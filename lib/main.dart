@@ -905,6 +905,18 @@ class _DaySmallSection extends StatelessWidget {
   }
 }
 
+class _TimelinePlacement {
+  final AgendaItem item;
+  final int lane;
+  final int laneCount;
+
+  const _TimelinePlacement({
+    required this.item,
+    required this.lane,
+    required this.laneCount,
+  });
+}
+
 class DayTimeline extends StatelessWidget {
   final DateTime date;
   final List<AgendaItem> events;
@@ -927,40 +939,126 @@ class DayTimeline extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final totalHeight = (endHour - startHour) * hourHeight;
+    final placements = _placements(events);
 
-    return Container(
-      height: totalHeight,
-      decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surface,
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: Theme.of(context).colorScheme.outlineVariant),
-      ),
-      clipBehavior: Clip.antiAlias,
-      child: Stack(
-        children: [
-          Positioned.fill(
-            child: GestureDetector(
-              behavior: HitTestBehavior.translucent,
-              onTapDown: (details) => _createAtPosition(context, details.localPosition.dy),
-              child: CustomPaint(
-                painter: _TimelinePainter(
-                  color: Theme.of(context).colorScheme.outlineVariant,
-                  textColor: Theme.of(context).colorScheme.onSurfaceVariant,
-                ),
-              ),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        return Container(
+          height: totalHeight,
+          decoration: BoxDecoration(
+            color: Theme.of(context).colorScheme.surface,
+            borderRadius: BorderRadius.circular(24),
+            border: Border.all(
+              color: Theme.of(context).colorScheme.outlineVariant,
             ),
           ),
-          ...events.map((event) => _eventBlock(context, event)),
-          if (AgendaStore.sameDay(date, DateTime.now()))
-            _currentTimeIndicator(context),
-        ],
-      ),
+          clipBehavior: Clip.antiAlias,
+          child: Stack(
+            children: [
+              Positioned.fill(
+                child: GestureDetector(
+                  behavior: HitTestBehavior.translucent,
+                  onTapDown: (details) =>
+                      _createAtPosition(context, details.localPosition.dy),
+                  child: CustomPaint(
+                    painter: _TimelinePainter(
+                      color: Theme.of(context).colorScheme.outlineVariant,
+                      textColor:
+                          Theme.of(context).colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                ),
+              ),
+              ...placements.map(
+                (placement) => _eventBlock(
+                  context,
+                  placement,
+                  constraints.maxWidth,
+                ),
+              ),
+              if (AgendaStore.sameDay(date, DateTime.now()))
+                _currentTimeIndicator(context),
+            ],
+          ),
+        );
+      },
     );
   }
 
-  Widget _eventBlock(BuildContext context, AgendaItem event) {
+  List<_TimelinePlacement> _placements(List<AgendaItem> source) {
+    final sorted = [...source]
+      ..sort((a, b) => _startMinutes(a).compareTo(_startMinutes(b)));
+
+    final result = <_TimelinePlacement>[];
+    var index = 0;
+
+    while (index < sorted.length) {
+      final group = <AgendaItem>[];
+      var groupEnd = _endMinutes(sorted[index]);
+      group.add(sorted[index]);
+      index++;
+
+      while (index < sorted.length &&
+          _startMinutes(sorted[index]) < groupEnd) {
+        final item = sorted[index];
+        group.add(item);
+        groupEnd = groupEnd < _endMinutes(item)
+            ? _endMinutes(item)
+            : groupEnd;
+        index++;
+      }
+
+      final laneEnds = <int>[];
+      final laneForItem = <AgendaItem, int>{};
+
+      for (final item in group) {
+        final start = _startMinutes(item);
+        var lane = laneEnds.indexWhere((end) => end <= start);
+        if (lane == -1) {
+          lane = laneEnds.length;
+          laneEnds.add(_endMinutes(item));
+        } else {
+          laneEnds[lane] = _endMinutes(item);
+        }
+        laneForItem[item] = lane;
+      }
+
+      final count = laneEnds.length.clamp(1, 99);
+      for (final item in group) {
+        result.add(
+          _TimelinePlacement(
+            item: item,
+            lane: laneForItem[item] ?? 0,
+            laneCount: count,
+          ),
+        );
+      }
+    }
+
+    return result;
+  }
+
+  int _startMinutes(AgendaItem item) {
+    final start = item.start!;
+    return start.hour * 60 + start.minute;
+  }
+
+  int _endMinutes(AgendaItem item) {
+    final start = _startMinutes(item);
+    final end = item.end;
+    if (end == null) return start + 60;
+    final result = end.hour * 60 + end.minute;
+    return result <= start ? start + 15 : result;
+  }
+
+  Widget _eventBlock(
+    BuildContext context,
+    _TimelinePlacement placement,
+    double maxWidth,
+  ) {
+    final event = placement.item;
     final start = event.start!;
-    final startMinutes = start.hour * 60 + start.minute;
+    final startMinutes = _startMinutes(event);
     final lower = startHour * 60;
     final upper = endHour * 60;
 
@@ -968,19 +1066,31 @@ class DayTimeline extends StatelessWidget {
       return const SizedBox.shrink();
     }
 
-    final rawEnd = event.end == null
-        ? startMinutes + 60
-        : event.end!.hour * 60 + event.end!.minute;
-    final endMinutes = rawEnd.clamp(startMinutes + 15, upper);
-
+    final endMinutes =
+        _endMinutes(event).clamp(startMinutes + 15, upper);
     final top = ((startMinutes - lower) / 60) * hourHeight;
     final height = (((endMinutes - startMinutes) / 60) * hourHeight)
         .clamp(36.0, totalHeightFromTop(top));
 
+    const gap = 5.0;
+    final contentWidth = maxWidth - timeColumnWidth - 16;
+    final laneWidth =
+        (contentWidth - gap * (placement.laneCount - 1)) /
+            placement.laneCount;
+    final left = timeColumnWidth +
+        8 +
+        placement.lane * (laneWidth + gap);
+
+    final base = event.category.color;
+    final background = Color.alphaBlend(
+      base.withValues(alpha: 0.16),
+      Theme.of(context).colorScheme.surface,
+    );
+
     return Positioned(
       top: top + 2,
-      left: timeColumnWidth + 8,
-      right: 8,
+      left: left,
+      width: laneWidth,
       height: height - 4,
       child: Material(
         color: Colors.transparent,
@@ -996,13 +1106,14 @@ class DayTimeline extends StatelessWidget {
             onChanged();
           },
           child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 7),
+            padding: EdgeInsets.symmetric(
+              horizontal: placement.laneCount > 2 ? 6 : 9,
+              vertical: 7,
+            ),
             decoration: BoxDecoration(
-              gradient: const LinearGradient(
-                colors: [Color(0xFFFFDDE7), Color(0xFFF0E7FF)],
-              ),
+              color: background,
               borderRadius: BorderRadius.circular(14),
-              border: Border.all(color: const Color(0xFFE7A1B7)),
+              border: Border.all(color: base.withValues(alpha: 0.55)),
               boxShadow: const [
                 BoxShadow(
                   blurRadius: 4,
@@ -1017,29 +1128,58 @@ class DayTimeline extends StatelessWidget {
                 Container(
                   width: 4,
                   decoration: BoxDecoration(
-                    color: const Color(0xFFE37899),
+                    color: base,
                     borderRadius: BorderRadius.circular(99),
                   ),
                 ),
-                const SizedBox(width: 8),
+                const SizedBox(width: 6),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
+                      if (placement.laneCount <= 2)
+                        Row(
+                          children: [
+                            Icon(event.category.icon, size: 13, color: base),
+                            const SizedBox(width: 4),
+                            Expanded(
+                              child: Text(
+                                event.category.label,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(
+                                  color: base,
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.w800,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
                       Text(
                         event.title,
                         maxLines: height < 58 ? 1 : 2,
                         overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(fontWeight: FontWeight.w800),
+                        style: TextStyle(
+                          fontWeight: FontWeight.w800,
+                          fontSize: placement.laneCount > 2 ? 11 : 13,
+                        ),
                       ),
                       if (height >= 52)
                         Text(
                           event.end == null
                               ? formatTime(start)
                               : '${formatTime(start)} – ${formatTime(event.end!)}',
-                          style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            fontSize: placement.laneCount > 2 ? 9 : 11,
+                            fontWeight: FontWeight.w600,
+                          ),
                         ),
-                      if (height >= 82 && event.note.trim().isNotEmpty)
+                      if (height >= 82 &&
+                          placement.laneCount <= 2 &&
+                          event.note.trim().isNotEmpty)
                         Text(
                           event.note,
                           maxLines: 1,
@@ -1063,7 +1203,9 @@ class DayTimeline extends StatelessWidget {
     final lower = startHour * 60;
     final upper = endHour * 60;
 
-    if (minutes < lower || minutes >= upper) return const SizedBox.shrink();
+    if (minutes < lower || minutes >= upper) {
+      return const SizedBox.shrink();
+    }
 
     final top = ((minutes - lower) / 60) * hourHeight;
     return Positioned(
@@ -1082,7 +1224,10 @@ class DayTimeline extends StatelessWidget {
               ),
             ),
             Expanded(
-              child: Container(height: 2, color: const Color(0xFFE14F7A)),
+              child: Container(
+                height: 2,
+                color: const Color(0xFFE14F7A),
+              ),
             ),
           ],
         ),
@@ -1090,15 +1235,25 @@ class DayTimeline extends StatelessWidget {
     );
   }
 
-  Future<void> _createAtPosition(BuildContext context, double y) async {
-    var minutes = startHour * 60 + ((y / hourHeight) * 60).round();
-    minutes = ((minutes / 15).round() * 15).clamp(startHour * 60, endHour * 60 - 15);
+  Future<void> _createAtPosition(
+    BuildContext context,
+    double y,
+  ) async {
+    var minutes =
+        startHour * 60 + ((y / hourHeight) * 60).round();
+    minutes = ((minutes / 15).round() * 15).clamp(
+      startHour * 60,
+      endHour * 60 - 15,
+    );
 
     await openItemEditor(
       context,
       store,
       date,
-      initialTime: TimeOfDay(hour: minutes ~/ 60, minute: minutes % 60),
+      initialTime: TimeOfDay(
+        hour: minutes ~/ 60,
+        minute: minutes % 60,
+      ),
     );
     onChanged();
   }
