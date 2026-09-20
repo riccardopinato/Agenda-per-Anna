@@ -30,6 +30,25 @@ jobs:
           cp -R /tmp/agenda_base/web .
           cp -R /tmp/agenda_base/ios .
 
+      - name: Enable Android core library desugaring
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path("android/app/build.gradle.kts")
+          s = p.read_text()
+          needle = "compileOptions {"
+          if needle not in s:
+              raise SystemExit("compileOptions block not found")
+          s = s.replace(
+              needle,
+              needle + "\n        isCoreLibraryDesugaringEnabled = true",
+              1,
+          )
+          if 'coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.5")' not in s:
+              s += '\n\ndependencies {\n    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.5")\n}\n'
+          p.write_text(s)
+          PY
+
       - name: Decode app icon
         run: |
           mkdir -p assets/icon
@@ -54,29 +73,8 @@ jobs:
       - name: Build Android APK
         run: flutter build apk --release
 
-      - name: Prepare Web icon
-        run: |
-          cp assets/icon/app_icon.jpg web/icons/Icon-192.png
-          cp assets/icon/app_icon.jpg web/icons/Icon-512.png
-          cp assets/icon/app_icon.jpg web/icons/Icon-maskable-192.png
-          cp assets/icon/app_icon.jpg web/icons/Icon-maskable-512.png
-
-      - name: Build Web
-        run: flutter build web --release
-
-      - name: Package Web
-        run: |
-          cd build/web
-          zip -r ../agenda-per-anna-web.zip .
-
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: agenda-per-anna-apk
           path: build/app/outputs/flutter-apk/app-release.apk
-
-      - name: Upload Web PWA
-        uses: actions/upload-artifact@v4
-        with:
-          name: agenda-per-anna-web
-          path: build/agenda-per-anna-web.zip
