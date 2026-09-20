@@ -33,7 +33,7 @@ jobs:
       - name: Restore persistent Android debug keystore
         uses: actions/cache@v5
         with:
-          path: ~/.android/debug.keystore
+          path: /home/runner/.android/debug.keystore
           key: agenda-per-anna-android-debug-keystore-v1
 
       - name: Enable Android core library desugaring
@@ -90,6 +90,6 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: agenda-per-anna-debug-keystore
-          path: ~/.android/debug.keystore
+          path: /home/runner/.android/debug.keystore
           if-no-files-found: ignore
           retention-days: 90
