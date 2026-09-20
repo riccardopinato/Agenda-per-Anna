@@ -3,7 +3,8 @@ import 'package:agenda_per_anna/main.dart';
 
 void main() {
   testWidgets('Agenda app starts', (tester) async {
-    await tester.pumpWidget(const AgendaApp());
+    final store = AgendaStore();
+    await tester.pumpWidget(AgendaApp(store: store));
     await tester.pumpAndSettle();
     expect(find.text('Agenda per Anna'), findsOneWidget);
   });
