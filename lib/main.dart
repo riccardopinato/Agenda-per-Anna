@@ -761,11 +761,13 @@ class _WeekScreenState extends State<WeekScreen> {
               ),
               const SizedBox(height: 14),
               WeekFocusCard(
+                key: ValueKey('week-focus-${AgendaStore.dateKey(start)}'),
                 data: data,
                 onSave: (value) => widget.store.saveWeek(start, value),
               ),
               const SizedBox(height: 14),
               WeekPrioritiesCard(
+                key: ValueKey('week-priorities-${AgendaStore.dateKey(start)}'),
                 data: data,
                 onSave: (value) => widget.store.saveWeek(start, value),
               ),
@@ -781,6 +783,7 @@ class _WeekScreenState extends State<WeekScreen> {
               ],
               const SizedBox(height: 8),
               WeekMemoryCard(
+                key: ValueKey('week-memory-${AgendaStore.dateKey(start)}'),
                 data: data,
                 autoMemories: beautifulThings,
                 onSave: (value) => widget.store.saveWeek(start, value),
@@ -1216,6 +1219,7 @@ class _MonthScreenState extends State<MonthScreen> {
               ),
               const SizedBox(height: 14),
               MonthTextCard(
+                key: ValueKey('month-intention-${selected.year}-${selected.month}'),
                 title: 'Questo mese voglio...',
                 initial: data.intention,
                 onSave: (v) => widget.store.saveMonth(selected.year, selected.month, data.copyWith(intention: v)),
@@ -1245,6 +1249,7 @@ class _MonthScreenState extends State<MonthScreen> {
               ),
               const SizedBox(height: 12),
               ClosingMonthCard(
+                key: ValueKey('month-closing-${selected.year}-${selected.month}'),
                 data: data,
                 onSave: (v) => widget.store.saveMonth(selected.year, selected.month, v),
               ),
