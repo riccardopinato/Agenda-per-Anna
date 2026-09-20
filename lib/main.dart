@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
 import 'package:intl/date_symbol_data_local.dart';
@@ -7,9 +8,12 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:table_calendar/table_calendar.dart';
 import 'package:uuid/uuid.dart';
 
+import 'notification_service.dart';
+
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await initializeDateFormatting('it_IT', null);
+  await NotificationService.instance.initialize();
   final store = AgendaStore();
   await store.load();
   runApp(AgendaApp(store: store));
@@ -44,6 +48,48 @@ class AgendaApp extends StatelessWidget {
 
 enum ItemType { appointment, task }
 
+enum AgendaCategory {
+  personal,
+  study,
+  work,
+  health,
+  couple,
+  leisure,
+  other,
+}
+
+extension AgendaCategoryUi on AgendaCategory {
+  String get label => switch (this) {
+        AgendaCategory.personal => 'Personale',
+        AgendaCategory.study => 'Studio',
+        AgendaCategory.work => 'Lavoro',
+        AgendaCategory.health => 'Salute',
+        AgendaCategory.couple => 'Noi ♡',
+        AgendaCategory.leisure => 'Tempo libero',
+        AgendaCategory.other => 'Altro',
+      };
+
+  IconData get icon => switch (this) {
+        AgendaCategory.personal => Icons.favorite_outline,
+        AgendaCategory.study => Icons.menu_book_outlined,
+        AgendaCategory.work => Icons.work_outline,
+        AgendaCategory.health => Icons.spa_outlined,
+        AgendaCategory.couple => Icons.favorite_border,
+        AgendaCategory.leisure => Icons.celebration_outlined,
+        AgendaCategory.other => Icons.label_outline,
+      };
+
+  Color get color => switch (this) {
+        AgendaCategory.personal => const Color(0xFFE88CA8),
+        AgendaCategory.study => const Color(0xFF8F8BD8),
+        AgendaCategory.work => const Color(0xFF6C9DC6),
+        AgendaCategory.health => const Color(0xFF70B69A),
+        AgendaCategory.couple => const Color(0xFFE07C93),
+        AgendaCategory.leisure => const Color(0xFFE7A85D),
+        AgendaCategory.other => const Color(0xFF9B93A6),
+      };
+}
+
 class AgendaItem {
   final String id;
   final String title;
@@ -52,6 +98,8 @@ class AgendaItem {
   final TimeOfDay? start;
   final TimeOfDay? end;
   final ItemType type;
+  final AgendaCategory category;
+  final int? reminderMinutesBefore;
   final bool done;
 
   const AgendaItem({
@@ -60,6 +108,8 @@ class AgendaItem {
     required this.note,
     required this.date,
     required this.type,
+    this.category = AgendaCategory.personal,
+    this.reminderMinutesBefore,
     this.start,
     this.end,
     this.done = false,
@@ -72,8 +122,11 @@ class AgendaItem {
     TimeOfDay? start,
     TimeOfDay? end,
     ItemType? type,
+    AgendaCategory? category,
+    int? reminderMinutesBefore,
     bool? done,
     bool clearTime = false,
+    bool clearReminder = false,
   }) {
     return AgendaItem(
       id: id,
@@ -81,6 +134,9 @@ class AgendaItem {
       note: note ?? this.note,
       date: date ?? this.date,
       type: type ?? this.type,
+      category: category ?? this.category,
+      reminderMinutesBefore:
+          clearReminder ? null : (reminderMinutesBefore ?? this.reminderMinutesBefore),
       start: clearTime ? null : (start ?? this.start),
       end: clearTime ? null : (end ?? this.end),
       done: done ?? this.done,
@@ -93,6 +149,8 @@ class AgendaItem {
         'note': note,
         'date': date.toIso8601String(),
         'type': type.name,
+        'category': category.name,
+        'reminderMinutesBefore': reminderMinutesBefore,
         'done': done,
         'start': start == null ? null : [start!.hour, start!.minute],
         'end': end == null ? null : [end!.hour, end!.minute],
@@ -115,6 +173,11 @@ class AgendaItem {
         (e) => e.name == json['type'],
         orElse: () => ItemType.appointment,
       ),
+      category: AgendaCategory.values.firstWhere(
+        (e) => e.name == json['category'],
+        orElse: () => AgendaCategory.personal,
+      ),
+      reminderMinutesBefore: json['reminderMinutesBefore'] as int?,
       done: json['done'] as bool? ?? false,
       start: parseTime(json['start']),
       end: parseTime(json['end']),
@@ -387,13 +450,42 @@ class AgendaStore extends ChangeNotifier {
       items[index] = item;
     }
     await _save();
+    await _syncReminder(item);
     notifyListeners();
   }
 
   Future<void> deleteItem(String id) async {
     items.removeWhere((e) => e.id == id);
+    await NotificationService.instance.cancel(id);
     await _save();
     notifyListeners();
+  }
+
+  Future<void> _syncReminder(AgendaItem item) async {
+    final minutes = item.reminderMinutesBefore;
+    final start = item.start;
+    if (minutes == null || start == null) {
+      await NotificationService.instance.cancel(item.id);
+      return;
+    }
+
+    final eventTime = DateTime(
+      item.date.year,
+      item.date.month,
+      item.date.day,
+      start.hour,
+      start.minute,
+    );
+    final when = eventTime.subtract(Duration(minutes: minutes));
+
+    await NotificationService.instance.schedule(
+      stableId: item.id,
+      title: item.title,
+      body: minutes == 0
+          ? 'È il momento di iniziare.'
+          : 'Tra $minutes minuti: ${item.title}',
+      when: when,
+    );
   }
 
   Future<void> toggle(String id) async {
@@ -1059,7 +1151,7 @@ class _TimelinePainter extends CustomPainter {
               fontWeight: FontWeight.w600,
             ),
           ),
-          textDirection: TextDirection.ltr,
+          textDirection: ui.TextDirection.ltr,
         )..layout(maxWidth: DayTimeline.timeColumnWidth - 8);
 
         painter.paint(
