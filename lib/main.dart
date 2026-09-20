@@ -135,6 +135,49 @@ class DayJournal {
       );
 }
 
+
+class WeekData {
+  final String focus;
+  final List<String> priorities;
+  final String bestThing;
+  final String reflection;
+
+  const WeekData({
+    this.focus = '',
+    this.priorities = const [],
+    this.bestThing = '',
+    this.reflection = '',
+  });
+
+  WeekData copyWith({
+    String? focus,
+    List<String>? priorities,
+    String? bestThing,
+    String? reflection,
+  }) {
+    return WeekData(
+      focus: focus ?? this.focus,
+      priorities: priorities ?? this.priorities,
+      bestThing: bestThing ?? this.bestThing,
+      reflection: reflection ?? this.reflection,
+    );
+  }
+
+  Map<String, dynamic> toJson() => {
+        'focus': focus,
+        'priorities': priorities,
+        'bestThing': bestThing,
+        'reflection': reflection,
+      };
+
+  factory WeekData.fromJson(Map<String, dynamic> json) => WeekData(
+        focus: json['focus'] as String? ?? '',
+        priorities: List<String>.from(json['priorities'] as List? ?? const []),
+        bestThing: json['bestThing'] as String? ?? '',
+        reflection: json['reflection'] as String? ?? '',
+      );
+}
+
 class MonthlyData {
   final String intention;
   final List<String> goals;
@@ -257,10 +300,12 @@ class AgendaStore extends ChangeNotifier {
   static const _itemsKey = 'items_v1';
   static const _journalsKey = 'journals_v1';
   static const _monthsKey = 'months_v1';
+  static const _weeksKey = 'weeks_v1';
 
   final List<AgendaItem> items = [];
   final Map<String, DayJournal> journals = {};
   final Map<String, MonthlyData> months = {};
+  final Map<String, WeekData> weeks = {};
 
   Future<void> load() async {
     final prefs = await SharedPreferences.getInstance();
@@ -293,6 +338,17 @@ class AgendaStore extends ChangeNotifier {
                 MonthlyData.fromJson(Map<String, dynamic>.from(v as Map)),
               )));
       }
+
+      final wr = prefs.getString(_weeksKey);
+      if (wr != null) {
+        final map = Map<String, dynamic>.from(jsonDecode(wr) as Map);
+        weeks
+          ..clear()
+          ..addAll(map.map((k, v) => MapEntry(
+                k,
+                WeekData.fromJson(Map<String, dynamic>.from(v as Map)),
+              )));
+      }
     } catch (_) {}
   }
 
@@ -306,6 +362,10 @@ class AgendaStore extends ChangeNotifier {
     await prefs.setString(
       _monthsKey,
       jsonEncode(months.map((k, v) => MapEntry(k, v.toJson()))),
+    );
+    await prefs.setString(
+      _weeksKey,
+      jsonEncode(weeks.map((k, v) => MapEntry(k, v.toJson()))),
     );
   }
 
@@ -360,6 +420,18 @@ class AgendaStore extends ChangeNotifier {
     notifyListeners();
   }
 
+  WeekData week(DateTime anyDay) {
+    final monday = mondayOf(anyDay);
+    return weeks[dateKey(monday)] ?? const WeekData();
+  }
+
+  Future<void> saveWeek(DateTime anyDay, WeekData value) async {
+    final monday = mondayOf(anyDay);
+    weeks[dateKey(monday)] = value;
+    await _save();
+    notifyListeners();
+  }
+
   static bool sameDay(DateTime a, DateTime b) =>
       a.year == b.year && a.month == b.month && a.day == b.day;
 
@@ -385,8 +457,8 @@ class _MainShellState extends State<MainShell> {
     final pages = [
       HomeScreen(store: widget.store),
       CalendarScreen(store: widget.store),
-      PlannerScreen(store: widget.store),
       WeekScreen(store: widget.store),
+      PlannerScreen(store: widget.store),
     ];
     return Scaffold(
       body: IndexedStack(index: index, children: pages),
@@ -396,8 +468,8 @@ class _MainShellState extends State<MainShell> {
         destinations: const [
           NavigationDestination(icon: Icon(Icons.home_outlined), label: 'Home'),
           NavigationDestination(icon: Icon(Icons.calendar_month_outlined), label: 'Mese'),
-          NavigationDestination(icon: Icon(Icons.today_outlined), label: 'Oggi'),
           NavigationDestination(icon: Icon(Icons.view_week_outlined), label: 'Settimana'),
+          NavigationDestination(icon: Icon(Icons.today_outlined), label: 'Oggi'),
         ],
       ),
     );
@@ -434,10 +506,10 @@ class HomeScreen extends StatelessWidget {
                     Text(_cap(DateFormat('EEEE d MMMM', 'it_IT').format(now)),
                         style: Theme.of(context).textTheme.titleMedium),
                     const SizedBox(height: 8),
-                    const Text('Una cosa alla volta ♡',
-                        style: TextStyle(fontSize: 24, fontWeight: FontWeight.w900)),
+                    Text(_dailyQuote(now).$1,
+                        style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w900)),
                     const SizedBox(height: 6),
-                    const Text('Organizza la giornata, lascia spazio alle cose belle e ricordati di te.'),
+                    Text(_dailyQuote(now).$2),
                   ],
                 ),
               ),
@@ -642,48 +714,464 @@ class _WeekScreenState extends State<WeekScreen> {
   Widget build(BuildContext context) {
     return AnimatedBuilder(
       animation: widget.store,
-      builder: (context, _) => Scaffold(
-        appBar: AppBar(
-          title: const Text('La mia settimana', style: TextStyle(fontWeight: FontWeight.w800)),
-          actions: [
-            IconButton(onPressed: () => setState(() => start = start.subtract(const Duration(days: 7))), icon: const Icon(Icons.chevron_left)),
-            IconButton(onPressed: () => setState(() => start = start.add(const Duration(days: 7))), icon: const Icon(Icons.chevron_right)),
-          ],
+      builder: (context, _) {
+        final data = widget.store.week(start);
+        final end = start.add(const Duration(days: 6));
+        final events = <AgendaItem>[
+          for (int i = 0; i < 7; i++) ...widget.store.forDay(start.add(Duration(days: i))),
+        ];
+        final completedTasks = events.where((e) => e.type == ItemType.task && e.done).length;
+        final totalTasks = events.where((e) => e.type == ItemType.task).length;
+        final beautifulThings = <String>[
+          for (int i = 0; i < 7; i++)
+            if (widget.store.journal(start.add(Duration(days: i))).beautiful.trim().isNotEmpty)
+              widget.store.journal(start.add(Duration(days: i))).beautiful.trim(),
+        ];
+
+        return Scaffold(
+          appBar: AppBar(
+            title: const Text('La mia settimana', style: TextStyle(fontWeight: FontWeight.w800)),
+            actions: [
+              IconButton(
+                tooltip: 'Settimana precedente',
+                onPressed: () => setState(() => start = start.subtract(const Duration(days: 7))),
+                icon: const Icon(Icons.chevron_left),
+              ),
+              IconButton(
+                tooltip: 'Questa settimana',
+                onPressed: () => setState(() => start = mondayOf(DateTime.now())),
+                icon: const Icon(Icons.today_outlined),
+              ),
+              IconButton(
+                tooltip: 'Settimana successiva',
+                onPressed: () => setState(() => start = start.add(const Duration(days: 7))),
+                icon: const Icon(Icons.chevron_right),
+              ),
+            ],
+          ),
+          body: ListView(
+            padding: const EdgeInsets.fromLTRB(14, 8, 14, 110),
+            children: [
+              _WeekHero(
+                start: start,
+                end: end,
+                eventCount: events.length,
+                completedTasks: completedTasks,
+                totalTasks: totalTasks,
+              ),
+              const SizedBox(height: 14),
+              WeekFocusCard(
+                data: data,
+                onSave: (value) => widget.store.saveWeek(start, value),
+              ),
+              const SizedBox(height: 14),
+              WeekPrioritiesCard(
+                data: data,
+                onSave: (value) => widget.store.saveWeek(start, value),
+              ),
+              const SizedBox(height: 18),
+              const SectionTitle('I 7 giorni'),
+              const SizedBox(height: 10),
+              for (int i = 0; i < 7; i++) ...[
+                _WeekDayCard(
+                  day: start.add(Duration(days: i)),
+                  store: widget.store,
+                ),
+                const SizedBox(height: 10),
+              ],
+              const SizedBox(height: 8),
+              WeekMemoryCard(
+                data: data,
+                autoMemories: beautifulThings,
+                onSave: (value) => widget.store.saveWeek(start, value),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+}
+
+class _WeekHero extends StatelessWidget {
+  final DateTime start;
+  final DateTime end;
+  final int eventCount;
+  final int completedTasks;
+  final int totalTasks;
+
+  const _WeekHero({
+    required this.start,
+    required this.end,
+    required this.eventCount,
+    required this.completedTasks,
+    required this.totalTasks,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: [Color(0xFFFFE5ED), Color(0xFFEDE8FF)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
         ),
-        body: ListView.builder(
-          padding: const EdgeInsets.fromLTRB(14, 8, 14, 100),
-          itemCount: 7,
-          itemBuilder: (context, i) {
-            final day = start.add(Duration(days: i));
-            final list = widget.store.forDay(day);
-            return Padding(
-              padding: const EdgeInsets.only(bottom: 14),
-              child: SimpleCard(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Text(_cap(DateFormat('EEEE d MMMM', 'it_IT').format(day)),
-                              style: const TextStyle(fontWeight: FontWeight.w800)),
-                        ),
-                        IconButton(
-                          onPressed: () => openItemEditor(context, widget.store, day),
-                          icon: const Icon(Icons.add_circle_outline),
+        borderRadius: BorderRadius.circular(26),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            '${DateFormat('d MMM', 'it_IT').format(start)} – ${DateFormat('d MMM yyyy', 'it_IT').format(end)}',
+            style: const TextStyle(fontWeight: FontWeight.w800),
+          ),
+          const SizedBox(height: 8),
+          const Text(
+            'Una settimana alla volta',
+            style: TextStyle(fontSize: 22, fontWeight: FontWeight.w900),
+          ),
+          const SizedBox(height: 12),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              _MiniPill(icon: Icons.event_outlined, text: '$eventCount impegni'),
+              _MiniPill(
+                icon: Icons.check_circle_outline,
+                text: totalTasks == 0 ? 'Nessun task' : '$completedTasks / $totalTasks task',
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _MiniPill extends StatelessWidget {
+  final IconData icon;
+  final String text;
+  const _MiniPill({required this.icon, required this.text});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 7),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.76),
+        borderRadius: BorderRadius.circular(999),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 16),
+          const SizedBox(width: 6),
+          Text(text, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 12)),
+        ],
+      ),
+    );
+  }
+}
+
+class WeekFocusCard extends StatefulWidget {
+  final WeekData data;
+  final ValueChanged<WeekData> onSave;
+  const WeekFocusCard({super.key, required this.data, required this.onSave});
+
+  @override
+  State<WeekFocusCard> createState() => _WeekFocusCardState();
+}
+
+class _WeekFocusCardState extends State<WeekFocusCard> {
+  late final TextEditingController controller =
+      TextEditingController(text: widget.data.focus);
+
+  @override
+  Widget build(BuildContext context) {
+    return SimpleCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Row(
+            children: [
+              Icon(Icons.center_focus_strong_outlined),
+              SizedBox(width: 8),
+              Text('Focus della settimana', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800)),
+            ],
+          ),
+          const SizedBox(height: 12),
+          TextField(
+            controller: controller,
+            minLines: 2,
+            maxLines: 4,
+            decoration: const InputDecoration(
+              hintText: 'Qual è la cosa più importante di questa settimana?',
+              border: OutlineInputBorder(),
+            ),
+          ),
+          const SizedBox(height: 10),
+          SizedBox(
+            width: double.infinity,
+            child: FilledButton.tonal(
+              onPressed: () => widget.onSave(widget.data.copyWith(focus: controller.text.trim())),
+              child: const Text('Salva focus'),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class WeekPrioritiesCard extends StatelessWidget {
+  final WeekData data;
+  final ValueChanged<WeekData> onSave;
+  const WeekPrioritiesCard({super.key, required this.data, required this.onSave});
+
+  @override
+  Widget build(BuildContext context) {
+    return SimpleCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Expanded(
+                child: Text('Priorità della settimana',
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800)),
+              ),
+              IconButton(
+                onPressed: () async {
+                  final controller = TextEditingController();
+                  final value = await showDialog<String>(
+                    context: context,
+                    builder: (context) => AlertDialog(
+                      title: const Text('Nuova priorità'),
+                      content: TextField(
+                        controller: controller,
+                        autofocus: true,
+                        decoration: const InputDecoration(hintText: 'Es. Finire la tesi'),
+                      ),
+                      actions: [
+                        TextButton(onPressed: () => Navigator.pop(context), child: const Text('Annulla')),
+                        FilledButton(
+                          onPressed: () => Navigator.pop(context, controller.text.trim()),
+                          child: const Text('Aggiungi'),
                         ),
                       ],
                     ),
-                    if (list.isEmpty)
-                      const Text('Nessun impegno')
-                    else
-                      ...list.map((e) => EventTile(store: widget.store, item: e, compact: true)),
+                  );
+                  if (value != null && value.isNotEmpty) {
+                    onSave(data.copyWith(priorities: [...data.priorities, value]));
+                  }
+                },
+                icon: const Icon(Icons.add_circle_outline),
+              ),
+            ],
+          ),
+          if (data.priorities.isEmpty)
+            const Padding(
+              padding: EdgeInsets.only(top: 6),
+              child: Text('Aggiungi fino a poche cose davvero importanti, senza riempire troppo la settimana.'),
+            )
+          else
+            ...data.priorities.asMap().entries.map(
+                  (entry) => ListTile(
+                    contentPadding: EdgeInsets.zero,
+                    leading: CircleAvatar(
+                      radius: 14,
+                      child: Text('${entry.key + 1}', style: const TextStyle(fontSize: 12)),
+                    ),
+                    title: Text(entry.value),
+                    trailing: IconButton(
+                      icon: const Icon(Icons.close),
+                      onPressed: () {
+                        final copy = [...data.priorities]..removeAt(entry.key);
+                        onSave(data.copyWith(priorities: copy));
+                      },
+                    ),
+                  ),
+                ),
+        ],
+      ),
+    );
+  }
+}
+
+class _WeekDayCard extends StatelessWidget {
+  final DateTime day;
+  final AgendaStore store;
+  const _WeekDayCard({required this.day, required this.store});
+
+  @override
+  Widget build(BuildContext context) {
+    final items = store.forDay(day);
+    final journal = store.journal(day);
+    final isToday = AgendaStore.sameDay(day, DateTime.now());
+
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: isToday
+            ? Theme.of(context).colorScheme.primaryContainer.withValues(alpha: 0.55)
+            : Theme.of(context).colorScheme.surface,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: Theme.of(context).colorScheme.outlineVariant),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 44,
+                height: 44,
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  color: isToday
+                      ? Theme.of(context).colorScheme.primary
+                      : Theme.of(context).colorScheme.surfaceContainerHighest,
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                child: Text(
+                  '${day.day}',
+                  style: TextStyle(
+                    fontWeight: FontWeight.w900,
+                    color: isToday ? Theme.of(context).colorScheme.onPrimary : null,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  _cap(DateFormat('EEEE', 'it_IT').format(day)),
+                  style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 17),
+                ),
+              ),
+              IconButton(
+                onPressed: () => openItemEditor(context, store, day),
+                icon: const Icon(Icons.add_circle_outline),
+              ),
+            ],
+          ),
+          if (items.isEmpty)
+            const Padding(
+              padding: EdgeInsets.only(top: 8),
+              child: Text('Nessun impegno'),
+            )
+          else ...[
+            const SizedBox(height: 8),
+            ...items.take(4).map((item) => EventTile(store: store, item: item, compact: true)),
+            if (items.length > 4)
+              Padding(
+                padding: const EdgeInsets.only(top: 4),
+                child: Text('+ ${items.length - 4} altri'),
+              ),
+          ],
+          if (journal.beautiful.trim().isNotEmpty) ...[
+            const Divider(height: 22),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Icon(Icons.favorite_outline, size: 17),
+                const SizedBox(width: 7),
+                Expanded(
+                  child: Text(
+                    journal.beautiful,
+                    style: const TextStyle(fontSize: 13, fontStyle: FontStyle.italic),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class WeekMemoryCard extends StatefulWidget {
+  final WeekData data;
+  final List<String> autoMemories;
+  final ValueChanged<WeekData> onSave;
+
+  const WeekMemoryCard({
+    super.key,
+    required this.data,
+    required this.autoMemories,
+    required this.onSave,
+  });
+
+  @override
+  State<WeekMemoryCard> createState() => _WeekMemoryCardState();
+}
+
+class _WeekMemoryCardState extends State<WeekMemoryCard> {
+  late final TextEditingController best =
+      TextEditingController(text: widget.data.bestThing);
+  late final TextEditingController reflection =
+      TextEditingController(text: widget.data.reflection);
+
+  @override
+  Widget build(BuildContext context) {
+    return SimpleCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text('La mia settimana ♡',
+              style: TextStyle(fontWeight: FontWeight.w800, fontSize: 18)),
+          if (widget.autoMemories.isNotEmpty) ...[
+            const SizedBox(height: 12),
+            const Text('Cose belle annotate nei giorni',
+                style: TextStyle(fontWeight: FontWeight.w700)),
+            const SizedBox(height: 6),
+            ...widget.autoMemories.map(
+              (memory) => Padding(
+                padding: const EdgeInsets.only(bottom: 5),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text('♡  '),
+                    Expanded(child: Text(memory)),
                   ],
                 ),
               ),
-            );
-          },
-        ),
+            ),
+          ],
+          const SizedBox(height: 12),
+          TextField(
+            controller: best,
+            decoration: const InputDecoration(
+              labelText: 'La cosa più bella della settimana',
+              border: OutlineInputBorder(),
+            ),
+          ),
+          const SizedBox(height: 10),
+          TextField(
+            controller: reflection,
+            minLines: 3,
+            maxLines: 6,
+            decoration: const InputDecoration(
+              labelText: 'Come è andata questa settimana?',
+              border: OutlineInputBorder(),
+            ),
+          ),
+          const SizedBox(height: 10),
+          SizedBox(
+            width: double.infinity,
+            child: FilledButton.tonal(
+              onPressed: () => widget.onSave(
+                widget.data.copyWith(
+                  bestThing: best.text.trim(),
+                  reflection: reflection.text.trim(),
+                ),
+              ),
+              child: const Text('Salva settimana'),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -719,6 +1207,14 @@ class _MonthScreenState extends State<MonthScreen> {
           body: ListView(
             padding: const EdgeInsets.fromLTRB(14, 8, 14, 100),
             children: [
+              MonthOpeningHero(
+                month: selected,
+                data: data,
+                eventCount: widget.store.items
+                    .where((e) => e.date.year == selected.year && e.date.month == selected.month)
+                    .length,
+              ),
+              const SizedBox(height: 14),
               MonthTextCard(
                 title: 'Questo mese voglio...',
                 initial: data.intention,
@@ -733,7 +1229,14 @@ class _MonthScreenState extends State<MonthScreen> {
               const SizedBox(height: 12),
               MonthlyListCard(title: 'Desideri', items: data.wishes, onChange: (v) => widget.store.saveMonth(selected.year, selected.month, data.copyWith(wishes: v))),
               const SizedBox(height: 12),
-              MonthlyListCard(title: 'Idee', items: data.ideas, onChange: (v) => widget.store.saveMonth(selected.year, selected.month, data.copyWith(ideas: v))),
+              MonthIdeasBoard(
+                ideas: data.ideas,
+                onChange: (v) => widget.store.saveMonth(
+                  selected.year,
+                  selected.month,
+                  data.copyWith(ideas: v),
+                ),
+              ),
               const SizedBox(height: 12),
               BudgetCard(
                 data: data,
@@ -749,6 +1252,160 @@ class _MonthScreenState extends State<MonthScreen> {
           ),
         );
       },
+    );
+  }
+}
+
+class MonthOpeningHero extends StatelessWidget {
+  final DateTime month;
+  final MonthlyData data;
+  final int eventCount;
+
+  const MonthOpeningHero({
+    super.key,
+    required this.month,
+    required this.data,
+    required this.eventCount,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final spent = data.expenses.fold<int>(0, (sum, item) => sum + item.cents);
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: [Color(0xFFFFE2EB), Color(0xFFFFF4E8), Color(0xFFEDE7FF)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(28),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            _cap(DateFormat('MMMM', 'it_IT').format(month)),
+            style: const TextStyle(fontSize: 28, fontWeight: FontWeight.w900),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            _monthPhrase(month.month),
+            style: const TextStyle(fontSize: 14),
+          ),
+          const SizedBox(height: 16),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              _MiniPill(icon: Icons.event_outlined, text: '$eventCount impegni'),
+              _MiniPill(icon: Icons.flag_outlined, text: '${data.goals.length} obiettivi'),
+              _MiniPill(icon: Icons.lightbulb_outline, text: '${data.ideas.length} idee'),
+              _MiniPill(icon: Icons.wallet_outlined, text: money(spent)),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class MonthIdeasBoard extends StatelessWidget {
+  final List<String> ideas;
+  final ValueChanged<List<String>> onChange;
+
+  const MonthIdeasBoard({
+    super.key,
+    required this.ideas,
+    required this.onChange,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return SimpleCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('Idee del mese',
+                        style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800)),
+                    SizedBox(height: 3),
+                    Text('Posti, ricette, film, cose da provare e piccoli desideri.',
+                        style: TextStyle(fontSize: 12)),
+                  ],
+                ),
+              ),
+              IconButton(
+                onPressed: () async {
+                  final controller = TextEditingController();
+                  final value = await showDialog<String>(
+                    context: context,
+                    builder: (context) => AlertDialog(
+                      title: const Text('Nuova idea'),
+                      content: TextField(
+                        controller: controller,
+                        autofocus: true,
+                        decoration: const InputDecoration(
+                          hintText: 'Es. Fare una passeggiata al lago',
+                        ),
+                      ),
+                      actions: [
+                        TextButton(onPressed: () => Navigator.pop(context), child: const Text('Annulla')),
+                        FilledButton(
+                          onPressed: () => Navigator.pop(context, controller.text.trim()),
+                          child: const Text('Aggiungi'),
+                        ),
+                      ],
+                    ),
+                  );
+                  if (value != null && value.isNotEmpty) onChange([...ideas, value]);
+                },
+                icon: const Icon(Icons.add_circle_outline),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          if (ideas.isEmpty)
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(18),
+              decoration: BoxDecoration(
+                color: const Color(0xFFFFF5F8),
+                borderRadius: BorderRadius.circular(18),
+              ),
+              child: const Text(
+                'Qui può diventare la piccola “rivista” del mese: aggiungi qualcosa che ti piacerebbe fare, vedere, leggere o provare.',
+              ),
+            )
+          else
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: ideas.asMap().entries.map((entry) {
+                final icons = [
+                  Icons.place_outlined,
+                  Icons.restaurant_outlined,
+                  Icons.movie_outlined,
+                  Icons.local_florist_outlined,
+                  Icons.auto_awesome_outlined,
+                ];
+                return InputChip(
+                  avatar: Icon(icons[entry.key % icons.length], size: 17),
+                  label: Text(entry.value),
+                  onDeleted: () {
+                    final copy = [...ideas]..removeAt(entry.key);
+                    onChange(copy);
+                  },
+                );
+              }).toList(),
+            ),
+        ],
+      ),
     );
   }
 }
@@ -805,10 +1462,98 @@ class _YearScreenState extends State<YearScreen> {
                 title: 'Spese registrate',
                 value: money(expenses),
               ),
+
+              const SizedBox(height: 22),
+              const SectionTitle('I miei 12 mesi'),
+              const SizedBox(height: 10),
+              for (int month = 1; month <= 12; month++) ...[
+                YearMonthSnapshot(
+                  year: year,
+                  month: month,
+                  data: widget.store.month(year, month),
+                  memoryCount: widget.store.journals.entries.where((entry) {
+                    final date = DateTime.tryParse(entry.key);
+                    return date?.year == year &&
+                        date?.month == month &&
+                        entry.value.beautiful.trim().isNotEmpty;
+                  }).length,
+                ),
+                const SizedBox(height: 9),
+              ],
             ],
           ),
         );
       },
+    );
+  }
+}
+
+class YearMonthSnapshot extends StatelessWidget {
+  final int year;
+  final int month;
+  final MonthlyData data;
+  final int memoryCount;
+
+  const YearMonthSnapshot({
+    super.key,
+    required this.year,
+    required this.month,
+    required this.data,
+    required this.memoryCount,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final spent = data.expenses.fold<int>(0, (sum, item) => sum + item.cents);
+    final hasStory = data.bestMoment.trim().isNotEmpty ||
+        data.reflection.trim().isNotEmpty ||
+        memoryCount > 0 ||
+        data.goals.isNotEmpty ||
+        spent > 0;
+
+    return Container(
+      padding: const EdgeInsets.all(15),
+      decoration: BoxDecoration(
+        color: hasStory
+            ? Theme.of(context).colorScheme.primaryContainer.withValues(alpha: 0.28)
+            : Theme.of(context).colorScheme.surface,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: Theme.of(context).colorScheme.outlineVariant),
+      ),
+      child: Row(
+        children: [
+          SizedBox(
+            width: 74,
+            child: Text(
+              _cap(DateFormat('MMM', 'it_IT').format(DateTime(year, month))),
+              style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 16),
+            ),
+          ),
+          Expanded(
+            child: hasStory
+                ? Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      if (data.bestMoment.trim().isNotEmpty)
+                        Text(
+                          '♡ ${data.bestMoment}',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(fontWeight: FontWeight.w700),
+                        ),
+                      Text(
+                        '${data.goals.length} obiettivi · $memoryCount ricordi · ${money(spent)}',
+                        style: Theme.of(context).textTheme.bodySmall,
+                      ),
+                    ],
+                  )
+                : Text(
+                    'Ancora da scrivere',
+                    style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant),
+                  ),
+          ),
+        ],
+      ),
     );
   }
 }
@@ -1448,6 +2193,42 @@ Future<void> openItemEditor(
       ),
     ),
   );
+}
+
+const _positiveQuotes = <(String, String)>[
+  ('Una cosa alla volta ♡', 'Non serve fare tutto oggi. Basta iniziare da qualcosa che conta.'),
+  ('Fai spazio alle cose belle', 'Anche una giornata piena può contenere un momento solo tuo.'),
+  ('Non devi correre sempre', 'La costanza vale più della fretta.'),
+  ('Oggi merita una pagina nuova', 'Puoi decidere cosa portare con te e cosa lasciare andare.'),
+  ('Piccoli passi, grandi cambiamenti', 'Le cose importanti crescono un giorno alla volta.'),
+  ('Ricordati anche di te', 'Tra tutte le cose da fare, lascia uno spazio per stare bene.'),
+  ('Va bene cambiare programma', 'Un’agenda serve a sostenerti, non a metterti pressione.'),
+  ('Celebra quello che funziona', 'Non aspettare solo i grandi traguardi per essere fiera di te.'),
+];
+
+(String, String) _dailyQuote(DateTime date) {
+  final start = DateTime(date.year, 1, 1);
+  final dayOfYear = date.difference(start).inDays;
+  return _positiveQuotes[dayOfYear % _positiveQuotes.length];
+}
+
+String _monthPhrase(int month) {
+  const phrases = [
+    '',
+    'Un inizio leggero, senza pretendere tutto subito.',
+    'Coltiva ciò che vuoi vedere crescere.',
+    'Lascia entrare un po’ di primavera anche nei programmi.',
+    'Fai spazio alle novità.',
+    'Scegli ciò che ti fa stare bene.',
+    'Porta con te solo quello che serve.',
+    'Più luce, più tempo per respirare.',
+    'Rallenta abbastanza da ricordarti le giornate.',
+    'Riparti dalle cose essenziali.',
+    'Raccogli ciò che hai costruito.',
+    'Proteggi il tuo tempo e le tue energie.',
+    'Chiudi l’anno ricordando anche le cose belle.',
+  ];
+  return phrases[month.clamp(1, 12)];
 }
 
 DateTime mondayOf(DateTime d) {
