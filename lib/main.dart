@@ -12,11 +12,25 @@ import 'notification_service.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await initializeDateFormatting('it_IT', null);
-  await NotificationService.instance.initialize();
+
+  try {
+    await initializeDateFormatting('it_IT', null);
+  } catch (_) {}
+
   final store = AgendaStore();
-  await store.load();
+  try {
+    await store.load();
+  } catch (_) {}
+
   runApp(AgendaApp(store: store));
+
+  Future<void>.delayed(Duration.zero, () async {
+    try {
+      await NotificationService.instance.initialize();
+    } catch (_) {
+      // Le notifiche non devono mai impedire l'avvio dell'agenda.
+    }
+  });
 }
 
 class AgendaApp extends StatelessWidget {
