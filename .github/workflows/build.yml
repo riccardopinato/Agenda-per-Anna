@@ -30,11 +30,51 @@ jobs:
           cp -R /tmp/agenda_base/web .
           cp -R /tmp/agenda_base/ios .
 
-      - name: Restore persistent Android debug keystore
+      - name: Restore project signing keystore
         uses: actions/cache@v5
         with:
-          path: /home/runner/.android/debug.keystore
-          key: agenda-per-anna-android-debug-keystore-v1
+          path: .signing/agenda-debug.jks
+          key: agenda-per-anna-project-signing-v1
+
+      - name: Create project signing keystore if missing
+        run: |
+          mkdir -p .signing
+          if [ ! -f .signing/agenda-debug.jks ]; then
+            keytool -genkeypair -v               -keystore .signing/agenda-debug.jks               -storepass android               -keypass android               -alias androiddebugkey               -keyalg RSA               -keysize 2048               -validity 10000               -dname "CN=Android Debug,O=Android,C=US"
+          fi
+
+      - name: Configure project release signing
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+
+          p = Path("android/app/build.gradle.kts")
+          s = p.read_text()
+
+          block = '''
+              signingConfigs {
+                  create("agendaStable") {
+                      storeFile = file("../../.signing/agenda-debug.jks")
+                      storePassword = "android"
+                      keyAlias = "androiddebugkey"
+                      keyPassword = "android"
+                  }
+              }
+          '''
+
+          marker = "    buildTypes {"
+          if 'create("agendaStable")' not in s:
+              if marker not in s:
+                  raise SystemExit("buildTypes block not found")
+              s = s.replace(marker, block + "\n" + marker, 1)
+
+          s = s.replace(
+              'signingConfig = signingConfigs.getByName("debug")',
+              'signingConfig = signingConfigs.getByName("agendaStable")'
+          )
+
+          p.write_text(s)
+          PY
 
       - name: Enable Android core library desugaring
         run: |
@@ -86,10 +126,8 @@ jobs:
           path: build/app/outputs/flutter-apk/app-release.apk
 
       - name: Upload signing key backup
-        if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: agenda-per-anna-debug-keystore
-          path: /home/runner/.android/debug.keystore
-          if-no-files-found: ignore
+          name: agenda-per-anna-signing-keystore
+          path: .signing/agenda-debug.jks
           retention-days: 90
