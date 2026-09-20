@@ -643,50 +643,92 @@ class _PlannerScreenState extends State<PlannerScreen> {
       animation: widget.store,
       builder: (context, _) {
         final events = widget.store.forDay(day);
-        final allDay = events.where((e) => e.start == null).toList();
+        final tasks = events.where((e) => e.type == ItemType.task).toList();
+        final allDay = events
+            .where((e) => e.type == ItemType.appointment && e.start == null)
+            .toList();
+        final timed = events
+            .where((e) => e.type == ItemType.appointment && e.start != null)
+            .toList();
+
         return Scaffold(
           appBar: AppBar(
             title: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text('La mia giornata', style: TextStyle(fontWeight: FontWeight.w800)),
-                Text(_cap(DateFormat('EEEE d MMMM', 'it_IT').format(day)),
-                    style: Theme.of(context).textTheme.bodySmall),
+                const Text('La mia giornata',
+                    style: TextStyle(fontWeight: FontWeight.w800)),
+                Text(
+                  _cap(DateFormat('EEEE d MMMM', 'it_IT').format(day)),
+                  style: Theme.of(context).textTheme.bodySmall,
+                ),
               ],
             ),
             actions: [
-              IconButton(onPressed: () => setState(() => day = DateTime.now()), icon: const Icon(Icons.today_outlined)),
-              IconButton(onPressed: () => openItemEditor(context, widget.store, day), icon: const Icon(Icons.add_circle_outline)),
+              if (!AgendaStore.sameDay(day, DateTime.now()))
+                TextButton(
+                  onPressed: () => setState(() => day = DateTime.now()),
+                  child: const Text('Oggi'),
+                ),
+              IconButton(
+                onPressed: () => openItemEditor(context, widget.store, day),
+                icon: const Icon(Icons.add_circle_outline),
+              ),
             ],
           ),
           body: Column(
             children: [
-              DateStrip(selected: day, onSelected: (d) => setState(() => day = d)),
+              DateStrip(
+                selected: day,
+                onSelected: (d) => setState(() => day = d),
+              ),
               Expanded(
                 child: ListView(
                   padding: const EdgeInsets.fromLTRB(14, 8, 14, 110),
                   children: [
-                    if (allDay.isNotEmpty) ...[
-                      const SectionTitle('Senza orario'),
-                      const SizedBox(height: 8),
-                      ...allDay.map((e) => EventTile(store: widget.store, item: e)),
-                      const SizedBox(height: 16),
-                    ],
-                    const SectionTitle('Timeline'),
-                    const SizedBox(height: 8),
-                    for (int hour = 6; hour < 24; hour++)
-                      HourRow(
-                        hour: hour,
-                        items: events.where((e) => e.start?.hour == hour).toList(),
-                        onTap: () => openItemEditor(
-                          context,
-                          widget.store,
-                          day,
-                          initialTime: TimeOfDay(hour: hour, minute: 0),
+                    _DayOpeningCard(date: day),
+                    if (tasks.isNotEmpty) ...[
+                      const SizedBox(height: 14),
+                      _DaySmallSection(
+                        title: 'Da fare',
+                        icon: Icons.check_circle_outline,
+                        child: Column(
+                          children: tasks
+                              .map((e) => EventTile(
+                                    store: widget.store,
+                                    item: e,
+                                    compact: true,
+                                  ))
+                              .toList(),
                         ),
-                        store: widget.store,
                       ),
-                    const SizedBox(height: 20),
+                    ],
+                    if (allDay.isNotEmpty) ...[
+                      const SizedBox(height: 14),
+                      _DaySmallSection(
+                        title: 'Tutto il giorno',
+                        icon: Icons.event_outlined,
+                        child: Column(
+                          children: allDay
+                              .map((e) => EventTile(
+                                    store: widget.store,
+                                    item: e,
+                                    compact: true,
+                                  ))
+                              .toList(),
+                        ),
+                      ),
+                    ],
+                    const SizedBox(height: 18),
+                    const SectionTitle('La mia giornata'),
+                    const SizedBox(height: 10),
+                    DayTimeline(
+                      date: day,
+                      events: timed,
+                      store: widget.store,
+                      onChanged: () => setState(() {}),
+                    ),
+                    const SizedBox(height: 22),
                     JournalEditor(store: widget.store, date: day),
                   ],
                 ),
@@ -696,6 +738,344 @@ class _PlannerScreenState extends State<PlannerScreen> {
         );
       },
     );
+  }
+}
+
+class _DayOpeningCard extends StatelessWidget {
+  final DateTime date;
+  const _DayOpeningCard({required this.date});
+
+  @override
+  Widget build(BuildContext context) {
+    final quote = _dailyQuote(date);
+    return Container(
+      padding: const EdgeInsets.all(17),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: [Color(0xFFFFEAF0), Color(0xFFF5F0FF)],
+        ),
+        borderRadius: BorderRadius.circular(22),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Icon(Icons.wb_sunny_outlined),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  quote.$1,
+                  style: const TextStyle(fontWeight: FontWeight.w800),
+                ),
+                const SizedBox(height: 3),
+                Text(quote.$2, style: const TextStyle(fontSize: 12)),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _DaySmallSection extends StatelessWidget {
+  final String title;
+  final IconData icon;
+  final Widget child;
+
+  const _DaySmallSection({
+    required this.title,
+    required this.icon,
+    required this.child,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return SimpleCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(icon, size: 20),
+              const SizedBox(width: 8),
+              Text(title,
+                  style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 17)),
+            ],
+          ),
+          const SizedBox(height: 10),
+          child,
+        ],
+      ),
+    );
+  }
+}
+
+class DayTimeline extends StatelessWidget {
+  final DateTime date;
+  final List<AgendaItem> events;
+  final AgendaStore store;
+  final VoidCallback onChanged;
+
+  const DayTimeline({
+    super.key,
+    required this.date,
+    required this.events,
+    required this.store,
+    required this.onChanged,
+  });
+
+  static const int startHour = 6;
+  static const int endHour = 24;
+  static const double hourHeight = 74;
+  static const double timeColumnWidth = 54;
+
+  @override
+  Widget build(BuildContext context) {
+    final totalHeight = (endHour - startHour) * hourHeight;
+
+    return Container(
+      height: totalHeight,
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surface,
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: Theme.of(context).colorScheme.outlineVariant),
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: Stack(
+        children: [
+          Positioned.fill(
+            child: GestureDetector(
+              behavior: HitTestBehavior.translucent,
+              onTapDown: (details) => _createAtPosition(context, details.localPosition.dy),
+              child: CustomPaint(
+                painter: _TimelinePainter(
+                  color: Theme.of(context).colorScheme.outlineVariant,
+                  textColor: Theme.of(context).colorScheme.onSurfaceVariant,
+                ),
+              ),
+            ),
+          ),
+          ...events.map((event) => _eventBlock(context, event)),
+          if (AgendaStore.sameDay(date, DateTime.now()))
+            _currentTimeIndicator(context),
+        ],
+      ),
+    );
+  }
+
+  Widget _eventBlock(BuildContext context, AgendaItem event) {
+    final start = event.start!;
+    final startMinutes = start.hour * 60 + start.minute;
+    final lower = startHour * 60;
+    final upper = endHour * 60;
+
+    if (startMinutes < lower || startMinutes >= upper) {
+      return const SizedBox.shrink();
+    }
+
+    final rawEnd = event.end == null
+        ? startMinutes + 60
+        : event.end!.hour * 60 + event.end!.minute;
+    final endMinutes = rawEnd.clamp(startMinutes + 15, upper);
+
+    final top = ((startMinutes - lower) / 60) * hourHeight;
+    final height = (((endMinutes - startMinutes) / 60) * hourHeight)
+        .clamp(36.0, totalHeightFromTop(top));
+
+    return Positioned(
+      top: top + 2,
+      left: timeColumnWidth + 8,
+      right: 8,
+      height: height - 4,
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(14),
+          onTap: () async {
+            await openItemEditor(
+              context,
+              store,
+              date,
+              existing: event,
+            );
+            onChanged();
+          },
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 7),
+            decoration: BoxDecoration(
+              gradient: const LinearGradient(
+                colors: [Color(0xFFFFDDE7), Color(0xFFF0E7FF)],
+              ),
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(color: const Color(0xFFE7A1B7)),
+              boxShadow: const [
+                BoxShadow(
+                  blurRadius: 4,
+                  offset: Offset(0, 2),
+                  color: Color(0x12000000),
+                ),
+              ],
+            ),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Container(
+                  width: 4,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFE37899),
+                    borderRadius: BorderRadius.circular(99),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        event.title,
+                        maxLines: height < 58 ? 1 : 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(fontWeight: FontWeight.w800),
+                      ),
+                      if (height >= 52)
+                        Text(
+                          event.end == null
+                              ? formatTime(start)
+                              : '${formatTime(start)} – ${formatTime(event.end!)}',
+                          style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600),
+                        ),
+                      if (height >= 82 && event.note.trim().isNotEmpty)
+                        Text(
+                          event.note,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(fontSize: 11),
+                        ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _currentTimeIndicator(BuildContext context) {
+    final now = DateTime.now();
+    final minutes = now.hour * 60 + now.minute;
+    final lower = startHour * 60;
+    final upper = endHour * 60;
+
+    if (minutes < lower || minutes >= upper) return const SizedBox.shrink();
+
+    final top = ((minutes - lower) / 60) * hourHeight;
+    return Positioned(
+      top: top,
+      left: timeColumnWidth - 3,
+      right: 0,
+      child: IgnorePointer(
+        child: Row(
+          children: [
+            Container(
+              width: 9,
+              height: 9,
+              decoration: const BoxDecoration(
+                color: Color(0xFFE14F7A),
+                shape: BoxShape.circle,
+              ),
+            ),
+            Expanded(
+              child: Container(height: 2, color: const Color(0xFFE14F7A)),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _createAtPosition(BuildContext context, double y) async {
+    var minutes = startHour * 60 + ((y / hourHeight) * 60).round();
+    minutes = ((minutes / 15).round() * 15).clamp(startHour * 60, endHour * 60 - 15);
+
+    await openItemEditor(
+      context,
+      store,
+      date,
+      initialTime: TimeOfDay(hour: minutes ~/ 60, minute: minutes % 60),
+    );
+    onChanged();
+  }
+
+  double totalHeightFromTop(double top) {
+    final total = (endHour - startHour) * hourHeight;
+    return total - top;
+  }
+}
+
+class _TimelinePainter extends CustomPainter {
+  final Color color;
+  final Color textColor;
+
+  _TimelinePainter({required this.color, required this.textColor});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final fullPaint = Paint()
+      ..color = color
+      ..strokeWidth = 1;
+    final halfPaint = Paint()
+      ..color = color.withValues(alpha: 0.35)
+      ..strokeWidth = 1;
+
+    for (int hour = DayTimeline.startHour; hour <= DayTimeline.endHour; hour++) {
+      final y = (hour - DayTimeline.startHour) * DayTimeline.hourHeight;
+      canvas.drawLine(
+        Offset(DayTimeline.timeColumnWidth, y),
+        Offset(size.width, y),
+        fullPaint,
+      );
+
+      if (hour < DayTimeline.endHour) {
+        final half = y + DayTimeline.hourHeight / 2;
+        canvas.drawLine(
+          Offset(DayTimeline.timeColumnWidth, half),
+          Offset(size.width, half),
+          halfPaint,
+        );
+      }
+
+      if (hour < DayTimeline.endHour) {
+        final painter = TextPainter(
+          text: TextSpan(
+            text: '${hour.toString().padLeft(2, '0')}:00',
+            style: TextStyle(
+              color: textColor,
+              fontSize: 10.5,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          textDirection: TextDirection.ltr,
+        )..layout(maxWidth: DayTimeline.timeColumnWidth - 8);
+
+        painter.paint(
+          canvas,
+          Offset(
+            DayTimeline.timeColumnWidth - painter.width - 8,
+            y + 6,
+          ),
+        );
+      }
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant _TimelinePainter oldDelegate) {
+    return oldDelegate.color != color || oldDelegate.textColor != textColor;
   }
 }
 
