@@ -30,6 +30,12 @@ jobs:
           cp -R /tmp/agenda_base/web .
           cp -R /tmp/agenda_base/ios .
 
+      - name: Restore persistent Android debug keystore
+        uses: actions/cache@v5
+        with:
+          path: ~/.android/debug.keystore
+          key: agenda-per-anna-android-debug-keystore-v1
+
       - name: Enable Android core library desugaring
         run: |
           python3 - <<'PY'
@@ -78,3 +84,12 @@ jobs:
         with:
           name: agenda-per-anna-apk
           path: build/app/outputs/flutter-apk/app-release.apk
+
+      - name: Upload signing key backup
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: agenda-per-anna-debug-keystore
+          path: ~/.android/debug.keystore
+          if-no-files-found: ignore
+          retention-days: 90
