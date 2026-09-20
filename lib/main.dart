@@ -1120,7 +1120,7 @@ class BudgetCard extends StatelessWidget {
                                 TextField(controller: amount, keyboardType: const TextInputType.numberWithOptions(decimal: true), decoration: const InputDecoration(labelText: 'Importo')),
                                 const SizedBox(height: 8),
                                 DropdownButtonFormField<String>(
-                                  value: category,
+                                  initialValue: category,
                                   items: const ['Cibo', 'Casa', 'Salute', 'Shopping', 'Trasporti', 'Svago', 'Regali', 'Altro']
                                       .map((e) => DropdownMenuItem(value: e, child: Text(e)))
                                       .toList(),
