@@ -2040,17 +2040,40 @@ class EventTile extends StatelessWidget {
   final AgendaItem item;
   final bool compact;
 
-  const EventTile({super.key, required this.store, required this.item, this.compact = false});
+  const EventTile({
+    super.key,
+    required this.store,
+    required this.item,
+    this.compact = false,
+  });
 
   @override
   Widget build(BuildContext context) {
+    final color = item.category.color;
+    final timeText = item.start == null
+        ? (item.type == ItemType.task ? 'Da fare' : 'Tutto il giorno')
+        : '${formatTime(item.start!)}'
+            '${item.end == null ? '' : ' – ${formatTime(item.end!)}'}';
+
     return Card(
       margin: EdgeInsets.only(bottom: compact ? 6 : 10),
       child: ListTile(
         dense: compact,
+        contentPadding: EdgeInsets.only(
+          left: compact ? 10 : 12,
+          right: compact ? 4 : 8,
+        ),
         leading: item.type == ItemType.task
-            ? Checkbox(value: item.done, onChanged: (_) => store.toggle(item.id))
-            : const CircleAvatar(child: Icon(Icons.event_outlined)),
+            ? Checkbox(
+                value: item.done,
+                activeColor: color,
+                onChanged: (_) => store.toggle(item.id),
+              )
+            : CircleAvatar(
+                backgroundColor: color.withValues(alpha: 0.16),
+                foregroundColor: color,
+                child: Icon(item.category.icon),
+              ),
         title: Text(
           item.title,
           style: TextStyle(
@@ -2058,10 +2081,30 @@ class EventTile extends StatelessWidget {
             decoration: item.done ? TextDecoration.lineThrough : null,
           ),
         ),
-        subtitle: Text(item.start == null
-            ? (item.type == ItemType.task ? 'Da fare' : 'Tutto il giorno')
-            : '${formatTime(item.start!)}${item.end == null ? '' : ' – ${formatTime(item.end!)}'}'),
-        onTap: () => openItemEditor(context, store, item.date, existing: item),
+        subtitle: Wrap(
+          spacing: 7,
+          runSpacing: 2,
+          crossAxisAlignment: WrapCrossAlignment.center,
+          children: [
+            Text(timeText),
+            Text(
+              item.category.label,
+              style: TextStyle(
+                color: color,
+                fontWeight: FontWeight.w700,
+                fontSize: 11,
+              ),
+            ),
+            if (item.reminderMinutesBefore != null)
+              Icon(
+                Icons.notifications_active_outlined,
+                size: 14,
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
+          ],
+        ),
+        onTap: () =>
+            openItemEditor(context, store, item.date, existing: item),
         trailing: IconButton(
           onPressed: () => store.deleteItem(item.id),
           icon: const Icon(Icons.close),
@@ -2569,8 +2612,15 @@ Future<void> openItemEditor(
   DateTime date = existing?.date ?? initialDate;
   TimeOfDay? start = existing?.start ?? initialTime;
   TimeOfDay? end = existing?.end ??
-      (start == null ? null : TimeOfDay(hour: (start.hour + 1).clamp(0, 23), minute: start.minute));
+      (start == null
+          ? null
+          : TimeOfDay(
+              hour: (start.hour + 1).clamp(0, 23),
+              minute: start.minute,
+            ));
   ItemType type = existing?.type ?? ItemType.appointment;
+  AgendaCategory category = existing?.category ?? AgendaCategory.personal;
+  int reminderChoice = existing?.reminderMinutesBefore ?? -1;
 
   await showModalBottomSheet(
     context: context,
@@ -2578,7 +2628,12 @@ Future<void> openItemEditor(
     backgroundColor: Colors.transparent,
     builder: (sheetContext) => StatefulBuilder(
       builder: (context, setLocal) => Container(
-        padding: EdgeInsets.fromLTRB(18, 18, 18, 18 + MediaQuery.viewInsetsOf(context).bottom),
+        padding: EdgeInsets.fromLTRB(
+          18,
+          18,
+          18,
+          18 + MediaQuery.viewInsetsOf(context).bottom,
+        ),
         decoration: const BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
@@ -2589,44 +2644,135 @@ Future<void> openItemEditor(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(existing == null ? 'Aggiungi alla giornata' : 'Modifica',
-                    style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w800)),
+                Center(
+                  child: Container(
+                    width: 42,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).colorScheme.outlineVariant,
+                      borderRadius: BorderRadius.circular(99),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 14),
+                Text(
+                  existing == null ? 'Aggiungi alla giornata' : 'Modifica',
+                  style: Theme.of(context)
+                      .textTheme
+                      .headlineSmall
+                      ?.copyWith(fontWeight: FontWeight.w800),
+                ),
                 const SizedBox(height: 14),
                 SegmentedButton<ItemType>(
                   segments: const [
-                    ButtonSegment(value: ItemType.appointment, label: Text('Appuntamento'), icon: Icon(Icons.event_outlined)),
-                    ButtonSegment(value: ItemType.task, label: Text('Da fare'), icon: Icon(Icons.check_circle_outline)),
+                    ButtonSegment(
+                      value: ItemType.appointment,
+                      label: Text('Appuntamento'),
+                      icon: Icon(Icons.event_outlined),
+                    ),
+                    ButtonSegment(
+                      value: ItemType.task,
+                      label: Text('Da fare'),
+                      icon: Icon(Icons.check_circle_outline),
+                    ),
                   ],
                   selected: {type},
                   onSelectionChanged: (v) => setLocal(() => type = v.first),
                 ),
                 const SizedBox(height: 14),
-                TextField(controller: title, autofocus: existing == null, decoration: const InputDecoration(labelText: 'Titolo', border: OutlineInputBorder())),
+                TextField(
+                  controller: title,
+                  autofocus: existing == null,
+                  decoration: const InputDecoration(
+                    labelText: 'Titolo',
+                    border: OutlineInputBorder(),
+                  ),
+                ),
                 const SizedBox(height: 10),
-                TextField(controller: note, maxLines: 3, decoration: const InputDecoration(labelText: 'Note', border: OutlineInputBorder())),
+                TextField(
+                  controller: note,
+                  maxLines: 3,
+                  decoration: const InputDecoration(
+                    labelText: 'Note',
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  'Categoria',
+                  style: Theme.of(context)
+                      .textTheme
+                      .titleSmall
+                      ?.copyWith(fontWeight: FontWeight.w800),
+                ),
+                const SizedBox(height: 8),
+                Wrap(
+                  spacing: 7,
+                  runSpacing: 7,
+                  children: AgendaCategory.values.map((value) {
+                    final active = category == value;
+                    return ChoiceChip(
+                      selected: active,
+                      avatar: Icon(
+                        value.icon,
+                        size: 17,
+                        color: active ? Colors.white : value.color,
+                      ),
+                      label: Text(value.label),
+                      selectedColor: value.color,
+                      labelStyle: TextStyle(
+                        color: active ? Colors.white : null,
+                        fontWeight: FontWeight.w700,
+                      ),
+                      onSelected: (_) => setLocal(() => category = value),
+                    );
+                  }).toList(),
+                ),
                 const SizedBox(height: 10),
                 ListTile(
                   contentPadding: EdgeInsets.zero,
                   leading: const Icon(Icons.calendar_today_outlined),
-                  title: Text(DateFormat('d MMMM yyyy', 'it_IT').format(date)),
+                  title: Text(
+                    DateFormat('d MMMM yyyy', 'it_IT').format(date),
+                  ),
                   onTap: () async {
-                    final picked = await showDatePicker(context: context, initialDate: date, firstDate: DateTime(2020), lastDate: DateTime(2040));
+                    final picked = await showDatePicker(
+                      context: context,
+                      initialDate: date,
+                      firstDate: DateTime(2020),
+                      lastDate: DateTime(2040),
+                    );
                     if (picked != null) setLocal(() => date = picked);
                   },
                 ),
                 ListTile(
                   contentPadding: EdgeInsets.zero,
                   leading: const Icon(Icons.schedule_outlined),
-                  title: Text(start == null ? 'Senza orario' : formatTime(start!)),
+                  title: Text(
+                    start == null ? 'Senza orario' : formatTime(start!),
+                  ),
                   trailing: start == null
                       ? null
-                      : IconButton(onPressed: () => setLocal(() { start = null; end = null; }), icon: const Icon(Icons.close)),
+                      : IconButton(
+                          onPressed: () => setLocal(() {
+                            start = null;
+                            end = null;
+                            reminderChoice = -1;
+                          }),
+                          icon: const Icon(Icons.close),
+                        ),
                   onTap: () async {
-                    final picked = await showTimePicker(context: context, initialTime: start ?? TimeOfDay.now());
+                    final picked = await showTimePicker(
+                      context: context,
+                      initialTime: start ?? TimeOfDay.now(),
+                    );
                     if (picked != null) {
                       setLocal(() {
                         start = picked;
-                        end ??= TimeOfDay(hour: (picked.hour + 1).clamp(0, 23), minute: picked.minute);
+                        end ??= TimeOfDay(
+                          hour: (picked.hour + 1).clamp(0, 23),
+                          minute: picked.minute,
+                        );
                       });
                     }
                   },
@@ -2635,32 +2781,73 @@ Future<void> openItemEditor(
                   ListTile(
                     contentPadding: EdgeInsets.zero,
                     leading: const Icon(Icons.timelapse_outlined),
-                    title: Text(end == null ? 'Ora fine' : formatTime(end!)),
+                    title: Text(
+                      end == null ? 'Ora fine' : formatTime(end!),
+                    ),
                     onTap: () async {
-                      final picked = await showTimePicker(context: context, initialTime: end ?? start!);
+                      final picked = await showTimePicker(
+                        context: context,
+                        initialTime: end ?? start!,
+                      );
                       if (picked != null) setLocal(() => end = picked);
                     },
                   ),
-                const SizedBox(height: 10),
+                if (start != null) ...[
+                  const SizedBox(height: 4),
+                  DropdownButtonFormField<int>(
+                    initialValue: reminderChoice,
+                    decoration: const InputDecoration(
+                      labelText: 'Promemoria',
+                      prefixIcon: Icon(Icons.notifications_none_outlined),
+                      border: OutlineInputBorder(),
+                    ),
+                    items: const [
+                      DropdownMenuItem(value: -1, child: Text('Nessun promemoria')),
+                      DropdownMenuItem(value: 0, child: Text('All’ora dell’evento')),
+                      DropdownMenuItem(value: 10, child: Text('10 minuti prima')),
+                      DropdownMenuItem(value: 30, child: Text('30 minuti prima')),
+                      DropdownMenuItem(value: 60, child: Text('1 ora prima')),
+                      DropdownMenuItem(value: 1440, child: Text('1 giorno prima')),
+                    ],
+                    onChanged: (value) =>
+                        setLocal(() => reminderChoice = value ?? -1),
+                  ),
+                  const SizedBox(height: 7),
+                  Text(
+                    'Il promemoria viene salvato sul dispositivo. Sul web la disponibilità dipende dal browser.',
+                    style: Theme.of(context).textTheme.bodySmall,
+                  ),
+                ],
+                const SizedBox(height: 16),
                 SizedBox(
                   width: double.infinity,
-                  child: FilledButton(
+                  child: FilledButton.icon(
+                    icon: const Icon(Icons.check),
                     onPressed: () async {
                       final t = title.text.trim();
                       if (t.isEmpty) return;
-                      await store.upsert(AgendaItem(
-                        id: existing?.id ?? const Uuid().v4(),
-                        title: t,
-                        note: note.text.trim(),
-                        date: DateTime(date.year, date.month, date.day),
-                        type: type,
-                        start: start,
-                        end: type == ItemType.task ? null : end,
-                        done: existing?.done ?? false,
-                      ));
+
+                      await store.upsert(
+                        AgendaItem(
+                          id: existing?.id ?? const Uuid().v4(),
+                          title: t,
+                          note: note.text.trim(),
+                          date: DateTime(date.year, date.month, date.day),
+                          type: type,
+                          category: category,
+                          reminderMinutesBefore:
+                              start == null || reminderChoice < 0
+                                  ? null
+                                  : reminderChoice,
+                          start: start,
+                          end: type == ItemType.task ? null : end,
+                          done: existing?.done ?? false,
+                        ),
+                      );
+
                       if (sheetContext.mounted) Navigator.pop(sheetContext);
                     },
-                    child: const Text('Salva'),
+                    label: const Text('Salva'),
                   ),
                 ),
               ],
