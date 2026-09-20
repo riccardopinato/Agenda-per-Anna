@@ -12,9 +12,10 @@ class NotificationService {
       FlutterLocalNotificationsPlugin();
 
   bool _initialized = false;
+  bool _available = true;
 
   Future<void> initialize() async {
-    if (_initialized) return;
+    if (_initialized || !_available) return;
 
     tz_data.initializeTimeZones();
 
@@ -38,12 +39,17 @@ class NotificationService {
       macOS: darwin,
     );
 
-    await _plugin.initialize(settings: settings);
-    _initialized = true;
+    try {
+      await _plugin.initialize(settings: settings);
+      _initialized = true;
+    } catch (_) {
+      _available = false;
+    }
   }
 
   Future<void> requestPermissions() async {
     await initialize();
+    if (!_available) return;
 
     try {
       await _plugin
@@ -78,6 +84,7 @@ class NotificationService {
     required DateTime when,
   }) async {
     await initialize();
+    if (!_available) return;
 
     if (!when.isAfter(DateTime.now())) {
       await cancel(stableId);
@@ -117,6 +124,7 @@ class NotificationService {
 
   Future<void> cancel(String stableId) async {
     await initialize();
+    if (!_available) return;
     try {
       await _plugin.cancel(id: _notificationId(stableId));
     } catch (_) {}
