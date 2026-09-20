@@ -1,0 +1,19 @@
+FROM ghcr.io/cirruslabs/flutter:stable AS build
+
+WORKDIR /app
+COPY . .
+
+RUN rm -rf /tmp/agenda_base && \
+    flutter create --project-name agenda_per_anna --org com.riccardopinato --platforms=web /tmp/agenda_base && \
+    cp -R /tmp/agenda_base/web . && \
+    mkdir -p assets/icon && \
+    base64 -d assets/icon/app_icon.b64 > assets/icon/app_icon.jpg && \
+    sed -i 's#assets/icon/app_icon.png#assets/icon/app_icon.jpg#g' pubspec.yaml && \
+    flutter pub get && \
+    flutter build web --release
+
+FROM nginx:alpine
+COPY --from=build /app/build/web /usr/share/nginx/html
+COPY nginx.conf /etc/nginx/conf.d/default.conf
+EXPOSE 8080
+CMD ["nginx", "-g", "daemon off;"]
