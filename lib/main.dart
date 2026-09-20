@@ -248,10 +248,14 @@ class MonthlyData {
   final List<String> hobbies;
   final List<String> wishes;
   final List<String> ideas;
+  final String monthWord;
+  final String selfCare;
   final int budgetCents;
   final List<ExpenseEntry> expenses;
   final String bestMoment;
   final String lesson;
+  final String challenge;
+  final String nextMonth;
   final String reflection;
 
   const MonthlyData({
@@ -261,10 +265,14 @@ class MonthlyData {
     this.hobbies = const [],
     this.wishes = const [],
     this.ideas = const [],
+    this.monthWord = '',
+    this.selfCare = '',
     this.budgetCents = 0,
     this.expenses = const [],
     this.bestMoment = '',
     this.lesson = '',
+    this.challenge = '',
+    this.nextMonth = '',
     this.reflection = '',
   });
 
@@ -275,10 +283,14 @@ class MonthlyData {
     List<String>? hobbies,
     List<String>? wishes,
     List<String>? ideas,
+    String? monthWord,
+    String? selfCare,
     int? budgetCents,
     List<ExpenseEntry>? expenses,
     String? bestMoment,
     String? lesson,
+    String? challenge,
+    String? nextMonth,
     String? reflection,
   }) {
     return MonthlyData(
@@ -288,10 +300,14 @@ class MonthlyData {
       hobbies: hobbies ?? this.hobbies,
       wishes: wishes ?? this.wishes,
       ideas: ideas ?? this.ideas,
+      monthWord: monthWord ?? this.monthWord,
+      selfCare: selfCare ?? this.selfCare,
       budgetCents: budgetCents ?? this.budgetCents,
       expenses: expenses ?? this.expenses,
       bestMoment: bestMoment ?? this.bestMoment,
       lesson: lesson ?? this.lesson,
+      challenge: challenge ?? this.challenge,
+      nextMonth: nextMonth ?? this.nextMonth,
       reflection: reflection ?? this.reflection,
     );
   }
@@ -303,10 +319,14 @@ class MonthlyData {
         'hobbies': hobbies,
         'wishes': wishes,
         'ideas': ideas,
+        'monthWord': monthWord,
+        'selfCare': selfCare,
         'budgetCents': budgetCents,
         'expenses': expenses.map((e) => e.toJson()).toList(),
         'bestMoment': bestMoment,
         'lesson': lesson,
+        'challenge': challenge,
+        'nextMonth': nextMonth,
         'reflection': reflection,
       };
 
@@ -317,12 +337,16 @@ class MonthlyData {
         hobbies: List<String>.from(json['hobbies'] as List? ?? const []),
         wishes: List<String>.from(json['wishes'] as List? ?? const []),
         ideas: List<String>.from(json['ideas'] as List? ?? const []),
+        monthWord: json['monthWord'] as String? ?? '',
+        selfCare: json['selfCare'] as String? ?? '',
         budgetCents: json['budgetCents'] as int? ?? 0,
         expenses: (json['expenses'] as List? ?? const [])
             .map((e) => ExpenseEntry.fromJson(Map<String, dynamic>.from(e as Map)))
             .toList(),
         bestMoment: json['bestMoment'] as String? ?? '',
         lesson: json['lesson'] as String? ?? '',
+        challenge: json['challenge'] as String? ?? '',
+        nextMonth: json['nextMonth'] as String? ?? '',
         reflection: json['reflection'] as String? ?? '',
       );
 }
@@ -1845,6 +1869,16 @@ class _MonthScreenState extends State<MonthScreen> {
                     .length,
               ),
               const SizedBox(height: 14),
+              MonthOpeningJournalCard(
+                key: ValueKey('month-opening-${selected.year}-${selected.month}'),
+                data: data,
+                onSave: (value) => widget.store.saveMonth(
+                  selected.year,
+                  selected.month,
+                  value,
+                ),
+              ),
+              const SizedBox(height: 12),
               MonthTextCard(
                 key: ValueKey('month-intention-${selected.year}-${selected.month}'),
                 title: 'Questo mese voglio...',
@@ -1925,6 +1959,23 @@ class MonthOpeningHero extends StatelessWidget {
             _monthPhrase(month.month),
             style: const TextStyle(fontSize: 14),
           ),
+          if (data.monthWord.trim().isNotEmpty) ...[
+            const SizedBox(height: 10),
+            Container(
+              padding: const EdgeInsets.symmetric(
+                horizontal: 12,
+                vertical: 7,
+              ),
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.72),
+                borderRadius: BorderRadius.circular(999),
+              ),
+              child: Text(
+                'Parola del mese: ${data.monthWord}',
+                style: const TextStyle(fontWeight: FontWeight.w800),
+              ),
+            ),
+          ],
           const SizedBox(height: 16),
           Wrap(
             spacing: 8,
@@ -1935,6 +1986,94 @@ class MonthOpeningHero extends StatelessWidget {
               _MiniPill(icon: Icons.lightbulb_outline, text: '${data.ideas.length} idee'),
               _MiniPill(icon: Icons.wallet_outlined, text: money(spent)),
             ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class MonthOpeningJournalCard extends StatefulWidget {
+  final MonthlyData data;
+  final ValueChanged<MonthlyData> onSave;
+
+  const MonthOpeningJournalCard({
+    super.key,
+    required this.data,
+    required this.onSave,
+  });
+
+  @override
+  State<MonthOpeningJournalCard> createState() =>
+      _MonthOpeningJournalCardState();
+}
+
+class _MonthOpeningJournalCardState
+    extends State<MonthOpeningJournalCard> {
+  late final TextEditingController word =
+      TextEditingController(text: widget.data.monthWord);
+  late final TextEditingController selfCare =
+      TextEditingController(text: widget.data.selfCare);
+
+  @override
+  Widget build(BuildContext context) {
+    return SimpleCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Row(
+            children: [
+              Icon(Icons.auto_awesome_outlined),
+              SizedBox(width: 8),
+              Text(
+                'Apertura del mese',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 6),
+          Text(
+            'Una piccola pagina per dare un tono al mese prima di riempirlo.',
+            style: Theme.of(context).textTheme.bodySmall,
+          ),
+          const SizedBox(height: 14),
+          TextField(
+            controller: word,
+            decoration: const InputDecoration(
+              labelText: 'La parola del mese',
+              hintText: 'Es. calma, coraggio, leggerezza...',
+              prefixIcon: Icon(Icons.text_fields_outlined),
+              border: OutlineInputBorder(),
+            ),
+          ),
+          const SizedBox(height: 10),
+          TextField(
+            controller: selfCare,
+            minLines: 2,
+            maxLines: 4,
+            decoration: const InputDecoration(
+              labelText: 'Come voglio prendermi cura di me',
+              hintText: 'Una piccola attenzione concreta...',
+              prefixIcon: Icon(Icons.spa_outlined),
+              border: OutlineInputBorder(),
+            ),
+          ),
+          const SizedBox(height: 10),
+          SizedBox(
+            width: double.infinity,
+            child: FilledButton.tonalIcon(
+              icon: const Icon(Icons.bookmark_added_outlined),
+              onPressed: () => widget.onSave(
+                widget.data.copyWith(
+                  monthWord: word.text.trim(),
+                  selfCare: selfCare.text.trim(),
+                ),
+              ),
+              label: const Text('Salva apertura del mese'),
+            ),
           ),
         ],
       ),
@@ -2581,37 +2720,151 @@ class BudgetCard extends StatelessWidget {
   }
 }
 
-class ClosingMonthCard extends StatelessWidget {
+class ClosingMonthCard extends StatefulWidget {
   final MonthlyData data;
   final ValueChanged<MonthlyData> onSave;
-  const ClosingMonthCard({super.key, required this.data, required this.onSave});
+
+  const ClosingMonthCard({
+    super.key,
+    required this.data,
+    required this.onSave,
+  });
+
+  @override
+  State<ClosingMonthCard> createState() => _ClosingMonthCardState();
+}
+
+class _ClosingMonthCardState extends State<ClosingMonthCard> {
+  late final TextEditingController best =
+      TextEditingController(text: widget.data.bestMoment);
+  late final TextEditingController lesson =
+      TextEditingController(text: widget.data.lesson);
+  late final TextEditingController challenge =
+      TextEditingController(text: widget.data.challenge);
+  late final TextEditingController nextMonth =
+      TextEditingController(text: widget.data.nextMonth);
+  late final TextEditingController reflection =
+      TextEditingController(text: widget.data.reflection);
 
   @override
   Widget build(BuildContext context) {
-    final best = TextEditingController(text: data.bestMoment);
-    final lesson = TextEditingController(text: data.lesson);
-    final reflection = TextEditingController(text: data.reflection);
-    return SimpleCard(
+    final spent = widget.data.expenses
+        .fold<int>(0, (sum, item) => sum + item.cents);
+    final remaining = widget.data.budgetCents - spent;
+
+    return Container(
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: [Color(0xFFF8EDFF), Color(0xFFFFF2F6)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(24),
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text('Chiusura del mese', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 18)),
+          const Row(
+            children: [
+              Icon(Icons.nights_stay_outlined),
+              SizedBox(width: 8),
+              Text(
+                'Chiusura del mese',
+                style: TextStyle(
+                  fontWeight: FontWeight.w900,
+                  fontSize: 19,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 6),
+          const Text(
+            'Fermati un momento prima di voltare pagina.',
+          ),
+          const SizedBox(height: 14),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              _MiniPill(
+                icon: Icons.flag_outlined,
+                text: '${widget.data.goals.length} obiettivi',
+              ),
+              _MiniPill(
+                icon: Icons.receipt_long_outlined,
+                text: 'Speso ${money(spent)}',
+              ),
+              if (widget.data.budgetCents > 0)
+                _MiniPill(
+                  icon: Icons.savings_outlined,
+                  text: 'Rimane ${money(remaining)}',
+                ),
+            ],
+          ),
+          const SizedBox(height: 14),
+          TextField(
+            controller: best,
+            decoration: const InputDecoration(
+              labelText: 'Il momento più bello',
+              prefixIcon: Icon(Icons.favorite_outline),
+              border: OutlineInputBorder(),
+            ),
+          ),
           const SizedBox(height: 10),
-          TextField(controller: best, decoration: const InputDecoration(labelText: 'Il momento più bello')),
-          const SizedBox(height: 8),
-          TextField(controller: lesson, decoration: const InputDecoration(labelText: 'Cosa ho imparato')),
-          const SizedBox(height: 8),
-          TextField(controller: reflection, minLines: 3, maxLines: 5, decoration: const InputDecoration(labelText: 'Com’è andato questo mese?')),
+          TextField(
+            controller: challenge,
+            decoration: const InputDecoration(
+              labelText: 'La cosa più difficile',
+              prefixIcon: Icon(Icons.trending_up_outlined),
+              border: OutlineInputBorder(),
+            ),
+          ),
           const SizedBox(height: 10),
+          TextField(
+            controller: lesson,
+            decoration: const InputDecoration(
+              labelText: 'Cosa ho imparato',
+              prefixIcon: Icon(Icons.lightbulb_outline),
+              border: OutlineInputBorder(),
+            ),
+          ),
+          const SizedBox(height: 10),
+          TextField(
+            controller: reflection,
+            minLines: 3,
+            maxLines: 6,
+            decoration: const InputDecoration(
+              labelText: 'Com’è andato davvero questo mese?',
+              border: OutlineInputBorder(),
+            ),
+          ),
+          const SizedBox(height: 10),
+          TextField(
+            controller: nextMonth,
+            minLines: 2,
+            maxLines: 4,
+            decoration: const InputDecoration(
+              labelText: 'Cosa voglio portare nel prossimo mese',
+              prefixIcon: Icon(Icons.arrow_forward_outlined),
+              border: OutlineInputBorder(),
+            ),
+          ),
+          const SizedBox(height: 12),
           SizedBox(
             width: double.infinity,
-            child: FilledButton.tonal(
-              onPressed: () => onSave(data.copyWith(
-                bestMoment: best.text.trim(),
-                lesson: lesson.text.trim(),
-                reflection: reflection.text.trim(),
-              )),
-              child: const Text('Salva il mio mese'),
+            child: FilledButton.icon(
+              icon: const Icon(Icons.favorite_outline),
+              onPressed: () => widget.onSave(
+                widget.data.copyWith(
+                  bestMoment: best.text.trim(),
+                  lesson: lesson.text.trim(),
+                  challenge: challenge.text.trim(),
+                  nextMonth: nextMonth.text.trim(),
+                  reflection: reflection.text.trim(),
+                ),
+              ),
+              label: const Text('Chiudi e salva il mese'),
             ),
           ),
         ],
