@@ -88,6 +88,24 @@ alter table public.shared_spaces enable row level security;
 alter table public.space_members enable row level security;
 alter table public.space_invites enable row level security;
 
+create or replace function public.is_space_member(target_space_id uuid)
+returns boolean
+language sql
+stable
+security definer
+set search_path = public
+as $
+  select exists (
+    select 1
+    from public.space_members sm
+    where sm.space_id = target_space_id
+      and sm.user_id = auth.uid()
+  );
+$;
+
+revoke all on function public.is_space_member(uuid) from public;
+grant execute on function public.is_space_member(uuid) to authenticated;
+
 -- Personal records: only their owner.
 -- Shared records: any current member of that shared space.
 drop policy if exists "agenda_records_select" on public.agenda_records;
@@ -100,12 +118,7 @@ using (
   or
   (
     visibility = 'shared'
-    and exists (
-      select 1
-      from public.space_members sm
-      where sm.space_id = agenda_records.space_id
-        and sm.user_id = auth.uid()
-    )
+    and public.is_space_member(agenda_records.space_id)
   )
 );
 
@@ -120,12 +133,7 @@ with check (
   (
     visibility = 'shared'
     and owner_id = auth.uid()
-    and exists (
-      select 1
-      from public.space_members sm
-      where sm.space_id = agenda_records.space_id
-        and sm.user_id = auth.uid()
-    )
+    and public.is_space_member(agenda_records.space_id)
   )
 );
 
@@ -139,12 +147,7 @@ using (
   or
   (
     visibility = 'shared'
-    and exists (
-      select 1
-      from public.space_members sm
-      where sm.space_id = agenda_records.space_id
-        and sm.user_id = auth.uid()
-    )
+    and public.is_space_member(agenda_records.space_id)
   )
 )
 with check (
@@ -152,12 +155,7 @@ with check (
   or
   (
     visibility = 'shared'
-    and exists (
-      select 1
-      from public.space_members sm
-      where sm.space_id = agenda_records.space_id
-        and sm.user_id = auth.uid()
-    )
+    and public.is_space_member(agenda_records.space_id)
   )
 );
 
@@ -171,12 +169,7 @@ using (
   or
   (
     visibility = 'shared'
-    and exists (
-      select 1
-      from public.space_members sm
-      where sm.space_id = agenda_records.space_id
-        and sm.user_id = auth.uid()
-    )
+    and public.is_space_member(agenda_records.space_id)
   )
 );
 
@@ -187,12 +180,7 @@ for select
 to authenticated
 using (
   owner_id = auth.uid()
-  or exists (
-    select 1
-    from public.space_members sm
-    where sm.space_id = shared_spaces.id
-      and sm.user_id = auth.uid()
-  )
+  or public.is_space_member(shared_spaces.id)
 );
 
 drop policy if exists "shared_spaces_insert" on public.shared_spaces;
@@ -217,12 +205,7 @@ for select
 to authenticated
 using (
   user_id = auth.uid()
-  or exists (
-    select 1
-    from public.space_members self_membership
-    where self_membership.space_id = space_members.space_id
-      and self_membership.user_id = auth.uid()
-  )
+  or public.is_space_member(space_members.space_id)
 );
 
 -- Membership and invite writes are intentionally reserved for v0.16 RPCs.
