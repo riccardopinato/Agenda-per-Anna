@@ -3439,9 +3439,8 @@ class _CloudAccountScreenState extends State<CloudAccountScreen> {
       }
 
       await widget.store.activateCloudAccount(cloud.userId);
-      await widget.store.syncCloud(preferRemoteOnFirstSync: true);
-      await widget.store.flushSharedPendingOperations();
-      _message('Account connesso e sincronizzazione avviata.');
+      await widget.store.syncAllCloud(preferRemoteOnFirstSync: true);
+      _message('Account connesso e sincronizzato.');
     } catch (_) {
       _message(
         CloudSyncService.instance.lastError ??
@@ -3452,15 +3451,43 @@ class _CloudAccountScreenState extends State<CloudAccountScreen> {
     }
   }
 
+  Future<void> _forgotPassword() async {
+    final email = emailController.text.trim();
+    if (email.isEmpty || !email.contains('@')) {
+      _message('Inserisci prima l’email del tuo account.');
+      return;
+    }
+
+    setState(() => busy = true);
+    try {
+      await CloudSyncService.instance.requestPasswordReset(email);
+      _message(
+        'Se l’indirizzo è registrato, riceverai una mail per scegliere una nuova password.',
+      );
+    } catch (_) {
+      _message(
+        CloudSyncService.instance.lastError ??
+            'Non è stato possibile inviare la mail di recupero.',
+      );
+    } finally {
+      if (mounted) setState(() => busy = false);
+    }
+  }
+
   Future<void> _syncNow() async {
     setState(() => busy = true);
     try {
-      await widget.store.syncCloud();
+      await widget.store.syncAllCloud();
       final cloud = CloudSyncService.instance;
       if (cloud.state == CloudConnectionState.error) {
         _message(cloud.lastError ?? 'Sincronizzazione non riuscita.');
+      } else if (widget.store.totalPendingCloudChanges > 0) {
+        _message(
+          'I dati locali sono al sicuro: '
+          '${widget.store.totalPendingCloudChanges} modifiche restano in attesa di rete.',
+        );
       } else {
-        _message('Agenda sincronizzata.');
+        _message('Agenda completamente sincronizzata.');
       }
     } finally {
       if (mounted) setState(() => busy = false);
@@ -3470,6 +3497,9 @@ class _CloudAccountScreenState extends State<CloudAccountScreen> {
   Future<void> _signOut() async {
     setState(() => busy = true);
     try {
+      await widget.store.createLocalSnapshot(
+        label: 'Prima della disconnessione account',
+      );
       await CloudSyncService.instance.signOut();
       await widget.store.activateCloudAccount(null);
       _message(
@@ -3625,6 +3655,14 @@ class _CloudAccountScreenState extends State<CloudAccountScreen> {
                           ),
                         ),
                         const SizedBox(height: 6),
+                        if (!createMode)
+                          Center(
+                            child: TextButton.icon(
+                              onPressed: busy ? null : _forgotPassword,
+                              icon: const Icon(Icons.lock_reset_outlined),
+                              label: const Text('Password dimenticata?'),
+                            ),
+                          ),
                         Center(
                           child: TextButton(
                             onPressed: busy
@@ -3673,12 +3711,20 @@ class _CloudAccountScreenState extends State<CloudAccountScreen> {
                           leading: const Icon(Icons.sync_outlined),
                           title: const Text('Modifiche in attesa'),
                           trailing: Text(
-                            '${widget.store.pendingCloudChanges}',
+                            '${widget.store.totalPendingCloudChanges}',
                             style: const TextStyle(
                               fontWeight: FontWeight.w900,
                             ),
                           ),
                         ),
+                        if (widget.store.totalPendingCloudChanges > 0) ...[
+                          const SizedBox(height: 4),
+                          Text(
+                            '${widget.store.pendingCloudChanges} private · '
+                            '${widget.store.pendingSharedChangeCount} Noi ♡',
+                            style: Theme.of(context).textTheme.bodySmall,
+                          ),
+                        ],
                         const SizedBox(height: 8),
                         SizedBox(
                           width: double.infinity,
@@ -3722,7 +3768,7 @@ class _CloudAccountScreenState extends State<CloudAccountScreen> {
                         '• L’app continua a salvare prima di tutto sul dispositivo.\n'
                         '• Le modifiche vengono messe in coda anche senza Internet.\n'
                         '• Quando il cloud torna disponibile, vengono sincronizzati solo gli elementi cambiati.\n'
-                        '• Diario, appuntamenti, task, mesi, settimane, abitudini, Inbox e preferenze personali restano separati dagli spazi condivisi futuri.',
+                        '• Agenda privata e Noi ♡ restano archivi separati, ma vengono riconciliati insieme quando torna la rete.',
                       ),
                       const SizedBox(height: 12),
                       Container(
@@ -3741,7 +3787,7 @@ class _CloudAccountScreenState extends State<CloudAccountScreen> {
                             SizedBox(width: 10),
                             Expanded(
                               child: Text(
-                                'v0.16: lo Spazio condiviso userà la stessa infrastruttura, ma i contenuti condivisi resteranno separati dalla tua agenda privata.',
+                                'Privato resta l’impostazione predefinita. Gli elementi Noi ♡ sono condivisi solo quando lo scegli esplicitamente.',
                               ),
                             ),
                           ],
