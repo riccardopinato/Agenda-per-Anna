@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:math';
 import 'dart:ui' as ui;
@@ -1968,6 +1969,195 @@ class AgendaStore extends ChangeNotifier {
     await _save();
     notifyListeners();
   }
+
+  Future<void> initializeCloudSync() async {
+    _cloudSyncTimer?.cancel();
+
+    if (CloudSyncService.instance.signedIn) {
+      await syncCloud(preferRemoteOnFirstSync: true);
+    }
+
+    _cloudSyncTimer = Timer.periodic(
+      const Duration(seconds: 45),
+      (_) {
+        if (CloudSyncService.instance.signedIn) {
+          syncCloud();
+        }
+      },
+    );
+  }
+
+  Future<void> syncCloud({
+    bool preferRemoteOnFirstSync = false,
+  }) async {
+    final cloud = CloudSyncService.instance;
+    if (!cloud.configured || !cloud.initialized || !cloud.signedIn) return;
+    if (_cloudSyncRunning) return;
+
+    _cloudSyncRunning = true;
+    cloud.markSyncStarted();
+
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final ownerId = cloud.userId!;
+      final previousOwner = prefs.getString(_syncOwnerKey);
+      final firstSyncForOwner = previousOwner != ownerId;
+
+      await _captureSyncChanges(
+        prefs,
+        forceAll: firstSyncForOwner && _syncIndex.isEmpty,
+      );
+
+      final remote = await cloud.pullPrivateRecords();
+
+      for (final record in remote) {
+        final localOp = _syncQueue[record.localKey];
+        final remoteWins = preferRemoteOnFirstSync && firstSyncForOwner
+            ? true
+            : localOp == null ||
+                !localOp.updatedAt.isAfter(record.clientUpdatedAt);
+
+        if (!remoteWins) continue;
+
+        await _applyRemoteRecord(record);
+        _syncQueue.remove(record.localKey);
+      }
+
+      final entitiesAfterPull = _currentSyncEntities();
+      _replaceSyncIndex(entitiesAfterPull);
+      await _save(
+        createAutoSnapshot: false,
+        enqueueSync: false,
+      );
+
+      final pendingSnapshot =
+          Map<String, CloudSyncOperation>.from(_syncQueue);
+
+      await cloud.pushPrivateOperations(pendingSnapshot.values);
+
+      for (final entry in pendingSnapshot.entries) {
+        final current = _syncQueue[entry.key];
+        if (current != null &&
+            current.updatedAt == entry.value.updatedAt) {
+          _syncQueue.remove(entry.key);
+        }
+      }
+
+      await prefs.setString(_syncOwnerKey, ownerId);
+      await _persistSyncMetadata(prefs);
+
+      for (final item in items) {
+        await _syncReminders(item);
+      }
+
+      cloud.markSyncSuccess();
+      notifyListeners();
+    } catch (error) {
+      cloud.markSyncError(error);
+    } finally {
+      _cloudSyncRunning = false;
+    }
+  }
+
+  Future<void> _applyRemoteRecord(CloudRemoteRecord record) async {
+    if (record.deletedAt != null) {
+      switch (record.entityType) {
+        case 'item':
+          items.removeWhere((e) => e.id == record.entityId);
+          await NotificationService.instance.cancel(record.entityId);
+          await NotificationService.instance
+              .cancel('${record.entityId}:primary');
+          await NotificationService.instance
+              .cancel('${record.entityId}:secondary');
+        case 'journal':
+          journals.remove(record.entityId);
+        case 'month':
+          months.remove(record.entityId);
+        case 'week':
+          weeks.remove(record.entityId);
+        case 'habit':
+          habits.removeWhere((e) => e.id == record.entityId);
+        case 'inbox':
+          inbox.removeWhere((e) => e.id == record.entityId);
+        case 'preferences':
+          // Le preferenze locali restano valide se il record remoto è assente.
+          break;
+      }
+      return;
+    }
+
+    final payload = record.payload;
+    if (payload == null) return;
+
+    switch (record.entityType) {
+      case 'item':
+        final item = AgendaItem.fromJson(payload);
+        final index = items.indexWhere((e) => e.id == item.id);
+        if (index < 0) {
+          items.add(item);
+        } else {
+          items[index] = item;
+        }
+      case 'journal':
+        journals[record.entityId] = DayJournal.fromJson(payload);
+      case 'month':
+        months[record.entityId] = MonthlyData.fromJson(payload);
+      case 'week':
+        weeks[record.entityId] = WeekData.fromJson(payload);
+      case 'habit':
+        final habit = HabitDefinition.fromJson(payload);
+        final index = habits.indexWhere((e) => e.id == habit.id);
+        if (index < 0) {
+          habits.add(habit);
+        } else {
+          habits[index] = habit;
+        }
+      case 'inbox':
+        final entry = InboxEntry.fromJson(payload);
+        final index = inbox.indexWhere((e) => e.id == entry.id);
+        if (index < 0) {
+          inbox.add(entry);
+        } else {
+          inbox[index] = entry;
+        }
+      case 'preferences':
+        preferences = preferences.copyWith(
+          displayName: payload['displayName'] as String?,
+          themeMode: AgendaThemeMode.values.firstWhere(
+            (e) => e.name == payload['themeMode'],
+            orElse: () => preferences.themeMode,
+          ),
+          palette: AgendaPalette.values.firstWhere(
+            (e) => e.name == payload['palette'],
+            orElse: () => preferences.palette,
+          ),
+          showDailyQuote:
+              payload['showDailyQuote'] as bool? ??
+                  preferences.showDailyQuote,
+          startTab: StartTab.values.firstWhere(
+            (e) => e.name == payload['startTab'],
+            orElse: () => preferences.startTab,
+          ),
+          defaultCategory: AgendaCategory.values.firstWhere(
+            (e) => e.name == payload['defaultCategory'],
+            orElse: () => preferences.defaultCategory,
+          ),
+          defaultEventMinutes:
+              (payload['defaultEventMinutes'] as int?) ??
+                  preferences.defaultEventMinutes,
+          defaultPrimaryReminder:
+              payload['defaultPrimaryReminder'] as int?,
+          defaultSecondaryReminder:
+              payload['defaultSecondaryReminder'] as int?,
+          clearPrimaryReminder:
+              payload['defaultPrimaryReminder'] == null,
+          clearSecondaryReminder:
+              payload['defaultSecondaryReminder'] == null,
+        );
+    }
+  }
+
+  int get pendingCloudChanges => _syncQueue.length;
 
   Future<void> addInboxEntry(String text) async {
     final value = text.trim();
