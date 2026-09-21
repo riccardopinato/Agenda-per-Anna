@@ -112,6 +112,55 @@ void main() {
     expect(edited.pinned, isTrue);
   });
 
+  test('PIN accepts only 4 to 8 numeric digits', () async {
+    final store = AgendaStore();
+
+    await expectLater(
+      store.setPin('12ab'),
+      throwsA(isA<FormatException>()),
+    );
+    await expectLater(
+      store.setPin('123456789'),
+      throwsA(isA<FormatException>()),
+    );
+
+    await store.setPin('123456');
+    expect(store.verifyPin('123456'), isTrue);
+  });
+
+  test('restore preserves intentionally empty habits', () async {
+    final source = AgendaStore();
+    await source.load();
+
+    while (source.habits.isNotEmpty) {
+      await source.removeHabit(source.habits.first.id);
+    }
+
+    final backup = source.createBackupJson();
+
+    final restored = AgendaStore();
+    await restored.load();
+    await restored.restoreBackup(backup, merge: false);
+
+    expect(restored.habits, isEmpty);
+  });
+
+  test('privacy guard survives a corrupt preferences payload', () async {
+    final seed = AgendaStore();
+    await seed.load();
+    await seed.setPin('2468');
+
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('agenda_preferences_v1', '{corrupt');
+
+    final restored = AgendaStore();
+    await restored.load();
+
+    expect(restored.hasStorageWarnings, isTrue);
+    expect(restored.preferences.privacyLockEnabled, isTrue);
+    expect(restored.verifyPin('2468'), isTrue);
+  });
+
   test('completed task remains serializable with its pinned state', () {
     final item = AgendaItem(
       id: 'done-1',
