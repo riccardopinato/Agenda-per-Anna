@@ -3894,7 +3894,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       SwitchListTile(
                         contentPadding: EdgeInsets.zero,
                         title: const Text('Sblocco biometrico'),
-                        subtitle: Text(
+                        subtitle: const Text(
                           kIsWeb
                               ? 'Non disponibile sul web.'
                               : 'Usa impronta o riconoscimento biometrico del dispositivo.',
@@ -3904,7 +3904,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                             ? (value) async {
                                 if (value &&
                                     !await _deviceSupportsBiometrics()) {
-                                  if (!mounted) return;
+                                  if (!context.mounted) return;
                                   ScaffoldMessenger.of(context).showSnackBar(
                                     const SnackBar(
                                       content: Text(
