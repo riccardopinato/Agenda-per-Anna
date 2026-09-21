@@ -13,3 +13,12 @@ The application remains a single Dart library rooted at `lib/main.dart`, but the
 - `src/widgets_editors.dart`: reusable tiles, editors, cards and presentation helpers.
 
 This refactor intentionally changes no persistence keys, JSON schemas, sync record formats, navigation behavior, notification identifiers or user-visible features.
+
+## v0.18.0 — Shared Space 2.0
+
+- Shared-space changes are delivered through Supabase Realtime Postgres Changes.
+- Shared edits use an account-scoped offline queue with per-entity coalescing.
+- Stale concurrent writes are discarded deterministically in favor of the newest server revision.
+- Cached shared entries retain server revision/audit metadata.
+- Shared UI exposes realtime/offline/pending state, editor attribution and update badges.
+- The private agenda remains separate from shared-space records.
