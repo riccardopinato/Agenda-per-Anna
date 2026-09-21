@@ -1,12 +1,6 @@
 name: Build Agenda per Anna
 
 on:
-  push:
-    branches: [main]
-    paths:
-      - "lib/**"
-      - "pubspec.yaml"
-      - ".github/workflows/build.yml"
   workflow_dispatch:
 
 jobs:
