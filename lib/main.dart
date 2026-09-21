@@ -2160,6 +2160,7 @@ class HomeScreen extends StatelessWidget {
                         store: store,
                         item: e,
                         compact: true,
+                        hideDetails: store.preferences.hideHomeDetails,
                       ),
                     ),
               ],
@@ -2169,7 +2170,13 @@ class HomeScreen extends StatelessWidget {
               if (today.isEmpty)
                 const SimpleCard(child: Text('Nessun impegno per oggi.'))
               else
-                ...today.take(5).map((e) => EventTile(store: store, item: e)),
+                ...today.take(5).map(
+                  (e) => EventTile(
+                    store: store,
+                    item: e,
+                    hideDetails: store.preferences.hideHomeDetails,
+                  ),
+                ),
               const SizedBox(height: 14),
               _TodayWellbeingCard(store: store, date: now),
               const SizedBox(height: 24),
@@ -5951,12 +5958,14 @@ class EventTile extends StatelessWidget {
   final AgendaStore store;
   final AgendaItem item;
   final bool compact;
+  final bool hideDetails;
 
   const EventTile({
     super.key,
     required this.store,
     required this.item,
     this.compact = false,
+    this.hideDetails = false,
   });
 
   @override
@@ -5987,7 +5996,7 @@ class EventTile extends StatelessWidget {
                 child: Icon(item.category.icon),
               ),
         title: Text(
-          item.title,
+          hideDetails ? 'Contenuto nascosto' : item.title,
           style: TextStyle(
             fontWeight: FontWeight.w700,
             decoration: item.done ? TextDecoration.lineThrough : null,
