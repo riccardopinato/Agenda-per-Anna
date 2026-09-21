@@ -307,3 +307,157 @@ Future<void> _deleteSharedAgendaEntry(
     await store.flushSharedPendingOperations(spaceId: space.id);
   }
 }
+
+
+Future<void> openUnifiedItemComposer(
+  BuildContext context,
+  AgendaStore store,
+  DateTime initialDate, {
+  TimeOfDay? initialTime,
+  ItemType? initialType,
+}) async {
+  final spaces = store.sharedAgendaSpaces;
+  if (spaces.isEmpty) {
+    await openItemEditor(
+      context,
+      store,
+      initialDate,
+      initialTime: initialTime,
+      initialType: initialType,
+    );
+    return;
+  }
+
+  final visibility = await showModalBottomSheet<AgendaCreationVisibility>(
+    context: context,
+    showDragHandle: true,
+    builder: (sheetContext) => SafeArea(
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Dove vuoi salvarlo?',
+              style: Theme.of(sheetContext)
+                  .textTheme
+                  .titleLarge
+                  ?.copyWith(fontWeight: FontWeight.w900),
+            ),
+            const SizedBox(height: 6),
+            Text(
+              'Privato resta la scelta predefinita. Usa Noi ♡ solo per ciò che vuoi condividere.',
+              style: Theme.of(sheetContext).textTheme.bodySmall,
+            ),
+            const SizedBox(height: 14),
+            ListTile(
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(18),
+              ),
+              leading: const CircleAvatar(
+                child: Icon(Icons.lock_outline),
+              ),
+              title: const Text(
+                'Privato',
+                style: TextStyle(fontWeight: FontWeight.w800),
+              ),
+              subtitle: const Text('Visibile solo nel tuo account.'),
+              onTap: () => Navigator.pop(
+                sheetContext,
+                AgendaCreationVisibility.privateItem,
+              ),
+            ),
+            const SizedBox(height: 8),
+            ListTile(
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(18),
+              ),
+              leading: CircleAvatar(
+                backgroundColor:
+                    AgendaCategory.couple.color.withValues(alpha: 0.16),
+                foregroundColor: AgendaCategory.couple.color,
+                child: const Icon(Icons.favorite_outline),
+              ),
+              title: const Text(
+                'Noi ♡',
+                style: TextStyle(fontWeight: FontWeight.w800),
+              ),
+              subtitle: const Text(
+                'Sincronizzato con lo spazio condiviso scelto.',
+              ),
+              onTap: () => Navigator.pop(
+                sheetContext,
+                AgendaCreationVisibility.shared,
+              ),
+            ),
+          ],
+        ),
+      ),
+    ),
+  );
+
+  if (!context.mounted || visibility == null) return;
+
+  if (visibility == AgendaCreationVisibility.privateItem) {
+    await openItemEditor(
+      context,
+      store,
+      initialDate,
+      initialTime: initialTime,
+      initialType: initialType,
+    );
+    return;
+  }
+
+  SharedSpace? targetSpace;
+  if (spaces.length == 1) {
+    targetSpace = spaces.first;
+  } else {
+    targetSpace = await showDialog<SharedSpace>(
+      context: context,
+      builder: (dialogContext) => SimpleDialog(
+        title: const Text('Scegli lo spazio condiviso'),
+        children: spaces
+            .map(
+              (space) => SimpleDialogOption(
+                onPressed: () => Navigator.pop(dialogContext, space),
+                child: ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  leading: const Icon(Icons.favorite_outline),
+                  title: Text(
+                    space.name,
+                    style: const TextStyle(fontWeight: FontWeight.w800),
+                  ),
+                  subtitle: Text(
+                    space.isOwner ? 'Creato da te' : 'Spazio condiviso',
+                  ),
+                ),
+              ),
+            )
+            .toList(),
+      ),
+    );
+  }
+
+  if (!context.mounted || targetSpace == null) return;
+
+  final sharedType = switch (initialType) {
+    ItemType.task => SharedEntryType.task,
+    _ => SharedEntryType.appointment,
+  };
+
+  final result = await _openSharedEntryEditor(
+    context,
+    initialDate: initialDate,
+    initialType: sharedType,
+    initialTime: initialTime,
+  );
+  if (result == null) return;
+
+  await _saveSharedAgendaEntry(
+    store,
+    targetSpace.id,
+    result,
+  );
+}
