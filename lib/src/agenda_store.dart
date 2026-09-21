@@ -1559,6 +1559,243 @@ class AgendaStore extends ChangeNotifier {
     return false;
   }
 
+  void setAgendaContentFilter(AgendaContentFilter value) {
+    if (agendaContentFilter == value) return;
+    agendaContentFilter = value;
+    notifyListeners();
+  }
+
+  List<UnifiedAgendaEntry> unifiedForDay(DateTime date) {
+    final result = unifiedAgendaItems
+        .where((entry) => sameDay(entry.date, date))
+        .toList()
+      ..sort((a, b) => a.sortMinutes.compareTo(b.sortMinutes));
+    return List<UnifiedAgendaEntry>.unmodifiable(result);
+  }
+
+  List<UnifiedAgendaEntry> unifiedUpcoming(DateTime now) {
+    final result = unifiedAgendaItems.where((entry) {
+      if (entry.done || entry.start == null) return false;
+      final at = DateTime(
+        entry.date.year,
+        entry.date.month,
+        entry.date.day,
+        entry.start!.hour,
+        entry.start!.minute,
+      );
+      return at.isAfter(now);
+    }).toList()
+      ..sort((a, b) {
+        final at = DateTime(
+          a.date.year,
+          a.date.month,
+          a.date.day,
+          a.start!.hour,
+          a.start!.minute,
+        );
+        final bt = DateTime(
+          b.date.year,
+          b.date.month,
+          b.date.day,
+          b.start!.hour,
+          b.start!.minute,
+        );
+        return at.compareTo(bt);
+      });
+    return List<UnifiedAgendaEntry>.unmodifiable(result);
+  }
+
+  int unifiedMonthCount(int year, int month) => unifiedAgendaItems
+      .where((entry) => entry.date.year == year && entry.date.month == month)
+      .length;
+
+  Future<void> refreshSharedAgendaCache({
+    bool pullRemote = false,
+    bool notify = true,
+  }) async {
+    final ownerId = _activeAccountId;
+    if (ownerId == null) {
+      _sharedAgendaSpaces.clear();
+      _sharedAgendaEntriesBySpace.clear();
+      if (notify) notifyListeners();
+      return;
+    }
+
+    final prefs = await SharedPreferences.getInstance();
+    final cloud = CloudSyncService.instance;
+    List<SharedSpace> spaces = const [];
+
+    if (pullRemote && cloud.signedIn && cloud.userId == ownerId) {
+      try {
+        spaces = await cloud.listSharedSpaces();
+        await prefs.setString(
+          sharedSpacesCacheStorageKey,
+          jsonEncode(
+            spaces
+                .map(
+                  (space) => {
+                    'id': space.id,
+                    'owner_id': space.ownerId,
+                    'name': space.name,
+                    'role': space.role,
+                    'created_at': space.createdAt.toIso8601String(),
+                  },
+                )
+                .toList(),
+          ),
+        );
+      } catch (_) {
+        spaces = const [];
+      }
+    }
+
+    if (spaces.isEmpty) {
+      final rawSpaces = prefs.getString(sharedSpacesCacheStorageKey);
+      if (rawSpaces != null) {
+        try {
+          spaces = (jsonDecode(rawSpaces) as List)
+              .map((raw) => Map<String, dynamic>.from(raw as Map))
+              .map(
+                (raw) => SharedSpace.fromJson(
+                  raw,
+                  role: raw['role'] as String? ?? 'member',
+                ),
+              )
+              .toList();
+        } catch (_) {
+          spaces = const [];
+        }
+      }
+    }
+
+    final nextEntries = <String, List<SharedEntry>>{};
+    for (final space in spaces) {
+      var entries = <SharedEntry>[];
+
+      if (pullRemote && cloud.signedIn && cloud.userId == ownerId) {
+        try {
+          final records = await cloud.pullSharedRecords(space.id);
+          entries = records
+              .where(
+                (record) =>
+                    record.entityType == 'shared_entry' &&
+                    record.deletedAt == null &&
+                    record.payload != null,
+              )
+              .map(
+                (record) => SharedEntry.fromJson(
+                  record.payload!,
+                  updatedBy: record.updatedBy,
+                  updatedAt: record.clientUpdatedAt,
+                ),
+              )
+              .toList();
+        } catch (_) {
+          entries = <SharedEntry>[];
+        }
+      }
+
+      if (entries.isEmpty) {
+        final raw = prefs.getString(sharedCacheStorageKey(space.id));
+        if (raw != null) {
+          try {
+            entries = (jsonDecode(raw) as List)
+                .map(
+                  (rawEntry) => SharedEntry.fromCacheJson(
+                    Map<String, dynamic>.from(rawEntry as Map),
+                  ),
+                )
+                .toList();
+          } catch (_) {
+            entries = <SharedEntry>[];
+          }
+        }
+      }
+
+      final pending = await loadSharedPendingOperations(space.id);
+      for (final operation in pending) {
+        entries.removeWhere((entry) => entry.id == operation.entityId);
+        if (operation.action == SharedPendingAction.upsert &&
+            operation.payload != null) {
+          entries.add(
+            SharedEntry.fromJson(
+              operation.payload!,
+              updatedBy: ownerId,
+              updatedAt: operation.updatedAt,
+            ),
+          );
+        }
+      }
+
+      entries.sort((a, b) {
+        final dateCompare = a.date.compareTo(b.date);
+        if (dateCompare != 0) return dateCompare;
+        final am =
+            a.start == null ? 24 * 60 + 1 : a.start!.hour * 60 + a.start!.minute;
+        final bm =
+            b.start == null ? 24 * 60 + 1 : b.start!.hour * 60 + b.start!.minute;
+        return am.compareTo(bm);
+      });
+      nextEntries[space.id] = entries;
+      await prefs.setString(
+        sharedCacheStorageKey(space.id),
+        jsonEncode(entries.map((entry) => entry.toCacheJson()).toList()),
+      );
+    }
+
+    _sharedAgendaSpaces
+      ..clear()
+      ..addEntries(spaces.map((space) => MapEntry(space.id, space)));
+    _sharedAgendaEntriesBySpace
+      ..clear()
+      ..addAll(nextEntries);
+
+    await _bindUnifiedRealtime(spaces);
+    if (notify) notifyListeners();
+  }
+
+  Future<void> _bindUnifiedRealtime(List<SharedSpace> spaces) async {
+    final nextIds = spaces.map((space) => space.id).toSet();
+    final cloud = CloudSyncService.instance;
+
+    for (final oldId in _unifiedRealtimeSpaceIds.difference(nextIds).toList()) {
+      await cloud.unsubscribeSharedSpace(
+        spaceId: oldId,
+        listenerKey: 'unified-agenda',
+      );
+      _unifiedRealtimeSpaceIds.remove(oldId);
+    }
+
+    if (!cloud.signedIn) return;
+    for (final space in spaces) {
+      cloud.subscribeSharedSpace(
+        spaceId: space.id,
+        listenerKey: 'unified-agenda',
+        onChanged: () {
+          _unifiedRealtimeDebounce?.cancel();
+          _unifiedRealtimeDebounce = Timer(
+            const Duration(milliseconds: 450),
+            () => unawaited(
+              refreshSharedAgendaCache(pullRemote: true),
+            ),
+          );
+        },
+      );
+      _unifiedRealtimeSpaceIds.add(space.id);
+    }
+  }
+
+  Future<void> _cacheSharedAgendaEntries(
+    String spaceId,
+    List<SharedEntry> entries,
+  ) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(
+      sharedCacheStorageKey(spaceId),
+      jsonEncode(entries.map((entry) => entry.toCacheJson()).toList()),
+    );
+  }
+
   String sharedCacheStorageKey(String spaceId) {
     final owner = _activeAccountId ?? 'guest';
     return 'shared_cache_${owner}_$spaceId';
