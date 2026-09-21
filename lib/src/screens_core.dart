@@ -3550,8 +3550,7 @@ class _CloudAccountScreenState extends State<CloudAccountScreen> {
       _message('Account connesso e sincronizzato.');
     } catch (_) {
       _message(
-        CloudSyncService.instance.lastError ??
-            'Accesso non riuscito. Controlla i dati inseriti.',
+        CloudSyncService.instance.userFacingError,
       );
     } finally {
       if (mounted) setState(() => busy = false);
@@ -3573,8 +3572,7 @@ class _CloudAccountScreenState extends State<CloudAccountScreen> {
       );
     } catch (_) {
       _message(
-        CloudSyncService.instance.lastError ??
-            'Non è stato possibile inviare la mail di recupero.',
+        CloudSyncService.instance.userFacingError,
       );
     } finally {
       if (mounted) setState(() => busy = false);
@@ -3587,7 +3585,7 @@ class _CloudAccountScreenState extends State<CloudAccountScreen> {
       await widget.store.syncAllCloud();
       final cloud = CloudSyncService.instance;
       if (cloud.state == CloudConnectionState.error) {
-        _message(cloud.lastError ?? 'Sincronizzazione non riuscita.');
+        _message(cloud.userFacingError);
       } else if (widget.store.totalPendingCloudChanges > 0) {
         _message(
           'I dati locali sono al sicuro: '
