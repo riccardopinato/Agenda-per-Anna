@@ -882,6 +882,8 @@ class HomeScreen extends StatelessWidget {
                 const SimpleCard(child: Text('Nessun impegno per oggi.'))
               else
                 ...today.take(5).map((e) => EventTile(store: store, item: e)),
+              const SizedBox(height: 14),
+              _TodayWellbeingCard(store: store, date: now),
               const SizedBox(height: 24),
               const SectionTitle('La mia agenda'),
               const SizedBox(height: 10),
@@ -916,6 +918,94 @@ class HomeScreen extends StatelessWidget {
           ),
         );
       },
+    );
+  }
+}
+
+class _TodayWellbeingCard extends StatelessWidget {
+  final AgendaStore store;
+  final DateTime date;
+
+  const _TodayWellbeingCard({
+    required this.store,
+    required this.date,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final journal = store.journal(date);
+    final totalHabits = store.habits.length;
+    final doneHabits = journal.completedHabitIds
+        .where((id) => store.habits.any((habit) => habit.id == id))
+        .length;
+    final gratitudeCount = journal.gratitude.length.clamp(0, 3);
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: [Color(0xFFFFF0F5), Color(0xFFF4F0FF)],
+        ),
+        borderRadius: BorderRadius.circular(22),
+        border: Border.all(
+          color: Theme.of(context).colorScheme.outlineVariant,
+        ),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 48,
+            height: 48,
+            alignment: Alignment.center,
+            decoration: BoxDecoration(
+              color: Colors.white.withValues(alpha: 0.85),
+              shape: BoxShape.circle,
+            ),
+            child: Text(
+              journal.mood?.emoji ?? '♡',
+              style: const TextStyle(fontSize: 24),
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  journal.mood == null
+                      ? 'Come sta andando la giornata?'
+                      : 'Oggi: ${journal.mood!.label}',
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w800,
+                    fontSize: 16,
+                  ),
+                ),
+                const SizedBox(height: 5),
+                Wrap(
+                  spacing: 10,
+                  runSpacing: 4,
+                  children: [
+                    Text(
+                      totalHabits == 0
+                          ? 'Nessuna abitudine'
+                          : '$doneHabits/$totalHabits abitudini',
+                      style: Theme.of(context).textTheme.bodySmall,
+                    ),
+                    Text(
+                      '$gratitudeCount/3 cose belle',
+                      style: Theme.of(context).textTheme.bodySmall,
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          Icon(
+            Icons.favorite_outline,
+            color: Theme.of(context).colorScheme.primary,
+          ),
+        ],
+      ),
     );
   }
 }
