@@ -2069,16 +2069,22 @@ class AgendaStore extends ChangeNotifier {
               .cancel('${record.entityId}:primary');
           await NotificationService.instance
               .cancel('${record.entityId}:secondary');
+          break;
         case 'journal':
           journals.remove(record.entityId);
+          break;
         case 'month':
           months.remove(record.entityId);
+          break;
         case 'week':
           weeks.remove(record.entityId);
+          break;
         case 'habit':
           habits.removeWhere((e) => e.id == record.entityId);
+          break;
         case 'inbox':
           inbox.removeWhere((e) => e.id == record.entityId);
+          break;
         case 'preferences':
           // Le preferenze locali restano valide se il record remoto è assente.
           break;
@@ -2098,12 +2104,16 @@ class AgendaStore extends ChangeNotifier {
         } else {
           items[index] = item;
         }
+        break;
       case 'journal':
         journals[record.entityId] = DayJournal.fromJson(payload);
+        break;
       case 'month':
         months[record.entityId] = MonthlyData.fromJson(payload);
+        break;
       case 'week':
         weeks[record.entityId] = WeekData.fromJson(payload);
+        break;
       case 'habit':
         final habit = HabitDefinition.fromJson(payload);
         final index = habits.indexWhere((e) => e.id == habit.id);
@@ -2112,6 +2122,7 @@ class AgendaStore extends ChangeNotifier {
         } else {
           habits[index] = habit;
         }
+        break;
       case 'inbox':
         final entry = InboxEntry.fromJson(payload);
         final index = inbox.indexWhere((e) => e.id == entry.id);
@@ -2120,6 +2131,7 @@ class AgendaStore extends ChangeNotifier {
         } else {
           inbox[index] = entry;
         }
+        break;
       case 'preferences':
         preferences = preferences.copyWith(
           displayName: payload['displayName'] as String?,
@@ -2154,6 +2166,7 @@ class AgendaStore extends ChangeNotifier {
           clearSecondaryReminder:
               payload['defaultSecondaryReminder'] == null,
         );
+        break;
     }
   }
 
