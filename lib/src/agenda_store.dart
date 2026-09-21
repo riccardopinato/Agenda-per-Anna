@@ -1537,7 +1537,7 @@ class AgendaStore extends ChangeNotifier {
   ) async {
     final prefs = await SharedPreferences.getInstance();
     final raw = prefs.getString(sharedPendingStorageKey(spaceId));
-    if (raw == null) return const [];
+    if (raw == null) return <SharedPendingOperation>[];
     try {
       return (jsonDecode(raw) as List)
           .map(
@@ -1548,7 +1548,7 @@ class AgendaStore extends ChangeNotifier {
           .where((operation) => operation.entityId.isNotEmpty)
           .toList();
     } catch (_) {
-      return const [];
+      return <SharedPendingOperation>[];
     }
   }
 
