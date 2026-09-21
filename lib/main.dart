@@ -61,6 +61,134 @@ class AgendaApp extends StatelessWidget {
   }
 }
 
+enum AgendaThemeMode { system, light, dark }
+
+enum AgendaPalette { rose, lilac, sage, peach, sky }
+
+extension AgendaPaletteUi on AgendaPalette {
+  String get label => switch (this) {
+        AgendaPalette.rose => 'Rosa',
+        AgendaPalette.lilac => 'Lilla',
+        AgendaPalette.sage => 'Salvia',
+        AgendaPalette.peach => 'Pesca',
+        AgendaPalette.sky => 'Cielo',
+      };
+
+  Color get seed => switch (this) {
+        AgendaPalette.rose => const Color(0xFFE98FAA),
+        AgendaPalette.lilac => const Color(0xFF9A8ED0),
+        AgendaPalette.sage => const Color(0xFF7FAF98),
+        AgendaPalette.peach => const Color(0xFFE9A47D),
+        AgendaPalette.sky => const Color(0xFF78A9D1),
+      };
+}
+
+enum StartTab { home, month, week, today }
+
+extension StartTabUi on StartTab {
+  String get label => switch (this) {
+        StartTab.home => 'Home',
+        StartTab.month => 'Mese',
+        StartTab.week => 'Settimana',
+        StartTab.today => 'Oggi',
+      };
+}
+
+class AgendaPreferences {
+  final String displayName;
+  final AgendaThemeMode themeMode;
+  final AgendaPalette palette;
+  final bool showDailyQuote;
+  final StartTab startTab;
+  final AgendaCategory defaultCategory;
+  final int defaultEventMinutes;
+  final int? defaultPrimaryReminder;
+  final int? defaultSecondaryReminder;
+
+  const AgendaPreferences({
+    this.displayName = 'Anna',
+    this.themeMode = AgendaThemeMode.system,
+    this.palette = AgendaPalette.rose,
+    this.showDailyQuote = true,
+    this.startTab = StartTab.home,
+    this.defaultCategory = AgendaCategory.personal,
+    this.defaultEventMinutes = 60,
+    this.defaultPrimaryReminder = 30,
+    this.defaultSecondaryReminder,
+  });
+
+  AgendaPreferences copyWith({
+    String? displayName,
+    AgendaThemeMode? themeMode,
+    AgendaPalette? palette,
+    bool? showDailyQuote,
+    StartTab? startTab,
+    AgendaCategory? defaultCategory,
+    int? defaultEventMinutes,
+    int? defaultPrimaryReminder,
+    int? defaultSecondaryReminder,
+    bool clearPrimaryReminder = false,
+    bool clearSecondaryReminder = false,
+  }) {
+    return AgendaPreferences(
+      displayName: displayName ?? this.displayName,
+      themeMode: themeMode ?? this.themeMode,
+      palette: palette ?? this.palette,
+      showDailyQuote: showDailyQuote ?? this.showDailyQuote,
+      startTab: startTab ?? this.startTab,
+      defaultCategory: defaultCategory ?? this.defaultCategory,
+      defaultEventMinutes: defaultEventMinutes ?? this.defaultEventMinutes,
+      defaultPrimaryReminder: clearPrimaryReminder
+          ? null
+          : (defaultPrimaryReminder ?? this.defaultPrimaryReminder),
+      defaultSecondaryReminder: clearSecondaryReminder
+          ? null
+          : (defaultSecondaryReminder ?? this.defaultSecondaryReminder),
+    );
+  }
+
+  Map<String, dynamic> toJson() => {
+        'displayName': displayName,
+        'themeMode': themeMode.name,
+        'palette': palette.name,
+        'showDailyQuote': showDailyQuote,
+        'startTab': startTab.name,
+        'defaultCategory': defaultCategory.name,
+        'defaultEventMinutes': defaultEventMinutes,
+        'defaultPrimaryReminder': defaultPrimaryReminder,
+        'defaultSecondaryReminder': defaultSecondaryReminder,
+      };
+
+  factory AgendaPreferences.fromJson(Map<String, dynamic> json) =>
+      AgendaPreferences(
+        displayName: (json['displayName'] as String? ?? 'Anna').trim().isEmpty
+            ? 'Anna'
+            : (json['displayName'] as String? ?? 'Anna').trim(),
+        themeMode: AgendaThemeMode.values.firstWhere(
+          (e) => e.name == json['themeMode'],
+          orElse: () => AgendaThemeMode.system,
+        ),
+        palette: AgendaPalette.values.firstWhere(
+          (e) => e.name == json['palette'],
+          orElse: () => AgendaPalette.rose,
+        ),
+        showDailyQuote: json['showDailyQuote'] as bool? ?? true,
+        startTab: StartTab.values.firstWhere(
+          (e) => e.name == json['startTab'],
+          orElse: () => StartTab.home,
+        ),
+        defaultCategory: AgendaCategory.values.firstWhere(
+          (e) => e.name == json['defaultCategory'],
+          orElse: () => AgendaCategory.personal,
+        ),
+        defaultEventMinutes:
+            (json['defaultEventMinutes'] as int? ?? 60).clamp(15, 240),
+        defaultPrimaryReminder: json['defaultPrimaryReminder'] as int?,
+        defaultSecondaryReminder:
+            json['defaultSecondaryReminder'] as int?,
+      );
+}
+
 enum ItemType { appointment, task }
 
 enum RecurrenceRule { none, daily, weekly, monthly }
