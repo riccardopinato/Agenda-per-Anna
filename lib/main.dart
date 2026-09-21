@@ -21,6 +21,7 @@ import 'notification_service.dart';
 part 'src/app_shell.dart';
 part 'src/domain_models.dart';
 part 'src/agenda_store.dart';
+part 'src/unified_agenda.dart';
 part 'src/screens_core.dart';
 part 'src/planner_views.dart';
 part 'src/widgets_editors.dart';
