@@ -1432,7 +1432,13 @@ class MainShell extends StatefulWidget {
 }
 
 class _MainShellState extends State<MainShell> {
-  int index = 0;
+  late int index;
+
+  @override
+  void initState() {
+    super.initState();
+    index = widget.store.preferences.startTab.index;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -1471,9 +1477,9 @@ class HomeScreen extends StatelessWidget {
         final today = store.forDay(now);
         return Scaffold(
           appBar: AppBar(
-            title: const Text(
-              'Agenda per Anna',
-              style: TextStyle(fontWeight: FontWeight.w800),
+            title: Text(
+              'Agenda per ${store.preferences.displayName}',
+              style: const TextStyle(fontWeight: FontWeight.w800),
             ),
             actions: [
               IconButton(
@@ -1506,6 +1512,16 @@ class HomeScreen extends StatelessWidget {
                 ),
                 icon: const Icon(Icons.backup_outlined),
               ),
+              IconButton(
+                tooltip: 'Impostazioni',
+                onPressed: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => SettingsScreen(store: store),
+                  ),
+                ),
+                icon: const Icon(Icons.settings_outlined),
+              ),
             ],
           ),
           body: ListView(
@@ -1522,13 +1538,26 @@ class HomeScreen extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(_cap(DateFormat('EEEE d MMMM', 'it_IT').format(now)),
-                        style: Theme.of(context).textTheme.titleMedium),
+                    Text(
+                      _cap(DateFormat('EEEE d MMMM', 'it_IT').format(now)),
+                      style: Theme.of(context).textTheme.titleMedium,
+                    ),
                     const SizedBox(height: 8),
-                    Text(_dailyQuote(now).$1,
-                        style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w900)),
+                    Text(
+                      store.preferences.showDailyQuote
+                          ? _dailyQuote(now).$1
+                          : 'Ciao ${store.preferences.displayName} ♡',
+                      style: const TextStyle(
+                        fontSize: 24,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
                     const SizedBox(height: 6),
-                    Text(_dailyQuote(now).$2),
+                    Text(
+                      store.preferences.showDailyQuote
+                          ? _dailyQuote(now).$2
+                          : 'Questa è la tua pagina di oggi.',
+                    ),
                   ],
                 ),
               ),
