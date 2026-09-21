@@ -1928,6 +1928,7 @@ class AgendaStore extends ChangeNotifier {
       ),
     );
     await _saveSharedPendingOperations(spaceId, operations);
+    await refreshPendingSharedCount(notify: false);
     final cached = List<SharedEntry>.from(
       _sharedAgendaEntriesBySpace[spaceId] ?? const <SharedEntry>[],
     )
@@ -1960,6 +1961,7 @@ class AgendaStore extends ChangeNotifier {
       ),
     );
     await _saveSharedPendingOperations(spaceId, operations);
+    await refreshPendingSharedCount(notify: false);
     final cached = List<SharedEntry>.from(
       _sharedAgendaEntriesBySpace[spaceId] ?? const <SharedEntry>[],
     )..removeWhere((entry) => entry.id == entityId);
