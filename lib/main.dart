@@ -35,6 +35,7 @@ Future<void> main() async {
   Future<void>.delayed(Duration.zero, () async {
     try {
       await NotificationService.instance.initialize();
+      await store.reconcileReminders();
     } catch (_) {
       // Le notifiche non devono mai impedire l'avvio dell'agenda.
     }
@@ -2319,7 +2320,7 @@ class AgendaStore extends ChangeNotifier {
     // Pulisce anche il vecchio ID usato dalla versione a promemoria singolo.
     await NotificationService.instance.cancel(item.id);
 
-    if (start == null) {
+    if (start == null || item.done) {
       await NotificationService.instance.cancel('${item.id}:primary');
       await NotificationService.instance.cancel('${item.id}:secondary');
       return;
@@ -2355,6 +2356,12 @@ class AgendaStore extends ChangeNotifier {
     await syncOne('secondary', item.secondaryReminderMinutesBefore);
   }
 
+  Future<void> reconcileReminders() async {
+    for (final item in items) {
+      await _syncReminders(item);
+    }
+  }
+
   String _reminderBody(int minutes, String title) {
     if (minutes == 1440) return 'Domani: $title';
     if (minutes == 120) return 'Tra 2 ore: $title';
@@ -2367,6 +2374,7 @@ class AgendaStore extends ChangeNotifier {
     if (i < 0) return;
     items[i] = items[i].copyWith(done: !items[i].done);
     await _save(onlyKeys: {_itemsKey});
+    await _syncReminders(items[i]);
     notifyListeners();
   }
 
