@@ -1291,6 +1291,9 @@ class AgendaStore extends ChangeNotifier {
   static const _syncQueueKey = 'cloud_sync_queue_v1';
   static const _syncIndexKey = 'cloud_sync_index_v1';
   static const _syncOwnerKey = 'cloud_sync_owner_v1';
+  static const _accountProfilesKey = 'account_profiles_v1';
+  static const _activeAccountKey = 'active_account_v1';
+  static const _legacyClaimedByKey = 'legacy_claimed_by_v1';
   static const _backupFormat = 'agenda_per_anna_backup';
   static const _backupSchemaVersion = 1;
 
@@ -1303,130 +1306,313 @@ class AgendaStore extends ChangeNotifier {
   final List<InboxEntry> inbox = [];
   final Map<String, CloudSyncOperation> _syncQueue = {};
   final Map<String, String> _syncIndex = {};
+  final Set<String> _unreadableStorageKeys = {};
   AgendaPreferences preferences = const AgendaPreferences();
 
   Timer? _cloudSyncTimer;
+  Timer? _syncDebounceTimer;
   bool _cloudSyncRunning = false;
+  String? _activeAccountId;
+
+  String? get activeAccountId => _activeAccountId;
+  bool get hasStorageWarnings => _unreadableStorageKeys.isNotEmpty;
+
+  List<String> get _workingStorageKeys => const [
+        _itemsKey,
+        _journalsKey,
+        _monthsKey,
+        _weeksKey,
+        _habitsKey,
+        _snapshotsKey,
+        _preferencesKey,
+        _inboxKey,
+        _syncQueueKey,
+        _syncIndexKey,
+        _syncOwnerKey,
+      ];
 
   Future<void> load() async {
     final prefs = await SharedPreferences.getInstance();
-    try {
-      final raw = prefs.getString(_itemsKey);
-      if (raw != null) {
-        items
-          ..clear()
-          ..addAll((jsonDecode(raw) as List).map(
-            (e) => AgendaItem.fromJson(Map<String, dynamic>.from(e as Map)),
-          ));
-      }
-      final jr = prefs.getString(_journalsKey);
-      if (jr != null) {
-        final map = Map<String, dynamic>.from(jsonDecode(jr) as Map);
-        journals
-          ..clear()
-          ..addAll(map.map((k, v) => MapEntry(
-                k,
-                DayJournal.fromJson(Map<String, dynamic>.from(v as Map)),
-              )));
-      }
-      final mr = prefs.getString(_monthsKey);
-      if (mr != null) {
-        final map = Map<String, dynamic>.from(jsonDecode(mr) as Map);
-        months
-          ..clear()
-          ..addAll(map.map((k, v) => MapEntry(
-                k,
-                MonthlyData.fromJson(Map<String, dynamic>.from(v as Map)),
-              )));
-      }
+    _activeAccountId = prefs.getString(_activeAccountKey);
+    _unreadableStorageKeys.clear();
 
-      final wr = prefs.getString(_weeksKey);
-      if (wr != null) {
-        final map = Map<String, dynamic>.from(jsonDecode(wr) as Map);
-        weeks
-          ..clear()
-          ..addAll(map.map((k, v) => MapEntry(
-                k,
-                WeekData.fromJson(Map<String, dynamic>.from(v as Map)),
-              )));
-      }
+    items.clear();
+    journals.clear();
+    months.clear();
+    weeks.clear();
+    habits.clear();
+    localSnapshots.clear();
+    inbox.clear();
+    _syncQueue.clear();
+    _syncIndex.clear();
+    preferences = const AgendaPreferences();
 
-      final hr = prefs.getString(_habitsKey);
-      if (hr != null) {
-        habits
-          ..clear()
-          ..addAll((jsonDecode(hr) as List).map(
+    T? decodeSection<T>(
+      String key,
+      T Function(dynamic value) parser,
+    ) {
+      final raw = prefs.getString(key);
+      if (raw == null) return null;
+      try {
+        return parser(jsonDecode(raw));
+      } catch (_) {
+        _unreadableStorageKeys.add(key);
+        return null;
+      }
+    }
+
+    final parsedItems = decodeSection<List<AgendaItem>>(
+      _itemsKey,
+      (value) => (value as List)
+          .map(
+            (e) => AgendaItem.fromJson(
+              Map<String, dynamic>.from(e as Map),
+            ),
+          )
+          .toList(),
+    );
+    if (parsedItems != null) items.addAll(parsedItems);
+
+    final parsedJournals = decodeSection<Map<String, DayJournal>>(
+      _journalsKey,
+      (value) => Map<String, dynamic>.from(value as Map).map(
+        (key, raw) => MapEntry(
+          key,
+          DayJournal.fromJson(Map<String, dynamic>.from(raw as Map)),
+        ),
+      ),
+    );
+    if (parsedJournals != null) journals.addAll(parsedJournals);
+
+    final parsedMonths = decodeSection<Map<String, MonthlyData>>(
+      _monthsKey,
+      (value) => Map<String, dynamic>.from(value as Map).map(
+        (key, raw) => MapEntry(
+          key,
+          MonthlyData.fromJson(Map<String, dynamic>.from(raw as Map)),
+        ),
+      ),
+    );
+    if (parsedMonths != null) months.addAll(parsedMonths);
+
+    final parsedWeeks = decodeSection<Map<String, WeekData>>(
+      _weeksKey,
+      (value) => Map<String, dynamic>.from(value as Map).map(
+        (key, raw) => MapEntry(
+          key,
+          WeekData.fromJson(Map<String, dynamic>.from(raw as Map)),
+        ),
+      ),
+    );
+    if (parsedWeeks != null) weeks.addAll(parsedWeeks);
+
+    final hadHabitsKey = prefs.containsKey(_habitsKey);
+    final parsedHabits = decodeSection<List<HabitDefinition>>(
+      _habitsKey,
+      (value) => (value as List)
+          .map(
             (e) => HabitDefinition.fromJson(
               Map<String, dynamic>.from(e as Map),
             ),
-          ));
-      }
+          )
+          .toList(),
+    );
+    if (parsedHabits != null) habits.addAll(parsedHabits);
 
-      final sr = prefs.getString(_snapshotsKey);
-      if (sr != null) {
-        localSnapshots
-          ..clear()
-          ..addAll((jsonDecode(sr) as List).map(
+    final parsedSnapshots = decodeSection<List<LocalBackupSnapshot>>(
+      _snapshotsKey,
+      (value) => (value as List)
+          .map(
             (e) => LocalBackupSnapshot.fromJson(
               Map<String, dynamic>.from(e as Map),
             ),
-          ));
-      }
+          )
+          .toList(),
+    );
+    if (parsedSnapshots != null) localSnapshots.addAll(parsedSnapshots);
 
-      final pr = prefs.getString(_preferencesKey);
-      if (pr != null) {
-        preferences = AgendaPreferences.fromJson(
-          Map<String, dynamic>.from(jsonDecode(pr) as Map),
-        );
-      } else {
-        preferences = const AgendaPreferences(onboardingDone: false);
-      }
+    final parsedPreferences = decodeSection<AgendaPreferences>(
+      _preferencesKey,
+      (value) => AgendaPreferences.fromJson(
+        Map<String, dynamic>.from(value as Map),
+      ),
+    );
+    if (parsedPreferences != null) {
+      preferences = parsedPreferences;
+    } else if (!prefs.containsKey(_preferencesKey)) {
+      preferences = const AgendaPreferences(onboardingDone: false);
+    }
 
-      final ir = prefs.getString(_inboxKey);
-      if (ir != null) {
-        inbox
-          ..clear()
-          ..addAll((jsonDecode(ir) as List).map(
+    final parsedInbox = decodeSection<List<InboxEntry>>(
+      _inboxKey,
+      (value) => (value as List)
+          .map(
             (e) => InboxEntry.fromJson(
               Map<String, dynamic>.from(e as Map),
             ),
-          ));
-      }
+          )
+          .toList(),
+    );
+    if (parsedInbox != null) inbox.addAll(parsedInbox);
 
-      final qr = prefs.getString(_syncQueueKey);
-      if (qr != null) {
-        final map = Map<String, dynamic>.from(jsonDecode(qr) as Map);
-        _syncQueue
-          ..clear()
-          ..addAll(map.map(
-            (key, value) => MapEntry(
-              key,
-              CloudSyncOperation.fromJson(
-                Map<String, dynamic>.from(value as Map),
-              ),
-            ),
-          ));
-      }
+    final parsedQueue = decodeSection<Map<String, CloudSyncOperation>>(
+      _syncQueueKey,
+      (value) => Map<String, dynamic>.from(value as Map).map(
+        (key, raw) => MapEntry(
+          key,
+          CloudSyncOperation.fromJson(
+            Map<String, dynamic>.from(raw as Map),
+          ),
+        ),
+      ),
+    );
+    if (parsedQueue != null) _syncQueue.addAll(parsedQueue);
 
-      final srIndex = prefs.getString(_syncIndexKey);
-      if (srIndex != null) {
-        _syncIndex
-          ..clear()
-          ..addAll(
-            Map<String, String>.from(
-              Map<String, dynamic>.from(jsonDecode(srIndex) as Map),
-            ),
-          );
-      }
+    final parsedIndex = decodeSection<Map<String, String>>(
+      _syncIndexKey,
+      (value) => Map<String, String>.from(
+        Map<String, dynamic>.from(value as Map),
+      ),
+    );
+    if (parsedIndex != null) _syncIndex.addAll(parsedIndex);
 
-      if (habits.isEmpty) {
-        habits.addAll(const [
-          HabitDefinition(id: 'water', name: 'Bere abbastanza'),
-          HabitDefinition(id: 'move', name: 'Muovermi un po’'),
-          HabitDefinition(id: 'me', name: 'Tempo per me'),
-        ]);
+    if (!hadHabitsKey && !_unreadableStorageKeys.contains(_habitsKey)) {
+      habits.addAll(const [
+        HabitDefinition(id: 'water', name: 'Bere abbastanza'),
+        HabitDefinition(id: 'move', name: 'Muovermi un po’'),
+        HabitDefinition(id: 'me', name: 'Tempo per me'),
+      ]);
+    }
+  }
+
+  Map<String, dynamic> _readAccountProfiles(SharedPreferences prefs) {
+    final raw = prefs.getString(_accountProfilesKey);
+    if (raw == null) return <String, dynamic>{};
+    try {
+      return Map<String, dynamic>.from(jsonDecode(raw) as Map);
+    } catch (_) {
+      return <String, dynamic>{};
+    }
+  }
+
+  Map<String, dynamic> _captureWorkingProfile(
+    SharedPreferences prefs,
+  ) {
+    final result = <String, dynamic>{};
+    for (final key in _workingStorageKeys) {
+      final raw = prefs.getString(key);
+      if (raw != null) result[key] = raw;
+    }
+    return result;
+  }
+
+  Future<void> _writeWorkingProfile(
+    SharedPreferences prefs,
+    Map<String, dynamic> profile,
+  ) async {
+    for (final key in _workingStorageKeys) {
+      final raw = profile[key];
+      if (raw is String) {
+        await prefs.setString(key, raw);
+      } else {
+        await prefs.remove(key);
       }
-    } catch (_) {}
+    }
+  }
+
+  Future<void> _archiveCurrentProfile(
+    SharedPreferences prefs,
+  ) async {
+    final profiles = _readAccountProfiles(prefs);
+    final scope = _activeAccountId == null
+        ? 'guest'
+        : 'user:$_activeAccountId';
+    profiles[scope] = _captureWorkingProfile(prefs);
+    await prefs.setString(_accountProfilesKey, jsonEncode(profiles));
+  }
+
+  bool _workingProfileHasUserData(SharedPreferences prefs) {
+    for (final key in const [
+      _itemsKey,
+      _journalsKey,
+      _monthsKey,
+      _weeksKey,
+      _habitsKey,
+      _inboxKey,
+    ]) {
+      final raw = prefs.getString(key);
+      if (raw != null && raw != '[]' && raw != '{}') return true;
+    }
+    return false;
+  }
+
+  Future<void> activateCloudAccount(String? accountId) async {
+    final prefs = await SharedPreferences.getInstance();
+    if (_activeAccountId == accountId) {
+      if (accountId != null) {
+        _bindPendingOperationsTo(accountId);
+        await _persistSyncMetadata(prefs);
+      }
+      return;
+    }
+
+    await _archiveCurrentProfile(prefs);
+    final profiles = _readAccountProfiles(prefs);
+    final targetScope =
+        accountId == null ? 'guest' : 'user:$accountId';
+
+    if (accountId != null &&
+        profiles[targetScope] == null &&
+        prefs.getString(_legacyClaimedByKey) == null &&
+        _activeAccountId == null &&
+        _workingProfileHasUserData(prefs)) {
+      profiles[targetScope] = _captureWorkingProfile(prefs);
+      profiles['guest'] = <String, dynamic>{};
+      await prefs.setString(_legacyClaimedByKey, accountId);
+      await prefs.setString(_accountProfilesKey, jsonEncode(profiles));
+    }
+
+    final rawTarget = profiles[targetScope];
+    final target = rawTarget is Map
+        ? Map<String, dynamic>.from(rawTarget)
+        : <String, dynamic>{};
+
+    await _writeWorkingProfile(prefs, target);
+    _activeAccountId = accountId;
+    if (accountId == null) {
+      await prefs.remove(_activeAccountKey);
+    } else {
+      await prefs.setString(_activeAccountKey, accountId);
+    }
+
+    await load();
+
+    if (accountId != null) {
+      _activeAccountId = accountId;
+      _bindPendingOperationsTo(accountId);
+      await prefs.setString(_activeAccountKey, accountId);
+      await _persistSyncMetadata(prefs);
+    }
+
+    notifyListeners();
+  }
+
+  void _bindPendingOperationsTo(String ownerId) {
+    for (final entry in _syncQueue.entries.toList()) {
+      final operation = entry.value;
+      if (operation.ownerId == ownerId) continue;
+      if (operation.ownerId != null && operation.ownerId != ownerId) {
+        continue;
+      }
+      _syncQueue[entry.key] = CloudSyncOperation(
+        entityType: operation.entityType,
+        entityId: operation.entityId,
+        payload: operation.payload,
+        updatedAt: operation.updatedAt,
+        deleted: operation.deleted,
+        ownerId: ownerId,
+      );
+    }
   }
 
   Future<void> _save({
@@ -1434,34 +1620,48 @@ class AgendaStore extends ChangeNotifier {
     bool enqueueSync = true,
   }) async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(
-      _itemsKey,
-      jsonEncode(items.map((e) => e.toJson()).toList()),
-    );
-    await prefs.setString(
-      _journalsKey,
-      jsonEncode(journals.map((k, v) => MapEntry(k, v.toJson()))),
-    );
-    await prefs.setString(
-      _monthsKey,
-      jsonEncode(months.map((k, v) => MapEntry(k, v.toJson()))),
-    );
-    await prefs.setString(
-      _weeksKey,
-      jsonEncode(weeks.map((k, v) => MapEntry(k, v.toJson()))),
-    );
-    await prefs.setString(
-      _habitsKey,
-      jsonEncode(habits.map((e) => e.toJson()).toList()),
-    );
-    await prefs.setString(
-      _preferencesKey,
-      jsonEncode(preferences.toJson()),
-    );
-    await prefs.setString(
-      _inboxKey,
-      jsonEncode(inbox.map((e) => e.toJson()).toList()),
-    );
+    if (!_unreadableStorageKeys.contains(_itemsKey)) {
+      await prefs.setString(
+        _itemsKey,
+        jsonEncode(items.map((e) => e.toJson()).toList()),
+      );
+    }
+    if (!_unreadableStorageKeys.contains(_journalsKey)) {
+      await prefs.setString(
+        _journalsKey,
+        jsonEncode(journals.map((k, v) => MapEntry(k, v.toJson()))),
+      );
+    }
+    if (!_unreadableStorageKeys.contains(_monthsKey)) {
+      await prefs.setString(
+        _monthsKey,
+        jsonEncode(months.map((k, v) => MapEntry(k, v.toJson()))),
+      );
+    }
+    if (!_unreadableStorageKeys.contains(_weeksKey)) {
+      await prefs.setString(
+        _weeksKey,
+        jsonEncode(weeks.map((k, v) => MapEntry(k, v.toJson()))),
+      );
+    }
+    if (!_unreadableStorageKeys.contains(_habitsKey)) {
+      await prefs.setString(
+        _habitsKey,
+        jsonEncode(habits.map((e) => e.toJson()).toList()),
+      );
+    }
+    if (!_unreadableStorageKeys.contains(_preferencesKey)) {
+      await prefs.setString(
+        _preferencesKey,
+        jsonEncode(preferences.toJson()),
+      );
+    }
+    if (!_unreadableStorageKeys.contains(_inboxKey)) {
+      await prefs.setString(
+        _inboxKey,
+        jsonEncode(inbox.map((e) => e.toJson()).toList()),
+      );
+    }
 
     if (createAutoSnapshot) {
       await _maybeCreateAutomaticSnapshot(prefs);
