@@ -336,37 +336,62 @@ class CloudSyncService extends ChangeNotifier {
     return records;
   }
 
+  Future<void> _mergeRecord({
+    required String recordKey,
+    required String ownerId,
+    required String? spaceId,
+    required String visibility,
+    required String entityType,
+    required String entityId,
+    required Map<String, dynamic>? payload,
+    required DateTime clientUpdatedAt,
+    required DateTime? deletedAt,
+  }) async {
+    final client = _requireSignedInClient();
+    final result = await client.rpc(
+      'merge_agenda_record',
+      params: {
+        'p_record_key': recordKey,
+        'p_owner_id': ownerId,
+        'p_space_id': spaceId,
+        'p_visibility': visibility,
+        'p_entity_type': entityType,
+        'p_entity_id': entityId,
+        'p_payload': payload,
+        'p_client_updated_at':
+            clientUpdatedAt.toUtc().toIso8601String(),
+        'p_deleted_at': deletedAt?.toUtc().toIso8601String(),
+      },
+    );
+
+    if (result != true) {
+      throw StateError('remote_record_is_newer');
+    }
+  }
+
   Future<void> pushPrivateOperations(
     Iterable<CloudSyncOperation> operations,
   ) async {
-    final client = _requireSignedInClient();
     final uid = userId!;
     final ops = operations
         .where((op) => op.ownerId == null || op.ownerId == uid)
         .toList();
     if (ops.isEmpty) return;
 
-    final rows = ops.map((op) {
-      final recordKey =
-          '$uid:private:${op.entityType}:${op.entityId}';
-      return {
-        'record_key': recordKey,
-        'owner_id': uid,
-        'space_id': null,
-        'visibility': 'private',
-        'entity_type': op.entityType,
-        'entity_id': op.entityId,
-        'payload': op.deleted ? null : op.payload,
-        'client_updated_at': op.updatedAt.toUtc().toIso8601String(),
-        'deleted_at':
-            op.deleted ? op.updatedAt.toUtc().toIso8601String() : null,
-      };
-    }).toList();
-
-    await client.from('agenda_records').upsert(
-          rows,
-          onConflict: 'record_key',
-        );
+    for (final op in ops) {
+      final at = op.updatedAt.toUtc();
+      await _mergeRecord(
+        recordKey: '$uid:private:${op.entityType}:${op.entityId}',
+        ownerId: uid,
+        spaceId: null,
+        visibility: 'private',
+        entityType: op.entityType,
+        entityId: op.entityId,
+        payload: op.deleted ? null : op.payload,
+        clientUpdatedAt: at,
+        deletedAt: op.deleted ? at : null,
+      );
+    }
   }
 
   Future<List<SharedSpace>> listSharedSpaces() async {
@@ -492,25 +517,18 @@ class CloudSyncService extends ChangeNotifier {
     required Map<String, dynamic> payload,
     DateTime? updatedAt,
   }) async {
-    final client = _requireSignedInClient();
     final uid = userId!;
     final at = (updatedAt ?? DateTime.now()).toUtc();
-    final recordKey =
-        '$spaceId:shared:$entityType:$entityId';
-
-    await client.from('agenda_records').upsert(
-      {
-        'record_key': recordKey,
-        'owner_id': uid,
-        'space_id': spaceId,
-        'visibility': 'shared',
-        'entity_type': entityType,
-        'entity_id': entityId,
-        'payload': payload,
-        'client_updated_at': at.toIso8601String(),
-        'deleted_at': null,
-      },
-      onConflict: 'record_key',
+    await _mergeRecord(
+      recordKey: '$spaceId:shared:$entityType:$entityId',
+      ownerId: uid,
+      spaceId: spaceId,
+      visibility: 'shared',
+      entityType: entityType,
+      entityId: entityId,
+      payload: payload,
+      clientUpdatedAt: at,
+      deletedAt: null,
     );
   }
 
@@ -520,25 +538,18 @@ class CloudSyncService extends ChangeNotifier {
     required String entityId,
     DateTime? updatedAt,
   }) async {
-    final client = _requireSignedInClient();
     final uid = userId!;
     final at = (updatedAt ?? DateTime.now()).toUtc();
-    final recordKey =
-        '$spaceId:shared:$entityType:$entityId';
-
-    await client.from('agenda_records').upsert(
-      {
-        'record_key': recordKey,
-        'owner_id': uid,
-        'space_id': spaceId,
-        'visibility': 'shared',
-        'entity_type': entityType,
-        'entity_id': entityId,
-        'payload': null,
-        'client_updated_at': at.toIso8601String(),
-        'deleted_at': at.toIso8601String(),
-      },
-      onConflict: 'record_key',
+    await _mergeRecord(
+      recordKey: '$spaceId:shared:$entityType:$entityId',
+      ownerId: uid,
+      spaceId: spaceId,
+      visibility: 'shared',
+      entityType: entityType,
+      entityId: entityId,
+      payload: null,
+      clientUpdatedAt: at,
+      deletedAt: at,
     );
   }
 
