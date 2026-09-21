@@ -135,7 +135,7 @@ class _OnboardingScreen extends StatelessWidget {
               const SizedBox(height: 12),
               Text(
                 'Appuntamenti, diario, abitudini, idee e ricordi in un unico posto. '
-                'I dati restano sul dispositivo finché non scegli tu di esportarli.',
+                'L’app salva prima sul dispositivo; cloud e condivisione si attivano solo quando li scegli.',
                 style: Theme.of(context).textTheme.bodyLarge,
               ),
               const SizedBox(height: 24),
@@ -149,6 +149,13 @@ class _OnboardingScreen extends StatelessWidget {
                 icon: Icons.favorite_outline,
                 title: 'Diario personale',
                 subtitle: 'Mood, cose belle e abitudini quotidiane.',
+              ),
+              const SizedBox(height: 10),
+              const _OnboardingFeature(
+                icon: Icons.favorite_outline,
+                title: 'Privato o Noi ♡',
+                subtitle:
+                    'Privato è sempre il default; condividi solo ciò che scegli esplicitamente.',
               ),
               const SizedBox(height: 10),
               const _OnboardingFeature(
