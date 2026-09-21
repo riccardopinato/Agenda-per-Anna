@@ -196,6 +196,8 @@ class HomeScreen extends StatelessWidget {
                   ],
                 ),
               ),
+              const SizedBox(height: 14),
+              AgendaContentFilterBar(store: store),
               if (store.hasStorageWarnings) ...[
                 const SizedBox(height: 12),
                 SimpleCard(
@@ -226,11 +228,10 @@ class HomeScreen extends StatelessWidget {
                 hideDetails: store.preferences.hideHomeDetails,
                 onOpenNext: upcoming.isEmpty
                     ? null
-                    : () => openItemEditor(
+                    : () => openUnifiedAgendaEntry(
                           context,
                           store,
-                          upcoming.first.date,
-                          existing: upcoming.first,
+                          upcoming.first,
                         ),
                 onOpenInbox: () => Navigator.push(
                   context,
@@ -259,9 +260,9 @@ class HomeScreen extends StatelessWidget {
                 const SimpleCard(child: Text('Nessun impegno per oggi.'))
               else
                 ...today.take(5).map(
-                  (e) => EventTile(
+                  (e) => UnifiedAgendaTile(
                     store: store,
-                    item: e,
+                    entry: e,
                     hideDetails: store.preferences.hideHomeDetails,
                   ),
                 ),
@@ -398,7 +399,7 @@ Future<void> _showQuickCapture(
 }
 
 class _HomeFocusCard extends StatelessWidget {
-  final AgendaItem? next;
+  final UnifiedAgendaEntry? next;
   final int pendingTasks;
   final int inboxCount;
   final bool hideDetails;
@@ -422,7 +423,8 @@ class _HomeFocusCard extends StatelessWidget {
         : hideDetails
             ? 'Prossimo impegno programmato'
             : '${DateFormat('EEE d MMM', 'it_IT').format(next!.date)} · '
-                '${formatTime(next!.start!)} · ${next!.title}';
+                '${formatTime(next!.start!)} · ${next!.title}'
+                '${next!.isShared ? ' · Noi ♡' : ''}';
 
     return Container(
       padding: const EdgeInsets.all(16),
