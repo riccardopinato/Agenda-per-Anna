@@ -182,6 +182,7 @@ class CloudSyncService extends ChangeNotifier {
 
   SupabaseClient? _client;
   StreamSubscription<AuthState>? _authSubscription;
+  final Map<String, RealtimeChannel> _sharedChannels = {};
   bool _initialized = false;
   bool _initializing = false;
   int _sessionEpoch = 0;
@@ -229,6 +230,7 @@ class CloudSyncService extends ChangeNotifier {
       _authSubscription =
           _client!.auth.onAuthStateChange.listen((_) {
         _sessionEpoch++;
+        unawaited(_clearSharedChannels());
         _state = signedIn
             ? CloudConnectionState.synced
             : CloudConnectionState.signedOut;
@@ -553,6 +555,72 @@ class CloudSyncService extends ChangeNotifier {
     );
   }
 
+  RealtimeChannel subscribeSharedSpace({
+    required String spaceId,
+    required String listenerKey,
+    required VoidCallback onChanged,
+    void Function(RealtimeSubscribeStatus status, Object? error)? onStatus,
+  }) {
+    final client = _requireSignedInClient();
+    final uid = userId!;
+    final key = '$listenerKey:$spaceId';
+    final previous = _sharedChannels.remove(key);
+    if (previous != null) {
+      unawaited(client.removeChannel(previous));
+    }
+
+    final channel = client.channel('agenda:$uid:$spaceId:$listenerKey');
+    channel
+        .onPostgresChanges(
+          event: PostgresChangeEvent.all,
+          schema: 'public',
+          table: 'agenda_records',
+          filter: PostgresChangeFilter(
+            type: PostgresChangeFilterType.eq,
+            column: 'space_id',
+            value: spaceId,
+          ),
+          callback: (_) => onChanged(),
+        )
+        .subscribe((status, error) {
+          onStatus?.call(status, error);
+        });
+
+    _sharedChannels[key] = channel;
+    return channel;
+  }
+
+  Future<void> unsubscribeSharedSpace({
+    required String spaceId,
+    required String listenerKey,
+  }) async {
+    final key = '$listenerKey:$spaceId';
+    final channel = _sharedChannels.remove(key);
+    if (channel == null) return;
+    final client = _client;
+    if (client != null) {
+      await client.removeChannel(channel);
+    } else {
+      await channel.unsubscribe();
+    }
+  }
+
+  Future<void> _clearSharedChannels() async {
+    final channels = _sharedChannels.values.toList();
+    _sharedChannels.clear();
+    for (final channel in channels) {
+      try {
+        final client = _client;
+        if (client != null) {
+          await client.removeChannel(channel);
+        } else {
+          await channel.unsubscribe();
+        }
+      } catch (_) {
+        // Realtime cleanup must never block auth/session transitions.
+      }
+    }
+  }
   void markSyncStarted() {
     _state = CloudConnectionState.syncing;
     _lastError = null;
@@ -595,6 +663,10 @@ class CloudSyncService extends ChangeNotifier {
   @override
   void dispose() {
     _authSubscription?.cancel();
+    for (final channel in _sharedChannels.values) {
+      unawaited(channel.unsubscribe());
+    }
+    _sharedChannels.clear();
     super.dispose();
   }
 }
