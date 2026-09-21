@@ -14,19 +14,6 @@ void main() {
   });
 
   test('sync health counts private and shared pending work', () async {
-    final privateOperation = CloudSyncOperation(
-      entityType: 'item',
-      entityId: 'private-1',
-      payload: AgendaItem(
-        id: 'private-1',
-        title: 'Privato',
-        note: '',
-        date: DateTime(2026, 9, 22),
-        type: ItemType.task,
-      ).toJson(),
-      updatedAt: DateTime.utc(2026, 9, 22, 10),
-      ownerId: 'user-a',
-    );
     final sharedOperation = SharedPendingOperation(
       action: SharedPendingAction.upsert,
       entityId: 'shared-1',
@@ -43,7 +30,20 @@ void main() {
     SharedPreferences.setMockInitialValues({
       'active_account_v1': 'user-a',
       'cloud_sync_queue_v1': jsonEncode({
-        privateOperation.localKey: privateOperation.toJson(),
+        'item:private-1': {
+          'entityType': 'item',
+          'entityId': 'private-1',
+          'payload': AgendaItem(
+            id: 'private-1',
+            title: 'Privato',
+            note: '',
+            date: DateTime(2026, 9, 22),
+            type: ItemType.task,
+          ).toJson(),
+          'updatedAt': DateTime.utc(2026, 9, 22, 10).toIso8601String(),
+          'deleted': false,
+          'ownerId': 'user-a',
+        },
       }),
       'shared_pending_user-a_space-a': jsonEncode([
         sharedOperation.toJson(),
