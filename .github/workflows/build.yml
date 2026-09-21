@@ -44,11 +44,49 @@ jobs:
 
           manifest = Path("android/app/src/main/AndroidManifest.xml")
           m = manifest.read_text()
-          permission = '<uses-permission android:name="android.permission.INTERNET" />'
-          if permission not in m:
-              pos = m.find(">")
-              m = m[:pos+1] + "\n    " + permission + m[pos+1:]
+          permissions = [
+              '<uses-permission android:name="android.permission.INTERNET" />',
+              '<uses-permission android:name="android.permission.POST_NOTIFICATIONS" />',
+              '<uses-permission android:name="android.permission.USE_BIOMETRIC" />',
+              '<uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />',
+          ]
+          pos = m.find(">")
+          for permission in permissions:
+              if permission not in m:
+                  m = m[:pos+1] + "\n    " + permission + m[pos+1:]
+                  pos = m.find(">")
+
+          receiver_block = '''
+                  <receiver
+                      android:exported="false"
+                      android:name="com.dexterous.flutterlocalnotifications.ScheduledNotificationReceiver" />
+                  <receiver
+                      android:exported="false"
+                      android:name="com.dexterous.flutterlocalnotifications.ScheduledNotificationBootReceiver">
+                      <intent-filter>
+                          <action android:name="android.intent.action.BOOT_COMPLETED" />
+                          <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
+                          <action android:name="android.intent.action.QUICKBOOT_POWERON" />
+                          <action android:name="com.htc.intent.action.QUICKBOOT_POWERON" />
+                      </intent-filter>
+                  </receiver>
+          '''
+          if "ScheduledNotificationReceiver" not in m:
+              m = m.replace("</application>", receiver_block + "\n    </application>")
+
           manifest.write_text(m)
+
+          plist = Path("ios/Runner/Info.plist")
+          ptext = plist.read_text()
+          if "NSFaceIDUsageDescription" not in ptext:
+              ptext = ptext.replace(
+                  "</dict>",
+                  "    <key>NSFaceIDUsageDescription</key>\n"
+                  "    <string>Usa Face ID per sbloccare Agenda per Anna.</string>\n"
+                  "</dict>",
+                  1,
+              )
+          plist.write_text(ptext)
           PY
 
       - name: Restore project signing keystore
@@ -132,19 +170,21 @@ jobs:
         run: dart run flutter_launcher_icons
 
       - name: Analyze
-        run: flutter analyze --no-fatal-warnings
+        run: flutter analyze
 
       - name: Test
         run: flutter test
 
       - name: Build Android APK
-        run: flutter build apk --release
+        run: |
+          flutter build apk --release
+          flutter build apk --release --split-per-abi
 
-      - name: Upload APK
+      - name: Upload APKs
         uses: actions/upload-artifact@v4
         with:
           name: agenda-per-anna-apk
-          path: build/app/outputs/flutter-apk/app-release.apk
+          path: build/app/outputs/flutter-apk/*.apk
 
       - name: Upload signing key backup
         uses: actions/upload-artifact@v4
