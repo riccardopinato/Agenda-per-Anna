@@ -380,6 +380,7 @@ class MonthlyData {
   final String intention;
   final List<String> goals;
   final List<String> books;
+  final List<String> films;
   final List<String> hobbies;
   final List<String> wishes;
   final List<String> ideas;
@@ -397,6 +398,7 @@ class MonthlyData {
     this.intention = '',
     this.goals = const [],
     this.books = const [],
+    this.films = const [],
     this.hobbies = const [],
     this.wishes = const [],
     this.ideas = const [],
@@ -415,6 +417,7 @@ class MonthlyData {
     String? intention,
     List<String>? goals,
     List<String>? books,
+    List<String>? films,
     List<String>? hobbies,
     List<String>? wishes,
     List<String>? ideas,
@@ -432,6 +435,7 @@ class MonthlyData {
       intention: intention ?? this.intention,
       goals: goals ?? this.goals,
       books: books ?? this.books,
+      films: films ?? this.films,
       hobbies: hobbies ?? this.hobbies,
       wishes: wishes ?? this.wishes,
       ideas: ideas ?? this.ideas,
@@ -451,6 +455,7 @@ class MonthlyData {
         'intention': intention,
         'goals': goals,
         'books': books,
+        'films': films,
         'hobbies': hobbies,
         'wishes': wishes,
         'ideas': ideas,
@@ -469,6 +474,7 @@ class MonthlyData {
         intention: json['intention'] as String? ?? '',
         goals: List<String>.from(json['goals'] as List? ?? const []),
         books: List<String>.from(json['books'] as List? ?? const []),
+        films: List<String>.from(json['films'] as List? ?? const []),
         hobbies: List<String>.from(json['hobbies'] as List? ?? const []),
         wishes: List<String>.from(json['wishes'] as List? ?? const []),
         ideas: List<String>.from(json['ideas'] as List? ?? const []),
@@ -2183,6 +2189,8 @@ class _MonthScreenState extends State<MonthScreen> {
               MonthlyListCard(title: 'Obiettivi', items: data.goals, onChange: (v) => widget.store.saveMonth(selected.year, selected.month, data.copyWith(goals: v))),
               const SizedBox(height: 12),
               MonthlyListCard(title: 'Libri', items: data.books, onChange: (v) => widget.store.saveMonth(selected.year, selected.month, data.copyWith(books: v))),
+              const SizedBox(height: 12),
+              MonthlyListCard(title: 'Film e serie', items: data.films, onChange: (v) => widget.store.saveMonth(selected.year, selected.month, data.copyWith(films: v))),
               const SizedBox(height: 12),
               MonthlyListCard(title: 'Hobby', items: data.hobbies, onChange: (v) => widget.store.saveMonth(selected.year, selected.month, data.copyWith(hobbies: v))),
               const SizedBox(height: 12),
