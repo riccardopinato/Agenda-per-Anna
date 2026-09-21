@@ -3433,6 +3433,84 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
+  Future<void> _configurePin() async {
+    final first = TextEditingController();
+    final second = TextEditingController();
+    final value = await showDialog<String>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Imposta PIN'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(
+              controller: first,
+              autofocus: true,
+              obscureText: true,
+              keyboardType: TextInputType.number,
+              maxLength: 8,
+              decoration: const InputDecoration(
+                labelText: 'PIN',
+                hintText: 'Almeno 4 cifre',
+              ),
+            ),
+            const SizedBox(height: 8),
+            TextField(
+              controller: second,
+              obscureText: true,
+              keyboardType: TextInputType.number,
+              maxLength: 8,
+              decoration: const InputDecoration(
+                labelText: 'Ripeti PIN',
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext),
+            child: const Text('Annulla'),
+          ),
+          FilledButton(
+            onPressed: () {
+              final a = first.text.trim();
+              final b = second.text.trim();
+              if (a.length < 4 || a != b) return;
+              Navigator.pop(dialogContext, a);
+            },
+            child: const Text('Salva PIN'),
+          ),
+        ],
+      ),
+    );
+    first.dispose();
+    second.dispose();
+    if (value == null) return;
+
+    try {
+      await widget.store.setPin(value);
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('PIN impostato e blocco attivato.')),
+      );
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('PIN non valido.')),
+      );
+    }
+  }
+
+  Future<bool> _deviceSupportsBiometrics() async {
+    if (kIsWeb) return false;
+    try {
+      final auth = LocalAuthentication();
+      return await auth.isDeviceSupported() && await auth.canCheckBiometrics;
+    } catch (_) {
+      return false;
+    }
+  }
+
   Future<void> _reset() async {
     final confirmed = await showDialog<bool>(
           context: context,
@@ -3753,6 +3831,138 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           ),
                         );
                       },
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 12),
+              SimpleCard(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Privacy',
+                      style: TextStyle(
+                        fontWeight: FontWeight.w900,
+                        fontSize: 18,
+                      ),
+                    ),
+                    const SizedBox(height: 5),
+                    Text(
+                      'Proteggi l’agenda quando il telefono passa ad altre app o resta inattivo.',
+                      style: Theme.of(context).textTheme.bodySmall,
+                    ),
+                    const SizedBox(height: 10),
+                    if (prefs.pinHash == null)
+                      SizedBox(
+                        width: double.infinity,
+                        child: FilledButton.tonalIcon(
+                          onPressed: _configurePin,
+                          icon: const Icon(Icons.pin_outlined),
+                          label: const Text('Imposta PIN'),
+                        ),
+                      )
+                    else ...[
+                      SwitchListTile(
+                        contentPadding: EdgeInsets.zero,
+                        title: const Text('Blocca Agenda'),
+                        subtitle: const Text(
+                          'Richiede PIN o biometria per riaprire l’app.',
+                        ),
+                        value: prefs.privacyLockEnabled,
+                        onChanged: (value) =>
+                            widget.store.savePreferences(
+                          prefs.copyWith(privacyLockEnabled: value),
+                        ),
+                      ),
+                      ListTile(
+                        contentPadding: EdgeInsets.zero,
+                        leading: const Icon(Icons.pin_outlined),
+                        title: const Text('Cambia PIN'),
+                        trailing: const Icon(Icons.chevron_right),
+                        onTap: _configurePin,
+                      ),
+                    ],
+                    if (prefs.pinHash != null) ...[
+                      SwitchListTile(
+                        contentPadding: EdgeInsets.zero,
+                        title: const Text('Sblocco biometrico'),
+                        subtitle: Text(
+                          kIsWeb
+                              ? 'Non disponibile sul web.'
+                              : 'Usa impronta o riconoscimento biometrico del dispositivo.',
+                        ),
+                        value: prefs.biometricUnlock,
+                        onChanged: prefs.privacyLockEnabled
+                            ? (value) async {
+                                if (value &&
+                                    !await _deviceSupportsBiometrics()) {
+                                  if (!mounted) return;
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(
+                                      content: Text(
+                                        'Biometria non disponibile su questo dispositivo.',
+                                      ),
+                                    ),
+                                  );
+                                  return;
+                                }
+                                await widget.store.savePreferences(
+                                  prefs.copyWith(
+                                    biometricUnlock: value,
+                                  ),
+                                );
+                              }
+                            : null,
+                      ),
+                      DropdownButtonFormField<int>(
+                        initialValue: prefs.autoLockMinutes,
+                        decoration: const InputDecoration(
+                          labelText: 'Blocco automatico',
+                          prefixIcon: Icon(Icons.timer_outlined),
+                        ),
+                        items: const [
+                          DropdownMenuItem(
+                            value: 0,
+                            child: Text('Subito'),
+                          ),
+                          DropdownMenuItem(
+                            value: 1,
+                            child: Text('Dopo 1 minuto'),
+                          ),
+                          DropdownMenuItem(
+                            value: 2,
+                            child: Text('Dopo 2 minuti'),
+                          ),
+                          DropdownMenuItem(
+                            value: 5,
+                            child: Text('Dopo 5 minuti'),
+                          ),
+                          DropdownMenuItem(
+                            value: 15,
+                            child: Text('Dopo 15 minuti'),
+                          ),
+                        ],
+                        onChanged: (value) {
+                          if (value == null) return;
+                          widget.store.savePreferences(
+                            prefs.copyWith(autoLockMinutes: value),
+                          );
+                        },
+                      ),
+                    ],
+                    const SizedBox(height: 4),
+                    SwitchListTile(
+                      contentPadding: EdgeInsets.zero,
+                      title: const Text('Nascondi dettagli in Home'),
+                      subtitle: const Text(
+                        'Mostra indicatori generici invece del titolo del prossimo impegno.',
+                      ),
+                      value: prefs.hideHomeDetails,
+                      onChanged: (value) =>
+                          widget.store.savePreferences(
+                        prefs.copyWith(hideHomeDetails: value),
+                      ),
                     ),
                   ],
                 ),
