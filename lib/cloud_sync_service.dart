@@ -18,6 +18,7 @@ class CloudSyncOperation {
   final Map<String, dynamic>? payload;
   final DateTime updatedAt;
   final bool deleted;
+  final String? ownerId;
 
   const CloudSyncOperation({
     required this.entityType,
@@ -25,6 +26,7 @@ class CloudSyncOperation {
     required this.payload,
     required this.updatedAt,
     this.deleted = false,
+    this.ownerId,
   });
 
   String get localKey => '$entityType:$entityId';
@@ -35,6 +37,7 @@ class CloudSyncOperation {
         'payload': payload,
         'updatedAt': updatedAt.toIso8601String(),
         'deleted': deleted,
+        'ownerId': ownerId,
       };
 
   factory CloudSyncOperation.fromJson(Map<String, dynamic> json) =>
@@ -48,6 +51,7 @@ class CloudSyncOperation {
             DateTime.tryParse(json['updatedAt'] as String? ?? '') ??
                 DateTime.now(),
         deleted: json['deleted'] as bool? ?? false,
+        ownerId: json['ownerId'] as String?,
       );
 }
 
@@ -179,6 +183,8 @@ class CloudSyncService extends ChangeNotifier {
   SupabaseClient? _client;
   StreamSubscription<AuthState>? _authSubscription;
   bool _initialized = false;
+  bool _initializing = false;
+  int _sessionEpoch = 0;
   CloudConnectionState _state = CloudConnectionState.disabled;
   DateTime? _lastSyncAt;
   String? _lastError;
@@ -186,6 +192,7 @@ class CloudSyncService extends ChangeNotifier {
   bool get configured =>
       _url.trim().isNotEmpty && _publishableKey.trim().isNotEmpty;
   bool get initialized => _initialized;
+  int get sessionEpoch => _sessionEpoch;
   CloudConnectionState get state => _state;
   DateTime? get lastSyncAt => _lastSyncAt;
   String? get lastError => _lastError;
@@ -195,7 +202,7 @@ class CloudSyncService extends ChangeNotifier {
   bool get signedIn => user != null;
 
   Future<void> initialize() async {
-    if (_initialized) return;
+    if (_initialized || _initializing) return;
 
     if (!configured) {
       _state = CloudConnectionState.disabled;
@@ -204,6 +211,7 @@ class CloudSyncService extends ChangeNotifier {
       return;
     }
 
+    _initializing = true;
     _state = CloudConnectionState.initializing;
     notifyListeners();
 
@@ -220,6 +228,7 @@ class CloudSyncService extends ChangeNotifier {
 
       _authSubscription =
           _client!.auth.onAuthStateChange.listen((_) {
+        _sessionEpoch++;
         _state = signedIn
             ? CloudConnectionState.synced
             : CloudConnectionState.signedOut;
@@ -227,9 +236,12 @@ class CloudSyncService extends ChangeNotifier {
         notifyListeners();
       });
     } catch (error) {
-      _initialized = true;
+      _initialized = false;
+      _client = null;
       _state = CloudConnectionState.error;
       _lastError = error.toString();
+    } finally {
+      _initializing = false;
     }
 
     notifyListeners();
@@ -296,32 +308,44 @@ class CloudSyncService extends ChangeNotifier {
   Future<List<CloudRemoteRecord>> pullPrivateRecords() async {
     final client = _requireSignedInClient();
     final uid = userId!;
+    const pageSize = 500;
+    final records = <CloudRemoteRecord>[];
 
-    final response = await client
-        .from('agenda_records')
-        .select(
-          'record_key,entity_type,entity_id,payload,client_updated_at,deleted_at',
-        )
-        .eq('owner_id', uid)
-        .eq('visibility', 'private');
+    for (var from = 0;; from += pageSize) {
+      final response = await client
+          .from('agenda_records')
+          .select(
+            'record_key,entity_type,entity_id,payload,client_updated_at,deleted_at',
+          )
+          .eq('owner_id', uid)
+          .eq('visibility', 'private')
+          .order('record_key')
+          .range(from, from + pageSize - 1);
 
-    return (response as List)
-        .map(
-          (row) => CloudRemoteRecord.fromJson(
-            Map<String, dynamic>.from(row as Map),
-          ),
-        )
-        .toList();
+      final page = (response as List)
+          .map(
+            (row) => CloudRemoteRecord.fromJson(
+              Map<String, dynamic>.from(row as Map),
+            ),
+          )
+          .toList();
+      records.addAll(page);
+      if (page.length < pageSize) break;
+    }
+
+    return records;
   }
 
   Future<void> pushPrivateOperations(
     Iterable<CloudSyncOperation> operations,
   ) async {
-    final ops = operations.toList();
-    if (ops.isEmpty) return;
-
     final client = _requireSignedInClient();
     final uid = userId!;
+    final ops = operations
+        .where((op) => op.ownerId == null || op.ownerId == uid)
+        .toList();
+    if (ops.isEmpty) return;
+
     final rows = ops.map((op) {
       final recordKey =
           '$uid:private:${op.entityType}:${op.entityId}';
@@ -433,21 +457,32 @@ class CloudSyncService extends ChangeNotifier {
     String spaceId,
   ) async {
     final client = _requireSignedInClient();
-    final response = await client
-        .from('agenda_records')
-        .select(
-          'record_key,space_id,owner_id,updated_by,entity_type,entity_id,payload,client_updated_at,deleted_at',
-        )
-        .eq('space_id', spaceId)
-        .eq('visibility', 'shared');
+    const pageSize = 500;
+    final records = <SharedSpaceRecord>[];
 
-    return (response as List)
-        .map(
-          (row) => SharedSpaceRecord.fromJson(
-            Map<String, dynamic>.from(row as Map),
-          ),
-        )
-        .toList();
+    for (var from = 0;; from += pageSize) {
+      final response = await client
+          .from('agenda_records')
+          .select(
+            'record_key,space_id,owner_id,updated_by,entity_type,entity_id,payload,client_updated_at,deleted_at',
+          )
+          .eq('space_id', spaceId)
+          .eq('visibility', 'shared')
+          .order('record_key')
+          .range(from, from + pageSize - 1);
+
+      final page = (response as List)
+          .map(
+            (row) => SharedSpaceRecord.fromJson(
+              Map<String, dynamic>.from(row as Map),
+            ),
+          )
+          .toList();
+      records.addAll(page);
+      if (page.length < pageSize) break;
+    }
+
+    return records;
   }
 
   Future<void> upsertSharedRecord({
@@ -483,10 +518,11 @@ class CloudSyncService extends ChangeNotifier {
     required String spaceId,
     required String entityType,
     required String entityId,
+    DateTime? updatedAt,
   }) async {
     final client = _requireSignedInClient();
     final uid = userId!;
-    final at = DateTime.now().toUtc();
+    final at = (updatedAt ?? DateTime.now()).toUtc();
     final recordKey =
         '$spaceId:shared:$entityType:$entityId';
 
