@@ -1989,7 +1989,48 @@ class HomeScreen extends StatelessWidget {
       animation: store,
       builder: (context, _) {
         final today = store.forDay(now);
+        final upcoming = store.items
+            .where((e) {
+              if (e.done) return false;
+              final start = e.start;
+              if (start == null) return false;
+              final at = DateTime(
+                e.date.year,
+                e.date.month,
+                e.date.day,
+                start.hour,
+                start.minute,
+              );
+              return at.isAfter(now);
+            })
+            .toList()
+          ..sort((a, b) {
+            final ad = DateTime(
+              a.date.year,
+              a.date.month,
+              a.date.day,
+              a.start!.hour,
+              a.start!.minute,
+            );
+            final bd = DateTime(
+              b.date.year,
+              b.date.month,
+              b.date.day,
+              b.start!.hour,
+              b.start!.minute,
+            );
+            return ad.compareTo(bd);
+          });
+        final pendingTasks = store.items
+            .where((e) => e.type == ItemType.task && !e.done)
+            .length;
+        final pinnedItems = store.items.where((e) => e.pinned).toList();
         return Scaffold(
+          floatingActionButton: FloatingActionButton.extended(
+            onPressed: () => _showQuickCapture(context, store),
+            icon: const Icon(Icons.add),
+            label: const Text('Aggiungi'),
+          ),
           appBar: AppBar(
             title: Text(
               'Agenda per ${store.preferences.displayName}',
@@ -2005,6 +2046,20 @@ class HomeScreen extends StatelessWidget {
                   ),
                 ),
                 icon: const Icon(Icons.search),
+              ),
+              IconButton(
+                tooltip: 'Inbox',
+                onPressed: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => InboxScreen(store: store),
+                  ),
+                ),
+                icon: Badge(
+                  isLabelVisible: store.inbox.isNotEmpty,
+                  label: Text('${store.inbox.length}'),
+                  child: const Icon(Icons.inbox_outlined),
+                ),
               ),
               IconButton(
                 tooltip: 'Archivio',
@@ -2075,6 +2130,39 @@ class HomeScreen extends StatelessWidget {
                   ],
                 ),
               ),
+              const SizedBox(height: 16),
+              _HomeFocusCard(
+                next: upcoming.isEmpty ? null : upcoming.first,
+                pendingTasks: pendingTasks,
+                inboxCount: store.inbox.length,
+                hideDetails: store.preferences.hideHomeDetails,
+                onOpenNext: upcoming.isEmpty
+                    ? null
+                    : () => openItemEditor(
+                          context,
+                          store,
+                          upcoming.first.date,
+                          existing: upcoming.first,
+                        ),
+                onOpenInbox: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => InboxScreen(store: store),
+                  ),
+                ),
+              ),
+              if (pinnedItems.isNotEmpty) ...[
+                const SizedBox(height: 20),
+                const SectionTitle('Fissati'),
+                const SizedBox(height: 10),
+                ...pinnedItems.take(3).map(
+                      (e) => EventTile(
+                        store: store,
+                        item: e,
+                        compact: true,
+                      ),
+                    ),
+              ],
               const SizedBox(height: 24),
               const SectionTitle('Oggi'),
               const SizedBox(height: 10),
@@ -2116,6 +2204,305 @@ class HomeScreen extends StatelessWidget {
               ),
             ],
           ),
+        );
+      },
+    );
+  }
+}
+
+Future<void> _showQuickCapture(
+  BuildContext context,
+  AgendaStore store,
+) async {
+  final action = await showModalBottomSheet<String>(
+    context: context,
+    showDragHandle: true,
+    builder: (sheetContext) => SafeArea(
+      child: Wrap(
+        children: [
+          const ListTile(
+            title: Text(
+              'Cattura veloce',
+              style: TextStyle(fontWeight: FontWeight.w900),
+            ),
+            subtitle: Text('Aggiungi senza interrompere quello che stai facendo.'),
+          ),
+          ListTile(
+            leading: const CircleAvatar(
+              child: Icon(Icons.sticky_note_2_outlined),
+            ),
+            title: const Text('Nota veloce'),
+            subtitle: const Text('Finisce nell’Inbox, da sistemare dopo.'),
+            onTap: () => Navigator.pop(sheetContext, 'note'),
+          ),
+          ListTile(
+            leading: const CircleAvatar(
+              child: Icon(Icons.check_circle_outline),
+            ),
+            title: const Text('Attività'),
+            subtitle: const Text('Crea subito una cosa da fare.'),
+            onTap: () => Navigator.pop(sheetContext, 'task'),
+          ),
+          ListTile(
+            leading: const CircleAvatar(
+              child: Icon(Icons.event_outlined),
+            ),
+            title: const Text('Appuntamento'),
+            subtitle: const Text('Apri il modulo evento di oggi.'),
+            onTap: () => Navigator.pop(sheetContext, 'event'),
+          ),
+        ],
+      ),
+    ),
+  );
+
+  if (!context.mounted || action == null) return;
+
+  if (action == 'note') {
+    final controller = TextEditingController();
+    final value = await showDialog<String>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Nota veloce'),
+        content: TextField(
+          controller: controller,
+          autofocus: true,
+          minLines: 2,
+          maxLines: 5,
+          textCapitalization: TextCapitalization.sentences,
+          decoration: const InputDecoration(
+            hintText: 'Scrivi al volo...',
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext),
+            child: const Text('Annulla'),
+          ),
+          FilledButton(
+            onPressed: () =>
+                Navigator.pop(dialogContext, controller.text.trim()),
+            child: const Text('Salva'),
+          ),
+        ],
+      ),
+    );
+    controller.dispose();
+    if (value != null && value.isNotEmpty) {
+      await store.addInboxEntry(value);
+    }
+    return;
+  }
+
+  await openItemEditor(
+    context,
+    store,
+    DateTime.now(),
+    initialType: action == 'task' ? ItemType.task : ItemType.appointment,
+  );
+}
+
+class _HomeFocusCard extends StatelessWidget {
+  final AgendaItem? next;
+  final int pendingTasks;
+  final int inboxCount;
+  final bool hideDetails;
+  final VoidCallback? onOpenNext;
+  final VoidCallback onOpenInbox;
+
+  const _HomeFocusCard({
+    required this.next,
+    required this.pendingTasks,
+    required this.inboxCount,
+    required this.hideDetails,
+    required this.onOpenNext,
+    required this.onOpenInbox,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final nextText = next == null
+        ? 'Nessun appuntamento in arrivo'
+        : hideDetails
+            ? 'Prossimo impegno programmato'
+            : '${DateFormat('EEE d MMM', 'it_IT').format(next!.date)} · '
+                '${formatTime(next!.start!)} · ${next!.title}';
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: scheme.surfaceContainerHighest.withValues(alpha: 0.45),
+        borderRadius: BorderRadius.circular(22),
+        border: Border.all(color: scheme.outlineVariant),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'A colpo d’occhio',
+            style: TextStyle(fontWeight: FontWeight.w900, fontSize: 17),
+          ),
+          const SizedBox(height: 10),
+          InkWell(
+            borderRadius: BorderRadius.circular(14),
+            onTap: onOpenNext,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 4),
+              child: Row(
+                children: [
+                  Icon(Icons.schedule_outlined, color: scheme.primary),
+                  const SizedBox(width: 9),
+                  Expanded(
+                    child: Text(
+                      nextText,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(fontWeight: FontWeight.w700),
+                    ),
+                  ),
+                  if (onOpenNext != null) const Icon(Icons.chevron_right),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(height: 8),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              _MiniPill(
+                icon: Icons.check_circle_outline,
+                text: '$pendingTasks da fare',
+              ),
+              ActionChip(
+                avatar: const Icon(Icons.inbox_outlined, size: 17),
+                label: Text('$inboxCount in Inbox'),
+                onPressed: onOpenInbox,
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class InboxScreen extends StatelessWidget {
+  final AgendaStore store;
+
+  const InboxScreen({super.key, required this.store});
+
+  Future<void> _convertToTask(
+    BuildContext context,
+    InboxEntry entry,
+  ) async {
+    final item = AgendaItem(
+      id: const Uuid().v4(),
+      title: entry.text,
+      note: '',
+      date: DateTime.now(),
+      type: ItemType.task,
+      category: store.preferences.defaultCategory,
+    );
+    await store.upsert(item);
+    await store.deleteInboxEntry(entry.id);
+    if (!context.mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Nota trasformata in attività.')),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: store,
+      builder: (context, _) {
+        final entries = [...store.inbox]
+          ..sort((a, b) {
+            if (a.pinned != b.pinned) return a.pinned ? -1 : 1;
+            return b.createdAt.compareTo(a.createdAt);
+          });
+
+        return Scaffold(
+          appBar: AppBar(
+            title: const Text(
+              'Inbox',
+              style: TextStyle(fontWeight: FontWeight.w900),
+            ),
+          ),
+          floatingActionButton: FloatingActionButton.extended(
+            onPressed: () => _showQuickCapture(context, store),
+            icon: const Icon(Icons.add),
+            label: const Text('Cattura'),
+          ),
+          body: entries.isEmpty
+              ? const Center(
+                  child: Padding(
+                    padding: EdgeInsets.all(32),
+                    child: Text(
+                      'Qui finiranno le idee e le note catturate al volo.',
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+                )
+              : ListView.separated(
+                  padding: const EdgeInsets.fromLTRB(14, 8, 14, 100),
+                  itemCount: entries.length,
+                  separatorBuilder: (_, __) => const SizedBox(height: 8),
+                  itemBuilder: (context, index) {
+                    final entry = entries[index];
+                    return Card(
+                      child: ListTile(
+                        contentPadding: const EdgeInsets.fromLTRB(
+                          14,
+                          8,
+                          6,
+                          8,
+                        ),
+                        leading: Icon(
+                          entry.pinned
+                              ? Icons.push_pin
+                              : Icons.sticky_note_2_outlined,
+                        ),
+                        title: Text(entry.text),
+                        subtitle: Text(
+                          DateFormat(
+                            'd MMM, HH:mm',
+                            'it_IT',
+                          ).format(entry.createdAt),
+                        ),
+                        trailing: PopupMenuButton<String>(
+                          onSelected: (value) async {
+                            if (value == 'pin') {
+                              await store.toggleInboxPinned(entry.id);
+                            } else if (value == 'task') {
+                              await _convertToTask(context, entry);
+                            } else if (value == 'delete') {
+                              await store.deleteInboxEntry(entry.id);
+                            }
+                          },
+                          itemBuilder: (_) => [
+                            PopupMenuItem(
+                              value: 'pin',
+                              child: Text(
+                                entry.pinned ? 'Togli dai fissati' : 'Fissa',
+                              ),
+                            ),
+                            const PopupMenuItem(
+                              value: 'task',
+                              child: Text('Trasforma in attività'),
+                            ),
+                            const PopupMenuItem(
+                              value: 'delete',
+                              child: Text('Elimina'),
+                            ),
+                          ],
+                        ),
+                      ),
+                    );
+                  },
+                ),
         );
       },
     );
