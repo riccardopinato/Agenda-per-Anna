@@ -4561,6 +4561,879 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 }
 
+class SharedSpaceHubScreen extends StatefulWidget {
+  final AgendaStore store;
+
+  const SharedSpaceHubScreen({super.key, required this.store});
+
+  @override
+  State<SharedSpaceHubScreen> createState() => _SharedSpaceHubScreenState();
+}
+
+class _SharedSpaceHubScreenState extends State<SharedSpaceHubScreen> {
+  bool loading = true;
+  List<SharedSpace> spaces = const [];
+
+  @override
+  void initState() {
+    super.initState();
+    _reload();
+  }
+
+  Future<void> _reload() async {
+    final cloud = CloudSyncService.instance;
+    if (!cloud.signedIn) {
+      if (mounted) setState(() => loading = false);
+      return;
+    }
+    try {
+      final result = await cloud.listSharedSpaces();
+      if (mounted) {
+        setState(() {
+          spaces = result;
+          loading = false;
+        });
+      }
+    } catch (_) {
+      if (mounted) setState(() => loading = false);
+    }
+  }
+
+  Future<void> _createSpace() async {
+    final controller = TextEditingController(text: 'Noi ♡');
+    final name = await showDialog<String>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Crea uno spazio condiviso'),
+        content: TextField(
+          controller: controller,
+          autofocus: true,
+          decoration: const InputDecoration(
+            labelText: 'Nome dello spazio',
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext),
+            child: const Text('Annulla'),
+          ),
+          FilledButton(
+            onPressed: () =>
+                Navigator.pop(dialogContext, controller.text.trim()),
+            child: const Text('Crea'),
+          ),
+        ],
+      ),
+    );
+    controller.dispose();
+    if (name == null || name.isEmpty) return;
+
+    setState(() => loading = true);
+    try {
+      await CloudSyncService.instance.createSharedSpace(name: name);
+      await _reload();
+    } catch (error) {
+      if (!mounted) return;
+      setState(() => loading = false);
+      _message('Impossibile creare lo spazio: $error');
+    }
+  }
+
+  Future<void> _joinSpace() async {
+    final controller = TextEditingController();
+    final code = await showDialog<String>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Collegati con un codice'),
+        content: TextField(
+          controller: controller,
+          autofocus: true,
+          textCapitalization: TextCapitalization.characters,
+          maxLength: 8,
+          decoration: const InputDecoration(
+            labelText: 'Codice invito',
+            hintText: 'Es. A1B2C3D4',
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext),
+            child: const Text('Annulla'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(
+              dialogContext,
+              controller.text.trim().toUpperCase(),
+            ),
+            child: const Text('Collegati'),
+          ),
+        ],
+      ),
+    );
+    controller.dispose();
+    if (code == null || code.isEmpty) return;
+
+    setState(() => loading = true);
+    try {
+      await CloudSyncService.instance.joinSharedSpace(code);
+      await _reload();
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => loading = false);
+      _message('Codice non valido, già usato o scaduto.');
+    }
+  }
+
+  void _message(String text) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(text)),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final cloud = CloudSyncService.instance;
+    return AnimatedBuilder(
+      animation: cloud,
+      builder: (context, _) {
+        return Scaffold(
+          appBar: AppBar(
+            title: const Text(
+              'Noi ♡',
+              style: TextStyle(fontWeight: FontWeight.w900),
+            ),
+            actions: [
+              if (cloud.signedIn)
+                IconButton(
+                  tooltip: 'Aggiorna',
+                  onPressed: loading ? null : _reload,
+                  icon: const Icon(Icons.refresh),
+                ),
+            ],
+          ),
+          body: !cloud.signedIn
+              ? Center(
+                  child: Padding(
+                    padding: const EdgeInsets.all(24),
+                    child: ConstrainedBox(
+                      constraints: const BoxConstraints(maxWidth: 430),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(Icons.favorite_outline, size: 60),
+                          const SizedBox(height: 16),
+                          const Text(
+                            'Uno spazio solo per voi',
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              fontSize: 25,
+                              fontWeight: FontWeight.w900,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          const Text(
+                            'Accedi al cloud per creare o raggiungere uno spazio condiviso. '
+                            'La tua agenda personale resterà separata.',
+                            textAlign: TextAlign.center,
+                          ),
+                          const SizedBox(height: 18),
+                          FilledButton.icon(
+                            onPressed: () => Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => CloudAccountScreen(
+                                  store: widget.store,
+                                ),
+                              ),
+                            ),
+                            icon: const Icon(Icons.cloud_outlined),
+                            label: const Text('Account e sincronizzazione'),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                )
+              : loading
+                  ? const Center(child: CircularProgressIndicator())
+                  : ListView(
+                      padding: const EdgeInsets.fromLTRB(16, 10, 16, 40),
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(20),
+                          decoration: BoxDecoration(
+                            gradient: const LinearGradient(
+                              colors: [
+                                Color(0xFFFFE4EC),
+                                Color(0xFFF0E8FF),
+                              ],
+                            ),
+                            borderRadius: BorderRadius.circular(26),
+                          ),
+                          child: const Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Icon(Icons.favorite_outline, size: 30),
+                              SizedBox(height: 10),
+                              Text(
+                                'Spazio condiviso',
+                                style: TextStyle(
+                                  fontSize: 23,
+                                  fontWeight: FontWeight.w900,
+                                ),
+                              ),
+                              SizedBox(height: 6),
+                              Text(
+                                'Qui compaiono solo gli elementi che scegliete di condividere. '
+                                'Diario, mood, note private e agenda personale restano privati.',
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                        if (spaces.isEmpty)
+                          SimpleCard(
+                            child: Column(
+                              children: [
+                                const Text(
+                                  'Non sei ancora collegato a nessuno spazio.',
+                                  textAlign: TextAlign.center,
+                                ),
+                                const SizedBox(height: 14),
+                                SizedBox(
+                                  width: double.infinity,
+                                  child: FilledButton.icon(
+                                    onPressed: _createSpace,
+                                    icon: const Icon(Icons.add),
+                                    label: const Text('Crea il nostro spazio'),
+                                  ),
+                                ),
+                                const SizedBox(height: 8),
+                                SizedBox(
+                                  width: double.infinity,
+                                  child: OutlinedButton.icon(
+                                    onPressed: _joinSpace,
+                                    icon: const Icon(Icons.link),
+                                    label: const Text('Inserisci un codice'),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          )
+                        else ...[
+                          ...spaces.map(
+                            (space) => Card(
+                              margin: const EdgeInsets.only(bottom: 10),
+                              child: ListTile(
+                                leading: CircleAvatar(
+                                  child: Icon(
+                                    space.isOwner
+                                        ? Icons.favorite
+                                        : Icons.favorite_outline,
+                                  ),
+                                ),
+                                title: Text(
+                                  space.name,
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.w800,
+                                  ),
+                                ),
+                                subtitle: Text(
+                                  space.isOwner
+                                      ? 'Creato da te'
+                                      : 'Spazio condiviso',
+                                ),
+                                trailing: const Icon(Icons.chevron_right),
+                                onTap: () => Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (_) => SharedSpaceScreen(
+                                      store: widget.store,
+                                      space: space,
+                                    ),
+                                  ),
+                                ).then((_) => _reload()),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 6),
+                          OutlinedButton.icon(
+                            onPressed: _joinSpace,
+                            icon: const Icon(Icons.link),
+                            label: const Text('Collegati a un altro spazio'),
+                          ),
+                        ],
+                      ],
+                    ),
+        );
+      },
+    );
+  }
+}
+
+class SharedSpaceScreen extends StatefulWidget {
+  final AgendaStore store;
+  final SharedSpace space;
+
+  const SharedSpaceScreen({
+    super.key,
+    required this.store,
+    required this.space,
+  });
+
+  @override
+  State<SharedSpaceScreen> createState() => _SharedSpaceScreenState();
+}
+
+class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
+  bool loading = true;
+  List<SharedEntry> entries = [];
+  DateTime selected = DateTime.now();
+
+  String get _cacheKey => 'shared_cache_${widget.space.id}';
+
+  @override
+  void initState() {
+    super.initState();
+    _loadCachedThenRefresh();
+  }
+
+  Future<void> _loadCachedThenRefresh() async {
+    final prefs = await SharedPreferences.getInstance();
+    final raw = prefs.getString(_cacheKey);
+    if (raw != null) {
+      try {
+        entries = (jsonDecode(raw) as List)
+            .map(
+              (e) => SharedEntry.fromJson(
+                Map<String, dynamic>.from(e as Map),
+              ),
+            )
+            .toList();
+      } catch (_) {}
+    }
+    if (mounted) setState(() => loading = false);
+    await _refresh();
+  }
+
+  Future<void> _saveCache() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(
+      _cacheKey,
+      jsonEncode(entries.map((e) => e.toJson()).toList()),
+    );
+  }
+
+  Future<void> _refresh() async {
+    if (!CloudSyncService.instance.signedIn) return;
+    if (mounted) setState(() => loading = true);
+    try {
+      final records =
+          await CloudSyncService.instance.pullSharedRecords(widget.space.id);
+      final next = <SharedEntry>[];
+      for (final record in records) {
+        if (record.deletedAt != null ||
+            record.entityType != 'shared_entry' ||
+            record.payload == null) {
+          continue;
+        }
+        next.add(
+          SharedEntry.fromJson(
+            record.payload!,
+            updatedBy: record.updatedBy,
+          ),
+        );
+      }
+      next.sort((a, b) {
+        final date = a.date.compareTo(b.date);
+        if (date != 0) return date;
+        final am = a.start == null ? 0 : a.start!.hour * 60 + a.start!.minute;
+        final bm = b.start == null ? 0 : b.start!.hour * 60 + b.start!.minute;
+        return am.compareTo(bm);
+      });
+      entries = next;
+      await _saveCache();
+    } catch (_) {
+      _message('Impossibile aggiornare ora. Mostro l’ultima copia disponibile.');
+    } finally {
+      if (mounted) setState(() => loading = false);
+    }
+  }
+
+  List<SharedEntry> get _selectedEntries => entries
+      .where((e) => AgendaStore.sameDay(e.date, selected))
+      .toList();
+
+  Future<void> _edit([SharedEntry? existing]) async {
+    if (!CloudSyncService.instance.signedIn) {
+      _message('Serve una connessione all’account cloud per modificare lo spazio.');
+      return;
+    }
+
+    final result = await _openSharedEntryEditor(
+      context,
+      initialDate: selected,
+      existing: existing,
+    );
+    if (result == null) return;
+
+    final index = entries.indexWhere((e) => e.id == result.id);
+    setState(() {
+      if (index < 0) {
+        entries.add(result);
+      } else {
+        entries[index] = result;
+      }
+    });
+    await _saveCache();
+
+    try {
+      await CloudSyncService.instance.upsertSharedRecord(
+        spaceId: widget.space.id,
+        entityType: 'shared_entry',
+        entityId: result.id,
+        payload: result.toJson(),
+      );
+      await _refresh();
+    } catch (_) {
+      _message('Modifica salvata sul dispositivo, ma non ancora inviata.');
+    }
+  }
+
+  Future<void> _toggleDone(SharedEntry entry) async {
+    final updated = entry.copyWith(done: !entry.done);
+    final index = entries.indexWhere((e) => e.id == entry.id);
+    if (index >= 0) {
+      setState(() => entries[index] = updated);
+      await _saveCache();
+    }
+    try {
+      await CloudSyncService.instance.upsertSharedRecord(
+        spaceId: widget.space.id,
+        entityType: 'shared_entry',
+        entityId: updated.id,
+        payload: updated.toJson(),
+      );
+    } catch (_) {
+      _message('Stato salvato localmente; sincronizzazione da completare.');
+    }
+  }
+
+  Future<void> _delete(SharedEntry entry) async {
+    final confirmed = await showDialog<bool>(
+          context: context,
+          builder: (dialogContext) => AlertDialog(
+            title: const Text('Eliminare dallo spazio condiviso?'),
+            content: Text(entry.title),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(dialogContext, false),
+                child: const Text('Annulla'),
+              ),
+              FilledButton(
+                onPressed: () => Navigator.pop(dialogContext, true),
+                child: const Text('Elimina'),
+              ),
+            ],
+          ),
+        ) ??
+        false;
+    if (!confirmed) return;
+
+    setState(() => entries.removeWhere((e) => e.id == entry.id));
+    await _saveCache();
+    try {
+      await CloudSyncService.instance.deleteSharedRecord(
+        spaceId: widget.space.id,
+        entityType: 'shared_entry',
+        entityId: entry.id,
+      );
+    } catch (_) {
+      _message('Eliminazione locale effettuata; cloud da aggiornare.');
+    }
+  }
+
+  Future<void> _invite() async {
+    try {
+      final code =
+          await CloudSyncService.instance.createSpaceInvite(widget.space.id);
+      if (!mounted) return;
+      await showDialog<void>(
+        context: context,
+        builder: (dialogContext) => AlertDialog(
+          title: const Text('Codice per collegarsi'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text(
+                'Condividi questo codice con la persona che vuoi invitare. '
+                'È valido per 24 ore e può essere usato una sola volta.',
+              ),
+              const SizedBox(height: 18),
+              SelectableText(
+                code,
+                style: const TextStyle(
+                  fontSize: 30,
+                  fontWeight: FontWeight.w900,
+                  letterSpacing: 3,
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            FilledButton(
+              onPressed: () => Navigator.pop(dialogContext),
+              child: const Text('Chiudi'),
+            ),
+          ],
+        ),
+      );
+    } catch (_) {
+      _message('Non è stato possibile creare il codice invito.');
+    }
+  }
+
+  Future<void> _leaveOrDelete() async {
+    final owner = widget.space.isOwner;
+    final confirmed = await showDialog<bool>(
+          context: context,
+          builder: (dialogContext) => AlertDialog(
+            title: Text(owner ? 'Eliminare lo spazio?' : 'Lasciare lo spazio?'),
+            content: Text(
+              owner
+                  ? 'Lo spazio e tutti i contenuti condivisi verranno eliminati per tutti.'
+                  : 'Non vedrai più questo spazio, ma i tuoi dati personali non verranno toccati.',
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(dialogContext, false),
+                child: const Text('Annulla'),
+              ),
+              FilledButton(
+                onPressed: () => Navigator.pop(dialogContext, true),
+                child: Text(owner ? 'Elimina' : 'Lascia'),
+              ),
+            ],
+          ),
+        ) ??
+        false;
+    if (!confirmed) return;
+
+    try {
+      if (owner) {
+        await CloudSyncService.instance.deleteSharedSpace(widget.space.id);
+      } else {
+        await CloudSyncService.instance.leaveSharedSpace(widget.space.id);
+      }
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.remove(_cacheKey);
+      if (mounted) Navigator.pop(context);
+    } catch (_) {
+      _message('Operazione non riuscita.');
+    }
+  }
+
+  void _message(String text) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(text)),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final dayEntries = _selectedEntries;
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(
+          widget.space.name,
+          style: const TextStyle(fontWeight: FontWeight.w900),
+        ),
+        actions: [
+          if (widget.space.isOwner)
+            IconButton(
+              tooltip: 'Invita',
+              onPressed: _invite,
+              icon: const Icon(Icons.person_add_alt_1_outlined),
+            ),
+          PopupMenuButton<String>(
+            onSelected: (value) {
+              if (value == 'refresh') _refresh();
+              if (value == 'leave') _leaveOrDelete();
+            },
+            itemBuilder: (_) => [
+              const PopupMenuItem(
+                value: 'refresh',
+                child: Text('Aggiorna'),
+              ),
+              PopupMenuItem(
+                value: 'leave',
+                child: Text(
+                  widget.space.isOwner
+                      ? 'Elimina spazio'
+                      : 'Lascia spazio',
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () => _edit(),
+        icon: const Icon(Icons.add),
+        label: const Text('Condividi'),
+      ),
+      body: RefreshIndicator(
+        onRefresh: _refresh,
+        child: ListView(
+          padding: const EdgeInsets.fromLTRB(14, 8, 14, 100),
+          children: [
+            Container(
+              padding: const EdgeInsets.all(17),
+              decoration: BoxDecoration(
+                color: Theme.of(context)
+                    .colorScheme
+                    .primaryContainer
+                    .withValues(alpha: 0.55),
+                borderRadius: BorderRadius.circular(22),
+              ),
+              child: const Row(
+                children: [
+                  Icon(Icons.lock_outline),
+                  SizedBox(width: 10),
+                  Expanded(
+                    child: Text(
+                      'Questo spazio è condiviso. Tutto il resto dell’agenda rimane personale.',
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 14),
+            TableCalendar<SharedEntry>(
+              locale: 'it_IT',
+              firstDay: DateTime(2020),
+              lastDay: DateTime(2040),
+              focusedDay: selected,
+              selectedDayPredicate: (day) =>
+                  AgendaStore.sameDay(day, selected),
+              eventLoader: (day) => entries
+                  .where((e) => AgendaStore.sameDay(e.date, day))
+                  .toList(),
+              onDaySelected: (day, _) => setState(() => selected = day),
+              headerStyle: const HeaderStyle(
+                formatButtonVisible: false,
+                titleCentered: true,
+              ),
+            ),
+            const SizedBox(height: 16),
+            SectionTitle(
+              _cap(DateFormat('EEEE d MMMM', 'it_IT').format(selected)),
+            ),
+            const SizedBox(height: 10),
+            if (loading && entries.isEmpty)
+              const Center(
+                child: Padding(
+                  padding: EdgeInsets.all(24),
+                  child: CircularProgressIndicator(),
+                ),
+              )
+            else if (dayEntries.isEmpty)
+              const SimpleCard(
+                child: Text('Niente di condiviso per questo giorno.'),
+              )
+            else
+              ...dayEntries.map(
+                (entry) => Card(
+                  margin: const EdgeInsets.only(bottom: 9),
+                  child: ListTile(
+                    leading: entry.type == SharedEntryType.task
+                        ? Checkbox(
+                            value: entry.done,
+                            onChanged: (_) => _toggleDone(entry),
+                          )
+                        : CircleAvatar(
+                            child: Icon(entry.type.icon),
+                          ),
+                    title: Text(
+                      entry.title,
+                      style: TextStyle(
+                        fontWeight: FontWeight.w800,
+                        decoration: entry.done
+                            ? TextDecoration.lineThrough
+                            : null,
+                      ),
+                    ),
+                    subtitle: Text(
+                      [
+                        if (entry.start != null) formatTime(entry.start!),
+                        if (entry.note.isNotEmpty) entry.note,
+                      ].join(' · '),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    onTap: () => _edit(entry),
+                    trailing: PopupMenuButton<String>(
+                      onSelected: (value) {
+                        if (value == 'edit') _edit(entry);
+                        if (value == 'delete') _delete(entry);
+                      },
+                      itemBuilder: (_) => const [
+                        PopupMenuItem(
+                          value: 'edit',
+                          child: Text('Modifica'),
+                        ),
+                        PopupMenuItem(
+                          value: 'delete',
+                          child: Text('Elimina'),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+Future<SharedEntry?> _openSharedEntryEditor(
+  BuildContext context, {
+  required DateTime initialDate,
+  SharedEntry? existing,
+}) async {
+  final title = TextEditingController(text: existing?.title ?? '');
+  final note = TextEditingController(text: existing?.note ?? '');
+  var type = existing?.type ?? SharedEntryType.appointment;
+  var date = existing?.date ?? initialDate;
+  var start = existing?.start;
+  var end = existing?.end;
+
+  final result = await showDialog<SharedEntry>(
+    context: context,
+    builder: (dialogContext) => StatefulBuilder(
+      builder: (context, setLocal) => AlertDialog(
+        title: Text(
+          existing == null ? 'Condividi qualcosa' : 'Modifica elemento',
+        ),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              SegmentedButton<SharedEntryType>(
+                segments: SharedEntryType.values
+                    .map(
+                      (value) => ButtonSegment(
+                        value: value,
+                        icon: Icon(value.icon),
+                        label: Text(value.label),
+                      ),
+                    )
+                    .toList(),
+                selected: {type},
+                onSelectionChanged: (value) =>
+                    setLocal(() => type = value.first),
+              ),
+              const SizedBox(height: 14),
+              TextField(
+                controller: title,
+                autofocus: existing == null,
+                decoration: const InputDecoration(labelText: 'Titolo'),
+              ),
+              const SizedBox(height: 10),
+              TextField(
+                controller: note,
+                minLines: 2,
+                maxLines: 4,
+                decoration: const InputDecoration(labelText: 'Nota'),
+              ),
+              const SizedBox(height: 8),
+              ListTile(
+                contentPadding: EdgeInsets.zero,
+                leading: const Icon(Icons.calendar_today_outlined),
+                title: Text(
+                  DateFormat('d MMMM yyyy', 'it_IT').format(date),
+                ),
+                onTap: () async {
+                  final picked = await showDatePicker(
+                    context: context,
+                    initialDate: date,
+                    firstDate: DateTime(2020),
+                    lastDate: DateTime(2040),
+                  );
+                  if (picked != null) setLocal(() => date = picked);
+                },
+              ),
+              if (type != SharedEntryType.note)
+                ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  leading: const Icon(Icons.schedule_outlined),
+                  title: Text(
+                    start == null ? 'Senza orario' : formatTime(start!),
+                  ),
+                  trailing: start == null
+                      ? null
+                      : IconButton(
+                          onPressed: () => setLocal(() {
+                            start = null;
+                            end = null;
+                          }),
+                          icon: const Icon(Icons.close),
+                        ),
+                  onTap: () async {
+                    final picked = await showTimePicker(
+                      context: context,
+                      initialTime: start ?? TimeOfDay.now(),
+                    );
+                    if (picked != null) {
+                      setLocal(() {
+                        start = picked;
+                        end ??= _timePlusMinutes(picked, 60);
+                      });
+                    }
+                  },
+                ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext),
+            child: const Text('Annulla'),
+          ),
+          FilledButton(
+            onPressed: () {
+              final value = title.text.trim();
+              if (value.isEmpty) return;
+              Navigator.pop(
+                dialogContext,
+                SharedEntry(
+                  id: existing?.id ?? const Uuid().v4(),
+                  type: type,
+                  title: value,
+                  note: note.text.trim(),
+                  date: date,
+                  start: type == SharedEntryType.note ? null : start,
+                  end: type == SharedEntryType.note ? null : end,
+                  done: existing?.done ?? false,
+                ),
+              );
+            },
+            child: const Text('Salva'),
+          ),
+        ],
+      ),
+    ),
+  );
+
+  title.dispose();
+  note.dispose();
+  return result;
+}
+
 class CloudAccountScreen extends StatefulWidget {
   final AgendaStore store;
 
