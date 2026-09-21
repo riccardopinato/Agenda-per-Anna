@@ -5685,6 +5685,15 @@ Future<void> _showAgendaItemActions(
           ),
           ListTile(
             leading: Icon(
+              item.pinned ? Icons.push_pin : Icons.push_pin_outlined,
+            ),
+            title: Text(
+              item.pinned ? 'Togli dai fissati' : 'Fissa in Home',
+            ),
+            onTap: () => Navigator.pop(context, 'pin'),
+          ),
+          ListTile(
+            leading: Icon(
               Icons.delete_outline,
               color: Theme.of(context).colorScheme.error,
             ),
@@ -5703,6 +5712,8 @@ Future<void> _showAgendaItemActions(
     await openItemEditor(context, store, item.date, existing: item);
   } else if (action == 'duplicate') {
     await store.duplicateItem(item);
+  } else if (action == 'pin') {
+    await store.toggleItemPinned(item.id);
   } else if (action == 'delete' && context.mounted) {
     final confirmed = await showDialog<bool>(
           context: context,
@@ -5786,6 +5797,12 @@ class EventTile extends StatelessWidget {
                 fontSize: 11,
               ),
             ),
+            if (item.pinned)
+              Icon(
+                Icons.push_pin,
+                size: 14,
+                color: color,
+              ),
             if (item.reminderMinutesBefore != null ||
                 item.secondaryReminderMinutesBefore != null)
               Row(
