@@ -59,9 +59,12 @@ class AgendaApp extends StatelessWidget {
           themeMode: mode,
           theme: _theme(Brightness.light),
           darkTheme: _theme(Brightness.dark),
-          builder: (context, child) => _PrivacyGate(
+          builder: (context, child) => _AuthRecoveryGate(
             store: store,
-            child: child ?? const SizedBox.shrink(),
+            child: _PrivacyGate(
+              store: store,
+              child: child ?? const SizedBox.shrink(),
+            ),
           ),
           home: AgendaRoot(store: store),
         );
@@ -199,6 +202,166 @@ class _OnboardingFeature extends StatelessWidget {
           ),
         ),
       ],
+    );
+  }
+}
+
+class _AuthRecoveryGate extends StatefulWidget {
+  final AgendaStore store;
+  final Widget child;
+
+  const _AuthRecoveryGate({
+    required this.store,
+    required this.child,
+  });
+
+  @override
+  State<_AuthRecoveryGate> createState() => _AuthRecoveryGateState();
+}
+
+class _AuthRecoveryGateState extends State<_AuthRecoveryGate> {
+  final passwordController = TextEditingController();
+  final confirmController = TextEditingController();
+  bool busy = false;
+  String? errorText;
+
+  @override
+  void dispose() {
+    passwordController.dispose();
+    confirmController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _savePassword() async {
+    final password = passwordController.text;
+    if (password.length < 8) {
+      setState(() => errorText = 'Usa almeno 8 caratteri.');
+      return;
+    }
+    if (password != confirmController.text) {
+      setState(() => errorText = 'Le due password non coincidono.');
+      return;
+    }
+
+    setState(() {
+      busy = true;
+      errorText = null;
+    });
+    try {
+      await CloudSyncService.instance.updateRecoveredPassword(password);
+      await widget.store.handleAppResumed();
+      if (!mounted) return;
+      passwordController.clear();
+      confirmController.clear();
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Password aggiornata. Il tuo account è pronto.'),
+        ),
+      );
+    } catch (error) {
+      if (!mounted) return;
+      setState(() {
+        errorText = error is FormatException
+            ? error.message.toString()
+            : (CloudSyncService.instance.lastError ??
+                'Non è stato possibile aggiornare la password.');
+      });
+    } finally {
+      if (mounted) setState(() => busy = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: CloudSyncService.instance,
+      builder: (context, _) {
+        if (!CloudSyncService.instance.passwordRecoveryPending) {
+          return widget.child;
+        }
+
+        final scheme = Theme.of(context).colorScheme;
+        return Scaffold(
+          body: SafeArea(
+            child: Center(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.all(24),
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 440),
+                  child: Card(
+                    child: Padding(
+                      padding: const EdgeInsets.all(22),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          CircleAvatar(
+                            backgroundColor: scheme.primaryContainer,
+                            foregroundColor: scheme.onPrimaryContainer,
+                            child: const Icon(Icons.password_outlined),
+                          ),
+                          const SizedBox(height: 16),
+                          const Text(
+                            'Scegli una nuova password',
+                            style: TextStyle(
+                              fontWeight: FontWeight.w900,
+                              fontSize: 24,
+                            ),
+                          ),
+                          const SizedBox(height: 6),
+                          const Text(
+                            'Il link di recupero è valido. Imposta la nuova password per completare il recupero dell’account.',
+                          ),
+                          const SizedBox(height: 18),
+                          TextField(
+                            controller: passwordController,
+                            obscureText: true,
+                            enabled: !busy,
+                            autofillHints: const [AutofillHints.newPassword],
+                            decoration: const InputDecoration(
+                              labelText: 'Nuova password',
+                              prefixIcon: Icon(Icons.lock_outline),
+                            ),
+                          ),
+                          const SizedBox(height: 10),
+                          TextField(
+                            controller: confirmController,
+                            obscureText: true,
+                            enabled: !busy,
+                            onSubmitted: (_) => busy ? null : _savePassword(),
+                            decoration: InputDecoration(
+                              labelText: 'Ripeti password',
+                              prefixIcon:
+                                  const Icon(Icons.lock_reset_outlined),
+                              errorText: errorText,
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                          SizedBox(
+                            width: double.infinity,
+                            child: FilledButton.icon(
+                              onPressed: busy ? null : _savePassword,
+                              icon: busy
+                                  ? const SizedBox(
+                                      width: 18,
+                                      height: 18,
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                      ),
+                                    )
+                                  : const Icon(Icons.check),
+                              label: const Text('Aggiorna password'),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        );
+      },
     );
   }
 }
