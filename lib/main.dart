@@ -838,6 +838,7 @@ class AgendaStore extends ChangeNotifier {
   static const _habitsKey = 'habits_v1';
   static const _snapshotsKey = 'backup_snapshots_v1';
   static const _preferencesKey = 'agenda_preferences_v1';
+  static const _inboxKey = 'inbox_v1';
   static const _backupFormat = 'agenda_per_anna_backup';
   static const _backupSchemaVersion = 1;
 
@@ -847,6 +848,7 @@ class AgendaStore extends ChangeNotifier {
   final Map<String, WeekData> weeks = {};
   final List<HabitDefinition> habits = [];
   final List<LocalBackupSnapshot> localSnapshots = [];
+  final List<InboxEntry> inbox = [];
   AgendaPreferences preferences = const AgendaPreferences();
 
   Future<void> load() async {
@@ -919,6 +921,19 @@ class AgendaStore extends ChangeNotifier {
         preferences = AgendaPreferences.fromJson(
           Map<String, dynamic>.from(jsonDecode(pr) as Map),
         );
+      } else {
+        preferences = const AgendaPreferences(onboardingDone: false);
+      }
+
+      final ir = prefs.getString(_inboxKey);
+      if (ir != null) {
+        inbox
+          ..clear()
+          ..addAll((jsonDecode(ir) as List).map(
+            (e) => InboxEntry.fromJson(
+              Map<String, dynamic>.from(e as Map),
+            ),
+          ));
       }
 
       if (habits.isEmpty) {
@@ -957,6 +972,10 @@ class AgendaStore extends ChangeNotifier {
       _preferencesKey,
       jsonEncode(preferences.toJson()),
     );
+    await prefs.setString(
+      _inboxKey,
+      jsonEncode(inbox.map((e) => e.toJson()).toList()),
+    );
 
     if (createAutoSnapshot) {
       await _maybeCreateAutomaticSnapshot(prefs);
@@ -969,6 +988,7 @@ class AgendaStore extends ChangeNotifier {
         'months': months.map((k, v) => MapEntry(k, v.toJson())),
         'weeks': weeks.map((k, v) => MapEntry(k, v.toJson())),
         'habits': habits.map((e) => e.toJson()).toList(),
+        'inbox': inbox.map((e) => e.toJson()).toList(),
         'preferences': preferences.toJson(),
       };
 
@@ -976,7 +996,7 @@ class AgendaStore extends ChangeNotifier {
     final document = {
       'format': _backupFormat,
       'schemaVersion': _backupSchemaVersion,
-      'appVersion': '0.13.0',
+      'appVersion': '0.14.0',
       'exportedAt': DateTime.now().toIso8601String(),
       'data': _backupDataPayload(),
     };
@@ -1068,6 +1088,13 @@ class AgendaStore extends ChangeNotifier {
           ),
         )
         .toList();
+    final incomingInbox = (payload['inbox'] as List? ?? const [])
+        .map(
+          (e) => InboxEntry.fromJson(
+            Map<String, dynamic>.from(e as Map),
+          ),
+        )
+        .toList();
     final incomingPreferences = payload['preferences'] is Map
         ? AgendaPreferences.fromJson(
             Map<String, dynamic>.from(payload['preferences'] as Map),
@@ -1096,6 +1123,14 @@ class AgendaStore extends ChangeNotifier {
       habits
         ..clear()
         ..addAll(habitsById.values);
+
+      final inboxById = {for (final entry in inbox) entry.id: entry};
+      for (final entry in incomingInbox) {
+        inboxById[entry.id] = entry;
+      }
+      inbox
+        ..clear()
+        ..addAll(inboxById.values);
     } else {
       items
         ..clear()
@@ -1112,6 +1147,9 @@ class AgendaStore extends ChangeNotifier {
       habits
         ..clear()
         ..addAll(incomingHabits);
+      inbox
+        ..clear()
+        ..addAll(incomingInbox);
       if (incomingPreferences != null) {
         preferences = incomingPreferences;
       }
@@ -1197,7 +1235,7 @@ class AgendaStore extends ChangeNotifier {
     final document = {
       'format': _backupFormat,
       'schemaVersion': _backupSchemaVersion,
-      'appVersion': '0.13.0',
+      'appVersion': '0.14.0',
       'exportedAt': snapshot.createdAt.toIso8601String(),
       'data': snapshot.data,
     };
@@ -1443,6 +1481,70 @@ class AgendaStore extends ChangeNotifier {
     journals[dateKey(date)] = journal;
     await _save();
     notifyListeners();
+  }
+
+  Future<void> addInboxEntry(String text) async {
+    final value = text.trim();
+    if (value.isEmpty) return;
+    inbox.insert(
+      0,
+      InboxEntry(
+        id: const Uuid().v4(),
+        text: value,
+        createdAt: DateTime.now(),
+      ),
+    );
+    await _save();
+    notifyListeners();
+  }
+
+  Future<void> deleteInboxEntry(String id) async {
+    inbox.removeWhere((e) => e.id == id);
+    await _save();
+    notifyListeners();
+  }
+
+  Future<void> toggleInboxPinned(String id) async {
+    final index = inbox.indexWhere((e) => e.id == id);
+    if (index < 0) return;
+    inbox[index] = inbox[index].copyWith(pinned: !inbox[index].pinned);
+    await _save();
+    notifyListeners();
+  }
+
+  Future<void> toggleItemPinned(String id) async {
+    final index = items.indexWhere((e) => e.id == id);
+    if (index < 0) return;
+    items[index] = items[index].copyWith(pinned: !items[index].pinned);
+    await _save();
+    notifyListeners();
+  }
+
+  Future<void> setPin(String pin) async {
+    final normalized = pin.trim();
+    if (normalized.length < 4) {
+      throw const FormatException('Il PIN deve avere almeno 4 cifre.');
+    }
+    final saltBytes = List<int>.generate(
+      16,
+      (_) => Random.secure().nextInt(256),
+    );
+    final salt = base64UrlEncode(saltBytes);
+    final hash = _derivePinHash(normalized, salt);
+    await savePreferences(
+      preferences.copyWith(
+        pinSalt: salt,
+        pinHash: hash,
+        privacyLockEnabled: true,
+      ),
+    );
+  }
+
+  bool verifyPin(String pin) {
+    final salt = preferences.pinSalt;
+    final expected = preferences.pinHash;
+    if (salt == null || expected == null) return false;
+    return _derivePinHash(pin.trim(), salt) == expected;
   }
 
   Future<void> savePreferences(AgendaPreferences value) async {
@@ -6374,6 +6476,14 @@ TimeOfDay _timePlusMinutes(TimeOfDay start, int minutes) {
     hour: total ~/ 60,
     minute: total % 60,
   );
+}
+
+String _derivePinHash(String pin, String salt) {
+  var bytes = utf8.encode('$salt:$pin');
+  for (var i = 0; i < 25000; i++) {
+    bytes = sha256.convert(bytes).bytes;
+  }
+  return base64UrlEncode(bytes);
 }
 
 String formatTime(TimeOfDay t) =>
