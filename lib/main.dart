@@ -1313,6 +1313,7 @@ class AgendaStore extends ChangeNotifier {
   Timer? _cloudSyncTimer;
   Timer? _syncDebounceTimer;
   bool _cloudSyncRunning = false;
+  bool _sharedFlushRunning = false;
   String? _activeAccountId;
 
   String? get activeAccountId => _activeAccountId;
@@ -2609,6 +2610,119 @@ class AgendaStore extends ChangeNotifier {
               payload['defaultSecondaryReminder'] == null,
         );
         return true;
+    }
+  }
+
+  String sharedCacheStorageKey(String spaceId) {
+    final owner = _activeAccountId ?? 'guest';
+    return 'shared_cache_${owner}_$spaceId';
+  }
+
+  String sharedPendingStorageKey(String spaceId) {
+    final owner = _activeAccountId ?? 'guest';
+    return 'shared_pending_${owner}_$spaceId';
+  }
+
+  String get sharedSpacesCacheStorageKey {
+    final owner = _activeAccountId ?? 'guest';
+    return 'shared_spaces_$owner';
+  }
+
+  Future<void> flushSharedPendingOperations({
+    String? spaceId,
+  }) async {
+    final cloud = CloudSyncService.instance;
+    final ownerId = _activeAccountId;
+    if (!cloud.signedIn ||
+        ownerId == null ||
+        cloud.userId != ownerId ||
+        _sharedFlushRunning) {
+      return;
+    }
+
+    _sharedFlushRunning = true;
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final prefix = 'shared_pending_${ownerId}_';
+      final keys = prefs
+          .getKeys()
+          .where(
+            (key) =>
+                key.startsWith(prefix) &&
+                (spaceId == null || key == sharedPendingStorageKey(spaceId)),
+          )
+          .toList();
+
+      for (final key in keys) {
+        final currentSpaceId = key.substring(prefix.length);
+        final raw = prefs.getString(key);
+        if (raw == null) continue;
+
+        List<Map<String, dynamic>> snapshot;
+        try {
+          snapshot = (jsonDecode(raw) as List)
+              .map((e) => Map<String, dynamic>.from(e as Map))
+              .toList();
+        } catch (_) {
+          continue;
+        }
+
+        for (final op in snapshot) {
+          final entityId = op['entityId'] as String?;
+          final action = op['action'] as String?;
+          final revision = op['updatedAt'] as String?;
+          if (entityId == null || action == null || revision == null) {
+            continue;
+          }
+
+          final updatedAt = DateTime.tryParse(revision);
+          try {
+            if (action == 'delete') {
+              await cloud.deleteSharedRecord(
+                spaceId: currentSpaceId,
+                entityType: 'shared_entry',
+                entityId: entityId,
+                updatedAt: updatedAt,
+              );
+            } else if (action == 'upsert' && op['payload'] is Map) {
+              await cloud.upsertSharedRecord(
+                spaceId: currentSpaceId,
+                entityType: 'shared_entry',
+                entityId: entityId,
+                payload: Map<String, dynamic>.from(op['payload'] as Map),
+                updatedAt: updatedAt,
+              );
+            } else {
+              continue;
+            }
+
+            if (cloud.userId != ownerId || _activeAccountId != ownerId) {
+              return;
+            }
+
+            final latestRaw = prefs.getString(key);
+            if (latestRaw == null) continue;
+            try {
+              final latest = (jsonDecode(latestRaw) as List)
+                  .map((e) => Map<String, dynamic>.from(e as Map))
+                  .toList();
+              latest.removeWhere(
+                (candidate) =>
+                    candidate['entityId'] == entityId &&
+                    candidate['action'] == action &&
+                    candidate['updatedAt'] == revision,
+              );
+              await prefs.setString(key, jsonEncode(latest));
+            } catch (_) {
+              // Preserve a queue we cannot safely parse.
+            }
+          } catch (_) {
+            // Keep the operation for the next resume/refresh.
+          }
+        }
+      }
+    } finally {
+      _sharedFlushRunning = false;
     }
   }
 
@@ -4924,7 +5038,52 @@ class _SharedSpaceHubScreenState extends State<SharedSpaceHubScreen> {
   @override
   void initState() {
     super.initState();
-    _reload();
+    _loadCachedThenReload();
+  }
+
+  Future<void> _loadCachedThenReload() async {
+    final prefs = await SharedPreferences.getInstance();
+    final raw = prefs.getString(widget.store.sharedSpacesCacheStorageKey);
+    if (raw != null) {
+      try {
+        final cached = (jsonDecode(raw) as List)
+            .map((e) => Map<String, dynamic>.from(e as Map))
+            .map(
+              (e) => SharedSpace.fromJson(
+                e,
+                role: e['role'] as String? ?? 'member',
+              ),
+            )
+            .toList();
+        if (mounted) {
+          setState(() {
+            spaces = cached;
+            loading = false;
+          });
+        }
+      } catch (_) {}
+    }
+    await _reload();
+  }
+
+  Future<void> _saveSpacesCache(List<SharedSpace> value) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(
+      widget.store.sharedSpacesCacheStorageKey,
+      jsonEncode(
+        value
+            .map(
+              (space) => {
+                'id': space.id,
+                'owner_id': space.ownerId,
+                'name': space.name,
+                'role': space.role,
+                'created_at': space.createdAt.toIso8601String(),
+              },
+            )
+            .toList(),
+      ),
+    );
   }
 
   Future<void> _reload() async {
@@ -4935,6 +5094,7 @@ class _SharedSpaceHubScreenState extends State<SharedSpaceHubScreen> {
     }
     try {
       final result = await cloud.listSharedSpaces();
+      await _saveSpacesCache(result);
       if (mounted) {
         setState(() {
           spaces = result;
@@ -5238,8 +5398,10 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
   List<SharedEntry> entries = [];
   DateTime selected = DateTime.now();
 
-  String get _cacheKey => 'shared_cache_${widget.space.id}';
-  String get _pendingKey => 'shared_pending_${widget.space.id}';
+  String get _cacheKey =>
+      widget.store.sharedCacheStorageKey(widget.space.id);
+  String get _pendingKey =>
+      widget.store.sharedPendingStorageKey(widget.space.id);
 
   @override
   void initState() {
@@ -5317,33 +5479,9 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
   }
 
   Future<void> _flushPending() async {
-    if (!CloudSyncService.instance.signedIn) return;
-    final pending = await _loadPending();
-    if (pending.isEmpty) return;
-
-    final remaining = <Map<String, dynamic>>[];
-    for (final op in pending) {
-      try {
-        if (op['action'] == 'delete') {
-          await CloudSyncService.instance.deleteSharedRecord(
-            spaceId: widget.space.id,
-            entityType: 'shared_entry',
-            entityId: op['entityId'] as String,
-          );
-        } else {
-          await CloudSyncService.instance.upsertSharedRecord(
-            spaceId: widget.space.id,
-            entityType: 'shared_entry',
-            entityId: op['entityId'] as String,
-            payload: Map<String, dynamic>.from(op['payload'] as Map),
-            updatedAt: DateTime.tryParse(op['updatedAt'] as String? ?? ''),
-          );
-        }
-      } catch (_) {
-        remaining.add(op);
-      }
-    }
-    await _savePending(remaining);
+    await widget.store.flushSharedPendingOperations(
+      spaceId: widget.space.id,
+    );
   }
 
   Future<void> _refresh() async {
