@@ -37,8 +37,10 @@ class UnifiedAgendaEntry {
   String get title => privateItem?.title ?? sharedEntry!.title;
   String get note => privateItem?.note ?? sharedEntry!.note;
   DateTime get date => privateItem?.date ?? sharedEntry!.date;
-  TimeOfDay? get start => privateItem?.start ?? sharedEntry!.start;
-  TimeOfDay? get end => privateItem?.end ?? sharedEntry!.end;
+  TimeOfDay? get start =>
+      privateItem != null ? privateItem!.start : sharedEntry!.start;
+  TimeOfDay? get end =>
+      privateItem != null ? privateItem!.end : sharedEntry!.end;
   bool get done => privateItem?.done ?? sharedEntry!.done;
 
   ItemType get type {
