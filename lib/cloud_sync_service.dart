@@ -87,6 +87,81 @@ class CloudRemoteRecord {
       );
 }
 
+class SharedSpace {
+  final String id;
+  final String ownerId;
+  final String name;
+  final String role;
+  final DateTime createdAt;
+
+  const SharedSpace({
+    required this.id,
+    required this.ownerId,
+    required this.name,
+    required this.role,
+    required this.createdAt,
+  });
+
+  bool get isOwner => role == 'owner';
+
+  factory SharedSpace.fromJson(
+    Map<String, dynamic> json, {
+    required String role,
+  }) =>
+      SharedSpace(
+        id: json['id'] as String,
+        ownerId: json['owner_id'] as String,
+        name: json['name'] as String? ?? 'Noi ♡',
+        role: role,
+        createdAt:
+            DateTime.tryParse(json['created_at'] as String? ?? '') ??
+                DateTime.now(),
+      );
+}
+
+class SharedSpaceRecord {
+  final String recordKey;
+  final String spaceId;
+  final String ownerId;
+  final String? updatedBy;
+  final String entityType;
+  final String entityId;
+  final Map<String, dynamic>? payload;
+  final DateTime clientUpdatedAt;
+  final DateTime? deletedAt;
+
+  const SharedSpaceRecord({
+    required this.recordKey,
+    required this.spaceId,
+    required this.ownerId,
+    required this.updatedBy,
+    required this.entityType,
+    required this.entityId,
+    required this.payload,
+    required this.clientUpdatedAt,
+    required this.deletedAt,
+  });
+
+  factory SharedSpaceRecord.fromJson(Map<String, dynamic> json) =>
+      SharedSpaceRecord(
+        recordKey: json['record_key'] as String,
+        spaceId: json['space_id'] as String,
+        ownerId: json['owner_id'] as String,
+        updatedBy: json['updated_by'] as String?,
+        entityType: json['entity_type'] as String,
+        entityId: json['entity_id'] as String,
+        payload: json['payload'] == null
+            ? null
+            : Map<String, dynamic>.from(json['payload'] as Map),
+        clientUpdatedAt:
+            DateTime.tryParse(json['client_updated_at'] as String? ?? '') ??
+                DateTime.fromMillisecondsSinceEpoch(0, isUtc: true),
+        deletedAt: json['deleted_at'] == null
+            ? null
+            : DateTime.tryParse(json['deleted_at'] as String),
+      );
+}
+
 class CloudSyncService extends ChangeNotifier {
   CloudSyncService._();
 
@@ -268,6 +343,167 @@ class CloudSyncService extends ChangeNotifier {
           rows,
           onConflict: 'record_key',
         );
+  }
+
+  Future<List<SharedSpace>> listSharedSpaces() async {
+    final client = _requireSignedInClient();
+    final uid = userId!;
+
+    final membershipResponse = await client
+        .from('space_members')
+        .select('space_id,role')
+        .eq('user_id', uid);
+
+    final memberships = (membershipResponse as List)
+        .map((row) => Map<String, dynamic>.from(row as Map))
+        .toList();
+
+    if (memberships.isEmpty) return const [];
+
+    final roleBySpace = <String, String>{
+      for (final row in memberships)
+        row['space_id'] as String: row['role'] as String? ?? 'member',
+    };
+
+    final response = await client
+        .from('shared_spaces')
+        .select('id,owner_id,name,created_at');
+
+    final spaces = (response as List)
+        .map((row) => Map<String, dynamic>.from(row as Map))
+        .where((row) => roleBySpace.containsKey(row['id'] as String))
+        .map(
+          (row) => SharedSpace.fromJson(
+            row,
+            role: roleBySpace[row['id'] as String]!,
+          ),
+        )
+        .toList()
+      ..sort((a, b) => a.createdAt.compareTo(b.createdAt));
+
+    return spaces;
+  }
+
+  Future<String> createSharedSpace({
+    String name = 'Noi ♡',
+  }) async {
+    final client = _requireSignedInClient();
+    final result = await client.rpc(
+      'create_shared_space',
+      params: {'p_name': name.trim()},
+    );
+    return result.toString();
+  }
+
+  Future<String> createSpaceInvite(String spaceId) async {
+    final client = _requireSignedInClient();
+    final result = await client.rpc(
+      'create_space_invite',
+      params: {'p_space_id': spaceId},
+    );
+    return result.toString().toUpperCase();
+  }
+
+  Future<String> joinSharedSpace(String code) async {
+    final client = _requireSignedInClient();
+    final result = await client.rpc(
+      'join_shared_space',
+      params: {'p_code': code.trim().toUpperCase()},
+    );
+    return result.toString();
+  }
+
+  Future<void> leaveSharedSpace(String spaceId) async {
+    final client = _requireSignedInClient();
+    await client.rpc(
+      'leave_shared_space',
+      params: {'p_space_id': spaceId},
+    );
+  }
+
+  Future<void> deleteSharedSpace(String spaceId) async {
+    final client = _requireSignedInClient();
+    await client.rpc(
+      'delete_shared_space',
+      params: {'p_space_id': spaceId},
+    );
+  }
+
+  Future<List<SharedSpaceRecord>> pullSharedRecords(
+    String spaceId,
+  ) async {
+    final client = _requireSignedInClient();
+    final response = await client
+        .from('agenda_records')
+        .select(
+          'record_key,space_id,owner_id,updated_by,entity_type,entity_id,payload,client_updated_at,deleted_at',
+        )
+        .eq('space_id', spaceId)
+        .eq('visibility', 'shared');
+
+    return (response as List)
+        .map(
+          (row) => SharedSpaceRecord.fromJson(
+            Map<String, dynamic>.from(row as Map),
+          ),
+        )
+        .toList();
+  }
+
+  Future<void> upsertSharedRecord({
+    required String spaceId,
+    required String entityType,
+    required String entityId,
+    required Map<String, dynamic> payload,
+    DateTime? updatedAt,
+  }) async {
+    final client = _requireSignedInClient();
+    final uid = userId!;
+    final at = (updatedAt ?? DateTime.now()).toUtc();
+    final recordKey =
+        '$spaceId:shared:$entityType:$entityId';
+
+    await client.from('agenda_records').upsert(
+      {
+        'record_key': recordKey,
+        'owner_id': uid,
+        'space_id': spaceId,
+        'visibility': 'shared',
+        'entity_type': entityType,
+        'entity_id': entityId,
+        'payload': payload,
+        'client_updated_at': at.toIso8601String(),
+        'deleted_at': null,
+      },
+      onConflict: 'record_key',
+    );
+  }
+
+  Future<void> deleteSharedRecord({
+    required String spaceId,
+    required String entityType,
+    required String entityId,
+  }) async {
+    final client = _requireSignedInClient();
+    final uid = userId!;
+    final at = DateTime.now().toUtc();
+    final recordKey =
+        '$spaceId:shared:$entityType:$entityId';
+
+    await client.from('agenda_records').upsert(
+      {
+        'record_key': recordKey,
+        'owner_id': uid,
+        'space_id': spaceId,
+        'visibility': 'shared',
+        'entity_type': entityType,
+        'entity_id': entityId,
+        'payload': null,
+        'client_updated_at': at.toIso8601String(),
+        'deleted_at': at.toIso8601String(),
+      },
+      onConflict: 'record_key',
+    );
   }
 
   void markSyncStarted() {
