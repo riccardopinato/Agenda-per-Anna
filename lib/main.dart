@@ -2497,6 +2497,418 @@ class _BackupActionCard extends StatelessWidget {
   }
 }
 
+class SettingsScreen extends StatefulWidget {
+  final AgendaStore store;
+
+  const SettingsScreen({super.key, required this.store});
+
+  @override
+  State<SettingsScreen> createState() => _SettingsScreenState();
+}
+
+class _SettingsScreenState extends State<SettingsScreen> {
+  late final TextEditingController nameController =
+      TextEditingController(text: widget.store.preferences.displayName);
+
+  @override
+  void dispose() {
+    nameController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _saveName() async {
+    final value = nameController.text.trim();
+    await widget.store.savePreferences(
+      widget.store.preferences.copyWith(
+        displayName: value.isEmpty ? 'Anna' : value,
+      ),
+    );
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Nome aggiornato.'),
+        duration: Duration(seconds: 1),
+      ),
+    );
+  }
+
+  Future<void> _reset() async {
+    final confirmed = await showDialog<bool>(
+          context: context,
+          builder: (dialogContext) => AlertDialog(
+            title: const Text('Ripristinare le impostazioni?'),
+            content: const Text(
+              'Verranno ripristinati tema, colore e valori predefiniti. '
+              'Appuntamenti, diario e altri dati non verranno toccati.',
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(dialogContext, false),
+                child: const Text('Annulla'),
+              ),
+              FilledButton(
+                onPressed: () => Navigator.pop(dialogContext, true),
+                child: const Text('Ripristina'),
+              ),
+            ],
+          ),
+        ) ??
+        false;
+    if (!confirmed) return;
+    await widget.store.resetPreferences();
+    nameController.text = widget.store.preferences.displayName;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: widget.store,
+      builder: (context, _) {
+        final prefs = widget.store.preferences;
+        final primary = prefs.defaultPrimaryReminder ?? -1;
+        final secondary = prefs.defaultSecondaryReminder ?? -1;
+
+        return Scaffold(
+          appBar: AppBar(
+            title: const Text(
+              'Impostazioni',
+              style: TextStyle(fontWeight: FontWeight.w800),
+            ),
+          ),
+          body: ListView(
+            padding: const EdgeInsets.fromLTRB(14, 8, 14, 50),
+            children: [
+              SimpleCard(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'La mia agenda',
+                      style: TextStyle(
+                        fontWeight: FontWeight.w900,
+                        fontSize: 18,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    TextField(
+                      controller: nameController,
+                      textCapitalization: TextCapitalization.words,
+                      decoration: const InputDecoration(
+                        labelText: 'Nome',
+                        prefixIcon: Icon(Icons.favorite_outline),
+                      ),
+                      onSubmitted: (_) => _saveName(),
+                    ),
+                    const SizedBox(height: 10),
+                    SizedBox(
+                      width: double.infinity,
+                      child: FilledButton.tonal(
+                        onPressed: _saveName,
+                        child: const Text('Salva nome'),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 12),
+              SimpleCard(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Aspetto',
+                      style: TextStyle(
+                        fontWeight: FontWeight.w900,
+                        fontSize: 18,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    SegmentedButton<AgendaThemeMode>(
+                      segments: const [
+                        ButtonSegment(
+                          value: AgendaThemeMode.system,
+                          label: Text('Sistema'),
+                          icon: Icon(Icons.brightness_auto_outlined),
+                        ),
+                        ButtonSegment(
+                          value: AgendaThemeMode.light,
+                          label: Text('Chiaro'),
+                          icon: Icon(Icons.light_mode_outlined),
+                        ),
+                        ButtonSegment(
+                          value: AgendaThemeMode.dark,
+                          label: Text('Scuro'),
+                          icon: Icon(Icons.dark_mode_outlined),
+                        ),
+                      ],
+                      selected: {prefs.themeMode},
+                      onSelectionChanged: (value) =>
+                          widget.store.savePreferences(
+                        prefs.copyWith(themeMode: value.first),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
+                      'Colore dell’agenda',
+                      style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                            fontWeight: FontWeight.w800,
+                          ),
+                    ),
+                    const SizedBox(height: 8),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: AgendaPalette.values.map((palette) {
+                        final selected = prefs.palette == palette;
+                        return ChoiceChip(
+                          selected: selected,
+                          avatar: CircleAvatar(
+                            radius: 8,
+                            backgroundColor: palette.seed,
+                          ),
+                          label: Text(palette.label),
+                          onSelected: (_) =>
+                              widget.store.savePreferences(
+                            prefs.copyWith(palette: palette),
+                          ),
+                        );
+                      }).toList(),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 12),
+              SimpleCard(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Avvio e Home',
+                      style: TextStyle(
+                        fontWeight: FontWeight.w900,
+                        fontSize: 18,
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    DropdownButtonFormField<StartTab>(
+                      initialValue: prefs.startTab,
+                      decoration: const InputDecoration(
+                        labelText: 'Apri l’app su',
+                        prefixIcon: Icon(Icons.home_outlined),
+                      ),
+                      items: StartTab.values
+                          .map(
+                            (value) => DropdownMenuItem(
+                              value: value,
+                              child: Text(value.label),
+                            ),
+                          )
+                          .toList(),
+                      onChanged: (value) {
+                        if (value == null) return;
+                        widget.store.savePreferences(
+                          prefs.copyWith(startTab: value),
+                        );
+                      },
+                    ),
+                    const SizedBox(height: 8),
+                    SwitchListTile(
+                      contentPadding: EdgeInsets.zero,
+                      title: const Text('Frase positiva del giorno'),
+                      subtitle: const Text(
+                        'Mostra la frase nella testata della Home.',
+                      ),
+                      value: prefs.showDailyQuote,
+                      onChanged: (value) =>
+                          widget.store.savePreferences(
+                        prefs.copyWith(showDailyQuote: value),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 12),
+              SimpleCard(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Nuovi impegni',
+                      style: TextStyle(
+                        fontWeight: FontWeight.w900,
+                        fontSize: 18,
+                      ),
+                    ),
+                    const SizedBox(height: 5),
+                    Text(
+                      'Questi valori vengono proposti automaticamente quando crei un nuovo elemento.',
+                      style: Theme.of(context).textTheme.bodySmall,
+                    ),
+                    const SizedBox(height: 12),
+                    DropdownButtonFormField<AgendaCategory>(
+                      initialValue: prefs.defaultCategory,
+                      decoration: const InputDecoration(
+                        labelText: 'Categoria predefinita',
+                        prefixIcon: Icon(Icons.label_outline),
+                      ),
+                      items: AgendaCategory.values
+                          .map(
+                            (value) => DropdownMenuItem(
+                              value: value,
+                              child: Row(
+                                children: [
+                                  Icon(
+                                    value.icon,
+                                    color: value.color,
+                                    size: 18,
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Text(value.label),
+                                ],
+                              ),
+                            ),
+                          )
+                          .toList(),
+                      onChanged: (value) {
+                        if (value == null) return;
+                        widget.store.savePreferences(
+                          prefs.copyWith(defaultCategory: value),
+                        );
+                      },
+                    ),
+                    const SizedBox(height: 14),
+                    Row(
+                      children: [
+                        const Icon(Icons.timelapse_outlined),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            'Durata appuntamento: ${prefs.defaultEventMinutes} min',
+                            style: const TextStyle(
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    Slider(
+                      min: 15,
+                      max: 180,
+                      divisions: 11,
+                      value: prefs.defaultEventMinutes
+                          .clamp(15, 180)
+                          .toDouble(),
+                      label: '${prefs.defaultEventMinutes} min',
+                      onChanged: (value) =>
+                          widget.store.savePreferences(
+                        prefs.copyWith(
+                          defaultEventMinutes:
+                              (value / 15).round() * 15,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    DropdownButtonFormField<int>(
+                      key: ValueKey('primary-$primary'),
+                      initialValue: primary,
+                      decoration: const InputDecoration(
+                        labelText: 'Promemoria predefinito 1',
+                        prefixIcon:
+                            Icon(Icons.notifications_none_outlined),
+                      ),
+                      items: _reminderMenuItems,
+                      onChanged: (value) {
+                        final minutes = value ?? -1;
+                        widget.store.savePreferences(
+                          prefs.copyWith(
+                            defaultPrimaryReminder:
+                                minutes < 0 ? null : minutes,
+                            clearPrimaryReminder: minutes < 0,
+                            clearSecondaryReminder:
+                                minutes >= 0 && minutes == secondary,
+                          ),
+                        );
+                      },
+                    ),
+                    const SizedBox(height: 10),
+                    DropdownButtonFormField<int>(
+                      key: ValueKey('secondary-$secondary-$primary'),
+                      initialValue: secondary,
+                      decoration: const InputDecoration(
+                        labelText: 'Promemoria predefinito 2',
+                        prefixIcon: Icon(Icons.add_alert_outlined),
+                      ),
+                      items: _reminderMenuItems,
+                      onChanged: (value) {
+                        final minutes = value ?? -1;
+                        widget.store.savePreferences(
+                          prefs.copyWith(
+                            defaultSecondaryReminder:
+                                minutes < 0 || minutes == primary
+                                    ? null
+                                    : minutes,
+                            clearSecondaryReminder:
+                                minutes < 0 || minutes == primary,
+                          ),
+                        );
+                      },
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 12),
+              SimpleCard(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Dati',
+                      style: TextStyle(
+                        fontWeight: FontWeight.w900,
+                        fontSize: 18,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    ListTile(
+                      contentPadding: EdgeInsets.zero,
+                      leading: const Icon(Icons.backup_outlined),
+                      title: const Text('Backup e ripristino'),
+                      subtitle: const Text(
+                        'Esporta, importa o recupera una copia locale.',
+                      ),
+                      trailing: const Icon(Icons.chevron_right),
+                      onTap: () => Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) =>
+                              BackupScreen(store: widget.store),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 12),
+              OutlinedButton.icon(
+                onPressed: _reset,
+                icon: const Icon(Icons.restart_alt),
+                label: const Text('Ripristina impostazioni predefinite'),
+              ),
+              const SizedBox(height: 8),
+              Center(
+                child: Text(
+                  'Agenda per Anna · v0.13',
+                  style: Theme.of(context).textTheme.bodySmall,
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+}
+
 class CalendarScreen extends StatefulWidget {
   final AgendaStore store;
   const CalendarScreen({super.key, required this.store});
