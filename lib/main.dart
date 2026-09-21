@@ -98,6 +98,10 @@ class AgendaApp extends StatelessWidget {
           themeMode: mode,
           theme: _theme(Brightness.light),
           darkTheme: _theme(Brightness.dark),
+          builder: (context, child) => _PrivacyGate(
+            store: store,
+            child: child ?? const SizedBox.shrink(),
+          ),
           home: AgendaRoot(store: store),
         );
       },
@@ -115,10 +119,7 @@ class AgendaRoot extends StatelessWidget {
     if (!store.preferences.onboardingDone) {
       return _OnboardingScreen(store: store);
     }
-    return _PrivacyGate(
-      store: store,
-      child: MainShell(store: store),
-    );
+    return MainShell(store: store);
   }
 }
 
@@ -289,6 +290,10 @@ class _PrivacyGateState extends State<_PrivacyGate>
         state == AppLifecycleState.hidden) {
       backgroundedAt ??= DateTime.now();
       return;
+    }
+
+    if (state == AppLifecycleState.resumed) {
+      unawaited(widget.store.handleAppResumed());
     }
 
     if (state == AppLifecycleState.resumed && backgroundedAt != null) {
@@ -6644,16 +6649,16 @@ class _WeekScreenState extends State<WeekScreen> {
       animation: widget.store,
       builder: (context, _) {
         final data = widget.store.week(start);
-        final end = start.add(const Duration(days: 6));
+        final end = addCivilDays(start, 6);
         final events = <AgendaItem>[
-          for (int i = 0; i < 7; i++) ...widget.store.forDay(start.add(Duration(days: i))),
+          for (int i = 0; i < 7; i++) ...widget.store.forDay(addCivilDays(start, i)),
         ];
         final completedTasks = events.where((e) => e.type == ItemType.task && e.done).length;
         final totalTasks = events.where((e) => e.type == ItemType.task).length;
         final beautifulThings = <String>[
           for (int i = 0; i < 7; i++)
-            if (widget.store.journal(start.add(Duration(days: i))).beautiful.trim().isNotEmpty)
-              widget.store.journal(start.add(Duration(days: i))).beautiful.trim(),
+            if (widget.store.journal(addCivilDays(start, i)).beautiful.trim().isNotEmpty)
+              widget.store.journal(addCivilDays(start, i)).beautiful.trim(),
         ];
 
         return Scaffold(
@@ -6662,7 +6667,7 @@ class _WeekScreenState extends State<WeekScreen> {
             actions: [
               IconButton(
                 tooltip: 'Settimana precedente',
-                onPressed: () => setState(() => start = start.subtract(const Duration(days: 7))),
+                onPressed: () => setState(() => start = addCivilDays(start, -7)),
                 icon: const Icon(Icons.chevron_left),
               ),
               IconButton(
@@ -6672,7 +6677,7 @@ class _WeekScreenState extends State<WeekScreen> {
               ),
               IconButton(
                 tooltip: 'Settimana successiva',
-                onPressed: () => setState(() => start = start.add(const Duration(days: 7))),
+                onPressed: () => setState(() => start = addCivilDays(start, 7)),
                 icon: const Icon(Icons.chevron_right),
               ),
             ],
@@ -6704,7 +6709,7 @@ class _WeekScreenState extends State<WeekScreen> {
               const SizedBox(height: 10),
               for (int i = 0; i < 7; i++) ...[
                 _WeekDayCard(
-                  day: start.add(Duration(days: i)),
+                  day: addCivilDays(start, i),
                   store: widget.store,
                 ),
                 const SizedBox(height: 10),
@@ -7914,55 +7919,6 @@ class EventTile extends StatelessWidget {
           tooltip: 'Azioni',
           onPressed: () => _showAgendaItemActions(context, store, item),
           icon: const Icon(Icons.more_horiz),
-        ),
-      ),
-    );
-  }
-}
-
-class HourRow extends StatelessWidget {
-  final int hour;
-  final List<AgendaItem> items;
-  final VoidCallback onTap;
-  final AgendaStore store;
-
-  const HourRow({
-    super.key,
-    required this.hour,
-    required this.items,
-    required this.onTap,
-    required this.store,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return InkWell(
-      onTap: onTap,
-      child: Container(
-        constraints: const BoxConstraints(minHeight: 76),
-        decoration: BoxDecoration(
-          border: Border(bottom: BorderSide(color: Theme.of(context).colorScheme.outlineVariant)),
-        ),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            SizedBox(
-              width: 54,
-              child: Padding(
-                padding: const EdgeInsets.only(top: 8),
-                child: Text('${hour.toString().padLeft(2, '0')}:00', textAlign: TextAlign.right),
-              ),
-            ),
-            const SizedBox(width: 10),
-            Expanded(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(vertical: 5),
-                child: items.isEmpty
-                    ? const SizedBox(height: 60)
-                    : Column(children: items.map((e) => EventTile(store: store, item: e, compact: true)).toList()),
-              ),
-            ),
-          ],
         ),
       ),
     );
@@ -9258,6 +9214,12 @@ String _monthPhrase(int month) {
     'Chiudi l’anno ricordando anche le cose belle.',
   ];
   return phrases[month.clamp(1, 12)];
+}
+
+DateTime addCivilDays(DateTime date, int days) {
+  final noon = DateTime(date.year, date.month, date.day, 12);
+  final shifted = DateTime(noon.year, noon.month, noon.day + days, 12);
+  return DateTime(shifted.year, shifted.month, shifted.day);
 }
 
 DateTime mondayOf(DateTime d) {
