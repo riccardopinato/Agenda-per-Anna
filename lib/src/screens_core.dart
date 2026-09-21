@@ -3229,13 +3229,16 @@ Future<SharedEntry?> _openSharedEntryEditor(
   BuildContext context, {
   required DateTime initialDate,
   SharedEntry? existing,
+  SharedEntryType? initialType,
+  TimeOfDay? initialTime,
 }) async {
   final title = TextEditingController(text: existing?.title ?? '');
   final note = TextEditingController(text: existing?.note ?? '');
-  var type = existing?.type ?? SharedEntryType.appointment;
+  var type = existing?.type ?? initialType ?? SharedEntryType.appointment;
   var date = existing?.date ?? initialDate;
-  var start = existing?.start;
-  var end = existing?.end;
+  var start = existing?.start ?? initialTime;
+  var end = existing?.end ??
+      (start == null ? null : _timePlusMinutes(start, 60));
 
   final result = await showDialog<SharedEntry>(
     context: context,
