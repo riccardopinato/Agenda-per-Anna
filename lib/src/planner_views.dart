@@ -17,7 +17,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
     return AnimatedBuilder(
       animation: widget.store,
       builder: (context, _) {
-        final events = widget.store.forDay(selected);
+        final events = widget.store.unifiedForDay(selected);
         return Scaffold(
           appBar: AppBar(title: const Text('Calendario', style: TextStyle(fontWeight: FontWeight.w800))),
           floatingActionButton: FloatingActionButton(
@@ -30,13 +30,13 @@ class _CalendarScreenState extends State<CalendarScreen> {
               Card(
                 child: Padding(
                   padding: const EdgeInsets.all(8),
-                  child: TableCalendar<AgendaItem>(
+                  child: TableCalendar<UnifiedAgendaEntry>(
                     locale: 'it_IT',
                     firstDay: DateTime(2020),
                     lastDay: DateTime(2040),
                     focusedDay: focused,
                     selectedDayPredicate: (d) => isSameDay(d, selected),
-                    eventLoader: widget.store.forDay,
+                    eventLoader: widget.store.unifiedForDay,
                     onDaySelected: (s, f) => setState(() {
                       selected = s;
                       focused = f;
@@ -53,13 +53,15 @@ class _CalendarScreenState extends State<CalendarScreen> {
                   ),
                 ),
               ),
+              const SizedBox(height: 12),
+              AgendaContentFilterBar(store: widget.store),
               const SizedBox(height: 18),
               SectionTitle(_cap(DateFormat('EEEE d MMMM', 'it_IT').format(selected))),
               const SizedBox(height: 10),
               if (events.isEmpty)
                 const SimpleCard(child: Text('Nessun impegno.'))
               else
-                ...events.map((e) => EventTile(store: widget.store, item: e)),
+                ...events.map((e) => UnifiedAgendaTile(store: widget.store, entry: e)),
             ],
           ),
         );
@@ -96,13 +98,23 @@ class _PlannerScreenState extends State<PlannerScreen> {
     return AnimatedBuilder(
       animation: widget.store,
       builder: (context, _) {
-        final events = widget.store.forDay(day);
+        final events = widget.store.unifiedForDay(day);
         final tasks = events.where((e) => e.type == ItemType.task).toList();
         final allDay = events
             .where((e) => e.type == ItemType.appointment && e.start == null)
             .toList();
-        final timed = events
-            .where((e) => e.type == ItemType.appointment && e.start != null)
+        final timedPrivate = events
+            .where((e) =>
+                e.type == ItemType.appointment &&
+                e.start != null &&
+                e.isPrivate)
+            .map((e) => e.privateItem!)
+            .toList();
+        final timedShared = events
+            .where((e) =>
+                e.type == ItemType.appointment &&
+                e.start != null &&
+                e.isShared)
             .toList();
 
         return Scaffold(
@@ -141,6 +153,8 @@ class _PlannerScreenState extends State<PlannerScreen> {
                   padding: const EdgeInsets.fromLTRB(14, 8, 14, 110),
                   children: [
                     _DayOpeningCard(date: day),
+                    const SizedBox(height: 12),
+                    AgendaContentFilterBar(store: widget.store),
                     if (tasks.isNotEmpty) ...[
                       const SizedBox(height: 14),
                       _DaySmallSection(
@@ -148,9 +162,9 @@ class _PlannerScreenState extends State<PlannerScreen> {
                         icon: Icons.check_circle_outline,
                         child: Column(
                           children: tasks
-                              .map((e) => EventTile(
+                              .map((e) => UnifiedAgendaTile(
                                     store: widget.store,
-                                    item: e,
+                                    entry: e,
                                     compact: true,
                                   ))
                               .toList(),
@@ -164,9 +178,25 @@ class _PlannerScreenState extends State<PlannerScreen> {
                         icon: Icons.event_outlined,
                         child: Column(
                           children: allDay
-                              .map((e) => EventTile(
+                              .map((e) => UnifiedAgendaTile(
                                     store: widget.store,
-                                    item: e,
+                                    entry: e,
+                                    compact: true,
+                                  ))
+                              .toList(),
+                        ),
+                      ),
+                    ],
+                    if (timedShared.isNotEmpty) ...[
+                      const SizedBox(height: 14),
+                      _DaySmallSection(
+                        title: 'Noi ♡ · con orario',
+                        icon: Icons.favorite_outline,
+                        child: Column(
+                          children: timedShared
+                              .map((e) => UnifiedAgendaTile(
+                                    store: widget.store,
+                                    entry: e,
                                     compact: true,
                                   ))
                               .toList(),
@@ -176,11 +206,11 @@ class _PlannerScreenState extends State<PlannerScreen> {
                     const SizedBox(height: 18),
                     const SectionTitle('La mia giornata'),
                     const SizedBox(height: 8),
-                    _TimelineHint(eventCount: timed.length),
+                    _TimelineHint(eventCount: timedPrivate.length),
                     const SizedBox(height: 10),
                     DayTimeline(
                       date: day,
-                      events: timed,
+                      events: timedPrivate,
                       store: widget.store,
                       onChanged: () => setState(() {}),
                     ),
@@ -766,8 +796,9 @@ class _WeekScreenState extends State<WeekScreen> {
       builder: (context, _) {
         final data = widget.store.week(start);
         final end = addCivilDays(start, 6);
-        final events = <AgendaItem>[
-          for (int i = 0; i < 7; i++) ...widget.store.forDay(addCivilDays(start, i)),
+        final events = <UnifiedAgendaEntry>[
+          for (int i = 0; i < 7; i++)
+            ...widget.store.unifiedForDay(addCivilDays(start, i)),
         ];
         final completedTasks = events.where((e) => e.type == ItemType.task && e.done).length;
         final totalTasks = events.where((e) => e.type == ItemType.task).length;
@@ -808,6 +839,8 @@ class _WeekScreenState extends State<WeekScreen> {
                 completedTasks: completedTasks,
                 totalTasks: totalTasks,
               ),
+              const SizedBox(height: 12),
+              AgendaContentFilterBar(store: widget.store),
               const SizedBox(height: 14),
               WeekFocusCard(
                 key: ValueKey('week-focus-${AgendaStore.dateKey(start)}'),
@@ -1066,7 +1099,7 @@ class _WeekDayCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final items = store.forDay(day);
+    final items = store.unifiedForDay(day);
     final journal = store.journal(day);
     final isToday = AgendaStore.sameDay(day, DateTime.now());
 
@@ -1122,7 +1155,7 @@ class _WeekDayCard extends StatelessWidget {
             )
           else ...[
             const SizedBox(height: 8),
-            ...items.take(4).map((item) => EventTile(store: store, item: item, compact: true)),
+            ...items.take(4).map((item) => UnifiedAgendaTile(store: store, entry: item, compact: true)),
             if (items.length > 4)
               Padding(
                 padding: const EdgeInsets.only(top: 4),
@@ -1286,12 +1319,15 @@ class _MonthScreenState extends State<MonthScreen> {
           body: ListView(
             padding: const EdgeInsets.fromLTRB(14, 8, 14, 100),
             children: [
+              AgendaContentFilterBar(store: widget.store),
+              const SizedBox(height: 12),
               MonthOpeningHero(
                 month: selected,
                 data: data,
-                eventCount: widget.store.items
-                    .where((e) => e.date.year == selected.year && e.date.month == selected.month)
-                    .length,
+                eventCount: widget.store.unifiedMonthCount(
+                  selected.year,
+                  selected.month,
+                ),
               ),
               const SizedBox(height: 14),
               MonthOpeningJournalCard(
