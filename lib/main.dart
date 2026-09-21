@@ -7491,6 +7491,12 @@ class _WeekFocusCardState extends State<WeekFocusCard> {
       TextEditingController(text: widget.data.focus);
 
   @override
+  void dispose() {
+    controller.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return SimpleCard(
       child: Column(
@@ -7565,6 +7571,7 @@ class WeekPrioritiesCard extends StatelessWidget {
                       ],
                     ),
                   );
+                  controller.dispose();
                   if (value != null && value.isNotEmpty) {
                     onSave(data.copyWith(priorities: [...data.priorities, value]));
                   }
@@ -7715,6 +7722,13 @@ class _WeekMemoryCardState extends State<WeekMemoryCard> {
       TextEditingController(text: widget.data.bestThing);
   late final TextEditingController reflection =
       TextEditingController(text: widget.data.reflection);
+
+  @override
+  void dispose() {
+    best.dispose();
+    reflection.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -8094,6 +8108,13 @@ class _MonthOpeningJournalCardState
       TextEditingController(text: widget.data.selfCare);
 
   @override
+  void dispose() {
+    word.dispose();
+    selfCare.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return SimpleCard(
       child: Column(
@@ -8212,7 +8233,10 @@ class MonthIdeasBoard extends StatelessWidget {
                       ],
                     ),
                   );
-                  if (value != null && value.isNotEmpty) onChange([...ideas, value]);
+                  controller.dispose();
+                  if (value != null && value.isNotEmpty) {
+                    onChange([...ideas, value]);
+                  }
                 },
                 icon: const Icon(Icons.add_circle_outline),
               ),
@@ -8935,7 +8959,14 @@ class MonthTextCard extends StatefulWidget {
 }
 
 class _MonthTextCardState extends State<MonthTextCard> {
-  late final TextEditingController c = TextEditingController(text: widget.initial);
+  late final TextEditingController c =
+      TextEditingController(text: widget.initial);
+
+  @override
+  void dispose() {
+    c.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) => SimpleCard(
@@ -8981,7 +9012,10 @@ class MonthlyListCard extends StatelessWidget {
                       ],
                     ),
                   );
-                  if (value != null && value.isNotEmpty) onChange([...items, value]);
+                  c.dispose();
+                  if (value != null && value.isNotEmpty) {
+                    onChange([...items, value]);
+                  }
                 },
                 icon: const Icon(Icons.add_circle_outline),
               ),
@@ -9049,6 +9083,7 @@ class BudgetCard extends StatelessWidget {
                         ],
                       ),
                     );
+                    c.dispose();
                     final d = double.tryParse((v ?? '').replaceAll(',', '.'));
                     if (d != null) onSave(data.copyWith(budgetCents: (d * 100).round()));
                   },
@@ -9092,14 +9127,18 @@ class BudgetCard extends StatelessWidget {
                         ),
                       ),
                     );
+                    final amountText = amount.text;
+                    final noteText = note.text;
+                    amount.dispose();
+                    note.dispose();
                     if (ok != true) return;
-                    final d = double.tryParse(amount.text.replaceAll(',', '.'));
+                    final d = double.tryParse(amountText.replaceAll(',', '.'));
                     if (d == null || d <= 0) return;
                     final expense = ExpenseEntry(
                       id: const Uuid().v4(),
                       cents: (d * 100).round(),
                       category: category,
-                      note: note.text.trim(),
+                      note: noteText.trim(),
                       date: DateTime.now(),
                     );
                     onSave(data.copyWith(expenses: [...data.expenses, expense]));
@@ -9140,6 +9179,16 @@ class _ClosingMonthCardState extends State<ClosingMonthCard> {
       TextEditingController(text: widget.data.nextMonth);
   late final TextEditingController reflection =
       TextEditingController(text: widget.data.reflection);
+
+  @override
+  void dispose() {
+    best.dispose();
+    lesson.dispose();
+    challenge.dispose();
+    nextMonth.dispose();
+    reflection.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -9816,6 +9865,8 @@ Future<void> openItemEditor(
       ),
     ),
   );
+  title.dispose();
+  note.dispose();
 }
 
 const List<DropdownMenuItem<int>> _reminderMenuItems = [
