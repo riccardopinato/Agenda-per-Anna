@@ -24,6 +24,25 @@ jobs:
           cp -R /tmp/agenda_base/web .
           cp -R /tmp/agenda_base/ios .
 
+      - name: Configure Android activity for local authentication
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path("android/app/src/main/kotlin/com/riccardopinato/agenda_per_anna/MainActivity.kt")
+          s = p.read_text()
+          s = s.replace("FlutterActivity", "FlutterFragmentActivity")
+          s = s.replace(
+              "import io.flutter.embedding.android.FlutterFragmentActivity",
+              "import io.flutter.embedding.android.FlutterFragmentActivity",
+          )
+          if "FlutterFragmentActivity" in s and "import io.flutter.embedding.android.FlutterActivity" in s:
+              s = s.replace(
+                  "import io.flutter.embedding.android.FlutterActivity",
+                  "import io.flutter.embedding.android.FlutterFragmentActivity",
+              )
+          p.write_text(s)
+          PY
+
       - name: Restore project signing keystore
         uses: actions/cache@v5
         with:
