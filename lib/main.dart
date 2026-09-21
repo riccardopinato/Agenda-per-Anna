@@ -922,6 +922,8 @@ class _PlannerScreenState extends State<PlannerScreen> {
                     ],
                     const SizedBox(height: 18),
                     const SectionTitle('La mia giornata'),
+                    const SizedBox(height: 8),
+                    _TimelineHint(eventCount: timed.length),
                     const SizedBox(height: 10),
                     DayTimeline(
                       date: day,
@@ -1008,6 +1010,54 @@ class _DaySmallSection extends StatelessWidget {
           ),
           const SizedBox(height: 10),
           child,
+        ],
+      ),
+    );
+  }
+}
+
+class _TimelineHint extends StatelessWidget {
+  final int eventCount;
+
+  const _TimelineHint({required this.eventCount});
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
+      decoration: BoxDecoration(
+        color: scheme.surfaceContainerHighest.withValues(alpha: 0.55),
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Row(
+        children: [
+          Icon(Icons.touch_app_outlined, size: 17, color: scheme.primary),
+          const SizedBox(width: 7),
+          Expanded(
+            child: Text(
+              eventCount == 0
+                  ? 'Tocca un orario libero per aggiungere il primo impegno.'
+                  : 'Tocca uno spazio libero per aggiungere · tocca un impegno per modificarlo.',
+              style: Theme.of(context).textTheme.bodySmall,
+            ),
+          ),
+          if (eventCount > 0)
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+              decoration: BoxDecoration(
+                color: scheme.primaryContainer,
+                borderRadius: BorderRadius.circular(99),
+              ),
+              child: Text(
+                '$eventCount',
+                style: TextStyle(
+                  color: scheme.onPrimaryContainer,
+                  fontWeight: FontWeight.w800,
+                  fontSize: 12,
+                ),
+              ),
+            ),
         ],
       ),
     );
@@ -2474,11 +2524,31 @@ class EventTile extends StatelessWidget {
                 fontSize: 11,
               ),
             ),
-            if (item.reminderMinutesBefore != null)
-              Icon(
-                Icons.notifications_active_outlined,
-                size: 14,
-                color: Theme.of(context).colorScheme.onSurfaceVariant,
+            if (item.reminderMinutesBefore != null ||
+                item.secondaryReminderMinutesBefore != null)
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    Icons.notifications_active_outlined,
+                    size: 14,
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
+                  if (item.reminderMinutesBefore != null &&
+                      item.secondaryReminderMinutesBefore != null) ...[
+                    const SizedBox(width: 2),
+                    Text(
+                      '2',
+                      style: TextStyle(
+                        fontSize: 10,
+                        fontWeight: FontWeight.w800,
+                        color: Theme.of(context)
+                            .colorScheme
+                            .onSurfaceVariant,
+                      ),
+                    ),
+                  ],
+                ],
               ),
           ],
         ),
@@ -3525,7 +3595,7 @@ DateTime _recurrenceDate(
         firstOfTarget.month + 1,
         0,
       ).day;
-      final day = start.day.clamp(1, lastDay);
+      final day = start.day.clamp(1, lastDay).toInt();
       return DateTime(firstOfTarget.year, firstOfTarget.month, day);
   }
 }
