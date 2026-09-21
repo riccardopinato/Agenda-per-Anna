@@ -2611,6 +2611,7 @@ class AgendaStore extends ChangeNotifier {
         );
         return true;
     }
+    return false;
   }
 
   String sharedCacheStorageKey(String spaceId) {
