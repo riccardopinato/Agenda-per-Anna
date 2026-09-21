@@ -62,6 +62,24 @@ class AgendaApp extends StatelessWidget {
 
 enum ItemType { appointment, task }
 
+enum RecurrenceRule { none, daily, weekly, monthly }
+
+extension RecurrenceRuleUi on RecurrenceRule {
+  String get label => switch (this) {
+        RecurrenceRule.none => 'Non ripetere',
+        RecurrenceRule.daily => 'Ogni giorno',
+        RecurrenceRule.weekly => 'Ogni settimana',
+        RecurrenceRule.monthly => 'Ogni mese',
+      };
+
+  IconData get icon => switch (this) {
+        RecurrenceRule.none => Icons.repeat_outlined,
+        RecurrenceRule.daily => Icons.today_outlined,
+        RecurrenceRule.weekly => Icons.view_week_outlined,
+        RecurrenceRule.monthly => Icons.calendar_month_outlined,
+      };
+}
+
 enum AgendaCategory {
   personal,
   study,
@@ -114,6 +132,7 @@ class AgendaItem {
   final ItemType type;
   final AgendaCategory category;
   final int? reminderMinutesBefore;
+  final int? secondaryReminderMinutesBefore;
   final bool done;
 
   const AgendaItem({
@@ -124,6 +143,7 @@ class AgendaItem {
     required this.type,
     this.category = AgendaCategory.personal,
     this.reminderMinutesBefore,
+    this.secondaryReminderMinutesBefore,
     this.start,
     this.end,
     this.done = false,
@@ -138,9 +158,11 @@ class AgendaItem {
     ItemType? type,
     AgendaCategory? category,
     int? reminderMinutesBefore,
+    int? secondaryReminderMinutesBefore,
     bool? done,
     bool clearTime = false,
     bool clearReminder = false,
+    bool clearSecondaryReminder = false,
   }) {
     return AgendaItem(
       id: id,
@@ -151,6 +173,9 @@ class AgendaItem {
       category: category ?? this.category,
       reminderMinutesBefore:
           clearReminder ? null : (reminderMinutesBefore ?? this.reminderMinutesBefore),
+      secondaryReminderMinutesBefore: clearSecondaryReminder
+          ? null
+          : (secondaryReminderMinutesBefore ?? this.secondaryReminderMinutesBefore),
       start: clearTime ? null : (start ?? this.start),
       end: clearTime ? null : (end ?? this.end),
       done: done ?? this.done,
@@ -165,6 +190,7 @@ class AgendaItem {
         'type': type.name,
         'category': category.name,
         'reminderMinutesBefore': reminderMinutesBefore,
+        'secondaryReminderMinutesBefore': secondaryReminderMinutesBefore,
         'done': done,
         'start': start == null ? null : [start!.hour, start!.minute],
         'end': end == null ? null : [end!.hour, end!.minute],
@@ -192,6 +218,8 @@ class AgendaItem {
         orElse: () => AgendaCategory.personal,
       ),
       reminderMinutesBefore: json['reminderMinutesBefore'] as int?,
+      secondaryReminderMinutesBefore:
+          json['secondaryReminderMinutesBefore'] as int?,
       done: json['done'] as bool? ?? false,
       start: parseTime(json['start']),
       end: parseTime(json['end']),
