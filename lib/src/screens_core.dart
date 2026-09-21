@@ -2671,12 +2671,9 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
           if (mounted) unawaited(_refresh(silent: true));
         });
       },
-      onStatus: (status, _) {
+      onConnectionChanged: (connected) {
         if (!mounted) return;
-        setState(() {
-          realtimeConnected =
-              status == RealtimeSubscribeStatus.subscribed;
-        });
+        setState(() => realtimeConnected = connected);
       },
     );
   }
