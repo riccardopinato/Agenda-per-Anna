@@ -202,6 +202,7 @@ class CloudSyncService extends ChangeNotifier {
   CloudConnectionState _state = CloudConnectionState.disabled;
   DateTime? _lastSyncAt;
   String? _lastError;
+  bool _passwordRecoveryPending = false;
 
   bool get configured =>
       _url.trim().isNotEmpty && _publishableKey.trim().isNotEmpty;
@@ -214,6 +215,7 @@ class CloudSyncService extends ChangeNotifier {
   String? get userId => user?.id;
   String? get email => user?.email;
   bool get signedIn => user != null;
+  bool get passwordRecoveryPending => _passwordRecoveryPending;
 
   Future<void> initialize() async {
     if (_initialized || _initializing) return;
@@ -242,9 +244,17 @@ class CloudSyncService extends ChangeNotifier {
           : CloudConnectionState.signedOut;
 
       _authSubscription =
-          _client!.auth.onAuthStateChange.listen((_) {
+          _client!.auth.onAuthStateChange.listen((authState) {
         _sessionEpoch++;
         unawaited(_clearSharedChannels());
+
+        final eventName = authState.event.toString().split('.').last;
+        if (eventName == 'passwordRecovery') {
+          _passwordRecoveryPending = true;
+        } else if (eventName == 'signedOut') {
+          _passwordRecoveryPending = false;
+        }
+
         _state = signedIn
             ? CloudConnectionState.synced
             : CloudConnectionState.signedOut;
@@ -317,7 +327,25 @@ class CloudSyncService extends ChangeNotifier {
   Future<void> _completeWebAuthCallbackIfNeeded() async {
     if (!kIsWeb) return;
     final client = _client;
-    if (client == null || client.auth.currentSession != null) return;
+    if (client == null) return;
+
+    Map<String, String> fragmentParameters = const {};
+    final fragment = Uri.base.fragment;
+    if (fragment.isNotEmpty) {
+      try {
+        fragmentParameters = Uri.splitQueryString(fragment);
+      } catch (_) {
+        fragmentParameters = const {};
+      }
+    }
+
+    final authType =
+        Uri.base.queryParameters['type'] ?? fragmentParameters['type'];
+    if (authType == 'recovery') {
+      _passwordRecoveryPending = true;
+    }
+
+    if (client.auth.currentSession != null) return;
 
     final code = Uri.base.queryParameters['code'];
     if (code == null || code.trim().isEmpty) return;
@@ -331,9 +359,58 @@ class CloudSyncService extends ChangeNotifier {
     }
   }
 
+  Future<void> requestPasswordReset(String email) async {
+    final client = _requireClient();
+    _state = CloudConnectionState.initializing;
+    _lastError = null;
+    notifyListeners();
+
+    try {
+      await client.auth.resetPasswordForEmail(
+        email.trim(),
+        redirectTo: _emailRedirectUrl,
+      );
+      _state = signedIn
+          ? CloudConnectionState.synced
+          : CloudConnectionState.signedOut;
+    } catch (error) {
+      _state = CloudConnectionState.error;
+      _lastError = error.toString();
+      rethrow;
+    } finally {
+      notifyListeners();
+    }
+  }
+
+  Future<void> updateRecoveredPassword(String password) async {
+    final value = password.trim();
+    if (value.length < 8) {
+      throw const FormatException(
+        'La nuova password deve contenere almeno 8 caratteri.',
+      );
+    }
+
+    final client = _requireSignedInClient();
+    _lastError = null;
+    try {
+      await client.auth.updateUser(
+        UserAttributes(password: value),
+      );
+      _passwordRecoveryPending = false;
+      _state = CloudConnectionState.synced;
+    } catch (error) {
+      _state = CloudConnectionState.error;
+      _lastError = error.toString();
+      rethrow;
+    } finally {
+      notifyListeners();
+    }
+  }
+
   Future<void> signOut() async {
     final client = _requireClient();
     await client.auth.signOut();
+    _passwordRecoveryPending = false;
     _lastSyncAt = null;
     _state = CloudConnectionState.signedOut;
     notifyListeners();
