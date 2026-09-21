@@ -1866,6 +1866,18 @@ class AgendaStore extends ChangeNotifier {
       ),
     );
     await _saveSharedPendingOperations(spaceId, operations);
+    final cached = List<SharedEntry>.from(
+      _sharedAgendaEntriesBySpace[spaceId] ?? const <SharedEntry>[],
+    )
+      ..removeWhere((cachedEntry) => cachedEntry.id == entry.id)
+      ..add(
+        entry.copyWith(
+          updatedBy: CloudSyncService.instance.userId,
+          updatedAt: revision,
+        ),
+      );
+    _sharedAgendaEntriesBySpace[spaceId] = cached;
+    await _cacheSharedAgendaEntries(spaceId, cached);
     notifyListeners();
   }
 
@@ -1885,6 +1897,11 @@ class AgendaStore extends ChangeNotifier {
       ),
     );
     await _saveSharedPendingOperations(spaceId, operations);
+    final cached = List<SharedEntry>.from(
+      _sharedAgendaEntriesBySpace[spaceId] ?? const <SharedEntry>[],
+    )..removeWhere((entry) => entry.id == entityId);
+    _sharedAgendaEntriesBySpace[spaceId] = cached;
+    await _cacheSharedAgendaEntries(spaceId, cached);
     notifyListeners();
   }
 
@@ -2187,6 +2204,16 @@ class AgendaStore extends ChangeNotifier {
   void dispose() {
     _cloudSyncTimer?.cancel();
     _syncDebounceTimer?.cancel();
+    _unifiedRealtimeDebounce?.cancel();
+    for (final spaceId in _unifiedRealtimeSpaceIds.toList()) {
+      unawaited(
+        CloudSyncService.instance.unsubscribeSharedSpace(
+          spaceId: spaceId,
+          listenerKey: 'unified-agenda',
+        ),
+      );
+    }
+    _unifiedRealtimeSpaceIds.clear();
     super.dispose();
   }
 }
