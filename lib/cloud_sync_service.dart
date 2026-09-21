@@ -92,11 +92,13 @@ class CloudSyncService extends ChangeNotifier {
 
   static final CloudSyncService instance = CloudSyncService._();
 
-  static const String _url =
-      String.fromEnvironment('SUPABASE_URL', defaultValue: '');
+  static const String _url = String.fromEnvironment(
+    'SUPABASE_URL',
+    defaultValue: 'https://pxsxlorntswypdbeerzw.supabase.co',
+  );
   static const String _publishableKey = String.fromEnvironment(
     'SUPABASE_PUBLISHABLE_KEY',
-    defaultValue: '',
+    defaultValue: 'sb_publishable_RWgJneLG9V-pu2IcsDRQCg_G14_kqS7',
   );
 
   SupabaseClient? _client;
