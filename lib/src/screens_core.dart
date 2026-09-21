@@ -2270,6 +2270,7 @@ class _SharedSpaceHubScreenState extends State<SharedSpaceHubScreen> {
       await _saveSpacesCache(result);
       await _bindRealtime(result);
       await _refreshIndicators(result);
+      await widget.store.refreshSharedAgendaCache(pullRemote: true);
       if (mounted) {
         setState(() {
           spaces = result;
@@ -2981,6 +2982,7 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
       final prefs = await SharedPreferences.getInstance();
       await prefs.remove(_cacheKey);
       await prefs.remove(_pendingKey);
+      await widget.store.refreshSharedAgendaCache(pullRemote: true);
       if (mounted) Navigator.pop(context);
     } catch (_) {
       _message('Operazione non riuscita.');
