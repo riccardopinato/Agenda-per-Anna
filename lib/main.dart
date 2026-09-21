@@ -283,6 +283,11 @@ class _PrivacyGateState extends State<_PrivacyGate>
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     final prefs = widget.store.preferences;
+
+    if (state == AppLifecycleState.resumed) {
+      unawaited(widget.store.handleAppResumed());
+    }
+
     if (!prefs.privacyLockEnabled) return;
 
     if (state == AppLifecycleState.paused ||
@@ -290,10 +295,6 @@ class _PrivacyGateState extends State<_PrivacyGate>
         state == AppLifecycleState.hidden) {
       backgroundedAt ??= DateTime.now();
       return;
-    }
-
-    if (state == AppLifecycleState.resumed) {
-      unawaited(widget.store.handleAppResumed());
     }
 
     if (state == AppLifecycleState.resumed && backgroundedAt != null) {
@@ -1669,7 +1670,45 @@ class AgendaStore extends ChangeNotifier {
 
     if (enqueueSync) {
       await _captureSyncChanges(prefs);
+      _scheduleCloudSync();
     }
+  }
+
+  void _scheduleCloudSync() {
+    final cloud = CloudSyncService.instance;
+    if (!cloud.signedIn || _activeAccountId != cloud.userId) return;
+    _syncDebounceTimer?.cancel();
+    _syncDebounceTimer = Timer(
+      const Duration(milliseconds: 900),
+      () => unawaited(syncCloud()),
+    );
+  }
+
+  Map<String, dynamic> _cloudPreferencesPayload() {
+    return Map<String, dynamic>.from(preferences.toJson())
+      ..remove('privacyLockEnabled')
+      ..remove('biometricUnlock')
+      ..remove('autoLockMinutes')
+      ..remove('hideHomeDetails')
+      ..remove('pinSalt')
+      ..remove('pinHash')
+      ..remove('onboardingDone');
+  }
+
+  Future<void> _queuePreferencesSync() async {
+    final prefs = await SharedPreferences.getInstance();
+    final payload = _cloudPreferencesPayload();
+    final key = 'preferences:main';
+    _syncIndex[key] = _syncPayloadHash(payload);
+    _syncQueue[key] = CloudSyncOperation(
+      entityType: 'preferences',
+      entityId: 'main',
+      payload: payload,
+      updatedAt: DateTime.now(),
+      ownerId: _activeAccountId,
+    );
+    await _persistSyncMetadata(prefs);
+    _scheduleCloudSync();
   }
 
   Map<String, _LocalSyncEntity> _currentSyncEntities() {
@@ -1707,15 +1746,7 @@ class AgendaStore extends ChangeNotifier {
       add('inbox', entry.id, entry.toJson());
     }
 
-    final cloudPrefs = Map<String, dynamic>.from(preferences.toJson())
-      ..remove('privacyLockEnabled')
-      ..remove('biometricUnlock')
-      ..remove('autoLockMinutes')
-      ..remove('hideHomeDetails')
-      ..remove('pinSalt')
-      ..remove('pinHash')
-      ..remove('onboardingDone');
-    add('preferences', 'main', cloudPrefs);
+    add('preferences', 'main', _cloudPreferencesPayload());
 
     return result;
   }
@@ -1738,6 +1769,7 @@ class AgendaStore extends ChangeNotifier {
           entityId: entry.value.entityId,
           payload: entry.value.payload,
           updatedAt: now,
+          ownerId: _activeAccountId,
         );
       }
     }
@@ -1752,6 +1784,7 @@ class AgendaStore extends ChangeNotifier {
         payload: null,
         updatedAt: now,
         deleted: true,
+        ownerId: _activeAccountId,
       );
     }
 
@@ -2286,18 +2319,39 @@ class AgendaStore extends ChangeNotifier {
   Future<void> initializeCloudSync() async {
     _cloudSyncTimer?.cancel();
 
-    if (CloudSyncService.instance.signedIn) {
+    final cloud = CloudSyncService.instance;
+    await activateCloudAccount(cloud.signedIn ? cloud.userId : null);
+
+    if (cloud.signedIn) {
+      await flushSharedPendingOperations();
       await syncCloud(preferRemoteOnFirstSync: true);
     }
 
+    // Remote changes still need an occasional pull, but idle devices should
+    // not rewrite the whole archive every 45 seconds.
     _cloudSyncTimer = Timer.periodic(
-      const Duration(seconds: 45),
+      const Duration(minutes: 5),
       (_) {
         if (CloudSyncService.instance.signedIn) {
-          syncCloud();
+          unawaited(syncCloud());
+          unawaited(flushSharedPendingOperations());
         }
       },
     );
+  }
+
+  Future<void> handleAppResumed() async {
+    final cloud = CloudSyncService.instance;
+    if (!cloud.initialized) {
+      await cloud.initialize();
+    }
+
+    await activateCloudAccount(cloud.signedIn ? cloud.userId : null);
+
+    if (cloud.signedIn) {
+      await flushSharedPendingOperations();
+      await syncCloud();
+    }
   }
 
   Future<void> syncCloud({
@@ -2307,22 +2361,38 @@ class AgendaStore extends ChangeNotifier {
     if (!cloud.configured || !cloud.initialized || !cloud.signedIn) return;
     if (_cloudSyncRunning) return;
 
+    final ownerId = cloud.userId!;
+    if (_activeAccountId != ownerId) {
+      await activateCloudAccount(ownerId);
+    }
+    if (_activeAccountId != ownerId) return;
+
+    final sessionEpoch = cloud.sessionEpoch;
     _cloudSyncRunning = true;
     cloud.markSyncStarted();
 
     try {
       final prefs = await SharedPreferences.getInstance();
-      final ownerId = cloud.userId!;
       final previousOwner = prefs.getString(_syncOwnerKey);
       final firstSyncForOwner = previousOwner != ownerId;
 
-      await _captureSyncChanges(
-        prefs,
-        forceAll: firstSyncForOwner && _syncIndex.isEmpty,
-      );
+      if (firstSyncForOwner && _syncIndex.isEmpty) {
+        await _captureSyncChanges(
+          prefs,
+          forceAll: true,
+        );
+        _bindPendingOperationsTo(ownerId);
+      }
 
       final remote = await cloud.pullPrivateRecords();
 
+      if (cloud.sessionEpoch != sessionEpoch ||
+          cloud.userId != ownerId ||
+          _activeAccountId != ownerId) {
+        return;
+      }
+
+      var remoteChanged = false;
       for (final record in remote) {
         final localOp = _syncQueue[record.localKey];
         final remoteWins = preferRemoteOnFirstSync && firstSyncForOwner
@@ -2332,26 +2402,47 @@ class AgendaStore extends ChangeNotifier {
 
         if (!remoteWins) continue;
 
-        await _applyRemoteRecord(record);
+        final changed = await _applyRemoteRecord(record);
+        remoteChanged = remoteChanged || changed;
         _syncQueue.remove(record.localKey);
       }
 
-      final entitiesAfterPull = _currentSyncEntities();
-      _replaceSyncIndex(entitiesAfterPull);
-      await _save(
-        createAutoSnapshot: false,
-        enqueueSync: false,
-      );
+      if (remoteChanged) {
+        final entitiesAfterPull = _currentSyncEntities();
+        _replaceSyncIndex(entitiesAfterPull);
+        await _save(
+          createAutoSnapshot: false,
+          enqueueSync: false,
+        );
+      }
+
+      if (cloud.sessionEpoch != sessionEpoch ||
+          cloud.userId != ownerId ||
+          _activeAccountId != ownerId) {
+        return;
+      }
 
       final pendingSnapshot =
-          Map<String, CloudSyncOperation>.from(_syncQueue);
+          Map<String, CloudSyncOperation>.from(_syncQueue)
+            ..removeWhere(
+              (_, operation) =>
+                  operation.ownerId != null &&
+                  operation.ownerId != ownerId,
+            );
 
       await cloud.pushPrivateOperations(pendingSnapshot.values);
+
+      if (cloud.sessionEpoch != sessionEpoch ||
+          cloud.userId != ownerId ||
+          _activeAccountId != ownerId) {
+        return;
+      }
 
       for (final entry in pendingSnapshot.entries) {
         final current = _syncQueue[entry.key];
         if (current != null &&
-            current.updatedAt == entry.value.updatedAt) {
+            current.updatedAt == entry.value.updatedAt &&
+            current.ownerId == entry.value.ownerId) {
           _syncQueue.remove(entry.key);
         }
       }
@@ -2359,12 +2450,10 @@ class AgendaStore extends ChangeNotifier {
       await prefs.setString(_syncOwnerKey, ownerId);
       await _persistSyncMetadata(prefs);
 
-      for (final item in items) {
-        await _syncReminders(item);
-      }
-
       cloud.markSyncSuccess();
-      notifyListeners();
+      if (remoteChanged || pendingSnapshot.isNotEmpty) {
+        notifyListeners();
+      }
     } catch (error) {
       cloud.markSyncError(error);
     } finally {
@@ -2372,80 +2461,120 @@ class AgendaStore extends ChangeNotifier {
     }
   }
 
-  Future<void> _applyRemoteRecord(CloudRemoteRecord record) async {
+  Future<bool> _applyRemoteRecord(CloudRemoteRecord record) async {
     if (record.deletedAt != null) {
       switch (record.entityType) {
         case 'item':
+          final existed = items.any((e) => e.id == record.entityId);
+          if (!existed) return false;
           items.removeWhere((e) => e.id == record.entityId);
           await NotificationService.instance.cancel(record.entityId);
           await NotificationService.instance
               .cancel('${record.entityId}:primary');
           await NotificationService.instance
               .cancel('${record.entityId}:secondary');
-          break;
+          return true;
         case 'journal':
-          journals.remove(record.entityId);
-          break;
+          return journals.remove(record.entityId) != null;
         case 'month':
-          months.remove(record.entityId);
-          break;
+          return months.remove(record.entityId) != null;
         case 'week':
-          weeks.remove(record.entityId);
-          break;
+          return weeks.remove(record.entityId) != null;
         case 'habit':
+          final before = habits.length;
           habits.removeWhere((e) => e.id == record.entityId);
-          break;
+          return habits.length != before;
         case 'inbox':
+          final before = inbox.length;
           inbox.removeWhere((e) => e.id == record.entityId);
-          break;
+          return inbox.length != before;
         case 'preferences':
-          // Le preferenze locali restano valide se il record remoto è assente.
-          break;
+          return false;
       }
-      return;
     }
 
     final payload = record.payload;
-    if (payload == null) return;
+    if (payload == null) return false;
 
     switch (record.entityType) {
       case 'item':
         final item = AgendaItem.fromJson(payload);
         final index = items.indexWhere((e) => e.id == item.id);
+        if (index >= 0 &&
+            _syncPayloadHash(items[index].toJson()) ==
+                _syncPayloadHash(item.toJson())) {
+          return false;
+        }
         if (index < 0) {
           items.add(item);
         } else {
           items[index] = item;
         }
-        break;
+        await _syncReminders(item);
+        return true;
       case 'journal':
-        journals[record.entityId] = DayJournal.fromJson(payload);
-        break;
+        final incoming = DayJournal.fromJson(payload);
+        final current = journals[record.entityId];
+        if (current != null &&
+            _syncPayloadHash(current.toJson()) ==
+                _syncPayloadHash(incoming.toJson())) {
+          return false;
+        }
+        journals[record.entityId] = incoming;
+        return true;
       case 'month':
-        months[record.entityId] = MonthlyData.fromJson(payload);
-        break;
+        final incoming = MonthlyData.fromJson(payload);
+        final current = months[record.entityId];
+        if (current != null &&
+            _syncPayloadHash(current.toJson()) ==
+                _syncPayloadHash(incoming.toJson())) {
+          return false;
+        }
+        months[record.entityId] = incoming;
+        return true;
       case 'week':
-        weeks[record.entityId] = WeekData.fromJson(payload);
-        break;
+        final incoming = WeekData.fromJson(payload);
+        final current = weeks[record.entityId];
+        if (current != null &&
+            _syncPayloadHash(current.toJson()) ==
+                _syncPayloadHash(incoming.toJson())) {
+          return false;
+        }
+        weeks[record.entityId] = incoming;
+        return true;
       case 'habit':
-        final habit = HabitDefinition.fromJson(payload);
-        final index = habits.indexWhere((e) => e.id == habit.id);
-        if (index < 0) {
-          habits.add(habit);
-        } else {
-          habits[index] = habit;
+        final incoming = HabitDefinition.fromJson(payload);
+        final index = habits.indexWhere((e) => e.id == incoming.id);
+        if (index >= 0 &&
+            _syncPayloadHash(habits[index].toJson()) ==
+                _syncPayloadHash(incoming.toJson())) {
+          return false;
         }
-        break;
+        if (index < 0) {
+          habits.add(incoming);
+        } else {
+          habits[index] = incoming;
+        }
+        return true;
       case 'inbox':
-        final entry = InboxEntry.fromJson(payload);
-        final index = inbox.indexWhere((e) => e.id == entry.id);
-        if (index < 0) {
-          inbox.add(entry);
-        } else {
-          inbox[index] = entry;
+        final incoming = InboxEntry.fromJson(payload);
+        final index = inbox.indexWhere((e) => e.id == incoming.id);
+        if (index >= 0 &&
+            _syncPayloadHash(inbox[index].toJson()) ==
+                _syncPayloadHash(incoming.toJson())) {
+          return false;
         }
-        break;
+        if (index < 0) {
+          inbox.add(incoming);
+        } else {
+          inbox[index] = incoming;
+        }
+        return true;
       case 'preferences':
+        if (_syncPayloadHash(_cloudPreferencesPayload()) ==
+            _syncPayloadHash(payload)) {
+          return false;
+        }
         preferences = preferences.copyWith(
           displayName: payload['displayName'] as String?,
           themeMode: AgendaThemeMode.values.firstWhere(
@@ -2479,7 +2608,7 @@ class AgendaStore extends ChangeNotifier {
           clearSecondaryReminder:
               payload['defaultSecondaryReminder'] == null,
         );
-        break;
+        return true;
     }
   }
 
@@ -2552,7 +2681,13 @@ class AgendaStore extends ChangeNotifier {
   Future<void> savePreferences(AgendaPreferences value) async {
     preferences = value;
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(_preferencesKey, jsonEncode(preferences.toJson()));
+    if (!_unreadableStorageKeys.contains(_preferencesKey)) {
+      await prefs.setString(
+        _preferencesKey,
+        jsonEncode(preferences.toJson()),
+      );
+    }
+    await _queuePreferencesSync();
     notifyListeners();
   }
 
@@ -2624,6 +2759,13 @@ class AgendaStore extends ChangeNotifier {
       '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
 
   static String monthKey(int y, int m) => '$y-${m.toString().padLeft(2, '0')}';
+
+  @override
+  void dispose() {
+    _cloudSyncTimer?.cancel();
+    _syncDebounceTimer?.cancel();
+    super.dispose();
+  }
 }
 
 class MainShell extends StatefulWidget {
@@ -5774,7 +5916,9 @@ class _CloudAccountScreenState extends State<CloudAccountScreen> {
         await cloud.signIn(email: email, password: password);
       }
 
+      await widget.store.activateCloudAccount(cloud.userId);
       await widget.store.syncCloud(preferRemoteOnFirstSync: true);
+      await widget.store.flushSharedPendingOperations();
       _message('Account connesso e sincronizzazione avviata.');
     } catch (_) {
       _message(
@@ -5805,7 +5949,10 @@ class _CloudAccountScreenState extends State<CloudAccountScreen> {
     setState(() => busy = true);
     try {
       await CloudSyncService.instance.signOut();
-      _message('Account disconnesso. I dati locali restano sul dispositivo.');
+      await widget.store.activateCloudAccount(null);
+      _message(
+        'Account disconnesso. I dati dell’account restano salvati sul dispositivo ma non sono più mostrati.',
+      );
     } finally {
       if (mounted) setState(() => busy = false);
     }
@@ -6571,8 +6718,14 @@ class DayTimeline extends StatelessWidget {
     final endMinutes =
         _endMinutes(event).clamp(startMinutes + 15, upper);
     final top = ((startMinutes - lower) / 60) * hourHeight;
-    final height = (((endMinutes - startMinutes) / 60) * hourHeight)
-        .clamp(36.0, totalHeightFromTop(top));
+    final remainingHeight = max(1.0, totalHeightFromTop(top));
+    final naturalHeight =
+        ((endMinutes - startMinutes) / 60) * hourHeight;
+    final minimumVisibleHeight = min(36.0, remainingHeight);
+    final height = naturalHeight.clamp(
+      minimumVisibleHeight,
+      remainingHeight,
+    );
 
     const gap = 5.0;
     final contentWidth = maxWidth - timeColumnWidth - 16;
@@ -6593,7 +6746,7 @@ class DayTimeline extends StatelessWidget {
       top: top + 2,
       left: left,
       width: laneWidth,
-      height: height - 4,
+      height: max(1.0, height - 4),
       child: Material(
         color: Colors.transparent,
         child: InkWell(
@@ -8809,7 +8962,10 @@ class DateStrip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final dates = List.generate(7, (i) => selected.add(Duration(days: i - 3)));
+    final dates = List.generate(
+      7,
+      (i) => addCivilDays(selected, i - 3),
+    );
     return SizedBox(
       height: 80,
       child: ListView.separated(
@@ -8972,6 +9128,7 @@ Future<void> openItemEditor(
     required String id,
     required DateTime itemDate,
     bool done = false,
+    bool pinned = false,
   }) {
     return AgendaItem(
       id: id,
@@ -8987,6 +9144,7 @@ Future<void> openItemEditor(
       start: start,
       end: type == ItemType.task ? null : end,
       done: done,
+      pinned: pinned,
     );
   }
 
@@ -9308,6 +9466,7 @@ Future<void> openItemEditor(
                             id: existing?.id ?? const Uuid().v4(),
                             itemDate: date,
                             done: existing?.done ?? false,
+                            pinned: existing?.pinned ?? false,
                           );
                           await store.upsert(base);
 
@@ -9365,9 +9524,9 @@ DateTime _recurrenceDate(
     case RecurrenceRule.none:
       return start;
     case RecurrenceRule.daily:
-      return start.add(Duration(days: offset));
+      return addCivilDays(start, offset);
     case RecurrenceRule.weekly:
-      return start.add(Duration(days: 7 * offset));
+      return addCivilDays(start, 7 * offset);
     case RecurrenceRule.monthly:
       final firstOfTarget = DateTime(start.year, start.month + offset, 1);
       final lastDay = DateTime(
@@ -9424,7 +9583,7 @@ DateTime addCivilDays(DateTime date, int days) {
 
 DateTime mondayOf(DateTime d) {
   final n = DateTime(d.year, d.month, d.day);
-  return n.subtract(Duration(days: n.weekday - 1));
+  return addCivilDays(n, -(n.weekday - 1));
 }
 
 TimeOfDay _timePlusMinutes(TimeOfDay start, int minutes) {
