@@ -18,6 +18,7 @@ class AgendaStore extends ChangeNotifier {
   static const _privacyGuardKey = 'privacy_guard_v1';
   static const _backupFormat = 'agenda_per_anna_backup';
   static const _backupSchemaVersion = 1;
+  static const _appVersion = '0.20.0';
 
   final List<AgendaItem> items = [];
   final Map<String, DayJournal> journals = {};
@@ -44,6 +45,7 @@ class AgendaStore extends ChangeNotifier {
   bool _cloudSyncRunning = false;
   bool _sharedFlushRunning = false;
   int _sharedConflictCount = 0;
+  int _pendingSharedChangeCount = 0;
   DateTime? _lastSharedSyncAt;
   String? _activeAccountId;
   bool _accountScopeResolved = true;
@@ -52,6 +54,8 @@ class AgendaStore extends ChangeNotifier {
   bool get accountScopeResolved => _accountScopeResolved;
   bool get hasStorageWarnings => _unreadableStorageKeys.isNotEmpty;
   int get sharedConflictCount => _sharedConflictCount;
+  int get pendingSharedChangeCount => _pendingSharedChangeCount;
+  int get totalPendingCloudChanges => pendingCloudChanges + _pendingSharedChangeCount;
   DateTime? get lastSharedSyncAt => _lastSharedSyncAt;
   List<SharedSpace> get sharedAgendaSpaces {
     final result = _sharedAgendaSpaces.values.toList()
@@ -118,6 +122,7 @@ class AgendaStore extends ChangeNotifier {
     _sharedAgendaEntriesBySpace.clear();
     _sharedAgendaDayIndex.clear();
     _unifiedRealtimeSpaceIds.clear();
+    _pendingSharedChangeCount = 0;
     preferences = const AgendaPreferences();
 
     T? decodeSection<T>(
@@ -288,6 +293,7 @@ class AgendaStore extends ChangeNotifier {
     }
     _invalidateDayIndex();
     await refreshSharedAgendaCache(notify: false);
+    await refreshPendingSharedCount(notify: false);
   }
 
   Map<String, dynamic> _readAccountProfiles(SharedPreferences prefs) {
@@ -708,7 +714,7 @@ class AgendaStore extends ChangeNotifier {
     final document = {
       'format': _backupFormat,
       'schemaVersion': _backupSchemaVersion,
-      'appVersion': '0.16.1',
+      'appVersion': _appVersion,
       'exportedAt': DateTime.now().toIso8601String(),
       'data': _backupDataPayload(),
     };
@@ -959,7 +965,7 @@ class AgendaStore extends ChangeNotifier {
     final document = {
       'format': _backupFormat,
       'schemaVersion': _backupSchemaVersion,
-      'appVersion': '0.16.1',
+      'appVersion': _appVersion,
       'exportedAt': snapshot.createdAt.toIso8601String(),
       'data': snapshot.data,
     };
@@ -1248,19 +1254,16 @@ class AgendaStore extends ChangeNotifier {
     }
 
     if (cloud.signedIn) {
-      await flushSharedPendingOperations();
-      await syncCloud(preferRemoteOnFirstSync: true);
-      await refreshSharedAgendaCache(pullRemote: true);
+      await syncAllCloud(preferRemoteOnFirstSync: true);
     }
 
-    // Remote changes still need an occasional pull, but idle devices should
-    // not rewrite the whole archive every 45 seconds.
+    // Reconcile private + shared state periodically in case Realtime or a
+    // network transition was missed while the app stayed open.
     _cloudSyncTimer = Timer.periodic(
       const Duration(minutes: 5),
       (_) {
         if (CloudSyncService.instance.signedIn) {
-          unawaited(syncCloud());
-          unawaited(flushSharedPendingOperations());
+          unawaited(syncAllCloud());
         }
       },
     );
@@ -1280,10 +1283,31 @@ class AgendaStore extends ChangeNotifier {
     }
 
     if (cloud.signedIn) {
-      await flushSharedPendingOperations();
-      await syncCloud();
-      await refreshSharedAgendaCache(pullRemote: true);
+      await syncAllCloud();
     }
+  }
+
+  Future<void> syncAllCloud({
+    bool preferRemoteOnFirstSync = false,
+  }) async {
+    final cloud = CloudSyncService.instance;
+    if (!cloud.configured || !cloud.initialized || !cloud.signedIn) {
+      return;
+    }
+
+    await flushSharedPendingOperations();
+    await syncCloud(
+      preferRemoteOnFirstSync: preferRemoteOnFirstSync,
+    );
+
+    if (!cloud.signedIn ||
+        cloud.userId == null ||
+        _activeAccountId != cloud.userId) {
+      return;
+    }
+
+    await refreshSharedAgendaCache(pullRemote: true);
+    await refreshPendingSharedCount();
   }
 
   Future<void> syncCloud({
@@ -1953,6 +1977,31 @@ class AgendaStore extends ChangeNotifier {
           .map((operation) => operation.entityId)
           .toSet();
 
+  Future<void> refreshPendingSharedCount({
+    bool notify = true,
+  }) async {
+    final ownerId = _activeAccountId;
+    var next = 0;
+
+    if (ownerId != null) {
+      final prefs = await SharedPreferences.getInstance();
+      final prefix = 'shared_pending_${ownerId}_';
+      for (final key in prefs.getKeys().where((key) => key.startsWith(prefix))) {
+        final raw = prefs.getString(key);
+        if (raw == null) continue;
+        try {
+          next += (jsonDecode(raw) as List).length;
+        } catch (_) {
+          // Preserve unreadable queues; only exclude them from the badge.
+        }
+      }
+    }
+
+    if (next == _pendingSharedChangeCount) return;
+    _pendingSharedChangeCount = next;
+    if (notify) notifyListeners();
+  }
+
   void resetSharedConflictCount() {
     if (_sharedConflictCount == 0) return;
     _sharedConflictCount = 0;
@@ -1973,6 +2022,7 @@ class AgendaStore extends ChangeNotifier {
 
     _sharedFlushRunning = true;
     var stateChanged = false;
+    final pendingBefore = _pendingSharedChangeCount;
     try {
       final prefs = await SharedPreferences.getInstance();
       final prefix = 'shared_pending_${ownerId}_';
@@ -2081,7 +2131,10 @@ class AgendaStore extends ChangeNotifier {
       }
     } finally {
       _sharedFlushRunning = false;
-      if (stateChanged) notifyListeners();
+      await refreshPendingSharedCount(notify: false);
+      if (stateChanged || pendingBefore != _pendingSharedChangeCount) {
+        notifyListeners();
+      }
     }
   }
   int get pendingCloudChanges => _syncQueue.length;
