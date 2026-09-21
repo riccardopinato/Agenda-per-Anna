@@ -2849,6 +2849,8 @@ class JournalEditor extends StatefulWidget {
 class _JournalEditorState extends State<JournalEditor> {
   late TextEditingController beautiful;
   late TextEditingController note;
+  late List<TextEditingController> gratitude;
+  DayMood? mood;
 
   @override
   void initState() {
@@ -2859,26 +2861,138 @@ class _JournalEditorState extends State<JournalEditor> {
   @override
   void didUpdateWidget(covariant JournalEditor oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (!AgendaStore.sameDay(oldWidget.date, widget.date)) _load();
+    if (!AgendaStore.sameDay(oldWidget.date, widget.date)) {
+      _disposeControllers();
+      _load();
+    }
   }
 
   void _load() {
     final j = widget.store.journal(widget.date);
     beautiful = TextEditingController(text: j.beautiful);
     note = TextEditingController(text: j.note);
+    mood = j.mood;
+    gratitude = List.generate(
+      3,
+      (index) => TextEditingController(
+        text: index < j.gratitude.length ? j.gratitude[index] : '',
+      ),
+    );
+  }
+
+  void _disposeControllers() {
+    beautiful.dispose();
+    note.dispose();
+    for (final controller in gratitude) {
+      controller.dispose();
+    }
+  }
+
+  @override
+  void dispose() {
+    _disposeControllers();
+    super.dispose();
+  }
+
+  Future<void> _save() async {
+    final current = widget.store.journal(widget.date);
+    await widget.store.saveJournal(
+      widget.date,
+      current.copyWith(
+        beautiful: beautiful.text.trim(),
+        note: note.text.trim(),
+        mood: mood,
+        clearMood: mood == null,
+        gratitude: gratitude
+            .map((controller) => controller.text.trim())
+            .where((value) => value.isNotEmpty)
+            .toList(),
+      ),
+    );
+
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Giornata salvata ♡'),
+          duration: Duration(seconds: 1),
+        ),
+      );
+    }
+  }
+
+  Future<void> _addHabit() async {
+    final controller = TextEditingController();
+    final value = await showDialog<String>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Nuova abitudine'),
+        content: TextField(
+          controller: controller,
+          autofocus: true,
+          textCapitalization: TextCapitalization.sentences,
+          decoration: const InputDecoration(
+            hintText: 'Es. Leggere 20 minuti',
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext),
+            child: const Text('Annulla'),
+          ),
+          FilledButton(
+            onPressed: () =>
+                Navigator.pop(dialogContext, controller.text.trim()),
+            child: const Text('Aggiungi'),
+          ),
+        ],
+      ),
+    );
+    controller.dispose();
+    if (value != null && value.isNotEmpty) {
+      await widget.store.addHabit(value);
+    }
   }
 
   @override
   Widget build(BuildContext context) {
+    final journal = widget.store.journal(widget.date);
+    final completed = journal.completedHabitIds;
+    final habits = widget.store.habits;
+
     return Column(
       children: [
         SimpleCard(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text('Una cosa bella di oggi ♡', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 17)),
+              const Text(
+                'Come ti senti oggi?',
+                style: TextStyle(fontWeight: FontWeight.w800, fontSize: 17),
+              ),
               const SizedBox(height: 10),
-              TextField(controller: beautiful, maxLines: 2, decoration: const InputDecoration(hintText: 'Qualcosa che ti ha fatto sorridere...')),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: DayMood.values.map((value) {
+                  final selected = mood == value;
+                  return ChoiceChip(
+                    selected: selected,
+                    selectedColor: value.color.withValues(alpha: 0.18),
+                    avatar: Text(
+                      value.emoji,
+                      style: const TextStyle(fontSize: 18),
+                    ),
+                    label: Text(value.label),
+                    labelStyle: TextStyle(
+                      fontWeight: selected ? FontWeight.w800 : FontWeight.w600,
+                      color: selected ? value.color : null,
+                    ),
+                    onSelected: (_) => setState(() {
+                      mood = selected ? null : value;
+                    }),
+                  );
+                }).toList(),
+              ),
             ],
           ),
         ),
@@ -2887,18 +3001,165 @@ class _JournalEditorState extends State<JournalEditor> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text('Pensieri e note', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 17)),
+              const Text(
+                'Tre cose belle di oggi ♡',
+                style: TextStyle(fontWeight: FontWeight.w800, fontSize: 17),
+              ),
+              const SizedBox(height: 5),
+              Text(
+                'Anche piccole: qualcosa che ti ha fatto sorridere, stare bene o sentire grata.',
+                style: Theme.of(context).textTheme.bodySmall,
+              ),
               const SizedBox(height: 10),
-              TextField(controller: note, minLines: 4, maxLines: 8, decoration: const InputDecoration(hintText: 'Scrivi quello che vuoi ricordare...')),
+              ...gratitude.asMap().entries.map(
+                (entry) => Padding(
+                  padding: const EdgeInsets.only(bottom: 8),
+                  child: TextField(
+                    controller: entry.value,
+                    textCapitalization: TextCapitalization.sentences,
+                    decoration: InputDecoration(
+                      prefixIcon: Center(
+                        widthFactor: 1,
+                        child: Text(
+                          '${entry.key + 1}',
+                          style: const TextStyle(fontWeight: FontWeight.w800),
+                        ),
+                      ),
+                      hintText: entry.key == 0
+                          ? 'Una cosa bella...'
+                          : 'Un altro piccolo momento...',
+                      border: const OutlineInputBorder(),
+                    ),
+                  ),
+                ),
+              ),
+              TextField(
+                controller: beautiful,
+                maxLines: 2,
+                textCapitalization: TextCapitalization.sentences,
+                decoration: const InputDecoration(
+                  labelText: 'Il momento che voglio ricordare',
+                  hintText: 'Quello che vorresti rileggere tra qualche mese...',
+                  border: OutlineInputBorder(),
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 12),
+        SimpleCard(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  const Expanded(
+                    child: Text(
+                      'Le mie abitudini',
+                      style:
+                          TextStyle(fontWeight: FontWeight.w800, fontSize: 17),
+                    ),
+                  ),
+                  IconButton(
+                    tooltip: 'Aggiungi abitudine',
+                    onPressed: _addHabit,
+                    icon: const Icon(Icons.add_circle_outline),
+                  ),
+                ],
+              ),
+              if (habits.isEmpty)
+                const Text('Aggiungi una piccola abitudine da seguire.')
+              else
+                ...habits.map(
+                  (habit) => CheckboxListTile(
+                    contentPadding: EdgeInsets.zero,
+                    dense: true,
+                    value: completed.contains(habit.id),
+                    title: Text(habit.name),
+                    secondary: Icon(
+                      completed.contains(habit.id)
+                          ? Icons.auto_awesome
+                          : Icons.radio_button_unchecked,
+                      color: completed.contains(habit.id)
+                          ? Theme.of(context).colorScheme.primary
+                          : Theme.of(context).colorScheme.outline,
+                    ),
+                    onChanged: (_) =>
+                        widget.store.toggleHabit(widget.date, habit.id),
+                    controlAffinity: ListTileControlAffinity.trailing,
+                  ),
+                ),
+              if (habits.isNotEmpty) ...[
+                const Divider(),
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: TextButton.icon(
+                    onPressed: () async {
+                      final selected = await showModalBottomSheet<String>(
+                        context: context,
+                        showDragHandle: true,
+                        builder: (sheetContext) => SafeArea(
+                          child: ListView(
+                            shrinkWrap: true,
+                            children: [
+                              const ListTile(
+                                title: Text(
+                                  'Gestisci abitudini',
+                                  style: TextStyle(fontWeight: FontWeight.w800),
+                                ),
+                              ),
+                              ...habits.map(
+                                (habit) => ListTile(
+                                  title: Text(habit.name),
+                                  trailing:
+                                      const Icon(Icons.delete_outline),
+                                  onTap: () =>
+                                      Navigator.pop(sheetContext, habit.id),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      );
+                      if (selected != null) {
+                        await widget.store.removeHabit(selected);
+                      }
+                    },
+                    icon: const Icon(Icons.tune),
+                    label: const Text('Gestisci'),
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ),
+        const SizedBox(height: 12),
+        SimpleCard(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Pensieri e note',
+                style: TextStyle(fontWeight: FontWeight.w800, fontSize: 17),
+              ),
               const SizedBox(height: 10),
+              TextField(
+                controller: note,
+                minLines: 4,
+                maxLines: 8,
+                textCapitalization: TextCapitalization.sentences,
+                decoration: const InputDecoration(
+                  hintText: 'Scrivi quello che vuoi ricordare...',
+                  border: OutlineInputBorder(),
+                ),
+              ),
+              const SizedBox(height: 12),
               SizedBox(
                 width: double.infinity,
-                child: FilledButton.tonal(
-                  onPressed: () => widget.store.saveJournal(
-                    widget.date,
-                    DayJournal(beautiful: beautiful.text.trim(), note: note.text.trim()),
-                  ),
-                  child: const Text('Salva giornata'),
+                child: FilledButton.icon(
+                  onPressed: _save,
+                  icon: const Icon(Icons.favorite_outline),
+                  label: const Text('Salva la mia giornata'),
                 ),
               ),
             ],
