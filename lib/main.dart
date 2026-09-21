@@ -14,6 +14,7 @@ import 'package:table_calendar/table_calendar.dart';
 import 'package:uuid/uuid.dart';
 
 import 'backup_service.dart';
+import 'cloud_sync_service.dart';
 import 'notification_service.dart';
 
 Future<void> main() async {
@@ -35,6 +36,13 @@ Future<void> main() async {
       await NotificationService.instance.initialize();
     } catch (_) {
       // Le notifiche non devono mai impedire l'avvio dell'agenda.
+    }
+
+    try {
+      await CloudSyncService.instance.initialize();
+      await store.initializeCloudSync();
+    } catch (_) {
+      // Il cloud è opzionale: l'agenda deve restare pienamente offline.
     }
   });
 }
@@ -1095,6 +1103,20 @@ class ExpenseEntry {
       );
 }
 
+class _LocalSyncEntity {
+  final String entityType;
+  final String entityId;
+  final Map<String, dynamic> payload;
+
+  const _LocalSyncEntity({
+    required this.entityType,
+    required this.entityId,
+    required this.payload,
+  });
+
+  String get localKey => '$entityType:$entityId';
+}
+
 class BackupSummary {
   final DateTime exportedAt;
   final int itemCount;
@@ -1152,6 +1174,9 @@ class AgendaStore extends ChangeNotifier {
   static const _snapshotsKey = 'backup_snapshots_v1';
   static const _preferencesKey = 'agenda_preferences_v1';
   static const _inboxKey = 'inbox_v1';
+  static const _syncQueueKey = 'cloud_sync_queue_v1';
+  static const _syncIndexKey = 'cloud_sync_index_v1';
+  static const _syncOwnerKey = 'cloud_sync_owner_v1';
   static const _backupFormat = 'agenda_per_anna_backup';
   static const _backupSchemaVersion = 1;
 
@@ -1162,7 +1187,12 @@ class AgendaStore extends ChangeNotifier {
   final List<HabitDefinition> habits = [];
   final List<LocalBackupSnapshot> localSnapshots = [];
   final List<InboxEntry> inbox = [];
+  final Map<String, CloudSyncOperation> _syncQueue = {};
+  final Map<String, String> _syncIndex = {};
   AgendaPreferences preferences = const AgendaPreferences();
+
+  Timer? _cloudSyncTimer;
+  bool _cloudSyncRunning = false;
 
   Future<void> load() async {
     final prefs = await SharedPreferences.getInstance();
@@ -1249,6 +1279,32 @@ class AgendaStore extends ChangeNotifier {
           ));
       }
 
+      final qr = prefs.getString(_syncQueueKey);
+      if (qr != null) {
+        final map = Map<String, dynamic>.from(jsonDecode(qr) as Map);
+        _syncQueue
+          ..clear()
+          ..addAll(map.map(
+            (key, value) => MapEntry(
+              key,
+              CloudSyncOperation.fromJson(
+                Map<String, dynamic>.from(value as Map),
+              ),
+            ),
+          ));
+      }
+
+      final srIndex = prefs.getString(_syncIndexKey);
+      if (srIndex != null) {
+        _syncIndex
+          ..clear()
+          ..addAll(
+            Map<String, String>.from(
+              Map<String, dynamic>.from(jsonDecode(srIndex) as Map),
+            ),
+          );
+      }
+
       if (habits.isEmpty) {
         habits.addAll(const [
           HabitDefinition(id: 'water', name: 'Bere abbastanza'),
@@ -1259,7 +1315,10 @@ class AgendaStore extends ChangeNotifier {
     } catch (_) {}
   }
 
-  Future<void> _save({bool createAutoSnapshot = true}) async {
+  Future<void> _save({
+    bool createAutoSnapshot = true,
+    bool enqueueSync = true,
+  }) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(
       _itemsKey,
@@ -1293,6 +1352,120 @@ class AgendaStore extends ChangeNotifier {
     if (createAutoSnapshot) {
       await _maybeCreateAutomaticSnapshot(prefs);
     }
+
+    if (enqueueSync) {
+      await _captureSyncChanges(prefs);
+    }
+  }
+
+  Map<String, _LocalSyncEntity> _currentSyncEntities() {
+    final result = <String, _LocalSyncEntity>{};
+
+    void add(
+      String type,
+      String id,
+      Map<String, dynamic> payload,
+    ) {
+      final entity = _LocalSyncEntity(
+        entityType: type,
+        entityId: id,
+        payload: payload,
+      );
+      result[entity.localKey] = entity;
+    }
+
+    for (final item in items) {
+      add('item', item.id, item.toJson());
+    }
+    for (final entry in journals.entries) {
+      add('journal', entry.key, entry.value.toJson());
+    }
+    for (final entry in months.entries) {
+      add('month', entry.key, entry.value.toJson());
+    }
+    for (final entry in weeks.entries) {
+      add('week', entry.key, entry.value.toJson());
+    }
+    for (final habit in habits) {
+      add('habit', habit.id, habit.toJson());
+    }
+    for (final entry in inbox) {
+      add('inbox', entry.id, entry.toJson());
+    }
+
+    final cloudPrefs = Map<String, dynamic>.from(preferences.toJson())
+      ..remove('privacyLockEnabled')
+      ..remove('biometricUnlock')
+      ..remove('autoLockMinutes')
+      ..remove('hideHomeDetails')
+      ..remove('pinSalt')
+      ..remove('pinHash')
+      ..remove('onboardingDone');
+    add('preferences', 'main', cloudPrefs);
+
+    return result;
+  }
+
+  String _syncPayloadHash(Map<String, dynamic> payload) =>
+      sha256.convert(utf8.encode(jsonEncode(payload))).toString();
+
+  Future<void> _captureSyncChanges(
+    SharedPreferences prefs, {
+    bool forceAll = false,
+  }) async {
+    final entities = _currentSyncEntities();
+    final now = DateTime.now();
+
+    for (final entry in entities.entries) {
+      final hash = _syncPayloadHash(entry.value.payload);
+      if (forceAll || _syncIndex[entry.key] != hash) {
+        _syncQueue[entry.key] = CloudSyncOperation(
+          entityType: entry.value.entityType,
+          entityId: entry.value.entityId,
+          payload: entry.value.payload,
+          updatedAt: now,
+        );
+      }
+    }
+
+    for (final oldKey in _syncIndex.keys.toList()) {
+      if (entities.containsKey(oldKey)) continue;
+      final splitAt = oldKey.indexOf(':');
+      if (splitAt <= 0) continue;
+      _syncQueue[oldKey] = CloudSyncOperation(
+        entityType: oldKey.substring(0, splitAt),
+        entityId: oldKey.substring(splitAt + 1),
+        payload: null,
+        updatedAt: now,
+        deleted: true,
+      );
+    }
+
+    _replaceSyncIndex(entities);
+    await _persistSyncMetadata(prefs);
+  }
+
+  void _replaceSyncIndex(Map<String, _LocalSyncEntity> entities) {
+    _syncIndex
+      ..clear()
+      ..addEntries(
+        entities.entries.map(
+          (entry) => MapEntry(
+            entry.key,
+            _syncPayloadHash(entry.value.payload),
+          ),
+        ),
+      );
+  }
+
+  Future<void> _persistSyncMetadata(SharedPreferences prefs) async {
+    await prefs.setString(
+      _syncQueueKey,
+      jsonEncode(
+        _syncQueue.map((key, value) => MapEntry(key, value.toJson())),
+      ),
+    );
+    await prefs.setString(_syncIndexKey, jsonEncode(_syncIndex));
   }
 
   Map<String, dynamic> _backupDataPayload() => {
