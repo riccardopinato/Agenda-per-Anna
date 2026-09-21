@@ -3525,8 +3525,13 @@ class _CloudAccountScreenState extends State<CloudAccountScreen> {
   Future<void> _submit() async {
     final email = emailController.text.trim();
     final password = passwordController.text;
-    if (email.isEmpty || password.length < 6) {
-      _message('Inserisci email e una password di almeno 6 caratteri.');
+    final minimumPasswordLength = createMode ? 8 : 6;
+    if (email.isEmpty || password.length < minimumPasswordLength) {
+      _message(
+        createMode
+            ? 'Inserisci email e una password di almeno 8 caratteri.'
+            : 'Inserisci email e password.',
+      );
       return;
     }
 
