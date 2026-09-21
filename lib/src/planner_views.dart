@@ -1948,6 +1948,13 @@ Future<void> _showAgendaItemActions(
             ),
             onTap: () => Navigator.pop(context, 'pin'),
           ),
+          if (store.sharedAgendaSpaces.isNotEmpty)
+            ListTile(
+              leading: const Icon(Icons.favorite_outline),
+              title: const Text('Sposta in Noi ♡'),
+              subtitle: const Text('Rendi questo elemento condiviso.'),
+              onTap: () => Navigator.pop(context, 'share'),
+            ),
           ListTile(
             leading: Icon(
               Icons.delete_outline,
@@ -1970,6 +1977,8 @@ Future<void> _showAgendaItemActions(
     await store.duplicateItem(item);
   } else if (action == 'pin') {
     await store.toggleItemPinned(item.id);
+  } else if (action == 'share' && context.mounted) {
+    await _movePrivateAgendaItemToShared(context, store, item);
   } else if (action == 'delete' && context.mounted) {
     final confirmed = await showDialog<bool>(
           context: context,
