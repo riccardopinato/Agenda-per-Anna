@@ -94,14 +94,14 @@ language sql
 stable
 security definer
 set search_path = public
-as $
+as $func$
   select exists (
     select 1
     from public.space_members sm
     where sm.space_id = target_space_id
       and sm.user_id = auth.uid()
   );
-$;
+$func$;
 
 revoke all on function public.is_space_member(uuid) from public;
 grant execute on function public.is_space_member(uuid) to authenticated;
