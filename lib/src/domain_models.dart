@@ -726,6 +726,8 @@ class SharedEntry {
   final TimeOfDay? end;
   final bool done;
   final String? updatedBy;
+  final DateTime? updatedAt;
+  final String editorName;
 
   const SharedEntry({
     required this.id,
@@ -737,6 +739,8 @@ class SharedEntry {
     this.end,
     this.done = false,
     this.updatedBy,
+    this.updatedAt,
+    this.editorName = '',
   });
 
   SharedEntry copyWith({
@@ -748,7 +752,10 @@ class SharedEntry {
     TimeOfDay? end,
     bool? done,
     String? updatedBy,
+    DateTime? updatedAt,
+    String? editorName,
     bool clearTime = false,
+    bool clearUpdatedBy = false,
   }) =>
       SharedEntry(
         id: id,
@@ -759,7 +766,9 @@ class SharedEntry {
         start: clearTime ? null : (start ?? this.start),
         end: clearTime ? null : (end ?? this.end),
         done: done ?? this.done,
-        updatedBy: updatedBy ?? this.updatedBy,
+        updatedBy: clearUpdatedBy ? null : (updatedBy ?? this.updatedBy),
+        updatedAt: updatedAt ?? this.updatedAt,
+        editorName: editorName ?? this.editorName,
       );
 
   Map<String, dynamic> toJson() => {
@@ -775,11 +784,26 @@ class SharedEntry {
             ? null
             : {'hour': end!.hour, 'minute': end!.minute},
         'done': done,
+        'editorName': editorName,
       };
+
+  Map<String, dynamic> toCacheJson() => {
+        ...toJson(),
+        '_updatedBy': updatedBy,
+        '_updatedAt': updatedAt?.toUtc().toIso8601String(),
+      };
+
+  factory SharedEntry.fromCacheJson(Map<String, dynamic> json) =>
+      SharedEntry.fromJson(
+        json,
+        updatedBy: json['_updatedBy'] as String?,
+        updatedAt: DateTime.tryParse(json['_updatedAt'] as String? ?? ''),
+      );
 
   factory SharedEntry.fromJson(
     Map<String, dynamic> json, {
     String? updatedBy,
+    DateTime? updatedAt,
   }) {
     TimeOfDay? parseTime(dynamic raw) {
       if (raw is! Map) return null;
@@ -798,16 +822,55 @@ class SharedEntry {
       ),
       title: json['title'] as String? ?? '',
       note: json['note'] as String? ?? '',
-      date: DateTime.tryParse(json['date'] as String? ?? '') ??
-          DateTime.now(),
+      date: DateTime.tryParse(json['date'] as String? ?? '') ?? DateTime.now(),
       start: parseTime(json['start']),
       end: parseTime(json['end']),
       done: json['done'] as bool? ?? false,
       updatedBy: updatedBy,
+      updatedAt: updatedAt,
+      editorName: json['editorName'] as String? ?? '',
     );
   }
 }
 
+enum SharedPendingAction { upsert, delete }
+
+class SharedPendingOperation {
+  final SharedPendingAction action;
+  final String entityId;
+  final Map<String, dynamic>? payload;
+  final DateTime updatedAt;
+
+  const SharedPendingOperation({
+    required this.action,
+    required this.entityId,
+    required this.updatedAt,
+    this.payload,
+  });
+
+  Map<String, dynamic> toJson() => {
+        'action': action.name,
+        'entityId': entityId,
+        'payload': payload,
+        'updatedAt': updatedAt.toUtc().toIso8601String(),
+      };
+
+  factory SharedPendingOperation.fromJson(Map<String, dynamic> json) {
+    final actionName = json['action'] as String? ?? 'upsert';
+    return SharedPendingOperation(
+      action: SharedPendingAction.values.firstWhere(
+        (value) => value.name == actionName,
+        orElse: () => SharedPendingAction.upsert,
+      ),
+      entityId: json['entityId'] as String? ?? '',
+      payload: json['payload'] is Map
+          ? Map<String, dynamic>.from(json['payload'] as Map)
+          : null,
+      updatedAt: DateTime.tryParse(json['updatedAt'] as String? ?? '') ??
+          DateTime.fromMillisecondsSinceEpoch(0, isUtc: true),
+    );
+  }
+}
 class BackupSummary {
   final DateTime exportedAt;
   final int itemCount;
