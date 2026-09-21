@@ -3113,7 +3113,32 @@ Future<void> openItemEditor(
             ));
   ItemType type = existing?.type ?? ItemType.appointment;
   AgendaCategory category = existing?.category ?? AgendaCategory.personal;
-  int reminderChoice = existing?.reminderMinutesBefore ?? -1;
+  int primaryReminder = existing?.reminderMinutesBefore ?? -1;
+  int secondaryReminder = existing?.secondaryReminderMinutesBefore ?? -1;
+  RecurrenceRule recurrence = RecurrenceRule.none;
+  int recurrenceCount = 4;
+
+  AgendaItem buildItem({
+    required String id,
+    required DateTime itemDate,
+    bool done = false,
+  }) {
+    return AgendaItem(
+      id: id,
+      title: title.text.trim(),
+      note: note.text.trim(),
+      date: DateTime(itemDate.year, itemDate.month, itemDate.day),
+      type: type,
+      category: category,
+      reminderMinutesBefore:
+          start == null || primaryReminder < 0 ? null : primaryReminder,
+      secondaryReminderMinutesBefore:
+          start == null || secondaryReminder < 0 ? null : secondaryReminder,
+      start: start,
+      end: type == ItemType.task ? null : end,
+      done: done,
+    );
+  }
 
   await showModalBottomSheet(
     context: context,
@@ -3148,12 +3173,34 @@ Future<void> openItemEditor(
                   ),
                 ),
                 const SizedBox(height: 14),
-                Text(
-                  existing == null ? 'Aggiungi alla giornata' : 'Modifica',
-                  style: Theme.of(context)
-                      .textTheme
-                      .headlineSmall
-                      ?.copyWith(fontWeight: FontWeight.w800),
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        existing == null ? 'Aggiungi alla giornata' : 'Modifica',
+                        style: Theme.of(context)
+                            .textTheme
+                            .headlineSmall
+                            ?.copyWith(fontWeight: FontWeight.w800),
+                      ),
+                    ),
+                    if (existing != null)
+                      IconButton.filledTonal(
+                        tooltip: 'Duplica',
+                        onPressed: () async {
+                          final t = title.text.trim();
+                          if (t.isEmpty) return;
+                          await store.upsert(
+                            buildItem(
+                              id: const Uuid().v4(),
+                              itemDate: date,
+                            ),
+                          );
+                          if (sheetContext.mounted) Navigator.pop(sheetContext);
+                        },
+                        icon: const Icon(Icons.content_copy_outlined),
+                      ),
+                  ],
                 ),
                 const SizedBox(height: 14),
                 SegmentedButton<ItemType>(
@@ -3250,7 +3297,8 @@ Future<void> openItemEditor(
                           onPressed: () => setLocal(() {
                             start = null;
                             end = null;
-                            reminderChoice = -1;
+                            primaryReminder = -1;
+                            secondaryReminder = -1;
                           }),
                           icon: const Icon(Icons.close),
                         ),
@@ -3287,61 +3335,157 @@ Future<void> openItemEditor(
                   ),
                 if (start != null) ...[
                   const SizedBox(height: 4),
-                  DropdownButtonFormField<int>(
-                    initialValue: reminderChoice,
-                    decoration: const InputDecoration(
-                      labelText: 'Promemoria',
-                      prefixIcon: Icon(Icons.notifications_none_outlined),
-                      border: OutlineInputBorder(),
-                    ),
-                    items: const [
-                      DropdownMenuItem(value: -1, child: Text('Nessun promemoria')),
-                      DropdownMenuItem(value: 0, child: Text('All’ora dell’evento')),
-                      DropdownMenuItem(value: 10, child: Text('10 minuti prima')),
-                      DropdownMenuItem(value: 30, child: Text('30 minuti prima')),
-                      DropdownMenuItem(value: 60, child: Text('1 ora prima')),
-                      DropdownMenuItem(value: 1440, child: Text('1 giorno prima')),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: DropdownButtonFormField<int>(
+                          initialValue: primaryReminder,
+                          decoration: const InputDecoration(
+                            labelText: 'Promemoria 1',
+                            prefixIcon:
+                                Icon(Icons.notifications_none_outlined),
+                            border: OutlineInputBorder(),
+                          ),
+                          items: _reminderMenuItems,
+                          onChanged: (value) => setLocal(() {
+                            primaryReminder = value ?? -1;
+                            if (secondaryReminder == primaryReminder) {
+                              secondaryReminder = -1;
+                            }
+                          }),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: DropdownButtonFormField<int>(
+                          initialValue: secondaryReminder,
+                          decoration: const InputDecoration(
+                            labelText: 'Promemoria 2',
+                            prefixIcon:
+                                Icon(Icons.add_alert_outlined),
+                            border: OutlineInputBorder(),
+                          ),
+                          items: _reminderMenuItems,
+                          onChanged: (value) => setLocal(() {
+                            secondaryReminder = value ?? -1;
+                            if (secondaryReminder == primaryReminder) {
+                              secondaryReminder = -1;
+                            }
+                          }),
+                        ),
+                      ),
                     ],
-                    onChanged: (value) =>
-                        setLocal(() => reminderChoice = value ?? -1),
                   ),
                   const SizedBox(height: 7),
                   Text(
-                    'Il promemoria viene salvato sul dispositivo. Sul web la disponibilità dipende dal browser.',
+                    'Puoi impostare fino a due promemoria diversi per lo stesso impegno.',
                     style: Theme.of(context).textTheme.bodySmall,
                   ),
                 ],
-                const SizedBox(height: 16),
-                SizedBox(
-                  width: double.infinity,
-                  child: FilledButton.icon(
-                    icon: const Icon(Icons.check),
-                    onPressed: () async {
-                      final t = title.text.trim();
-                      if (t.isEmpty) return;
-
-                      await store.upsert(
-                        AgendaItem(
-                          id: existing?.id ?? const Uuid().v4(),
-                          title: t,
-                          note: note.text.trim(),
-                          date: DateTime(date.year, date.month, date.day),
-                          type: type,
-                          category: category,
-                          reminderMinutesBefore:
-                              start == null || reminderChoice < 0
-                                  ? null
-                                  : reminderChoice,
-                          start: start,
-                          end: type == ItemType.task ? null : end,
-                          done: existing?.done ?? false,
+                const SizedBox(height: 18),
+                Text(
+                  'Ripeti',
+                  style: Theme.of(context)
+                      .textTheme
+                      .titleSmall
+                      ?.copyWith(fontWeight: FontWeight.w800),
+                ),
+                const SizedBox(height: 8),
+                Wrap(
+                  spacing: 7,
+                  runSpacing: 7,
+                  children: RecurrenceRule.values.map((value) {
+                    return ChoiceChip(
+                      selected: recurrence == value,
+                      avatar: Icon(value.icon, size: 17),
+                      label: Text(value.label),
+                      onSelected: (_) =>
+                          setLocal(() => recurrence = value),
+                    );
+                  }).toList(),
+                ),
+                if (recurrence != RecurrenceRule.none) ...[
+                  const SizedBox(height: 10),
+                  Row(
+                    children: [
+                      const Icon(Icons.repeat),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          '$recurrenceCount occorrenze totali',
+                          style: const TextStyle(fontWeight: FontWeight.w700),
                         ),
-                      );
-
-                      if (sheetContext.mounted) Navigator.pop(sheetContext);
-                    },
-                    label: const Text('Salva'),
+                      ),
+                    ],
                   ),
+                  Slider(
+                    value: recurrenceCount.toDouble(),
+                    min: 2,
+                    max: 20,
+                    divisions: 18,
+                    label: recurrenceCount.toString(),
+                    onChanged: (value) =>
+                        setLocal(() => recurrenceCount = value.round()),
+                  ),
+                ],
+                const SizedBox(height: 18),
+                Row(
+                  children: [
+                    if (existing != null) ...[
+                      Expanded(
+                        child: OutlinedButton.icon(
+                          icon: const Icon(Icons.delete_outline),
+                          onPressed: () async {
+                            await store.deleteItem(existing.id);
+                            if (sheetContext.mounted) {
+                              Navigator.pop(sheetContext);
+                            }
+                          },
+                          label: const Text('Elimina'),
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                    ],
+                    Expanded(
+                      flex: 2,
+                      child: FilledButton.icon(
+                        icon: const Icon(Icons.check),
+                        onPressed: () async {
+                          final t = title.text.trim();
+                          if (t.isEmpty) return;
+
+                          final base = buildItem(
+                            id: existing?.id ?? const Uuid().v4(),
+                            itemDate: date,
+                            done: existing?.done ?? false,
+                          );
+                          await store.upsert(base);
+
+                          if (recurrence != RecurrenceRule.none) {
+                            for (var i = 1; i < recurrenceCount; i++) {
+                              final nextDate =
+                                  _recurrenceDate(date, recurrence, i);
+                              await store.upsert(
+                                buildItem(
+                                  id: const Uuid().v4(),
+                                  itemDate: nextDate,
+                                ),
+                              );
+                            }
+                          }
+
+                          if (sheetContext.mounted) {
+                            Navigator.pop(sheetContext);
+                          }
+                        },
+                        label: Text(
+                          recurrence == RecurrenceRule.none
+                              ? 'Salva'
+                              : 'Salva serie',
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),
@@ -3350,6 +3494,40 @@ Future<void> openItemEditor(
       ),
     ),
   );
+}
+
+const List<DropdownMenuItem<int>> _reminderMenuItems = [
+  DropdownMenuItem(value: -1, child: Text('Nessuno')),
+  DropdownMenuItem(value: 0, child: Text('All’ora')),
+  DropdownMenuItem(value: 10, child: Text('10 min prima')),
+  DropdownMenuItem(value: 30, child: Text('30 min prima')),
+  DropdownMenuItem(value: 60, child: Text('1 ora prima')),
+  DropdownMenuItem(value: 120, child: Text('2 ore prima')),
+  DropdownMenuItem(value: 1440, child: Text('1 giorno prima')),
+];
+
+DateTime _recurrenceDate(
+  DateTime start,
+  RecurrenceRule rule,
+  int offset,
+) {
+  switch (rule) {
+    case RecurrenceRule.none:
+      return start;
+    case RecurrenceRule.daily:
+      return start.add(Duration(days: offset));
+    case RecurrenceRule.weekly:
+      return start.add(Duration(days: 7 * offset));
+    case RecurrenceRule.monthly:
+      final firstOfTarget = DateTime(start.year, start.month + offset, 1);
+      final lastDay = DateTime(
+        firstOfTarget.year,
+        firstOfTarget.month + 1,
+        0,
+      ).day;
+      final day = start.day.clamp(1, lastDay);
+      return DateTime(firstOfTarget.year, firstOfTarget.month, day);
+  }
 }
 
 const _positiveQuotes = <(String, String)>[
