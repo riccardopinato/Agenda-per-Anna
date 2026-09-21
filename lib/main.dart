@@ -38,25 +38,55 @@ class AgendaApp extends StatelessWidget {
   final AgendaStore store;
   const AgendaApp({super.key, required this.store});
 
-  @override
-  Widget build(BuildContext context) {
+  ThemeData _theme(Brightness brightness) {
     final scheme = ColorScheme.fromSeed(
-      seedColor: const Color(0xFFE98FAA),
-      brightness: Brightness.light,
+      seedColor: store.preferences.palette.seed,
+      brightness: brightness,
     );
-    return MaterialApp(
-      debugShowCheckedModeBanner: false,
-      title: 'Agenda per Anna',
-      theme: ThemeData(
-        useMaterial3: true,
-        colorScheme: scheme,
-        scaffoldBackgroundColor: const Color(0xFFFFFAFC),
-        cardTheme: const CardThemeData(
-          elevation: 0,
-          margin: EdgeInsets.zero,
+    final dark = brightness == Brightness.dark;
+
+    return ThemeData(
+      useMaterial3: true,
+      colorScheme: scheme,
+      scaffoldBackgroundColor:
+          dark ? const Color(0xFF151316) : const Color(0xFFFFFAFC),
+      cardTheme: const CardThemeData(
+        elevation: 0,
+        margin: EdgeInsets.zero,
+      ),
+      inputDecorationTheme: InputDecorationTheme(
+        filled: false,
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(16),
         ),
       ),
-      home: MainShell(store: store),
+      navigationBarTheme: NavigationBarThemeData(
+        height: 72,
+        indicatorColor: scheme.primaryContainer,
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: store,
+      builder: (context, _) {
+        final mode = switch (store.preferences.themeMode) {
+          AgendaThemeMode.system => ThemeMode.system,
+          AgendaThemeMode.light => ThemeMode.light,
+          AgendaThemeMode.dark => ThemeMode.dark,
+        };
+
+        return MaterialApp(
+          debugShowCheckedModeBanner: false,
+          title: 'Agenda per Anna',
+          themeMode: mode,
+          theme: _theme(Brightness.light),
+          darkTheme: _theme(Brightness.dark),
+          home: MainShell(store: store),
+        );
+      },
     );
   }
 }
