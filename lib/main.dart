@@ -850,7 +850,34 @@ class HomeScreen extends StatelessWidget {
       builder: (context, _) {
         final today = store.forDay(now);
         return Scaffold(
-          appBar: AppBar(title: const Text('Agenda per Anna', style: TextStyle(fontWeight: FontWeight.w800))),
+          appBar: AppBar(
+            title: const Text(
+              'Agenda per Anna',
+              style: TextStyle(fontWeight: FontWeight.w800),
+            ),
+            actions: [
+              IconButton(
+                tooltip: 'Cerca',
+                onPressed: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => SearchScreen(store: store),
+                  ),
+                ),
+                icon: const Icon(Icons.search),
+              ),
+              IconButton(
+                tooltip: 'Archivio',
+                onPressed: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => ArchiveScreen(store: store),
+                  ),
+                ),
+                icon: const Icon(Icons.inventory_2_outlined),
+              ),
+            ],
+          ),
           body: ListView(
             padding: const EdgeInsets.fromLTRB(18, 8, 18, 100),
             children: [
@@ -1006,6 +1033,393 @@ class _TodayWellbeingCard extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+enum _SearchHitType { event, journal, month }
+
+class _SearchHit {
+  final _SearchHitType type;
+  final String title;
+  final String subtitle;
+  final DateTime date;
+  final AgendaItem? item;
+
+  const _SearchHit({
+    required this.type,
+    required this.title,
+    required this.subtitle,
+    required this.date,
+    this.item,
+  });
+}
+
+class SearchScreen extends StatefulWidget {
+  final AgendaStore store;
+
+  const SearchScreen({super.key, required this.store});
+
+  @override
+  State<SearchScreen> createState() => _SearchScreenState();
+}
+
+class _SearchScreenState extends State<SearchScreen> {
+  String query = '';
+  AgendaCategory? category;
+
+  List<_SearchHit> _results() {
+    final q = query.trim().toLowerCase();
+    if (q.isEmpty) return const [];
+
+    final hits = <_SearchHit>[];
+
+    for (final item in widget.store.items) {
+      if (category != null && item.category != category) continue;
+      final haystack = [
+        item.title,
+        item.note,
+        item.category.label,
+        DateFormat('d MMMM yyyy', 'it_IT').format(item.date),
+      ].join(' ').toLowerCase();
+
+      if (haystack.contains(q)) {
+        hits.add(
+          _SearchHit(
+            type: _SearchHitType.event,
+            title: item.title,
+            subtitle:
+                '${DateFormat('d MMMM yyyy', 'it_IT').format(item.date)} · ${item.category.label}',
+            date: item.date,
+            item: item,
+          ),
+        );
+      }
+    }
+
+    if (category == null) {
+      for (final entry in widget.store.journals.entries) {
+        final date = DateTime.tryParse(entry.key);
+        if (date == null) continue;
+        final journal = entry.value;
+        final haystack = [
+          journal.beautiful,
+          journal.note,
+          ...journal.gratitude,
+          journal.mood?.label ?? '',
+        ].join(' ').toLowerCase();
+
+        if (haystack.contains(q)) {
+          hits.add(
+            _SearchHit(
+              type: _SearchHitType.journal,
+              title: journal.beautiful.trim().isNotEmpty
+                  ? journal.beautiful.trim()
+                  : 'Diario del ${DateFormat('d MMMM', 'it_IT').format(date)}',
+              subtitle:
+                  'Diario · ${DateFormat('d MMMM yyyy', 'it_IT').format(date)}',
+              date: date,
+            ),
+          );
+        }
+      }
+
+      for (final entry in widget.store.months.entries) {
+        final parts = entry.key.split('-');
+        if (parts.length != 2) continue;
+        final year = int.tryParse(parts[0]);
+        final month = int.tryParse(parts[1]);
+        if (year == null || month == null) continue;
+        final data = entry.value;
+        final haystack = [
+          data.intention,
+          data.monthWord,
+          data.selfCare,
+          ...data.goals,
+          ...data.books,
+          ...data.films,
+          ...data.hobbies,
+          ...data.wishes,
+          ...data.ideas,
+          data.bestMoment,
+          data.lesson,
+          data.challenge,
+          data.nextMonth,
+          data.reflection,
+        ].join(' ').toLowerCase();
+
+        if (haystack.contains(q)) {
+          final date = DateTime(year, month);
+          hits.add(
+            _SearchHit(
+              type: _SearchHitType.month,
+              title:
+                  _cap(DateFormat('MMMM yyyy', 'it_IT').format(date)),
+              subtitle: data.intention.trim().isEmpty
+                  ? 'Pagina del mese'
+                  : data.intention.trim(),
+              date: date,
+            ),
+          );
+        }
+      }
+    }
+
+    hits.sort((a, b) => b.date.compareTo(a.date));
+    return hits;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final results = _results();
+
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text(
+          'Cerca nell’agenda',
+          style: TextStyle(fontWeight: FontWeight.w800),
+        ),
+      ),
+      body: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(14, 4, 14, 8),
+            child: TextField(
+              autofocus: true,
+              onChanged: (value) => setState(() => query = value),
+              decoration: InputDecoration(
+                hintText: 'Cerca appuntamenti, note, ricordi...',
+                prefixIcon: const Icon(Icons.search),
+                filled: true,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(18),
+                  borderSide: BorderSide.none,
+                ),
+              ),
+            ),
+          ),
+          SizedBox(
+            height: 46,
+            child: ListView(
+              padding: const EdgeInsets.symmetric(horizontal: 14),
+              scrollDirection: Axis.horizontal,
+              children: [
+                Padding(
+                  padding: const EdgeInsets.only(right: 7),
+                  child: ChoiceChip(
+                    selected: category == null,
+                    label: const Text('Tutto'),
+                    onSelected: (_) => setState(() => category = null),
+                  ),
+                ),
+                ...AgendaCategory.values.map(
+                  (value) => Padding(
+                    padding: const EdgeInsets.only(right: 7),
+                    child: ChoiceChip(
+                      selected: category == value,
+                      avatar: Icon(
+                        value.icon,
+                        size: 16,
+                        color: value.color,
+                      ),
+                      label: Text(value.label),
+                      onSelected: (_) => setState(() {
+                        category = category == value ? null : value;
+                      }),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 6),
+          Expanded(
+            child: query.trim().isEmpty
+                ? const Center(
+                    child: Padding(
+                      padding: EdgeInsets.all(32),
+                      child: Text(
+                        'Scrivi qualcosa: i risultati compariranno mentre digiti.',
+                        textAlign: TextAlign.center,
+                      ),
+                    ),
+                  )
+                : results.isEmpty
+                    ? const Center(child: Text('Nessun risultato.'))
+                    : ListView.separated(
+                        padding: const EdgeInsets.fromLTRB(14, 8, 14, 40),
+                        itemCount: results.length,
+                        separatorBuilder: (_, __) =>
+                            const SizedBox(height: 8),
+                        itemBuilder: (context, index) {
+                          final hit = results[index];
+                          final icon = switch (hit.type) {
+                            _SearchHitType.event => Icons.event_outlined,
+                            _SearchHitType.journal => Icons.menu_book_outlined,
+                            _SearchHitType.month =>
+                              Icons.calendar_month_outlined,
+                          };
+
+                          return Card(
+                            child: ListTile(
+                              leading: CircleAvatar(child: Icon(icon)),
+                              title: Text(
+                                hit.title,
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                              subtitle: Text(
+                                hit.subtitle,
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                              trailing:
+                                  const Icon(Icons.chevron_right),
+                              onTap: () async {
+                                switch (hit.type) {
+                                  case _SearchHitType.event:
+                                    await openItemEditor(
+                                      context,
+                                      widget.store,
+                                      hit.date,
+                                      existing: hit.item,
+                                    );
+                                  case _SearchHitType.journal:
+                                    if (!context.mounted) return;
+                                    await Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (_) => PlannerScreen(
+                                          store: widget.store,
+                                          initialDate: hit.date,
+                                        ),
+                                      ),
+                                    );
+                                  case _SearchHitType.month:
+                                    if (!context.mounted) return;
+                                    await Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (_) => MonthScreen(
+                                          store: widget.store,
+                                          initialMonth: hit.date,
+                                        ),
+                                      ),
+                                    );
+                                }
+                                if (mounted) setState(() {});
+                              },
+                            ),
+                          );
+                        },
+                      ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class ArchiveScreen extends StatelessWidget {
+  final AgendaStore store;
+
+  const ArchiveScreen({super.key, required this.store});
+
+  List<DateTime> _months() {
+    final keys = <String>{};
+
+    for (final item in store.items) {
+      keys.add(AgendaStore.monthKey(item.date.year, item.date.month));
+    }
+    for (final key in store.journals.keys) {
+      if (key.length >= 7) keys.add(key.substring(0, 7));
+    }
+    keys.addAll(store.months.keys);
+
+    final months = <DateTime>[];
+    for (final key in keys) {
+      final parts = key.split('-');
+      if (parts.length != 2) continue;
+      final year = int.tryParse(parts[0]);
+      final month = int.tryParse(parts[1]);
+      if (year != null && month != null) {
+        months.add(DateTime(year, month));
+      }
+    }
+    months.sort((a, b) => b.compareTo(a));
+    return months;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final months = _months();
+
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text(
+          'Archivio',
+          style: TextStyle(fontWeight: FontWeight.w800),
+        ),
+      ),
+      body: months.isEmpty
+          ? const Center(child: Text('L’archivio è ancora vuoto.'))
+          : ListView.separated(
+              padding: const EdgeInsets.fromLTRB(14, 8, 14, 40),
+              itemCount: months.length,
+              separatorBuilder: (_, __) => const SizedBox(height: 9),
+              itemBuilder: (context, index) {
+                final month = months[index];
+                final data = store.month(month.year, month.month);
+                final events = store.items
+                    .where(
+                      (e) =>
+                          e.date.year == month.year &&
+                          e.date.month == month.month,
+                    )
+                    .length;
+                final prefix =
+                    '${month.year}-${month.month.toString().padLeft(2, '0')}-';
+                final journalDays = store.journals.keys
+                    .where((key) => key.startsWith(prefix))
+                    .length;
+
+                return Card(
+                  child: ListTile(
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 8,
+                    ),
+                    leading: const CircleAvatar(
+                      child: Icon(Icons.auto_stories_outlined),
+                    ),
+                    title: Text(
+                      _cap(
+                        DateFormat('MMMM yyyy', 'it_IT').format(month),
+                      ),
+                      style: const TextStyle(fontWeight: FontWeight.w800),
+                    ),
+                    subtitle: Text(
+                      [
+                        '$events impegni',
+                        '$journalDays giorni raccontati',
+                        if (data.goals.isNotEmpty)
+                          '${data.goals.length} obiettivi',
+                      ].join(' · '),
+                    ),
+                    trailing: const Icon(Icons.chevron_right),
+                    onTap: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => MonthScreen(
+                          store: store,
+                          initialMonth: month,
+                        ),
+                      ),
+                    ),
+                  ),
+                );
+              },
+            ),
     );
   }
 }
