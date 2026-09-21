@@ -2269,6 +2269,8 @@ class _MonthScreenState extends State<MonthScreen> {
                 ),
               ),
               const SizedBox(height: 12),
+              _MonthWellbeingCard(store: widget.store, month: selected),
+              const SizedBox(height: 12),
               MonthTextCard(
                 key: ValueKey('month-intention-${selected.year}-${selected.month}'),
                 title: 'Questo mese voglio...',
@@ -2310,6 +2312,119 @@ class _MonthScreenState extends State<MonthScreen> {
           ),
         );
       },
+    );
+  }
+}
+
+class _MonthWellbeingCard extends StatelessWidget {
+  final AgendaStore store;
+  final DateTime month;
+
+  const _MonthWellbeingCard({
+    required this.store,
+    required this.month,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final prefix =
+        '${month.year}-${month.month.toString().padLeft(2, '0')}-';
+    final journals = store.journals.entries
+        .where((entry) => entry.key.startsWith(prefix))
+        .map((entry) => entry.value)
+        .toList();
+
+    final moodDays = journals.where((j) => j.mood != null).toList();
+    final gratitudeCount =
+        journals.fold<int>(0, (sum, j) => sum + j.gratitude.length);
+    final completedHabits = journals.fold<int>(
+      0,
+      (sum, j) => sum + j.completedHabitIds.length,
+    );
+
+    DayMood? mostCommonMood;
+    if (moodDays.isNotEmpty) {
+      final counts = <DayMood, int>{};
+      for (final journal in moodDays) {
+        final value = journal.mood!;
+        counts[value] = (counts[value] ?? 0) + 1;
+      }
+      mostCommonMood = counts.entries
+          .reduce((a, b) => a.value >= b.value ? a : b)
+          .key;
+    }
+
+    return SimpleCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Row(
+            children: [
+              Icon(Icons.favorite_outline),
+              SizedBox(width: 8),
+              Text(
+                'Il mese, visto da me',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800),
+              ),
+            ],
+          ),
+          const SizedBox(height: 6),
+          Text(
+            'Un piccolo riepilogo delle giornate che hai raccontato.',
+            style: Theme.of(context).textTheme.bodySmall,
+          ),
+          const SizedBox(height: 14),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              _MiniPill(
+                icon: Icons.mood_outlined,
+                text: '${moodDays.length} giorni con mood',
+              ),
+              _MiniPill(
+                icon: Icons.auto_awesome_outlined,
+                text: '$gratitudeCount cose belle',
+              ),
+              _MiniPill(
+                icon: Icons.check_circle_outline,
+                text: '$completedHabits abitudini fatte',
+              ),
+            ],
+          ),
+          if (mostCommonMood != null) ...[
+            const SizedBox(height: 12),
+            Container(
+              padding: const EdgeInsets.symmetric(
+                horizontal: 12,
+                vertical: 9,
+              ),
+              decoration: BoxDecoration(
+                color: mostCommonMood.color.withValues(alpha: 0.12),
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: Row(
+                children: [
+                  Text(
+                    mostCommonMood.emoji,
+                    style: const TextStyle(fontSize: 24),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      'Mood più presente: ${mostCommonMood.label}',
+                      style: TextStyle(
+                        color: mostCommonMood.color,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ],
+      ),
     );
   }
 }
