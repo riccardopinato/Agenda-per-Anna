@@ -2216,6 +2216,7 @@ class _SharedSpaceHubScreenState extends State<SharedSpaceHubScreen> {
             .toList(),
       ),
     );
+    await widget.store.refreshSharedAgendaCache();
   }
 
   Future<void> _bindRealtime(List<SharedSpace> value) async {
@@ -2675,6 +2676,7 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
       _cacheKey,
       jsonEncode(entries.map((e) => e.toCacheJson()).toList()),
     );
+    await widget.store.refreshSharedAgendaCache();
   }
 
   Future<List<SharedPendingOperation>> _loadPending() =>
