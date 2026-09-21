@@ -31,6 +31,7 @@ class AgendaStore extends ChangeNotifier {
   final Map<String, List<AgendaItem>> _dayIndex = {};
   final Map<String, SharedSpace> _sharedAgendaSpaces = {};
   final Map<String, List<SharedEntry>> _sharedAgendaEntriesBySpace = {};
+  final Map<String, List<UnifiedAgendaEntry>> _sharedAgendaDayIndex = {};
   final Set<String> _unifiedRealtimeSpaceIds = {};
   bool _dayIndexDirty = true;
   AgendaContentFilter agendaContentFilter = AgendaContentFilter.all;
@@ -115,6 +116,7 @@ class AgendaStore extends ChangeNotifier {
     _syncIndex.clear();
     _sharedAgendaSpaces.clear();
     _sharedAgendaEntriesBySpace.clear();
+    _sharedAgendaDayIndex.clear();
     _unifiedRealtimeSpaceIds.clear();
     preferences = const AgendaPreferences();
 
@@ -1566,11 +1568,42 @@ class AgendaStore extends ChangeNotifier {
   }
 
   List<UnifiedAgendaEntry> unifiedForDay(DateTime date) {
-    final result = unifiedAgendaItems
-        .where((entry) => sameDay(entry.date, date))
-        .toList()
-      ..sort((a, b) => a.sortMinutes.compareTo(b.sortMinutes));
+    final result = <UnifiedAgendaEntry>[];
+    final key = dateKey(date);
+
+    if (agendaContentFilter != AgendaContentFilter.sharedOnly) {
+      _ensureDayIndex();
+      result.addAll(
+        (_dayIndex[key] ?? const <AgendaItem>[])
+            .map(UnifiedAgendaEntry.private),
+      );
+    }
+
+    if (agendaContentFilter != AgendaContentFilter.privateOnly) {
+      result.addAll(
+        _sharedAgendaDayIndex[key] ?? const <UnifiedAgendaEntry>[],
+      );
+    }
+
+    result.sort((a, b) => a.sortMinutes.compareTo(b.sortMinutes));
     return List<UnifiedAgendaEntry>.unmodifiable(result);
+  }
+
+  void _rebuildSharedAgendaDayIndex() {
+    _sharedAgendaDayIndex.clear();
+    for (final space in _sharedAgendaSpaces.values) {
+      for (final entry
+          in _sharedAgendaEntriesBySpace[space.id] ?? const <SharedEntry>[]) {
+        if (entry.type == SharedEntryType.note) continue;
+        final unified = UnifiedAgendaEntry.shared(entry, space);
+        (_sharedAgendaDayIndex[dateKey(entry.date)] ??=
+                <UnifiedAgendaEntry>[])
+            .add(unified);
+      }
+    }
+    for (final dayEntries in _sharedAgendaDayIndex.values) {
+      dayEntries.sort((a, b) => a.sortMinutes.compareTo(b.sortMinutes));
+    }
   }
 
   List<UnifiedAgendaEntry> unifiedUpcoming(DateTime now) {
@@ -1753,6 +1786,7 @@ class AgendaStore extends ChangeNotifier {
     _sharedAgendaEntriesBySpace
       ..clear()
       ..addAll(nextEntries);
+    _rebuildSharedAgendaDayIndex();
 
     await _bindUnifiedRealtime(spaces);
     if (notify) notifyListeners();
@@ -1881,6 +1915,7 @@ class AgendaStore extends ChangeNotifier {
         ),
       );
     _sharedAgendaEntriesBySpace[spaceId] = cached;
+    _rebuildSharedAgendaDayIndex();
     await _cacheSharedAgendaEntries(spaceId, cached);
     notifyListeners();
   }
@@ -1905,6 +1940,7 @@ class AgendaStore extends ChangeNotifier {
       _sharedAgendaEntriesBySpace[spaceId] ?? const <SharedEntry>[],
     )..removeWhere((entry) => entry.id == entityId);
     _sharedAgendaEntriesBySpace[spaceId] = cached;
+    _rebuildSharedAgendaDayIndex();
     await _cacheSharedAgendaEntries(spaceId, cached);
     notifyListeners();
   }
