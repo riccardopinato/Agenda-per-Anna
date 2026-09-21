@@ -1080,14 +1080,26 @@ class _CalendarScreenState extends State<CalendarScreen> {
 
 class PlannerScreen extends StatefulWidget {
   final AgendaStore store;
-  const PlannerScreen({super.key, required this.store});
+  final DateTime? initialDate;
+
+  const PlannerScreen({
+    super.key,
+    required this.store,
+    this.initialDate,
+  });
 
   @override
   State<PlannerScreen> createState() => _PlannerScreenState();
 }
 
 class _PlannerScreenState extends State<PlannerScreen> {
-  DateTime day = DateTime.now();
+  late DateTime day;
+
+  @override
+  void initState() {
+    super.initState();
+    day = widget.initialDate ?? DateTime.now();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -2223,14 +2235,27 @@ class _WeekMemoryCardState extends State<WeekMemoryCard> {
 
 class MonthScreen extends StatefulWidget {
   final AgendaStore store;
-  const MonthScreen({super.key, required this.store});
+  final DateTime? initialMonth;
+
+  const MonthScreen({
+    super.key,
+    required this.store,
+    this.initialMonth,
+  });
 
   @override
   State<MonthScreen> createState() => _MonthScreenState();
 }
 
 class _MonthScreenState extends State<MonthScreen> {
-  late DateTime selected = DateTime(DateTime.now().year, DateTime.now().month);
+  late DateTime selected;
+
+  @override
+  void initState() {
+    super.initState();
+    final initial = widget.initialMonth ?? DateTime.now();
+    selected = DateTime(initial.year, initial.month);
+  }
 
   @override
   Widget build(BuildContext context) {
