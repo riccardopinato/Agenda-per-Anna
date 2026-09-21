@@ -1305,6 +1305,7 @@ class AgendaStore extends ChangeNotifier {
   static const _accountProfilesKey = 'account_profiles_v1';
   static const _activeAccountKey = 'active_account_v1';
   static const _legacyClaimedByKey = 'legacy_claimed_by_v1';
+  static const _privacyGuardKey = 'privacy_guard_v1';
   static const _backupFormat = 'agenda_per_anna_backup';
   static const _backupSchemaVersion = 1;
 
@@ -1455,6 +1456,36 @@ class AgendaStore extends ChangeNotifier {
       preferences = parsedPreferences;
     } else if (!prefs.containsKey(_preferencesKey)) {
       preferences = const AgendaPreferences(onboardingDone: false);
+    }
+
+    final privacyGuard = decodeSection<Map<String, dynamic>>(
+      _privacyGuardKey,
+      (value) => Map<String, dynamic>.from(value as Map),
+    );
+    if (privacyGuard != null) {
+      preferences = preferences.copyWith(
+        privacyLockEnabled:
+            privacyGuard['privacyLockEnabled'] as bool? ??
+                preferences.privacyLockEnabled,
+        biometricUnlock:
+            privacyGuard['biometricUnlock'] as bool? ??
+                preferences.biometricUnlock,
+        autoLockMinutes:
+            privacyGuard['autoLockMinutes'] as int? ??
+                preferences.autoLockMinutes,
+        hideHomeDetails:
+            privacyGuard['hideHomeDetails'] as bool? ??
+                preferences.hideHomeDetails,
+        pinSalt: privacyGuard['pinSalt'] as String?,
+        pinHash: privacyGuard['pinHash'] as String?,
+        clearPin: privacyGuard['pinSalt'] == null ||
+            privacyGuard['pinHash'] == null,
+      );
+    } else if (parsedPreferences != null) {
+      await prefs.setString(
+        _privacyGuardKey,
+        jsonEncode(_privacyGuardPayload()),
+      );
     }
 
     final parsedInbox = decodeSection<List<InboxEntry>>(
@@ -1706,6 +1737,15 @@ class AgendaStore extends ChangeNotifier {
       () => unawaited(syncCloud()),
     );
   }
+
+  Map<String, dynamic> _privacyGuardPayload() => {
+        'privacyLockEnabled': preferences.privacyLockEnabled,
+        'biometricUnlock': preferences.biometricUnlock,
+        'autoLockMinutes': preferences.autoLockMinutes,
+        'hideHomeDetails': preferences.hideHomeDetails,
+        'pinSalt': preferences.pinSalt,
+        'pinHash': preferences.pinHash,
+      };
 
   Map<String, dynamic> _cloudPreferencesPayload() {
     return Map<String, dynamic>.from(preferences.toJson())
@@ -2910,6 +2950,10 @@ class AgendaStore extends ChangeNotifier {
         jsonEncode(preferences.toJson()),
       );
     }
+    await prefs.setString(
+      _privacyGuardKey,
+      jsonEncode(_privacyGuardPayload()),
+    );
     await _queuePreferencesSync();
     notifyListeners();
   }
@@ -3217,6 +3261,28 @@ class HomeScreen extends StatelessWidget {
                   ],
                 ),
               ),
+              if (store.hasStorageWarnings) ...[
+                const SizedBox(height: 12),
+                SimpleCard(
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Icon(
+                        Icons.warning_amber_rounded,
+                        color: Theme.of(context).colorScheme.error,
+                      ),
+                      const SizedBox(width: 10),
+                      const Expanded(
+                        child: Text(
+                          'Una parte dell’archivio locale non è leggibile. '
+                          'Agenda la mantiene intatta invece di sovrascriverla. '
+                          'Puoi usare Backup e ripristino per recuperare una copia valida.',
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
               const SizedBox(height: 16),
               _HomeFocusCard(
                 next: upcoming.isEmpty ? null : upcoming.first,
