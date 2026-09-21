@@ -4892,6 +4892,7 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
   DateTime selected = DateTime.now();
 
   String get _cacheKey => 'shared_cache_${widget.space.id}';
+  String get _pendingKey => 'shared_pending_${widget.space.id}';
 
   @override
   void initState() {
@@ -4925,10 +4926,84 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
     );
   }
 
+  Future<List<Map<String, dynamic>>> _loadPending() async {
+    final prefs = await SharedPreferences.getInstance();
+    final raw = prefs.getString(_pendingKey);
+    if (raw == null) return [];
+    try {
+      return (jsonDecode(raw) as List)
+          .map((e) => Map<String, dynamic>.from(e as Map))
+          .toList();
+    } catch (_) {
+      return [];
+    }
+  }
+
+  Future<void> _savePending(
+    List<Map<String, dynamic>> pending,
+  ) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_pendingKey, jsonEncode(pending));
+  }
+
+  Future<void> _enqueueSharedUpsert(SharedEntry entry) async {
+    final pending = await _loadPending();
+    pending.removeWhere((e) => e['entityId'] == entry.id);
+    pending.add({
+      'action': 'upsert',
+      'entityId': entry.id,
+      'payload': entry.toJson(),
+      'updatedAt': DateTime.now().toUtc().toIso8601String(),
+    });
+    await _savePending(pending);
+  }
+
+  Future<void> _enqueueSharedDelete(String id) async {
+    final pending = await _loadPending();
+    pending.removeWhere((e) => e['entityId'] == id);
+    pending.add({
+      'action': 'delete',
+      'entityId': id,
+      'updatedAt': DateTime.now().toUtc().toIso8601String(),
+    });
+    await _savePending(pending);
+  }
+
+  Future<void> _flushPending() async {
+    if (!CloudSyncService.instance.signedIn) return;
+    final pending = await _loadPending();
+    if (pending.isEmpty) return;
+
+    final remaining = <Map<String, dynamic>>[];
+    for (final op in pending) {
+      try {
+        if (op['action'] == 'delete') {
+          await CloudSyncService.instance.deleteSharedRecord(
+            spaceId: widget.space.id,
+            entityType: 'shared_entry',
+            entityId: op['entityId'] as String,
+          );
+        } else {
+          await CloudSyncService.instance.upsertSharedRecord(
+            spaceId: widget.space.id,
+            entityType: 'shared_entry',
+            entityId: op['entityId'] as String,
+            payload: Map<String, dynamic>.from(op['payload'] as Map),
+            updatedAt: DateTime.tryParse(op['updatedAt'] as String? ?? ''),
+          );
+        }
+      } catch (_) {
+        remaining.add(op);
+      }
+    }
+    await _savePending(remaining);
+  }
+
   Future<void> _refresh() async {
     if (!CloudSyncService.instance.signedIn) return;
     if (mounted) setState(() => loading = true);
     try {
+      await _flushPending();
       final records =
           await CloudSyncService.instance.pullSharedRecords(widget.space.id);
       final next = <SharedEntry>[];
@@ -4945,6 +5020,19 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
           ),
         );
       }
+      final pending = await _loadPending();
+      for (final op in pending) {
+        final id = op['entityId'] as String;
+        next.removeWhere((e) => e.id == id);
+        if (op['action'] == 'upsert' && op['payload'] is Map) {
+          next.add(
+            SharedEntry.fromJson(
+              Map<String, dynamic>.from(op['payload'] as Map),
+            ),
+          );
+        }
+      }
+
       next.sort((a, b) {
         final date = a.date.compareTo(b.date);
         if (date != 0) return date;
@@ -4988,16 +5076,11 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
     });
     await _saveCache();
 
-    try {
-      await CloudSyncService.instance.upsertSharedRecord(
-        spaceId: widget.space.id,
-        entityType: 'shared_entry',
-        entityId: result.id,
-        payload: result.toJson(),
-      );
-      await _refresh();
-    } catch (_) {
-      _message('Modifica salvata sul dispositivo, ma non ancora inviata.');
+    await _enqueueSharedUpsert(result);
+    await _refresh();
+    final pending = await _loadPending();
+    if (pending.any((e) => e['entityId'] == result.id)) {
+      _message('Modifica salvata: verrà sincronizzata appena possibile.');
     }
   }
 
@@ -5008,16 +5091,8 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
       setState(() => entries[index] = updated);
       await _saveCache();
     }
-    try {
-      await CloudSyncService.instance.upsertSharedRecord(
-        spaceId: widget.space.id,
-        entityType: 'shared_entry',
-        entityId: updated.id,
-        payload: updated.toJson(),
-      );
-    } catch (_) {
-      _message('Stato salvato localmente; sincronizzazione da completare.');
-    }
+    await _enqueueSharedUpsert(updated);
+    await _flushPending();
   }
 
   Future<void> _delete(SharedEntry entry) async {
@@ -5043,15 +5118,8 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
 
     setState(() => entries.removeWhere((e) => e.id == entry.id));
     await _saveCache();
-    try {
-      await CloudSyncService.instance.deleteSharedRecord(
-        spaceId: widget.space.id,
-        entityType: 'shared_entry',
-        entityId: entry.id,
-      );
-    } catch (_) {
-      _message('Eliminazione locale effettuata; cloud da aggiornare.');
-    }
+    await _enqueueSharedDelete(entry.id);
+    await _flushPending();
   }
 
   Future<void> _invite() async {
@@ -5128,6 +5196,7 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
       }
       final prefs = await SharedPreferences.getInstance();
       await prefs.remove(_cacheKey);
+      await prefs.remove(_pendingKey);
       if (mounted) Navigator.pop(context);
     } catch (_) {
       _message('Operazione non riuscita.');
