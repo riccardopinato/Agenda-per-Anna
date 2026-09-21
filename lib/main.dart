@@ -516,22 +516,47 @@ class AgendaStore extends ChangeNotifier {
       items[index] = item;
     }
     await _save();
-    await _syncReminder(item);
+    await _syncReminders(item);
     notifyListeners();
+  }
+
+  Future<void> duplicateItem(AgendaItem item, {DateTime? date}) async {
+    final copy = AgendaItem(
+      id: const Uuid().v4(),
+      title: item.title,
+      note: item.note,
+      date: date == null
+          ? item.date
+          : DateTime(date.year, date.month, date.day),
+      type: item.type,
+      category: item.category,
+      reminderMinutesBefore: item.reminderMinutesBefore,
+      secondaryReminderMinutesBefore: item.secondaryReminderMinutesBefore,
+      start: item.start,
+      end: item.end,
+      done: false,
+    );
+    await upsert(copy);
   }
 
   Future<void> deleteItem(String id) async {
     items.removeWhere((e) => e.id == id);
     await NotificationService.instance.cancel(id);
+    await NotificationService.instance.cancel('$id:primary');
+    await NotificationService.instance.cancel('$id:secondary');
     await _save();
     notifyListeners();
   }
 
-  Future<void> _syncReminder(AgendaItem item) async {
-    final minutes = item.reminderMinutesBefore;
+  Future<void> _syncReminders(AgendaItem item) async {
     final start = item.start;
-    if (minutes == null || start == null) {
-      await NotificationService.instance.cancel(item.id);
+
+    // Pulisce anche il vecchio ID usato dalla versione a promemoria singolo.
+    await NotificationService.instance.cancel(item.id);
+
+    if (start == null) {
+      await NotificationService.instance.cancel('${item.id}:primary');
+      await NotificationService.instance.cancel('${item.id}:secondary');
       return;
     }
 
@@ -542,16 +567,34 @@ class AgendaStore extends ChangeNotifier {
       start.hour,
       start.minute,
     );
-    final when = eventTime.subtract(Duration(minutes: minutes));
 
-    await NotificationService.instance.schedule(
-      stableId: item.id,
-      title: item.title,
-      body: minutes == 0
-          ? 'È il momento di iniziare.'
-          : 'Tra $minutes minuti: ${item.title}',
-      when: when,
-    );
+    Future<void> syncOne(String suffix, int? minutes) async {
+      final stableId = '${item.id}:$suffix';
+      if (minutes == null) {
+        await NotificationService.instance.cancel(stableId);
+        return;
+      }
+
+      final when = eventTime.subtract(Duration(minutes: minutes));
+      await NotificationService.instance.schedule(
+        stableId: stableId,
+        title: item.title,
+        body: minutes == 0
+            ? 'È il momento di iniziare.'
+            : _reminderBody(minutes, item.title),
+        when: when,
+      );
+    }
+
+    await syncOne('primary', item.reminderMinutesBefore);
+    await syncOne('secondary', item.secondaryReminderMinutesBefore);
+  }
+
+  String _reminderBody(int minutes, String title) {
+    if (minutes == 1440) return 'Domani: $title';
+    if (minutes == 120) return 'Tra 2 ore: $title';
+    if (minutes == 60) return 'Tra 1 ora: $title';
+    return 'Tra $minutes minuti: $title';
   }
 
   Future<void> toggle(String id) async {
