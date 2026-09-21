@@ -1305,6 +1305,16 @@ class HomeScreen extends StatelessWidget {
                 ),
                 icon: const Icon(Icons.inventory_2_outlined),
               ),
+              IconButton(
+                tooltip: 'Backup',
+                onPressed: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => BackupScreen(store: store),
+                  ),
+                ),
+                icon: const Icon(Icons.backup_outlined),
+              ),
             ],
           ),
           body: ListView(
@@ -1849,6 +1859,420 @@ class ArchiveScreen extends StatelessWidget {
                 );
               },
             ),
+    );
+  }
+}
+
+class BackupScreen extends StatefulWidget {
+  final AgendaStore store;
+
+  const BackupScreen({super.key, required this.store});
+
+  @override
+  State<BackupScreen> createState() => _BackupScreenState();
+}
+
+class _BackupScreenState extends State<BackupScreen> {
+  bool busy = false;
+
+  String _timestampFileName(String extension) {
+    final stamp = DateFormat('yyyy-MM-dd_HH-mm').format(DateTime.now());
+    return 'Agenda-per-Anna_backup_$stamp.$extension';
+  }
+
+  void _message(String text) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(text)),
+    );
+  }
+
+  Future<void> _exportBackup() async {
+    setState(() => busy = true);
+    try {
+      final ok = await BackupFileService.instance.saveJsonBackup(
+        json: widget.store.createBackupJson(),
+        fileName: _timestampFileName('json'),
+      );
+      _message(
+        ok
+            ? 'Backup completo salvato.'
+            : 'Salvataggio annullato o non riuscito.',
+      );
+    } finally {
+      if (mounted) setState(() => busy = false);
+    }
+  }
+
+  Future<void> _exportReadable() async {
+    setState(() => busy = true);
+    try {
+      final ok = await BackupFileService.instance.saveTextExport(
+        text: widget.store.createReadableExport(),
+        fileName: _timestampFileName('txt'),
+      );
+      _message(
+        ok
+            ? 'Copia leggibile esportata.'
+            : 'Esportazione annullata o non riuscita.',
+      );
+    } finally {
+      if (mounted) setState(() => busy = false);
+    }
+  }
+
+  Future<void> _importBackup() async {
+    setState(() => busy = true);
+    String? raw;
+    try {
+      raw = await BackupFileService.instance.pickJsonBackup();
+    } finally {
+      if (mounted) setState(() => busy = false);
+    }
+
+    if (raw == null || !mounted) return;
+
+    BackupSummary summary;
+    try {
+      summary = widget.store.inspectBackup(raw);
+    } catch (error) {
+      _message(
+        error is FormatException
+            ? error.message.toString()
+            : 'Il file selezionato non è un backup valido.',
+      );
+      return;
+    }
+
+    final action = await showDialog<String>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Ripristinare questo backup?'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Creato il ${DateFormat('d MMMM yyyy, HH:mm', 'it_IT').format(summary.exportedAt)}',
+            ),
+            const SizedBox(height: 12),
+            Text('• ${summary.itemCount} impegni e attività'),
+            Text('• ${summary.journalCount} giorni di diario'),
+            Text('• ${summary.monthCount} pagine mensili'),
+            Text('• ${summary.weekCount} settimane'),
+            Text('• ${summary.habitCount} abitudini'),
+            const SizedBox(height: 14),
+            const Text(
+              'Prima del ripristino verrà creato automaticamente un backup locale di sicurezza.',
+              style: TextStyle(fontWeight: FontWeight.w700),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext),
+            child: const Text('Annulla'),
+          ),
+          OutlinedButton(
+            onPressed: () => Navigator.pop(dialogContext, 'merge'),
+            child: const Text('Unisci'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(dialogContext, 'replace'),
+            child: const Text('Sostituisci tutto'),
+          ),
+        ],
+      ),
+    );
+
+    if (action == null || !mounted) return;
+
+    if (action == 'replace') {
+      final confirmed = await showDialog<bool>(
+            context: context,
+            builder: (dialogContext) => AlertDialog(
+              title: const Text('Conferma sostituzione'),
+              content: const Text(
+                'I dati attuali verranno sostituiti da quelli del backup. '
+                'Potrai tornare indietro usando il backup locale creato prima del ripristino.',
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(dialogContext, false),
+                  child: const Text('Annulla'),
+                ),
+                FilledButton(
+                  onPressed: () => Navigator.pop(dialogContext, true),
+                  child: const Text('Ripristina'),
+                ),
+              ],
+            ),
+          ) ??
+          false;
+      if (!confirmed) return;
+    }
+
+    setState(() => busy = true);
+    try {
+      await widget.store.restoreBackup(
+        raw,
+        merge: action == 'merge',
+      );
+      _message(
+        action == 'merge'
+            ? 'Backup unito ai dati presenti.'
+            : 'Backup ripristinato correttamente.',
+      );
+    } catch (_) {
+      _message('Ripristino non riuscito. I dati attuali non sono stati eliminati.');
+    } finally {
+      if (mounted) setState(() => busy = false);
+    }
+  }
+
+  Future<void> _restoreSnapshot(LocalBackupSnapshot snapshot) async {
+    final confirmed = await showDialog<bool>(
+          context: context,
+          builder: (dialogContext) => AlertDialog(
+            title: const Text('Ripristinare questo backup locale?'),
+            content: Text(
+              '${snapshot.label}\n'
+              '${DateFormat('d MMMM yyyy, HH:mm', 'it_IT').format(snapshot.createdAt)}',
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(dialogContext, false),
+                child: const Text('Annulla'),
+              ),
+              FilledButton(
+                onPressed: () => Navigator.pop(dialogContext, true),
+                child: const Text('Ripristina'),
+              ),
+            ],
+          ),
+        ) ??
+        false;
+    if (!confirmed || !mounted) return;
+
+    setState(() => busy = true);
+    try {
+      await widget.store.restoreLocalSnapshot(snapshot.id);
+      _message('Backup locale ripristinato.');
+    } finally {
+      if (mounted) setState(() => busy = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: widget.store,
+      builder: (context, _) {
+        final snapshots = widget.store.localSnapshots;
+        return Scaffold(
+          appBar: AppBar(
+            title: const Text(
+              'Backup e dati',
+              style: TextStyle(fontWeight: FontWeight.w800),
+            ),
+          ),
+          body: Stack(
+            children: [
+              ListView(
+                padding: const EdgeInsets.fromLTRB(14, 8, 14, 50),
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(20),
+                    decoration: BoxDecoration(
+                      gradient: const LinearGradient(
+                        colors: [
+                          Color(0xFFFFE7EF),
+                          Color(0xFFF1ECFF),
+                        ],
+                      ),
+                      borderRadius: BorderRadius.circular(26),
+                    ),
+                    child: const Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Icon(Icons.shield_outlined, size: 30),
+                        SizedBox(height: 10),
+                        Text(
+                          'I ricordi restano tuoi',
+                          style: TextStyle(
+                            fontSize: 22,
+                            fontWeight: FontWeight.w900,
+                          ),
+                        ),
+                        SizedBox(height: 5),
+                        Text(
+                          'Crea una copia completa dell’agenda e conservala dove preferisci. '
+                          'Il file JSON può ripristinare l’app; il TXT è pensato per essere letto.',
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 14),
+                  _BackupActionCard(
+                    icon: Icons.save_alt_outlined,
+                    title: 'Crea backup completo',
+                    subtitle:
+                        'Salva appuntamenti, diario, mesi, settimane, abitudini e budget in un file .json.',
+                    buttonLabel: 'Salva backup',
+                    onPressed: busy ? null : _exportBackup,
+                  ),
+                  const SizedBox(height: 10),
+                  _BackupActionCard(
+                    icon: Icons.restore_outlined,
+                    title: 'Ripristina da file',
+                    subtitle:
+                        'Importa un backup precedente. Puoi unire i dati oppure sostituire tutto.',
+                    buttonLabel: 'Scegli backup',
+                    onPressed: busy ? null : _importBackup,
+                  ),
+                  const SizedBox(height: 10),
+                  _BackupActionCard(
+                    icon: Icons.description_outlined,
+                    title: 'Esporta copia leggibile',
+                    subtitle:
+                        'Crea un file .txt con impegni, diario e pagine mensili da conservare o stampare.',
+                    buttonLabel: 'Esporta TXT',
+                    onPressed: busy ? null : _exportReadable,
+                  ),
+                  const SizedBox(height: 20),
+                  Row(
+                    children: [
+                      const Expanded(
+                        child: Text(
+                          'Backup locali di sicurezza',
+                          style: TextStyle(
+                            fontWeight: FontWeight.w900,
+                            fontSize: 18,
+                          ),
+                        ),
+                      ),
+                      IconButton(
+                        tooltip: 'Crea backup locale',
+                        onPressed: busy
+                            ? null
+                            : () => widget.store.createLocalSnapshot(),
+                        icon: const Icon(Icons.add_circle_outline),
+                      ),
+                    ],
+                  ),
+                  Text(
+                    'L’app conserva fino a 5 copie locali e ne crea una automaticamente circa ogni 6 ore di utilizzo. '
+                    'Queste copie restano sul dispositivo e vengono perse se l’app viene disinstallata: '
+                    'per una copia davvero sicura usa anche “Crea backup completo”.',
+                    style: Theme.of(context).textTheme.bodySmall,
+                  ),
+                  const SizedBox(height: 10),
+                  if (snapshots.isEmpty)
+                    const SimpleCard(
+                      child: Text('Nessun backup locale disponibile.'),
+                    )
+                  else
+                    ...snapshots.map(
+                      (snapshot) => Card(
+                        margin: const EdgeInsets.only(bottom: 8),
+                        child: ListTile(
+                          leading: const CircleAvatar(
+                            child: Icon(Icons.history),
+                          ),
+                          title: Text(
+                            snapshot.label,
+                            style: const TextStyle(fontWeight: FontWeight.w800),
+                          ),
+                          subtitle: Text(
+                            DateFormat(
+                              'd MMMM yyyy, HH:mm',
+                              'it_IT',
+                            ).format(snapshot.createdAt),
+                          ),
+                          onTap: busy
+                              ? null
+                              : () => _restoreSnapshot(snapshot),
+                          trailing: IconButton(
+                            tooltip: 'Elimina backup',
+                            onPressed: busy
+                                ? null
+                                : () => widget.store
+                                    .deleteLocalSnapshot(snapshot.id),
+                            icon: const Icon(Icons.delete_outline),
+                          ),
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+              if (busy)
+                Positioned.fill(
+                  child: ColoredBox(
+                    color: Colors.white54,
+                    child: const Center(
+                      child: CircularProgressIndicator(),
+                    ),
+                  ),
+                ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+}
+
+class _BackupActionCard extends StatelessWidget {
+  final IconData icon;
+  final String title;
+  final String subtitle;
+  final String buttonLabel;
+  final VoidCallback? onPressed;
+
+  const _BackupActionCard({
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+    required this.buttonLabel,
+    required this.onPressed,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return SimpleCard(
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          CircleAvatar(
+            child: Icon(icon),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w800,
+                    fontSize: 17,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  subtitle,
+                  style: Theme.of(context).textTheme.bodySmall,
+                ),
+                const SizedBox(height: 10),
+                FilledButton.tonal(
+                  onPressed: onPressed,
+                  child: Text(buttonLabel),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
