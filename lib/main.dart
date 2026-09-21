@@ -1118,6 +1118,114 @@ class _LocalSyncEntity {
   String get localKey => '$entityType:$entityId';
 }
 
+enum SharedEntryType { appointment, task, note }
+
+extension SharedEntryTypeUi on SharedEntryType {
+  String get label => switch (this) {
+        SharedEntryType.appointment => 'Appuntamento',
+        SharedEntryType.task => 'Da fare',
+        SharedEntryType.note => 'Nota',
+      };
+
+  IconData get icon => switch (this) {
+        SharedEntryType.appointment => Icons.event_outlined,
+        SharedEntryType.task => Icons.check_circle_outline,
+        SharedEntryType.note => Icons.sticky_note_2_outlined,
+      };
+}
+
+class SharedEntry {
+  final String id;
+  final SharedEntryType type;
+  final String title;
+  final String note;
+  final DateTime date;
+  final TimeOfDay? start;
+  final TimeOfDay? end;
+  final bool done;
+  final String? updatedBy;
+
+  const SharedEntry({
+    required this.id,
+    required this.type,
+    required this.title,
+    required this.note,
+    required this.date,
+    this.start,
+    this.end,
+    this.done = false,
+    this.updatedBy,
+  });
+
+  SharedEntry copyWith({
+    SharedEntryType? type,
+    String? title,
+    String? note,
+    DateTime? date,
+    TimeOfDay? start,
+    TimeOfDay? end,
+    bool? done,
+    String? updatedBy,
+    bool clearTime = false,
+  }) =>
+      SharedEntry(
+        id: id,
+        type: type ?? this.type,
+        title: title ?? this.title,
+        note: note ?? this.note,
+        date: date ?? this.date,
+        start: clearTime ? null : (start ?? this.start),
+        end: clearTime ? null : (end ?? this.end),
+        done: done ?? this.done,
+        updatedBy: updatedBy ?? this.updatedBy,
+      );
+
+  Map<String, dynamic> toJson() => {
+        'id': id,
+        'type': type.name,
+        'title': title,
+        'note': note,
+        'date': date.toIso8601String(),
+        'start': start == null
+            ? null
+            : {'hour': start!.hour, 'minute': start!.minute},
+        'end': end == null
+            ? null
+            : {'hour': end!.hour, 'minute': end!.minute},
+        'done': done,
+      };
+
+  factory SharedEntry.fromJson(
+    Map<String, dynamic> json, {
+    String? updatedBy,
+  }) {
+    TimeOfDay? parseTime(dynamic raw) {
+      if (raw is! Map) return null;
+      final map = Map<String, dynamic>.from(raw);
+      return TimeOfDay(
+        hour: map['hour'] as int? ?? 0,
+        minute: map['minute'] as int? ?? 0,
+      );
+    }
+
+    return SharedEntry(
+      id: json['id'] as String,
+      type: SharedEntryType.values.firstWhere(
+        (e) => e.name == json['type'],
+        orElse: () => SharedEntryType.appointment,
+      ),
+      title: json['title'] as String? ?? '',
+      note: json['note'] as String? ?? '',
+      date: DateTime.tryParse(json['date'] as String? ?? '') ??
+          DateTime.now(),
+      start: parseTime(json['start']),
+      end: parseTime(json['end']),
+      done: json['done'] as bool? ?? false,
+      updatedBy: updatedBy,
+    );
+  }
+}
+
 class BackupSummary {
   final DateTime exportedAt;
   final int itemCount;
@@ -2456,6 +2564,16 @@ class HomeScreen extends StatelessWidget {
                   ),
                 ),
                 icon: const Icon(Icons.backup_outlined),
+              ),
+              IconButton(
+                tooltip: 'Noi',
+                onPressed: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => SharedSpaceHubScreen(store: store),
+                  ),
+                ),
+                icon: const Icon(Icons.favorite_outline),
               ),
               IconButton(
                 tooltip: 'Cloud',
