@@ -6305,6 +6305,7 @@ Future<void> openItemEditor(
   AgendaStore store,
   DateTime initialDate, {
   TimeOfDay? initialTime,
+  ItemType? initialType,
   AgendaItem? existing,
 }) async {
   final title = TextEditingController(text: existing?.title ?? '');
@@ -6318,7 +6319,7 @@ Future<void> openItemEditor(
               start,
               store.preferences.defaultEventMinutes,
             ));
-  ItemType type = existing?.type ?? ItemType.appointment;
+  ItemType type = existing?.type ?? initialType ?? ItemType.appointment;
   AgendaCategory category =
       existing?.category ?? store.preferences.defaultCategory;
   int primaryReminder = existing == null
