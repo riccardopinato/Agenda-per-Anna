@@ -51,43 +51,13 @@ class HomeScreen extends StatelessWidget {
     return AnimatedBuilder(
       animation: store,
       builder: (context, _) {
-        final today = store.forDay(now);
-        final upcoming = store.items
-            .where((e) {
-              if (e.done) return false;
-              final start = e.start;
-              if (start == null) return false;
-              final at = DateTime(
-                e.date.year,
-                e.date.month,
-                e.date.day,
-                start.hour,
-                start.minute,
-              );
-              return at.isAfter(now);
-            })
-            .toList()
-          ..sort((a, b) {
-            final ad = DateTime(
-              a.date.year,
-              a.date.month,
-              a.date.day,
-              a.start!.hour,
-              a.start!.minute,
-            );
-            final bd = DateTime(
-              b.date.year,
-              b.date.month,
-              b.date.day,
-              b.start!.hour,
-              b.start!.minute,
-            );
-            return ad.compareTo(bd);
-          });
-        final pendingTasks = store.items
-            .where((e) => e.type == ItemType.task && !e.done)
-            .length;
-        final pinnedItems = store.items.where((e) => e.pinned).toList();
+        final today = store.unifiedForDay(now);
+        final upcoming = store.unifiedUpcoming(now);
+        final pendingTasks = store.pendingUnifiedTaskCount;
+        final pinnedItems =
+            store.agendaContentFilter == AgendaContentFilter.sharedOnly
+                ? <AgendaItem>[]
+                : store.items.where((e) => e.pinned).toList();
         return Scaffold(
           floatingActionButton: FloatingActionButton.extended(
             onPressed: () => _showQuickCapture(context, store),
