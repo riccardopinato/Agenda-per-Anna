@@ -1,8 +1,13 @@
 import 'dart:convert';
+import 'dart:math';
 import 'dart:ui' as ui;
 
+import 'package:crypto/crypto.dart';
+
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/date_symbol_data_local.dart';
+import 'package:local_auth/local_auth.dart';
 import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:table_calendar/table_calendar.dart';
@@ -134,6 +139,13 @@ class AgendaPreferences {
   final int defaultEventMinutes;
   final int? defaultPrimaryReminder;
   final int? defaultSecondaryReminder;
+  final bool privacyLockEnabled;
+  final bool biometricUnlock;
+  final int autoLockMinutes;
+  final bool hideHomeDetails;
+  final String? pinSalt;
+  final String? pinHash;
+  final bool onboardingDone;
 
   const AgendaPreferences({
     this.displayName = 'Anna',
@@ -145,6 +157,13 @@ class AgendaPreferences {
     this.defaultEventMinutes = 60,
     this.defaultPrimaryReminder = 30,
     this.defaultSecondaryReminder,
+    this.privacyLockEnabled = false,
+    this.biometricUnlock = false,
+    this.autoLockMinutes = 2,
+    this.hideHomeDetails = false,
+    this.pinSalt,
+    this.pinHash,
+    this.onboardingDone = true,
   });
 
   AgendaPreferences copyWith({
@@ -157,8 +176,16 @@ class AgendaPreferences {
     int? defaultEventMinutes,
     int? defaultPrimaryReminder,
     int? defaultSecondaryReminder,
+    bool? privacyLockEnabled,
+    bool? biometricUnlock,
+    int? autoLockMinutes,
+    bool? hideHomeDetails,
+    String? pinSalt,
+    String? pinHash,
+    bool? onboardingDone,
     bool clearPrimaryReminder = false,
     bool clearSecondaryReminder = false,
+    bool clearPin = false,
   }) {
     return AgendaPreferences(
       displayName: displayName ?? this.displayName,
@@ -174,6 +201,14 @@ class AgendaPreferences {
       defaultSecondaryReminder: clearSecondaryReminder
           ? null
           : (defaultSecondaryReminder ?? this.defaultSecondaryReminder),
+      privacyLockEnabled:
+          privacyLockEnabled ?? this.privacyLockEnabled,
+      biometricUnlock: biometricUnlock ?? this.biometricUnlock,
+      autoLockMinutes: autoLockMinutes ?? this.autoLockMinutes,
+      hideHomeDetails: hideHomeDetails ?? this.hideHomeDetails,
+      pinSalt: clearPin ? null : (pinSalt ?? this.pinSalt),
+      pinHash: clearPin ? null : (pinHash ?? this.pinHash),
+      onboardingDone: onboardingDone ?? this.onboardingDone,
     );
   }
 
@@ -187,6 +222,13 @@ class AgendaPreferences {
         'defaultEventMinutes': defaultEventMinutes,
         'defaultPrimaryReminder': defaultPrimaryReminder,
         'defaultSecondaryReminder': defaultSecondaryReminder,
+        'privacyLockEnabled': privacyLockEnabled,
+        'biometricUnlock': biometricUnlock,
+        'autoLockMinutes': autoLockMinutes,
+        'hideHomeDetails': hideHomeDetails,
+        'pinSalt': pinSalt,
+        'pinHash': pinHash,
+        'onboardingDone': onboardingDone,
       };
 
   factory AgendaPreferences.fromJson(Map<String, dynamic> json) =>
@@ -216,6 +258,17 @@ class AgendaPreferences {
         defaultPrimaryReminder: json['defaultPrimaryReminder'] as int?,
         defaultSecondaryReminder:
             json['defaultSecondaryReminder'] as int?,
+        privacyLockEnabled:
+            json['privacyLockEnabled'] as bool? ?? false,
+        biometricUnlock:
+            json['biometricUnlock'] as bool? ?? false,
+        autoLockMinutes:
+            (json['autoLockMinutes'] as int? ?? 2).clamp(0, 60).toInt(),
+        hideHomeDetails:
+            json['hideHomeDetails'] as bool? ?? false,
+        pinSalt: json['pinSalt'] as String?,
+        pinHash: json['pinHash'] as String?,
+        onboardingDone: json['onboardingDone'] as bool? ?? true,
       );
 }
 
@@ -293,6 +346,7 @@ class AgendaItem {
   final int? reminderMinutesBefore;
   final int? secondaryReminderMinutesBefore;
   final bool done;
+  final bool pinned;
 
   const AgendaItem({
     required this.id,
@@ -306,6 +360,7 @@ class AgendaItem {
     this.start,
     this.end,
     this.done = false,
+    this.pinned = false,
   });
 
   AgendaItem copyWith({
@@ -319,6 +374,7 @@ class AgendaItem {
     int? reminderMinutesBefore,
     int? secondaryReminderMinutesBefore,
     bool? done,
+    bool? pinned,
     bool clearTime = false,
     bool clearReminder = false,
     bool clearSecondaryReminder = false,
@@ -338,6 +394,7 @@ class AgendaItem {
       start: clearTime ? null : (start ?? this.start),
       end: clearTime ? null : (end ?? this.end),
       done: done ?? this.done,
+      pinned: pinned ?? this.pinned,
     );
   }
 
@@ -351,6 +408,7 @@ class AgendaItem {
         'reminderMinutesBefore': reminderMinutesBefore,
         'secondaryReminderMinutesBefore': secondaryReminderMinutesBefore,
         'done': done,
+        'pinned': pinned,
         'start': start == null ? null : [start!.hour, start!.minute],
         'end': end == null ? null : [end!.hour, end!.minute],
       };
@@ -380,10 +438,51 @@ class AgendaItem {
       secondaryReminderMinutesBefore:
           json['secondaryReminderMinutesBefore'] as int?,
       done: json['done'] as bool? ?? false,
+      pinned: json['pinned'] as bool? ?? false,
       start: parseTime(json['start']),
       end: parseTime(json['end']),
     );
   }
+}
+
+class InboxEntry {
+  final String id;
+  final String text;
+  final DateTime createdAt;
+  final bool pinned;
+
+  const InboxEntry({
+    required this.id,
+    required this.text,
+    required this.createdAt,
+    this.pinned = false,
+  });
+
+  InboxEntry copyWith({
+    String? text,
+    bool? pinned,
+  }) =>
+      InboxEntry(
+        id: id,
+        text: text ?? this.text,
+        createdAt: createdAt,
+        pinned: pinned ?? this.pinned,
+      );
+
+  Map<String, dynamic> toJson() => {
+        'id': id,
+        'text': text,
+        'createdAt': createdAt.toIso8601String(),
+        'pinned': pinned,
+      };
+
+  factory InboxEntry.fromJson(Map<String, dynamic> json) => InboxEntry(
+        id: json['id'] as String,
+        text: json['text'] as String? ?? '',
+        createdAt: DateTime.tryParse(json['createdAt'] as String? ?? '') ??
+            DateTime.now(),
+        pinned: json['pinned'] as bool? ?? false,
+      );
 }
 
 enum DayMood { great, good, neutral, low, hard }
