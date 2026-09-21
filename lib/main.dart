@@ -227,16 +227,109 @@ class AgendaItem {
   }
 }
 
+enum DayMood { great, good, neutral, low, hard }
+
+extension DayMoodUi on DayMood {
+  String get label => switch (this) {
+        DayMood.great => 'Benissimo',
+        DayMood.good => 'Bene',
+        DayMood.neutral => 'Così così',
+        DayMood.low => 'Giù',
+        DayMood.hard => 'Difficile',
+      };
+
+  String get emoji => switch (this) {
+        DayMood.great => '😍',
+        DayMood.good => '😊',
+        DayMood.neutral => '😐',
+        DayMood.low => '😔',
+        DayMood.hard => '😣',
+      };
+
+  Color get color => switch (this) {
+        DayMood.great => const Color(0xFFE789A7),
+        DayMood.good => const Color(0xFF79B697),
+        DayMood.neutral => const Color(0xFFE0A85C),
+        DayMood.low => const Color(0xFF8C9BC7),
+        DayMood.hard => const Color(0xFF9B8A9D),
+      };
+}
+
+class HabitDefinition {
+  final String id;
+  final String name;
+
+  const HabitDefinition({
+    required this.id,
+    required this.name,
+  });
+
+  Map<String, dynamic> toJson() => {
+        'id': id,
+        'name': name,
+      };
+
+  factory HabitDefinition.fromJson(Map<String, dynamic> json) =>
+      HabitDefinition(
+        id: json['id'] as String,
+        name: json['name'] as String? ?? '',
+      );
+}
+
 class DayJournal {
   final String beautiful;
   final String note;
-  const DayJournal({this.beautiful = '', this.note = ''});
+  final DayMood? mood;
+  final List<String> gratitude;
+  final List<String> completedHabitIds;
 
-  Map<String, dynamic> toJson() => {'beautiful': beautiful, 'note': note};
+  const DayJournal({
+    this.beautiful = '',
+    this.note = '',
+    this.mood,
+    this.gratitude = const [],
+    this.completedHabitIds = const [],
+  });
+
+  DayJournal copyWith({
+    String? beautiful,
+    String? note,
+    DayMood? mood,
+    List<String>? gratitude,
+    List<String>? completedHabitIds,
+    bool clearMood = false,
+  }) {
+    return DayJournal(
+      beautiful: beautiful ?? this.beautiful,
+      note: note ?? this.note,
+      mood: clearMood ? null : (mood ?? this.mood),
+      gratitude: gratitude ?? this.gratitude,
+      completedHabitIds: completedHabitIds ?? this.completedHabitIds,
+    );
+  }
+
+  Map<String, dynamic> toJson() => {
+        'beautiful': beautiful,
+        'note': note,
+        'mood': mood?.name,
+        'gratitude': gratitude,
+        'completedHabitIds': completedHabitIds,
+      };
 
   factory DayJournal.fromJson(Map<String, dynamic> json) => DayJournal(
         beautiful: json['beautiful'] as String? ?? '',
         note: json['note'] as String? ?? '',
+        mood: json['mood'] == null
+            ? null
+            : DayMood.values.firstWhere(
+                (e) => e.name == json['mood'],
+                orElse: () => DayMood.neutral,
+              ),
+        gratitude:
+            List<String>.from(json['gratitude'] as List? ?? const []),
+        completedHabitIds: List<String>.from(
+          json['completedHabitIds'] as List? ?? const [],
+        ),
       );
 }
 
@@ -430,11 +523,13 @@ class AgendaStore extends ChangeNotifier {
   static const _journalsKey = 'journals_v1';
   static const _monthsKey = 'months_v1';
   static const _weeksKey = 'weeks_v1';
+  static const _habitsKey = 'habits_v1';
 
   final List<AgendaItem> items = [];
   final Map<String, DayJournal> journals = {};
   final Map<String, MonthlyData> months = {};
   final Map<String, WeekData> weeks = {};
+  final List<HabitDefinition> habits = [];
 
   Future<void> load() async {
     final prefs = await SharedPreferences.getInstance();
@@ -478,6 +573,25 @@ class AgendaStore extends ChangeNotifier {
                 WeekData.fromJson(Map<String, dynamic>.from(v as Map)),
               )));
       }
+
+      final hr = prefs.getString(_habitsKey);
+      if (hr != null) {
+        habits
+          ..clear()
+          ..addAll((jsonDecode(hr) as List).map(
+            (e) => HabitDefinition.fromJson(
+              Map<String, dynamic>.from(e as Map),
+            ),
+          ));
+      }
+
+      if (habits.isEmpty) {
+        habits.addAll(const [
+          HabitDefinition(id: 'water', name: 'Bere abbastanza'),
+          HabitDefinition(id: 'move', name: 'Muovermi un po’'),
+          HabitDefinition(id: 'me', name: 'Tempo per me'),
+        ]);
+      }
     } catch (_) {}
   }
 
@@ -495,6 +609,10 @@ class AgendaStore extends ChangeNotifier {
     await prefs.setString(
       _weeksKey,
       jsonEncode(weeks.map((k, v) => MapEntry(k, v.toJson()))),
+    );
+    await prefs.setString(
+      _habitsKey,
+      jsonEncode(habits.map((e) => e.toJson()).toList()),
     );
   }
 
@@ -609,6 +727,43 @@ class AgendaStore extends ChangeNotifier {
 
   Future<void> saveJournal(DateTime date, DayJournal journal) async {
     journals[dateKey(date)] = journal;
+    await _save();
+    notifyListeners();
+  }
+
+  Future<void> addHabit(String name) async {
+    final value = name.trim();
+    if (value.isEmpty) return;
+    habits.add(HabitDefinition(id: const Uuid().v4(), name: value));
+    await _save();
+    notifyListeners();
+  }
+
+  Future<void> removeHabit(String id) async {
+    habits.removeWhere((e) => e.id == id);
+    for (final entry in journals.entries.toList()) {
+      final journal = entry.value;
+      if (journal.completedHabitIds.contains(id)) {
+        journals[entry.key] = journal.copyWith(
+          completedHabitIds: journal.completedHabitIds
+              .where((habitId) => habitId != id)
+              .toList(),
+        );
+      }
+    }
+    await _save();
+    notifyListeners();
+  }
+
+  Future<void> toggleHabit(DateTime date, String habitId) async {
+    final current = journal(date);
+    final completed = [...current.completedHabitIds];
+    if (completed.contains(habitId)) {
+      completed.remove(habitId);
+    } else {
+      completed.add(habitId);
+    }
+    journals[dateKey(date)] = current.copyWith(completedHabitIds: completed);
     await _save();
     notifyListeners();
   }
