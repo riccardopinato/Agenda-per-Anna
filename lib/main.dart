@@ -2458,6 +2458,29 @@ class HomeScreen extends StatelessWidget {
                 icon: const Icon(Icons.backup_outlined),
               ),
               IconButton(
+                tooltip: 'Cloud',
+                onPressed: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => CloudAccountScreen(store: store),
+                  ),
+                ),
+                icon: AnimatedBuilder(
+                  animation: CloudSyncService.instance,
+                  builder: (context, _) {
+                    final cloud = CloudSyncService.instance;
+                    final icon = !cloud.configured
+                        ? Icons.cloud_off_outlined
+                        : cloud.state == CloudConnectionState.syncing
+                            ? Icons.sync
+                            : cloud.signedIn
+                                ? Icons.cloud_done_outlined
+                                : Icons.cloud_outlined;
+                    return Icon(icon);
+                  },
+                ),
+              ),
+              IconButton(
                 tooltip: 'Impostazioni',
                 onPressed: () => Navigator.push(
                   context,
@@ -4365,6 +4388,23 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     const SizedBox(height: 8),
                     ListTile(
                       contentPadding: EdgeInsets.zero,
+                      leading: const Icon(Icons.cloud_outlined),
+                      title: const Text('Account e sincronizzazione'),
+                      subtitle: const Text(
+                        'Sincronizza l’agenda personale fra i tuoi dispositivi.',
+                      ),
+                      trailing: const Icon(Icons.chevron_right),
+                      onTap: () => Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) =>
+                              CloudAccountScreen(store: widget.store),
+                        ),
+                      ),
+                    ),
+                    const Divider(),
+                    ListTile(
+                      contentPadding: EdgeInsets.zero,
                       leading: const Icon(Icons.backup_outlined),
                       title: const Text('Backup e ripristino'),
                       subtitle: const Text(
@@ -4399,6 +4439,388 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ),
         );
       },
+    );
+  }
+}
+
+class CloudAccountScreen extends StatefulWidget {
+  final AgendaStore store;
+
+  const CloudAccountScreen({
+    super.key,
+    required this.store,
+  });
+
+  @override
+  State<CloudAccountScreen> createState() => _CloudAccountScreenState();
+}
+
+class _CloudAccountScreenState extends State<CloudAccountScreen> {
+  final emailController = TextEditingController();
+  final passwordController = TextEditingController();
+  bool busy = false;
+  bool createMode = false;
+
+  @override
+  void dispose() {
+    emailController.dispose();
+    passwordController.dispose();
+    super.dispose();
+  }
+
+  String _stateLabel(CloudConnectionState state) => switch (state) {
+        CloudConnectionState.disabled => 'Cloud non configurato',
+        CloudConnectionState.initializing => 'Connessione...',
+        CloudConnectionState.signedOut => 'Non connesso',
+        CloudConnectionState.syncing => 'Sincronizzazione...',
+        CloudConnectionState.synced => 'Sincronizzato',
+        CloudConnectionState.error => 'Errore di sincronizzazione',
+      };
+
+  IconData _stateIcon(CloudConnectionState state) => switch (state) {
+        CloudConnectionState.disabled => Icons.cloud_off_outlined,
+        CloudConnectionState.initializing => Icons.hourglass_top,
+        CloudConnectionState.signedOut => Icons.cloud_outlined,
+        CloudConnectionState.syncing => Icons.sync,
+        CloudConnectionState.synced => Icons.cloud_done_outlined,
+        CloudConnectionState.error => Icons.cloud_off,
+      };
+
+  Future<void> _submit() async {
+    final email = emailController.text.trim();
+    final password = passwordController.text;
+    if (email.isEmpty || password.length < 6) {
+      _message('Inserisci email e una password di almeno 6 caratteri.');
+      return;
+    }
+
+    setState(() => busy = true);
+    try {
+      final cloud = CloudSyncService.instance;
+      if (createMode) {
+        await cloud.signUp(email: email, password: password);
+        if (!cloud.signedIn) {
+          _message(
+            'Account creato. Controlla la tua email per confermare l’accesso.',
+          );
+          return;
+        }
+      } else {
+        await cloud.signIn(email: email, password: password);
+      }
+
+      await widget.store.syncCloud(preferRemoteOnFirstSync: true);
+      _message('Account connesso e sincronizzazione avviata.');
+    } catch (_) {
+      _message(
+        CloudSyncService.instance.lastError ??
+            'Accesso non riuscito. Controlla i dati inseriti.',
+      );
+    } finally {
+      if (mounted) setState(() => busy = false);
+    }
+  }
+
+  Future<void> _syncNow() async {
+    setState(() => busy = true);
+    try {
+      await widget.store.syncCloud();
+      final cloud = CloudSyncService.instance;
+      if (cloud.state == CloudConnectionState.error) {
+        _message(cloud.lastError ?? 'Sincronizzazione non riuscita.');
+      } else {
+        _message('Agenda sincronizzata.');
+      }
+    } finally {
+      if (mounted) setState(() => busy = false);
+    }
+  }
+
+  Future<void> _signOut() async {
+    setState(() => busy = true);
+    try {
+      await CloudSyncService.instance.signOut();
+      _message('Account disconnesso. I dati locali restano sul dispositivo.');
+    } finally {
+      if (mounted) setState(() => busy = false);
+    }
+  }
+
+  void _message(String text) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(text)),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final cloud = CloudSyncService.instance;
+
+    return AnimatedBuilder(
+      animation: cloud,
+      builder: (context, _) => AnimatedBuilder(
+        animation: widget.store,
+        builder: (context, _) {
+          return Scaffold(
+            appBar: AppBar(
+              title: const Text(
+                'Account e sincronizzazione',
+                style: TextStyle(fontWeight: FontWeight.w900),
+              ),
+            ),
+            body: ListView(
+              padding: const EdgeInsets.fromLTRB(14, 8, 14, 50),
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(20),
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [
+                        Theme.of(context)
+                            .colorScheme
+                            .primaryContainer
+                            .withValues(alpha: 0.75),
+                        Theme.of(context)
+                            .colorScheme
+                            .secondaryContainer
+                            .withValues(alpha: 0.75),
+                      ],
+                    ),
+                    borderRadius: BorderRadius.circular(26),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Icon(
+                        _stateIcon(cloud.state),
+                        size: 32,
+                      ),
+                      const SizedBox(height: 10),
+                      Text(
+                        _stateLabel(cloud.state),
+                        style: const TextStyle(
+                          fontWeight: FontWeight.w900,
+                          fontSize: 22,
+                        ),
+                      ),
+                      const SizedBox(height: 5),
+                      Text(
+                        cloud.signedIn
+                            ? 'La tua agenda personale può restare allineata su Android, iPhone e Web.'
+                            : 'Accedi con lo stesso account sui tuoi dispositivi per ritrovare la stessa agenda personale.',
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 14),
+                if (!cloud.configured)
+                  SimpleCard(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'Cloud pronto, ma non ancora collegato',
+                          style: TextStyle(
+                            fontWeight: FontWeight.w900,
+                            fontSize: 18,
+                          ),
+                        ),
+                        const SizedBox(height: 6),
+                        Text(
+                          'Questa build non contiene ancora le credenziali del progetto Supabase. '
+                          'L’app continua a funzionare completamente offline e nessun dato viene perso.',
+                          style: Theme.of(context).textTheme.bodySmall,
+                        ),
+                        const SizedBox(height: 10),
+                        const Text(
+                          'La struttura di sincronizzazione e il database sono già predisposti anche per il futuro Spazio condiviso.',
+                          style: TextStyle(fontWeight: FontWeight.w700),
+                        ),
+                      ],
+                    ),
+                  )
+                else if (!cloud.signedIn)
+                  SimpleCard(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          createMode ? 'Crea account' : 'Accedi',
+                          style: const TextStyle(
+                            fontWeight: FontWeight.w900,
+                            fontSize: 18,
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        TextField(
+                          controller: emailController,
+                          keyboardType: TextInputType.emailAddress,
+                          autofillHints: const [AutofillHints.email],
+                          decoration: const InputDecoration(
+                            labelText: 'Email',
+                            prefixIcon: Icon(Icons.email_outlined),
+                          ),
+                        ),
+                        const SizedBox(height: 10),
+                        TextField(
+                          controller: passwordController,
+                          obscureText: true,
+                          autofillHints: createMode
+                              ? const [AutofillHints.newPassword]
+                              : const [AutofillHints.password],
+                          onSubmitted: (_) => busy ? null : _submit(),
+                          decoration: const InputDecoration(
+                            labelText: 'Password',
+                            prefixIcon: Icon(Icons.lock_outline),
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        SizedBox(
+                          width: double.infinity,
+                          child: FilledButton.icon(
+                            onPressed: busy ? null : _submit,
+                            icon: Icon(
+                              createMode
+                                  ? Icons.person_add_outlined
+                                  : Icons.login,
+                            ),
+                            label: Text(
+                              createMode ? 'Crea account' : 'Accedi',
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 6),
+                        Center(
+                          child: TextButton(
+                            onPressed: busy
+                                ? null
+                                : () => setState(
+                                      () => createMode = !createMode,
+                                    ),
+                            child: Text(
+                              createMode
+                                  ? 'Ho già un account'
+                                  : 'Crea un nuovo account',
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  )
+                else ...[
+                  SimpleCard(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'Il mio account',
+                          style: TextStyle(
+                            fontWeight: FontWeight.w900,
+                            fontSize: 18,
+                          ),
+                        ),
+                        const SizedBox(height: 10),
+                        ListTile(
+                          contentPadding: EdgeInsets.zero,
+                          leading: const CircleAvatar(
+                            child: Icon(Icons.person_outline),
+                          ),
+                          title: Text(cloud.email ?? 'Account'),
+                          subtitle: Text(
+                            cloud.lastSyncAt == null
+                                ? 'Nessuna sincronizzazione completata'
+                                : 'Ultimo sync: ${DateFormat('d MMM, HH:mm', 'it_IT').format(cloud.lastSyncAt!)}',
+                          ),
+                        ),
+                        const Divider(),
+                        ListTile(
+                          contentPadding: EdgeInsets.zero,
+                          leading: const Icon(Icons.sync_outlined),
+                          title: const Text('Modifiche in attesa'),
+                          trailing: Text(
+                            '${widget.store.pendingCloudChanges}',
+                            style: const TextStyle(
+                              fontWeight: FontWeight.w900,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        SizedBox(
+                          width: double.infinity,
+                          child: FilledButton.icon(
+                            onPressed: busy ||
+                                    cloud.state ==
+                                        CloudConnectionState.syncing
+                                ? null
+                                : _syncNow,
+                            icon: const Icon(Icons.sync),
+                            label: const Text('Sincronizza ora'),
+                          ),
+                        ),
+                        const SizedBox(height: 6),
+                        SizedBox(
+                          width: double.infinity,
+                          child: OutlinedButton.icon(
+                            onPressed: busy ? null : _signOut,
+                            icon: const Icon(Icons.logout),
+                            label: const Text('Disconnetti account'),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+                const SizedBox(height: 12),
+                SimpleCard(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Come funziona',
+                        style: TextStyle(
+                          fontWeight: FontWeight.w900,
+                          fontSize: 18,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      const Text(
+                        '• L’app continua a salvare prima di tutto sul dispositivo.\n'
+                        '• Le modifiche vengono messe in coda anche senza Internet.\n'
+                        '• Quando il cloud torna disponibile, vengono sincronizzati solo gli elementi cambiati.\n'
+                        '• Diario, appuntamenti, task, mesi, settimane, abitudini, Inbox e preferenze personali restano separati dagli spazi condivisi futuri.',
+                      ),
+                      const SizedBox(height: 12),
+                      Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: Theme.of(context)
+                              .colorScheme
+                              .surfaceContainerHighest,
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        child: const Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Icon(Icons.people_outline),
+                            SizedBox(width: 10),
+                            Expanded(
+                              child: Text(
+                                'v0.16: lo Spazio condiviso userà la stessa infrastruttura, ma i contenuti condivisi resteranno separati dalla tua agenda privata.',
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          );
+        },
+      ),
     );
   }
 }
