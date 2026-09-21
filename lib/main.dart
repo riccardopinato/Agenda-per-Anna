@@ -8,6 +8,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:table_calendar/table_calendar.dart';
 import 'package:uuid/uuid.dart';
 
+import 'backup_service.dart';
 import 'notification_service.dart';
 
 Future<void> main() async {
@@ -524,18 +525,70 @@ class ExpenseEntry {
       );
 }
 
+class BackupSummary {
+  final DateTime exportedAt;
+  final int itemCount;
+  final int journalCount;
+  final int monthCount;
+  final int weekCount;
+  final int habitCount;
+
+  const BackupSummary({
+    required this.exportedAt,
+    required this.itemCount,
+    required this.journalCount,
+    required this.monthCount,
+    required this.weekCount,
+    required this.habitCount,
+  });
+}
+
+class LocalBackupSnapshot {
+  final String id;
+  final DateTime createdAt;
+  final String label;
+  final Map<String, dynamic> data;
+
+  const LocalBackupSnapshot({
+    required this.id,
+    required this.createdAt,
+    required this.label,
+    required this.data,
+  });
+
+  Map<String, dynamic> toJson() => {
+        'id': id,
+        'createdAt': createdAt.toIso8601String(),
+        'label': label,
+        'data': data,
+      };
+
+  factory LocalBackupSnapshot.fromJson(Map<String, dynamic> json) =>
+      LocalBackupSnapshot(
+        id: json['id'] as String? ?? const Uuid().v4(),
+        createdAt: DateTime.tryParse(json['createdAt'] as String? ?? '') ??
+            DateTime.now(),
+        label: json['label'] as String? ?? 'Backup automatico',
+        data: Map<String, dynamic>.from(json['data'] as Map? ?? const {}),
+      );
+}
+
 class AgendaStore extends ChangeNotifier {
   static const _itemsKey = 'items_v1';
   static const _journalsKey = 'journals_v1';
   static const _monthsKey = 'months_v1';
   static const _weeksKey = 'weeks_v1';
   static const _habitsKey = 'habits_v1';
+  static const _snapshotsKey = 'backup_snapshots_v1';
+  static const _backupFormat = 'agenda_per_anna_backup';
+  static const _backupSchemaVersion = 1;
 
   final List<AgendaItem> items = [];
   final Map<String, DayJournal> journals = {};
   final Map<String, MonthlyData> months = {};
   final Map<String, WeekData> weeks = {};
   final List<HabitDefinition> habits = [];
+  final List<LocalBackupSnapshot> localSnapshots = [];
 
   Future<void> load() async {
     final prefs = await SharedPreferences.getInstance();
@@ -591,6 +644,17 @@ class AgendaStore extends ChangeNotifier {
           ));
       }
 
+      final sr = prefs.getString(_snapshotsKey);
+      if (sr != null) {
+        localSnapshots
+          ..clear()
+          ..addAll((jsonDecode(sr) as List).map(
+            (e) => LocalBackupSnapshot.fromJson(
+              Map<String, dynamic>.from(e as Map),
+            ),
+          ));
+      }
+
       if (habits.isEmpty) {
         habits.addAll(const [
           HabitDefinition(id: 'water', name: 'Bere abbastanza'),
@@ -601,9 +665,12 @@ class AgendaStore extends ChangeNotifier {
     } catch (_) {}
   }
 
-  Future<void> _save() async {
+  Future<void> _save({bool createAutoSnapshot = true}) async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(_itemsKey, jsonEncode(items.map((e) => e.toJson()).toList()));
+    await prefs.setString(
+      _itemsKey,
+      jsonEncode(items.map((e) => e.toJson()).toList()),
+    );
     await prefs.setString(
       _journalsKey,
       jsonEncode(journals.map((k, v) => MapEntry(k, v.toJson()))),
@@ -620,6 +687,368 @@ class AgendaStore extends ChangeNotifier {
       _habitsKey,
       jsonEncode(habits.map((e) => e.toJson()).toList()),
     );
+
+    if (createAutoSnapshot) {
+      await _maybeCreateAutomaticSnapshot(prefs);
+    }
+  }
+
+  Map<String, dynamic> _backupDataPayload() => {
+        'items': items.map((e) => e.toJson()).toList(),
+        'journals': journals.map((k, v) => MapEntry(k, v.toJson())),
+        'months': months.map((k, v) => MapEntry(k, v.toJson())),
+        'weeks': weeks.map((k, v) => MapEntry(k, v.toJson())),
+        'habits': habits.map((e) => e.toJson()).toList(),
+      };
+
+  String createBackupJson() {
+    final document = {
+      'format': _backupFormat,
+      'schemaVersion': _backupSchemaVersion,
+      'appVersion': '0.12.0',
+      'exportedAt': DateTime.now().toIso8601String(),
+      'data': _backupDataPayload(),
+    };
+    return const JsonEncoder.withIndent('  ').convert(document);
+  }
+
+  BackupSummary inspectBackup(String raw) {
+    final decoded = jsonDecode(raw);
+    if (decoded is! Map) {
+      throw const FormatException('Il file non contiene un backup valido.');
+    }
+
+    final root = Map<String, dynamic>.from(decoded);
+    if (root['format'] != _backupFormat) {
+      throw const FormatException('Questo file non appartiene ad Agenda per Anna.');
+    }
+
+    final schema = root['schemaVersion'];
+    if (schema is! int || schema > _backupSchemaVersion || schema < 1) {
+      throw const FormatException('Versione del backup non supportata.');
+    }
+
+    final data = root['data'];
+    if (data is! Map) {
+      throw const FormatException('Il backup non contiene dati leggibili.');
+    }
+
+    final payload = Map<String, dynamic>.from(data);
+    final exportedAt =
+        DateTime.tryParse(root['exportedAt'] as String? ?? '') ??
+            DateTime.now();
+
+    return BackupSummary(
+      exportedAt: exportedAt,
+      itemCount: (payload['items'] as List? ?? const []).length,
+      journalCount: (payload['journals'] as Map? ?? const {}).length,
+      monthCount: (payload['months'] as Map? ?? const {}).length,
+      weekCount: (payload['weeks'] as Map? ?? const {}).length,
+      habitCount: (payload['habits'] as List? ?? const []).length,
+    );
+  }
+
+  Future<void> restoreBackup(
+    String raw, {
+    required bool merge,
+  }) async {
+    final decoded = jsonDecode(raw);
+    final root = Map<String, dynamic>.from(decoded as Map);
+    inspectBackup(raw);
+
+    await createLocalSnapshot(label: 'Prima del ripristino');
+
+    final payload =
+        Map<String, dynamic>.from(root['data'] as Map<String, dynamic>);
+
+    final incomingItems = (payload['items'] as List? ?? const [])
+        .map(
+          (e) => AgendaItem.fromJson(
+            Map<String, dynamic>.from(e as Map),
+          ),
+        )
+        .toList();
+    final incomingJournals =
+        Map<String, dynamic>.from(payload['journals'] as Map? ?? const {})
+            .map(
+      (k, v) => MapEntry(
+        k,
+        DayJournal.fromJson(Map<String, dynamic>.from(v as Map)),
+      ),
+    );
+    final incomingMonths =
+        Map<String, dynamic>.from(payload['months'] as Map? ?? const {}).map(
+      (k, v) => MapEntry(
+        k,
+        MonthlyData.fromJson(Map<String, dynamic>.from(v as Map)),
+      ),
+    );
+    final incomingWeeks =
+        Map<String, dynamic>.from(payload['weeks'] as Map? ?? const {}).map(
+      (k, v) => MapEntry(
+        k,
+        WeekData.fromJson(Map<String, dynamic>.from(v as Map)),
+      ),
+    );
+    final incomingHabits = (payload['habits'] as List? ?? const [])
+        .map(
+          (e) => HabitDefinition.fromJson(
+            Map<String, dynamic>.from(e as Map),
+          ),
+        )
+        .toList();
+
+    final oldItems = [...items];
+
+    if (merge) {
+      final byId = {for (final item in items) item.id: item};
+      for (final item in incomingItems) {
+        byId[item.id] = item;
+      }
+      items
+        ..clear()
+        ..addAll(byId.values);
+
+      journals.addAll(incomingJournals);
+      months.addAll(incomingMonths);
+      weeks.addAll(incomingWeeks);
+
+      final habitsById = {for (final habit in habits) habit.id: habit};
+      for (final habit in incomingHabits) {
+        habitsById[habit.id] = habit;
+      }
+      habits
+        ..clear()
+        ..addAll(habitsById.values);
+    } else {
+      items
+        ..clear()
+        ..addAll(incomingItems);
+      journals
+        ..clear()
+        ..addAll(incomingJournals);
+      months
+        ..clear()
+        ..addAll(incomingMonths);
+      weeks
+        ..clear()
+        ..addAll(incomingWeeks);
+      habits
+        ..clear()
+        ..addAll(incomingHabits);
+    }
+
+    if (habits.isEmpty) {
+      habits.addAll(const [
+        HabitDefinition(id: 'water', name: 'Bere abbastanza'),
+        HabitDefinition(id: 'move', name: 'Muovermi un po’'),
+        HabitDefinition(id: 'me', name: 'Tempo per me'),
+      ]);
+    }
+
+    for (final item in oldItems) {
+      await NotificationService.instance.cancel(item.id);
+      await NotificationService.instance.cancel('${item.id}:primary');
+      await NotificationService.instance.cancel('${item.id}:secondary');
+    }
+
+    await _save(createAutoSnapshot: false);
+
+    for (final item in items) {
+      await _syncReminders(item);
+    }
+
+    notifyListeners();
+  }
+
+  Future<void> createLocalSnapshot({
+    String label = 'Backup manuale',
+  }) async {
+    final prefs = await SharedPreferences.getInstance();
+    localSnapshots.insert(
+      0,
+      LocalBackupSnapshot(
+        id: const Uuid().v4(),
+        createdAt: DateTime.now(),
+        label: label,
+        data: jsonDecode(jsonEncode(_backupDataPayload()))
+            as Map<String, dynamic>,
+      ),
+    );
+    if (localSnapshots.length > 5) {
+      localSnapshots.removeRange(5, localSnapshots.length);
+    }
+    await _saveSnapshots(prefs);
+    notifyListeners();
+  }
+
+  Future<void> _maybeCreateAutomaticSnapshot(
+    SharedPreferences prefs,
+  ) async {
+    final now = DateTime.now();
+    final shouldCreate = localSnapshots.isEmpty ||
+        now.difference(localSnapshots.first.createdAt).inHours >= 6;
+    if (!shouldCreate) return;
+
+    localSnapshots.insert(
+      0,
+      LocalBackupSnapshot(
+        id: const Uuid().v4(),
+        createdAt: now,
+        label: 'Backup automatico',
+        data: jsonDecode(jsonEncode(_backupDataPayload()))
+            as Map<String, dynamic>,
+      ),
+    );
+    if (localSnapshots.length > 5) {
+      localSnapshots.removeRange(5, localSnapshots.length);
+    }
+    await _saveSnapshots(prefs);
+  }
+
+  Future<void> _saveSnapshots(SharedPreferences prefs) async {
+    await prefs.setString(
+      _snapshotsKey,
+      jsonEncode(localSnapshots.map((e) => e.toJson()).toList()),
+    );
+  }
+
+  Future<void> restoreLocalSnapshot(String id) async {
+    final snapshot = localSnapshots.firstWhere((e) => e.id == id);
+    final document = {
+      'format': _backupFormat,
+      'schemaVersion': _backupSchemaVersion,
+      'appVersion': '0.12.0',
+      'exportedAt': snapshot.createdAt.toIso8601String(),
+      'data': snapshot.data,
+    };
+    await restoreBackup(jsonEncode(document), merge: false);
+  }
+
+  Future<void> deleteLocalSnapshot(String id) async {
+    localSnapshots.removeWhere((e) => e.id == id);
+    final prefs = await SharedPreferences.getInstance();
+    await _saveSnapshots(prefs);
+    notifyListeners();
+  }
+
+  String createReadableExport() {
+    final buffer = StringBuffer();
+    final now = DateTime.now();
+
+    buffer.writeln('AGENDA PER ANNA');
+    buffer.writeln('Esportazione del ${DateFormat('d MMMM yyyy, HH:mm', 'it_IT').format(now)}');
+    buffer.writeln();
+    buffer.writeln('============================================================');
+    buffer.writeln('IMPEGNI E ATTIVITÀ');
+    buffer.writeln('============================================================');
+
+    final sortedItems = [...items]..sort((a, b) {
+      final dateCompare = a.date.compareTo(b.date);
+      if (dateCompare != 0) return dateCompare;
+      final am = a.start == null ? 9999 : a.start!.hour * 60 + a.start!.minute;
+      final bm = b.start == null ? 9999 : b.start!.hour * 60 + b.start!.minute;
+      return am.compareTo(bm);
+    });
+
+    if (sortedItems.isEmpty) {
+      buffer.writeln('Nessun impegno salvato.');
+    } else {
+      for (final item in sortedItems) {
+        final date = DateFormat('d MMMM yyyy', 'it_IT').format(item.date);
+        final time = item.start == null ? '' : ' · ${formatTime(item.start!)}';
+        buffer.writeln('- $date$time · ${item.title}');
+        buffer.writeln('  Categoria: ${item.category.label}');
+        if (item.note.trim().isNotEmpty) {
+          buffer.writeln('  Note: ${item.note.trim()}');
+        }
+      }
+    }
+
+    buffer.writeln();
+    buffer.writeln('============================================================');
+    buffer.writeln('DIARIO');
+    buffer.writeln('============================================================');
+
+    final journalEntries = journals.entries.toList()
+      ..sort((a, b) => a.key.compareTo(b.key));
+
+    if (journalEntries.isEmpty) {
+      buffer.writeln('Nessuna pagina di diario salvata.');
+    } else {
+      for (final entry in journalEntries) {
+        final date = DateTime.tryParse(entry.key);
+        final journal = entry.value;
+        buffer.writeln();
+        buffer.writeln(
+          date == null
+              ? entry.key
+              : DateFormat('d MMMM yyyy', 'it_IT').format(date),
+        );
+        if (journal.mood != null) {
+          buffer.writeln('Mood: ${journal.mood!.emoji} ${journal.mood!.label}');
+        }
+        if (journal.gratitude.isNotEmpty) {
+          buffer.writeln('Cose belle:');
+          for (final value in journal.gratitude) {
+            buffer.writeln('  • $value');
+          }
+        }
+        if (journal.beautiful.trim().isNotEmpty) {
+          buffer.writeln('Da ricordare: ${journal.beautiful.trim()}');
+        }
+        if (journal.note.trim().isNotEmpty) {
+          buffer.writeln('Pensieri: ${journal.note.trim()}');
+        }
+      }
+    }
+
+    buffer.writeln();
+    buffer.writeln('============================================================');
+    buffer.writeln('PAGINE MENSILI');
+    buffer.writeln('============================================================');
+
+    final monthEntries = months.entries.toList()
+      ..sort((a, b) => a.key.compareTo(b.key));
+
+    for (final entry in monthEntries) {
+      final parts = entry.key.split('-');
+      if (parts.length != 2) continue;
+      final y = int.tryParse(parts[0]);
+      final m = int.tryParse(parts[1]);
+      if (y == null || m == null) continue;
+      final data = entry.value;
+      buffer.writeln();
+      buffer.writeln(
+        _cap(DateFormat('MMMM yyyy', 'it_IT').format(DateTime(y, m))),
+      );
+      if (data.monthWord.isNotEmpty) {
+        buffer.writeln('Parola del mese: ${data.monthWord}');
+      }
+      if (data.intention.isNotEmpty) {
+        buffer.writeln('Intenzione: ${data.intention}');
+      }
+      if (data.goals.isNotEmpty) {
+        buffer.writeln('Obiettivi: ${data.goals.join(' · ')}');
+      }
+      if (data.books.isNotEmpty) {
+        buffer.writeln('Libri: ${data.books.join(' · ')}');
+      }
+      if (data.films.isNotEmpty) {
+        buffer.writeln('Film e serie: ${data.films.join(' · ')}');
+      }
+      if (data.wishes.isNotEmpty) {
+        buffer.writeln('Desideri: ${data.wishes.join(' · ')}');
+      }
+      if (data.bestMoment.isNotEmpty) {
+        buffer.writeln('Momento più bello: ${data.bestMoment}');
+      }
+      if (data.reflection.isNotEmpty) {
+        buffer.writeln('Riflessione: ${data.reflection}');
+      }
+    }
+
+    return buffer.toString();
   }
 
   List<AgendaItem> forDay(DateTime date) {
