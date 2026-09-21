@@ -10210,6 +10210,746 @@ class _MainShellState extends State<MainShell> {
   }
 }
 
+class SectionTitle extends StatelessWidget {
+  final String text;
+  const SectionTitle(this.text, {super.key});
+  @override
+  Widget build(BuildContext context) =>
+      Text(text, style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800));
+}
+
+class SimpleCard extends StatelessWidget {
+  final Widget child;
+  const SimpleCard({super.key, required this.child});
+  @override
+  Widget build(BuildContext context) => Card(
+        child: Padding(
+          padding: const EdgeInsets.all(18),
+          child: child,
+        ),
+      );
+}
+
+class MoneyBox extends StatelessWidget {
+  final String label;
+  final String value;
+  const MoneyBox({super.key, required this.label, required this.value});
+
+  @override
+  Widget build(BuildContext context) => Container(
+        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 6),
+        decoration: BoxDecoration(
+          color: Theme.of(context).colorScheme.surfaceContainerHighest,
+          borderRadius: BorderRadius.circular(14),
+        ),
+        child: Column(
+          children: [
+            Text(label, style: Theme.of(context).textTheme.bodySmall),
+            const SizedBox(height: 3),
+            FittedBox(child: Text(value, style: const TextStyle(fontWeight: FontWeight.w800))),
+          ],
+        ),
+      );
+}
+
+class StatCard extends StatelessWidget {
+  final IconData icon;
+  final String title;
+  final String value;
+  const StatCard({super.key, required this.icon, required this.title, required this.value});
+
+  @override
+  Widget build(BuildContext context) => SimpleCard(
+        child: Row(
+          children: [
+            Icon(icon, size: 30),
+            const SizedBox(width: 14),
+            Expanded(child: Text(title, style: const TextStyle(fontWeight: FontWeight.w700))),
+            Text(value, style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 18)),
+          ],
+        ),
+      );
+}
+
+Future<void> openItemEditor(
+  BuildContext context,
+  AgendaStore store,
+  DateTime initialDate, {
+  TimeOfDay? initialTime,
+  ItemType? initialType,
+  AgendaItem? existing,
+}) async {
+  final title = TextEditingController(text: existing?.title ?? '');
+  final note = TextEditingController(text: existing?.note ?? '');
+  DateTime date = existing?.date ?? initialDate;
+  TimeOfDay? start = existing?.start ?? initialTime;
+  TimeOfDay? end = existing?.end ??
+      (start == null
+          ? null
+          : _timePlusMinutes(
+              start,
+              store.preferences.defaultEventMinutes,
+            ));
+  ItemType type = existing?.type ?? initialType ?? ItemType.appointment;
+  AgendaCategory category =
+      existing?.category ?? store.preferences.defaultCategory;
+  int primaryReminder = existing == null
+      ? (store.preferences.defaultPrimaryReminder ?? -1)
+      : (existing.reminderMinutesBefore ?? -1);
+  int secondaryReminder = existing == null
+      ? (store.preferences.defaultSecondaryReminder ?? -1)
+      : (existing.secondaryReminderMinutesBefore ?? -1);
+  RecurrenceRule recurrence = RecurrenceRule.none;
+  int recurrenceCount = 4;
+
+  AgendaItem buildItem({
+    required String id,
+    required DateTime itemDate,
+    bool done = false,
+    bool pinned = false,
+  }) {
+    return AgendaItem(
+      id: id,
+      title: title.text.trim(),
+      note: note.text.trim(),
+      date: DateTime(itemDate.year, itemDate.month, itemDate.day),
+      type: type,
+      category: category,
+      reminderMinutesBefore:
+          start == null || primaryReminder < 0 ? null : primaryReminder,
+      secondaryReminderMinutesBefore:
+          start == null || secondaryReminder < 0 ? null : secondaryReminder,
+      start: start,
+      end: type == ItemType.task ? null : end,
+      done: done,
+      pinned: pinned,
+    );
+  }
+
+  await showModalBottomSheet(
+    context: context,
+    isScrollControlled: true,
+    backgroundColor: Colors.transparent,
+    builder: (sheetContext) => StatefulBuilder(
+      builder: (context, setLocal) => Container(
+        padding: EdgeInsets.fromLTRB(
+          18,
+          18,
+          18,
+          18 + MediaQuery.viewInsetsOf(context).bottom,
+        ),
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+        ),
+        child: SafeArea(
+          top: false,
+          child: SingleChildScrollView(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Center(
+                  child: Container(
+                    width: 42,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).colorScheme.outlineVariant,
+                      borderRadius: BorderRadius.circular(99),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 14),
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        existing == null ? 'Aggiungi alla giornata' : 'Modifica',
+                        style: Theme.of(context)
+                            .textTheme
+                            .headlineSmall
+                            ?.copyWith(fontWeight: FontWeight.w800),
+                      ),
+                    ),
+                    if (existing != null)
+                      IconButton.filledTonal(
+                        tooltip: 'Duplica',
+                        onPressed: () async {
+                          final t = title.text.trim();
+                          if (t.isEmpty) return;
+                          await store.upsert(
+                            buildItem(
+                              id: const Uuid().v4(),
+                              itemDate: date,
+                            ),
+                          );
+                          if (sheetContext.mounted) Navigator.pop(sheetContext);
+                        },
+                        icon: const Icon(Icons.content_copy_outlined),
+                      ),
+                  ],
+                ),
+                const SizedBox(height: 14),
+                SegmentedButton<ItemType>(
+                  segments: const [
+                    ButtonSegment(
+                      value: ItemType.appointment,
+                      label: Text('Appuntamento'),
+                      icon: Icon(Icons.event_outlined),
+                    ),
+                    ButtonSegment(
+                      value: ItemType.task,
+                      label: Text('Da fare'),
+                      icon: Icon(Icons.check_circle_outline),
+                    ),
+                  ],
+                  selected: {type},
+                  onSelectionChanged: (v) => setLocal(() => type = v.first),
+                ),
+                const SizedBox(height: 14),
+                TextField(
+                  controller: title,
+                  autofocus: existing == null,
+                  decoration: const InputDecoration(
+                    labelText: 'Titolo',
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+                const SizedBox(height: 10),
+                TextField(
+                  controller: note,
+                  maxLines: 3,
+                  decoration: const InputDecoration(
+                    labelText: 'Note',
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  'Categoria',
+                  style: Theme.of(context)
+                      .textTheme
+                      .titleSmall
+                      ?.copyWith(fontWeight: FontWeight.w800),
+                ),
+                const SizedBox(height: 8),
+                Wrap(
+                  spacing: 7,
+                  runSpacing: 7,
+                  children: AgendaCategory.values.map((value) {
+                    final active = category == value;
+                    return ChoiceChip(
+                      selected: active,
+                      avatar: Icon(
+                        value.icon,
+                        size: 17,
+                        color: active ? Colors.white : value.color,
+                      ),
+                      label: Text(value.label),
+                      selectedColor: value.color,
+                      labelStyle: TextStyle(
+                        color: active ? Colors.white : null,
+                        fontWeight: FontWeight.w700,
+                      ),
+                      onSelected: (_) => setLocal(() => category = value),
+                    );
+                  }).toList(),
+                ),
+                const SizedBox(height: 10),
+                ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  leading: const Icon(Icons.calendar_today_outlined),
+                  title: Text(
+                    DateFormat('d MMMM yyyy', 'it_IT').format(date),
+                  ),
+                  onTap: () async {
+                    final picked = await showDatePicker(
+                      context: context,
+                      initialDate: date,
+                      firstDate: DateTime(2020),
+                      lastDate: DateTime(2040),
+                    );
+                    if (picked != null) setLocal(() => date = picked);
+                  },
+                ),
+                ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  leading: const Icon(Icons.schedule_outlined),
+                  title: Text(
+                    start == null ? 'Senza orario' : formatTime(start!),
+                  ),
+                  trailing: start == null
+                      ? null
+                      : IconButton(
+                          onPressed: () => setLocal(() {
+                            start = null;
+                            end = null;
+                            primaryReminder = -1;
+                            secondaryReminder = -1;
+                          }),
+                          icon: const Icon(Icons.close),
+                        ),
+                  onTap: () async {
+                    final picked = await showTimePicker(
+                      context: context,
+                      initialTime: start ?? TimeOfDay.now(),
+                    );
+                    if (picked != null) {
+                      setLocal(() {
+                        start = picked;
+                        end ??= _timePlusMinutes(
+                          picked,
+                          store.preferences.defaultEventMinutes,
+                        );
+                      });
+                    }
+                  },
+                ),
+                if (start != null && type == ItemType.appointment)
+                  ListTile(
+                    contentPadding: EdgeInsets.zero,
+                    leading: const Icon(Icons.timelapse_outlined),
+                    title: Text(
+                      end == null ? 'Ora fine' : formatTime(end!),
+                    ),
+                    onTap: () async {
+                      final picked = await showTimePicker(
+                        context: context,
+                        initialTime: end ?? start!,
+                      );
+                      if (picked != null) setLocal(() => end = picked);
+                    },
+                  ),
+                if (start != null) ...[
+                  const SizedBox(height: 4),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: DropdownButtonFormField<int>(
+                          initialValue: primaryReminder,
+                          decoration: const InputDecoration(
+                            labelText: 'Promemoria 1',
+                            prefixIcon:
+                                Icon(Icons.notifications_none_outlined),
+                            border: OutlineInputBorder(),
+                          ),
+                          items: _reminderMenuItems,
+                          onChanged: (value) => setLocal(() {
+                            primaryReminder = value ?? -1;
+                            if (secondaryReminder == primaryReminder) {
+                              secondaryReminder = -1;
+                            }
+                          }),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: DropdownButtonFormField<int>(
+                          initialValue: secondaryReminder,
+                          decoration: const InputDecoration(
+                            labelText: 'Promemoria 2',
+                            prefixIcon:
+                                Icon(Icons.add_alert_outlined),
+                            border: OutlineInputBorder(),
+                          ),
+                          items: _reminderMenuItems,
+                          onChanged: (value) => setLocal(() {
+                            secondaryReminder = value ?? -1;
+                            if (secondaryReminder == primaryReminder) {
+                              secondaryReminder = -1;
+                            }
+                          }),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 7),
+                  Text(
+                    'Puoi impostare fino a due promemoria diversi per lo stesso impegno.',
+                    style: Theme.of(context).textTheme.bodySmall,
+                  ),
+                ],
+                const SizedBox(height: 18),
+                Text(
+                  'Ripeti',
+                  style: Theme.of(context)
+                      .textTheme
+                      .titleSmall
+                      ?.copyWith(fontWeight: FontWeight.w800),
+                ),
+                const SizedBox(height: 8),
+                Wrap(
+                  spacing: 7,
+                  runSpacing: 7,
+                  children: RecurrenceRule.values.map((value) {
+                    return ChoiceChip(
+                      selected: recurrence == value,
+                      avatar: Icon(value.icon, size: 17),
+                      label: Text(value.label),
+                      onSelected: (_) =>
+                          setLocal(() => recurrence = value),
+                    );
+                  }).toList(),
+                ),
+                if (recurrence != RecurrenceRule.none) ...[
+                  const SizedBox(height: 10),
+                  Row(
+                    children: [
+                      const Icon(Icons.repeat),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          '$recurrenceCount occorrenze totali',
+                          style: const TextStyle(fontWeight: FontWeight.w700),
+                        ),
+                      ),
+                    ],
+                  ),
+                  Slider(
+                    value: recurrenceCount.toDouble(),
+                    min: 2,
+                    max: 20,
+                    divisions: 18,
+                    label: recurrenceCount.toString(),
+                    onChanged: (value) =>
+                        setLocal(() => recurrenceCount = value.round()),
+                  ),
+                ],
+                const SizedBox(height: 18),
+                Row(
+                  children: [
+                    if (existing != null) ...[
+                      Expanded(
+                        child: OutlinedButton.icon(
+                          icon: const Icon(Icons.delete_outline),
+                          onPressed: () async {
+                            await store.deleteItem(existing.id);
+                            if (sheetContext.mounted) {
+                              Navigator.pop(sheetContext);
+                            }
+                          },
+                          label: const Text('Elimina'),
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                    ],
+                    Expanded(
+                      flex: 2,
+                      child: FilledButton.icon(
+                        icon: const Icon(Icons.check),
+                        onPressed: () async {
+                          final t = title.text.trim();
+                          if (t.isEmpty) return;
+
+                          final base = buildItem(
+                            id: existing?.id ?? const Uuid().v4(),
+                            itemDate: date,
+                            done: existing?.done ?? false,
+                            pinned: existing?.pinned ?? false,
+                          );
+                          await store.upsert(base);
+
+                          if (recurrence != RecurrenceRule.none) {
+                            for (var i = 1; i < recurrenceCount; i++) {
+                              final nextDate =
+                                  _recurrenceDate(date, recurrence, i);
+                              await store.upsert(
+                                buildItem(
+                                  id: const Uuid().v4(),
+                                  itemDate: nextDate,
+                                ),
+                              );
+                            }
+                          }
+
+                          if (sheetContext.mounted) {
+                            Navigator.pop(sheetContext);
+                          }
+                        },
+                        label: Text(
+                          recurrence == RecurrenceRule.none
+                              ? 'Salva'
+                              : 'Salva serie',
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    ),
+  );
+  title.dispose();
+  note.dispose();
+}
+
+const List<DropdownMenuItem<int>> _reminderMenuItems = [
+  DropdownMenuItem(value: -1, child: Text('Nessuno')),
+  DropdownMenuItem(value: 0, child: Text('All’ora')),
+  DropdownMenuItem(value: 10, child: Text('10 min prima')),
+  DropdownMenuItem(value: 30, child: Text('30 min prima')),
+  DropdownMenuItem(value: 60, child: Text('1 ora prima')),
+  DropdownMenuItem(value: 120, child: Text('2 ore prima')),
+  DropdownMenuItem(value: 1440, child: Text('1 giorno prima')),
+];
+
+DateTime _recurrenceDate(
+  DateTime start,
+  RecurrenceRule rule,
+  int offset,
+) {
+  switch (rule) {
+    case RecurrenceRule.none:
+      return start;
+    case RecurrenceRule.daily:
+      return addCivilDays(start, offset);
+    case RecurrenceRule.weekly:
+      return addCivilDays(start, 7 * offset);
+    case RecurrenceRule.monthly:
+      final firstOfTarget = DateTime(start.year, start.month + offset, 1);
+      final lastDay = DateTime(
+        firstOfTarget.year,
+        firstOfTarget.month + 1,
+        0,
+      ).day;
+      final day = start.day.clamp(1, lastDay).toInt();
+      return DateTime(firstOfTarget.year, firstOfTarget.month, day);
+  }
+}
+
+const _positiveQuotes = <(String, String)>[
+  ('Una cosa alla volta ♡', 'Non serve fare tutto oggi. Basta iniziare da qualcosa che conta.'),
+  ('Fai spazio alle cose belle', 'Anche una giornata piena può contenere un momento solo tuo.'),
+  ('Non devi correre sempre', 'La costanza vale più della fretta.'),
+  ('Oggi merita una pagina nuova', 'Puoi decidere cosa portare con te e cosa lasciare andare.'),
+  ('Piccoli passi, grandi cambiamenti', 'Le cose importanti crescono un giorno alla volta.'),
+  ('Ricordati anche di te', 'Tra tutte le cose da fare, lascia uno spazio per stare bene.'),
+  ('Va bene cambiare programma', 'Un’agenda serve a sostenerti, non a metterti pressione.'),
+  ('Celebra quello che funziona', 'Non aspettare solo i grandi traguardi per essere fiera di te.'),
+];
+
+(String, String) _dailyQuote(DateTime date) {
+  final start = DateTime(date.year, 1, 1);
+  final dayOfYear = date.difference(start).inDays;
+  return _positiveQuotes[dayOfYear % _positiveQuotes.length];
+}
+
+String _monthPhrase(int month) {
+  const phrases = [
+    '',
+    'Un inizio leggero, senza pretendere tutto subito.',
+    'Coltiva ciò che vuoi vedere crescere.',
+    'Lascia entrare un po’ di primavera anche nei programmi.',
+    'Fai spazio alle novità.',
+    'Scegli ciò che ti fa stare bene.',
+    'Porta con te solo quello che serve.',
+    'Più luce, più tempo per respirare.',
+    'Rallenta abbastanza da ricordarti le giornate.',
+    'Riparti dalle cose essenziali.',
+    'Raccogli ciò che hai costruito.',
+    'Proteggi il tuo tempo e le tue energie.',
+    'Chiudi l’anno ricordando anche le cose belle.',
+  ];
+  return phrases[month.clamp(1, 12)];
+}
+
+DateTime addCivilDays(DateTime date, int days) {
+  final noon = DateTime(date.year, date.month, date.day, 12);
+  final shifted = DateTime(noon.year, noon.month, noon.day + days, 12);
+  return DateTime(shifted.year, shifted.month, shifted.day);
+}
+
+DateTime mondayOf(DateTime d) {
+  final n = DateTime(d.year, d.month, d.day);
+  return addCivilDays(n, -(n.weekday - 1));
+}
+
+TimeOfDay _timePlusMinutes(TimeOfDay start, int minutes) {
+  final total = (start.hour * 60 + start.minute + minutes).clamp(0, 1439);
+  return TimeOfDay(
+    hour: total ~/ 60,
+    minute: total % 60,
+  );
+}
+
+String _derivePinHash(String pin, String salt) {
+  List<int> bytes = utf8.encode('$salt:$pin');
+  for (var i = 0; i < 25000; i++) {
+    bytes = sha256.convert(bytes).bytes;
+  }
+  return base64UrlEncode(bytes);
+}
+
+String formatTime(TimeOfDay t) =>
+    '${t.hour.toString().padLeft(2, '0')}:${t.minute.toString().padLeft(2, '0')}';
+
+String money(int cents) => NumberFormat.currency(locale: 'it_IT', symbol: '€').format(cents / 100);
+
+String _cap(String value) => value.isEmpty ? value : '${value[0].toUpperCase()}${value.substring(1)}';
+).hasMatch(normalized)) {
+      throw const FormatException(
+        'Il PIN deve contenere da 4 a 8 cifre.',
+      );
+    }
+    final saltBytes = List<int>.generate(
+      16,
+      (_) => Random.secure().nextInt(256),
+    );
+    final salt = base64UrlEncode(saltBytes);
+    final hash = _derivePinHash(normalized, salt);
+    await savePreferences(
+      preferences.copyWith(
+        pinSalt: salt,
+        pinHash: hash,
+        privacyLockEnabled: true,
+      ),
+    );
+  }
+
+  bool verifyPin(String pin) {
+    final salt = preferences.pinSalt;
+    final expected = preferences.pinHash;
+    if (salt == null || expected == null) return false;
+    return _derivePinHash(pin.trim(), salt) == expected;
+  }
+
+  Future<void> savePreferences(AgendaPreferences value) async {
+    preferences = value;
+    final prefs = await SharedPreferences.getInstance();
+    if (!_unreadableStorageKeys.contains(_preferencesKey)) {
+      await prefs.setString(
+        _preferencesKey,
+        jsonEncode(preferences.toJson()),
+      );
+    }
+    await prefs.setString(
+      _privacyGuardKey,
+      jsonEncode(_privacyGuardPayload()),
+    );
+    await _queuePreferencesSync();
+    notifyListeners();
+  }
+
+  Future<void> resetPreferences() async {
+    await savePreferences(const AgendaPreferences());
+  }
+
+  Future<void> addHabit(String name) async {
+    final value = name.trim();
+    if (value.isEmpty) return;
+    habits.add(HabitDefinition(id: const Uuid().v4(), name: value));
+    await _save(onlyKeys: {_habitsKey});
+    notifyListeners();
+  }
+
+  Future<void> removeHabit(String id) async {
+    habits.removeWhere((e) => e.id == id);
+    for (final entry in journals.entries.toList()) {
+      final journal = entry.value;
+      if (journal.completedHabitIds.contains(id)) {
+        journals[entry.key] = journal.copyWith(
+          completedHabitIds: journal.completedHabitIds
+              .where((habitId) => habitId != id)
+              .toList(),
+        );
+      }
+    }
+    await _save(onlyKeys: {_habitsKey, _journalsKey});
+    notifyListeners();
+  }
+
+  Future<void> toggleHabit(DateTime date, String habitId) async {
+    final current = journal(date);
+    final completed = [...current.completedHabitIds];
+    if (completed.contains(habitId)) {
+      completed.remove(habitId);
+    } else {
+      completed.add(habitId);
+    }
+    journals[dateKey(date)] = current.copyWith(completedHabitIds: completed);
+    await _save(onlyKeys: {_journalsKey});
+    notifyListeners();
+  }
+
+  MonthlyData month(int year, int month) => months[monthKey(year, month)] ?? const MonthlyData();
+
+  Future<void> saveMonth(int year, int month, MonthlyData value) async {
+    months[monthKey(year, month)] = value;
+    await _save(onlyKeys: {_monthsKey});
+    notifyListeners();
+  }
+
+  WeekData week(DateTime anyDay) {
+    final monday = mondayOf(anyDay);
+    return weeks[dateKey(monday)] ?? const WeekData();
+  }
+
+  Future<void> saveWeek(DateTime anyDay, WeekData value) async {
+    final monday = mondayOf(anyDay);
+    weeks[dateKey(monday)] = value;
+    await _save(onlyKeys: {_weeksKey});
+    notifyListeners();
+  }
+
+  static bool sameDay(DateTime a, DateTime b) =>
+      a.year == b.year && a.month == b.month && a.day == b.day;
+
+  static String dateKey(DateTime d) =>
+      '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
+
+  static String monthKey(int y, int m) => '$y-${m.toString().padLeft(2, '0')}';
+
+  @override
+  void dispose() {
+    _cloudSyncTimer?.cancel();
+    _syncDebounceTimer?.cancel();
+    super.dispose();
+  }
+}
+
+class MainShell extends StatefulWidget {
+  final AgendaStore store;
+  const MainShell({super.key, required this.store});
+
+  @override
+  State<MainShell> createState() => _MainShellState();
+}
+
+class _MainShellState extends State<MainShell> {
+  late int index;
+
+  @override
+  void initState() {
+    super.initState();
+    index = widget.store.preferences.startTab.index;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final pages = [
+      HomeScreen(store: widget.store),
+      CalendarScreen(store: widget.store),
+      WeekScreen(store: widget.store),
+      PlannerScreen(store: widget.store),
+    ];
+    return Scaffold(
+      body: IndexedStack(index: index, children: pages),
+      bottomNavigationBar: NavigationBar(
+        selectedIndex: index,
+        onDestinationSelected: (v) => setState(() => index = v),
+        destinations: const [
+          NavigationDestination(icon: Icon(Icons.home_outlined), label: 'Home'),
+          NavigationDestination(icon: Icon(Icons.calendar_month_outlined), label: 'Mese'),
+          NavigationDestination(icon: Icon(Icons.view_week_outlined), label: 'Settimana'),
+          NavigationDestination(icon: Icon(Icons.today_outlined), label: 'Oggi'),
+        ],
+      ),
+    );
+  }
+}
+
 class HomeScreen extends StatelessWidget {
   final AgendaStore store;
   const HomeScreen({super.key, required this.store});
