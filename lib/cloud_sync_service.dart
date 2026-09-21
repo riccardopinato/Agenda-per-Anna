@@ -559,7 +559,7 @@ class CloudSyncService extends ChangeNotifier {
     required String spaceId,
     required String listenerKey,
     required VoidCallback onChanged,
-    void Function(RealtimeSubscribeStatus status, Object? error)? onStatus,
+    ValueChanged<bool>? onConnectionChanged,
   }) {
     final client = _requireSignedInClient();
     final uid = userId!;
@@ -582,8 +582,10 @@ class CloudSyncService extends ChangeNotifier {
           ),
           callback: (_) => onChanged(),
         )
-        .subscribe((status, error) {
-          onStatus?.call(status, error);
+        .subscribe((status, _) {
+          onConnectionChanged?.call(
+            status == RealtimeSubscribeStatus.subscribed,
+          );
         });
 
     _sharedChannels[key] = channel;
