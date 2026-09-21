@@ -2176,11 +2176,27 @@ class SharedSpaceHubScreen extends StatefulWidget {
 class _SharedSpaceHubScreenState extends State<SharedSpaceHubScreen> {
   bool loading = true;
   List<SharedSpace> spaces = const [];
+  final Map<String, int> unreadBySpace = {};
+  final Map<String, int> pendingBySpace = {};
+  final Set<String> _realtimeSpaceIds = {};
 
   @override
   void initState() {
     super.initState();
     _loadCachedThenReload();
+  }
+
+  @override
+  void dispose() {
+    for (final spaceId in _realtimeSpaceIds.toList()) {
+      unawaited(
+        CloudSyncService.instance.unsubscribeSharedSpace(
+          spaceId: spaceId,
+          listenerKey: 'hub',
+        ),
+      );
+    }
+    super.dispose();
   }
 
   Future<void> _loadCachedThenReload() async {
@@ -2203,6 +2219,8 @@ class _SharedSpaceHubScreenState extends State<SharedSpaceHubScreen> {
             loading = false;
           });
         }
+        await _bindRealtime(cached);
+        await _refreshIndicators(cached);
       } catch (_) {}
     }
     await _reload();
@@ -2228,6 +2246,46 @@ class _SharedSpaceHubScreenState extends State<SharedSpaceHubScreen> {
     );
   }
 
+  Future<void> _bindRealtime(List<SharedSpace> value) async {
+    final nextIds = value.map((space) => space.id).toSet();
+    for (final oldId in _realtimeSpaceIds.difference(nextIds).toList()) {
+      await CloudSyncService.instance.unsubscribeSharedSpace(
+        spaceId: oldId,
+        listenerKey: 'hub',
+      );
+      _realtimeSpaceIds.remove(oldId);
+    }
+
+    if (!CloudSyncService.instance.signedIn) return;
+    for (final space in value) {
+      CloudSyncService.instance.subscribeSharedSpace(
+        spaceId: space.id,
+        listenerKey: 'hub',
+        onChanged: () {
+          if (!mounted) return;
+          setState(() {
+            unreadBySpace[space.id] = (unreadBySpace[space.id] ?? 0) + 1;
+          });
+        },
+      );
+      _realtimeSpaceIds.add(space.id);
+    }
+  }
+
+  Future<void> _refreshIndicators(List<SharedSpace> value) async {
+    final next = <String, int>{};
+    for (final space in value) {
+      next[space.id] = await widget.store.pendingSharedChanges(space.id);
+    }
+    if (mounted) {
+      setState(() {
+        pendingBySpace
+          ..clear()
+          ..addAll(next);
+      });
+    }
+  }
+
   Future<void> _reload() async {
     final cloud = CloudSyncService.instance;
     if (!cloud.signedIn) {
@@ -2237,6 +2295,8 @@ class _SharedSpaceHubScreenState extends State<SharedSpaceHubScreen> {
     try {
       final result = await cloud.listSharedSpaces();
       await _saveSpacesCache(result);
+      await _bindRealtime(result);
+      await _refreshIndicators(result);
       if (mounted) {
         setState(() {
           spaces = result;
@@ -2344,7 +2404,7 @@ class _SharedSpaceHubScreenState extends State<SharedSpaceHubScreen> {
   Widget build(BuildContext context) {
     final cloud = CloudSyncService.instance;
     return AnimatedBuilder(
-      animation: cloud,
+      animation: Listenable.merge([cloud, widget.store]),
       builder: (context, _) {
         return Scaffold(
           appBar: AppBar(
@@ -2434,8 +2494,8 @@ class _SharedSpaceHubScreenState extends State<SharedSpaceHubScreen> {
                               ),
                               SizedBox(height: 6),
                               Text(
-                                'Qui compaiono solo gli elementi che scegliete di condividere. '
-                                'Diario, mood, note private e agenda personale restano privati.',
+                                'Gli aggiornamenti arrivano in tempo reale. '
+                                'Se siete offline, le modifiche restano in coda e vengono inviate dopo.',
                               ),
                             ],
                           ),
@@ -2472,39 +2532,70 @@ class _SharedSpaceHubScreenState extends State<SharedSpaceHubScreen> {
                           )
                         else ...[
                           ...spaces.map(
-                            (space) => Card(
-                              margin: const EdgeInsets.only(bottom: 10),
-                              child: ListTile(
-                                leading: CircleAvatar(
-                                  child: Icon(
-                                    space.isOwner
-                                        ? Icons.favorite
-                                        : Icons.favorite_outline,
-                                  ),
-                                ),
-                                title: Text(
-                                  space.name,
-                                  style: const TextStyle(
-                                    fontWeight: FontWeight.w800,
-                                  ),
-                                ),
-                                subtitle: Text(
-                                  space.isOwner
-                                      ? 'Creato da te'
-                                      : 'Spazio condiviso',
-                                ),
-                                trailing: const Icon(Icons.chevron_right),
-                                onTap: () => Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (_) => SharedSpaceScreen(
-                                      store: widget.store,
-                                      space: space,
+                            (space) {
+                              final unread = unreadBySpace[space.id] ?? 0;
+                              final pending = pendingBySpace[space.id] ?? 0;
+                              return Card(
+                                margin: const EdgeInsets.only(bottom: 10),
+                                child: ListTile(
+                                  leading: CircleAvatar(
+                                    child: Icon(
+                                      space.isOwner
+                                          ? Icons.favorite
+                                          : Icons.favorite_outline,
                                     ),
                                   ),
-                                ).then((_) => _reload()),
-                              ),
-                            ),
+                                  title: Text(
+                                    space.name,
+                                    style: const TextStyle(
+                                      fontWeight: FontWeight.w800,
+                                    ),
+                                  ),
+                                  subtitle: Text(
+                                    pending > 0
+                                        ? '$pending modifiche da sincronizzare'
+                                        : space.isOwner
+                                            ? 'Creato da te · sincronizzato'
+                                            : 'Spazio condiviso · sincronizzato',
+                                  ),
+                                  trailing: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      if (unread > 0)
+                                        Badge(
+                                          label: Text(
+                                            unread > 99 ? '99+' : '$unread',
+                                          ),
+                                          child: const Icon(
+                                            Icons.notifications_none,
+                                          ),
+                                        ),
+                                      const SizedBox(width: 6),
+                                      const Icon(Icons.chevron_right),
+                                    ],
+                                  ),
+                                  onTap: () async {
+                                    setState(
+                                      () => unreadBySpace[space.id] = 0,
+                                    );
+                                    await Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (_) => SharedSpaceScreen(
+                                          store: widget.store,
+                                          space: space,
+                                        ),
+                                      ),
+                                    );
+                                    if (!mounted) return;
+                                    setState(
+                                      () => unreadBySpace[space.id] = 0,
+                                    );
+                                    await _reload();
+                                  },
+                                ),
+                              );
+                            },
                           ),
                           const SizedBox(height: 6),
                           OutlinedButton.icon(
@@ -2520,7 +2611,6 @@ class _SharedSpaceHubScreenState extends State<SharedSpaceHubScreen> {
     );
   }
 }
-
 class SharedSpaceScreen extends StatefulWidget {
   final AgendaStore store;
   final SharedSpace space;
