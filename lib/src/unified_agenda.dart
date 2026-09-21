@@ -122,8 +122,8 @@ class UnifiedAgendaTile extends StatelessWidget {
     final color = AgendaCategory.couple.color;
     final timeText = shared.start == null
         ? (shared.type == SharedEntryType.task ? 'Da fare' : 'Tutto il giorno')
-        : formatTime(shared.start!) +
-            (shared.end == null ? '' : ' – ' + formatTime(shared.end!));
+        : '${formatTime(shared.start!)}'
+            '${shared.end == null ? '' : ' – ${formatTime(shared.end!)}'}';
 
     return Card(
       margin: EdgeInsets.only(bottom: compact ? 6 : 10),
@@ -280,9 +280,7 @@ Future<void> _deleteSharedAgendaEntry(
         builder: (dialogContext) => AlertDialog(
           title: const Text('Eliminare da Noi ♡?'),
           content: Text(
-            '“' +
-                shared.title +
-                '” verrà eliminato per tutte le persone dello spazio condiviso.',
+            '“${shared.title}” verrà eliminato per tutte le persone dello spazio condiviso.',
           ),
           actions: [
             TextButton(
