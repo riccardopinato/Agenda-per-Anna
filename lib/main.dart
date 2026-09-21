@@ -53,14 +53,21 @@ class AgendaApp extends StatelessWidget {
   final AgendaStore store;
   const AgendaApp({super.key, required this.store});
 
+  static final Map<String, ThemeData> _themeCache = {};
+
   ThemeData _theme(Brightness brightness) {
+    final palette = store.preferences.palette;
+    final cacheKey = '${palette.name}:${brightness.name}';
+    final cached = _themeCache[cacheKey];
+    if (cached != null) return cached;
+
     final scheme = ColorScheme.fromSeed(
-      seedColor: store.preferences.palette.seed,
+      seedColor: palette.seed,
       brightness: brightness,
     );
     final dark = brightness == Brightness.dark;
 
-    return ThemeData(
+    final theme = ThemeData(
       useMaterial3: true,
       colorScheme: scheme,
       scaffoldBackgroundColor:
@@ -80,6 +87,8 @@ class AgendaApp extends StatelessWidget {
         indicatorColor: scheme.primaryContainer,
       ),
     );
+    _themeCache[cacheKey] = theme;
+    return theme;
   }
 
   @override
@@ -1308,6 +1317,8 @@ class AgendaStore extends ChangeNotifier {
   final List<InboxEntry> inbox = [];
   final Map<String, CloudSyncOperation> _syncQueue = {};
   final Map<String, String> _syncIndex = {};
+  final Map<String, List<AgendaItem>> _dayIndex = {};
+  bool _dayIndexDirty = true;
   final Set<String> _unreadableStorageKeys = {};
   AgendaPreferences preferences = const AgendaPreferences();
 
@@ -1486,6 +1497,7 @@ class AgendaStore extends ChangeNotifier {
         HabitDefinition(id: 'me', name: 'Tempo per me'),
       ]);
     }
+    _invalidateDayIndex();
   }
 
   Map<String, dynamic> _readAccountProfiles(SharedPreferences prefs) {
@@ -2051,6 +2063,8 @@ class AgendaStore extends ChangeNotifier {
       }
     }
 
+    _invalidateDayIndex();
+
     if (habits.isEmpty) {
       habits.addAll(const [
         HabitDefinition(id: 'water', name: 'Bere abbastanza'),
@@ -2264,14 +2278,33 @@ class AgendaStore extends ChangeNotifier {
     return buffer.toString();
   }
 
+  void _invalidateDayIndex() {
+    _dayIndexDirty = true;
+  }
+
+  void _ensureDayIndex() {
+    if (!_dayIndexDirty) return;
+    _dayIndex.clear();
+    for (final item in items) {
+      (_dayIndex[dateKey(item.date)] ??= <AgendaItem>[]).add(item);
+    }
+    for (final dayItems in _dayIndex.values) {
+      dayItems.sort((a, b) {
+        final am =
+            a.start == null ? 9999 : a.start!.hour * 60 + a.start!.minute;
+        final bm =
+            b.start == null ? 9999 : b.start!.hour * 60 + b.start!.minute;
+        return am.compareTo(bm);
+      });
+    }
+    _dayIndexDirty = false;
+  }
+
   List<AgendaItem> forDay(DateTime date) {
-    final out = items.where((e) => sameDay(e.date, date)).toList();
-    out.sort((a, b) {
-      final am = a.start == null ? 9999 : a.start!.hour * 60 + a.start!.minute;
-      final bm = b.start == null ? 9999 : b.start!.hour * 60 + b.start!.minute;
-      return am.compareTo(bm);
-    });
-    return out;
+    _ensureDayIndex();
+    return List<AgendaItem>.unmodifiable(
+      _dayIndex[dateKey(date)] ?? const <AgendaItem>[],
+    );
   }
 
   Future<void> upsert(AgendaItem item) async {
@@ -2281,6 +2314,7 @@ class AgendaStore extends ChangeNotifier {
     } else {
       items[index] = item;
     }
+    _invalidateDayIndex();
     await _save(onlyKeys: {_itemsKey});
     await _syncReminders(item);
     notifyListeners();
@@ -2307,6 +2341,7 @@ class AgendaStore extends ChangeNotifier {
 
   Future<void> deleteItem(String id) async {
     items.removeWhere((e) => e.id == id);
+    _invalidateDayIndex();
     await NotificationService.instance.cancel(id);
     await NotificationService.instance.cancel('$id:primary');
     await NotificationService.instance.cancel('$id:secondary');
@@ -2373,6 +2408,7 @@ class AgendaStore extends ChangeNotifier {
     final i = items.indexWhere((e) => e.id == id);
     if (i < 0) return;
     items[i] = items[i].copyWith(done: !items[i].done);
+    _invalidateDayIndex();
     await _save(onlyKeys: {_itemsKey});
     await _syncReminders(items[i]);
     notifyListeners();
@@ -2538,6 +2574,7 @@ class AgendaStore extends ChangeNotifier {
           final existed = items.any((e) => e.id == record.entityId);
           if (!existed) return false;
           items.removeWhere((e) => e.id == record.entityId);
+          _invalidateDayIndex();
           await NotificationService.instance.cancel(record.entityId);
           await NotificationService.instance
               .cancel('${record.entityId}:primary');
@@ -2580,6 +2617,7 @@ class AgendaStore extends ChangeNotifier {
         } else {
           items[index] = item;
         }
+        _invalidateDayIndex();
         await _syncReminders(item);
         return true;
       case 'journal':
@@ -2831,6 +2869,7 @@ class AgendaStore extends ChangeNotifier {
     final index = items.indexWhere((e) => e.id == id);
     if (index < 0) return;
     items[index] = items[index].copyWith(pinned: !items[index].pinned);
+    _invalidateDayIndex();
     await _save(onlyKeys: {_itemsKey});
     notifyListeners();
   }
