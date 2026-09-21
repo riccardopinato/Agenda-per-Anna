@@ -1624,10 +1624,12 @@ class AgendaStore extends ChangeNotifier {
     final prefs = await SharedPreferences.getInstance();
     final cloud = CloudSyncService.instance;
     List<SharedSpace> spaces = const [];
+    var remoteSpacesLoaded = false;
 
     if (pullRemote && cloud.signedIn && cloud.userId == ownerId) {
       try {
         spaces = await cloud.listSharedSpaces();
+        remoteSpacesLoaded = true;
         await prefs.setString(
           sharedSpacesCacheStorageKey,
           jsonEncode(
@@ -1649,7 +1651,7 @@ class AgendaStore extends ChangeNotifier {
       }
     }
 
-    if (spaces.isEmpty) {
+    if (!remoteSpacesLoaded && spaces.isEmpty) {
       final rawSpaces = prefs.getString(sharedSpacesCacheStorageKey);
       if (rawSpaces != null) {
         try {
@@ -1671,10 +1673,12 @@ class AgendaStore extends ChangeNotifier {
     final nextEntries = <String, List<SharedEntry>>{};
     for (final space in spaces) {
       var entries = <SharedEntry>[];
+      var remoteEntriesLoaded = false;
 
       if (pullRemote && cloud.signedIn && cloud.userId == ownerId) {
         try {
           final records = await cloud.pullSharedRecords(space.id);
+          remoteEntriesLoaded = true;
           entries = records
               .where(
                 (record) =>
@@ -1695,7 +1699,7 @@ class AgendaStore extends ChangeNotifier {
         }
       }
 
-      if (entries.isEmpty) {
+      if (!remoteEntriesLoaded && entries.isEmpty) {
         final raw = prefs.getString(sharedCacheStorageKey(space.id));
         if (raw != null) {
           try {
