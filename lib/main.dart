@@ -1620,45 +1620,51 @@ class AgendaStore extends ChangeNotifier {
   Future<void> _save({
     bool createAutoSnapshot = true,
     bool enqueueSync = true,
+    Set<String>? onlyKeys,
   }) async {
     final prefs = await SharedPreferences.getInstance();
-    if (!_unreadableStorageKeys.contains(_itemsKey)) {
+
+    bool shouldWrite(String key) {
+      return (onlyKeys == null || onlyKeys.contains(key)) &&
+          !_unreadableStorageKeys.contains(key);
+    }
+    if (shouldWrite(_itemsKey)) {
       await prefs.setString(
         _itemsKey,
         jsonEncode(items.map((e) => e.toJson()).toList()),
       );
     }
-    if (!_unreadableStorageKeys.contains(_journalsKey)) {
+    if (shouldWrite(_journalsKey)) {
       await prefs.setString(
         _journalsKey,
         jsonEncode(journals.map((k, v) => MapEntry(k, v.toJson()))),
       );
     }
-    if (!_unreadableStorageKeys.contains(_monthsKey)) {
+    if (shouldWrite(_monthsKey)) {
       await prefs.setString(
         _monthsKey,
         jsonEncode(months.map((k, v) => MapEntry(k, v.toJson()))),
       );
     }
-    if (!_unreadableStorageKeys.contains(_weeksKey)) {
+    if (shouldWrite(_weeksKey)) {
       await prefs.setString(
         _weeksKey,
         jsonEncode(weeks.map((k, v) => MapEntry(k, v.toJson()))),
       );
     }
-    if (!_unreadableStorageKeys.contains(_habitsKey)) {
+    if (shouldWrite(_habitsKey)) {
       await prefs.setString(
         _habitsKey,
         jsonEncode(habits.map((e) => e.toJson()).toList()),
       );
     }
-    if (!_unreadableStorageKeys.contains(_preferencesKey)) {
+    if (shouldWrite(_preferencesKey)) {
       await prefs.setString(
         _preferencesKey,
         jsonEncode(preferences.toJson()),
       );
     }
-    if (!_unreadableStorageKeys.contains(_inboxKey)) {
+    if (shouldWrite(_inboxKey)) {
       await prefs.setString(
         _inboxKey,
         jsonEncode(inbox.map((e) => e.toJson()).toList()),
@@ -1670,7 +1676,10 @@ class AgendaStore extends ChangeNotifier {
     }
 
     if (enqueueSync) {
-      await _captureSyncChanges(prefs);
+      await _captureSyncChanges(
+        prefs,
+        onlyKeys: onlyKeys,
+      );
       _scheduleCloudSync();
     }
   }
@@ -1712,8 +1721,13 @@ class AgendaStore extends ChangeNotifier {
     _scheduleCloudSync();
   }
 
-  Map<String, _LocalSyncEntity> _currentSyncEntities() {
+  Map<String, _LocalSyncEntity> _currentSyncEntities({
+    Set<String>? onlyKeys,
+  }) {
     final result = <String, _LocalSyncEntity>{};
+
+    bool includes(String key) =>
+        onlyKeys == null || onlyKeys.contains(key);
 
     void add(
       String type,
@@ -1728,26 +1742,39 @@ class AgendaStore extends ChangeNotifier {
       result[entity.localKey] = entity;
     }
 
-    for (final item in items) {
-      add('item', item.id, item.toJson());
+    if (includes(_itemsKey)) {
+      for (final item in items) {
+        add('item', item.id, item.toJson());
+      }
     }
-    for (final entry in journals.entries) {
-      add('journal', entry.key, entry.value.toJson());
+    if (includes(_journalsKey)) {
+      for (final entry in journals.entries) {
+        add('journal', entry.key, entry.value.toJson());
+      }
     }
-    for (final entry in months.entries) {
-      add('month', entry.key, entry.value.toJson());
+    if (includes(_monthsKey)) {
+      for (final entry in months.entries) {
+        add('month', entry.key, entry.value.toJson());
+      }
     }
-    for (final entry in weeks.entries) {
-      add('week', entry.key, entry.value.toJson());
+    if (includes(_weeksKey)) {
+      for (final entry in weeks.entries) {
+        add('week', entry.key, entry.value.toJson());
+      }
     }
-    for (final habit in habits) {
-      add('habit', habit.id, habit.toJson());
+    if (includes(_habitsKey)) {
+      for (final habit in habits) {
+        add('habit', habit.id, habit.toJson());
+      }
     }
-    for (final entry in inbox) {
-      add('inbox', entry.id, entry.toJson());
+    if (includes(_inboxKey)) {
+      for (final entry in inbox) {
+        add('inbox', entry.id, entry.toJson());
+      }
     }
-
-    add('preferences', 'main', _cloudPreferencesPayload());
+    if (includes(_preferencesKey)) {
+      add('preferences', 'main', _cloudPreferencesPayload());
+    }
 
     return result;
   }
@@ -1755,11 +1782,23 @@ class AgendaStore extends ChangeNotifier {
   String _syncPayloadHash(Map<String, dynamic> payload) =>
       sha256.convert(utf8.encode(jsonEncode(payload))).toString();
 
+  String? _storageKeyForEntityType(String type) => switch (type) {
+        'item' => _itemsKey,
+        'journal' => _journalsKey,
+        'month' => _monthsKey,
+        'week' => _weeksKey,
+        'habit' => _habitsKey,
+        'inbox' => _inboxKey,
+        'preferences' => _preferencesKey,
+        _ => null,
+      };
+
   Future<void> _captureSyncChanges(
     SharedPreferences prefs, {
     bool forceAll = false,
+    Set<String>? onlyKeys,
   }) async {
-    final entities = _currentSyncEntities();
+    final entities = _currentSyncEntities(onlyKeys: onlyKeys);
     final now = DateTime.now();
 
     for (final entry in entities.entries) {
@@ -1779,8 +1818,14 @@ class AgendaStore extends ChangeNotifier {
       if (entities.containsKey(oldKey)) continue;
       final splitAt = oldKey.indexOf(':');
       if (splitAt <= 0) continue;
+      final entityType = oldKey.substring(0, splitAt);
+      final storageKey = _storageKeyForEntityType(entityType);
+      if (onlyKeys != null &&
+          (storageKey == null || !onlyKeys.contains(storageKey))) {
+        continue;
+      }
       _syncQueue[oldKey] = CloudSyncOperation(
-        entityType: oldKey.substring(0, splitAt),
+        entityType: entityType,
         entityId: oldKey.substring(splitAt + 1),
         payload: null,
         updatedAt: now,
@@ -1789,21 +1834,37 @@ class AgendaStore extends ChangeNotifier {
       );
     }
 
-    _replaceSyncIndex(entities);
+    _replaceSyncIndex(
+      entities,
+      onlyKeys: onlyKeys,
+    );
     await _persistSyncMetadata(prefs);
   }
 
-  void _replaceSyncIndex(Map<String, _LocalSyncEntity> entities) {
-    _syncIndex
-      ..clear()
-      ..addEntries(
-        entities.entries.map(
-          (entry) => MapEntry(
-            entry.key,
-            _syncPayloadHash(entry.value.payload),
-          ),
+  void _replaceSyncIndex(
+    Map<String, _LocalSyncEntity> entities, {
+    Set<String>? onlyKeys,
+  }) {
+    if (onlyKeys == null) {
+      _syncIndex.clear();
+    } else {
+      _syncIndex.removeWhere((key, _) {
+        final splitAt = key.indexOf(':');
+        if (splitAt <= 0) return false;
+        final storageKey =
+            _storageKeyForEntityType(key.substring(0, splitAt));
+        return storageKey != null && onlyKeys.contains(storageKey);
+      });
+    }
+
+    _syncIndex.addEntries(
+      entities.entries.map(
+        (entry) => MapEntry(
+          entry.key,
+          _syncPayloadHash(entry.value.payload),
         ),
-      );
+      ),
+    );
   }
 
   Future<void> _persistSyncMetadata(SharedPreferences prefs) async {
@@ -2219,7 +2280,7 @@ class AgendaStore extends ChangeNotifier {
     } else {
       items[index] = item;
     }
-    await _save();
+    await _save(onlyKeys: {_itemsKey});
     await _syncReminders(item);
     notifyListeners();
   }
@@ -2248,7 +2309,7 @@ class AgendaStore extends ChangeNotifier {
     await NotificationService.instance.cancel(id);
     await NotificationService.instance.cancel('$id:primary');
     await NotificationService.instance.cancel('$id:secondary');
-    await _save();
+    await _save(onlyKeys: {_itemsKey});
     notifyListeners();
   }
 
@@ -2305,7 +2366,7 @@ class AgendaStore extends ChangeNotifier {
     final i = items.indexWhere((e) => e.id == id);
     if (i < 0) return;
     items[i] = items[i].copyWith(done: !items[i].done);
-    await _save();
+    await _save(onlyKeys: {_itemsKey});
     notifyListeners();
   }
 
@@ -2313,7 +2374,7 @@ class AgendaStore extends ChangeNotifier {
 
   Future<void> saveJournal(DateTime date, DayJournal journal) async {
     journals[dateKey(date)] = journal;
-    await _save();
+    await _save(onlyKeys: {_journalsKey});
     notifyListeners();
   }
 
@@ -2740,13 +2801,13 @@ class AgendaStore extends ChangeNotifier {
         createdAt: DateTime.now(),
       ),
     );
-    await _save();
+    await _save(onlyKeys: {_inboxKey});
     notifyListeners();
   }
 
   Future<void> deleteInboxEntry(String id) async {
     inbox.removeWhere((e) => e.id == id);
-    await _save();
+    await _save(onlyKeys: {_inboxKey});
     notifyListeners();
   }
 
@@ -2754,7 +2815,7 @@ class AgendaStore extends ChangeNotifier {
     final index = inbox.indexWhere((e) => e.id == id);
     if (index < 0) return;
     inbox[index] = inbox[index].copyWith(pinned: !inbox[index].pinned);
-    await _save();
+    await _save(onlyKeys: {_inboxKey});
     notifyListeners();
   }
 
@@ -2762,7 +2823,7 @@ class AgendaStore extends ChangeNotifier {
     final index = items.indexWhere((e) => e.id == id);
     if (index < 0) return;
     items[index] = items[index].copyWith(pinned: !items[index].pinned);
-    await _save();
+    await _save(onlyKeys: {_itemsKey});
     notifyListeners();
   }
 
@@ -2814,7 +2875,7 @@ class AgendaStore extends ChangeNotifier {
     final value = name.trim();
     if (value.isEmpty) return;
     habits.add(HabitDefinition(id: const Uuid().v4(), name: value));
-    await _save();
+    await _save(onlyKeys: {_habitsKey});
     notifyListeners();
   }
 
@@ -2830,7 +2891,7 @@ class AgendaStore extends ChangeNotifier {
         );
       }
     }
-    await _save();
+    await _save(onlyKeys: {_habitsKey, _journalsKey});
     notifyListeners();
   }
 
@@ -2843,7 +2904,7 @@ class AgendaStore extends ChangeNotifier {
       completed.add(habitId);
     }
     journals[dateKey(date)] = current.copyWith(completedHabitIds: completed);
-    await _save();
+    await _save(onlyKeys: {_journalsKey});
     notifyListeners();
   }
 
@@ -2851,7 +2912,7 @@ class AgendaStore extends ChangeNotifier {
 
   Future<void> saveMonth(int year, int month, MonthlyData value) async {
     months[monthKey(year, month)] = value;
-    await _save();
+    await _save(onlyKeys: {_monthsKey});
     notifyListeners();
   }
 
@@ -2863,7 +2924,7 @@ class AgendaStore extends ChangeNotifier {
   Future<void> saveWeek(DateTime anyDay, WeekData value) async {
     final monday = mondayOf(anyDay);
     weeks[dateKey(monday)] = value;
-    await _save();
+    await _save(onlyKeys: {_weeksKey});
     notifyListeners();
   }
 
