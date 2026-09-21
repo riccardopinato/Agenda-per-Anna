@@ -1276,36 +1276,36 @@ class _SearchScreenState extends State<SearchScreen> {
                               trailing:
                                   const Icon(Icons.chevron_right),
                               onTap: () async {
-                                switch (hit.type) {
-                                  case _SearchHitType.event:
-                                    await openItemEditor(
-                                      context,
-                                      widget.store,
-                                      hit.date,
-                                      existing: hit.item,
-                                    );
-                                  case _SearchHitType.journal:
-                                    if (!context.mounted) return;
-                                    await Navigator.push(
-                                      context,
-                                      MaterialPageRoute(
-                                        builder: (_) => PlannerScreen(
-                                          store: widget.store,
-                                          initialDate: hit.date,
-                                        ),
+                                if (hit.type == _SearchHitType.event) {
+                                  await openItemEditor(
+                                    context,
+                                    widget.store,
+                                    hit.date,
+                                    existing: hit.item,
+                                  );
+                                } else if (hit.type ==
+                                    _SearchHitType.journal) {
+                                  if (!context.mounted) return;
+                                  await Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (_) => PlannerScreen(
+                                        store: widget.store,
+                                        initialDate: hit.date,
                                       ),
-                                    );
-                                  case _SearchHitType.month:
-                                    if (!context.mounted) return;
-                                    await Navigator.push(
-                                      context,
-                                      MaterialPageRoute(
-                                        builder: (_) => MonthScreen(
-                                          store: widget.store,
-                                          initialMonth: hit.date,
-                                        ),
+                                    ),
+                                  );
+                                } else {
+                                  if (!context.mounted) return;
+                                  await Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (_) => MonthScreen(
+                                        store: widget.store,
+                                        initialMonth: hit.date,
                                       ),
-                                    );
+                                    ),
+                                  );
                                 }
                                 if (mounted) setState(() {});
                               },
