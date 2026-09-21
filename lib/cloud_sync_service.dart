@@ -179,6 +179,19 @@ class CloudSyncService extends ChangeNotifier {
     'SUPABASE_PUBLISHABLE_KEY',
     defaultValue: 'sb_publishable_RWgJneLG9V-pu2IcsDRQCg_G14_kqS7',
   );
+  static const String _productionWebUrl =
+      'https://agenda-per-anna-production.up.railway.app/';
+
+  String get _emailRedirectUrl {
+    if (kIsWeb) {
+      final base = Uri.base;
+      if ((base.scheme == 'https' || base.scheme == 'http') &&
+          base.host.isNotEmpty) {
+        return base.replace(path: '/', query: null, fragment: null).toString();
+      }
+    }
+    return _productionWebUrl;
+  }
 
   SupabaseClient? _client;
   StreamSubscription<AuthState>? _authSubscription;
@@ -222,6 +235,7 @@ class CloudSyncService extends ChangeNotifier {
         publishableKey: _publishableKey,
       );
       _client = Supabase.instance.client;
+      await _completeWebAuthCallbackIfNeeded();
       _initialized = true;
       _state = signedIn
           ? CloudConnectionState.synced
@@ -286,6 +300,7 @@ class CloudSyncService extends ChangeNotifier {
       await client.auth.signUp(
         email: email.trim(),
         password: password,
+        emailRedirectTo: _emailRedirectUrl,
       );
       _state = signedIn
           ? CloudConnectionState.synced
@@ -296,6 +311,23 @@ class CloudSyncService extends ChangeNotifier {
       rethrow;
     } finally {
       notifyListeners();
+    }
+  }
+
+  Future<void> _completeWebAuthCallbackIfNeeded() async {
+    if (!kIsWeb) return;
+    final client = _client;
+    if (client == null || client.auth.currentSession != null) return;
+
+    final code = Uri.base.queryParameters['code'];
+    if (code == null || code.trim().isEmpty) return;
+
+    try {
+      await client.auth.exchangeCodeForSession(code);
+    } on AuthException {
+      // The email can still be confirmed even when the callback was opened
+      // in a different browser/device and the local PKCE verifier is absent.
+      // In that case the user can simply sign in with the confirmed account.
     }
   }
 
