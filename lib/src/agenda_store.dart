@@ -29,12 +29,17 @@ class AgendaStore extends ChangeNotifier {
   final Map<String, CloudSyncOperation> _syncQueue = {};
   final Map<String, String> _syncIndex = {};
   final Map<String, List<AgendaItem>> _dayIndex = {};
+  final Map<String, SharedSpace> _sharedAgendaSpaces = {};
+  final Map<String, List<SharedEntry>> _sharedAgendaEntriesBySpace = {};
+  final Set<String> _unifiedRealtimeSpaceIds = {};
   bool _dayIndexDirty = true;
+  AgendaContentFilter agendaContentFilter = AgendaContentFilter.all;
   final Set<String> _unreadableStorageKeys = {};
   AgendaPreferences preferences = const AgendaPreferences();
 
   Timer? _cloudSyncTimer;
   Timer? _syncDebounceTimer;
+  Timer? _unifiedRealtimeDebounce;
   bool _cloudSyncRunning = false;
   bool _sharedFlushRunning = false;
   int _sharedConflictCount = 0;
@@ -47,6 +52,37 @@ class AgendaStore extends ChangeNotifier {
   bool get hasStorageWarnings => _unreadableStorageKeys.isNotEmpty;
   int get sharedConflictCount => _sharedConflictCount;
   DateTime? get lastSharedSyncAt => _lastSharedSyncAt;
+  List<SharedSpace> get sharedAgendaSpaces {
+    final result = _sharedAgendaSpaces.values.toList()
+      ..sort((a, b) => a.createdAt.compareTo(b.createdAt));
+    return List<SharedSpace>.unmodifiable(result);
+  }
+
+  List<UnifiedAgendaEntry> get unifiedAgendaItems {
+    final result = <UnifiedAgendaEntry>[];
+    if (agendaContentFilter != AgendaContentFilter.sharedOnly) {
+      result.addAll(items.map(UnifiedAgendaEntry.private));
+    }
+    if (agendaContentFilter != AgendaContentFilter.privateOnly) {
+      for (final space in _sharedAgendaSpaces.values) {
+        for (final entry
+            in _sharedAgendaEntriesBySpace[space.id] ?? const <SharedEntry>[]) {
+          if (entry.type == SharedEntryType.note) continue;
+          result.add(UnifiedAgendaEntry.shared(entry, space));
+        }
+      }
+    }
+    result.sort((a, b) {
+      final byDate = a.date.compareTo(b.date);
+      if (byDate != 0) return byDate;
+      return a.sortMinutes.compareTo(b.sortMinutes);
+    });
+    return List<UnifiedAgendaEntry>.unmodifiable(result);
+  }
+
+  int get pendingUnifiedTaskCount => unifiedAgendaItems
+      .where((entry) => entry.type == ItemType.task && !entry.done)
+      .length;
 
   List<String> get _workingStorageKeys => const [
         _itemsKey,
@@ -77,6 +113,9 @@ class AgendaStore extends ChangeNotifier {
     inbox.clear();
     _syncQueue.clear();
     _syncIndex.clear();
+    _sharedAgendaSpaces.clear();
+    _sharedAgendaEntriesBySpace.clear();
+    _unifiedRealtimeSpaceIds.clear();
     preferences = const AgendaPreferences();
 
     T? decodeSection<T>(
@@ -246,6 +285,7 @@ class AgendaStore extends ChangeNotifier {
       ]);
     }
     _invalidateDayIndex();
+    await refreshSharedAgendaCache(notify: false);
   }
 
   Map<String, dynamic> _readAccountProfiles(SharedPreferences prefs) {
@@ -1208,6 +1248,7 @@ class AgendaStore extends ChangeNotifier {
     if (cloud.signedIn) {
       await flushSharedPendingOperations();
       await syncCloud(preferRemoteOnFirstSync: true);
+      await refreshSharedAgendaCache(pullRemote: true);
     }
 
     // Remote changes still need an occasional pull, but idle devices should
@@ -1239,6 +1280,7 @@ class AgendaStore extends ChangeNotifier {
     if (cloud.signedIn) {
       await flushSharedPendingOperations();
       await syncCloud();
+      await refreshSharedAgendaCache(pullRemote: true);
     }
   }
 
