@@ -390,7 +390,7 @@ Future<void> _showQuickCapture(
     return;
   }
 
-  await openItemEditor(
+  await openUnifiedItemComposer(
     context,
     store,
     DateTime.now(),
