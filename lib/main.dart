@@ -5800,14 +5800,19 @@ Future<void> openItemEditor(
   TimeOfDay? end = existing?.end ??
       (start == null
           ? null
-          : TimeOfDay(
-              hour: (start.hour + 1).clamp(0, 23),
-              minute: start.minute,
+          : _timePlusMinutes(
+              start,
+              store.preferences.defaultEventMinutes,
             ));
   ItemType type = existing?.type ?? ItemType.appointment;
-  AgendaCategory category = existing?.category ?? AgendaCategory.personal;
-  int primaryReminder = existing?.reminderMinutesBefore ?? -1;
-  int secondaryReminder = existing?.secondaryReminderMinutesBefore ?? -1;
+  AgendaCategory category =
+      existing?.category ?? store.preferences.defaultCategory;
+  int primaryReminder = existing == null
+      ? (store.preferences.defaultPrimaryReminder ?? -1)
+      : (existing.reminderMinutesBefore ?? -1);
+  int secondaryReminder = existing == null
+      ? (store.preferences.defaultSecondaryReminder ?? -1)
+      : (existing.secondaryReminderMinutesBefore ?? -1);
   RecurrenceRule recurrence = RecurrenceRule.none;
   int recurrenceCount = 4;
 
@@ -6003,9 +6008,9 @@ Future<void> openItemEditor(
                     if (picked != null) {
                       setLocal(() {
                         start = picked;
-                        end ??= TimeOfDay(
-                          hour: (picked.hour + 1).clamp(0, 23),
-                          minute: picked.minute,
+                        end ??= _timePlusMinutes(
+                          picked,
+                          store.preferences.defaultEventMinutes,
                         );
                       });
                     }
@@ -6262,6 +6267,14 @@ String _monthPhrase(int month) {
 DateTime mondayOf(DateTime d) {
   final n = DateTime(d.year, d.month, d.day);
   return n.subtract(Duration(days: n.weekday - 1));
+}
+
+TimeOfDay _timePlusMinutes(TimeOfDay start, int minutes) {
+  final total = (start.hour * 60 + start.minute + minutes).clamp(0, 1439);
+  return TimeOfDay(
+    hour: total ~/ 60,
+    minute: total % 60,
+  );
 }
 
 String formatTime(TimeOfDay t) =>
