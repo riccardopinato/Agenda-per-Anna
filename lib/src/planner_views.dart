@@ -21,7 +21,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
         return Scaffold(
           appBar: AppBar(title: const Text('Calendario', style: TextStyle(fontWeight: FontWeight.w800))),
           floatingActionButton: FloatingActionButton(
-            onPressed: () => openItemEditor(context, widget.store, selected),
+            onPressed: () => openUnifiedItemComposer(context, widget.store, selected),
             child: const Icon(Icons.add),
           ),
           body: ListView(
@@ -137,7 +137,7 @@ class _PlannerScreenState extends State<PlannerScreen> {
                   child: const Text('Oggi'),
                 ),
               IconButton(
-                onPressed: () => openItemEditor(context, widget.store, day),
+                onPressed: () => openUnifiedItemComposer(context, widget.store, day),
                 icon: const Icon(Icons.add_circle_outline),
               ),
             ],
@@ -698,7 +698,7 @@ class DayTimeline extends StatelessWidget {
       endHour * 60 - 15,
     );
 
-    await openItemEditor(
+    await openUnifiedItemComposer(
       context,
       store,
       date,
@@ -1143,7 +1143,7 @@ class _WeekDayCard extends StatelessWidget {
                 ),
               ),
               IconButton(
-                onPressed: () => openItemEditor(context, store, day),
+                onPressed: () => openUnifiedItemComposer(context, store, day),
                 icon: const Icon(Icons.add_circle_outline),
               ),
             ],
