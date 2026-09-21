@@ -2138,6 +2138,14 @@ class AgendaStore extends ChangeNotifier {
 
     await _save(createAutoSnapshot: false);
 
+    if (!merge && incomingPreferences != null) {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString(
+        _privacyGuardKey,
+        jsonEncode(_privacyGuardPayload()),
+      );
+    }
+
     for (final item in items) {
       await _syncReminders(item);
     }
@@ -2905,8 +2913,30 @@ class AgendaStore extends ChangeNotifier {
             } catch (_) {
               // Preserve a queue we cannot safely parse.
             }
-          } catch (_) {
-            // Keep the operation for the next resume/refresh.
+          } catch (error) {
+            if (error is StateError &&
+                error.message == 'remote_record_is_newer') {
+              final latestRaw = prefs.getString(key);
+              if (latestRaw != null) {
+                try {
+                  final latest = (jsonDecode(latestRaw) as List)
+                      .map(
+                        (e) => Map<String, dynamic>.from(e as Map),
+                      )
+                      .toList();
+                  latest.removeWhere(
+                    (candidate) =>
+                        candidate['entityId'] == entityId &&
+                        candidate['action'] == action &&
+                        candidate['updatedAt'] == revision,
+                  );
+                  await prefs.setString(key, jsonEncode(latest));
+                } catch (_) {
+                  // Preserve an unreadable queue rather than overwrite it.
+                }
+              }
+            }
+            // Network and permission errors stay queued for a later retry.
           }
         }
       }
@@ -2957,7 +2987,12 @@ class AgendaStore extends ChangeNotifier {
 
   Future<void> setPin(String pin) async {
     final normalized = pin.trim();
-    if (!RegExp(r'^\d{4,8}
+    final validPin = RegExp(r'^\d{4,8}$').hasMatch(normalized);
+    if (!validPin) {
+      throw const FormatException(
+        'Il PIN deve contenere da 4 a 8 cifre.',
+      );
+    }
     final saltBytes = List<int>.generate(
       16,
       (_) => Random.secure().nextInt(256),
@@ -4674,7 +4709,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
             onPressed: () {
               final a = first.text.trim();
               final b = second.text.trim();
-              if (!RegExp(r'^\d{4,8}
+              final validPin =
+                  RegExp(r'^\d{4,8}$').hasMatch(a);
+              if (!validPin || a != b) return;
               Navigator.pop(dialogContext, a);
             },
             child: const Text('Salva PIN'),
