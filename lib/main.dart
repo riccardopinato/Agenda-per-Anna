@@ -1264,6 +1264,10 @@ class DayTimeline extends StatelessWidget {
             );
             onChanged();
           },
+          onLongPress: () async {
+            await _showAgendaItemActions(context, store, event);
+            onChanged();
+          },
           child: Container(
             padding: EdgeInsets.symmetric(
               horizontal: placement.laneCount > 2 ? 6 : 9,
@@ -2464,6 +2468,71 @@ class YearMonthSnapshot extends StatelessWidget {
   }
 }
 
+Future<void> _showAgendaItemActions(
+  BuildContext context,
+  AgendaStore store,
+  AgendaItem item,
+) async {
+  final action = await showModalBottomSheet<String>(
+    context: context,
+    showDragHandle: true,
+    builder: (context) => SafeArea(
+      child: Wrap(
+        children: [
+          ListTile(
+            leading: const Icon(Icons.edit_outlined),
+            title: const Text('Modifica'),
+            onTap: () => Navigator.pop(context, 'edit'),
+          ),
+          ListTile(
+            leading: const Icon(Icons.content_copy_outlined),
+            title: const Text('Duplica'),
+            subtitle: const Text('Crea una copia nello stesso giorno'),
+            onTap: () => Navigator.pop(context, 'duplicate'),
+          ),
+          ListTile(
+            leading: Icon(
+              Icons.delete_outline,
+              color: Theme.of(context).colorScheme.error,
+            ),
+            title: Text(
+              'Elimina',
+              style: TextStyle(color: Theme.of(context).colorScheme.error),
+            ),
+            onTap: () => Navigator.pop(context, 'delete'),
+          ),
+        ],
+      ),
+    ),
+  );
+
+  if (action == 'edit' && context.mounted) {
+    await openItemEditor(context, store, item.date, existing: item);
+  } else if (action == 'duplicate') {
+    await store.duplicateItem(item);
+  } else if (action == 'delete' && context.mounted) {
+    final confirmed = await showDialog<bool>(
+          context: context,
+          builder: (dialogContext) => AlertDialog(
+            title: const Text('Eliminare questo elemento?'),
+            content: Text(item.title),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(dialogContext, false),
+                child: const Text('Annulla'),
+              ),
+              FilledButton(
+                onPressed: () => Navigator.pop(dialogContext, true),
+                child: const Text('Elimina'),
+              ),
+            ],
+          ),
+        ) ??
+        false;
+    if (confirmed) await store.deleteItem(item.id);
+  }
+}
+
 class EventTile extends StatelessWidget {
   final AgendaStore store;
   final AgendaItem item;
@@ -2555,8 +2624,9 @@ class EventTile extends StatelessWidget {
         onTap: () =>
             openItemEditor(context, store, item.date, existing: item),
         trailing: IconButton(
-          onPressed: () => store.deleteItem(item.id),
-          icon: const Icon(Icons.close),
+          tooltip: 'Azioni',
+          onPressed: () => _showAgendaItemActions(context, store, item),
+          icon: const Icon(Icons.more_horiz),
         ),
       ),
     );
