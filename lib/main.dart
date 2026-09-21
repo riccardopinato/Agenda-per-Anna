@@ -212,7 +212,7 @@ class AgendaPreferences {
           orElse: () => AgendaCategory.personal,
         ),
         defaultEventMinutes:
-            (json['defaultEventMinutes'] as int? ?? 60).clamp(15, 240),
+            (json['defaultEventMinutes'] as int? ?? 60).clamp(15, 240).toInt(),
         defaultPrimaryReminder: json['defaultPrimaryReminder'] as int?,
         defaultSecondaryReminder:
             json['defaultSecondaryReminder'] as int?,
@@ -738,6 +738,7 @@ class AgendaStore extends ChangeNotifier {
   static const _weeksKey = 'weeks_v1';
   static const _habitsKey = 'habits_v1';
   static const _snapshotsKey = 'backup_snapshots_v1';
+  static const _preferencesKey = 'agenda_preferences_v1';
   static const _backupFormat = 'agenda_per_anna_backup';
   static const _backupSchemaVersion = 1;
 
@@ -747,6 +748,7 @@ class AgendaStore extends ChangeNotifier {
   final Map<String, WeekData> weeks = {};
   final List<HabitDefinition> habits = [];
   final List<LocalBackupSnapshot> localSnapshots = [];
+  AgendaPreferences preferences = const AgendaPreferences();
 
   Future<void> load() async {
     final prefs = await SharedPreferences.getInstance();
@@ -813,6 +815,13 @@ class AgendaStore extends ChangeNotifier {
           ));
       }
 
+      final pr = prefs.getString(_preferencesKey);
+      if (pr != null) {
+        preferences = AgendaPreferences.fromJson(
+          Map<String, dynamic>.from(jsonDecode(pr) as Map),
+        );
+      }
+
       if (habits.isEmpty) {
         habits.addAll(const [
           HabitDefinition(id: 'water', name: 'Bere abbastanza'),
@@ -845,6 +854,10 @@ class AgendaStore extends ChangeNotifier {
       _habitsKey,
       jsonEncode(habits.map((e) => e.toJson()).toList()),
     );
+    await prefs.setString(
+      _preferencesKey,
+      jsonEncode(preferences.toJson()),
+    );
 
     if (createAutoSnapshot) {
       await _maybeCreateAutomaticSnapshot(prefs);
@@ -857,13 +870,14 @@ class AgendaStore extends ChangeNotifier {
         'months': months.map((k, v) => MapEntry(k, v.toJson())),
         'weeks': weeks.map((k, v) => MapEntry(k, v.toJson())),
         'habits': habits.map((e) => e.toJson()).toList(),
+        'preferences': preferences.toJson(),
       };
 
   String createBackupJson() {
     final document = {
       'format': _backupFormat,
       'schemaVersion': _backupSchemaVersion,
-      'appVersion': '0.12.0',
+      'appVersion': '0.13.0',
       'exportedAt': DateTime.now().toIso8601String(),
       'data': _backupDataPayload(),
     };
@@ -955,6 +969,11 @@ class AgendaStore extends ChangeNotifier {
           ),
         )
         .toList();
+    final incomingPreferences = payload['preferences'] is Map
+        ? AgendaPreferences.fromJson(
+            Map<String, dynamic>.from(payload['preferences'] as Map),
+          )
+        : null;
 
     final oldItems = [...items];
 
@@ -994,6 +1013,9 @@ class AgendaStore extends ChangeNotifier {
       habits
         ..clear()
         ..addAll(incomingHabits);
+      if (incomingPreferences != null) {
+        preferences = incomingPreferences;
+      }
     }
 
     if (habits.isEmpty) {
@@ -1076,7 +1098,7 @@ class AgendaStore extends ChangeNotifier {
     final document = {
       'format': _backupFormat,
       'schemaVersion': _backupSchemaVersion,
-      'appVersion': '0.12.0',
+      'appVersion': '0.13.0',
       'exportedAt': snapshot.createdAt.toIso8601String(),
       'data': snapshot.data,
     };
@@ -1322,6 +1344,17 @@ class AgendaStore extends ChangeNotifier {
     journals[dateKey(date)] = journal;
     await _save();
     notifyListeners();
+  }
+
+  Future<void> savePreferences(AgendaPreferences value) async {
+    preferences = value;
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_preferencesKey, jsonEncode(preferences.toJson()));
+    notifyListeners();
+  }
+
+  Future<void> resetPreferences() async {
+    await savePreferences(const AgendaPreferences());
   }
 
   Future<void> addHabit(String name) async {
