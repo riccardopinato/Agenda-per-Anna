@@ -198,6 +198,8 @@ class HomeScreen extends StatelessWidget {
               ),
               const SizedBox(height: 14),
               AgendaContentFilterBar(store: store),
+              const SizedBox(height: 10),
+              _HomeSyncStatusCard(store: store),
               if (store.hasStorageWarnings) ...[
                 const SizedBox(height: 12),
                 SimpleCard(
@@ -396,6 +398,111 @@ Future<void> _showQuickCapture(
     DateTime.now(),
     initialType: action == 'task' ? ItemType.task : ItemType.appointment,
   );
+}
+
+class _HomeSyncStatusCard extends StatelessWidget {
+  final AgendaStore store;
+
+  const _HomeSyncStatusCard({required this.store});
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: CloudSyncService.instance,
+      builder: (context, _) {
+        final cloud = CloudSyncService.instance;
+        final pending = store.totalPendingCloudChanges;
+
+        IconData icon;
+        String title;
+        String subtitle;
+
+        if (!cloud.configured) {
+          icon = Icons.cloud_off_outlined;
+          title = 'Solo sul dispositivo';
+          subtitle = 'Il cloud non è configurato in questa build.';
+        } else if (!cloud.signedIn) {
+          icon = Icons.cloud_outlined;
+          title = 'Cloud non connesso';
+          subtitle = 'L’agenda continua a funzionare offline.';
+        } else if (cloud.state == CloudConnectionState.syncing) {
+          icon = Icons.sync;
+          title = 'Sincronizzazione in corso';
+          subtitle = pending == 0
+              ? 'Controllo le modifiche sui tuoi dispositivi.'
+              : '$pending modifiche locali sono al sicuro in coda.';
+        } else if (cloud.state == CloudConnectionState.error) {
+          icon = Icons.cloud_off_outlined;
+          title = pending == 0
+              ? 'Cloud temporaneamente non disponibile'
+              : 'Offline · dati al sicuro';
+          subtitle = pending == 0
+              ? 'Riproverò alla riapertura o alla prossima sincronizzazione.'
+              : '$pending modifiche verranno inviate quando torna la rete.';
+        } else if (pending > 0) {
+          icon = Icons.cloud_upload_outlined;
+          title = '$pending modifiche in attesa';
+          subtitle =
+              'Restano salvate sul dispositivo finché non vengono sincronizzate.';
+        } else {
+          icon = Icons.cloud_done_outlined;
+          title = 'Tutto sincronizzato';
+          subtitle = cloud.lastSyncAt == null
+              ? 'Nessuna modifica in attesa.'
+              : 'Ultimo controllo ${DateFormat('HH:mm', 'it_IT').format(cloud.lastSyncAt!)}.';
+        }
+
+        return Material(
+          color: Theme.of(context)
+              .colorScheme
+              .surfaceContainerHighest
+              .withValues(alpha: 0.42),
+          borderRadius: BorderRadius.circular(18),
+          child: InkWell(
+            borderRadius: BorderRadius.circular(18),
+            onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => CloudAccountScreen(store: store),
+              ),
+            ),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(
+                horizontal: 14,
+                vertical: 11,
+              ),
+              child: Row(
+                children: [
+                  Icon(icon, size: 21),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          title,
+                          style: const TextStyle(
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                        Text(
+                          subtitle,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: Theme.of(context).textTheme.bodySmall,
+                        ),
+                      ],
+                    ),
+                  ),
+                  const Icon(Icons.chevron_right, size: 20),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
 }
 
 class _HomeFocusCard extends StatelessWidget {
