@@ -13,6 +13,7 @@ class NotificationService {
 
   bool _initialized = false;
   bool _available = true;
+  bool _permissionsRequested = false;
 
   Future<void> initialize() async {
     if (_initialized || !_available) return;
@@ -49,7 +50,8 @@ class NotificationService {
 
   Future<void> requestPermissions() async {
     await initialize();
-    if (!_available) return;
+    if (!_available || _permissionsRequested) return;
+    _permissionsRequested = true;
 
     try {
       await _plugin
