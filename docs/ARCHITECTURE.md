@@ -33,3 +33,17 @@ This refactor intentionally changes no persistence keys, JSON schemas, sync reco
 - Existing entries can move Privato → Noi ♡ or Noi ♡ → Privato through explicit actions.
 - Shared changes update the unified offline cache immediately and reconcile through the existing deterministic queue/realtime pipeline.
 - Empty or removed remote shared data never falls back to stale cache after a successful remote fetch.
+
+
+## v0.20.0 — Release Readiness & Daily Reliability
+
+- Account recovery is complete: password reset email, recovery callback handling and in-app new-password gate.
+- Cloud errors shown to users are translated into clear messages while technical details remain internal.
+- Private sync and Shared Space sync are reconciled through one reliability path on login, resume, manual sync and periodic refresh.
+- Home exposes a compact sync-health card with synced/offline/pending states and a combined private + shared pending count.
+- Shared pending work is counted per active account and kept isolated across account switches.
+- A local safety snapshot is created before account sign-out; restore already creates its own pre-restore snapshot.
+- Backup metadata now reports the current release line while keeping schema compatibility unchanged.
+- Production PWA shell, manifest and service-worker caching are hardened so Railway deploys do not strand users on stale bundles.
+- Onboarding now explains that Privato is the default and Noi ♡ is always explicit opt-in.
+- Reliability regression coverage includes pending queue accounting, account scope isolation and backup release metadata.
