@@ -37,12 +37,16 @@ class AgendaStore extends ChangeNotifier {
   Timer? _syncDebounceTimer;
   bool _cloudSyncRunning = false;
   bool _sharedFlushRunning = false;
+  int _sharedConflictCount = 0;
+  DateTime? _lastSharedSyncAt;
   String? _activeAccountId;
   bool _accountScopeResolved = true;
 
   String? get activeAccountId => _activeAccountId;
   bool get accountScopeResolved => _accountScopeResolved;
   bool get hasStorageWarnings => _unreadableStorageKeys.isNotEmpty;
+  int get sharedConflictCount => _sharedConflictCount;
+  DateTime? get lastSharedSyncAt => _lastSharedSyncAt;
 
   List<String> get _workingStorageKeys => const [
         _itemsKey,
@@ -1528,6 +1532,97 @@ class AgendaStore extends ChangeNotifier {
     return 'shared_spaces_$owner';
   }
 
+  Future<List<SharedPendingOperation>> loadSharedPendingOperations(
+    String spaceId,
+  ) async {
+    final prefs = await SharedPreferences.getInstance();
+    final raw = prefs.getString(sharedPendingStorageKey(spaceId));
+    if (raw == null) return const [];
+    try {
+      return (jsonDecode(raw) as List)
+          .map(
+            (rawOperation) => SharedPendingOperation.fromJson(
+              Map<String, dynamic>.from(rawOperation as Map),
+            ),
+          )
+          .where((operation) => operation.entityId.isNotEmpty)
+          .toList();
+    } catch (_) {
+      return const [];
+    }
+  }
+
+  Future<void> _saveSharedPendingOperations(
+    String spaceId,
+    List<SharedPendingOperation> operations,
+  ) async {
+    final prefs = await SharedPreferences.getInstance();
+    final key = sharedPendingStorageKey(spaceId);
+    if (operations.isEmpty) {
+      await prefs.remove(key);
+    } else {
+      await prefs.setString(
+        key,
+        jsonEncode(
+          operations.map((operation) => operation.toJson()).toList(),
+        ),
+      );
+    }
+  }
+
+  Future<void> enqueueSharedUpsert({
+    required String spaceId,
+    required SharedEntry entry,
+    DateTime? updatedAt,
+  }) async {
+    final revision = (updatedAt ?? DateTime.now()).toUtc();
+    final operations = await loadSharedPendingOperations(spaceId);
+    operations.removeWhere((operation) => operation.entityId == entry.id);
+    operations.add(
+      SharedPendingOperation(
+        action: SharedPendingAction.upsert,
+        entityId: entry.id,
+        payload: entry.toJson(),
+        updatedAt: revision,
+      ),
+    );
+    await _saveSharedPendingOperations(spaceId, operations);
+    notifyListeners();
+  }
+
+  Future<void> enqueueSharedDelete({
+    required String spaceId,
+    required String entityId,
+    DateTime? updatedAt,
+  }) async {
+    final revision = (updatedAt ?? DateTime.now()).toUtc();
+    final operations = await loadSharedPendingOperations(spaceId);
+    operations.removeWhere((operation) => operation.entityId == entityId);
+    operations.add(
+      SharedPendingOperation(
+        action: SharedPendingAction.delete,
+        entityId: entityId,
+        updatedAt: revision,
+      ),
+    );
+    await _saveSharedPendingOperations(spaceId, operations);
+    notifyListeners();
+  }
+
+  Future<int> pendingSharedChanges(String spaceId) async =>
+      (await loadSharedPendingOperations(spaceId)).length;
+
+  Future<Set<String>> pendingSharedEntityIds(String spaceId) async =>
+      (await loadSharedPendingOperations(spaceId))
+          .map((operation) => operation.entityId)
+          .toSet();
+
+  void resetSharedConflictCount() {
+    if (_sharedConflictCount == 0) return;
+    _sharedConflictCount = 0;
+    notifyListeners();
+  }
+
   Future<void> flushSharedPendingOperations({
     String? spaceId,
   }) async {
@@ -1541,6 +1636,7 @@ class AgendaStore extends ChangeNotifier {
     }
 
     _sharedFlushRunning = true;
+    var stateChanged = false;
     try {
       final prefs = await SharedPreferences.getInstance();
       final prefix = 'shared_pending_${ownerId}_';
@@ -1558,39 +1654,71 @@ class AgendaStore extends ChangeNotifier {
         final raw = prefs.getString(key);
         if (raw == null) continue;
 
-        List<Map<String, dynamic>> snapshot;
+        List<SharedPendingOperation> snapshot;
         try {
           snapshot = (jsonDecode(raw) as List)
-              .map((e) => Map<String, dynamic>.from(e as Map))
+              .map(
+                (rawOperation) => SharedPendingOperation.fromJson(
+                  Map<String, dynamic>.from(rawOperation as Map),
+                ),
+              )
+              .where((operation) => operation.entityId.isNotEmpty)
               .toList();
         } catch (_) {
           continue;
         }
 
-        for (final op in snapshot) {
-          final entityId = op['entityId'] as String?;
-          final action = op['action'] as String?;
-          final revision = op['updatedAt'] as String?;
-          if (entityId == null || action == null || revision == null) {
-            continue;
-          }
-
-          final updatedAt = DateTime.tryParse(revision);
+        Future<void> removeExactOperation(
+          SharedPendingOperation operation,
+        ) async {
+          final latestRaw = prefs.getString(key);
+          if (latestRaw == null) return;
           try {
-            if (action == 'delete') {
+            final latest = (jsonDecode(latestRaw) as List)
+                .map(
+                  (rawOperation) => SharedPendingOperation.fromJson(
+                    Map<String, dynamic>.from(rawOperation as Map),
+                  ),
+                )
+                .toList();
+            latest.removeWhere(
+              (candidate) =>
+                  candidate.entityId == operation.entityId &&
+                  candidate.action == operation.action &&
+                  candidate.updatedAt.toUtc() ==
+                      operation.updatedAt.toUtc(),
+            );
+            if (latest.isEmpty) {
+              await prefs.remove(key);
+            } else {
+              await prefs.setString(
+                key,
+                jsonEncode(
+                  latest.map((candidate) => candidate.toJson()).toList(),
+                ),
+              );
+            }
+          } catch (_) {
+            // Preserve a queue we cannot safely parse.
+          }
+        }
+
+        for (final operation in snapshot) {
+          try {
+            if (operation.action == SharedPendingAction.delete) {
               await cloud.deleteSharedRecord(
                 spaceId: currentSpaceId,
                 entityType: 'shared_entry',
-                entityId: entityId,
-                updatedAt: updatedAt,
+                entityId: operation.entityId,
+                updatedAt: operation.updatedAt,
               );
-            } else if (action == 'upsert' && op['payload'] is Map) {
+            } else if (operation.payload != null) {
               await cloud.upsertSharedRecord(
                 spaceId: currentSpaceId,
                 entityType: 'shared_entry',
-                entityId: entityId,
-                payload: Map<String, dynamic>.from(op['payload'] as Map),
-                updatedAt: updatedAt,
+                entityId: operation.entityId,
+                payload: operation.payload!,
+                updatedAt: operation.updatedAt,
               );
             } else {
               continue;
@@ -1600,44 +1728,16 @@ class AgendaStore extends ChangeNotifier {
               return;
             }
 
-            final latestRaw = prefs.getString(key);
-            if (latestRaw == null) continue;
-            try {
-              final latest = (jsonDecode(latestRaw) as List)
-                  .map((e) => Map<String, dynamic>.from(e as Map))
-                  .toList();
-              latest.removeWhere(
-                (candidate) =>
-                    candidate['entityId'] == entityId &&
-                    candidate['action'] == action &&
-                    candidate['updatedAt'] == revision,
-              );
-              await prefs.setString(key, jsonEncode(latest));
-            } catch (_) {
-              // Preserve a queue we cannot safely parse.
-            }
+            await removeExactOperation(operation);
+            _lastSharedSyncAt = DateTime.now();
+            stateChanged = true;
           } catch (error) {
             if (error is StateError &&
                 error.message == 'remote_record_is_newer') {
-              final latestRaw = prefs.getString(key);
-              if (latestRaw != null) {
-                try {
-                  final latest = (jsonDecode(latestRaw) as List)
-                      .map(
-                        (e) => Map<String, dynamic>.from(e as Map),
-                      )
-                      .toList();
-                  latest.removeWhere(
-                    (candidate) =>
-                        candidate['entityId'] == entityId &&
-                        candidate['action'] == action &&
-                        candidate['updatedAt'] == revision,
-                  );
-                  await prefs.setString(key, jsonEncode(latest));
-                } catch (_) {
-                  // Preserve an unreadable queue rather than overwrite it.
-                }
-              }
+              await removeExactOperation(operation);
+              _sharedConflictCount++;
+              _lastSharedSyncAt = DateTime.now();
+              stateChanged = true;
             }
             // Network and permission errors stay queued for a later retry.
           }
@@ -1645,9 +1745,9 @@ class AgendaStore extends ChangeNotifier {
       }
     } finally {
       _sharedFlushRunning = false;
+      if (stateChanged) notifyListeners();
     }
   }
-
   int get pendingCloudChanges => _syncQueue.length;
 
   Future<void> addInboxEntry(String text) async {
