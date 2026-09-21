@@ -2627,8 +2627,13 @@ class SharedSpaceScreen extends StatefulWidget {
 
 class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
   bool loading = true;
+  bool realtimeConnected = false;
   List<SharedEntry> entries = [];
+  Set<String> pendingIds = {};
   DateTime selected = DateTime.now();
+  DateTime? lastRefreshAt;
+  Timer? _realtimeDebounce;
+  int _seenConflictCount = 0;
 
   String get _cacheKey =>
       widget.store.sharedCacheStorageKey(widget.space.id);
@@ -2638,7 +2643,42 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
   @override
   void initState() {
     super.initState();
+    _seenConflictCount = widget.store.sharedConflictCount;
     _loadCachedThenRefresh();
+    _bindRealtime();
+  }
+
+  @override
+  void dispose() {
+    _realtimeDebounce?.cancel();
+    unawaited(
+      CloudSyncService.instance.unsubscribeSharedSpace(
+        spaceId: widget.space.id,
+        listenerKey: 'screen',
+      ),
+    );
+    super.dispose();
+  }
+
+  void _bindRealtime() {
+    if (!CloudSyncService.instance.signedIn) return;
+    CloudSyncService.instance.subscribeSharedSpace(
+      spaceId: widget.space.id,
+      listenerKey: 'screen',
+      onChanged: () {
+        _realtimeDebounce?.cancel();
+        _realtimeDebounce = Timer(const Duration(milliseconds: 350), () {
+          if (mounted) unawaited(_refresh(silent: true));
+        });
+      },
+      onStatus: (status, _) {
+        if (!mounted) return;
+        setState(() {
+          realtimeConnected =
+              status == RealtimeSubscribeStatus.subscribed;
+        });
+      },
+    );
   }
 
   Future<void> _loadCachedThenRefresh() async {
@@ -2648,81 +2688,63 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
       try {
         entries = (jsonDecode(raw) as List)
             .map(
-              (e) => SharedEntry.fromJson(
+              (e) => SharedEntry.fromCacheJson(
                 Map<String, dynamic>.from(e as Map),
               ),
             )
             .toList();
       } catch (_) {}
     }
+    await _updatePendingState();
     if (mounted) setState(() => loading = false);
-    await _refresh();
+    await _refresh(silent: entries.isNotEmpty);
   }
 
   Future<void> _saveCache() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(
       _cacheKey,
-      jsonEncode(entries.map((e) => e.toJson()).toList()),
+      jsonEncode(entries.map((e) => e.toCacheJson()).toList()),
     );
   }
 
-  Future<List<Map<String, dynamic>>> _loadPending() async {
-    final prefs = await SharedPreferences.getInstance();
-    final raw = prefs.getString(_pendingKey);
-    if (raw == null) return [];
-    try {
-      return (jsonDecode(raw) as List)
-          .map((e) => Map<String, dynamic>.from(e as Map))
-          .toList();
-    } catch (_) {
-      return [];
-    }
-  }
+  Future<List<SharedPendingOperation>> _loadPending() =>
+      widget.store.loadSharedPendingOperations(widget.space.id);
 
-  Future<void> _savePending(
-    List<Map<String, dynamic>> pending,
-  ) async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(_pendingKey, jsonEncode(pending));
-  }
-
-  Future<void> _enqueueSharedUpsert(SharedEntry entry) async {
-    final pending = await _loadPending();
-    pending.removeWhere((e) => e['entityId'] == entry.id);
-    pending.add({
-      'action': 'upsert',
-      'entityId': entry.id,
-      'payload': entry.toJson(),
-      'updatedAt': DateTime.now().toUtc().toIso8601String(),
+  Future<void> _updatePendingState() async {
+    final operations = await _loadPending();
+    if (!mounted) return;
+    setState(() {
+      pendingIds = operations.map((operation) => operation.entityId).toSet();
     });
-    await _savePending(pending);
-  }
-
-  Future<void> _enqueueSharedDelete(String id) async {
-    final pending = await _loadPending();
-    pending.removeWhere((e) => e['entityId'] == id);
-    pending.add({
-      'action': 'delete',
-      'entityId': id,
-      'updatedAt': DateTime.now().toUtc().toIso8601String(),
-    });
-    await _savePending(pending);
   }
 
   Future<void> _flushPending() async {
+    final conflictsBefore = widget.store.sharedConflictCount;
     await widget.store.flushSharedPendingOperations(
       spaceId: widget.space.id,
     );
+    await _updatePendingState();
+    if (widget.store.sharedConflictCount > conflictsBefore &&
+        widget.store.sharedConflictCount > _seenConflictCount) {
+      _seenConflictCount = widget.store.sharedConflictCount;
+      _message(
+        'Conflitto risolto: è stata mantenuta la modifica più recente.',
+      );
+    }
   }
 
-  Future<void> _refresh() async {
-    if (!CloudSyncService.instance.signedIn) return;
-    if (mounted) setState(() => loading = true);
+  Future<void> _refresh({bool silent = false}) async {
+    final cloud = CloudSyncService.instance;
+    if (!cloud.signedIn) {
+      await _updatePendingState();
+      if (mounted) setState(() => loading = false);
+      return;
+    }
+    if (!silent && mounted) setState(() => loading = true);
     try {
       await _flushPending();
-      final records =
-          await CloudSyncService.instance.pullSharedRecords(widget.space.id);
+      final records = await cloud.pullSharedRecords(widget.space.id);
       final next = <SharedEntry>[];
       for (final record in records) {
         if (record.deletedAt != null ||
@@ -2734,17 +2756,21 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
           SharedEntry.fromJson(
             record.payload!,
             updatedBy: record.updatedBy,
+            updatedAt: record.clientUpdatedAt,
           ),
         );
       }
+
       final pending = await _loadPending();
-      for (final op in pending) {
-        final id = op['entityId'] as String;
-        next.removeWhere((e) => e.id == id);
-        if (op['action'] == 'upsert' && op['payload'] is Map) {
+      for (final operation in pending) {
+        next.removeWhere((entry) => entry.id == operation.entityId);
+        if (operation.action == SharedPendingAction.upsert &&
+            operation.payload != null) {
           next.add(
             SharedEntry.fromJson(
-              Map<String, dynamic>.from(op['payload'] as Map),
+              operation.payload!,
+              updatedBy: cloud.userId,
+              updatedAt: operation.updatedAt,
             ),
           );
         }
@@ -2758,21 +2784,57 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
         return am.compareTo(bm);
       });
       entries = next;
+      pendingIds = pending.map((operation) => operation.entityId).toSet();
+      lastRefreshAt = DateTime.now();
       await _saveCache();
     } catch (_) {
-      _message('Impossibile aggiornare ora. Mostro l’ultima copia disponibile.');
+      if (!silent) {
+        _message(
+          'Impossibile aggiornare ora. Mostro l’ultima copia disponibile.',
+        );
+      }
     } finally {
       if (mounted) setState(() => loading = false);
     }
   }
 
   List<SharedEntry> get _selectedEntries => entries
-      .where((e) => AgendaStore.sameDay(e.date, selected))
+      .where((entry) => AgendaStore.sameDay(entry.date, selected))
       .toList();
 
+  String _editorLabel(SharedEntry entry) {
+    final explicit = entry.editorName.trim();
+    if (explicit.isNotEmpty) {
+      if (explicit == widget.store.preferences.displayName.trim()) {
+        return 'Modificato da te';
+      }
+      return 'Modificato da $explicit';
+    }
+    if (entry.updatedBy != null &&
+        entry.updatedBy == CloudSyncService.instance.userId) {
+      return 'Modificato da te';
+    }
+    if (entry.updatedBy != null) return 'Modificato dall’altra persona';
+    return '';
+  }
+
+  SharedEntry _withLocalMetadata(
+    SharedEntry entry,
+    DateTime revision,
+  ) =>
+      entry.copyWith(
+        editorName: widget.store.preferences.displayName.trim().isEmpty
+            ? 'Utente'
+            : widget.store.preferences.displayName.trim(),
+        updatedBy: CloudSyncService.instance.userId,
+        updatedAt: revision,
+      );
+
   Future<void> _edit([SharedEntry? existing]) async {
-    if (!CloudSyncService.instance.signedIn) {
-      _message('Serve una connessione all’account cloud per modificare lo spazio.');
+    if (widget.store.activeAccountId == null) {
+      _message(
+        'Accedi al cloud almeno una volta per usare lo spazio condiviso.',
+      );
       return;
     }
 
@@ -2783,33 +2845,54 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
     );
     if (result == null) return;
 
-    final index = entries.indexWhere((e) => e.id == result.id);
+    final revision = DateTime.now().toUtc();
+    final updated = _withLocalMetadata(result, revision);
+    final index = entries.indexWhere((entry) => entry.id == updated.id);
     setState(() {
       if (index < 0) {
-        entries.add(result);
+        entries.add(updated);
       } else {
-        entries[index] = result;
+        entries[index] = updated;
       }
+      pendingIds.add(updated.id);
     });
-    await _enqueueSharedUpsert(result);
+    await widget.store.enqueueSharedUpsert(
+      spaceId: widget.space.id,
+      entry: updated,
+      updatedAt: revision,
+    );
     await _saveCache();
 
-    await _refresh();
-    final pending = await _loadPending();
-    if (pending.any((e) => e['entityId'] == result.id)) {
-      _message('Modifica salvata: verrà sincronizzata appena possibile.');
+    if (CloudSyncService.instance.signedIn) {
+      await _flushPending();
+      await _refresh(silent: true);
+    } else {
+      _message('Salvato offline: verrà sincronizzato appena torni online.');
     }
   }
 
   Future<void> _toggleDone(SharedEntry entry) async {
-    final updated = entry.copyWith(done: !entry.done);
-    final index = entries.indexWhere((e) => e.id == entry.id);
+    final revision = DateTime.now().toUtc();
+    final updated = _withLocalMetadata(
+      entry.copyWith(done: !entry.done),
+      revision,
+    );
+    final index = entries.indexWhere((candidate) => candidate.id == entry.id);
     if (index >= 0) {
-      setState(() => entries[index] = updated);
+      setState(() {
+        entries[index] = updated;
+        pendingIds.add(updated.id);
+      });
     }
-    await _enqueueSharedUpsert(updated);
+    await widget.store.enqueueSharedUpsert(
+      spaceId: widget.space.id,
+      entry: updated,
+      updatedAt: revision,
+    );
     await _saveCache();
-    await _flushPending();
+    if (CloudSyncService.instance.signedIn) {
+      await _flushPending();
+    }
   }
 
   Future<void> _delete(SharedEntry entry) async {
@@ -2833,10 +2916,23 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
         false;
     if (!confirmed) return;
 
-    setState(() => entries.removeWhere((e) => e.id == entry.id));
-    await _enqueueSharedDelete(entry.id);
+    final revision = DateTime.now().toUtc();
+    setState(() {
+      entries.removeWhere((candidate) => candidate.id == entry.id);
+      pendingIds.add(entry.id);
+    });
+    await widget.store.enqueueSharedDelete(
+      spaceId: widget.space.id,
+      entityId: entry.id,
+      updatedAt: revision,
+    );
     await _saveCache();
-    await _flushPending();
+    if (CloudSyncService.instance.signedIn) {
+      await _flushPending();
+      await _refresh(silent: true);
+    } else {
+      _message('Eliminazione salvata offline.');
+    }
   }
 
   Future<void> _invite() async {
@@ -2927,165 +3023,237 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
     );
   }
 
-  @override
-  Widget build(BuildContext context) {
-    final dayEntries = _selectedEntries;
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(
-          widget.space.name,
-          style: const TextStyle(fontWeight: FontWeight.w900),
-        ),
-        actions: [
-          if (widget.space.isOwner)
-            IconButton(
-              tooltip: 'Invita',
-              onPressed: _invite,
-              icon: const Icon(Icons.person_add_alt_1_outlined),
+  Widget _syncCard(BuildContext context) {
+    final cloud = CloudSyncService.instance;
+    final pending = pendingIds.length;
+    final scheme = Theme.of(context).colorScheme;
+    final IconData icon;
+    final String title;
+    final String subtitle;
+
+    if (pending > 0) {
+      icon = cloud.signedIn ? Icons.sync : Icons.cloud_off_outlined;
+      title = '$pending modifiche in attesa';
+      subtitle = cloud.signedIn
+          ? 'Invio automatico in corso.'
+          : 'Sono al sicuro sul dispositivo e verranno inviate quando torni online.';
+    } else if (!cloud.signedIn) {
+      icon = Icons.cloud_off_outlined;
+      title = 'Offline';
+      subtitle = 'Puoi consultare e modificare la copia locale dello spazio.';
+    } else if (realtimeConnected) {
+      icon = Icons.bolt;
+      title = 'Sincronizzato in tempo reale';
+      subtitle = lastRefreshAt == null
+          ? 'In ascolto degli aggiornamenti.'
+          : 'Ultimo aggiornamento ${DateFormat('HH:mm').format(lastRefreshAt!)}.';
+    } else {
+      icon = Icons.cloud_done_outlined;
+      title = 'Sincronizzato';
+      subtitle = 'La connessione realtime si ristabilirà automaticamente.';
+    }
+
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: scheme.surfaceContainerHighest.withValues(alpha: 0.55),
+        borderRadius: BorderRadius.circular(18),
+      ),
+      child: Row(
+        children: [
+          Icon(icon, color: scheme.primary),
+          const SizedBox(width: 11),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(title, style: const TextStyle(fontWeight: FontWeight.w800)),
+                const SizedBox(height: 2),
+                Text(subtitle, style: Theme.of(context).textTheme.bodySmall),
+              ],
             ),
-          PopupMenuButton<String>(
-            onSelected: (value) {
-              if (value == 'refresh') _refresh();
-              if (value == 'leave') _leaveOrDelete();
-            },
-            itemBuilder: (_) => [
-              const PopupMenuItem(
-                value: 'refresh',
-                child: Text('Aggiorna'),
-              ),
-              PopupMenuItem(
-                value: 'leave',
-                child: Text(
-                  widget.space.isOwner
-                      ? 'Elimina spazio'
-                      : 'Lascia spazio',
-                ),
-              ),
-            ],
           ),
         ],
       ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => _edit(),
-        icon: const Icon(Icons.add),
-        label: const Text('Condividi'),
-      ),
-      body: RefreshIndicator(
-        onRefresh: _refresh,
-        child: ListView(
-          padding: const EdgeInsets.fromLTRB(14, 8, 14, 100),
-          children: [
-            Container(
-              padding: const EdgeInsets.all(17),
-              decoration: BoxDecoration(
-                color: Theme.of(context)
-                    .colorScheme
-                    .primaryContainer
-                    .withValues(alpha: 0.55),
-                borderRadius: BorderRadius.circular(22),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final dayEntries = _selectedEntries;
+    return AnimatedBuilder(
+      animation: Listenable.merge([
+        CloudSyncService.instance,
+        widget.store,
+      ]),
+      builder: (context, _) => Scaffold(
+        appBar: AppBar(
+          title: Text(
+            widget.space.name,
+            style: const TextStyle(fontWeight: FontWeight.w900),
+          ),
+          actions: [
+            if (widget.space.isOwner)
+              IconButton(
+                tooltip: 'Invita',
+                onPressed: _invite,
+                icon: const Icon(Icons.person_add_alt_1_outlined),
               ),
-              child: const Row(
-                children: [
-                  Icon(Icons.lock_outline),
-                  SizedBox(width: 10),
-                  Expanded(
-                    child: Text(
-                      'Questo spazio è condiviso. Tutto il resto dell’agenda rimane personale.',
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 14),
-            TableCalendar<SharedEntry>(
-              locale: 'it_IT',
-              firstDay: DateTime(2020),
-              lastDay: DateTime(2040),
-              focusedDay: selected,
-              selectedDayPredicate: (day) =>
-                  AgendaStore.sameDay(day, selected),
-              eventLoader: (day) => entries
-                  .where((e) => AgendaStore.sameDay(e.date, day))
-                  .toList(),
-              onDaySelected: (day, _) => setState(() => selected = day),
-              headerStyle: const HeaderStyle(
-                formatButtonVisible: false,
-                titleCentered: true,
-              ),
-            ),
-            const SizedBox(height: 16),
-            SectionTitle(
-              _cap(DateFormat('EEEE d MMMM', 'it_IT').format(selected)),
-            ),
-            const SizedBox(height: 10),
-            if (loading && entries.isEmpty)
-              const Center(
-                child: Padding(
-                  padding: EdgeInsets.all(24),
-                  child: CircularProgressIndicator(),
+            PopupMenuButton<String>(
+              onSelected: (value) {
+                if (value == 'refresh') _refresh();
+                if (value == 'leave') _leaveOrDelete();
+              },
+              itemBuilder: (_) => [
+                const PopupMenuItem(
+                  value: 'refresh',
+                  child: Text('Aggiorna'),
                 ),
-              )
-            else if (dayEntries.isEmpty)
-              const SimpleCard(
-                child: Text('Niente di condiviso per questo giorno.'),
-              )
-            else
-              ...dayEntries.map(
-                (entry) => Card(
-                  margin: const EdgeInsets.only(bottom: 9),
-                  child: ListTile(
-                    leading: entry.type == SharedEntryType.task
-                        ? Checkbox(
-                            value: entry.done,
-                            onChanged: (_) => _toggleDone(entry),
-                          )
-                        : CircleAvatar(
-                            child: Icon(entry.type.icon),
-                          ),
-                    title: Text(
-                      entry.title,
-                      style: TextStyle(
-                        fontWeight: FontWeight.w800,
-                        decoration: entry.done
-                            ? TextDecoration.lineThrough
-                            : null,
+                PopupMenuItem(
+                  value: 'leave',
+                  child: Text(
+                    widget.space.isOwner
+                        ? 'Elimina spazio'
+                        : 'Lascia spazio',
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+        floatingActionButton: FloatingActionButton.extended(
+          onPressed: () => _edit(),
+          icon: const Icon(Icons.add),
+          label: const Text('Condividi'),
+        ),
+        body: RefreshIndicator(
+          onRefresh: _refresh,
+          child: ListView(
+            padding: const EdgeInsets.fromLTRB(14, 8, 14, 100),
+            children: [
+              Container(
+                padding: const EdgeInsets.all(17),
+                decoration: BoxDecoration(
+                  color: Theme.of(context)
+                      .colorScheme
+                      .primaryContainer
+                      .withValues(alpha: 0.55),
+                  borderRadius: BorderRadius.circular(22),
+                ),
+                child: const Row(
+                  children: [
+                    Icon(Icons.favorite_outline),
+                    SizedBox(width: 10),
+                    Expanded(
+                      child: Text(
+                        'Noi ♡ · tutto ciò che crei qui è condiviso. '
+                        'Il resto dell’agenda rimane privato.',
                       ),
                     ),
-                    subtitle: Text(
-                      [
-                        if (entry.start != null) formatTime(entry.start!),
-                        if (entry.note.isNotEmpty) entry.note,
-                      ].join(' · '),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    onTap: () => _edit(entry),
-                    trailing: PopupMenuButton<String>(
-                      onSelected: (value) {
-                        if (value == 'edit') _edit(entry);
-                        if (value == 'delete') _delete(entry);
-                      },
-                      itemBuilder: (_) => const [
-                        PopupMenuItem(
-                          value: 'edit',
-                          child: Text('Modifica'),
-                        ),
-                        PopupMenuItem(
-                          value: 'delete',
-                          child: Text('Elimina'),
-                        ),
-                      ],
-                    ),
-                  ),
+                  ],
                 ),
               ),
-          ],
+              const SizedBox(height: 10),
+              _syncCard(context),
+              const SizedBox(height: 14),
+              TableCalendar<SharedEntry>(
+                locale: 'it_IT',
+                firstDay: DateTime(2020),
+                lastDay: DateTime(2040),
+                focusedDay: selected,
+                selectedDayPredicate: (day) =>
+                    AgendaStore.sameDay(day, selected),
+                eventLoader: (day) => entries
+                    .where((entry) => AgendaStore.sameDay(entry.date, day))
+                    .toList(),
+                onDaySelected: (day, _) => setState(() => selected = day),
+                headerStyle: const HeaderStyle(
+                  formatButtonVisible: false,
+                  titleCentered: true,
+                ),
+              ),
+              const SizedBox(height: 16),
+              SectionTitle(
+                _cap(DateFormat('EEEE d MMMM', 'it_IT').format(selected)),
+              ),
+              const SizedBox(height: 10),
+              if (loading && entries.isEmpty)
+                const Center(
+                  child: Padding(
+                    padding: EdgeInsets.all(24),
+                    child: CircularProgressIndicator(),
+                  ),
+                )
+              else if (dayEntries.isEmpty)
+                const SimpleCard(
+                  child: Text('Niente di condiviso per questo giorno.'),
+                )
+              else
+                ...dayEntries.map(
+                  (entry) {
+                    final editor = _editorLabel(entry);
+                    final pending = pendingIds.contains(entry.id);
+                    final details = <String>[
+                      if (entry.start != null) formatTime(entry.start!),
+                      if (entry.note.isNotEmpty) entry.note,
+                      if (editor.isNotEmpty) editor,
+                      if (pending) 'In attesa di sincronizzazione',
+                    ];
+                    return Card(
+                      margin: const EdgeInsets.only(bottom: 9),
+                      child: ListTile(
+                        leading: entry.type == SharedEntryType.task
+                            ? Checkbox(
+                                value: entry.done,
+                                onChanged: (_) => _toggleDone(entry),
+                              )
+                            : CircleAvatar(
+                                child: Icon(entry.type.icon),
+                              ),
+                        title: Text(
+                          entry.title,
+                          style: TextStyle(
+                            fontWeight: FontWeight.w800,
+                            decoration: entry.done
+                                ? TextDecoration.lineThrough
+                                : null,
+                          ),
+                        ),
+                        subtitle: Text(
+                          details.join(' · '),
+                          maxLines: 3,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        onTap: () => _edit(entry),
+                        trailing: pending
+                            ? const Icon(Icons.schedule_outlined)
+                            : PopupMenuButton<String>(
+                                onSelected: (value) {
+                                  if (value == 'edit') _edit(entry);
+                                  if (value == 'delete') _delete(entry);
+                                },
+                                itemBuilder: (_) => const [
+                                  PopupMenuItem(
+                                    value: 'edit',
+                                    child: Text('Modifica'),
+                                  ),
+                                  PopupMenuItem(
+                                    value: 'delete',
+                                    child: Text('Elimina'),
+                                  ),
+                                ],
+                              ),
+                      ),
+                    );
+                  },
+                ),
+            ],
+          ),
         ),
       ),
     );
   }
 }
-
 Future<SharedEntry?> _openSharedEntryEditor(
   BuildContext context, {
   required DateTime initialDate,
@@ -3109,6 +3277,14 @@ Future<SharedEntry?> _openSharedEntryEditor(
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
+              const Align(
+                alignment: Alignment.centerLeft,
+                child: Chip(
+                  avatar: Icon(Icons.favorite_outline, size: 18),
+                  label: Text('Visibilità: Noi ♡'),
+                ),
+              ),
+              const SizedBox(height: 10),
               SegmentedButton<SharedEntryType>(
                 segments: SharedEntryType.values
                     .map(
