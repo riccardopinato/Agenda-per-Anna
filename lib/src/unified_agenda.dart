@@ -180,6 +180,8 @@ class UnifiedAgendaTile extends StatelessWidget {
           onSelected: (value) async {
             if (value == 'edit') {
               await openUnifiedAgendaEntry(context, store, entry);
+            } else if (value == 'private') {
+              await _moveSharedAgendaEntryToPrivate(context, store, entry);
             } else if (value == 'delete') {
               await _deleteSharedAgendaEntry(context, store, entry);
             }
@@ -191,6 +193,14 @@ class UnifiedAgendaTile extends StatelessWidget {
                 contentPadding: EdgeInsets.zero,
                 leading: Icon(Icons.edit_outlined),
                 title: Text('Modifica'),
+              ),
+            ),
+            PopupMenuItem(
+              value: 'private',
+              child: ListTile(
+                contentPadding: EdgeInsets.zero,
+                leading: Icon(Icons.lock_outline),
+                title: Text('Sposta in Privato'),
               ),
             ),
             PopupMenuItem(
@@ -266,6 +276,145 @@ Future<void> _toggleSharedAgendaEntry(
     space.id,
     shared.copyWith(done: !shared.done),
   );
+}
+
+Future<SharedSpace?> _chooseSharedSpace(
+  BuildContext context,
+  AgendaStore store,
+) async {
+  final spaces = store.sharedAgendaSpaces;
+  if (spaces.isEmpty) return null;
+  if (spaces.length == 1) return spaces.first;
+
+  return showDialog<SharedSpace>(
+    context: context,
+    builder: (dialogContext) => SimpleDialog(
+      title: const Text('Scegli lo spazio condiviso'),
+      children: spaces
+          .map(
+            (space) => SimpleDialogOption(
+              onPressed: () => Navigator.pop(dialogContext, space),
+              child: ListTile(
+                contentPadding: EdgeInsets.zero,
+                leading: const Icon(Icons.favorite_outline),
+                title: Text(
+                  space.name,
+                  style: const TextStyle(fontWeight: FontWeight.w800),
+                ),
+                subtitle: Text(
+                  space.isOwner ? 'Creato da te' : 'Spazio condiviso',
+                ),
+              ),
+            ),
+          )
+          .toList(),
+    ),
+  );
+}
+
+Future<void> _movePrivateAgendaItemToShared(
+  BuildContext context,
+  AgendaStore store,
+  AgendaItem item,
+) async {
+  final space = await _chooseSharedSpace(context, store);
+  if (!context.mounted || space == null) return;
+
+  final confirmed = await showDialog<bool>(
+        context: context,
+        builder: (dialogContext) => AlertDialog(
+          title: const Text('Spostare in Noi ♡?'),
+          content: const Text(
+            'L’elemento diventerà condiviso. Categoria, fissaggio e promemoria '
+            'restano impostazioni private e non vengono trasferiti.',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext, false),
+              child: const Text('Annulla'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.pop(dialogContext, true),
+              child: const Text('Sposta'),
+            ),
+          ],
+        ),
+      ) ??
+      false;
+  if (!confirmed) return;
+
+  final shared = SharedEntry(
+    id: item.id,
+    type: item.type == ItemType.task
+        ? SharedEntryType.task
+        : SharedEntryType.appointment,
+    title: item.title,
+    note: item.note,
+    date: item.date,
+    start: item.start,
+    end: item.end,
+    done: item.done,
+  );
+  await _saveSharedAgendaEntry(store, space.id, shared);
+  await store.deleteItem(item.id);
+}
+
+Future<void> _moveSharedAgendaEntryToPrivate(
+  BuildContext context,
+  AgendaStore store,
+  UnifiedAgendaEntry entry,
+) async {
+  final shared = entry.sharedEntry;
+  final space = entry.space;
+  if (shared == null || space == null) return;
+
+  final confirmed = await showDialog<bool>(
+        context: context,
+        builder: (dialogContext) => AlertDialog(
+          title: const Text('Spostare in Privato?'),
+          content: const Text(
+            'L’elemento verrà rimosso da Noi ♡ e resterà solo nella tua agenda.',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext, false),
+              child: const Text('Annulla'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.pop(dialogContext, true),
+              child: const Text('Sposta'),
+            ),
+          ],
+        ),
+      ) ??
+      false;
+  if (!confirmed) return;
+
+  await store.upsert(
+    AgendaItem(
+      id: shared.id,
+      title: shared.title,
+      note: shared.note,
+      date: shared.date,
+      type: shared.type == SharedEntryType.task
+          ? ItemType.task
+          : ItemType.appointment,
+      category: AgendaCategory.couple,
+      start: shared.start,
+      end: shared.end,
+      done: shared.done,
+    ),
+  );
+
+  final revision = DateTime.now().toUtc();
+  await store.enqueueSharedDelete(
+    spaceId: space.id,
+    entityId: shared.id,
+    updatedAt: revision,
+  );
+  if (CloudSyncService.instance.signedIn) {
+    await store.flushSharedPendingOperations(spaceId: space.id);
+  }
 }
 
 Future<void> _deleteSharedAgendaEntry(
@@ -412,36 +561,7 @@ Future<void> openUnifiedItemComposer(
     return;
   }
 
-  SharedSpace? targetSpace;
-  if (spaces.length == 1) {
-    targetSpace = spaces.first;
-  } else {
-    targetSpace = await showDialog<SharedSpace>(
-      context: context,
-      builder: (dialogContext) => SimpleDialog(
-        title: const Text('Scegli lo spazio condiviso'),
-        children: spaces
-            .map(
-              (space) => SimpleDialogOption(
-                onPressed: () => Navigator.pop(dialogContext, space),
-                child: ListTile(
-                  contentPadding: EdgeInsets.zero,
-                  leading: const Icon(Icons.favorite_outline),
-                  title: Text(
-                    space.name,
-                    style: const TextStyle(fontWeight: FontWeight.w800),
-                  ),
-                  subtitle: Text(
-                    space.isOwner ? 'Creato da te' : 'Spazio condiviso',
-                  ),
-                ),
-              ),
-            )
-            .toList(),
-      ),
-    );
-  }
-
+  final targetSpace = await _chooseSharedSpace(context, store);
   if (!context.mounted || targetSpace == null) return;
 
   final sharedType = switch (initialType) {
