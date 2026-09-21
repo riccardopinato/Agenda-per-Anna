@@ -22,3 +22,14 @@ This refactor intentionally changes no persistence keys, JSON schemas, sync reco
 - Cached shared entries retain server revision/audit metadata.
 - Shared UI exposes realtime/offline/pending state, editor attribution and update badges.
 - The private agenda remains separate from shared-space records.
+
+
+## v0.19.0 — Unified Agenda & Fluid UX
+
+- Private agenda records and Shared Space records stay physically separate and account-scoped, but are projected through a unified presentation layer.
+- Home, Calendar, Day, Week and Month views can show Tutto / Privato / Noi ♡ without copying shared records into private storage.
+- Shared calendar entries are indexed by civil day to keep TableCalendar and planner navigation fast.
+- New agenda items choose visibility explicitly; Privato remains the default path and Shared Space is opt-in.
+- Existing entries can move Privato → Noi ♡ or Noi ♡ → Privato through explicit actions.
+- Shared changes update the unified offline cache immediately and reconcile through the existing deterministic queue/realtime pipeline.
+- Empty or removed remote shared data never falls back to stale cache after a successful remote fetch.
