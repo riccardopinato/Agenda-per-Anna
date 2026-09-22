@@ -3465,21 +3465,7 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
         updatedAt: revision,
       );
 
-  Future<void> _edit([SharedEntry? existing]) async {
-    if (widget.store.activeAccountId == null) {
-      _message(
-        'Accedi al cloud almeno una volta per usare lo spazio condiviso.',
-      );
-      return;
-    }
-
-    final result = await _openSharedEntryEditor(
-      context,
-      initialDate: selected,
-      existing: existing,
-    );
-    if (result == null) return;
-
+  Future<void> _persistSharedEntry(SharedEntry result) async {
     final revision = DateTime.now().toUtc();
     final updated = _withLocalMetadata(result, revision);
     final index = entries.indexWhere((entry) => entry.id == updated.id);
@@ -3503,6 +3489,261 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
       await _refresh(silent: true);
     } else {
       _message('Salvato offline: verrà sincronizzato appena torni online.');
+    }
+  }
+
+  Future<void> _edit([
+    SharedEntry? existing,
+    SharedEntryType? initialType,
+  ]) async {
+    if (widget.store.activeAccountId == null) {
+      _message(
+        'Accedi al cloud almeno una volta per usare lo spazio condiviso.',
+      );
+      return;
+    }
+
+    if (existing?.type == SharedEntryType.photo) {
+      await _addSharedPhoto(existing);
+      return;
+    }
+    if (existing?.type == SharedEntryType.sketch) {
+      await _addSharedSketch(existing);
+      return;
+    }
+
+    final result = await _openSharedEntryEditor(
+      context,
+      initialDate: selected,
+      existing: existing,
+      initialType: initialType,
+    );
+    if (result == null) return;
+    await _persistSharedEntry(result);
+  }
+
+  Future<(String, String, DateTime)?> _sharedMediaDetails({
+    required String defaultTitle,
+    String titleValue = '',
+    String noteValue = '',
+    DateTime? dateValue,
+  }) async {
+    final title = TextEditingController(
+      text: titleValue.trim().isEmpty ? defaultTitle : titleValue,
+    );
+    final note = TextEditingController(text: noteValue);
+    var date = dateValue ?? selected;
+
+    final result = await showDialog<(String, String, DateTime)>(
+      context: context,
+      builder: (dialogContext) => StatefulBuilder(
+        builder: (dialogContext, setLocal) => AlertDialog(
+          title: const Text('Dettagli condivisione'),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextField(
+                  controller: title,
+                  autofocus: true,
+                  textCapitalization: TextCapitalization.sentences,
+                  decoration: const InputDecoration(labelText: 'Titolo'),
+                ),
+                const SizedBox(height: 10),
+                TextField(
+                  controller: note,
+                  minLines: 2,
+                  maxLines: 4,
+                  textCapitalization: TextCapitalization.sentences,
+                  decoration: const InputDecoration(
+                    labelText: 'Didascalia / nota',
+                  ),
+                ),
+                ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  leading: const Icon(Icons.calendar_today_outlined),
+                  title: Text(
+                    DateFormat('d MMMM yyyy', 'it_IT').format(date),
+                  ),
+                  onTap: () async {
+                    final picked = await showDatePicker(
+                      context: dialogContext,
+                      initialDate: date,
+                      firstDate: DateTime(2020),
+                      lastDate: DateTime(2040),
+                    );
+                    if (picked != null) setLocal(() => date = picked);
+                  },
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext),
+              child: const Text('Annulla'),
+            ),
+            FilledButton(
+              onPressed: () {
+                final value = title.text.trim();
+                if (value.isEmpty) return;
+                Navigator.pop(
+                  dialogContext,
+                  (value, note.text.trim(), date),
+                );
+              },
+              child: const Text('Continua'),
+            ),
+          ],
+        ),
+      ),
+    );
+
+    title.dispose();
+    note.dispose();
+    return result;
+  }
+
+  Future<void> _addSharedPhoto([SharedEntry? existing]) async {
+    final cloud = CloudSyncService.instance;
+    if (!cloud.signedIn) {
+      _message('Per condividere una foto serve la connessione cloud.');
+      return;
+    }
+
+    final source = await _chooseDiaryImageSource(context);
+    if (source == null || !mounted) return;
+
+    try {
+      final fullBase64 = await _pickCompressedDiaryImageBase64(
+        source,
+        maxSide: 1280,
+        quality: 70,
+      );
+      if (fullBase64 == null || !mounted) return;
+
+      final details = await _sharedMediaDetails(
+        defaultTitle: 'Foto',
+        titleValue: existing?.title ?? '',
+        noteValue: existing?.note ?? '',
+        dateValue: existing?.date ?? selected,
+      );
+      if (details == null) return;
+
+      final bytes = base64Decode(fullBase64);
+      final thumbnail = await FlutterImageCompress.compressWithList(
+        bytes,
+        minWidth: 420,
+        minHeight: 420,
+        quality: 46,
+        format: CompressFormat.jpeg,
+      );
+
+      final entryId = existing?.id ?? const Uuid().v4();
+      final newPath = await cloud.uploadSharedMedia(
+        spaceId: widget.space.id,
+        entryId: entryId,
+        bytes: bytes,
+      );
+
+      final updated = SharedEntry(
+        id: entryId,
+        type: SharedEntryType.photo,
+        title: details.$1,
+        note: details.$2,
+        date: details.$3,
+        mediaPath: newPath,
+        mediaThumbnailBase64: base64Encode(thumbnail),
+      );
+
+      final oldPath = existing?.mediaPath ?? '';
+      await _persistSharedEntry(updated);
+      if (oldPath.isNotEmpty && oldPath != newPath) {
+        try {
+          await cloud.deleteSharedMedia(oldPath);
+        } catch (_) {}
+      }
+    } catch (_) {
+      _message('Foto non condivisa. Riprova con la connessione attiva.');
+    }
+  }
+
+  Future<void> _addSharedSketch([SharedEntry? existing]) async {
+    final initialPages = existing?.sketchPages.isNotEmpty == true
+        ? existing!.sketchPages
+        : [DiarySketchPage(id: const Uuid().v4())];
+
+    final pages = await Navigator.push<List<DiarySketchPage>>(
+      context,
+      MaterialPageRoute(
+        builder: (_) => DiarySketchbookScreen(initialPages: initialPages),
+      ),
+    );
+    if (pages == null || pages.isEmpty || !mounted) return;
+
+    final details = await _sharedMediaDetails(
+      defaultTitle: 'Sketch',
+      titleValue: existing?.title ?? '',
+      noteValue: existing?.note ?? '',
+      dateValue: existing?.date ?? selected,
+    );
+    if (details == null) return;
+
+    await _persistSharedEntry(
+      SharedEntry(
+        id: existing?.id ?? const Uuid().v4(),
+        type: SharedEntryType.sketch,
+        title: details.$1,
+        note: details.$2,
+        date: details.$3,
+        sketchPages: pages,
+      ),
+    );
+  }
+
+  Future<void> _createSharedContent() async {
+    final type = await showModalBottomSheet<SharedEntryType>(
+      context: context,
+      showDragHandle: true,
+      builder: (sheetContext) => SafeArea(
+        child: Wrap(
+          children: [
+            const ListTile(
+              title: Text(
+                'Condividi in Noi ♡',
+                style: TextStyle(fontWeight: FontWeight.w900),
+              ),
+            ),
+            for (final value in SharedEntryType.values)
+              ListTile(
+                leading: CircleAvatar(child: Icon(value.icon)),
+                title: Text(value.label),
+                subtitle: Text(
+                  switch (value) {
+                    SharedEntryType.appointment => 'Un appuntamento insieme',
+                    SharedEntryType.task => 'Una cosa da fare',
+                    SharedEntryType.note => 'Un pensiero o un messaggio',
+                    SharedEntryType.photo => 'Una foto o immagine',
+                    SharedEntryType.sketch => 'Un disegno dallo Sketchbook',
+                  },
+                ),
+                onTap: () => Navigator.pop(sheetContext, value),
+              ),
+          ],
+        ),
+      ),
+    );
+    if (type == null || !mounted) return;
+
+    switch (type) {
+      case SharedEntryType.photo:
+        await _addSharedPhoto();
+      case SharedEntryType.sketch:
+        await _addSharedSketch();
+      case SharedEntryType.appointment:
+      case SharedEntryType.task:
+      case SharedEntryType.note:
+        await _edit(null, type);
     }
   }
 
