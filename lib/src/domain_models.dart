@@ -1244,6 +1244,117 @@ class SharedPendingOperation {
     );
   }
 }
+enum SharedInteractionPendingType {
+  addComment,
+  deleteComment,
+  setHeart,
+}
+
+class SharedInteractionPendingOperation {
+  final String id;
+  final SharedInteractionPendingType type;
+  final String spaceId;
+  final String entryId;
+  final Map<String, dynamic> payload;
+  final DateTime createdAt;
+
+  const SharedInteractionPendingOperation({
+    required this.id,
+    required this.type,
+    required this.spaceId,
+    required this.entryId,
+    required this.payload,
+    required this.createdAt,
+  });
+
+  Map<String, dynamic> toJson() => {
+        'id': id,
+        'type': type.name,
+        'spaceId': spaceId,
+        'entryId': entryId,
+        'payload': payload,
+        'createdAt': createdAt.toUtc().toIso8601String(),
+      };
+
+  factory SharedInteractionPendingOperation.fromJson(
+    Map<String, dynamic> json,
+  ) =>
+      SharedInteractionPendingOperation(
+        id: json['id'] as String? ?? const Uuid().v4(),
+        type: SharedInteractionPendingType.values.firstWhere(
+          (value) => value.name == json['type'],
+          orElse: () => SharedInteractionPendingType.setHeart,
+        ),
+        spaceId: json['spaceId'] as String? ?? '',
+        entryId: json['entryId'] as String? ?? '',
+        payload: json['payload'] is Map
+            ? Map<String, dynamic>.from(json['payload'] as Map)
+            : <String, dynamic>{},
+        createdAt:
+            DateTime.tryParse(json['createdAt'] as String? ?? '') ??
+                DateTime.now().toUtc(),
+      );
+}
+
+class SharedMediaPendingUpload {
+  final String id;
+  final String spaceId;
+  final String entryId;
+  final String title;
+  final String note;
+  final DateTime date;
+  final String imageBase64;
+  final String thumbnailBase64;
+  final String oldMediaPath;
+  final DateTime createdAt;
+
+  const SharedMediaPendingUpload({
+    required this.id,
+    required this.spaceId,
+    required this.entryId,
+    required this.title,
+    required this.note,
+    required this.date,
+    required this.imageBase64,
+    required this.thumbnailBase64,
+    required this.oldMediaPath,
+    required this.createdAt,
+  });
+
+  Map<String, dynamic> toJson() => {
+        'id': id,
+        'spaceId': spaceId,
+        'entryId': entryId,
+        'title': title,
+        'note': note,
+        'date': date.toIso8601String(),
+        'imageBase64': imageBase64,
+        'thumbnailBase64': thumbnailBase64,
+        'oldMediaPath': oldMediaPath,
+        'createdAt': createdAt.toUtc().toIso8601String(),
+      };
+
+  factory SharedMediaPendingUpload.fromJson(
+    Map<String, dynamic> json,
+  ) =>
+      SharedMediaPendingUpload(
+        id: json['id'] as String? ?? const Uuid().v4(),
+        spaceId: json['spaceId'] as String? ?? '',
+        entryId: json['entryId'] as String? ?? '',
+        title: json['title'] as String? ?? 'Foto',
+        note: json['note'] as String? ?? '',
+        date:
+            DateTime.tryParse(json['date'] as String? ?? '') ??
+                DateTime.now(),
+        imageBase64: json['imageBase64'] as String? ?? '',
+        thumbnailBase64: json['thumbnailBase64'] as String? ?? '',
+        oldMediaPath: json['oldMediaPath'] as String? ?? '',
+        createdAt:
+            DateTime.tryParse(json['createdAt'] as String? ?? '') ??
+                DateTime.now().toUtc(),
+      );
+}
+
 class BackupSummary {
   final DateTime exportedAt;
   final int itemCount;
