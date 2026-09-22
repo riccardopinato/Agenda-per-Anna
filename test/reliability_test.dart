@@ -86,6 +86,61 @@ void main() {
     store.dispose();
   });
 
+  test('shared unread badge persists and clears per space', () async {
+    SharedPreferences.setMockInitialValues({
+      'active_account_v1': 'user-a',
+      'shared_unread_user-a': jsonEncode({'space-a': 2}),
+    });
+
+    final store = AgendaStore();
+    await store.load();
+
+    expect(store.sharedUnreadCount('space-a'), 2);
+    expect(store.totalSharedUnreadCount, 2);
+
+    await store.markSharedSpaceUnread('space-a');
+    expect(store.sharedUnreadCount('space-a'), 3);
+
+    final prefs = await SharedPreferences.getInstance();
+    expect(
+      Map<String, dynamic>.from(
+        jsonDecode(prefs.getString('shared_unread_user-a')!) as Map,
+      )['space-a'],
+      3,
+    );
+
+    await store.markSharedSpaceRead('space-a');
+    expect(store.sharedUnreadCount('space-a'), 0);
+    expect(store.totalSharedUnreadCount, 0);
+
+    store.dispose();
+  });
+
+  test('shared unread badge follows account scope', () async {
+    SharedPreferences.setMockInitialValues({
+      'active_account_v1': 'user-a',
+      'shared_unread_user-a': jsonEncode({'space-a': 4}),
+      'shared_unread_user-b': jsonEncode({'space-b': 1}),
+    });
+
+    final store = AgendaStore();
+    await store.load();
+
+    expect(store.totalSharedUnreadCount, 4);
+    expect(store.sharedUnreadCount('space-a'), 4);
+
+    await store.activateCloudAccount('user-b');
+    expect(store.totalSharedUnreadCount, 1);
+    expect(store.sharedUnreadCount('space-b'), 1);
+    expect(store.sharedUnreadCount('space-a'), 0);
+
+    await store.activateCloudAccount('user-a');
+    expect(store.totalSharedUnreadCount, 4);
+    expect(store.sharedUnreadCount('space-a'), 4);
+
+    store.dispose();
+  });
+
   test('backup metadata reports the current release line', () async {
     final store = AgendaStore();
     await store.load();
@@ -93,7 +148,7 @@ void main() {
     final backup =
         Map<String, dynamic>.from(jsonDecode(store.createBackupJson()) as Map);
 
-    expect(backup['appVersion'], '0.20.0');
+    expect(backup['appVersion'], '0.20.1');
 
     store.dispose();
   });
