@@ -2560,6 +2560,7 @@ class AgendaStore extends ChangeNotifier {
               title: upload.title,
               note: upload.note,
               date: upload.date,
+              createdAt: upload.createdAt,
               mediaPath: mediaPath,
               mediaThumbnailBase64: upload.thumbnailBase64,
             );
