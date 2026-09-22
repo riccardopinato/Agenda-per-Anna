@@ -2933,6 +2933,7 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
   DateTime? lastRefreshAt;
   Timer? _realtimeDebounce;
   int _seenConflictCount = 0;
+  bool feedMode = true;
 
   String get _cacheKey =>
       widget.store.sharedCacheStorageKey(widget.space.id);
@@ -3115,6 +3116,23 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
       return bUpdated.compareTo(aUpdated);
     });
     return selectedEntries;
+  }
+
+  List<SharedEntry> get _feedEntries {
+    final feed = [...entries];
+    feed.sort((a, b) {
+      final aUpdated = a.updatedAt ?? a.date;
+      final bUpdated = b.updatedAt ?? b.date;
+      final updated = bUpdated.compareTo(aUpdated);
+      if (updated != 0) return updated;
+
+      final aMinutes =
+          a.start == null ? -1 : a.start!.hour * 60 + a.start!.minute;
+      final bMinutes =
+          b.start == null ? -1 : b.start!.hour * 60 + b.start!.minute;
+      return bMinutes.compareTo(aMinutes);
+    });
+    return feed;
   }
 
   String _editorLabel(SharedEntry entry) {
@@ -3339,6 +3357,70 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
     );
   }
 
+  Widget _sharedEntryCard(
+    BuildContext context,
+    SharedEntry entry, {
+    bool showDate = false,
+  }) {
+    final editor = _editorLabel(entry);
+    final pending = pendingIds.contains(entry.id);
+    final details = <String>[
+      if (showDate)
+        _cap(DateFormat('EEE d MMM', 'it_IT').format(entry.date)),
+      if (entry.start != null) formatTime(entry.start!),
+      if (entry.note.isNotEmpty) entry.note,
+      if (editor.isNotEmpty) editor,
+      if (entry.updatedAt != null)
+        'Aggiornato ${DateFormat('HH:mm', 'it_IT').format(entry.updatedAt!.toLocal())}',
+      if (pending) 'In attesa di sincronizzazione',
+    ];
+
+    return Card(
+      margin: const EdgeInsets.only(bottom: 9),
+      child: ListTile(
+        leading: entry.type == SharedEntryType.task
+            ? Checkbox(
+                value: entry.done,
+                onChanged: (_) => _toggleDone(entry),
+              )
+            : CircleAvatar(
+                child: Icon(entry.type.icon),
+              ),
+        title: Text(
+          entry.title,
+          style: TextStyle(
+            fontWeight: FontWeight.w800,
+            decoration: entry.done ? TextDecoration.lineThrough : null,
+          ),
+        ),
+        subtitle: Text(
+          details.join(' · '),
+          maxLines: showDate ? 4 : 3,
+          overflow: TextOverflow.ellipsis,
+        ),
+        onTap: () => _edit(entry),
+        trailing: pending
+            ? const Icon(Icons.schedule_outlined)
+            : PopupMenuButton<String>(
+                onSelected: (value) {
+                  if (value == 'edit') _edit(entry);
+                  if (value == 'delete') _delete(entry);
+                },
+                itemBuilder: (_) => const [
+                  PopupMenuItem(
+                    value: 'edit',
+                    child: Text('Modifica'),
+                  ),
+                  PopupMenuItem(
+                    value: 'delete',
+                    child: Text('Elimina'),
+                  ),
+                ],
+              ),
+      ),
+    );
+  }
+
   Widget _syncCard(BuildContext context) {
     final cloud = CloudSyncService.instance;
     final pending = pendingIds.length;
@@ -3472,27 +3554,24 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
               const SizedBox(height: 10),
               _syncCard(context),
               const SizedBox(height: 14),
-              TableCalendar<SharedEntry>(
-                locale: 'it_IT',
-                firstDay: DateTime(2020),
-                lastDay: DateTime(2040),
-                focusedDay: selected,
-                selectedDayPredicate: (day) =>
-                    AgendaStore.sameDay(day, selected),
-                eventLoader: (day) => entries
-                    .where((entry) => AgendaStore.sameDay(entry.date, day))
-                    .toList(),
-                onDaySelected: (day, _) => setState(() => selected = day),
-                headerStyle: const HeaderStyle(
-                  formatButtonVisible: false,
-                  titleCentered: true,
-                ),
+              SegmentedButton<bool>(
+                segments: const [
+                  ButtonSegment<bool>(
+                    value: true,
+                    icon: Icon(Icons.dynamic_feed_outlined),
+                    label: Text('Feed'),
+                  ),
+                  ButtonSegment<bool>(
+                    value: false,
+                    icon: Icon(Icons.calendar_month_outlined),
+                    label: Text('Calendario'),
+                  ),
+                ],
+                selected: {feedMode},
+                onSelectionChanged: (value) =>
+                    setState(() => feedMode = value.first),
               ),
-              const SizedBox(height: 16),
-              SectionTitle(
-                _cap(DateFormat('EEEE d MMMM', 'it_IT').format(selected)),
-              ),
-              const SizedBox(height: 10),
+              const SizedBox(height: 14),
               if (loading && entries.isEmpty)
                 const Center(
                   child: Padding(
@@ -3500,69 +3579,52 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
                     child: CircularProgressIndicator(),
                   ),
                 )
-              else if (dayEntries.isEmpty)
-                const SimpleCard(
-                  child: Text('Niente di condiviso per questo giorno.'),
-                )
-              else
-                ...dayEntries.map(
-                  (entry) {
-                    final editor = _editorLabel(entry);
-                    final pending = pendingIds.contains(entry.id);
-                    final details = <String>[
-                      if (entry.start != null) formatTime(entry.start!),
-                      if (entry.note.isNotEmpty) entry.note,
-                      if (editor.isNotEmpty) editor,
-                      if (pending) 'In attesa di sincronizzazione',
-                    ];
-                    return Card(
-                      margin: const EdgeInsets.only(bottom: 9),
-                      child: ListTile(
-                        leading: entry.type == SharedEntryType.task
-                            ? Checkbox(
-                                value: entry.done,
-                                onChanged: (_) => _toggleDone(entry),
-                              )
-                            : CircleAvatar(
-                                child: Icon(entry.type.icon),
-                              ),
-                        title: Text(
-                          entry.title,
-                          style: TextStyle(
-                            fontWeight: FontWeight.w800,
-                            decoration: entry.done
-                                ? TextDecoration.lineThrough
-                                : null,
-                          ),
-                        ),
-                        subtitle: Text(
-                          details.join(' · '),
-                          maxLines: 3,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        onTap: () => _edit(entry),
-                        trailing: pending
-                            ? const Icon(Icons.schedule_outlined)
-                            : PopupMenuButton<String>(
-                                onSelected: (value) {
-                                  if (value == 'edit') _edit(entry);
-                                  if (value == 'delete') _delete(entry);
-                                },
-                                itemBuilder: (_) => const [
-                                  PopupMenuItem(
-                                    value: 'edit',
-                                    child: Text('Modifica'),
-                                  ),
-                                  PopupMenuItem(
-                                    value: 'delete',
-                                    child: Text('Elimina'),
-                                  ),
-                                ],
-                              ),
-                      ),
-                    );
-                  },
+              else if (feedMode) ...[
+                const SectionTitle('Ultimi aggiornamenti'),
+                const SizedBox(height: 10),
+                if (_feedEntries.isEmpty)
+                  const SimpleCard(
+                    child: Text('Ancora niente in Noi ♡.'),
+                  )
+                else
+                  ..._feedEntries.map(
+                    (entry) => _sharedEntryCard(
+                      context,
+                      entry,
+                      showDate: true,
+                    ),
+                  ),
+              ] else ...[
+                TableCalendar<SharedEntry>(
+                  locale: 'it_IT',
+                  firstDay: DateTime(2020),
+                  lastDay: DateTime(2040),
+                  focusedDay: selected,
+                  selectedDayPredicate: (day) =>
+                      AgendaStore.sameDay(day, selected),
+                  eventLoader: (day) => entries
+                      .where((entry) => AgendaStore.sameDay(entry.date, day))
+                      .toList(),
+                  onDaySelected: (day, _) => setState(() => selected = day),
+                  headerStyle: const HeaderStyle(
+                    formatButtonVisible: false,
+                    titleCentered: true,
+                  ),
                 ),
+                const SizedBox(height: 16),
+                SectionTitle(
+                  _cap(DateFormat('EEEE d MMMM', 'it_IT').format(selected)),
+                ),
+                const SizedBox(height: 10),
+                if (dayEntries.isEmpty)
+                  const SimpleCard(
+                    child: Text('Niente di condiviso per questo giorno.'),
+                  )
+                else
+                  ...dayEntries.map(
+                    (entry) => _sharedEntryCard(context, entry),
+                  ),
+              ],
             ],
           ),
         ),
