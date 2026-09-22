@@ -3863,6 +3863,7 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
         title: compactTitle.isEmpty ? 'Nota' : compactTitle,
         note: value,
         date: existing?.date ?? selected,
+        createdAt: existing?.createdAt ?? DateTime.now(),
         memoryPinned: existing?.memoryPinned ?? false,
       ),
     );
@@ -3926,6 +3927,7 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
             : 'Foto',
         note: caption ?? '',
         date: existing?.date ?? selected,
+        createdAt: existing?.createdAt ?? DateTime.now(),
         mediaPath: existing?.mediaPath ?? '',
         mediaThumbnailBase64: thumbnailBase64,
         memoryPinned: existing?.memoryPinned ?? false,
@@ -3996,6 +3998,7 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
             : 'Sketch',
         note: existing?.note ?? '',
         date: existing?.date ?? selected,
+        createdAt: existing?.createdAt ?? DateTime.now(),
         sketchPages: pages,
         memoryPinned: existing?.memoryPinned ?? false,
       ),
@@ -4110,7 +4113,8 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
         )
         .toList()
       ..sort(
-        (a, b) => (b.updatedAt ?? b.date).compareTo(a.updatedAt ?? a.date),
+        (a, b) => (b.createdAt ?? b.updatedAt ?? b.date)
+            .compareTo(a.createdAt ?? a.updatedAt ?? a.date),
       );
 
     return DiaryComposerSection(
@@ -5180,6 +5184,7 @@ Future<SharedEntry?> _openSharedEntryEditor(
                   title: value,
                   note: note.text.trim(),
                   date: date,
+                  createdAt: existing?.createdAt ?? DateTime.now(),
                   start: type.supportsTime ? start : null,
                   end: type.supportsTime ? end : null,
                   done: existing?.done ?? false,
