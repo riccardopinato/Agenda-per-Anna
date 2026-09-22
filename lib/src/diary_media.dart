@@ -70,6 +70,219 @@ Future<ImageSource?> _chooseDiaryImageSource(BuildContext context) =>
       ),
     );
 
+enum DiaryContentKind { note, photo, sketch }
+
+extension DiaryContentKindUi on DiaryContentKind {
+  String get label => switch (this) {
+        DiaryContentKind.note => 'Nota',
+        DiaryContentKind.photo => 'Foto',
+        DiaryContentKind.sketch => 'Sketch',
+      };
+
+  IconData get icon => switch (this) {
+        DiaryContentKind.note => Icons.sticky_note_2_outlined,
+        DiaryContentKind.photo => Icons.photo_outlined,
+        DiaryContentKind.sketch => Icons.draw_outlined,
+      };
+}
+
+class DiaryComposerSection extends StatelessWidget {
+  final String title;
+  final String subtitle;
+  final String memoriesLabel;
+  final String emptyText;
+  final VoidCallback onMemories;
+  final VoidCallback onAddNote;
+  final VoidCallback onAddSketch;
+  final VoidCallback onAddPhoto;
+  final bool photoBusy;
+  final List<Widget> children;
+
+  const DiaryComposerSection({
+    super.key,
+    required this.title,
+    required this.subtitle,
+    required this.memoriesLabel,
+    required this.emptyText,
+    required this.onMemories,
+    required this.onAddNote,
+    required this.onAddSketch,
+    required this.onAddPhoto,
+    required this.photoBusy,
+    required this.children,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return SimpleCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  title,
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w900,
+                    fontSize: 18,
+                  ),
+                ),
+              ),
+              TextButton.icon(
+                onPressed: onMemories,
+                icon: const Icon(Icons.photo_library_outlined, size: 18),
+                label: Text(memoriesLabel),
+              ),
+            ],
+          ),
+          const SizedBox(height: 4),
+          Text(
+            subtitle,
+            style: Theme.of(context).textTheme.bodySmall,
+          ),
+          const SizedBox(height: 12),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              FilledButton.tonalIcon(
+                onPressed: onAddNote,
+                icon: const Icon(Icons.sticky_note_2_outlined),
+                label: const Text('Nota'),
+              ),
+              FilledButton.tonalIcon(
+                onPressed: onAddSketch,
+                icon: const Icon(Icons.draw_outlined),
+                label: const Text('Sketch'),
+              ),
+              FilledButton.tonalIcon(
+                onPressed: photoBusy ? null : onAddPhoto,
+                icon: photoBusy
+                    ? const SizedBox(
+                        width: 18,
+                        height: 18,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : const Icon(Icons.add_photo_alternate_outlined),
+                label: const Text('Foto'),
+              ),
+            ],
+          ),
+          if (children.isEmpty) ...[
+            const SizedBox(height: 14),
+            Text(emptyText),
+          ] else ...[
+            const SizedBox(height: 14),
+            ...children,
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class DiaryContentCard extends StatelessWidget {
+  final DiaryContentKind kind;
+  final String title;
+  final String subtitle;
+  final Widget? preview;
+  final VoidCallback onOpen;
+  final VoidCallback? onEdit;
+  final VoidCallback? onEditCaption;
+  final VoidCallback? onReplacePhoto;
+  final VoidCallback onDelete;
+  final Widget? footer;
+  final Widget? statusIcon;
+
+  const DiaryContentCard({
+    super.key,
+    required this.kind,
+    required this.title,
+    required this.subtitle,
+    required this.onOpen,
+    required this.onDelete,
+    this.preview,
+    this.onEdit,
+    this.onEditCaption,
+    this.onReplacePhoto,
+    this.footer,
+    this.statusIcon,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      margin: const EdgeInsets.only(bottom: 9),
+      clipBehavior: Clip.antiAlias,
+      child: Column(
+        children: [
+          if (preview != null)
+            AspectRatio(
+              aspectRatio: 16 / 10,
+              child: InkWell(
+                onTap: onOpen,
+                child: preview!,
+              ),
+            ),
+          ListTile(
+            leading: CircleAvatar(child: Icon(kind.icon)),
+            title: Text(
+              title,
+              maxLines: kind == DiaryContentKind.note ? 4 : 2,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(fontWeight: FontWeight.w800),
+            ),
+            subtitle: Text(
+              subtitle,
+              maxLines: 3,
+              overflow: TextOverflow.ellipsis,
+            ),
+            onTap: onOpen,
+            trailing: statusIcon ??
+                PopupMenuButton<String>(
+                  tooltip: 'Azioni ${kind.label.toLowerCase()}',
+                  onSelected: (value) {
+                    if (value == 'edit') onEdit?.call();
+                    if (value == 'caption') onEditCaption?.call();
+                    if (value == 'replace') onReplacePhoto?.call();
+                    if (value == 'delete') onDelete();
+                  },
+                  itemBuilder: (_) => [
+                    if (kind != DiaryContentKind.photo && onEdit != null)
+                      const PopupMenuItem(
+                        value: 'edit',
+                        child: Text('Modifica'),
+                      ),
+                    if (kind == DiaryContentKind.photo &&
+                        onEditCaption != null)
+                      const PopupMenuItem(
+                        value: 'caption',
+                        child: Text('Modifica didascalia'),
+                      ),
+                    if (kind == DiaryContentKind.photo &&
+                        onReplacePhoto != null)
+                      const PopupMenuItem(
+                        value: 'replace',
+                        child: Text('Sostituisci foto'),
+                      ),
+                    const PopupMenuItem(
+                      value: 'delete',
+                      child: Text('Elimina'),
+                    ),
+                  ],
+                ),
+          ),
+          if (footer != null) ...[
+            const Divider(height: 1),
+            footer!,
+          ],
+        ],
+      ),
+    );
+  }
+}
+
 class DiaryMemoryCard extends StatefulWidget {
   final AgendaStore store;
   final DateTime date;
