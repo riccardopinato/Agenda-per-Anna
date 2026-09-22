@@ -27,6 +27,54 @@ part 'src/screens_core.dart';
 part 'src/planner_views.dart';
 part 'src/widgets_editors.dart';
 
+final GlobalKey<NavigatorState> appNavigatorKey = GlobalKey<NavigatorState>();
+
+Future<void> _openSharedSpaceFromNotification(
+  AgendaStore store,
+  String spaceId,
+) async {
+  final cloud = CloudSyncService.instance;
+
+  if (cloud.signedIn) {
+    try {
+      if (store.activeAccountId != cloud.userId) {
+        await store.activateCloudAccount(cloud.userId);
+      }
+      await store.refreshSharedAgendaCache(pullRemote: true);
+    } catch (_) {
+      // La navigazione usa comunque la cache locale disponibile.
+    }
+  }
+
+  await store.markSharedSpaceRead(spaceId);
+
+  NavigatorState? navigator = appNavigatorKey.currentState;
+  if (navigator == null) {
+    await Future<void>.delayed(const Duration(milliseconds: 150));
+    navigator = appNavigatorKey.currentState;
+  }
+  if (navigator == null) return;
+
+  SharedSpace? target;
+  for (final space in store.sharedAgendaSpaces) {
+    if (space.id == spaceId) {
+      target = space;
+      break;
+    }
+  }
+
+  await navigator.push(
+    MaterialPageRoute<void>(
+      builder: (_) => target == null
+          ? SharedSpaceHubScreen(store: store)
+          : SharedSpaceScreen(
+              store: store,
+              space: target!,
+            ),
+    ),
+  );
+}
+
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   PushNotificationService.configureBackgroundHandling();
@@ -53,7 +101,13 @@ Future<void> main() async {
     try {
       await CloudSyncService.instance.initialize();
       await store.initializeCloudSync();
-      await PushNotificationService.instance.initialize();
+      await PushNotificationService.instance.initialize(
+        onSharedPushReceived: (spaceId, eventId) async {
+          await store.markSharedSpaceUnread(spaceId);
+        },
+        onSharedPushOpened: (spaceId) =>
+            _openSharedSpaceFromNotification(store, spaceId),
+      );
     } catch (_) {
       // Cloud e push sono opzionali: l'agenda resta pienamente offline.
     }
