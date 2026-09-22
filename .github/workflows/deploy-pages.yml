@@ -42,7 +42,7 @@ jobs:
           sed -i 's#assets/icon/app_icon.png#assets/icon/app_icon.jpg#g' pubspec.yaml
 
       - name: Install dependencies
-        run: flutter pub get
+        run: flutter pub get --enforce-lockfile
 
       - name: Build Web for GitHub Pages
         run: flutter build web --release --base-href "/Agenda-per-Anna/"
