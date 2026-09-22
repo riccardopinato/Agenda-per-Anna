@@ -3111,6 +3111,8 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
       widget.store.sharedCacheStorageKey(widget.space.id);
   String get _pendingKey =>
       widget.store.sharedPendingStorageKey(widget.space.id);
+  String get _interactionCacheKey =>
+      'shared_interactions_cache_${widget.store.activeAccountId ?? 'guest'}_${widget.space.id}';
 
   @override
   void initState() {
@@ -3157,6 +3159,82 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
     );
   }
 
+  Future<void> _loadInteractionCache(
+    SharedPreferences prefs,
+  ) async {
+    final raw = prefs.getString(_interactionCacheKey);
+    if (raw == null) return;
+    try {
+      final decoded = Map<String, dynamic>.from(jsonDecode(raw) as Map);
+      final commentsRaw = decoded['comments'] as List? ?? const [];
+      final heartsRaw = decoded['hearts'] is Map
+          ? Map<String, dynamic>.from(decoded['hearts'] as Map)
+          : <String, dynamic>{};
+      final readsRaw = decoded['reads'] is Map
+          ? Map<String, dynamic>.from(decoded['reads'] as Map)
+          : <String, dynamic>{};
+
+      final cachedComments = <String, List<SharedEntryComment>>{};
+      for (final rawComment in commentsRaw.whereType<Map>()) {
+        final comment = SharedEntryComment.fromJson(
+          Map<String, dynamic>.from(rawComment),
+        );
+        cachedComments
+            .putIfAbsent(comment.entryId, () => <SharedEntryComment>[])
+            .add(comment);
+      }
+
+      commentsByEntry = cachedComments;
+      heartsByEntry = {
+        for (final entry in heartsRaw.entries)
+          entry.key: (entry.value as List? ?? const [])
+              .map((value) => value.toString())
+              .toSet(),
+      };
+      memberReads = {
+        for (final entry in readsRaw.entries)
+          if (DateTime.tryParse(entry.value.toString()) != null)
+            entry.key: DateTime.parse(entry.value.toString()),
+      };
+    } catch (_) {}
+  }
+
+  Future<void> _saveInteractionCache(
+    Map<String, List<SharedEntryComment>> comments,
+    Map<String, Set<String>> hearts,
+    Map<String, DateTime> reads,
+  ) async {
+    final prefs = await SharedPreferences.getInstance();
+    final flatComments = <Map<String, dynamic>>[
+      for (final bucket in comments.values)
+        for (final comment in bucket)
+          {
+            'id': comment.id,
+            'space_id': comment.spaceId,
+            'entry_id': comment.entryId,
+            'user_id': comment.userId,
+            'author_name': comment.authorName,
+            'body': comment.body,
+            'created_at': comment.createdAt.toUtc().toIso8601String(),
+            'updated_at': comment.updatedAt.toUtc().toIso8601String(),
+          },
+    ];
+    await prefs.setString(
+      _interactionCacheKey,
+      jsonEncode({
+        'comments': flatComments,
+        'hearts': {
+          for (final entry in hearts.entries)
+            entry.key: entry.value.toList(),
+        },
+        'reads': {
+          for (final entry in reads.entries)
+            entry.key: entry.value.toUtc().toIso8601String(),
+        },
+      }),
+    );
+  }
+
   Future<void> _loadCachedThenRefresh() async {
     final prefs = await SharedPreferences.getInstance();
     final raw = prefs.getString(_cacheKey);
@@ -3171,7 +3249,9 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
             .toList();
       } catch (_) {}
     }
+    await _loadInteractionCache(prefs);
     await _updatePendingState();
+    await _loadInteractions();
     if (mounted) setState(() => loading = false);
     await _refresh(silent: entries.isNotEmpty);
   }
@@ -3221,6 +3301,7 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
     final cloud = CloudSyncService.instance;
     if (!cloud.signedIn) {
       await _updatePendingState();
+      await _loadInteractions();
       if (mounted) setState(() => loading = false);
       return;
     }
@@ -3260,11 +3341,15 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
       }
 
       next.sort((a, b) {
-        final date = a.date.compareTo(b.date);
+        final date = b.date.compareTo(a.date);
         if (date != 0) return date;
-        final am = a.start == null ? 0 : a.start!.hour * 60 + a.start!.minute;
-        final bm = b.start == null ? 0 : b.start!.hour * 60 + b.start!.minute;
-        return am.compareTo(bm);
+        final am = a.start == null ? -1 : a.start!.hour * 60 + a.start!.minute;
+        final bm = b.start == null ? -1 : b.start!.hour * 60 + b.start!.minute;
+        final time = bm.compareTo(am);
+        if (time != 0) return time;
+        final aUpdated = a.updatedAt ?? a.date;
+        final bUpdated = b.updatedAt ?? b.date;
+        return bUpdated.compareTo(aUpdated);
       });
       entries = next;
       pendingIds = pending.map((operation) => operation.entityId).toSet();
@@ -3378,6 +3463,11 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
       bucket.sort((a, b) => a.createdAt.compareTo(b.createdAt));
     }
 
+    await _saveInteractionCache(
+      nextComments,
+      nextHearts,
+      nextReads,
+    );
     if (!mounted) return;
     setState(() {
       commentsByEntry = nextComments;
