@@ -69,7 +69,7 @@ Future<void> _openSharedSpaceFromNotification(
           ? SharedSpaceHubScreen(store: store)
           : SharedSpaceScreen(
               store: store,
-              space: target!,
+              space: target,
             ),
     ),
   );
