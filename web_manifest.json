@@ -1,11 +1,11 @@
 {
-  "name": "Agenda per Anna",
-  "short_name": "Agenda",
+  "name": "Anna's Diary",
+  "short_name": "Anna's Diary",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#FFFAFC",
   "theme_color": "#E88CA8",
-  "description": "Agenda personale e condivisa per organizzare giornate, attività e ricordi.",
+  "description": "Diario, agenda personale e spazio condiviso Noi ♡.",
   "orientation": "any",
   "prefer_related_applications": false,
   "icons": [
