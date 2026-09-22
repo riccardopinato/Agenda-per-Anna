@@ -4327,7 +4327,11 @@ Future<SharedEntry?> _openSharedEntryEditor(
               ),
               const SizedBox(height: 10),
               SegmentedButton<SharedEntryType>(
-                segments: SharedEntryType.values
+                segments: const [
+                  SharedEntryType.appointment,
+                  SharedEntryType.task,
+                  SharedEntryType.note,
+                ]
                     .map(
                       (value) => ButtonSegment(
                         value: value,
@@ -4370,7 +4374,7 @@ Future<SharedEntry?> _openSharedEntryEditor(
                   if (picked != null) setLocal(() => date = picked);
                 },
               ),
-              if (type != SharedEntryType.note)
+              if (type.supportsTime)
                 ListTile(
                   contentPadding: EdgeInsets.zero,
                   leading: const Icon(Icons.schedule_outlined),
@@ -4419,8 +4423,8 @@ Future<SharedEntry?> _openSharedEntryEditor(
                   title: value,
                   note: note.text.trim(),
                   date: date,
-                  start: type == SharedEntryType.note ? null : start,
-                  end: type == SharedEntryType.note ? null : end,
+                  start: type.supportsTime ? start : null,
+                  end: type.supportsTime ? end : null,
                   done: existing?.done ?? false,
                 ),
               );
