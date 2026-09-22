@@ -70,6 +70,117 @@ Future<ImageSource?> _chooseDiaryImageSource(BuildContext context) =>
       ),
     );
 
+Future<String?> showDiaryNoteEditor(
+  BuildContext context, {
+  String initialText = '',
+  bool editing = false,
+}) async {
+  final controller = TextEditingController(text: initialText);
+  final value = await showDialog<String>(
+    context: context,
+    builder: (dialogContext) => AlertDialog(
+      title: Text(editing ? 'Modifica nota' : 'Nuova nota'),
+      content: TextField(
+        controller: controller,
+        autofocus: true,
+        minLines: 5,
+        maxLines: 12,
+        textCapitalization: TextCapitalization.sentences,
+        decoration: const InputDecoration(
+          hintText:
+              'Scrivi un ricordo, un pensiero, qualcosa da non dimenticare...',
+          border: OutlineInputBorder(),
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(dialogContext),
+          child: const Text('Annulla'),
+        ),
+        FilledButton(
+          onPressed: () => Navigator.pop(
+            dialogContext,
+            controller.text.trim(),
+          ),
+          child: const Text('Salva'),
+        ),
+      ],
+    ),
+  );
+  controller.dispose();
+  return value;
+}
+
+Future<String?> showDiaryCaptionEditor(
+  BuildContext context, {
+  String initialText = '',
+  bool adding = false,
+}) async {
+  final controller = TextEditingController(text: initialText);
+  final value = await showDialog<String>(
+    context: context,
+    builder: (dialogContext) => AlertDialog(
+      title: Text(adding ? 'Aggiungi al diario' : 'Didascalia'),
+      content: TextField(
+        controller: controller,
+        autofocus: true,
+        minLines: adding ? 1 : 2,
+        maxLines: 5,
+        textCapitalization: TextCapitalization.sentences,
+        decoration: InputDecoration(
+          hintText: adding
+              ? 'Una didascalia, se vuoi...'
+              : 'Scrivi qualcosa su questo ricordo...',
+          border: const OutlineInputBorder(),
+        ),
+      ),
+      actions: [
+        if (adding)
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, ''),
+            child: const Text('Senza testo'),
+          )
+        else
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext),
+            child: const Text('Annulla'),
+          ),
+        FilledButton(
+          onPressed: () => Navigator.pop(
+            dialogContext,
+            controller.text.trim(),
+          ),
+          child: Text(adding ? 'Aggiungi' : 'Salva'),
+        ),
+      ],
+    ),
+  );
+  controller.dispose();
+  return value;
+}
+
+Future<bool> confirmDiaryContentDelete(BuildContext context) async =>
+    await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Eliminare dal diario?'),
+        content: const Text(
+          'Questo contenuto verrà rimosso dalla giornata.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: const Text('Annulla'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(dialogContext, true),
+            child: const Text('Elimina'),
+          ),
+        ],
+      ),
+    ) ??
+    false;
+
 enum DiaryContentKind { note, photo, sketch }
 
 extension DiaryContentKindUi on DiaryContentKind {
