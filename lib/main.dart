@@ -7,6 +7,8 @@ import 'package:crypto/crypto.dart';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_image_compress/flutter_image_compress.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:local_auth/local_auth.dart';
 import 'package:intl/intl.dart';
@@ -26,6 +28,7 @@ part 'src/unified_agenda.dart';
 part 'src/screens_core.dart';
 part 'src/planner_views.dart';
 part 'src/widgets_editors.dart';
+part 'src/diary_media.dart';
 
 final GlobalKey<NavigatorState> appNavigatorKey = GlobalKey<NavigatorState>();
 
