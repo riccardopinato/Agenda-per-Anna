@@ -115,14 +115,32 @@ class HomeScreen extends StatelessWidget {
                 icon: const Icon(Icons.backup_outlined),
               ),
               IconButton(
-                tooltip: 'Noi',
+                tooltip: store.totalSharedUnreadCount > 0
+                    ? 'Noi ♡ · ${store.totalSharedUnreadCount} novità'
+                    : 'Noi ♡',
                 onPressed: () => Navigator.push(
                   context,
                   MaterialPageRoute(
                     builder: (_) => SharedSpaceHubScreen(store: store),
                   ),
                 ),
-                icon: const Icon(Icons.favorite_outline),
+                icon: Badge(
+                  isLabelVisible: store.totalSharedUnreadCount > 0,
+                  backgroundColor: Theme.of(context).colorScheme.error,
+                  label: Text(
+                    store.totalSharedUnreadCount > 99
+                        ? '99+'
+                        : '${store.totalSharedUnreadCount}',
+                  ),
+                  child: Icon(
+                    store.totalSharedUnreadCount > 0
+                        ? Icons.favorite
+                        : Icons.favorite_outline,
+                    color: store.totalSharedUnreadCount > 0
+                        ? Theme.of(context).colorScheme.error
+                        : null,
+                  ),
+                ),
               ),
               IconButton(
                 tooltip: 'Cloud',
@@ -2255,7 +2273,6 @@ class SharedSpaceHubScreen extends StatefulWidget {
 class _SharedSpaceHubScreenState extends State<SharedSpaceHubScreen> {
   bool loading = true;
   List<SharedSpace> spaces = const [];
-  final Map<String, int> unreadBySpace = {};
   final Map<String, int> pendingBySpace = {};
   final Set<String> _realtimeSpaceIds = {};
 
@@ -2341,12 +2358,8 @@ class _SharedSpaceHubScreenState extends State<SharedSpaceHubScreen> {
       CloudSyncService.instance.subscribeSharedSpace(
         spaceId: space.id,
         listenerKey: 'hub',
-        onChanged: () {
-          if (!mounted) return;
-          setState(() {
-            unreadBySpace[space.id] = (unreadBySpace[space.id] ?? 0) + 1;
-          });
-        },
+        onChanged: () {},
+
       );
       _realtimeSpaceIds.add(space.id);
     }
@@ -2614,7 +2627,7 @@ class _SharedSpaceHubScreenState extends State<SharedSpaceHubScreen> {
                         else ...[
                           ...spaces.map(
                             (space) {
-                              final unread = unreadBySpace[space.id] ?? 0;
+                              final unread = widget.store.sharedUnreadCount(space.id);
                               final pending = pendingBySpace[space.id] ?? 0;
                               return Card(
                                 margin: const EdgeInsets.only(bottom: 10),
@@ -2656,9 +2669,10 @@ class _SharedSpaceHubScreenState extends State<SharedSpaceHubScreen> {
                                     ],
                                   ),
                                   onTap: () async {
-                                    setState(
-                                      () => unreadBySpace[space.id] = 0,
+                                    await widget.store.markSharedSpaceRead(
+                                      space.id,
                                     );
+                                    if (!mounted) return;
                                     await Navigator.push(
                                       context,
                                       MaterialPageRoute(
@@ -2669,8 +2683,8 @@ class _SharedSpaceHubScreenState extends State<SharedSpaceHubScreen> {
                                       ),
                                     );
                                     if (!mounted) return;
-                                    setState(
-                                      () => unreadBySpace[space.id] = 0,
+                                    await widget.store.markSharedSpaceRead(
+                                      space.id,
                                     );
                                     await _reload();
                                   },
@@ -2866,6 +2880,7 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
       pendingIds = pending.map((operation) => operation.entityId).toSet();
       lastRefreshAt = DateTime.now();
       await _saveCache();
+      await widget.store.markSharedSpaceRead(widget.space.id);
     } catch (_) {
       if (!silent) {
         _message(
