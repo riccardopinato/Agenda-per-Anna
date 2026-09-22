@@ -428,6 +428,73 @@ void main() {
     store.dispose();
   });
 
+  test('Noi memories include rich content and pinned moments', () {
+    final day = DateTime(2026, 9, 22);
+    final note = SharedEntry(
+      id: 'note-memory',
+      type: SharedEntryType.note,
+      title: 'Pensiero',
+      note: 'Una giornata insieme',
+      date: day,
+    );
+    final photo = SharedEntry(
+      id: 'photo-memory',
+      type: SharedEntryType.photo,
+      title: 'Foto',
+      note: '',
+      date: day,
+      mediaPath: 'space-a/photo-memory/media.jpg',
+    );
+    final sketch = SharedEntry(
+      id: 'sketch-memory',
+      type: SharedEntryType.sketch,
+      title: 'Sketch',
+      note: '',
+      date: day,
+    );
+    final event = SharedEntry(
+      id: 'event-memory',
+      type: SharedEntryType.appointment,
+      title: 'Cena',
+      note: '',
+      date: day,
+    );
+    final pinnedEvent = event.copyWith(memoryPinned: true);
+
+    expect(note.appearsInSharedMemories, isTrue);
+    expect(photo.appearsInSharedMemories, isTrue);
+    expect(sketch.appearsInSharedMemories, isTrue);
+    expect(event.appearsInSharedMemories, isFalse);
+    expect(pinnedEvent.appearsInSharedMemories, isTrue);
+  });
+
+  test('shared memory pin survives JSON and legacy entries stay compatible',
+      () {
+    final entry = SharedEntry(
+      id: 'event-memory',
+      type: SharedEntryType.appointment,
+      title: 'Weekend',
+      note: 'Da ricordare',
+      date: DateTime(2026, 9, 22),
+      memoryPinned: true,
+    );
+
+    final restored = SharedEntry.fromJson(entry.toJson());
+    expect(restored.memoryPinned, isTrue);
+    expect(restored.appearsInSharedMemories, isTrue);
+
+    final legacy = SharedEntry.fromJson({
+      'id': 'legacy-event',
+      'type': 'appointment',
+      'title': 'Vecchio evento',
+      'note': '',
+      'date': DateTime(2026, 1, 10).toIso8601String(),
+      'done': false,
+    });
+    expect(legacy.memoryPinned, isFalse);
+    expect(legacy.appearsInSharedMemories, isFalse);
+  });
+
   test('backup metadata reports the current release line', () async {
     final store = AgendaStore();
     await store.load();
