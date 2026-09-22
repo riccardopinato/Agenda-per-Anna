@@ -2092,6 +2092,10 @@ class AgendaStore extends ChangeNotifier {
     DateTime? updatedAt,
     String mediaPath = '',
   }) async {
+    await cancelSharedMediaUpload(
+      spaceId: spaceId,
+      entryId: entityId,
+    );
     final revision = (updatedAt ?? DateTime.now()).toUtc();
     final operations = await loadSharedPendingOperations(spaceId);
     operations.removeWhere((operation) => operation.entityId == entityId);
@@ -2464,6 +2468,19 @@ class AgendaStore extends ChangeNotifier {
         jsonEncode(uploads.map((upload) => upload.toJson()).toList()),
       );
     }
+  }
+
+  Future<void> cancelSharedMediaUpload({
+    required String spaceId,
+    required String entryId,
+  }) async {
+    final uploads = await loadSharedMediaPendingUploads(spaceId);
+    final before = uploads.length;
+    uploads.removeWhere((upload) => upload.entryId == entryId);
+    if (uploads.length == before) return;
+    await _saveSharedMediaPendingUploads(spaceId, uploads);
+    await refreshPendingSharedMediaCount(notify: false);
+    notifyListeners();
   }
 
   Future<void> enqueueSharedMediaUpload(
