@@ -3103,6 +3103,12 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
 
   Future<void> _flushPending() async {
     final conflictsBefore = widget.store.sharedConflictCount;
+    await widget.store.flushSharedMediaUploads(
+      spaceId: widget.space.id,
+    );
+    await widget.store.flushSharedInteractionOperations(
+      spaceId: widget.space.id,
+    );
     await widget.store.flushSharedPendingOperations(
       spaceId: widget.space.id,
     );
@@ -3950,16 +3956,12 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
       spaceId: widget.space.id,
       entityId: entry.id,
       updatedAt: revision,
+      mediaPath:
+          entry.type == SharedEntryType.photo ? entry.mediaPath : '',
     );
     await _saveCache();
     if (CloudSyncService.instance.signedIn) {
       await _flushPending();
-      if (entry.type == SharedEntryType.photo &&
-          entry.mediaPath.isNotEmpty) {
-        try {
-          await CloudSyncService.instance.deleteSharedMedia(entry.mediaPath);
-        } catch (_) {}
-      }
       await _refresh(silent: true);
     } else {
       _message('Eliminazione salvata offline.');
@@ -4232,18 +4234,27 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
 
   Widget _syncCard(BuildContext context) {
     final cloud = CloudSyncService.instance;
-    final pending = pendingIds.length;
+    final pendingEntries = pendingIds.length;
+    final pendingInteractions = widget.store.pendingSharedInteractionCount;
+    final pendingMedia = widget.store.pendingSharedMediaCount;
+    final pendingTotal =
+        pendingEntries + pendingInteractions + pendingMedia;
     final scheme = Theme.of(context).colorScheme;
     final IconData icon;
     final String title;
     final String subtitle;
 
-    if (pending > 0) {
+    if (pendingTotal > 0) {
       icon = cloud.signedIn ? Icons.sync : Icons.cloud_off_outlined;
-      title = '$pending modifiche in attesa';
+      title = '$pendingTotal modifiche in attesa';
+      final parts = <String>[
+        if (pendingEntries > 0) '$pendingEntries contenuti',
+        if (pendingInteractions > 0) '$pendingInteractions interazioni',
+        if (pendingMedia > 0) '$pendingMedia media',
+      ];
       subtitle = cloud.signedIn
-          ? 'Invio automatico in corso.'
-          : 'Sono al sicuro sul dispositivo e verranno inviate quando torni online.';
+          ? '${parts.join(' · ')} · retry automatico attivo.'
+          : '${parts.join(' · ')} · salvati sul dispositivo fino al ritorno online.';
     } else if (!cloud.signedIn) {
       icon = Icons.cloud_off_outlined;
       title = 'Offline';
@@ -4280,6 +4291,12 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
               ],
             ),
           ),
+          if (pendingTotal > 0 && cloud.signedIn)
+            IconButton(
+              tooltip: 'Riprova ora',
+              onPressed: () => _refresh(),
+              icon: const Icon(Icons.refresh),
+            ),
         ],
       ),
     );
