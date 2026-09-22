@@ -33,6 +33,7 @@ class AgendaStore extends ChangeNotifier {
   final Map<String, SharedSpace> _sharedAgendaSpaces = {};
   final Map<String, List<SharedEntry>> _sharedAgendaEntriesBySpace = {};
   final Map<String, List<UnifiedAgendaEntry>> _sharedAgendaDayIndex = {};
+  final Map<String, int> _sharedUnreadBySpace = {};
   final Set<String> _unifiedRealtimeSpaceIds = {};
   bool _dayIndexDirty = true;
   AgendaContentFilter agendaContentFilter = AgendaContentFilter.all;
@@ -55,7 +56,11 @@ class AgendaStore extends ChangeNotifier {
   bool get hasStorageWarnings => _unreadableStorageKeys.isNotEmpty;
   int get sharedConflictCount => _sharedConflictCount;
   int get pendingSharedChangeCount => _pendingSharedChangeCount;
-  int get totalPendingCloudChanges => pendingCloudChanges + _pendingSharedChangeCount;
+  int get totalPendingCloudChanges =>
+      pendingCloudChanges + _pendingSharedChangeCount;
+  int get totalSharedUnreadCount =>
+      _sharedUnreadBySpace.values.fold(0, (sum, count) => sum + count);
+  int sharedUnreadCount(String spaceId) => _sharedUnreadBySpace[spaceId] ?? 0;
   DateTime? get lastSharedSyncAt => _lastSharedSyncAt;
   List<SharedSpace> get sharedAgendaSpaces {
     final result = _sharedAgendaSpaces.values.toList()
@@ -121,6 +126,7 @@ class AgendaStore extends ChangeNotifier {
     _sharedAgendaSpaces.clear();
     _sharedAgendaEntriesBySpace.clear();
     _sharedAgendaDayIndex.clear();
+    _sharedUnreadBySpace.clear();
     _unifiedRealtimeSpaceIds.clear();
     _pendingSharedChangeCount = 0;
     preferences = const AgendaPreferences();
@@ -292,6 +298,7 @@ class AgendaStore extends ChangeNotifier {
       ]);
     }
     _invalidateDayIndex();
+    await _loadSharedUnreadCounts(prefs);
     await refreshSharedAgendaCache(notify: false);
     await refreshPendingSharedCount(notify: false);
   }
@@ -1812,6 +1819,17 @@ class AgendaStore extends ChangeNotifier {
       ..addAll(nextEntries);
     _rebuildSharedAgendaDayIndex();
 
+    final activeSpaceIds = spaces.map((space) => space.id).toSet();
+    final staleUnreadIds = _sharedUnreadBySpace.keys
+        .where((spaceId) => !activeSpaceIds.contains(spaceId))
+        .toList();
+    if (staleUnreadIds.isNotEmpty) {
+      for (final spaceId in staleUnreadIds) {
+        _sharedUnreadBySpace.remove(spaceId);
+      }
+      await _saveSharedUnreadCounts();
+    }
+
     await _bindUnifiedRealtime(spaces);
     if (notify) notifyListeners();
   }
@@ -1833,6 +1851,11 @@ class AgendaStore extends ChangeNotifier {
       cloud.subscribeSharedSpace(
         spaceId: space.id,
         listenerKey: 'unified-agenda',
+        onUpdatedBy: (updatedBy) {
+          if (updatedBy != null && updatedBy != cloud.userId) {
+            unawaited(markSharedSpaceUnread(space.id));
+          }
+        },
         onChanged: () {
           _unifiedRealtimeDebounce?.cancel();
           _unifiedRealtimeDebounce = Timer(
@@ -1871,6 +1894,58 @@ class AgendaStore extends ChangeNotifier {
   String get sharedSpacesCacheStorageKey {
     final owner = _activeAccountId ?? 'guest';
     return 'shared_spaces_$owner';
+  }
+
+  String get sharedUnreadStorageKey {
+    final owner = _activeAccountId ?? 'guest';
+    return 'shared_unread_$owner';
+  }
+
+  Future<void> _loadSharedUnreadCounts(SharedPreferences prefs) async {
+    final raw = prefs.getString(sharedUnreadStorageKey);
+    if (raw == null) return;
+    try {
+      final decoded = Map<String, dynamic>.from(jsonDecode(raw) as Map);
+      _sharedUnreadBySpace
+        ..clear()
+        ..addEntries(
+          decoded.entries.map(
+            (entry) => MapEntry(
+              entry.key,
+              max(0, (entry.value as num?)?.toInt() ?? 0),
+            ),
+          ),
+        );
+    } catch (_) {
+      _sharedUnreadBySpace.clear();
+    }
+  }
+
+  Future<void> _saveSharedUnreadCounts() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(
+      sharedUnreadStorageKey,
+      jsonEncode(_sharedUnreadBySpace),
+    );
+  }
+
+  Future<void> markSharedSpaceUnread(
+    String spaceId, {
+    int amount = 1,
+  }) async {
+    if (_activeAccountId == null || amount <= 0) return;
+    final next = min(999, sharedUnreadCount(spaceId) + amount);
+    if (next == sharedUnreadCount(spaceId)) return;
+    _sharedUnreadBySpace[spaceId] = next;
+    await _saveSharedUnreadCounts();
+    notifyListeners();
+  }
+
+  Future<void> markSharedSpaceRead(String spaceId) async {
+    if (!_sharedUnreadBySpace.containsKey(spaceId)) return;
+    _sharedUnreadBySpace.remove(spaceId);
+    await _saveSharedUnreadCounts();
+    notifyListeners();
   }
 
   Future<List<SharedPendingOperation>> loadSharedPendingOperations(
