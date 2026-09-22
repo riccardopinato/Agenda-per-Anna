@@ -3726,9 +3726,10 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
   }
 
   Future<void> _addSharedPhoto([SharedEntry? existing]) async {
-    final cloud = CloudSyncService.instance;
-    if (!cloud.signedIn) {
-      _message('Per condividere una foto serve la connessione cloud.');
+    if (widget.store.activeAccountId == null) {
+      _message(
+        'Accedi al cloud almeno una volta per condividere una foto.',
+      );
       return;
     }
 
@@ -3761,31 +3762,55 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
       );
 
       final entryId = existing?.id ?? const Uuid().v4();
-      final newPath = await cloud.uploadSharedMedia(
-        spaceId: widget.space.id,
-        entryId: entryId,
-        bytes: bytes,
-      );
-
-      final updated = SharedEntry(
+      final thumbnailBase64 = base64Encode(thumbnail);
+      final localPreview = SharedEntry(
         id: entryId,
         type: SharedEntryType.photo,
         title: details.$1,
         note: details.$2,
         date: details.$3,
-        mediaPath: newPath,
-        mediaThumbnailBase64: base64Encode(thumbnail),
+        mediaPath: existing?.mediaPath ?? '',
+        mediaThumbnailBase64: thumbnailBase64,
       );
 
-      final oldPath = existing?.mediaPath ?? '';
-      await _persistSharedEntry(updated);
-      if (oldPath.isNotEmpty && oldPath != newPath) {
-        try {
-          await cloud.deleteSharedMedia(oldPath);
-        } catch (_) {}
+      final revision = DateTime.now().toUtc();
+      final preview = _withLocalMetadata(localPreview, revision);
+      setState(() {
+        entries.removeWhere((entry) => entry.id == entryId);
+        entries.add(preview);
+        pendingIds.add(entryId);
+      });
+      await _saveCache();
+
+      await widget.store.enqueueSharedMediaUpload(
+        SharedMediaPendingUpload(
+          id: const Uuid().v4(),
+          spaceId: widget.space.id,
+          entryId: entryId,
+          title: details.$1,
+          note: details.$2,
+          date: details.$3,
+          imageBase64: fullBase64,
+          thumbnailBase64: thumbnailBase64,
+          oldMediaPath: existing?.mediaPath ?? '',
+          createdAt: revision,
+        ),
+      );
+
+      if (CloudSyncService.instance.signedIn) {
+        await widget.store.flushSharedMediaUploads(
+          spaceId: widget.space.id,
+        );
+        await _refresh(silent: true);
+      } else {
+        _message(
+          'Foto salvata sul dispositivo: verrà caricata automaticamente.',
+        );
       }
     } catch (_) {
-      _message('Foto non condivisa. Riprova con la connessione attiva.');
+      _message(
+        'La foto è rimasta sul dispositivo. Il caricamento verrà ritentato.',
+      );
     }
   }
 
