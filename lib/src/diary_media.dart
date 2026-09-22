@@ -1573,7 +1573,7 @@ class _DiarySketchbookScreenState extends State<DiarySketchbookScreen> {
       if (data == null) return;
       final bytes = data.buffer.asUint8List();
 
-      final path = await FilePicker.platform.saveFile(
+      final path = await FilePicker.saveFile(
         dialogTitle: 'Esporta sketch',
         fileName:
             'annas-diary-sketch-${DateFormat('yyyyMMdd-HHmm').format(DateTime.now())}.png',
