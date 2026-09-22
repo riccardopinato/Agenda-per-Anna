@@ -1942,6 +1942,16 @@ class AgendaStore extends ChangeNotifier {
     final owner = _activeAccountId ?? 'guest';
     return 'shared_pending_${owner}_$spaceId';
   }
+  String sharedInteractionPendingStorageKey(String spaceId) {
+    final owner = _activeAccountId ?? 'guest';
+    return 'shared_interactions_pending_${owner}_$spaceId';
+  }
+
+  String sharedMediaPendingStorageKey(String spaceId) {
+    final owner = _activeAccountId ?? 'guest';
+    return 'shared_media_pending_${owner}_$spaceId';
+  }
+
 
   String get sharedSpacesCacheStorageKey {
     final owner = _activeAccountId ?? 'guest';
@@ -2129,6 +2139,437 @@ class AgendaStore extends ChangeNotifier {
     if (next == _pendingSharedChangeCount) return;
     _pendingSharedChangeCount = next;
     if (notify) notifyListeners();
+  }
+
+  Future<List<SharedInteractionPendingOperation>>
+      loadSharedInteractionPendingOperations(String spaceId) async {
+    final prefs = await SharedPreferences.getInstance();
+    final raw = prefs.getString(sharedInteractionPendingStorageKey(spaceId));
+    if (raw == null) return <SharedInteractionPendingOperation>[];
+    try {
+      return (jsonDecode(raw) as List)
+          .map(
+            (value) => SharedInteractionPendingOperation.fromJson(
+              Map<String, dynamic>.from(value as Map),
+            ),
+          )
+          .where(
+            (operation) =>
+                operation.id.isNotEmpty &&
+                operation.spaceId == spaceId &&
+                operation.entryId.isNotEmpty,
+          )
+          .toList();
+    } catch (_) {
+      return <SharedInteractionPendingOperation>[];
+    }
+  }
+
+  Future<void> _saveSharedInteractionPendingOperations(
+    String spaceId,
+    List<SharedInteractionPendingOperation> operations,
+  ) async {
+    final prefs = await SharedPreferences.getInstance();
+    final key = sharedInteractionPendingStorageKey(spaceId);
+    if (operations.isEmpty) {
+      await prefs.remove(key);
+    } else {
+      await prefs.setString(
+        key,
+        jsonEncode(
+          operations.map((operation) => operation.toJson()).toList(),
+        ),
+      );
+    }
+  }
+
+  Future<SharedEntryComment> enqueueSharedComment({
+    required String spaceId,
+    required String entryId,
+    required String authorName,
+    required String body,
+  }) async {
+    final ownerId = _activeAccountId;
+    if (ownerId == null) {
+      throw StateError('shared_account_required');
+    }
+    final text = body.trim();
+    if (text.isEmpty) {
+      throw const FormatException('empty_comment');
+    }
+
+    final commentId = const Uuid().v4();
+    final now = DateTime.now().toUtc();
+    final operations = await loadSharedInteractionPendingOperations(spaceId);
+    operations.add(
+      SharedInteractionPendingOperation(
+        id: const Uuid().v4(),
+        type: SharedInteractionPendingType.addComment,
+        spaceId: spaceId,
+        entryId: entryId,
+        payload: {
+          'commentId': commentId,
+          'authorName': authorName.trim(),
+          'body': text,
+        },
+        createdAt: now,
+      ),
+    );
+    await _saveSharedInteractionPendingOperations(spaceId, operations);
+    await refreshPendingSharedInteractionCount(notify: false);
+    notifyListeners();
+
+    return SharedEntryComment(
+      id: commentId,
+      spaceId: spaceId,
+      entryId: entryId,
+      userId: ownerId,
+      authorName: authorName.trim(),
+      body: text,
+      createdAt: now,
+      updatedAt: now,
+    );
+  }
+
+  Future<void> enqueueSharedCommentDelete({
+    required String spaceId,
+    required String entryId,
+    required String commentId,
+  }) async {
+    final operations = await loadSharedInteractionPendingOperations(spaceId);
+    final before = operations.length;
+    operations.removeWhere(
+      (operation) =>
+          operation.type == SharedInteractionPendingType.addComment &&
+          operation.payload['commentId']?.toString() == commentId,
+    );
+
+    if (operations.length == before) {
+      operations.add(
+        SharedInteractionPendingOperation(
+          id: const Uuid().v4(),
+          type: SharedInteractionPendingType.deleteComment,
+          spaceId: spaceId,
+          entryId: entryId,
+          payload: {'commentId': commentId},
+          createdAt: DateTime.now().toUtc(),
+        ),
+      );
+    }
+
+    await _saveSharedInteractionPendingOperations(spaceId, operations);
+    await refreshPendingSharedInteractionCount(notify: false);
+    notifyListeners();
+  }
+
+  Future<void> enqueueSharedHeart({
+    required String spaceId,
+    required String entryId,
+    required bool active,
+  }) async {
+    final operations = await loadSharedInteractionPendingOperations(spaceId);
+    operations.removeWhere(
+      (operation) =>
+          operation.type == SharedInteractionPendingType.setHeart &&
+          operation.entryId == entryId,
+    );
+    operations.add(
+      SharedInteractionPendingOperation(
+        id: const Uuid().v4(),
+        type: SharedInteractionPendingType.setHeart,
+        spaceId: spaceId,
+        entryId: entryId,
+        payload: {'active': active},
+        createdAt: DateTime.now().toUtc(),
+      ),
+    );
+    await _saveSharedInteractionPendingOperations(spaceId, operations);
+    await refreshPendingSharedInteractionCount(notify: false);
+    notifyListeners();
+  }
+
+  Future<void> refreshPendingSharedInteractionCount({
+    bool notify = true,
+  }) async {
+    final ownerId = _activeAccountId;
+    var next = 0;
+    if (ownerId != null) {
+      final prefs = await SharedPreferences.getInstance();
+      final prefix = 'shared_interactions_pending_${ownerId}_';
+      for (final key in prefs.getKeys().where((key) => key.startsWith(prefix))) {
+        final raw = prefs.getString(key);
+        if (raw == null) continue;
+        try {
+          next += (jsonDecode(raw) as List).length;
+        } catch (_) {}
+      }
+    }
+    if (next == _pendingSharedInteractionCount) return;
+    _pendingSharedInteractionCount = next;
+    if (notify) notifyListeners();
+  }
+
+  Future<void> flushSharedInteractionOperations({
+    String? spaceId,
+  }) async {
+    final cloud = CloudSyncService.instance;
+    final ownerId = _activeAccountId;
+    if (!cloud.signedIn ||
+        ownerId == null ||
+        cloud.userId != ownerId ||
+        _sharedInteractionFlushRunning) {
+      return;
+    }
+
+    _sharedInteractionFlushRunning = true;
+    final before = _pendingSharedInteractionCount;
+    var changed = false;
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final prefix = 'shared_interactions_pending_${ownerId}_';
+      final keys = prefs
+          .getKeys()
+          .where(
+            (key) =>
+                key.startsWith(prefix) &&
+                (spaceId == null ||
+                    key == sharedInteractionPendingStorageKey(spaceId)),
+          )
+          .toList();
+
+      for (final key in keys) {
+        final currentSpaceId = key.substring(prefix.length);
+        final operations =
+            await loadSharedInteractionPendingOperations(currentSpaceId);
+
+        for (final operation in List<SharedInteractionPendingOperation>.from(
+          operations,
+        )) {
+          try {
+            switch (operation.type) {
+              case SharedInteractionPendingType.addComment:
+                final commentId =
+                    operation.payload['commentId']?.toString() ?? operation.id;
+                await cloud.addSharedEntryComment(
+                  spaceId: currentSpaceId,
+                  entryId: operation.entryId,
+                  authorName:
+                      operation.payload['authorName']?.toString() ?? '',
+                  body: operation.payload['body']?.toString() ?? '',
+                  commentId: commentId,
+                );
+                try {
+                  await cloud.sendSharedPush(
+                    spaceId: currentSpaceId,
+                    eventId: 'comment:$commentId',
+                    action: 'comment',
+                    entityId: operation.entryId,
+                  );
+                } catch (_) {}
+                break;
+              case SharedInteractionPendingType.deleteComment:
+                final commentId =
+                    operation.payload['commentId']?.toString() ?? '';
+                if (commentId.isNotEmpty) {
+                  await cloud.deleteSharedEntryComment(commentId);
+                }
+                break;
+              case SharedInteractionPendingType.setHeart:
+                final active = operation.payload['active'] == true;
+                await cloud.setSharedHeart(
+                  spaceId: currentSpaceId,
+                  entryId: operation.entryId,
+                  active: active,
+                );
+                if (active) {
+                  try {
+                    await cloud.sendSharedPush(
+                      spaceId: currentSpaceId,
+                      eventId: 'reaction:${operation.id}',
+                      action: 'reaction',
+                      entityId: operation.entryId,
+                    );
+                  } catch (_) {}
+                }
+                break;
+            }
+
+            final latest =
+                await loadSharedInteractionPendingOperations(currentSpaceId);
+            latest.removeWhere((candidate) => candidate.id == operation.id);
+            await _saveSharedInteractionPendingOperations(
+              currentSpaceId,
+              latest,
+            );
+            changed = true;
+          } catch (_) {
+            // Keep the operation queued for the next resume/periodic sync.
+          }
+        }
+      }
+    } finally {
+      _sharedInteractionFlushRunning = false;
+      await refreshPendingSharedInteractionCount(notify: false);
+      if (changed || before != _pendingSharedInteractionCount) {
+        notifyListeners();
+      }
+    }
+  }
+
+  Future<List<SharedMediaPendingUpload>> loadSharedMediaPendingUploads(
+    String spaceId,
+  ) async {
+    final prefs = await SharedPreferences.getInstance();
+    final raw = prefs.getString(sharedMediaPendingStorageKey(spaceId));
+    if (raw == null) return <SharedMediaPendingUpload>[];
+    try {
+      return (jsonDecode(raw) as List)
+          .map(
+            (value) => SharedMediaPendingUpload.fromJson(
+              Map<String, dynamic>.from(value as Map),
+            ),
+          )
+          .where(
+            (upload) =>
+                upload.id.isNotEmpty &&
+                upload.spaceId == spaceId &&
+                upload.entryId.isNotEmpty &&
+                upload.imageBase64.isNotEmpty,
+          )
+          .toList();
+    } catch (_) {
+      return <SharedMediaPendingUpload>[];
+    }
+  }
+
+  Future<void> _saveSharedMediaPendingUploads(
+    String spaceId,
+    List<SharedMediaPendingUpload> uploads,
+  ) async {
+    final prefs = await SharedPreferences.getInstance();
+    final key = sharedMediaPendingStorageKey(spaceId);
+    if (uploads.isEmpty) {
+      await prefs.remove(key);
+    } else {
+      await prefs.setString(
+        key,
+        jsonEncode(uploads.map((upload) => upload.toJson()).toList()),
+      );
+    }
+  }
+
+  Future<void> enqueueSharedMediaUpload(
+    SharedMediaPendingUpload upload,
+  ) async {
+    final uploads = await loadSharedMediaPendingUploads(upload.spaceId);
+    uploads.removeWhere((candidate) => candidate.entryId == upload.entryId);
+    uploads.add(upload);
+    await _saveSharedMediaPendingUploads(upload.spaceId, uploads);
+    await refreshPendingSharedMediaCount(notify: false);
+    notifyListeners();
+  }
+
+  Future<void> refreshPendingSharedMediaCount({
+    bool notify = true,
+  }) async {
+    final ownerId = _activeAccountId;
+    var next = 0;
+    if (ownerId != null) {
+      final prefs = await SharedPreferences.getInstance();
+      final prefix = 'shared_media_pending_${ownerId}_';
+      for (final key in prefs.getKeys().where((key) => key.startsWith(prefix))) {
+        final raw = prefs.getString(key);
+        if (raw == null) continue;
+        try {
+          next += (jsonDecode(raw) as List).length;
+        } catch (_) {}
+      }
+    }
+    if (next == _pendingSharedMediaCount) return;
+    _pendingSharedMediaCount = next;
+    if (notify) notifyListeners();
+  }
+
+  Future<void> flushSharedMediaUploads({
+    String? spaceId,
+  }) async {
+    final cloud = CloudSyncService.instance;
+    final ownerId = _activeAccountId;
+    if (!cloud.signedIn ||
+        ownerId == null ||
+        cloud.userId != ownerId ||
+        _sharedMediaFlushRunning) {
+      return;
+    }
+
+    _sharedMediaFlushRunning = true;
+    final before = _pendingSharedMediaCount;
+    var changed = false;
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final prefix = 'shared_media_pending_${ownerId}_';
+      final keys = prefs
+          .getKeys()
+          .where(
+            (key) =>
+                key.startsWith(prefix) &&
+                (spaceId == null ||
+                    key == sharedMediaPendingStorageKey(spaceId)),
+          )
+          .toList();
+
+      for (final key in keys) {
+        final currentSpaceId = key.substring(prefix.length);
+        final uploads = await loadSharedMediaPendingUploads(currentSpaceId);
+
+        for (final upload in List<SharedMediaPendingUpload>.from(uploads)) {
+          try {
+            final mediaPath = await cloud.uploadSharedMedia(
+              spaceId: currentSpaceId,
+              entryId: upload.entryId,
+              bytes: base64Decode(upload.imageBase64),
+            );
+            final entry = SharedEntry(
+              id: upload.entryId,
+              type: SharedEntryType.photo,
+              title: upload.title,
+              note: upload.note,
+              date: upload.date,
+              mediaPath: mediaPath,
+              mediaThumbnailBase64: upload.thumbnailBase64,
+            );
+            await enqueueSharedUpsert(
+              spaceId: currentSpaceId,
+              entry: entry,
+            );
+
+            final latest = await loadSharedMediaPendingUploads(currentSpaceId);
+            latest.removeWhere((candidate) => candidate.id == upload.id);
+            await _saveSharedMediaPendingUploads(currentSpaceId, latest);
+            changed = true;
+
+            await flushSharedPendingOperations(spaceId: currentSpaceId);
+            final stillPending =
+                await pendingSharedEntityIds(currentSpaceId);
+            if (!stillPending.contains(upload.entryId) &&
+                upload.oldMediaPath.isNotEmpty &&
+                upload.oldMediaPath != mediaPath) {
+              try {
+                await cloud.deleteSharedMedia(upload.oldMediaPath);
+              } catch (_) {}
+            }
+          } catch (_) {
+            // Keep compressed bytes locally and retry automatically later.
+          }
+        }
+      }
+    } finally {
+      _sharedMediaFlushRunning = false;
+      await refreshPendingSharedMediaCount(notify: false);
+      if (changed || before != _pendingSharedMediaCount) {
+        notifyListeners();
+      }
+    }
   }
 
   void resetSharedConflictCount() {
