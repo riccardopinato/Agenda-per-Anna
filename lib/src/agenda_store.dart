@@ -18,7 +18,7 @@ class AgendaStore extends ChangeNotifier {
   static const _privacyGuardKey = 'privacy_guard_v1';
   static const _backupFormat = 'agenda_per_anna_backup';
   static const _backupSchemaVersion = 1;
-  static const _appVersion = '0.20.1';
+  static const _appVersion = '0.21.0';
 
   final List<AgendaItem> items = [];
   final Map<String, DayJournal> journals = {};
@@ -736,7 +736,7 @@ class AgendaStore extends ChangeNotifier {
 
     final root = Map<String, dynamic>.from(decoded);
     if (root['format'] != _backupFormat) {
-      throw const FormatException('Questo file non appartiene ad Agenda per Anna.');
+      throw const FormatException('Questo file non appartiene ad Anna's Diary.');
     }
 
     final schema = root['schemaVersion'];
@@ -990,7 +990,7 @@ class AgendaStore extends ChangeNotifier {
     final buffer = StringBuffer();
     final now = DateTime.now();
 
-    buffer.writeln('AGENDA PER ANNA');
+    buffer.writeln('ANNA\'S DIARY');
     buffer.writeln('Esportazione del ${DateFormat('d MMMM yyyy, HH:mm', 'it_IT').format(now)}');
     buffer.writeln();
     buffer.writeln('============================================================');
