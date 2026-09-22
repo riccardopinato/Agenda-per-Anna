@@ -47,55 +47,86 @@ class NotificationService {
     return payload;
   }
 
-  Future<void> initialize() async {
-    if (_initialized || !_available) return;
-
-    tz_data.initializeTimeZones();
-
-    try {
-      final info = await FlutterTimezone.getLocalTimezone();
-      tz.setLocalLocation(tz.getLocation(info.identifier));
-    } catch (_) {
-      // TZDateTime.from() continua a rispettare l'istante del DateTime anche
-      // se il device non espone un timezone IANA valido.
-    }
-
-    const android = AndroidInitializationSettings('notification_icon');
+  Future<bool> _initializePlugin(
+    AndroidInitializationSettings android,
+  ) async {
     const darwin = DarwinInitializationSettings(
       requestAlertPermission: false,
       requestBadgePermission: false,
       requestSoundPermission: false,
     );
 
-    const settings = InitializationSettings(
+    final settings = InitializationSettings(
       android: android,
       iOS: darwin,
       macOS: darwin,
     );
 
-    try {
-      final launchDetails = await _plugin.getNotificationAppLaunchDetails();
-      if (launchDetails?.didNotificationLaunchApp == true) {
-        final payload = launchDetails?.notificationResponse?.payload?.trim();
+    final launchDetails = await _plugin.getNotificationAppLaunchDetails();
+    if (launchDetails?.didNotificationLaunchApp == true) {
+      final payload = launchDetails?.notificationResponse?.payload?.trim();
+      if (payload != null && payload.isNotEmpty) {
+        _initialPayload = payload;
+      }
+    }
+
+    final initialized = await _plugin.initialize(
+      settings: settings,
+      onDidReceiveNotificationResponse: (response) {
+        final payload = response.payload?.trim();
         if (payload != null && payload.isNotEmpty) {
-          _initialPayload = payload;
+          _tapController.add(payload);
         }
-      }
+      },
+    );
+    return initialized != false;
+  }
 
-      final initialized = await _plugin.initialize(
-        settings: settings,
-        onDidReceiveNotificationResponse: (response) {
-          final payload = response.payload?.trim();
-          if (payload != null && payload.isNotEmpty) {
-            _tapController.add(payload);
-          }
-        },
+  Future<void> initialize({bool force = false}) async {
+    if (_initialized && !force) return;
+
+    _available = true;
+    tz_data.initializeTimeZones();
+
+    try {
+      final info = await FlutterTimezone.getLocalTimezone();
+      tz.setLocalLocation(tz.getLocation(info.identifier));
+    } catch (_) {
+      // La schedulazione continua comunque a funzionare con il timezone locale
+      // disponibile al runtime.
+    }
+
+    var initialized = false;
+    try {
+      initialized = await _initializePlugin(
+        const AndroidInitializationSettings('notification_icon'),
       );
-      if (initialized == false) {
-        _available = false;
-        return;
-      }
+    } catch (_) {
+      initialized = false;
+    }
 
+    if (!initialized &&
+        !kIsWeb &&
+        defaultTargetPlatform == TargetPlatform.android) {
+      try {
+        initialized = await _initializePlugin(
+          const AndroidInitializationSettings('@mipmap/ic_launcher'),
+        );
+      } catch (_) {
+        initialized = false;
+      }
+    }
+
+    if (!initialized) {
+      _initialized = false;
+      _available = false;
+      return;
+    }
+
+    _initialized = true;
+    _available = true;
+
+    try {
       final androidPlugin = _plugin.resolvePlatformSpecificImplementation<
           AndroidFlutterLocalNotificationsPlugin>();
 
@@ -124,10 +155,9 @@ class NotificationService {
           showBadge: true,
         ),
       );
-
-      _initialized = true;
     } catch (_) {
-      _available = false;
+      // La creazione/lettura di un singolo canale non deve disabilitare
+      // l'intero servizio. Android può ricrearlo al primo show().
     }
   }
 
@@ -185,7 +215,7 @@ class NotificationService {
   }
 
   Future<NotificationHealth> health() async {
-    await initialize();
+    await initialize(force: !_initialized || !_available);
     if (!_available) {
       return const NotificationHealth(
         available: false,
@@ -221,16 +251,20 @@ class NotificationService {
   }
 
   Future<void> openSystemSettings() async {
-    await initialize();
-    if (!_available) return;
+    await initialize(force: !_initialized || !_available);
     try {
       await _plugin.openAppNotificationSettings();
-    } catch (_) {}
+    } catch (_) {
+      // Non bloccare la UI: alcuni OEM possono rifiutare temporaneamente
+      // l'intent delle impostazioni.
+    }
   }
 
   Future<void> showTestNotification() async {
-    await initialize();
-    if (!_available) return;
+    await initialize(force: !_initialized || !_available);
+    if (!_available) {
+      throw StateError('notification_service_unavailable');
+    }
     await requestPermissions();
 
     await _plugin.show(
