@@ -7,6 +7,8 @@ RUN rm -rf /tmp/agenda_base && \
     flutter create --project-name agenda_per_anna --org com.riccardopinato --platforms=web /tmp/agenda_base && \
     cp -R /tmp/agenda_base/web . && \
     cp web_manifest.json web/manifest.json && \
+    sed -i "s#<title>agenda_per_anna</title>#<title>Anna's Diary</title>#g" web/index.html && \
+    sed -i "s#content=\"agenda_per_anna\"#content=\"Anna's Diary\"#g" web/index.html && \
     mkdir -p assets/icon && \
     base64 -d assets/icon/app_icon.b64 > assets/icon/app_icon.jpg && \
     sed -i 's#assets/icon/app_icon.png#assets/icon/app_icon.jpg#g' pubspec.yaml && \
