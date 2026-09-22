@@ -13,6 +13,7 @@ jobs:
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
+          flutter-version: "3.47.5"
           channel: stable
           cache: true
 
@@ -118,6 +119,12 @@ jobs:
               'android:label="agenda_per_anna"',
               'android:label="Anna\'s Diary"',
           )
+          if 'android:allowBackup=' not in m:
+              m = m.replace(
+                  '<application',
+                  '<application android:allowBackup="false"',
+                  1,
+              )
           manifest.write_text(m)
 
           drawable = Path("android/app/src/main/res/drawable")
@@ -169,36 +176,61 @@ jobs:
           plist.write_text(ptext)
           PY
 
-      - name: Restore project signing keystore
+      - name: Restore stable sideload signing key
         uses: actions/cache@v5
         with:
           path: .signing/agenda-debug.jks
           key: agenda-per-anna-project-signing-v1
 
-      - name: Create project signing keystore if missing
+      - name: Configure release signing
+        env:
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
         run: |
           mkdir -p .signing
-          if [ ! -f .signing/agenda-debug.jks ]; then
-            keytool -genkeypair -v               -keystore .signing/agenda-debug.jks               -storepass android               -keypass android               -alias androiddebugkey               -keyalg RSA               -keysize 2048               -validity 10000               -dname "CN=Android Debug,O=Android,C=US"
+
+          if [ -n "$ANDROID_KEYSTORE_BASE64" ] &&              [ -n "$ANDROID_KEYSTORE_PASSWORD" ] &&              [ -n "$ANDROID_KEY_ALIAS" ] &&              [ -n "$ANDROID_KEY_PASSWORD" ]; then
+            echo "$ANDROID_KEYSTORE_BASE64" | base64 -d > .signing/agenda-release.jks
+            SIGNING_FILE="agenda-release.jks"
+            SIGNING_STORE_PASSWORD="$ANDROID_KEYSTORE_PASSWORD"
+            SIGNING_ALIAS="$ANDROID_KEY_ALIAS"
+            SIGNING_KEY_PASSWORD="$ANDROID_KEY_PASSWORD"
+            echo "Using production signing credentials from GitHub Secrets."
+          else
+            if [ ! -f .signing/agenda-debug.jks ]; then
+              keytool -genkeypair -v                 -keystore .signing/agenda-debug.jks                 -storepass android                 -keypass android                 -alias androiddebugkey                 -keyalg RSA                 -keysize 2048                 -validity 10000                 -dname "CN=Anna's Diary Sideload,O=Riccardo,C=IT"
+            fi
+            SIGNING_FILE="agenda-debug.jks"
+            SIGNING_STORE_PASSWORD="android"
+            SIGNING_ALIAS="androiddebugkey"
+            SIGNING_KEY_PASSWORD="android"
+            echo "::warning::Production signing secrets are not configured; using the stable sideload key for update compatibility."
           fi
 
-      - name: Configure project release signing
-        run: |
+          export SIGNING_FILE SIGNING_STORE_PASSWORD SIGNING_ALIAS SIGNING_KEY_PASSWORD
+
           python3 - <<'PY'
+          import os
           from pathlib import Path
 
           p = Path("android/app/build.gradle.kts")
           s = p.read_text()
+          signing_file = os.environ["SIGNING_FILE"]
+          store_password = os.environ["SIGNING_STORE_PASSWORD"]
+          alias = os.environ["SIGNING_ALIAS"]
+          key_password = os.environ["SIGNING_KEY_PASSWORD"]
 
-          block = '''
-              signingConfigs {
-                  create("agendaStable") {
-                      storeFile = file("../../.signing/agenda-debug.jks")
-                      storePassword = "android"
-                      keyAlias = "androiddebugkey"
-                      keyPassword = "android"
-                  }
-              }
+          block = f'''
+              signingConfigs {{
+                  create("agendaStable") {{
+                      storeFile = file("../../.signing/{signing_file}")
+                      storePassword = "{store_password}"
+                      keyAlias = "{alias}"
+                      keyPassword = "{key_password}"
+                  }}
+              }}
           '''
 
           marker = "    buildTypes {"
@@ -211,7 +243,6 @@ jobs:
               'signingConfig = signingConfigs.getByName("debug")',
               'signingConfig = signingConfigs.getByName("agendaStable")'
           )
-
           p.write_text(s)
           PY
 
@@ -270,9 +301,3 @@ jobs:
           name: annas-diary-apk
           path: build/app/outputs/flutter-apk/*.apk
 
-      - name: Upload signing key backup
-        uses: actions/upload-artifact@v4
-        with:
-          name: agenda-per-anna-signing-keystore
-          path: .signing/agenda-debug.jks
-          retention-days: 90
