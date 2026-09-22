@@ -402,6 +402,132 @@ class DiaryContentCard extends StatelessWidget {
   }
 }
 
+class DiaryZoomableImage extends StatelessWidget {
+  final Uint8List? bytes;
+  final bool loading;
+
+  const DiaryZoomableImage({
+    super.key,
+    required this.bytes,
+    this.loading = false,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    if (loading) {
+      return const Center(child: CircularProgressIndicator());
+    }
+    final data = bytes;
+    if (data == null || data.isEmpty) {
+      return const Center(
+        child: Icon(
+          Icons.broken_image_outlined,
+          color: Colors.white70,
+          size: 64,
+        ),
+      );
+    }
+    return InteractiveViewer(
+      minScale: 0.75,
+      maxScale: 6,
+      child: Center(
+        child: Image.memory(
+          data,
+          fit: BoxFit.contain,
+          errorBuilder: (_, __, ___) => const Icon(
+            Icons.broken_image_outlined,
+            color: Colors.white70,
+            size: 64,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class DiaryPhotoViewerShell extends StatelessWidget {
+  final String title;
+  final Widget image;
+  final String caption;
+  final List<Widget> metadata;
+  final List<Widget> actions;
+
+  const DiaryPhotoViewerShell({
+    super.key,
+    required this.title,
+    required this.image,
+    this.caption = '',
+    this.metadata = const [],
+    this.actions = const [],
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.black,
+      appBar: AppBar(
+        backgroundColor: Colors.black,
+        foregroundColor: Colors.white,
+        title: Text(
+          title,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+        ),
+      ),
+      body: SafeArea(
+        child: Column(
+          children: [
+            Expanded(child: image),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
+              decoration: const BoxDecoration(
+                color: Colors.black,
+                border: Border(
+                  top: BorderSide(color: Colors.white12),
+                ),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  if (caption.trim().isNotEmpty) ...[
+                    Text(
+                      caption.trim(),
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 16,
+                        height: 1.3,
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                  ],
+                  for (var i = 0; i < metadata.length; i++) ...[
+                    metadata[i],
+                    if (i < metadata.length - 1) const SizedBox(height: 4),
+                  ],
+                  if (actions.isNotEmpty) ...[
+                    if (metadata.isNotEmpty || caption.trim().isNotEmpty)
+                      const SizedBox(height: 12),
+                    Row(
+                      children: [
+                        for (var i = 0; i < actions.length; i++) ...[
+                          Expanded(child: actions[i]),
+                          if (i < actions.length - 1)
+                            const SizedBox(width: 8),
+                        ],
+                      ],
+                    ),
+                  ],
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 class DiaryMemoryCard extends StatefulWidget {
   final AgendaStore store;
   final DateTime date;
