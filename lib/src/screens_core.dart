@@ -817,6 +817,12 @@ class _TodayWellbeingCard extends StatelessWidget {
                       '$gratitudeCount/3 cose belle',
                       style: Theme.of(context).textTheme.bodySmall,
                     ),
+                    Text(
+                      journal.blocks.isEmpty
+                          ? 'Nessun ricordo'
+                          : '${journal.blocks.length} ricordi',
+                      style: Theme.of(context).textTheme.bodySmall,
+                    ),
                   ],
                 ),
               ],
