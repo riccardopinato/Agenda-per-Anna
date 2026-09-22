@@ -1322,6 +1322,8 @@ class AgendaStore extends ChangeNotifier {
       return;
     }
 
+    await flushSharedMediaUploads();
+    await flushSharedInteractionOperations();
     await flushSharedPendingOperations();
     await syncCloud(
       preferRemoteOnFirstSync: preferRemoteOnFirstSync,
@@ -1335,6 +1337,8 @@ class AgendaStore extends ChangeNotifier {
 
     await refreshSharedAgendaCache(pullRemote: true);
     await refreshPendingSharedCount();
+    await refreshPendingSharedInteractionCount();
+    await refreshPendingSharedMediaCount();
   }
 
   Future<void> syncCloud({
