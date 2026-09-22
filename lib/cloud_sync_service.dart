@@ -839,6 +839,35 @@ class CloudSyncService extends ChangeNotifier {
         .eq('user_id', uid)
         .eq('token', token);
   }
+  Future<bool> isPushDeviceRegistered(String token) async {
+    final client = _requireSignedInClient();
+    final uid = userId!;
+    final response = await client
+        .from('push_devices')
+        .select('token')
+        .eq('user_id', uid)
+        .eq('token', token)
+        .limit(1);
+    return (response as List).isNotEmpty;
+  }
+
+  Future<Map<String, dynamic>> sendPushSelfTest({
+    required String eventId,
+  }) async {
+    final client = _requireSignedInClient();
+    final response = await client.functions.invoke(
+      'send-shared-push',
+      body: {
+        'event_id': eventId,
+        'action': 'self_test',
+      },
+    );
+    final data = response.data;
+    return data is Map
+        ? Map<String, dynamic>.from(data)
+        : <String, dynamic>{};
+  }
+
 
   Future<List<SharedEntryComment>> listSharedEntryComments(
     String spaceId,
@@ -902,18 +931,26 @@ class CloudSyncService extends ChangeNotifier {
     required String entryId,
     required String authorName,
     required String body,
+    String? commentId,
   }) async {
     final client = _requireSignedInClient();
     final uid = userId!;
+    final payload = <String, dynamic>{
+      if (commentId != null && commentId.trim().isNotEmpty)
+        'id': commentId.trim(),
+      'space_id': spaceId,
+      'entry_id': entryId,
+      'user_id': uid,
+      'author_name': authorName.trim(),
+      'body': body.trim(),
+      'updated_at': DateTime.now().toUtc().toIso8601String(),
+    };
     final response = await client
         .from('shared_entry_comments')
-        .insert({
-          'space_id': spaceId,
-          'entry_id': entryId,
-          'user_id': uid,
-          'author_name': authorName.trim(),
-          'body': body.trim(),
-        })
+        .upsert(
+          payload,
+          onConflict: 'id',
+        )
         .select(
           'id,space_id,entry_id,user_id,author_name,body,created_at,updated_at',
         )
