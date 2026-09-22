@@ -2273,8 +2273,8 @@ class _DiarySketchbookScreenState extends State<DiarySketchbookScreen> {
             painter: DiarySketchPainter(
               page: currentPage,
               activeStroke: activeStroke,
-              selectedStrokeIndices: selectedStrokeIndices,
-              lassoPoints: lassoPoints,
+              selectedStrokeIndices: Set<int>.of(selectedStrokeIndices),
+              lassoPoints: List<DiarySketchPoint>.of(lassoPoints),
             ),
             child: const SizedBox.expand(),
           ),
@@ -2913,5 +2913,13 @@ class DiarySketchPainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(covariant DiarySketchPainter oldDelegate) => true;
+  bool shouldRepaint(covariant DiarySketchPainter oldDelegate) {
+    return oldDelegate.page != page ||
+        oldDelegate.activeStroke != activeStroke ||
+        !setEquals(
+          oldDelegate.selectedStrokeIndices,
+          selectedStrokeIndices,
+        ) ||
+        !listEquals(oldDelegate.lassoPoints, lassoPoints);
+  }
 }
