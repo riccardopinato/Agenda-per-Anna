@@ -318,6 +318,18 @@ class HomeScreen extends StatelessWidget {
                   ),
                 ],
               ),
+              const SizedBox(height: 12),
+              NavigationCard(
+                icon: Icons.photo_library_outlined,
+                title: 'I miei ricordi',
+                subtitle: 'Note, foto e sketch del diario',
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => DiaryMemoriesScreen(store: store),
+                  ),
+                ),
+              ),
             ],
           ),
         );
@@ -353,6 +365,14 @@ Future<void> _showQuickCapture(
           ),
           ListTile(
             leading: const CircleAvatar(
+              child: Icon(Icons.auto_stories_outlined),
+            ),
+            title: const Text('Diario di oggi'),
+            subtitle: const Text('Aggiungi una nota, una foto o uno sketch.'),
+            onTap: () => Navigator.pop(sheetContext, 'diary'),
+          ),
+          ListTile(
+            leading: const CircleAvatar(
               child: Icon(Icons.check_circle_outline),
             ),
             title: const Text('Attività'),
@@ -373,6 +393,19 @@ Future<void> _showQuickCapture(
   );
 
   if (!context.mounted || action == null) return;
+
+  if (action == 'diary') {
+    await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => PlannerScreen(
+          store: store,
+          initialDate: DateTime.now(),
+        ),
+      ),
+    );
+    return;
+  }
 
   if (action == 'note') {
     final controller = TextEditingController();
