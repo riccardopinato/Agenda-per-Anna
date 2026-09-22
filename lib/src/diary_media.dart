@@ -145,16 +145,16 @@ class _DiaryMemoryCardState extends State<DiaryMemoryCard> {
       captionController.dispose();
       if (caption == null) return;
 
-      final blocks = [...widget.store.journal(widget.date).blocks]
-        ..add(
-          DiaryBlock(
-            id: const Uuid().v4(),
-            type: DiaryBlockType.photo,
-            createdAt: DateTime.now(),
-            text: caption,
-            imageBase64: base64Encode(compressed),
-          ),
-        );
+      final blocks = [
+        ...widget.store.journal(widget.date).blocks,
+        DiaryBlock(
+          id: const Uuid().v4(),
+          type: DiaryBlockType.photo,
+          createdAt: DateTime.now(),
+          text: caption,
+          imageBase64: base64Encode(compressed),
+        ),
+      ];
       await _saveBlocks(blocks);
     } catch (_) {
       if (!mounted) return;
