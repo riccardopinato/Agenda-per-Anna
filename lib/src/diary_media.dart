@@ -578,129 +578,50 @@ class _DiaryMemoryCardState extends State<DiaryMemoryCard> {
 
     switch (block.type) {
       case DiaryBlockType.note:
-        return Card(
-          margin: const EdgeInsets.only(bottom: 9),
-          child: ListTile(
-            leading: const CircleAvatar(
-              child: Icon(Icons.sticky_note_2_outlined),
-            ),
-            title: Text(
-              block.text,
-              maxLines: 4,
-              overflow: TextOverflow.ellipsis,
-            ),
-            subtitle: Text('Nota · $time'),
-            onTap: () => _addNote(block),
-            trailing: IconButton(
-              tooltip: 'Elimina',
-              onPressed: () => _delete(block),
-              icon: const Icon(Icons.delete_outline),
-            ),
-          ),
+        return DiaryContentCard(
+          kind: DiaryContentKind.note,
+          title: block.text,
+          subtitle: 'Nota · $time',
+          onOpen: () => _addNote(block),
+          onEdit: () => _addNote(block),
+          onDelete: () => _delete(block),
         );
       case DiaryBlockType.photo:
-        return Card(
-          margin: const EdgeInsets.only(bottom: 9),
-          clipBehavior: Clip.antiAlias,
-          child: InkWell(
-            onTap: () => _openPhoto(block),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                if (block.imageBase64.isNotEmpty)
-                  AspectRatio(
-                    aspectRatio: 16 / 10,
-                    child: Image.memory(
-                      base64Decode(block.imageBase64),
-                      fit: BoxFit.cover,
-                      cacheWidth: 720,
-                      errorBuilder: (_, __, ___) => const Center(
-                        child: Icon(Icons.broken_image_outlined),
-                      ),
-                    ),
-                  ),
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(14, 10, 4, 8),
-                  child: Row(
-                    children: [
-                      const Icon(Icons.photo_outlined, size: 19),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Text(
-                          block.text.trim().isEmpty
-                              ? 'Foto del giorno · $time'
-                              : block.text,
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                      PopupMenuButton<String>(
-                        tooltip: 'Azioni foto',
-                        onSelected: (value) {
-                          if (value == 'caption') {
-                            _editPhotoCaption(block);
-                          } else if (value == 'replace') {
-                            _replacePhoto(block);
-                          } else if (value == 'delete') {
-                            _delete(block);
-                          }
-                        },
-                        itemBuilder: (_) => const [
-                          PopupMenuItem(
-                            value: 'caption',
-                            child: Text('Modifica didascalia'),
-                          ),
-                          PopupMenuItem(
-                            value: 'replace',
-                            child: Text('Sostituisci foto'),
-                          ),
-                          PopupMenuItem(
-                            value: 'delete',
-                            child: Text('Elimina'),
-                          ),
-                        ],
-                      ),
-                    ],
+        return DiaryContentCard(
+          kind: DiaryContentKind.photo,
+          title: block.text.trim().isEmpty
+              ? 'Foto del giorno'
+              : block.text,
+          subtitle: 'Foto · $time',
+          preview: block.imageBase64.isEmpty
+              ? null
+              : Image.memory(
+                  base64Decode(block.imageBase64),
+                  fit: BoxFit.cover,
+                  cacheWidth: 720,
+                  errorBuilder: (_, __, ___) => const Center(
+                    child: Icon(Icons.broken_image_outlined),
                   ),
                 ),
-              ],
-            ),
-          ),
+          onOpen: () => _openPhoto(block),
+          onEditCaption: () => _editPhotoCaption(block),
+          onReplacePhoto: () => _replacePhoto(block),
+          onDelete: () => _delete(block),
         );
       case DiaryBlockType.sketch:
         final page = block.pages.isEmpty
             ? DiarySketchPage(id: block.id)
             : block.pages.first;
-        return Card(
-          margin: const EdgeInsets.only(bottom: 9),
-          clipBehavior: Clip.antiAlias,
-          child: InkWell(
-            onTap: () => _openSketch(block),
-            child: Column(
-              children: [
-                AspectRatio(
-                  aspectRatio: 16 / 10,
-                  child: DiarySketchPagePreview(page: page),
-                ),
-                ListTile(
-                  leading: const CircleAvatar(
-                    child: Icon(Icons.draw_outlined),
-                  ),
-                  title: Text(
-                    block.pages.length <= 1
-                        ? 'Sketch'
-                        : 'Sketch · ${block.pages.length} pagine',
-                  ),
-                  subtitle: Text(time),
-                  trailing: IconButton(
-                    tooltip: 'Elimina',
-                    onPressed: () => _delete(block),
-                    icon: const Icon(Icons.delete_outline),
-                  ),
-                ),
-              ],
-            ),
-          ),
+        return DiaryContentCard(
+          kind: DiaryContentKind.sketch,
+          title: block.pages.length <= 1
+              ? 'Sketch'
+              : 'Sketch · ${block.pages.length} pagine',
+          subtitle: 'Sketch · $time',
+          preview: DiarySketchPagePreview(page: page),
+          onOpen: () => _openSketch(block),
+          onEdit: () => _openSketch(block),
+          onDelete: () => _delete(block),
         );
     }
   }
@@ -709,76 +630,26 @@ class _DiaryMemoryCardState extends State<DiaryMemoryCard> {
   Widget build(BuildContext context) {
     final blocks = _blocks;
 
-    return SimpleCard(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              const Expanded(
-                child: Text(
-                  'Il mio diario',
-                  style: TextStyle(fontWeight: FontWeight.w900, fontSize: 18),
-                ),
-              ),
-              TextButton.icon(
-                onPressed: () => Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => DiaryMemoriesScreen(
-                      store: widget.store,
-                    ),
-                  ),
-                ),
-                icon: const Icon(Icons.photo_library_outlined, size: 18),
-                label: const Text('Ricordi'),
-              ),
-            ],
-          ),
-          const SizedBox(height: 4),
-          Text(
-            'Note, sketch e foto restano personali. Le foto vengono compresse in una copia leggera per diario e sync.',
-            style: Theme.of(context).textTheme.bodySmall,
-          ),
-          const SizedBox(height: 12),
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: [
-              FilledButton.tonalIcon(
-                onPressed: () => _addNote(),
-                icon: const Icon(Icons.sticky_note_2_outlined),
-                label: const Text('Nota'),
-              ),
-              FilledButton.tonalIcon(
-                onPressed: () => _openSketch(),
-                icon: const Icon(Icons.draw_outlined),
-                label: const Text('Sketch'),
-              ),
-              FilledButton.tonalIcon(
-                onPressed: photoBusy ? null : _addPhoto,
-                icon: photoBusy
-                    ? const SizedBox(
-                        width: 18,
-                        height: 18,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      )
-                    : const Icon(Icons.add_photo_alternate_outlined),
-                label: const Text('Foto'),
-              ),
-            ],
-          ),
-          if (blocks.isEmpty) ...[
-            const SizedBox(height: 14),
-            const Text(
-              'Qui puoi costruire la giornata come una pagina di diario, un ricordo alla volta.',
-            ),
-          ] else ...[
-            const SizedBox(height: 14),
-            ...blocks.map((block) => _blockCard(context, block)),
-          ],
-        ],
+    return DiaryComposerSection(
+      title: 'Il mio diario',
+      subtitle:
+          'Note, sketch e foto restano personali. Gli stessi strumenti sono disponibili anche in Noi ♡.',
+      memoriesLabel: 'Ricordi',
+      emptyText:
+          'Qui puoi costruire la giornata come una pagina di diario, un ricordo alla volta.',
+      onMemories: () => Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => DiaryMemoriesScreen(store: widget.store),
+        ),
       ),
+      onAddNote: () => _addNote(),
+      onAddSketch: () => _openSketch(),
+      onAddPhoto: _addPhoto,
+      photoBusy: photoBusy,
+      children: blocks
+          .map((block) => _blockCard(context, block))
+          .toList(growable: false),
     );
   }
 }
