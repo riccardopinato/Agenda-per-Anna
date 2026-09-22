@@ -696,6 +696,7 @@ class CloudSyncService extends ChangeNotifier {
     required String spaceId,
     required String listenerKey,
     required VoidCallback onChanged,
+    ValueChanged<String?>? onUpdatedBy,
     ValueChanged<bool>? onConnectionChanged,
   }) {
     final client = _requireSignedInClient();
@@ -717,7 +718,12 @@ class CloudSyncService extends ChangeNotifier {
             column: 'space_id',
             value: spaceId,
           ),
-          callback: (_) => onChanged(),
+          callback: (payload) {
+            final updatedBy = payload.newRecord['updated_by']?.toString() ??
+                payload.oldRecord['updated_by']?.toString();
+            onUpdatedBy?.call(updatedBy);
+            onChanged();
+          },
         )
         .subscribe((status, _) {
           onConnectionChanged?.call(
