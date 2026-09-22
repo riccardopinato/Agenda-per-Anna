@@ -18,7 +18,7 @@ class AgendaStore extends ChangeNotifier {
   static const _privacyGuardKey = 'privacy_guard_v1';
   static const _backupFormat = 'agenda_per_anna_backup';
   static const _backupSchemaVersion = 1;
-  static const _appVersion = '0.21.1';
+  static const _appVersion = '0.22.0';
 
   final List<AgendaItem> items = [];
   final Map<String, DayJournal> journals = {};
@@ -1856,16 +1856,19 @@ class AgendaStore extends ChangeNotifier {
         spaceId: space.id,
         listenerKey: 'unified-agenda',
         onUpdatedBy: (updatedBy) {
-          if (updatedBy != null && updatedBy != cloud.userId) {
+          if (updatedBy != null &&
+              updatedBy != cloud.userId &&
+              !PushNotificationService.instance.remotePushActive) {
+            // FCM is the primary unread source when a registered remote token
+            // is active. Realtime remains the fallback when push is unavailable,
+            // avoiding duplicate unread increments and duplicate notifications.
             unawaited(markSharedSpaceUnread(space.id));
-            if (!PushNotificationService.instance.remotePushActive) {
-              unawaited(
-                NotificationService.instance.showSharedUpdate(
-                  spaceId: space.id,
-                  spaceName: space.name,
-                ),
-              );
-            }
+            unawaited(
+              NotificationService.instance.showSharedUpdate(
+                spaceId: space.id,
+                spaceName: space.name,
+              ),
+            );
           }
         },
         onChanged: () {
