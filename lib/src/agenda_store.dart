@@ -78,17 +78,17 @@ class AgendaStore extends ChangeNotifier {
         for (final entry
             in _sharedAgendaEntriesBySpace[space.id] ?? const <SharedEntry>[]) {
           if (entry.type != SharedEntryType.appointment &&
-            entry.type != SharedEntryType.task) {
-          continue;
-        }
+              entry.type != SharedEntryType.task) {
+            continue;
+          }
           result.add(UnifiedAgendaEntry.shared(entry, space));
         }
       }
     }
     result.sort((a, b) {
-      final byDate = a.date.compareTo(b.date);
+      final byDate = b.date.compareTo(a.date);
       if (byDate != 0) return byDate;
-      return a.sortMinutes.compareTo(b.sortMinutes);
+      return _compareUnifiedNewestFirst(a, b);
     });
     return List<UnifiedAgendaEntry>.unmodifiable(result);
   }
@@ -1650,7 +1650,10 @@ class AgendaStore extends ChangeNotifier {
     for (final space in _sharedAgendaSpaces.values) {
       for (final entry
           in _sharedAgendaEntriesBySpace[space.id] ?? const <SharedEntry>[]) {
-        if (entry.type == SharedEntryType.note) continue;
+        if (entry.type != SharedEntryType.appointment &&
+            entry.type != SharedEntryType.task) {
+          continue;
+        }
         final unified = UnifiedAgendaEntry.shared(entry, space);
         (_sharedAgendaDayIndex[dateKey(entry.date)] ??=
                 <UnifiedAgendaEntry>[])
@@ -2236,10 +2239,20 @@ class AgendaStore extends ChangeNotifier {
                 operation.updatedAt.toUtc().toIso8601String(),
                 operation.action.name,
               ].join(':');
+              var pushAction = operation.action.name;
+              final type = operation.payload?['type']?.toString();
+              if (operation.action == SharedPendingAction.upsert) {
+                if (type == SharedEntryType.photo.name) {
+                  pushAction = 'photo';
+                } else if (type == SharedEntryType.sketch.name) {
+                  pushAction = 'sketch';
+                }
+              }
               await cloud.sendSharedPush(
                 spaceId: currentSpaceId,
                 eventId: eventId,
-                action: operation.action.name,
+                action: pushAction,
+                entityId: operation.entityId,
               );
             } catch (_) {
               // Push is best-effort and must never requeue a synced change.
