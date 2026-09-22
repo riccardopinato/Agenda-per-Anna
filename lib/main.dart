@@ -17,6 +17,7 @@ import 'package:uuid/uuid.dart';
 import 'backup_service.dart';
 import 'cloud_sync_service.dart';
 import 'notification_service.dart';
+import 'push_notification_service.dart';
 
 part 'src/app_shell.dart';
 part 'src/domain_models.dart';
@@ -28,6 +29,7 @@ part 'src/widgets_editors.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  PushNotificationService.configureBackgroundHandling();
 
   try {
     await initializeDateFormatting('it_IT', null);
@@ -51,8 +53,9 @@ Future<void> main() async {
     try {
       await CloudSyncService.instance.initialize();
       await store.initializeCloudSync();
+      await PushNotificationService.instance.initialize();
     } catch (_) {
-      // Il cloud è opzionale: l'agenda deve restare pienamente offline.
+      // Cloud e push sono opzionali: l'agenda resta pienamente offline.
     }
   });
 }
