@@ -749,18 +749,31 @@ class _TodayWellbeingCard extends StatelessWidget {
         .length;
     final gratitudeCount = journal.gratitude.length.clamp(0, 3);
 
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [Color(0xFFFFF0F5), Color(0xFFF4F0FF)],
-        ),
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
         borderRadius: BorderRadius.circular(22),
-        border: Border.all(
-          color: Theme.of(context).colorScheme.outlineVariant,
+        onTap: () => Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => PlannerScreen(
+              store: store,
+              initialDate: date,
+            ),
+          ),
         ),
-      ),
-      child: Row(
+        child: Ink(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            gradient: const LinearGradient(
+              colors: [Color(0xFFFFF0F5), Color(0xFFF4F0FF)],
+            ),
+            borderRadius: BorderRadius.circular(22),
+            border: Border.all(
+              color: Theme.of(context).colorScheme.outlineVariant,
+            ),
+          ),
+          child: Row(
         children: [
           Container(
             width: 48,
@@ -810,10 +823,12 @@ class _TodayWellbeingCard extends StatelessWidget {
             ),
           ),
           Icon(
-            Icons.favorite_outline,
+            Icons.chevron_right,
             color: Theme.of(context).colorScheme.primary,
           ),
         ],
+          ),
+        ),
       ),
     );
   }
@@ -3075,9 +3090,26 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
     }
   }
 
-  List<SharedEntry> get _selectedEntries => entries
-      .where((entry) => AgendaStore.sameDay(entry.date, selected))
-      .toList();
+  List<SharedEntry> get _selectedEntries {
+    final selectedEntries = entries
+        .where((entry) => AgendaStore.sameDay(entry.date, selected))
+        .toList();
+    selectedEntries.sort((a, b) {
+      final aMinutes =
+          a.start == null ? -1 : a.start!.hour * 60 + a.start!.minute;
+      final bMinutes =
+          b.start == null ? -1 : b.start!.hour * 60 + b.start!.minute;
+      final time = bMinutes.compareTo(aMinutes);
+      if (time != 0) return time;
+
+      final aUpdated =
+          a.updatedAt ?? DateTime.fromMillisecondsSinceEpoch(0, isUtc: true);
+      final bUpdated =
+          b.updatedAt ?? DateTime.fromMillisecondsSinceEpoch(0, isUtc: true);
+      return bUpdated.compareTo(aUpdated);
+    });
+    return selectedEntries;
+  }
 
   String _editorLabel(SharedEntry entry) {
     final explicit = entry.editorName.trim();
