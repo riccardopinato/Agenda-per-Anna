@@ -239,7 +239,13 @@ class DiaryContentCard extends StatelessWidget {
               overflow: TextOverflow.ellipsis,
             ),
             onTap: onOpen,
-            trailing: statusIcon ??
+            trailing: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (statusIcon != null) ...[
+                  statusIcon!,
+                  const SizedBox(width: 2),
+                ],
                 PopupMenuButton<String>(
                   tooltip: 'Azioni ${kind.label.toLowerCase()}',
                   onSelected: (value) {
@@ -272,6 +278,8 @@ class DiaryContentCard extends StatelessWidget {
                     ),
                   ],
                 ),
+              ],
+            ),
           ),
           if (footer != null) ...[
             const Divider(height: 1),
