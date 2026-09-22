@@ -451,6 +451,7 @@ class DiaryPhotoViewerShell extends StatelessWidget {
   final String caption;
   final List<Widget> metadata;
   final List<Widget> actions;
+  final List<Widget> appBarActions;
 
   const DiaryPhotoViewerShell({
     super.key,
@@ -459,6 +460,7 @@ class DiaryPhotoViewerShell extends StatelessWidget {
     this.caption = '',
     this.metadata = const [],
     this.actions = const [],
+    this.appBarActions = const [],
   });
 
   @override
@@ -473,6 +475,7 @@ class DiaryPhotoViewerShell extends StatelessWidget {
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
         ),
+        actions: appBarActions,
       ),
       body: SafeArea(
         child: Column(
