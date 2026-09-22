@@ -2,8 +2,6 @@ name: Build Anna's Diary
 
 on:
   workflow_dispatch:
-  push:
-    branches: [main]
 
 jobs:
   build:
