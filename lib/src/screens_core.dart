@@ -4221,13 +4221,32 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
 
     try {
       if (owner) {
-        await CloudSyncService.instance.deleteSharedSpace(widget.space.id);
+        final cloud = CloudSyncService.instance;
+        for (final entry in entries) {
+          if (entry.type == SharedEntryType.photo &&
+              entry.mediaPath.isNotEmpty) {
+            try {
+              await cloud.deleteSharedMedia(entry.mediaPath);
+            } catch (_) {}
+          }
+        }
+        await cloud.deleteSharedSpace(widget.space.id);
       } else {
         await CloudSyncService.instance.leaveSharedSpace(widget.space.id);
       }
       final prefs = await SharedPreferences.getInstance();
       await prefs.remove(_cacheKey);
       await prefs.remove(_pendingKey);
+      await prefs.remove(_interactionCacheKey);
+      await prefs.remove(
+        widget.store.sharedInteractionPendingStorageKey(widget.space.id),
+      );
+      await prefs.remove(
+        widget.store.sharedMediaPendingStorageKey(widget.space.id),
+      );
+      await widget.store.refreshPendingSharedCount(notify: false);
+      await widget.store.refreshPendingSharedInteractionCount(notify: false);
+      await widget.store.refreshPendingSharedMediaCount(notify: false);
       await widget.store.refreshSharedAgendaCache(pullRemote: true);
       if (mounted) Navigator.pop(context);
     } catch (_) {
