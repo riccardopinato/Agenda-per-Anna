@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_timezone/flutter_timezone.dart';
@@ -32,8 +34,18 @@ class NotificationService {
   bool _initialized = false;
   bool _available = true;
   bool _permissionsRequested = false;
+  String? _initialPayload;
+  final StreamController<String> _tapController =
+      StreamController<String>.broadcast();
 
   bool get available => _available;
+  Stream<String> get notificationTapStream => _tapController.stream;
+
+  String? takeInitialPayload() {
+    final payload = _initialPayload;
+    _initialPayload = null;
+    return payload;
+  }
 
   Future<void> initialize() async {
     if (_initialized || !_available) return;
@@ -62,7 +74,23 @@ class NotificationService {
     );
 
     try {
-      final initialized = await _plugin.initialize(settings: settings);
+      final launchDetails = await _plugin.getNotificationAppLaunchDetails();
+      if (launchDetails?.didNotificationLaunchApp == true) {
+        final payload = launchDetails?.notificationResponse?.payload?.trim();
+        if (payload != null && payload.isNotEmpty) {
+          _initialPayload = payload;
+        }
+      }
+
+      final initialized = await _plugin.initialize(
+        settings: settings,
+        onDidReceiveNotificationResponse: (response) {
+          final payload = response.payload?.trim();
+          if (payload != null && payload.isNotEmpty) {
+            _tapController.add(payload);
+          }
+        },
+      );
       if (initialized == false) {
         _available = false;
         return;
