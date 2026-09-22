@@ -440,7 +440,17 @@ class HabitDefinition {
 
 enum DiaryBlockType { note, sketch, photo }
 
-enum DiarySketchTool { pen, highlighter, eraser, line, rectangle, ellipse }
+enum DiarySketchTool {
+  pen,
+  highlighter,
+  eraser,
+  line,
+  rectangle,
+  ellipse,
+  select,
+  lasso,
+  hand,
+}
 
 enum DiarySketchPaper { plain, ruled, grid, dots }
 
@@ -472,6 +482,16 @@ class DiarySketchStroke {
     required this.points,
   });
 
+  DiarySketchStroke copyWith({
+    List<DiarySketchPoint>? points,
+  }) =>
+      DiarySketchStroke(
+        tool: tool,
+        colorValue: colorValue,
+        width: width,
+        points: points ?? this.points,
+      );
+
   Map<String, dynamic> toJson() => {
         'tool': tool.name,
         'colorValue': colorValue,
@@ -498,31 +518,149 @@ class DiarySketchStroke {
       );
 }
 
+class DiarySketchTextElement {
+  final String id;
+  final String text;
+  final double x;
+  final double y;
+  final double fontSize;
+  final int colorValue;
+
+  const DiarySketchTextElement({
+    required this.id,
+    required this.text,
+    required this.x,
+    required this.y,
+    this.fontSize = 22,
+    this.colorValue = 0xFF222222,
+  });
+
+  DiarySketchTextElement copyWith({
+    String? text,
+    double? x,
+    double? y,
+    double? fontSize,
+    int? colorValue,
+  }) =>
+      DiarySketchTextElement(
+        id: id,
+        text: text ?? this.text,
+        x: x ?? this.x,
+        y: y ?? this.y,
+        fontSize: fontSize ?? this.fontSize,
+        colorValue: colorValue ?? this.colorValue,
+      );
+
+  Map<String, dynamic> toJson() => {
+        'id': id,
+        'text': text,
+        'x': x,
+        'y': y,
+        'fontSize': fontSize,
+        'colorValue': colorValue,
+      };
+
+  factory DiarySketchTextElement.fromJson(Map<String, dynamic> json) =>
+      DiarySketchTextElement(
+        id: json['id'] as String? ?? const Uuid().v4(),
+        text: json['text'] as String? ?? '',
+        x: (json['x'] as num? ?? 0.12).toDouble(),
+        y: (json['y'] as num? ?? 0.12).toDouble(),
+        fontSize: (json['fontSize'] as num? ?? 22).toDouble(),
+        colorValue: json['colorValue'] as int? ?? 0xFF222222,
+      );
+}
+
+class DiarySketchImageElement {
+  final String id;
+  final String imageBase64;
+  final double x;
+  final double y;
+  final double width;
+  final double height;
+
+  const DiarySketchImageElement({
+    required this.id,
+    required this.imageBase64,
+    required this.x,
+    required this.y,
+    this.width = 0.52,
+    this.height = 0.34,
+  });
+
+  DiarySketchImageElement copyWith({
+    String? imageBase64,
+    double? x,
+    double? y,
+    double? width,
+    double? height,
+  }) =>
+      DiarySketchImageElement(
+        id: id,
+        imageBase64: imageBase64 ?? this.imageBase64,
+        x: x ?? this.x,
+        y: y ?? this.y,
+        width: width ?? this.width,
+        height: height ?? this.height,
+      );
+
+  Map<String, dynamic> toJson() => {
+        'id': id,
+        'imageBase64': imageBase64,
+        'x': x,
+        'y': y,
+        'width': width,
+        'height': height,
+      };
+
+  factory DiarySketchImageElement.fromJson(Map<String, dynamic> json) =>
+      DiarySketchImageElement(
+        id: json['id'] as String? ?? const Uuid().v4(),
+        imageBase64: json['imageBase64'] as String? ?? '',
+        x: (json['x'] as num? ?? 0.12).toDouble(),
+        y: (json['y'] as num? ?? 0.12).toDouble(),
+        width: (json['width'] as num? ?? 0.52).toDouble(),
+        height: (json['height'] as num? ?? 0.34).toDouble(),
+      );
+}
+
 class DiarySketchPage {
   final String id;
   final DiarySketchPaper paper;
   final List<DiarySketchStroke> strokes;
+  final List<DiarySketchTextElement> textElements;
+  final List<DiarySketchImageElement> imageElements;
 
   const DiarySketchPage({
     required this.id,
     this.paper = DiarySketchPaper.plain,
     this.strokes = const [],
+    this.textElements = const [],
+    this.imageElements = const [],
   });
 
   DiarySketchPage copyWith({
     DiarySketchPaper? paper,
     List<DiarySketchStroke>? strokes,
+    List<DiarySketchTextElement>? textElements,
+    List<DiarySketchImageElement>? imageElements,
   }) =>
       DiarySketchPage(
         id: id,
         paper: paper ?? this.paper,
         strokes: strokes ?? this.strokes,
+        textElements: textElements ?? this.textElements,
+        imageElements: imageElements ?? this.imageElements,
       );
 
   Map<String, dynamic> toJson() => {
         'id': id,
         'paper': paper.name,
         'strokes': strokes.map((stroke) => stroke.toJson()).toList(),
+        'textElements':
+            textElements.map((element) => element.toJson()).toList(),
+        'imageElements':
+            imageElements.map((element) => element.toJson()).toList(),
       };
 
   factory DiarySketchPage.fromJson(Map<String, dynamic> json) =>
@@ -537,6 +675,22 @@ class DiarySketchPage {
             .map(
               (stroke) => DiarySketchStroke.fromJson(
                 Map<String, dynamic>.from(stroke),
+              ),
+            )
+            .toList(),
+        textElements: (json['textElements'] as List? ?? const [])
+            .whereType<Map>()
+            .map(
+              (element) => DiarySketchTextElement.fromJson(
+                Map<String, dynamic>.from(element),
+              ),
+            )
+            .toList(),
+        imageElements: (json['imageElements'] as List? ?? const [])
+            .whereType<Map>()
+            .map(
+              (element) => DiarySketchImageElement.fromJson(
+                Map<String, dynamic>.from(element),
               ),
             )
             .toList(),
