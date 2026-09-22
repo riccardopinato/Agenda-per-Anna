@@ -243,7 +243,6 @@ class AgendaItem {
   final String title;
   final String note;
   final DateTime date;
-  final DateTime? createdAt;
   final TimeOfDay? start;
   final TimeOfDay? end;
   final ItemType type;
@@ -272,7 +271,6 @@ class AgendaItem {
     String? title,
     String? note,
     DateTime? date,
-    DateTime? createdAt,
     TimeOfDay? start,
     TimeOfDay? end,
     ItemType? type,
