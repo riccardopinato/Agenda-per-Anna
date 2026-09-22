@@ -3841,43 +3841,13 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
 
 
   Future<void> _addSharedNote([SharedEntry? existing]) async {
-    final controller = TextEditingController(
-      text: existing?.note.isNotEmpty == true
+    final value = await showDiaryNoteEditor(
+      context,
+      initialText: existing?.note.isNotEmpty == true
           ? existing!.note
           : existing?.title ?? '',
+      editing: existing != null,
     );
-    final value = await showDialog<String>(
-      context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: Text(existing == null ? 'Nuova nota' : 'Modifica nota'),
-        content: TextField(
-          controller: controller,
-          autofocus: true,
-          minLines: 5,
-          maxLines: 12,
-          textCapitalization: TextCapitalization.sentences,
-          decoration: const InputDecoration(
-            hintText:
-                'Scrivi un ricordo, un pensiero, qualcosa da non dimenticare...',
-            border: OutlineInputBorder(),
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(dialogContext),
-            child: const Text('Annulla'),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.pop(
-              dialogContext,
-              controller.text.trim(),
-            ),
-            child: const Text('Salva'),
-          ),
-        ],
-      ),
-    );
-    controller.dispose();
     if (value == null || value.isEmpty) return;
 
     final compactTitle = value
@@ -3899,38 +3869,10 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
   }
 
   Future<void> _editSharedPhotoCaption(SharedEntry entry) async {
-    final controller = TextEditingController(text: entry.note);
-    final value = await showDialog<String>(
-      context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: const Text('Didascalia'),
-        content: TextField(
-          controller: controller,
-          autofocus: true,
-          minLines: 2,
-          maxLines: 5,
-          textCapitalization: TextCapitalization.sentences,
-          decoration: const InputDecoration(
-            hintText: 'Scrivi qualcosa su questo ricordo...',
-            border: OutlineInputBorder(),
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(dialogContext),
-            child: const Text('Annulla'),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.pop(
-              dialogContext,
-              controller.text.trim(),
-            ),
-            child: const Text('Salva'),
-          ),
-        ],
-      ),
+    final value = await showDiaryCaptionEditor(
+      context,
+      initialText: entry.note,
     );
-    controller.dispose();
     if (value == null) return;
     await _persistSharedEntry(entry.copyWith(note: value));
   }
@@ -3958,37 +3900,10 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
 
       String? caption = existing?.note;
       if (existing == null) {
-        final captionController = TextEditingController();
-        caption = await showDialog<String>(
-          context: context,
-          builder: (dialogContext) => AlertDialog(
-            title: const Text('Aggiungi al diario condiviso'),
-            content: TextField(
-              controller: captionController,
-              autofocus: true,
-              maxLines: 3,
-              textCapitalization: TextCapitalization.sentences,
-              decoration: const InputDecoration(
-                hintText: 'Una didascalia, se vuoi...',
-                border: OutlineInputBorder(),
-              ),
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(dialogContext, ''),
-                child: const Text('Senza testo'),
-              ),
-              FilledButton(
-                onPressed: () => Navigator.pop(
-                  dialogContext,
-                  captionController.text.trim(),
-                ),
-                child: const Text('Aggiungi'),
-              ),
-            ],
-          ),
+        caption = await showDiaryCaptionEditor(
+          context,
+          adding: true,
         );
-        captionController.dispose();
         if (caption == null) return;
       }
 
@@ -4286,24 +4201,30 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
   }
 
   Future<void> _delete(SharedEntry entry) async {
-    final confirmed = await showDialog<bool>(
-          context: context,
-          builder: (dialogContext) => AlertDialog(
-            title: const Text('Eliminare dallo spazio condiviso?'),
-            content: Text(entry.title),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(dialogContext, false),
-                child: const Text('Annulla'),
+    final isDiaryContent =
+        entry.type == SharedEntryType.note ||
+        entry.type == SharedEntryType.photo ||
+        entry.type == SharedEntryType.sketch;
+    final confirmed = isDiaryContent
+        ? await confirmDiaryContentDelete(context)
+        : await showDialog<bool>(
+              context: context,
+              builder: (dialogContext) => AlertDialog(
+                title: const Text('Eliminare dallo spazio condiviso?'),
+                content: Text(entry.title),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.pop(dialogContext, false),
+                    child: const Text('Annulla'),
+                  ),
+                  FilledButton(
+                    onPressed: () => Navigator.pop(dialogContext, true),
+                    child: const Text('Elimina'),
+                  ),
+                ],
               ),
-              FilledButton(
-                onPressed: () => Navigator.pop(dialogContext, true),
-                child: const Text('Elimina'),
-              ),
-            ],
-          ),
-        ) ??
-        false;
+            ) ??
+            false;
     if (!confirmed) return;
 
     final revision = DateTime.now().toUtc();
