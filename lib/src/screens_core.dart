@@ -2967,6 +2967,11 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
   Timer? _realtimeDebounce;
   int _seenConflictCount = 0;
   bool feedMode = true;
+  bool interactionsLoading = false;
+  Map<String, List<SharedEntryComment>> commentsByEntry = {};
+  Map<String, Set<String>> heartsByEntry = {};
+  Map<String, DateTime> memberReads = {};
+  Timer? _interactionDebounce;
 
   String get _cacheKey =>
       widget.store.sharedCacheStorageKey(widget.space.id);
@@ -2984,6 +2989,7 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
   @override
   void dispose() {
     _realtimeDebounce?.cancel();
+    _interactionDebounce?.cancel();
     unawaited(
       CloudSyncService.instance.unsubscribeSharedSpace(
         spaceId: widget.space.id,
@@ -3002,6 +3008,12 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
         _realtimeDebounce?.cancel();
         _realtimeDebounce = Timer(const Duration(milliseconds: 350), () {
           if (mounted) unawaited(_refresh(silent: true));
+        });
+      },
+      onInteractionsChanged: () {
+        _interactionDebounce?.cancel();
+        _interactionDebounce = Timer(const Duration(milliseconds: 250), () {
+          if (mounted) unawaited(_loadInteractions());
         });
       },
       onConnectionChanged: (connected) {
@@ -3118,6 +3130,8 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
       pendingIds = pending.map((operation) => operation.entityId).toSet();
       lastRefreshAt = DateTime.now();
       await _saveCache();
+      await cloud.markSharedSpaceSeen(widget.space.id);
+      await _loadInteractions();
       await widget.store.markSharedSpaceRead(widget.space.id);
     } catch (_) {
       if (!silent) {
@@ -3128,6 +3142,261 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
     } finally {
       if (mounted) setState(() => loading = false);
     }
+  }
+
+  Future<void> _loadInteractions() async {
+    final cloud = CloudSyncService.instance;
+    if (!cloud.signedIn) return;
+    if (mounted) setState(() => interactionsLoading = true);
+    try {
+      final comments =
+          await cloud.listSharedEntryComments(widget.space.id);
+      final reactions =
+          await cloud.listSharedEntryReactions(widget.space.id);
+      final reads =
+          await cloud.listSharedMemberReads(widget.space.id);
+
+      final nextComments = <String, List<SharedEntryComment>>{};
+      for (final comment in comments) {
+        nextComments.putIfAbsent(comment.entryId, () => []).add(comment);
+      }
+      final nextHearts = <String, Set<String>>{};
+      for (final reaction in reactions) {
+        if (reaction.kind != 'heart') continue;
+        nextHearts
+            .putIfAbsent(reaction.entryId, () => <String>{})
+            .add(reaction.userId);
+      }
+      final nextReads = <String, DateTime>{
+        for (final read in reads) read.userId: read.lastSeenAt,
+      };
+
+      if (!mounted) return;
+      setState(() {
+        commentsByEntry = nextComments;
+        heartsByEntry = nextHearts;
+        memberReads = nextReads;
+      });
+    } catch (_) {
+      // Interactions are supplementary; the shared agenda remains usable.
+    } finally {
+      if (mounted) setState(() => interactionsLoading = false);
+    }
+  }
+
+  String? _seenLabel(SharedEntry entry) {
+    final uid = CloudSyncService.instance.userId;
+    if (uid == null || entry.updatedBy != uid || entry.updatedAt == null) {
+      return null;
+    }
+    final seenCount = memberReads.entries
+        .where(
+          (read) =>
+              read.key != uid &&
+              !read.value.isBefore(entry.updatedAt!.toUtc()),
+        )
+        .length;
+    if (seenCount == 0) return null;
+    return seenCount == 1 ? 'Visto' : 'Visto da $seenCount';
+  }
+
+  Future<void> _toggleHeart(SharedEntry entry) async {
+    final cloud = CloudSyncService.instance;
+    final uid = cloud.userId;
+    if (!cloud.signedIn || uid == null) {
+      _message('Accedi al cloud per usare le reazioni.');
+      return;
+    }
+    final mine = heartsByEntry[entry.id]?.contains(uid) ?? false;
+    try {
+      await cloud.setSharedHeart(
+        spaceId: widget.space.id,
+        entryId: entry.id,
+        active: !mine,
+      );
+      await _loadInteractions();
+      if (!mine) {
+        unawaited(
+          cloud.sendSharedPush(
+            spaceId: widget.space.id,
+            eventId:
+                'reaction:${entry.id}:$uid:${DateTime.now().microsecondsSinceEpoch}',
+            action: 'reaction',
+            entityId: entry.id,
+          ),
+        );
+      }
+    } catch (_) {
+      _message('Reazione non salvata. Riprova.');
+    }
+  }
+
+  Future<void> _deleteComment(SharedEntryComment comment) async {
+    try {
+      await CloudSyncService.instance.deleteSharedEntryComment(comment.id);
+      await _loadInteractions();
+    } catch (_) {
+      _message('Commento non eliminato.');
+    }
+  }
+
+  Future<void> _openComments(SharedEntry entry) async {
+    if (!CloudSyncService.instance.signedIn) {
+      _message('Accedi al cloud per commentare.');
+      return;
+    }
+
+    final controller = TextEditingController();
+    await showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      showDragHandle: true,
+      builder: (sheetContext) => StatefulBuilder(
+        builder: (sheetContext, setSheetState) {
+          final comments =
+              commentsByEntry[entry.id] ?? const <SharedEntryComment>[];
+          final uid = CloudSyncService.instance.userId;
+          return Padding(
+            padding: EdgeInsets.fromLTRB(
+              16,
+              0,
+              16,
+              MediaQuery.viewInsetsOf(sheetContext).bottom + 16,
+            ),
+            child: SizedBox(
+              height: MediaQuery.sizeOf(sheetContext).height * 0.68,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    entry.title,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      fontWeight: FontWeight.w900,
+                      fontSize: 19,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    '${comments.length} commenti',
+                    style: Theme.of(sheetContext).textTheme.bodySmall,
+                  ),
+                  const SizedBox(height: 12),
+                  Expanded(
+                    child: comments.isEmpty
+                        ? const Center(
+                            child: Text(
+                              'Nessun commento. Scrivi il primo messaggio.',
+                            ),
+                          )
+                        : ListView.builder(
+                            itemCount: comments.length,
+                            itemBuilder: (context, index) {
+                              final comment = comments[index];
+                              final mine = comment.userId == uid;
+                              final author = mine
+                                  ? 'Tu'
+                                  : (comment.authorName.trim().isEmpty
+                                      ? 'L’altra persona'
+                                      : comment.authorName.trim());
+                              return ListTile(
+                                contentPadding: EdgeInsets.zero,
+                                leading: CircleAvatar(
+                                  child: Text(
+                                    author.characters.first.toUpperCase(),
+                                  ),
+                                ),
+                                title: Text(
+                                  author,
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.w800,
+                                  ),
+                                ),
+                                subtitle: Text(
+                                  '${comment.body}\n${DateFormat('d MMM · HH:mm', 'it_IT').format(comment.createdAt.toLocal())}',
+                                ),
+                                isThreeLine: true,
+                                trailing: mine
+                                    ? IconButton(
+                                        tooltip: 'Elimina commento',
+                                        onPressed: () async {
+                                          await _deleteComment(comment);
+                                          if (sheetContext.mounted) {
+                                            setSheetState(() {});
+                                          }
+                                        },
+                                        icon: const Icon(Icons.delete_outline),
+                                      )
+                                    : null,
+                              );
+                            },
+                          ),
+                  ),
+                  const Divider(),
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      Expanded(
+                        child: TextField(
+                          controller: controller,
+                          minLines: 1,
+                          maxLines: 4,
+                          maxLength: 500,
+                          textCapitalization: TextCapitalization.sentences,
+                          decoration: const InputDecoration(
+                            hintText: 'Scrivi un commento...',
+                            border: OutlineInputBorder(),
+                            counterText: '',
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      IconButton.filled(
+                        tooltip: 'Invia',
+                        onPressed: () async {
+                          final text = controller.text.trim();
+                          if (text.isEmpty) return;
+                          try {
+                            final cloud = CloudSyncService.instance;
+                            final comment = await cloud.addSharedEntryComment(
+                              spaceId: widget.space.id,
+                              entryId: entry.id,
+                              authorName: widget
+                                      .store.preferences.displayName.trim().isEmpty
+                                  ? 'Utente'
+                                  : widget.store.preferences.displayName.trim(),
+                              body: text,
+                            );
+                            controller.clear();
+                            await _loadInteractions();
+                            if (sheetContext.mounted) {
+                              setSheetState(() {});
+                            }
+                            unawaited(
+                              cloud.sendSharedPush(
+                                spaceId: widget.space.id,
+                                eventId: 'comment:${comment.id}',
+                                action: 'comment',
+                                entityId: entry.id,
+                              ),
+                            );
+                          } catch (_) {
+                            _message('Commento non inviato.');
+                          }
+                        },
+                        icon: const Icon(Icons.send_outlined),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          );
+        },
+      ),
+    );
+    controller.dispose();
   }
 
   List<SharedEntry> get _selectedEntries {
@@ -3397,6 +3666,11 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
   }) {
     final editor = _editorLabel(entry);
     final pending = pendingIds.contains(entry.id);
+    final uid = CloudSyncService.instance.userId;
+    final hearts = heartsByEntry[entry.id] ?? const <String>{};
+    final likedByMe = uid != null && hearts.contains(uid);
+    final comments = commentsByEntry[entry.id] ?? const <SharedEntryComment>[];
+    final seen = _seenLabel(entry);
     final details = <String>[
       if (showDate)
         _cap(DateFormat('EEE d MMM', 'it_IT').format(entry.date)),
@@ -3410,46 +3684,95 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
 
     return Card(
       margin: const EdgeInsets.only(bottom: 9),
-      child: ListTile(
-        leading: entry.type == SharedEntryType.task
-            ? Checkbox(
-                value: entry.done,
-                onChanged: (_) => _toggleDone(entry),
-              )
-            : CircleAvatar(
-                child: Icon(entry.type.icon),
+      child: Column(
+        children: [
+          ListTile(
+            leading: entry.type == SharedEntryType.task
+                ? Checkbox(
+                    value: entry.done,
+                    onChanged: (_) => _toggleDone(entry),
+                  )
+                : CircleAvatar(
+                    child: Icon(entry.type.icon),
+                  ),
+            title: Text(
+              entry.title,
+              style: TextStyle(
+                fontWeight: FontWeight.w800,
+                decoration: entry.done ? TextDecoration.lineThrough : null,
               ),
-        title: Text(
-          entry.title,
-          style: TextStyle(
-            fontWeight: FontWeight.w800,
-            decoration: entry.done ? TextDecoration.lineThrough : null,
+            ),
+            subtitle: Text(
+              details.join(' · '),
+              maxLines: showDate ? 4 : 3,
+              overflow: TextOverflow.ellipsis,
+            ),
+            onTap: () => _edit(entry),
+            trailing: pending
+                ? const Icon(Icons.schedule_outlined)
+                : PopupMenuButton<String>(
+                    onSelected: (value) {
+                      if (value == 'edit') _edit(entry);
+                      if (value == 'delete') _delete(entry);
+                    },
+                    itemBuilder: (_) => const [
+                      PopupMenuItem(
+                        value: 'edit',
+                        child: Text('Modifica'),
+                      ),
+                      PopupMenuItem(
+                        value: 'delete',
+                        child: Text('Elimina'),
+                      ),
+                    ],
+                  ),
           ),
-        ),
-        subtitle: Text(
-          details.join(' · '),
-          maxLines: showDate ? 4 : 3,
-          overflow: TextOverflow.ellipsis,
-        ),
-        onTap: () => _edit(entry),
-        trailing: pending
-            ? const Icon(Icons.schedule_outlined)
-            : PopupMenuButton<String>(
-                onSelected: (value) {
-                  if (value == 'edit') _edit(entry);
-                  if (value == 'delete') _delete(entry);
-                },
-                itemBuilder: (_) => const [
-                  PopupMenuItem(
-                    value: 'edit',
-                    child: Text('Modifica'),
+          const Divider(height: 1),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(8, 2, 8, 4),
+            child: Row(
+              children: [
+                TextButton.icon(
+                  onPressed: interactionsLoading
+                      ? null
+                      : () => _toggleHeart(entry),
+                  icon: Icon(
+                    likedByMe ? Icons.favorite : Icons.favorite_border,
+                    color: likedByMe
+                        ? Theme.of(context).colorScheme.error
+                        : null,
+                    size: 20,
                   ),
-                  PopupMenuItem(
-                    value: 'delete',
-                    child: Text('Elimina'),
+                  label: Text(
+                    hearts.isEmpty ? 'Mi piace' : '${hearts.length}',
                   ),
-                ],
-              ),
+                ),
+                TextButton.icon(
+                  onPressed: () => _openComments(entry),
+                  icon: const Icon(Icons.chat_bubble_outline, size: 19),
+                  label: Text(
+                    comments.isEmpty ? 'Commenta' : '${comments.length}',
+                  ),
+                ),
+                const Spacer(),
+                if (seen != null)
+                  Padding(
+                    padding: const EdgeInsets.only(right: 6),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.done_all, size: 17),
+                        const SizedBox(width: 4),
+                        Text(
+                          seen,
+                          style: Theme.of(context).textTheme.bodySmall,
+                        ),
+                      ],
+                    ),
+                  ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }
