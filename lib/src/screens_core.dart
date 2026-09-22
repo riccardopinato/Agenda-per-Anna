@@ -3750,6 +3750,7 @@ class _CloudAccountScreenState extends State<CloudAccountScreen> {
 
       await widget.store.activateCloudAccount(cloud.userId);
       await widget.store.syncAllCloud(preferRemoteOnFirstSync: true);
+      await PushNotificationService.instance.registerCurrentToken();
       _message('Account connesso e sincronizzato.');
     } catch (_) {
       _message(
@@ -3808,6 +3809,7 @@ class _CloudAccountScreenState extends State<CloudAccountScreen> {
       await widget.store.createLocalSnapshot(
         label: 'Prima della disconnessione account',
       );
+      await PushNotificationService.instance.unregisterCurrentToken();
       await CloudSyncService.instance.signOut();
       await widget.store.activateCloudAccount(null);
       _message(
