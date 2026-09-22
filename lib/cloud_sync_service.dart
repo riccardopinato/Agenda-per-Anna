@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:typed_data';
 
 import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -773,6 +774,42 @@ class CloudSyncService extends ChangeNotifier {
       clientUpdatedAt: at,
       deletedAt: at,
     );
+  }
+
+  Future<String> uploadSharedMedia({
+    required String spaceId,
+    required String entryId,
+    required Uint8List bytes,
+    String contentType = 'image/jpeg',
+  }) async {
+    final client = _requireSignedInClient();
+    final extension = switch (contentType) {
+      'image/png' => 'png',
+      'image/webp' => 'webp',
+      _ => 'jpg',
+    };
+    final path =
+        '$spaceId/$entryId/${DateTime.now().microsecondsSinceEpoch}.$extension';
+    await client.storage.from('shared-media').uploadBinary(
+          path,
+          bytes,
+          fileOptions: FileOptions(
+            contentType: contentType,
+            upsert: false,
+          ),
+        );
+    return path;
+  }
+
+  Future<Uint8List> downloadSharedMedia(String path) async {
+    final client = _requireSignedInClient();
+    return client.storage.from('shared-media').download(path);
+  }
+
+  Future<void> deleteSharedMedia(String path) async {
+    if (path.trim().isEmpty) return;
+    final client = _requireSignedInClient();
+    await client.storage.from('shared-media').remove([path]);
   }
 
   Future<void> registerPushDevice({
