@@ -405,6 +405,11 @@ class _JournalEditorState extends State<JournalEditor> {
           ),
         ),
         const SizedBox(height: 12),
+        DiaryMemoryCard(
+          store: widget.store,
+          date: widget.date,
+        ),
+        const SizedBox(height: 12),
         SimpleCard(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
