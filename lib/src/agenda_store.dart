@@ -2090,6 +2090,7 @@ class AgendaStore extends ChangeNotifier {
     required String spaceId,
     required String entityId,
     DateTime? updatedAt,
+    String mediaPath = '',
   }) async {
     final revision = (updatedAt ?? DateTime.now()).toUtc();
     final operations = await loadSharedPendingOperations(spaceId);
@@ -2099,6 +2100,9 @@ class AgendaStore extends ChangeNotifier {
         action: SharedPendingAction.delete,
         entityId: entityId,
         updatedAt: revision,
+        payload: mediaPath.trim().isEmpty
+            ? null
+            : {'mediaPath': mediaPath.trim()},
       ),
     );
     await _saveSharedPendingOperations(spaceId, operations);
@@ -2672,6 +2676,16 @@ class AgendaStore extends ChangeNotifier {
                 entityId: operation.entityId,
                 updatedAt: operation.updatedAt,
               );
+              final mediaPath =
+                  operation.payload?['mediaPath']?.toString().trim() ?? '';
+              if (mediaPath.isNotEmpty) {
+                try {
+                  await cloud.deleteSharedMedia(mediaPath);
+                } catch (_) {
+                  // Record deletion is authoritative; stale media cleanup can
+                  // be retried manually without resurrecting the entry.
+                }
+              }
             } else if (operation.payload != null) {
               await cloud.upsertSharedRecord(
                 spaceId: currentSpaceId,
