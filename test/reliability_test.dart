@@ -176,7 +176,7 @@ void main() {
           type: DiaryBlockType.sketch,
           createdAt: DateTime.utc(2026, 9, 22, 14, 30),
           pages: [
-            DiarySketchPage(
+            const DiarySketchPage(
               id: 'page-1',
               paper: DiarySketchPaper.grid,
               strokes: const [
