@@ -166,6 +166,89 @@ class SharedSpaceRecord {
       );
 }
 
+class SharedEntryComment {
+  final String id;
+  final String spaceId;
+  final String entryId;
+  final String userId;
+  final String authorName;
+  final String body;
+  final DateTime createdAt;
+  final DateTime updatedAt;
+
+  const SharedEntryComment({
+    required this.id,
+    required this.spaceId,
+    required this.entryId,
+    required this.userId,
+    required this.authorName,
+    required this.body,
+    required this.createdAt,
+    required this.updatedAt,
+  });
+
+  factory SharedEntryComment.fromJson(Map<String, dynamic> json) =>
+      SharedEntryComment(
+        id: json['id'] as String,
+        spaceId: json['space_id'] as String,
+        entryId: json['entry_id'] as String,
+        userId: json['user_id'] as String,
+        authorName: json['author_name'] as String? ?? '',
+        body: json['body'] as String? ?? '',
+        createdAt: DateTime.tryParse(json['created_at'] as String? ?? '') ??
+            DateTime.now(),
+        updatedAt: DateTime.tryParse(json['updated_at'] as String? ?? '') ??
+            DateTime.now(),
+      );
+}
+
+class SharedEntryReaction {
+  final String spaceId;
+  final String entryId;
+  final String userId;
+  final String kind;
+  final DateTime createdAt;
+
+  const SharedEntryReaction({
+    required this.spaceId,
+    required this.entryId,
+    required this.userId,
+    required this.kind,
+    required this.createdAt,
+  });
+
+  factory SharedEntryReaction.fromJson(Map<String, dynamic> json) =>
+      SharedEntryReaction(
+        spaceId: json['space_id'] as String,
+        entryId: json['entry_id'] as String,
+        userId: json['user_id'] as String,
+        kind: json['kind'] as String? ?? 'heart',
+        createdAt: DateTime.tryParse(json['created_at'] as String? ?? '') ??
+            DateTime.now(),
+      );
+}
+
+class SharedMemberRead {
+  final String spaceId;
+  final String userId;
+  final DateTime lastSeenAt;
+
+  const SharedMemberRead({
+    required this.spaceId,
+    required this.userId,
+    required this.lastSeenAt,
+  });
+
+  factory SharedMemberRead.fromJson(Map<String, dynamic> json) =>
+      SharedMemberRead(
+        spaceId: json['space_id'] as String,
+        userId: json['user_id'] as String,
+        lastSeenAt:
+            DateTime.tryParse(json['last_seen_at'] as String? ?? '') ??
+                DateTime.fromMillisecondsSinceEpoch(0, isUtc: true),
+      );
+}
+
 class CloudSyncService extends ChangeNotifier {
   CloudSyncService._();
 
@@ -721,10 +804,148 @@ class CloudSyncService extends ChangeNotifier {
         .eq('token', token);
   }
 
+  Future<List<SharedEntryComment>> listSharedEntryComments(
+    String spaceId,
+  ) async {
+    final client = _requireSignedInClient();
+    final response = await client
+        .from('shared_entry_comments')
+        .select(
+          'id,space_id,entry_id,user_id,author_name,body,created_at,updated_at',
+        )
+        .eq('space_id', spaceId)
+        .order('created_at');
+
+    return (response as List)
+        .map(
+          (row) => SharedEntryComment.fromJson(
+            Map<String, dynamic>.from(row as Map),
+          ),
+        )
+        .toList();
+  }
+
+  Future<List<SharedEntryReaction>> listSharedEntryReactions(
+    String spaceId,
+  ) async {
+    final client = _requireSignedInClient();
+    final response = await client
+        .from('shared_entry_reactions')
+        .select('space_id,entry_id,user_id,kind,created_at')
+        .eq('space_id', spaceId);
+
+    return (response as List)
+        .map(
+          (row) => SharedEntryReaction.fromJson(
+            Map<String, dynamic>.from(row as Map),
+          ),
+        )
+        .toList();
+  }
+
+  Future<List<SharedMemberRead>> listSharedMemberReads(
+    String spaceId,
+  ) async {
+    final client = _requireSignedInClient();
+    final response = await client
+        .from('space_member_reads')
+        .select('space_id,user_id,last_seen_at')
+        .eq('space_id', spaceId);
+
+    return (response as List)
+        .map(
+          (row) => SharedMemberRead.fromJson(
+            Map<String, dynamic>.from(row as Map),
+          ),
+        )
+        .toList();
+  }
+
+  Future<SharedEntryComment> addSharedEntryComment({
+    required String spaceId,
+    required String entryId,
+    required String authorName,
+    required String body,
+  }) async {
+    final client = _requireSignedInClient();
+    final uid = userId!;
+    final response = await client
+        .from('shared_entry_comments')
+        .insert({
+          'space_id': spaceId,
+          'entry_id': entryId,
+          'user_id': uid,
+          'author_name': authorName.trim(),
+          'body': body.trim(),
+        })
+        .select(
+          'id,space_id,entry_id,user_id,author_name,body,created_at,updated_at',
+        )
+        .single();
+
+    return SharedEntryComment.fromJson(
+      Map<String, dynamic>.from(response),
+    );
+  }
+
+  Future<void> deleteSharedEntryComment(String commentId) async {
+    final client = _requireSignedInClient();
+    final uid = userId!;
+    await client
+        .from('shared_entry_comments')
+        .delete()
+        .eq('id', commentId)
+        .eq('user_id', uid);
+  }
+
+  Future<void> setSharedHeart({
+    required String spaceId,
+    required String entryId,
+    required bool active,
+  }) async {
+    final client = _requireSignedInClient();
+    final uid = userId!;
+
+    if (active) {
+      await client.from('shared_entry_reactions').upsert(
+        {
+          'space_id': spaceId,
+          'entry_id': entryId,
+          'user_id': uid,
+          'kind': 'heart',
+        },
+        onConflict: 'space_id,entry_id,user_id,kind',
+      );
+      return;
+    }
+
+    await client
+        .from('shared_entry_reactions')
+        .delete()
+        .eq('space_id', spaceId)
+        .eq('entry_id', entryId)
+        .eq('user_id', uid)
+        .eq('kind', 'heart');
+  }
+
+  Future<void> markSharedSpaceSeen(String spaceId) async {
+    final client = _requireSignedInClient();
+    final uid = userId!;
+    await client.from('space_member_reads').upsert(
+      {
+        'space_id': spaceId,
+        'user_id': uid,
+        'last_seen_at': DateTime.now().toUtc().toIso8601String(),
+      },
+      onConflict: 'space_id,user_id',
+    );
+  }
+
   Future<void> sendSharedPush({
     required String spaceId,
     required String eventId,
     required String action,
+    String? entityId,
   }) async {
     final client = _requireSignedInClient();
     await client.functions.invoke(
@@ -733,6 +954,7 @@ class CloudSyncService extends ChangeNotifier {
         'space_id': spaceId,
         'event_id': eventId,
         'action': action,
+        if (entityId != null) 'entity_id': entityId,
       },
     );
   }
@@ -741,6 +963,7 @@ class CloudSyncService extends ChangeNotifier {
     required String spaceId,
     required String listenerKey,
     required VoidCallback onChanged,
+    VoidCallback? onInteractionsChanged,
     ValueChanged<String?>? onUpdatedBy,
     ValueChanged<bool>? onConnectionChanged,
   }) {
@@ -769,6 +992,39 @@ class CloudSyncService extends ChangeNotifier {
             onUpdatedBy?.call(updatedBy);
             onChanged();
           },
+        )
+        .onPostgresChanges(
+          event: PostgresChangeEvent.all,
+          schema: 'public',
+          table: 'shared_entry_comments',
+          filter: PostgresChangeFilter(
+            type: PostgresChangeFilterType.eq,
+            column: 'space_id',
+            value: spaceId,
+          ),
+          callback: (_) => onInteractionsChanged?.call(),
+        )
+        .onPostgresChanges(
+          event: PostgresChangeEvent.all,
+          schema: 'public',
+          table: 'shared_entry_reactions',
+          filter: PostgresChangeFilter(
+            type: PostgresChangeFilterType.eq,
+            column: 'space_id',
+            value: spaceId,
+          ),
+          callback: (_) => onInteractionsChanged?.call(),
+        )
+        .onPostgresChanges(
+          event: PostgresChangeEvent.all,
+          schema: 'public',
+          table: 'space_member_reads',
+          filter: PostgresChangeFilter(
+            type: PostgresChangeFilterType.eq,
+            column: 'space_id',
+            value: spaceId,
+          ),
+          callback: (_) => onInteractionsChanged?.call(),
         )
         .subscribe((status, _) {
           onConnectionChanged?.call(
