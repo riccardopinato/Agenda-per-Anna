@@ -797,13 +797,13 @@ class _WeekScreenState extends State<WeekScreen> {
         final data = widget.store.week(start);
         final end = addCivilDays(start, 6);
         final events = <UnifiedAgendaEntry>[
-          for (int i = 0; i < 7; i++)
+          for (int i = 6; i >= 0; i--)
             ...widget.store.unifiedForDay(addCivilDays(start, i)),
         ];
         final completedTasks = events.where((e) => e.type == ItemType.task && e.done).length;
         final totalTasks = events.where((e) => e.type == ItemType.task).length;
         final beautifulThings = <String>[
-          for (int i = 0; i < 7; i++)
+          for (int i = 6; i >= 0; i--)
             if (widget.store.journal(addCivilDays(start, i)).beautiful.trim().isNotEmpty)
               widget.store.journal(addCivilDays(start, i)).beautiful.trim(),
         ];
@@ -856,7 +856,7 @@ class _WeekScreenState extends State<WeekScreen> {
               const SizedBox(height: 18),
               const SectionTitle('I 7 giorni'),
               const SizedBox(height: 10),
-              for (int i = 0; i < 7; i++) ...[
+              for (int i = 6; i >= 0; i--) ...[
                 _WeekDayCard(
                   day: addCivilDays(start, i),
                   store: widget.store,
