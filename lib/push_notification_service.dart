@@ -24,6 +24,30 @@ Future<void> annasDiaryFirebaseMessagingBackgroundHandler(
   await PushNotificationService.persistBackgroundSharedMessage(message);
 }
 
+class PushNotificationHealth {
+  final bool configured;
+  final bool initialized;
+  final bool permissionGranted;
+  final String permissionStatus;
+  final bool tokenAvailable;
+  final bool deviceRegistered;
+  final bool remotePushActive;
+  final bool signedIn;
+  final String? lastError;
+
+  const PushNotificationHealth({
+    required this.configured,
+    required this.initialized,
+    required this.permissionGranted,
+    required this.permissionStatus,
+    required this.tokenAvailable,
+    required this.deviceRegistered,
+    required this.remotePushActive,
+    required this.signedIn,
+    this.lastError,
+  });
+}
+
 class PushNotificationService {
   PushNotificationService._();
 
@@ -42,6 +66,7 @@ class PushNotificationService {
 
   bool _initialized = false;
   bool _remotePushActive = false;
+  String? _lastError;
   StreamSubscription<String>? _tokenSubscription;
   StreamSubscription<RemoteMessage>? _messageSubscription;
   StreamSubscription<RemoteMessage>? _openedSubscription;
@@ -113,6 +138,7 @@ class PushNotificationService {
     if (_initialized || !configured) return;
 
     try {
+      _lastError = null;
       await Firebase.initializeApp();
       await FirebaseMessaging.instance.setAutoInitEnabled(true);
       await FirebaseMessaging.instance.requestPermission(
@@ -157,7 +183,8 @@ class PushNotificationService {
       }
 
       await registerCurrentToken();
-    } catch (_) {
+    } catch (error) {
+      _lastError = error.toString();
       _remotePushActive = false;
     }
   }
@@ -180,7 +207,8 @@ class PushNotificationService {
         return;
       }
       await _registerToken(token);
-    } catch (_) {
+    } catch (error) {
+      _lastError = error.toString();
       _remotePushActive = false;
     }
   }
@@ -194,15 +222,125 @@ class PushNotificationService {
       await CloudSyncService.instance.registerPushDevice(
         token: token,
         platform: 'android',
-        appVersion: '0.28.0',
+        appVersion: '0.29.0',
       );
       _remotePushActive = true;
-    } catch (_) {
+    } catch (error) {
+      _lastError = error.toString();
       _remotePushActive = false;
     }
   }
 
+  Future<PushNotificationHealth> health() async {
+    if (!configured) {
+      return PushNotificationHealth(
+        configured: false,
+        initialized: _initialized,
+        permissionGranted: false,
+        permissionStatus: 'non configurato',
+        tokenAvailable: false,
+        deviceRegistered: false,
+        remotePushActive: false,
+        signedIn: CloudSyncService.instance.signedIn,
+        lastError: _lastError,
+      );
+    }
+
+    if (!_initialized) {
+      await initialize();
+    }
+
+    var permissionStatus = 'sconosciuto';
+    var permissionGranted = false;
+    String? token;
+    var registered = false;
+
+    try {
+      final settings =
+          await FirebaseMessaging.instance.getNotificationSettings();
+      permissionStatus = settings.authorizationStatus.name;
+      permissionGranted =
+          settings.authorizationStatus == AuthorizationStatus.authorized ||
+              settings.authorizationStatus ==
+                  AuthorizationStatus.provisional;
+    } catch (error) {
+      _lastError = error.toString();
+    }
+
+    try {
+      token = await FirebaseMessaging.instance.getToken();
+      if (token != null &&
+          token.isNotEmpty &&
+          CloudSyncService.instance.signedIn) {
+        registered =
+            await CloudSyncService.instance.isPushDeviceRegistered(token);
+      }
+    } catch (error) {
+      _lastError = error.toString();
+    }
+
+    return PushNotificationHealth(
+      configured: configured,
+      initialized: _initialized,
+      permissionGranted: permissionGranted,
+      permissionStatus: permissionStatus,
+      tokenAvailable: token?.isNotEmpty == true,
+      deviceRegistered: registered,
+      remotePushActive: _remotePushActive,
+      signedIn: CloudSyncService.instance.signedIn,
+      lastError: _lastError,
+    );
+  }
+
+  Future<PushNotificationHealth> repair() async {
+    if (!configured) return health();
+    try {
+      await Firebase.initializeApp();
+    } catch (_) {}
+    try {
+      await FirebaseMessaging.instance.setAutoInitEnabled(true);
+      await FirebaseMessaging.instance.requestPermission(
+        alert: true,
+        badge: true,
+        sound: true,
+      );
+      if (!_initialized) {
+        await initialize();
+      }
+      await registerCurrentToken();
+      _lastError = null;
+    } catch (error) {
+      _lastError = error.toString();
+    }
+    return health();
+  }
+
+  Future<Map<String, dynamic>> sendSelfTest() async {
+    if (!configured) {
+      throw StateError('firebase_not_configured');
+    }
+    if (!CloudSyncService.instance.signedIn) {
+      throw StateError('cloud_sign_in_required');
+    }
+
+    await repair();
+    final status = await health();
+    if (!status.tokenAvailable || !status.deviceRegistered) {
+      throw StateError('push_device_not_registered');
+    }
+
+    return CloudSyncService.instance.sendPushSelfTest(
+      eventId:
+          'self-test:${DateTime.now().toUtc().microsecondsSinceEpoch}',
+    );
+  }
+
   Future<void> _handleForegroundMessage(RemoteMessage message) async {
+    if (message.data['kind'] == 'push_self_test') {
+      await NotificationService.instance.showPushSelfTestReceived();
+      return;
+    }
+
     final parsed = _parseSharedMessage(message);
     if (parsed == null) return;
 
