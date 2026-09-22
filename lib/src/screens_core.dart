@@ -3102,6 +3102,7 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
   int _seenConflictCount = 0;
   bool feedMode = true;
   bool interactionsLoading = false;
+  bool sharedPhotoBusy = false;
   Map<String, List<SharedEntryComment>> commentsByEntry = {};
   Map<String, Set<String>> heartsByEntry = {};
   Map<String, DateTime> memberReads = {};
