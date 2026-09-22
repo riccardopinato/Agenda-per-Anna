@@ -1687,6 +1687,7 @@ class _NotificationSettingsCard extends StatefulWidget {
 class _NotificationSettingsCardState
     extends State<_NotificationSettingsCard> {
   NotificationHealth? health;
+  PushNotificationHealth? pushHealth;
   bool busy = false;
 
   bool get _isAndroid =>
@@ -1699,139 +1700,229 @@ class _NotificationSettingsCardState
   }
 
   Future<void> _refresh() async {
-    final next = await NotificationService.instance.health();
+    final local = await NotificationService.instance.health();
+    final push = await PushNotificationService.instance.health();
     if (!mounted) return;
-    setState(() => health = next);
+    setState(() {
+      health = local;
+      pushHealth = push;
+    });
+  }
+
+  Future<void> _runBusy(Future<void> Function() action) async {
+    if (busy) return;
+    setState(() => busy = true);
+    try {
+      await action();
+    } finally {
+      if (mounted) setState(() => busy = false);
+    }
+  }
+
+  void _snack(String message) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message)),
+    );
   }
 
   Future<void> _requestPermissions({bool exact = false}) async {
-    setState(() => busy = true);
-    try {
+    await _runBusy(() async {
       await NotificationService.instance.requestPermissions(
         requestExactAlarm: exact,
       );
+      if (PushNotificationService.instance.configured) {
+        await PushNotificationService.instance.repair();
+      }
       await widget.store.reconcileReminders();
       await _refresh();
-    } finally {
-      if (mounted) setState(() => busy = false);
-    }
+    });
   }
 
-  Future<void> _test() async {
-    setState(() => busy = true);
-    try {
-      await NotificationService.instance.showTestNotification();
-      await _refresh();
-      if (!mounted) return;
-      final current = health;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            current?.notificationsEnabled == false
-                ? 'Le notifiche risultano bloccate dal sistema.'
-                : 'Notifica di prova inviata. Controlla la tendina notifiche.',
-          ),
-        ),
-      );
-    } catch (_) {
-      await _refresh();
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text(
-            'Il servizio notifiche non si è inizializzato. '
-            'Riprova ora oppure apri le impostazioni di sistema.',
-          ),
-        ),
-      );
-    } finally {
-      if (mounted) setState(() => busy = false);
-    }
+  Future<void> _testLocal() async {
+    await _runBusy(() async {
+      try {
+        await NotificationService.instance.showTestNotification();
+        await _refresh();
+        _snack(
+          health?.notificationsEnabled == false
+              ? 'Le notifiche risultano bloccate dal sistema.'
+              : 'Test locale inviato. Controlla la tendina notifiche.',
+        );
+      } catch (_) {
+        await _refresh();
+        _snack(
+          'Test locale non riuscito. Usa “Ripara notifiche” e riprova.',
+        );
+      }
+    });
+  }
+
+  Future<void> _testPush() async {
+    await _runBusy(() async {
+      try {
+        final result = await PushNotificationService.instance.sendSelfTest();
+        await _refresh();
+        final delivered = (result['delivered'] as num?)?.toInt() ?? 0;
+        final devices = (result['devices'] as num?)?.toInt() ?? 0;
+        _snack(
+          delivered > 0
+              ? 'Test Firebase inviato a $delivered dispositivo/i. '
+                  'La notifica dovrebbe comparire ora.'
+              : 'Firebase è raggiungibile, ma non risultano consegne '
+                  '($devices dispositivi registrati).',
+        );
+      } catch (_) {
+        await _refresh();
+        _snack(
+          'Test Firebase non riuscito. Controlla lo stato qui sotto '
+          'e usa “Ripara notifiche”.',
+        );
+      }
+    });
   }
 
   Future<void> _openSettings() async {
-    setState(() => busy = true);
-    try {
+    await _runBusy(() async {
       await NotificationService.instance.openSystemSettings();
       if (!mounted) return;
       await Future<void>.delayed(const Duration(milliseconds: 350));
       await _refresh();
-    } catch (_) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Non riesco ad aprire le impostazioni notifiche.'),
-        ),
-      );
-    } finally {
-      if (mounted) setState(() => busy = false);
-    }
+    });
   }
 
-  Future<void> _retryNotificationService() async {
-    setState(() => busy = true);
-    try {
+  Future<void> _repairAll() async {
+    await _runBusy(() async {
       await NotificationService.instance.initialize(force: true);
+      await NotificationService.instance.requestPermissions();
+      if (PushNotificationService.instance.configured) {
+        await PushNotificationService.instance.repair();
+      }
+      await widget.store.reconcileReminders();
       await _refresh();
-    } finally {
-      if (mounted) setState(() => busy = false);
-    }
+
+      final localOk = health?.available == true &&
+          health?.notificationsEnabled == true;
+      final push = pushHealth;
+      final pushOk = push?.configured != true ||
+          (push?.tokenAvailable == true &&
+              push?.deviceRegistered == true);
+      _snack(
+        localOk && pushOk
+            ? 'Diagnostica completata: notifiche pronte.'
+            : 'Riparazione completata. Alcune autorizzazioni richiedono '
+                'ancora un intervento nelle impostazioni di sistema.',
+      );
+    });
+  }
+
+  Widget _statusRow({
+    required IconData icon,
+    required String title,
+    required String subtitle,
+    required bool ok,
+  }) {
+    final scheme = Theme.of(context).colorScheme;
+    return ListTile(
+      contentPadding: EdgeInsets.zero,
+      leading: CircleAvatar(
+        backgroundColor:
+            ok ? scheme.primaryContainer : scheme.errorContainer,
+        foregroundColor:
+            ok ? scheme.onPrimaryContainer : scheme.onErrorContainer,
+        child: Icon(icon),
+      ),
+      title: Text(
+        title,
+        style: const TextStyle(fontWeight: FontWeight.w800),
+      ),
+      subtitle: Text(subtitle),
+      trailing: Icon(
+        ok ? Icons.check_circle_outline : Icons.error_outline,
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
-    final current = health;
-    final enabled = current?.notificationsEnabled == true;
-    final unavailable = current != null && !current.available;
-    final pending = current?.pendingCount ?? 0;
-    final exact = current?.exactAlarmsEnabled == true;
-    final scheme = Theme.of(context).colorScheme;
+    final local = health;
+    final push = pushHealth;
+    final enabled = local?.notificationsEnabled == true;
+    final available = local?.available == true;
+    final exact = local?.exactAlarmsEnabled == true;
+    final pending = local?.pendingCount ?? 0;
+
+    final pushConfigured = push?.configured == true;
+    final pushReady = pushConfigured &&
+        push?.tokenAvailable == true &&
+        push?.deviceRegistered == true &&
+        push?.permissionGranted == true;
 
     return SimpleCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            'Notifiche',
-            style: TextStyle(
-              fontWeight: FontWeight.w900,
-              fontSize: 18,
-            ),
+          const Row(
+            children: [
+              Icon(Icons.notifications_active_outlined),
+              SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  'Notifiche · diagnostica',
+                  style: TextStyle(
+                    fontWeight: FontWeight.w900,
+                    fontSize: 18,
+                  ),
+                ),
+              ),
+            ],
           ),
           const SizedBox(height: 5),
           Text(
-            'Promemoria di agenda e novità di Noi ♡ compariranno nella tendina notifiche.',
+            'Controlla separatamente promemoria locali e push di Noi ♡. '
+            'Se qualcosa non funziona, “Ripara notifiche” ricrea i canali, '
+            'richiede i permessi e registra di nuovo il dispositivo.',
             style: Theme.of(context).textTheme.bodySmall,
           ),
           const SizedBox(height: 12),
-          ListTile(
-            contentPadding: EdgeInsets.zero,
-            leading: CircleAvatar(
-              backgroundColor: enabled
-                  ? scheme.primaryContainer
-                  : scheme.errorContainer,
-              foregroundColor: enabled
-                  ? scheme.onPrimaryContainer
-                  : scheme.onErrorContainer,
-              child: Icon(
-                enabled
-                    ? Icons.notifications_active
-                    : Icons.notifications_off_outlined,
-              ),
-            ),
-            title: Text(
-              unavailable
-                  ? 'Servizio notifiche non disponibile'
-                  : enabled
-                      ? 'Notifiche attive'
-                      : 'Notifiche da attivare',
-              style: const TextStyle(fontWeight: FontWeight.w800),
-            ),
-            subtitle: Text(
-              enabled
-                  ? '$pending promemoria programmati'
-                  : 'Anna\'s Diary non può ancora mostrare avvisi di sistema.',
-            ),
+          _statusRow(
+            icon: enabled
+                ? Icons.notifications_active
+                : Icons.notifications_off_outlined,
+            title: !available
+                ? 'Servizio locale non inizializzato'
+                : enabled
+                    ? 'Notifiche locali attive'
+                    : 'Notifiche locali bloccate',
+            subtitle: available
+                ? '$pending promemoria programmati'
+                : 'Il plugin locale non è disponibile in questo momento.',
+            ok: available && enabled,
+          ),
+          const Divider(),
+          _statusRow(
+            icon: pushReady
+                ? Icons.cloud_done_outlined
+                : Icons.cloud_off_outlined,
+            title: !pushConfigured
+                ? 'Push Firebase non configurate'
+                : pushReady
+                    ? 'Push Noi ♡ registrate'
+                    : 'Push Noi ♡ da riparare',
+            subtitle: !pushConfigured
+                ? 'Questa build non contiene Firebase per la piattaforma corrente.'
+                : [
+                    'permesso: ${push?.permissionStatus ?? '...'}',
+                    push?.tokenAvailable == true
+                        ? 'token FCM: presente'
+                        : 'token FCM: assente',
+                    push?.signedIn == true
+                        ? (push?.deviceRegistered == true
+                            ? 'Supabase: registrato'
+                            : 'Supabase: non registrato')
+                        : 'cloud: accesso richiesto',
+                  ].join(' · '),
+            ok: pushReady,
           ),
           if (_isAndroid) ...[
             const Divider(),
@@ -1847,7 +1938,7 @@ class _NotificationSettingsCardState
               subtitle: Text(
                 exact
                     ? 'Android può mostrare i promemoria all’orario previsto.'
-                    : 'Consenti “Sveglie e promemoria” per ridurre i ritardi dovuti al risparmio energetico.',
+                    : 'Consenti “Sveglie e promemoria” per ridurre i ritardi.',
               ),
               trailing: exact
                   ? const Icon(Icons.check_circle_outline)
@@ -1859,35 +1950,39 @@ class _NotificationSettingsCardState
                     ),
             ),
           ],
-          const SizedBox(height: 8),
+          const SizedBox(height: 10),
           Wrap(
             spacing: 8,
             runSpacing: 8,
             children: [
-              FilledButton.tonalIcon(
-                onPressed: busy ? null : _test,
-                icon: const Icon(Icons.notification_add_outlined),
-                label: const Text('Notifica di prova'),
+              FilledButton.icon(
+                onPressed: busy ? null : _repairAll,
+                icon: const Icon(Icons.build_circle_outlined),
+                label: const Text('Ripara notifiche'),
               ),
-              if (!enabled)
-                FilledButton.icon(
-                  onPressed: busy ? null : _requestPermissions,
-                  icon: const Icon(Icons.notifications_active_outlined),
-                  label: const Text('Attiva notifiche'),
+              FilledButton.tonalIcon(
+                onPressed: busy ? null : _testLocal,
+                icon: const Icon(Icons.notification_add_outlined),
+                label: const Text('Test locale'),
+              ),
+              if (pushConfigured)
+                FilledButton.tonalIcon(
+                  onPressed:
+                      busy || push?.signedIn != true ? null : _testPush,
+                  icon: const Icon(Icons.cloud_upload_outlined),
+                  label: const Text('Test Firebase'),
                 ),
               OutlinedButton.icon(
                 onPressed: busy ? null : _openSettings,
                 icon: const Icon(Icons.settings_outlined),
                 label: const Text('Impostazioni sistema'),
               ),
-              if (unavailable)
-                OutlinedButton.icon(
-                  onPressed: busy ? null : _retryNotificationService,
-                  icon: const Icon(Icons.refresh),
-                  label: const Text('Riprova servizio'),
-                ),
             ],
           ),
+          if (busy) ...[
+            const SizedBox(height: 12),
+            const LinearProgressIndicator(),
+          ],
         ],
       ),
     );
