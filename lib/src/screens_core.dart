@@ -3185,42 +3185,105 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
 
   Future<void> _loadInteractions() async {
     final cloud = CloudSyncService.instance;
-    if (!cloud.signedIn) return;
     if (mounted) setState(() => interactionsLoading = true);
-    try {
-      final comments =
-          await cloud.listSharedEntryComments(widget.space.id);
-      final reactions =
-          await cloud.listSharedEntryReactions(widget.space.id);
-      final reads =
-          await cloud.listSharedMemberReads(widget.space.id);
 
-      final nextComments = <String, List<SharedEntryComment>>{};
-      for (final comment in comments) {
-        nextComments.putIfAbsent(comment.entryId, () => []).add(comment);
-      }
-      final nextHearts = <String, Set<String>>{};
-      for (final reaction in reactions) {
-        if (reaction.kind != 'heart') continue;
-        nextHearts
-            .putIfAbsent(reaction.entryId, () => <String>{})
-            .add(reaction.userId);
-      }
-      final nextReads = <String, DateTime>{
-        for (final read in reads) read.userId: read.lastSeenAt,
-      };
+    final nextComments = <String, List<SharedEntryComment>>{
+      for (final entry in commentsByEntry.entries)
+        entry.key: List<SharedEntryComment>.from(entry.value),
+    };
+    final nextHearts = <String, Set<String>>{
+      for (final entry in heartsByEntry.entries)
+        entry.key: Set<String>.from(entry.value),
+    };
+    var nextReads = Map<String, DateTime>.from(memberReads);
 
-      if (!mounted) return;
-      setState(() {
-        commentsByEntry = nextComments;
-        heartsByEntry = nextHearts;
-        memberReads = nextReads;
-      });
-    } catch (_) {
-      // Interactions are supplementary; the shared agenda remains usable.
-    } finally {
-      if (mounted) setState(() => interactionsLoading = false);
+    if (cloud.signedIn) {
+      try {
+        await widget.store.flushSharedInteractionOperations(
+          spaceId: widget.space.id,
+        );
+        final comments =
+            await cloud.listSharedEntryComments(widget.space.id);
+        final reactions =
+            await cloud.listSharedEntryReactions(widget.space.id);
+        final reads =
+            await cloud.listSharedMemberReads(widget.space.id);
+
+        nextComments.clear();
+        for (final comment in comments) {
+          nextComments.putIfAbsent(comment.entryId, () => []).add(comment);
+        }
+        nextHearts.clear();
+        for (final reaction in reactions) {
+          if (reaction.kind != 'heart') continue;
+          nextHearts
+              .putIfAbsent(reaction.entryId, () => <String>{})
+              .add(reaction.userId);
+        }
+        nextReads = {
+          for (final read in reads) read.userId: read.lastSeenAt,
+        };
+      } catch (_) {
+        // Preserve the last known interaction cache and overlay the offline
+        // queue below.
+      }
     }
+
+    final pending = await widget.store
+        .loadSharedInteractionPendingOperations(widget.space.id);
+    final uid = widget.store.activeAccountId ?? cloud.userId ?? '';
+    for (final operation in pending) {
+      switch (operation.type) {
+        case SharedInteractionPendingType.addComment:
+          final commentId =
+              operation.payload['commentId']?.toString() ?? operation.id;
+          final bucket =
+              nextComments.putIfAbsent(operation.entryId, () => []);
+          if (!bucket.any((comment) => comment.id == commentId)) {
+            bucket.add(
+              SharedEntryComment(
+                id: commentId,
+                spaceId: widget.space.id,
+                entryId: operation.entryId,
+                userId: uid,
+                authorName:
+                    operation.payload['authorName']?.toString() ?? '',
+                body: operation.payload['body']?.toString() ?? '',
+                createdAt: operation.createdAt,
+                updatedAt: operation.createdAt,
+              ),
+            );
+          }
+          break;
+        case SharedInteractionPendingType.deleteComment:
+          final commentId =
+              operation.payload['commentId']?.toString() ?? '';
+          nextComments[operation.entryId]
+              ?.removeWhere((comment) => comment.id == commentId);
+          break;
+        case SharedInteractionPendingType.setHeart:
+          final hearts =
+              nextHearts.putIfAbsent(operation.entryId, () => <String>{});
+          if (operation.payload['active'] == true) {
+            if (uid.isNotEmpty) hearts.add(uid);
+          } else {
+            hearts.remove(uid);
+          }
+          break;
+      }
+    }
+
+    for (final bucket in nextComments.values) {
+      bucket.sort((a, b) => a.createdAt.compareTo(b.createdAt));
+    }
+
+    if (!mounted) return;
+    setState(() {
+      commentsByEntry = nextComments;
+      heartsByEntry = nextHearts;
+      memberReads = nextReads;
+      interactionsLoading = false;
+    });
   }
 
   String? _seenLabel(SharedEntry entry) {
@@ -3240,43 +3303,53 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
   }
 
   Future<void> _toggleHeart(SharedEntry entry) async {
-    final cloud = CloudSyncService.instance;
-    final uid = cloud.userId;
-    if (!cloud.signedIn || uid == null) {
-      _message('Accedi al cloud per usare le reazioni.');
+    final uid =
+        widget.store.activeAccountId ?? CloudSyncService.instance.userId;
+    if (uid == null) {
+      _message('Accedi al cloud almeno una volta per usare le reazioni.');
       return;
     }
+
     final mine = heartsByEntry[entry.id]?.contains(uid) ?? false;
-    try {
-      await cloud.setSharedHeart(
-        spaceId: widget.space.id,
-        entryId: entry.id,
-        active: !mine,
-      );
-      await _loadInteractions();
-      if (!mine) {
-        unawaited(
-          cloud.sendSharedPush(
-            spaceId: widget.space.id,
-            eventId:
-                'reaction:${entry.id}:$uid:${DateTime.now().microsecondsSinceEpoch}',
-            action: 'reaction',
-            entityId: entry.id,
-          ),
-        );
+    setState(() {
+      final hearts = heartsByEntry.putIfAbsent(entry.id, () => <String>{});
+      if (mine) {
+        hearts.remove(uid);
+      } else {
+        hearts.add(uid);
       }
-    } catch (_) {
-      _message('Reazione non salvata. Riprova.');
+    });
+
+    await widget.store.enqueueSharedHeart(
+      spaceId: widget.space.id,
+      entryId: entry.id,
+      active: !mine,
+    );
+
+    if (CloudSyncService.instance.signedIn) {
+      await widget.store.flushSharedInteractionOperations(
+        spaceId: widget.space.id,
+      );
     }
+    await _loadInteractions();
   }
 
   Future<void> _deleteComment(SharedEntryComment comment) async {
-    try {
-      await CloudSyncService.instance.deleteSharedEntryComment(comment.id);
-      await _loadInteractions();
-    } catch (_) {
-      _message('Commento non eliminato.');
+    await widget.store.enqueueSharedCommentDelete(
+      spaceId: widget.space.id,
+      entryId: comment.entryId,
+      commentId: comment.id,
+    );
+    setState(() {
+      commentsByEntry[comment.entryId]
+          ?.removeWhere((candidate) => candidate.id == comment.id);
+    });
+    if (CloudSyncService.instance.signedIn) {
+      await widget.store.flushSharedInteractionOperations(
+        spaceId: widget.space.id,
+      );
     }
+    await _loadInteractions();
   }
 
   Future<void> _openComments(SharedEntry entry) async {
