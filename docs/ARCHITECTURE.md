@@ -60,3 +60,17 @@ This refactor intentionally changes no persistence keys, JSON schemas, sync reco
 - Android cloud/device backup is disabled for local diary data.
 - CI is pinned to Flutter 3.47.5 and release signing can use protected GitHub Secrets, while preserving the existing sideload key as a compatibility fallback.
 - The release workflow no longer uploads signing keys as artifacts.
+
+
+## v0.31.0 — Shared Diary Parity 2.0
+
+The private journal and Noi ♡ no longer maintain independent diary presentation code for the core Note / Photo / Sketch experience.
+
+- `DiaryComposerSection` renders the common diary shell and the Note / Sketch / Photo actions.
+- `DiaryContentCard` renders the same note, photo and sketch cards and action menus in both scopes.
+- `showDiaryNoteEditor`, `showDiaryCaptionEditor` and `confirmDiaryContentDelete` are shared by private and shared flows.
+- `DiarySketchbookScreen` remains the single full Sketchbook implementation for both scopes.
+- `DiaryPhotoViewerShell` and `DiaryZoomableImage` provide the common immersive photo viewer.
+- Noi ♡ adds collaboration-only UI (heart, comments, read receipts and sync state) as an optional footer/status layer on the common card.
+- Shared entries persist `createdAt` in their JSON payload so same-day ordering follows creation order like the private diary and edits do not unexpectedly move old memories to the top.
+- Legacy shared payloads fall back to their cloud revision when `createdAt` is absent.
