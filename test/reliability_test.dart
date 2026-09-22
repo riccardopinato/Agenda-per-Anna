@@ -274,6 +274,40 @@ void main() {
     expect(restoredSketch.sketchPages.single.strokes.single.points.length, 2);
   });
 
+  test('shared diary creation time survives serialization and edits', () {
+    final createdAt = DateTime.utc(2026, 9, 23, 9, 15);
+    final entry = SharedEntry(
+      id: 'shared-note-created-at',
+      type: SharedEntryType.note,
+      title: 'Nota',
+      note: 'Primo testo',
+      date: DateTime(2026, 9, 23),
+      createdAt: createdAt,
+    );
+
+    final restored = SharedEntry.fromJson(entry.toJson());
+    final edited = restored.copyWith(note: 'Testo modificato');
+
+    expect(restored.createdAt, createdAt);
+    expect(edited.createdAt, createdAt);
+  });
+
+  test('legacy shared entries use cloud revision as creation fallback', () {
+    final revision = DateTime.utc(2026, 9, 22, 18, 45);
+    final entry = SharedEntry.fromJson(
+      {
+        'id': 'legacy-shared-note',
+        'type': 'note',
+        'title': 'Legacy',
+        'note': 'Vecchio contenuto',
+        'date': DateTime(2026, 9, 22).toIso8601String(),
+      },
+      updatedAt: revision,
+    );
+
+    expect(entry.createdAt, revision);
+  });
+
   test('daily agenda orders newest time first', () async {
     final day = DateTime(2026, 9, 22);
     SharedPreferences.setMockInitialValues({
