@@ -736,7 +736,7 @@ class AgendaStore extends ChangeNotifier {
 
     final root = Map<String, dynamic>.from(decoded);
     if (root['format'] != _backupFormat) {
-      throw const FormatException('Questo file non appartiene ad Anna's Diary.');
+      throw const FormatException('Questo file non appartiene ad Anna\'s Diary.');
     }
 
     final schema = root['schemaVersion'];
