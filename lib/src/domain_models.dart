@@ -438,12 +438,180 @@ class HabitDefinition {
       );
 }
 
+enum DiaryBlockType { note, sketch, photo }
+
+enum DiarySketchTool { pen, highlighter, eraser, line, rectangle, ellipse }
+
+enum DiarySketchPaper { plain, ruled, grid, dots }
+
+class DiarySketchPoint {
+  final double x;
+  final double y;
+
+  const DiarySketchPoint(this.x, this.y);
+
+  Map<String, dynamic> toJson() => {'x': x, 'y': y};
+
+  factory DiarySketchPoint.fromJson(Map<String, dynamic> json) =>
+      DiarySketchPoint(
+        (json['x'] as num? ?? 0).toDouble(),
+        (json['y'] as num? ?? 0).toDouble(),
+      );
+}
+
+class DiarySketchStroke {
+  final DiarySketchTool tool;
+  final int colorValue;
+  final double width;
+  final List<DiarySketchPoint> points;
+
+  const DiarySketchStroke({
+    required this.tool,
+    required this.colorValue,
+    required this.width,
+    required this.points,
+  });
+
+  Map<String, dynamic> toJson() => {
+        'tool': tool.name,
+        'colorValue': colorValue,
+        'width': width,
+        'points': points.map((point) => point.toJson()).toList(),
+      };
+
+  factory DiarySketchStroke.fromJson(Map<String, dynamic> json) =>
+      DiarySketchStroke(
+        tool: DiarySketchTool.values.firstWhere(
+          (value) => value.name == json['tool'],
+          orElse: () => DiarySketchTool.pen,
+        ),
+        colorValue: json['colorValue'] as int? ?? 0xFF222222,
+        width: (json['width'] as num? ?? 3).toDouble(),
+        points: (json['points'] as List? ?? const [])
+            .whereType<Map>()
+            .map(
+              (point) => DiarySketchPoint.fromJson(
+                Map<String, dynamic>.from(point),
+              ),
+            )
+            .toList(),
+      );
+}
+
+class DiarySketchPage {
+  final String id;
+  final DiarySketchPaper paper;
+  final List<DiarySketchStroke> strokes;
+
+  const DiarySketchPage({
+    required this.id,
+    this.paper = DiarySketchPaper.plain,
+    this.strokes = const [],
+  });
+
+  DiarySketchPage copyWith({
+    DiarySketchPaper? paper,
+    List<DiarySketchStroke>? strokes,
+  }) =>
+      DiarySketchPage(
+        id: id,
+        paper: paper ?? this.paper,
+        strokes: strokes ?? this.strokes,
+      );
+
+  Map<String, dynamic> toJson() => {
+        'id': id,
+        'paper': paper.name,
+        'strokes': strokes.map((stroke) => stroke.toJson()).toList(),
+      };
+
+  factory DiarySketchPage.fromJson(Map<String, dynamic> json) =>
+      DiarySketchPage(
+        id: json['id'] as String? ?? const Uuid().v4(),
+        paper: DiarySketchPaper.values.firstWhere(
+          (value) => value.name == json['paper'],
+          orElse: () => DiarySketchPaper.plain,
+        ),
+        strokes: (json['strokes'] as List? ?? const [])
+            .whereType<Map>()
+            .map(
+              (stroke) => DiarySketchStroke.fromJson(
+                Map<String, dynamic>.from(stroke),
+              ),
+            )
+            .toList(),
+      );
+}
+
+class DiaryBlock {
+  final String id;
+  final DiaryBlockType type;
+  final DateTime createdAt;
+  final String text;
+  final String imageBase64;
+  final List<DiarySketchPage> pages;
+
+  const DiaryBlock({
+    required this.id,
+    required this.type,
+    required this.createdAt,
+    this.text = '',
+    this.imageBase64 = '',
+    this.pages = const [],
+  });
+
+  DiaryBlock copyWith({
+    String? text,
+    String? imageBase64,
+    List<DiarySketchPage>? pages,
+  }) =>
+      DiaryBlock(
+        id: id,
+        type: type,
+        createdAt: createdAt,
+        text: text ?? this.text,
+        imageBase64: imageBase64 ?? this.imageBase64,
+        pages: pages ?? this.pages,
+      );
+
+  Map<String, dynamic> toJson() => {
+        'id': id,
+        'type': type.name,
+        'createdAt': createdAt.toUtc().toIso8601String(),
+        'text': text,
+        'imageBase64': imageBase64,
+        'pages': pages.map((page) => page.toJson()).toList(),
+      };
+
+  factory DiaryBlock.fromJson(Map<String, dynamic> json) => DiaryBlock(
+        id: json['id'] as String? ?? const Uuid().v4(),
+        type: DiaryBlockType.values.firstWhere(
+          (value) => value.name == json['type'],
+          orElse: () => DiaryBlockType.note,
+        ),
+        createdAt:
+            DateTime.tryParse(json['createdAt'] as String? ?? '')?.toLocal() ??
+                DateTime.now(),
+        text: json['text'] as String? ?? '',
+        imageBase64: json['imageBase64'] as String? ?? '',
+        pages: (json['pages'] as List? ?? const [])
+            .whereType<Map>()
+            .map(
+              (page) => DiarySketchPage.fromJson(
+                Map<String, dynamic>.from(page),
+              ),
+            )
+            .toList(),
+      );
+}
+
 class DayJournal {
   final String beautiful;
   final String note;
   final DayMood? mood;
   final List<String> gratitude;
   final List<String> completedHabitIds;
+  final List<DiaryBlock> blocks;
 
   const DayJournal({
     this.beautiful = '',
@@ -451,6 +619,7 @@ class DayJournal {
     this.mood,
     this.gratitude = const [],
     this.completedHabitIds = const [],
+    this.blocks = const [],
   });
 
   DayJournal copyWith({
@@ -459,6 +628,7 @@ class DayJournal {
     DayMood? mood,
     List<String>? gratitude,
     List<String>? completedHabitIds,
+    List<DiaryBlock>? blocks,
     bool clearMood = false,
   }) {
     return DayJournal(
@@ -467,6 +637,7 @@ class DayJournal {
       mood: clearMood ? null : (mood ?? this.mood),
       gratitude: gratitude ?? this.gratitude,
       completedHabitIds: completedHabitIds ?? this.completedHabitIds,
+      blocks: blocks ?? this.blocks,
     );
   }
 
@@ -476,6 +647,7 @@ class DayJournal {
         'mood': mood?.name,
         'gratitude': gratitude,
         'completedHabitIds': completedHabitIds,
+        'blocks': blocks.map((block) => block.toJson()).toList(),
       };
 
   factory DayJournal.fromJson(Map<String, dynamic> json) => DayJournal(
@@ -492,9 +664,16 @@ class DayJournal {
         completedHabitIds: List<String>.from(
           json['completedHabitIds'] as List? ?? const [],
         ),
+        blocks: (json['blocks'] as List? ?? const [])
+            .whereType<Map>()
+            .map(
+              (block) => DiaryBlock.fromJson(
+                Map<String, dynamic>.from(block),
+              ),
+            )
+            .toList(),
       );
 }
-
 
 class WeekData {
   final String focus;
