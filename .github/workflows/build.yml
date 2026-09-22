@@ -24,6 +24,45 @@ jobs:
           cp -R /tmp/agenda_base/web .
           cp -R /tmp/agenda_base/ios .
 
+      - name: Configure Firebase Android when available
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import shutil
+
+          source = Path("firebase/google-services.json")
+          if not source.exists():
+              print("Firebase Android config not present; push stays disabled.")
+              raise SystemExit(0)
+
+          target = Path("android/app/google-services.json")
+          target.parent.mkdir(parents=True, exist_ok=True)
+          shutil.copyfile(source, target)
+
+          settings = Path("android/settings.gradle.kts")
+          s = settings.read_text()
+          plugin_line = '    id("com.google.gms.google-services") version "4.4.4" apply false\n'
+          if 'com.google.gms.google-services' not in s:
+              marker = "plugins {\n"
+              if marker not in s:
+                  raise SystemExit("Android settings plugins block not found")
+              s = s.replace(marker, marker + plugin_line, 1)
+          settings.write_text(s)
+
+          app = Path("android/app/build.gradle.kts")
+          a = app.read_text()
+          plugin_line = '    id("com.google.gms.google-services")\n'
+          if 'com.google.gms.google-services' not in a:
+              marker = "plugins {\n"
+              if marker not in a:
+                  raise SystemExit("Android app plugins block not found")
+              a = a.replace(marker, marker + plugin_line, 1)
+          app.write_text(a)
+
+          Path(".firebase_enabled").write_text("1")
+          print("Firebase Android config enabled.")
+          PY
+
       - name: Configure Android activity for local authentication
         run: |
           python3 - <<'PY'
@@ -202,8 +241,12 @@ jobs:
 
       - name: Build Android APK
         run: |
-          flutter build apk --release
-          flutter build apk --release --split-per-abi
+          FIREBASE_ARG=""
+          if [ -f .firebase_enabled ]; then
+            FIREBASE_ARG="--dart-define=FIREBASE_ENABLED=true"
+          fi
+          flutter build apk --release $FIREBASE_ARG
+          flutter build apk --release --split-per-abi $FIREBASE_ARG
 
       - name: Upload APKs
         uses: actions/upload-artifact@v4
