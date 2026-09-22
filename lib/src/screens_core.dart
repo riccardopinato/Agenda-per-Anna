@@ -3353,8 +3353,8 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
   }
 
   Future<void> _openComments(SharedEntry entry) async {
-    if (!CloudSyncService.instance.signedIn) {
-      _message('Accedi al cloud per commentare.');
+    if (widget.store.activeAccountId == null) {
+      _message('Accedi al cloud almeno una volta per commentare.');
       return;
     }
 
@@ -3470,31 +3470,40 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
                           final text = controller.text.trim();
                           if (text.isEmpty) return;
                           try {
-                            final cloud = CloudSyncService.instance;
-                            final comment = await cloud.addSharedEntryComment(
+                            final author = widget
+                                    .store.preferences.displayName.trim().isEmpty
+                                ? 'Utente'
+                                : widget.store.preferences.displayName.trim();
+                            final comment =
+                                await widget.store.enqueueSharedComment(
                               spaceId: widget.space.id,
                               entryId: entry.id,
-                              authorName: widget
-                                      .store.preferences.displayName.trim().isEmpty
-                                  ? 'Utente'
-                                  : widget.store.preferences.displayName.trim(),
+                              authorName: author,
                               body: text,
                             );
                             controller.clear();
+                            setState(() {
+                              commentsByEntry
+                                  .putIfAbsent(entry.id, () => [])
+                                  .add(comment);
+                            });
+                            if (CloudSyncService.instance.signedIn) {
+                              await widget.store
+                                  .flushSharedInteractionOperations(
+                                spaceId: widget.space.id,
+                              );
+                            }
                             await _loadInteractions();
                             if (sheetContext.mounted) {
                               setSheetState(() {});
                             }
-                            unawaited(
-                              cloud.sendSharedPush(
-                                spaceId: widget.space.id,
-                                eventId: 'comment:${comment.id}',
-                                action: 'comment',
-                                entityId: entry.id,
-                              ),
-                            );
+                            if (!CloudSyncService.instance.signedIn) {
+                              _message(
+                                'Commento salvato offline: verrà inviato automaticamente.',
+                              );
+                            }
                           } catch (_) {
-                            _message('Commento non inviato.');
+                            _message('Commento non salvato.');
                           }
                         },
                         icon: const Icon(Icons.send_outlined),
