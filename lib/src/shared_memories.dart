@@ -233,9 +233,9 @@ class _SharedMemoriesScreenState extends State<SharedMemoriesScreen> {
     result.sort((a, b) {
       final date = b.date.compareTo(a.date);
       if (date != 0) return date;
-      final updated = (b.updatedAt ?? b.date)
-          .compareTo(a.updatedAt ?? a.date);
-      if (updated != 0) return updated;
+      final created = (b.createdAt ?? b.updatedAt ?? b.date)
+          .compareTo(a.createdAt ?? a.updatedAt ?? a.date);
+      if (created != 0) return created;
       return b.id.compareTo(a.id);
     });
     return result;
@@ -1310,7 +1310,8 @@ class SharedMemoryCollectionScreen extends StatelessWidget {
       ..sort((a, b) {
         final date = b.date.compareTo(a.date);
         if (date != 0) return date;
-        return (b.updatedAt ?? b.date).compareTo(a.updatedAt ?? a.date);
+        return (b.createdAt ?? b.updatedAt ?? b.date)
+            .compareTo(a.createdAt ?? a.updatedAt ?? a.date);
       });
 
     return Scaffold(
