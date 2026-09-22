@@ -316,6 +316,118 @@ void main() {
     store.dispose();
   });
 
+  test('Noi interaction queue coalesces hearts and cancels unsent comments',
+      () async {
+    SharedPreferences.setMockInitialValues({
+      'active_account_v1': 'user-a',
+    });
+    final store = AgendaStore();
+    await store.load();
+
+    await store.enqueueSharedHeart(
+      spaceId: 'space-a',
+      entryId: 'entry-a',
+      active: true,
+    );
+    await store.enqueueSharedHeart(
+      spaceId: 'space-a',
+      entryId: 'entry-a',
+      active: false,
+    );
+
+    var pending =
+        await store.loadSharedInteractionPendingOperations('space-a');
+    expect(pending.length, 1);
+    expect(pending.single.type, SharedInteractionPendingType.setHeart);
+    expect(pending.single.payload['active'], false);
+
+    final comment = await store.enqueueSharedComment(
+      spaceId: 'space-a',
+      entryId: 'entry-a',
+      authorName: 'Riccardo',
+      body: 'Offline',
+    );
+    expect(store.pendingSharedInteractionCount, 2);
+
+    await store.enqueueSharedCommentDelete(
+      spaceId: 'space-a',
+      entryId: 'entry-a',
+      commentId: comment.id,
+    );
+
+    pending = await store.loadSharedInteractionPendingOperations('space-a');
+    expect(pending.length, 1);
+    expect(pending.single.type, SharedInteractionPendingType.setHeart);
+
+    store.dispose();
+  });
+
+  test('Noi reliability queues stay scoped to the active account', () async {
+    SharedPreferences.setMockInitialValues({
+      'active_account_v1': 'user-a',
+    });
+    final store = AgendaStore();
+    await store.load();
+
+    await store.enqueueSharedHeart(
+      spaceId: 'space-a',
+      entryId: 'entry-a',
+      active: true,
+    );
+    await store.enqueueSharedMediaUpload(
+      SharedMediaPendingUpload(
+        id: 'upload-a',
+        spaceId: 'space-a',
+        entryId: 'photo-a',
+        title: 'Foto',
+        note: '',
+        date: DateTime(2026, 9, 22),
+        imageBase64: 'AA==',
+        thumbnailBase64: 'AA==',
+        oldMediaPath: '',
+        createdAt: DateTime.utc(2026, 9, 22, 18),
+      ),
+    );
+
+    expect(store.pendingSharedInteractionCount, 1);
+    expect(store.pendingSharedMediaCount, 1);
+    expect(store.totalPendingCloudChanges, 2);
+
+    await store.activateCloudAccount('user-b');
+    expect(store.pendingSharedInteractionCount, 0);
+    expect(store.pendingSharedMediaCount, 0);
+
+    await store.activateCloudAccount('user-a');
+    expect(store.pendingSharedInteractionCount, 1);
+    expect(store.pendingSharedMediaCount, 1);
+
+    store.dispose();
+  });
+
+  test('shared photo delete queue retains media cleanup path', () async {
+    SharedPreferences.setMockInitialValues({
+      'active_account_v1': 'user-a',
+    });
+    final store = AgendaStore();
+    await store.load();
+
+    await store.enqueueSharedDelete(
+      spaceId: 'space-a',
+      entityId: 'photo-a',
+      mediaPath: 'space-a/photo-a/media.jpg',
+    );
+
+    final operations = await store.loadSharedPendingOperations('space-a');
+    expect(operations.length, 1);
+    expect(operations.single.action, SharedPendingAction.delete);
+    expect(
+      operations.single.payload?['mediaPath'],
+      'space-a/photo-a/media.jpg',
+    );
+
+    store.dispose();
+  });
+
   test('backup metadata reports the current release line', () async {
     final store = AgendaStore();
     await store.load();
@@ -323,7 +435,7 @@ void main() {
     final backup =
         Map<String, dynamic>.from(jsonDecode(store.createBackupJson()) as Map);
 
-    expect(backup['appVersion'], '0.28.0');
+    expect(backup['appVersion'], '0.29.0');
 
     store.dispose();
   });
