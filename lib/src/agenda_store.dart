@@ -18,7 +18,7 @@ class AgendaStore extends ChangeNotifier {
   static const _privacyGuardKey = 'privacy_guard_v1';
   static const _backupFormat = 'agenda_per_anna_backup';
   static const _backupSchemaVersion = 1;
-  static const _appVersion = '0.30.1';
+  static const _appVersion = '0.31.0';
 
   final List<AgendaItem> items = [];
   final Map<String, DayJournal> journals = {};
