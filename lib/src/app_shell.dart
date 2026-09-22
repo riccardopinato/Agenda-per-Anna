@@ -55,7 +55,7 @@ class AgendaApp extends StatelessWidget {
 
         return MaterialApp(
           debugShowCheckedModeBanner: false,
-          title: 'Agenda per Anna',
+          title: 'Anna\'s Diary',
           themeMode: mode,
           theme: _theme(Brightness.light),
           darkTheme: _theme(Brightness.dark),
@@ -460,7 +460,7 @@ class _PrivacyGateState extends State<_PrivacyGate>
       final canCheck = await auth.canCheckBiometrics;
       if (!supported || !canCheck) return;
       final ok = await auth.authenticate(
-        localizedReason: 'Sblocca Agenda per Anna',
+        localizedReason: 'Sblocca Anna\'s Diary',
       );
       if (ok && mounted) {
         setState(() {
