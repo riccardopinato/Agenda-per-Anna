@@ -33,7 +33,6 @@ class NotificationService {
 
   bool _initialized = false;
   bool _available = true;
-  bool _permissionsRequested = false;
   String? _initialPayload;
   final StreamController<String> _tapController =
       StreamController<String>.broadcast();
@@ -62,12 +61,17 @@ class NotificationService {
       macOS: darwin,
     );
 
-    final launchDetails = await _plugin.getNotificationAppLaunchDetails();
-    if (launchDetails?.didNotificationLaunchApp == true) {
-      final payload = launchDetails?.notificationResponse?.payload?.trim();
-      if (payload != null && payload.isNotEmpty) {
-        _initialPayload = payload;
+    try {
+      final launchDetails = await _plugin.getNotificationAppLaunchDetails();
+      if (launchDetails?.didNotificationLaunchApp == true) {
+        final payload = launchDetails?.notificationResponse?.payload?.trim();
+        if (payload != null && payload.isNotEmpty) {
+          _initialPayload = payload;
+        }
       }
+    } catch (_) {
+      // Il recupero del tap iniziale è accessorio e non deve impedire
+      // l'inizializzazione del plugin.
     }
 
     final initialized = await _plugin.initialize(
@@ -164,19 +168,16 @@ class NotificationService {
   Future<bool> requestPermissions({
     bool requestExactAlarm = false,
   }) async {
-    await initialize();
+    await initialize(force: !_initialized || !_available);
     if (!_available) return false;
 
-    bool granted = true;
+    var granted = true;
 
     try {
       final android = _plugin.resolvePlatformSpecificImplementation<
           AndroidFlutterLocalNotificationsPlugin>();
-
-      if (!_permissionsRequested) {
-        final result = await android?.requestNotificationsPermission();
-        if (result != null) granted = result;
-      }
+      final result = await android?.requestNotificationsPermission();
+      if (result != null) granted = result;
 
       if (requestExactAlarm) {
         final exact = await android?.canScheduleExactNotifications();
@@ -187,30 +188,25 @@ class NotificationService {
     } catch (_) {}
 
     try {
-      if (!_permissionsRequested) {
-        final result = await _plugin
-            .resolvePlatformSpecificImplementation<
-                IOSFlutterLocalNotificationsPlugin>()
-            ?.requestPermissions(
-              alert: true,
-              badge: true,
-              sound: true,
-            );
-        if (result != null) granted = granted && result;
-      }
+      final result = await _plugin
+          .resolvePlatformSpecificImplementation<
+              IOSFlutterLocalNotificationsPlugin>()
+          ?.requestPermissions(
+            alert: true,
+            badge: true,
+            sound: true,
+          );
+      if (result != null) granted = granted && result;
     } catch (_) {}
 
     try {
-      if (!_permissionsRequested) {
-        final result = await _plugin
-            .resolvePlatformSpecificImplementation<
-                WebFlutterLocalNotificationsPlugin>()
-            ?.requestNotificationsPermission();
-        if (result != null) granted = granted && result;
-      }
+      final result = await _plugin
+          .resolvePlatformSpecificImplementation<
+              WebFlutterLocalNotificationsPlugin>()
+          ?.requestNotificationsPermission();
+      if (result != null) granted = granted && result;
     } catch (_) {}
 
-    _permissionsRequested = true;
     return granted;
   }
 
