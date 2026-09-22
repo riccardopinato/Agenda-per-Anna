@@ -434,39 +434,11 @@ class _DiaryMemoryCardState extends State<DiaryMemoryCard> {
   }
 
   Future<void> _addNote([DiaryBlock? existing]) async {
-    final controller = TextEditingController(text: existing?.text ?? '');
-    final value = await showDialog<String>(
-      context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: Text(existing == null ? 'Nuova nota' : 'Modifica nota'),
-        content: TextField(
-          controller: controller,
-          autofocus: true,
-          minLines: 5,
-          maxLines: 12,
-          textCapitalization: TextCapitalization.sentences,
-          decoration: const InputDecoration(
-            hintText:
-                'Scrivi un ricordo, un pensiero, qualcosa da non dimenticare...',
-            border: OutlineInputBorder(),
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(dialogContext),
-            child: const Text('Annulla'),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.pop(
-              dialogContext,
-              controller.text.trim(),
-            ),
-            child: const Text('Salva'),
-          ),
-        ],
-      ),
+    final value = await showDiaryNoteEditor(
+      context,
+      initialText: existing?.text ?? '',
+      editing: existing != null,
     );
-    controller.dispose();
     if (value == null || value.isEmpty) return;
 
     final blocks = [...widget.store.journal(widget.date).blocks];
@@ -496,37 +468,10 @@ class _DiaryMemoryCardState extends State<DiaryMemoryCard> {
       final imageBase64 = await _pickCompressedDiaryImageBase64(source);
       if (imageBase64 == null || !mounted) return;
 
-      final captionController = TextEditingController();
-      final caption = await showDialog<String>(
-        context: context,
-        builder: (dialogContext) => AlertDialog(
-          title: const Text('Aggiungi al diario'),
-          content: TextField(
-            controller: captionController,
-            autofocus: true,
-            maxLines: 3,
-            textCapitalization: TextCapitalization.sentences,
-            decoration: const InputDecoration(
-              hintText: 'Una didascalia, se vuoi...',
-              border: OutlineInputBorder(),
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(dialogContext, ''),
-              child: const Text('Senza testo'),
-            ),
-            FilledButton(
-              onPressed: () => Navigator.pop(
-                dialogContext,
-                captionController.text.trim(),
-              ),
-              child: const Text('Aggiungi'),
-            ),
-          ],
-        ),
+      final caption = await showDiaryCaptionEditor(
+        context,
+        adding: true,
       );
-      captionController.dispose();
       if (caption == null) return;
 
       final blocks = [
@@ -553,36 +498,10 @@ class _DiaryMemoryCardState extends State<DiaryMemoryCard> {
   }
 
   Future<void> _editPhotoCaption(DiaryBlock block) async {
-    final controller = TextEditingController(text: block.text);
-    final value = await showDialog<String>(
-      context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: const Text('Didascalia'),
-        content: TextField(
-          controller: controller,
-          autofocus: true,
-          minLines: 2,
-          maxLines: 5,
-          textCapitalization: TextCapitalization.sentences,
-          decoration: const InputDecoration(
-            hintText: 'Scrivi qualcosa su questo ricordo...',
-            border: OutlineInputBorder(),
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(dialogContext),
-            child: const Text('Annulla'),
-          ),
-          FilledButton(
-            onPressed: () =>
-                Navigator.pop(dialogContext, controller.text.trim()),
-            child: const Text('Salva'),
-          ),
-        ],
-      ),
+    final value = await showDiaryCaptionEditor(
+      context,
+      initialText: block.text,
     );
-    controller.dispose();
     if (value == null) return;
 
     final blocks = [...widget.store.journal(widget.date).blocks];
@@ -651,26 +570,7 @@ class _DiaryMemoryCardState extends State<DiaryMemoryCard> {
   }
 
   Future<void> _delete(DiaryBlock block) async {
-    final confirmed = await showDialog<bool>(
-          context: context,
-          builder: (dialogContext) => AlertDialog(
-            title: const Text('Eliminare dal diario?'),
-            content: const Text(
-              'Questo contenuto verrà rimosso dalla giornata.',
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(dialogContext, false),
-                child: const Text('Annulla'),
-              ),
-              FilledButton(
-                onPressed: () => Navigator.pop(dialogContext, true),
-                child: const Text('Elimina'),
-              ),
-            ],
-          ),
-        ) ??
-        false;
+    final confirmed = await confirmDiaryContentDelete(context);
     if (!confirmed) return;
 
     final blocks = [...widget.store.journal(widget.date).blocks]
