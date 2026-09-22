@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "386250604936",
+    "project_id": "anna-s-diary",
+    "storage_bucket": "anna-s-diary.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:386250604936:android:f293083ec3327b11ecba3d",
+        "android_client_info": {
+          "package_name": "com.riccardopinato.agenda_per_anna"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBqanq4Ern2Hw0yY6ww_xow0z4TjsoQXNU"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
