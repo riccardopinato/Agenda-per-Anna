@@ -243,6 +243,7 @@ class AgendaItem {
   final String title;
   final String note;
   final DateTime date;
+  final DateTime? createdAt;
   final TimeOfDay? start;
   final TimeOfDay? end;
   final ItemType type;
@@ -271,6 +272,7 @@ class AgendaItem {
     String? title,
     String? note,
     DateTime? date,
+    DateTime? createdAt,
     TimeOfDay? start,
     TimeOfDay? end,
     ItemType? type,
@@ -1082,6 +1084,7 @@ class SharedEntry {
     required this.title,
     required this.note,
     required this.date,
+    this.createdAt,
     this.start,
     this.end,
     this.done = false,
@@ -1126,6 +1129,7 @@ class SharedEntry {
         title: title ?? this.title,
         note: note ?? this.note,
         date: date ?? this.date,
+        createdAt: createdAt ?? this.createdAt,
         start: clearTime ? null : (start ?? this.start),
         end: clearTime ? null : (end ?? this.end),
         done: done ?? this.done,
@@ -1147,6 +1151,7 @@ class SharedEntry {
         'title': title,
         'note': note,
         'date': date.toIso8601String(),
+        'createdAt': createdAt?.toUtc().toIso8601String(),
         'start': start == null
             ? null
             : {'hour': start!.hour, 'minute': start!.minute},
@@ -1197,6 +1202,9 @@ class SharedEntry {
       title: json['title'] as String? ?? '',
       note: json['note'] as String? ?? '',
       date: DateTime.tryParse(json['date'] as String? ?? '') ?? DateTime.now(),
+      createdAt:
+          DateTime.tryParse(json['createdAt'] as String? ?? '') ??
+              updatedAt,
       start: parseTime(json['start']),
       end: parseTime(json['end']),
       done: json['done'] as bool? ?? false,
