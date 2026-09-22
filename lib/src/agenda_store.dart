@@ -45,8 +45,12 @@ class AgendaStore extends ChangeNotifier {
   Timer? _unifiedRealtimeDebounce;
   bool _cloudSyncRunning = false;
   bool _sharedFlushRunning = false;
+  bool _sharedInteractionFlushRunning = false;
+  bool _sharedMediaFlushRunning = false;
   int _sharedConflictCount = 0;
   int _pendingSharedChangeCount = 0;
+  int _pendingSharedInteractionCount = 0;
+  int _pendingSharedMediaCount = 0;
   DateTime? _lastSharedSyncAt;
   String? _activeAccountId;
   bool _accountScopeResolved = true;
@@ -56,8 +60,13 @@ class AgendaStore extends ChangeNotifier {
   bool get hasStorageWarnings => _unreadableStorageKeys.isNotEmpty;
   int get sharedConflictCount => _sharedConflictCount;
   int get pendingSharedChangeCount => _pendingSharedChangeCount;
+  int get pendingSharedInteractionCount => _pendingSharedInteractionCount;
+  int get pendingSharedMediaCount => _pendingSharedMediaCount;
   int get totalPendingCloudChanges =>
-      pendingCloudChanges + _pendingSharedChangeCount;
+      pendingCloudChanges +
+      _pendingSharedChangeCount +
+      _pendingSharedInteractionCount +
+      _pendingSharedMediaCount;
   int get totalSharedUnreadCount =>
       _sharedUnreadBySpace.values.fold(0, (sum, count) => sum + count);
   int sharedUnreadCount(String spaceId) => _sharedUnreadBySpace[spaceId] ?? 0;
@@ -132,6 +141,8 @@ class AgendaStore extends ChangeNotifier {
     _sharedUnreadBySpace.clear();
     _unifiedRealtimeSpaceIds.clear();
     _pendingSharedChangeCount = 0;
+    _pendingSharedInteractionCount = 0;
+    _pendingSharedMediaCount = 0;
     preferences = const AgendaPreferences();
 
     T? decodeSection<T>(
@@ -304,6 +315,8 @@ class AgendaStore extends ChangeNotifier {
     await _loadSharedUnreadCounts(prefs);
     await refreshSharedAgendaCache(notify: false);
     await refreshPendingSharedCount(notify: false);
+    await refreshPendingSharedInteractionCount(notify: false);
+    await refreshPendingSharedMediaCount(notify: false);
   }
 
   Map<String, dynamic> _readAccountProfiles(SharedPreferences prefs) {
