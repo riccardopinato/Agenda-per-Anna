@@ -1074,6 +1074,7 @@ class SharedEntry {
   final String mediaPath;
   final String mediaThumbnailBase64;
   final List<DiarySketchPage> sketchPages;
+  final bool memoryPinned;
 
   const SharedEntry({
     required this.id,
@@ -1090,7 +1091,14 @@ class SharedEntry {
     this.mediaPath = '',
     this.mediaThumbnailBase64 = '',
     this.sketchPages = const [],
+    this.memoryPinned = false,
   });
+
+  bool get appearsInSharedMemories =>
+      memoryPinned ||
+      type == SharedEntryType.note ||
+      type == SharedEntryType.photo ||
+      type == SharedEntryType.sketch;
 
   SharedEntry copyWith({
     SharedEntryType? type,
@@ -1106,6 +1114,7 @@ class SharedEntry {
     String? mediaPath,
     String? mediaThumbnailBase64,
     List<DiarySketchPage>? sketchPages,
+    bool? memoryPinned,
     bool clearTime = false,
     bool clearUpdatedBy = false,
     bool clearMedia = false,
@@ -1129,6 +1138,7 @@ class SharedEntry {
             : (mediaThumbnailBase64 ?? this.mediaThumbnailBase64),
         sketchPages:
             clearSketch ? const [] : (sketchPages ?? this.sketchPages),
+        memoryPinned: memoryPinned ?? this.memoryPinned,
       );
 
   Map<String, dynamic> toJson() => {
@@ -1148,6 +1158,7 @@ class SharedEntry {
         'mediaPath': mediaPath,
         'mediaThumbnailBase64': mediaThumbnailBase64,
         'sketchPages': sketchPages.map((page) => page.toJson()).toList(),
+        'memoryPinned': memoryPinned,
       };
 
   Map<String, dynamic> toCacheJson() => {
@@ -1202,6 +1213,7 @@ class SharedEntry {
             ),
           )
           .toList(),
+      memoryPinned: json['memoryPinned'] as bool? ?? false,
     );
   }
 }
