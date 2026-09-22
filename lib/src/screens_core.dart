@@ -4198,74 +4198,29 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
         (a, b) => (b.updatedAt ?? b.date).compareTo(a.updatedAt ?? a.date),
       );
 
-    return SimpleCard(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              const Expanded(
-                child: Text(
-                  'Il nostro diario',
-                  style: TextStyle(
-                    fontWeight: FontWeight.w900,
-                    fontSize: 18,
-                  ),
-                ),
-              ),
-              TextButton.icon(
-                onPressed: _openSharedMemories,
-                icon: const Icon(Icons.photo_library_outlined, size: 18),
-                label: const Text('Ricordi'),
-              ),
-            ],
-          ),
-          const SizedBox(height: 4),
-          Text(
-            'Note, sketch e foto usano gli stessi strumenti del diario privato, '
-            'ma vengono sincronizzati in Noi ♡ e sono visibili a entrambi.',
-            style: Theme.of(context).textTheme.bodySmall,
-          ),
-          const SizedBox(height: 12),
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: [
-              FilledButton.tonalIcon(
-                onPressed: () => _addSharedNote(),
-                icon: const Icon(Icons.sticky_note_2_outlined),
-                label: const Text('Nota'),
-              ),
-              FilledButton.tonalIcon(
-                onPressed: () => _addSharedSketch(),
-                icon: const Icon(Icons.draw_outlined),
-                label: const Text('Sketch'),
-              ),
-              FilledButton.tonalIcon(
-                onPressed: () => _addSharedPhoto(),
-                icon: const Icon(Icons.add_photo_alternate_outlined),
-                label: const Text('Foto'),
-              ),
-            ],
-          ),
-          if (blocks.isEmpty) ...[
-            const SizedBox(height: 14),
-            const Text(
-              'Qui potete costruire la giornata come una pagina di diario condivisa, '
-              'un ricordo alla volta.',
+    return DiaryComposerSection(
+      title: 'Il nostro diario',
+      subtitle:
+          'Stessi strumenti, stesse card e stesse azioni del diario privato. '
+          'Qui i contenuti vengono sincronizzati in Noi ♡ e sono visibili a entrambi.',
+      memoriesLabel: 'Ricordi',
+      emptyText:
+          'Qui potete costruire la giornata come una pagina di diario condivisa, '
+          'un ricordo alla volta.',
+      onMemories: _openSharedMemories,
+      onAddNote: () => _addSharedNote(),
+      onAddSketch: () => _addSharedSketch(),
+      onAddPhoto: () => _addSharedPhoto(),
+      photoBusy: sharedPhotoBusy,
+      children: blocks
+          .map(
+            (entry) => _sharedEntryCard(
+              context,
+              entry,
+              showDate: false,
             ),
-          ] else ...[
-            const SizedBox(height: 14),
-            ...blocks.map(
-              (entry) => _sharedEntryCard(
-                context,
-                entry,
-                showDate: false,
-              ),
-            ),
-          ],
-        ],
-      ),
+          )
+          .toList(growable: false),
     );
   }
 
