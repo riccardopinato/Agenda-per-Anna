@@ -1294,6 +1294,7 @@ class AgendaStore extends ChangeNotifier {
 
     if (cloud.signedIn) {
       await syncAllCloud();
+      await PushNotificationService.instance.registerCurrentToken();
     }
   }
 
@@ -1857,12 +1858,14 @@ class AgendaStore extends ChangeNotifier {
         onUpdatedBy: (updatedBy) {
           if (updatedBy != null && updatedBy != cloud.userId) {
             unawaited(markSharedSpaceUnread(space.id));
-            unawaited(
-              NotificationService.instance.showSharedUpdate(
-                spaceId: space.id,
-                spaceName: space.name,
-              ),
-            );
+            if (!PushNotificationService.instance.remotePushActive) {
+              unawaited(
+                NotificationService.instance.showSharedUpdate(
+                  spaceId: space.id,
+                  spaceName: space.name,
+                ),
+              );
+            }
           }
         },
         onChanged: () {
@@ -2201,6 +2204,23 @@ class AgendaStore extends ChangeNotifier {
             }
 
             await removeExactOperation(operation);
+
+            try {
+              final eventId = [
+                currentSpaceId,
+                operation.entityId,
+                operation.updatedAt.toUtc().toIso8601String(),
+                operation.action.name,
+              ].join(':');
+              await cloud.sendSharedPush(
+                spaceId: currentSpaceId,
+                eventId: eventId,
+                action: operation.action.name,
+              );
+            } catch (_) {
+              // Push is best-effort and must never requeue a synced change.
+            }
+
             _lastSharedSyncAt = DateTime.now();
             stateChanged = true;
           } catch (error) {
