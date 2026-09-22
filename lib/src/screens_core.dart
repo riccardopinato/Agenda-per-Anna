@@ -3863,7 +3863,8 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
         title: compactTitle.isEmpty ? 'Nota' : compactTitle,
         note: value,
         date: existing?.date ?? selected,
-        createdAt: existing?.createdAt ?? DateTime.now(),
+        createdAt:
+            existing?.createdAt ?? existing?.updatedAt ?? DateTime.now(),
         memoryPinned: existing?.memoryPinned ?? false,
       ),
     );
@@ -3927,7 +3928,8 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
             : 'Foto',
         note: caption ?? '',
         date: existing?.date ?? selected,
-        createdAt: existing?.createdAt ?? DateTime.now(),
+        createdAt:
+            existing?.createdAt ?? existing?.updatedAt ?? DateTime.now(),
         mediaPath: existing?.mediaPath ?? '',
         mediaThumbnailBase64: thumbnailBase64,
         memoryPinned: existing?.memoryPinned ?? false,
@@ -3953,7 +3955,7 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
           imageBase64: fullBase64,
           thumbnailBase64: thumbnailBase64,
           oldMediaPath: existing?.mediaPath ?? '',
-          createdAt: revision,
+          createdAt: localPreview.createdAt ?? revision,
         ),
       );
 
@@ -3998,7 +4000,8 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
             : 'Sketch',
         note: existing?.note ?? '',
         date: existing?.date ?? selected,
-        createdAt: existing?.createdAt ?? DateTime.now(),
+        createdAt:
+            existing?.createdAt ?? existing?.updatedAt ?? DateTime.now(),
         sketchPages: pages,
         memoryPinned: existing?.memoryPinned ?? false,
       ),
@@ -5118,7 +5121,10 @@ Future<SharedEntry?> _openSharedEntryEditor(
                   title: value,
                   note: note.text.trim(),
                   date: date,
-                  createdAt: existing?.createdAt ?? DateTime.now(),
+                  createdAt:
+                      existing?.createdAt ??
+                      existing?.updatedAt ??
+                      DateTime.now(),
                   start: type.supportsTime ? start : null,
                   end: type.supportsTime ? end : null,
                   done: existing?.done ?? false,
