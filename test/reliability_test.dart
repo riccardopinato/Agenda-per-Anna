@@ -404,6 +404,49 @@ void main() {
     store.dispose();
   });
 
+  test('deleting an offline shared photo cancels its pending upload',
+      () async {
+    SharedPreferences.setMockInitialValues({
+      'active_account_v1': 'user-a',
+    });
+    final store = AgendaStore();
+    await store.load();
+
+    await store.enqueueSharedMediaUpload(
+      SharedMediaPendingUpload(
+        id: 'upload-a',
+        spaceId: 'space-a',
+        entryId: 'photo-a',
+        title: 'Foto',
+        note: 'Offline',
+        date: DateTime(2026, 9, 23),
+        imageBase64: 'AA==',
+        thumbnailBase64: 'AA==',
+        oldMediaPath: '',
+        createdAt: DateTime.utc(2026, 9, 23, 10),
+      ),
+    );
+    expect(store.pendingSharedMediaCount, 1);
+
+    await store.enqueueSharedDelete(
+      spaceId: 'space-a',
+      entityId: 'photo-a',
+    );
+
+    expect(
+      await store.loadSharedMediaPendingUploads('space-a'),
+      isEmpty,
+    );
+    expect(store.pendingSharedMediaCount, 0);
+
+    final pending = await store.loadSharedPendingOperations('space-a');
+    expect(pending.length, 1);
+    expect(pending.single.action, SharedPendingAction.delete);
+    expect(pending.single.entityId, 'photo-a');
+
+    store.dispose();
+  });
+
   test('shared photo delete queue retains media cleanup path', () async {
     SharedPreferences.setMockInitialValues({
       'active_account_v1': 'user-a',
