@@ -1220,7 +1220,7 @@ class _BackupScreenState extends State<BackupScreen> {
 
   String _timestampFileName(String extension) {
     final stamp = DateFormat('yyyy-MM-dd_HH-mm').format(DateTime.now());
-    return 'Agenda-per-Anna_backup_$stamp.$extension';
+    return 'Annas-Diary_backup_$stamp.$extension';
   }
 
   void _message(String text) {
@@ -2432,7 +2432,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               const SizedBox(height: 8),
               Center(
                 child: Text(
-                  'Agenda per Anna · v0.13',
+                  'Anna\'s Diary · v0.21',
                   style: Theme.of(context).textTheme.bodySmall,
                 ),
               ),
