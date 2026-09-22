@@ -91,6 +91,131 @@ class _SharedMemoriesScreenState extends State<SharedMemoriesScreen> {
     }
   }
 
+  String _formatBytes(int bytes) {
+    if (bytes < 1024) return '$bytes B';
+    final kb = bytes / 1024;
+    if (kb < 1024) return '${kb.toStringAsFixed(1)} KB';
+    final mb = kb / 1024;
+    return '${mb.toStringAsFixed(1)} MB';
+  }
+
+  Future<void> _runMediaMaintenance({
+    bool removeOrphans = false,
+  }) async {
+    if (!CloudSyncService.instance.signedIn) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'La manutenzione media richiede la connessione cloud.',
+          ),
+        ),
+      );
+      return;
+    }
+
+    setState(() => refreshing = true);
+    try {
+      await widget.onRefresh();
+      _syncSnapshot();
+      final referenced = entries
+          .where(
+            (entry) =>
+                entry.type == SharedEntryType.photo &&
+                entry.mediaPath.trim().isNotEmpty,
+          )
+          .map((entry) => entry.mediaPath.trim())
+          .toSet();
+
+      final report =
+          await CloudSyncService.instance.maintainSharedMedia(
+        spaceId: widget.space.id,
+        referencedPaths: referenced,
+        removeOrphans: removeOrphans,
+      );
+
+      if (!mounted) return;
+      if (removeOrphans) {
+        await showDialog<void>(
+          context: context,
+          builder: (dialogContext) => AlertDialog(
+            title: const Text('Manutenzione completata'),
+            content: Text(
+              report.removedCount == 0
+                  ? 'Non c’erano file orfani da eliminare. '
+                      'Storage rilevato: ${_formatBytes(report.totalBytes)}.'
+                  : 'Eliminati ${report.removedCount} file orfani. '
+                      'Storage rilevato prima della pulizia: '
+                      '${_formatBytes(report.totalBytes)}.',
+            ),
+            actions: [
+              FilledButton(
+                onPressed: () => Navigator.pop(dialogContext),
+                child: const Text('OK'),
+              ),
+            ],
+          ),
+        );
+        return;
+      }
+
+      final cleanup = await showDialog<bool>(
+            context: context,
+            builder: (dialogContext) => AlertDialog(
+              title: const Text('Media di Noi ♡'),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('File Storage: ${report.fileCount}'),
+                  Text(
+                    'Media collegati ai ricordi: '
+                    '${report.referencedCount}',
+                  ),
+                  Text('File orfani: ${report.orphanCount}'),
+                  Text(
+                    'Spazio rilevato: '
+                    '${_formatBytes(report.totalBytes)}',
+                  ),
+                  if (report.orphanCount > 0) ...[
+                    const SizedBox(height: 12),
+                    const Text(
+                      'I file orfani non risultano più collegati ad alcuna '
+                      'foto condivisa nello spazio corrente.',
+                    ),
+                  ],
+                ],
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(dialogContext, false),
+                  child: const Text('Chiudi'),
+                ),
+                if (report.orphanCount > 0)
+                  FilledButton(
+                    onPressed: () => Navigator.pop(dialogContext, true),
+                    child: const Text('Pulisci orfani'),
+                  ),
+              ],
+            ),
+          ) ??
+          false;
+
+      if (cleanup && mounted) {
+        await _runMediaMaintenance(removeOrphans: true);
+      }
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Controllo Storage non riuscito. Riprova più tardi.'),
+        ),
+      );
+    } finally {
+      if (mounted) setState(() => refreshing = false);
+    }
+  }
+
   Future<void> _toggleMemory(SharedEntry entry) async {
     await widget.onToggleMemory(entry);
     if (!mounted) return;
@@ -652,6 +777,20 @@ class _SharedMemoriesScreenState extends State<SharedMemoriesScreen> {
             tooltip: 'Aggiorna',
             onPressed: refreshing ? null : _refresh,
             icon: const Icon(Icons.refresh),
+          ),
+          PopupMenuButton<String>(
+            tooltip: 'Altre opzioni',
+            onSelected: (value) {
+              if (value == 'storage') {
+                _runMediaMaintenance();
+              }
+            },
+            itemBuilder: (_) => const [
+              PopupMenuItem(
+                value: 'storage',
+                child: Text('Controlla media e Storage'),
+              ),
+            ],
           ),
         ],
       ),
