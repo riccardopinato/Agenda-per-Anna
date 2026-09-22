@@ -3831,7 +3831,11 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
       initialType: initialType,
     );
     if (result == null) return;
-    await _persistSharedEntry(result);
+    await _persistSharedEntry(
+      existing == null
+          ? result
+          : result.copyWith(memoryPinned: existing.memoryPinned),
+    );
   }
 
   Future<(String, String, DateTime)?> _sharedMediaDetails({
@@ -3962,6 +3966,7 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
         date: details.$3,
         mediaPath: existing?.mediaPath ?? '',
         mediaThumbnailBase64: thumbnailBase64,
+        memoryPinned: existing?.memoryPinned ?? false,
       );
 
       final revision = DateTime.now().toUtc();
@@ -4034,6 +4039,7 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
         note: details.$2,
         date: details.$3,
         sketchPages: pages,
+        memoryPinned: existing?.memoryPinned ?? false,
       ),
     );
   }
@@ -4108,6 +4114,43 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
     await _saveCache();
     if (CloudSyncService.instance.signedIn) {
       await _flushPending();
+    }
+  }
+
+  Future<void> _toggleMemoryPin(SharedEntry entry) async {
+    if (entry.type != SharedEntryType.appointment &&
+        entry.type != SharedEntryType.task) {
+      return;
+    }
+
+    final next = entry.copyWith(memoryPinned: !entry.memoryPinned);
+    await _persistSharedEntry(next);
+    if (!mounted) return;
+    _message(
+      next.memoryPinned
+          ? 'Aggiunto a I nostri ricordi.'
+          : 'Rimosso da I nostri ricordi.',
+    );
+  }
+
+  Future<void> _openSharedMemories() async {
+    await Navigator.push<void>(
+      context,
+      MaterialPageRoute(
+        builder: (_) => SharedMemoriesScreen(
+          store: widget.store,
+          space: widget.space,
+          entriesProvider: () => List<SharedEntry>.from(entries),
+          commentsProvider: () => commentsByEntry,
+          heartsProvider: () => heartsByEntry,
+          readsProvider: () => memberReads,
+          onRefresh: () => _refresh(silent: true),
+          onToggleMemory: _toggleMemoryPin,
+        ),
+      ),
+    );
+    if (mounted) {
+      await _refresh(silent: true);
     }
   }
 
@@ -4279,6 +4322,7 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
       if (entry.start != null) formatTime(entry.start!),
       if (entry.note.isNotEmpty) entry.note,
       if (editor.isNotEmpty) editor,
+      if (entry.memoryPinned) 'Nei ricordi',
       if (entry.updatedAt != null)
         'Aggiornato ${DateFormat('HH:mm', 'it_IT').format(entry.updatedAt!.toLocal())}',
       if (pending) 'In attesa di sincronizzazione',
@@ -4365,6 +4409,9 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
                           _edit(entry);
                         }
                       }
+                      if (value == 'memory') {
+                        _toggleMemoryPin(entry);
+                      }
                       if (value == 'delete') _delete(entry);
                     },
                     itemBuilder: (_) => [
@@ -4376,6 +4423,16 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
                               : 'Modifica',
                         ),
                       ),
+                      if (entry.type == SharedEntryType.appointment ||
+                          entry.type == SharedEntryType.task)
+                        PopupMenuItem(
+                          value: 'memory',
+                          child: Text(
+                            entry.memoryPinned
+                                ? 'Togli dai ricordi'
+                                : 'Aggiungi ai ricordi',
+                          ),
+                        ),
                       const PopupMenuItem(
                         value: 'delete',
                         child: Text('Elimina'),
@@ -4518,6 +4575,11 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
             style: const TextStyle(fontWeight: FontWeight.w900),
           ),
           actions: [
+            IconButton(
+              tooltip: 'I nostri ricordi',
+              onPressed: _openSharedMemories,
+              icon: const Icon(Icons.photo_library_outlined),
+            ),
             if (widget.space.isOwner)
               IconButton(
                 tooltip: 'Invita',
@@ -4580,6 +4642,25 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
               ),
               const SizedBox(height: 10),
               _syncCard(context),
+              const SizedBox(height: 10),
+              Card(
+                margin: EdgeInsets.zero,
+                child: ListTile(
+                  leading: const CircleAvatar(
+                    child: Icon(Icons.photo_library_outlined),
+                  ),
+                  title: const Text(
+                    'I nostri ricordi',
+                    style: TextStyle(fontWeight: FontWeight.w900),
+                  ),
+                  subtitle: Text(
+                    '${entries.where((entry) => entry.appearsInSharedMemories).length} ricordi · '
+                    'foto, sketch, note e momenti scelti da voi',
+                  ),
+                  trailing: const Icon(Icons.chevron_right),
+                  onTap: _openSharedMemories,
+                ),
+              ),
               const SizedBox(height: 14),
               SegmentedButton<bool>(
                 segments: const [
