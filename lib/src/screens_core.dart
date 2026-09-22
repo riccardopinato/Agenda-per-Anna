@@ -4581,7 +4581,9 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
     ];
 
     VoidCallback openEntry = () => _edit(entry);
-    if (entry.type == SharedEntryType.photo) {
+    if (entry.type == SharedEntryType.note) {
+      openEntry = () => _addSharedNote(entry);
+    } else if (entry.type == SharedEntryType.photo) {
       openEntry = () => Navigator.push(
             context,
             MaterialPageRoute(
@@ -4653,13 +4655,21 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
                 : PopupMenuButton<String>(
                     onSelected: (value) {
                       if (value == 'edit') {
-                        if (entry.type == SharedEntryType.photo) {
-                          _addSharedPhoto(entry);
+                        if (entry.type == SharedEntryType.note) {
+                          _addSharedNote(entry);
                         } else if (entry.type == SharedEntryType.sketch) {
                           _addSharedSketch(entry);
                         } else {
                           _edit(entry);
                         }
+                      }
+                      if (value == 'caption' &&
+                          entry.type == SharedEntryType.photo) {
+                        _editSharedPhotoCaption(entry);
+                      }
+                      if (value == 'replace' &&
+                          entry.type == SharedEntryType.photo) {
+                        _addSharedPhoto(entry);
                       }
                       if (value == 'memory') {
                         _toggleMemoryPin(entry);
@@ -4667,14 +4677,21 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
                       if (value == 'delete') _delete(entry);
                     },
                     itemBuilder: (_) => [
-                      PopupMenuItem(
-                        value: 'edit',
-                        child: Text(
-                          entry.type == SharedEntryType.photo
-                              ? 'Sostituisci / modifica'
-                              : 'Modifica',
+                      if (entry.type != SharedEntryType.photo)
+                        const PopupMenuItem(
+                          value: 'edit',
+                          child: Text('Modifica'),
                         ),
-                      ),
+                      if (entry.type == SharedEntryType.photo) ...[
+                        const PopupMenuItem(
+                          value: 'caption',
+                          child: Text('Modifica didascalia'),
+                        ),
+                        const PopupMenuItem(
+                          value: 'replace',
+                          child: Text('Sostituisci foto'),
+                        ),
+                      ],
                       if (entry.type == SharedEntryType.appointment ||
                           entry.type == SharedEntryType.task)
                         PopupMenuItem(
@@ -4894,6 +4911,8 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
               ),
               const SizedBox(height: 10),
               _syncCard(context),
+              const SizedBox(height: 10),
+              _sharedDiaryCard(context),
               const SizedBox(height: 10),
               Card(
                 margin: EdgeInsets.zero,
