@@ -1733,16 +1733,49 @@ class _NotificationSettingsCardState
           ),
         ),
       );
+    } catch (_) {
+      await _refresh();
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Il servizio notifiche non si è inizializzato. '
+            'Riprova ora oppure apri le impostazioni di sistema.',
+          ),
+        ),
+      );
     } finally {
       if (mounted) setState(() => busy = false);
     }
   }
 
   Future<void> _openSettings() async {
-    await NotificationService.instance.openSystemSettings();
-    if (!mounted) return;
-    await Future<void>.delayed(const Duration(milliseconds: 350));
-    await _refresh();
+    setState(() => busy = true);
+    try {
+      await NotificationService.instance.openSystemSettings();
+      if (!mounted) return;
+      await Future<void>.delayed(const Duration(milliseconds: 350));
+      await _refresh();
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Non riesco ad aprire le impostazioni notifiche.'),
+        ),
+      );
+    } finally {
+      if (mounted) setState(() => busy = false);
+    }
+  }
+
+  Future<void> _retryNotificationService() async {
+    setState(() => busy = true);
+    try {
+      await NotificationService.instance.initialize(force: true);
+      await _refresh();
+    } finally {
+      if (mounted) setState(() => busy = false);
+    }
   }
 
   @override
@@ -1847,6 +1880,12 @@ class _NotificationSettingsCardState
                 icon: const Icon(Icons.settings_outlined),
                 label: const Text('Impostazioni sistema'),
               ),
+              if (unavailable)
+                OutlinedButton.icon(
+                  onPressed: busy ? null : _retryNotificationService,
+                  icon: const Icon(Icons.refresh),
+                  label: const Text('Riprova servizio'),
+                ),
             ],
           ),
         ],
@@ -3738,12 +3777,15 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
     switch (type) {
       case SharedEntryType.photo:
         await _addSharedPhoto();
+        return;
       case SharedEntryType.sketch:
         await _addSharedSketch();
+        return;
       case SharedEntryType.appointment:
       case SharedEntryType.task:
       case SharedEntryType.note:
         await _edit(null, type);
+        return;
     }
   }
 
