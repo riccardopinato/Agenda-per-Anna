@@ -256,6 +256,7 @@ Deno.serve(async (req: Request) => {
             kind: "shared_update",
             space_id: spaceId,
             event_id: eventId,
+            action,
           },
           android: {
             priority: "high",
