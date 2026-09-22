@@ -4292,6 +4292,136 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
     );
   }
 }
+class SharedPhotoViewerScreen extends StatefulWidget {
+  final SharedSpace space;
+  final SharedEntry entry;
+
+  const SharedPhotoViewerScreen({
+    super.key,
+    required this.space,
+    required this.entry,
+  });
+
+  @override
+  State<SharedPhotoViewerScreen> createState() =>
+      _SharedPhotoViewerScreenState();
+}
+
+class _SharedPhotoViewerScreenState extends State<SharedPhotoViewerScreen> {
+  late final Future<Uint8List> _imageFuture = _load();
+
+  Future<Uint8List> _load() async {
+    if (widget.entry.mediaPath.isNotEmpty &&
+        CloudSyncService.instance.signedIn) {
+      try {
+        return await CloudSyncService.instance
+            .downloadSharedMedia(widget.entry.mediaPath);
+      } catch (_) {}
+    }
+    if (widget.entry.mediaThumbnailBase64.isNotEmpty) {
+      return base64Decode(widget.entry.mediaThumbnailBase64);
+    }
+    throw StateError('shared_photo_unavailable');
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.black,
+      appBar: AppBar(
+        backgroundColor: Colors.black,
+        foregroundColor: Colors.white,
+        title: Text(
+          widget.entry.title,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+        ),
+      ),
+      body: SafeArea(
+        child: Column(
+          children: [
+            Expanded(
+              child: FutureBuilder<Uint8List>(
+                future: _imageFuture,
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState != ConnectionState.done) {
+                    return const Center(
+                      child: CircularProgressIndicator(),
+                    );
+                  }
+                  final bytes = snapshot.data;
+                  if (bytes == null) {
+                    return const Center(
+                      child: Icon(
+                        Icons.broken_image_outlined,
+                        color: Colors.white70,
+                        size: 64,
+                      ),
+                    );
+                  }
+                  return InteractiveViewer(
+                    minScale: 0.75,
+                    maxScale: 6,
+                    child: Center(
+                      child: Image.memory(
+                        bytes,
+                        fit: BoxFit.contain,
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
+              decoration: const BoxDecoration(
+                color: Colors.black,
+                border: Border(
+                  top: BorderSide(color: Colors.white12),
+                ),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  if (widget.entry.note.trim().isNotEmpty) ...[
+                    Text(
+                      widget.entry.note,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 16,
+                        height: 1.3,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                  ],
+                  Text(
+                    _cap(
+                      DateFormat(
+                        'EEEE d MMMM yyyy',
+                        'it_IT',
+                      ).format(widget.entry.date),
+                    ),
+                    style: const TextStyle(color: Colors.white70),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    widget.space.name,
+                    style: const TextStyle(
+                      color: Colors.white70,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 Future<SharedEntry?> _openSharedEntryEditor(
   BuildContext context, {
   required DateTime initialDate,
