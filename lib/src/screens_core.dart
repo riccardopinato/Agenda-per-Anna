@@ -2672,7 +2672,7 @@ class _SharedSpaceHubScreenState extends State<SharedSpaceHubScreen> {
                                     await widget.store.markSharedSpaceRead(
                                       space.id,
                                     );
-                                    if (!mounted) return;
+                                    if (!context.mounted) return;
                                     await Navigator.push(
                                       context,
                                       MaterialPageRoute(
