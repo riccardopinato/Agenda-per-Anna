@@ -3936,6 +3936,7 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
   }
 
   Future<void> _addSharedPhoto([SharedEntry? existing]) async {
+    if (sharedPhotoBusy) return;
     if (widget.store.activeAccountId == null) {
       _message(
         'Accedi al cloud almeno una volta per condividere una foto.',
@@ -3946,6 +3947,7 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
     final source = await _chooseDiaryImageSource(context);
     if (source == null || !mounted) return;
 
+    setState(() => sharedPhotoBusy = true);
     try {
       final fullBase64 = await _pickCompressedDiaryImageBase64(
         source,
@@ -4052,6 +4054,8 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
       _message(
         'La foto è rimasta sul dispositivo. Il caricamento verrà ritentato.',
       );
+    } finally {
+      if (mounted) setState(() => sharedPhotoBusy = false);
     }
   }
 
