@@ -296,6 +296,43 @@ class NotificationService {
     );
   }
 
+  Future<void> showPushSelfTestReceived() async {
+    await initialize(force: !_initialized || !_available);
+    if (!_available) return;
+    await _plugin.show(
+      id: _notificationId(
+        'annas-diary:fcm-test:${DateTime.now().millisecondsSinceEpoch}',
+      ),
+      title: 'Anna\'s Diary · Test push',
+      body: 'Push Firebase ricevuta correttamente ♡',
+      notificationDetails: const NotificationDetails(
+        android: AndroidNotificationDetails(
+          sharedChannelId,
+          'Noi ♡',
+          channelDescription:
+              'Novità e aggiornamenti dello spazio condiviso Noi ♡',
+          importance: Importance.max,
+          priority: Priority.max,
+          playSound: true,
+          enableVibration: true,
+          category: AndroidNotificationCategory.status,
+          color: Color(0xFFE84A7F),
+        ),
+        iOS: DarwinNotificationDetails(
+          presentAlert: true,
+          presentBadge: true,
+          presentSound: true,
+        ),
+        macOS: DarwinNotificationDetails(
+          presentAlert: true,
+          presentBadge: true,
+          presentSound: true,
+        ),
+      ),
+      payload: 'test:fcm',
+    );
+  }
+
   Future<void> showSharedUpdate({
     required String spaceId,
     String? spaceName,
