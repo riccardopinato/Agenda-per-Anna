@@ -4197,13 +4197,10 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
         aspectRatio: 16 / 10,
         child: InkWell(
           onTap: openEntry,
-          child: Image.memory(
-            base64Decode(entry.mediaThumbnailBase64),
+          child: _CachedBase64Image(
+            data: entry.mediaThumbnailBase64,
             fit: BoxFit.cover,
             cacheWidth: 720,
-            errorBuilder: (_, __, ___) => const Center(
-              child: Icon(Icons.broken_image_outlined),
-            ),
           ),
         ),
       );
@@ -4553,6 +4550,61 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
     );
   }
 }
+class _CachedBase64Image extends StatefulWidget {
+  final String data;
+  final BoxFit fit;
+  final int? cacheWidth;
+
+  const _CachedBase64Image({
+    required this.data,
+    required this.fit,
+    this.cacheWidth,
+  });
+
+  @override
+  State<_CachedBase64Image> createState() => _CachedBase64ImageState();
+}
+
+class _CachedBase64ImageState extends State<_CachedBase64Image> {
+  Uint8List? bytes;
+
+  @override
+  void initState() {
+    super.initState();
+    _decode();
+  }
+
+  @override
+  void didUpdateWidget(covariant _CachedBase64Image oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.data != widget.data) _decode();
+  }
+
+  void _decode() {
+    try {
+      bytes = base64Decode(widget.data);
+    } catch (_) {
+      bytes = null;
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final image = bytes;
+    if (image == null) {
+      return const Center(child: Icon(Icons.broken_image_outlined));
+    }
+    return Image.memory(
+      image,
+      fit: widget.fit,
+      cacheWidth: widget.cacheWidth,
+      gaplessPlayback: true,
+      errorBuilder: (_, __, ___) =>
+          const Center(child: Icon(Icons.broken_image_outlined)),
+    );
+  }
+}
+
 class SharedPhotoViewerScreen extends StatefulWidget {
   final SharedSpace space;
   final SharedEntry entry;
