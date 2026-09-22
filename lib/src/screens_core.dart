@@ -3304,7 +3304,7 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
                                 contentPadding: EdgeInsets.zero,
                                 leading: CircleAvatar(
                                   child: Text(
-                                    author.characters.first.toUpperCase(),
+                                    author.substring(0, 1).toUpperCase(),
                                   ),
                                 ),
                                 title: Text(
