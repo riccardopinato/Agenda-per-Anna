@@ -1,5 +1,75 @@
 part of '../main.dart';
 
+Future<String?> _pickCompressedDiaryImageBase64(
+  ImageSource source, {
+  int maxSide = 720,
+  int quality = 58,
+}) async {
+  final picked = await ImagePicker().pickImage(
+    source: source,
+    requestFullMetadata: false,
+  );
+  if (picked == null) return null;
+
+  final bytes = await picked.readAsBytes();
+  var compressed = await FlutterImageCompress.compressWithList(
+    bytes,
+    minWidth: maxSide,
+    minHeight: maxSide,
+    quality: quality,
+    format: CompressFormat.jpeg,
+  );
+
+  if (compressed.lengthInBytes > 220 * 1024) {
+    compressed = await FlutterImageCompress.compressWithList(
+      bytes,
+      minWidth: 520,
+      minHeight: 520,
+      quality: 48,
+      format: CompressFormat.jpeg,
+    );
+  }
+
+  return base64Encode(compressed);
+}
+
+Future<ImageSource?> _chooseDiaryImageSource(BuildContext context) =>
+    showModalBottomSheet<ImageSource>(
+      context: context,
+      showDragHandle: true,
+      builder: (sheetContext) => SafeArea(
+        child: Wrap(
+          children: [
+            const ListTile(
+              title: Text(
+                'Aggiungi una foto',
+                style: TextStyle(fontWeight: FontWeight.w900),
+              ),
+              subtitle: Text(
+                'Nel diario viene salvata una copia compressa, non l’originale.',
+              ),
+            ),
+            ListTile(
+              leading: const CircleAvatar(
+                child: Icon(Icons.photo_camera_outlined),
+              ),
+              title: const Text('Scatta una foto'),
+              onTap: () =>
+                  Navigator.pop(sheetContext, ImageSource.camera),
+            ),
+            ListTile(
+              leading: const CircleAvatar(
+                child: Icon(Icons.photo_library_outlined),
+              ),
+              title: const Text('Scegli dalla galleria'),
+              onTap: () =>
+                  Navigator.pop(sheetContext, ImageSource.gallery),
+            ),
+          ],
+        ),
+      ),
+    );
+
 class DiaryMemoryCard extends StatefulWidget {
   final AgendaStore store;
   final DateTime date;
@@ -44,7 +114,8 @@ class _DiaryMemoryCardState extends State<DiaryMemoryCard> {
           maxLines: 12,
           textCapitalization: TextCapitalization.sentences,
           decoration: const InputDecoration(
-            hintText: 'Scrivi un ricordo, un pensiero, qualcosa da non dimenticare...',
+            hintText:
+                'Scrivi un ricordo, un pensiero, qualcosa da non dimenticare...',
             border: OutlineInputBorder(),
           ),
         ),
@@ -85,33 +156,14 @@ class _DiaryMemoryCardState extends State<DiaryMemoryCard> {
 
   Future<void> _addPhoto() async {
     if (photoBusy) return;
+    final source = await _chooseDiaryImageSource(context);
+    if (source == null || !mounted) return;
+
     setState(() => photoBusy = true);
     try {
-      final picked = await ImagePicker().pickImage(
-        source: ImageSource.gallery,
-        requestFullMetadata: false,
-      );
-      if (picked == null) return;
+      final imageBase64 = await _pickCompressedDiaryImageBase64(source);
+      if (imageBase64 == null || !mounted) return;
 
-      final bytes = await picked.readAsBytes();
-      var compressed = await FlutterImageCompress.compressWithList(
-        bytes,
-        minWidth: 1080,
-        minHeight: 1080,
-        quality: 72,
-        format: CompressFormat.jpeg,
-      );
-      if (compressed.lengthInBytes > 450 * 1024) {
-        compressed = await FlutterImageCompress.compressWithList(
-          bytes,
-          minWidth: 800,
-          minHeight: 800,
-          quality: 62,
-          format: CompressFormat.jpeg,
-        );
-      }
-
-      if (!mounted) return;
       final captionController = TextEditingController();
       final caption = await showDialog<String>(
         context: context,
@@ -152,7 +204,7 @@ class _DiaryMemoryCardState extends State<DiaryMemoryCard> {
           type: DiaryBlockType.photo,
           createdAt: DateTime.now(),
           text: caption,
-          imageBase64: base64Encode(compressed),
+          imageBase64: imageBase64,
         ),
       ];
       await _saveBlocks(blocks);
@@ -163,6 +215,68 @@ class _DiaryMemoryCardState extends State<DiaryMemoryCard> {
           content: Text('Non riesco ad aggiungere questa foto.'),
         ),
       );
+    } finally {
+      if (mounted) setState(() => photoBusy = false);
+    }
+  }
+
+  Future<void> _editPhotoCaption(DiaryBlock block) async {
+    final controller = TextEditingController(text: block.text);
+    final value = await showDialog<String>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Didascalia'),
+        content: TextField(
+          controller: controller,
+          autofocus: true,
+          minLines: 2,
+          maxLines: 5,
+          textCapitalization: TextCapitalization.sentences,
+          decoration: const InputDecoration(
+            hintText: 'Scrivi qualcosa su questo ricordo...',
+            border: OutlineInputBorder(),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext),
+            child: const Text('Annulla'),
+          ),
+          FilledButton(
+            onPressed: () =>
+                Navigator.pop(dialogContext, controller.text.trim()),
+            child: const Text('Salva'),
+          ),
+        ],
+      ),
+    );
+    controller.dispose();
+    if (value == null) return;
+
+    final blocks = [...widget.store.journal(widget.date).blocks];
+    final index = blocks.indexWhere((candidate) => candidate.id == block.id);
+    if (index >= 0) {
+      blocks[index] = block.copyWith(text: value);
+      await _saveBlocks(blocks);
+    }
+  }
+
+  Future<void> _replacePhoto(DiaryBlock block) async {
+    final source = await _chooseDiaryImageSource(context);
+    if (source == null || !mounted) return;
+
+    setState(() => photoBusy = true);
+    try {
+      final imageBase64 = await _pickCompressedDiaryImageBase64(source);
+      if (imageBase64 == null) return;
+
+      final blocks = [...widget.store.journal(widget.date).blocks];
+      final index =
+          blocks.indexWhere((candidate) => candidate.id == block.id);
+      if (index >= 0) {
+        blocks[index] = block.copyWith(imageBase64: imageBase64);
+        await _saveBlocks(blocks);
+      }
     } finally {
       if (mounted) setState(() => photoBusy = false);
     }
@@ -314,7 +428,7 @@ class _DiaryMemoryCardState extends State<DiaryMemoryCard> {
                     ),
                   ),
                 Padding(
-                  padding: const EdgeInsets.fromLTRB(14, 10, 6, 8),
+                  padding: const EdgeInsets.fromLTRB(14, 10, 4, 8),
                   child: Row(
                     children: [
                       const Icon(Icons.photo_outlined, size: 19),
@@ -328,10 +442,31 @@ class _DiaryMemoryCardState extends State<DiaryMemoryCard> {
                           overflow: TextOverflow.ellipsis,
                         ),
                       ),
-                      IconButton(
-                        tooltip: 'Elimina',
-                        onPressed: () => _delete(block),
-                        icon: const Icon(Icons.delete_outline),
+                      PopupMenuButton<String>(
+                        tooltip: 'Azioni foto',
+                        onSelected: (value) {
+                          if (value == 'caption') {
+                            _editPhotoCaption(block);
+                          } else if (value == 'replace') {
+                            _replacePhoto(block);
+                          } else if (value == 'delete') {
+                            _delete(block);
+                          }
+                        },
+                        itemBuilder: (_) => const [
+                          PopupMenuItem(
+                            value: 'caption',
+                            child: Text('Modifica didascalia'),
+                          ),
+                          PopupMenuItem(
+                            value: 'replace',
+                            child: Text('Sostituisci foto'),
+                          ),
+                          PopupMenuItem(
+                            value: 'delete',
+                            child: Text('Elimina'),
+                          ),
+                        ],
                       ),
                     ],
                   ),
@@ -353,13 +488,7 @@ class _DiaryMemoryCardState extends State<DiaryMemoryCard> {
               children: [
                 AspectRatio(
                   aspectRatio: 16 / 10,
-                  child: ColoredBox(
-                    color: Colors.white,
-                    child: CustomPaint(
-                      painter: DiarySketchPainter(page: page),
-                      child: const SizedBox.expand(),
-                    ),
-                  ),
+                  child: DiarySketchPagePreview(page: page),
                 ),
                 ListTile(
                   leading: const CircleAvatar(
@@ -392,13 +521,31 @@ class _DiaryMemoryCardState extends State<DiaryMemoryCard> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            'Il mio diario',
-            style: TextStyle(fontWeight: FontWeight.w900, fontSize: 18),
+          Row(
+            children: [
+              const Expanded(
+                child: Text(
+                  'Il mio diario',
+                  style: TextStyle(fontWeight: FontWeight.w900, fontSize: 18),
+                ),
+              ),
+              TextButton.icon(
+                onPressed: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => DiaryMemoriesScreen(
+                      store: widget.store,
+                    ),
+                  ),
+                ),
+                icon: const Icon(Icons.photo_library_outlined, size: 18),
+                label: const Text('Ricordi'),
+              ),
+            ],
           ),
           const SizedBox(height: 4),
           Text(
-            'Note, sketch e foto restano personali. Le foto vengono compresse prima di essere salvate.',
+            'Note, sketch e foto restano personali. Le foto vengono compresse in una copia leggera per diario e sync.',
             style: Theme.of(context).textTheme.bodySmall,
           ),
           const SizedBox(height: 12),
@@ -444,6 +591,267 @@ class _DiaryMemoryCardState extends State<DiaryMemoryCard> {
   }
 }
 
+class _DiaryMemoryRecord {
+  final DateTime date;
+  final DiaryBlock block;
+
+  const _DiaryMemoryRecord({
+    required this.date,
+    required this.block,
+  });
+}
+
+class DiaryMemoriesScreen extends StatefulWidget {
+  final AgendaStore store;
+
+  const DiaryMemoriesScreen({
+    super.key,
+    required this.store,
+  });
+
+  @override
+  State<DiaryMemoriesScreen> createState() => _DiaryMemoriesScreenState();
+}
+
+class _DiaryMemoriesScreenState extends State<DiaryMemoriesScreen> {
+  DiaryBlockType? filter;
+
+  List<_DiaryMemoryRecord> _records() {
+    final result = <_DiaryMemoryRecord>[];
+    for (final entry in widget.store.journals.entries) {
+      final date = DateTime.tryParse(entry.key);
+      if (date == null) continue;
+      for (final block in entry.value.blocks) {
+        if (filter != null && block.type != filter) continue;
+        result.add(_DiaryMemoryRecord(date: date, block: block));
+      }
+    }
+    result.sort((a, b) {
+      final created = b.block.createdAt.compareTo(a.block.createdAt);
+      if (created != 0) return created;
+      return b.date.compareTo(a.date);
+    });
+    return result;
+  }
+
+  Future<void> _openRecord(_DiaryMemoryRecord record) async {
+    await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => PlannerScreen(
+          store: widget.store,
+          initialDate: record.date,
+        ),
+      ),
+    );
+    if (mounted) setState(() {});
+  }
+
+  Widget _memoryTile(
+    BuildContext context,
+    _DiaryMemoryRecord record,
+  ) {
+    final block = record.block;
+    final date = DateFormat('d MMMM yyyy', 'it_IT').format(record.date);
+
+    switch (block.type) {
+      case DiaryBlockType.photo:
+        return Card(
+          clipBehavior: Clip.antiAlias,
+          child: InkWell(
+            onTap: () => _openRecord(record),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  child: block.imageBase64.isEmpty
+                      ? const Center(
+                          child: Icon(Icons.broken_image_outlined),
+                        )
+                      : Image.memory(
+                          base64Decode(block.imageBase64),
+                          width: double.infinity,
+                          fit: BoxFit.cover,
+                          cacheWidth: 560,
+                          errorBuilder: (_, __, ___) => const Center(
+                            child: Icon(Icons.broken_image_outlined),
+                          ),
+                        ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.all(10),
+                  child: Text(
+                    block.text.trim().isEmpty ? date : block.text,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(fontWeight: FontWeight.w700),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      case DiaryBlockType.sketch:
+        final page = block.pages.isEmpty
+            ? DiarySketchPage(id: block.id)
+            : block.pages.first;
+        return Card(
+          clipBehavior: Clip.antiAlias,
+          child: InkWell(
+            onTap: () => _openRecord(record),
+            child: Column(
+              children: [
+                Expanded(
+                  child: DiarySketchPagePreview(page: page),
+                ),
+                Padding(
+                  padding: const EdgeInsets.all(10),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.draw_outlined, size: 18),
+                      const SizedBox(width: 6),
+                      Expanded(
+                        child: Text(
+                          '$date · ${block.pages.length} pag.',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      case DiaryBlockType.note:
+        return Card(
+          child: InkWell(
+            borderRadius: BorderRadius.circular(12),
+            onTap: () => _openRecord(record),
+            child: Padding(
+              padding: const EdgeInsets.all(14),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Icon(Icons.sticky_note_2_outlined),
+                  const SizedBox(height: 10),
+                  Expanded(
+                    child: Text(
+                      block.text,
+                      maxLines: 8,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    date,
+                    style: Theme.of(context).textTheme.bodySmall,
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text(
+          'I miei ricordi',
+          style: TextStyle(fontWeight: FontWeight.w900),
+        ),
+      ),
+      body: AnimatedBuilder(
+        animation: widget.store,
+        builder: (context, _) {
+          final current = _records();
+          return Column(
+            children: [
+              SizedBox(
+                height: 58,
+                child: ListView(
+                  padding: const EdgeInsets.symmetric(horizontal: 12),
+                  scrollDirection: Axis.horizontal,
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.only(right: 7),
+                      child: ChoiceChip(
+                        selected: filter == null,
+                        label: const Text('Tutti'),
+                        avatar: const Icon(Icons.auto_awesome_outlined),
+                        onSelected: (_) => setState(() => filter = null),
+                      ),
+                    ),
+                    ...DiaryBlockType.values.map(
+                      (type) => Padding(
+                        padding: const EdgeInsets.only(right: 7),
+                        child: ChoiceChip(
+                          selected: filter == type,
+                          avatar: Icon(
+                            switch (type) {
+                              DiaryBlockType.note =>
+                                Icons.sticky_note_2_outlined,
+                              DiaryBlockType.sketch => Icons.draw_outlined,
+                              DiaryBlockType.photo =>
+                                Icons.photo_outlined,
+                            },
+                          ),
+                          label: Text(
+                            switch (type) {
+                              DiaryBlockType.note => 'Note',
+                              DiaryBlockType.sketch => 'Sketch',
+                              DiaryBlockType.photo => 'Foto',
+                            },
+                          ),
+                          onSelected: (_) =>
+                              setState(() => filter = type),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Expanded(
+                child: current.isEmpty
+                    ? const Center(
+                        child: Padding(
+                          padding: EdgeInsets.all(28),
+                          child: Text(
+                            'Nessun ricordo ancora. Aggiungi una nota, una foto o uno sketch in una giornata.',
+                            textAlign: TextAlign.center,
+                          ),
+                        ),
+                      )
+                    : GridView.builder(
+                        padding:
+                            const EdgeInsets.fromLTRB(12, 4, 12, 24),
+                        gridDelegate:
+                            const SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: 2,
+                          crossAxisSpacing: 10,
+                          mainAxisSpacing: 10,
+                          childAspectRatio: 0.82,
+                        ),
+                        itemCount: current.length,
+                        itemBuilder: (context, index) =>
+                            _memoryTile(context, current[index]),
+                      ),
+              ),
+            ],
+          );
+        },
+      ),
+    );
+  }
+}
+
 class DiarySketchbookScreen extends StatefulWidget {
   final List<DiarySketchPage> initialPages;
 
@@ -453,7 +861,8 @@ class DiarySketchbookScreen extends StatefulWidget {
   });
 
   @override
-  State<DiarySketchbookScreen> createState() => _DiarySketchbookScreenState();
+  State<DiarySketchbookScreen> createState() =>
+      _DiarySketchbookScreenState();
 }
 
 class _DiarySketchbookScreenState extends State<DiarySketchbookScreen> {
@@ -462,8 +871,20 @@ class _DiarySketchbookScreenState extends State<DiarySketchbookScreen> {
   DiarySketchTool tool = DiarySketchTool.pen;
   int colorValue = 0xFF222222;
   double width = 3;
+  double textSize = 22;
   DiarySketchStroke? activeStroke;
-  final Map<String, List<DiarySketchStroke>> _redo = {};
+  List<DiarySketchPoint> lassoPoints = const [];
+
+  final Set<int> selectedStrokeIndices = {};
+  final Set<String> selectedTextIds = {};
+  final Set<String> selectedImageIds = {};
+
+  final Map<String, List<DiarySketchPage>> _undo = {};
+  final Map<String, List<DiarySketchPage>> _redo = {};
+  final TransformationController _transform = TransformationController();
+  final GlobalKey _pageBoundaryKey = GlobalKey();
+
+  bool _selectionMoveStarted = false;
 
   static const _colors = <int>[
     0xFF222222,
@@ -477,24 +898,107 @@ class _DiarySketchbookScreenState extends State<DiarySketchbookScreen> {
   @override
   void initState() {
     super.initState();
-    pages = widget.initialPages
-        .map(
-          (page) => DiarySketchPage(
-            id: page.id,
-            paper: page.paper,
-            strokes: [...page.strokes],
-          ),
-        )
-        .toList();
+    pages = widget.initialPages.map(_clonePage).toList();
     if (pages.isEmpty) {
       pages = [DiarySketchPage(id: const Uuid().v4())];
     }
   }
 
+  @override
+  void dispose() {
+    _transform.dispose();
+    super.dispose();
+  }
+
+  DiarySketchPage _clonePage(DiarySketchPage source, {String? id}) =>
+      DiarySketchPage(
+        id: id ?? source.id,
+        paper: source.paper,
+        strokes: source.strokes
+            .map(
+              (stroke) => DiarySketchStroke(
+                tool: stroke.tool,
+                colorValue: stroke.colorValue,
+                width: stroke.width,
+                points: stroke.points
+                    .map((point) => DiarySketchPoint(point.x, point.y))
+                    .toList(),
+              ),
+            )
+            .toList(),
+        textElements: source.textElements
+            .map(
+              (element) => DiarySketchTextElement(
+                id: element.id,
+                text: element.text,
+                x: element.x,
+                y: element.y,
+                fontSize: element.fontSize,
+                colorValue: element.colorValue,
+              ),
+            )
+            .toList(),
+        imageElements: source.imageElements
+            .map(
+              (element) => DiarySketchImageElement(
+                id: element.id,
+                imageBase64: element.imageBase64,
+                x: element.x,
+                y: element.y,
+                width: element.width,
+                height: element.height,
+              ),
+            )
+            .toList(),
+      );
+
   DiarySketchPage get page => pages[pageIndex];
 
-  void _replacePage(DiarySketchPage value) {
+  void _clearSelection() {
+    selectedStrokeIndices.clear();
+    selectedTextIds.clear();
+    selectedImageIds.clear();
+  }
+
+  void _pushHistory() {
+    final stack = _undo.putIfAbsent(page.id, () => []);
+    stack.add(_clonePage(page));
+    if (stack.length > 50) stack.removeAt(0);
+    _redo[page.id] = [];
+  }
+
+  void _replacePage(
+    DiarySketchPage value, {
+    bool history = false,
+  }) {
+    if (history) _pushHistory();
     setState(() => pages[pageIndex] = value);
+  }
+
+  void _undoAction() {
+    final stack = _undo[page.id];
+    if (stack == null || stack.isEmpty) return;
+    final previous = stack.removeLast();
+    _redo.putIfAbsent(page.id, () => []).add(_clonePage(page));
+    setState(() {
+      pages[pageIndex] = previous;
+      _clearSelection();
+      activeStroke = null;
+      lassoPoints = const [];
+    });
+  }
+
+  void _redoAction() {
+    final stack = _redo[page.id];
+    if (stack == null || stack.isEmpty) return;
+    final next = stack.removeLast();
+    _undo.putIfAbsent(page.id, () => []).add(_clonePage(page));
+    setState(() {
+      pages[pageIndex] = next;
+      _clearSelection();
+      activeStroke = null;
+      lassoPoints = const [];
+    });
   }
 
   DiarySketchPoint _point(Offset local, Size size) {
@@ -506,8 +1010,118 @@ class _DiarySketchbookScreenState extends State<DiarySketchbookScreen> {
     );
   }
 
+  DiarySketchPoint _strokeCenter(DiarySketchStroke stroke) {
+    if (stroke.points.isEmpty) return const DiarySketchPoint(0, 0);
+    var sx = 0.0;
+    var sy = 0.0;
+    for (final point in stroke.points) {
+      sx += point.x;
+      sy += point.y;
+    }
+    return DiarySketchPoint(
+      sx / stroke.points.length,
+      sy / stroke.points.length,
+    );
+  }
+
+  double _distanceSquared(DiarySketchPoint a, DiarySketchPoint b) {
+    final dx = a.x - b.x;
+    final dy = a.y - b.y;
+    return dx * dx + dy * dy;
+  }
+
+  bool _insidePolygon(
+    DiarySketchPoint point,
+    List<DiarySketchPoint> polygon,
+  ) {
+    if (polygon.length < 3) return false;
+    var inside = false;
+    for (var i = 0, j = polygon.length - 1;
+        i < polygon.length;
+        j = i++) {
+      final pi = polygon[i];
+      final pj = polygon[j];
+      final denominator =
+          (pj.y - pi.y).abs() < 0.000001 ? 0.000001 : pj.y - pi.y;
+      final intersects = ((pi.y > point.y) != (pj.y > point.y)) &&
+          (point.x <
+              (pj.x - pi.x) * (point.y - pi.y) / denominator + pi.x);
+      if (intersects) inside = !inside;
+    }
+    return inside;
+  }
+
+  void _selectAt(DiarySketchPoint point) {
+    _clearSelection();
+
+    for (final image in page.imageElements.reversed) {
+      if (point.x >= image.x &&
+          point.x <= image.x + image.width &&
+          point.y >= image.y &&
+          point.y <= image.y + image.height) {
+        selectedImageIds.add(image.id);
+        return;
+      }
+    }
+
+    for (final element in page.textElements.reversed) {
+      final estimatedWidth =
+          (element.text.length * element.fontSize * 0.00095).clamp(0.12, 0.7);
+      final estimatedHeight =
+          (element.fontSize * 0.0028).clamp(0.05, 0.18);
+      if (point.x >= element.x &&
+          point.x <= element.x + estimatedWidth &&
+          point.y >= element.y &&
+          point.y <= element.y + estimatedHeight) {
+        selectedTextIds.add(element.id);
+        return;
+      }
+    }
+
+    var bestIndex = -1;
+    var bestDistance = double.infinity;
+    for (var index = 0; index < page.strokes.length; index++) {
+      final stroke = page.strokes[index];
+      if (stroke.points.isEmpty) continue;
+      var distance = _distanceSquared(point, _strokeCenter(stroke));
+      for (final strokePoint in stroke.points) {
+        final candidate = _distanceSquared(point, strokePoint);
+        if (candidate < distance) distance = candidate;
+      }
+      if (distance < bestDistance) {
+        bestDistance = distance;
+        bestIndex = index;
+      }
+    }
+    if (bestIndex >= 0 && bestDistance <= 0.012) {
+      selectedStrokeIndices.add(bestIndex);
+    }
+  }
+
   void _start(DragStartDetails details, Size size) {
+    if (tool == DiarySketchTool.hand) return;
     final p = _point(details.localPosition, size);
+
+    if (tool == DiarySketchTool.select) {
+      setState(() {
+        _selectAt(p);
+        _selectionMoveStarted =
+            selectedStrokeIndices.isNotEmpty ||
+                selectedTextIds.isNotEmpty ||
+                selectedImageIds.isNotEmpty;
+        if (_selectionMoveStarted) _pushHistory();
+      });
+      return;
+    }
+
+    if (tool == DiarySketchTool.lasso) {
+      setState(() {
+        lassoPoints = [p];
+        activeStroke = null;
+      });
+      return;
+    }
+
     setState(() {
       activeStroke = DiarySketchStroke(
         tool: tool,
@@ -518,10 +1132,74 @@ class _DiarySketchbookScreenState extends State<DiarySketchbookScreen> {
     });
   }
 
+  void _moveSelection(Offset delta, Size size) {
+    final dx = delta.dx / (size.width <= 0 ? 1 : size.width);
+    final dy = delta.dy / (size.height <= 0 ? 1 : size.height);
+    if (dx == 0 && dy == 0) return;
+
+    final movedStrokes = page.strokes.asMap().entries.map((entry) {
+      if (!selectedStrokeIndices.contains(entry.key)) return entry.value;
+      return entry.value.copyWith(
+        points: entry.value.points
+            .map(
+              (point) => DiarySketchPoint(
+                (point.x + dx).clamp(0.0, 1.0),
+                (point.y + dy).clamp(0.0, 1.0),
+              ),
+            )
+            .toList(),
+      );
+    }).toList();
+
+    final movedText = page.textElements.map((element) {
+      if (!selectedTextIds.contains(element.id)) return element;
+      return element.copyWith(
+        x: (element.x + dx).clamp(0.0, 0.96),
+        y: (element.y + dy).clamp(0.0, 0.96),
+      );
+    }).toList();
+
+    final movedImages = page.imageElements.map((element) {
+      if (!selectedImageIds.contains(element.id)) return element;
+      return element.copyWith(
+        x: (element.x + dx).clamp(
+          0.0,
+          (1.0 - element.width).clamp(0.0, 1.0),
+        ),
+        y: (element.y + dy).clamp(
+          0.0,
+          (1.0 - element.height).clamp(0.0, 1.0),
+        ),
+      );
+    }).toList();
+
+    setState(() {
+      pages[pageIndex] = page.copyWith(
+        strokes: movedStrokes,
+        textElements: movedText,
+        imageElements: movedImages,
+      );
+    });
+  }
+
   void _update(DragUpdateDetails details, Size size) {
+    if (tool == DiarySketchTool.hand) return;
+
+    if (tool == DiarySketchTool.select) {
+      if (_selectionMoveStarted) {
+        _moveSelection(details.delta, size);
+      }
+      return;
+    }
+
+    final p = _point(details.localPosition, size);
+    if (tool == DiarySketchTool.lasso) {
+      setState(() => lassoPoints = [...lassoPoints, p]);
+      return;
+    }
+
     final current = activeStroke;
     if (current == null) return;
-    final p = _point(details.localPosition, size);
     setState(() {
       if (current.tool == DiarySketchTool.line ||
           current.tool == DiarySketchTool.rectangle ||
@@ -543,30 +1221,249 @@ class _DiarySketchbookScreenState extends State<DiarySketchbookScreen> {
     });
   }
 
+  void _finishLasso() {
+    final polygon = lassoPoints;
+    if (polygon.length < 3) {
+      setState(() {
+        lassoPoints = const [];
+        tool = DiarySketchTool.select;
+      });
+      return;
+    }
+
+    _clearSelection();
+    for (var index = 0; index < page.strokes.length; index++) {
+      if (_insidePolygon(_strokeCenter(page.strokes[index]), polygon)) {
+        selectedStrokeIndices.add(index);
+      }
+    }
+    for (final element in page.textElements) {
+      if (_insidePolygon(
+        DiarySketchPoint(element.x, element.y),
+        polygon,
+      )) {
+        selectedTextIds.add(element.id);
+      }
+    }
+    for (final element in page.imageElements) {
+      if (_insidePolygon(
+        DiarySketchPoint(
+          element.x + element.width / 2,
+          element.y + element.height / 2,
+        ),
+        polygon,
+      )) {
+        selectedImageIds.add(element.id);
+      }
+    }
+
+    setState(() {
+      lassoPoints = const [];
+      tool = DiarySketchTool.select;
+    });
+  }
+
   void _end(DragEndDetails details) {
+    if (tool == DiarySketchTool.hand) return;
+
+    if (tool == DiarySketchTool.select) {
+      _selectionMoveStarted = false;
+      return;
+    }
+
+    if (tool == DiarySketchTool.lasso) {
+      _finishLasso();
+      return;
+    }
+
     final stroke = activeStroke;
     if (stroke == null || stroke.points.isEmpty) return;
-    final next = [...page.strokes, stroke];
-    _redo[page.id] = [];
+    _pushHistory();
     setState(() {
-      pages[pageIndex] = page.copyWith(strokes: next);
+      pages[pageIndex] = page.copyWith(
+        strokes: [...page.strokes, stroke],
+      );
       activeStroke = null;
     });
   }
 
-  void _undo() {
-    if (page.strokes.isEmpty) return;
-    final next = [...page.strokes];
-    final removed = next.removeLast();
-    _redo.putIfAbsent(page.id, () => []).add(removed);
-    _replacePage(page.copyWith(strokes: next));
+  Future<void> _addText() async {
+    DiarySketchTextElement? existing;
+    if (selectedTextIds.length == 1) {
+      final id = selectedTextIds.first;
+      for (final item in page.textElements) {
+        if (item.id == id) {
+          existing = item;
+          break;
+        }
+      }
+    }
+
+    final controller = TextEditingController(text: existing?.text ?? '');
+    final value = await showDialog<String>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: Text(existing == null ? 'Aggiungi testo' : 'Modifica testo'),
+        content: TextField(
+          controller: controller,
+          autofocus: true,
+          minLines: 2,
+          maxLines: 6,
+          textCapitalization: TextCapitalization.sentences,
+          decoration: const InputDecoration(
+            hintText: 'Scrivi sul foglio...',
+            border: OutlineInputBorder(),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext),
+            child: const Text('Annulla'),
+          ),
+          FilledButton(
+            onPressed: () =>
+                Navigator.pop(dialogContext, controller.text.trim()),
+            child: const Text('Inserisci'),
+          ),
+        ],
+      ),
+    );
+    controller.dispose();
+    if (value == null || value.isEmpty) return;
+
+    _pushHistory();
+    if (existing == null) {
+      final element = DiarySketchTextElement(
+        id: const Uuid().v4(),
+        text: value,
+        x: 0.12,
+        y: 0.12,
+        fontSize: textSize,
+        colorValue: colorValue,
+      );
+      setState(() {
+        pages[pageIndex] = page.copyWith(
+          textElements: [...page.textElements, element],
+        );
+        _clearSelection();
+        selectedTextIds.add(element.id);
+        tool = DiarySketchTool.select;
+      });
+    } else {
+      final existingId = existing.id;
+      final updated = page.textElements
+          .map(
+            (item) => item.id == existingId
+                ? item.copyWith(
+                    text: value,
+                    fontSize: textSize,
+                    colorValue: colorValue,
+                  )
+                : item,
+          )
+          .toList();
+      setState(() {
+        pages[pageIndex] = page.copyWith(textElements: updated);
+        tool = DiarySketchTool.select;
+      });
+    }
   }
 
-  void _redoStroke() {
-    final stack = _redo[page.id];
-    if (stack == null || stack.isEmpty) return;
-    final stroke = stack.removeLast();
-    _replacePage(page.copyWith(strokes: [...page.strokes, stroke]));
+  Future<void> _addImage() async {
+    final source = await _chooseDiaryImageSource(context);
+    if (source == null || !mounted) return;
+
+    try {
+      final imageBase64 = await _pickCompressedDiaryImageBase64(
+        source,
+        maxSide: 900,
+        quality: 64,
+      );
+      if (imageBase64 == null) return;
+      _pushHistory();
+      final element = DiarySketchImageElement(
+        id: const Uuid().v4(),
+        imageBase64: imageBase64,
+        x: 0.12,
+        y: 0.12,
+      );
+      setState(() {
+        pages[pageIndex] = page.copyWith(
+          imageElements: [...page.imageElements, element],
+        );
+        _clearSelection();
+        selectedImageIds.add(element.id);
+        tool = DiarySketchTool.select;
+      });
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Immagine non inserita.')),
+      );
+    }
+  }
+
+  void _deleteSelection() {
+    if (selectedStrokeIndices.isEmpty &&
+        selectedTextIds.isEmpty &&
+        selectedImageIds.isEmpty) {
+      return;
+    }
+    _pushHistory();
+
+    final strokes = <DiarySketchStroke>[];
+    for (var index = 0; index < page.strokes.length; index++) {
+      if (!selectedStrokeIndices.contains(index)) {
+        strokes.add(page.strokes[index]);
+      }
+    }
+
+    _replacePage(
+      page.copyWith(
+        strokes: strokes,
+        textElements: page.textElements
+            .where((item) => !selectedTextIds.contains(item.id))
+            .toList(),
+        imageElements: page.imageElements
+            .where((item) => !selectedImageIds.contains(item.id))
+            .toList(),
+      ),
+    );
+    setState(_clearSelection);
+  }
+
+  void _resizeSelectedImage(double value) {
+    if (selectedImageIds.length != 1) return;
+    final id = selectedImageIds.first;
+    final images = page.imageElements.map((item) {
+      if (item.id != id) return item;
+      final ratio = item.height / (item.width <= 0 ? 1 : item.width);
+      final nextHeight = (value * ratio).clamp(0.08, 0.9);
+      return item.copyWith(
+        width: value,
+        height: nextHeight,
+        x: item.x.clamp(0.0, (1.0 - value).clamp(0.0, 1.0)),
+        y: item.y.clamp(
+          0.0,
+          (1.0 - nextHeight).clamp(0.0, 1.0),
+        ),
+      );
+    }).toList();
+    setState(() => pages[pageIndex] = page.copyWith(imageElements: images));
+  }
+
+  void _resizeSelectedText(double value) {
+    if (selectedTextIds.length != 1) return;
+    final id = selectedTextIds.first;
+    final texts = page.textElements
+        .map(
+          (item) => item.id == id ? item.copyWith(fontSize: value) : item,
+        )
+        .toList();
+    setState(() {
+      textSize = value;
+      pages[pageIndex] = page.copyWith(textElements: texts);
+    });
   }
 
   void _addPage() {
@@ -579,21 +1476,140 @@ class _DiarySketchbookScreenState extends State<DiarySketchbookScreen> {
         ),
       );
       pageIndex = pages.length - 1;
+      _clearSelection();
       activeStroke = null;
+      lassoPoints = const [];
+      _transform.value = Matrix4.identity();
+    });
+  }
+
+  void _duplicatePage() {
+    if (pages.length >= 64) return;
+    final duplicated = DiarySketchPage(
+      id: const Uuid().v4(),
+      paper: page.paper,
+      strokes: page.strokes
+          .map(
+            (stroke) => DiarySketchStroke(
+              tool: stroke.tool,
+              colorValue: stroke.colorValue,
+              width: stroke.width,
+              points: stroke.points
+                  .map((point) => DiarySketchPoint(point.x, point.y))
+                  .toList(),
+            ),
+          )
+          .toList(),
+      textElements: page.textElements
+          .map(
+            (element) => DiarySketchTextElement(
+              id: const Uuid().v4(),
+              text: element.text,
+              x: element.x,
+              y: element.y,
+              fontSize: element.fontSize,
+              colorValue: element.colorValue,
+            ),
+          )
+          .toList(),
+      imageElements: page.imageElements
+          .map(
+            (element) => DiarySketchImageElement(
+              id: const Uuid().v4(),
+              imageBase64: element.imageBase64,
+              x: element.x,
+              y: element.y,
+              width: element.width,
+              height: element.height,
+            ),
+          )
+          .toList(),
+    );
+    setState(() {
+      pages.insert(pageIndex + 1, duplicated);
+      pageIndex++;
+      _clearSelection();
+      _transform.value = Matrix4.identity();
     });
   }
 
   void _deletePage() {
     if (pages.length <= 1) {
-      _replacePage(page.copyWith(strokes: const []));
-      _redo[page.id] = [];
+      _pushHistory();
+      setState(() {
+        pages[pageIndex] = DiarySketchPage(
+          id: page.id,
+          paper: page.paper,
+        );
+        _clearSelection();
+      });
       return;
     }
     setState(() {
       pages.removeAt(pageIndex);
       pageIndex = pageIndex.clamp(0, pages.length - 1);
+      _clearSelection();
       activeStroke = null;
+      lassoPoints = const [];
+      _transform.value = Matrix4.identity();
     });
+  }
+
+  Future<void> _exportPng() async {
+    final selectedStrokes = {...selectedStrokeIndices};
+    final selectedTexts = {...selectedTextIds};
+    final selectedImages = {...selectedImageIds};
+
+    setState(_clearSelection);
+    await WidgetsBinding.instance.endOfFrame;
+
+    try {
+      final boundary = _pageBoundaryKey.currentContext?.findRenderObject()
+          as RenderRepaintBoundary?;
+      if (boundary == null) return;
+
+      final image = await boundary.toImage(pixelRatio: 2.5);
+      final data = await image.toByteData(format: ui.ImageByteFormat.png);
+      if (data == null) return;
+      final bytes = data.buffer.asUint8List();
+
+      final path = await FilePicker.platform.saveFile(
+        dialogTitle: 'Esporta sketch',
+        fileName:
+            'annas-diary-sketch-${DateFormat('yyyyMMdd-HHmm').format(DateTime.now())}.png',
+        type: FileType.custom,
+        allowedExtensions: const ['png'],
+        bytes: bytes,
+      );
+
+      if (!mounted) return;
+      if (path != null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Sketch esportato in PNG.')),
+        );
+      }
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Non è stato possibile esportare lo sketch.'),
+        ),
+      );
+    } finally {
+      if (mounted) {
+        setState(() {
+          selectedStrokeIndices
+            ..clear()
+            ..addAll(selectedStrokes);
+          selectedTextIds
+            ..clear()
+            ..addAll(selectedTexts);
+          selectedImageIds
+            ..clear()
+            ..addAll(selectedImages);
+        });
+      }
+    }
   }
 
   IconData _toolIcon(DiarySketchTool value) => switch (value) {
@@ -603,6 +1619,9 @@ class _DiarySketchbookScreenState extends State<DiarySketchbookScreen> {
         DiarySketchTool.line => Icons.horizontal_rule,
         DiarySketchTool.rectangle => Icons.crop_square,
         DiarySketchTool.ellipse => Icons.circle_outlined,
+        DiarySketchTool.select => Icons.open_with_outlined,
+        DiarySketchTool.lasso => Icons.gesture_outlined,
+        DiarySketchTool.hand => Icons.pan_tool_alt_outlined,
       };
 
   String _toolLabel(DiarySketchTool value) => switch (value) {
@@ -612,6 +1631,9 @@ class _DiarySketchbookScreenState extends State<DiarySketchbookScreen> {
         DiarySketchTool.line => 'Linea',
         DiarySketchTool.rectangle => 'Rettangolo',
         DiarySketchTool.ellipse => 'Ellisse',
+        DiarySketchTool.select => 'Seleziona',
+        DiarySketchTool.lasso => 'Lazo',
+        DiarySketchTool.hand => 'Zoom',
       };
 
   String _paperLabel(DiarySketchPaper value) => switch (value) {
@@ -621,9 +1643,151 @@ class _DiarySketchbookScreenState extends State<DiarySketchbookScreen> {
         DiarySketchPaper.dots => 'Puntini',
       };
 
+  Widget _canvas(Size size) {
+    final currentPage = page;
+    return RepaintBoundary(
+      key: _pageBoundaryKey,
+      child: Stack(
+        fit: StackFit.expand,
+        children: [
+          CustomPaint(
+            painter: DiarySketchPainter(
+              page: currentPage,
+              activeStroke: activeStroke,
+              selectedStrokeIndices: selectedStrokeIndices,
+              lassoPoints: lassoPoints,
+            ),
+            child: const SizedBox.expand(),
+          ),
+          ...currentPage.imageElements.map(
+            (element) {
+              final selected = selectedImageIds.contains(element.id);
+              return Positioned(
+                left: element.x * size.width,
+                top: element.y * size.height,
+                width: element.width * size.width,
+                height: element.height * size.height,
+                child: DecoratedBox(
+                  decoration: BoxDecoration(
+                    border: selected
+                        ? Border.all(
+                            color: Theme.of(context).colorScheme.primary,
+                            width: 2.5,
+                          )
+                        : null,
+                  ),
+                  child: Image.memory(
+                    base64Decode(element.imageBase64),
+                    fit: BoxFit.cover,
+                    errorBuilder: (_, __, ___) => const ColoredBox(
+                      color: Color(0xFFF0F0F0),
+                      child: Center(
+                        child: Icon(Icons.broken_image_outlined),
+                      ),
+                    ),
+                  ),
+                ),
+              );
+            },
+          ),
+          ...currentPage.textElements.map(
+            (element) {
+              final selected = selectedTextIds.contains(element.id);
+              return Positioned(
+                left: element.x * size.width,
+                top: element.y * size.height,
+                child: DecoratedBox(
+                  decoration: BoxDecoration(
+                    border: selected
+                        ? Border.all(
+                            color: Theme.of(context).colorScheme.primary,
+                            width: 1.5,
+                          )
+                        : null,
+                    color: selected
+                        ? Colors.white.withValues(alpha: 0.5)
+                        : null,
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.all(2),
+                    child: Text(
+                      element.text,
+                      style: TextStyle(
+                        color: Color(element.colorValue),
+                        fontSize: element.fontSize,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                ),
+              );
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _selectionControls() {
+    DiarySketchImageElement? image;
+    if (selectedImageIds.length == 1) {
+      final id = selectedImageIds.first;
+      for (final item in page.imageElements) {
+        if (item.id == id) {
+          image = item;
+          break;
+        }
+      }
+    }
+
+    DiarySketchTextElement? textElement;
+    if (selectedTextIds.length == 1) {
+      final id = selectedTextIds.first;
+      for (final item in page.textElements) {
+        if (item.id == id) {
+          textElement = item;
+          break;
+        }
+      }
+    }
+
+    if (image == null && textElement == null) {
+      return const SizedBox.shrink();
+    }
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(12, 0, 12, 6),
+      child: Row(
+        children: [
+          Icon(
+            image != null ? Icons.photo_size_select_large : Icons.text_fields,
+            size: 18,
+          ),
+          const SizedBox(width: 8),
+          Text(image != null ? 'Dimensione immagine' : 'Dimensione testo'),
+          Expanded(
+            child: Slider(
+              min: image != null ? 0.15 : 12,
+              max: image != null ? 0.9 : 48,
+              value: image != null
+                  ? image.width.clamp(0.15, 0.9)
+                  : textElement!.fontSize.clamp(12, 48),
+              onChanged:
+                  image != null ? _resizeSelectedImage : _resizeSelectedText,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
+    final undoAvailable = (_undo[page.id] ?? const []).isNotEmpty;
     final redoAvailable = (_redo[page.id] ?? const []).isNotEmpty;
+    final hasSelection = selectedStrokeIndices.isNotEmpty ||
+        selectedTextIds.isNotEmpty ||
+        selectedImageIds.isNotEmpty;
 
     return Scaffold(
       appBar: AppBar(
@@ -632,6 +1796,11 @@ class _DiarySketchbookScreenState extends State<DiarySketchbookScreen> {
           style: TextStyle(fontWeight: FontWeight.w900),
         ),
         actions: [
+          IconButton(
+            tooltip: 'Esporta PNG',
+            onPressed: _exportPng,
+            icon: const Icon(Icons.ios_share_outlined),
+          ),
           IconButton(
             tooltip: 'Salva sketch',
             onPressed: () => Navigator.pop(context, pages),
@@ -655,32 +1824,57 @@ class _DiarySketchbookScreenState extends State<DiarySketchbookScreen> {
                       selected: selected,
                       avatar: Icon(_toolIcon(value), size: 18),
                       label: Text(_toolLabel(value)),
-                      onSelected: (_) => setState(() => tool = value),
+                      onSelected: (_) => setState(() {
+                        tool = value;
+                        activeStroke = null;
+                        lassoPoints = const [];
+                      }),
                     ),
                   );
                 }).toList(),
               ),
             ),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(12, 0, 12, 8),
-              child: Row(
+            SizedBox(
+              height: 48,
+              child: ListView(
+                padding: const EdgeInsets.symmetric(horizontal: 8),
+                scrollDirection: Axis.horizontal,
                 children: [
                   IconButton(
-                    tooltip: 'Annulla tratto',
-                    onPressed: page.strokes.isEmpty ? null : _undo,
+                    tooltip: 'Annulla',
+                    onPressed: undoAvailable ? _undoAction : null,
                     icon: const Icon(Icons.undo),
                   ),
                   IconButton(
-                    tooltip: 'Ripeti tratto',
-                    onPressed: redoAvailable ? _redoStroke : null,
+                    tooltip: 'Ripeti',
+                    onPressed: redoAvailable ? _redoAction : null,
                     icon: const Icon(Icons.redo),
                   ),
-                  const SizedBox(width: 6),
+                  IconButton(
+                    tooltip: 'Testo',
+                    onPressed: _addText,
+                    icon: const Icon(Icons.text_fields_outlined),
+                  ),
+                  IconButton(
+                    tooltip: 'Inserisci immagine',
+                    onPressed: _addImage,
+                    icon: const Icon(Icons.add_photo_alternate_outlined),
+                  ),
+                  IconButton(
+                    tooltip: 'Elimina selezione',
+                    onPressed: hasSelection ? _deleteSelection : null,
+                    icon: const Icon(Icons.delete_sweep_outlined),
+                  ),
+                  const SizedBox(width: 4),
                   PopupMenuButton<DiarySketchPaper>(
                     tooltip: 'Carta',
                     initialValue: page.paper,
-                    onSelected: (paper) =>
-                        _replacePage(page.copyWith(paper: paper)),
+                    onSelected: (paper) {
+                      _replacePage(
+                        page.copyWith(paper: paper),
+                        history: true,
+                      );
+                    },
                     itemBuilder: (_) => DiarySketchPaper.values
                         .map(
                           (paper) => PopupMenuItem(
@@ -690,19 +1884,28 @@ class _DiarySketchbookScreenState extends State<DiarySketchbookScreen> {
                         )
                         .toList(),
                     child: Chip(
-                      avatar: const Icon(Icons.grid_4x4_outlined, size: 17),
+                      avatar:
+                          const Icon(Icons.grid_4x4_outlined, size: 17),
                       label: Text(_paperLabel(page.paper)),
                     ),
                   ),
-                  const Spacer(),
-                  Text('${pageIndex + 1}/${pages.length}'),
+                  const SizedBox(width: 10),
+                  Center(
+                    child: Text(
+                      '${pageIndex + 1}/${pages.length}',
+                      style: const TextStyle(fontWeight: FontWeight.w800),
+                    ),
+                  ),
                   IconButton(
                     tooltip: 'Pagina precedente',
                     onPressed: pageIndex == 0
                         ? null
                         : () => setState(() {
                               pageIndex--;
+                              _clearSelection();
                               activeStroke = null;
+                              lassoPoints = const [];
+                              _transform.value = Matrix4.identity();
                             }),
                     icon: const Icon(Icons.chevron_left),
                   ),
@@ -712,7 +1915,10 @@ class _DiarySketchbookScreenState extends State<DiarySketchbookScreen> {
                         ? null
                         : () => setState(() {
                               pageIndex++;
+                              _clearSelection();
                               activeStroke = null;
+                              lassoPoints = const [];
+                              _transform.value = Matrix4.identity();
                             }),
                     icon: const Icon(Icons.chevron_right),
                   ),
@@ -722,6 +1928,12 @@ class _DiarySketchbookScreenState extends State<DiarySketchbookScreen> {
                     icon: const Icon(Icons.add_box_outlined),
                   ),
                   IconButton(
+                    tooltip: 'Duplica pagina',
+                    onPressed:
+                        pages.length >= 64 ? null : _duplicatePage,
+                    icon: const Icon(Icons.copy_all_outlined),
+                  ),
+                  IconButton(
                     tooltip: 'Elimina pagina',
                     onPressed: _deletePage,
                     icon: const Icon(Icons.delete_outline),
@@ -729,7 +1941,9 @@ class _DiarySketchbookScreenState extends State<DiarySketchbookScreen> {
                 ],
               ),
             ),
-            if (tool != DiarySketchTool.eraser)
+            if (tool != DiarySketchTool.select &&
+                tool != DiarySketchTool.lasso &&
+                tool != DiarySketchTool.hand)
               SizedBox(
                 height: 42,
                 child: Row(
@@ -740,7 +1954,8 @@ class _DiarySketchbookScreenState extends State<DiarySketchbookScreen> {
                         padding: const EdgeInsets.only(right: 7),
                         child: InkWell(
                           borderRadius: BorderRadius.circular(999),
-                          onTap: () => setState(() => colorValue = value),
+                          onTap: () =>
+                              setState(() => colorValue = value),
                           child: Container(
                             width: 27,
                             height: 27,
@@ -749,7 +1964,9 @@ class _DiarySketchbookScreenState extends State<DiarySketchbookScreen> {
                               shape: BoxShape.circle,
                               border: Border.all(
                                 color: colorValue == value
-                                    ? Theme.of(context).colorScheme.primary
+                                    ? Theme.of(context)
+                                        .colorScheme
+                                        .primary
                                     : Colors.transparent,
                                 width: 3,
                               ),
@@ -765,27 +1982,31 @@ class _DiarySketchbookScreenState extends State<DiarySketchbookScreen> {
                         value: width.clamp(1, 14),
                         min: 1,
                         max: 14,
-                        onChanged: (value) => setState(() => width = value),
+                        onChanged: (value) =>
+                            setState(() => width = value),
                       ),
                     ),
                   ],
                 ),
-              )
-            else
+              ),
+            _selectionControls(),
+            if (tool == DiarySketchTool.hand)
               Padding(
-                padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+                padding: const EdgeInsets.fromLTRB(14, 0, 14, 6),
                 child: Row(
                   children: [
-                    const Icon(Icons.auto_fix_normal_outlined, size: 18),
+                    const Icon(Icons.pinch_outlined, size: 18),
                     const SizedBox(width: 8),
-                    const Text('Dimensione gomma'),
-                    Expanded(
-                      child: Slider(
-                        value: width.clamp(2, 14),
-                        min: 2,
-                        max: 14,
-                        onChanged: (value) => setState(() => width = value),
+                    const Expanded(
+                      child: Text(
+                        'Trascina e usa due dita per zoomare. Torna a Penna o Seleziona per modificare.',
                       ),
+                    ),
+                    TextButton(
+                      onPressed: () {
+                        _transform.value = Matrix4.identity();
+                      },
+                      child: const Text('Reset'),
                     ),
                   ],
                 ),
@@ -801,26 +2022,44 @@ class _DiarySketchbookScreenState extends State<DiarySketchbookScreen> {
                       color: Colors.white,
                       borderRadius: BorderRadius.circular(8),
                       clipBehavior: Clip.antiAlias,
-                      child: LayoutBuilder(
-                        builder: (context, constraints) {
-                          final size = Size(
-                            constraints.maxWidth,
-                            constraints.maxHeight,
-                          );
-                          return GestureDetector(
-                            behavior: HitTestBehavior.opaque,
-                            onPanStart: (details) => _start(details, size),
-                            onPanUpdate: (details) => _update(details, size),
-                            onPanEnd: _end,
-                            child: CustomPaint(
-                              painter: DiarySketchPainter(
-                                page: page,
-                                activeStroke: activeStroke,
-                              ),
-                              child: const SizedBox.expand(),
-                            ),
-                          );
-                        },
+                      child: InteractiveViewer(
+                        transformationController: _transform,
+                        minScale: 0.75,
+                        maxScale: 5,
+                        panEnabled: tool == DiarySketchTool.hand,
+                        scaleEnabled: tool == DiarySketchTool.hand,
+                        constrained: true,
+                        child: LayoutBuilder(
+                          builder: (context, constraints) {
+                            final size = Size(
+                              constraints.maxWidth,
+                              constraints.maxHeight,
+                            );
+                            return GestureDetector(
+                              behavior: HitTestBehavior.opaque,
+                              onTapDown: tool == DiarySketchTool.select
+                                  ? (details) => setState(
+                                        () => _selectAt(
+                                          _point(
+                                            details.localPosition,
+                                            size,
+                                          ),
+                                        ),
+                                      )
+                                  : null,
+                              onPanStart: tool == DiarySketchTool.hand
+                                  ? null
+                                  : (details) => _start(details, size),
+                              onPanUpdate: tool == DiarySketchTool.hand
+                                  ? null
+                                  : (details) => _update(details, size),
+                              onPanEnd: tool == DiarySketchTool.hand
+                                  ? null
+                                  : _end,
+                              child: _canvas(size),
+                            );
+                          },
+                        ),
                       ),
                     ),
                   ),
@@ -834,13 +2073,77 @@ class _DiarySketchbookScreenState extends State<DiarySketchbookScreen> {
   }
 }
 
+class DiarySketchPagePreview extends StatelessWidget {
+  final DiarySketchPage page;
+
+  const DiarySketchPagePreview({
+    super.key,
+    required this.page,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final size = Size(
+          constraints.maxWidth,
+          constraints.maxHeight,
+        );
+        return ColoredBox(
+          color: Colors.white,
+          child: Stack(
+            fit: StackFit.expand,
+            children: [
+              CustomPaint(
+                painter: DiarySketchPainter(page: page),
+                child: const SizedBox.expand(),
+              ),
+              ...page.imageElements.map(
+                (element) => Positioned(
+                  left: element.x * size.width,
+                  top: element.y * size.height,
+                  width: element.width * size.width,
+                  height: element.height * size.height,
+                  child: Image.memory(
+                    base64Decode(element.imageBase64),
+                    fit: BoxFit.cover,
+                    errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+                  ),
+                ),
+              ),
+              ...page.textElements.map(
+                (element) => Positioned(
+                  left: element.x * size.width,
+                  top: element.y * size.height,
+                  child: Text(
+                    element.text,
+                    style: TextStyle(
+                      color: Color(element.colorValue),
+                      fontSize: element.fontSize,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+}
+
 class DiarySketchPainter extends CustomPainter {
   final DiarySketchPage page;
   final DiarySketchStroke? activeStroke;
+  final Set<int> selectedStrokeIndices;
+  final List<DiarySketchPoint> lassoPoints;
 
   const DiarySketchPainter({
     required this.page,
     this.activeStroke,
+    this.selectedStrokeIndices = const {},
+    this.lassoPoints = const [],
   });
 
   Offset _offset(DiarySketchPoint point, Size size) =>
@@ -875,16 +2178,33 @@ class DiarySketchPainter extends CustomPainter {
     }
   }
 
-  void _drawStroke(Canvas canvas, Size size, DiarySketchStroke stroke) {
+  void _drawStroke(
+    Canvas canvas,
+    Size size,
+    DiarySketchStroke stroke, {
+    bool selected = false,
+  }) {
     if (stroke.points.isEmpty) return;
     final color = Color(stroke.colorValue);
+    final baseWidth = stroke.tool == DiarySketchTool.eraser
+        ? stroke.width * 2.8
+        : stroke.width;
+
+    if (selected && stroke.tool != DiarySketchTool.eraser) {
+      final highlight = Paint()
+        ..strokeCap = StrokeCap.round
+        ..strokeJoin = StrokeJoin.round
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = baseWidth + 5
+        ..color = const Color(0xFF7C6FE3).withValues(alpha: 0.28);
+      _drawStrokeWithPaint(canvas, size, stroke, highlight);
+    }
+
     final paint = Paint()
       ..strokeCap = StrokeCap.round
       ..strokeJoin = StrokeJoin.round
       ..style = PaintingStyle.stroke
-      ..strokeWidth = stroke.tool == DiarySketchTool.eraser
-          ? stroke.width * 2.8
-          : stroke.width
+      ..strokeWidth = baseWidth
       ..color = stroke.tool == DiarySketchTool.highlighter
           ? color.withValues(alpha: 0.28)
           : color;
@@ -892,7 +2212,15 @@ class DiarySketchPainter extends CustomPainter {
     if (stroke.tool == DiarySketchTool.eraser) {
       paint.blendMode = BlendMode.clear;
     }
+    _drawStrokeWithPaint(canvas, size, stroke, paint);
+  }
 
+  void _drawStrokeWithPaint(
+    Canvas canvas,
+    Size size,
+    DiarySketchStroke stroke,
+    Paint paint,
+  ) {
     if (stroke.tool == DiarySketchTool.line ||
         stroke.tool == DiarySketchTool.rectangle ||
         stroke.tool == DiarySketchTool.ellipse) {
@@ -936,16 +2264,35 @@ class DiarySketchPainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     _paintPaper(canvas, size);
     canvas.saveLayer(Offset.zero & size, Paint());
-    for (final stroke in page.strokes) {
-      _drawStroke(canvas, size, stroke);
+    for (var index = 0; index < page.strokes.length; index++) {
+      _drawStroke(
+        canvas,
+        size,
+        page.strokes[index],
+        selected: selectedStrokeIndices.contains(index),
+      );
     }
     if (activeStroke != null) {
       _drawStroke(canvas, size, activeStroke!);
+    }
+
+    if (lassoPoints.length > 1) {
+      final lassoPaint = Paint()
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 2
+        ..color = const Color(0xFF7C6FE3);
+      final path = Path();
+      final first = _offset(lassoPoints.first, size);
+      path.moveTo(first.dx, first.dy);
+      for (final point in lassoPoints.skip(1)) {
+        final p = _offset(point, size);
+        path.lineTo(p.dx, p.dy);
+      }
+      canvas.drawPath(path, lassoPaint);
     }
     canvas.restore();
   }
 
   @override
-  bool shouldRepaint(covariant DiarySketchPainter oldDelegate) =>
-      oldDelegate.page != page || oldDelegate.activeStroke != activeStroke;
+  bool shouldRepaint(covariant DiarySketchPainter oldDelegate) => true;
 }
