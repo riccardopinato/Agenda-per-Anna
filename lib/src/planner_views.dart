@@ -1771,14 +1771,26 @@ class MonthIdeasBoard extends StatelessWidget {
 
 class YearScreen extends StatefulWidget {
   final AgendaStore store;
-  const YearScreen({super.key, required this.store});
+  final int? initialYear;
+
+  const YearScreen({
+    super.key,
+    required this.store,
+    this.initialYear,
+  });
 
   @override
   State<YearScreen> createState() => _YearScreenState();
 }
 
 class _YearScreenState extends State<YearScreen> {
-  int year = DateTime.now().year;
+  late int year;
+
+  @override
+  void initState() {
+    super.initState();
+    year = widget.initialYear ?? DateTime.now().year;
+  }
 
   @override
   Widget build(BuildContext context) {
