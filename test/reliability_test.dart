@@ -89,6 +89,15 @@ void main() {
   test('shared unread badge persists and clears per space', () async {
     SharedPreferences.setMockInitialValues({
       'active_account_v1': 'user-a',
+      'shared_spaces_user-a': jsonEncode([
+        {
+          'id': 'space-a',
+          'owner_id': 'user-a',
+          'name': 'Noi ♡',
+          'role': 'owner',
+          'created_at': DateTime.utc(2026, 9, 1).toIso8601String(),
+        }
+      ]),
       'shared_unread_user-a': jsonEncode({'space-a': 2}),
     });
 
@@ -119,6 +128,24 @@ void main() {
   test('shared unread badge follows account scope', () async {
     SharedPreferences.setMockInitialValues({
       'active_account_v1': 'user-a',
+      'shared_spaces_user-a': jsonEncode([
+        {
+          'id': 'space-a',
+          'owner_id': 'user-a',
+          'name': 'Noi ♡',
+          'role': 'owner',
+          'created_at': DateTime.utc(2026, 9, 1).toIso8601String(),
+        }
+      ]),
+      'shared_spaces_user-b': jsonEncode([
+        {
+          'id': 'space-b',
+          'owner_id': 'user-b',
+          'name': 'Noi ♡',
+          'role': 'owner',
+          'created_at': DateTime.utc(2026, 9, 2).toIso8601String(),
+        }
+      ]),
       'shared_unread_user-a': jsonEncode({'space-a': 4}),
       'shared_unread_user-b': jsonEncode({'space-b': 1}),
     });
