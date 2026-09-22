@@ -179,7 +179,7 @@ void main() {
             const DiarySketchPage(
               id: 'page-1',
               paper: DiarySketchPaper.grid,
-              strokes: const [
+              strokes: [
                 DiarySketchStroke(
                   tool: DiarySketchTool.pen,
                   colorValue: 0xFF222222,
@@ -190,7 +190,7 @@ void main() {
                   ],
                 ),
               ],
-              textElements: const [
+              textElements: [
                 DiarySketchTextElement(
                   id: 'text-1',
                   text: 'Ricordo',
@@ -200,7 +200,7 @@ void main() {
                   colorValue: 0xFFE86D91,
                 ),
               ],
-              imageElements: const [
+              imageElements: [
                 DiarySketchImageElement(
                   id: 'image-1',
                   imageBase64: 'AA==',
