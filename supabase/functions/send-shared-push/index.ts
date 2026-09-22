@@ -253,9 +253,13 @@ Deno.serve(async (req: Request) => {
                 ? "C’è un nuovo commento in Noi ♡."
                 : action === "reaction"
                   ? "Hai ricevuto una reazione ❤️ in Noi ♡."
-                  : action === "delete"
-                    ? "Un elemento condiviso è stato aggiornato."
-                    : "C’è una nuova attività condivisa da leggere.",
+                  : action === "photo"
+                    ? "È stata condivisa una nuova foto in Noi ♡."
+                    : action === "sketch"
+                      ? "È stato condiviso un nuovo sketch in Noi ♡."
+                      : action === "delete"
+                        ? "Un elemento condiviso è stato aggiornato."
+                        : "C’è una nuova attività condivisa da leggere.",
           },
           data: {
             kind: "shared_update",
