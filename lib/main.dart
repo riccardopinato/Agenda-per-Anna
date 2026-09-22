@@ -31,6 +31,7 @@ part 'src/screens_core.dart';
 part 'src/planner_views.dart';
 part 'src/widgets_editors.dart';
 part 'src/diary_media.dart';
+part 'src/shared_memories.dart';
 
 final GlobalKey<NavigatorState> appNavigatorKey = GlobalKey<NavigatorState>();
 
