@@ -20,6 +20,7 @@ set
   file_size_limit = excluded.file_size_limit,
   allowed_mime_types = excluded.allowed_mime_types;
 
+drop policy if exists shared_media_select_members on storage.objects;
 create policy shared_media_select_members
 on storage.objects
 for select
@@ -30,6 +31,7 @@ using (
   and private.is_space_member(((storage.foldername(name))[1])::uuid)
 );
 
+drop policy if exists shared_media_insert_members on storage.objects;
 create policy shared_media_insert_members
 on storage.objects
 for insert
@@ -40,6 +42,7 @@ with check (
   and private.is_space_member(((storage.foldername(name))[1])::uuid)
 );
 
+drop policy if exists shared_media_delete_members on storage.objects;
 create policy shared_media_delete_members
 on storage.objects
 for delete
