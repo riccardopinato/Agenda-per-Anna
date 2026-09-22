@@ -47,3 +47,16 @@ This refactor intentionally changes no persistence keys, JSON schemas, sync reco
 - Production PWA shell, manifest and service-worker caching are hardened so Railway deploys do not strand users on stale bundles.
 - Onboarding now explains that Privato is the default and Noi ♡ is always explicit opt-in.
 - Reliability regression coverage includes pending queue accounting, account scope isolation and backup release metadata.
+
+
+## v0.30.1 — Shared Diary Parity & Audit Hardening
+
+- Noi ♡ exposes the same diary creation primitives as the private journal: Note, Photo and the full Sketchbook editor.
+- Shared photos keep compressed local previews and use private Supabase Storage for originals, with offline retry and cancellation when an unsynced photo is deleted.
+- Shared comments/reactions/read state remain account-scoped and offline-first.
+- Deleted shared entries automatically clean their comments and reactions in the backend.
+- Supabase Data API grants are least-privilege; anonymous table/RPC access is revoked.
+- Shared agenda-record identity fields are immutable after insert; members can still edit payload/revision data.
+- Android cloud/device backup is disabled for local diary data.
+- CI is pinned to Flutter 3.47.5 and release signing can use protected GitHub Secrets, while preserving the existing sideload key as a compatibility fallback.
+- The release workflow no longer uploads signing keys as artifacts.
