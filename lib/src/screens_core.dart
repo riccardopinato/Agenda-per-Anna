@@ -4957,98 +4957,32 @@ class _SharedPhotoViewerScreenState extends State<SharedPhotoViewerScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.black,
-      appBar: AppBar(
-        backgroundColor: Colors.black,
-        foregroundColor: Colors.white,
-        title: Text(
-          widget.entry.title,
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
+    final dateLabel = _cap(
+      DateFormat(
+        'EEEE d MMMM yyyy',
+        'it_IT',
+      ).format(widget.entry.date),
+    );
+
+    return DiaryPhotoViewerShell(
+      title: dateLabel,
+      caption: widget.entry.note,
+      image: FutureBuilder<Uint8List>(
+        future: _imageFuture,
+        builder: (context, snapshot) => DiaryZoomableImage(
+          bytes: snapshot.data,
+          loading: snapshot.connectionState != ConnectionState.done,
         ),
       ),
-      body: SafeArea(
-        child: Column(
-          children: [
-            Expanded(
-              child: FutureBuilder<Uint8List>(
-                future: _imageFuture,
-                builder: (context, snapshot) {
-                  if (snapshot.connectionState != ConnectionState.done) {
-                    return const Center(
-                      child: CircularProgressIndicator(),
-                    );
-                  }
-                  final bytes = snapshot.data;
-                  if (bytes == null) {
-                    return const Center(
-                      child: Icon(
-                        Icons.broken_image_outlined,
-                        color: Colors.white70,
-                        size: 64,
-                      ),
-                    );
-                  }
-                  return InteractiveViewer(
-                    minScale: 0.75,
-                    maxScale: 6,
-                    child: Center(
-                      child: Image.memory(
-                        bytes,
-                        fit: BoxFit.contain,
-                      ),
-                    ),
-                  );
-                },
-              ),
-            ),
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
-              decoration: const BoxDecoration(
-                color: Colors.black,
-                border: Border(
-                  top: BorderSide(color: Colors.white12),
-                ),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  if (widget.entry.note.trim().isNotEmpty) ...[
-                    Text(
-                      widget.entry.note,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 16,
-                        height: 1.3,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                  ],
-                  Text(
-                    _cap(
-                      DateFormat(
-                        'EEEE d MMMM yyyy',
-                        'it_IT',
-                      ).format(widget.entry.date),
-                    ),
-                    style: const TextStyle(color: Colors.white70),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    widget.space.name,
-                    style: const TextStyle(
-                      color: Colors.white70,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
+      metadata: [
+        Text(
+          widget.space.name,
+          style: const TextStyle(
+            color: Colors.white70,
+            fontWeight: FontWeight.w700,
+          ),
         ),
-      ),
+      ],
     );
   }
 }
