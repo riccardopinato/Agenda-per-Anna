@@ -3805,6 +3805,12 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
     await _saveCache();
     if (CloudSyncService.instance.signedIn) {
       await _flushPending();
+      if (entry.type == SharedEntryType.photo &&
+          entry.mediaPath.isNotEmpty) {
+        try {
+          await CloudSyncService.instance.deleteSharedMedia(entry.mediaPath);
+        } catch (_) {}
+      }
       await _refresh(silent: true);
     } else {
       _message('Eliminazione salvata offline.');
@@ -3923,10 +3929,55 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
       if (pending) 'In attesa di sincronizzazione',
     ];
 
+    VoidCallback openEntry = () => _edit(entry);
+    if (entry.type == SharedEntryType.photo) {
+      openEntry = () => Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => SharedPhotoViewerScreen(
+                space: widget.space,
+                entry: entry,
+              ),
+            ),
+          );
+    } else if (entry.type == SharedEntryType.sketch) {
+      openEntry = () => _addSharedSketch(entry);
+    }
+
+    Widget? mediaPreview;
+    if (entry.type == SharedEntryType.photo &&
+        entry.mediaThumbnailBase64.isNotEmpty) {
+      mediaPreview = AspectRatio(
+        aspectRatio: 16 / 10,
+        child: InkWell(
+          onTap: openEntry,
+          child: Image.memory(
+            base64Decode(entry.mediaThumbnailBase64),
+            fit: BoxFit.cover,
+            cacheWidth: 720,
+            errorBuilder: (_, __, ___) => const Center(
+              child: Icon(Icons.broken_image_outlined),
+            ),
+          ),
+        ),
+      );
+    } else if (entry.type == SharedEntryType.sketch &&
+        entry.sketchPages.isNotEmpty) {
+      mediaPreview = AspectRatio(
+        aspectRatio: 16 / 10,
+        child: InkWell(
+          onTap: openEntry,
+          child: DiarySketchPagePreview(page: entry.sketchPages.first),
+        ),
+      );
+    }
+
     return Card(
       margin: const EdgeInsets.only(bottom: 9),
+      clipBehavior: Clip.antiAlias,
       child: Column(
         children: [
+          if (mediaPreview != null) mediaPreview,
           ListTile(
             leading: entry.type == SharedEntryType.task
                 ? Checkbox(
@@ -3948,20 +3999,32 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
               maxLines: showDate ? 4 : 3,
               overflow: TextOverflow.ellipsis,
             ),
-            onTap: () => _edit(entry),
+            onTap: openEntry,
             trailing: pending
                 ? const Icon(Icons.schedule_outlined)
                 : PopupMenuButton<String>(
                     onSelected: (value) {
-                      if (value == 'edit') _edit(entry);
+                      if (value == 'edit') {
+                        if (entry.type == SharedEntryType.photo) {
+                          _addSharedPhoto(entry);
+                        } else if (entry.type == SharedEntryType.sketch) {
+                          _addSharedSketch(entry);
+                        } else {
+                          _edit(entry);
+                        }
+                      }
                       if (value == 'delete') _delete(entry);
                     },
-                    itemBuilder: (_) => const [
+                    itemBuilder: (_) => [
                       PopupMenuItem(
                         value: 'edit',
-                        child: Text('Modifica'),
+                        child: Text(
+                          entry.type == SharedEntryType.photo
+                              ? 'Sostituisci / modifica'
+                              : 'Modifica',
+                        ),
                       ),
-                      PopupMenuItem(
+                      const PopupMenuItem(
                         value: 'delete',
                         child: Text('Elimina'),
                       ),
@@ -4117,7 +4180,7 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
           ],
         ),
         floatingActionButton: FloatingActionButton.extended(
-          onPressed: () => _edit(),
+          onPressed: _createSharedContent,
           icon: const Icon(Icons.add),
           label: const Text('Condividi'),
         ),
