@@ -1277,6 +1277,9 @@ class AgendaStore extends ChangeNotifier {
   }
 
   Future<void> handleAppResumed() async {
+    await NotificationService.instance.initialize();
+    await reconcileReminders();
+
     final cloud = CloudSyncService.instance;
     if (!cloud.initialized) {
       await cloud.initialize();
@@ -1854,6 +1857,12 @@ class AgendaStore extends ChangeNotifier {
         onUpdatedBy: (updatedBy) {
           if (updatedBy != null && updatedBy != cloud.userId) {
             unawaited(markSharedSpaceUnread(space.id));
+            unawaited(
+              NotificationService.instance.showSharedUpdate(
+                spaceId: space.id,
+                spaceName: space.name,
+              ),
+            );
           }
         },
         onChanged: () {
