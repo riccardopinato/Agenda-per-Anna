@@ -261,6 +261,7 @@ Deno.serve(async (req: Request) => {
             priority: "high",
             notification: {
               channel_id: "annas_diary_shared_v1",
+              icon: "notification_icon",
               color: "#E84A7F",
               sound: "default",
             },
