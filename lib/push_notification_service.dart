@@ -114,7 +114,7 @@ class PushNotificationService {
       await CloudSyncService.instance.registerPushDevice(
         token: token,
         platform: 'android',
-        appVersion: '0.21.0',
+        appVersion: '0.21.1',
       );
       _remotePushActive = true;
     } catch (_) {
