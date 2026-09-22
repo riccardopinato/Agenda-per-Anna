@@ -47,10 +47,13 @@ async function importPrivateKey(pem: string) {
   );
 }
 
-async function firebaseAccessToken(serviceAccount: {
+type FirebaseServiceAccount = {
+  project_id: string;
   client_email: string;
   private_key: string;
-}) {
+};
+
+async function firebaseAccessToken(serviceAccount: FirebaseServiceAccount) {
   const now = Math.floor(Date.now() / 1000);
   const header = base64UrlJson({ alg: "RS256", typ: "JWT" });
   const payload = base64UrlJson({
@@ -79,7 +82,8 @@ async function firebaseAccessToken(serviceAccount: {
         "Content-Type": "application/x-www-form-urlencoded",
       },
       body: new URLSearchParams({
-        grant_type: "urn:ietf:params:oauth:grant-type:jwt-bearer",
+        grant_type: "urn:ietf:params:oauth-type:jwt-bearer"
+          .replace("oauth-type", "oauth"),
         assertion,
       }),
     },
@@ -93,6 +97,112 @@ async function firebaseAccessToken(serviceAccount: {
 
   const tokenJson = await tokenResponse.json();
   return tokenJson.access_token as string;
+}
+
+function loadFirebase(): FirebaseServiceAccount | null {
+  const raw = Deno.env.get("FIREBASE_SERVICE_ACCOUNT_JSON");
+  if (!raw) return null;
+  try {
+    const parsed = JSON.parse(raw);
+    if (!parsed.project_id || !parsed.client_email || !parsed.private_key) {
+      return null;
+    }
+    return parsed as FirebaseServiceAccount;
+  } catch (_) {
+    return null;
+  }
+}
+
+async function sendFirebaseMessages({
+  firebase,
+  devices,
+  admin,
+  title,
+  body,
+  data,
+}: {
+  firebase: FirebaseServiceAccount;
+  devices: Array<{ token: string; user_id: string }>;
+  admin: any;
+  title: string;
+  body: string;
+  data: Record<string, string>;
+}) {
+  if (devices.length === 0) {
+    return { delivered: 0, devices: 0, removed: 0, failed: 0 };
+  }
+
+  const oauthToken = await firebaseAccessToken(firebase);
+  const endpoint =
+    `https://fcm.googleapis.com/v1/projects/${firebase.project_id}/messages:send`;
+
+  let delivered = 0;
+  let removed = 0;
+  const failures: number[] = [];
+
+  for (const device of devices) {
+    const response = await fetch(endpoint, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${oauthToken}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        message: {
+          token: device.token,
+          notification: { title, body },
+          data,
+          android: {
+            priority: "high",
+            notification: {
+              channel_id: "annas_diary_shared_v1",
+              icon: "notification_icon",
+              color: "#E84A7F",
+              sound: "default",
+            },
+          },
+          apns: {
+            payload: {
+              aps: {
+                sound: "default",
+                badge: 1,
+              },
+            },
+          },
+        },
+      }),
+    });
+
+    if (response.ok) {
+      delivered++;
+      continue;
+    }
+
+    let errorPayload: any = null;
+    try {
+      errorPayload = await response.json();
+    } catch (_) {}
+
+    const detailCodes = Array.isArray(errorPayload?.error?.details)
+      ? errorPayload.error.details.map((item: any) => item?.errorCode)
+      : [];
+    const unregistered =
+      response.status === 404 || detailCodes.includes("UNREGISTERED");
+
+    if (unregistered) {
+      await admin.from("push_devices").delete().eq("token", device.token);
+      removed++;
+    } else {
+      failures.push(response.status);
+    }
+  }
+
+  return {
+    delivered,
+    devices: devices.length,
+    removed,
+    failed: failures.length,
+  };
 }
 
 Deno.serve(async (req: Request) => {
@@ -142,20 +252,61 @@ Deno.serve(async (req: Request) => {
     return json({ error: "invalid_session" }, 401);
   }
 
-  let body: Record<string, unknown>;
+  let requestBody: Record<string, unknown>;
   try {
-    body = await req.json();
+    requestBody = await req.json();
   } catch (_) {
     return json({ error: "invalid_json" }, 400);
   }
 
-  const spaceId = String(body.space_id ?? "").trim();
-  const eventId = String(body.event_id ?? "").trim();
-  const action = String(body.action ?? "updated").trim();
-  const entityId = String(body.entity_id ?? "").trim();
+  const spaceId = String(requestBody.space_id ?? "").trim();
+  const eventId = String(requestBody.event_id ?? "").trim();
+  const action = String(requestBody.action ?? "updated").trim();
+  const entityId = String(requestBody.entity_id ?? "").trim();
 
-  if (!spaceId || !eventId) {
-    return json({ error: "space_id_and_event_id_required" }, 400);
+  if (!eventId) {
+    return json({ error: "event_id_required" }, 400);
+  }
+
+  const firebase = loadFirebase();
+  if (!firebase) {
+    return json({ error: "firebase_not_configured" }, 503);
+  }
+
+  if (action === "self_test") {
+    const { data: ownDevices, error: ownDevicesError } = await admin
+      .from("push_devices")
+      .select("token,user_id")
+      .eq("user_id", user.id);
+
+    if (ownDevicesError) {
+      return json({ error: "device_lookup_failed" }, 500);
+    }
+
+    const result = await sendFirebaseMessages({
+      firebase,
+      devices: ownDevices ?? [],
+      admin,
+      title: "Anna's Diary · Test push",
+      body: "Il canale Firebase funziona correttamente ♡",
+      data: {
+        kind: "push_self_test",
+        event_id: eventId,
+      },
+    });
+
+    return json({
+      ok: true,
+      self_test: true,
+      delivered: result.delivered,
+      devices: result.devices,
+      removed_invalid_tokens: result.removed,
+      failed: result.failed,
+    });
+  }
+
+  if (!spaceId) {
+    return json({ error: "space_id_required" }, 400);
   }
 
   const { data: members, error: membersError } = await admin
@@ -175,30 +326,6 @@ Deno.serve(async (req: Request) => {
   const recipientIds = memberIds.filter((id) => id !== user.id);
   if (recipientIds.length === 0) {
     return json({ ok: true, delivered: 0 });
-  }
-
-  const firebaseRaw = Deno.env.get("FIREBASE_SERVICE_ACCOUNT_JSON");
-  if (!firebaseRaw) {
-    return json({ error: "firebase_not_configured" }, 503);
-  }
-
-  let firebase: {
-    project_id: string;
-    client_email: string;
-    private_key: string;
-  };
-  try {
-    firebase = JSON.parse(firebaseRaw);
-  } catch (_) {
-    return json({ error: "firebase_secret_invalid" }, 500);
-  }
-
-  if (
-    !firebase.project_id ||
-    !firebase.client_email ||
-    !firebase.private_key
-  ) {
-    return json({ error: "firebase_secret_incomplete" }, 500);
   }
 
   const { error: dedupeError } = await admin
@@ -224,100 +351,40 @@ Deno.serve(async (req: Request) => {
   if (devicesError) {
     return json({ error: "device_lookup_failed" }, 500);
   }
-  if (!devices?.length) {
-    return json({ ok: true, delivered: 0, devices: 0 });
-  }
 
-  const oauthToken = await firebaseAccessToken(firebase);
-  const endpoint =
-    `https://fcm.googleapis.com/v1/projects/${firebase.project_id}/messages:send`;
+  const messageBody =
+    action === "comment"
+      ? "C’è un nuovo commento in Noi ♡."
+      : action === "reaction"
+        ? "Hai ricevuto una reazione ❤️ in Noi ♡."
+        : action === "photo"
+          ? "È stata condivisa una nuova foto in Noi ♡."
+          : action === "sketch"
+            ? "È stato condiviso un nuovo sketch in Noi ♡."
+            : action === "delete"
+              ? "Un elemento condiviso è stato aggiornato."
+              : "C’è una nuova attività condivisa da leggere.";
 
-  let delivered = 0;
-  let removed = 0;
-  const failures: number[] = [];
-
-  for (const device of devices) {
-    const response = await fetch(endpoint, {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${oauthToken}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        message: {
-          token: device.token,
-          notification: {
-            title: "Anna's Diary · Noi ♡",
-            body:
-              action === "comment"
-                ? "C’è un nuovo commento in Noi ♡."
-                : action === "reaction"
-                  ? "Hai ricevuto una reazione ❤️ in Noi ♡."
-                  : action === "photo"
-                    ? "È stata condivisa una nuova foto in Noi ♡."
-                    : action === "sketch"
-                      ? "È stato condiviso un nuovo sketch in Noi ♡."
-                      : action === "delete"
-                        ? "Un elemento condiviso è stato aggiornato."
-                        : "C’è una nuova attività condivisa da leggere.",
-          },
-          data: {
-            kind: "shared_update",
-            space_id: spaceId,
-            event_id: eventId,
-            action,
-            ...(entityId ? { entity_id: entityId } : {}),
-          },
-          android: {
-            priority: "high",
-            notification: {
-              channel_id: "annas_diary_shared_v1",
-              icon: "notification_icon",
-              color: "#E84A7F",
-              sound: "default",
-            },
-          },
-          apns: {
-            payload: {
-              aps: {
-                sound: "default",
-                badge: 1,
-              },
-            },
-          },
-        },
-      }),
-    });
-
-    if (response.ok) {
-      delivered++;
-      continue;
-    }
-
-    let errorPayload: any = null;
-    try {
-      errorPayload = await response.json();
-    } catch (_) {}
-
-    const detailCodes = Array.isArray(errorPayload?.error?.details)
-      ? errorPayload.error.details.map((item: any) => item?.errorCode)
-      : [];
-    const unregistered =
-      response.status === 404 || detailCodes.includes("UNREGISTERED");
-
-    if (unregistered) {
-      await admin.from("push_devices").delete().eq("token", device.token);
-      removed++;
-    } else {
-      failures.push(response.status);
-    }
-  }
+  const result = await sendFirebaseMessages({
+    firebase,
+    devices: devices ?? [],
+    admin,
+    title: "Anna's Diary · Noi ♡",
+    body: messageBody,
+    data: {
+      kind: "shared_update",
+      space_id: spaceId,
+      event_id: eventId,
+      action,
+      ...(entityId ? { entity_id: entityId } : {}),
+    },
+  });
 
   return json({
     ok: true,
-    delivered,
-    devices: devices.length,
-    removed_invalid_tokens: removed,
-    failed: failures.length,
+    delivered: result.delivered,
+    devices: result.devices,
+    removed_invalid_tokens: result.removed,
+    failed: result.failed,
   });
 });
