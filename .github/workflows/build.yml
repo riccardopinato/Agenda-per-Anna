@@ -1,4 +1,4 @@
-name: Build Agenda per Anna
+name: Build Anna's Diary
 
 on:
   workflow_dispatch:
@@ -49,6 +49,7 @@ jobs:
               '<uses-permission android:name="android.permission.POST_NOTIFICATIONS" />',
               '<uses-permission android:name="android.permission.USE_BIOMETRIC" />',
               '<uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />',
+              '<uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />',
           ]
           pos = m.find(">")
           for permission in permissions:
@@ -74,7 +75,23 @@ jobs:
           if "ScheduledNotificationReceiver" not in m:
               m = m.replace("</application>", receiver_block + "\n    </application>")
 
+          m = m.replace(
+              'android:label="agenda_per_anna"',
+              'android:label="Anna\'s Diary"',
+          )
           manifest.write_text(m)
+
+          drawable = Path("android/app/src/main/res/drawable")
+          drawable.mkdir(parents=True, exist_ok=True)
+          (drawable / "notification_icon.xml").write_text("""<vector xmlns:android="http://schemas.android.com/apk/res/android"
+              android:width="24dp"
+              android:height="24dp"
+              android:viewportWidth="24"
+              android:viewportHeight="24">
+              <path
+                  android:fillColor="#FFFFFFFF"
+                  android:pathData="M12,22c1.1,0 2,-0.9 2,-2h-4c0,1.1 0.9,2 2,2zM18,16v-5c0,-3.07 -1.63,-5.64 -4.5,-6.32V3c0,-0.83 -0.67,-1.5 -1.5,-1.5S10.5,2.17 10.5,3v0.68C7.64,4.36 6,6.92 6,10v6l-2,2v1h16v-1l-2,-2z" />
+          </vector>""")
 
           plist = Path("ios/Runner/Info.plist")
           ptext = plist.read_text()
@@ -82,10 +99,18 @@ jobs:
               ptext = ptext.replace(
                   "</dict>",
                   "    <key>NSFaceIDUsageDescription</key>\n"
-                  "    <string>Usa Face ID per sbloccare Agenda per Anna.</string>\n"
+                  "    <string>Usa Face ID per sbloccare Anna's Diary.</string>\n"
                   "</dict>",
                   1,
               )
+          ptext = ptext.replace(
+              "<string>Agenda Per Anna</string>",
+              "<string>Anna's Diary</string>",
+          )
+          ptext = ptext.replace(
+              "<string>agenda_per_anna</string>",
+              "<string>Anna's Diary</string>",
+          )
           plist.write_text(ptext)
           PY
 
@@ -183,7 +208,7 @@ jobs:
       - name: Upload APKs
         uses: actions/upload-artifact@v4
         with:
-          name: agenda-per-anna-apk
+          name: annas-diary-apk
           path: build/app/outputs/flutter-apk/*.apk
 
       - name: Upload signing key backup
