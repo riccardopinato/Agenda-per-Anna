@@ -1033,20 +1033,30 @@ class _LocalSyncEntity {
   String get localKey => '$entityType:$entityId';
 }
 
-enum SharedEntryType { appointment, task, note }
+enum SharedEntryType { appointment, task, note, photo, sketch }
 
 extension SharedEntryTypeUi on SharedEntryType {
   String get label => switch (this) {
         SharedEntryType.appointment => 'Appuntamento',
         SharedEntryType.task => 'Da fare',
         SharedEntryType.note => 'Nota',
+        SharedEntryType.photo => 'Foto',
+        SharedEntryType.sketch => 'Sketch',
       };
 
   IconData get icon => switch (this) {
         SharedEntryType.appointment => Icons.event_outlined,
         SharedEntryType.task => Icons.check_circle_outline,
         SharedEntryType.note => Icons.sticky_note_2_outlined,
+        SharedEntryType.photo => Icons.photo_outlined,
+        SharedEntryType.sketch => Icons.draw_outlined,
       };
+
+  bool get supportsTime =>
+      this == SharedEntryType.appointment || this == SharedEntryType.task;
+
+  bool get isMedia =>
+      this == SharedEntryType.photo || this == SharedEntryType.sketch;
 }
 
 class SharedEntry {
@@ -1061,6 +1071,9 @@ class SharedEntry {
   final String? updatedBy;
   final DateTime? updatedAt;
   final String editorName;
+  final String mediaPath;
+  final String mediaThumbnailBase64;
+  final List<DiarySketchPage> sketchPages;
 
   const SharedEntry({
     required this.id,
@@ -1074,6 +1087,9 @@ class SharedEntry {
     this.updatedBy,
     this.updatedAt,
     this.editorName = '',
+    this.mediaPath = '',
+    this.mediaThumbnailBase64 = '',
+    this.sketchPages = const [],
   });
 
   SharedEntry copyWith({
@@ -1087,8 +1103,13 @@ class SharedEntry {
     String? updatedBy,
     DateTime? updatedAt,
     String? editorName,
+    String? mediaPath,
+    String? mediaThumbnailBase64,
+    List<DiarySketchPage>? sketchPages,
     bool clearTime = false,
     bool clearUpdatedBy = false,
+    bool clearMedia = false,
+    bool clearSketch = false,
   }) =>
       SharedEntry(
         id: id,
@@ -1102,6 +1123,12 @@ class SharedEntry {
         updatedBy: clearUpdatedBy ? null : (updatedBy ?? this.updatedBy),
         updatedAt: updatedAt ?? this.updatedAt,
         editorName: editorName ?? this.editorName,
+        mediaPath: clearMedia ? '' : (mediaPath ?? this.mediaPath),
+        mediaThumbnailBase64: clearMedia
+            ? ''
+            : (mediaThumbnailBase64 ?? this.mediaThumbnailBase64),
+        sketchPages:
+            clearSketch ? const [] : (sketchPages ?? this.sketchPages),
       );
 
   Map<String, dynamic> toJson() => {
@@ -1118,6 +1145,9 @@ class SharedEntry {
             : {'hour': end!.hour, 'minute': end!.minute},
         'done': done,
         'editorName': editorName,
+        'mediaPath': mediaPath,
+        'mediaThumbnailBase64': mediaThumbnailBase64,
+        'sketchPages': sketchPages.map((page) => page.toJson()).toList(),
       };
 
   Map<String, dynamic> toCacheJson() => {
@@ -1162,6 +1192,16 @@ class SharedEntry {
       updatedBy: updatedBy,
       updatedAt: updatedAt,
       editorName: json['editorName'] as String? ?? '',
+      mediaPath: json['mediaPath'] as String? ?? '',
+      mediaThumbnailBase64: json['mediaThumbnailBase64'] as String? ?? '',
+      sketchPages: (json['sketchPages'] as List? ?? const [])
+          .whereType<Map>()
+          .map(
+            (page) => DiarySketchPage.fromJson(
+              Map<String, dynamic>.from(page),
+            ),
+          )
+          .toList(),
     );
   }
 }
