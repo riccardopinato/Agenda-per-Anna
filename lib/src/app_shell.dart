@@ -54,6 +54,7 @@ class AgendaApp extends StatelessWidget {
         };
 
         return MaterialApp(
+          navigatorKey: appNavigatorKey,
           debugShowCheckedModeBanner: false,
           title: 'Anna\'s Diary',
           themeMode: mode,
