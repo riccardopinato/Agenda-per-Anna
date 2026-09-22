@@ -1572,133 +1572,69 @@ class DiaryPhotoViewerScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final dateLabel =
         _cap(DateFormat('EEEE d MMMM yyyy', 'it_IT').format(date));
+    Uint8List? bytes;
+    try {
+      if (block.imageBase64.isNotEmpty) {
+        bytes = base64Decode(block.imageBase64);
+      }
+    } catch (_) {
+      bytes = null;
+    }
 
-    return Scaffold(
-      backgroundColor: Colors.black,
-      appBar: AppBar(
-        backgroundColor: Colors.black,
-        foregroundColor: Colors.white,
-        title: Text(
-          dateLabel,
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-        ),
-        actions: [
-          IconButton(
-            tooltip: 'Apri giornata',
-            onPressed: () => Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (_) => PlannerScreen(
-                  store: store,
-                  initialDate: date,
-                ),
+    final actionStyle = OutlinedButton.styleFrom(
+      foregroundColor: Colors.white,
+      side: const BorderSide(color: Colors.white38),
+    );
+
+    return DiaryPhotoViewerShell(
+      title: dateLabel,
+      image: DiaryZoomableImage(bytes: bytes),
+      caption: block.text,
+      appBarActions: [
+        IconButton(
+          tooltip: 'Apri giornata',
+          onPressed: () => Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => PlannerScreen(
+                store: store,
+                initialDate: date,
               ),
             ),
-            icon: const Icon(Icons.calendar_today_outlined),
           ),
-        ],
-      ),
-      body: SafeArea(
-        child: Column(
-          children: [
-            Expanded(
-              child: InteractiveViewer(
-                minScale: 0.75,
-                maxScale: 6,
-                child: Center(
-                  child: block.imageBase64.isEmpty
-                      ? const Icon(
-                          Icons.broken_image_outlined,
-                          color: Colors.white70,
-                          size: 64,
-                        )
-                      : Image.memory(
-                          base64Decode(block.imageBase64),
-                          fit: BoxFit.contain,
-                          errorBuilder: (_, __, ___) => const Icon(
-                            Icons.broken_image_outlined,
-                            color: Colors.white70,
-                            size: 64,
-                          ),
-                        ),
-                ),
-              ),
-            ),
-            DecoratedBox(
-              decoration: BoxDecoration(
-                color: Colors.black.withValues(alpha: 0.92),
-                border: const Border(
-                  top: BorderSide(color: Colors.white12),
-                ),
-              ),
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(16, 12, 16, 14),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    if (block.text.trim().isNotEmpty) ...[
-                      Text(
-                        block.text,
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 16,
-                          height: 1.3,
-                        ),
-                      ),
-                      const SizedBox(height: 12),
-                    ],
-                    Row(
-                      children: [
-                        Expanded(
-                          child: OutlinedButton.icon(
-                            style: OutlinedButton.styleFrom(
-                              foregroundColor: Colors.white,
-                              side: const BorderSide(color: Colors.white38),
-                            ),
-                            onPressed: () => Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (_) => MonthScreen(
-                                  store: store,
-                                  initialMonth:
-                                      DateTime(date.year, date.month),
-                                ),
-                              ),
-                            ),
-                            icon: const Icon(Icons.calendar_month_outlined),
-                            label: const Text('Mese'),
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: OutlinedButton.icon(
-                            style: OutlinedButton.styleFrom(
-                              foregroundColor: Colors.white,
-                              side: const BorderSide(color: Colors.white38),
-                            ),
-                            onPressed: () => Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (_) => YearScreen(
-                                  store: store,
-                                  initialYear: date.year,
-                                ),
-                              ),
-                            ),
-                            icon: const Icon(Icons.insights_outlined),
-                            label: const Text('Anno'),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ],
+          icon: const Icon(Icons.calendar_today_outlined),
         ),
-      ),
+      ],
+      actions: [
+        OutlinedButton.icon(
+          style: actionStyle,
+          onPressed: () => Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => MonthScreen(
+                store: store,
+                initialMonth: DateTime(date.year, date.month),
+              ),
+            ),
+          ),
+          icon: const Icon(Icons.calendar_month_outlined),
+          label: const Text('Mese'),
+        ),
+        OutlinedButton.icon(
+          style: actionStyle,
+          onPressed: () => Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => YearScreen(
+                store: store,
+                initialYear: date.year,
+              ),
+            ),
+          ),
+          icon: const Icon(Icons.insights_outlined),
+          label: const Text('Anno'),
+        ),
+      ],
     );
   }
 }
