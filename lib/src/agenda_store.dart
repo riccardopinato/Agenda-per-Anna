@@ -77,7 +77,10 @@ class AgendaStore extends ChangeNotifier {
       for (final space in _sharedAgendaSpaces.values) {
         for (final entry
             in _sharedAgendaEntriesBySpace[space.id] ?? const <SharedEntry>[]) {
-          if (entry.type == SharedEntryType.note) continue;
+          if (entry.type != SharedEntryType.appointment &&
+            entry.type != SharedEntryType.task) {
+          continue;
+        }
           result.add(UnifiedAgendaEntry.shared(entry, space));
         }
       }
@@ -1620,8 +1623,26 @@ class AgendaStore extends ChangeNotifier {
       );
     }
 
-    result.sort((a, b) => a.sortMinutes.compareTo(b.sortMinutes));
+    result.sort(_compareUnifiedNewestFirst);
     return List<UnifiedAgendaEntry>.unmodifiable(result);
+  }
+
+  int _compareUnifiedNewestFirst(
+    UnifiedAgendaEntry a,
+    UnifiedAgendaEntry b,
+  ) {
+    final aHasTime = a.start != null;
+    final bHasTime = b.start != null;
+    if (aHasTime && bHasTime) {
+      final time = b.sortMinutes.compareTo(a.sortMinutes);
+      if (time != 0) return time;
+    } else if (aHasTime != bHasTime) {
+      return aHasTime ? -1 : 1;
+    }
+
+    final date = b.date.compareTo(a.date);
+    if (date != 0) return date;
+    return b.id.compareTo(a.id);
   }
 
   void _rebuildSharedAgendaDayIndex() {
@@ -1637,7 +1658,7 @@ class AgendaStore extends ChangeNotifier {
       }
     }
     for (final dayEntries in _sharedAgendaDayIndex.values) {
-      dayEntries.sort((a, b) => a.sortMinutes.compareTo(b.sortMinutes));
+      dayEntries.sort(_compareUnifiedNewestFirst);
     }
   }
 
