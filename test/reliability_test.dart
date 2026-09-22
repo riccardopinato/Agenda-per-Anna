@@ -168,6 +168,67 @@ void main() {
     store.dispose();
   });
 
+  test('rich diary blocks preserve sketch text images and strokes', () {
+    final journal = DayJournal(
+      blocks: [
+        DiaryBlock(
+          id: 'sketch-1',
+          type: DiaryBlockType.sketch,
+          createdAt: DateTime.utc(2026, 9, 22, 14, 30),
+          pages: [
+            DiarySketchPage(
+              id: 'page-1',
+              paper: DiarySketchPaper.grid,
+              strokes: const [
+                DiarySketchStroke(
+                  tool: DiarySketchTool.pen,
+                  colorValue: 0xFF222222,
+                  width: 3,
+                  points: [
+                    DiarySketchPoint(0.1, 0.2),
+                    DiarySketchPoint(0.4, 0.5),
+                  ],
+                ),
+              ],
+              textElements: const [
+                DiarySketchTextElement(
+                  id: 'text-1',
+                  text: 'Ricordo',
+                  x: 0.2,
+                  y: 0.3,
+                  fontSize: 24,
+                  colorValue: 0xFFE86D91,
+                ),
+              ],
+              imageElements: const [
+                DiarySketchImageElement(
+                  id: 'image-1',
+                  imageBase64: 'AA==',
+                  x: 0.15,
+                  y: 0.4,
+                  width: 0.5,
+                  height: 0.3,
+                ),
+              ],
+            ),
+          ],
+        ),
+      ],
+    );
+
+    final restored = DayJournal.fromJson(journal.toJson());
+    final page = restored.blocks.single.pages.single;
+
+    expect(restored.blocks.single.type, DiaryBlockType.sketch);
+    expect(page.paper, DiarySketchPaper.grid);
+    expect(page.strokes.single.points.length, 2);
+    expect(page.textElements.single.text, 'Ricordo');
+    expect(page.textElements.single.fontSize, 24);
+    expect(page.imageElements.single.width, 0.5);
+    expect(page.imageElements.single.imageBase64, 'AA==');
+  });
+
+
   test('backup metadata reports the current release line', () async {
     final store = AgendaStore();
     await store.load();
@@ -175,7 +236,7 @@ void main() {
     final backup =
         Map<String, dynamic>.from(jsonDecode(store.createBackupJson()) as Map);
 
-    expect(backup['appVersion'], '0.24.0');
+    expect(backup['appVersion'], '0.25.0');
 
     store.dispose();
   });
