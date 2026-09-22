@@ -1620,6 +1620,187 @@ class _BackupActionCard extends StatelessWidget {
   }
 }
 
+class _NotificationSettingsCard extends StatefulWidget {
+  final AgendaStore store;
+
+  const _NotificationSettingsCard({required this.store});
+
+  @override
+  State<_NotificationSettingsCard> createState() =>
+      _NotificationSettingsCardState();
+}
+
+class _NotificationSettingsCardState
+    extends State<_NotificationSettingsCard> {
+  NotificationHealth? health;
+  bool busy = false;
+
+  bool get _isAndroid =>
+      !kIsWeb && defaultTargetPlatform == TargetPlatform.android;
+
+  @override
+  void initState() {
+    super.initState();
+    unawaited(_refresh());
+  }
+
+  Future<void> _refresh() async {
+    final next = await NotificationService.instance.health();
+    if (!mounted) return;
+    setState(() => health = next);
+  }
+
+  Future<void> _requestPermissions({bool exact = false}) async {
+    setState(() => busy = true);
+    try {
+      await NotificationService.instance.requestPermissions(
+        requestExactAlarm: exact,
+      );
+      await widget.store.reconcileReminders();
+      await _refresh();
+    } finally {
+      if (mounted) setState(() => busy = false);
+    }
+  }
+
+  Future<void> _test() async {
+    setState(() => busy = true);
+    try {
+      await NotificationService.instance.showTestNotification();
+      await _refresh();
+      if (!mounted) return;
+      final current = health;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            current?.notificationsEnabled == false
+                ? 'Le notifiche risultano bloccate dal sistema.'
+                : 'Notifica di prova inviata. Controlla la tendina notifiche.',
+          ),
+        ),
+      );
+    } finally {
+      if (mounted) setState(() => busy = false);
+    }
+  }
+
+  Future<void> _openSettings() async {
+    await NotificationService.instance.openSystemSettings();
+    if (!mounted) return;
+    await Future<void>.delayed(const Duration(milliseconds: 350));
+    await _refresh();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final current = health;
+    final enabled = current?.notificationsEnabled == true;
+    final unavailable = current != null && !current.available;
+    final pending = current?.pendingCount ?? 0;
+    final exact = current?.exactAlarmsEnabled == true;
+    final scheme = Theme.of(context).colorScheme;
+
+    return SimpleCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Notifiche',
+            style: TextStyle(
+              fontWeight: FontWeight.w900,
+              fontSize: 18,
+            ),
+          ),
+          const SizedBox(height: 5),
+          Text(
+            'Promemoria di agenda e novità di Noi ♡ compariranno nella tendina notifiche.',
+            style: Theme.of(context).textTheme.bodySmall,
+          ),
+          const SizedBox(height: 12),
+          ListTile(
+            contentPadding: EdgeInsets.zero,
+            leading: CircleAvatar(
+              backgroundColor: enabled
+                  ? scheme.primaryContainer
+                  : scheme.errorContainer,
+              foregroundColor: enabled
+                  ? scheme.onPrimaryContainer
+                  : scheme.onErrorContainer,
+              child: Icon(
+                enabled
+                    ? Icons.notifications_active
+                    : Icons.notifications_off_outlined,
+              ),
+            ),
+            title: Text(
+              unavailable
+                  ? 'Servizio notifiche non disponibile'
+                  : enabled
+                      ? 'Notifiche attive'
+                      : 'Notifiche da attivare',
+              style: const TextStyle(fontWeight: FontWeight.w800),
+            ),
+            subtitle: Text(
+              enabled
+                  ? '$pending promemoria programmati'
+                  : 'Anna\'s Diary non può ancora mostrare avvisi di sistema.',
+            ),
+          ),
+          if (_isAndroid) ...[
+            const Divider(),
+            ListTile(
+              contentPadding: EdgeInsets.zero,
+              leading: Icon(
+                exact ? Icons.alarm_on_outlined : Icons.alarm_add_outlined,
+              ),
+              title: Text(
+                exact ? 'Promemoria precisi attivi' : 'Promemoria precisi',
+                style: const TextStyle(fontWeight: FontWeight.w700),
+              ),
+              subtitle: Text(
+                exact
+                    ? 'Android può mostrare i promemoria all’orario previsto.'
+                    : 'Consenti “Sveglie e promemoria” per ridurre i ritardi dovuti al risparmio energetico.',
+              ),
+              trailing: exact
+                  ? const Icon(Icons.check_circle_outline)
+                  : TextButton(
+                      onPressed: busy
+                          ? null
+                          : () => _requestPermissions(exact: true),
+                      child: const Text('Attiva'),
+                    ),
+            ),
+          ],
+          const SizedBox(height: 8),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              FilledButton.tonalIcon(
+                onPressed: busy ? null : _test,
+                icon: const Icon(Icons.notification_add_outlined),
+                label: const Text('Notifica di prova'),
+              ),
+              if (!enabled)
+                FilledButton.icon(
+                  onPressed: busy ? null : _requestPermissions,
+                  icon: const Icon(Icons.notifications_active_outlined),
+                  label: const Text('Attiva notifiche'),
+                ),
+              OutlinedButton.icon(
+                onPressed: busy ? null : _openSettings,
+                icon: const Icon(Icons.settings_outlined),
+                label: const Text('Impostazioni sistema'),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class SettingsScreen extends StatefulWidget {
   final AgendaStore store;
 
@@ -2059,6 +2240,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   ],
                 ),
               ),
+              const SizedBox(height: 12),
+              _NotificationSettingsCard(store: widget.store),
               const SizedBox(height: 12),
               SimpleCard(
                 child: Column(
