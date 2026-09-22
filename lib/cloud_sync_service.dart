@@ -692,6 +692,51 @@ class CloudSyncService extends ChangeNotifier {
     );
   }
 
+  Future<void> registerPushDevice({
+    required String token,
+    required String platform,
+    required String appVersion,
+  }) async {
+    final client = _requireSignedInClient();
+    final uid = userId!;
+    await client.from('push_devices').upsert(
+      {
+        'user_id': uid,
+        'token': token,
+        'platform': platform,
+        'app_version': appVersion,
+        'updated_at': DateTime.now().toUtc().toIso8601String(),
+      },
+      onConflict: 'token',
+    );
+  }
+
+  Future<void> unregisterPushDevice(String token) async {
+    final client = _requireSignedInClient();
+    final uid = userId!;
+    await client
+        .from('push_devices')
+        .delete()
+        .eq('user_id', uid)
+        .eq('token', token);
+  }
+
+  Future<void> sendSharedPush({
+    required String spaceId,
+    required String eventId,
+    required String action,
+  }) async {
+    final client = _requireSignedInClient();
+    await client.functions.invoke(
+      'send-shared-push',
+      body: {
+        'space_id': spaceId,
+        'event_id': eventId,
+        'action': action,
+      },
+    );
+  }
+
   RealtimeChannel subscribeSharedSpace({
     required String spaceId,
     required String listenerKey,
