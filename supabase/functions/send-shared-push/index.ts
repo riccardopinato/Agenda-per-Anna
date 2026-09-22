@@ -152,6 +152,7 @@ Deno.serve(async (req: Request) => {
   const spaceId = String(body.space_id ?? "").trim();
   const eventId = String(body.event_id ?? "").trim();
   const action = String(body.action ?? "updated").trim();
+  const entityId = String(body.entity_id ?? "").trim();
 
   if (!spaceId || !eventId) {
     return json({ error: "space_id_and_event_id_required" }, 400);
@@ -248,15 +249,20 @@ Deno.serve(async (req: Request) => {
           notification: {
             title: "Anna's Diary · Noi ♡",
             body:
-              action === "delete"
-                ? "Un elemento condiviso è stato aggiornato."
-                : "C’è una nuova attività condivisa da leggere.",
+              action === "comment"
+                ? "C’è un nuovo commento in Noi ♡."
+                : action === "reaction"
+                  ? "Hai ricevuto una reazione ❤️ in Noi ♡."
+                  : action === "delete"
+                    ? "Un elemento condiviso è stato aggiornato."
+                    : "C’è una nuova attività condivisa da leggere.",
           },
           data: {
             kind: "shared_update",
             space_id: spaceId,
             event_id: eventId,
             action,
+            ...(entityId ? { entity_id: entityId } : {}),
           },
           android: {
             priority: "high",
