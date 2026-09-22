@@ -1067,6 +1067,7 @@ class SharedEntry {
   final String title;
   final String note;
   final DateTime date;
+  final DateTime? createdAt;
   final TimeOfDay? start;
   final TimeOfDay? end;
   final bool done;
@@ -1108,6 +1109,7 @@ class SharedEntry {
     String? title,
     String? note,
     DateTime? date,
+    DateTime? createdAt,
     TimeOfDay? start,
     TimeOfDay? end,
     bool? done,
