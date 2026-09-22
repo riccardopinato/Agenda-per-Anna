@@ -4480,6 +4480,148 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
     );
   }
 
+  Widget _sharedInteractionFooter(
+    SharedEntry entry, {
+    required Set<String> hearts,
+    required List<SharedEntryComment> comments,
+    required bool likedByMe,
+    required String? seen,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(8, 2, 8, 4),
+      child: Row(
+        children: [
+          TextButton.icon(
+            onPressed:
+                interactionsLoading ? null : () => _toggleHeart(entry),
+            icon: Icon(
+              likedByMe ? Icons.favorite : Icons.favorite_border,
+              color: likedByMe
+                  ? Theme.of(context).colorScheme.error
+                  : null,
+              size: 20,
+            ),
+            label: Text(hearts.isEmpty ? 'Mi piace' : '${hearts.length}'),
+          ),
+          TextButton.icon(
+            onPressed: () => _openComments(entry),
+            icon: const Icon(Icons.chat_bubble_outline, size: 19),
+            label: Text(
+              comments.isEmpty ? 'Commenta' : '${comments.length}',
+            ),
+          ),
+          const Spacer(),
+          if (seen != null)
+            Padding(
+              padding: const EdgeInsets.only(right: 6),
+              child: Row(
+                children: [
+                  const Icon(Icons.done_all, size: 17),
+                  const SizedBox(width: 4),
+                  Text(
+                    seen,
+                    style: Theme.of(context).textTheme.bodySmall,
+                  ),
+                ],
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _sharedDiaryContentCard(
+    BuildContext context,
+    SharedEntry entry, {
+    required bool showDate,
+    required bool pending,
+    required Set<String> hearts,
+    required List<SharedEntryComment> comments,
+    required bool likedByMe,
+    required String? seen,
+    required String editor,
+  }) {
+    final kind = switch (entry.type) {
+      SharedEntryType.note => DiaryContentKind.note,
+      SharedEntryType.photo => DiaryContentKind.photo,
+      SharedEntryType.sketch => DiaryContentKind.sketch,
+      _ => throw StateError('not_a_diary_entry'),
+    };
+
+    final meta = <String>[
+      kind.label,
+      if (showDate)
+        _cap(DateFormat('EEE d MMM', 'it_IT').format(entry.date)),
+      if (editor.isNotEmpty) editor,
+      if (entry.updatedAt != null)
+        'Aggiornato ${DateFormat('HH:mm', 'it_IT').format(entry.updatedAt!.toLocal())}',
+      if (pending) 'In attesa di sincronizzazione',
+    ];
+
+    final VoidCallback openEntry = switch (entry.type) {
+      SharedEntryType.note => () => _addSharedNote(entry),
+      SharedEntryType.photo => () => Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => SharedPhotoViewerScreen(
+                space: widget.space,
+                entry: entry,
+              ),
+            ),
+          ),
+      SharedEntryType.sketch => () => _addSharedSketch(entry),
+      _ => () {},
+    };
+
+    final Widget? preview = switch (entry.type) {
+      SharedEntryType.photo when entry.mediaThumbnailBase64.isNotEmpty =>
+        _CachedBase64Image(
+          data: entry.mediaThumbnailBase64,
+          fit: BoxFit.cover,
+          cacheWidth: 720,
+        ),
+      SharedEntryType.sketch when entry.sketchPages.isNotEmpty =>
+        DiarySketchPagePreview(page: entry.sketchPages.first),
+      _ => null,
+    };
+
+    final title = switch (entry.type) {
+      SharedEntryType.note =>
+        entry.note.trim().isEmpty ? entry.title : entry.note.trim(),
+      SharedEntryType.photo =>
+        entry.note.trim().isEmpty ? 'Foto del giorno' : entry.note.trim(),
+      SharedEntryType.sketch => entry.sketchPages.length <= 1
+          ? 'Sketch'
+          : 'Sketch · ${entry.sketchPages.length} pagine',
+      _ => entry.title,
+    };
+
+    return DiaryContentCard(
+      kind: kind,
+      title: title,
+      subtitle: meta.join(' · '),
+      preview: preview,
+      onOpen: openEntry,
+      onEdit: kind == DiaryContentKind.photo ? null : openEntry,
+      onEditCaption: kind == DiaryContentKind.photo
+          ? () => _editSharedPhotoCaption(entry)
+          : null,
+      onReplacePhoto: kind == DiaryContentKind.photo
+          ? () => _addSharedPhoto(entry)
+          : null,
+      onDelete: () => _delete(entry),
+      statusIcon:
+          pending ? const Icon(Icons.schedule_outlined, size: 20) : null,
+      footer: _sharedInteractionFooter(
+        entry,
+        hearts: hearts,
+        comments: comments,
+        likedByMe: likedByMe,
+        seen: seen,
+      ),
+    );
+  }
+
   Widget _sharedEntryCard(
     BuildContext context,
     SharedEntry entry, {
@@ -4492,6 +4634,23 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
     final likedByMe = uid != null && hearts.contains(uid);
     final comments = commentsByEntry[entry.id] ?? const <SharedEntryComment>[];
     final seen = _seenLabel(entry);
+
+    if (entry.type == SharedEntryType.note ||
+        entry.type == SharedEntryType.photo ||
+        entry.type == SharedEntryType.sketch) {
+      return _sharedDiaryContentCard(
+        context,
+        entry,
+        showDate: showDate,
+        pending: pending,
+        hearts: hearts,
+        comments: comments,
+        likedByMe: likedByMe,
+        seen: seen,
+        editor: editor,
+      );
+    }
+
     final details = <String>[
       if (showDate)
         _cap(DateFormat('EEE d MMM', 'it_IT').format(entry.date)),
@@ -4504,63 +4663,18 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
       if (pending) 'In attesa di sincronizzazione',
     ];
 
-    VoidCallback openEntry = () => _edit(entry);
-    if (entry.type == SharedEntryType.note) {
-      openEntry = () => _addSharedNote(entry);
-    } else if (entry.type == SharedEntryType.photo) {
-      openEntry = () => Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (_) => SharedPhotoViewerScreen(
-                space: widget.space,
-                entry: entry,
-              ),
-            ),
-          );
-    } else if (entry.type == SharedEntryType.sketch) {
-      openEntry = () => _addSharedSketch(entry);
-    }
-
-    Widget? mediaPreview;
-    if (entry.type == SharedEntryType.photo &&
-        entry.mediaThumbnailBase64.isNotEmpty) {
-      mediaPreview = AspectRatio(
-        aspectRatio: 16 / 10,
-        child: InkWell(
-          onTap: openEntry,
-          child: _CachedBase64Image(
-            data: entry.mediaThumbnailBase64,
-            fit: BoxFit.cover,
-            cacheWidth: 720,
-          ),
-        ),
-      );
-    } else if (entry.type == SharedEntryType.sketch &&
-        entry.sketchPages.isNotEmpty) {
-      mediaPreview = AspectRatio(
-        aspectRatio: 16 / 10,
-        child: InkWell(
-          onTap: openEntry,
-          child: DiarySketchPagePreview(page: entry.sketchPages.first),
-        ),
-      );
-    }
-
     return Card(
       margin: const EdgeInsets.only(bottom: 9),
       clipBehavior: Clip.antiAlias,
       child: Column(
         children: [
-          if (mediaPreview != null) mediaPreview,
           ListTile(
             leading: entry.type == SharedEntryType.task
                 ? Checkbox(
                     value: entry.done,
                     onChanged: (_) => _toggleDone(entry),
                   )
-                : CircleAvatar(
-                    child: Icon(entry.type.icon),
-                  ),
+                : CircleAvatar(child: Icon(entry.type.icon)),
             title: Text(
               entry.title,
               style: TextStyle(
@@ -4573,110 +4687,49 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
               maxLines: showDate ? 4 : 3,
               overflow: TextOverflow.ellipsis,
             ),
-            onTap: openEntry,
-            trailing: pending
-                ? const Icon(Icons.schedule_outlined)
-                : PopupMenuButton<String>(
-                    onSelected: (value) {
-                      if (value == 'edit') {
-                        if (entry.type == SharedEntryType.note) {
-                          _addSharedNote(entry);
-                        } else if (entry.type == SharedEntryType.sketch) {
-                          _addSharedSketch(entry);
-                        } else {
-                          _edit(entry);
-                        }
-                      }
-                      if (value == 'caption' &&
-                          entry.type == SharedEntryType.photo) {
-                        _editSharedPhotoCaption(entry);
-                      }
-                      if (value == 'replace' &&
-                          entry.type == SharedEntryType.photo) {
-                        _addSharedPhoto(entry);
-                      }
-                      if (value == 'memory') {
-                        _toggleMemoryPin(entry);
-                      }
-                      if (value == 'delete') _delete(entry);
-                    },
-                    itemBuilder: (_) => [
-                      if (entry.type != SharedEntryType.photo)
-                        const PopupMenuItem(
-                          value: 'edit',
-                          child: Text('Modifica'),
-                        ),
-                      if (entry.type == SharedEntryType.photo) ...[
-                        const PopupMenuItem(
-                          value: 'caption',
-                          child: Text('Modifica didascalia'),
-                        ),
-                        const PopupMenuItem(
-                          value: 'replace',
-                          child: Text('Sostituisci foto'),
-                        ),
-                      ],
-                      if (entry.type == SharedEntryType.appointment ||
-                          entry.type == SharedEntryType.task)
-                        PopupMenuItem(
-                          value: 'memory',
-                          child: Text(
-                            entry.memoryPinned
-                                ? 'Togli dai ricordi'
-                                : 'Aggiungi ai ricordi',
-                          ),
-                        ),
-                      const PopupMenuItem(
-                        value: 'delete',
-                        child: Text('Elimina'),
-                      ),
-                    ],
-                  ),
-          ),
-          const Divider(height: 1),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(8, 2, 8, 4),
-            child: Row(
+            onTap: () => _edit(entry),
+            trailing: Row(
+              mainAxisSize: MainAxisSize.min,
               children: [
-                TextButton.icon(
-                  onPressed: interactionsLoading
-                      ? null
-                      : () => _toggleHeart(entry),
-                  icon: Icon(
-                    likedByMe ? Icons.favorite : Icons.favorite_border,
-                    color: likedByMe
-                        ? Theme.of(context).colorScheme.error
-                        : null,
-                    size: 20,
-                  ),
-                  label: Text(
-                    hearts.isEmpty ? 'Mi piace' : '${hearts.length}',
-                  ),
-                ),
-                TextButton.icon(
-                  onPressed: () => _openComments(entry),
-                  icon: const Icon(Icons.chat_bubble_outline, size: 19),
-                  label: Text(
-                    comments.isEmpty ? 'Commenta' : '${comments.length}',
-                  ),
-                ),
-                const Spacer(),
-                if (seen != null)
-                  Padding(
-                    padding: const EdgeInsets.only(right: 6),
-                    child: Row(
-                      children: [
-                        const Icon(Icons.done_all, size: 17),
-                        const SizedBox(width: 4),
-                        Text(
-                          seen,
-                          style: Theme.of(context).textTheme.bodySmall,
-                        ),
-                      ],
+                if (pending) ...[
+                  const Icon(Icons.schedule_outlined, size: 20),
+                  const SizedBox(width: 2),
+                ],
+                PopupMenuButton<String>(
+                  onSelected: (value) {
+                    if (value == 'edit') _edit(entry);
+                    if (value == 'memory') _toggleMemoryPin(entry);
+                    if (value == 'delete') _delete(entry);
+                  },
+                  itemBuilder: (_) => [
+                    const PopupMenuItem(
+                      value: 'edit',
+                      child: Text('Modifica'),
                     ),
-                  ),
+                    PopupMenuItem(
+                      value: 'memory',
+                      child: Text(
+                        entry.memoryPinned
+                            ? 'Togli dai ricordi'
+                            : 'Aggiungi ai ricordi',
+                      ),
+                    ),
+                    const PopupMenuItem(
+                      value: 'delete',
+                      child: Text('Elimina'),
+                    ),
+                  ],
+                ),
               ],
             ),
+          ),
+          const Divider(height: 1),
+          _sharedInteractionFooter(
+            entry,
+            hearts: hearts,
+            comments: comments,
+            likedByMe: likedByMe,
+            seen: seen,
           ),
         ],
       ),
