@@ -249,6 +249,22 @@ class SharedMemberRead {
       );
 }
 
+class SharedMediaMaintenanceReport {
+  final int fileCount;
+  final int referencedCount;
+  final int orphanCount;
+  final int removedCount;
+  final int totalBytes;
+
+  const SharedMediaMaintenanceReport({
+    required this.fileCount,
+    required this.referencedCount,
+    required this.orphanCount,
+    required this.removedCount,
+    required this.totalBytes,
+  });
+}
+
 class CloudSyncService extends ChangeNotifier {
   CloudSyncService._();
 
@@ -808,6 +824,90 @@ class CloudSyncService extends ChangeNotifier {
     if (path.trim().isEmpty) return;
     final client = _requireSignedInClient();
     await client.storage.from('shared-media').remove([path]);
+  }
+
+  Future<SharedMediaMaintenanceReport> maintainSharedMedia({
+    required String spaceId,
+    required Set<String> referencedPaths,
+    bool removeOrphans = false,
+  }) async {
+    final client = _requireSignedInClient();
+    final storage = client.storage.from('shared-media');
+    final discovered = <String>{};
+    var totalBytes = 0;
+
+    int objectSize(FileObject object) {
+      final raw = object.metadata?['size'];
+      if (raw is num) return raw.toInt();
+      return int.tryParse(raw?.toString() ?? '') ?? 0;
+    }
+
+    Future<void> collectFiles(String path) async {
+      const pageSize = 100;
+      for (var offset = 0;; offset += pageSize) {
+        final page = await storage.list(
+          path: path,
+          searchOptions: SearchOptions(
+            limit: pageSize,
+            offset: offset,
+          ),
+        );
+
+        for (final object in page) {
+          if (object.id == null) continue;
+          final fullPath = '$path/${object.name}';
+          discovered.add(fullPath);
+          totalBytes += objectSize(object);
+        }
+
+        if (page.length < pageSize) break;
+      }
+    }
+
+    const pageSize = 100;
+    for (var offset = 0;; offset += pageSize) {
+      final page = await storage.list(
+        path: spaceId,
+        searchOptions: SearchOptions(
+          limit: pageSize,
+          offset: offset,
+        ),
+      );
+
+      for (final object in page) {
+        if (object.id != null) {
+          final fullPath = '$spaceId/${object.name}';
+          discovered.add(fullPath);
+          totalBytes += objectSize(object);
+        } else {
+          await collectFiles('$spaceId/${object.name}');
+        }
+      }
+
+      if (page.length < pageSize) break;
+    }
+
+    final orphans = discovered
+        .where((path) => !referencedPaths.contains(path))
+        .toList(growable: false);
+
+    var removed = 0;
+    if (removeOrphans && orphans.isNotEmpty) {
+      await storage.remove(orphans);
+      removed = orphans.length;
+    }
+
+    final referencedCount = discovered
+        .where((path) => referencedPaths.contains(path))
+        .length;
+
+    return SharedMediaMaintenanceReport(
+      fileCount: discovered.length,
+      referencedCount: referencedCount,
+      orphanCount: orphans.length,
+      removedCount: removed,
+      totalBytes: totalBytes,
+    );
   }
 
   Future<void> registerPushDevice({
