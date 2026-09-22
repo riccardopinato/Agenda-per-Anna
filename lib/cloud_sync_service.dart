@@ -787,14 +787,13 @@ class CloudSyncService extends ChangeNotifier {
       'image/webp' => 'webp',
       _ => 'jpg',
     };
-    final path =
-        '$spaceId/$entryId/${DateTime.now().microsecondsSinceEpoch}.$extension';
+    final path = '$spaceId/$entryId/media.$extension';
     await client.storage.from('shared-media').uploadBinary(
           path,
           bytes,
           fileOptions: FileOptions(
             contentType: contentType,
-            upsert: false,
+            upsert: true,
           ),
         );
     return path;
