@@ -2,7 +2,7 @@
 
 Flutter app for personal planning, private diary and the shared **Noi ♡** space.
 
-Current release line: **v0.30.1**.
+Current release line: **v0.31.0**.
 
 ## Core areas
 
@@ -21,3 +21,8 @@ Current release line: **v0.30.1**.
 GitHub Actions runs Flutter analyze and tests on main. Release builds are manual and use Flutter 3.47.5 for reproducibility.
 
 See `docs/ARCHITECTURE.md` and `supabase/README.md` for implementation details.
+
+
+## v0.31.0 — Shared Diary Parity 2.0
+
+Private diary and Noi ♡ now share the same diary UI components for Note, Photo and Sketch: the same section shell, content cards, edit/caption/delete dialogs, photo viewer frame and full Sketchbook editor. Shared-only collaboration controls (hearts, comments and read receipts) are layered on top of the common diary component instead of maintaining a separate visual implementation.
