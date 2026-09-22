@@ -229,6 +229,92 @@ void main() {
   });
 
 
+  test('shared photo and sketch metadata survive serialization', () {
+    final photo = SharedEntry(
+      id: 'photo-1',
+      type: SharedEntryType.photo,
+      title: 'Una foto',
+      note: 'Ricordo insieme',
+      date: DateTime(2026, 9, 22),
+      mediaPath: 'space-a/photo-1/image.jpg',
+      mediaThumbnailBase64: 'AA==',
+    );
+    final sketch = SharedEntry(
+      id: 'sketch-1',
+      type: SharedEntryType.sketch,
+      title: 'Disegno',
+      note: '',
+      date: DateTime(2026, 9, 22),
+      sketchPages: const [
+        DiarySketchPage(
+          id: 'page-shared',
+          strokes: [
+            DiarySketchStroke(
+              tool: DiarySketchTool.pen,
+              colorValue: 0xFF222222,
+              width: 3,
+              points: [
+                DiarySketchPoint(0.1, 0.1),
+                DiarySketchPoint(0.7, 0.7),
+              ],
+            ),
+          ],
+        ),
+      ],
+    );
+
+    final restoredPhoto = SharedEntry.fromJson(photo.toJson());
+    final restoredSketch = SharedEntry.fromJson(sketch.toJson());
+
+    expect(restoredPhoto.type, SharedEntryType.photo);
+    expect(restoredPhoto.mediaPath, 'space-a/photo-1/image.jpg');
+    expect(restoredPhoto.mediaThumbnailBase64, 'AA==');
+    expect(restoredSketch.type, SharedEntryType.sketch);
+    expect(restoredSketch.sketchPages.single.strokes.single.points.length, 2);
+  });
+
+  test('daily agenda orders newest time first', () async {
+    final day = DateTime(2026, 9, 22);
+    SharedPreferences.setMockInitialValues({
+      'items_v1': jsonEncode([
+        AgendaItem(
+          id: 'morning',
+          title: 'Mattina',
+          note: '',
+          date: day,
+          type: ItemType.appointment,
+          start: const TimeOfDay(hour: 9, minute: 0),
+        ).toJson(),
+        AgendaItem(
+          id: 'evening',
+          title: 'Sera',
+          note: '',
+          date: day,
+          type: ItemType.appointment,
+          start: const TimeOfDay(hour: 18, minute: 30),
+        ).toJson(),
+        AgendaItem(
+          id: 'all-day',
+          title: 'Tutto il giorno',
+          note: '',
+          date: day,
+          type: ItemType.appointment,
+        ).toJson(),
+      ]),
+    });
+
+    final store = AgendaStore();
+    await store.load();
+    final ordered = store.unifiedForDay(day);
+
+    expect(
+      ordered.map((entry) => entry.id).toList(),
+      ['evening', 'morning', 'all-day'],
+    );
+
+    store.dispose();
+  });
+
   test('backup metadata reports the current release line', () async {
     final store = AgendaStore();
     await store.load();
@@ -236,7 +322,7 @@ void main() {
     final backup =
         Map<String, dynamic>.from(jsonDecode(store.createBackupJson()) as Map);
 
-    expect(backup['appVersion'], '0.27.0');
+    expect(backup['appVersion'], '0.28.0');
 
     store.dispose();
   });
