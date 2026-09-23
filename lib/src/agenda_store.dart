@@ -1013,6 +1013,7 @@ class AgendaStore extends ChangeNotifier {
       }
       if (!_accountScopeResolved) {
         _accountScopeResolved = true;
+        _notifyShellChanged();
         notifyListeners();
       }
       return;
@@ -1066,6 +1067,7 @@ class AgendaStore extends ChangeNotifier {
     }
 
     _accountScopeResolved = true;
+    _notifyShellChanged();
     notifyListeners();
   }
 
@@ -1650,6 +1652,7 @@ class AgendaStore extends ChangeNotifier {
       // from the durable marker on the next sync/resume.
     }
 
+    _notifyShellChanged();
     notifyListeners();
   }
 
@@ -1845,6 +1848,7 @@ class AgendaStore extends ChangeNotifier {
 
   void _invalidateDayIndex() {
     _dayIndexDirty = true;
+    _invalidateUnifiedAgendaCache();
   }
 
   void _ensureDayIndex() {
@@ -2012,6 +2016,7 @@ class AgendaStore extends ChangeNotifier {
       await activateCloudAccount(cloud.signedIn ? cloud.userId : null);
     } else {
       _accountScopeResolved = true;
+      _notifyShellChanged();
       notifyListeners();
     }
 
@@ -2044,6 +2049,7 @@ class AgendaStore extends ChangeNotifier {
       await activateCloudAccount(cloud.signedIn ? cloud.userId : null);
     } else if (!_accountScopeResolved) {
       _accountScopeResolved = true;
+      _notifyShellChanged();
       notifyListeners();
     }
 
@@ -2378,6 +2384,7 @@ class AgendaStore extends ChangeNotifier {
           clearSecondaryReminder:
               payload['defaultSecondaryReminder'] == null,
         );
+        _notifyShellChanged();
         return true;
     }
     return false;
@@ -2386,6 +2393,7 @@ class AgendaStore extends ChangeNotifier {
   void setAgendaContentFilter(AgendaContentFilter value) {
     if (agendaContentFilter == value) return;
     agendaContentFilter = value;
+    _invalidateUnifiedAgendaCache();
     notifyListeners();
   }
 
@@ -2431,6 +2439,7 @@ class AgendaStore extends ChangeNotifier {
 
   void _rebuildSharedAgendaDayIndex() {
     _sharedAgendaDayIndex.clear();
+    _invalidateUnifiedAgendaCache();
     for (final space in _sharedAgendaSpaces.values) {
       for (final entry
           in _sharedAgendaEntriesBySpace[space.id] ?? const <SharedEntry>[]) {
@@ -2481,9 +2490,10 @@ class AgendaStore extends ChangeNotifier {
     return List<UnifiedAgendaEntry>.unmodifiable(result);
   }
 
-  int unifiedMonthCount(int year, int month) => unifiedAgendaItems
-      .where((entry) => entry.date.year == year && entry.date.month == month)
-      .length;
+  int unifiedMonthCount(int year, int month) {
+    _ensureUnifiedAgendaCache();
+    return _unifiedMonthCountCache['$year-$month'] ?? 0;
+  }
 
   Future<void> refreshSharedAgendaCache({
     bool pullRemote = false,
@@ -2493,6 +2503,8 @@ class AgendaStore extends ChangeNotifier {
     if (ownerId == null) {
       _sharedAgendaSpaces.clear();
       _sharedAgendaEntriesBySpace.clear();
+      _sharedAgendaDayIndex.clear();
+      _invalidateUnifiedAgendaCache();
       if (notify) notifyListeners();
       return;
     }
@@ -3750,6 +3762,7 @@ class AgendaStore extends ChangeNotifier {
       jsonEncode(_privacyGuardPayload()),
     );
     await _queuePreferencesSync();
+    _notifyShellChanged();
     notifyListeners();
   }
 
@@ -3885,6 +3898,7 @@ class AgendaStore extends ChangeNotifier {
       );
     }
     _unifiedRealtimeSpaceIds.clear();
+    shellRevision.dispose();
     super.dispose();
   }
 }
