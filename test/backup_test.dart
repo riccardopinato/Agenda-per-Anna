@@ -38,7 +38,7 @@ void main() {
       const HabitDefinition(id: 'read', name: 'Leggere'),
     );
 
-    final raw = source.createBackupJson();
+    final raw = await source.createBackupJson();
     final summary = source.inspectBackup(raw);
 
     expect(summary.itemCount, 1);
