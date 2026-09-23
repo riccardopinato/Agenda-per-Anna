@@ -145,6 +145,74 @@ class AgendaStore extends ChangeNotifier {
     return Uint8List.fromList(bytes);
   }
 
+  Future<({List<DiarySketchPage> pages, bool changed})>
+      _localizeSketchPages(
+    List<DiarySketchPage> pages,
+  ) async {
+    var changed = false;
+    final localizedPages = <DiarySketchPage>[];
+
+    for (final page in pages) {
+      final images = <DiarySketchImageElement>[];
+      var pageChanged = false;
+
+      for (final image in page.imageElements) {
+        var next = image;
+        if (image.imageBase64.isNotEmpty) {
+          try {
+            final bytes = base64Decode(image.imageBase64);
+            final assetId = await MediaAssetStore.instance.put(bytes);
+            next = image.copyWith(
+              imageBase64: '',
+              mediaAssetId: assetId,
+            );
+            pageChanged = true;
+          } catch (_) {
+            // Preserve legacy inline media when it cannot be decoded.
+          }
+        }
+        images.add(next);
+      }
+
+      localizedPages.add(
+        pageChanged ? page.copyWith(imageElements: images) : page,
+      );
+      changed = changed || pageChanged;
+    }
+
+    return (pages: localizedPages, changed: changed);
+  }
+
+  Future<List<Map<String, dynamic>>> _portableSketchPages(
+    List<DiarySketchPage> pages,
+  ) async {
+    final result = <Map<String, dynamic>>[];
+
+    for (final page in pages) {
+      final pageJson = Map<String, dynamic>.from(page.toJson());
+      final images = <Map<String, dynamic>>[];
+
+      for (final image in page.imageElements) {
+        final imageJson = Map<String, dynamic>.from(image.toJson());
+        if ((imageJson['imageBase64']?.toString().isEmpty ?? true) &&
+            image.mediaAssetId.isNotEmpty) {
+          final bytes =
+              await MediaAssetStore.instance.read(image.mediaAssetId);
+          if (bytes != null) {
+            imageJson['imageBase64'] = base64Encode(bytes);
+          }
+        }
+        imageJson.remove('mediaAssetId');
+        images.add(imageJson);
+      }
+
+      pageJson['imageElements'] = images;
+      result.add(pageJson);
+    }
+
+    return result;
+  }
+
   Future<bool> _migrateInlinePrivateMedia(
     LocalStateStore prefs,
   ) async {
@@ -154,63 +222,73 @@ class AgendaStore extends ChangeNotifier {
     for (final entry in journals.entries.toList()) {
       final journal = entry.value;
       final blocks = <DiaryBlock>[];
+      var journalChanged = false;
 
       for (final block in journal.blocks) {
-        if (block.type != DiaryBlockType.photo) {
-          blocks.add(block);
-          continue;
+        var next = block;
+        var blockChanged = false;
+
+        if (block.type == DiaryBlockType.photo) {
+          var fullId = block.mediaAssetId;
+          var thumbnailId = block.mediaThumbnailAssetId;
+
+          if (block.imageBase64.isNotEmpty) {
+            try {
+              final bytes = base64Decode(block.imageBase64);
+              fullId = await MediaAssetStore.instance.put(bytes);
+
+              final existingThumbnail = thumbnailId.isEmpty
+                  ? null
+                  : await MediaAssetStore.instance.read(thumbnailId);
+              if (existingThumbnail == null) {
+                thumbnailId = await MediaAssetStore.instance.put(
+                  await _createMediaThumbnail(bytes),
+                );
+              }
+
+              next = next.copyWith(
+                imageBase64: '',
+                mediaAssetId: fullId,
+                mediaThumbnailAssetId: thumbnailId,
+              );
+              blockChanged = true;
+            } catch (_) {
+              // Preserve unreadable legacy Base64 instead of destroying it.
+            }
+          } else if (fullId.isNotEmpty) {
+            final bytes = await MediaAssetStore.instance.read(fullId);
+            if (bytes != null) {
+              final existingThumbnail = thumbnailId.isEmpty
+                  ? null
+                  : await MediaAssetStore.instance.read(thumbnailId);
+              if (existingThumbnail == null) {
+                thumbnailId = await MediaAssetStore.instance.put(
+                  await _createMediaThumbnail(bytes),
+                );
+                next = next.copyWith(
+                  mediaThumbnailAssetId: thumbnailId,
+                );
+                blockChanged = true;
+              }
+            }
+          }
         }
 
-        var next = block;
-        var fullId = block.mediaAssetId;
-        var thumbnailId = block.mediaThumbnailAssetId;
-
-        if (block.imageBase64.isNotEmpty) {
-          try {
-            final bytes = base64Decode(block.imageBase64);
-            // Portable cloud/backup payloads may carry sender-local IDs.
-            // Rebind every inline image to this device's content store.
-            fullId = await MediaAssetStore.instance.put(bytes);
-
-            final existingThumbnail = thumbnailId.isEmpty
-                ? null
-                : await MediaAssetStore.instance.read(thumbnailId);
-            if (existingThumbnail == null) {
-              thumbnailId = await MediaAssetStore.instance.put(
-                await _createMediaThumbnail(bytes),
-              );
-            }
-
-            next = block.copyWith(
-              imageBase64: '',
-              mediaAssetId: fullId,
-              mediaThumbnailAssetId: thumbnailId,
-            );
-            changed = true;
-          } catch (_) {
-            // Preserve unreadable legacy Base64 instead of destroying it.
-          }
-        } else if (fullId.isNotEmpty) {
-          final bytes = await MediaAssetStore.instance.read(fullId);
-          if (bytes != null) {
-            final existingThumbnail = thumbnailId.isEmpty
-                ? null
-                : await MediaAssetStore.instance.read(thumbnailId);
-            if (existingThumbnail == null) {
-              thumbnailId = await MediaAssetStore.instance.put(
-                await _createMediaThumbnail(bytes),
-              );
-              next = block.copyWith(mediaThumbnailAssetId: thumbnailId);
-              changed = true;
-            }
+        if (next.pages.isNotEmpty) {
+          final localized = await _localizeSketchPages(next.pages);
+          if (localized.changed) {
+            next = next.copyWith(pages: localized.pages);
+            blockChanged = true;
           }
         }
 
         blocks.add(next);
+        journalChanged = journalChanged || blockChanged;
       }
 
-      if (changed) {
+      if (journalChanged) {
         journals[entry.key] = journal.copyWith(blocks: blocks);
+        changed = true;
       }
     }
 
@@ -235,6 +313,7 @@ class AgendaStore extends ChangeNotifier {
 
     for (final block in journal.blocks) {
       final blockJson = Map<String, dynamic>.from(block.toJson());
+
       if (block.type == DiaryBlockType.photo) {
         if ((blockJson['imageBase64']?.toString().isEmpty ?? true) &&
             block.mediaAssetId.isNotEmpty) {
@@ -244,11 +323,12 @@ class AgendaStore extends ChangeNotifier {
             blockJson['imageBase64'] = base64Encode(bytes);
           }
         }
-        // Asset IDs belong to one local media store. Keeping them in cloud or
-        // an exported backup can make another device believe it owns bytes it
-        // does not actually have.
         blockJson.remove('mediaAssetId');
         blockJson.remove('mediaThumbnailAssetId');
+      }
+
+      if (block.pages.isNotEmpty) {
+        blockJson['pages'] = await _portableSketchPages(block.pages);
       }
       blocks.add(blockJson);
     }
@@ -260,15 +340,26 @@ class AgendaStore extends ChangeNotifier {
   Future<SharedEntry> _localizeSharedThumbnail(
     SharedEntry entry,
   ) async {
-    if (entry.type != SharedEntryType.photo ||
-        entry.mediaThumbnailAssetId.isNotEmpty ||
-        entry.mediaThumbnailBase64.isEmpty) {
-      return entry;
+    var next = entry;
+
+    if (next.type == SharedEntryType.photo &&
+        next.mediaThumbnailAssetId.isEmpty &&
+        next.mediaThumbnailBase64.isNotEmpty) {
+      final assetId = await MediaAssetStore.instance
+          .importBase64(next.mediaThumbnailBase64);
+      if (assetId != null) {
+        next = next.copyWith(mediaThumbnailAssetId: assetId);
+      }
     }
-    final assetId =
-        await MediaAssetStore.instance.importBase64(entry.mediaThumbnailBase64);
-    if (assetId == null) return entry;
-    return entry.copyWith(mediaThumbnailAssetId: assetId);
+
+    if (next.sketchPages.isNotEmpty) {
+      final localized = await _localizeSketchPages(next.sketchPages);
+      if (localized.changed) {
+        next = next.copyWith(sketchPages: localized.pages);
+      }
+    }
+
+    return next;
   }
 
   Map<String, dynamic> _sharedLocalQueuePayload(
@@ -279,6 +370,10 @@ class AgendaStore extends ChangeNotifier {
         entry.mediaThumbnailAssetId.isNotEmpty) {
       payload['mediaThumbnailBase64'] = '';
       payload['_mediaThumbnailAssetId'] = entry.mediaThumbnailAssetId;
+    }
+    if (entry.sketchPages.isNotEmpty) {
+      payload['sketchPages'] =
+          entry.sketchPages.map((page) => page.toLocalJson()).toList();
     }
     return payload;
   }
@@ -296,6 +391,20 @@ class AgendaStore extends ChangeNotifier {
         payload['mediaThumbnailBase64'] = base64Encode(bytes);
       }
     }
+
+    final rawPages = payload['sketchPages'];
+    if (rawPages is List) {
+      final pages = rawPages
+          .whereType<Map>()
+          .map(
+            (value) => DiarySketchPage.fromJson(
+              Map<String, dynamic>.from(value),
+            ),
+          )
+          .toList();
+      payload['sketchPages'] = await _portableSketchPages(pages);
+    }
+
     return payload;
   }
 
@@ -331,8 +440,9 @@ class AgendaStore extends ChangeNotifier {
         }
         for (final page in block.pages) {
           for (final image in page.imageElements) {
-            // Sketch image Base64 migration is intentionally independent.
-            if (image.imageBase64.isEmpty) continue;
+            if (image.mediaAssetId.isNotEmpty) {
+              referenced.add(image.mediaAssetId);
+            }
           }
         }
       }
