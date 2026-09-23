@@ -161,3 +161,15 @@ The private journal and Noi ♡ no longer maintain independent diary presentatio
 - Realtime exposes typed record/interaction change envelopes. Unified shared agenda applies record changes directly, while the active shared screen applies comments, reactions and member-read changes directly to its cached maps.
 - Physical DELETE events with incomplete old-row data fall back to the existing full interaction reconciliation.
 - Startup cloud initialization performs private reconciliation first; shared queue flushes and shared remote refresh run in a short deferred task. Resume and periodic reconciliation remain full.
+
+
+## v0.38.0 — Release, APK Size & Platform Hardening
+
+- Generated Android source remains out of Git, but native configuration is no longer encoded as large inline workflow fragments. `tool/prepare_android_platform.py` is the single deterministic transformation applied by CI, size audit and production release.
+- Flutter is pinned to 3.47.5 for platform generation. Missing template anchors fail immediately, turning upstream template drift into a visible CI failure.
+- Development checks now compile a generated Android debug package, so native manifest/plugin/desugaring regressions are covered continuously instead of only during manual release.
+- Production signing uses environment-backed Gradle values and a stable secret-decoded keystore. No release path falls back to debug/ephemeral signing.
+- Direct sideload distribution is ARM64-first; universal and legacy ABI packages remain available separately. Play distribution uses AAB.
+- Release binaries are obfuscated with split debug symbols preserved for symbolication.
+- `tool/android_size_report.py` reports total compressed APK bytes, grouped compressed/uncompressed payload and the largest archive entries without requiring Android SDK analysis tools.
+- A dedicated pull-request size audit builds the ARM64 release path with production-equivalent compiler flags but uploads only the text report, never an audit-signed APK.
