@@ -15,5 +15,8 @@ Future<bool> deleteMediaAssetBytes(String assetId) =>
 Future<Set<String>> listMediaAssetIds() =>
     implementation.listMediaAssetIds();
 
+Future<Map<String, List<int>>> listMediaAssetStats() =>
+    implementation.listMediaAssetStats();
+
 Future<void> clearMediaAssetsForTesting() =>
     implementation.clearMediaAssetsForTesting();
