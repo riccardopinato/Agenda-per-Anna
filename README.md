@@ -2,7 +2,7 @@
 
 Flutter app for personal planning, private diary and the shared **Noi ♡** space.
 
-Current release line: **v0.31.0**.
+Current release line: **v0.33.2**.
 
 ## Core areas
 
@@ -11,18 +11,28 @@ Current release line: **v0.31.0**.
 - Noi ♡: shared agenda plus the same Note / Photo / Sketch diary tools.
 - I nostri ricordi: shared memories grouped by memories, days, months, years and timeline.
 - Offline-first private/shared queues with deterministic cloud reconciliation.
+- Structured local state on Sembast with checksums, rollback records and account isolation.
+- Media Engine 2.0 with binary assets separated from structured state.
 - Supabase Auth, Database, Realtime and private Storage.
 - Firebase Cloud Messaging for Android Noi ♡ push notifications.
 - Local reminders with notification diagnostics and repair tools.
-- Local/JSON backup and account-scoped safety snapshots.
+- Portable JSON backup and account-scoped safety snapshots.
 
 ## Quality gates
 
-GitHub Actions runs Flutter analyze and tests on main. Release builds are manual and use Flutter 3.47.5 for reproducibility.
+GitHub Actions runs locked dependency resolution, Flutter analyze, the full test suite and a Web release build on every pull request and every push to `main`.
+
+Release Android builds remain manual and use Flutter 3.47.5 for reproducibility. Release APK signing requires the stable keystore credentials in GitHub Secrets; the workflow deliberately refuses ephemeral or cache-backed signing keys.
 
 See `docs/ARCHITECTURE.md` and `supabase/README.md` for implementation details.
 
+## v0.33.2 — Reliability & Cleanup
 
-## v0.31.0 — Shared Diary Parity 2.0
-
-Private diary and Noi ♡ now share the same diary UI components for Note, Photo and Sketch: the same section shell, content cards, edit/caption/delete dialogs, photo viewer frame and full Sketchbook editor. Shared-only collaboration controls (hearts, comments and read receipts) are layered on top of the common diary component instead of maintaining a separate visual implementation.
+- Fail-safe startup when persistent local storage cannot be opened.
+- No temporary-directory fallback for database or media.
+- Transactional account switching.
+- Atomic core-state backup restore with crash-safe full-sync recovery.
+- Redundant Noi ♡ hub Realtime subscriptions removed.
+- Permanent CI quality gate.
+- Stable secret-backed Android release signing required.
+- Runtime version metadata aligned across backup and push registration.
