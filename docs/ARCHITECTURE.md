@@ -86,3 +86,15 @@ The private journal and Noi ♡ no longer maintain independent diary presentatio
 - Account switching keeps the existing per-account profile semantics while the working profile, private sync queue and shared-space queues are persisted through the same database.
 - The external JSON backup format remains schema-compatible; backup/restore and local safety snapshots continue to work independently from the storage implementation.
 - The v0.32 release gate runs analyzer, the full regression suite, the PWA build and the Android release packaging before distribution.
+
+
+## v0.33.0 — Media Engine 2.0
+
+- Standalone diary photos are no longer persisted as Base64 inside the primary journal JSON. Native builds use an application-support media directory; the PWA uses a dedicated IndexedDB media store.
+- Media assets are content-addressed with SHA-256 IDs, deduplicated automatically and served through a bounded in-memory cache.
+- Private journal records persist lightweight media references plus thumbnails. Legacy inline photos are migrated transparently on load.
+- Private cloud sync and full JSON backup remain portable: media references are materialized back to Base64 only when a cloud/backup payload is built.
+- Shared photo upload queues persist durable media asset references instead of large Base64 blobs, while accepting and migrating v0.32 queue entries.
+- Shared photo thumbnails are localized into the media store for offline cards. Full remote photos are cached after first successful open for later offline viewing.
+- Local snapshots remain lightweight and retain media references; garbage collection protects assets referenced by journals, snapshots, account profiles and pending queues.
+- Media corruption is isolated from structured agenda state, and missing/corrupt assets fail as broken media without invalidating the journal database.
