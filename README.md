@@ -2,7 +2,7 @@
 
 Flutter app for personal planning, private diary and the shared **Noi ♡** space.
 
-Current release line: **v0.35.0**.
+Current release line: **v0.36.0**.
 
 ## Core areas
 
@@ -57,3 +57,14 @@ See `docs/ARCHITECTURE.md` and `supabase/README.md` for implementation details.
 - Duplicated sketch pages preserve embedded media asset references.
 - Remote shared-photo disk cache is bounded to 160 entries / 200 MB with LRU-style pruning.
 - Media garbage collection is debounced and runs after startup/diary edits instead of blocking the startup critical path.
+
+
+## v0.36.0 — Backup & Cloud Media 3.0
+
+- Complete backups now export as ZIP packages with `manifest.json`, `data.json` and separate binary media under `media/`.
+- Backup data keeps local media references instead of embedding image Base64 in the JSON payload.
+- Every media entry is integrity-checked through declared size and SHA-256; the data document has its own SHA-256 in the manifest.
+- Restore accepts the new ZIP format and all previous JSON backups.
+- Missing or corrupt referenced media prevents creation/restore of an apparently valid but incomplete full backup.
+- Private cloud sync hashes and scans compact local journal payloads; Base64 media materialization occurs only when a journal is actually sent to the remote backend.
+- The remote Supabase journal format remains backward-compatible in this release, avoiding a forced live storage migration or broken older clients.
