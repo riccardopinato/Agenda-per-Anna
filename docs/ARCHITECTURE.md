@@ -129,3 +129,14 @@ The private journal and Noi ♡ no longer maintain independent diary presentatio
 - Full-section saves are batched into one Sembast transaction and compact deltas for the sections they replace.
 - Unified agenda results cache the sorted combined list, pending task total and month totals. Private or shared mutations invalidate the cache explicitly.
 - The application shell has its own revision notifier. Theme, onboarding, privacy and account-scope changes rebuild the shell; ordinary agenda content changes remain below MaterialApp.
+
+
+## v0.35.0 — Sketch & Media Performance
+
+- Sketch gestures keep a mutable transient point buffer. The persistent DiarySketchStroke remains immutable-by-convention and receives a frozen point list only at gesture end.
+- Pointer sampling uses a small pixel-distance threshold, reducing redundant freehand/lasso points and eliminating the previous O(n²) list-copy pattern.
+- Selection dragging reuses mutable working collections and replaces only selected objects while the gesture is active.
+- Undo/redo snapshots reuse immutable stroke/text/image objects and copy only collection structure; history depth adapts to sketch point complexity.
+- Media cache backends expose access recency and byte size. Native files use file modification time; Web records persist access metadata alongside the existing Base64 payload.
+- Remote media cache eviction is LRU-style with count and byte budgets. In-memory cache entries are protected from immediate disk eviction.
+- Full media GC is scheduled after the first frame path and debounced after diary writes, rather than awaited by AgendaStore.load().
