@@ -17,6 +17,7 @@ class AgendaStore extends ChangeNotifier {
   static const _activeAccountKey = 'active_account_v1';
   static const _legacyClaimedByKey = 'legacy_claimed_by_v1';
   static const _privacyGuardKey = 'privacy_guard_v1';
+  static const _entityDeltaPrefix = 'entity_delta_v2_';
   static const _backupFormat = 'agenda_per_anna_backup';
   static const _backupSchemaVersion = 1;
   static const _appVersion = appReleaseVersion;
@@ -34,9 +35,14 @@ class AgendaStore extends ChangeNotifier {
   final Map<String, SharedSpace> _sharedAgendaSpaces = {};
   final Map<String, List<SharedEntry>> _sharedAgendaEntriesBySpace = {};
   final Map<String, List<UnifiedAgendaEntry>> _sharedAgendaDayIndex = {};
+  final List<UnifiedAgendaEntry> _unifiedAgendaCache = [];
+  final Map<String, int> _unifiedMonthCountCache = {};
+  final ValueNotifier<int> shellRevision = ValueNotifier<int>(0);
   final Map<String, int> _sharedUnreadBySpace = {};
   final Set<String> _unifiedRealtimeSpaceIds = {};
   bool _dayIndexDirty = true;
+  bool _unifiedAgendaCacheDirty = true;
+  int _pendingUnifiedTaskCountCache = 0;
   AgendaContentFilter agendaContentFilter = AgendaContentFilter.all;
   final Set<String> _unreadableStorageKeys = {};
   AgendaPreferences preferences = const AgendaPreferences();
@@ -79,33 +85,14 @@ class AgendaStore extends ChangeNotifier {
   }
 
   List<UnifiedAgendaEntry> get unifiedAgendaItems {
-    final result = <UnifiedAgendaEntry>[];
-    if (agendaContentFilter != AgendaContentFilter.sharedOnly) {
-      result.addAll(items.map(UnifiedAgendaEntry.private));
-    }
-    if (agendaContentFilter != AgendaContentFilter.privateOnly) {
-      for (final space in _sharedAgendaSpaces.values) {
-        for (final entry
-            in _sharedAgendaEntriesBySpace[space.id] ?? const <SharedEntry>[]) {
-          if (entry.type != SharedEntryType.appointment &&
-              entry.type != SharedEntryType.task) {
-            continue;
-          }
-          result.add(UnifiedAgendaEntry.shared(entry, space));
-        }
-      }
-    }
-    result.sort((a, b) {
-      final byDate = b.date.compareTo(a.date);
-      if (byDate != 0) return byDate;
-      return _compareUnifiedNewestFirst(a, b);
-    });
-    return List<UnifiedAgendaEntry>.unmodifiable(result);
+    _ensureUnifiedAgendaCache();
+    return List<UnifiedAgendaEntry>.unmodifiable(_unifiedAgendaCache);
   }
 
-  int get pendingUnifiedTaskCount => unifiedAgendaItems
-      .where((entry) => entry.type == ItemType.task && !entry.done)
-      .length;
+  int get pendingUnifiedTaskCount {
+    _ensureUnifiedAgendaCache();
+    return _pendingUnifiedTaskCountCache;
+  }
 
   List<String> get _workingStorageKeys => const [
         _itemsKey,
@@ -127,6 +114,84 @@ class AgendaStore extends ChangeNotifier {
     return LocalStateStore.instance.open(
       legacyPreferences: legacyPreferences,
     );
+  }
+
+  String _entityScopeToken([String? accountId]) {
+    final scope = accountId == null ? 'guest' : 'user:$accountId';
+    return base64UrlEncode(utf8.encode(scope));
+  }
+
+  String _entityDeltaScopePrefix([String? accountId]) =>
+      '$_entityDeltaPrefix${_entityScopeToken(accountId)}:';
+
+  String _entityDeltaKey(String type, String id) =>
+      '${_entityDeltaScopePrefix(_activeAccountId)}$type:'
+      '${base64UrlEncode(utf8.encode(id))}';
+
+  String _entityTypeForStorageKey(String storageKey) => switch (storageKey) {
+        _itemsKey => 'item',
+        _journalsKey => 'journal',
+        _monthsKey => 'month',
+        _weeksKey => 'week',
+        _habitsKey => 'habit',
+        _inboxKey => 'inbox',
+        _preferencesKey => 'preferences',
+        _ => '',
+      };
+
+  Set<String> _activeEntityDeltaKeys(LocalStateStore prefs) {
+    final prefix = _entityDeltaScopePrefix(_activeAccountId);
+    return prefs.getKeys().where((key) => key.startsWith(prefix)).toSet();
+  }
+
+  void _invalidateUnifiedAgendaCache() {
+    _unifiedAgendaCacheDirty = true;
+  }
+
+  void _ensureUnifiedAgendaCache() {
+    if (!_unifiedAgendaCacheDirty) return;
+
+    final result = <UnifiedAgendaEntry>[];
+    if (agendaContentFilter != AgendaContentFilter.sharedOnly) {
+      result.addAll(items.map(UnifiedAgendaEntry.private));
+    }
+    if (agendaContentFilter != AgendaContentFilter.privateOnly) {
+      for (final space in _sharedAgendaSpaces.values) {
+        for (final entry
+            in _sharedAgendaEntriesBySpace[space.id] ?? const <SharedEntry>[]) {
+          if (entry.type != SharedEntryType.appointment &&
+              entry.type != SharedEntryType.task) {
+            continue;
+          }
+          result.add(UnifiedAgendaEntry.shared(entry, space));
+        }
+      }
+    }
+
+    result.sort((a, b) {
+      final byDate = b.date.compareTo(a.date);
+      if (byDate != 0) return byDate;
+      return _compareUnifiedNewestFirst(a, b);
+    });
+
+    _unifiedAgendaCache
+      ..clear()
+      ..addAll(result);
+    _pendingUnifiedTaskCountCache = result
+        .where((entry) => entry.type == ItemType.task && !entry.done)
+        .length;
+    _unifiedMonthCountCache
+      ..clear();
+    for (final entry in result) {
+      final key = '${entry.date.year}-${entry.date.month}';
+      _unifiedMonthCountCache[key] =
+          (_unifiedMonthCountCache[key] ?? 0) + 1;
+    }
+    _unifiedAgendaCacheDirty = false;
+  }
+
+  void _notifyShellChanged() {
+    shellRevision.value = shellRevision.value + 1;
   }
 
   Future<Uint8List> _createMediaThumbnail(
