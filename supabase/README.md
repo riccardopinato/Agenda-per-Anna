@@ -1,44 +1,44 @@
-# Supabase backend — Agenda per Anna
+# Supabase backend — Anna's Diary
 
-Questa cartella contiene lo schema cloud della v0.15 e la base dati già predisposta per la v0.16 "Spazio condiviso".
+This directory contains the versioned cloud schema used by the current application, including private sync, **Noi ♡** shared spaces, Realtime, interactions, push-device registration and private shared-media Storage.
 
-## Ordine di applicazione
+## Migration order
 
-1. Creare un progetto Supabase dedicato ad Agenda per Anna.
-2. Applicare `migrations/001_cloud_sync.sql`.
-3. In Auth abilitare Email/Password.
-4. Usare nell'app solo:
+1. Create the dedicated Supabase project.
+2. Apply every SQL file in `supabase/migrations/` in numeric order, starting from `001_cloud_sync.sql` through the latest migration committed in the repository.
+3. In Auth enable Email/Password.
+4. Configure the client with only:
    - Project URL
    - Publishable key
-5. Non inserire mai la service-role key nel client Flutter.
+5. Never put the service-role key in the Flutter client.
 
-## Modello dati
+Do not skip later migrations: they contain RLS hardening, RPC permissions, interaction cleanup, push infrastructure and shared-media policies required by current releases.
 
-`agenda_records` contiene sia record privati sia, dalla v0.16, record condivisi.
+## Data model
 
-- `visibility = private` → `space_id IS NULL`, accesso esclusivo del proprietario.
-- `visibility = shared` → `space_id` valorizzato, accesso consentito solo ai membri dello spazio.
-- `record_key` è l'identificatore globale usato per gli upsert incrementali.
-- `deleted_at` implementa tombstone per sincronizzare correttamente le eliminazioni.
-- `client_updated_at` consente la risoluzione deterministica dei conflitti offline.
+`agenda_records` stores both private and shared synchronized records.
 
-## Sicurezza
+- `visibility = private` → `space_id IS NULL`, accessible only by the owner.
+- `visibility = shared` → `space_id` is set, accessible only to authenticated members of that space.
+- `record_key` is the deterministic sync identity.
+- `deleted_at` implements tombstones.
+- `client_updated_at` is used for deterministic offline conflict resolution.
 
-RLS è obbligatoria su tutte le tabelle cloud. La funzione `is_space_member()` centralizza il controllo membership senza creare ricorsione nelle policy di `space_members`.
+Noi ♡ also uses dedicated tables for membership, invitations, comments, reactions, read state, push devices/delivery diagnostics and a private `shared-media` Storage bucket.
 
-Gli inviti di `space_invites` sono volutamente non accessibili direttamente dal client nella v0.15. La v0.16 userà RPC/Edge Function dedicate per:
-- generare un codice temporaneo;
-- validare il codice;
-- aggiungere il secondo account allo spazio;
-- revocare/rigenerare gli inviti.
+## Security
 
-## Configurazione build
+RLS is mandatory. Current migrations move membership checks behind the hardened `private.is_space_member()` security-definer helper, restrict Data API grants, protect synchronized record identity and clean shared interactions when an entry is deleted.
 
-Flutter legge:
+Invites and other privileged shared-space mutations are performed through the dedicated authenticated RPC functions defined by the migrations.
+
+## Build configuration
+
+Flutter reads:
 
 - `SUPABASE_URL`
 - `SUPABASE_PUBLISHABLE_KEY`
 
-tramite `--dart-define`.
+through `--dart-define`. The repository currently also contains production-safe publishable defaults; never add a service-role secret or other privileged credential to source control.
 
-La build resta completamente funzionante offline se le variabili non sono presenti.
+The app remains offline-first when cloud access is unavailable.
