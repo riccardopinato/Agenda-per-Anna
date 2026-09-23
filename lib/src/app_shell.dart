@@ -45,7 +45,7 @@ class AgendaApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return AnimatedBuilder(
-      animation: store,
+      animation: store.shellRevision,
       builder: (context, _) {
         final mode = switch (store.preferences.themeMode) {
           AgendaThemeMode.system => ThemeMode.system,
