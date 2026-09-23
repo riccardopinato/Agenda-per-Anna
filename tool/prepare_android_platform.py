@@ -280,6 +280,16 @@ def prepare_icon() -> None:
         "assets/icon/app_icon.png",
         "assets/icon/app_icon.jpg",
     )
+    # This script prepares an Android-only generated platform. Keep the
+    # repository's iOS icon configuration intact, but disable iOS generation
+    # in the ephemeral CI pubspec so flutter_launcher_icons never expects an
+    # ios/ directory in Android workflows.
+    pubspec = replace_required(
+        pubspec,
+        "  ios: true",
+        "  ios: false",
+        "flutter_launcher_icons iOS flag",
+    )
     write_if_changed(PUBSPEC, pubspec)
 
 
