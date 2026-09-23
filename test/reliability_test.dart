@@ -579,7 +579,7 @@ void main() {
     final backup =
         Map<String, dynamic>.from(jsonDecode(store.createBackupJson()) as Map);
 
-    expect(backup['appVersion'], '0.31.0');
+    expect(backup['appVersion'], '0.32.0');
 
     store.dispose();
   });
