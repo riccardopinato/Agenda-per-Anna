@@ -2409,17 +2409,12 @@ class AgendaStore extends ChangeNotifier {
           forceAll: true,
         );
         _bindPendingOperationsTo(ownerId);
-        if (forceFullSync) {
-          await prefs.remove(_forceFullSyncKey);
-        }
       }
 
       final cursorKey = _privateSyncCursorKey(ownerId);
       final storedCursor = _readSyncCursor(prefs, cursorKey);
-      final requiresFullPull = forceFullSync ||
-          firstSyncForOwner ||
-          preferRemoteOnFirstSync ||
-          storedCursor == null;
+      final requiresFullPull =
+          forceFullSync || firstSyncForOwner || storedCursor == null;
 
       final remote = await cloud.pullPrivateRecords(
         updatedSince: requiresFullPull ? null : storedCursor,
@@ -2445,7 +2440,7 @@ class AgendaStore extends ChangeNotifier {
         final changed = await _applyRemoteRecord(record);
         remoteChanged = remoteChanged || changed;
         _syncQueue.remove(record.localKey);
-        if (changed) appliedRemote.add(record);
+        appliedRemote.add(record);
       }
 
       if (remoteChanged) {
@@ -2453,6 +2448,8 @@ class AgendaStore extends ChangeNotifier {
           prefs,
           persist: false,
         );
+      }
+      if (appliedRemote.isNotEmpty) {
         await _persistAppliedRemoteRecords(prefs, appliedRemote);
       }
 
@@ -2519,6 +2516,7 @@ class AgendaStore extends ChangeNotifier {
         extraChanges: {
           _syncOwnerKey: ownerId,
           cursorKey: nextPrivateCursor.toIso8601String(),
+          if (forceFullSync) _forceFullSyncKey: null,
         },
       );
 
@@ -2925,7 +2923,6 @@ class AgendaStore extends ChangeNotifier {
             cursorKey,
             nextCursor.toIso8601String(),
           );
-          hasBaseline = true;
         } catch (_) {
           // Keep the current in-memory/disk baseline and pending overlay.
         }
