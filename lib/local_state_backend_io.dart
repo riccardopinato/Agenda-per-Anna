@@ -12,15 +12,7 @@ Future<Database> openLocalStateDatabase() async {
     return openNewInMemoryDatabase();
   }
 
-  Directory directory;
-  try {
-    directory = await getApplicationSupportDirectory();
-  } catch (_) {
-    directory = Directory(
-      '${Directory.systemTemp.path}${Platform.pathSeparator}annas_diary',
-    );
-  }
-
+  final directory = await getApplicationSupportDirectory();
   if (!await directory.exists()) {
     await directory.create(recursive: true);
   }
