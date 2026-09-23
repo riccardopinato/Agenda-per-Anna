@@ -128,17 +128,6 @@ class AgendaStore extends ChangeNotifier {
       '${_entityDeltaScopePrefix(_activeAccountId)}$type:'
       '${base64UrlEncode(utf8.encode(id))}';
 
-  String _entityTypeForStorageKey(String storageKey) => switch (storageKey) {
-        _itemsKey => 'item',
-        _journalsKey => 'journal',
-        _monthsKey => 'month',
-        _weeksKey => 'week',
-        _habitsKey => 'habit',
-        _inboxKey => 'inbox',
-        _preferencesKey => 'preferences',
-        _ => '',
-      };
-
   Set<String> _activeEntityDeltaKeys(LocalStateStore prefs) {
     final prefix = _entityDeltaScopePrefix(_activeAccountId);
     return prefs.getKeys().where((key) => key.startsWith(prefix)).toSet();
@@ -180,8 +169,7 @@ class AgendaStore extends ChangeNotifier {
     _pendingUnifiedTaskCountCache = result
         .where((entry) => entry.type == ItemType.task && !entry.done)
         .length;
-    _unifiedMonthCountCache
-      ..clear();
+    _unifiedMonthCountCache.clear();
     for (final entry in result) {
       final key = '${entry.date.year}-${entry.date.month}';
       _unifiedMonthCountCache[key] =
