@@ -28,3 +28,5 @@ jobs:
           flutter test test/local_state_store_test.dart --reporter compact
           flutter test test/reliability_test.dart --reporter compact
           flutter test test/stability_performance_test.dart --reporter compact
+          flutter test test/diary_parity_components_test.dart --reporter compact
+          flutter test test/shared_diary_parity_test.dart --reporter compact
