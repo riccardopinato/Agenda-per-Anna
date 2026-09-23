@@ -85,3 +85,4 @@ The private journal and Noi ♡ no longer maintain independent diary presentatio
 - Storage-level corruption is exposed through the existing local-data warning path so damaged sections are not silently overwritten.
 - Account switching keeps the existing per-account profile semantics while the working profile, private sync queue and shared-space queues are persisted through the same database.
 - The external JSON backup format remains schema-compatible; backup/restore and local safety snapshots continue to work independently from the storage implementation.
+- The v0.32 release gate runs analyzer, the full regression suite, the PWA build and the Android release packaging before distribution.
