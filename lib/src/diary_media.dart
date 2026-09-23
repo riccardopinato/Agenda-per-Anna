@@ -1861,6 +1861,7 @@ class _DiarySketchbookScreenState extends State<DiarySketchbookScreen> {
               (element) => DiarySketchImageElement(
                 id: element.id,
                 imageBase64: element.imageBase64,
+                mediaAssetId: element.mediaAssetId,
                 x: element.x,
                 y: element.y,
                 width: element.width,
@@ -2292,16 +2293,17 @@ class _DiarySketchbookScreenState extends State<DiarySketchbookScreen> {
     if (source == null || !mounted) return;
 
     try {
-      final imageBase64 = await _pickCompressedDiaryImageBase64(
+      final imageBytes = await _pickCompressedDiaryImageBytes(
         source,
         maxSide: 900,
         quality: 64,
       );
-      if (imageBase64 == null) return;
+      if (imageBytes == null) return;
+      final mediaAssetId = await MediaAssetStore.instance.put(imageBytes);
       _pushHistory();
       final element = DiarySketchImageElement(
         id: const Uuid().v4(),
-        imageBase64: imageBase64,
+        mediaAssetId: mediaAssetId,
         x: 0.12,
         y: 0.12,
       );
@@ -2594,10 +2596,11 @@ class _DiarySketchbookScreenState extends State<DiarySketchbookScreen> {
                           )
                         : null,
                   ),
-                  child: Image.memory(
-                    base64Decode(element.imageBase64),
+                  child: DiaryMediaImage(
+                    assetId: element.mediaAssetId,
+                    fallbackBase64: element.imageBase64,
                     fit: BoxFit.cover,
-                    errorBuilder: (_, __, ___) => const ColoredBox(
+                    empty: const ColoredBox(
                       color: Color(0xFFF0F0F0),
                       child: Center(
                         child: Icon(Icons.broken_image_outlined),
@@ -3022,10 +3025,11 @@ class DiarySketchPagePreview extends StatelessWidget {
                   top: element.y * size.height,
                   width: element.width * size.width,
                   height: element.height * size.height,
-                  child: Image.memory(
-                    base64Decode(element.imageBase64),
+                  child: DiaryMediaImage(
+                    assetId: element.mediaAssetId,
+                    fallbackBase64: element.imageBase64,
                     fit: BoxFit.cover,
-                    errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+                    empty: const SizedBox.shrink(),
                   ),
                 ),
               ),
