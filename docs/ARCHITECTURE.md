@@ -100,3 +100,10 @@ The private journal and Noi ♡ no longer maintain independent diary presentatio
 - Shared photo thumbnails are localized into the media store for offline cards. Full remote photos are cached after first successful open for later offline viewing.
 - Local snapshots remain lightweight and retain media references; garbage collection protects assets referenced by journals, snapshots, account profiles and pending queues.
 - Media corruption is isolated from structured agenda state, and missing/corrupt assets fail as broken media without invalidating the journal database.
+
+
+## v0.33.1 — Media cache hardening
+
+- Native media replacement now always commits the new bytes atomically, including named shared-media cache entries whose new payload happens to have the same byte length as the previous file.
+- This prevents stale shared photos from reappearing after an app restart when a remote asset is updated in place.
+- Regression coverage verifies equal-size replacement semantics at the native file backend boundary.
