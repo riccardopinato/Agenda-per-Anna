@@ -43,8 +43,26 @@ jobs:
           flutter create             --project-name agenda_per_anna             --org com.riccardopinato             --platforms=android             /tmp/agenda_android
           cp -R /tmp/agenda_android/android .
 
-      - name: Apply Android configuration
-        run: python3 tool/prepare_android_platform.py
+      - name: Create disposable audit signing key
+        shell: bash
+        run: |
+          set -euo pipefail
+          AUDIT_STORE="$RUNNER_TEMP/agenda-audit.jks"
+          keytool -genkeypair             -keystore "$AUDIT_STORE"             -storepass audit-store-pass             -keypass audit-key-pass             -alias audit             -keyalg RSA             -keysize 2048             -validity 2             -dname "CN=Anna Diary CI Audit,O=CI,C=IT"             -noprompt
+          {
+            echo "ANDROID_KEYSTORE_BASE64=$(base64 -w0 "$AUDIT_STORE")"
+            echo "ANDROID_KEYSTORE_PASSWORD=audit-store-pass"
+            echo "ANDROID_KEY_ALIAS=audit"
+            echo "ANDROID_KEY_PASSWORD=audit-key-pass"
+            echo "ANDROID_KEYSTORE_PATH=$GITHUB_WORKSPACE/.signing/agenda-release.jks"
+          } >> "$GITHUB_ENV"
+
+      - name: Apply Android configuration and signing path
+        run: python3 tool/prepare_android_platform.py --release-signing
+
+      - name: Verify audit keystore path
+        run: |
+          keytool -list             -keystore "$ANDROID_KEYSTORE_PATH"             -storepass "$ANDROID_KEYSTORE_PASSWORD"             -alias "$ANDROID_KEY_ALIAS" >/dev/null
 
       - name: Install locked dependencies
         run: flutter pub get --enforce-lockfile
