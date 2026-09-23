@@ -16,7 +16,7 @@ void main() {
       });
 
       final store = AgendaStore();
-      await store.load();
+      await tester.runAsync(store.load);
 
       final space = SharedSpace(
         id: 'space-a',
