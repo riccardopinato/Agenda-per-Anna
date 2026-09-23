@@ -74,3 +74,14 @@ The private journal and Noi ♡ no longer maintain independent diary presentatio
 - Noi ♡ adds collaboration-only UI (heart, comments, read receipts and sync state) as an optional footer/status layer on the common card.
 - Shared entries persist `createdAt` in their JSON payload so same-day ordering follows creation order like the private diary and edits do not unexpectedly move old memories to the top.
 - Legacy shared payloads fall back to their cloud revision when `createdAt` is absent.
+
+
+## v0.32.0 — Data Safety & Local Storage
+
+- Private agenda data, diary data, preferences, snapshots, account profiles, cloud-sync metadata and Noi ♡ offline caches/queues now use one structured local Sembast store instead of SharedPreferences as the primary persistence layer.
+- Native builds persist the database in the application-support directory; the PWA uses the browser IndexedDB backend.
+- First launch after upgrade performs a transparent, idempotent migration from the existing SharedPreferences keys. Legacy values are intentionally left untouched during this release as a rollback source, but all normal writes move to the structured store.
+- Every stored state record carries a SHA-256 checksum and one previous committed value. If the newest payload is corrupt but its predecessor is valid, startup automatically recovers the predecessor instead of discarding the section.
+- Storage-level corruption is exposed through the existing local-data warning path so damaged sections are not silently overwritten.
+- Account switching keeps the existing per-account profile semantics while the working profile, private sync queue and shared-space queues are persisted through the same database.
+- The external JSON backup format remains schema-compatible; backup/restore and local safety snapshots continue to work independently from the storage implementation.
