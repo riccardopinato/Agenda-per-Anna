@@ -12,6 +12,9 @@ dependencies:
   intl: ^0.20.2
   table_calendar: ^3.2.0
   shared_preferences: ^2.5.3
+  path_provider: ^2.1.6
+  sembast: ^3.8.6
+  sembast_web: ^2.4.4+1
   uuid: ^4.5.1
   flutter_local_notifications: ^22.3.1
   flutter_timezone: ^5.1.0
