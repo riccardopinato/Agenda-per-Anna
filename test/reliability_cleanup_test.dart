@@ -110,7 +110,6 @@ void main() {
     final exported =
         Map<String, dynamic>.from(jsonDecode(await store.createBackupJson()));
     expect(exported['appVersion'], appReleaseVersion);
-    expect(appReleaseVersion, '0.33.2');
 
     store.dispose();
   });
