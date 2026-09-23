@@ -93,7 +93,9 @@ The private journal and Noi ♡ no longer maintain independent diary presentatio
 - Standalone diary photos are no longer persisted as Base64 inside the primary journal JSON. Native builds use an application-support media directory; the PWA uses a dedicated IndexedDB media store.
 - Media assets are content-addressed with SHA-256 IDs, deduplicated automatically and served through a bounded in-memory cache.
 - Private journal records persist lightweight media references plus thumbnails. Legacy inline photos are migrated transparently on load.
+- Images embedded in Sketchbook pages use the same asset store, including legacy migration, local previews and portable cloud/backup materialization.
 - Private cloud sync and full JSON backup remain portable: media references are materialized back to Base64 only when a cloud/backup payload is built.
+- Private and shared sync queues persist local media references rather than Base64 payloads; bytes are materialized only for the outgoing cloud request.
 - Shared photo upload queues persist durable media asset references instead of large Base64 blobs, while accepting and migrating v0.32 queue entries.
 - Shared photo thumbnails are localized into the media store for offline cards. Full remote photos are cached after first successful open for later offline viewing.
 - Local snapshots remain lightweight and retain media references; garbage collection protects assets referenced by journals, snapshots, account profiles and pending queues.
