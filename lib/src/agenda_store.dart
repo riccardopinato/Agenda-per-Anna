@@ -1880,7 +1880,11 @@ class AgendaStore extends ChangeNotifier {
       items[index] = item;
     }
     _invalidateDayIndex();
-    await _save(onlyKeys: {_itemsKey});
+    await _persistEntityMutation(
+      type: 'item',
+      id: item.id,
+      payload: item.toJson(),
+    );
     await _syncReminders(item);
     notifyListeners();
   }
@@ -1910,7 +1914,11 @@ class AgendaStore extends ChangeNotifier {
     await NotificationService.instance.cancel(id);
     await NotificationService.instance.cancel('$id:primary');
     await NotificationService.instance.cancel('$id:secondary');
-    await _save(onlyKeys: {_itemsKey});
+    await _persistEntityMutation(
+      type: 'item',
+      id: id,
+      deleted: true,
+    );
     notifyListeners();
   }
 
@@ -1974,7 +1982,11 @@ class AgendaStore extends ChangeNotifier {
     if (i < 0) return;
     items[i] = items[i].copyWith(done: !items[i].done);
     _invalidateDayIndex();
-    await _save(onlyKeys: {_itemsKey});
+    await _persistEntityMutation(
+      type: 'item',
+      id: items[i].id,
+      payload: items[i].toJson(),
+    );
     await _syncReminders(items[i]);
     notifyListeners();
   }
@@ -1982,8 +1994,13 @@ class AgendaStore extends ChangeNotifier {
   DayJournal journal(DateTime date) => journals[dateKey(date)] ?? const DayJournal();
 
   Future<void> saveJournal(DateTime date, DayJournal journal) async {
-    journals[dateKey(date)] = journal;
-    await _save(onlyKeys: {_journalsKey});
+    final key = dateKey(date);
+    journals[key] = journal;
+    await _persistEntityMutation(
+      type: 'journal',
+      id: key,
+      payload: journal.toLocalJson(),
+    );
     notifyListeners();
   }
 
@@ -3640,21 +3657,27 @@ class AgendaStore extends ChangeNotifier {
   Future<void> addInboxEntry(String text) async {
     final value = text.trim();
     if (value.isEmpty) return;
-    inbox.insert(
-      0,
-      InboxEntry(
-        id: const Uuid().v4(),
-        text: value,
-        createdAt: DateTime.now(),
-      ),
+    final entry = InboxEntry(
+      id: const Uuid().v4(),
+      text: value,
+      createdAt: DateTime.now(),
     );
-    await _save(onlyKeys: {_inboxKey});
+    inbox.insert(0, entry);
+    await _persistEntityMutation(
+      type: 'inbox',
+      id: entry.id,
+      payload: entry.toJson(),
+    );
     notifyListeners();
   }
 
   Future<void> deleteInboxEntry(String id) async {
     inbox.removeWhere((e) => e.id == id);
-    await _save(onlyKeys: {_inboxKey});
+    await _persistEntityMutation(
+      type: 'inbox',
+      id: id,
+      deleted: true,
+    );
     notifyListeners();
   }
 
@@ -3662,7 +3685,11 @@ class AgendaStore extends ChangeNotifier {
     final index = inbox.indexWhere((e) => e.id == id);
     if (index < 0) return;
     inbox[index] = inbox[index].copyWith(pinned: !inbox[index].pinned);
-    await _save(onlyKeys: {_inboxKey});
+    await _persistEntityMutation(
+      type: 'inbox',
+      id: inbox[index].id,
+      payload: inbox[index].toJson(),
+    );
     notifyListeners();
   }
 
@@ -3671,7 +3698,11 @@ class AgendaStore extends ChangeNotifier {
     if (index < 0) return;
     items[index] = items[index].copyWith(pinned: !items[index].pinned);
     _invalidateDayIndex();
-    await _save(onlyKeys: {_itemsKey});
+    await _persistEntityMutation(
+      type: 'item',
+      id: items[index].id,
+      payload: items[index].toJson(),
+    );
     notifyListeners();
   }
 
@@ -3729,24 +3760,57 @@ class AgendaStore extends ChangeNotifier {
   Future<void> addHabit(String name) async {
     final value = name.trim();
     if (value.isEmpty) return;
-    habits.add(HabitDefinition(id: const Uuid().v4(), name: value));
-    await _save(onlyKeys: {_habitsKey});
+    final habit = HabitDefinition(
+      id: const Uuid().v4(),
+      name: value,
+    );
+    habits.add(habit);
+    await _persistEntityMutation(
+      type: 'habit',
+      id: habit.id,
+      payload: habit.toJson(),
+    );
     notifyListeners();
   }
 
   Future<void> removeHabit(String id) async {
     habits.removeWhere((e) => e.id == id);
+    final mutations = <
+        ({
+          String type,
+          String id,
+          Map<String, dynamic>? payload,
+          bool deleted,
+        })>[
+      (
+        type: 'habit',
+        id: id,
+        payload: null,
+        deleted: true,
+      ),
+    ];
+
     for (final entry in journals.entries.toList()) {
       final journal = entry.value;
-      if (journal.completedHabitIds.contains(id)) {
-        journals[entry.key] = journal.copyWith(
-          completedHabitIds: journal.completedHabitIds
-              .where((habitId) => habitId != id)
-              .toList(),
-        );
-      }
+      if (!journal.completedHabitIds.contains(id)) continue;
+
+      final updated = journal.copyWith(
+        completedHabitIds: journal.completedHabitIds
+            .where((habitId) => habitId != id)
+            .toList(),
+      );
+      journals[entry.key] = updated;
+      mutations.add(
+        (
+          type: 'journal',
+          id: entry.key,
+          payload: updated.toLocalJson(),
+          deleted: false,
+        ),
+      );
     }
-    await _save(onlyKeys: {_habitsKey, _journalsKey});
+
+    await _persistEntityMutations(mutations);
     notifyListeners();
   }
 
@@ -3758,16 +3822,27 @@ class AgendaStore extends ChangeNotifier {
     } else {
       completed.add(habitId);
     }
-    journals[dateKey(date)] = current.copyWith(completedHabitIds: completed);
-    await _save(onlyKeys: {_journalsKey});
+    final key = dateKey(date);
+    final updated = current.copyWith(completedHabitIds: completed);
+    journals[key] = updated;
+    await _persistEntityMutation(
+      type: 'journal',
+      id: key,
+      payload: updated.toLocalJson(),
+    );
     notifyListeners();
   }
 
   MonthlyData month(int year, int month) => months[monthKey(year, month)] ?? const MonthlyData();
 
   Future<void> saveMonth(int year, int month, MonthlyData value) async {
-    months[monthKey(year, month)] = value;
-    await _save(onlyKeys: {_monthsKey});
+    final key = monthKey(year, month);
+    months[key] = value;
+    await _persistEntityMutation(
+      type: 'month',
+      id: key,
+      payload: value.toJson(),
+    );
     notifyListeners();
   }
 
@@ -3778,8 +3853,13 @@ class AgendaStore extends ChangeNotifier {
 
   Future<void> saveWeek(DateTime anyDay, WeekData value) async {
     final monday = mondayOf(anyDay);
-    weeks[dateKey(monday)] = value;
-    await _save(onlyKeys: {_weeksKey});
+    final key = dateKey(monday);
+    weeks[key] = value;
+    await _persistEntityMutation(
+      type: 'week',
+      id: key,
+      payload: value.toJson(),
+    );
     notifyListeners();
   }
 
