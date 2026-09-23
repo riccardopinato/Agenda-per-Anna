@@ -2667,7 +2667,7 @@ class _SharedSpaceHubScreenState extends State<SharedSpaceHubScreen> {
   }
 
   Future<void> _loadCachedThenReload() async {
-    final prefs = await SharedPreferences.getInstance();
+    final prefs = await widget.store._localState();
     final raw = prefs.getString(widget.store.sharedSpacesCacheStorageKey);
     if (raw != null) {
       try {
@@ -2694,7 +2694,7 @@ class _SharedSpaceHubScreenState extends State<SharedSpaceHubScreen> {
   }
 
   Future<void> _saveSpacesCache(List<SharedSpace> value) async {
-    final prefs = await SharedPreferences.getInstance();
+    final prefs = await widget.store._localState();
     await prefs.setString(
       widget.store.sharedSpacesCacheStorageKey,
       jsonEncode(
@@ -3161,7 +3161,7 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
   }
 
   Future<void> _loadInteractionCache(
-    SharedPreferences prefs,
+    LocalStateStore prefs,
   ) async {
     final raw = prefs.getString(_interactionCacheKey);
     if (raw == null) return;
@@ -3205,7 +3205,7 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
     Map<String, Set<String>> hearts,
     Map<String, DateTime> reads,
   ) async {
-    final prefs = await SharedPreferences.getInstance();
+    final prefs = await widget.store._localState();
     final flatComments = <Map<String, dynamic>>[
       for (final bucket in comments.values)
         for (final comment in bucket)
@@ -3237,7 +3237,7 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
   }
 
   Future<void> _loadCachedThenRefresh() async {
-    final prefs = await SharedPreferences.getInstance();
+    final prefs = await widget.store._localState();
     final raw = prefs.getString(_cacheKey);
     if (raw != null) {
       try {
@@ -3258,7 +3258,7 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
   }
 
   Future<void> _saveCache() async {
-    final prefs = await SharedPreferences.getInstance();
+    final prefs = await widget.store._localState();
     await prefs.setString(
       _cacheKey,
       jsonEncode(entries.map((e) => e.toCacheJson()).toList()),
@@ -4336,7 +4336,7 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
       } else {
         await CloudSyncService.instance.leaveSharedSpace(widget.space.id);
       }
-      final prefs = await SharedPreferences.getInstance();
+      final prefs = await widget.store._localState();
       await prefs.remove(_cacheKey);
       await prefs.remove(_pendingKey);
       await prefs.remove(_interactionCacheKey);
