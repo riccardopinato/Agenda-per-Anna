@@ -2,7 +2,7 @@
 
 Flutter app for personal planning, private diary and the shared **Noi ♡** space.
 
-Current release line: **v0.37.0**.
+Current release line: **v0.38.0**.
 
 ## Core areas
 
@@ -80,3 +80,15 @@ See `docs/ARCHITECTURE.md` and `supabase/README.md` for implementation details.
 - Optimistic comment/heart mutations no longer immediately reload all interaction tables.
 - Initial cloud bootstrap completes the private reconciliation first and defers shared uploads/pulls briefly, allowing push setup and the already-rendered UI to continue sooner.
 - Full-sync recovery markers are cleared only after a successful reconciliation, and no SQL migration is required for the cursor model.
+
+
+## v0.38.0 — Release, APK Size & Platform Hardening
+
+- Android release generation is deterministic: the workflow creates only the pinned Flutter 3.47.5 Android template and applies app-specific native changes through a versioned Python script.
+- Permanent CI now regenerates Android, applies the same native configuration and builds a debug APK in addition to analyze/tests/Web release, catching platform-template drift before a manual release.
+- Production Android builds require the stable secret-backed keystore and no longer embed signing passwords into generated Gradle source.
+- Release packaging uses obfuscation, split debug info and tree-shaken icons, with symbols retained as a dedicated artifact.
+- Distribution artifacts are separated and version-named: preferred ARM64 APK, Play Store AAB, universal APK and legacy ABI APKs.
+- SHA-256 checksums and compressed APK breakdown reports are generated for every production release.
+- Pull requests affecting runtime/package inputs run an ARM64 production-equivalent size audit without publishing the audit APK.
+- The dependency review found no safe direct dependency removal without removing active product functionality; size work therefore targets native ABI/package structure rather than speculative library deletion.
