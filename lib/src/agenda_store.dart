@@ -19,7 +19,9 @@ class AgendaStore extends ChangeNotifier {
   static const _privacyGuardKey = 'privacy_guard_v1';
   static const _entityDeltaPrefix = 'entity_delta_v2_';
   static const _backupFormat = 'agenda_per_anna_backup';
+  static const _backupBundleFormat = 'agenda_per_anna_backup_bundle';
   static const _backupSchemaVersion = 1;
+  static const _backupBundleVersion = 1;
   static const _appVersion = appReleaseVersion;
 
   final List<AgendaItem> items = [];
@@ -1424,6 +1426,141 @@ class AgendaStore extends ChangeNotifier {
       'data': await _portableBackupDataPayload(),
     };
     return const JsonEncoder.withIndent('  ').convert(document);
+  }
+
+  Future<Uint8List> createBackupZip() async {
+    final exportedAt = DateTime.now();
+    final localData = _localDataPayload();
+    final referencedAssetIds = <String>{};
+    _collectAssetIdsFromJson(localData, referencedAssetIds);
+
+    final media = <String, Uint8List>{};
+    final manifestMedia = <Map<String, dynamic>>[];
+
+    final sortedIds = referencedAssetIds.toList()..sort();
+    for (final assetId in sortedIds) {
+      final bytes = await MediaAssetStore.instance.read(assetId);
+      if (bytes == null || bytes.isEmpty) {
+        throw FormatException(
+          'Media locale mancante nel backup: $assetId',
+        );
+      }
+      media[assetId] = bytes;
+      manifestMedia.add({
+        'assetId': assetId,
+        'path': 'media/$assetId.bin',
+        'size': bytes.lengthInBytes,
+        'sha256': sha256.convert(bytes).toString(),
+      });
+    }
+
+    final dataDocument = {
+      'format': _backupFormat,
+      'schemaVersion': _backupSchemaVersion,
+      'appVersion': _appVersion,
+      'exportedAt': exportedAt.toIso8601String(),
+      'data': localData,
+    };
+    final dataJson =
+        const JsonEncoder.withIndent('  ').convert(dataDocument);
+
+    final manifest = {
+      'format': _backupBundleFormat,
+      'bundleVersion': _backupBundleVersion,
+      'appVersion': _appVersion,
+      'exportedAt': exportedAt.toIso8601String(),
+      'dataFile': 'data.json',
+      'mediaCount': manifestMedia.length,
+      'media': manifestMedia,
+      'dataSha256': sha256.convert(utf8.encode(dataJson)).toString(),
+    };
+
+    return BackupFileService.instance.buildZipBackup(
+      manifestJson: const JsonEncoder.withIndent('  ').convert(manifest),
+      dataJson: dataJson,
+      media: media,
+    );
+  }
+
+  DecodedZipBackup _decodeAndValidateBackupZip(Uint8List bytes) {
+    final decoded = BackupFileService.instance.decodeZipBackup(bytes);
+
+    final manifestValue = jsonDecode(decoded.manifestJson);
+    if (manifestValue is! Map) {
+      throw const FormatException('Manifest backup non valido.');
+    }
+    final manifest = Map<String, dynamic>.from(manifestValue);
+    if (manifest['format'] != _backupBundleFormat ||
+        manifest['bundleVersion'] != _backupBundleVersion) {
+      throw const FormatException('Formato ZIP del backup non supportato.');
+    }
+
+    final expectedDataHash = manifest['dataSha256']?.toString() ?? '';
+    final actualDataHash =
+        sha256.convert(utf8.encode(decoded.dataJson)).toString();
+    if (expectedDataHash.isEmpty || expectedDataHash != actualDataHash) {
+      throw const FormatException('Il file dati del backup non è integro.');
+    }
+
+    final rawMedia = manifest['media'];
+    if (rawMedia is! List) {
+      throw const FormatException('Indice media del backup non valido.');
+    }
+
+    final declaredIds = <String>{};
+    for (final raw in rawMedia) {
+      if (raw is! Map) {
+        throw const FormatException('Indice media del backup non valido.');
+      }
+      final entry = Map<String, dynamic>.from(raw);
+      final assetId = entry['assetId']?.toString() ?? '';
+      final expectedSize = entry['size'];
+      final expectedHash = entry['sha256']?.toString() ?? '';
+      if (assetId.isEmpty ||
+          expectedSize is! int ||
+          expectedHash.isEmpty ||
+          !declaredIds.add(assetId)) {
+        throw const FormatException('Indice media del backup non valido.');
+      }
+
+      final mediaBytes = decoded.media[assetId];
+      if (mediaBytes == null ||
+          mediaBytes.lengthInBytes != expectedSize ||
+          sha256.convert(mediaBytes).toString() != expectedHash) {
+        throw FormatException(
+          'Media del backup danneggiato o mancante: $assetId',
+        );
+      }
+    }
+
+    if (decoded.media.keys.any((assetId) => !declaredIds.contains(assetId))) {
+      throw const FormatException('Il backup contiene media non dichiarati.');
+    }
+
+    inspectBackup(decoded.dataJson);
+    return decoded;
+  }
+
+  BackupSummary inspectBackupZip(Uint8List bytes) =>
+      inspectBackup(_decodeAndValidateBackupZip(bytes).dataJson);
+
+  Future<void> restoreBackupZip(
+    Uint8List bytes, {
+    required bool merge,
+  }) async {
+    final decoded = _decodeAndValidateBackupZip(bytes);
+
+    for (final entry in decoded.media.entries) {
+      await MediaAssetStore.instance.putNamed(
+        entry.key,
+        entry.value,
+      );
+    }
+
+    await restoreBackup(
+      decoded.dataJson,
+      merge: merge,
+    );
   }
 
   BackupSummary inspectBackup(String raw) {
