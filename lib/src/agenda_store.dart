@@ -214,8 +214,9 @@ class AgendaStore extends ChangeNotifier {
   }
 
   Future<bool> _migrateInlinePrivateMedia(
-    LocalStateStore prefs,
-  ) async {
+    LocalStateStore prefs, {
+    bool persist = true,
+  }) async {
     if (_unreadableStorageKeys.contains(_journalsKey)) return false;
 
     var changed = false;
@@ -292,7 +293,7 @@ class AgendaStore extends ChangeNotifier {
       }
     }
 
-    if (changed) {
+    if (changed && persist) {
       await prefs.setString(
         _journalsKey,
         jsonEncode(
@@ -699,30 +700,29 @@ class AgendaStore extends ChangeNotifier {
     return result;
   }
 
-  Future<void> _writeWorkingProfile(
-    LocalStateStore prefs,
+  Map<String, String?> _workingProfileChanges(
     Map<String, dynamic> profile,
-  ) async {
-    for (final key in _workingStorageKeys) {
-      final raw = profile[key];
-      if (raw is String) {
-        await prefs.setString(key, raw);
-      } else {
-        await prefs.remove(key);
-      }
-    }
+  ) {
+    return {
+      for (final key in _workingStorageKeys)
+        key: profile[key] is String ? profile[key] as String : null,
+    };
   }
 
-  Future<void> _archiveCurrentProfile(
-    LocalStateStore prefs,
-  ) async {
-    final profiles = _readAccountProfiles(prefs);
-    final scope = _activeAccountId == null
-        ? 'guest'
-        : 'user:$_activeAccountId';
-    profiles[scope] = _captureWorkingProfile(prefs);
-    await prefs.setString(_accountProfilesKey, jsonEncode(profiles));
-  }
+  Map<String, String?> _currentWorkingStateChanges() => {
+        _itemsKey: jsonEncode(items.map((e) => e.toJson()).toList()),
+        _journalsKey: jsonEncode(
+          journals.map((k, v) => MapEntry(k, v.toLocalJson())),
+        ),
+        _monthsKey:
+            jsonEncode(months.map((k, v) => MapEntry(k, v.toJson()))),
+        _weeksKey:
+            jsonEncode(weeks.map((k, v) => MapEntry(k, v.toJson()))),
+        _habitsKey: jsonEncode(habits.map((e) => e.toJson()).toList()),
+        _preferencesKey: jsonEncode(preferences.toJson()),
+        _inboxKey: jsonEncode(inbox.map((e) => e.toJson()).toList()),
+        _privacyGuardKey: jsonEncode(_privacyGuardPayload()),
+      };
 
   bool _workingProfileHasUserData(LocalStateStore prefs) {
     for (final key in const [
@@ -753,20 +753,24 @@ class AgendaStore extends ChangeNotifier {
       return;
     }
 
-    await _archiveCurrentProfile(prefs);
     final profiles = _readAccountProfiles(prefs);
+    final currentScope =
+        _activeAccountId == null ? 'guest' : 'user:$_activeAccountId';
+    final currentProfile = _captureWorkingProfile(prefs);
+    profiles[currentScope] = currentProfile;
+
     final targetScope =
         accountId == null ? 'guest' : 'user:$accountId';
+    var claimedLegacyGuest = false;
 
     if (accountId != null &&
         profiles[targetScope] == null &&
         prefs.getString(_legacyClaimedByKey) == null &&
         _activeAccountId == null &&
         _workingProfileHasUserData(prefs)) {
-      profiles[targetScope] = _captureWorkingProfile(prefs);
+      profiles[targetScope] = currentProfile;
       profiles['guest'] = <String, dynamic>{};
-      await prefs.setString(_legacyClaimedByKey, accountId);
-      await prefs.setString(_accountProfilesKey, jsonEncode(profiles));
+      claimedLegacyGuest = true;
     }
 
     final rawTarget = profiles[targetScope];
@@ -774,20 +778,23 @@ class AgendaStore extends ChangeNotifier {
         ? Map<String, dynamic>.from(rawTarget)
         : <String, dynamic>{};
 
-    await _writeWorkingProfile(prefs, target);
-    _activeAccountId = accountId;
-    if (accountId == null) {
-      await prefs.remove(_activeAccountKey);
-    } else {
-      await prefs.setString(_activeAccountKey, accountId);
-    }
+    final changes = <String, String?>{
+      _accountProfilesKey: jsonEncode(profiles),
+      ..._workingProfileChanges(target),
+      _activeAccountKey: accountId,
+      if (claimedLegacyGuest) _legacyClaimedByKey: accountId,
+    };
+
+    // Archive the previous profile, activate the target profile and move the
+    // active-account pointer in one Sembast transaction. A crash cannot leave
+    // a partially switched working set.
+    await prefs.writeBatch(changes);
 
     await load();
 
     if (accountId != null) {
       _activeAccountId = accountId;
       _bindPendingOperationsTo(accountId);
-      await prefs.setString(_activeAccountKey, accountId);
       await _persistSyncMetadata(prefs);
     }
 
