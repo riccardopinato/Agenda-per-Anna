@@ -702,7 +702,12 @@ class DiaryBlock {
   final DiaryBlockType type;
   final DateTime createdAt;
   final String text;
+
+  // imageBase64 is retained only as a legacy/portable transport field.
+  // New local photos live in MediaAssetStore and persist only these IDs.
   final String imageBase64;
+  final String mediaAssetId;
+  final String mediaThumbnailAssetId;
   final List<DiarySketchPage> pages;
 
   const DiaryBlock({
@@ -711,12 +716,19 @@ class DiaryBlock {
     required this.createdAt,
     this.text = '',
     this.imageBase64 = '',
+    this.mediaAssetId = '',
+    this.mediaThumbnailAssetId = '',
     this.pages = const [],
   });
+
+  bool get hasPhotoMedia =>
+      mediaAssetId.isNotEmpty || imageBase64.isNotEmpty;
 
   DiaryBlock copyWith({
     String? text,
     String? imageBase64,
+    String? mediaAssetId,
+    String? mediaThumbnailAssetId,
     List<DiarySketchPage>? pages,
   }) =>
       DiaryBlock(
@@ -725,6 +737,9 @@ class DiaryBlock {
         createdAt: createdAt,
         text: text ?? this.text,
         imageBase64: imageBase64 ?? this.imageBase64,
+        mediaAssetId: mediaAssetId ?? this.mediaAssetId,
+        mediaThumbnailAssetId:
+            mediaThumbnailAssetId ?? this.mediaThumbnailAssetId,
         pages: pages ?? this.pages,
       );
 
@@ -734,7 +749,14 @@ class DiaryBlock {
         'createdAt': createdAt.toUtc().toIso8601String(),
         'text': text,
         'imageBase64': imageBase64,
+        'mediaAssetId': mediaAssetId,
+        'mediaThumbnailAssetId': mediaThumbnailAssetId,
         'pages': pages.map((page) => page.toJson()).toList(),
+      };
+
+  Map<String, dynamic> toLocalJson() => {
+        ...toJson(),
+        if (mediaAssetId.isNotEmpty) 'imageBase64': '',
       };
 
   factory DiaryBlock.fromJson(Map<String, dynamic> json) => DiaryBlock(
@@ -748,6 +770,9 @@ class DiaryBlock {
                 DateTime.now(),
         text: json['text'] as String? ?? '',
         imageBase64: json['imageBase64'] as String? ?? '',
+        mediaAssetId: json['mediaAssetId'] as String? ?? '',
+        mediaThumbnailAssetId:
+            json['mediaThumbnailAssetId'] as String? ?? '',
         pages: (json['pages'] as List? ?? const [])
             .whereType<Map>()
             .map(
@@ -802,6 +827,15 @@ class DayJournal {
         'gratitude': gratitude,
         'completedHabitIds': completedHabitIds,
         'blocks': blocks.map((block) => block.toJson()).toList(),
+      };
+
+  Map<String, dynamic> toLocalJson() => {
+        'beautiful': beautiful,
+        'note': note,
+        'mood': mood?.name,
+        'gratitude': gratitude,
+        'completedHabitIds': completedHabitIds,
+        'blocks': blocks.map((block) => block.toLocalJson()).toList(),
       };
 
   factory DayJournal.fromJson(Map<String, dynamic> json) => DayJournal(
@@ -1074,6 +1108,8 @@ class SharedEntry {
   final String editorName;
   final String mediaPath;
   final String mediaThumbnailBase64;
+  // Cache-only local thumbnail reference. It is never sent to another device.
+  final String mediaThumbnailAssetId;
   final List<DiarySketchPage> sketchPages;
   final bool memoryPinned;
 
@@ -1092,6 +1128,7 @@ class SharedEntry {
     this.editorName = '',
     this.mediaPath = '',
     this.mediaThumbnailBase64 = '',
+    this.mediaThumbnailAssetId = '',
     this.sketchPages = const [],
     this.memoryPinned = false,
   });
@@ -1116,6 +1153,7 @@ class SharedEntry {
     String? editorName,
     String? mediaPath,
     String? mediaThumbnailBase64,
+    String? mediaThumbnailAssetId,
     List<DiarySketchPage>? sketchPages,
     bool? memoryPinned,
     bool clearTime = false,
@@ -1140,6 +1178,9 @@ class SharedEntry {
         mediaThumbnailBase64: clearMedia
             ? ''
             : (mediaThumbnailBase64 ?? this.mediaThumbnailBase64),
+        mediaThumbnailAssetId: clearMedia
+            ? ''
+            : (mediaThumbnailAssetId ?? this.mediaThumbnailAssetId),
         sketchPages:
             clearSketch ? const [] : (sketchPages ?? this.sketchPages),
         memoryPinned: memoryPinned ?? this.memoryPinned,
@@ -1168,6 +1209,8 @@ class SharedEntry {
 
   Map<String, dynamic> toCacheJson() => {
         ...toJson(),
+        if (mediaThumbnailAssetId.isNotEmpty) 'mediaThumbnailBase64': '',
+        '_mediaThumbnailAssetId': mediaThumbnailAssetId,
         '_updatedBy': updatedBy,
         '_updatedAt': updatedAt?.toUtc().toIso8601String(),
       };
@@ -1177,12 +1220,15 @@ class SharedEntry {
         json,
         updatedBy: json['_updatedBy'] as String?,
         updatedAt: DateTime.tryParse(json['_updatedAt'] as String? ?? ''),
+        mediaThumbnailAssetId:
+            json['_mediaThumbnailAssetId'] as String? ?? '',
       );
 
   factory SharedEntry.fromJson(
     Map<String, dynamic> json, {
     String? updatedBy,
     DateTime? updatedAt,
+    String mediaThumbnailAssetId = '',
   }) {
     TimeOfDay? parseTime(dynamic raw) {
       if (raw is! Map) return null;
@@ -1213,6 +1259,7 @@ class SharedEntry {
       editorName: json['editorName'] as String? ?? '',
       mediaPath: json['mediaPath'] as String? ?? '',
       mediaThumbnailBase64: json['mediaThumbnailBase64'] as String? ?? '',
+      mediaThumbnailAssetId: mediaThumbnailAssetId,
       sketchPages: (json['sketchPages'] as List? ?? const [])
           .whereType<Map>()
           .map(
@@ -1323,6 +1370,10 @@ class SharedMediaPendingUpload {
   final String title;
   final String note;
   final DateTime date;
+  final String mediaAssetId;
+  final String thumbnailAssetId;
+
+  // Legacy fallback fields for queues created before v0.33.
   final String imageBase64;
   final String thumbnailBase64;
   final String oldMediaPath;
@@ -1335,11 +1386,16 @@ class SharedMediaPendingUpload {
     required this.title,
     required this.note,
     required this.date,
-    required this.imageBase64,
-    required this.thumbnailBase64,
+    this.mediaAssetId = '',
+    this.thumbnailAssetId = '',
+    this.imageBase64 = '',
+    this.thumbnailBase64 = '',
     required this.oldMediaPath,
     required this.createdAt,
   });
+
+  bool get hasFullMedia =>
+      mediaAssetId.isNotEmpty || imageBase64.isNotEmpty;
 
   Map<String, dynamic> toJson() => {
         'id': id,
@@ -1348,8 +1404,11 @@ class SharedMediaPendingUpload {
         'title': title,
         'note': note,
         'date': date.toIso8601String(),
-        'imageBase64': imageBase64,
-        'thumbnailBase64': thumbnailBase64,
+        'mediaAssetId': mediaAssetId,
+        'thumbnailAssetId': thumbnailAssetId,
+        'imageBase64': mediaAssetId.isEmpty ? imageBase64 : '',
+        'thumbnailBase64':
+            thumbnailAssetId.isEmpty ? thumbnailBase64 : '',
         'oldMediaPath': oldMediaPath,
         'createdAt': createdAt.toUtc().toIso8601String(),
       };
@@ -1366,6 +1425,8 @@ class SharedMediaPendingUpload {
         date:
             DateTime.tryParse(json['date'] as String? ?? '') ??
                 DateTime.now(),
+        mediaAssetId: json['mediaAssetId'] as String? ?? '',
+        thumbnailAssetId: json['thumbnailAssetId'] as String? ?? '',
         imageBase64: json['imageBase64'] as String? ?? '',
         thumbnailBase64: json['thumbnailBase64'] as String? ?? '',
         oldMediaPath: json['oldMediaPath'] as String? ?? '',
