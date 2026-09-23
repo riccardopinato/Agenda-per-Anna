@@ -1288,7 +1288,7 @@ class _BackupScreenState extends State<BackupScreen> {
     setState(() => busy = true);
     try {
       final ok = await BackupFileService.instance.saveJsonBackup(
-        json: widget.store.createBackupJson(),
+        json: await widget.store.createBackupJson(),
         fileName: _timestampFileName('json'),
       );
       _message(
@@ -3893,12 +3893,12 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
 
     setState(() => sharedPhotoBusy = true);
     try {
-      final fullBase64 = await _pickCompressedDiaryImageBase64(
+      final fullBytes = await _pickCompressedDiaryImageBytes(
         source,
         maxSide: 1280,
         quality: 70,
       );
-      if (fullBase64 == null || !mounted) return;
+      if (fullBytes == null || !mounted) return;
 
       String? caption = existing?.note;
       if (existing == null) {
@@ -3909,17 +3909,12 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
         if (caption == null) return;
       }
 
-      final bytes = base64Decode(fullBase64);
-      final thumbnail = await FlutterImageCompress.compressWithList(
-        bytes,
-        minWidth: 420,
-        minHeight: 420,
-        quality: 46,
-        format: CompressFormat.jpeg,
-      );
+      final thumbnailBytes = await _diaryThumbnailBytes(fullBytes);
+      final mediaAssetId = await MediaAssetStore.instance.put(fullBytes);
+      final thumbnailAssetId =
+          await MediaAssetStore.instance.put(thumbnailBytes);
 
       final entryId = existing?.id ?? const Uuid().v4();
-      final thumbnailBase64 = base64Encode(thumbnail);
       final localPreview = SharedEntry(
         id: entryId,
         type: SharedEntryType.photo,
@@ -3930,8 +3925,10 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
         date: existing?.date ?? selected,
         createdAt:
             existing?.createdAt ?? existing?.updatedAt ?? DateTime.now(),
-        mediaPath: existing?.mediaPath ?? '',
-        mediaThumbnailBase64: thumbnailBase64,
+        // While a replacement is pending, do not display the previous
+        // remote full-resolution image over the new local preview.
+        mediaPath: '',
+        mediaThumbnailAssetId: thumbnailAssetId,
         memoryPinned: existing?.memoryPinned ?? false,
       );
 
@@ -3952,8 +3949,8 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
           title: localPreview.title,
           note: localPreview.note,
           date: localPreview.date,
-          imageBase64: fullBase64,
-          thumbnailBase64: thumbnailBase64,
+          mediaAssetId: mediaAssetId,
+          thumbnailAssetId: thumbnailAssetId,
           oldMediaPath: existing?.mediaPath ?? '',
           createdAt: localPreview.createdAt ?? revision,
         ),
@@ -4457,9 +4454,12 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
     };
 
     final Widget? preview = switch (entry.type) {
-      SharedEntryType.photo when entry.mediaThumbnailBase64.isNotEmpty =>
-        _CachedBase64Image(
-          data: entry.mediaThumbnailBase64,
+      SharedEntryType.photo
+          when entry.mediaThumbnailAssetId.isNotEmpty ||
+              entry.mediaThumbnailBase64.isNotEmpty =>
+        DiaryMediaImage(
+          assetId: entry.mediaThumbnailAssetId,
+          fallbackBase64: entry.mediaThumbnailBase64,
           fit: BoxFit.cover,
           cacheWidth: 720,
         ),
@@ -4945,12 +4945,27 @@ class _SharedPhotoViewerScreenState extends State<SharedPhotoViewerScreen> {
   late final Future<Uint8List> _imageFuture = _load();
 
   Future<Uint8List> _load() async {
-    if (widget.entry.mediaPath.isNotEmpty &&
-        CloudSyncService.instance.signedIn) {
-      try {
-        return await CloudSyncService.instance
-            .downloadSharedMedia(widget.entry.mediaPath);
-      } catch (_) {}
+    final path = widget.entry.mediaPath.trim();
+    if (path.isNotEmpty) {
+      final cacheId =
+          MediaAssetStore.instance.namedAssetId('remote', path);
+      final cached = await MediaAssetStore.instance.read(cacheId);
+      if (cached != null) return cached;
+
+      if (CloudSyncService.instance.signedIn) {
+        try {
+          final downloaded =
+              await CloudSyncService.instance.downloadSharedMedia(path);
+          await MediaAssetStore.instance.putNamed(cacheId, downloaded);
+          return downloaded;
+        } catch (_) {}
+      }
+    }
+
+    if (widget.entry.mediaThumbnailAssetId.isNotEmpty) {
+      final thumbnail = await MediaAssetStore.instance
+          .read(widget.entry.mediaThumbnailAssetId);
+      if (thumbnail != null) return thumbnail;
     }
     if (widget.entry.mediaThumbnailBase64.isNotEmpty) {
       return base64Decode(widget.entry.mediaThumbnailBase64);
