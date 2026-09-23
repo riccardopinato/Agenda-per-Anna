@@ -3157,7 +3157,12 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
     SharedRealtimeInteractionChange change,
   ) async {
     final record = change.record;
-    if (record['space_id']?.toString() != widget.space.id) return;
+    final changeSpaceId = record['space_id']?.toString();
+    if (changeSpaceId == null || changeSpaceId.isEmpty) {
+      await _loadInteractions();
+      return;
+    }
+    if (changeSpaceId != widget.space.id) return;
 
     final nextComments = <String, List<SharedEntryComment>>{
       for (final entry in commentsByEntry.entries)
@@ -3173,7 +3178,10 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
       case SharedRealtimeInteractionKind.comment:
         final id = record['id']?.toString() ?? '';
         final entryId = record['entry_id']?.toString() ?? '';
-        if (id.isEmpty || entryId.isEmpty) return;
+        if (id.isEmpty || entryId.isEmpty) {
+          await _loadInteractions();
+          return;
+        }
         final bucket =
             nextComments.putIfAbsent(entryId, () => <SharedEntryComment>[]);
         bucket.removeWhere((comment) => comment.id == id);
@@ -3186,7 +3194,10 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
         final entryId = record['entry_id']?.toString() ?? '';
         final userId = record['user_id']?.toString() ?? '';
         final kind = record['kind']?.toString() ?? '';
-        if (entryId.isEmpty || userId.isEmpty || kind != 'heart') return;
+        if (entryId.isEmpty || userId.isEmpty || kind != 'heart') {
+          await _loadInteractions();
+          return;
+        }
         final hearts = nextHearts.putIfAbsent(entryId, () => <String>{});
         if (change.deleted) {
           hearts.remove(userId);
@@ -3196,7 +3207,10 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
         break;
       case SharedRealtimeInteractionKind.memberRead:
         final userId = record['user_id']?.toString() ?? '';
-        if (userId.isEmpty) return;
+        if (userId.isEmpty) {
+          await _loadInteractions();
+          return;
+        }
         if (change.deleted) {
           nextReads.remove(userId);
         } else {
@@ -3565,7 +3579,11 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
         spaceId: widget.space.id,
       );
     }
-    await _loadInteractions();
+    await _saveInteractionCache(
+      commentsByEntry,
+      heartsByEntry,
+      memberReads,
+    );
   }
 
   Future<void> _deleteComment(SharedEntryComment comment) async {
@@ -3583,7 +3601,11 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
         spaceId: widget.space.id,
       );
     }
-    await _loadInteractions();
+    await _saveInteractionCache(
+      commentsByEntry,
+      heartsByEntry,
+      memberReads,
+    );
   }
 
   Future<void> _openComments(SharedEntry entry) async {
@@ -3727,7 +3749,15 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
                                 spaceId: widget.space.id,
                               );
                             }
-                            await _loadInteractions();
+                            commentsByEntry[entry.id]?.sort(
+                              (a, b) =>
+                                  a.createdAt.compareTo(b.createdAt),
+                            );
+                            await _saveInteractionCache(
+                              commentsByEntry,
+                              heartsByEntry,
+                              memberReads,
+                            );
                             if (sheetContext.mounted) {
                               setSheetState(() {});
                             }
