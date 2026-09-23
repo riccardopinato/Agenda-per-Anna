@@ -48,9 +48,14 @@ jobs:
         run: |
           set -euo pipefail
           AUDIT_STORE="$RUNNER_TEMP/agenda-audit.jks"
-          keytool -genkeypair             -keystore "$AUDIT_STORE"             -storepass audit-store-pass             -keypass audit-key-pass             -alias audit             -keyalg RSA             -keysize 2048             -validity 2             -dname "CN=Anna Diary CI Audit,O=CI,C=IT"             -noprompt
+          keytool -genkeypair -storetype JKS -keystore "$AUDIT_STORE" -storepass audit-store-pass -keypass audit-key-pass -alias audit -keyalg RSA -keysize 2048 -validity 2 -dname "CN=Anna Diary CI Audit,O=CI,C=IT" -noprompt
+
+          AUDIT_B64=$(base64 -w0 "$AUDIT_STORE")
+          echo "::add-mask::$AUDIT_B64"
+          echo "::add-mask::audit-store-pass"
+          echo "::add-mask::audit-key-pass"
           {
-            echo "ANDROID_KEYSTORE_BASE64=$(base64 -w0 "$AUDIT_STORE")"
+            echo "ANDROID_KEYSTORE_BASE64=$AUDIT_B64"
             echo "ANDROID_KEYSTORE_PASSWORD=audit-store-pass"
             echo "ANDROID_KEY_ALIAS=audit"
             echo "ANDROID_KEY_PASSWORD=audit-key-pass"
