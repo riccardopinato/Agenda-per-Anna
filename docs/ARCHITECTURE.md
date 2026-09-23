@@ -150,3 +150,14 @@ The private journal and Noi ♡ no longer maintain independent diary presentatio
 - Legacy single-file JSON backup remains importable and `createBackupJson()` remains available for compatibility/tests.
 - ZIP restore validates the complete bundle before mutating working state, writes media into MediaAssetStore, then uses the existing transactional restore path.
 - Cloud sync indexing now hashes journal `toLocalJson()` rather than materializing media. The legacy-compatible remote Base64 representation is produced only for pending journal operations at the upload boundary.
+
+
+## v0.37.0 — Scale, Startup & Incremental Cloud Sync
+
+- Private and shared `agenda_records` pulls use durable local cursors based on `client_updated_at`. Queries use an inclusive lower bound so rows sharing the last cursor timestamp are safely replayed; merge/application remains idempotent.
+- First reconciliation, explicit full-sync recovery and missing local cursors still perform a complete pull. Subsequent pulls are incremental.
+- Private remote results are persisted as account-scoped entity deltas and update the sync index directly, avoiding the previous full `_save()` + full entity hash scan.
+- Shared space cache refresh starts from in-memory/disk baseline and applies changed records/tombstones. A targeted space refresh is used by the active shared screen.
+- Realtime exposes typed record/interaction change envelopes. Unified shared agenda applies record changes directly, while the active shared screen applies comments, reactions and member-read changes directly to its cached maps.
+- Physical DELETE events with incomplete old-row data fall back to the existing full interaction reconciliation.
+- Startup cloud initialization performs private reconciliation first; shared queue flushes and shared remote refresh run in a short deferred task. Resume and periodic reconciliation remain full.
