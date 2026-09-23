@@ -13,6 +13,8 @@ class MediaAssetStore {
   static const int schemaVersion = 2;
   static const int _maxCacheEntries = 24;
   static const int _maxCacheBytes = 8 * 1024 * 1024;
+  static const int _maxRemoteDiskEntries = 160;
+  static const int _maxRemoteDiskBytes = 200 * 1024 * 1024;
 
   final Map<String, Uint8List> _cache = <String, Uint8List>{};
   final Set<String> _corruptAssetIds = <String>{};
@@ -85,14 +87,55 @@ class MediaAssetStore {
   Future<int> prune(Set<String> referencedAssetIds) async {
     final existing = await listMediaAssetIds();
     var removed = 0;
+
     for (final assetId in existing) {
       if (referencedAssetIds.contains(assetId)) continue;
-      // Remote shared-photo cache is bounded by remote storage and can remain
-      // available offline even though it is intentionally not persisted in
-      // shared record JSON.
       if (assetId.startsWith('remote_')) continue;
       if (await delete(assetId)) removed++;
     }
+
+    final stats = await listMediaAssetStats();
+    final protectedRemote = _cache.keys
+        .where((assetId) => assetId.startsWith('remote_'))
+        .toSet();
+    final remote = stats.entries
+        .where((entry) => entry.key.startsWith('remote_'))
+        .map(
+          (entry) => (
+            id: entry.key,
+            lastAccessedMs:
+                entry.value.isNotEmpty ? entry.value[0] : 0,
+            sizeBytes:
+                entry.value.length > 1 ? entry.value[1] : 0,
+          ),
+        )
+        .toList()
+      ..sort((a, b) {
+        final byAccess =
+            a.lastAccessedMs.compareTo(b.lastAccessedMs);
+        if (byAccess != 0) return byAccess;
+        return a.id.compareTo(b.id);
+      });
+
+    var remoteCount = remote.length;
+    var remoteBytes = remote.fold<int>(
+      0,
+      (sum, entry) => sum + entry.sizeBytes,
+    );
+
+    for (final entry in remote) {
+      if (remoteCount <= _maxRemoteDiskEntries &&
+          remoteBytes <= _maxRemoteDiskBytes) {
+        break;
+      }
+      if (protectedRemote.contains(entry.id)) continue;
+      if (await delete(entry.id)) {
+        removed++;
+        remoteCount--;
+        remoteBytes -= entry.sizeBytes;
+      }
+    }
+
     return removed;
   }
 
