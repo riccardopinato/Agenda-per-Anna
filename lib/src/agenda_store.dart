@@ -142,19 +142,14 @@ class AgendaStore extends ChangeNotifier {
 
   DateTime _nextSyncCursor(
     DateTime? current,
-    Iterable<DateTime> revisions, {
-    required bool completedFullPull,
-  }) {
+    Iterable<DateTime> revisions,
+  ) {
     var next = current;
     for (final revision in revisions) {
       final value = revision.toUtc();
       if (next == null || value.isAfter(next)) next = value;
     }
-    return next ??
-        DateTime.fromMillisecondsSinceEpoch(
-          completedFullPull ? 0 : 0,
-          isUtc: true,
-        );
+    return next ?? DateTime.fromMillisecondsSinceEpoch(0, isUtc: true);
   }
 
   String _entityDeltaKey(String type, String id) =>
@@ -1494,14 +1489,17 @@ class AgendaStore extends ChangeNotifier {
     );
   }
 
-  Future<void> _persistSyncMetadata(LocalStateStore prefs) async {
-    await prefs.setString(
-      _syncQueueKey,
-      jsonEncode(
+  Future<void> _persistSyncMetadata(
+    LocalStateStore prefs, {
+    Map<String, String?> extraChanges = const {},
+  }) async {
+    await prefs.writeBatch({
+      _syncQueueKey: jsonEncode(
         _syncQueue.map((key, value) => MapEntry(key, value.toJson())),
       ),
-    );
-    await prefs.setString(_syncIndexKey, jsonEncode(_syncIndex));
+      _syncIndexKey: jsonEncode(_syncIndex),
+      ...extraChanges,
+    });
   }
 
   Map<String, dynamic> _localDataPayload() => {
@@ -2397,7 +2395,16 @@ class AgendaStore extends ChangeNotifier {
         }
       }
 
-      final remote = await cloud.pullPrivateRecords();
+      final cursorKey = _privateSyncCursorKey(ownerId);
+      final storedCursor = _readSyncCursor(prefs, cursorKey);
+      final requiresFullPull = forceFullSync ||
+          firstSyncForOwner ||
+          preferRemoteOnFirstSync ||
+          storedCursor == null;
+
+      final remote = await cloud.pullPrivateRecords(
+        updatedSince: requiresFullPull ? null : storedCursor,
+      );
 
       if (cloud.sessionEpoch != sessionEpoch ||
           cloud.userId != ownerId ||
@@ -2406,6 +2413,7 @@ class AgendaStore extends ChangeNotifier {
       }
 
       var remoteChanged = false;
+      final appliedRemote = <CloudRemoteRecord>[];
       for (final record in remote) {
         final localOp = _syncQueue[record.localKey];
         final remoteWins = preferRemoteOnFirstSync && firstSyncForOwner
@@ -2418,17 +2426,21 @@ class AgendaStore extends ChangeNotifier {
         final changed = await _applyRemoteRecord(record);
         remoteChanged = remoteChanged || changed;
         _syncQueue.remove(record.localKey);
+        if (changed) appliedRemote.add(record);
       }
 
       if (remoteChanged) {
-        await _migrateInlinePrivateMedia(prefs);
-        final entitiesAfterPull = await _currentSyncEntities();
-        _replaceSyncIndex(entitiesAfterPull);
-        await _save(
-          createAutoSnapshot: false,
-          enqueueSync: false,
+        await _migrateInlinePrivateMedia(
+          prefs,
+          persist: false,
         );
+        await _persistAppliedRemoteRecords(prefs, appliedRemote);
       }
+
+      final nextPrivateCursor = _nextSyncCursor(
+        requiresFullPull ? null : storedCursor,
+        remote.map((record) => record.clientUpdatedAt),
+      );
 
       if (cloud.sessionEpoch != sessionEpoch ||
           cloud.userId != ownerId ||
@@ -2483,8 +2495,13 @@ class AgendaStore extends ChangeNotifier {
         }
       }
 
-      await prefs.setString(_syncOwnerKey, ownerId);
-      await _persistSyncMetadata(prefs);
+      await _persistSyncMetadata(
+        prefs,
+        extraChanges: {
+          _syncOwnerKey: ownerId,
+          cursorKey: nextPrivateCursor.toIso8601String(),
+        },
+      );
 
       cloud.markSyncSuccess();
       if (remoteChanged || pendingSnapshot.isNotEmpty) {
