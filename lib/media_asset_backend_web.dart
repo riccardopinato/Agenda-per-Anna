@@ -4,7 +4,7 @@ import 'dart:typed_data';
 import 'package:sembast/sembast.dart';
 import 'package:sembast_web/sembast_web.dart';
 
-final StoreRef<String, String> _assets =
+final StoreRef<String, Map<String, Object?>> _assets =
     stringMapStoreFactory.store('media_assets_v2');
 Database? _database;
 
@@ -19,13 +19,17 @@ Future<void> writeMediaAssetBytes(
   Uint8List bytes,
 ) async {
   final db = await _db();
-  await _assets.record(assetId).put(db, base64Encode(bytes));
+  await _assets.record(assetId).put(
+    db,
+    <String, Object?>{'data': base64Encode(bytes)},
+  );
 }
 
 Future<Uint8List?> readMediaAssetBytes(String assetId) async {
   final db = await _db();
-  final raw = await _assets.record(assetId).get(db);
-  if (raw == null) return null;
+  final record = await _assets.record(assetId).get(db);
+  final raw = record?['data'];
+  if (raw is! String) return null;
   try {
     return base64Decode(raw);
   } catch (_) {
