@@ -119,3 +119,13 @@ The private journal and Noi ♡ no longer maintain independent diary presentatio
 - The Noi ♡ hub no longer creates duplicate Realtime subscriptions with no-op callbacks; the unified store and active shared-space screen remain responsible for live updates.
 - Permanent CI now validates locked dependencies, analyze, tests and a Web release build on pull requests and main.
 - Manual Android release builds require stable secret-backed signing credentials and refuse cache-generated or ephemeral fallback keys.
+
+
+## v0.34.0 — Performance Core
+
+- Structured persistence keeps the v0.32 aggregate sections as a compact compatibility baseline while normal item, journal, month, week, habit and inbox edits are appended as account-scoped per-entity deltas.
+- Reload overlays deltas on the aggregate baseline. Account switching compacts the current scope before archiving it; backup restore replaces the baseline and removes stale deltas atomically.
+- Granular mutations update the cloud sync index and queue directly, avoiding a complete entity scan and avoiding portable-media materialization for unrelated journals.
+- Full-section saves are batched into one Sembast transaction and compact deltas for the sections they replace.
+- Unified agenda results cache the sorted combined list, pending task total and month totals. Private or shared mutations invalidate the cache explicitly.
+- The application shell has its own revision notifier. Theme, onboarding, privacy and account-scope changes rebuild the shell; ordinary agenda content changes remain below MaterialApp.
