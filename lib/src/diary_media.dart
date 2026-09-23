@@ -2564,6 +2564,7 @@ class _DiarySketchbookScreenState extends State<DiarySketchbookScreen> {
             (element) => DiarySketchImageElement(
               id: const Uuid().v4(),
               imageBase64: element.imageBase64,
+              mediaAssetId: element.mediaAssetId,
               x: element.x,
               y: element.y,
               width: element.width,
@@ -2704,7 +2705,8 @@ class _DiarySketchbookScreenState extends State<DiarySketchbookScreen> {
               page: currentPage,
               activeStroke: activeStroke,
               selectedStrokeIndices: Set<int>.of(selectedStrokeIndices),
-              lassoPoints: List<DiarySketchPoint>.of(lassoPoints),
+              lassoPoints: lassoPoints,
+              gestureRevision: _gestureRevision,
             ),
             child: const SizedBox.expand(),
           ),
@@ -2876,8 +2878,8 @@ class _DiarySketchbookScreenState extends State<DiarySketchbookScreen> {
                       label: Text(_toolLabel(value)),
                       onSelected: (_) => setState(() {
                         tool = value;
-                        activeStroke = null;
-                        lassoPoints = const [];
+                        _resetGesturePreview();
+                        _clearSelectionMoveBuffers();
                       }),
                     ),
                   );
@@ -2953,8 +2955,8 @@ class _DiarySketchbookScreenState extends State<DiarySketchbookScreen> {
                         : () => setState(() {
                               pageIndex--;
                               _clearSelection();
-                              activeStroke = null;
-                              lassoPoints = const [];
+                              _resetGesturePreview();
+                              _clearSelectionMoveBuffers();
                               _transform.value = Matrix4.identity();
                             }),
                     icon: const Icon(Icons.chevron_left),
@@ -2966,8 +2968,8 @@ class _DiarySketchbookScreenState extends State<DiarySketchbookScreen> {
                         : () => setState(() {
                               pageIndex++;
                               _clearSelection();
-                              activeStroke = null;
-                              lassoPoints = const [];
+                              _resetGesturePreview();
+                              _clearSelectionMoveBuffers();
                               _transform.value = Matrix4.identity();
                             }),
                     icon: const Icon(Icons.chevron_right),
@@ -3189,12 +3191,14 @@ class DiarySketchPainter extends CustomPainter {
   final DiarySketchStroke? activeStroke;
   final Set<int> selectedStrokeIndices;
   final List<DiarySketchPoint> lassoPoints;
+  final int gestureRevision;
 
   const DiarySketchPainter({
     required this.page,
     this.activeStroke,
     this.selectedStrokeIndices = const {},
     this.lassoPoints = const [],
+    this.gestureRevision = 0,
   });
 
   Offset _offset(DiarySketchPoint point, Size size) =>
@@ -3348,6 +3352,7 @@ class DiarySketchPainter extends CustomPainter {
   bool shouldRepaint(covariant DiarySketchPainter oldDelegate) {
     return oldDelegate.page != page ||
         oldDelegate.activeStroke != activeStroke ||
+        oldDelegate.gestureRevision != gestureRevision ||
         !setEquals(
           oldDelegate.selectedStrokeIndices,
           selectedStrokeIndices,
