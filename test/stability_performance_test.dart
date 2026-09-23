@@ -74,10 +74,27 @@ void main() {
       legacyPreferences: await SharedPreferences.getInstance(),
     );
     expect(state.getString('items_v1'), '{not valid json');
+
+    // v0.34 keeps the healthy aggregate baseline untouched and persists the
+    // edited journal as a granular delta.
     expect(
       jsonDecode(state.getString('journals_v1')!) as Map,
-      contains('2026-09-22'),
+      isNot(contains('2026-09-22')),
     );
+    expect(
+      state.getKeys().where(
+            (key) => key.startsWith('entity_delta_v2_'),
+          ),
+      isNotEmpty,
+    );
+
+    final reloaded = AgendaStore();
+    await reloaded.load();
+    expect(
+      reloaded.journal(DateTime(2026, 9, 22)).beautiful,
+      'Secondo giorno',
+    );
+    reloaded.dispose();
   });
 
   test('explicitly empty habits remain empty after reload', () async {
