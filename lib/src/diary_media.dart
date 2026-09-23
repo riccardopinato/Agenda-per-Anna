@@ -1778,7 +1778,15 @@ class _DiarySketchbookScreenState extends State<DiarySketchbookScreen> {
   double width = 3;
   double textSize = 22;
   DiarySketchStroke? activeStroke;
-  List<DiarySketchPoint> lassoPoints = const [];
+  final List<DiarySketchPoint> _activeStrokePoints = <DiarySketchPoint>[];
+  final List<DiarySketchPoint> lassoPoints = <DiarySketchPoint>[];
+  int _gestureRevision = 0;
+
+  List<DiarySketchStroke>? _selectionWorkingStrokes;
+  List<DiarySketchTextElement>? _selectionWorkingText;
+  List<DiarySketchImageElement>? _selectionWorkingImages;
+  Set<int> _selectionTextIndices = <int>{};
+  Set<int> _selectionImageIndices = <int>{};
 
   final Set<int> selectedStrokeIndices = {};
   final Set<String> selectedTextIds = {};
@@ -1866,10 +1874,34 @@ class _DiarySketchbookScreenState extends State<DiarySketchbookScreen> {
     selectedImageIds.clear();
   }
 
+  DiarySketchPage _historySnapshot(DiarySketchPage source) =>
+      DiarySketchPage(
+        id: source.id,
+        paper: source.paper,
+        strokes: List<DiarySketchStroke>.unmodifiable(source.strokes),
+        textElements:
+            List<DiarySketchTextElement>.unmodifiable(source.textElements),
+        imageElements:
+            List<DiarySketchImageElement>.unmodifiable(source.imageElements),
+      );
+
+  int _historyLimit(DiarySketchPage source) {
+    var pointCount = 0;
+    for (final stroke in source.strokes) {
+      pointCount += stroke.points.length;
+    }
+    if (pointCount > 5000) return 12;
+    if (pointCount > 1500) return 20;
+    return 32;
+  }
+
   void _pushHistory() {
     final stack = _undo.putIfAbsent(page.id, () => []);
-    stack.add(_clonePage(page));
-    if (stack.length > 50) stack.removeAt(0);
+    stack.add(_historySnapshot(page));
+    final limit = _historyLimit(page);
+    if (stack.length > limit) {
+      stack.removeRange(0, stack.length - limit);
+    }
     _redo[page.id] = [];
   }
 
@@ -1885,7 +1917,7 @@ class _DiarySketchbookScreenState extends State<DiarySketchbookScreen> {
     final stack = _undo[page.id];
     if (stack == null || stack.isEmpty) return;
     final previous = stack.removeLast();
-    _redo.putIfAbsent(page.id, () => []).add(_clonePage(page));
+    _redo.putIfAbsent(page.id, () => []).add(_historySnapshot(page));
     setState(() {
       pages[pageIndex] = previous;
       _clearSelection();
@@ -1898,7 +1930,7 @@ class _DiarySketchbookScreenState extends State<DiarySketchbookScreen> {
     final stack = _redo[page.id];
     if (stack == null || stack.isEmpty) return;
     final next = stack.removeLast();
-    _undo.putIfAbsent(page.id, () => []).add(_clonePage(page));
+    _undo.putIfAbsent(page.id, () => []).add(_historySnapshot(page));
     setState(() {
       pages[pageIndex] = next;
       _clearSelection();
