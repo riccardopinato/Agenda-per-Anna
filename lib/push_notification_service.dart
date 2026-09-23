@@ -6,6 +6,7 @@ import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'app_version.dart';
 import 'cloud_sync_service.dart';
 import 'notification_service.dart';
 
@@ -222,7 +223,7 @@ class PushNotificationService {
       await CloudSyncService.instance.registerPushDevice(
         token: token,
         platform: 'android',
-        appVersion: '0.31.0',
+        appVersion: appReleaseVersion,
       );
       _remotePushActive = true;
     } catch (error) {
