@@ -183,4 +183,134 @@ void main() {
     expect(restored.done, isTrue);
     expect(restored.pinned, isTrue);
   });
+  test('journal edits persist as entity deltas without rewriting aggregate',
+      () async {
+    final original = jsonEncode({
+      '2026-09-20': const DayJournal(
+        beautiful: 'Baseline',
+      ).toLocalJson(),
+    });
+    SharedPreferences.setMockInitialValues({
+      'journals_v1': original,
+      'habits_v1': '[]',
+    });
+
+    final store = AgendaStore();
+    await store.load();
+
+    final state = await LocalStateStore.instance.open(
+      legacyPreferences: await SharedPreferences.getInstance(),
+    );
+    final aggregateBefore = state.getString('journals_v1');
+
+    await store.saveJournal(
+      DateTime(2026, 9, 23),
+      const DayJournal(
+        beautiful: 'Delta',
+        note: 'Salvataggio granulare',
+      ),
+    );
+
+    expect(state.getString('journals_v1'), aggregateBefore);
+    expect(
+      state.getKeys().where(
+            (key) => key.startsWith('entity_delta_v2_'),
+          ),
+      isNotEmpty,
+    );
+
+    final reloaded = AgendaStore();
+    await reloaded.load();
+
+    expect(
+      reloaded.journal(DateTime(2026, 9, 20)).beautiful,
+      'Baseline',
+    );
+    expect(
+      reloaded.journal(DateTime(2026, 9, 23)).beautiful,
+      'Delta',
+    );
+    expect(
+      reloaded.journal(DateTime(2026, 9, 23)).note,
+      'Salvataggio granulare',
+    );
+
+    store.dispose();
+    reloaded.dispose();
+  });
+
+  test('item delta deletion survives reload without aggregate rewrite',
+      () async {
+    final baselineItem = AgendaItem(
+      id: 'baseline',
+      title: 'Baseline',
+      note: '',
+      date: DateTime(2026, 9, 23),
+      type: ItemType.task,
+    );
+    final original = jsonEncode([baselineItem.toJson()]);
+    SharedPreferences.setMockInitialValues({
+      'items_v1': original,
+      'habits_v1': '[]',
+    });
+
+    final store = AgendaStore();
+    await store.load();
+    final state = await LocalStateStore.instance.open(
+      legacyPreferences: await SharedPreferences.getInstance(),
+    );
+    final aggregateBefore = state.getString('items_v1');
+
+    await store.upsert(
+      AgendaItem(
+        id: 'delta',
+        title: 'Granulare',
+        note: '',
+        date: DateTime(2026, 9, 24),
+        type: ItemType.appointment,
+      ),
+    );
+    await store.deleteItem('baseline');
+
+    expect(state.getString('items_v1'), aggregateBefore);
+
+    final reloaded = AgendaStore();
+    await reloaded.load();
+
+    expect(reloaded.items.any((item) => item.id == 'baseline'), isFalse);
+    expect(reloaded.items.any((item) => item.id == 'delta'), isTrue);
+
+    store.dispose();
+    reloaded.dispose();
+  });
+
+  test('unified counters invalidate after granular agenda mutations',
+      () async {
+    final store = AgendaStore();
+    await store.load();
+
+    expect(store.pendingUnifiedTaskCount, 0);
+    expect(store.unifiedMonthCount(2026, 9), 0);
+
+    await store.upsert(
+      AgendaItem(
+        id: 'cached-task',
+        title: 'Task',
+        note: '',
+        date: DateTime(2026, 9, 23),
+        type: ItemType.task,
+      ),
+    );
+
+    expect(store.pendingUnifiedTaskCount, 1);
+    expect(store.unifiedMonthCount(2026, 9), 1);
+
+    await store.toggle('cached-task');
+
+    expect(store.pendingUnifiedTaskCount, 0);
+    expect(store.unifiedMonthCount(2026, 9), 1);
+
+    store.dispose();
+  });
+
 }
