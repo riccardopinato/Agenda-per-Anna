@@ -2645,25 +2645,10 @@ class _SharedSpaceHubScreenState extends State<SharedSpaceHubScreen> {
   bool loading = true;
   List<SharedSpace> spaces = const [];
   final Map<String, int> pendingBySpace = {};
-  final Set<String> _realtimeSpaceIds = {};
-
   @override
   void initState() {
     super.initState();
     _loadCachedThenReload();
-  }
-
-  @override
-  void dispose() {
-    for (final spaceId in _realtimeSpaceIds.toList()) {
-      unawaited(
-        CloudSyncService.instance.unsubscribeSharedSpace(
-          spaceId: spaceId,
-          listenerKey: 'hub',
-        ),
-      );
-    }
-    super.dispose();
   }
 
   Future<void> _loadCachedThenReload() async {
@@ -2686,7 +2671,6 @@ class _SharedSpaceHubScreenState extends State<SharedSpaceHubScreen> {
             loading = false;
           });
         }
-        await _bindRealtime(cached);
         await _refreshIndicators(cached);
       } catch (_) {}
     }
@@ -2714,28 +2698,6 @@ class _SharedSpaceHubScreenState extends State<SharedSpaceHubScreen> {
     await widget.store.refreshSharedAgendaCache();
   }
 
-  Future<void> _bindRealtime(List<SharedSpace> value) async {
-    final nextIds = value.map((space) => space.id).toSet();
-    for (final oldId in _realtimeSpaceIds.difference(nextIds).toList()) {
-      await CloudSyncService.instance.unsubscribeSharedSpace(
-        spaceId: oldId,
-        listenerKey: 'hub',
-      );
-      _realtimeSpaceIds.remove(oldId);
-    }
-
-    if (!CloudSyncService.instance.signedIn) return;
-    for (final space in value) {
-      CloudSyncService.instance.subscribeSharedSpace(
-        spaceId: space.id,
-        listenerKey: 'hub',
-        onChanged: () {},
-
-      );
-      _realtimeSpaceIds.add(space.id);
-    }
-  }
-
   Future<void> _refreshIndicators(List<SharedSpace> value) async {
     final next = <String, int>{};
     for (final space in value) {
@@ -2759,7 +2721,6 @@ class _SharedSpaceHubScreenState extends State<SharedSpaceHubScreen> {
     try {
       final result = await cloud.listSharedSpaces();
       await _saveSpacesCache(result);
-      await _bindRealtime(result);
       await _refreshIndicators(result);
       await widget.store.refreshSharedAgendaCache(pullRemote: true);
       if (mounted) {
