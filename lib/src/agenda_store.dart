@@ -517,7 +517,24 @@ class AgendaStore extends ChangeNotifier {
     await refreshSharedAgendaCache(notify: false);
     await refreshPendingSharedCount(notify: false);
     await refreshPendingSharedInteractionCount(notify: false);
+    await _migrateSharedMediaQueues(prefs);
     await refreshPendingSharedMediaCount(notify: false);
+    await _pruneUnreferencedMedia(prefs);
+  }
+
+  Future<void> _migrateSharedMediaQueues(
+    LocalStateStore prefs,
+  ) async {
+    final ownerId = _activeAccountId;
+    if (ownerId == null) return;
+    final prefix = 'shared_media_pending_${ownerId}_';
+    final keys =
+        prefs.getKeys().where((key) => key.startsWith(prefix)).toList();
+    for (final key in keys) {
+      final spaceId = key.substring(prefix.length);
+      if (spaceId.isEmpty) continue;
+      await loadSharedMediaPendingUploads(spaceId);
+    }
   }
 
   Map<String, dynamic> _readAccountProfiles(LocalStateStore prefs) {
@@ -673,6 +690,7 @@ class AgendaStore extends ChangeNotifier {
       );
     }
     if (shouldWrite(_journalsKey)) {
+      await _migrateInlinePrivateMedia(prefs);
       await prefs.setString(
         _journalsKey,
         jsonEncode(
@@ -2066,6 +2084,12 @@ class AgendaStore extends ChangeNotifier {
         }
       }
 
+      final localizedEntries = <SharedEntry>[];
+      for (final entry in entries) {
+        localizedEntries.add(await _localizeSharedThumbnail(entry));
+      }
+      entries = localizedEntries;
+
       entries.sort((a, b) {
         final dateCompare = a.date.compareTo(b.date);
         if (dateCompare != 0) return dateCompare;
@@ -2286,26 +2310,28 @@ class AgendaStore extends ChangeNotifier {
     final revision = (updatedAt ?? DateTime.now()).toUtc();
     final operations = await loadSharedPendingOperations(spaceId);
     operations.removeWhere((operation) => operation.entityId == entry.id);
+    final portablePayload = await _sharedPortablePayload(entry);
     operations.add(
       SharedPendingOperation(
         action: SharedPendingAction.upsert,
         entityId: entry.id,
-        payload: entry.toJson(),
+        payload: portablePayload,
         updatedAt: revision,
       ),
     );
     await _saveSharedPendingOperations(spaceId, operations);
     await refreshPendingSharedCount(notify: false);
+    final localizedEntry = await _localizeSharedThumbnail(
+      entry.copyWith(
+        updatedBy: CloudSyncService.instance.userId,
+        updatedAt: revision,
+      ),
+    );
     final cached = List<SharedEntry>.from(
       _sharedAgendaEntriesBySpace[spaceId] ?? const <SharedEntry>[],
     )
       ..removeWhere((cachedEntry) => cachedEntry.id == entry.id)
-      ..add(
-        entry.copyWith(
-          updatedBy: CloudSyncService.instance.userId,
-          updatedAt: revision,
-        ),
-      );
+      ..add(localizedEntry);
     _sharedAgendaEntriesBySpace[spaceId] = cached;
     _rebuildSharedAgendaDayIndex();
     await _cacheSharedAgendaEntries(spaceId, cached);
@@ -2654,14 +2680,73 @@ class AgendaStore extends ChangeNotifier {
     }
   }
 
+  Future<SharedMediaPendingUpload> _localizeSharedMediaUpload(
+    SharedMediaPendingUpload upload,
+  ) async {
+    var mediaAssetId = upload.mediaAssetId;
+    var thumbnailAssetId = upload.thumbnailAssetId;
+
+    if (mediaAssetId.isEmpty && upload.imageBase64.isNotEmpty) {
+      mediaAssetId =
+          await MediaAssetStore.instance.importBase64(upload.imageBase64) ?? '';
+    }
+    if (thumbnailAssetId.isEmpty && upload.thumbnailBase64.isNotEmpty) {
+      thumbnailAssetId = await MediaAssetStore.instance
+              .importBase64(upload.thumbnailBase64) ??
+          '';
+    }
+
+    if (mediaAssetId == upload.mediaAssetId &&
+        thumbnailAssetId == upload.thumbnailAssetId) {
+      return upload;
+    }
+
+    return SharedMediaPendingUpload(
+      id: upload.id,
+      spaceId: upload.spaceId,
+      entryId: upload.entryId,
+      title: upload.title,
+      note: upload.note,
+      date: upload.date,
+      mediaAssetId: mediaAssetId,
+      thumbnailAssetId: thumbnailAssetId,
+      imageBase64: upload.imageBase64,
+      thumbnailBase64: upload.thumbnailBase64,
+      oldMediaPath: upload.oldMediaPath,
+      createdAt: upload.createdAt,
+    );
+  }
+
+  Future<Uint8List?> _sharedMediaUploadBytes(
+    SharedMediaPendingUpload upload, {
+    required bool thumbnail,
+  }) async {
+    final assetId =
+        thumbnail ? upload.thumbnailAssetId : upload.mediaAssetId;
+    if (assetId.isNotEmpty) {
+      final stored = await MediaAssetStore.instance.read(assetId);
+      if (stored != null) return stored;
+    }
+
+    final legacy =
+        thumbnail ? upload.thumbnailBase64 : upload.imageBase64;
+    if (legacy.isEmpty) return null;
+    try {
+      return base64Decode(legacy);
+    } catch (_) {
+      return null;
+    }
+  }
+
   Future<List<SharedMediaPendingUpload>> loadSharedMediaPendingUploads(
     String spaceId,
   ) async {
     final prefs = await _localState();
     final raw = prefs.getString(sharedMediaPendingStorageKey(spaceId));
     if (raw == null) return <SharedMediaPendingUpload>[];
+
     try {
-      return (jsonDecode(raw) as List)
+      final decoded = (jsonDecode(raw) as List)
           .map(
             (value) => SharedMediaPendingUpload.fromJson(
               Map<String, dynamic>.from(value as Map),
@@ -2672,9 +2757,23 @@ class AgendaStore extends ChangeNotifier {
                 upload.id.isNotEmpty &&
                 upload.spaceId == spaceId &&
                 upload.entryId.isNotEmpty &&
-                upload.imageBase64.isNotEmpty,
+                upload.hasFullMedia,
           )
           .toList();
+
+      final localized = <SharedMediaPendingUpload>[];
+      var changed = false;
+      for (final upload in decoded) {
+        final next = await _localizeSharedMediaUpload(upload);
+        localized.add(next);
+        changed = changed ||
+            next.mediaAssetId != upload.mediaAssetId ||
+            next.thumbnailAssetId != upload.thumbnailAssetId;
+      }
+      if (changed) {
+        await _saveSharedMediaPendingUploads(spaceId, localized);
+      }
+      return localized;
     } catch (_) {
       return <SharedMediaPendingUpload>[];
     }
@@ -2712,10 +2811,14 @@ class AgendaStore extends ChangeNotifier {
   Future<void> enqueueSharedMediaUpload(
     SharedMediaPendingUpload upload,
   ) async {
-    final uploads = await loadSharedMediaPendingUploads(upload.spaceId);
-    uploads.removeWhere((candidate) => candidate.entryId == upload.entryId);
-    uploads.add(upload);
-    await _saveSharedMediaPendingUploads(upload.spaceId, uploads);
+    final localizedUpload = await _localizeSharedMediaUpload(upload);
+    final uploads =
+        await loadSharedMediaPendingUploads(localizedUpload.spaceId);
+    uploads.removeWhere(
+      (candidate) => candidate.entryId == localizedUpload.entryId,
+    );
+    uploads.add(localizedUpload);
+    await _saveSharedMediaPendingUploads(localizedUpload.spaceId, uploads);
     await refreshPendingSharedMediaCount(notify: false);
     notifyListeners();
   }
@@ -2775,11 +2878,30 @@ class AgendaStore extends ChangeNotifier {
 
         for (final upload in List<SharedMediaPendingUpload>.from(uploads)) {
           try {
+            final mediaBytes = await _sharedMediaUploadBytes(
+              upload,
+              thumbnail: false,
+            );
+            if (mediaBytes == null || mediaBytes.isEmpty) {
+              throw StateError('shared_media_missing');
+            }
+            final thumbnailBytes = await _sharedMediaUploadBytes(
+              upload,
+              thumbnail: true,
+            );
+
             final mediaPath = await cloud.uploadSharedMedia(
               spaceId: currentSpaceId,
               entryId: upload.entryId,
-              bytes: base64Decode(upload.imageBase64),
+              bytes: mediaBytes,
             );
+            final remoteCacheId =
+                MediaAssetStore.instance.namedAssetId('remote', mediaPath);
+            await MediaAssetStore.instance.putNamed(
+              remoteCacheId,
+              mediaBytes,
+            );
+
             final entry = SharedEntry(
               id: upload.entryId,
               type: SharedEntryType.photo,
@@ -2788,7 +2910,10 @@ class AgendaStore extends ChangeNotifier {
               date: upload.date,
               createdAt: upload.createdAt,
               mediaPath: mediaPath,
-              mediaThumbnailBase64: upload.thumbnailBase64,
+              mediaThumbnailBase64: thumbnailBytes == null
+                  ? ''
+                  : base64Encode(thumbnailBytes),
+              mediaThumbnailAssetId: upload.thumbnailAssetId,
             );
             await enqueueSharedUpsert(
               spaceId: currentSpaceId,
