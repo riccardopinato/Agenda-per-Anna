@@ -194,6 +194,202 @@ class AgendaStore extends ChangeNotifier {
     shellRevision.value = shellRevision.value + 1;
   }
 
+  Future<void> _applyEntityDeltas(LocalStateStore prefs) async {
+    final prefix = _entityDeltaScopePrefix(_activeAccountId);
+    final keys =
+        prefs.getKeys().where((key) => key.startsWith(prefix)).toList()
+          ..sort();
+
+    for (final key in keys) {
+      final raw = prefs.getString(key);
+      if (raw == null) continue;
+
+      try {
+        final envelope =
+            Map<String, dynamic>.from(jsonDecode(raw) as Map);
+        final type = envelope['type']?.toString() ?? '';
+        final id = envelope['id']?.toString() ?? '';
+        final deleted = envelope['deleted'] == true;
+        final payload = envelope['payload'];
+
+        if (type.isEmpty || id.isEmpty) continue;
+
+        switch (type) {
+          case 'item':
+            items.removeWhere((item) => item.id == id);
+            if (!deleted && payload is Map) {
+              items.add(
+                AgendaItem.fromJson(
+                  Map<String, dynamic>.from(payload),
+                ),
+              );
+            }
+            break;
+          case 'journal':
+            if (deleted) {
+              journals.remove(id);
+            } else if (payload is Map) {
+              journals[id] = DayJournal.fromJson(
+                Map<String, dynamic>.from(payload),
+              );
+            }
+            break;
+          case 'month':
+            if (deleted) {
+              months.remove(id);
+            } else if (payload is Map) {
+              months[id] = MonthlyData.fromJson(
+                Map<String, dynamic>.from(payload),
+              );
+            }
+            break;
+          case 'week':
+            if (deleted) {
+              weeks.remove(id);
+            } else if (payload is Map) {
+              weeks[id] = WeekData.fromJson(
+                Map<String, dynamic>.from(payload),
+              );
+            }
+            break;
+          case 'habit':
+            habits.removeWhere((habit) => habit.id == id);
+            if (!deleted && payload is Map) {
+              habits.add(
+                HabitDefinition.fromJson(
+                  Map<String, dynamic>.from(payload),
+                ),
+              );
+            }
+            break;
+          case 'inbox':
+            inbox.removeWhere((entry) => entry.id == id);
+            if (!deleted && payload is Map) {
+              inbox.add(
+                InboxEntry.fromJson(
+                  Map<String, dynamic>.from(payload),
+                ),
+              );
+            }
+            break;
+        }
+      } catch (_) {
+        // A single bad delta must not hide the aggregate baseline.
+      }
+    }
+  }
+
+  Future<void> _compactActiveEntityDeltas(
+    LocalStateStore prefs,
+  ) async {
+    final deltaKeys = _activeEntityDeltaKeys(prefs);
+    if (deltaKeys.isEmpty) return;
+
+    final changes = <String, String?>{
+      ..._currentWorkingStateChanges(),
+      for (final key in deltaKeys) key: null,
+    };
+    await prefs.writeBatch(changes);
+  }
+
+  Future<void> _persistEntityMutations(
+    List<
+        ({
+          String type,
+          String id,
+          Map<String, dynamic>? payload,
+          bool deleted,
+        })> mutations, {
+    bool createAutoSnapshot = true,
+  }) async {
+    if (mutations.isEmpty) return;
+
+    final prefs = await _localState();
+    final changes = <String, String?>{};
+    final now = DateTime.now();
+
+    for (final mutation in mutations) {
+      final storageKey = _storageKeyForEntityType(mutation.type);
+      if (storageKey == null ||
+          _unreadableStorageKeys.contains(storageKey)) {
+        continue;
+      }
+
+      changes[_entityDeltaKey(mutation.type, mutation.id)] = jsonEncode({
+        'type': mutation.type,
+        'id': mutation.id,
+        'deleted': mutation.deleted,
+        'payload': mutation.deleted ? null : mutation.payload,
+      });
+
+      final localKey = '${mutation.type}:${mutation.id}';
+      if (mutation.deleted) {
+        _syncIndex.remove(localKey);
+        _syncQueue[localKey] = CloudSyncOperation(
+          entityType: mutation.type,
+          entityId: mutation.id,
+          payload: null,
+          updatedAt: now,
+          deleted: true,
+          ownerId: _activeAccountId,
+        );
+        continue;
+      }
+
+      final localPayload = mutation.payload;
+      if (localPayload == null) continue;
+
+      Map<String, dynamic> syncPayload = localPayload;
+      if (mutation.type == 'journal') {
+        final value = journals[mutation.id];
+        if (value != null) {
+          syncPayload = await _portableJournalJson(value);
+        }
+      }
+
+      _syncIndex[localKey] = _syncPayloadHash(syncPayload);
+      _syncQueue[localKey] = CloudSyncOperation(
+        entityType: mutation.type,
+        entityId: mutation.id,
+        payload: localPayload,
+        updatedAt: now,
+        ownerId: _activeAccountId,
+      );
+    }
+
+    if (changes.isEmpty) return;
+
+    changes[_syncQueueKey] = jsonEncode(
+      _syncQueue.map((key, value) => MapEntry(key, value.toJson())),
+    );
+    changes[_syncIndexKey] = jsonEncode(_syncIndex);
+    await prefs.writeBatch(changes);
+
+    if (createAutoSnapshot) {
+      await _maybeCreateAutomaticSnapshot(prefs);
+    }
+    _scheduleCloudSync();
+  }
+
+  Future<void> _persistEntityMutation({
+    required String type,
+    required String id,
+    Map<String, dynamic>? payload,
+    bool deleted = false,
+    bool createAutoSnapshot = true,
+  }) =>
+      _persistEntityMutations(
+        [
+          (
+            type: type,
+            id: id,
+            payload: payload,
+            deleted: deleted,
+          ),
+        ],
+        createAutoSnapshot: createAutoSnapshot,
+      );
+
   Future<Uint8List> _createMediaThumbnail(
     Uint8List bytes, {
     int maxSide = 420,
@@ -720,6 +916,8 @@ class AgendaStore extends ChangeNotifier {
         HabitDefinition(id: 'me', name: 'Tempo per me'),
       ]);
     }
+
+    await _applyEntityDeltas(prefs);
     await _migrateInlinePrivateMedia(prefs);
     _invalidateDayIndex();
     await _loadSharedUnreadCounts(prefs);
@@ -819,6 +1017,8 @@ class AgendaStore extends ChangeNotifier {
       }
       return;
     }
+
+    await _compactActiveEntityDeltas(prefs);
 
     final profiles = _readAccountProfiles(prefs);
     final currentScope =
@@ -1387,6 +1587,7 @@ class AgendaStore extends ChangeNotifier {
       final changes = <String, String?>{
         ..._currentWorkingStateChanges(),
         _forceFullSyncKey: 'true',
+        for (final key in _activeEntityDeltaKeys(prefs)) key: null,
       };
       await prefs.writeBatch(changes);
       _unreadableStorageKeys.removeAll(changes.keys);
