@@ -21,6 +21,7 @@ import 'package:uuid/uuid.dart';
 import 'backup_service.dart';
 import 'cloud_sync_service.dart';
 import 'notification_service.dart';
+import 'local_state_store.dart';
 import 'push_notification_service.dart';
 
 part 'src/app_shell.dart';
