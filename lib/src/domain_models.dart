@@ -623,7 +623,6 @@ class DiarySketchImageElement {
   Map<String, dynamic> toLocalJson() => {
         ...toJson(),
         if (mediaAssetId.isNotEmpty) 'imageBase64': '',
-        'pages': pages.map((page) => page.toLocalJson()).toList(),
       };
 
   factory DiarySketchImageElement.fromJson(Map<String, dynamic> json) =>
@@ -781,6 +780,7 @@ class DiaryBlock {
   Map<String, dynamic> toLocalJson() => {
         ...toJson(),
         if (mediaAssetId.isNotEmpty) 'imageBase64': '',
+        'pages': pages.map((page) => page.toLocalJson()).toList(),
       };
 
   factory DiaryBlock.fromJson(Map<String, dynamic> json) => DiaryBlock(
