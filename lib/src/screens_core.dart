@@ -3140,10 +3140,10 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
           if (mounted) unawaited(_refresh(silent: true));
         });
       },
-      onInteractionsChanged: () {
+      onInteractionChanged: (change) {
         _interactionDebounce?.cancel();
-        _interactionDebounce = Timer(const Duration(milliseconds: 250), () {
-          if (mounted) unawaited(_loadInteractions());
+        _interactionDebounce = Timer(const Duration(milliseconds: 80), () {
+          if (mounted) unawaited(_applyRealtimeInteractionChange(change));
         });
       },
       onConnectionChanged: (connected) {
@@ -3151,6 +3151,70 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
         setState(() => realtimeConnected = connected);
       },
     );
+  }
+
+  Future<void> _applyRealtimeInteractionChange(
+    SharedRealtimeInteractionChange change,
+  ) async {
+    final record = change.record;
+    if (record['space_id']?.toString() != widget.space.id) return;
+
+    final nextComments = <String, List<SharedEntryComment>>{
+      for (final entry in commentsByEntry.entries)
+        entry.key: List<SharedEntryComment>.from(entry.value),
+    };
+    final nextHearts = <String, Set<String>>{
+      for (final entry in heartsByEntry.entries)
+        entry.key: Set<String>.from(entry.value),
+    };
+    final nextReads = Map<String, DateTime>.from(memberReads);
+
+    switch (change.kind) {
+      case SharedRealtimeInteractionKind.comment:
+        final id = record['id']?.toString() ?? '';
+        final entryId = record['entry_id']?.toString() ?? '';
+        if (id.isEmpty || entryId.isEmpty) return;
+        final bucket =
+            nextComments.putIfAbsent(entryId, () => <SharedEntryComment>[]);
+        bucket.removeWhere((comment) => comment.id == id);
+        if (!change.deleted && change.newRecord.isNotEmpty) {
+          bucket.add(SharedEntryComment.fromJson(change.newRecord));
+          bucket.sort((a, b) => a.createdAt.compareTo(b.createdAt));
+        }
+        break;
+      case SharedRealtimeInteractionKind.reaction:
+        final entryId = record['entry_id']?.toString() ?? '';
+        final userId = record['user_id']?.toString() ?? '';
+        final kind = record['kind']?.toString() ?? '';
+        if (entryId.isEmpty || userId.isEmpty || kind != 'heart') return;
+        final hearts = nextHearts.putIfAbsent(entryId, () => <String>{});
+        if (change.deleted) {
+          hearts.remove(userId);
+        } else {
+          hearts.add(userId);
+        }
+        break;
+      case SharedRealtimeInteractionKind.memberRead:
+        final userId = record['user_id']?.toString() ?? '';
+        if (userId.isEmpty) return;
+        if (change.deleted) {
+          nextReads.remove(userId);
+        } else {
+          final seenAt =
+              DateTime.tryParse(record['last_seen_at']?.toString() ?? '');
+          if (seenAt != null) nextReads[userId] = seenAt;
+        }
+        break;
+    }
+
+    await _saveInteractionCache(nextComments, nextHearts, nextReads);
+    if (!mounted) return;
+    setState(() {
+      commentsByEntry = nextComments;
+      heartsByEntry = nextHearts;
+      memberReads = nextReads;
+      interactionsLoading = false;
+    });
   }
 
   Future<void> _loadInteractionCache(
@@ -3307,61 +3371,33 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
     if (!silent && mounted) setState(() => loading = true);
     try {
       await _flushPending();
-      final records = await cloud.pullSharedRecords(widget.space.id);
-      final next = <SharedEntry>[];
-      for (final record in records) {
-        if (record.deletedAt != null ||
-            record.entityType != 'shared_entry' ||
-            record.payload == null) {
-          continue;
-        }
-        next.add(
-          await widget.store._localizeSharedThumbnail(
-            SharedEntry.fromJson(
-              record.payload!,
-              updatedBy: record.updatedBy,
-              updatedAt: record.clientUpdatedAt,
-            ),
-          ),
-        );
-      }
+      await widget.store.refreshSharedAgendaCache(
+        pullRemote: true,
+        notify: false,
+        targetSpaceId: widget.space.id,
+      );
+
+      final next = List<SharedEntry>.from(
+        widget.store._sharedAgendaEntriesBySpace[widget.space.id] ??
+            const <SharedEntry>[],
+      )..sort((a, b) {
+          final date = b.date.compareTo(a.date);
+          if (date != 0) return date;
+          final am =
+              a.start == null ? -1 : a.start!.hour * 60 + a.start!.minute;
+          final bm =
+              b.start == null ? -1 : b.start!.hour * 60 + b.start!.minute;
+          final time = bm.compareTo(am);
+          if (time != 0) return time;
+          final aUpdated = a.updatedAt ?? a.date;
+          final bUpdated = b.updatedAt ?? b.date;
+          return bUpdated.compareTo(aUpdated);
+        });
 
       final pending = await _loadPending();
-      for (final operation in pending) {
-        next.removeWhere((entry) => entry.id == operation.entityId);
-        if (operation.action == SharedPendingAction.upsert &&
-            operation.payload != null) {
-          next.add(
-            await widget.store._localizeSharedThumbnail(
-              SharedEntry.fromJson(
-                operation.payload!,
-                updatedBy: cloud.userId,
-                updatedAt: operation.updatedAt,
-                mediaThumbnailAssetId:
-                    operation.payload!['_mediaThumbnailAssetId']
-                            ?.toString() ??
-                        '',
-              ),
-            ),
-          );
-        }
-      }
-
-      next.sort((a, b) {
-        final date = b.date.compareTo(a.date);
-        if (date != 0) return date;
-        final am = a.start == null ? -1 : a.start!.hour * 60 + a.start!.minute;
-        final bm = b.start == null ? -1 : b.start!.hour * 60 + b.start!.minute;
-        final time = bm.compareTo(am);
-        if (time != 0) return time;
-        final aUpdated = a.updatedAt ?? a.date;
-        final bUpdated = b.updatedAt ?? b.date;
-        return bUpdated.compareTo(aUpdated);
-      });
       entries = next;
       pendingIds = pending.map((operation) => operation.entityId).toSet();
       lastRefreshAt = DateTime.now();
-      await _saveCache();
       await cloud.markSharedSpaceSeen(widget.space.id);
       await _loadInteractions();
       await widget.store.markSharedSpaceRead(widget.space.id);
