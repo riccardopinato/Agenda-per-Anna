@@ -574,6 +574,7 @@ class DiarySketchTextElement {
 class DiarySketchImageElement {
   final String id;
   final String imageBase64;
+  final String mediaAssetId;
   final double x;
   final double y;
   final double width;
@@ -581,15 +582,19 @@ class DiarySketchImageElement {
 
   const DiarySketchImageElement({
     required this.id,
-    required this.imageBase64,
+    this.imageBase64 = '',
+    this.mediaAssetId = '',
     required this.x,
     required this.y,
     this.width = 0.52,
     this.height = 0.34,
   });
 
+  bool get hasMedia => mediaAssetId.isNotEmpty || imageBase64.isNotEmpty;
+
   DiarySketchImageElement copyWith({
     String? imageBase64,
+    String? mediaAssetId,
     double? x,
     double? y,
     double? width,
@@ -598,6 +603,7 @@ class DiarySketchImageElement {
       DiarySketchImageElement(
         id: id,
         imageBase64: imageBase64 ?? this.imageBase64,
+        mediaAssetId: mediaAssetId ?? this.mediaAssetId,
         x: x ?? this.x,
         y: y ?? this.y,
         width: width ?? this.width,
@@ -607,16 +613,24 @@ class DiarySketchImageElement {
   Map<String, dynamic> toJson() => {
         'id': id,
         'imageBase64': imageBase64,
+        'mediaAssetId': mediaAssetId,
         'x': x,
         'y': y,
         'width': width,
         'height': height,
       };
 
+  Map<String, dynamic> toLocalJson() => {
+        ...toJson(),
+        if (mediaAssetId.isNotEmpty) 'imageBase64': '',
+        'pages': pages.map((page) => page.toLocalJson()).toList(),
+      };
+
   factory DiarySketchImageElement.fromJson(Map<String, dynamic> json) =>
       DiarySketchImageElement(
         id: json['id'] as String? ?? const Uuid().v4(),
         imageBase64: json['imageBase64'] as String? ?? '',
+        mediaAssetId: json['mediaAssetId'] as String? ?? '',
         x: (json['x'] as num? ?? 0.12).toDouble(),
         y: (json['y'] as num? ?? 0.12).toDouble(),
         width: (json['width'] as num? ?? 0.52).toDouble(),
@@ -661,6 +675,16 @@ class DiarySketchPage {
             textElements.map((element) => element.toJson()).toList(),
         'imageElements':
             imageElements.map((element) => element.toJson()).toList(),
+      };
+
+  Map<String, dynamic> toLocalJson() => {
+        'id': id,
+        'paper': paper.name,
+        'strokes': strokes.map((stroke) => stroke.toJson()).toList(),
+        'textElements':
+            textElements.map((element) => element.toJson()).toList(),
+        'imageElements':
+            imageElements.map((element) => element.toLocalJson()).toList(),
       };
 
   factory DiarySketchPage.fromJson(Map<String, dynamic> json) =>
@@ -1211,6 +1235,8 @@ class SharedEntry {
         ...toJson(),
         if (mediaThumbnailAssetId.isNotEmpty) 'mediaThumbnailBase64': '',
         '_mediaThumbnailAssetId': mediaThumbnailAssetId,
+        'sketchPages':
+            sketchPages.map((page) => page.toLocalJson()).toList(),
         '_updatedBy': updatedBy,
         '_updatedAt': updatedAt?.toUtc().toIso8601String(),
       };
