@@ -2281,7 +2281,8 @@ class AgendaStore extends ChangeNotifier {
     }
 
     if (cloud.signedIn) {
-      await syncAllCloud(preferRemoteOnFirstSync: true);
+      await syncCloud(preferRemoteOnFirstSync: true);
+      _scheduleDeferredSharedCloudSync();
     }
 
     // Reconcile private + shared state periodically in case Realtime or a
@@ -2319,20 +2320,24 @@ class AgendaStore extends ChangeNotifier {
     }
   }
 
-  Future<void> syncAllCloud({
-    bool preferRemoteOnFirstSync = false,
-  }) async {
+  void _scheduleDeferredSharedCloudSync() {
+    _deferredCloudSyncTimer?.cancel();
+    _deferredCloudSyncTimer = Timer(
+      const Duration(milliseconds: 900),
+      () => unawaited(_syncSharedCloudWork()),
+    );
+  }
+
+  Future<void> _syncSharedCloudWork() async {
     final cloud = CloudSyncService.instance;
     if (!cloud.configured || !cloud.initialized || !cloud.signedIn) {
       return;
     }
+    if (_activeAccountId != cloud.userId) return;
 
     await flushSharedMediaUploads();
     await flushSharedInteractionOperations();
     await flushSharedPendingOperations();
-    await syncCloud(
-      preferRemoteOnFirstSync: preferRemoteOnFirstSync,
-    );
 
     if (!cloud.signedIn ||
         cloud.userId == null ||
@@ -2344,6 +2349,20 @@ class AgendaStore extends ChangeNotifier {
     await refreshPendingSharedCount();
     await refreshPendingSharedInteractionCount();
     await refreshPendingSharedMediaCount();
+  }
+
+  Future<void> syncAllCloud({
+    bool preferRemoteOnFirstSync = false,
+  }) async {
+    final cloud = CloudSyncService.instance;
+    if (!cloud.configured || !cloud.initialized || !cloud.signedIn) {
+      return;
+    }
+
+    await syncCloud(
+      preferRemoteOnFirstSync: preferRemoteOnFirstSync,
+    );
+    await _syncSharedCloudWork();
   }
 
   Future<void> syncCloud({
@@ -4260,6 +4279,7 @@ class AgendaStore extends ChangeNotifier {
     _cloudSyncTimer?.cancel();
     _syncDebounceTimer?.cancel();
     _unifiedRealtimeDebounce?.cancel();
+    _deferredCloudSyncTimer?.cancel();
     for (final spaceId in _unifiedRealtimeSpaceIds.toList()) {
       unawaited(
         CloudSyncService.instance.unsubscribeSharedSpace(
