@@ -2,7 +2,7 @@
 
 Flutter app for personal planning, private diary and the shared **Noi ♡** space.
 
-Current release line: **v0.34.0**.
+Current release line: **v0.35.0**.
 
 ## Core areas
 
@@ -46,3 +46,14 @@ See `docs/ARCHITECTURE.md` and `supabase/README.md` for implementation details.
 - Backup restore clears stale deltas in the same transaction as the restored working set.
 - Private/shared unified agenda lists, pending-task counts and month counts use invalidated caches instead of rebuilding and re-sorting the full agenda on every read.
 - The top-level MaterialApp now listens only to shell/configuration revisions, so ordinary agenda, diary and sync notifications do not rebuild the entire app tree.
+
+
+## v0.35.0 — Sketch & Media Performance
+
+- Freehand strokes and lasso gestures use mutable in-progress buffers and freeze the point list only once when the gesture finishes.
+- Pen/highlighter/eraser/lasso input is distance-sampled to reduce redundant points and repaint work without changing the saved sketch format.
+- Selection dragging updates only selected elements through reusable working lists instead of rebuilding every stroke/text/image collection on every pointer event.
+- Undo/redo uses lightweight structural snapshots with an adaptive history limit instead of deep-copying every stroke point up to 50 times per page.
+- Duplicated sketch pages preserve embedded media asset references.
+- Remote shared-photo disk cache is bounded to 160 entries / 200 MB with LRU-style pruning.
+- Media garbage collection is debounced and runs after startup/diary edits instead of blocking the startup critical path.
