@@ -1,7 +1,7 @@
 name: agenda_per_anna
 description: Anna's Diary, diario e agenda personale multipiattaforma.
 publish_to: "none"
-version: 0.36.0+43
+version: 0.37.0+44
 
 environment:
   sdk: ">=3.10.0 <4.0.0"
