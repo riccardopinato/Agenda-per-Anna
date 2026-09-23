@@ -165,15 +165,22 @@ class AgendaStore extends ChangeNotifier {
         var fullId = block.mediaAssetId;
         var thumbnailId = block.mediaThumbnailAssetId;
 
-        if (fullId.isEmpty && block.imageBase64.isNotEmpty) {
+        if (block.imageBase64.isNotEmpty) {
           try {
             final bytes = base64Decode(block.imageBase64);
+            // Portable cloud/backup payloads may carry sender-local IDs.
+            // Rebind every inline image to this device's content store.
             fullId = await MediaAssetStore.instance.put(bytes);
-            if (thumbnailId.isEmpty) {
+
+            final existingThumbnail = thumbnailId.isEmpty
+                ? null
+                : await MediaAssetStore.instance.read(thumbnailId);
+            if (existingThumbnail == null) {
               thumbnailId = await MediaAssetStore.instance.put(
                 await _createMediaThumbnail(bytes),
               );
             }
+
             next = block.copyWith(
               imageBase64: '',
               mediaAssetId: fullId,
@@ -183,14 +190,19 @@ class AgendaStore extends ChangeNotifier {
           } catch (_) {
             // Preserve unreadable legacy Base64 instead of destroying it.
           }
-        } else if (fullId.isNotEmpty && thumbnailId.isEmpty) {
+        } else if (fullId.isNotEmpty) {
           final bytes = await MediaAssetStore.instance.read(fullId);
           if (bytes != null) {
-            thumbnailId = await MediaAssetStore.instance.put(
-              await _createMediaThumbnail(bytes),
-            );
-            next = block.copyWith(mediaThumbnailAssetId: thumbnailId);
-            changed = true;
+            final existingThumbnail = thumbnailId.isEmpty
+                ? null
+                : await MediaAssetStore.instance.read(thumbnailId);
+            if (existingThumbnail == null) {
+              thumbnailId = await MediaAssetStore.instance.put(
+                await _createMediaThumbnail(bytes),
+              );
+              next = block.copyWith(mediaThumbnailAssetId: thumbnailId);
+              changed = true;
+            }
           }
         }
 
@@ -223,13 +235,20 @@ class AgendaStore extends ChangeNotifier {
 
     for (final block in journal.blocks) {
       final blockJson = Map<String, dynamic>.from(block.toJson());
-      if (block.type == DiaryBlockType.photo &&
-          (blockJson['imageBase64']?.toString().isEmpty ?? true) &&
-          block.mediaAssetId.isNotEmpty) {
-        final bytes = await MediaAssetStore.instance.read(block.mediaAssetId);
-        if (bytes != null) {
-          blockJson['imageBase64'] = base64Encode(bytes);
+      if (block.type == DiaryBlockType.photo) {
+        if ((blockJson['imageBase64']?.toString().isEmpty ?? true) &&
+            block.mediaAssetId.isNotEmpty) {
+          final bytes =
+              await MediaAssetStore.instance.read(block.mediaAssetId);
+          if (bytes != null) {
+            blockJson['imageBase64'] = base64Encode(bytes);
+          }
         }
+        // Asset IDs belong to one local media store. Keeping them in cloud or
+        // an exported backup can make another device believe it owns bytes it
+        // does not actually have.
+        blockJson.remove('mediaAssetId');
+        blockJson.remove('mediaThumbnailAssetId');
       }
       blocks.add(blockJson);
     }
