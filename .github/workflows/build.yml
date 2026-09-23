@@ -1,11 +1,26 @@
-name: Build Anna's Diary
+name: Build Anna's Diary Android Release
 
 on:
   workflow_dispatch:
 
+permissions:
+  contents: read
+
+concurrency:
+  group: android-release
+  cancel-in-progress: false
+
 jobs:
   build:
     runs-on: ubuntu-latest
+    timeout-minutes: 40
+    env:
+      ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+      ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+      ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+      ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+      ANDROID_KEYSTORE_PATH: ${{ github.workspace }}/.signing/agenda-release.jks
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -17,254 +32,20 @@ jobs:
           channel: stable
           cache: true
 
-      - name: Create Flutter platform skeleton
+      - name: Generate pinned Android platform
         run: |
-          rm -rf /tmp/agenda_base
-          flutter create --project-name agenda_per_anna --org com.riccardopinato --platforms=android,web,ios /tmp/agenda_base
-          cp -R /tmp/agenda_base/android .
-          cp -R /tmp/agenda_base/web .
-          cp -R /tmp/agenda_base/ios .
+          rm -rf android /tmp/agenda_android
+          flutter create             --project-name agenda_per_anna             --org com.riccardopinato             --platforms=android             /tmp/agenda_android
+          cp -R /tmp/agenda_android/android .
 
-      - name: Configure Firebase Android when available
+      - name: Apply deterministic Android configuration
+        run: python3 tool/prepare_android_platform.py --release-signing
+
+      - name: Verify release keystore
         run: |
-          python3 - <<'PY'
-          from pathlib import Path
-          import shutil
+          keytool -list             -keystore "$ANDROID_KEYSTORE_PATH"             -storepass "$ANDROID_KEYSTORE_PASSWORD"             -alias "$ANDROID_KEY_ALIAS" >/dev/null
 
-          source = Path("firebase/google-services.json")
-          if not source.exists():
-              print("Firebase Android config not present; push stays disabled.")
-              raise SystemExit(0)
-
-          target = Path("android/app/google-services.json")
-          target.parent.mkdir(parents=True, exist_ok=True)
-          shutil.copyfile(source, target)
-
-          settings = Path("android/settings.gradle.kts")
-          s = settings.read_text()
-          plugin_line = '    id("com.google.gms.google-services") version "4.4.4" apply false\n'
-          if 'com.google.gms.google-services' not in s:
-              marker = "plugins {\n"
-              if marker not in s:
-                  raise SystemExit("Android settings plugins block not found")
-              s = s.replace(marker, marker + plugin_line, 1)
-          settings.write_text(s)
-
-          app = Path("android/app/build.gradle.kts")
-          a = app.read_text()
-          plugin_line = '    id("com.google.gms.google-services")\n'
-          if 'com.google.gms.google-services' not in a:
-              marker = "plugins {\n"
-              if marker not in a:
-                  raise SystemExit("Android app plugins block not found")
-              a = a.replace(marker, marker + plugin_line, 1)
-          app.write_text(a)
-
-          Path(".firebase_enabled").write_text("1")
-          print("Firebase Android config enabled.")
-          PY
-
-      - name: Configure Android activity for local authentication
-        run: |
-          python3 - <<'PY'
-          from pathlib import Path
-          p = Path("android/app/src/main/kotlin/com/riccardopinato/agenda_per_anna/MainActivity.kt")
-          s = p.read_text()
-          s = s.replace("FlutterActivity", "FlutterFragmentActivity")
-          s = s.replace(
-              "import io.flutter.embedding.android.FlutterFragmentActivity",
-              "import io.flutter.embedding.android.FlutterFragmentActivity",
-          )
-          if "FlutterFragmentActivity" in s and "import io.flutter.embedding.android.FlutterActivity" in s:
-              s = s.replace(
-                  "import io.flutter.embedding.android.FlutterActivity",
-                  "import io.flutter.embedding.android.FlutterFragmentActivity",
-              )
-          p.write_text(s)
-
-          manifest = Path("android/app/src/main/AndroidManifest.xml")
-          m = manifest.read_text()
-          permissions = [
-              '<uses-permission android:name="android.permission.INTERNET" />',
-              '<uses-permission android:name="android.permission.POST_NOTIFICATIONS" />',
-              '<uses-permission android:name="android.permission.USE_BIOMETRIC" />',
-              '<uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />',
-              '<uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />',
-          ]
-          pos = m.find(">")
-          for permission in permissions:
-              if permission not in m:
-                  m = m[:pos+1] + "\n    " + permission + m[pos+1:]
-                  pos = m.find(">")
-
-          receiver_block = '''
-                  <receiver
-                      android:exported="false"
-                      android:name="com.dexterous.flutterlocalnotifications.ScheduledNotificationReceiver" />
-                  <receiver
-                      android:exported="false"
-                      android:name="com.dexterous.flutterlocalnotifications.ScheduledNotificationBootReceiver">
-                      <intent-filter>
-                          <action android:name="android.intent.action.BOOT_COMPLETED" />
-                          <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
-                          <action android:name="android.intent.action.QUICKBOOT_POWERON" />
-                          <action android:name="com.htc.intent.action.QUICKBOOT_POWERON" />
-                      </intent-filter>
-                  </receiver>
-          '''
-          if "ScheduledNotificationReceiver" not in m:
-              m = m.replace("</application>", receiver_block + "\n    </application>")
-
-          m = m.replace(
-              'android:label="agenda_per_anna"',
-              'android:label="Anna\'s Diary"',
-          )
-          if 'android:allowBackup=' not in m:
-              m = m.replace(
-                  '<application',
-                  '<application android:allowBackup="false"',
-                  1,
-              )
-          manifest.write_text(m)
-
-          drawable = Path("android/app/src/main/res/drawable")
-          drawable.mkdir(parents=True, exist_ok=True)
-          (drawable / "notification_icon.xml").write_text("""<vector xmlns:android="http://schemas.android.com/apk/res/android"
-              android:width="24dp"
-              android:height="24dp"
-              android:viewportWidth="24"
-              android:viewportHeight="24">
-              <path
-                  android:fillColor="#FFFFFFFF"
-                  android:pathData="M12,22c1.1,0 2,-0.9 2,-2h-4c0,1.1 0.9,2 2,2zM18,16v-5c0,-3.07 -1.63,-5.64 -4.5,-6.32V3c0,-0.83 -0.67,-1.5 -1.5,-1.5S10.5,2.17 10.5,3v0.68C7.64,4.36 6,6.92 6,10v6l-2,2v1h16v-1l-2,-2z" />
-          </vector>""")
-
-          plist = Path("ios/Runner/Info.plist")
-          ptext = plist.read_text()
-          if "NSFaceIDUsageDescription" not in ptext:
-              ptext = ptext.replace(
-                  "</dict>",
-                  "    <key>NSFaceIDUsageDescription</key>\n"
-                  "    <string>Usa Face ID per sbloccare Anna's Diary.</string>\n"
-                  "</dict>",
-                  1,
-              )
-          if "NSPhotoLibraryUsageDescription" not in ptext:
-              ptext = ptext.replace(
-                  "</dict>",
-                  "    <key>NSPhotoLibraryUsageDescription</key>\n"
-                  "    <string>Consenti ad Anna's Diary di scegliere foto per il tuo diario personale.</string>\n"
-                  "</dict>",
-                  1,
-              )
-          if "NSCameraUsageDescription" not in ptext:
-              ptext = ptext.replace(
-                  "</dict>",
-                  "    <key>NSCameraUsageDescription</key>\n"
-                  "    <string>Consenti ad Anna's Diary di scattare foto per il tuo diario personale.</string>\n"
-                  "</dict>",
-                  1,
-              )
-          ptext = ptext.replace(
-              "<string>Agenda Per Anna</string>",
-              "<string>Anna's Diary</string>",
-          )
-          ptext = ptext.replace(
-              "<string>agenda_per_anna</string>",
-              "<string>Anna's Diary</string>",
-          )
-          plist.write_text(ptext)
-          PY
-
-      - name: Configure release signing
-        env:
-          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
-          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
-          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
-          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
-        run: |
-          set -euo pipefail
-
-          if [ -z "$ANDROID_KEYSTORE_BASE64" ] || \
-             [ -z "$ANDROID_KEYSTORE_PASSWORD" ] || \
-             [ -z "$ANDROID_KEY_ALIAS" ] || \
-             [ -z "$ANDROID_KEY_PASSWORD" ]; then
-            echo "::error::Release signing secrets are required. Refusing to create a release APK with an ephemeral or cache-backed key."
-            exit 1
-          fi
-
-          mkdir -p .signing
-          echo "$ANDROID_KEYSTORE_BASE64" | base64 -d > .signing/agenda-release.jks
-
-          export SIGNING_FILE="agenda-release.jks"
-          export SIGNING_STORE_PASSWORD="$ANDROID_KEYSTORE_PASSWORD"
-          export SIGNING_ALIAS="$ANDROID_KEY_ALIAS"
-          export SIGNING_KEY_PASSWORD="$ANDROID_KEY_PASSWORD"
-
-          python3 - <<'PY'
-          import os
-          from pathlib import Path
-
-          p = Path("android/app/build.gradle.kts")
-          s = p.read_text()
-          signing_file = os.environ["SIGNING_FILE"]
-          store_password = os.environ["SIGNING_STORE_PASSWORD"]
-          alias = os.environ["SIGNING_ALIAS"]
-          key_password = os.environ["SIGNING_KEY_PASSWORD"]
-
-          block = f'''
-              signingConfigs {{
-                  create("agendaStable") {{
-                      storeFile = file("../../.signing/{signing_file}")
-                      storePassword = "{store_password}"
-                      keyAlias = "{alias}"
-                      keyPassword = "{key_password}"
-                  }}
-              }}
-          '''
-
-          marker = "    buildTypes {"
-          if 'create("agendaStable")' not in s:
-              if marker not in s:
-                  raise SystemExit("buildTypes block not found")
-              s = s.replace(marker, block + "\n" + marker, 1)
-
-          s = s.replace(
-              'signingConfig = signingConfigs.getByName("debug")',
-              'signingConfig = signingConfigs.getByName("agendaStable")'
-          )
-          p.write_text(s)
-          PY
-
-      - name: Enable Android core library desugaring
-        run: |
-          python3 - <<'PY'
-          from pathlib import Path
-          p = Path("android/app/build.gradle.kts")
-          s = p.read_text()
-          needle = "compileOptions {"
-          if needle not in s:
-              raise SystemExit("compileOptions block not found")
-          s = s.replace(
-              needle,
-              needle + "\n        isCoreLibraryDesugaringEnabled = true",
-              1,
-          )
-          if 'coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.5")' not in s:
-              s += '\n\ndependencies {\n    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.5")\n}\n'
-          p.write_text(s)
-          PY
-
-      - name: Decode app icon
-        run: |
-          mkdir -p assets/icon
-          base64 -d assets/icon/app_icon.b64 > assets/icon/app_icon.jpg
-
-      - name: Adjust icon config path
-        run: |
-          sed -i 's#assets/icon/app_icon.png#assets/icon/app_icon.jpg#g' pubspec.yaml
-
-      - name: Install dependencies
+      - name: Install locked dependencies
         run: flutter pub get --enforce-lockfile
 
       - name: Generate launcher icons
@@ -276,18 +57,98 @@ jobs:
       - name: Test
         run: flutter test
 
-      - name: Build Android APK
+      - name: Build signed Android releases
+        shell: bash
         run: |
+          set -euo pipefail
           FIREBASE_ARG=""
-          if [ -f .firebase_enabled ]; then
+          if [ -f android/app/google-services.json ]; then
             FIREBASE_ARG="--dart-define=FIREBASE_ENABLED=true"
           fi
-          flutter build apk --release $FIREBASE_ARG
-          flutter build apk --release --split-per-abi $FIREBASE_ARG
 
-      - name: Upload APKs
+          COMMON_ARGS=(
+            --release
+            --obfuscate
+            --tree-shake-icons
+            --split-debug-info=build/symbols
+          )
+
+          flutter build apk "${COMMON_ARGS[@]}" $FIREBASE_ARG
+          cp build/app/outputs/flutter-apk/app-release.apk             build/app/outputs/flutter-apk/app-universal-release.apk
+
+          flutter build apk             "${COMMON_ARGS[@]}"             --split-per-abi             $FIREBASE_ARG
+
+          flutter build appbundle             "${COMMON_ARGS[@]}"             $FIREBASE_ARG
+
+      - name: Name release outputs and create size reports
+        shell: bash
+        run: |
+          set -euo pipefail
+          VERSION=$(awk '/^version:/ {print $2; exit}' pubspec.yaml)
+          SAFE_VERSION=$(printf '%s' "$VERSION" | tr '+' '-')
+          OUT=build/release-artifacts
+          mkdir -p "$OUT"
+
+          cp build/app/outputs/flutter-apk/app-universal-release.apk             "$OUT/annas-diary-v${SAFE_VERSION}-universal.apk"
+          cp build/app/outputs/flutter-apk/app-arm64-v8a-release.apk             "$OUT/annas-diary-v${SAFE_VERSION}-arm64-v8a.apk"
+          cp build/app/outputs/flutter-apk/app-armeabi-v7a-release.apk             "$OUT/annas-diary-v${SAFE_VERSION}-armeabi-v7a.apk"
+          cp build/app/outputs/flutter-apk/app-x86_64-release.apk             "$OUT/annas-diary-v${SAFE_VERSION}-x86_64.apk"
+          cp build/app/outputs/bundle/release/app-release.aab             "$OUT/annas-diary-v${SAFE_VERSION}.aab"
+
+          python3 tool/android_size_report.py             "$OUT/annas-diary-v${SAFE_VERSION}-arm64-v8a.apk"             --output "$OUT/size-arm64.txt"
+          python3 tool/android_size_report.py             "$OUT/annas-diary-v${SAFE_VERSION}-universal.apk"             --output "$OUT/size-universal.txt"
+
+          sha256sum "$OUT"/*.apk "$OUT"/*.aab > "$OUT/SHA256SUMS.txt"
+          ls -lh "$OUT"
+
+      - name: Upload preferred ARM64 sideload APK
         uses: actions/upload-artifact@v4
         with:
-          name: annas-diary-apk
-          path: build/app/outputs/flutter-apk/*.apk
+          name: annas-diary-arm64
+          path: build/release-artifacts/*-arm64-v8a.apk
+          if-no-files-found: error
+          retention-days: 30
 
+      - name: Upload Play Store bundle
+        uses: actions/upload-artifact@v4
+        with:
+          name: annas-diary-play-aab
+          path: build/release-artifacts/*.aab
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Upload universal compatibility APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: annas-diary-universal
+          path: build/release-artifacts/*-universal.apk
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Upload legacy ABI APKs
+        uses: actions/upload-artifact@v4
+        with:
+          name: annas-diary-other-abis
+          path: |
+            build/release-artifacts/*-armeabi-v7a.apk
+            build/release-artifacts/*-x86_64.apk
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Upload size and checksum report
+        uses: actions/upload-artifact@v4
+        with:
+          name: annas-diary-release-report
+          path: |
+            build/release-artifacts/size-*.txt
+            build/release-artifacts/SHA256SUMS.txt
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Upload obfuscation symbols
+        uses: actions/upload-artifact@v4
+        with:
+          name: annas-diary-symbols
+          path: build/symbols/**
+          if-no-files-found: error
+          retention-days: 90
