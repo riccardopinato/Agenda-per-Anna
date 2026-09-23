@@ -14,7 +14,7 @@ void main() {
 
   testWidgets('private diary uses the shared composer component', (tester) async {
     final store = AgendaStore();
-    await store.load();
+    await tester.runAsync(store.load);
 
     await tester.pumpWidget(
       MaterialApp(
@@ -40,7 +40,7 @@ void main() {
       'active_account_v1': 'user-a',
     });
     final store = AgendaStore();
-    await store.load();
+    await tester.runAsync(store.load);
 
     final space = SharedSpace(
       id: 'space-a',
