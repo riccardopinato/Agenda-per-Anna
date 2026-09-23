@@ -1335,16 +1335,17 @@ class _BackupScreenState extends State<BackupScreen> {
     }
 
     if (picked == null || !mounted) return;
+    final selectedBackup = picked;
 
     String? legacyJson;
     Uint8List? zipBytes;
     BackupSummary summary;
     try {
-      if (picked.isZip) {
-        zipBytes = picked.bytes;
+      if (selectedBackup.isZip) {
+        zipBytes = selectedBackup.bytes;
         summary = widget.store.inspectBackupZip(zipBytes);
       } else {
-        legacyJson = utf8.decode(picked.bytes);
+        legacyJson = utf8.decode(selectedBackup.bytes);
         summary = widget.store.inspectBackup(legacyJson);
       }
     } catch (error) {
@@ -1373,7 +1374,7 @@ class _BackupScreenState extends State<BackupScreen> {
             Text('• ${summary.monthCount} pagine mensili'),
             Text('• ${summary.weekCount} settimane'),
             Text('• ${summary.habitCount} abitudini'),
-            if (picked.isZip) ...[
+            if (selectedBackup.isZip) ...[
               const SizedBox(height: 8),
               const Text(
                 '• Media inclusi separatamente nel pacchetto ZIP',
