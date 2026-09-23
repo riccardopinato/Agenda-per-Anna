@@ -87,6 +87,10 @@ class MediaAssetStore {
     var removed = 0;
     for (final assetId in existing) {
       if (referencedAssetIds.contains(assetId)) continue;
+      // Remote shared-photo cache is bounded by remote storage and can remain
+      // available offline even though it is intentionally not persisted in
+      // shared record JSON.
+      if (assetId.startsWith('remote_')) continue;
       if (await delete(assetId)) removed++;
     }
     return removed;
