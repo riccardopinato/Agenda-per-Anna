@@ -991,9 +991,11 @@ class SharedMemoryCover extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (entry.type == SharedEntryType.photo &&
-        entry.mediaThumbnailBase64.isNotEmpty) {
-      return _CachedBase64Image(
-        data: entry.mediaThumbnailBase64,
+        (entry.mediaThumbnailAssetId.isNotEmpty ||
+            entry.mediaThumbnailBase64.isNotEmpty)) {
+      return DiaryMediaImage(
+        assetId: entry.mediaThumbnailAssetId,
+        fallbackBase64: entry.mediaThumbnailBase64,
         fit: BoxFit.cover,
         cacheWidth: 720,
       );
