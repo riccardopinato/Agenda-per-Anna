@@ -4,6 +4,9 @@ on:
   push:
     branches:
       - v0.33-media-engine-2
+  pull_request:
+    branches:
+      - main
 
 jobs:
   validate:
