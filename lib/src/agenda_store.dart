@@ -1208,87 +1208,6 @@ class AgendaStore extends ChangeNotifier {
     }
   }
 
-  Future<void> _save({
-    bool createAutoSnapshot = true,
-    bool enqueueSync = true,
-    Set<String>? onlyKeys,
-  }) async {
-    final prefs = await _localState();
-    final changes = <String, String?>{};
-
-    bool shouldWrite(String key) {
-      return (onlyKeys == null || onlyKeys.contains(key)) &&
-          !_unreadableStorageKeys.contains(key);
-    }
-
-    if (shouldWrite(_itemsKey)) {
-      changes[_itemsKey] =
-          jsonEncode(items.map((e) => e.toJson()).toList());
-    }
-    if (shouldWrite(_journalsKey)) {
-      await _migrateInlinePrivateMedia(
-        prefs,
-        persist: false,
-      );
-      changes[_journalsKey] = jsonEncode(
-        journals.map((k, v) => MapEntry(k, v.toLocalJson())),
-      );
-    }
-    if (shouldWrite(_monthsKey)) {
-      changes[_monthsKey] =
-          jsonEncode(months.map((k, v) => MapEntry(k, v.toJson())));
-    }
-    if (shouldWrite(_weeksKey)) {
-      changes[_weeksKey] =
-          jsonEncode(weeks.map((k, v) => MapEntry(k, v.toJson())));
-    }
-    if (shouldWrite(_habitsKey)) {
-      changes[_habitsKey] =
-          jsonEncode(habits.map((e) => e.toJson()).toList());
-    }
-    if (shouldWrite(_preferencesKey)) {
-      changes[_preferencesKey] = jsonEncode(preferences.toJson());
-    }
-    if (shouldWrite(_inboxKey)) {
-      changes[_inboxKey] =
-          jsonEncode(inbox.map((e) => e.toJson()).toList());
-    }
-
-    // Full-section writes compact any accumulated entity deltas for the same
-    // sections in the very same Sembast transaction.
-    for (final key in _activeEntityDeltaKeys(prefs)) {
-      final raw = prefs.getString(key);
-      if (raw == null) continue;
-      try {
-        final envelope =
-            Map<String, dynamic>.from(jsonDecode(raw) as Map);
-        final type = envelope['type']?.toString() ?? '';
-        final storageKey = _storageKeyForEntityType(type);
-        if (storageKey != null && shouldWrite(storageKey)) {
-          changes[key] = null;
-        }
-      } catch (_) {
-        // Preserve unreadable deltas for diagnostics/recovery.
-      }
-    }
-
-    if (changes.isNotEmpty) {
-      await prefs.writeBatch(changes);
-    }
-
-    if (createAutoSnapshot) {
-      await _maybeCreateAutomaticSnapshot(prefs);
-    }
-
-    if (enqueueSync) {
-      await _captureSyncChanges(
-        prefs,
-        onlyKeys: onlyKeys,
-      );
-      _scheduleCloudSync();
-    }
-  }
-
   void _scheduleCloudSync() {
     final cloud = CloudSyncService.instance;
     if (!cloud.signedIn || _activeAccountId != cloud.userId) return;
@@ -2966,7 +2885,7 @@ class AgendaStore extends ChangeNotifier {
         sharedCacheStorageKey(space.id):
             jsonEncode(entries.map((entry) => entry.toCacheJson()).toList()),
         if (cursorKeyToPersist != null && nextCursorToPersist != null)
-          cursorKeyToPersist!: nextCursorToPersist!.toIso8601String(),
+          cursorKeyToPersist: nextCursorToPersist.toIso8601String(),
       });
     }
 
