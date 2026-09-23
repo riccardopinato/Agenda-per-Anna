@@ -330,15 +330,10 @@ class AgendaStore extends ChangeNotifier {
       final localPayload = mutation.payload;
       if (localPayload == null) continue;
 
-      Map<String, dynamic> syncPayload = localPayload;
-      if (mutation.type == 'journal') {
-        final value = journals[mutation.id];
-        if (value != null) {
-          syncPayload = await _portableJournalJson(value);
-        }
-      }
-
-      _syncIndex[localKey] = _syncPayloadHash(syncPayload);
+      // The sync index hashes the compact local representation.
+      // Media is materialized to Base64 only at the outbound upload boundary,
+      // avoiding repeated large allocations during normal local saves.
+      _syncIndex[localKey] = _syncPayloadHash(localPayload);
       _syncQueue[localKey] = CloudSyncOperation(
         entityType: mutation.type,
         entityId: mutation.id,
@@ -1257,7 +1252,7 @@ class AgendaStore extends ChangeNotifier {
         add(
           'journal',
           entry.key,
-          await _portableJournalJson(entry.value),
+          entry.value.toLocalJson(),
         );
       }
     }
