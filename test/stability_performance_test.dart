@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'package:agenda_per_anna/local_state_store.dart';
 import 'package:agenda_per_anna/main.dart';
 
 void main() {
@@ -69,10 +70,12 @@ void main() {
       const DayJournal(beautiful: 'Secondo giorno'),
     );
 
-    final prefs = await SharedPreferences.getInstance();
-    expect(prefs.getString('items_v1'), '{not valid json');
+    final state = await LocalStateStore.instance.open(
+      legacyPreferences: await SharedPreferences.getInstance(),
+    );
+    expect(state.getString('items_v1'), '{not valid json');
     expect(
-      jsonDecode(prefs.getString('journals_v1')!) as Map,
+      jsonDecode(state.getString('journals_v1')!) as Map,
       contains('2026-09-22'),
     );
   });
@@ -150,8 +153,10 @@ void main() {
     await seed.load();
     await seed.setPin('2468');
 
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString('agenda_preferences_v1', '{corrupt');
+    final state = await LocalStateStore.instance.open(
+      legacyPreferences: await SharedPreferences.getInstance(),
+    );
+    await state.setString('agenda_preferences_v1', '{corrupt');
 
     final restored = AgendaStore();
     await restored.load();
