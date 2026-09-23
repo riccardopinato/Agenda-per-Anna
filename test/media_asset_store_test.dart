@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:flutter_test/flutter_test.dart';
@@ -7,6 +8,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:agenda_per_anna/local_state_store.dart';
 import 'package:agenda_per_anna/main.dart';
 import 'package:agenda_per_anna/media_asset_store.dart';
+import 'package:agenda_per_anna/media_asset_backend_io.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -35,6 +37,26 @@ void main() {
 
     expect(await MediaAssetStore.instance.read(first), isNotNull);
     expect(await MediaAssetStore.instance.read(remoteId), isNotNull);
+  });
+
+
+  test('native atomic media replacement does not keep stale equal-size bytes',
+      () async {
+    final directory = await Directory.systemTemp.createTemp(
+      'annas_diary_media_test_',
+    );
+    addTearDown(() => directory.delete(recursive: true));
+
+    final file = File(
+      '${directory.path}${Platform.pathSeparator}remote_cache.bin',
+    );
+    final first = Uint8List.fromList([1, 2, 3, 4]);
+    final second = Uint8List.fromList([9, 8, 7, 6]);
+
+    await writeMediaAssetFileAtomically(file, first);
+    await writeMediaAssetFileAtomically(file, second);
+
+    expect(await file.readAsBytes(), orderedEquals(second));
   });
 
   test('legacy private photo and sketch media migrate out of journal JSON',
