@@ -1822,12 +1822,17 @@ class AgendaStore extends ChangeNotifier {
         await prefs.setBool(firstSnapshotKey, true);
       }
 
-      if (firstSyncForOwner && _syncIndex.isEmpty) {
+      final forceFullSync =
+          prefs.getBool(_forceFullSyncKey) == true;
+      if (forceFullSync || (firstSyncForOwner && _syncIndex.isEmpty)) {
         await _captureSyncChanges(
           prefs,
           forceAll: true,
         );
         _bindPendingOperationsTo(ownerId);
+        if (forceFullSync) {
+          await prefs.remove(_forceFullSyncKey);
+        }
       }
 
       final remote = await cloud.pullPrivateRecords();
