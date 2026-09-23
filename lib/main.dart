@@ -18,6 +18,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:table_calendar/table_calendar.dart';
 import 'package:uuid/uuid.dart';
 
+import 'app_version.dart';
 import 'backup_service.dart';
 import 'cloud_sync_service.dart';
 import 'notification_service.dart';
@@ -92,9 +93,21 @@ Future<void> main() async {
   } catch (_) {}
 
   final store = AgendaStore();
+  Object? startupStorageError;
   try {
     await store.load();
-  } catch (_) {}
+  } catch (error) {
+    startupStorageError = error;
+  }
+
+  if (startupStorageError != null) {
+    runApp(
+      StartupStorageFailureApp(
+        error: startupStorageError,
+      ),
+    );
+    return;
+  }
 
   runApp(AgendaApp(store: store));
 
@@ -120,4 +133,67 @@ Future<void> main() async {
       // Cloud e push sono opzionali: l'agenda resta pienamente offline.
     }
   });
+}
+
+
+class StartupStorageFailureApp extends StatelessWidget {
+  final Object error;
+
+  const StartupStorageFailureApp({
+    super.key,
+    required this.error,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      debugShowCheckedModeBanner: false,
+      title: 'Anna\'s Diary',
+      theme: ThemeData(
+        useMaterial3: true,
+        colorSchemeSeed: const Color(0xFFE86D91),
+      ),
+      home: Scaffold(
+        body: SafeArea(
+          child: Center(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 520),
+              child: Padding(
+                padding: const EdgeInsets.all(28),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(
+                      Icons.storage_rounded,
+                      size: 56,
+                    ),
+                    const SizedBox(height: 18),
+                    const Text(
+                      'Impossibile aprire i dati locali',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: 24,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    const Text(
+                      'Anna\'s Diary non avvia una copia vuota e non salva in una cartella temporanea quando lo storage persistente non è disponibile. Riavvia l’app; se il problema continua, controlla lo spazio libero del dispositivo.',
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 14),
+                    Text(
+                      'Dettaglio tecnico: ${error.runtimeType}',
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(fontSize: 12),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
 }
