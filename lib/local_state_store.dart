@@ -259,6 +259,7 @@ class LocalStateStore {
       'cloud_sync_queue_v1',
       'cloud_sync_index_v1',
       'cloud_sync_owner_v1',
+      'cloud_force_full_sync_v1',
       'account_profiles_v1',
       'active_account_v1',
       'legacy_claimed_by_v1',
