@@ -7,6 +7,9 @@ on:
     branches: [main]
   workflow_dispatch:
 
+permissions:
+  contents: read
+
 concurrency:
   group: development-checks-${{ github.ref }}
   cancel-in-progress: true
@@ -14,7 +17,7 @@ concurrency:
 jobs:
   check:
     runs-on: ubuntu-latest
-    timeout-minutes: 25
+    timeout-minutes: 30
 
     steps:
       - name: Checkout
@@ -27,14 +30,23 @@ jobs:
           channel: stable
           cache: true
 
-      - name: Create web platform skeleton
+      - name: Create pinned platform skeletons
         run: |
-          rm -rf /tmp/agenda_base
-          flutter create --project-name agenda_per_anna --org com.riccardopinato --platforms=web /tmp/agenda_base
+          rm -rf android web /tmp/agenda_base
+          flutter create             --project-name agenda_per_anna             --org com.riccardopinato             --platforms=android,web             /tmp/agenda_base
+          cp -R /tmp/agenda_base/android .
           cp -R /tmp/agenda_base/web .
+
+      - name: Apply and verify Android configuration
+        run: |
+          python3 -m py_compile             tool/prepare_android_platform.py             tool/android_size_report.py
+          python3 tool/prepare_android_platform.py
 
       - name: Install locked dependencies
         run: flutter pub get --enforce-lockfile
+
+      - name: Generate launcher icons
+        run: dart run flutter_launcher_icons
 
       - name: Analyze
         run: flutter analyze
@@ -44,3 +56,11 @@ jobs:
 
       - name: Build web release
         run: flutter build web --release
+
+      - name: Build Android debug package
+        run: |
+          FIREBASE_ARG=""
+          if [ -f android/app/google-services.json ]; then
+            FIREBASE_ARG="--dart-define=FIREBASE_ENABLED=true"
+          fi
+          flutter build apk --debug $FIREBASE_ARG
