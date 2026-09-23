@@ -107,3 +107,15 @@ The private journal and Noi ♡ no longer maintain independent diary presentatio
 - Native media replacement now always commits the new bytes atomically, including named shared-media cache entries whose new payload happens to have the same byte length as the previous file.
 - This prevents stale shared photos from reappearing after an app restart when a remote asset is updated in place.
 - Regression coverage verifies equal-size replacement semantics at the native file backend boundary.
+
+
+## v0.33.2 — Reliability & Cleanup
+
+- Runtime release metadata is centralized and shared by backup exports and push-device registration.
+- Native state and media backends require the persistent application-support directory; they no longer fall back to system temporary storage.
+- Startup fails closed with an explicit local-storage error screen instead of presenting an empty working set when persistent state cannot be opened.
+- Account switching archives the current profile, installs the target working set and updates the active account in one Sembast transaction.
+- Backup restore commits all core structured sections atomically, rolls back the in-memory working set on storage failure, and uses a durable full-sync marker so an interrupted post-restore cloud reconciliation is retried safely.
+- The Noi ♡ hub no longer creates duplicate Realtime subscriptions with no-op callbacks; the unified store and active shared-space screen remain responsible for live updates.
+- Permanent CI now validates locked dependencies, analyze, tests and a Web release build on pull requests and main.
+- Manual Android release builds require stable secret-backed signing credentials and refuse cache-generated or ephemeral fallback keys.
