@@ -1,6 +1,6 @@
 part of '../main.dart';
 
-Future<String?> _pickCompressedDiaryImageBase64(
+Future<Uint8List?> _pickCompressedDiaryImageBytes(
   ImageSource source, {
   int maxSide = 720,
   int quality = 58,
@@ -30,7 +30,122 @@ Future<String?> _pickCompressedDiaryImageBase64(
     );
   }
 
-  return base64Encode(compressed);
+  return compressed;
+}
+
+Future<String?> _pickCompressedDiaryImageBase64(
+  ImageSource source, {
+  int maxSide = 720,
+  int quality = 58,
+}) async {
+  final bytes = await _pickCompressedDiaryImageBytes(
+    source,
+    maxSide: maxSide,
+    quality: quality,
+  );
+  return bytes == null ? null : base64Encode(bytes);
+}
+
+Future<Uint8List> _diaryThumbnailBytes(Uint8List bytes) async {
+  try {
+    final thumbnail = await FlutterImageCompress.compressWithList(
+      bytes,
+      minWidth: 420,
+      minHeight: 420,
+      quality: 46,
+      format: CompressFormat.jpeg,
+    );
+    if (thumbnail.isNotEmpty) return thumbnail;
+  } catch (_) {}
+  return Uint8List.fromList(bytes);
+}
+
+Future<Uint8List?> _readDiaryMediaBytes({
+  String assetId = '',
+  String fallbackBase64 = '',
+}) async {
+  if (assetId.isNotEmpty) {
+    final stored = await MediaAssetStore.instance.read(assetId);
+    if (stored != null) return stored;
+  }
+  if (fallbackBase64.isNotEmpty) {
+    try {
+      return base64Decode(fallbackBase64);
+    } catch (_) {}
+  }
+  return null;
+}
+
+class DiaryMediaImage extends StatefulWidget {
+  final String assetId;
+  final String fallbackBase64;
+  final BoxFit fit;
+  final int? cacheWidth;
+  final Widget? empty;
+
+  const DiaryMediaImage({
+    super.key,
+    this.assetId = '',
+    this.fallbackBase64 = '',
+    this.fit = BoxFit.cover,
+    this.cacheWidth,
+    this.empty,
+  });
+
+  @override
+  State<DiaryMediaImage> createState() => _DiaryMediaImageState();
+}
+
+class _DiaryMediaImageState extends State<DiaryMediaImage> {
+  late Future<Uint8List?> _future = _load();
+
+  Future<Uint8List?> _load() => _readDiaryMediaBytes(
+        assetId: widget.assetId,
+        fallbackBase64: widget.fallbackBase64,
+      );
+
+  @override
+  void didUpdateWidget(covariant DiaryMediaImage oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.assetId != widget.assetId ||
+        oldWidget.fallbackBase64 != widget.fallbackBase64) {
+      _future = _load();
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return FutureBuilder<Uint8List?>(
+      future: _future,
+      builder: (context, snapshot) {
+        final bytes = snapshot.data;
+        if (bytes == null || bytes.isEmpty) {
+          if (snapshot.connectionState != ConnectionState.done) {
+            return const Center(
+              child: SizedBox(
+                width: 24,
+                height: 24,
+                child: CircularProgressIndicator(strokeWidth: 2),
+              ),
+            );
+          }
+          return widget.empty ??
+              const Center(child: Icon(Icons.broken_image_outlined));
+        }
+        return Image.memory(
+          bytes,
+          fit: widget.fit,
+          width: double.infinity,
+          height: double.infinity,
+          cacheWidth: widget.cacheWidth,
+          gaplessPlayback: true,
+          errorBuilder: (_, __, ___) =>
+              widget.empty ??
+              const Center(child: Icon(Icons.broken_image_outlined)),
+        );
+      },
+    );
+  }
 }
 
 Future<ImageSource?> _chooseDiaryImageSource(BuildContext context) =>
@@ -594,8 +709,8 @@ class _DiaryMemoryCardState extends State<DiaryMemoryCard> {
 
     setState(() => photoBusy = true);
     try {
-      final imageBase64 = await _pickCompressedDiaryImageBase64(source);
-      if (imageBase64 == null || !mounted) return;
+      final imageBytes = await _pickCompressedDiaryImageBytes(source);
+      if (imageBytes == null || !mounted) return;
 
       final caption = await showDiaryCaptionEditor(
         context,
@@ -603,6 +718,10 @@ class _DiaryMemoryCardState extends State<DiaryMemoryCard> {
       );
       if (caption == null) return;
 
+      final mediaAssetId = await MediaAssetStore.instance.put(imageBytes);
+      final mediaThumbnailAssetId = await MediaAssetStore.instance.put(
+        await _diaryThumbnailBytes(imageBytes),
+      );
       final blocks = [
         ...widget.store.journal(widget.date).blocks,
         DiaryBlock(
@@ -610,7 +729,8 @@ class _DiaryMemoryCardState extends State<DiaryMemoryCard> {
           type: DiaryBlockType.photo,
           createdAt: DateTime.now(),
           text: caption,
-          imageBase64: imageBase64,
+          mediaAssetId: mediaAssetId,
+          mediaThumbnailAssetId: mediaThumbnailAssetId,
         ),
       ];
       await _saveBlocks(blocks);
@@ -647,14 +767,22 @@ class _DiaryMemoryCardState extends State<DiaryMemoryCard> {
 
     setState(() => photoBusy = true);
     try {
-      final imageBase64 = await _pickCompressedDiaryImageBase64(source);
-      if (imageBase64 == null) return;
+      final imageBytes = await _pickCompressedDiaryImageBytes(source);
+      if (imageBytes == null) return;
 
+      final mediaAssetId = await MediaAssetStore.instance.put(imageBytes);
+      final mediaThumbnailAssetId = await MediaAssetStore.instance.put(
+        await _diaryThumbnailBytes(imageBytes),
+      );
       final blocks = [...widget.store.journal(widget.date).blocks];
       final index =
           blocks.indexWhere((candidate) => candidate.id == block.id);
       if (index >= 0) {
-        blocks[index] = block.copyWith(imageBase64: imageBase64);
+        blocks[index] = block.copyWith(
+          imageBase64: '',
+          mediaAssetId: mediaAssetId,
+          mediaThumbnailAssetId: mediaThumbnailAssetId,
+        );
         await _saveBlocks(blocks);
       }
     } finally {
@@ -708,7 +836,7 @@ class _DiaryMemoryCardState extends State<DiaryMemoryCard> {
   }
 
   void _openPhoto(DiaryBlock block) {
-    if (block.imageBase64.isEmpty) return;
+    if (!block.hasPhotoMedia) return;
     Navigator.push(
       context,
       MaterialPageRoute(
@@ -741,15 +869,15 @@ class _DiaryMemoryCardState extends State<DiaryMemoryCard> {
               ? 'Foto del giorno'
               : block.text,
           subtitle: 'Foto · $time',
-          preview: block.imageBase64.isEmpty
+          preview: !block.hasPhotoMedia
               ? null
-              : Image.memory(
-                  base64Decode(block.imageBase64),
+              : DiaryMediaImage(
+                  assetId: block.mediaThumbnailAssetId.isNotEmpty
+                      ? block.mediaThumbnailAssetId
+                      : block.mediaAssetId,
+                  fallbackBase64: block.imageBase64,
                   fit: BoxFit.cover,
                   cacheWidth: 720,
-                  errorBuilder: (_, __, ___) => const Center(
-                    child: Icon(Icons.broken_image_outlined),
-                  ),
                 ),
           onOpen: () => _openPhoto(block),
           onEditCaption: () => _editPhotoCaption(block),
@@ -920,7 +1048,7 @@ class _DiaryMemoriesScreenState extends State<DiaryMemoriesScreen> {
   _DiaryMemoryRecord _coverRecord(List<_DiaryMemoryRecord> records) {
     for (final record in records) {
       if (record.block.type == DiaryBlockType.photo &&
-          record.block.imageBase64.isNotEmpty) {
+          record.block.hasPhotoMedia) {
         return record;
       }
     }
@@ -974,19 +1102,20 @@ class _DiaryMemoriesScreenState extends State<DiaryMemoriesScreen> {
     final block = record.block;
     switch (block.type) {
       case DiaryBlockType.photo:
-        if (block.imageBase64.isEmpty) {
+        if (!block.hasPhotoMedia) {
           return const ColoredBox(
             color: Color(0xFFF2EEF5),
             child: Center(child: Icon(Icons.photo_outlined, size: 42)),
           );
         }
-        return Image.memory(
-          base64Decode(block.imageBase64),
+        return DiaryMediaImage(
+          assetId: block.mediaThumbnailAssetId.isNotEmpty
+              ? block.mediaThumbnailAssetId
+              : block.mediaAssetId,
+          fallbackBase64: block.imageBase64,
           fit: fit,
-          width: double.infinity,
-          height: double.infinity,
           cacheWidth: 720,
-          errorBuilder: (_, __, ___) => const ColoredBox(
+          empty: const ColoredBox(
             color: Color(0xFFF2EEF5),
             child: Center(child: Icon(Icons.broken_image_outlined)),
           ),
@@ -1572,14 +1701,10 @@ class DiaryPhotoViewerScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final dateLabel =
         _cap(DateFormat('EEEE d MMMM yyyy', 'it_IT').format(date));
-    Uint8List? bytes;
-    try {
-      if (block.imageBase64.isNotEmpty) {
-        bytes = base64Decode(block.imageBase64);
-      }
-    } catch (_) {
-      bytes = null;
-    }
+    final imageFuture = _readDiaryMediaBytes(
+      assetId: block.mediaAssetId,
+      fallbackBase64: block.imageBase64,
+    );
 
     final actionStyle = OutlinedButton.styleFrom(
       foregroundColor: Colors.white,
@@ -1588,7 +1713,13 @@ class DiaryPhotoViewerScreen extends StatelessWidget {
 
     return DiaryPhotoViewerShell(
       title: dateLabel,
-      image: DiaryZoomableImage(bytes: bytes),
+      image: FutureBuilder<Uint8List?>(
+        future: imageFuture,
+        builder: (context, snapshot) => DiaryZoomableImage(
+          bytes: snapshot.data,
+          loading: snapshot.connectionState != ConnectionState.done,
+        ),
+      ),
       caption: block.text,
       appBarActions: [
         IconButton(
