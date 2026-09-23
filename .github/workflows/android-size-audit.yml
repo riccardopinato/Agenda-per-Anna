@@ -1,0 +1,76 @@
+name: Android size audit
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "lib/**"
+      - "assets/**"
+      - "firebase/**"
+      - "pubspec.yaml"
+      - "pubspec.lock"
+      - "tool/**"
+      - ".github/workflows/android-size-audit.yml"
+      - ".github/workflows/build.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: android-size-audit-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  arm64:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: "3.47.5"
+          channel: stable
+          cache: true
+
+      - name: Generate pinned Android platform
+        run: |
+          rm -rf android /tmp/agenda_android
+          flutter create             --project-name agenda_per_anna             --org com.riccardopinato             --platforms=android             /tmp/agenda_android
+          cp -R /tmp/agenda_android/android .
+
+      - name: Apply Android configuration
+        run: python3 tool/prepare_android_platform.py
+
+      - name: Install locked dependencies
+        run: flutter pub get --enforce-lockfile
+
+      - name: Generate launcher icons
+        run: dart run flutter_launcher_icons
+
+      - name: Build production-equivalent ARM64 APK
+        shell: bash
+        run: |
+          set -euo pipefail
+          FIREBASE_ARG=""
+          if [ -f android/app/google-services.json ]; then
+            FIREBASE_ARG="--dart-define=FIREBASE_ENABLED=true"
+          fi
+          flutter build apk             --release             --target-platform android-arm64             --obfuscate             --tree-shake-icons             --split-debug-info=build/size-audit-symbols             $FIREBASE_ARG
+
+      - name: Generate size report
+        run: |
+          mkdir -p build/size-audit
+          python3 tool/android_size_report.py             build/app/outputs/flutter-apk/app-release.apk             --output build/size-audit/arm64-size.txt
+
+      - name: Upload size report only
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-arm64-size-report
+          path: build/size-audit/arm64-size.txt
+          if-no-files-found: error
+          retention-days: 14
