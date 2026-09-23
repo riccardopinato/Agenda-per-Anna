@@ -20,7 +20,11 @@ Future<void> writeMediaAssetBytes(
   final db = await _db();
   await _assets.record(assetId).put(
     db,
-    <String, Object?>{'data': base64Encode(bytes)},
+    <String, Object?>{
+      'data': base64Encode(bytes),
+      'lastAccessedMs': DateTime.now().millisecondsSinceEpoch,
+      'sizeBytes': bytes.lengthInBytes,
+    },
   );
 }
 
@@ -30,7 +34,15 @@ Future<Uint8List?> readMediaAssetBytes(String assetId) async {
   final raw = record?['data'];
   if (raw is! String) return null;
   try {
-    return base64Decode(raw);
+    final bytes = base64Decode(raw);
+    await _assets.record(assetId).update(
+      db,
+      <String, Object?>{
+        'lastAccessedMs': DateTime.now().millisecondsSinceEpoch,
+        'sizeBytes': bytes.lengthInBytes,
+      },
+    );
+    return bytes;
   } catch (_) {
     return null;
   }
@@ -45,6 +57,19 @@ Future<Set<String>> listMediaAssetIds() async {
   final db = await _db();
   final records = await _assets.find(db);
   return records.map((record) => record.key).toSet();
+}
+
+Future<Map<String, List<int>>> listMediaAssetStats() async {
+  final db = await _db();
+  final records = await _assets.find(db);
+  return {
+    for (final record in records)
+      record.key: [
+        record.value['lastAccessedMs'] as int? ?? 0,
+        record.value['sizeBytes'] as int? ??
+            (((record.value['data'] as String?)?.length ?? 0) * 3 ~/ 4),
+      ],
+  };
 }
 
 Future<void> clearMediaAssetsForTesting() async {
