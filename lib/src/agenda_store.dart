@@ -18,6 +18,8 @@ class AgendaStore extends ChangeNotifier {
   static const _legacyClaimedByKey = 'legacy_claimed_by_v1';
   static const _privacyGuardKey = 'privacy_guard_v1';
   static const _entityDeltaPrefix = 'entity_delta_v2_';
+  static const _privateSyncCursorPrefix = 'cloud_private_cursor_v2_';
+  static const _sharedSyncCursorPrefix = 'cloud_shared_cursor_v2_';
   static const _backupFormat = 'agenda_per_anna_backup';
   static const _backupBundleFormat = 'agenda_per_anna_backup_bundle';
   static const _backupSchemaVersion = 1;
@@ -53,6 +55,7 @@ class AgendaStore extends ChangeNotifier {
   Timer? _syncDebounceTimer;
   Timer? _unifiedRealtimeDebounce;
   Timer? _mediaMaintenanceTimer;
+  Timer? _deferredCloudSyncTimer;
   bool _cloudSyncRunning = false;
   bool _sharedFlushRunning = false;
   bool _sharedInteractionFlushRunning = false;
@@ -126,6 +129,33 @@ class AgendaStore extends ChangeNotifier {
 
   String _entityDeltaScopePrefix([String? accountId]) =>
       '$_entityDeltaPrefix${_entityScopeToken(accountId)}:';
+
+  String _privateSyncCursorKey(String ownerId) =>
+      '$_privateSyncCursorPrefix${_entityScopeToken(ownerId)}';
+
+  String _sharedSyncCursorKey(String spaceId) =>
+      '$_sharedSyncCursorPrefix${_entityScopeToken(_activeAccountId)}:'
+      '${base64UrlEncode(utf8.encode(spaceId))}';
+
+  DateTime? _readSyncCursor(LocalStateStore prefs, String key) =>
+      DateTime.tryParse(prefs.getString(key) ?? '')?.toUtc();
+
+  DateTime _nextSyncCursor(
+    DateTime? current,
+    Iterable<DateTime> revisions, {
+    required bool completedFullPull,
+  }) {
+    var next = current;
+    for (final revision in revisions) {
+      final value = revision.toUtc();
+      if (next == null || value.isAfter(next)) next = value;
+    }
+    return next ??
+        DateTime.fromMillisecondsSinceEpoch(
+          completedFullPull ? 0 : 0,
+          isUtc: true,
+        );
+  }
 
   String _entityDeltaKey(String type, String id) =>
       '${_entityDeltaScopePrefix(_activeAccountId)}$type:'
@@ -375,6 +405,95 @@ class AgendaStore extends ChangeNotifier {
         ],
         createAutoSnapshot: createAutoSnapshot,
       );
+
+  Map<String, dynamic>? _localEntityPayload(
+    String type,
+    String id,
+  ) {
+    switch (type) {
+      case 'item':
+        for (final item in items) {
+          if (item.id == id) return item.toJson();
+        }
+        return null;
+      case 'journal':
+        return journals[id]?.toLocalJson();
+      case 'month':
+        return months[id]?.toJson();
+      case 'week':
+        return weeks[id]?.toJson();
+      case 'habit':
+        for (final habit in habits) {
+          if (habit.id == id) return habit.toJson();
+        }
+        return null;
+      case 'inbox':
+        for (final entry in inbox) {
+          if (entry.id == id) return entry.toJson();
+        }
+        return null;
+      case 'preferences':
+        return _cloudPreferencesPayload();
+    }
+    return null;
+  }
+
+  Future<void> _persistAppliedRemoteRecords(
+    LocalStateStore prefs,
+    Iterable<CloudRemoteRecord> records,
+  ) async {
+    final changes = <String, String?>{};
+    var preferencesChanged = false;
+
+    for (final record in records) {
+      final localKey = record.localKey;
+      _syncQueue.remove(localKey);
+
+      if (record.entityType == 'preferences') {
+        if (record.deletedAt == null) {
+          preferencesChanged = true;
+          _syncIndex[localKey] =
+              _syncPayloadHash(_cloudPreferencesPayload());
+        } else {
+          _syncIndex.remove(localKey);
+        }
+        continue;
+      }
+
+      final storageKey = _storageKeyForEntityType(record.entityType);
+      if (storageKey == null ||
+          _unreadableStorageKeys.contains(storageKey)) {
+        continue;
+      }
+
+      final payload = record.deletedAt == null
+          ? _localEntityPayload(record.entityType, record.entityId)
+          : null;
+      changes[_entityDeltaKey(record.entityType, record.entityId)] =
+          jsonEncode({
+        'type': record.entityType,
+        'id': record.entityId,
+        'deleted': record.deletedAt != null,
+        'payload': payload,
+      });
+
+      if (payload == null) {
+        _syncIndex.remove(localKey);
+      } else {
+        _syncIndex[localKey] = _syncPayloadHash(payload);
+      }
+    }
+
+    if (preferencesChanged) {
+      changes[_preferencesKey] = jsonEncode(preferences.toJson());
+    }
+    changes[_syncQueueKey] = jsonEncode(
+      _syncQueue.map((key, value) => MapEntry(key, value.toJson())),
+    );
+    changes[_syncIndexKey] = jsonEncode(_syncIndex);
+
+    await prefs.writeBatch(changes);
+  }
 
   Future<Uint8List> _createMediaThumbnail(
     Uint8List bytes, {
