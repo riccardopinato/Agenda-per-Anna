@@ -2,7 +2,7 @@
 
 Flutter app for personal planning, private diary and the shared **Noi ♡** space.
 
-Current release line: **v0.36.0**.
+Current release line: **v0.37.0**.
 
 ## Core areas
 
@@ -68,3 +68,15 @@ See `docs/ARCHITECTURE.md` and `supabase/README.md` for implementation details.
 - Missing or corrupt referenced media prevents creation/restore of an apparently valid but incomplete full backup.
 - Private cloud sync hashes and scans compact local journal payloads; Base64 media materialization occurs only when a journal is actually sent to the remote backend.
 - The remote Supabase journal format remains backward-compatible in this release, avoiding a forced live storage migration or broken older clients.
+
+
+## v0.37.0 — Scale, Startup & Incremental Cloud Sync
+
+- Private cloud pull stores an account-scoped cursor and fetches only records at or after the last applied `client_updated_at` after the first full reconciliation.
+- Shared agenda uses a separate cursor per account/space and merges only changed/tombstoned records into the cached space instead of replacing every shared record list.
+- Remote private changes persist through the v0.34 per-entity delta layer rather than forcing a full local-state serialization after each cloud pull.
+- Realtime shared-entry events update the unified local cache directly; local pending edits newer than the remote revision remain protected.
+- Realtime comments, reactions and read receipts are applied as interaction deltas. Full interaction queries remain as a conservative fallback when a DELETE payload is incomplete.
+- Optimistic comment/heart mutations no longer immediately reload all interaction tables.
+- Initial cloud bootstrap completes the private reconciliation first and defers shared uploads/pulls briefly, allowing push setup and the already-rendered UI to continue sooner.
+- Full-sync recovery markers are cleared only after a successful reconciliation, and no SQL migration is required for the cursor model.
