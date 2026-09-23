@@ -36,6 +36,22 @@ Future<File> _assetFile(String assetId) async {
   );
 }
 
+Future<void> writeMediaAssetFileAtomically(
+  File file,
+  Uint8List bytes,
+) async {
+  final temp = File('${file.path}.tmp');
+  if (await temp.exists()) {
+    await temp.delete();
+  }
+
+  await temp.writeAsBytes(bytes, flush: true);
+  if (await file.exists()) {
+    await file.delete();
+  }
+  await temp.rename(file.path);
+}
+
 Future<void> writeMediaAssetBytes(
   String assetId,
   Uint8List bytes,
@@ -46,17 +62,7 @@ Future<void> writeMediaAssetBytes(
   }
 
   final file = await _assetFile(assetId);
-  if (await file.exists()) {
-    final existing = await file.length();
-    if (existing == bytes.length) return;
-  }
-
-  final temp = File('${file.path}.tmp');
-  await temp.writeAsBytes(bytes, flush: true);
-  if (await file.exists()) {
-    await file.delete();
-  }
-  await temp.rename(file.path);
+  await writeMediaAssetFileAtomically(file, bytes);
 }
 
 Future<Uint8List?> readMediaAssetBytes(String assetId) async {
