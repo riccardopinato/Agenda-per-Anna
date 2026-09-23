@@ -1,10 +1,6 @@
 name: Build Anna's Diary
 
 on:
-  push:
-    branches: [main]
-    paths:
-      - "docs/ARCHITECTURE.md"
   workflow_dispatch:
 
 jobs:
