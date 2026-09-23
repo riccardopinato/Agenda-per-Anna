@@ -3137,7 +3137,14 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
       onChanged: () {
         _realtimeDebounce?.cancel();
         _realtimeDebounce = Timer(const Duration(milliseconds: 350), () {
-          if (mounted) unawaited(_refresh(silent: true));
+          if (mounted) {
+            unawaited(
+              _refresh(
+                silent: true,
+                refreshInteractions: false,
+              ),
+            );
+          }
         });
       },
       onInteractionChanged: (change) {
@@ -3325,7 +3332,10 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
     await _updatePendingState();
     await _loadInteractions();
     if (mounted) setState(() => loading = false);
-    await _refresh(silent: entries.isNotEmpty);
+    await _refresh(
+      silent: entries.isNotEmpty,
+      refreshInteractions: false,
+    );
   }
 
   Future<void> _saveCache() async {
@@ -3374,7 +3384,10 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
     }
   }
 
-  Future<void> _refresh({bool silent = false}) async {
+  Future<void> _refresh({
+    bool silent = false,
+    bool refreshInteractions = true,
+  }) async {
     final cloud = CloudSyncService.instance;
     if (!cloud.signedIn) {
       await _updatePendingState();
@@ -3413,7 +3426,9 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
       pendingIds = pending.map((operation) => operation.entityId).toSet();
       lastRefreshAt = DateTime.now();
       await cloud.markSharedSpaceSeen(widget.space.id);
-      await _loadInteractions();
+      if (refreshInteractions) {
+        await _loadInteractions();
+      }
       await widget.store.markSharedSpaceRead(widget.space.id);
     } catch (_) {
       if (!silent) {
