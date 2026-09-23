@@ -3259,6 +3259,11 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
 
   Future<void> _saveCache() async {
     final prefs = await widget.store._localState();
+    final localized = <SharedEntry>[];
+    for (final entry in entries) {
+      localized.add(await widget.store._localizeSharedThumbnail(entry));
+    }
+    entries = localized;
     await prefs.setString(
       _cacheKey,
       jsonEncode(entries.map((e) => e.toCacheJson()).toList()),
@@ -3318,10 +3323,12 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
           continue;
         }
         next.add(
-          SharedEntry.fromJson(
-            record.payload!,
-            updatedBy: record.updatedBy,
-            updatedAt: record.clientUpdatedAt,
+          await widget.store._localizeSharedThumbnail(
+            SharedEntry.fromJson(
+              record.payload!,
+              updatedBy: record.updatedBy,
+              updatedAt: record.clientUpdatedAt,
+            ),
           ),
         );
       }
@@ -3332,10 +3339,16 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
         if (operation.action == SharedPendingAction.upsert &&
             operation.payload != null) {
           next.add(
-            SharedEntry.fromJson(
-              operation.payload!,
-              updatedBy: cloud.userId,
-              updatedAt: operation.updatedAt,
+            await widget.store._localizeSharedThumbnail(
+              SharedEntry.fromJson(
+                operation.payload!,
+                updatedBy: cloud.userId,
+                updatedAt: operation.updatedAt,
+                mediaThumbnailAssetId:
+                    operation.payload!['_mediaThumbnailAssetId']
+                            ?.toString() ??
+                        '',
+              ),
             ),
           );
         }
@@ -4874,12 +4887,9 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
 class _CachedBase64Image extends StatefulWidget {
   final String data;
   final BoxFit fit;
-  final int? cacheWidth;
-
   const _CachedBase64Image({
     required this.data,
     required this.fit,
-    this.cacheWidth,
   });
 
   @override
@@ -4918,7 +4928,6 @@ class _CachedBase64ImageState extends State<_CachedBase64Image> {
     return Image.memory(
       image,
       fit: widget.fit,
-      cacheWidth: widget.cacheWidth,
       gaplessPlayback: true,
       errorBuilder: (_, __, ___) =>
           const Center(child: Icon(Icons.broken_image_outlined)),
