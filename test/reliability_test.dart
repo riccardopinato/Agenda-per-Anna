@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'package:agenda_per_anna/local_state_store.dart';
 import 'package:agenda_per_anna/main.dart';
 
 void main() {
@@ -111,10 +112,12 @@ void main() {
     await store.markSharedSpaceUnread('space-a');
     expect(store.sharedUnreadCount('space-a'), 3);
 
-    final prefs = await SharedPreferences.getInstance();
+    final state = await LocalStateStore.instance.open(
+      legacyPreferences: await SharedPreferences.getInstance(),
+    );
     expect(
       Map<String, dynamic>.from(
-        jsonDecode(prefs.getString('shared_unread_user-a')!) as Map,
+        jsonDecode(state.getString('shared_unread_user-a')!) as Map,
       )['space-a'],
       3,
     );
