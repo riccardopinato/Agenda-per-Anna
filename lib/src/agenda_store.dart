@@ -50,6 +50,7 @@ class AgendaStore extends ChangeNotifier {
   Timer? _cloudSyncTimer;
   Timer? _syncDebounceTimer;
   Timer? _unifiedRealtimeDebounce;
+  Timer? _mediaMaintenanceTimer;
   bool _cloudSyncRunning = false;
   bool _sharedFlushRunning = false;
   bool _sharedInteractionFlushRunning = false;
@@ -711,6 +712,25 @@ class AgendaStore extends ChangeNotifier {
     await MediaAssetStore.instance.prune(referenced);
   }
 
+  void _scheduleMediaMaintenance({
+    Duration delay = const Duration(seconds: 3),
+  }) {
+    _mediaMaintenanceTimer?.cancel();
+    _mediaMaintenanceTimer = Timer(
+      delay,
+      () => unawaited(_runMediaMaintenance()),
+    );
+  }
+
+  Future<void> _runMediaMaintenance() async {
+    try {
+      final prefs = await _localState();
+      await _pruneUnreferencedMedia(prefs);
+    } catch (_) {
+      // Media maintenance is best-effort and must never block app startup.
+    }
+  }
+
   Future<void> load() async {
     final prefs = await _localState();
     _activeAccountId = prefs.getString(_activeAccountKey);
@@ -914,7 +934,7 @@ class AgendaStore extends ChangeNotifier {
     await refreshPendingSharedInteractionCount(notify: false);
     await _migrateSharedMediaQueues(prefs);
     await refreshPendingSharedMediaCount(notify: false);
-    await _pruneUnreferencedMedia(prefs);
+    _scheduleMediaMaintenance();
   }
 
   Future<void> _migrateSharedMediaQueues(
@@ -1993,6 +2013,9 @@ class AgendaStore extends ChangeNotifier {
       id: key,
       payload: journal.toLocalJson(),
     );
+    _scheduleMediaMaintenance(
+      delay: const Duration(seconds: 5),
+    );
     notifyListeners();
   }
 
@@ -2691,6 +2714,7 @@ class AgendaStore extends ChangeNotifier {
         },
         onChanged: () {
           _unifiedRealtimeDebounce?.cancel();
+    _mediaMaintenanceTimer?.cancel();
           _unifiedRealtimeDebounce = Timer(
             const Duration(milliseconds: 450),
             () => unawaited(
