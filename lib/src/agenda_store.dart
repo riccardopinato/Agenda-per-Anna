@@ -12,6 +12,7 @@ class AgendaStore extends ChangeNotifier {
   static const _syncQueueKey = 'cloud_sync_queue_v1';
   static const _syncIndexKey = 'cloud_sync_index_v1';
   static const _syncOwnerKey = 'cloud_sync_owner_v1';
+  static const _forceFullSyncKey = 'cloud_force_full_sync_v1';
   static const _accountProfilesKey = 'account_profiles_v1';
   static const _activeAccountKey = 'active_account_v1';
   static const _legacyClaimedByKey = 'legacy_claimed_by_v1';
@@ -118,6 +119,7 @@ class AgendaStore extends ChangeNotifier {
         _syncQueueKey,
         _syncIndexKey,
         _syncOwnerKey,
+        _forceFullSyncKey,
       ];
 
   Future<LocalStateStore> _localState() async {
@@ -1235,92 +1237,140 @@ class AgendaStore extends ChangeNotifier {
         : null;
     final backupContainsHabits = payload.containsKey('habits');
 
-    // Everything above is parsed before any user data is mutated.
+    // Parse first and keep a safety snapshot before touching the working set.
     await createLocalSnapshot(label: 'Prima del ripristino');
+    final prefs = await _localState();
 
-    final oldItems = [...items];
+    final previousItems = List<AgendaItem>.from(items);
+    final previousJournals = Map<String, DayJournal>.from(journals);
+    final previousMonths = Map<String, MonthlyData>.from(months);
+    final previousWeeks = Map<String, WeekData>.from(weeks);
+    final previousHabits = List<HabitDefinition>.from(habits);
+    final previousInbox = List<InboxEntry>.from(inbox);
+    final previousPreferences = preferences;
 
-    if (merge) {
-      final byId = {for (final item in items) item.id: item};
-      for (final item in incomingItems) {
-        byId[item.id] = item;
+    try {
+      if (merge) {
+        final byId = {for (final item in items) item.id: item};
+        for (final item in incomingItems) {
+          byId[item.id] = item;
+        }
+        items
+          ..clear()
+          ..addAll(byId.values);
+
+        journals.addAll(incomingJournals);
+        months.addAll(incomingMonths);
+        weeks.addAll(incomingWeeks);
+
+        final habitsById = {for (final habit in habits) habit.id: habit};
+        for (final habit in incomingHabits) {
+          habitsById[habit.id] = habit;
+        }
+        habits
+          ..clear()
+          ..addAll(habitsById.values);
+
+        final inboxById = {for (final entry in inbox) entry.id: entry};
+        for (final entry in incomingInbox) {
+          inboxById[entry.id] = entry;
+        }
+        inbox
+          ..clear()
+          ..addAll(inboxById.values);
+      } else {
+        items
+          ..clear()
+          ..addAll(incomingItems);
+        journals
+          ..clear()
+          ..addAll(incomingJournals);
+        months
+          ..clear()
+          ..addAll(incomingMonths);
+        weeks
+          ..clear()
+          ..addAll(incomingWeeks);
+        habits
+          ..clear()
+          ..addAll(incomingHabits);
+        inbox
+          ..clear()
+          ..addAll(incomingInbox);
+        if (incomingPreferences != null) {
+          preferences = incomingPreferences;
+        }
       }
+
+      if (habits.isEmpty && !backupContainsHabits) {
+        habits.addAll(const [
+          HabitDefinition(id: 'water', name: 'Bere abbastanza'),
+          HabitDefinition(id: 'move', name: 'Muovermi un po’'),
+          HabitDefinition(id: 'me', name: 'Tempo per me'),
+        ]);
+      }
+
+      _invalidateDayIndex();
+
+      // Convert portable inline media in memory first. The actual structured
+      // state is committed only once all sections are ready.
+      await _migrateInlinePrivateMedia(
+        prefs,
+        persist: false,
+      );
+
+      final changes = <String, String?>{
+        ..._currentWorkingStateChanges(),
+        _forceFullSyncKey: 'true',
+      };
+      await prefs.writeBatch(changes);
+      _unreadableStorageKeys.removeAll(changes.keys);
+    } catch (_) {
       items
         ..clear()
-        ..addAll(byId.values);
-
-      journals.addAll(incomingJournals);
-      months.addAll(incomingMonths);
-      weeks.addAll(incomingWeeks);
-
-      final habitsById = {for (final habit in habits) habit.id: habit};
-      for (final habit in incomingHabits) {
-        habitsById[habit.id] = habit;
-      }
-      habits
-        ..clear()
-        ..addAll(habitsById.values);
-
-      final inboxById = {for (final entry in inbox) entry.id: entry};
-      for (final entry in incomingInbox) {
-        inboxById[entry.id] = entry;
-      }
-      inbox
-        ..clear()
-        ..addAll(inboxById.values);
-    } else {
-      items
-        ..clear()
-        ..addAll(incomingItems);
+        ..addAll(previousItems);
       journals
         ..clear()
-        ..addAll(incomingJournals);
+        ..addAll(previousJournals);
       months
         ..clear()
-        ..addAll(incomingMonths);
+        ..addAll(previousMonths);
       weeks
         ..clear()
-        ..addAll(incomingWeeks);
+        ..addAll(previousWeeks);
       habits
         ..clear()
-        ..addAll(incomingHabits);
+        ..addAll(previousHabits);
       inbox
         ..clear()
-        ..addAll(incomingInbox);
-      if (incomingPreferences != null) {
-        preferences = incomingPreferences;
-      }
+        ..addAll(previousInbox);
+      preferences = previousPreferences;
+      _invalidateDayIndex();
+      rethrow;
     }
 
-    _invalidateDayIndex();
-
-    if (habits.isEmpty && !backupContainsHabits) {
-      habits.addAll(const [
-        HabitDefinition(id: 'water', name: 'Bere abbastanza'),
-        HabitDefinition(id: 'move', name: 'Muovermi un po’'),
-        HabitDefinition(id: 'me', name: 'Tempo per me'),
-      ]);
-    }
-
-    for (final item in oldItems) {
+    // Reminder changes happen only after the data transaction has committed.
+    for (final item in previousItems) {
       await NotificationService.instance.cancel(item.id);
       await NotificationService.instance.cancel('${item.id}:primary');
       await NotificationService.instance.cancel('${item.id}:secondary');
     }
-
-    await _migrateInlinePrivateMedia(await _localState());
-    await _save(createAutoSnapshot: false);
-
-    if (!merge && incomingPreferences != null) {
-      final prefs = await _localState();
-      await prefs.setString(
-        _privacyGuardKey,
-        jsonEncode(_privacyGuardPayload()),
-      );
-    }
-
     for (final item in items) {
       await _syncReminders(item);
+    }
+
+    // Force a complete queue rebuild after restore. The marker stays on disk
+    // until this succeeds, so a crash will retry on the next cloud sync.
+    try {
+      await _captureSyncChanges(
+        prefs,
+        forceAll: true,
+      );
+      await prefs.remove(_forceFullSyncKey);
+      _scheduleCloudSync();
+    } catch (_) {
+      // Local restore is already safely committed. Cloud recovery will retry
+      // from the durable marker on the next sync/resume.
     }
 
     notifyListeners();
