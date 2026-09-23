@@ -249,6 +249,75 @@ class SharedMemberRead {
       );
 }
 
+class SharedRealtimeRecordChange {
+  final String spaceId;
+  final String entityType;
+  final String entityId;
+  final Map<String, dynamic>? payload;
+  final DateTime clientUpdatedAt;
+  final DateTime? deletedAt;
+  final String? updatedBy;
+
+  const SharedRealtimeRecordChange({
+    required this.spaceId,
+    required this.entityType,
+    required this.entityId,
+    required this.payload,
+    required this.clientUpdatedAt,
+    required this.deletedAt,
+    required this.updatedBy,
+  });
+
+  factory SharedRealtimeRecordChange.fromRealtime({
+    required String fallbackSpaceId,
+    required Map<String, dynamic> newRecord,
+    required Map<String, dynamic> oldRecord,
+  }) {
+    final source = newRecord.isNotEmpty ? newRecord : oldRecord;
+    return SharedRealtimeRecordChange(
+      spaceId: source['space_id']?.toString() ?? fallbackSpaceId,
+      entityType: source['entity_type']?.toString() ?? '',
+      entityId: source['entity_id']?.toString() ?? '',
+      payload: source['payload'] is Map
+          ? Map<String, dynamic>.from(source['payload'] as Map)
+          : null,
+      clientUpdatedAt:
+          DateTime.tryParse(source['client_updated_at']?.toString() ?? '')
+                  ?.toUtc() ??
+              DateTime.fromMillisecondsSinceEpoch(0, isUtc: true),
+      deletedAt: source['deleted_at'] == null
+          ? (newRecord.isEmpty && oldRecord.isNotEmpty
+              ? DateTime.now().toUtc()
+              : null)
+          : DateTime.tryParse(source['deleted_at'].toString())?.toUtc(),
+      updatedBy: source['updated_by']?.toString(),
+    );
+  }
+}
+
+enum SharedRealtimeInteractionKind {
+  comment,
+  reaction,
+  memberRead,
+}
+
+class SharedRealtimeInteractionChange {
+  final SharedRealtimeInteractionKind kind;
+  final Map<String, dynamic> newRecord;
+  final Map<String, dynamic> oldRecord;
+
+  const SharedRealtimeInteractionChange({
+    required this.kind,
+    required this.newRecord,
+    required this.oldRecord,
+  });
+
+  bool get deleted => newRecord.isEmpty && oldRecord.isNotEmpty;
+
+  Map<String, dynamic> get record =>
+      newRecord.isNotEmpty ? newRecord : oldRecord;
+}
+
 class SharedMediaMaintenanceReport {
   final int fileCount;
   final int referencedCount;
@@ -543,22 +612,36 @@ class CloudSyncService extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<List<CloudRemoteRecord>> pullPrivateRecords() async {
+  Future<List<CloudRemoteRecord>> pullPrivateRecords({
+    DateTime? updatedSince,
+  }) async {
     final client = _requireSignedInClient();
     final uid = userId!;
     const pageSize = 500;
     final records = <CloudRemoteRecord>[];
 
     for (var from = 0;; from += pageSize) {
-      final response = await client
+      final base = client
           .from('agenda_records')
           .select(
             'record_key,entity_type,entity_id,payload,client_updated_at,deleted_at',
           )
           .eq('owner_id', uid)
-          .eq('visibility', 'private')
-          .order('record_key')
-          .range(from, from + pageSize - 1);
+          .eq('visibility', 'private');
+
+      final response = updatedSince == null
+          ? await base
+              .order('client_updated_at')
+              .order('record_key')
+              .range(from, from + pageSize - 1)
+          : await base
+              .gte(
+                'client_updated_at',
+                updatedSince.toUtc().toIso8601String(),
+              )
+              .order('client_updated_at')
+              .order('record_key')
+              .range(from, from + pageSize - 1);
 
       final page = (response as List)
           .map(
@@ -717,22 +800,35 @@ class CloudSyncService extends ChangeNotifier {
   }
 
   Future<List<SharedSpaceRecord>> pullSharedRecords(
-    String spaceId,
-  ) async {
+    String spaceId, {
+    DateTime? updatedSince,
+  }) async {
     final client = _requireSignedInClient();
     const pageSize = 500;
     final records = <SharedSpaceRecord>[];
 
     for (var from = 0;; from += pageSize) {
-      final response = await client
+      final base = client
           .from('agenda_records')
           .select(
             'record_key,space_id,owner_id,updated_by,entity_type,entity_id,payload,client_updated_at,deleted_at',
           )
           .eq('space_id', spaceId)
-          .eq('visibility', 'shared')
-          .order('record_key')
-          .range(from, from + pageSize - 1);
+          .eq('visibility', 'shared');
+
+      final response = updatedSince == null
+          ? await base
+              .order('client_updated_at')
+              .order('record_key')
+              .range(from, from + pageSize - 1)
+          : await base
+              .gte(
+                'client_updated_at',
+                updatedSince.toUtc().toIso8601String(),
+              )
+              .order('client_updated_at')
+              .order('record_key')
+              .range(from, from + pageSize - 1);
 
       final page = (response as List)
           .map(
@@ -1136,6 +1232,8 @@ class CloudSyncService extends ChangeNotifier {
     required String listenerKey,
     required VoidCallback onChanged,
     VoidCallback? onInteractionsChanged,
+    ValueChanged<SharedRealtimeRecordChange>? onRecordChanged,
+    ValueChanged<SharedRealtimeInteractionChange>? onInteractionChanged,
     ValueChanged<String?>? onUpdatedBy,
     ValueChanged<bool>? onConnectionChanged,
   }) {
@@ -1162,7 +1260,17 @@ class CloudSyncService extends ChangeNotifier {
             final updatedBy = payload.newRecord['updated_by']?.toString() ??
                 payload.oldRecord['updated_by']?.toString();
             onUpdatedBy?.call(updatedBy);
-            onChanged();
+            if (onRecordChanged != null) {
+              onRecordChanged(
+                SharedRealtimeRecordChange.fromRealtime(
+                  fallbackSpaceId: spaceId,
+                  newRecord: Map<String, dynamic>.from(payload.newRecord),
+                  oldRecord: Map<String, dynamic>.from(payload.oldRecord),
+                ),
+              );
+            } else {
+              onChanged();
+            }
           },
         )
         .onPostgresChanges(
@@ -1174,7 +1282,19 @@ class CloudSyncService extends ChangeNotifier {
             column: 'space_id',
             value: spaceId,
           ),
-          callback: (_) => onInteractionsChanged?.call(),
+          callback: (payload) {
+            if (onInteractionChanged != null) {
+              onInteractionChanged(
+                SharedRealtimeInteractionChange(
+                  kind: SharedRealtimeInteractionKind.comment,
+                  newRecord: Map<String, dynamic>.from(payload.newRecord),
+                  oldRecord: Map<String, dynamic>.from(payload.oldRecord),
+                ),
+              );
+            } else {
+              onInteractionsChanged?.call();
+            }
+          },
         )
         .onPostgresChanges(
           event: PostgresChangeEvent.all,
@@ -1185,7 +1305,19 @@ class CloudSyncService extends ChangeNotifier {
             column: 'space_id',
             value: spaceId,
           ),
-          callback: (_) => onInteractionsChanged?.call(),
+          callback: (payload) {
+            if (onInteractionChanged != null) {
+              onInteractionChanged(
+                SharedRealtimeInteractionChange(
+                  kind: SharedRealtimeInteractionKind.reaction,
+                  newRecord: Map<String, dynamic>.from(payload.newRecord),
+                  oldRecord: Map<String, dynamic>.from(payload.oldRecord),
+                ),
+              );
+            } else {
+              onInteractionsChanged?.call();
+            }
+          },
         )
         .onPostgresChanges(
           event: PostgresChangeEvent.all,
@@ -1196,7 +1328,19 @@ class CloudSyncService extends ChangeNotifier {
             column: 'space_id',
             value: spaceId,
           ),
-          callback: (_) => onInteractionsChanged?.call(),
+          callback: (payload) {
+            if (onInteractionChanged != null) {
+              onInteractionChanged(
+                SharedRealtimeInteractionChange(
+                  kind: SharedRealtimeInteractionKind.memberRead,
+                  newRecord: Map<String, dynamic>.from(payload.newRecord),
+                  oldRecord: Map<String, dynamic>.from(payload.oldRecord),
+                ),
+              );
+            } else {
+              onInteractionsChanged?.call();
+            }
+          },
         )
         .subscribe((status, _) {
           onConnectionChanged?.call(
