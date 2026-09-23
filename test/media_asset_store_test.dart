@@ -255,4 +255,32 @@ void main() {
 
     store.dispose();
   });
+
+  test('remote offline cache is bounded with LRU-style pruning', () async {
+    for (var i = 0; i < 175; i++) {
+      final id = MediaAssetStore.instance.namedAssetId(
+        'remote',
+        'shared/cache-$i.jpg',
+      );
+      await MediaAssetStore.instance.putNamed(
+        id,
+        Uint8List.fromList([i % 251 + 1, 7, 9, 11]),
+      );
+    }
+
+    final before = await listMediaAssetIds();
+    expect(
+      before.where((id) => id.startsWith('remote_')).length,
+      175,
+    );
+
+    await MediaAssetStore.instance.prune(const <String>{});
+
+    final after = await listMediaAssetIds();
+    expect(
+      after.where((id) => id.startsWith('remote_')).length,
+      lessThanOrEqualTo(160),
+    );
+  });
+
 }
