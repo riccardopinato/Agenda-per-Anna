@@ -18,7 +18,7 @@ class AgendaStore extends ChangeNotifier {
   static const _privacyGuardKey = 'privacy_guard_v1';
   static const _backupFormat = 'agenda_per_anna_backup';
   static const _backupSchemaVersion = 1;
-  static const _appVersion = '0.32.0';
+  static const _appVersion = '0.33.0';
 
   final List<AgendaItem> items = [];
   final Map<String, DayJournal> journals = {};
@@ -125,6 +125,197 @@ class AgendaStore extends ChangeNotifier {
     return LocalStateStore.instance.open(
       legacyPreferences: legacyPreferences,
     );
+  }
+
+  Future<Uint8List> _createMediaThumbnail(
+    Uint8List bytes, {
+    int maxSide = 420,
+    int quality = 46,
+  }) async {
+    try {
+      final compressed = await FlutterImageCompress.compressWithList(
+        bytes,
+        minWidth: maxSide,
+        minHeight: maxSide,
+        quality: quality,
+        format: CompressFormat.jpeg,
+      );
+      if (compressed.isNotEmpty) return compressed;
+    } catch (_) {}
+    return Uint8List.fromList(bytes);
+  }
+
+  Future<bool> _migrateInlinePrivateMedia(
+    LocalStateStore prefs,
+  ) async {
+    if (_unreadableStorageKeys.contains(_journalsKey)) return false;
+
+    var changed = false;
+    for (final entry in journals.entries.toList()) {
+      final journal = entry.value;
+      final blocks = <DiaryBlock>[];
+
+      for (final block in journal.blocks) {
+        if (block.type != DiaryBlockType.photo) {
+          blocks.add(block);
+          continue;
+        }
+
+        var next = block;
+        var fullId = block.mediaAssetId;
+        var thumbnailId = block.mediaThumbnailAssetId;
+
+        if (fullId.isEmpty && block.imageBase64.isNotEmpty) {
+          try {
+            final bytes = base64Decode(block.imageBase64);
+            fullId = await MediaAssetStore.instance.put(bytes);
+            if (thumbnailId.isEmpty) {
+              thumbnailId = await MediaAssetStore.instance.put(
+                await _createMediaThumbnail(bytes),
+              );
+            }
+            next = block.copyWith(
+              imageBase64: '',
+              mediaAssetId: fullId,
+              mediaThumbnailAssetId: thumbnailId,
+            );
+            changed = true;
+          } catch (_) {
+            // Preserve unreadable legacy Base64 instead of destroying it.
+          }
+        } else if (fullId.isNotEmpty && thumbnailId.isEmpty) {
+          final bytes = await MediaAssetStore.instance.read(fullId);
+          if (bytes != null) {
+            thumbnailId = await MediaAssetStore.instance.put(
+              await _createMediaThumbnail(bytes),
+            );
+            next = block.copyWith(mediaThumbnailAssetId: thumbnailId);
+            changed = true;
+          }
+        }
+
+        blocks.add(next);
+      }
+
+      if (changed) {
+        journals[entry.key] = journal.copyWith(blocks: blocks);
+      }
+    }
+
+    if (changed) {
+      await prefs.setString(
+        _journalsKey,
+        jsonEncode(
+          journals.map(
+            (key, value) => MapEntry(key, value.toLocalJson()),
+          ),
+        ),
+      );
+    }
+    return changed;
+  }
+
+  Future<Map<String, dynamic>> _portableJournalJson(
+    DayJournal journal,
+  ) async {
+    final payload = Map<String, dynamic>.from(journal.toJson());
+    final blocks = <Map<String, dynamic>>[];
+
+    for (final block in journal.blocks) {
+      final blockJson = Map<String, dynamic>.from(block.toJson());
+      if (block.type == DiaryBlockType.photo &&
+          (blockJson['imageBase64']?.toString().isEmpty ?? true) &&
+          block.mediaAssetId.isNotEmpty) {
+        final bytes = await MediaAssetStore.instance.read(block.mediaAssetId);
+        if (bytes != null) {
+          blockJson['imageBase64'] = base64Encode(bytes);
+        }
+      }
+      blocks.add(blockJson);
+    }
+
+    payload['blocks'] = blocks;
+    return payload;
+  }
+
+  Future<SharedEntry> _localizeSharedThumbnail(
+    SharedEntry entry,
+  ) async {
+    if (entry.type != SharedEntryType.photo ||
+        entry.mediaThumbnailAssetId.isNotEmpty ||
+        entry.mediaThumbnailBase64.isEmpty) {
+      return entry;
+    }
+    final assetId =
+        await MediaAssetStore.instance.importBase64(entry.mediaThumbnailBase64);
+    if (assetId == null) return entry;
+    return entry.copyWith(mediaThumbnailAssetId: assetId);
+  }
+
+  Future<Map<String, dynamic>> _sharedPortablePayload(
+    SharedEntry entry,
+  ) async {
+    final payload = Map<String, dynamic>.from(entry.toJson());
+    if (entry.type == SharedEntryType.photo &&
+        (payload['mediaThumbnailBase64']?.toString().isEmpty ?? true) &&
+        entry.mediaThumbnailAssetId.isNotEmpty) {
+      final bytes =
+          await MediaAssetStore.instance.read(entry.mediaThumbnailAssetId);
+      if (bytes != null) {
+        payload['mediaThumbnailBase64'] = base64Encode(bytes);
+      }
+    }
+    return payload;
+  }
+
+  void _collectAssetIdsFromJson(dynamic value, Set<String> result) {
+    if (value is Map) {
+      for (final entry in value.entries) {
+        final key = entry.key.toString().toLowerCase();
+        final child = entry.value;
+        if (key.contains('assetid') &&
+            child is String &&
+            child.trim().isNotEmpty) {
+          result.add(child);
+        }
+        _collectAssetIdsFromJson(child, result);
+      }
+      return;
+    }
+    if (value is List) {
+      for (final child in value) {
+        _collectAssetIdsFromJson(child, result);
+      }
+    }
+  }
+
+  Future<void> _pruneUnreferencedMedia(LocalStateStore prefs) async {
+    final referenced = <String>{};
+
+    for (final journal in journals.values) {
+      for (final block in journal.blocks) {
+        if (block.mediaAssetId.isNotEmpty) referenced.add(block.mediaAssetId);
+        if (block.mediaThumbnailAssetId.isNotEmpty) {
+          referenced.add(block.mediaThumbnailAssetId);
+        }
+        for (final page in block.pages) {
+          for (final image in page.imageElements) {
+            // Sketch image Base64 migration is intentionally independent.
+            if (image.imageBase64.isEmpty) continue;
+          }
+        }
+      }
+    }
+
+    for (final key in prefs.getKeys()) {
+      final raw = prefs.getString(key);
+      if (raw == null || !raw.contains('AssetId')) continue;
+      try {
+        _collectAssetIdsFromJson(jsonDecode(raw), referenced);
+      } catch (_) {}
+    }
+
+    await MediaAssetStore.instance.prune(referenced);
   }
 
   Future<void> load() async {
@@ -320,6 +511,7 @@ class AgendaStore extends ChangeNotifier {
         HabitDefinition(id: 'me', name: 'Tempo per me'),
       ]);
     }
+    await _migrateInlinePrivateMedia(prefs);
     _invalidateDayIndex();
     await _loadSharedUnreadCounts(prefs);
     await refreshSharedAgendaCache(notify: false);
@@ -483,7 +675,9 @@ class AgendaStore extends ChangeNotifier {
     if (shouldWrite(_journalsKey)) {
       await prefs.setString(
         _journalsKey,
-        jsonEncode(journals.map((k, v) => MapEntry(k, v.toJson()))),
+        jsonEncode(
+          journals.map((k, v) => MapEntry(k, v.toLocalJson())),
+        ),
       );
     }
     if (shouldWrite(_monthsKey)) {
@@ -576,9 +770,9 @@ class AgendaStore extends ChangeNotifier {
     _scheduleCloudSync();
   }
 
-  Map<String, _LocalSyncEntity> _currentSyncEntities({
+  Future<Map<String, _LocalSyncEntity>> _currentSyncEntities({
     Set<String>? onlyKeys,
-  }) {
+  }) async {
     final result = <String, _LocalSyncEntity>{};
 
     bool includes(String key) =>
@@ -604,7 +798,11 @@ class AgendaStore extends ChangeNotifier {
     }
     if (includes(_journalsKey)) {
       for (final entry in journals.entries) {
-        add('journal', entry.key, entry.value.toJson());
+        add(
+          'journal',
+          entry.key,
+          await _portableJournalJson(entry.value),
+        );
       }
     }
     if (includes(_monthsKey)) {
@@ -653,7 +851,7 @@ class AgendaStore extends ChangeNotifier {
     bool forceAll = false,
     Set<String>? onlyKeys,
   }) async {
-    final entities = _currentSyncEntities(onlyKeys: onlyKeys);
+    final entities = await _currentSyncEntities(onlyKeys: onlyKeys);
     final now = DateTime.now();
 
     for (final entry in entities.entries) {
@@ -732,9 +930,10 @@ class AgendaStore extends ChangeNotifier {
     await prefs.setString(_syncIndexKey, jsonEncode(_syncIndex));
   }
 
-  Map<String, dynamic> _backupDataPayload() => {
+  Map<String, dynamic> _localDataPayload() => {
         'items': items.map((e) => e.toJson()).toList(),
-        'journals': journals.map((k, v) => MapEntry(k, v.toJson())),
+        'journals':
+            journals.map((k, v) => MapEntry(k, v.toLocalJson())),
         'months': months.map((k, v) => MapEntry(k, v.toJson())),
         'weeks': weeks.map((k, v) => MapEntry(k, v.toJson())),
         'habits': habits.map((e) => e.toJson()).toList(),
@@ -742,13 +941,29 @@ class AgendaStore extends ChangeNotifier {
         'preferences': preferences.toJson(),
       };
 
-  String createBackupJson() {
+  Future<Map<String, dynamic>> _portableBackupDataPayload() async {
+    final portableJournals = <String, dynamic>{};
+    for (final entry in journals.entries) {
+      portableJournals[entry.key] = await _portableJournalJson(entry.value);
+    }
+    return {
+      'items': items.map((e) => e.toJson()).toList(),
+      'journals': portableJournals,
+      'months': months.map((k, v) => MapEntry(k, v.toJson())),
+      'weeks': weeks.map((k, v) => MapEntry(k, v.toJson())),
+      'habits': habits.map((e) => e.toJson()).toList(),
+      'inbox': inbox.map((e) => e.toJson()).toList(),
+      'preferences': preferences.toJson(),
+    };
+  }
+
+  Future<String> createBackupJson() async {
     final document = {
       'format': _backupFormat,
       'schemaVersion': _backupSchemaVersion,
       'appVersion': _appVersion,
       'exportedAt': DateTime.now().toIso8601String(),
-      'data': _backupDataPayload(),
+      'data': await _portableBackupDataPayload(),
     };
     return const JsonEncoder.withIndent('  ').convert(document);
   }
@@ -923,6 +1138,7 @@ class AgendaStore extends ChangeNotifier {
       await NotificationService.instance.cancel('${item.id}:secondary');
     }
 
+    await _migrateInlinePrivateMedia(await _localState());
     await _save(createAutoSnapshot: false);
 
     if (!merge && incomingPreferences != null) {
@@ -950,7 +1166,7 @@ class AgendaStore extends ChangeNotifier {
         id: const Uuid().v4(),
         createdAt: DateTime.now(),
         label: label,
-        data: jsonDecode(jsonEncode(_backupDataPayload()))
+        data: jsonDecode(jsonEncode(_localDataPayload()))
             as Map<String, dynamic>,
       ),
     );
@@ -975,7 +1191,7 @@ class AgendaStore extends ChangeNotifier {
         id: const Uuid().v4(),
         createdAt: now,
         label: 'Backup automatico',
-        data: jsonDecode(jsonEncode(_backupDataPayload()))
+        data: jsonDecode(jsonEncode(_localDataPayload()))
             as Map<String, dynamic>,
       ),
     );
@@ -1418,7 +1634,8 @@ class AgendaStore extends ChangeNotifier {
       }
 
       if (remoteChanged) {
-        final entitiesAfterPull = _currentSyncEntities();
+        await _migrateInlinePrivateMedia(prefs);
+        final entitiesAfterPull = await _currentSyncEntities();
         _replaceSyncIndex(entitiesAfterPull);
         await _save(
           createAutoSnapshot: false,
