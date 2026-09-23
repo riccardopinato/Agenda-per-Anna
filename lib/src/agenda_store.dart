@@ -18,7 +18,7 @@ class AgendaStore extends ChangeNotifier {
   static const _privacyGuardKey = 'privacy_guard_v1';
   static const _backupFormat = 'agenda_per_anna_backup';
   static const _backupSchemaVersion = 1;
-  static const _appVersion = '0.31.0';
+  static const _appVersion = '0.32.0';
 
   final List<AgendaItem> items = [];
   final Map<String, DayJournal> journals = {};
@@ -120,11 +120,20 @@ class AgendaStore extends ChangeNotifier {
         _syncOwnerKey,
       ];
 
+  Future<LocalStateStore> _localState() async {
+    final legacyPreferences = await SharedPreferences.getInstance();
+    return LocalStateStore.instance.open(
+      legacyPreferences: legacyPreferences,
+    );
+  }
+
   Future<void> load() async {
-    final prefs = await SharedPreferences.getInstance();
+    final prefs = await _localState();
     _activeAccountId = prefs.getString(_activeAccountKey);
     _accountScopeResolved = _activeAccountId == null;
-    _unreadableStorageKeys.clear();
+    _unreadableStorageKeys
+      ..clear()
+      ..addAll(prefs.corruptKeys);
 
     items.clear();
     journals.clear();
@@ -319,7 +328,7 @@ class AgendaStore extends ChangeNotifier {
     await refreshPendingSharedMediaCount(notify: false);
   }
 
-  Map<String, dynamic> _readAccountProfiles(SharedPreferences prefs) {
+  Map<String, dynamic> _readAccountProfiles(LocalStateStore prefs) {
     final raw = prefs.getString(_accountProfilesKey);
     if (raw == null) return <String, dynamic>{};
     try {
@@ -330,7 +339,7 @@ class AgendaStore extends ChangeNotifier {
   }
 
   Map<String, dynamic> _captureWorkingProfile(
-    SharedPreferences prefs,
+    LocalStateStore prefs,
   ) {
     final result = <String, dynamic>{};
     for (final key in _workingStorageKeys) {
@@ -341,7 +350,7 @@ class AgendaStore extends ChangeNotifier {
   }
 
   Future<void> _writeWorkingProfile(
-    SharedPreferences prefs,
+    LocalStateStore prefs,
     Map<String, dynamic> profile,
   ) async {
     for (final key in _workingStorageKeys) {
@@ -355,7 +364,7 @@ class AgendaStore extends ChangeNotifier {
   }
 
   Future<void> _archiveCurrentProfile(
-    SharedPreferences prefs,
+    LocalStateStore prefs,
   ) async {
     final profiles = _readAccountProfiles(prefs);
     final scope = _activeAccountId == null
@@ -365,7 +374,7 @@ class AgendaStore extends ChangeNotifier {
     await prefs.setString(_accountProfilesKey, jsonEncode(profiles));
   }
 
-  bool _workingProfileHasUserData(SharedPreferences prefs) {
+  bool _workingProfileHasUserData(LocalStateStore prefs) {
     for (final key in const [
       _itemsKey,
       _journalsKey,
@@ -381,7 +390,7 @@ class AgendaStore extends ChangeNotifier {
   }
 
   Future<void> activateCloudAccount(String? accountId) async {
-    final prefs = await SharedPreferences.getInstance();
+    final prefs = await _localState();
     if (_activeAccountId == accountId) {
       if (accountId != null) {
         _bindPendingOperationsTo(accountId);
@@ -459,7 +468,7 @@ class AgendaStore extends ChangeNotifier {
     bool enqueueSync = true,
     Set<String>? onlyKeys,
   }) async {
-    final prefs = await SharedPreferences.getInstance();
+    final prefs = await _localState();
 
     bool shouldWrite(String key) {
       return (onlyKeys == null || onlyKeys.contains(key)) &&
@@ -552,7 +561,7 @@ class AgendaStore extends ChangeNotifier {
   }
 
   Future<void> _queuePreferencesSync() async {
-    final prefs = await SharedPreferences.getInstance();
+    final prefs = await _localState();
     final payload = _cloudPreferencesPayload();
     final key = 'preferences:main';
     _syncIndex[key] = _syncPayloadHash(payload);
@@ -640,7 +649,7 @@ class AgendaStore extends ChangeNotifier {
       };
 
   Future<void> _captureSyncChanges(
-    SharedPreferences prefs, {
+    LocalStateStore prefs, {
     bool forceAll = false,
     Set<String>? onlyKeys,
   }) async {
@@ -713,7 +722,7 @@ class AgendaStore extends ChangeNotifier {
     );
   }
 
-  Future<void> _persistSyncMetadata(SharedPreferences prefs) async {
+  Future<void> _persistSyncMetadata(LocalStateStore prefs) async {
     await prefs.setString(
       _syncQueueKey,
       jsonEncode(
@@ -917,7 +926,7 @@ class AgendaStore extends ChangeNotifier {
     await _save(createAutoSnapshot: false);
 
     if (!merge && incomingPreferences != null) {
-      final prefs = await SharedPreferences.getInstance();
+      final prefs = await _localState();
       await prefs.setString(
         _privacyGuardKey,
         jsonEncode(_privacyGuardPayload()),
@@ -934,7 +943,7 @@ class AgendaStore extends ChangeNotifier {
   Future<void> createLocalSnapshot({
     String label = 'Backup manuale',
   }) async {
-    final prefs = await SharedPreferences.getInstance();
+    final prefs = await _localState();
     localSnapshots.insert(
       0,
       LocalBackupSnapshot(
@@ -953,7 +962,7 @@ class AgendaStore extends ChangeNotifier {
   }
 
   Future<void> _maybeCreateAutomaticSnapshot(
-    SharedPreferences prefs,
+    LocalStateStore prefs,
   ) async {
     final now = DateTime.now();
     final shouldCreate = localSnapshots.isEmpty ||
@@ -976,7 +985,7 @@ class AgendaStore extends ChangeNotifier {
     await _saveSnapshots(prefs);
   }
 
-  Future<void> _saveSnapshots(SharedPreferences prefs) async {
+  Future<void> _saveSnapshots(LocalStateStore prefs) async {
     await prefs.setString(
       _snapshotsKey,
       jsonEncode(localSnapshots.map((e) => e.toJson()).toList()),
@@ -997,7 +1006,7 @@ class AgendaStore extends ChangeNotifier {
 
   Future<void> deleteLocalSnapshot(String id) async {
     localSnapshots.removeWhere((e) => e.id == id);
-    final prefs = await SharedPreferences.getInstance();
+    final prefs = await _localState();
     await _saveSnapshots(prefs);
     notifyListeners();
   }
@@ -1359,7 +1368,7 @@ class AgendaStore extends ChangeNotifier {
     cloud.markSyncStarted();
 
     try {
-      final prefs = await SharedPreferences.getInstance();
+      final prefs = await _localState();
       final previousOwner = prefs.getString(_syncOwnerKey);
       final firstSyncForOwner = previousOwner != ownerId;
 
@@ -1730,7 +1739,7 @@ class AgendaStore extends ChangeNotifier {
       return;
     }
 
-    final prefs = await SharedPreferences.getInstance();
+    final prefs = await _localState();
     final cloud = CloudSyncService.instance;
     List<SharedSpace> spaces = const [];
     var remoteSpacesLoaded = false;
@@ -1930,7 +1939,7 @@ class AgendaStore extends ChangeNotifier {
     String spaceId,
     List<SharedEntry> entries,
   ) async {
-    final prefs = await SharedPreferences.getInstance();
+    final prefs = await _localState();
     await prefs.setString(
       sharedCacheStorageKey(spaceId),
       jsonEncode(entries.map((entry) => entry.toCacheJson()).toList()),
@@ -1967,7 +1976,7 @@ class AgendaStore extends ChangeNotifier {
     return 'shared_unread_$owner';
   }
 
-  Future<void> _loadSharedUnreadCounts(SharedPreferences prefs) async {
+  Future<void> _loadSharedUnreadCounts(LocalStateStore prefs) async {
     final raw = prefs.getString(sharedUnreadStorageKey);
     if (raw == null) return;
     try {
@@ -1988,7 +1997,7 @@ class AgendaStore extends ChangeNotifier {
   }
 
   Future<void> _saveSharedUnreadCounts() async {
-    final prefs = await SharedPreferences.getInstance();
+    final prefs = await _localState();
     await prefs.setString(
       sharedUnreadStorageKey,
       jsonEncode(_sharedUnreadBySpace),
@@ -2017,7 +2026,7 @@ class AgendaStore extends ChangeNotifier {
   Future<List<SharedPendingOperation>> loadSharedPendingOperations(
     String spaceId,
   ) async {
-    final prefs = await SharedPreferences.getInstance();
+    final prefs = await _localState();
     final raw = prefs.getString(sharedPendingStorageKey(spaceId));
     if (raw == null) return <SharedPendingOperation>[];
     try {
@@ -2038,7 +2047,7 @@ class AgendaStore extends ChangeNotifier {
     String spaceId,
     List<SharedPendingOperation> operations,
   ) async {
-    final prefs = await SharedPreferences.getInstance();
+    final prefs = await _localState();
     final key = sharedPendingStorageKey(spaceId);
     if (operations.isEmpty) {
       await prefs.remove(key);
@@ -2135,7 +2144,7 @@ class AgendaStore extends ChangeNotifier {
     var next = 0;
 
     if (ownerId != null) {
-      final prefs = await SharedPreferences.getInstance();
+      final prefs = await _localState();
       final prefix = 'shared_pending_${ownerId}_';
       for (final key in prefs.getKeys().where((key) => key.startsWith(prefix))) {
         final raw = prefs.getString(key);
@@ -2155,7 +2164,7 @@ class AgendaStore extends ChangeNotifier {
 
   Future<List<SharedInteractionPendingOperation>>
       loadSharedInteractionPendingOperations(String spaceId) async {
-    final prefs = await SharedPreferences.getInstance();
+    final prefs = await _localState();
     final raw = prefs.getString(sharedInteractionPendingStorageKey(spaceId));
     if (raw == null) return <SharedInteractionPendingOperation>[];
     try {
@@ -2181,7 +2190,7 @@ class AgendaStore extends ChangeNotifier {
     String spaceId,
     List<SharedInteractionPendingOperation> operations,
   ) async {
-    final prefs = await SharedPreferences.getInstance();
+    final prefs = await _localState();
     final key = sharedInteractionPendingStorageKey(spaceId);
     if (operations.isEmpty) {
       await prefs.remove(key);
@@ -2306,7 +2315,7 @@ class AgendaStore extends ChangeNotifier {
     final ownerId = _activeAccountId;
     var next = 0;
     if (ownerId != null) {
-      final prefs = await SharedPreferences.getInstance();
+      final prefs = await _localState();
       final prefix = 'shared_interactions_pending_${ownerId}_';
       for (final key in prefs.getKeys().where((key) => key.startsWith(prefix))) {
         final raw = prefs.getString(key);
@@ -2337,7 +2346,7 @@ class AgendaStore extends ChangeNotifier {
     final before = _pendingSharedInteractionCount;
     var changed = false;
     try {
-      final prefs = await SharedPreferences.getInstance();
+      final prefs = await _localState();
       final prefix = 'shared_interactions_pending_${ownerId}_';
       final keys = prefs
           .getKeys()
@@ -2431,7 +2440,7 @@ class AgendaStore extends ChangeNotifier {
   Future<List<SharedMediaPendingUpload>> loadSharedMediaPendingUploads(
     String spaceId,
   ) async {
-    final prefs = await SharedPreferences.getInstance();
+    final prefs = await _localState();
     final raw = prefs.getString(sharedMediaPendingStorageKey(spaceId));
     if (raw == null) return <SharedMediaPendingUpload>[];
     try {
@@ -2458,7 +2467,7 @@ class AgendaStore extends ChangeNotifier {
     String spaceId,
     List<SharedMediaPendingUpload> uploads,
   ) async {
-    final prefs = await SharedPreferences.getInstance();
+    final prefs = await _localState();
     final key = sharedMediaPendingStorageKey(spaceId);
     if (uploads.isEmpty) {
       await prefs.remove(key);
@@ -2500,7 +2509,7 @@ class AgendaStore extends ChangeNotifier {
     final ownerId = _activeAccountId;
     var next = 0;
     if (ownerId != null) {
-      final prefs = await SharedPreferences.getInstance();
+      final prefs = await _localState();
       final prefix = 'shared_media_pending_${ownerId}_';
       for (final key in prefs.getKeys().where((key) => key.startsWith(prefix))) {
         final raw = prefs.getString(key);
@@ -2531,7 +2540,7 @@ class AgendaStore extends ChangeNotifier {
     final before = _pendingSharedMediaCount;
     var changed = false;
     try {
-      final prefs = await SharedPreferences.getInstance();
+      final prefs = await _localState();
       final prefix = 'shared_media_pending_${ownerId}_';
       final keys = prefs
           .getKeys()
@@ -2620,7 +2629,7 @@ class AgendaStore extends ChangeNotifier {
     var stateChanged = false;
     final pendingBefore = _pendingSharedChangeCount;
     try {
-      final prefs = await SharedPreferences.getInstance();
+      final prefs = await _localState();
       final prefix = 'shared_pending_${ownerId}_';
       final keys = prefs
           .getKeys()
@@ -2842,7 +2851,7 @@ class AgendaStore extends ChangeNotifier {
 
   Future<void> savePreferences(AgendaPreferences value) async {
     preferences = value;
-    final prefs = await SharedPreferences.getInstance();
+    final prefs = await _localState();
     if (!_unreadableStorageKeys.contains(_preferencesKey)) {
       await prefs.setString(
         _preferencesKey,
