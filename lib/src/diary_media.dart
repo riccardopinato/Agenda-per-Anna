@@ -33,19 +33,6 @@ Future<Uint8List?> _pickCompressedDiaryImageBytes(
   return compressed;
 }
 
-Future<String?> _pickCompressedDiaryImageBase64(
-  ImageSource source, {
-  int maxSide = 720,
-  int quality = 58,
-}) async {
-  final bytes = await _pickCompressedDiaryImageBytes(
-    source,
-    maxSide: maxSide,
-    quality: quality,
-  );
-  return bytes == null ? null : base64Encode(bytes);
-}
-
 Future<Uint8List> _diaryThumbnailBytes(Uint8List bytes) async {
   try {
     final thumbnail = await FlutterImageCompress.compressWithList(
