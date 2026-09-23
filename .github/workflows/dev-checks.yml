@@ -3,17 +3,19 @@ name: Development checks
 on:
   push:
     branches: [main]
-    paths:
-      - "lib/**"
-      - "test/**"
-      - "pubspec.yaml"
-      - ".github/workflows/dev-checks.yml"
+  pull_request:
+    branches: [main]
   workflow_dispatch:
 
+concurrency:
+  group: development-checks-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   check:
     runs-on: ubuntu-latest
+    timeout-minutes: 25
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -25,25 +27,20 @@ jobs:
           channel: stable
           cache: true
 
-      - name: Create Flutter platform skeleton
+      - name: Create web platform skeleton
         run: |
           rm -rf /tmp/agenda_base
-          flutter create --project-name agenda_per_anna --org com.riccardopinato --platforms=android,web,ios /tmp/agenda_base
-          cp -R /tmp/agenda_base/android .
+          flutter create --project-name agenda_per_anna --org com.riccardopinato --platforms=web /tmp/agenda_base
           cp -R /tmp/agenda_base/web .
-          cp -R /tmp/agenda_base/ios .
 
-      - name: Prepare icon asset
-        run: |
-          mkdir -p assets/icon
-          base64 -d assets/icon/app_icon.b64 > assets/icon/app_icon.jpg
-          sed -i 's#assets/icon/app_icon.png#assets/icon/app_icon.jpg#g' pubspec.yaml
-
-      - name: Install dependencies
+      - name: Install locked dependencies
         run: flutter pub get --enforce-lockfile
 
       - name: Analyze
-        run: flutter analyze --no-fatal-warnings
+        run: flutter analyze
 
       - name: Test
         run: flutter test
+
+      - name: Build web release
+        run: flutter build web --release
