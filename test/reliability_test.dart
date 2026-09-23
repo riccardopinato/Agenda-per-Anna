@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'package:agenda_per_anna/app_version.dart';
 import 'package:agenda_per_anna/local_state_store.dart';
 import 'package:agenda_per_anna/main.dart';
 
@@ -583,7 +584,7 @@ void main() {
       jsonDecode(await store.createBackupJson()) as Map,
     );
 
-    expect(backup['appVersion'], '0.33.0');
+    expect(backup['appVersion'], appReleaseVersion);
 
     store.dispose();
   });
