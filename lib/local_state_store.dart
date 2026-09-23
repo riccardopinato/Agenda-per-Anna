@@ -143,6 +143,13 @@ class LocalStateStore {
 
   bool containsKey(String key) => _cache.containsKey(key);
 
+  bool? getBool(String key) {
+    final value = _cache[key];
+    if (value == 'true') return true;
+    if (value == 'false') return false;
+    return null;
+  }
+
   Set<String> getKeys() => Set<String>.unmodifiable(_cache.keys.toSet());
 
   Future<bool> setString(String key, String value) async {
@@ -152,6 +159,9 @@ class LocalStateStore {
     _corruptKeys.remove(key);
     return true;
   }
+
+  Future<bool> setBool(String key, bool value) =>
+      setString(key, value ? 'true' : 'false');
 
   Future<bool> remove(String key) async {
     final db = _requireDatabase();
@@ -264,6 +274,7 @@ class LocalStateStore {
       'shared_spaces_',
       'shared_unread_',
       'shared_interactions_cache_',
+      'cloud_first_sync_snapshot_',
     ];
     return prefixes.any(key.startsWith);
   }
