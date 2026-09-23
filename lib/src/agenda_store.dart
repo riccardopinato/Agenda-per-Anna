@@ -2777,6 +2777,7 @@ class AgendaStore extends ChangeNotifier {
   Future<void> refreshSharedAgendaCache({
     bool pullRemote = false,
     bool notify = true,
+    String? targetSpaceId,
   }) async {
     final ownerId = _activeAccountId;
     if (ownerId == null) {
@@ -2839,34 +2840,12 @@ class AgendaStore extends ChangeNotifier {
 
     final nextEntries = <String, List<SharedEntry>>{};
     for (final space in spaces) {
-      var entries = <SharedEntry>[];
-      var remoteEntriesLoaded = false;
+      var entries = List<SharedEntry>.from(
+        _sharedAgendaEntriesBySpace[space.id] ?? const <SharedEntry>[],
+      );
+      var hasBaseline = _sharedAgendaEntriesBySpace.containsKey(space.id);
 
-      if (pullRemote && cloud.signedIn && cloud.userId == ownerId) {
-        try {
-          final records = await cloud.pullSharedRecords(space.id);
-          remoteEntriesLoaded = true;
-          entries = records
-              .where(
-                (record) =>
-                    record.entityType == 'shared_entry' &&
-                    record.deletedAt == null &&
-                    record.payload != null,
-              )
-              .map(
-                (record) => SharedEntry.fromJson(
-                  record.payload!,
-                  updatedBy: record.updatedBy,
-                  updatedAt: record.clientUpdatedAt,
-                ),
-              )
-              .toList();
-        } catch (_) {
-          entries = <SharedEntry>[];
-        }
-      }
-
-      if (!remoteEntriesLoaded && entries.isEmpty) {
+      if (!hasBaseline) {
         final raw = prefs.getString(sharedCacheStorageKey(space.id));
         if (raw != null) {
           try {
@@ -2877,9 +2856,59 @@ class AgendaStore extends ChangeNotifier {
                   ),
                 )
                 .toList();
+            hasBaseline = true;
           } catch (_) {
             entries = <SharedEntry>[];
           }
+        }
+      }
+
+      final shouldPullSpace = pullRemote &&
+          cloud.signedIn &&
+          cloud.userId == ownerId &&
+          (targetSpaceId == null || targetSpaceId == space.id);
+
+      if (shouldPullSpace) {
+        try {
+          final cursorKey = _sharedSyncCursorKey(space.id);
+          final storedCursor =
+              hasBaseline ? _readSyncCursor(prefs, cursorKey) : null;
+          final records = await cloud.pullSharedRecords(
+            space.id,
+            updatedSince: storedCursor,
+          );
+
+          if (storedCursor == null) {
+            entries.clear();
+          }
+
+          for (final record in records) {
+            if (record.entityType != 'shared_entry') continue;
+            entries.removeWhere(
+              (entry) => entry.id == record.entityId,
+            );
+            if (record.deletedAt == null && record.payload != null) {
+              entries.add(
+                SharedEntry.fromJson(
+                  record.payload!,
+                  updatedBy: record.updatedBy,
+                  updatedAt: record.clientUpdatedAt,
+                ),
+              );
+            }
+          }
+
+          final nextCursor = _nextSyncCursor(
+            storedCursor,
+            records.map((record) => record.clientUpdatedAt),
+          );
+          await prefs.setString(
+            cursorKey,
+            nextCursor.toIso8601String(),
+          );
+          hasBaseline = true;
+        } catch (_) {
+          // Keep the current in-memory/disk baseline and pending overlay.
         }
       }
 
@@ -2980,19 +3009,81 @@ class AgendaStore extends ChangeNotifier {
             );
           }
         },
-        onChanged: () {
-          _unifiedRealtimeDebounce?.cancel();
-    _mediaMaintenanceTimer?.cancel();
-          _unifiedRealtimeDebounce = Timer(
-            const Duration(milliseconds: 450),
-            () => unawaited(
-              refreshSharedAgendaCache(pullRemote: true),
+        onChanged: () {},
+        onRecordChanged: (change) {
+          unawaited(
+            _applySharedRealtimeRecordChange(
+              space,
+              change,
             ),
           );
         },
       );
       _unifiedRealtimeSpaceIds.add(space.id);
     }
+  }
+
+  Future<void> _applySharedRealtimeRecordChange(
+    SharedSpace space,
+    SharedRealtimeRecordChange change,
+  ) async {
+    if (_activeAccountId == null ||
+        change.spaceId != space.id ||
+        change.entityType != 'shared_entry' ||
+        change.entityId.isEmpty) {
+      return;
+    }
+
+    final pending = await loadSharedPendingOperations(space.id);
+    final localPending = pending.where(
+      (operation) => operation.entityId == change.entityId,
+    );
+    if (localPending.any(
+      (operation) => operation.updatedAt.isAfter(change.clientUpdatedAt),
+    )) {
+      return;
+    }
+
+    final entries = List<SharedEntry>.from(
+      _sharedAgendaEntriesBySpace[space.id] ?? const <SharedEntry>[],
+    )..removeWhere((entry) => entry.id == change.entityId);
+
+    if (change.deletedAt == null && change.payload != null) {
+      entries.add(
+        await _localizeSharedThumbnail(
+          SharedEntry.fromJson(
+            change.payload!,
+            updatedBy: change.updatedBy,
+            updatedAt: change.clientUpdatedAt,
+          ),
+        ),
+      );
+    }
+
+    entries.sort((a, b) {
+      final dateCompare = a.date.compareTo(b.date);
+      if (dateCompare != 0) return dateCompare;
+      final am =
+          a.start == null ? 24 * 60 + 1 : a.start!.hour * 60 + a.start!.minute;
+      final bm =
+          b.start == null ? 24 * 60 + 1 : b.start!.hour * 60 + b.start!.minute;
+      return am.compareTo(bm);
+    });
+
+    _sharedAgendaEntriesBySpace[space.id] = entries;
+    _rebuildSharedAgendaDayIndex();
+    await _cacheSharedAgendaEntries(space.id, entries);
+
+    final prefs = await _localState();
+    final cursorKey = _sharedSyncCursorKey(space.id);
+    final current = _readSyncCursor(prefs, cursorKey);
+    final next = _nextSyncCursor(
+      current,
+      [change.clientUpdatedAt],
+    );
+    await prefs.setString(cursorKey, next.toIso8601String());
+
+    notifyListeners();
   }
 
   Future<void> _cacheSharedAgendaEntries(
