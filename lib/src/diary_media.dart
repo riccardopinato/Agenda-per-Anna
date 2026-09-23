@@ -1922,7 +1922,9 @@ class _DiarySketchbookScreenState extends State<DiarySketchbookScreen> {
       pages[pageIndex] = previous;
       _clearSelection();
       activeStroke = null;
-      lassoPoints = const [];
+      _activeStrokePoints.clear();
+      lassoPoints.clear();
+      _gestureRevision++;
     });
   }
 
@@ -1935,7 +1937,9 @@ class _DiarySketchbookScreenState extends State<DiarySketchbookScreen> {
       pages[pageIndex] = next;
       _clearSelection();
       activeStroke = null;
-      lassoPoints = const [];
+      _activeStrokePoints.clear();
+      lassoPoints.clear();
+      _gestureRevision++;
     });
   }
 
@@ -1966,6 +1970,56 @@ class _DiarySketchbookScreenState extends State<DiarySketchbookScreen> {
     final dx = a.x - b.x;
     final dy = a.y - b.y;
     return dx * dx + dy * dy;
+  }
+
+  bool _appendSampledPoint(
+    List<DiarySketchPoint> buffer,
+    DiarySketchPoint point,
+    Size size, {
+    double minPixels = 1.8,
+  }) {
+    if (buffer.isEmpty) {
+      buffer.add(point);
+      return true;
+    }
+    final last = buffer.last;
+    final dx = (point.x - last.x) * (size.width <= 0 ? 1 : size.width);
+    final dy = (point.y - last.y) * (size.height <= 0 ? 1 : size.height);
+    if (dx * dx + dy * dy < minPixels * minPixels) return false;
+    buffer.add(point);
+    return true;
+  }
+
+  void _resetGesturePreview() {
+    activeStroke = null;
+    _activeStrokePoints.clear();
+    lassoPoints.clear();
+    _gestureRevision++;
+  }
+
+  void _prepareSelectionMove() {
+    _selectionWorkingStrokes = List<DiarySketchStroke>.of(page.strokes);
+    _selectionWorkingText =
+        List<DiarySketchTextElement>.of(page.textElements);
+    _selectionWorkingImages =
+        List<DiarySketchImageElement>.of(page.imageElements);
+
+    _selectionTextIndices = {
+      for (var i = 0; i < page.textElements.length; i++)
+        if (selectedTextIds.contains(page.textElements[i].id)) i,
+    };
+    _selectionImageIndices = {
+      for (var i = 0; i < page.imageElements.length; i++)
+        if (selectedImageIds.contains(page.imageElements[i].id)) i,
+    };
+  }
+
+  void _clearSelectionMoveBuffers() {
+    _selectionWorkingStrokes = null;
+    _selectionWorkingText = null;
+    _selectionWorkingImages = null;
+    _selectionTextIndices = <int>{};
+    _selectionImageIndices = <int>{};
   }
 
   bool _insidePolygon(
@@ -2047,26 +2101,38 @@ class _DiarySketchbookScreenState extends State<DiarySketchbookScreen> {
             selectedStrokeIndices.isNotEmpty ||
                 selectedTextIds.isNotEmpty ||
                 selectedImageIds.isNotEmpty;
-        if (_selectionMoveStarted) _pushHistory();
+        if (_selectionMoveStarted) {
+          _pushHistory();
+          _prepareSelectionMove();
+        }
       });
       return;
     }
 
     if (tool == DiarySketchTool.lasso) {
       setState(() {
-        lassoPoints = [p];
         activeStroke = null;
+        _activeStrokePoints.clear();
+        lassoPoints
+          ..clear()
+          ..add(p);
+        _gestureRevision++;
       });
       return;
     }
 
     setState(() {
+      lassoPoints.clear();
+      _activeStrokePoints
+        ..clear()
+        ..add(p);
       activeStroke = DiarySketchStroke(
         tool: tool,
         colorValue: colorValue,
         width: width,
-        points: [p],
+        points: _activeStrokePoints,
       );
+      _gestureRevision++;
     });
   }
 
@@ -2075,31 +2141,39 @@ class _DiarySketchbookScreenState extends State<DiarySketchbookScreen> {
     final dy = delta.dy / (size.height <= 0 ? 1 : size.height);
     if (dx == 0 && dy == 0) return;
 
-    final movedStrokes = page.strokes.asMap().entries.map((entry) {
-      if (!selectedStrokeIndices.contains(entry.key)) return entry.value;
-      return entry.value.copyWith(
-        points: entry.value.points
+    final strokes = _selectionWorkingStrokes;
+    final texts = _selectionWorkingText;
+    final images = _selectionWorkingImages;
+    if (strokes == null || texts == null || images == null) return;
+
+    for (final index in selectedStrokeIndices) {
+      if (index < 0 || index >= strokes.length) continue;
+      final stroke = strokes[index];
+      strokes[index] = stroke.copyWith(
+        points: stroke.points
             .map(
               (point) => DiarySketchPoint(
                 (point.x + dx).clamp(0.0, 1.0),
                 (point.y + dy).clamp(0.0, 1.0),
               ),
             )
-            .toList(),
+            .toList(growable: false),
       );
-    }).toList();
+    }
 
-    final movedText = page.textElements.map((element) {
-      if (!selectedTextIds.contains(element.id)) return element;
-      return element.copyWith(
+    for (final index in _selectionTextIndices) {
+      if (index < 0 || index >= texts.length) continue;
+      final element = texts[index];
+      texts[index] = element.copyWith(
         x: (element.x + dx).clamp(0.0, 0.96),
         y: (element.y + dy).clamp(0.0, 0.96),
       );
-    }).toList();
+    }
 
-    final movedImages = page.imageElements.map((element) {
-      if (!selectedImageIds.contains(element.id)) return element;
-      return element.copyWith(
+    for (final index in _selectionImageIndices) {
+      if (index < 0 || index >= images.length) continue;
+      final element = images[index];
+      images[index] = element.copyWith(
         x: (element.x + dx).clamp(
           0.0,
           (1.0 - element.width).clamp(0.0, 1.0),
@@ -2109,13 +2183,15 @@ class _DiarySketchbookScreenState extends State<DiarySketchbookScreen> {
           (1.0 - element.height).clamp(0.0, 1.0),
         ),
       );
-    }).toList();
+    }
 
     setState(() {
-      pages[pageIndex] = page.copyWith(
-        strokes: movedStrokes,
-        textElements: movedText,
-        imageElements: movedImages,
+      pages[pageIndex] = DiarySketchPage(
+        id: page.id,
+        paper: page.paper,
+        strokes: strokes,
+        textElements: texts,
+        imageElements: images,
       );
     });
   }
@@ -2132,38 +2208,54 @@ class _DiarySketchbookScreenState extends State<DiarySketchbookScreen> {
 
     final p = _point(details.localPosition, size);
     if (tool == DiarySketchTool.lasso) {
-      setState(() => lassoPoints = [...lassoPoints, p]);
+      if (!_appendSampledPoint(
+        lassoPoints,
+        p,
+        size,
+        minPixels: 3,
+      )) {
+        return;
+      }
+      setState(() => _gestureRevision++);
       return;
     }
 
     final current = activeStroke;
     if (current == null) return;
-    setState(() {
-      if (current.tool == DiarySketchTool.line ||
-          current.tool == DiarySketchTool.rectangle ||
-          current.tool == DiarySketchTool.ellipse) {
-        activeStroke = DiarySketchStroke(
-          tool: current.tool,
-          colorValue: current.colorValue,
-          width: current.width,
-          points: [current.points.first, p],
-        );
+
+    if (current.tool == DiarySketchTool.line ||
+        current.tool == DiarySketchTool.rectangle ||
+        current.tool == DiarySketchTool.ellipse) {
+      if (_activeStrokePoints.length == 1) {
+        _activeStrokePoints.add(p);
       } else {
-        activeStroke = DiarySketchStroke(
-          tool: current.tool,
-          colorValue: current.colorValue,
-          width: current.width,
-          points: [...current.points, p],
-        );
+        _activeStrokePoints[1] = p;
       }
-    });
+      setState(() => _gestureRevision++);
+      return;
+    }
+
+    final minPixels = current.tool == DiarySketchTool.highlighter ||
+            current.tool == DiarySketchTool.eraser
+        ? 2.4
+        : 1.8;
+    if (!_appendSampledPoint(
+      _activeStrokePoints,
+      p,
+      size,
+      minPixels: minPixels,
+    )) {
+      return;
+    }
+    setState(() => _gestureRevision++);
   }
 
   void _finishLasso() {
-    final polygon = lassoPoints;
+    final polygon = List<DiarySketchPoint>.of(lassoPoints);
     if (polygon.length < 3) {
       setState(() {
-        lassoPoints = const [];
+        lassoPoints.clear();
+        _gestureRevision++;
         tool = DiarySketchTool.select;
       });
       return;
@@ -2196,7 +2288,8 @@ class _DiarySketchbookScreenState extends State<DiarySketchbookScreen> {
     }
 
     setState(() {
-      lassoPoints = const [];
+      lassoPoints.clear();
+      _gestureRevision++;
       tool = DiarySketchTool.select;
     });
   }
@@ -2206,6 +2299,7 @@ class _DiarySketchbookScreenState extends State<DiarySketchbookScreen> {
 
     if (tool == DiarySketchTool.select) {
       _selectionMoveStarted = false;
+      _clearSelectionMoveBuffers();
       return;
     }
 
@@ -2215,13 +2309,25 @@ class _DiarySketchbookScreenState extends State<DiarySketchbookScreen> {
     }
 
     final stroke = activeStroke;
-    if (stroke == null || stroke.points.isEmpty) return;
+    if (stroke == null || _activeStrokePoints.isEmpty) return;
+
+    final frozenStroke = DiarySketchStroke(
+      tool: stroke.tool,
+      colorValue: stroke.colorValue,
+      width: stroke.width,
+      points: List<DiarySketchPoint>.unmodifiable(
+        _activeStrokePoints.map(
+          (point) => DiarySketchPoint(point.x, point.y),
+        ),
+      ),
+    );
+
     _pushHistory();
     setState(() {
       pages[pageIndex] = page.copyWith(
-        strokes: [...page.strokes, stroke],
+        strokes: [...page.strokes, frozenStroke],
       );
-      activeStroke = null;
+      _resetGesturePreview();
     });
   }
 
@@ -2417,7 +2523,9 @@ class _DiarySketchbookScreenState extends State<DiarySketchbookScreen> {
       pageIndex = pages.length - 1;
       _clearSelection();
       activeStroke = null;
-      lassoPoints = const [];
+      _activeStrokePoints.clear();
+      lassoPoints.clear();
+      _gestureRevision++;
       _transform.value = Matrix4.identity();
     });
   }
@@ -2489,7 +2597,9 @@ class _DiarySketchbookScreenState extends State<DiarySketchbookScreen> {
       pageIndex = pageIndex.clamp(0, pages.length - 1);
       _clearSelection();
       activeStroke = null;
-      lassoPoints = const [];
+      _activeStrokePoints.clear();
+      lassoPoints.clear();
+      _gestureRevision++;
       _transform.value = Matrix4.identity();
     });
   }
