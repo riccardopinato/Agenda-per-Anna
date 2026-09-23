@@ -2884,6 +2884,8 @@ class AgendaStore extends ChangeNotifier {
           cloud.signedIn &&
           cloud.userId == ownerId &&
           (targetSpaceId == null || targetSpaceId == space.id);
+      String? cursorKeyToPersist;
+      DateTime? nextCursorToPersist;
 
       if (shouldPullSpace) {
         try {
@@ -2915,13 +2917,10 @@ class AgendaStore extends ChangeNotifier {
             }
           }
 
-          final nextCursor = _nextSyncCursor(
+          cursorKeyToPersist = cursorKey;
+          nextCursorToPersist = _nextSyncCursor(
             storedCursor,
             records.map((record) => record.clientUpdatedAt),
-          );
-          await prefs.setString(
-            cursorKey,
-            nextCursor.toIso8601String(),
           );
         } catch (_) {
           // Keep the current in-memory/disk baseline and pending overlay.
@@ -2963,10 +2962,12 @@ class AgendaStore extends ChangeNotifier {
         return am.compareTo(bm);
       });
       nextEntries[space.id] = entries;
-      await prefs.setString(
-        sharedCacheStorageKey(space.id),
-        jsonEncode(entries.map((entry) => entry.toCacheJson()).toList()),
-      );
+      await prefs.writeBatch({
+        sharedCacheStorageKey(space.id):
+            jsonEncode(entries.map((entry) => entry.toCacheJson()).toList()),
+        if (cursorKeyToPersist != null && nextCursorToPersist != null)
+          cursorKeyToPersist!: nextCursorToPersist!.toIso8601String(),
+      });
     }
 
     _sharedAgendaSpaces
@@ -3088,7 +3089,6 @@ class AgendaStore extends ChangeNotifier {
 
     _sharedAgendaEntriesBySpace[space.id] = entries;
     _rebuildSharedAgendaDayIndex();
-    await _cacheSharedAgendaEntries(space.id, entries);
 
     final prefs = await _localState();
     final cursorKey = _sharedSyncCursorKey(space.id);
@@ -3097,7 +3097,11 @@ class AgendaStore extends ChangeNotifier {
       current,
       [change.clientUpdatedAt],
     );
-    await prefs.setString(cursorKey, next.toIso8601String());
+    await prefs.writeBatch({
+      sharedCacheStorageKey(space.id):
+          jsonEncode(entries.map((entry) => entry.toCacheJson()).toList()),
+      cursorKey: next.toIso8601String(),
+    });
 
     notifyListeners();
   }
