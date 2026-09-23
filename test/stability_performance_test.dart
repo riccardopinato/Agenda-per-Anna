@@ -139,7 +139,7 @@ void main() {
       await source.removeHabit(source.habits.first.id);
     }
 
-    final backup = source.createBackupJson();
+    final backup = await source.createBackupJson();
 
     final restored = AgendaStore();
     await restored.load();

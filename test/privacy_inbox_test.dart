@@ -33,7 +33,7 @@ void main() {
     await store.toggleInboxPinned(id);
     expect(store.inbox.single.pinned, isTrue);
 
-    final backup = store.createBackupJson();
+    final backup = await store.createBackupJson();
 
     final restored = AgendaStore();
     await restored.restoreBackup(backup, merge: false);

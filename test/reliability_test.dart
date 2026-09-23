@@ -579,10 +579,11 @@ void main() {
     final store = AgendaStore();
     await store.load();
 
-    final backup =
-        Map<String, dynamic>.from(jsonDecode(store.createBackupJson()) as Map);
+    final backup = Map<String, dynamic>.from(
+      jsonDecode(await store.createBackupJson()) as Map,
+    );
 
-    expect(backup['appVersion'], '0.32.0');
+    expect(backup['appVersion'], '0.33.0');
 
     store.dispose();
   });

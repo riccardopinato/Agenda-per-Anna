@@ -18,7 +18,7 @@ class AgendaStore extends ChangeNotifier {
   static const _privacyGuardKey = 'privacy_guard_v1';
   static const _backupFormat = 'agenda_per_anna_backup';
   static const _backupSchemaVersion = 1;
-  static const _appVersion = '0.32.0';
+  static const _appVersion = '0.33.0';
 
   final List<AgendaItem> items = [];
   final Map<String, DayJournal> journals = {};
@@ -125,6 +125,338 @@ class AgendaStore extends ChangeNotifier {
     return LocalStateStore.instance.open(
       legacyPreferences: legacyPreferences,
     );
+  }
+
+  Future<Uint8List> _createMediaThumbnail(
+    Uint8List bytes, {
+    int maxSide = 420,
+    int quality = 46,
+  }) async {
+    try {
+      final compressed = await FlutterImageCompress.compressWithList(
+        bytes,
+        minWidth: maxSide,
+        minHeight: maxSide,
+        quality: quality,
+        format: CompressFormat.jpeg,
+      );
+      if (compressed.isNotEmpty) return compressed;
+    } catch (_) {}
+    return Uint8List.fromList(bytes);
+  }
+
+  Future<({List<DiarySketchPage> pages, bool changed})>
+      _localizeSketchPages(
+    List<DiarySketchPage> pages,
+  ) async {
+    var changed = false;
+    final localizedPages = <DiarySketchPage>[];
+
+    for (final page in pages) {
+      final images = <DiarySketchImageElement>[];
+      var pageChanged = false;
+
+      for (final image in page.imageElements) {
+        var next = image;
+        if (image.imageBase64.isNotEmpty) {
+          try {
+            final bytes = base64Decode(image.imageBase64);
+            final assetId = await MediaAssetStore.instance.put(bytes);
+            next = image.copyWith(
+              imageBase64: '',
+              mediaAssetId: assetId,
+            );
+            pageChanged = true;
+          } catch (_) {
+            // Preserve legacy inline media when it cannot be decoded.
+          }
+        }
+        images.add(next);
+      }
+
+      localizedPages.add(
+        pageChanged ? page.copyWith(imageElements: images) : page,
+      );
+      changed = changed || pageChanged;
+    }
+
+    return (pages: localizedPages, changed: changed);
+  }
+
+  Future<List<Map<String, dynamic>>> _portableSketchPages(
+    List<DiarySketchPage> pages,
+  ) async {
+    final result = <Map<String, dynamic>>[];
+
+    for (final page in pages) {
+      final pageJson = Map<String, dynamic>.from(page.toJson());
+      final images = <Map<String, dynamic>>[];
+
+      for (final image in page.imageElements) {
+        final imageJson = Map<String, dynamic>.from(image.toJson());
+        if ((imageJson['imageBase64']?.toString().isEmpty ?? true) &&
+            image.mediaAssetId.isNotEmpty) {
+          final bytes =
+              await MediaAssetStore.instance.read(image.mediaAssetId);
+          if (bytes != null) {
+            imageJson['imageBase64'] = base64Encode(bytes);
+          }
+        }
+        imageJson.remove('mediaAssetId');
+        images.add(imageJson);
+      }
+
+      pageJson['imageElements'] = images;
+      result.add(pageJson);
+    }
+
+    return result;
+  }
+
+  Future<bool> _migrateInlinePrivateMedia(
+    LocalStateStore prefs,
+  ) async {
+    if (_unreadableStorageKeys.contains(_journalsKey)) return false;
+
+    var changed = false;
+    for (final entry in journals.entries.toList()) {
+      final journal = entry.value;
+      final blocks = <DiaryBlock>[];
+      var journalChanged = false;
+
+      for (final block in journal.blocks) {
+        var next = block;
+        var blockChanged = false;
+
+        if (block.type == DiaryBlockType.photo) {
+          var fullId = block.mediaAssetId;
+          var thumbnailId = block.mediaThumbnailAssetId;
+
+          if (block.imageBase64.isNotEmpty) {
+            try {
+              final bytes = base64Decode(block.imageBase64);
+              fullId = await MediaAssetStore.instance.put(bytes);
+
+              final existingThumbnail = thumbnailId.isEmpty
+                  ? null
+                  : await MediaAssetStore.instance.read(thumbnailId);
+              if (existingThumbnail == null) {
+                thumbnailId = await MediaAssetStore.instance.put(
+                  await _createMediaThumbnail(bytes),
+                );
+              }
+
+              next = next.copyWith(
+                imageBase64: '',
+                mediaAssetId: fullId,
+                mediaThumbnailAssetId: thumbnailId,
+              );
+              blockChanged = true;
+            } catch (_) {
+              // Preserve unreadable legacy Base64 instead of destroying it.
+            }
+          } else if (fullId.isNotEmpty) {
+            final bytes = await MediaAssetStore.instance.read(fullId);
+            if (bytes != null) {
+              final existingThumbnail = thumbnailId.isEmpty
+                  ? null
+                  : await MediaAssetStore.instance.read(thumbnailId);
+              if (existingThumbnail == null) {
+                thumbnailId = await MediaAssetStore.instance.put(
+                  await _createMediaThumbnail(bytes),
+                );
+                next = next.copyWith(
+                  mediaThumbnailAssetId: thumbnailId,
+                );
+                blockChanged = true;
+              }
+            }
+          }
+        }
+
+        if (next.pages.isNotEmpty) {
+          final localized = await _localizeSketchPages(next.pages);
+          if (localized.changed) {
+            next = next.copyWith(pages: localized.pages);
+            blockChanged = true;
+          }
+        }
+
+        blocks.add(next);
+        journalChanged = journalChanged || blockChanged;
+      }
+
+      if (journalChanged) {
+        journals[entry.key] = journal.copyWith(blocks: blocks);
+        changed = true;
+      }
+    }
+
+    if (changed) {
+      await prefs.setString(
+        _journalsKey,
+        jsonEncode(
+          journals.map(
+            (key, value) => MapEntry(key, value.toLocalJson()),
+          ),
+        ),
+      );
+    }
+    return changed;
+  }
+
+  Future<Map<String, dynamic>> _portableJournalJson(
+    DayJournal journal,
+  ) async {
+    final payload = Map<String, dynamic>.from(journal.toJson());
+    final blocks = <Map<String, dynamic>>[];
+
+    for (final block in journal.blocks) {
+      final blockJson = Map<String, dynamic>.from(block.toJson());
+
+      if (block.type == DiaryBlockType.photo) {
+        if ((blockJson['imageBase64']?.toString().isEmpty ?? true) &&
+            block.mediaAssetId.isNotEmpty) {
+          final bytes =
+              await MediaAssetStore.instance.read(block.mediaAssetId);
+          if (bytes != null) {
+            blockJson['imageBase64'] = base64Encode(bytes);
+          }
+        }
+        blockJson.remove('mediaAssetId');
+        blockJson.remove('mediaThumbnailAssetId');
+      }
+
+      if (block.pages.isNotEmpty) {
+        blockJson['pages'] = await _portableSketchPages(block.pages);
+      }
+      blocks.add(blockJson);
+    }
+
+    payload['blocks'] = blocks;
+    return payload;
+  }
+
+  Future<SharedEntry> _localizeSharedThumbnail(
+    SharedEntry entry,
+  ) async {
+    var next = entry;
+
+    if (next.type == SharedEntryType.photo &&
+        next.mediaThumbnailAssetId.isEmpty &&
+        next.mediaThumbnailBase64.isNotEmpty) {
+      final assetId = await MediaAssetStore.instance
+          .importBase64(next.mediaThumbnailBase64);
+      if (assetId != null) {
+        next = next.copyWith(mediaThumbnailAssetId: assetId);
+      }
+    }
+
+    if (next.sketchPages.isNotEmpty) {
+      final localized = await _localizeSketchPages(next.sketchPages);
+      if (localized.changed) {
+        next = next.copyWith(sketchPages: localized.pages);
+      }
+    }
+
+    return next;
+  }
+
+  Map<String, dynamic> _sharedLocalQueuePayload(
+    SharedEntry entry,
+  ) {
+    final payload = Map<String, dynamic>.from(entry.toJson());
+    if (entry.type == SharedEntryType.photo &&
+        entry.mediaThumbnailAssetId.isNotEmpty) {
+      payload['mediaThumbnailBase64'] = '';
+      payload['_mediaThumbnailAssetId'] = entry.mediaThumbnailAssetId;
+    }
+    if (entry.sketchPages.isNotEmpty) {
+      payload['sketchPages'] =
+          entry.sketchPages.map((page) => page.toLocalJson()).toList();
+    }
+    return payload;
+  }
+
+  Future<Map<String, dynamic>> _materializeSharedQueuePayload(
+    Map<String, dynamic> source,
+  ) async {
+    final payload = Map<String, dynamic>.from(source);
+    final localAssetId =
+        payload.remove('_mediaThumbnailAssetId')?.toString() ?? '';
+    if ((payload['mediaThumbnailBase64']?.toString().isEmpty ?? true) &&
+        localAssetId.isNotEmpty) {
+      final bytes = await MediaAssetStore.instance.read(localAssetId);
+      if (bytes != null) {
+        payload['mediaThumbnailBase64'] = base64Encode(bytes);
+      }
+    }
+
+    final rawPages = payload['sketchPages'];
+    if (rawPages is List) {
+      final pages = rawPages
+          .whereType<Map>()
+          .map(
+            (value) => DiarySketchPage.fromJson(
+              Map<String, dynamic>.from(value),
+            ),
+          )
+          .toList();
+      payload['sketchPages'] = await _portableSketchPages(pages);
+    }
+
+    return payload;
+  }
+
+  void _collectAssetIdsFromJson(dynamic value, Set<String> result) {
+    if (value is Map) {
+      for (final entry in value.entries) {
+        final key = entry.key.toString().toLowerCase();
+        final child = entry.value;
+        if (key.contains('assetid') &&
+            child is String &&
+            child.trim().isNotEmpty) {
+          result.add(child);
+        }
+        _collectAssetIdsFromJson(child, result);
+      }
+      return;
+    }
+    if (value is List) {
+      for (final child in value) {
+        _collectAssetIdsFromJson(child, result);
+      }
+    }
+  }
+
+  Future<void> _pruneUnreferencedMedia(LocalStateStore prefs) async {
+    final referenced = <String>{};
+
+    for (final journal in journals.values) {
+      for (final block in journal.blocks) {
+        if (block.mediaAssetId.isNotEmpty) referenced.add(block.mediaAssetId);
+        if (block.mediaThumbnailAssetId.isNotEmpty) {
+          referenced.add(block.mediaThumbnailAssetId);
+        }
+        for (final page in block.pages) {
+          for (final image in page.imageElements) {
+            if (image.mediaAssetId.isNotEmpty) {
+              referenced.add(image.mediaAssetId);
+            }
+          }
+        }
+      }
+    }
+
+    for (final key in prefs.getKeys()) {
+      final raw = prefs.getString(key);
+      if (raw == null || !raw.contains('AssetId')) continue;
+      try {
+        _collectAssetIdsFromJson(jsonDecode(raw), referenced);
+      } catch (_) {}
+    }
+
+    await MediaAssetStore.instance.prune(referenced);
   }
 
   Future<void> load() async {
@@ -320,12 +652,30 @@ class AgendaStore extends ChangeNotifier {
         HabitDefinition(id: 'me', name: 'Tempo per me'),
       ]);
     }
+    await _migrateInlinePrivateMedia(prefs);
     _invalidateDayIndex();
     await _loadSharedUnreadCounts(prefs);
     await refreshSharedAgendaCache(notify: false);
     await refreshPendingSharedCount(notify: false);
     await refreshPendingSharedInteractionCount(notify: false);
+    await _migrateSharedMediaQueues(prefs);
     await refreshPendingSharedMediaCount(notify: false);
+    await _pruneUnreferencedMedia(prefs);
+  }
+
+  Future<void> _migrateSharedMediaQueues(
+    LocalStateStore prefs,
+  ) async {
+    final ownerId = _activeAccountId;
+    if (ownerId == null) return;
+    final prefix = 'shared_media_pending_${ownerId}_';
+    final keys =
+        prefs.getKeys().where((key) => key.startsWith(prefix)).toList();
+    for (final key in keys) {
+      final spaceId = key.substring(prefix.length);
+      if (spaceId.isEmpty) continue;
+      await loadSharedMediaPendingUploads(spaceId);
+    }
   }
 
   Map<String, dynamic> _readAccountProfiles(LocalStateStore prefs) {
@@ -481,9 +831,12 @@ class AgendaStore extends ChangeNotifier {
       );
     }
     if (shouldWrite(_journalsKey)) {
+      await _migrateInlinePrivateMedia(prefs);
       await prefs.setString(
         _journalsKey,
-        jsonEncode(journals.map((k, v) => MapEntry(k, v.toJson()))),
+        jsonEncode(
+          journals.map((k, v) => MapEntry(k, v.toLocalJson())),
+        ),
       );
     }
     if (shouldWrite(_monthsKey)) {
@@ -576,9 +929,9 @@ class AgendaStore extends ChangeNotifier {
     _scheduleCloudSync();
   }
 
-  Map<String, _LocalSyncEntity> _currentSyncEntities({
+  Future<Map<String, _LocalSyncEntity>> _currentSyncEntities({
     Set<String>? onlyKeys,
-  }) {
+  }) async {
     final result = <String, _LocalSyncEntity>{};
 
     bool includes(String key) =>
@@ -604,7 +957,11 @@ class AgendaStore extends ChangeNotifier {
     }
     if (includes(_journalsKey)) {
       for (final entry in journals.entries) {
-        add('journal', entry.key, entry.value.toJson());
+        add(
+          'journal',
+          entry.key,
+          await _portableJournalJson(entry.value),
+        );
       }
     }
     if (includes(_monthsKey)) {
@@ -653,16 +1010,20 @@ class AgendaStore extends ChangeNotifier {
     bool forceAll = false,
     Set<String>? onlyKeys,
   }) async {
-    final entities = _currentSyncEntities(onlyKeys: onlyKeys);
+    final entities = await _currentSyncEntities(onlyKeys: onlyKeys);
     final now = DateTime.now();
 
     for (final entry in entities.entries) {
       final hash = _syncPayloadHash(entry.value.payload);
       if (forceAll || _syncIndex[entry.key] != hash) {
+        final queuedPayload = entry.value.entityType == 'journal'
+            ? (journals[entry.value.entityId]?.toLocalJson() ??
+                entry.value.payload)
+            : entry.value.payload;
         _syncQueue[entry.key] = CloudSyncOperation(
           entityType: entry.value.entityType,
           entityId: entry.value.entityId,
-          payload: entry.value.payload,
+          payload: queuedPayload,
           updatedAt: now,
           ownerId: _activeAccountId,
         );
@@ -732,9 +1093,10 @@ class AgendaStore extends ChangeNotifier {
     await prefs.setString(_syncIndexKey, jsonEncode(_syncIndex));
   }
 
-  Map<String, dynamic> _backupDataPayload() => {
+  Map<String, dynamic> _localDataPayload() => {
         'items': items.map((e) => e.toJson()).toList(),
-        'journals': journals.map((k, v) => MapEntry(k, v.toJson())),
+        'journals':
+            journals.map((k, v) => MapEntry(k, v.toLocalJson())),
         'months': months.map((k, v) => MapEntry(k, v.toJson())),
         'weeks': weeks.map((k, v) => MapEntry(k, v.toJson())),
         'habits': habits.map((e) => e.toJson()).toList(),
@@ -742,13 +1104,29 @@ class AgendaStore extends ChangeNotifier {
         'preferences': preferences.toJson(),
       };
 
-  String createBackupJson() {
+  Future<Map<String, dynamic>> _portableBackupDataPayload() async {
+    final portableJournals = <String, dynamic>{};
+    for (final entry in journals.entries) {
+      portableJournals[entry.key] = await _portableJournalJson(entry.value);
+    }
+    return {
+      'items': items.map((e) => e.toJson()).toList(),
+      'journals': portableJournals,
+      'months': months.map((k, v) => MapEntry(k, v.toJson())),
+      'weeks': weeks.map((k, v) => MapEntry(k, v.toJson())),
+      'habits': habits.map((e) => e.toJson()).toList(),
+      'inbox': inbox.map((e) => e.toJson()).toList(),
+      'preferences': preferences.toJson(),
+    };
+  }
+
+  Future<String> createBackupJson() async {
     final document = {
       'format': _backupFormat,
       'schemaVersion': _backupSchemaVersion,
       'appVersion': _appVersion,
       'exportedAt': DateTime.now().toIso8601String(),
-      'data': _backupDataPayload(),
+      'data': await _portableBackupDataPayload(),
     };
     return const JsonEncoder.withIndent('  ').convert(document);
   }
@@ -923,6 +1301,7 @@ class AgendaStore extends ChangeNotifier {
       await NotificationService.instance.cancel('${item.id}:secondary');
     }
 
+    await _migrateInlinePrivateMedia(await _localState());
     await _save(createAutoSnapshot: false);
 
     if (!merge && incomingPreferences != null) {
@@ -950,7 +1329,7 @@ class AgendaStore extends ChangeNotifier {
         id: const Uuid().v4(),
         createdAt: DateTime.now(),
         label: label,
-        data: jsonDecode(jsonEncode(_backupDataPayload()))
+        data: jsonDecode(jsonEncode(_localDataPayload()))
             as Map<String, dynamic>,
       ),
     );
@@ -975,7 +1354,7 @@ class AgendaStore extends ChangeNotifier {
         id: const Uuid().v4(),
         createdAt: now,
         label: 'Backup automatico',
-        data: jsonDecode(jsonEncode(_backupDataPayload()))
+        data: jsonDecode(jsonEncode(_localDataPayload()))
             as Map<String, dynamic>,
       ),
     );
@@ -1418,7 +1797,8 @@ class AgendaStore extends ChangeNotifier {
       }
 
       if (remoteChanged) {
-        final entitiesAfterPull = _currentSyncEntities();
+        await _migrateInlinePrivateMedia(prefs);
+        final entitiesAfterPull = await _currentSyncEntities();
         _replaceSyncIndex(entitiesAfterPull);
         await _save(
           createAutoSnapshot: false,
@@ -1440,7 +1820,29 @@ class AgendaStore extends ChangeNotifier {
                   operation.ownerId != ownerId,
             );
 
-      await cloud.pushPrivateOperations(pendingSnapshot.values);
+      final portablePending = <CloudSyncOperation>[];
+      for (final operation in pendingSnapshot.values) {
+        if (operation.entityType == 'journal' &&
+            !operation.deleted &&
+            operation.payload != null) {
+          final journal = journals[operation.entityId] ??
+              DayJournal.fromJson(operation.payload!);
+          portablePending.add(
+            CloudSyncOperation(
+              entityType: operation.entityType,
+              entityId: operation.entityId,
+              payload: await _portableJournalJson(journal),
+              updatedAt: operation.updatedAt,
+              deleted: operation.deleted,
+              ownerId: operation.ownerId,
+            ),
+          );
+        } else {
+          portablePending.add(operation);
+        }
+      }
+
+      await cloud.pushPrivateOperations(portablePending);
 
       if (cloud.sessionEpoch != sessionEpoch ||
           cloud.userId != ownerId ||
@@ -1844,10 +2246,20 @@ class AgendaStore extends ChangeNotifier {
               operation.payload!,
               updatedBy: ownerId,
               updatedAt: operation.updatedAt,
+              mediaThumbnailAssetId:
+                  operation.payload!['_mediaThumbnailAssetId']
+                          ?.toString() ??
+                      '',
             ),
           );
         }
       }
+
+      final localizedEntries = <SharedEntry>[];
+      for (final entry in entries) {
+        localizedEntries.add(await _localizeSharedThumbnail(entry));
+      }
+      entries = localizedEntries;
 
       entries.sort((a, b) {
         final dateCompare = a.date.compareTo(b.date);
@@ -2069,26 +2481,28 @@ class AgendaStore extends ChangeNotifier {
     final revision = (updatedAt ?? DateTime.now()).toUtc();
     final operations = await loadSharedPendingOperations(spaceId);
     operations.removeWhere((operation) => operation.entityId == entry.id);
+    final queuedPayload = _sharedLocalQueuePayload(entry);
     operations.add(
       SharedPendingOperation(
         action: SharedPendingAction.upsert,
         entityId: entry.id,
-        payload: entry.toJson(),
+        payload: queuedPayload,
         updatedAt: revision,
       ),
     );
     await _saveSharedPendingOperations(spaceId, operations);
     await refreshPendingSharedCount(notify: false);
+    final localizedEntry = await _localizeSharedThumbnail(
+      entry.copyWith(
+        updatedBy: CloudSyncService.instance.userId,
+        updatedAt: revision,
+      ),
+    );
     final cached = List<SharedEntry>.from(
       _sharedAgendaEntriesBySpace[spaceId] ?? const <SharedEntry>[],
     )
       ..removeWhere((cachedEntry) => cachedEntry.id == entry.id)
-      ..add(
-        entry.copyWith(
-          updatedBy: CloudSyncService.instance.userId,
-          updatedAt: revision,
-        ),
-      );
+      ..add(localizedEntry);
     _sharedAgendaEntriesBySpace[spaceId] = cached;
     _rebuildSharedAgendaDayIndex();
     await _cacheSharedAgendaEntries(spaceId, cached);
@@ -2437,14 +2851,73 @@ class AgendaStore extends ChangeNotifier {
     }
   }
 
+  Future<SharedMediaPendingUpload> _localizeSharedMediaUpload(
+    SharedMediaPendingUpload upload,
+  ) async {
+    var mediaAssetId = upload.mediaAssetId;
+    var thumbnailAssetId = upload.thumbnailAssetId;
+
+    if (mediaAssetId.isEmpty && upload.imageBase64.isNotEmpty) {
+      mediaAssetId =
+          await MediaAssetStore.instance.importBase64(upload.imageBase64) ?? '';
+    }
+    if (thumbnailAssetId.isEmpty && upload.thumbnailBase64.isNotEmpty) {
+      thumbnailAssetId = await MediaAssetStore.instance
+              .importBase64(upload.thumbnailBase64) ??
+          '';
+    }
+
+    if (mediaAssetId == upload.mediaAssetId &&
+        thumbnailAssetId == upload.thumbnailAssetId) {
+      return upload;
+    }
+
+    return SharedMediaPendingUpload(
+      id: upload.id,
+      spaceId: upload.spaceId,
+      entryId: upload.entryId,
+      title: upload.title,
+      note: upload.note,
+      date: upload.date,
+      mediaAssetId: mediaAssetId,
+      thumbnailAssetId: thumbnailAssetId,
+      imageBase64: upload.imageBase64,
+      thumbnailBase64: upload.thumbnailBase64,
+      oldMediaPath: upload.oldMediaPath,
+      createdAt: upload.createdAt,
+    );
+  }
+
+  Future<Uint8List?> _sharedMediaUploadBytes(
+    SharedMediaPendingUpload upload, {
+    required bool thumbnail,
+  }) async {
+    final assetId =
+        thumbnail ? upload.thumbnailAssetId : upload.mediaAssetId;
+    if (assetId.isNotEmpty) {
+      final stored = await MediaAssetStore.instance.read(assetId);
+      if (stored != null) return stored;
+    }
+
+    final legacy =
+        thumbnail ? upload.thumbnailBase64 : upload.imageBase64;
+    if (legacy.isEmpty) return null;
+    try {
+      return base64Decode(legacy);
+    } catch (_) {
+      return null;
+    }
+  }
+
   Future<List<SharedMediaPendingUpload>> loadSharedMediaPendingUploads(
     String spaceId,
   ) async {
     final prefs = await _localState();
     final raw = prefs.getString(sharedMediaPendingStorageKey(spaceId));
     if (raw == null) return <SharedMediaPendingUpload>[];
+
     try {
-      return (jsonDecode(raw) as List)
+      final decoded = (jsonDecode(raw) as List)
           .map(
             (value) => SharedMediaPendingUpload.fromJson(
               Map<String, dynamic>.from(value as Map),
@@ -2455,9 +2928,23 @@ class AgendaStore extends ChangeNotifier {
                 upload.id.isNotEmpty &&
                 upload.spaceId == spaceId &&
                 upload.entryId.isNotEmpty &&
-                upload.imageBase64.isNotEmpty,
+                upload.hasFullMedia,
           )
           .toList();
+
+      final localized = <SharedMediaPendingUpload>[];
+      var changed = false;
+      for (final upload in decoded) {
+        final next = await _localizeSharedMediaUpload(upload);
+        localized.add(next);
+        changed = changed ||
+            next.mediaAssetId != upload.mediaAssetId ||
+            next.thumbnailAssetId != upload.thumbnailAssetId;
+      }
+      if (changed) {
+        await _saveSharedMediaPendingUploads(spaceId, localized);
+      }
+      return localized;
     } catch (_) {
       return <SharedMediaPendingUpload>[];
     }
@@ -2495,10 +2982,14 @@ class AgendaStore extends ChangeNotifier {
   Future<void> enqueueSharedMediaUpload(
     SharedMediaPendingUpload upload,
   ) async {
-    final uploads = await loadSharedMediaPendingUploads(upload.spaceId);
-    uploads.removeWhere((candidate) => candidate.entryId == upload.entryId);
-    uploads.add(upload);
-    await _saveSharedMediaPendingUploads(upload.spaceId, uploads);
+    final localizedUpload = await _localizeSharedMediaUpload(upload);
+    final uploads =
+        await loadSharedMediaPendingUploads(localizedUpload.spaceId);
+    uploads.removeWhere(
+      (candidate) => candidate.entryId == localizedUpload.entryId,
+    );
+    uploads.add(localizedUpload);
+    await _saveSharedMediaPendingUploads(localizedUpload.spaceId, uploads);
     await refreshPendingSharedMediaCount(notify: false);
     notifyListeners();
   }
@@ -2558,11 +3049,30 @@ class AgendaStore extends ChangeNotifier {
 
         for (final upload in List<SharedMediaPendingUpload>.from(uploads)) {
           try {
+            final mediaBytes = await _sharedMediaUploadBytes(
+              upload,
+              thumbnail: false,
+            );
+            if (mediaBytes == null || mediaBytes.isEmpty) {
+              throw StateError('shared_media_missing');
+            }
+            final thumbnailBytes = await _sharedMediaUploadBytes(
+              upload,
+              thumbnail: true,
+            );
+
             final mediaPath = await cloud.uploadSharedMedia(
               spaceId: currentSpaceId,
               entryId: upload.entryId,
-              bytes: base64Decode(upload.imageBase64),
+              bytes: mediaBytes,
             );
+            final remoteCacheId =
+                MediaAssetStore.instance.namedAssetId('remote', mediaPath);
+            await MediaAssetStore.instance.putNamed(
+              remoteCacheId,
+              mediaBytes,
+            );
+
             final entry = SharedEntry(
               id: upload.entryId,
               type: SharedEntryType.photo,
@@ -2571,7 +3081,10 @@ class AgendaStore extends ChangeNotifier {
               date: upload.date,
               createdAt: upload.createdAt,
               mediaPath: mediaPath,
-              mediaThumbnailBase64: upload.thumbnailBase64,
+              mediaThumbnailBase64: thumbnailBytes == null
+                  ? ''
+                  : base64Encode(thumbnailBytes),
+              mediaThumbnailAssetId: upload.thumbnailAssetId,
             );
             await enqueueSharedUpsert(
               spaceId: currentSpaceId,
@@ -2714,11 +3227,15 @@ class AgendaStore extends ChangeNotifier {
                 }
               }
             } else if (operation.payload != null) {
+              final portablePayload =
+                  await _materializeSharedQueuePayload(
+                operation.payload!,
+              );
               await cloud.upsertSharedRecord(
                 spaceId: currentSpaceId,
                 entityType: 'shared_entry',
                 entityId: operation.entityId,
-                payload: operation.payload!,
+                payload: portablePayload,
                 updatedAt: operation.updatedAt,
               );
             } else {
