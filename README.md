@@ -2,7 +2,7 @@
 
 Flutter app for personal planning, private diary and the shared **Noi ♡** space.
 
-Current release line: **v0.33.2**.
+Current release line: **v0.34.0**.
 
 ## Core areas
 
@@ -36,3 +36,13 @@ See `docs/ARCHITECTURE.md` and `supabase/README.md` for implementation details.
 - Permanent CI quality gate.
 - Stable secret-backed Android release signing required.
 - Runtime version metadata aligned across backup and push registration.
+
+
+## v0.34.0 — Performance Core
+
+- Hot-path agenda mutations persist as account-scoped per-entity deltas instead of rewriting an entire section JSON.
+- Full-section writes remain backward-compatible and compact matching deltas atomically.
+- Account switching compacts the active delta journal before archiving the profile.
+- Backup restore clears stale deltas in the same transaction as the restored working set.
+- Private/shared unified agenda lists, pending-task counts and month counts use invalidated caches instead of rebuilding and re-sorting the full agenda on every read.
+- The top-level MaterialApp now listens only to shell/configuration revisions, so ordinary agenda, diary and sync notifications do not rebuild the entire app tree.
