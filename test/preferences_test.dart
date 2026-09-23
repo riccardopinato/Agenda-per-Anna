@@ -50,7 +50,7 @@ void main() {
       ),
     );
 
-    final backup = source.createBackupJson();
+    final backup = await source.createBackupJson();
 
     final restored = AgendaStore();
     await restored.restoreBackup(backup, merge: false);
@@ -73,7 +73,7 @@ void main() {
       const AgendaPreferences(palette: AgendaPalette.peach),
     );
 
-    await target.restoreBackup(source.createBackupJson(), merge: true);
+    await target.restoreBackup(await source.createBackupJson(), merge: true);
 
     expect(target.preferences.palette, AgendaPalette.peach);
   });
