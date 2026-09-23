@@ -140,3 +140,13 @@ The private journal and Noi ♡ no longer maintain independent diary presentatio
 - Media cache backends expose access recency and byte size. Native files use file modification time; Web records persist access metadata alongside the existing Base64 payload.
 - Remote media cache eviction is LRU-style with count and byte budgets. In-memory cache entries are protected from immediate disk eviction.
 - Full media GC is scheduled after the first frame path and debounced after diary writes, rather than awaited by AgendaStore.load().
+
+
+## v0.36.0 — Backup & Cloud Media 3.0
+
+- Portable full backup uses a ZIP bundle. `data.json` contains the normal local structured representation, while media assets are stored separately as `media/<assetId>.bin`.
+- `manifest.json` declares bundle version, release version, export timestamp, data SHA-256, media count and per-media size/SHA-256.
+- ZIP decoding is bounded by entry count and total uncompressed bytes and never extracts archive paths directly to disk.
+- Legacy single-file JSON backup remains importable and `createBackupJson()` remains available for compatibility/tests.
+- ZIP restore validates the complete bundle before mutating working state, writes media into MediaAssetStore, then uses the existing transactional restore path.
+- Cloud sync indexing now hashes journal `toLocalJson()` rather than materializing media. The legacy-compatible remote Base64 representation is produced only for pending journal operations at the upload boundary.
