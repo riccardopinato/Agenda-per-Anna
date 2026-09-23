@@ -8,14 +8,7 @@ final Map<String, Uint8List> _testAssets = <String, Uint8List>{};
 bool get _isTest => Platform.environment['FLUTTER_TEST'] == 'true';
 
 Future<Directory> _mediaDirectory() async {
-  Directory root;
-  try {
-    root = await getApplicationSupportDirectory();
-  } catch (_) {
-    root = Directory(
-      '${Directory.systemTemp.path}${Platform.pathSeparator}annas_diary',
-    );
-  }
+  final root = await getApplicationSupportDirectory();
 
   final directory = Directory(
     '${root.path}${Platform.pathSeparator}media_v2',
