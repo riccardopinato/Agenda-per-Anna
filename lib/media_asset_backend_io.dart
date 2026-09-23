@@ -4,6 +4,7 @@ import 'dart:typed_data';
 import 'package:path_provider/path_provider.dart';
 
 final Map<String, Uint8List> _testAssets = <String, Uint8List>{};
+final Map<String, int> _testAccessedAt = <String, int>{};
 
 bool get _isTest => Platform.environment['FLUTTER_TEST'] == 'true';
 
@@ -51,6 +52,7 @@ Future<void> writeMediaAssetBytes(
 ) async {
   if (_isTest) {
     _testAssets[assetId] = Uint8List.fromList(bytes);
+    _testAccessedAt[assetId] = DateTime.now().millisecondsSinceEpoch;
     return;
   }
 
@@ -61,16 +63,25 @@ Future<void> writeMediaAssetBytes(
 Future<Uint8List?> readMediaAssetBytes(String assetId) async {
   if (_isTest) {
     final value = _testAssets[assetId];
-    return value == null ? null : Uint8List.fromList(value);
+    if (value == null) return null;
+    _testAccessedAt[assetId] = DateTime.now().millisecondsSinceEpoch;
+    return Uint8List.fromList(value);
   }
 
   final file = await _assetFile(assetId);
   if (!await file.exists()) return null;
-  return Uint8List.fromList(await file.readAsBytes());
+  final bytes = Uint8List.fromList(await file.readAsBytes());
+  try {
+    await file.setLastModified(DateTime.now());
+  } catch (_) {
+    // Cache recency is best-effort; reading the asset must still succeed.
+  }
+  return bytes;
 }
 
 Future<bool> deleteMediaAssetBytes(String assetId) async {
   if (_isTest) {
+    _testAccessedAt.remove(assetId);
     return _testAssets.remove(assetId) != null;
   }
 
@@ -93,6 +104,37 @@ Future<Set<String>> listMediaAssetIds() async {
   return result;
 }
 
+Future<Map<String, List<int>>> listMediaAssetStats() async {
+  if (_isTest) {
+    return {
+      for (final entry in _testAssets.entries)
+        entry.key: [
+          _testAccessedAt[entry.key] ?? 0,
+          entry.value.lengthInBytes,
+        ],
+    };
+  }
+
+  final directory = await _mediaDirectory();
+  final result = <String, List<int>>{};
+  await for (final entity in directory.list(followLinks: false)) {
+    if (entity is! File || !entity.path.endsWith('.bin')) continue;
+    final name = entity.uri.pathSegments.last;
+    final assetId = name.substring(0, name.length - 4);
+    try {
+      final stat = await entity.stat();
+      result[assetId] = [
+        stat.modified.millisecondsSinceEpoch,
+        stat.size,
+      ];
+    } catch (_) {
+      // Ignore files that disappear while the cache is being inspected.
+    }
+  }
+  return result;
+}
+
 Future<void> clearMediaAssetsForTesting() async {
   _testAssets.clear();
+  _testAccessedAt.clear();
 }
