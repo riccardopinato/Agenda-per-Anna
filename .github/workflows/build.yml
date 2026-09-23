@@ -176,12 +176,6 @@ jobs:
           plist.write_text(ptext)
           PY
 
-      - name: Restore stable sideload signing key
-        uses: actions/cache@v5
-        with:
-          path: .signing/agenda-debug.jks
-          key: agenda-per-anna-project-signing-v1
-
       - name: Configure release signing
         env:
           ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
@@ -189,27 +183,23 @@ jobs:
           ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
           ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
         run: |
-          mkdir -p .signing
+          set -euo pipefail
 
-          if [ -n "$ANDROID_KEYSTORE_BASE64" ] &&              [ -n "$ANDROID_KEYSTORE_PASSWORD" ] &&              [ -n "$ANDROID_KEY_ALIAS" ] &&              [ -n "$ANDROID_KEY_PASSWORD" ]; then
-            echo "$ANDROID_KEYSTORE_BASE64" | base64 -d > .signing/agenda-release.jks
-            SIGNING_FILE="agenda-release.jks"
-            SIGNING_STORE_PASSWORD="$ANDROID_KEYSTORE_PASSWORD"
-            SIGNING_ALIAS="$ANDROID_KEY_ALIAS"
-            SIGNING_KEY_PASSWORD="$ANDROID_KEY_PASSWORD"
-            echo "Using production signing credentials from GitHub Secrets."
-          else
-            if [ ! -f .signing/agenda-debug.jks ]; then
-              keytool -genkeypair -v                 -keystore .signing/agenda-debug.jks                 -storepass android                 -keypass android                 -alias androiddebugkey                 -keyalg RSA                 -keysize 2048                 -validity 10000                 -dname "CN=Anna's Diary Sideload,O=Riccardo,C=IT"
-            fi
-            SIGNING_FILE="agenda-debug.jks"
-            SIGNING_STORE_PASSWORD="android"
-            SIGNING_ALIAS="androiddebugkey"
-            SIGNING_KEY_PASSWORD="android"
-            echo "::warning::Production signing secrets are not configured; using the stable sideload key for update compatibility."
+          if [ -z "$ANDROID_KEYSTORE_BASE64" ] || \
+             [ -z "$ANDROID_KEYSTORE_PASSWORD" ] || \
+             [ -z "$ANDROID_KEY_ALIAS" ] || \
+             [ -z "$ANDROID_KEY_PASSWORD" ]; then
+            echo "::error::Release signing secrets are required. Refusing to create a release APK with an ephemeral or cache-backed key."
+            exit 1
           fi
 
-          export SIGNING_FILE SIGNING_STORE_PASSWORD SIGNING_ALIAS SIGNING_KEY_PASSWORD
+          mkdir -p .signing
+          echo "$ANDROID_KEYSTORE_BASE64" | base64 -d > .signing/agenda-release.jks
+
+          export SIGNING_FILE="agenda-release.jks"
+          export SIGNING_STORE_PASSWORD="$ANDROID_KEYSTORE_PASSWORD"
+          export SIGNING_ALIAS="$ANDROID_KEY_ALIAS"
+          export SIGNING_KEY_PASSWORD="$ANDROID_KEY_PASSWORD"
 
           python3 - <<'PY'
           import os
