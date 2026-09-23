@@ -1287,14 +1287,21 @@ class _BackupScreenState extends State<BackupScreen> {
   Future<void> _exportBackup() async {
     setState(() => busy = true);
     try {
-      final ok = await BackupFileService.instance.saveJsonBackup(
-        json: await widget.store.createBackupJson(),
-        fileName: _timestampFileName('json'),
+      final bytes = await widget.store.createBackupZip();
+      final ok = await BackupFileService.instance.saveZipBackup(
+        bytes: bytes,
+        fileName: _timestampFileName('zip'),
       );
       _message(
         ok
-            ? 'Backup completo salvato.'
+            ? 'Backup completo ZIP salvato.'
             : 'Salvataggio annullato o non riuscito.',
+      );
+    } catch (error) {
+      _message(
+        error is FormatException
+            ? error.message.toString()
+            : 'Non è stato possibile creare il backup completo.',
       );
     } finally {
       if (mounted) setState(() => busy = false);
@@ -1320,18 +1327,26 @@ class _BackupScreenState extends State<BackupScreen> {
 
   Future<void> _importBackup() async {
     setState(() => busy = true);
-    String? raw;
+    PickedBackupFile? picked;
     try {
-      raw = await BackupFileService.instance.pickJsonBackup();
+      picked = await BackupFileService.instance.pickBackup();
     } finally {
       if (mounted) setState(() => busy = false);
     }
 
-    if (raw == null || !mounted) return;
+    if (picked == null || !mounted) return;
 
+    String? legacyJson;
+    Uint8List? zipBytes;
     BackupSummary summary;
     try {
-      summary = widget.store.inspectBackup(raw);
+      if (picked.isZip) {
+        zipBytes = picked.bytes;
+        summary = widget.store.inspectBackupZip(zipBytes);
+      } else {
+        legacyJson = utf8.decode(picked.bytes);
+        summary = widget.store.inspectBackup(legacyJson);
+      }
     } catch (error) {
       _message(
         error is FormatException
@@ -1358,6 +1373,13 @@ class _BackupScreenState extends State<BackupScreen> {
             Text('• ${summary.monthCount} pagine mensili'),
             Text('• ${summary.weekCount} settimane'),
             Text('• ${summary.habitCount} abitudini'),
+            if (picked.isZip) ...[
+              const SizedBox(height: 8),
+              const Text(
+                '• Media inclusi separatamente nel pacchetto ZIP',
+                style: TextStyle(fontWeight: FontWeight.w700),
+              ),
+            ],
             const SizedBox(height: 14),
             const Text(
               'Prima del ripristino verrà creato automaticamente un backup locale di sicurezza.',
@@ -1411,17 +1433,26 @@ class _BackupScreenState extends State<BackupScreen> {
 
     setState(() => busy = true);
     try {
-      await widget.store.restoreBackup(
-        raw,
-        merge: action == 'merge',
-      );
+      if (zipBytes != null) {
+        await widget.store.restoreBackupZip(
+          zipBytes,
+          merge: action == 'merge',
+        );
+      } else {
+        await widget.store.restoreBackup(
+          legacyJson!,
+          merge: action == 'merge',
+        );
+      }
       _message(
         action == 'merge'
             ? 'Backup unito ai dati presenti.'
             : 'Backup ripristinato correttamente.',
       );
     } catch (_) {
-      _message('Ripristino non riuscito. I dati attuali non sono stati eliminati.');
+      _message(
+        'Ripristino non riuscito. I dati attuali non sono stati eliminati.',
+      );
     } finally {
       if (mounted) setState(() => busy = false);
     }
@@ -1504,7 +1535,7 @@ class _BackupScreenState extends State<BackupScreen> {
                         SizedBox(height: 5),
                         Text(
                           'Crea una copia completa dell’agenda e conservala dove preferisci. '
-                          'Il file JSON può ripristinare l’app; il TXT è pensato per essere letto.',
+                          'Il backup ZIP include dati e media separati; i vecchi backup JSON restano importabili.',
                         ),
                       ],
                     ),
@@ -1514,7 +1545,7 @@ class _BackupScreenState extends State<BackupScreen> {
                     icon: Icons.save_alt_outlined,
                     title: 'Crea backup completo',
                     subtitle:
-                        'Salva appuntamenti, diario, mesi, settimane, abitudini e budget in un file .json.',
+                        'Salva dati e media in un unico file .zip verificato, senza incorporare le foto in Base64 nel JSON.',
                     buttonLabel: 'Salva backup',
                     onPressed: busy ? null : _exportBackup,
                   ),
@@ -1523,7 +1554,7 @@ class _BackupScreenState extends State<BackupScreen> {
                     icon: Icons.restore_outlined,
                     title: 'Ripristina da file',
                     subtitle:
-                        'Importa un backup precedente. Puoi unire i dati oppure sostituire tutto.',
+                        'Importa backup ZIP nuovi o JSON precedenti. Puoi unire i dati oppure sostituire tutto.',
                     buttonLabel: 'Scegli backup',
                     onPressed: busy ? null : _importBackup,
                   ),
@@ -2620,7 +2651,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               const SizedBox(height: 8),
               Center(
                 child: Text(
-                  'Anna\'s Diary · v0.21',
+                  'Anna\'s Diary · v$appReleaseVersion',
                   style: Theme.of(context).textTheme.bodySmall,
                 ),
               ),
