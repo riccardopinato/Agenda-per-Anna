@@ -271,15 +271,27 @@ class AgendaStore extends ChangeNotifier {
     return entry.copyWith(mediaThumbnailAssetId: assetId);
   }
 
-  Future<Map<String, dynamic>> _sharedPortablePayload(
+  Map<String, dynamic> _sharedLocalQueuePayload(
     SharedEntry entry,
-  ) async {
+  ) {
     final payload = Map<String, dynamic>.from(entry.toJson());
     if (entry.type == SharedEntryType.photo &&
-        (payload['mediaThumbnailBase64']?.toString().isEmpty ?? true) &&
         entry.mediaThumbnailAssetId.isNotEmpty) {
-      final bytes =
-          await MediaAssetStore.instance.read(entry.mediaThumbnailAssetId);
+      payload['mediaThumbnailBase64'] = '';
+      payload['_mediaThumbnailAssetId'] = entry.mediaThumbnailAssetId;
+    }
+    return payload;
+  }
+
+  Future<Map<String, dynamic>> _materializeSharedQueuePayload(
+    Map<String, dynamic> source,
+  ) async {
+    final payload = Map<String, dynamic>.from(source);
+    final localAssetId =
+        payload.remove('_mediaThumbnailAssetId')?.toString() ?? '';
+    if ((payload['mediaThumbnailBase64']?.toString().isEmpty ?? true) &&
+        localAssetId.isNotEmpty) {
+      final bytes = await MediaAssetStore.instance.read(localAssetId);
       if (bytes != null) {
         payload['mediaThumbnailBase64'] = base64Encode(bytes);
       }
@@ -894,10 +906,14 @@ class AgendaStore extends ChangeNotifier {
     for (final entry in entities.entries) {
       final hash = _syncPayloadHash(entry.value.payload);
       if (forceAll || _syncIndex[entry.key] != hash) {
+        final queuedPayload = entry.value.entityType == 'journal'
+            ? (journals[entry.value.entityId]?.toLocalJson() ??
+                entry.value.payload)
+            : entry.value.payload;
         _syncQueue[entry.key] = CloudSyncOperation(
           entityType: entry.value.entityType,
           entityId: entry.value.entityId,
-          payload: entry.value.payload,
+          payload: queuedPayload,
           updatedAt: now,
           ownerId: _activeAccountId,
         );
@@ -1694,7 +1710,29 @@ class AgendaStore extends ChangeNotifier {
                   operation.ownerId != ownerId,
             );
 
-      await cloud.pushPrivateOperations(pendingSnapshot.values);
+      final portablePending = <CloudSyncOperation>[];
+      for (final operation in pendingSnapshot.values) {
+        if (operation.entityType == 'journal' &&
+            !operation.deleted &&
+            operation.payload != null) {
+          final journal = journals[operation.entityId] ??
+              DayJournal.fromJson(operation.payload!);
+          portablePending.add(
+            CloudSyncOperation(
+              entityType: operation.entityType,
+              entityId: operation.entityId,
+              payload: await _portableJournalJson(journal),
+              updatedAt: operation.updatedAt,
+              deleted: operation.deleted,
+              ownerId: operation.ownerId,
+            ),
+          );
+        } else {
+          portablePending.add(operation);
+        }
+      }
+
+      await cloud.pushPrivateOperations(portablePending);
 
       if (cloud.sessionEpoch != sessionEpoch ||
           cloud.userId != ownerId ||
@@ -2098,6 +2136,10 @@ class AgendaStore extends ChangeNotifier {
               operation.payload!,
               updatedBy: ownerId,
               updatedAt: operation.updatedAt,
+              mediaThumbnailAssetId:
+                  operation.payload!['_mediaThumbnailAssetId']
+                          ?.toString() ??
+                      '',
             ),
           );
         }
@@ -2329,12 +2371,12 @@ class AgendaStore extends ChangeNotifier {
     final revision = (updatedAt ?? DateTime.now()).toUtc();
     final operations = await loadSharedPendingOperations(spaceId);
     operations.removeWhere((operation) => operation.entityId == entry.id);
-    final portablePayload = await _sharedPortablePayload(entry);
+    final queuedPayload = _sharedLocalQueuePayload(entry);
     operations.add(
       SharedPendingOperation(
         action: SharedPendingAction.upsert,
         entityId: entry.id,
-        payload: portablePayload,
+        payload: queuedPayload,
         updatedAt: revision,
       ),
     );
@@ -3075,11 +3117,15 @@ class AgendaStore extends ChangeNotifier {
                 }
               }
             } else if (operation.payload != null) {
+              final portablePayload =
+                  await _materializeSharedQueuePayload(
+                operation.payload!,
+              );
               await cloud.upsertSharedRecord(
                 spaceId: currentSpaceId,
                 entityType: 'shared_entry',
                 entityId: operation.entityId,
-                payload: operation.payload!,
+                payload: portablePayload,
                 updatedAt: operation.updatedAt,
               );
             } else {
