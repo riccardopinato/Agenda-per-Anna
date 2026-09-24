@@ -1,6 +1,22 @@
-name: Deploy PWA to GitHub Pages
+name: Deploy Anna's Diary Web
 
 on:
+  push:
+    branches: [main]
+    paths:
+      - "lib/**"
+      - "assets/**"
+      - "pubspec.yaml"
+      - "pubspec.lock"
+      - ".github/workflows/deploy-pages.yml"
+  pull_request:
+    branches: [main]
+    paths:
+      - "lib/**"
+      - "assets/**"
+      - "pubspec.yaml"
+      - "pubspec.lock"
+      - ".github/workflows/deploy-pages.yml"
   workflow_dispatch:
 
 permissions:
@@ -9,15 +25,13 @@ permissions:
   id-token: write
 
 concurrency:
-  group: pages
+  group: anna-diary-pages-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
-  build:
+  build-web:
     runs-on: ubuntu-latest
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
+    timeout-minutes: 25
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -29,10 +43,11 @@ jobs:
           channel: stable
           cache: true
 
-      - name: Create Flutter web platform
+      - name: Create pinned Flutter web platform
         run: |
           rm -rf /tmp/agenda_base
-          flutter create --project-name agenda_per_anna --org com.riccardopinato --platforms=web /tmp/agenda_base
+          flutter create --project-name agenda_per_anna --org com.riccardopinato --platforms=web --no-pub /tmp/agenda_base
+          rm -rf web
           cp -R /tmp/agenda_base/web .
 
       - name: Decode app icon
@@ -41,21 +56,30 @@ jobs:
           base64 -d assets/icon/app_icon.b64 > assets/icon/app_icon.jpg
           sed -i 's#assets/icon/app_icon.png#assets/icon/app_icon.jpg#g' pubspec.yaml
 
-      - name: Install dependencies
+      - name: Install locked dependencies
         run: flutter pub get --enforce-lockfile
 
-      - name: Build Web for GitHub Pages
+      - name: Build web release
         run: flutter build web --release --base-href "/Agenda-per-Anna/"
 
+      - name: Upload Pages artifact
+        if: github.event_name != 'pull_request'
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: build/web
+
+  deploy:
+    if: github.event_name != 'pull_request'
+    needs: build-web
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
       - name: Configure Pages
         uses: actions/configure-pages@v5
         with:
           enablement: true
-
-      - name: Upload Pages artifact
-        uses: actions/upload-pages-artifact@v3
-        with:
-          path: build/web
 
       - name: Deploy to GitHub Pages
         id: deployment
