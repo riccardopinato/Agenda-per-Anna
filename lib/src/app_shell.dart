@@ -62,9 +62,12 @@ class AgendaApp extends StatelessWidget {
           darkTheme: _theme(Brightness.dark),
           builder: (context, child) => _AuthRecoveryGate(
             store: store,
-            child: _PrivacyGate(
+            child: _UniversalIdentityGate(
               store: store,
-              child: child ?? const SizedBox.shrink(),
+              child: _PrivacyGate(
+                store: store,
+                child: child ?? const SizedBox.shrink(),
+              ),
             ),
           ),
           home: AgendaRoot(store: store),
@@ -136,7 +139,7 @@ class _OnboardingScreen extends StatelessWidget {
               const SizedBox(height: 12),
               Text(
                 'Appuntamenti, diario, abitudini, idee e ricordi in un unico posto. '
-                'L’app salva prima sul dispositivo; cloud e condivisione si attivano solo quando li scegli.',
+                'Il tuo account Google mantiene identità e sincronizzazione allineate tra i tuoi dispositivi.',
                 style: Theme.of(context).textTheme.bodyLarge,
               ),
               const SizedBox(height: 24),
@@ -156,7 +159,7 @@ class _OnboardingScreen extends StatelessWidget {
                 icon: Icons.favorite_outline,
                 title: 'Privato o Noi ♡',
                 subtitle:
-                    'Privato è sempre il default; condividi solo ciò che scegli esplicitamente.',
+                    'Privato è sempre il default; Noi ♡ resta sincronizzato automaticamente con le persone collegate.',
               ),
               const SizedBox(height: 10),
               const _OnboardingFeature(
@@ -210,6 +213,263 @@ class _OnboardingFeature extends StatelessWidget {
           ),
         ),
       ],
+    );
+  }
+}
+
+class _UniversalIdentityGate extends StatefulWidget {
+  final AgendaStore store;
+  final Widget child;
+
+  const _UniversalIdentityGate({
+    required this.store,
+    required this.child,
+  });
+
+  @override
+  State<_UniversalIdentityGate> createState() =>
+      _UniversalIdentityGateState();
+}
+
+class _UniversalIdentityGateState extends State<_UniversalIdentityGate> {
+  static const _testBypass =
+      bool.fromEnvironment('ANNAS_DIARY_AUTH_TEST_BYPASS');
+
+  final emailController = TextEditingController();
+  final passwordController = TextEditingController();
+  bool busy = false;
+  bool bindingAccount = false;
+  bool showLegacyLogin = false;
+  String? errorText;
+
+  @override
+  void dispose() {
+    emailController.dispose();
+    passwordController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _bindSignedInAccount() async {
+    if (bindingAccount) return;
+    final cloud = CloudSyncService.instance;
+    final userId = cloud.userId;
+    if (!cloud.signedIn || userId == null) return;
+
+    setState(() => bindingAccount = true);
+    try {
+      await widget.store.activateCloudAccount(userId);
+      await widget.store.syncAllCloud(preferRemoteOnFirstSync: true);
+      await PushNotificationService.instance.registerCurrentToken();
+    } catch (_) {
+      // Offline-first: a valid persisted session can still open its local
+      // account. Pending work is retried on resume / periodic sync.
+    } finally {
+      if (mounted) setState(() => bindingAccount = false);
+    }
+  }
+
+  Future<void> _googleSignIn() async {
+    setState(() {
+      busy = true;
+      errorText = null;
+    });
+    try {
+      await CloudSyncService.instance.signInWithGoogle();
+    } catch (_) {
+      if (!mounted) return;
+      setState(
+        () => errorText = CloudSyncService.instance.userFacingError,
+      );
+    } finally {
+      if (mounted) setState(() => busy = false);
+    }
+  }
+
+  Future<void> _legacySignIn() async {
+    final email = emailController.text.trim();
+    final password = passwordController.text;
+    if (email.isEmpty || password.length < 6) {
+      setState(() => errorText = 'Inserisci email e password.');
+      return;
+    }
+
+    setState(() {
+      busy = true;
+      errorText = null;
+    });
+    try {
+      await CloudSyncService.instance.signIn(
+        email: email,
+        password: password,
+      );
+      await _bindSignedInAccount();
+    } catch (_) {
+      if (!mounted) return;
+      setState(
+        () => errorText = CloudSyncService.instance.userFacingError,
+      );
+    } finally {
+      if (mounted) setState(() => busy = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_testBypass) return widget.child;
+
+    final cloud = CloudSyncService.instance;
+    return AnimatedBuilder(
+      animation: cloud,
+      builder: (context, _) {
+        if (cloud.signedIn) {
+          final aligned = widget.store.activeAccountId == cloud.userId &&
+              widget.store.accountScopeResolved;
+          if (!aligned && !bindingAccount) {
+            WidgetsBinding.instance.addPostFrameCallback(
+              (_) => _bindSignedInAccount(),
+            );
+          }
+          if (!aligned || bindingAccount) {
+            return const Scaffold(
+              body: Center(child: CircularProgressIndicator()),
+            );
+          }
+          return widget.child;
+        }
+
+        if (!cloud.initialized &&
+            cloud.state != CloudConnectionState.error) {
+          return const Scaffold(
+            body: Center(child: CircularProgressIndicator()),
+          );
+        }
+
+        final scheme = Theme.of(context).colorScheme;
+        return Scaffold(
+          body: SafeArea(
+            child: Center(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.all(24),
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 430),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Center(
+                        child: Container(
+                          width: 76,
+                          height: 76,
+                          decoration: BoxDecoration(
+                            color: scheme.primaryContainer,
+                            borderRadius: BorderRadius.circular(24),
+                          ),
+                          child: Icon(
+                            Icons.auto_stories_outlined,
+                            size: 38,
+                            color: scheme.onPrimaryContainer,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 24),
+                      const Text(
+                        'Benvenuto in Anna\'s Diary',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          fontSize: 29,
+                          fontWeight: FontWeight.w900,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        'Un solo account per agenda privata, backup e Noi ♡. '
+                        'Dopo il primo accesso la sessione resta collegata e la sincronizzazione riparte automaticamente.',
+                        textAlign: TextAlign.center,
+                        style: Theme.of(context).textTheme.bodyLarge,
+                      ),
+                      const SizedBox(height: 24),
+                      FilledButton.icon(
+                        onPressed: busy ? null : _googleSignIn,
+                        icon: busy
+                            ? const SizedBox(
+                                width: 18,
+                                height: 18,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                ),
+                              )
+                            : const Icon(Icons.login),
+                        label: const Padding(
+                          padding: EdgeInsets.symmetric(vertical: 13),
+                          child: Text('Continua con Google'),
+                        ),
+                      ),
+                      if (errorText != null) ...[
+                        const SizedBox(height: 10),
+                        Text(
+                          errorText!,
+                          textAlign: TextAlign.center,
+                          style: TextStyle(color: scheme.error),
+                        ),
+                      ],
+                      const SizedBox(height: 12),
+                      TextButton(
+                        onPressed: busy
+                            ? null
+                            : () => setState(
+                                  () => showLegacyLogin = !showLegacyLogin,
+                                ),
+                        child: Text(
+                          showLegacyLogin
+                              ? 'Nascondi accesso precedente'
+                              : 'Hai già un account email/password?',
+                        ),
+                      ),
+                      if (showLegacyLogin) ...[
+                        const SizedBox(height: 8),
+                        TextField(
+                          controller: emailController,
+                          enabled: !busy,
+                          keyboardType: TextInputType.emailAddress,
+                          autofillHints: const [AutofillHints.email],
+                          decoration: const InputDecoration(
+                            labelText: 'Email account esistente',
+                            prefixIcon: Icon(Icons.mail_outline),
+                          ),
+                        ),
+                        const SizedBox(height: 10),
+                        TextField(
+                          controller: passwordController,
+                          enabled: !busy,
+                          obscureText: true,
+                          autofillHints: const [AutofillHints.password],
+                          onSubmitted: (_) =>
+                              busy ? null : _legacySignIn(),
+                          decoration: const InputDecoration(
+                            labelText: 'Password',
+                            prefixIcon: Icon(Icons.lock_outline),
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        OutlinedButton(
+                          onPressed: busy ? null : _legacySignIn,
+                          child: const Text('Accedi all’account esistente'),
+                        ),
+                      ],
+                      const SizedBox(height: 16),
+                      Text(
+                        'I dati restano prima sul dispositivo. Quando sei online, '
+                        'Anna\'s Diary riallinea automaticamente cloud e Noi ♡.',
+                        textAlign: TextAlign.center,
+                        style: Theme.of(context).textTheme.bodySmall,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+        );
+      },
     );
   }
 }
