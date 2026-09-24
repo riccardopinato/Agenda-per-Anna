@@ -1,0 +1,6 @@
+appId: com.riccardopinato.agenda_per_anna
+---
+- tapOn: "Mese"
+- extendedWaitUntil:
+    visible: "Calendario"
+    timeout: 10000
