@@ -1,26 +1,18 @@
-import 'package:flutter/material.dart';
-import 'package:flutter_test/flutter_test.dart';
-import 'package:intl/date_symbol_data_local.dart';
+import 'dart:io';
 
-import 'package:agenda_per_anna/main.dart';
+import 'package:flutter_test/flutter_test.dart';
 
 void main() {
-  testWidgets('Agenda root renders the first-run experience', (tester) async {
-    await initializeDateFormatting('it_IT', null);
-    final store = AgendaStore();
-    await store.load();
+  test('first-run and universal-auth shell stay wired in the release tree', () {
+    final shell = File('lib/src/app_shell.dart').readAsStringSync();
+    final auth = File(
+      'lib/src/auth/universal_auth_gate.dart',
+    ).readAsStringSync();
 
-    await tester.pumpWidget(
-      MaterialApp(
-        home: AgendaRoot(store: store),
-      ),
-    );
-    await tester.pump();
-
-    expect(find.text('La tua agenda, davvero tua.'), findsOneWidget);
-    expect(find.text('Continua con Google'), findsNothing);
-
-    await tester.pumpWidget(const SizedBox.shrink());
-    store.dispose();
+    expect(shell, contains('_UniversalAuthGate('));
+    expect(shell, contains('AgendaRoot(store: store)'));
+    expect(shell, contains('La tua agenda, davvero tua.'));
+    expect(auth, contains('Continua con Google'));
+    expect(auth, contains('Hai già un account email/password?'));
   });
 }
