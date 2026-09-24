@@ -1683,38 +1683,101 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
 
   Future<void> _invite() async {
     try {
-      final code =
-          await CloudSyncService.instance.createSpaceInvite(widget.space.id);
+      var invite =
+          await CloudSyncService.instance.getOrCreateSpaceInvite(
+        widget.space.id,
+      );
       if (!mounted) return;
+
       await showDialog<void>(
         context: context,
-        builder: (dialogContext) => AlertDialog(
-          title: const Text('Codice per collegarsi'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Text(
-                'Condividi questo codice con la persona che vuoi invitare. '
-                'È valido per 24 ore e può essere usato una sola volta.',
-              ),
-              const SizedBox(height: 18),
-              SelectableText(
-                code,
-                style: const TextStyle(
-                  fontSize: 30,
-                  fontWeight: FontWeight.w900,
-                  letterSpacing: 3,
+        builder: (dialogContext) {
+          var rotating = false;
+          return StatefulBuilder(
+            builder: (context, setDialogState) {
+              final remaining = invite.expiresAt.difference(DateTime.now());
+              final hours = remaining.inHours.clamp(0, 24);
+              final minutes =
+                  (remaining.inMinutes.remainder(60)).clamp(0, 59);
+              final expiresLabel =
+                  DateFormat('d MMM, HH:mm', 'it_IT').format(invite.expiresAt);
+
+              return AlertDialog(
+                title: const Text('Codice per collegarsi'),
+                content: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Text(
+                      'Questo codice resta identico per 24 ore, anche se '
+                      'chiudi l’app o esci da Noi ♡. Può essere usato da più '
+                      'persone finché non scade o lo rigeneri.',
+                    ),
+                    const SizedBox(height: 18),
+                    SelectableText(
+                      invite.code,
+                      style: const TextStyle(
+                        fontSize: 30,
+                        fontWeight: FontWeight.w900,
+                        letterSpacing: 3,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    Text(
+                      remaining.isNegative
+                          ? 'Codice scaduto'
+                          : 'Scade tra ${hours}h ${minutes}m · $expiresLabel',
+                      textAlign: TextAlign.center,
+                      style: Theme.of(context).textTheme.bodySmall,
+                    ),
+                  ],
                 ),
-              ),
-            ],
-          ),
-          actions: [
-            FilledButton(
-              onPressed: () => Navigator.pop(dialogContext),
-              child: const Text('Chiudi'),
-            ),
-          ],
-        ),
+                actions: [
+                  TextButton.icon(
+                    onPressed: rotating
+                        ? null
+                        : () async {
+                            setDialogState(() => rotating = true);
+                            try {
+                              final next = await CloudSyncService.instance
+                                  .getOrCreateSpaceInvite(
+                                widget.space.id,
+                                forceNew: true,
+                              );
+                              if (!context.mounted) return;
+                              setDialogState(() {
+                                invite = next;
+                                rotating = false;
+                              });
+                            } catch (_) {
+                              if (!context.mounted) return;
+                              setDialogState(() => rotating = false);
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text(
+                                    'Non è stato possibile rigenerare il codice.',
+                                  ),
+                                ),
+                              );
+                            }
+                          },
+                    icon: rotating
+                        ? const SizedBox(
+                            width: 16,
+                            height: 16,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : const Icon(Icons.refresh),
+                    label: const Text('Genera nuovo'),
+                  ),
+                  FilledButton(
+                    onPressed: () => Navigator.pop(dialogContext),
+                    child: const Text('Chiudi'),
+                  ),
+                ],
+              );
+            },
+          );
+        },
       );
     } catch (_) {
       _message('Non è stato possibile creare il codice invito.');
