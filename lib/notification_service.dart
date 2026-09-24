@@ -385,6 +385,7 @@ class NotificationService {
     required String title,
     required String body,
     required DateTime when,
+    bool requestPermission = true,
   }) async {
     await initialize();
     if (!_available) return;
@@ -394,7 +395,9 @@ class NotificationService {
       return;
     }
 
-    final enabled = await requestPermissions();
+    final enabled = requestPermission
+        ? await requestPermissions()
+        : (await health()).notificationsEnabled;
     if (!enabled) return;
 
     final id = _notificationId(stableId);
