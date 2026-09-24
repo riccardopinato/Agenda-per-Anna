@@ -73,7 +73,7 @@ jobs:
         run: flutter pub get --enforce-lockfile
 
       - name: Generate launcher icons
-        run: dart run flutter_launcher_icons
+        run: dart run flutter_launcher_icons -f tool/flutter_launcher_icons_android.yaml
 
       - name: Build production-equivalent ARM64 APK
         shell: bash
