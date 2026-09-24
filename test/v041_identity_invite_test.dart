@@ -29,6 +29,8 @@ void main() {
     expect(migration, contains('create_or_get_space_invite'));
     expect(migration, contains('regenerate_space_invite'));
     expect(migration, contains('uses_count = uses_count + 1'));
+    expect(migration, contains('for update;'));
+    expect(migration, contains('get diagnostics v_inserted = row_count'));
     expect(
       migration,
       isNot(contains('set consumed_at = now()')),
@@ -46,6 +48,7 @@ void main() {
     expect(identity, contains('Continua con Google'));
     expect(identity, contains('Ho già un account email/password'));
     expect(cloud, contains('signInWithGoogle'));
+    expect(cloud, contains('LaunchMode.externalApplication'));
     expect(
       cloud,
       contains('https://riccardopinato.github.io/Agenda-per-Anna/'),
