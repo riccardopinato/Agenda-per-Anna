@@ -150,8 +150,9 @@ class SpaceInvite {
     expiresAt:
         DateTime.tryParse((json['expires_at'] ?? '').toString())?.toUtc() ??
         DateTime.fromMillisecondsSinceEpoch(0, isUtc: true),
-    createdAt: DateTime.tryParse((json['created_at'] ?? '').toString())
-        ?.toUtc(),
+    createdAt: DateTime.tryParse(
+      (json['created_at'] ?? '').toString(),
+    )?.toUtc(),
     usesCount: (json['uses_count'] as num?)?.toInt() ?? 0,
     reused: json['reused'] as bool? ?? false,
   );
@@ -319,8 +320,9 @@ class SharedRealtimeRecordChange {
           ? Map<String, dynamic>.from(source['payload'] as Map)
           : null,
       clientUpdatedAt:
-          DateTime.tryParse(source['client_updated_at']?.toString() ?? '')
-              ?.toUtc() ??
+          DateTime.tryParse(
+            source['client_updated_at']?.toString() ?? '',
+          )?.toUtc() ??
           DateTime.fromMillisecondsSinceEpoch(0, isUtc: true),
       deletedAt: source['deleted_at'] == null
           ? (newRecord.isEmpty && oldRecord.isNotEmpty
