@@ -176,13 +176,9 @@ class _OnboardingScreen extends StatelessWidget {
                 ),
               ),
             ],
-                  ),
-                ),
-              ),
-            ),
           ),
         ),
-      ],
+      ),
     );
   }
 }
