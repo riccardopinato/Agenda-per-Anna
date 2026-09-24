@@ -506,66 +506,70 @@ class _PrivacyGateState extends State<_PrivacyGate>
           builder: (overlayContext) => Scaffold(
             body: SafeArea(
               child: Center(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.all(28),
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 420),
-              child: Column(
-                children: [
-                  const Icon(Icons.lock_outline, size: 54),
-                  const SizedBox(height: 16),
-                  Text(
-                    'Agenda bloccata',
-                    style: Theme.of(context)
-                        .textTheme
-                        .headlineSmall
-                        ?.copyWith(fontWeight: FontWeight.w900),
-                  ),
-                  const SizedBox(height: 6),
-                  const Text(
-                    'Inserisci il PIN per continuare.',
-                    textAlign: TextAlign.center,
-                  ),
-                  const SizedBox(height: 20),
-                  TextField(
-                    controller: pinController,
-                    autofocus: !prefs.biometricUnlock,
-                    obscureText: true,
-                    keyboardType: TextInputType.number,
-                    maxLength: 8,
-                    textAlign: TextAlign.center,
-                    onSubmitted: (_) => _unlockWithPin(),
-                    decoration: const InputDecoration(
-                      labelText: 'PIN',
-                      prefixIcon: Icon(Icons.pin_outlined),
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.all(28),
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 420),
+                    child: Column(
+                      children: [
+                        const Icon(Icons.lock_outline, size: 54),
+                        const SizedBox(height: 16),
+                        Text(
+                          'Agenda bloccata',
+                          style: Theme.of(overlayContext)
+                              .textTheme
+                              .headlineSmall
+                              ?.copyWith(fontWeight: FontWeight.w900),
+                        ),
+                        const SizedBox(height: 6),
+                        const Text(
+                          'Inserisci il PIN per continuare.',
+                          textAlign: TextAlign.center,
+                        ),
+                        const SizedBox(height: 20),
+                        TextField(
+                          controller: pinController,
+                          autofocus: !prefs.biometricUnlock,
+                          obscureText: true,
+                          keyboardType: TextInputType.number,
+                          maxLength: 8,
+                          textAlign: TextAlign.center,
+                          onSubmitted: (_) => _unlockWithPin(),
+                          decoration: const InputDecoration(
+                            labelText: 'PIN',
+                            prefixIcon: Icon(Icons.pin_outlined),
+                          ),
+                        ),
+                        const SizedBox(height: 10),
+                        SizedBox(
+                          width: double.infinity,
+                          child: FilledButton(
+                            onPressed: _unlockWithPin,
+                            child: const Text('Sblocca'),
+                          ),
+                        ),
+                        if (prefs.biometricUnlock && !kIsWeb) ...[
+                          const SizedBox(height: 8),
+                          TextButton.icon(
+                            onPressed:
+                                authenticating ? null : _biometricUnlock,
+                            icon: const Icon(Icons.fingerprint),
+                            label: Text(
+                              authenticating
+                                  ? 'Verifica in corso...'
+                                  : 'Usa biometria',
+                            ),
+                          ),
+                        ],
+                      ],
                     ),
                   ),
-                  const SizedBox(height: 10),
-                  SizedBox(
-                    width: double.infinity,
-                    child: FilledButton(
-                      onPressed: _unlockWithPin,
-                      child: const Text('Sblocca'),
-                    ),
-                  ),
-                  if (prefs.biometricUnlock && !kIsWeb) ...[
-                    const SizedBox(height: 8),
-                    TextButton.icon(
-                      onPressed: authenticating ? null : _biometricUnlock,
-                      icon: const Icon(Icons.fingerprint),
-                      label: Text(
-                        authenticating
-                            ? 'Verifica in corso...'
-                            : 'Usa biometria',
-                      ),
-                    ),
-                  ],
-                ],
+                ),
               ),
             ),
           ),
         ),
-      ),
+      ],
     );
   }
 }
