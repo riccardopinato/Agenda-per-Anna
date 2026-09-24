@@ -126,12 +126,16 @@ class SharedSpace {
 class SpaceInvite {
   final String code;
   final DateTime expiresAt;
+  final DateTime? createdAt;
+  final int usesCount;
   final bool reused;
 
   const SpaceInvite({
     required this.code,
     required this.expiresAt,
-    required this.reused,
+    this.createdAt,
+    this.usesCount = 0,
+    this.reused = false,
   });
 
   Duration remaining([DateTime? now]) {
@@ -146,6 +150,9 @@ class SpaceInvite {
     expiresAt:
         DateTime.tryParse((json['expires_at'] ?? '').toString())?.toUtc() ??
         DateTime.fromMillisecondsSinceEpoch(0, isUtc: true),
+    createdAt:
+        DateTime.tryParse((json['created_at'] ?? '').toString())?.toUtc(),
+    usesCount: (json['uses_count'] as num?)?.toInt() ?? 0,
     reused: json['reused'] as bool? ?? false,
   );
 }
@@ -836,8 +843,8 @@ class CloudSyncService extends ChangeNotifier {
   }) async {
     final client = _requireSignedInClient();
     final result = await client.rpc(
-      'get_or_create_space_invite',
-      params: {'p_space_id': spaceId, 'p_force_new': forceNew},
+      forceNew ? 'regenerate_space_invite' : 'create_or_get_space_invite',
+      params: {'p_space_id': spaceId},
     );
     if (result is Map) {
       return SpaceInvite.fromJson(Map<String, dynamic>.from(result));
