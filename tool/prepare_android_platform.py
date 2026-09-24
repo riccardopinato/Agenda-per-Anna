@@ -58,19 +58,153 @@ def replace_required(content: str, old: str, new: str, label: str) -> str:
 
 
 def configure_activity() -> None:
-    source = require_file(MAIN_ACTIVITY)
-    source = replace_required(
-        source,
-        "import io.flutter.embedding.android.FlutterActivity",
-        "import io.flutter.embedding.android.FlutterFragmentActivity",
-        "FlutterActivity import",
-    )
-    source = replace_required(
-        source,
-        "class MainActivity : FlutterActivity()",
-        "class MainActivity : FlutterFragmentActivity()",
-        "MainActivity base class",
-    )
+    template = require_file(MAIN_ACTIVITY)
+    if "package com.riccardopinato.agenda_per_anna" not in template:
+        raise SystemExit("Flutter template drift: unexpected MainActivity package")
+
+    source = r'''package com.riccardopinato.agenda_per_anna
+
+import android.content.Context
+import android.security.keystore.KeyGenParameterSpec
+import android.security.keystore.KeyProperties
+import android.util.Base64
+import io.flutter.embedding.android.FlutterFragmentActivity
+import io.flutter.embedding.engine.FlutterEngine
+import io.flutter.plugin.common.MethodChannel
+import java.security.KeyStore
+import javax.crypto.Cipher
+import javax.crypto.KeyGenerator
+import javax.crypto.SecretKey
+import javax.crypto.spec.GCMParameterSpec
+
+class MainActivity : FlutterFragmentActivity() {
+    companion object {
+        private const val CHANNEL = "annas_diary/private_vault"
+        private const val PREFS = "annas_diary_private_vault"
+        private const val KEY_PREFIX = "annas_diary_vault_"
+    }
+
+    override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
+        super.configureFlutterEngine(flutterEngine)
+        MethodChannel(
+            flutterEngine.dartExecutor.binaryMessenger,
+            CHANNEL
+        ).setMethodCallHandler { call, result ->
+            try {
+                val scope = sanitizeScope(call.argument<String>("scope") ?: "device")
+                when (call.method) {
+                    "storeBiometricKey" -> {
+                        val value = call.argument<String>("value")
+                            ?: throw IllegalArgumentException("Missing value")
+                        storeWrappedKey(scope, value)
+                        result.success(null)
+                    }
+                    "readBiometricKey" -> {
+                        result.success(readWrappedKey(scope))
+                    }
+                    "deleteBiometricKey" -> {
+                        deleteWrappedKey(scope)
+                        result.success(null)
+                    }
+                    else -> result.notImplemented()
+                }
+            } catch (error: Exception) {
+                result.error(
+                    "VAULT_KEYSTORE",
+                    error.javaClass.simpleName,
+                    null
+                )
+            }
+        }
+    }
+
+    private fun sanitizeScope(scope: String): String =
+        scope.replace(Regex("[^A-Za-z0-9_-]"), "_").take(120)
+
+    private fun alias(scope: String): String = KEY_PREFIX + scope
+
+    private fun securePrefs() =
+        getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+
+    private fun getOrCreateKey(scope: String): SecretKey {
+        val store = KeyStore.getInstance("AndroidKeyStore").apply { load(null) }
+        val existing = store.getKey(alias(scope), null)
+        if (existing is SecretKey) return existing
+
+        val generator = KeyGenerator.getInstance(
+            KeyProperties.KEY_ALGORITHM_AES,
+            "AndroidKeyStore"
+        )
+        generator.init(
+            KeyGenParameterSpec.Builder(
+                alias(scope),
+                KeyProperties.PURPOSE_ENCRYPT or KeyProperties.PURPOSE_DECRYPT
+            )
+                .setBlockModes(KeyProperties.BLOCK_MODE_GCM)
+                .setEncryptionPaddings(KeyProperties.ENCRYPTION_PADDING_NONE)
+                .setRandomizedEncryptionRequired(true)
+                .build()
+        )
+        return generator.generateKey()
+    }
+
+    private fun storeWrappedKey(scope: String, encodedValue: String) {
+        val clear = Base64.decode(
+            encodedValue,
+            Base64.URL_SAFE or Base64.NO_WRAP
+        )
+        val cipher = Cipher.getInstance("AES/GCM/NoPadding")
+        cipher.init(Cipher.ENCRYPT_MODE, getOrCreateKey(scope))
+        val encrypted = cipher.doFinal(clear)
+
+        securePrefs().edit()
+            .putString(
+                "$scope.iv",
+                Base64.encodeToString(cipher.iv, Base64.NO_WRAP)
+            )
+            .putString(
+                "$scope.data",
+                Base64.encodeToString(encrypted, Base64.NO_WRAP)
+            )
+            .apply()
+        clear.fill(0)
+    }
+
+    private fun readWrappedKey(scope: String): String? {
+        val prefs = securePrefs()
+        val ivValue = prefs.getString("$scope.iv", null) ?: return null
+        val dataValue = prefs.getString("$scope.data", null) ?: return null
+
+        val iv = Base64.decode(ivValue, Base64.NO_WRAP)
+        val encrypted = Base64.decode(dataValue, Base64.NO_WRAP)
+        val cipher = Cipher.getInstance("AES/GCM/NoPadding")
+        cipher.init(
+            Cipher.DECRYPT_MODE,
+            getOrCreateKey(scope),
+            GCMParameterSpec(128, iv)
+        )
+        val clear = cipher.doFinal(encrypted)
+        val encoded = Base64.encodeToString(
+            clear,
+            Base64.URL_SAFE or Base64.NO_WRAP
+        )
+        clear.fill(0)
+        return encoded
+    }
+
+    private fun deleteWrappedKey(scope: String) {
+        securePrefs().edit()
+            .remove("$scope.iv")
+            .remove("$scope.data")
+            .apply()
+
+        val store = KeyStore.getInstance("AndroidKeyStore").apply { load(null) }
+        if (store.containsAlias(alias(scope))) {
+            store.deleteEntry(alias(scope))
+        }
+    }
+}
+'''
     write_if_changed(MAIN_ACTIVITY, source)
 
 
@@ -331,6 +465,10 @@ def verify() -> None:
     failures = []
     if "FlutterFragmentActivity" not in activity:
         failures.append("FlutterFragmentActivity")
+    if "annas_diary/private_vault" not in activity:
+        failures.append("private vault MethodChannel")
+    if "AndroidKeyStore" not in activity:
+        failures.append("Android Keystore")
     if 'android:allowBackup="false"' not in manifest:
         failures.append("allowBackup=false")
     if "ScheduledNotificationReceiver" not in manifest:
