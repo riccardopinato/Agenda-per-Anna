@@ -120,6 +120,37 @@ def configure_manifest() -> None:
         'android:label="Anna\'s Diary"',
     )
 
+    auth_deep_link = """
+            <intent-filter android:autoVerify="false">
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data
+                    android:scheme="io.supabase.annasdiary"
+                    android:host="login-callback" />
+            </intent-filter>
+"""
+    if 'android:scheme="io.supabase.annasdiary"' not in manifest:
+        activity_pattern = re.compile(
+            r'(<activity\b[^>]*android:name="\.MainActivity"[^>]*>)(.*?)(</activity>)',
+            re.DOTALL,
+        )
+        activity_match = activity_pattern.search(manifest)
+        if activity_match is None:
+            raise SystemExit("Flutter template drift: MainActivity block not found")
+        activity_body = activity_match.group(2)
+        activity_replacement = (
+            activity_match.group(1)
+            + activity_body
+            + auth_deep_link
+            + activity_match.group(3)
+        )
+        manifest = (
+            manifest[: activity_match.start()]
+            + activity_replacement
+            + manifest[activity_match.end() :]
+        )
+
     receiver_block = """
         <receiver
             android:exported="false"
