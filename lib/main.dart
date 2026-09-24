@@ -24,6 +24,7 @@ import 'cloud_sync_service.dart';
 import 'notification_service.dart';
 import 'local_state_store.dart';
 import 'media_asset_store.dart';
+import 'private_vault_service.dart';
 import 'push_notification_service.dart';
 
 part 'src/app_shell.dart';
@@ -33,6 +34,7 @@ part 'src/store/backup_domain.dart';
 part 'src/agenda_store.dart';
 part 'src/unified_agenda.dart';
 part 'src/screens/universal_identity.dart';
+part 'src/screens/private_vault.dart';
 part 'src/screens/home_inbox_search.dart';
 part 'src/screens/backup_settings.dart';
 part 'src/screens/shared_space.dart';
