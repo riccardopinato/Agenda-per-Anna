@@ -182,8 +182,8 @@ void main() {
     final appLabJourney =
         File('.maestro/applab-journey.json').readAsStringSync();
 
-    expect(appReleaseVersion, '0.40.0');
-    expect(pubspec, contains('version: 0.40.0+48'));
+    expect(appReleaseVersion, '0.41.0');
+    expect(pubspec, contains('version: 0.41.0+49'));
 
     expect(releaseWorkflow, contains('--release-signing'));
     expect(releaseWorkflow, contains('--obfuscate'));
@@ -210,6 +210,7 @@ void main() {
     expect(appLabWorkflow, contains('flutter_version: "3.47.5"'));
     expect(appLabWorkflow, contains('app-arm64-v8a-release.apk'));
     expect(appLabWorkflow, contains('.maestro/applab-smoke.yaml'));
+    expect(appLabWorkflow, contains('ANNAS_DIARY_INTEGRATION_TEST=true'));
     expect(appLabJourney, contains('"calendar"'));
     expect(appLabJourney, contains('"week"'));
     expect(appLabJourney, contains('"today"'));
