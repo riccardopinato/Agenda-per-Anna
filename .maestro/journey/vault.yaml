@@ -1,8 +1,9 @@
 appId: com.riccardopinato.agenda_per_anna
 ---
-- tapOn:
-    text: 'Home[\s\S]*'
-    retryTapIfNoChange: true
+- back
+- extendedWaitUntil:
+    visible: "Agenda per Anna"
+    timeout: 10000
 - scrollUntilVisible:
     element:
       text: 'Cassaforte privata'
