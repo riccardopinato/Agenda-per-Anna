@@ -220,45 +220,13 @@ class _SharedSpaceHubScreenState extends State<SharedSpaceHubScreen> {
             ],
           ),
           body: !cloud.signedIn
-              ? Center(
+              ? const Center(
                   child: Padding(
-                    padding: const EdgeInsets.all(24),
-                    child: ConstrainedBox(
-                      constraints: const BoxConstraints(maxWidth: 430),
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          const Icon(Icons.favorite_outline, size: 60),
-                          const SizedBox(height: 16),
-                          const Text(
-                            'Uno spazio solo per voi',
-                            textAlign: TextAlign.center,
-                            style: TextStyle(
-                              fontSize: 25,
-                              fontWeight: FontWeight.w900,
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                          const Text(
-                            'Accedi al cloud per creare o raggiungere uno spazio condiviso. '
-                            'La tua agenda personale resterà separata.',
-                            textAlign: TextAlign.center,
-                          ),
-                          const SizedBox(height: 18),
-                          FilledButton.icon(
-                            onPressed: () => Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (_) => CloudAccountScreen(
-                                  store: widget.store,
-                                ),
-                              ),
-                            ),
-                            icon: const Icon(Icons.cloud_outlined),
-                            label: const Text('Account e sincronizzazione'),
-                          ),
-                        ],
-                      ),
+                    padding: EdgeInsets.all(28),
+                    child: Text(
+                      'La sessione dell’account non è disponibile. '
+                      'Torna alla schermata principale per riconnetterti.',
+                      textAlign: TextAlign.center,
                     ),
                   ),
                 )
@@ -1681,43 +1649,118 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
     }
   }
 
+  String _inviteRemainingLabel(SpaceInvite invite) {
+    final remaining = invite.remaining();
+    if (remaining <= Duration.zero) return 'Scaduto';
+    final hours = remaining.inHours;
+    final minutes = remaining.inMinutes.remainder(60);
+    if (hours > 0) return 'Valido ancora ${hours}h ${minutes}m';
+    return 'Valido ancora ${minutes}m';
+  }
+
   Future<void> _invite() async {
     try {
-      final code =
-          await CloudSyncService.instance.createSpaceInvite(widget.space.id);
+      var invite = await CloudSyncService.instance.getOrCreateSpaceInvite(
+        widget.space.id,
+      );
       if (!mounted) return;
+
       await showDialog<void>(
         context: context,
-        builder: (dialogContext) => AlertDialog(
-          title: const Text('Codice per collegarsi'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Text(
-                'Condividi questo codice con la persona che vuoi invitare. '
-                'È valido per 24 ore e può essere usato una sola volta.',
+        builder: (dialogContext) {
+          var regenerating = false;
+          return StatefulBuilder(
+            builder: (context, setDialogState) => AlertDialog(
+              title: const Text('Codice per collegarsi'),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Text(
+                    'Questo codice resta identico per 24 ore anche se chiudi '
+                    'l’app o torni alla Home. Può essere usato da più persone '
+                    'finché non scade o lo rigeneri.',
+                  ),
+                  const SizedBox(height: 18),
+                  SelectableText(
+                    invite.code,
+                    style: const TextStyle(
+                      fontSize: 30,
+                      fontWeight: FontWeight.w900,
+                      letterSpacing: 3,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    _inviteRemainingLabel(invite),
+                    style: Theme.of(context).textTheme.bodySmall,
+                  ),
+                  Text(
+                    'Scade: ${DateFormat('d MMM, HH:mm', 'it_IT').format(invite.expiresAt.toLocal())}',
+                    style: Theme.of(context).textTheme.bodySmall,
+                  ),
+                ],
               ),
-              const SizedBox(height: 18),
-              SelectableText(
-                code,
-                style: const TextStyle(
-                  fontSize: 30,
-                  fontWeight: FontWeight.w900,
-                  letterSpacing: 3,
+              actions: [
+                TextButton.icon(
+                  onPressed: regenerating
+                      ? null
+                      : () async {
+                          await Clipboard.setData(
+                            ClipboardData(text: invite.code),
+                          );
+                          if (!dialogContext.mounted) return;
+                          ScaffoldMessenger.of(dialogContext).showSnackBar(
+                            const SnackBar(content: Text('Codice copiato.')),
+                          );
+                        },
+                  icon: const Icon(Icons.copy_outlined),
+                  label: const Text('Copia'),
                 ),
-              ),
-            ],
-          ),
-          actions: [
-            FilledButton(
-              onPressed: () => Navigator.pop(dialogContext),
-              child: const Text('Chiudi'),
+                TextButton(
+                  onPressed: regenerating
+                      ? null
+                      : () async {
+                          setDialogState(() => regenerating = true);
+                          try {
+                            final next = await CloudSyncService.instance
+                                .getOrCreateSpaceInvite(
+                              widget.space.id,
+                              forceNew: true,
+                            );
+                            if (!dialogContext.mounted) return;
+                            setDialogState(() {
+                              invite = next;
+                              regenerating = false;
+                            });
+                          } catch (_) {
+                            if (!dialogContext.mounted) return;
+                            setDialogState(() => regenerating = false);
+                            ScaffoldMessenger.of(dialogContext).showSnackBar(
+                              const SnackBar(
+                                content: Text(
+                                  'Non è stato possibile rigenerare il codice.',
+                                ),
+                              ),
+                            );
+                          }
+                        },
+                  child: Text(
+                    regenerating ? 'Rigenerazione…' : 'Nuovo codice',
+                  ),
+                ),
+                FilledButton(
+                  onPressed: regenerating
+                      ? null
+                      : () => Navigator.pop(dialogContext),
+                  child: const Text('Chiudi'),
+                ),
+              ],
             ),
-          ],
-        ),
+          );
+        },
       );
     } catch (_) {
-      _message('Non è stato possibile creare il codice invito.');
+      _message('Non è stato possibile recuperare il codice invito.');
     }
   }
 
