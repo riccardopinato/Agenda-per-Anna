@@ -27,6 +27,7 @@ import 'media_asset_store.dart';
 import 'push_notification_service.dart';
 
 part 'src/app_shell.dart';
+part 'src/auth/universal_auth_gate.dart';
 part 'src/domain_models.dart';
 part 'src/store_signals.dart';
 part 'src/store/backup_domain.dart';
