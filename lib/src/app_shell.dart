@@ -3,11 +3,13 @@ part of '../main.dart';
 class AgendaApp extends StatelessWidget {
   final AgendaStore store;
   final bool authGateBypass;
+  final bool lifecycleSyncEnabled;
 
   const AgendaApp({
     super.key,
     required this.store,
     this.authGateBypass = false,
+    this.lifecycleSyncEnabled = true,
   });
 
   static final Map<String, ThemeData> _themeCache = {};
@@ -73,6 +75,7 @@ class AgendaApp extends StatelessWidget {
               store: store,
               child: _PrivacyGate(
                 store: store,
+                lifecycleSyncEnabled: lifecycleSyncEnabled,
                 child: child ?? const SizedBox.shrink(),
               ),
             ),
@@ -387,10 +390,12 @@ class _AuthRecoveryGateState extends State<_AuthRecoveryGate> {
 class _PrivacyGate extends StatefulWidget {
   final AgendaStore store;
   final Widget child;
+  final bool lifecycleSyncEnabled;
 
   const _PrivacyGate({
     required this.store,
     required this.child,
+    this.lifecycleSyncEnabled = true,
   });
 
   @override
@@ -433,7 +438,8 @@ class _PrivacyGateState extends State<_PrivacyGate>
   void didChangeAppLifecycleState(AppLifecycleState state) {
     final prefs = widget.store.preferences;
 
-    if (state == AppLifecycleState.resumed) {
+    if (state == AppLifecycleState.resumed &&
+        widget.lifecycleSyncEnabled) {
       unawaited(widget.store.handleAppResumed());
     }
 
