@@ -183,3 +183,18 @@ The private journal and Noi ♡ no longer maintain independent diary presentatio
 - Invalid backup input is verified to leave both in-memory and persisted state unchanged.
 - Repository-level release assertions keep the v0.38 Android packaging contract explicit: deterministic release signing preparation, obfuscation, split symbols, split-per-ABI APKs, AAB output and Android debug CI coverage.
 - Storage schemas, cloud record formats, Supabase migrations and media formats remain unchanged.
+
+
+## v0.39.1 — Media, Data Safety & Release Hardening
+
+This release keeps the v0.39 persistence/cloud model and hardens its boundaries rather than adding a new feature domain.
+
+- **Media pipeline:** diary photos default to a 1600 px / quality 82 optimized master with a bounded 1280 px fallback; shared photos request a 1920 px / quality 84 master. Thumbnails remain separate low-cost assets.
+- **Backup safety:** archive input, uncompressed expansion, individual entries and accumulated media have explicit memory-oriented ceilings. Media imported during restore is staged logically and deleted if model restore fails.
+- **Account safety:** malformed account-profile archives are treated as blocking corruption during account switching, preventing accidental overwrite of profile metadata.
+- **Queue diagnostics:** malformed shared pending queues remain on disk, are excluded from active processing and contribute to the existing storage-warning surface.
+- **Sync health:** shared sync tracks attempts/errors separately from private Supabase state. Sync-only counters increment `syncRevision` instead of rebuilding every AgendaStore consumer.
+- **Release parity:** Railway and GitHub CI use Flutter 3.47.5 and the lockfile. ARM64 sideload builds use an explicitly restored/generated cached JKS rather than relying on runner-local debug signing behavior.
+- **Device gate:** an Android emulator integration smoke verifies native persistence/media plus the four primary navigation surfaces.
+
+No Supabase schema migration is required for v0.39.1.
