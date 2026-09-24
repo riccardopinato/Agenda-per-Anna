@@ -223,6 +223,8 @@ class HomeScreen extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 14),
+              _PrivateVaultHomeCard(store: store),
+              const SizedBox(height: 12),
               AgendaContentFilterBar(store: store),
               const SizedBox(height: 10),
               _HomeSyncStatusCard(store: store),
@@ -457,6 +459,82 @@ Future<void> _showQuickCapture(
     DateTime.now(),
     initialType: action == 'task' ? ItemType.task : ItemType.appointment,
   );
+}
+
+class _PrivateVaultHomeCard extends StatelessWidget {
+  final AgendaStore store;
+
+  const _PrivateVaultHomeCard({required this.store});
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final scope = CloudSyncService.instance.userId ??
+        store.activeAccountId ??
+        'device';
+
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(24),
+        onTap: () => Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => PrivateVaultScreen(scope: scope),
+          ),
+        ),
+        child: Ink(
+          padding: const EdgeInsets.all(18),
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [
+                scheme.secondaryContainer,
+                scheme.primaryContainer,
+              ],
+            ),
+            borderRadius: BorderRadius.circular(24),
+          ),
+          child: Row(
+            children: [
+              Container(
+                width: 52,
+                height: 52,
+                decoration: BoxDecoration(
+                  color: scheme.surface.withValues(alpha: 0.78),
+                  borderRadius: BorderRadius.circular(18),
+                ),
+                child: const Icon(
+                  Icons.lock_person_outlined,
+                  size: 28,
+                ),
+              ),
+              const SizedBox(width: 14),
+              const Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Cassaforte privata',
+                      style: TextStyle(
+                        fontWeight: FontWeight.w900,
+                        fontSize: 17,
+                      ),
+                    ),
+                    SizedBox(height: 4),
+                    Text(
+                      'Solo sul dispositivo · cifrata · PIN/password o biometria',
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 8),
+              const Icon(Icons.chevron_right),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
 }
 
 class _HomeSyncStatusCard extends StatelessWidget {
