@@ -181,9 +181,14 @@ void main() {
         File('.github/workflows/applab.yml').readAsStringSync();
     final appLabJourney =
         File('.maestro/applab-journey.json').readAsStringSync();
+    final androidPrep =
+        File('tool/prepare_android_platform.py').readAsStringSync();
+    final inviteMigration = File(
+      'supabase/migrations/016_persistent_multi_member_invites_v041.sql',
+    ).readAsStringSync();
 
-    expect(appReleaseVersion, '0.40.0');
-    expect(pubspec, contains('version: 0.40.0+48'));
+    expect(appReleaseVersion, '0.41.0');
+    expect(pubspec, contains('version: 0.41.0+49'));
 
     expect(releaseWorkflow, contains('--release-signing'));
     expect(releaseWorkflow, contains('--obfuscate'));
@@ -214,5 +219,19 @@ void main() {
     expect(appLabJourney, contains('"week"'));
     expect(appLabJourney, contains('"today"'));
     expect(appLabJourney, contains('"memories"'));
+    expect(
+      appLabWorkflow,
+      contains('ANNAS_DIARY_AUTH_TEST_BYPASS=true'),
+    );
+    expect(
+      androidPrep,
+      contains('com.riccardopinato.agenda-per-anna'),
+    );
+    expect(inviteMigration, contains("interval '24 hours'"));
+    expect(inviteMigration, contains('p_force_new boolean default false'));
+    expect(
+      inviteMigration,
+      contains('Multi-use for the full TTL'),
+    );
   });
 }
