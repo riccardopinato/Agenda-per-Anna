@@ -2,8 +2,11 @@ part of '../main.dart';
 
 Future<Uint8List?> _pickCompressedDiaryImageBytes(
   ImageSource source, {
-  int maxSide = 720,
-  int quality = 58,
+  int maxSide = 1600,
+  int quality = 82,
+  int fallbackMaxSide = 1280,
+  int fallbackQuality = 76,
+  int maxEncodedBytes = 2 * 1024 * 1024,
 }) async {
   final picked = await ImagePicker().pickImage(
     source: source,
@@ -12,25 +15,31 @@ Future<Uint8List?> _pickCompressedDiaryImageBytes(
   if (picked == null) return null;
 
   final bytes = await picked.readAsBytes();
-  var compressed = await FlutterImageCompress.compressWithList(
-    bytes,
-    minWidth: maxSide,
-    minHeight: maxSide,
-    quality: quality,
-    format: CompressFormat.jpeg,
-  );
+  if (bytes.isEmpty) return null;
 
-  if (compressed.lengthInBytes > 220 * 1024) {
-    compressed = await FlutterImageCompress.compressWithList(
+  try {
+    final compressed = await FlutterImageCompress.compressWithList(
       bytes,
-      minWidth: 520,
-      minHeight: 520,
-      quality: 48,
+      minWidth: maxSide,
+      minHeight: maxSide,
+      quality: quality,
       format: CompressFormat.jpeg,
     );
-  }
+    if (compressed.isEmpty) return Uint8List.fromList(bytes);
+    if (compressed.lengthInBytes <= maxEncodedBytes) return compressed;
 
-  return compressed;
+    final fallback = await FlutterImageCompress.compressWithList(
+      bytes,
+      minWidth: fallbackMaxSide,
+      minHeight: fallbackMaxSide,
+      quality: fallbackQuality,
+      format: CompressFormat.jpeg,
+    );
+    return fallback.isEmpty ? compressed : fallback;
+  } catch (_) {
+    // Never destroy a selected memory just because native compression failed.
+    return Uint8List.fromList(bytes);
+  }
 }
 
 Future<Uint8List> _diaryThumbnailBytes(Uint8List bytes) async {
@@ -148,7 +157,7 @@ Future<ImageSource?> _chooseDiaryImageSource(BuildContext context) =>
                 style: TextStyle(fontWeight: FontWeight.w900),
               ),
               subtitle: Text(
-                'Nel diario viene salvata una copia compressa, non l’originale.',
+                'Nel diario viene salvata una copia ottimizzata ad alta qualità.',
               ),
             ),
             ListTile(
@@ -2420,8 +2429,10 @@ class _DiarySketchbookScreenState extends State<DiarySketchbookScreen> {
     try {
       final imageBytes = await _pickCompressedDiaryImageBytes(
         source,
-        maxSide: 900,
-        quality: 64,
+        maxSide: 1280,
+        quality: 80,
+        fallbackMaxSide: 1100,
+        fallbackQuality: 74,
       );
       if (imageBytes == null) return;
       final mediaAssetId = await MediaAssetStore.instance.put(imageBytes);
