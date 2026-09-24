@@ -459,7 +459,10 @@ class _HomeSyncStatusCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return AnimatedBuilder(
-      animation: CloudSyncService.instance,
+      animation: Listenable.merge([
+        CloudSyncService.instance,
+        store.syncRevision,
+      ]),
       builder: (context, _) {
         final cloud = CloudSyncService.instance;
         final pending = store.totalPendingCloudChanges;
@@ -490,6 +493,12 @@ class _HomeSyncStatusCard extends StatelessWidget {
           subtitle = pending == 0
               ? 'Riproverò alla riapertura o alla prossima sincronizzazione.'
               : '$pending modifiche verranno inviate quando torna la rete.';
+        } else if (store.hasSharedSyncError) {
+          icon = Icons.sync_problem_outlined;
+          title = 'Noi ♡ da risincronizzare';
+          subtitle = pending == 0
+              ? 'L’ultima sincronizzazione condivisa non è riuscita. Riproverò automaticamente.'
+              : '$pending modifiche restano al sicuro sul dispositivo e verranno ritentate.';
         } else if (pending > 0) {
           icon = Icons.cloud_upload_outlined;
           title = '$pending modifiche in attesa';
@@ -4783,6 +4792,7 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
       animation: Listenable.merge([
         CloudSyncService.instance,
         widget.store,
+        widget.store.syncRevision,
       ]),
       builder: (context, _) => Scaffold(
         appBar: AppBar(
@@ -5396,7 +5406,7 @@ class _CloudAccountScreenState extends State<CloudAccountScreen> {
     final cloud = CloudSyncService.instance;
 
     return AnimatedBuilder(
-      animation: cloud,
+      animation: Listenable.merge([cloud, widget.store.syncRevision]),
       builder: (context, _) => AnimatedBuilder(
         animation: widget.store,
         builder: (context, _) {
