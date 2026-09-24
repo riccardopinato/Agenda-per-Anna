@@ -50,7 +50,7 @@ jobs:
 
       - name: Format production modules
         run: |
-          dart format --output=none --set-exit-if-changed \
+          dart format \
             lib/private_vault_service.dart \
             lib/src/screens/private_vault.dart \
             lib/src/screens/home_inbox_search.dart \
