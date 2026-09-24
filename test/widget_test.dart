@@ -6,8 +6,15 @@ void main() {
   testWidgets('Agenda app starts', (tester) async {
     await initializeDateFormatting('it_IT', null);
     final store = AgendaStore();
+    await store.load();
+    await store.savePreferences(
+      store.preferences.copyWith(onboardingDone: true),
+    );
+
     await tester.pumpWidget(AgendaApp(store: store));
     await tester.pumpAndSettle();
+
     expect(find.text('Agenda per Anna'), findsOneWidget);
+    store.dispose();
   });
 }
