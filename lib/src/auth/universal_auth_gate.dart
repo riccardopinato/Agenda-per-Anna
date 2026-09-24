@@ -81,6 +81,24 @@ class _UniversalAuthGateState extends State<_UniversalAuthGate> {
     }
   }
 
+  Future<void> _retryCloudInitialization() async {
+    if (busy) return;
+    setState(() {
+      busy = true;
+      errorText = null;
+    });
+    try {
+      await CloudSyncService.instance.initialize();
+      await widget.store.initializeCloudSync();
+    } catch (_) {
+      if (mounted) {
+        setState(() => errorText = CloudSyncService.instance.userFacingError);
+      }
+    } finally {
+      if (mounted) setState(() => busy = false);
+    }
+  }
+
   Future<void> _googleSignIn() async {
     if (busy) return;
     setState(() {
@@ -381,7 +399,57 @@ class _UniversalAuthGateState extends State<_UniversalAuthGate> {
         widget.store.accountRevision,
       ]),
       builder: (context, _) {
-        if (!cloud.initialized || cloud.state == CloudConnectionState.initializing) {
+        if (!cloud.initialized) {
+          if (cloud.state == CloudConnectionState.error &&
+              widget.store.activeAccountId != null &&
+              widget.store.accountScopeResolved) {
+            return widget.child;
+          }
+          if (cloud.state == CloudConnectionState.error) {
+            return Scaffold(
+              body: SafeArea(
+                child: Center(
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 420),
+                    child: Padding(
+                      padding: const EdgeInsets.all(28),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(Icons.cloud_off_outlined, size: 54),
+                          const SizedBox(height: 16),
+                          const Text(
+                            'Serve Internet per il primo accesso',
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              fontWeight: FontWeight.w900,
+                              fontSize: 24,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          const Text(
+                            'Dopo aver collegato il tuo account una volta, '
+                            'Anna’s Diary continuerà ad aprirsi anche offline.',
+                            textAlign: TextAlign.center,
+                          ),
+                          const SizedBox(height: 18),
+                          FilledButton.icon(
+                            onPressed: busy ? null : _retryCloudInitialization,
+                            icon: const Icon(Icons.refresh),
+                            label: const Text('Riprova'),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            );
+          }
+          return _brandLoading(context, 'Preparazione del tuo account…');
+        }
+
+        if (cloud.state == CloudConnectionState.initializing) {
           return _brandLoading(context, 'Preparazione del tuo account…');
         }
 
