@@ -176,9 +176,13 @@ class _OnboardingScreen extends StatelessWidget {
                 ),
               ),
             ],
+                  ),
+                ),
+              ),
+            ),
           ),
         ),
-      ),
+      ],
     );
   }
 }
@@ -496,9 +500,12 @@ class _PrivacyGateState extends State<_PrivacyGate>
     }
 
     final prefs = widget.store.preferences;
-    return Scaffold(
-      body: SafeArea(
-        child: Center(
+    return Overlay(
+      initialEntries: [
+        OverlayEntry(
+          builder: (overlayContext) => Scaffold(
+            body: SafeArea(
+              child: Center(
           child: SingleChildScrollView(
             padding: const EdgeInsets.all(28),
             child: ConstrainedBox(
