@@ -2,7 +2,13 @@ part of '../main.dart';
 
 class AgendaApp extends StatelessWidget {
   final AgendaStore store;
-  const AgendaApp({super.key, required this.store});
+  final bool bypassIdentityForTesting;
+
+  const AgendaApp({
+    super.key,
+    required this.store,
+    this.bypassIdentityForTesting = false,
+  });
 
   static final Map<String, ThemeData> _themeCache = {};
 
@@ -67,7 +73,10 @@ class AgendaApp extends StatelessWidget {
               child: child ?? const SizedBox.shrink(),
             ),
           ),
-          home: AgendaRoot(store: store),
+          home: AgendaRoot(
+            store: store,
+            bypassIdentityForTesting: bypassIdentityForTesting,
+          ),
         );
       },
     );
@@ -76,13 +85,20 @@ class AgendaApp extends StatelessWidget {
 
 class AgendaRoot extends StatelessWidget {
   final AgendaStore store;
+  final bool bypassIdentityForTesting;
 
-  const AgendaRoot({super.key, required this.store});
+  const AgendaRoot({
+    super.key,
+    required this.store,
+    this.bypassIdentityForTesting = false,
+  });
 
   @override
   Widget build(BuildContext context) {
     const integrationTest =
         bool.fromEnvironment('ANNAS_DIARY_INTEGRATION_TEST');
+    final bypassIdentity =
+        integrationTest || bypassIdentityForTesting;
 
     return AnimatedBuilder(
       animation: Listenable.merge([
@@ -92,7 +108,7 @@ class AgendaRoot extends StatelessWidget {
       builder: (context, _) {
         final cloud = CloudSyncService.instance;
 
-        if (!integrationTest) {
+        if (!bypassIdentity) {
           if (!cloud.initialized &&
               cloud.state != CloudConnectionState.error) {
             return const Scaffold(
