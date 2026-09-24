@@ -142,12 +142,10 @@ class PushNotificationService {
       _lastError = null;
       await Firebase.initializeApp();
       await FirebaseMessaging.instance.setAutoInitEnabled(true);
-      await FirebaseMessaging.instance.requestPermission(
-        alert: true,
-        badge: true,
-        sound: true,
-      );
 
+      // Startup must remain non-interactive. Notification permission is
+      // requested only from an explicit user action (repair/settings), never
+      // while the app is simply launching.
       _tokenSubscription =
           FirebaseMessaging.instance.onTokenRefresh.listen((token) {
         unawaited(_registerToken(token));
