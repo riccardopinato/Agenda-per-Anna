@@ -120,6 +120,26 @@ def configure_manifest() -> None:
         'android:label="Anna\'s Diary"',
     )
 
+    oauth_filter = """
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data
+                    android:scheme="com.riccardopinato.agenda-per-anna"
+                    android:host="login-callback" />
+            </intent-filter>
+"""
+    if 'android:scheme="com.riccardopinato.agenda-per-anna"' not in manifest:
+        activity_close = manifest.find("</activity>")
+        if activity_close < 0:
+            raise SystemExit("Flutter template drift: </activity> not found")
+        manifest = (
+            manifest[:activity_close]
+            + oauth_filter
+            + manifest[activity_close:]
+        )
+
     receiver_block = """
         <receiver
             android:exported="false"
@@ -304,6 +324,8 @@ def verify() -> None:
         failures.append("allowBackup=false")
     if "ScheduledNotificationReceiver" not in manifest:
         failures.append("notification receiver")
+    if 'android:scheme="com.riccardopinato.agenda-per-anna"' not in manifest:
+        failures.append("Supabase OAuth deep link")
     if "isCoreLibraryDesugaringEnabled = true" not in gradle:
         failures.append("core library desugaring")
     if not ICON_JPG.is_file() or ICON_JPG.stat().st_size == 0:
