@@ -182,8 +182,8 @@ void main() {
     final appLabJourney =
         File('.maestro/applab-journey.json').readAsStringSync();
 
-    expect(appReleaseVersion, '0.41.0');
-    expect(pubspec, contains('version: 0.41.0+49'));
+    expect(appReleaseVersion, '0.42.0');
+    expect(pubspec, contains('version: 0.42.0+50'));
 
     expect(releaseWorkflow, contains('--release-signing'));
     expect(releaseWorkflow, contains('--obfuscate'));
@@ -215,5 +215,13 @@ void main() {
     expect(appLabJourney, contains('"week"'));
     expect(appLabJourney, contains('"today"'));
     expect(appLabJourney, contains('"memories"'));
+
+    final vaultService =
+        File('lib/private_vault_service.dart').readAsStringSync();
+    final vaultScreen =
+        File('lib/src/screens/private_vault.dart').readAsStringSync();
+    expect(vaultService, contains('GCMBlockCipher(AESEngine())'));
+    expect(vaultService, contains('private_vault_meta_v1_'));
+    expect(vaultScreen, contains('Cassaforte privata'));
   });
 }
