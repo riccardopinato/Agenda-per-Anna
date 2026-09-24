@@ -65,103 +65,97 @@ void main() {
     store.dispose();
   });
 
-  test('process-style restart reloads agenda journal planning inbox and habits',
-      () async {
-    final first = AgendaStore();
-    await first.load();
+  test(
+    'process-style restart reloads agenda journal planning inbox and habits',
+    () async {
+      final first = AgendaStore();
+      await first.load();
 
-    await first.upsert(
-      AgendaItem(
-        id: 'restart-task',
-        title: 'Sopravvive al restart',
-        note: '',
-        date: DateTime(2026, 9, 25),
-        type: ItemType.appointment,
-        start: const TimeOfDay(hour: 9, minute: 15),
-      ),
-    );
-    await first.saveJournal(
-      DateTime(2026, 9, 25),
-      const DayJournal(
-        beautiful: 'Persistenza',
-        note: 'Dopo process restart',
-      ),
-    );
-    await first.saveMonth(
-      2026,
-      9,
-      const MonthlyData(monthWord: 'Stabile'),
-    );
-    await first.saveWeek(
-      DateTime(2026, 9, 25),
-      const WeekData(focus: 'Settimana persistente'),
-    );
-    await first.addInboxEntry('Inbox persistente');
-    await first.addHabit('Stretching');
+      await first.upsert(
+        AgendaItem(
+          id: 'restart-task',
+          title: 'Sopravvive al restart',
+          note: '',
+          date: DateTime(2026, 9, 25),
+          type: ItemType.appointment,
+          start: const TimeOfDay(hour: 9, minute: 15),
+        ),
+      );
+      await first.saveJournal(
+        DateTime(2026, 9, 25),
+        const DayJournal(
+          beautiful: 'Persistenza',
+          note: 'Dopo process restart',
+        ),
+      );
+      await first.saveMonth(2026, 9, const MonthlyData(monthWord: 'Stabile'));
+      await first.saveWeek(
+        DateTime(2026, 9, 25),
+        const WeekData(focus: 'Settimana persistente'),
+      );
+      await first.addInboxEntry('Inbox persistente');
+      await first.addHabit('Stretching');
 
-    first.dispose();
+      first.dispose();
 
-    final second = AgendaStore();
-    await second.load();
+      final second = AgendaStore();
+      await second.load();
 
-    expect(second.items.any((item) => item.id == 'restart-task'), isTrue);
-    expect(
-      second.journal(DateTime(2026, 9, 25)).beautiful,
-      'Persistenza',
-    );
-    expect(second.month(2026, 9).monthWord, 'Stabile');
-    expect(
-      second.week(DateTime(2026, 9, 25)).focus,
-      'Settimana persistente',
-    );
-    expect(
-      second.inbox.map((entry) => entry.text),
-      contains('Inbox persistente'),
-    );
-    expect(second.habits.map((habit) => habit.name), contains('Stretching'));
+      expect(second.items.any((item) => item.id == 'restart-task'), isTrue);
+      expect(second.journal(DateTime(2026, 9, 25)).beautiful, 'Persistenza');
+      expect(second.month(2026, 9).monthWord, 'Stabile');
+      expect(second.week(DateTime(2026, 9, 25)).focus, 'Settimana persistente');
+      expect(
+        second.inbox.map((entry) => entry.text),
+        contains('Inbox persistente'),
+      );
+      expect(second.habits.map((habit) => habit.name), contains('Stretching'));
 
-    second.dispose();
-  });
+      second.dispose();
+    },
+  );
 
-  test('offline-style pending edits remain isolated across account switches',
-      () async {
-    final store = AgendaStore();
-    await store.load();
-    await store.activateCloudAccount('user-a');
+  test(
+    'offline-style pending edits remain isolated across account switches',
+    () async {
+      final store = AgendaStore();
+      await store.load();
+      await store.activateCloudAccount('user-a');
 
-    await store.upsert(
-      AgendaItem(
-        id: 'offline-a',
-        title: 'Offline A',
-        note: '',
-        date: DateTime(2026, 9, 26),
-        type: ItemType.task,
-      ),
-    );
-    final pendingA = store.pendingCloudChanges;
-    expect(pendingA, greaterThan(0));
+      await store.upsert(
+        AgendaItem(
+          id: 'offline-a',
+          title: 'Offline A',
+          note: '',
+          date: DateTime(2026, 9, 26),
+          type: ItemType.task,
+        ),
+      );
+      final pendingA = store.pendingCloudChanges;
+      expect(pendingA, greaterThan(0));
 
-    await store.activateCloudAccount('user-b');
-    expect(store.items.any((item) => item.id == 'offline-a'), isFalse);
+      await store.activateCloudAccount('user-b');
+      expect(store.items.any((item) => item.id == 'offline-a'), isFalse);
 
-    await store.upsert(
-      AgendaItem(
-        id: 'offline-b',
-        title: 'Offline B',
-        note: '',
-        date: DateTime(2026, 9, 26),
-        type: ItemType.task,
-      ),
-    );
+      await store.upsert(
+        AgendaItem(
+          id: 'offline-b',
+          title: 'Offline B',
+          note: '',
+          date: DateTime(2026, 9, 26),
+          type: ItemType.task,
+        ),
+      );
 
-    await store.activateCloudAccount('user-a');
+      await store.activateCloudAccount('user-a');
 
-    expect(store.items.any((item) => item.id == 'offline-a'), isTrue);
-    expect(store.items.any((item) => item.id == 'offline-b'), isFalse);
-    expect(store.pendingCloudChanges, pendingA);
+      expect(store.items.any((item) => item.id == 'offline-a'), isTrue);
+      expect(store.items.any((item) => item.id == 'offline-b'), isFalse);
+      expect(store.pendingCloudChanges, pendingA);
 
-    store.dispose();
-  });
+      store.dispose();
+    },
+  );
 
   test('legacy storage upgrades without losing private journal data', () async {
     final legacyItem = AgendaItem(
@@ -187,10 +181,7 @@ void main() {
     await store.load();
 
     expect(store.items.map((item) => item.id), contains('legacy-item-v040'));
-    expect(
-      store.journal(DateTime(2026, 9, 20)).beautiful,
-      'Ricordo legacy',
-    );
+    expect(store.journal(DateTime(2026, 9, 20)).beautiful, 'Ricordo legacy');
 
     final state = await LocalStateStore.instance.open(
       legacyPreferences: await SharedPreferences.getInstance(),
