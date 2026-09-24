@@ -58,6 +58,9 @@ class _CloudAccountScreenState extends State<CloudAccountScreen> {
       await widget.store.syncAllCloud(preferRemoteOnFirstSync: true);
       await PushNotificationService.instance.registerCurrentToken();
       _message('Account connesso e sincronizzato.');
+      if (mounted) {
+        Navigator.of(context).popUntil((route) => route.isFirst);
+      }
     } catch (_) {
       _message(CloudSyncService.instance.userFacingError);
     } finally {
@@ -320,14 +323,28 @@ class _CloudAccountScreenState extends State<CloudAccountScreen> {
                         const SizedBox(height: 10),
                         ListTile(
                           contentPadding: EdgeInsets.zero,
-                          leading: const CircleAvatar(
-                            child: Icon(Icons.person_outline),
+                          leading: CircleAvatar(
+                            backgroundImage: cloud.avatarUrl == null
+                                ? null
+                                : NetworkImage(cloud.avatarUrl!),
+                            child: cloud.avatarUrl == null
+                                ? const Icon(Icons.person_outline)
+                                : null,
                           ),
-                          title: Text(cloud.email ?? 'Account'),
+                          title: Text(
+                            cloud.displayName?.trim().isNotEmpty == true
+                                ? cloud.displayName!
+                                : (cloud.email ?? 'Account'),
+                          ),
                           subtitle: Text(
-                            cloud.lastSyncAt == null
-                                ? 'Nessuna sincronizzazione completata'
-                                : 'Ultimo sync: ${DateFormat('d MMM, HH:mm', 'it_IT').format(cloud.lastSyncAt!)}',
+                            [
+                              if (cloud.displayName?.trim().isNotEmpty == true &&
+                                  cloud.email != null)
+                                cloud.email!,
+                              cloud.lastSyncAt == null
+                                  ? 'Nessuna sincronizzazione completata'
+                                  : 'Ultimo sync: ${DateFormat('d MMM, HH:mm', 'it_IT').format(cloud.lastSyncAt!)}',
+                            ].join('\n'),
                           ),
                         ),
                         const Divider(),
