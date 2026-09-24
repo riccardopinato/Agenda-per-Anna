@@ -174,9 +174,12 @@ void main() {
         File('.github/workflows/dev-checks.yml').readAsStringSync();
     final sizeWorkflow =
         File('.github/workflows/android-size-audit.yml').readAsStringSync();
+    final sideloadWorkflow =
+        File('.github/workflows/sideload-arm64.yml').readAsStringSync();
+    final dockerfile = File('Dockerfile').readAsStringSync();
 
-    expect(appReleaseVersion, '0.39.0');
-    expect(pubspec, contains('version: 0.39.0+46'));
+    expect(appReleaseVersion, '0.39.1');
+    expect(pubspec, contains('version: 0.39.1+47'));
 
     expect(releaseWorkflow, contains('--release-signing'));
     expect(releaseWorkflow, contains('--obfuscate'));
@@ -189,5 +192,12 @@ void main() {
     expect(devWorkflow, contains('flutter build apk --debug'));
     expect(sizeWorkflow, contains('--split-per-abi'));
     expect(sizeWorkflow, contains('app-arm64-v8a-release.apk'));
+
+    expect(sideloadWorkflow, contains('.signing/sideload.jks'));
+    expect(sideloadWorkflow, contains('annas-diary-sideload-signing-v2'));
+    expect(sideloadWorkflow, contains('--release-signing'));
+    expect(sideloadWorkflow, contains('app-arm64-v8a-release.apk'));
+    expect(dockerfile, startsWith('FROM ghcr.io/cirruslabs/flutter:3.47.5'));
+    expect(dockerfile, contains('flutter pub get --enforce-lockfile'));
   });
 }
