@@ -34,8 +34,11 @@ class BackupFileService {
 
   static final BackupFileService instance = BackupFileService._();
 
-  static const int _maxArchiveEntries = 10000;
-  static const int _maxUncompressedBytes = 2 * 1024 * 1024 * 1024;
+  static const int maxBackupMediaBytes = 96 * 1024 * 1024;
+  static const int maxCompressedArchiveBytes = 128 * 1024 * 1024;
+  static const int maxUncompressedArchiveBytes = 192 * 1024 * 1024;
+  static const int maxSingleEntryBytes = 16 * 1024 * 1024;
+  static const int _maxArchiveEntries = 5000;
 
   Future<bool> saveJsonBackup({
     required String json,
@@ -107,6 +110,24 @@ class BackupFileService {
     required String dataJson,
     required Map<String, Uint8List> media,
   }) {
+    final totalMediaBytes = media.values.fold<int>(
+      0,
+      (sum, value) => sum + value.lengthInBytes,
+    );
+    final estimatedUncompressed =
+        totalMediaBytes + utf8.encode(manifestJson).length + utf8.encode(dataJson).length;
+    if (totalMediaBytes > maxBackupMediaBytes ||
+        estimatedUncompressed > maxUncompressedArchiveBytes) {
+      throw const FormatException(
+        'Il backup è troppo grande per essere creato in sicurezza su questo dispositivo.',
+      );
+    }
+    if (media.values.any((value) => value.lengthInBytes > maxSingleEntryBytes)) {
+      throw const FormatException(
+        'Un contenuto multimediale del backup è troppo grande.',
+      );
+    }
+
     final archive = Archive()
       ..addFile(ArchiveFile.string('manifest.json', manifestJson))
       ..addFile(ArchiveFile.string('data.json', dataJson));
@@ -129,6 +150,12 @@ class BackupFileService {
   }
 
   DecodedZipBackup decodeZipBackup(Uint8List bytes) {
+    if (bytes.lengthInBytes > maxCompressedArchiveBytes) {
+      throw const FormatException(
+        'Il file ZIP è troppo grande per essere aperto in sicurezza.',
+      );
+    }
+
     final archive = ZipDecoder().decodeBytes(bytes, verify: true);
     if (archive.length > _maxArchiveEntries) {
       throw const FormatException('Il backup contiene troppi file.');
@@ -141,8 +168,13 @@ class BackupFileService {
 
     for (final entry in archive) {
       if (!entry.isFile) continue;
+      if (entry.size > maxSingleEntryBytes) {
+        throw const FormatException(
+          'Il backup contiene un file singolo troppo grande.',
+        );
+      }
       totalBytes += entry.size;
-      if (totalBytes > _maxUncompressedBytes) {
+      if (totalBytes > maxUncompressedArchiveBytes) {
         throw const FormatException('Il backup è troppo grande.');
       }
 
