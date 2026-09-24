@@ -94,7 +94,7 @@ void main() {
     );
     await first.saveWeek(
       DateTime(2026, 9, 25),
-      const WeekData(note: 'Settimana persistente'),
+      const WeekData(focus: 'Settimana persistente'),
     );
     await first.addInboxEntry('Inbox persistente');
     await first.addHabit('Stretching');
@@ -111,7 +111,7 @@ void main() {
     );
     expect(second.month(2026, 9).monthWord, 'Stabile');
     expect(
-      second.week(DateTime(2026, 9, 25)).note,
+      second.week(DateTime(2026, 9, 25)).focus,
       'Settimana persistente',
     );
     expect(second.inbox.map((entry) => entry.text), contains('Inbox persistente'));
