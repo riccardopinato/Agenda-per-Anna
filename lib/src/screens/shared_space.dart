@@ -1697,7 +1697,7 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
       }
     }
 
-    if (!mounted || invite == null) return;
+    if (!mounted) return;
     var current = invite;
 
     await showDialog<void>(
