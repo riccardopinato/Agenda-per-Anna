@@ -177,9 +177,13 @@ void main() {
     final sideloadWorkflow =
         File('.github/workflows/sideload-arm64.yml').readAsStringSync();
     final dockerfile = File('Dockerfile').readAsStringSync();
+    final appLabWorkflow =
+        File('.github/workflows/applab.yml').readAsStringSync();
+    final appLabJourney =
+        File('.maestro/applab-journey.json').readAsStringSync();
 
-    expect(appReleaseVersion, '0.39.1');
-    expect(pubspec, contains('version: 0.39.1+47'));
+    expect(appReleaseVersion, '0.40.0');
+    expect(pubspec, contains('version: 0.40.0+48'));
 
     expect(releaseWorkflow, contains('--release-signing'));
     expect(releaseWorkflow, contains('--obfuscate'));
@@ -189,7 +193,9 @@ void main() {
     expect(releaseWorkflow, contains('app-arm64-v8a-release.apk'));
     expect(releaseWorkflow, contains('app-universal-release.apk'));
 
-    expect(devWorkflow, contains('flutter build apk --debug'));
+    expect(devWorkflow, contains('Build Android ARM64 release gate'));
+    expect(devWorkflow, contains('--release'));
+    expect(devWorkflow, contains('app-arm64-v8a-release.apk'));
     expect(sizeWorkflow, contains('--split-per-abi'));
     expect(sizeWorkflow, contains('app-arm64-v8a-release.apk'));
 
@@ -199,5 +205,14 @@ void main() {
     expect(sideloadWorkflow, contains('app-arm64-v8a-release.apk'));
     expect(dockerfile, startsWith('FROM ghcr.io/cirruslabs/flutter:3.47.5'));
     expect(dockerfile, contains('flutter pub get --enforce-lockfile'));
+
+    expect(appLabWorkflow, contains('AppLab Production Gate'));
+    expect(appLabWorkflow, contains('flutter_version: "3.47.5"'));
+    expect(appLabWorkflow, contains('app-arm64-v8a-release.apk'));
+    expect(appLabWorkflow, contains('.maestro/applab-smoke.yaml'));
+    expect(appLabJourney, contains('"calendar"'));
+    expect(appLabJourney, contains('"week"'));
+    expect(appLabJourney, contains('"today"'));
+    expect(appLabJourney, contains('"memories"'));
   });
 }
