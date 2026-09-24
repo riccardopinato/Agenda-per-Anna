@@ -126,7 +126,7 @@ def configure_manifest() -> None:
                   <category android:name="android.intent.category.DEFAULT" />
                   <category android:name="android.intent.category.BROWSABLE" />
                   <data
-                      android:scheme="com.riccardopinato.agenda_per_anna"
+                      android:scheme="com.riccardopinato.agendaperanna"
                       android:host="login-callback" />
               </intent-filter>
 """
