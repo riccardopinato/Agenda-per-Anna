@@ -155,8 +155,6 @@ def configure_manifest() -> None:
             </intent-filter>
         </receiver>
 """
-    if "com.riccardopinato.agenda_per_anna" not in manifest:
-        failures.append("auth deep link")
     if "ScheduledNotificationReceiver" not in manifest:
         if "</application>" not in manifest:
             raise SystemExit("Flutter template drift: </application> not found")
@@ -324,6 +322,8 @@ def verify() -> None:
         failures.append("FlutterFragmentActivity")
     if 'android:allowBackup="false"' not in manifest:
         failures.append("allowBackup=false")
+    if "com.riccardopinato.agenda_per_anna" not in manifest:
+        failures.append("auth deep link")
     if "ScheduledNotificationReceiver" not in manifest:
         failures.append("notification receiver")
     if "isCoreLibraryDesugaringEnabled = true" not in gradle:
