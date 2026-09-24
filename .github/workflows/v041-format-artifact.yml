@@ -1,0 +1,38 @@
+name: v0.41 Format Artifact
+
+on:
+  push:
+    branches: [v0.41-universal-identity-noi]
+    paths:
+      - ".github/workflows/v041-format-artifact.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  format:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: "3.47.5"
+          channel: stable
+          cache: true
+      - name: Format exact release files
+        run: |
+          dart format \
+            lib/cloud_sync_service.dart \
+            lib/src/auth/universal_auth_gate.dart \
+            test/v041_identity_invite_test.dart \
+            test/widget_test.dart
+      - name: Upload formatted sources
+        uses: actions/upload-artifact@v4
+        with:
+          name: v041-formatted-sources
+          path: |
+            lib/cloud_sync_service.dart
+            lib/src/auth/universal_auth_gate.dart
+            test/v041_identity_invite_test.dart
+            test/widget_test.dart
+          if-no-files-found: error
