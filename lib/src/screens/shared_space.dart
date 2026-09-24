@@ -111,9 +111,7 @@ class _SharedSpaceHubScreenState extends State<SharedSpaceHubScreen> {
         content: TextField(
           controller: controller,
           autofocus: true,
-          decoration: const InputDecoration(
-            labelText: 'Nome dello spazio',
-          ),
+          decoration: const InputDecoration(labelText: 'Nome dello spazio'),
         ),
         actions: [
           TextButton(
@@ -189,9 +187,7 @@ class _SharedSpaceHubScreenState extends State<SharedSpaceHubScreen> {
 
   void _message(String text) {
     if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(text)),
-    );
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(text)));
   }
 
   @override
@@ -231,153 +227,143 @@ class _SharedSpaceHubScreenState extends State<SharedSpaceHubScreen> {
                   ),
                 )
               : loading
-                  ? const Center(child: CircularProgressIndicator())
-                  : ListView(
-                      padding: const EdgeInsets.fromLTRB(16, 10, 16, 40),
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.all(20),
-                          decoration: BoxDecoration(
-                            gradient: const LinearGradient(
-                              colors: [
-                                Color(0xFFFFE4EC),
-                                Color(0xFFF0E8FF),
-                              ],
-                            ),
-                            borderRadius: BorderRadius.circular(26),
-                          ),
-                          child: const Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Icon(Icons.favorite_outline, size: 30),
-                              SizedBox(height: 10),
-                              Text(
-                                'Spazio condiviso',
-                                style: TextStyle(
-                                  fontSize: 23,
-                                  fontWeight: FontWeight.w900,
-                                ),
-                              ),
-                              SizedBox(height: 6),
-                              Text(
-                                'Gli aggiornamenti arrivano in tempo reale. '
-                                'Se siete offline, le modifiche restano in coda e vengono inviate dopo.',
-                              ),
-                            ],
-                          ),
+              ? const Center(child: CircularProgressIndicator())
+              : ListView(
+                  padding: const EdgeInsets.fromLTRB(16, 10, 16, 40),
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(20),
+                      decoration: BoxDecoration(
+                        gradient: const LinearGradient(
+                          colors: [Color(0xFFFFE4EC), Color(0xFFF0E8FF)],
                         ),
-                        const SizedBox(height: 16),
-                        if (spaces.isEmpty)
-                          SimpleCard(
-                            child: Column(
-                              children: [
-                                const Text(
-                                  'Non sei ancora collegato a nessuno spazio.',
-                                  textAlign: TextAlign.center,
-                                ),
-                                const SizedBox(height: 14),
-                                SizedBox(
-                                  width: double.infinity,
-                                  child: FilledButton.icon(
-                                    onPressed: _createSpace,
-                                    icon: const Icon(Icons.add),
-                                    label: const Text('Crea il nostro spazio'),
-                                  ),
-                                ),
-                                const SizedBox(height: 8),
-                                SizedBox(
-                                  width: double.infinity,
-                                  child: OutlinedButton.icon(
-                                    onPressed: _joinSpace,
-                                    icon: const Icon(Icons.link),
-                                    label: const Text('Inserisci un codice'),
-                                  ),
-                                ),
-                              ],
+                        borderRadius: BorderRadius.circular(26),
+                      ),
+                      child: const Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Icon(Icons.favorite_outline, size: 30),
+                          SizedBox(height: 10),
+                          Text(
+                            'Spazio condiviso',
+                            style: TextStyle(
+                              fontSize: 23,
+                              fontWeight: FontWeight.w900,
                             ),
-                          )
-                        else ...[
-                          ...spaces.map(
-                            (space) {
-                              final unread = widget.store.sharedUnreadCount(space.id);
-                              final pending = pendingBySpace[space.id] ?? 0;
-                              return Card(
-                                margin: const EdgeInsets.only(bottom: 10),
-                                child: ListTile(
-                                  leading: CircleAvatar(
-                                    child: Icon(
-                                      space.isOwner
-                                          ? Icons.favorite
-                                          : Icons.favorite_outline,
-                                    ),
-                                  ),
-                                  title: Text(
-                                    space.name,
-                                    style: const TextStyle(
-                                      fontWeight: FontWeight.w800,
-                                    ),
-                                  ),
-                                  subtitle: Text(
-                                    pending > 0
-                                        ? '$pending modifiche da sincronizzare'
-                                        : space.isOwner
-                                            ? 'Creato da te · sincronizzato'
-                                            : 'Spazio condiviso · sincronizzato',
-                                  ),
-                                  trailing: Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      if (unread > 0)
-                                        Badge(
-                                          label: Text(
-                                            unread > 99 ? '99+' : '$unread',
-                                          ),
-                                          child: const Icon(
-                                            Icons.notifications_none,
-                                          ),
-                                        ),
-                                      const SizedBox(width: 6),
-                                      const Icon(Icons.chevron_right),
-                                    ],
-                                  ),
-                                  onTap: () async {
-                                    await widget.store.markSharedSpaceRead(
-                                      space.id,
-                                    );
-                                    if (!context.mounted) return;
-                                    await Navigator.push(
-                                      context,
-                                      MaterialPageRoute(
-                                        builder: (_) => SharedSpaceScreen(
-                                          store: widget.store,
-                                          space: space,
-                                        ),
-                                      ),
-                                    );
-                                    if (!mounted) return;
-                                    await widget.store.markSharedSpaceRead(
-                                      space.id,
-                                    );
-                                    await _reload();
-                                  },
-                                ),
-                              );
-                            },
                           ),
-                          const SizedBox(height: 6),
-                          OutlinedButton.icon(
-                            onPressed: _joinSpace,
-                            icon: const Icon(Icons.link),
-                            label: const Text('Collegati a un altro spazio'),
+                          SizedBox(height: 6),
+                          Text(
+                            'Gli aggiornamenti arrivano in tempo reale. '
+                            'Se siete offline, le modifiche restano in coda e vengono inviate dopo.',
                           ),
                         ],
-                      ],
+                      ),
                     ),
+                    const SizedBox(height: 16),
+                    if (spaces.isEmpty)
+                      SimpleCard(
+                        child: Column(
+                          children: [
+                            const Text(
+                              'Non sei ancora collegato a nessuno spazio.',
+                              textAlign: TextAlign.center,
+                            ),
+                            const SizedBox(height: 14),
+                            SizedBox(
+                              width: double.infinity,
+                              child: FilledButton.icon(
+                                onPressed: _createSpace,
+                                icon: const Icon(Icons.add),
+                                label: const Text('Crea il nostro spazio'),
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            SizedBox(
+                              width: double.infinity,
+                              child: OutlinedButton.icon(
+                                onPressed: _joinSpace,
+                                icon: const Icon(Icons.link),
+                                label: const Text('Inserisci un codice'),
+                              ),
+                            ),
+                          ],
+                        ),
+                      )
+                    else ...[
+                      ...spaces.map((space) {
+                        final unread = widget.store.sharedUnreadCount(space.id);
+                        final pending = pendingBySpace[space.id] ?? 0;
+                        return Card(
+                          margin: const EdgeInsets.only(bottom: 10),
+                          child: ListTile(
+                            leading: CircleAvatar(
+                              child: Icon(
+                                space.isOwner
+                                    ? Icons.favorite
+                                    : Icons.favorite_outline,
+                              ),
+                            ),
+                            title: Text(
+                              space.name,
+                              style: const TextStyle(
+                                fontWeight: FontWeight.w800,
+                              ),
+                            ),
+                            subtitle: Text(
+                              pending > 0
+                                  ? '$pending modifiche da sincronizzare'
+                                  : space.isOwner
+                                  ? 'Creato da te · sincronizzato'
+                                  : 'Spazio condiviso · sincronizzato',
+                            ),
+                            trailing: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                if (unread > 0)
+                                  Badge(
+                                    label: Text(
+                                      unread > 99 ? '99+' : '$unread',
+                                    ),
+                                    child: const Icon(Icons.notifications_none),
+                                  ),
+                                const SizedBox(width: 6),
+                                const Icon(Icons.chevron_right),
+                              ],
+                            ),
+                            onTap: () async {
+                              await widget.store.markSharedSpaceRead(space.id);
+                              if (!context.mounted) return;
+                              await Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) => SharedSpaceScreen(
+                                    store: widget.store,
+                                    space: space,
+                                  ),
+                                ),
+                              );
+                              if (!mounted) return;
+                              await widget.store.markSharedSpaceRead(space.id);
+                              await _reload();
+                            },
+                          ),
+                        );
+                      }),
+                      const SizedBox(height: 6),
+                      OutlinedButton.icon(
+                        onPressed: _joinSpace,
+                        icon: const Icon(Icons.link),
+                        label: const Text('Collegati a un altro spazio'),
+                      ),
+                    ],
+                  ],
+                ),
         );
       },
     );
   }
 }
+
 class SharedSpaceScreen extends StatefulWidget {
   final AgendaStore store;
   final SharedSpace space;
@@ -409,8 +395,7 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
   Map<String, DateTime> memberReads = {};
   Timer? _interactionDebounce;
 
-  String get _cacheKey =>
-      widget.store.sharedCacheStorageKey(widget.space.id);
+  String get _cacheKey => widget.store.sharedCacheStorageKey(widget.space.id);
   String get _pendingKey =>
       widget.store.sharedPendingStorageKey(widget.space.id);
   String get _interactionCacheKey =>
@@ -446,12 +431,7 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
         _realtimeDebounce?.cancel();
         _realtimeDebounce = Timer(const Duration(milliseconds: 350), () {
           if (mounted) {
-            unawaited(
-              _refresh(
-                silent: true,
-                refreshInteractions: false,
-              ),
-            );
+            unawaited(_refresh(silent: true, refreshInteractions: false));
           }
         });
       },
@@ -497,8 +477,10 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
           await _loadInteractions();
           return;
         }
-        final bucket =
-            nextComments.putIfAbsent(entryId, () => <SharedEntryComment>[]);
+        final bucket = nextComments.putIfAbsent(
+          entryId,
+          () => <SharedEntryComment>[],
+        );
         bucket.removeWhere((comment) => comment.id == id);
         if (!change.deleted && change.newRecord.isNotEmpty) {
           bucket.add(SharedEntryComment.fromJson(change.newRecord));
@@ -529,8 +511,9 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
         if (change.deleted) {
           nextReads.remove(userId);
         } else {
-          final seenAt =
-              DateTime.tryParse(record['last_seen_at']?.toString() ?? '');
+          final seenAt = DateTime.tryParse(
+            record['last_seen_at']?.toString() ?? '',
+          );
           if (seenAt != null) nextReads[userId] = seenAt;
         }
         break;
@@ -546,9 +529,7 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
     });
   }
 
-  Future<void> _loadInteractionCache(
-    LocalStateStore prefs,
-  ) async {
+  Future<void> _loadInteractionCache(LocalStateStore prefs) async {
     final raw = prefs.getString(_interactionCacheKey);
     if (raw == null) return;
     try {
@@ -611,8 +592,7 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
       jsonEncode({
         'comments': flatComments,
         'hearts': {
-          for (final entry in hearts.entries)
-            entry.key: entry.value.toList(),
+          for (final entry in hearts.entries) entry.key: entry.value.toList(),
         },
         'reads': {
           for (final entry in reads.entries)
@@ -640,10 +620,7 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
     await _updatePendingState();
     await _loadInteractions();
     if (mounted) setState(() => loading = false);
-    await _refresh(
-      silent: entries.isNotEmpty,
-      refreshInteractions: false,
-    );
+    await _refresh(silent: entries.isNotEmpty, refreshInteractions: false);
   }
 
   Future<void> _saveCache() async {
@@ -673,22 +650,16 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
 
   Future<void> _flushPending() async {
     final conflictsBefore = widget.store.sharedConflictCount;
-    await widget.store.flushSharedMediaUploads(
-      spaceId: widget.space.id,
-    );
+    await widget.store.flushSharedMediaUploads(spaceId: widget.space.id);
     await widget.store.flushSharedInteractionOperations(
       spaceId: widget.space.id,
     );
-    await widget.store.flushSharedPendingOperations(
-      spaceId: widget.space.id,
-    );
+    await widget.store.flushSharedPendingOperations(spaceId: widget.space.id);
     await _updatePendingState();
     if (widget.store.sharedConflictCount > conflictsBefore &&
         widget.store.sharedConflictCount > _seenConflictCount) {
       _seenConflictCount = widget.store.sharedConflictCount;
-      _message(
-        'Conflitto risolto: è stata mantenuta la modifica più recente.',
-      );
+      _message('Conflitto risolto: è stata mantenuta la modifica più recente.');
     }
   }
 
@@ -712,22 +683,25 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
         targetSpaceId: widget.space.id,
       );
 
-      final next = List<SharedEntry>.from(
-        widget.store._sharedAgendaEntriesBySpace[widget.space.id] ??
-            const <SharedEntry>[],
-      )..sort((a, b) {
-          final date = b.date.compareTo(a.date);
-          if (date != 0) return date;
-          final am =
-              a.start == null ? -1 : a.start!.hour * 60 + a.start!.minute;
-          final bm =
-              b.start == null ? -1 : b.start!.hour * 60 + b.start!.minute;
-          final time = bm.compareTo(am);
-          if (time != 0) return time;
-          final aUpdated = a.updatedAt ?? a.date;
-          final bUpdated = b.updatedAt ?? b.date;
-          return bUpdated.compareTo(aUpdated);
-        });
+      final next =
+          List<SharedEntry>.from(
+            widget.store._sharedAgendaEntriesBySpace[widget.space.id] ??
+                const <SharedEntry>[],
+          )..sort((a, b) {
+            final date = b.date.compareTo(a.date);
+            if (date != 0) return date;
+            final am = a.start == null
+                ? -1
+                : a.start!.hour * 60 + a.start!.minute;
+            final bm = b.start == null
+                ? -1
+                : b.start!.hour * 60 + b.start!.minute;
+            final time = bm.compareTo(am);
+            if (time != 0) return time;
+            final aUpdated = a.updatedAt ?? a.date;
+            final bUpdated = b.updatedAt ?? b.date;
+            return bUpdated.compareTo(aUpdated);
+          });
 
       final pending = await _loadPending();
       entries = next;
@@ -768,12 +742,9 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
         await widget.store.flushSharedInteractionOperations(
           spaceId: widget.space.id,
         );
-        final comments =
-            await cloud.listSharedEntryComments(widget.space.id);
-        final reactions =
-            await cloud.listSharedEntryReactions(widget.space.id);
-        final reads =
-            await cloud.listSharedMemberReads(widget.space.id);
+        final comments = await cloud.listSharedEntryComments(widget.space.id);
+        final reactions = await cloud.listSharedEntryReactions(widget.space.id);
+        final reads = await cloud.listSharedMemberReads(widget.space.id);
 
         nextComments.clear();
         for (final comment in comments) {
@@ -786,25 +757,23 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
               .putIfAbsent(reaction.entryId, () => <String>{})
               .add(reaction.userId);
         }
-        nextReads = {
-          for (final read in reads) read.userId: read.lastSeenAt,
-        };
+        nextReads = {for (final read in reads) read.userId: read.lastSeenAt};
       } catch (_) {
         // Preserve the last known interaction cache and overlay the offline
         // queue below.
       }
     }
 
-    final pending = await widget.store
-        .loadSharedInteractionPendingOperations(widget.space.id);
+    final pending = await widget.store.loadSharedInteractionPendingOperations(
+      widget.space.id,
+    );
     final uid = widget.store.activeAccountId ?? cloud.userId ?? '';
     for (final operation in pending) {
       switch (operation.type) {
         case SharedInteractionPendingType.addComment:
           final commentId =
               operation.payload['commentId']?.toString() ?? operation.id;
-          final bucket =
-              nextComments.putIfAbsent(operation.entryId, () => []);
+          final bucket = nextComments.putIfAbsent(operation.entryId, () => []);
           if (!bucket.any((comment) => comment.id == commentId)) {
             bucket.add(
               SharedEntryComment(
@@ -812,8 +781,7 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
                 spaceId: widget.space.id,
                 entryId: operation.entryId,
                 userId: uid,
-                authorName:
-                    operation.payload['authorName']?.toString() ?? '',
+                authorName: operation.payload['authorName']?.toString() ?? '',
                 body: operation.payload['body']?.toString() ?? '',
                 createdAt: operation.createdAt,
                 updatedAt: operation.createdAt,
@@ -822,14 +790,16 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
           }
           break;
         case SharedInteractionPendingType.deleteComment:
-          final commentId =
-              operation.payload['commentId']?.toString() ?? '';
-          nextComments[operation.entryId]
-              ?.removeWhere((comment) => comment.id == commentId);
+          final commentId = operation.payload['commentId']?.toString() ?? '';
+          nextComments[operation.entryId]?.removeWhere(
+            (comment) => comment.id == commentId,
+          );
           break;
         case SharedInteractionPendingType.setHeart:
-          final hearts =
-              nextHearts.putIfAbsent(operation.entryId, () => <String>{});
+          final hearts = nextHearts.putIfAbsent(
+            operation.entryId,
+            () => <String>{},
+          );
           if (operation.payload['active'] == true) {
             if (uid.isNotEmpty) hearts.add(uid);
           } else {
@@ -843,11 +813,7 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
       bucket.sort((a, b) => a.createdAt.compareTo(b.createdAt));
     }
 
-    await _saveInteractionCache(
-      nextComments,
-      nextHearts,
-      nextReads,
-    );
+    await _saveInteractionCache(nextComments, nextHearts, nextReads);
     if (!mounted) return;
     setState(() {
       commentsByEntry = nextComments;
@@ -865,8 +831,7 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
     final seenCount = memberReads.entries
         .where(
           (read) =>
-              read.key != uid &&
-              !read.value.isBefore(entry.updatedAt!.toUtc()),
+              read.key != uid && !read.value.isBefore(entry.updatedAt!.toUtc()),
         )
         .length;
     if (seenCount == 0) return null;
@@ -902,11 +867,7 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
         spaceId: widget.space.id,
       );
     }
-    await _saveInteractionCache(
-      commentsByEntry,
-      heartsByEntry,
-      memberReads,
-    );
+    await _saveInteractionCache(commentsByEntry, heartsByEntry, memberReads);
   }
 
   Future<void> _deleteComment(SharedEntryComment comment) async {
@@ -916,19 +877,16 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
       commentId: comment.id,
     );
     setState(() {
-      commentsByEntry[comment.entryId]
-          ?.removeWhere((candidate) => candidate.id == comment.id);
+      commentsByEntry[comment.entryId]?.removeWhere(
+        (candidate) => candidate.id == comment.id,
+      );
     });
     if (CloudSyncService.instance.signedIn) {
       await widget.store.flushSharedInteractionOperations(
         spaceId: widget.space.id,
       );
     }
-    await _saveInteractionCache(
-      commentsByEntry,
-      heartsByEntry,
-      memberReads,
-    );
+    await _saveInteractionCache(commentsByEntry, heartsByEntry, memberReads);
   }
 
   Future<void> _openComments(SharedEntry entry) async {
@@ -989,8 +947,8 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
                               final author = mine
                                   ? 'Tu'
                                   : (comment.authorName.trim().isEmpty
-                                      ? 'L’altra persona'
-                                      : comment.authorName.trim());
+                                        ? 'L’altra persona'
+                                        : comment.authorName.trim());
                               return ListTile(
                                 contentPadding: EdgeInsets.zero,
                                 leading: CircleAvatar(
@@ -1049,17 +1007,19 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
                           final text = controller.text.trim();
                           if (text.isEmpty) return;
                           try {
-                            final author = widget
-                                    .store.preferences.displayName.trim().isEmpty
+                            final author =
+                                widget.store.preferences.displayName
+                                    .trim()
+                                    .isEmpty
                                 ? 'Utente'
                                 : widget.store.preferences.displayName.trim();
-                            final comment =
-                                await widget.store.enqueueSharedComment(
-                              spaceId: widget.space.id,
-                              entryId: entry.id,
-                              authorName: author,
-                              body: text,
-                            );
+                            final comment = await widget.store
+                                .enqueueSharedComment(
+                                  spaceId: widget.space.id,
+                                  entryId: entry.id,
+                                  authorName: author,
+                                  body: text,
+                                );
                             controller.clear();
                             setState(() {
                               commentsByEntry
@@ -1069,12 +1029,11 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
                             if (CloudSyncService.instance.signedIn) {
                               await widget.store
                                   .flushSharedInteractionOperations(
-                                spaceId: widget.space.id,
-                              );
+                                    spaceId: widget.space.id,
+                                  );
                             }
                             commentsByEntry[entry.id]?.sort(
-                              (a, b) =>
-                                  a.createdAt.compareTo(b.createdAt),
+                              (a, b) => a.createdAt.compareTo(b.createdAt),
                             );
                             await _saveInteractionCache(
                               commentsByEntry,
@@ -1112,10 +1071,12 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
         .where((entry) => AgendaStore.sameDay(entry.date, selected))
         .toList();
     selectedEntries.sort((a, b) {
-      final aMinutes =
-          a.start == null ? -1 : a.start!.hour * 60 + a.start!.minute;
-      final bMinutes =
-          b.start == null ? -1 : b.start!.hour * 60 + b.start!.minute;
+      final aMinutes = a.start == null
+          ? -1
+          : a.start!.hour * 60 + a.start!.minute;
+      final bMinutes = b.start == null
+          ? -1
+          : b.start!.hour * 60 + b.start!.minute;
       final time = bMinutes.compareTo(aMinutes);
       if (time != 0) return time;
 
@@ -1136,10 +1097,12 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
       final updated = bUpdated.compareTo(aUpdated);
       if (updated != 0) return updated;
 
-      final aMinutes =
-          a.start == null ? -1 : a.start!.hour * 60 + a.start!.minute;
-      final bMinutes =
-          b.start == null ? -1 : b.start!.hour * 60 + b.start!.minute;
+      final aMinutes = a.start == null
+          ? -1
+          : a.start!.hour * 60 + a.start!.minute;
+      final bMinutes = b.start == null
+          ? -1
+          : b.start!.hour * 60 + b.start!.minute;
       return bMinutes.compareTo(aMinutes);
     });
     return feed;
@@ -1161,10 +1124,7 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
     return '';
   }
 
-  SharedEntry _withLocalMetadata(
-    SharedEntry entry,
-    DateTime revision,
-  ) =>
+  SharedEntry _withLocalMetadata(SharedEntry entry, DateTime revision) =>
       entry.copyWith(
         editorName: widget.store.preferences.displayName.trim().isEmpty
             ? 'Utente'
@@ -1234,7 +1194,6 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
     );
   }
 
-
   Future<void> _addSharedNote([SharedEntry? existing]) async {
     final value = await showDiaryNoteEditor(
       context,
@@ -1245,11 +1204,7 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
     );
     if (value == null || value.isEmpty) return;
 
-    final compactTitle = value
-        .split(RegExp(r'\s+'))
-        .take(7)
-        .join(' ')
-        .trim();
+    final compactTitle = value.split(RegExp(r'\s+')).take(7).join(' ').trim();
 
     await _persistSharedEntry(
       SharedEntry(
@@ -1258,8 +1213,7 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
         title: compactTitle.isEmpty ? 'Nota' : compactTitle,
         note: value,
         date: existing?.date ?? selected,
-        createdAt:
-            existing?.createdAt ?? existing?.updatedAt ?? DateTime.now(),
+        createdAt: existing?.createdAt ?? existing?.updatedAt ?? DateTime.now(),
         memoryPinned: existing?.memoryPinned ?? false,
       ),
     );
@@ -1277,9 +1231,7 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
   Future<void> _addSharedPhoto([SharedEntry? existing]) async {
     if (sharedPhotoBusy) return;
     if (widget.store.activeAccountId == null) {
-      _message(
-        'Accedi al cloud almeno una volta per condividere una foto.',
-      );
+      _message('Accedi al cloud almeno una volta per condividere una foto.');
       return;
     }
 
@@ -1299,17 +1251,15 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
 
       String? caption = existing?.note;
       if (existing == null) {
-        caption = await showDiaryCaptionEditor(
-          context,
-          adding: true,
-        );
+        caption = await showDiaryCaptionEditor(context, adding: true);
         if (caption == null) return;
       }
 
       final thumbnailBytes = await _diaryThumbnailBytes(fullBytes);
       final mediaAssetId = await MediaAssetStore.instance.put(fullBytes);
-      final thumbnailAssetId =
-          await MediaAssetStore.instance.put(thumbnailBytes);
+      final thumbnailAssetId = await MediaAssetStore.instance.put(
+        thumbnailBytes,
+      );
 
       final entryId = existing?.id ?? const Uuid().v4();
       final localPreview = SharedEntry(
@@ -1320,8 +1270,7 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
             : 'Foto',
         note: caption ?? '',
         date: existing?.date ?? selected,
-        createdAt:
-            existing?.createdAt ?? existing?.updatedAt ?? DateTime.now(),
+        createdAt: existing?.createdAt ?? existing?.updatedAt ?? DateTime.now(),
         // While a replacement is pending, do not display the previous
         // remote full-resolution image over the new local preview.
         mediaPath: '',
@@ -1354,9 +1303,7 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
       );
 
       if (CloudSyncService.instance.signedIn) {
-        await widget.store.flushSharedMediaUploads(
-          spaceId: widget.space.id,
-        );
+        await widget.store.flushSharedMediaUploads(spaceId: widget.space.id);
         await _refresh(silent: true);
       } else {
         _message(
@@ -1394,8 +1341,7 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
             : 'Sketch',
         note: existing?.note ?? '',
         date: existing?.date ?? selected,
-        createdAt:
-            existing?.createdAt ?? existing?.updatedAt ?? DateTime.now(),
+        createdAt: existing?.createdAt ?? existing?.updatedAt ?? DateTime.now(),
         sketchPages: pages,
         memoryPinned: existing?.memoryPinned ?? false,
       ),
@@ -1416,10 +1362,7 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
               const ListTile(
                 title: Text(
                   'Diario condiviso · Noi ♡',
-                  style: TextStyle(
-                    fontWeight: FontWeight.w900,
-                    fontSize: 19,
-                  ),
+                  style: TextStyle(fontWeight: FontWeight.w900, fontSize: 19),
                 ),
                 subtitle: Text(
                   'Stessi strumenti del diario privato, ma visibili a entrambi.',
@@ -1434,9 +1377,7 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
                 onTap: () => Navigator.pop(sheetContext, 'note'),
               ),
               ListTile(
-                leading: const CircleAvatar(
-                  child: Icon(Icons.draw_outlined),
-                ),
+                leading: const CircleAvatar(child: Icon(Icons.draw_outlined)),
                 title: const Text('Sketch'),
                 subtitle: const Text(
                   'Lo stesso Sketchbook completo del diario privato',
@@ -1460,9 +1401,7 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
                 ),
               ),
               ListTile(
-                leading: const CircleAvatar(
-                  child: Icon(Icons.event_outlined),
-                ),
+                leading: const CircleAvatar(child: Icon(Icons.event_outlined)),
                 title: const Text('Appuntamento'),
                 onTap: () => Navigator.pop(sheetContext, 'appointment'),
               ),
@@ -1500,19 +1439,21 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
   }
 
   Widget _sharedDiaryCard(BuildContext context) {
-    final blocks = entries
-        .where(
-          (entry) =>
-              AgendaStore.sameDay(entry.date, selected) &&
-              (entry.type == SharedEntryType.note ||
-                  entry.type == SharedEntryType.photo ||
-                  entry.type == SharedEntryType.sketch),
-        )
-        .toList()
-      ..sort(
-        (a, b) => (b.createdAt ?? b.updatedAt ?? b.date)
-            .compareTo(a.createdAt ?? a.updatedAt ?? a.date),
-      );
+    final blocks =
+        entries
+            .where(
+              (entry) =>
+                  AgendaStore.sameDay(entry.date, selected) &&
+                  (entry.type == SharedEntryType.note ||
+                      entry.type == SharedEntryType.photo ||
+                      entry.type == SharedEntryType.sketch),
+            )
+            .toList()
+          ..sort(
+            (a, b) => (b.createdAt ?? b.updatedAt ?? b.date).compareTo(
+              a.createdAt ?? a.updatedAt ?? a.date,
+            ),
+          );
 
     return DiaryComposerSection(
       title: 'Il nostro diario',
@@ -1529,13 +1470,7 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
       onAddPhoto: () => _addSharedPhoto(),
       photoBusy: sharedPhotoBusy,
       children: blocks
-          .map(
-            (entry) => _sharedEntryCard(
-              context,
-              entry,
-              showDate: false,
-            ),
-          )
+          .map((entry) => _sharedEntryCard(context, entry, showDate: false))
           .toList(growable: false),
     );
   }
@@ -1609,23 +1544,23 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
     final confirmed = isDiaryContent
         ? await confirmDiaryContentDelete(context)
         : await showDialog<bool>(
-              context: context,
-              builder: (dialogContext) => AlertDialog(
-                title: const Text('Eliminare dallo spazio condiviso?'),
-                content: Text(entry.title),
-                actions: [
-                  TextButton(
-                    onPressed: () => Navigator.pop(dialogContext, false),
-                    child: const Text('Annulla'),
-                  ),
-                  FilledButton(
-                    onPressed: () => Navigator.pop(dialogContext, true),
-                    child: const Text('Elimina'),
-                  ),
-                ],
-              ),
-            ) ??
-            false;
+                context: context,
+                builder: (dialogContext) => AlertDialog(
+                  title: const Text('Eliminare dallo spazio condiviso?'),
+                  content: Text(entry.title),
+                  actions: [
+                    TextButton(
+                      onPressed: () => Navigator.pop(dialogContext, false),
+                      child: const Text('Annulla'),
+                    ),
+                    FilledButton(
+                      onPressed: () => Navigator.pop(dialogContext, true),
+                      child: const Text('Elimina'),
+                    ),
+                  ],
+                ),
+              ) ??
+              false;
     if (!confirmed) return;
 
     final revision = DateTime.now().toUtc();
@@ -1637,8 +1572,7 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
       spaceId: widget.space.id,
       entityId: entry.id,
       updatedAt: revision,
-      mediaPath:
-          entry.type == SharedEntryType.photo ? entry.mediaPath : '',
+      mediaPath: entry.type == SharedEntryType.photo ? entry.mediaPath : '',
     );
     await _saveCache();
     if (CloudSyncService.instance.signedIn) {
@@ -1724,9 +1658,9 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
                           try {
                             final next = await CloudSyncService.instance
                                 .getOrCreateSpaceInvite(
-                              widget.space.id,
-                              forceNew: true,
-                            );
+                                  widget.space.id,
+                                  forceNew: true,
+                                );
                             if (!dialogContext.mounted) return;
                             setDialogState(() {
                               invite = next;
@@ -1744,9 +1678,7 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
                             );
                           }
                         },
-                  child: Text(
-                    regenerating ? 'Rigenerazione…' : 'Nuovo codice',
-                  ),
+                  child: Text(regenerating ? 'Rigenerazione…' : 'Nuovo codice'),
                 ),
                 FilledButton(
                   onPressed: regenerating
@@ -1766,7 +1698,8 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
 
   Future<void> _leaveOrDelete() async {
     final owner = widget.space.isOwner;
-    final confirmed = await showDialog<bool>(
+    final confirmed =
+        await showDialog<bool>(
           context: context,
           builder: (dialogContext) => AlertDialog(
             title: Text(owner ? 'Eliminare lo spazio?' : 'Lasciare lo spazio?'),
@@ -1827,9 +1760,7 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
 
   void _message(String text) {
     if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(text)),
-    );
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(text)));
   }
 
   Widget _sharedInteractionFooter(
@@ -1844,13 +1775,10 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
       child: Row(
         children: [
           TextButton.icon(
-            onPressed:
-                interactionsLoading ? null : () => _toggleHeart(entry),
+            onPressed: interactionsLoading ? null : () => _toggleHeart(entry),
             icon: Icon(
               likedByMe ? Icons.favorite : Icons.favorite_border,
-              color: likedByMe
-                  ? Theme.of(context).colorScheme.error
-                  : null,
+              color: likedByMe ? Theme.of(context).colorScheme.error : null,
               size: 20,
             ),
             label: Text(hearts.isEmpty ? 'Mi piace' : '${hearts.length}'),
@@ -1858,9 +1786,7 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
           TextButton.icon(
             onPressed: () => _openComments(entry),
             icon: const Icon(Icons.chat_bubble_outline, size: 19),
-            label: Text(
-              comments.isEmpty ? 'Commenta' : '${comments.length}',
-            ),
+            label: Text(comments.isEmpty ? 'Commenta' : '${comments.length}'),
           ),
           const Spacer(),
           if (seen != null)
@@ -1870,10 +1796,7 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
                 children: [
                   const Icon(Icons.done_all, size: 17),
                   const SizedBox(width: 4),
-                  Text(
-                    seen,
-                    style: Theme.of(context).textTheme.bodySmall,
-                  ),
+                  Text(seen, style: Theme.of(context).textTheme.bodySmall),
                 ],
               ),
             ),
@@ -1902,8 +1825,7 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
 
     final meta = <String>[
       kind.label,
-      if (showDate)
-        _cap(DateFormat('EEE d MMM', 'it_IT').format(entry.date)),
+      if (showDate) _cap(DateFormat('EEE d MMM', 'it_IT').format(entry.date)),
       if (editor.isNotEmpty) editor,
       if (entry.updatedAt != null)
         'Aggiornato ${DateFormat('HH:mm', 'it_IT').format(entry.updatedAt!.toLocal())}',
@@ -1913,14 +1835,12 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
     final VoidCallback openEntry = switch (entry.type) {
       SharedEntryType.note => () => _addSharedNote(entry),
       SharedEntryType.photo => () => Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (_) => SharedPhotoViewerScreen(
-                space: widget.space,
-                entry: entry,
-              ),
-            ),
-          ),
+        context,
+        MaterialPageRoute(
+          builder: (_) =>
+              SharedPhotoViewerScreen(space: widget.space, entry: entry),
+        ),
+      ),
       SharedEntryType.sketch => () => _addSharedSketch(entry),
       _ => () {},
     };
@@ -1945,9 +1865,10 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
         entry.note.trim().isEmpty ? entry.title : entry.note.trim(),
       SharedEntryType.photo =>
         entry.note.trim().isEmpty ? 'Foto del giorno' : entry.note.trim(),
-      SharedEntryType.sketch => entry.sketchPages.length <= 1
-          ? 'Sketch'
-          : 'Sketch · ${entry.sketchPages.length} pagine',
+      SharedEntryType.sketch =>
+        entry.sketchPages.length <= 1
+            ? 'Sketch'
+            : 'Sketch · ${entry.sketchPages.length} pagine',
       _ => entry.title,
     };
 
@@ -1965,8 +1886,9 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
           ? () => _addSharedPhoto(entry)
           : null,
       onDelete: () => _delete(entry),
-      statusIcon:
-          pending ? const Icon(Icons.schedule_outlined, size: 20) : null,
+      statusIcon: pending
+          ? const Icon(Icons.schedule_outlined, size: 20)
+          : null,
       footer: _sharedInteractionFooter(
         entry,
         hearts: hearts,
@@ -2007,8 +1929,7 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
     }
 
     final details = <String>[
-      if (showDate)
-        _cap(DateFormat('EEE d MMM', 'it_IT').format(entry.date)),
+      if (showDate) _cap(DateFormat('EEE d MMM', 'it_IT').format(entry.date)),
       if (entry.start != null) formatTime(entry.start!),
       if (entry.note.isNotEmpty) entry.note,
       if (editor.isNotEmpty) editor,
@@ -2057,10 +1978,7 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
                     if (value == 'delete') _delete(entry);
                   },
                   itemBuilder: (_) => [
-                    const PopupMenuItem(
-                      value: 'edit',
-                      child: Text('Modifica'),
-                    ),
+                    const PopupMenuItem(value: 'edit', child: Text('Modifica')),
                     PopupMenuItem(
                       value: 'memory',
                       child: Text(
@@ -2096,8 +2014,7 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
     final pendingEntries = pendingIds.length;
     final pendingInteractions = widget.store.pendingSharedInteractionCount;
     final pendingMedia = widget.store.pendingSharedMediaCount;
-    final pendingTotal =
-        pendingEntries + pendingInteractions + pendingMedia;
+    final pendingTotal = pendingEntries + pendingInteractions + pendingMedia;
     final scheme = Theme.of(context).colorScheme;
     final IconData icon;
     final String title;
@@ -2144,7 +2061,10 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(title, style: const TextStyle(fontWeight: FontWeight.w800)),
+                Text(
+                  title,
+                  style: const TextStyle(fontWeight: FontWeight.w800),
+                ),
                 const SizedBox(height: 2),
                 Text(subtitle, style: Theme.of(context).textTheme.bodySmall),
               ],
@@ -2194,16 +2114,11 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
                 if (value == 'leave') _leaveOrDelete();
               },
               itemBuilder: (_) => [
-                const PopupMenuItem(
-                  value: 'refresh',
-                  child: Text('Aggiorna'),
-                ),
+                const PopupMenuItem(value: 'refresh', child: Text('Aggiorna')),
                 PopupMenuItem(
                   value: 'leave',
                   child: Text(
-                    widget.space.isOwner
-                        ? 'Elimina spazio'
-                        : 'Lascia spazio',
+                    widget.space.isOwner ? 'Elimina spazio' : 'Lascia spazio',
                   ),
                 ),
               ],
@@ -2223,9 +2138,7 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
               Container(
                 padding: const EdgeInsets.all(17),
                 decoration: BoxDecoration(
-                  color: Theme.of(context)
-                      .colorScheme
-                      .primaryContainer
+                  color: Theme.of(context).colorScheme.primaryContainer
                       .withValues(alpha: 0.55),
                   borderRadius: BorderRadius.circular(22),
                 ),
@@ -2295,16 +2208,10 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
                 const SectionTitle('Ultimi aggiornamenti'),
                 const SizedBox(height: 10),
                 if (_feedEntries.isEmpty)
-                  const SimpleCard(
-                    child: Text('Ancora niente in Noi ♡.'),
-                  )
+                  const SimpleCard(child: Text('Ancora niente in Noi ♡.'))
                 else
                   ..._feedEntries.map(
-                    (entry) => _sharedEntryCard(
-                      context,
-                      entry,
-                      showDate: true,
-                    ),
+                    (entry) => _sharedEntryCard(context, entry, showDate: true),
                   ),
               ] else ...[
                 TableCalendar<SharedEntry>(
@@ -2344,13 +2251,11 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
     );
   }
 }
+
 class _CachedBase64Image extends StatefulWidget {
   final String data;
   final BoxFit fit;
-  const _CachedBase64Image({
-    required this.data,
-    required this.fit,
-  });
+  const _CachedBase64Image({required this.data, required this.fit});
 
   @override
   State<_CachedBase64Image> createState() => _CachedBase64ImageState();
@@ -2416,15 +2321,14 @@ class _SharedPhotoViewerScreenState extends State<SharedPhotoViewerScreen> {
   Future<Uint8List> _load() async {
     final path = widget.entry.mediaPath.trim();
     if (path.isNotEmpty) {
-      final cacheId =
-          MediaAssetStore.instance.namedAssetId('remote', path);
+      final cacheId = MediaAssetStore.instance.namedAssetId('remote', path);
       final cached = await MediaAssetStore.instance.read(cacheId);
       if (cached != null) return cached;
 
       if (CloudSyncService.instance.signedIn) {
         try {
-          final downloaded =
-              await CloudSyncService.instance.downloadSharedMedia(path);
+          final downloaded = await CloudSyncService.instance
+              .downloadSharedMedia(path);
           await MediaAssetStore.instance.putNamed(cacheId, downloaded);
           return downloaded;
         } catch (_) {}
@@ -2432,8 +2336,9 @@ class _SharedPhotoViewerScreenState extends State<SharedPhotoViewerScreen> {
     }
 
     if (widget.entry.mediaThumbnailAssetId.isNotEmpty) {
-      final thumbnail = await MediaAssetStore.instance
-          .read(widget.entry.mediaThumbnailAssetId);
+      final thumbnail = await MediaAssetStore.instance.read(
+        widget.entry.mediaThumbnailAssetId,
+      );
       if (thumbnail != null) return thumbnail;
     }
     if (widget.entry.mediaThumbnailBase64.isNotEmpty) {
@@ -2445,10 +2350,7 @@ class _SharedPhotoViewerScreenState extends State<SharedPhotoViewerScreen> {
   @override
   Widget build(BuildContext context) {
     final dateLabel = _cap(
-      DateFormat(
-        'EEEE d MMMM yyyy',
-        'it_IT',
-      ).format(widget.entry.date),
+      DateFormat('EEEE d MMMM yyyy', 'it_IT').format(widget.entry.date),
     );
 
     return DiaryPhotoViewerShell(
@@ -2486,8 +2388,8 @@ Future<SharedEntry?> _openSharedEntryEditor(
   var type = existing?.type ?? initialType ?? SharedEntryType.appointment;
   var date = existing?.date ?? initialDate;
   var start = existing?.start ?? initialTime;
-  var end = existing?.end ??
-      (start == null ? null : _timePlusMinutes(start, 60));
+  var end =
+      existing?.end ?? (start == null ? null : _timePlusMinutes(start, 60));
 
   final result = await showDialog<SharedEntry>(
     context: context,
@@ -2509,19 +2411,20 @@ Future<SharedEntry?> _openSharedEntryEditor(
               ),
               const SizedBox(height: 10),
               SegmentedButton<SharedEntryType>(
-                segments: const [
-                  SharedEntryType.appointment,
-                  SharedEntryType.task,
-                  SharedEntryType.note,
-                ]
-                    .map(
-                      (value) => ButtonSegment(
-                        value: value,
-                        icon: Icon(value.icon),
-                        label: Text(value.label),
-                      ),
-                    )
-                    .toList(),
+                segments:
+                    const [
+                          SharedEntryType.appointment,
+                          SharedEntryType.task,
+                          SharedEntryType.note,
+                        ]
+                        .map(
+                          (value) => ButtonSegment(
+                            value: value,
+                            icon: Icon(value.icon),
+                            label: Text(value.label),
+                          ),
+                        )
+                        .toList(),
                 selected: {type},
                 onSelectionChanged: (value) =>
                     setLocal(() => type = value.first),
@@ -2543,9 +2446,7 @@ Future<SharedEntry?> _openSharedEntryEditor(
               ListTile(
                 contentPadding: EdgeInsets.zero,
                 leading: const Icon(Icons.calendar_today_outlined),
-                title: Text(
-                  DateFormat('d MMMM yyyy', 'it_IT').format(date),
-                ),
+                title: Text(DateFormat('d MMMM yyyy', 'it_IT').format(date)),
                 onTap: () async {
                   final picked = await showDatePicker(
                     context: context,

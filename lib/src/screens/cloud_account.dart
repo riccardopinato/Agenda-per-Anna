@@ -3,10 +3,7 @@ part of '../../main.dart';
 class CloudAccountScreen extends StatefulWidget {
   final AgendaStore store;
 
-  const CloudAccountScreen({
-    super.key,
-    required this.store,
-  });
+  const CloudAccountScreen({super.key, required this.store});
 
   @override
   State<CloudAccountScreen> createState() => _CloudAccountScreenState();
@@ -16,22 +13,22 @@ class _CloudAccountScreenState extends State<CloudAccountScreen> {
   bool busy = false;
 
   String _stateLabel(CloudConnectionState state) => switch (state) {
-        CloudConnectionState.disabled => 'Cloud non configurato',
-        CloudConnectionState.initializing => 'Connessione...',
-        CloudConnectionState.signedOut => 'Sessione non attiva',
-        CloudConnectionState.syncing => 'Sincronizzazione...',
-        CloudConnectionState.synced => 'Sincronizzato',
-        CloudConnectionState.error => 'Errore di sincronizzazione',
-      };
+    CloudConnectionState.disabled => 'Cloud non configurato',
+    CloudConnectionState.initializing => 'Connessione...',
+    CloudConnectionState.signedOut => 'Sessione non attiva',
+    CloudConnectionState.syncing => 'Sincronizzazione...',
+    CloudConnectionState.synced => 'Sincronizzato',
+    CloudConnectionState.error => 'Errore di sincronizzazione',
+  };
 
   IconData _stateIcon(CloudConnectionState state) => switch (state) {
-        CloudConnectionState.disabled => Icons.cloud_off_outlined,
-        CloudConnectionState.initializing => Icons.hourglass_top,
-        CloudConnectionState.signedOut => Icons.person_off_outlined,
-        CloudConnectionState.syncing => Icons.sync,
-        CloudConnectionState.synced => Icons.cloud_done_outlined,
-        CloudConnectionState.error => Icons.cloud_off,
-      };
+    CloudConnectionState.disabled => Icons.cloud_off_outlined,
+    CloudConnectionState.initializing => Icons.hourglass_top,
+    CloudConnectionState.signedOut => Icons.person_off_outlined,
+    CloudConnectionState.syncing => Icons.sync,
+    CloudConnectionState.synced => Icons.cloud_done_outlined,
+    CloudConnectionState.error => Icons.cloud_off,
+  };
 
   Future<void> _syncNow() async {
     setState(() => busy = true);
@@ -54,7 +51,8 @@ class _CloudAccountScreenState extends State<CloudAccountScreen> {
   }
 
   Future<void> _signOut() async {
-    final confirmed = await showDialog<bool>(
+    final confirmed =
+        await showDialog<bool>(
           context: context,
           builder: (dialogContext) => AlertDialog(
             title: const Text('Disconnettere l’account?'),
@@ -93,9 +91,7 @@ class _CloudAccountScreenState extends State<CloudAccountScreen> {
 
   void _message(String text) {
     if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(text)),
-    );
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(text)));
   }
 
   @override
@@ -125,13 +121,9 @@ class _CloudAccountScreenState extends State<CloudAccountScreen> {
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
                     colors: [
-                      Theme.of(context)
-                          .colorScheme
-                          .primaryContainer
+                      Theme.of(context).colorScheme.primaryContainer
                           .withValues(alpha: 0.75),
-                      Theme.of(context)
-                          .colorScheme
-                          .secondaryContainer
+                      Theme.of(context).colorScheme.secondaryContainer
                           .withValues(alpha: 0.75),
                     ],
                   ),
@@ -173,8 +165,9 @@ class _CloudAccountScreenState extends State<CloudAccountScreen> {
                     ListTile(
                       contentPadding: EdgeInsets.zero,
                       leading: CircleAvatar(
-                        foregroundImage:
-                            avatar == null ? null : NetworkImage(avatar),
+                        foregroundImage: avatar == null
+                            ? null
+                            : NetworkImage(avatar),
                         child: avatar == null
                             ? const Icon(Icons.person_outline)
                             : null,
@@ -205,8 +198,8 @@ class _CloudAccountScreenState extends State<CloudAccountScreen> {
                     SizedBox(
                       width: double.infinity,
                       child: FilledButton.icon(
-                        onPressed: busy ||
-                                cloud.state == CloudConnectionState.syncing
+                        onPressed:
+                            busy || cloud.state == CloudConnectionState.syncing
                             ? null
                             : _syncNow,
                         icon: const Icon(Icons.sync),

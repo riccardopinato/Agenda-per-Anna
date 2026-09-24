@@ -33,13 +33,13 @@ class CloudSyncOperation {
   String get localKey => '$entityType:$entityId';
 
   Map<String, dynamic> toJson() => {
-        'entityType': entityType,
-        'entityId': entityId,
-        'payload': payload,
-        'updatedAt': updatedAt.toIso8601String(),
-        'deleted': deleted,
-        'ownerId': ownerId,
-      };
+    'entityType': entityType,
+    'entityId': entityId,
+    'payload': payload,
+    'updatedAt': updatedAt.toIso8601String(),
+    'deleted': deleted,
+    'ownerId': ownerId,
+  };
 
   factory CloudSyncOperation.fromJson(Map<String, dynamic> json) =>
       CloudSyncOperation(
@@ -50,7 +50,7 @@ class CloudSyncOperation {
             : Map<String, dynamic>.from(json['payload'] as Map),
         updatedAt:
             DateTime.tryParse(json['updatedAt'] as String? ?? '') ??
-                DateTime.now(),
+            DateTime.now(),
         deleted: json['deleted'] as bool? ?? false,
         ownerId: json['ownerId'] as String?,
       );
@@ -85,7 +85,7 @@ class CloudRemoteRecord {
             : Map<String, dynamic>.from(json['payload'] as Map),
         clientUpdatedAt:
             DateTime.tryParse(json['client_updated_at'] as String? ?? '') ??
-                DateTime.fromMillisecondsSinceEpoch(0, isUtc: true),
+            DateTime.fromMillisecondsSinceEpoch(0, isUtc: true),
         deletedAt: json['deleted_at'] == null
             ? null
             : DateTime.tryParse(json['deleted_at'] as String),
@@ -112,16 +112,15 @@ class SharedSpace {
   factory SharedSpace.fromJson(
     Map<String, dynamic> json, {
     required String role,
-  }) =>
-      SharedSpace(
-        id: json['id'] as String,
-        ownerId: json['owner_id'] as String,
-        name: json['name'] as String? ?? 'Noi ♡',
-        role: role,
-        createdAt:
-            DateTime.tryParse(json['created_at'] as String? ?? '') ??
-                DateTime.now(),
-      );
+  }) => SharedSpace(
+    id: json['id'] as String,
+    ownerId: json['owner_id'] as String,
+    name: json['name'] as String? ?? 'Noi ♡',
+    role: role,
+    createdAt:
+        DateTime.tryParse(json['created_at'] as String? ?? '') ??
+        DateTime.now(),
+  );
 }
 
 class SpaceInvite {
@@ -143,12 +142,12 @@ class SpaceInvite {
   bool get expired => !expiresAt.isAfter(DateTime.now().toUtc());
 
   factory SpaceInvite.fromJson(Map<String, dynamic> json) => SpaceInvite(
-        code: (json['code'] ?? '').toString().toUpperCase(),
-        expiresAt:
-            DateTime.tryParse((json['expires_at'] ?? '').toString())?.toUtc() ??
-                DateTime.fromMillisecondsSinceEpoch(0, isUtc: true),
-        reused: json['reused'] as bool? ?? false,
-      );
+    code: (json['code'] ?? '').toString().toUpperCase(),
+    expiresAt:
+        DateTime.tryParse((json['expires_at'] ?? '').toString())?.toUtc() ??
+        DateTime.fromMillisecondsSinceEpoch(0, isUtc: true),
+    reused: json['reused'] as bool? ?? false,
+  );
 }
 
 class SharedSpaceRecord {
@@ -187,7 +186,7 @@ class SharedSpaceRecord {
             : Map<String, dynamic>.from(json['payload'] as Map),
         clientUpdatedAt:
             DateTime.tryParse(json['client_updated_at'] as String? ?? '') ??
-                DateTime.fromMillisecondsSinceEpoch(0, isUtc: true),
+            DateTime.fromMillisecondsSinceEpoch(0, isUtc: true),
         deletedAt: json['deleted_at'] == null
             ? null
             : DateTime.tryParse(json['deleted_at'] as String),
@@ -223,9 +222,11 @@ class SharedEntryComment {
         userId: json['user_id'] as String,
         authorName: json['author_name'] as String? ?? '',
         body: json['body'] as String? ?? '',
-        createdAt: DateTime.tryParse(json['created_at'] as String? ?? '') ??
+        createdAt:
+            DateTime.tryParse(json['created_at'] as String? ?? '') ??
             DateTime.now(),
-        updatedAt: DateTime.tryParse(json['updated_at'] as String? ?? '') ??
+        updatedAt:
+            DateTime.tryParse(json['updated_at'] as String? ?? '') ??
             DateTime.now(),
       );
 }
@@ -251,7 +252,8 @@ class SharedEntryReaction {
         entryId: json['entry_id'] as String,
         userId: json['user_id'] as String,
         kind: json['kind'] as String? ?? 'heart',
-        createdAt: DateTime.tryParse(json['created_at'] as String? ?? '') ??
+        createdAt:
+            DateTime.tryParse(json['created_at'] as String? ?? '') ??
             DateTime.now(),
       );
 }
@@ -273,7 +275,7 @@ class SharedMemberRead {
         userId: json['user_id'] as String,
         lastSeenAt:
             DateTime.tryParse(json['last_seen_at'] as String? ?? '') ??
-                DateTime.fromMillisecondsSinceEpoch(0, isUtc: true),
+            DateTime.fromMillisecondsSinceEpoch(0, isUtc: true),
       );
 }
 
@@ -311,23 +313,19 @@ class SharedRealtimeRecordChange {
           : null,
       clientUpdatedAt:
           DateTime.tryParse(source['client_updated_at']?.toString() ?? '')
-                  ?.toUtc() ??
-              DateTime.fromMillisecondsSinceEpoch(0, isUtc: true),
+              ?.toUtc() ??
+          DateTime.fromMillisecondsSinceEpoch(0, isUtc: true),
       deletedAt: source['deleted_at'] == null
           ? (newRecord.isEmpty && oldRecord.isNotEmpty
-              ? DateTime.now().toUtc()
-              : null)
+                ? DateTime.now().toUtc()
+                : null)
           : DateTime.tryParse(source['deleted_at'].toString())?.toUtc(),
       updatedBy: source['updated_by']?.toString(),
     );
   }
 }
 
-enum SharedRealtimeInteractionKind {
-  comment,
-  reaction,
-  memberRead,
-}
+enum SharedRealtimeInteractionKind { comment, reaction, memberRead }
 
 class SharedRealtimeInteractionChange {
   final SharedRealtimeInteractionKind kind;
@@ -443,12 +441,14 @@ class CloudSyncService extends ChangeNotifier {
     }
     return 'Operazione cloud non riuscita. Riprova tra poco.';
   }
+
   User? get user => _client?.auth.currentUser;
   String? get userId => user?.id;
   String? get email => user?.email;
   bool get signedIn => user != null;
   bool get passwordRecoveryPending => _passwordRecoveryPending;
-  String get authRedirectUrl => kIsWeb ? _emailRedirectUrl : _mobileAuthRedirectUrl;
+  String get authRedirectUrl =>
+      kIsWeb ? _emailRedirectUrl : _mobileAuthRedirectUrl;
   String get displayName {
     final metadata = user?.userMetadata;
     final raw = metadata?['full_name'] ?? metadata?['name'];
@@ -480,10 +480,7 @@ class CloudSyncService extends ChangeNotifier {
     notifyListeners();
 
     try {
-      await Supabase.initialize(
-        url: _url,
-        publishableKey: _publishableKey,
-      );
+      await Supabase.initialize(url: _url, publishableKey: _publishableKey);
       _client = Supabase.instance.client;
       await _completeWebAuthCallbackIfNeeded();
       _initialized = true;
@@ -491,8 +488,7 @@ class CloudSyncService extends ChangeNotifier {
           ? CloudConnectionState.synced
           : CloudConnectionState.signedOut;
 
-      _authSubscription =
-          _client!.auth.onAuthStateChange.listen((authState) {
+      _authSubscription = _client!.auth.onAuthStateChange.listen((authState) {
         _sessionEpoch++;
         unawaited(_clearSharedChannels());
 
@@ -547,10 +543,7 @@ class CloudSyncService extends ChangeNotifier {
     }
   }
 
-  Future<void> signIn({
-    required String email,
-    required String password,
-  }) async {
+  Future<void> signIn({required String email, required String password}) async {
     final client = _requireClient();
     _state = CloudConnectionState.initializing;
     _lastError = null;
@@ -571,10 +564,7 @@ class CloudSyncService extends ChangeNotifier {
     }
   }
 
-  Future<void> signUp({
-    required String email,
-    required String password,
-  }) async {
+  Future<void> signUp({required String email, required String password}) async {
     final client = _requireClient();
     _state = CloudConnectionState.initializing;
     _lastError = null;
@@ -667,9 +657,7 @@ class CloudSyncService extends ChangeNotifier {
     final client = _requireSignedInClient();
     _lastError = null;
     try {
-      await client.auth.updateUser(
-        UserAttributes(password: value),
-      );
+      await client.auth.updateUser(UserAttributes(password: value));
       _passwordRecoveryPending = false;
       _state = CloudConnectionState.synced;
     } catch (error) {
@@ -698,7 +686,7 @@ class CloudSyncService extends ChangeNotifier {
     const pageSize = 500;
     final records = <CloudRemoteRecord>[];
 
-    for (var from = 0;; from += pageSize) {
+    for (var from = 0; ; from += pageSize) {
       final base = client
           .from('agenda_records')
           .select(
@@ -709,17 +697,17 @@ class CloudSyncService extends ChangeNotifier {
 
       final response = updatedSince == null
           ? await base
-              .order('client_updated_at')
-              .order('record_key')
-              .range(from, from + pageSize - 1)
+                .order('client_updated_at')
+                .order('record_key')
+                .range(from, from + pageSize - 1)
           : await base
-              .gte(
-                'client_updated_at',
-                updatedSince.toUtc().toIso8601String(),
-              )
-              .order('client_updated_at')
-              .order('record_key')
-              .range(from, from + pageSize - 1);
+                .gte(
+                  'client_updated_at',
+                  updatedSince.toUtc().toIso8601String(),
+                )
+                .order('client_updated_at')
+                .order('record_key')
+                .range(from, from + pageSize - 1);
 
       final page = (response as List)
           .map(
@@ -757,8 +745,7 @@ class CloudSyncService extends ChangeNotifier {
         'p_entity_type': entityType,
         'p_entity_id': entityId,
         'p_payload': payload,
-        'p_client_updated_at':
-            clientUpdatedAt.toUtc().toIso8601String(),
+        'p_client_updated_at': clientUpdatedAt.toUtc().toIso8601String(),
         'p_deleted_at': deletedAt?.toUtc().toIso8601String(),
       },
     );
@@ -817,24 +804,23 @@ class CloudSyncService extends ChangeNotifier {
         .from('shared_spaces')
         .select('id,owner_id,name,created_at');
 
-    final spaces = (response as List)
-        .map((row) => Map<String, dynamic>.from(row as Map))
-        .where((row) => roleBySpace.containsKey(row['id'] as String))
-        .map(
-          (row) => SharedSpace.fromJson(
-            row,
-            role: roleBySpace[row['id'] as String]!,
-          ),
-        )
-        .toList()
-      ..sort((a, b) => a.createdAt.compareTo(b.createdAt));
+    final spaces =
+        (response as List)
+            .map((row) => Map<String, dynamic>.from(row as Map))
+            .where((row) => roleBySpace.containsKey(row['id'] as String))
+            .map(
+              (row) => SharedSpace.fromJson(
+                row,
+                role: roleBySpace[row['id'] as String]!,
+              ),
+            )
+            .toList()
+          ..sort((a, b) => a.createdAt.compareTo(b.createdAt));
 
     return spaces;
   }
 
-  Future<String> createSharedSpace({
-    String name = 'Noi ♡',
-  }) async {
+  Future<String> createSharedSpace({String name = 'Noi ♡'}) async {
     final client = _requireSignedInClient();
     final result = await client.rpc(
       'create_shared_space',
@@ -850,10 +836,7 @@ class CloudSyncService extends ChangeNotifier {
     final client = _requireSignedInClient();
     final result = await client.rpc(
       'get_or_create_space_invite',
-      params: {
-        'p_space_id': spaceId,
-        'p_force_new': forceNew,
-      },
+      params: {'p_space_id': spaceId, 'p_force_new': forceNew},
     );
     if (result is Map) {
       return SpaceInvite.fromJson(Map<String, dynamic>.from(result));
@@ -883,18 +866,12 @@ class CloudSyncService extends ChangeNotifier {
 
   Future<void> leaveSharedSpace(String spaceId) async {
     final client = _requireSignedInClient();
-    await client.rpc(
-      'leave_shared_space',
-      params: {'p_space_id': spaceId},
-    );
+    await client.rpc('leave_shared_space', params: {'p_space_id': spaceId});
   }
 
   Future<void> deleteSharedSpace(String spaceId) async {
     final client = _requireSignedInClient();
-    await client.rpc(
-      'delete_shared_space',
-      params: {'p_space_id': spaceId},
-    );
+    await client.rpc('delete_shared_space', params: {'p_space_id': spaceId});
   }
 
   Future<List<SharedSpaceRecord>> pullSharedRecords(
@@ -905,7 +882,7 @@ class CloudSyncService extends ChangeNotifier {
     const pageSize = 500;
     final records = <SharedSpaceRecord>[];
 
-    for (var from = 0;; from += pageSize) {
+    for (var from = 0; ; from += pageSize) {
       final base = client
           .from('agenda_records')
           .select(
@@ -916,17 +893,17 @@ class CloudSyncService extends ChangeNotifier {
 
       final response = updatedSince == null
           ? await base
-              .order('client_updated_at')
-              .order('record_key')
-              .range(from, from + pageSize - 1)
+                .order('client_updated_at')
+                .order('record_key')
+                .range(from, from + pageSize - 1)
           : await base
-              .gte(
-                'client_updated_at',
-                updatedSince.toUtc().toIso8601String(),
-              )
-              .order('client_updated_at')
-              .order('record_key')
-              .range(from, from + pageSize - 1);
+                .gte(
+                  'client_updated_at',
+                  updatedSince.toUtc().toIso8601String(),
+                )
+                .order('client_updated_at')
+                .order('record_key')
+                .range(from, from + pageSize - 1);
 
       final page = (response as List)
           .map(
@@ -998,13 +975,12 @@ class CloudSyncService extends ChangeNotifier {
       _ => 'jpg',
     };
     final path = '$spaceId/$entryId/media.$extension';
-    await client.storage.from('shared-media').uploadBinary(
+    await client.storage
+        .from('shared-media')
+        .uploadBinary(
           path,
           bytes,
-          fileOptions: FileOptions(
-            contentType: contentType,
-            upsert: true,
-          ),
+          fileOptions: FileOptions(contentType: contentType, upsert: true),
         );
     return path;
   }
@@ -1038,13 +1014,10 @@ class CloudSyncService extends ChangeNotifier {
 
     Future<void> collectFiles(String path) async {
       const pageSize = 100;
-      for (var offset = 0;; offset += pageSize) {
+      for (var offset = 0; ; offset += pageSize) {
         final page = await storage.list(
           path: path,
-          searchOptions: SearchOptions(
-            limit: pageSize,
-            offset: offset,
-          ),
+          searchOptions: SearchOptions(limit: pageSize, offset: offset),
         );
 
         for (final object in page) {
@@ -1059,13 +1032,10 @@ class CloudSyncService extends ChangeNotifier {
     }
 
     const pageSize = 100;
-    for (var offset = 0;; offset += pageSize) {
+    for (var offset = 0; ; offset += pageSize) {
       final page = await storage.list(
         path: spaceId,
-        searchOptions: SearchOptions(
-          limit: pageSize,
-          offset: offset,
-        ),
+        searchOptions: SearchOptions(limit: pageSize, offset: offset),
       );
 
       for (final object in page) {
@@ -1111,16 +1081,13 @@ class CloudSyncService extends ChangeNotifier {
   }) async {
     final client = _requireSignedInClient();
     final uid = userId!;
-    await client.from('push_devices').upsert(
-      {
-        'user_id': uid,
-        'token': token,
-        'platform': platform,
-        'app_version': appVersion,
-        'updated_at': DateTime.now().toUtc().toIso8601String(),
-      },
-      onConflict: 'token',
-    );
+    await client.from('push_devices').upsert({
+      'user_id': uid,
+      'token': token,
+      'platform': platform,
+      'app_version': appVersion,
+      'updated_at': DateTime.now().toUtc().toIso8601String(),
+    }, onConflict: 'token');
   }
 
   Future<void> unregisterPushDevice(String token) async {
@@ -1132,6 +1099,7 @@ class CloudSyncService extends ChangeNotifier {
         .eq('user_id', uid)
         .eq('token', token);
   }
+
   Future<bool> isPushDeviceRegistered(String token) async {
     final client = _requireSignedInClient();
     final uid = userId!;
@@ -1150,17 +1118,11 @@ class CloudSyncService extends ChangeNotifier {
     final client = _requireSignedInClient();
     final response = await client.functions.invoke(
       'send-shared-push',
-      body: {
-        'event_id': eventId,
-        'action': 'self_test',
-      },
+      body: {'event_id': eventId, 'action': 'self_test'},
     );
     final data = response.data;
-    return data is Map
-        ? Map<String, dynamic>.from(data)
-        : <String, dynamic>{};
+    return data is Map ? Map<String, dynamic>.from(data) : <String, dynamic>{};
   }
-
 
   Future<List<SharedEntryComment>> listSharedEntryComments(
     String spaceId,
@@ -1201,9 +1163,7 @@ class CloudSyncService extends ChangeNotifier {
         .toList();
   }
 
-  Future<List<SharedMemberRead>> listSharedMemberReads(
-    String spaceId,
-  ) async {
+  Future<List<SharedMemberRead>> listSharedMemberReads(String spaceId) async {
     final client = _requireSignedInClient();
     final response = await client
         .from('space_member_reads')
@@ -1212,9 +1172,8 @@ class CloudSyncService extends ChangeNotifier {
 
     return (response as List)
         .map(
-          (row) => SharedMemberRead.fromJson(
-            Map<String, dynamic>.from(row as Map),
-          ),
+          (row) =>
+              SharedMemberRead.fromJson(Map<String, dynamic>.from(row as Map)),
         )
         .toList();
   }
@@ -1240,18 +1199,13 @@ class CloudSyncService extends ChangeNotifier {
     };
     final response = await client
         .from('shared_entry_comments')
-        .upsert(
-          payload,
-          onConflict: 'id',
-        )
+        .upsert(payload, onConflict: 'id')
         .select(
           'id,space_id,entry_id,user_id,author_name,body,created_at,updated_at',
         )
         .single();
 
-    return SharedEntryComment.fromJson(
-      Map<String, dynamic>.from(response),
-    );
+    return SharedEntryComment.fromJson(Map<String, dynamic>.from(response));
   }
 
   Future<void> deleteSharedEntryComment(String commentId) async {
@@ -1273,15 +1227,12 @@ class CloudSyncService extends ChangeNotifier {
     final uid = userId!;
 
     if (active) {
-      await client.from('shared_entry_reactions').upsert(
-        {
-          'space_id': spaceId,
-          'entry_id': entryId,
-          'user_id': uid,
-          'kind': 'heart',
-        },
-        onConflict: 'space_id,entry_id,user_id,kind',
-      );
+      await client.from('shared_entry_reactions').upsert({
+        'space_id': spaceId,
+        'entry_id': entryId,
+        'user_id': uid,
+        'kind': 'heart',
+      }, onConflict: 'space_id,entry_id,user_id,kind');
       return;
     }
 
@@ -1297,14 +1248,11 @@ class CloudSyncService extends ChangeNotifier {
   Future<void> markSharedSpaceSeen(String spaceId) async {
     final client = _requireSignedInClient();
     final uid = userId!;
-    await client.from('space_member_reads').upsert(
-      {
-        'space_id': spaceId,
-        'user_id': uid,
-        'last_seen_at': DateTime.now().toUtc().toIso8601String(),
-      },
-      onConflict: 'space_id,user_id',
-    );
+    await client.from('space_member_reads').upsert({
+      'space_id': spaceId,
+      'user_id': uid,
+      'last_seen_at': DateTime.now().toUtc().toIso8601String(),
+    }, onConflict: 'space_id,user_id');
   }
 
   Future<void> sendSharedPush({
@@ -1355,7 +1303,8 @@ class CloudSyncService extends ChangeNotifier {
             value: spaceId,
           ),
           callback: (payload) {
-            final updatedBy = payload.newRecord['updated_by']?.toString() ??
+            final updatedBy =
+                payload.newRecord['updated_by']?.toString() ??
                 payload.oldRecord['updated_by']?.toString();
             onUpdatedBy?.call(updatedBy);
             if (onRecordChanged != null) {
@@ -1481,6 +1430,7 @@ class CloudSyncService extends ChangeNotifier {
       }
     }
   }
+
   void markSyncStarted() {
     _state = CloudConnectionState.syncing;
     _lastError = null;

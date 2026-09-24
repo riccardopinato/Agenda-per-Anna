@@ -2,19 +2,13 @@ part of '../../main.dart';
 
 const bool _authGateBypass =
     bool.fromEnvironment('FLUTTER_TEST') ||
-    bool.fromEnvironment(
-      'ANNAS_DIARY_APPLAB_AUTH_BYPASS',
-      defaultValue: false,
-    );
+    bool.fromEnvironment('ANNAS_DIARY_APPLAB_AUTH_BYPASS', defaultValue: false);
 
 class _UniversalAuthGate extends StatefulWidget {
   final AgendaStore store;
   final Widget child;
 
-  const _UniversalAuthGate({
-    required this.store,
-    required this.child,
-  });
+  const _UniversalAuthGate({required this.store, required this.child});
 
   @override
   State<_UniversalAuthGate> createState() => _UniversalAuthGateState();
@@ -123,7 +117,9 @@ class _UniversalAuthGateState extends State<_UniversalAuthGate> {
     final email = emailController.text.trim();
     final password = passwordController.text;
     if (!email.contains('@') || password.length < 6) {
-      setState(() => errorText = 'Inserisci email e password del vecchio account.');
+      setState(
+        () => errorText = 'Inserisci email e password del vecchio account.',
+      );
       return;
     }
 
@@ -132,10 +128,7 @@ class _UniversalAuthGateState extends State<_UniversalAuthGate> {
       errorText = null;
     });
     try {
-      await CloudSyncService.instance.signIn(
-        email: email,
-        password: password,
-      );
+      await CloudSyncService.instance.signIn(email: email, password: password);
       await _activateSignedInAccount();
     } catch (_) {
       if (mounted) {
@@ -149,7 +142,9 @@ class _UniversalAuthGateState extends State<_UniversalAuthGate> {
   Future<void> _forgotPassword() async {
     final email = emailController.text.trim();
     if (!email.contains('@')) {
-      setState(() => errorText = 'Inserisci prima l’email del vecchio account.');
+      setState(
+        () => errorText = 'Inserisci prima l’email del vecchio account.',
+      );
       return;
     }
     setState(() {
@@ -268,7 +263,9 @@ class _UniversalAuthGateState extends State<_UniversalAuthGate> {
                   SizedBox(
                     height: 54,
                     child: FilledButton(
-                      onPressed: busy || !cloud.configured ? null : _googleSignIn,
+                      onPressed: busy || !cloud.configured
+                          ? null
+                          : _googleSignIn,
                       child: busy
                           ? const SizedBox(
                               width: 20,
@@ -318,9 +315,8 @@ class _UniversalAuthGateState extends State<_UniversalAuthGate> {
                   TextButton.icon(
                     onPressed: busy
                         ? null
-                        : () => setState(
-                              () => legacyExpanded = !legacyExpanded,
-                            ),
+                        : () =>
+                              setState(() => legacyExpanded = !legacyExpanded),
                     icon: const Icon(Icons.manage_accounts_outlined),
                     label: Text(
                       legacyExpanded
@@ -394,10 +390,7 @@ class _UniversalAuthGateState extends State<_UniversalAuthGate> {
 
     final cloud = CloudSyncService.instance;
     return AnimatedBuilder(
-      animation: Listenable.merge([
-        cloud,
-        widget.store.accountRevision,
-      ]),
+      animation: Listenable.merge([cloud, widget.store.accountRevision]),
       builder: (context, _) {
         if (!cloud.initialized) {
           if (cloud.state == CloudConnectionState.error &&
@@ -461,7 +454,10 @@ class _UniversalAuthGateState extends State<_UniversalAuthGate> {
         if (!widget.store.accountScopeResolved ||
             widget.store.activeAccountId != cloud.userId ||
             busy) {
-          return _brandLoading(context, 'Allineamento del tuo spazio personale…');
+          return _brandLoading(
+            context,
+            'Allineamento del tuo spazio personale…',
+          );
         }
 
         return widget.child;
