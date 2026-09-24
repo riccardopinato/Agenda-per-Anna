@@ -133,7 +133,7 @@ See `docs/ARCHITECTURE.md` and `supabase/README.md` for implementation details.
 - Google via Supabase Auth becomes the primary account entry point for the whole app; authentication is no longer presented inside Noi ♡.
 - Existing email/password accounts remain available only as a migration/recovery fallback.
 - First account activation claims the pre-login local working set once, preserving existing device data without cross-account leakage.
-- Android OAuth returns through the versioned deep link `com.riccardopinato.agenda_per_anna://login-callback/`.
+- Android OAuth returns through the versioned deep link `com.riccardopinato.agendaperanna://login-callback/`.
 - GitHub Pages is the canonical Web OAuth return surface.
 - Noi ♡ invitation codes now persist server-side for the complete 24-hour TTL, survive app/home/restart navigation and can be used by multiple members.
 - Reopening the invite returns the same code; only explicit regeneration revokes it and creates a new 24-hour code.
