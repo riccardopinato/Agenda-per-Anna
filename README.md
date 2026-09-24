@@ -2,7 +2,7 @@
 
 Flutter app for personal planning, private diary and the shared **Noi ♡** space.
 
-Current release line: **v0.40.0**.
+Current release line: **v0.41.0**.
 
 ## Core areas
 
@@ -126,3 +126,16 @@ See `docs/ARCHITECTURE.md` and `supabase/README.md` for implementation details.
 - Pull requests now build an ARM64 release APK instead of relying only on debug packaging.
 - Added AppLab as a first-class PR gate with restart persistence smoke and Calendar / Week / Today / Memories visual checkpoints.
 - GitHub Pages is the canonical Web deployment: https://riccardopinato.github.io/Agenda-per-Anna/
+
+
+## v0.41.0 — Universal Identity, Persistent Invite & Always-Synced Noi ♡
+
+- Google via Supabase Auth becomes the primary account entry point for the whole app; authentication is no longer presented inside Noi ♡.
+- Existing email/password accounts remain available only as a migration/recovery fallback.
+- First account activation claims the pre-login local working set once, preserving existing device data without cross-account leakage.
+- Android OAuth returns through the versioned deep link `com.riccardopinato.agenda_per_anna://login-callback/`.
+- GitHub Pages is the canonical Web OAuth return surface.
+- Noi ♡ invitation codes now persist server-side for the complete 24-hour TTL, survive app/home/restart navigation and can be used by multiple members.
+- Reopening the invite returns the same code; only explicit regeneration revokes it and creates a new 24-hour code.
+- Noi ♡ keeps Realtime while active, offline queues while disconnected, push for background changes and automatic reconciliation on resume/periodic sync.
+- AppLab uses a compile-time test-only auth bypass so production authentication is never disabled in distributed builds.
