@@ -16,13 +16,13 @@ Current release line: **v0.38.0**.
 - Supabase Auth, Database, Realtime and private Storage.
 - Firebase Cloud Messaging for Android Noi ♡ push notifications.
 - Local reminders with notification diagnostics and repair tools.
-- Portable JSON backup and account-scoped safety snapshots.
+- Integrity-checked ZIP backup with separate binary media, legacy JSON import and account-scoped safety snapshots.
 
 ## Quality gates
 
-GitHub Actions runs locked dependency resolution, Flutter analyze, the full test suite and a Web release build on every pull request and every push to `main`.
+GitHub Actions runs locked dependency resolution, Android platform generation/verification, Flutter analyze, the full test suite, a Web release build and an Android debug package on every pull request and every push to `main`.
 
-Release Android builds remain manual and use Flutter 3.47.5 for reproducibility. Release APK signing requires the stable keystore credentials in GitHub Secrets; the workflow deliberately refuses ephemeral or cache-backed signing keys.
+Android release packaging remains manual and uses Flutter 3.47.5 for reproducibility. Pull requests that affect runtime packaging also run an ARM64 release-size audit. Production signing requires the stable keystore credentials in GitHub Secrets; the workflow deliberately refuses ephemeral or cache-backed signing keys.
 
 See `docs/ARCHITECTURE.md` and `supabase/README.md` for implementation details.
 
