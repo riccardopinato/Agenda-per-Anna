@@ -3,13 +3,10 @@ import 'package:intl/date_symbol_data_local.dart';
 import 'package:agenda_per_anna/main.dart';
 
 void main() {
-  testWidgets('Agenda app starts', (tester) async {
+  testWidgets('Agenda app boots into the first-run experience', (tester) async {
     await initializeDateFormatting('it_IT', null);
     final store = AgendaStore();
     await store.load();
-    await store.savePreferences(
-      store.preferences.copyWith(onboardingDone: true),
-    );
 
     await tester.pumpWidget(
       AgendaApp(
@@ -19,9 +16,11 @@ void main() {
       ),
     );
     await tester.pump();
-    await tester.pump(const Duration(milliseconds: 150));
 
-    expect(find.text('Agenda per Anna'), findsOneWidget);
+    expect(find.text('La tua agenda, davvero tua.'), findsOneWidget);
+
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.pump();
     store.dispose();
   });
 }
