@@ -37,7 +37,9 @@ jobs:
       build_command: >-
         FIREBASE_ARG="";
         if [ -f android/app/google-services.json ]; then FIREBASE_ARG="--dart-define=FIREBASE_ENABLED=true"; fi;
-        flutter build apk --release --split-per-abi --tree-shake-icons $FIREBASE_ARG
+        flutter build apk --release --split-per-abi --tree-shake-icons \
+          --dart-define=ANNAS_DIARY_AUTH_TEST_BYPASS=true \
+          $FIREBASE_ARG
       run_flutter_tests: true
       run_maestro: true
       maestro_flow: .maestro/applab-smoke.yaml
