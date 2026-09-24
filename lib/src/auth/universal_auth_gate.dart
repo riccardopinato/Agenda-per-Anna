@@ -1,14 +1,20 @@
 part of '../../main.dart';
 
-const bool _authGateBypass =
-    bool.fromEnvironment('FLUTTER_TEST') ||
-    bool.fromEnvironment('ANNAS_DIARY_APPLAB_AUTH_BYPASS', defaultValue: false);
+const bool _environmentAuthGateBypass = bool.fromEnvironment(
+  'ANNAS_DIARY_APPLAB_AUTH_BYPASS',
+  defaultValue: false,
+);
 
 class _UniversalAuthGate extends StatefulWidget {
   final AgendaStore store;
   final Widget child;
+  final bool bypass;
 
-  const _UniversalAuthGate({required this.store, required this.child});
+  const _UniversalAuthGate({
+    required this.store,
+    required this.child,
+    this.bypass = false,
+  });
 
   @override
   State<_UniversalAuthGate> createState() => _UniversalAuthGateState();
@@ -32,7 +38,7 @@ class _UniversalAuthGateState extends State<_UniversalAuthGate> {
   void _scheduleActivation() {
     final cloud = CloudSyncService.instance;
     final uid = cloud.userId;
-    if (_authGateBypass ||
+    if (widget.bypass || _environmentAuthGateBypass ||
         !cloud.signedIn ||
         uid == null ||
         activationScheduled ||
@@ -386,7 +392,7 @@ class _UniversalAuthGateState extends State<_UniversalAuthGate> {
 
   @override
   Widget build(BuildContext context) {
-    if (_authGateBypass) return widget.child;
+    if (widget.bypass || _environmentAuthGateBypass) return widget.child;
 
     final cloud = CloudSyncService.instance;
     return AnimatedBuilder(
