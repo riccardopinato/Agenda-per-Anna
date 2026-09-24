@@ -34,8 +34,26 @@ jobs:
       - name: Restore stable sideload signing key
         uses: actions/cache@v4
         with:
-          path: ~/.android/debug.keystore
-          key: annas-diary-sideload-signing-v1
+          path: .signing/sideload.jks
+          key: annas-diary-sideload-signing-v2
+
+      - name: Ensure stable sideload signing key
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p .signing
+          if [ ! -s .signing/sideload.jks ]; then
+            keytool -genkeypair               -storetype JKS               -keystore .signing/sideload.jks               -storepass annas-diary-sideload               -keypass annas-diary-sideload               -alias annas-diary-sideload               -keyalg RSA               -keysize 2048               -validity 10000               -dname "CN=Anna Diary Sideload,O=Riccardo,C=IT"               -noprompt
+          fi
+          KEY_B64=$(base64 -w0 .signing/sideload.jks)
+          echo "::add-mask::$KEY_B64"
+          {
+            echo "ANDROID_KEYSTORE_BASE64=$KEY_B64"
+            echo "ANDROID_KEYSTORE_PASSWORD=annas-diary-sideload"
+            echo "ANDROID_KEY_ALIAS=annas-diary-sideload"
+            echo "ANDROID_KEY_PASSWORD=annas-diary-sideload"
+            echo "ANDROID_KEYSTORE_PATH=$GITHUB_WORKSPACE/.signing/agenda-release.jks"
+          } >> "$GITHUB_ENV"
 
       - name: Generate pinned Android platform
         run: |
@@ -44,7 +62,7 @@ jobs:
           cp -R /tmp/agenda_android/android .
 
       - name: Apply Android configuration
-        run: python3 tool/prepare_android_platform.py
+        run: python3 tool/prepare_android_platform.py --release-signing
 
       - name: Install locked dependencies
         run: flutter pub get --enforce-lockfile
