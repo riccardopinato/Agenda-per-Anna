@@ -121,10 +121,12 @@ class _CloudAccountScreenState extends State<CloudAccountScreen> {
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
                     colors: [
-                      Theme.of(context).colorScheme.primaryContainer
-                          .withValues(alpha: 0.75),
-                      Theme.of(context).colorScheme.secondaryContainer
-                          .withValues(alpha: 0.75),
+                      Theme.of(
+                        context,
+                      ).colorScheme.primaryContainer.withValues(alpha: 0.75),
+                      Theme.of(
+                        context,
+                      ).colorScheme.secondaryContainer.withValues(alpha: 0.75),
                     ],
                   ),
                   borderRadius: BorderRadius.circular(26),

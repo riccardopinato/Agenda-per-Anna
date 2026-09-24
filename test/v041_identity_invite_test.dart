@@ -66,15 +66,19 @@ void main() {
   test(
     'v0.41 repository locks universal identity and persistent invite contract',
     () {
-      final authGate = File('lib/src/auth/universal_auth_gate.dart')
-          .readAsStringSync();
+      final authGate = File(
+        'lib/src/auth/universal_auth_gate.dart',
+      ).readAsStringSync();
       final cloud = File('lib/cloud_sync_service.dart').readAsStringSync();
-      final account = File('lib/src/screens/cloud_account.dart')
-          .readAsStringSync();
-      final shared = File('lib/src/screens/shared_space.dart')
-          .readAsStringSync();
-      final android = File('tool/prepare_android_platform.py')
-          .readAsStringSync();
+      final account = File(
+        'lib/src/screens/cloud_account.dart',
+      ).readAsStringSync();
+      final shared = File(
+        'lib/src/screens/shared_space.dart',
+      ).readAsStringSync();
+      final android = File(
+        'tool/prepare_android_platform.py',
+      ).readAsStringSync();
       final migration = File(
         'supabase/migrations/016_persistent_multi_member_invites_v041.sql',
       ).readAsStringSync();
