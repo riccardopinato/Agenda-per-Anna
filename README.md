@@ -92,3 +92,15 @@ See `docs/ARCHITECTURE.md` and `supabase/README.md` for implementation details.
 - SHA-256 checksums and compressed APK breakdown reports are generated for every production release.
 - Pull requests affecting runtime/package inputs run an ARM64 production-equivalent size audit without publishing the audit APK.
 - The dependency review found no safe direct dependency removal without removing active product functionality; size work therefore targets native ABI/package structure rather than speculative library deletion.
+
+
+## v0.38.0 — Release, APK Size & Platform Hardening
+
+- Android platform customization moved out of inline workflow snippets into `tool/prepare_android_platform.py`, which validates expected Flutter-template anchors and fails explicitly on template drift.
+- Permanent CI now generates both Web and Android from the pinned Flutter 3.47.5 template, applies the same Android configuration used by releases, runs analyze/tests, builds Web release and builds an Android debug APK.
+- The manual Android release workflow generates Android only, requires the stable secret-backed signing key, validates the keystore, enables obfuscation/tree-shaking and retains split debug symbols.
+- Release output is separated into a preferred ARM64 sideload APK, Play Store AAB, universal compatibility APK and legacy ABI APKs instead of one ambiguous artifact bundle.
+- Artifact names contain the app version and build number. SHA-256 checksums are generated for all distributable Android packages.
+- `tool/android_size_report.py` reports compressed APK size by component class and the largest archive entries.
+- A dedicated PR/workflow size audit builds a production-equivalent ARM64 release package and uploads only its text size report; the audit APK itself is intentionally not distributed.
+- No dependency was removed without measured evidence; APK-size decisions now use reproducible reports rather than estimates.
