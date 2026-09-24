@@ -674,7 +674,7 @@ class _PrivateVaultScreenState extends State<PrivateVaultScreen>
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(Icons.safe_outlined, size: 58),
+                    Icon(Icons.shield_outlined, size: 58),
                     SizedBox(height: 14),
                     Text(
                       'La cassaforte è vuota',
