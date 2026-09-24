@@ -291,6 +291,14 @@ class PrivateVaultService extends ChangeNotifier {
     notifyListeners();
   }
 
+  @visibleForTesting
+  void resetMemoryForTesting() {
+    lock();
+    _meta = null;
+    _store = null;
+    _initialized = false;
+  }
+
   Future<void> setSecureScreen(bool enabled) async {
     if (kIsWeb) return;
     try {
