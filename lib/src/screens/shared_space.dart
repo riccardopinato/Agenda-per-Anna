@@ -1823,6 +1823,10 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
       await prefs.remove(
         widget.store.sharedMediaPendingStorageKey(widget.space.id),
       );
+      final ownerId = CloudSyncService.instance.userId ?? 'unknown';
+      await prefs.remove(
+        'shared_invite_v2_${ownerId}_${widget.space.id}',
+      );
       await widget.store.refreshPendingSharedCount(notify: false);
       await widget.store.refreshPendingSharedInteractionCount(notify: false);
       await widget.store.refreshPendingSharedMediaCount(notify: false);
