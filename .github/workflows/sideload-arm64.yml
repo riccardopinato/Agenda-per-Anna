@@ -31,6 +31,12 @@ jobs:
           channel: stable
           cache: true
 
+      - name: Restore stable sideload signing key
+        uses: actions/cache@v4
+        with:
+          path: ~/.android/debug.keystore
+          key: annas-diary-sideload-signing-v1
+
       - name: Generate pinned Android platform
         run: |
           rm -rf android /tmp/agenda_android
@@ -69,7 +75,7 @@ jobs:
           SAFE_VERSION=$(printf '%s' "$VERSION" | tr '+' '-')
           mkdir -p build/direct-apk
           cp build/app/outputs/flutter-apk/app-arm64-v8a-release.apk \
-             "build/direct-apk/Anna-Diary-v\${SAFE_VERSION}-arm64-release.apk"
+             "build/direct-apk/Anna-Diary-arm64-release.apk"
           ls -lh build/direct-apk/*.apk
 
       - name: Upload lightweight ARM64 APK
