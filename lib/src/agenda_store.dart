@@ -1505,9 +1505,6 @@ class AgendaStore extends ChangeNotifier {
   Map<String, dynamic> _localDataPayload() =>
       _backupDomain.localDataPayload(this);
 
-  Future<Map<String, dynamic>> _portableBackupDataPayload() =>
-      _backupDomain.portableBackupDataPayload(this);
-
   Future<String> createBackupJson() =>
       _backupDomain.createBackupJson(this);
 
