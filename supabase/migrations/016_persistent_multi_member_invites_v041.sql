@@ -14,8 +14,9 @@ where code_value is null
   and consumed_at is null
   and expires_at > now();
 
-create index if not exists space_invites_space_expiry_idx
-  on public.space_invites(space_id, expires_at desc);
+create index if not exists space_invites_active_space_idx
+  on public.space_invites(space_id, expires_at desc)
+  where revoked_at is null;
 
 create or replace function private.get_or_create_space_invite_impl(
   p_space_id uuid,
@@ -199,6 +200,8 @@ revoke all on function public.get_or_create_space_invite(uuid, boolean)
   from public, anon;
 grant execute on function public.get_or_create_space_invite(uuid, boolean)
   to authenticated;
+grant execute on function public.get_or_create_space_invite(uuid, boolean)
+  to service_role;
 
 revoke all on function public.create_space_invite(uuid) from public, anon;
 grant execute on function public.create_space_invite(uuid) to authenticated;
