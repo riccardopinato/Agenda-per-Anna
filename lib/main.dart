@@ -29,6 +29,7 @@ import 'push_notification_service.dart';
 part 'src/app_shell.dart';
 part 'src/domain_models.dart';
 part 'src/store_signals.dart';
+part 'src/store/backup_domain.dart';
 part 'src/agenda_store.dart';
 part 'src/unified_agenda.dart';
 part 'src/screens/home_inbox_search.dart';
