@@ -524,6 +524,9 @@ class CloudSyncService extends ChangeNotifier {
         OAuthProvider.google,
         redirectTo: kIsWeb ? _productionWebUrl : _mobileAuthRedirectUrl,
         scopes: 'openid email profile',
+        authScreenLaunchMode: kIsWeb
+            ? LaunchMode.platformDefault
+            : LaunchMode.externalApplication,
       );
       if (!started) {
         throw const AuthException('Google sign-in could not be started.');
