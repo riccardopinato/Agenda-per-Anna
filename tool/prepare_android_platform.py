@@ -59,19 +59,134 @@ def replace_required(content: str, old: str, new: str, label: str) -> str:
 
 def configure_activity() -> None:
     source = require_file(MAIN_ACTIVITY)
-    source = replace_required(
-        source,
-        "import io.flutter.embedding.android.FlutterActivity",
-        "import io.flutter.embedding.android.FlutterFragmentActivity",
-        "FlutterActivity import",
-    )
-    source = replace_required(
-        source,
-        "class MainActivity : FlutterActivity()",
-        "class MainActivity : FlutterFragmentActivity()",
-        "MainActivity base class",
-    )
-    write_if_changed(MAIN_ACTIVITY, source)
+    if "class MainActivity : FlutterActivity()" not in source and "class MainActivity : FlutterFragmentActivity()" not in source:
+        raise SystemExit("Flutter template drift: MainActivity class not found")
+
+    vault_activity = r'''package com.riccardopinato.agenda_per_anna
+
+import android.security.keystore.KeyGenParameterSpec
+import android.security.keystore.KeyProperties
+import android.util.Base64
+import android.view.WindowManager
+import io.flutter.embedding.android.FlutterFragmentActivity
+import io.flutter.embedding.engine.FlutterEngine
+import io.flutter.plugin.common.MethodChannel
+import java.security.KeyStore
+import javax.crypto.Cipher
+import javax.crypto.KeyGenerator
+import javax.crypto.SecretKey
+import javax.crypto.spec.GCMParameterSpec
+
+class MainActivity : FlutterFragmentActivity() {
+    companion object {
+        private const val CHANNEL = "annas_diary/private_vault"
+        private const val KEY_ALIAS = "annas_diary_private_vault_v1"
+        private const val IV_BYTES = 12
+    }
+
+    override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
+        super.configureFlutterEngine(flutterEngine)
+        MethodChannel(
+            flutterEngine.dartExecutor.binaryMessenger,
+            CHANNEL,
+        ).setMethodCallHandler { call, result ->
+            try {
+                when (call.method) {
+                    "protectMasterKey" -> {
+                        val encoded = call.argument<String>("key")
+                            ?: throw IllegalArgumentException("missing key")
+                        val raw = Base64.decode(encoded, Base64.URL_SAFE)
+                        result.success(protect(raw))
+                    }
+                    "unprotectMasterKey" -> {
+                        val blob = call.argument<String>("blob")
+                            ?: throw IllegalArgumentException("missing blob")
+                        val raw = unprotect(blob)
+                        result.success(
+                            Base64.encodeToString(
+                                raw,
+                                Base64.URL_SAFE or Base64.NO_WRAP,
+                            ),
+                        )
+                    }
+                    "deleteMasterKey" -> {
+                        val store = KeyStore.getInstance("AndroidKeyStore").apply {
+                            load(null)
+                        }
+                        if (store.containsAlias(KEY_ALIAS)) {
+                            store.deleteEntry(KEY_ALIAS)
+                        }
+                        result.success(null)
+                    }
+                    "setSecureScreen" -> {
+                        val enabled = call.argument<Boolean>("enabled") ?: false
+                        if (enabled) {
+                            window.addFlags(WindowManager.LayoutParams.FLAG_SECURE)
+                        } else {
+                            window.clearFlags(WindowManager.LayoutParams.FLAG_SECURE)
+                        }
+                        result.success(null)
+                    }
+                    else -> result.notImplemented()
+                }
+            } catch (error: Throwable) {
+                result.error(
+                    "vault_native_error",
+                    error.message ?: error.javaClass.simpleName,
+                    null,
+                )
+            }
+        }
+    }
+
+    private fun getOrCreateKey(): SecretKey {
+        val store = KeyStore.getInstance("AndroidKeyStore").apply { load(null) }
+        val existing = store.getKey(KEY_ALIAS, null) as? SecretKey
+        if (existing != null) return existing
+
+        val generator = KeyGenerator.getInstance(
+            KeyProperties.KEY_ALGORITHM_AES,
+            "AndroidKeyStore",
+        )
+        generator.init(
+            KeyGenParameterSpec.Builder(
+                KEY_ALIAS,
+                KeyProperties.PURPOSE_ENCRYPT or KeyProperties.PURPOSE_DECRYPT,
+            )
+                .setBlockModes(KeyProperties.BLOCK_MODE_GCM)
+                .setEncryptionPaddings(KeyProperties.ENCRYPTION_PADDING_NONE)
+                .setRandomizedEncryptionRequired(true)
+                .build(),
+        )
+        return generator.generateKey()
+    }
+
+    private fun protect(raw: ByteArray): String {
+        val cipher = Cipher.getInstance("AES/GCM/NoPadding")
+        cipher.init(Cipher.ENCRYPT_MODE, getOrCreateKey())
+        val payload = cipher.iv + cipher.doFinal(raw)
+        return Base64.encodeToString(
+            payload,
+            Base64.URL_SAFE or Base64.NO_WRAP,
+        )
+    }
+
+    private fun unprotect(blob: String): ByteArray {
+        val payload = Base64.decode(blob, Base64.URL_SAFE)
+        require(payload.size > IV_BYTES) { "invalid vault key envelope" }
+        val iv = payload.copyOfRange(0, IV_BYTES)
+        val encrypted = payload.copyOfRange(IV_BYTES, payload.size)
+        val cipher = Cipher.getInstance("AES/GCM/NoPadding")
+        cipher.init(
+            Cipher.DECRYPT_MODE,
+            getOrCreateKey(),
+            GCMParameterSpec(128, iv),
+        )
+        return cipher.doFinal(encrypted)
+    }
+}
+'''
+    write_if_changed(MAIN_ACTIVITY, vault_activity)
 
 
 def configure_manifest() -> None:
@@ -331,6 +446,12 @@ def verify() -> None:
     failures = []
     if "FlutterFragmentActivity" not in activity:
         failures.append("FlutterFragmentActivity")
+    if "annas_diary/private_vault" not in activity:
+        failures.append("private vault channel")
+    if "FLAG_SECURE" not in activity:
+        failures.append("vault FLAG_SECURE")
+    if "AndroidKeyStore" not in activity:
+        failures.append("vault AndroidKeyStore")
     if 'android:allowBackup="false"' not in manifest:
         failures.append("allowBackup=false")
     if "ScheduledNotificationReceiver" not in manifest:

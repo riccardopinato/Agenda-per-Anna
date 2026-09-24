@@ -223,6 +223,8 @@ class HomeScreen extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 14),
+              PrivateVaultHomeCard(store: store),
+              const SizedBox(height: 12),
               AgendaContentFilterBar(store: store),
               const SizedBox(height: 10),
               _HomeSyncStatusCard(store: store),
