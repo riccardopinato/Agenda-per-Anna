@@ -1,4 +1,4 @@
-FROM ghcr.io/cirruslabs/flutter:stable AS build
+FROM ghcr.io/cirruslabs/flutter:3.47.5 AS build
 
 WORKDIR /app
 COPY . .
@@ -12,7 +12,7 @@ RUN rm -rf /tmp/agenda_base && \
     mkdir -p assets/icon && \
     base64 -d assets/icon/app_icon.b64 > assets/icon/app_icon.jpg && \
     sed -i 's#assets/icon/app_icon.png#assets/icon/app_icon.jpg#g' pubspec.yaml && \
-    flutter pub get && \
+    flutter pub get --enforce-lockfile && \
     flutter build web --release
 
 FROM nginx:alpine
