@@ -1,5 +1,5 @@
 name: AppLab Production Gate
-# AppLab reusable checkout fix: 317a90b1
+# AppLab reusable hardening baseline: 7f0493d6
 
 on:
   pull_request:
