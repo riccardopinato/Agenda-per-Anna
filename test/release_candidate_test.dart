@@ -215,6 +215,9 @@ void main() {
     expect(appLabJourney, contains('"week"'));
     expect(appLabJourney, contains('"today"'));
     expect(appLabJourney, contains('"memories"'));
+    expect(appLabJourney, contains('"vault"'));
+    expect(File('.maestro/journey/vault.yaml').readAsStringSync(),
+        contains('Segreto AppLab'));
 
     final vaultService =
         File('lib/private_vault_service.dart').readAsStringSync();
