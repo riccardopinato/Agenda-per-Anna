@@ -101,7 +101,7 @@ void main() {
       expect(cloud, contains('OAuthProvider.google'));
       expect(
         cloud,
-        contains('com.riccardopinato.agenda_per_anna://login-callback/'),
+        contains('com.riccardopinato.agendaperanna://login-callback/'),
       );
 
       expect(account, isNot(contains('Crea un nuovo account')));
@@ -111,7 +111,7 @@ void main() {
 
       expect(
         android,
-        contains('android:scheme="com.riccardopinato.agenda_per_anna"'),
+        contains('android:scheme="com.riccardopinato.agendaperanna"'),
       );
       expect(android, contains('android:host="login-callback"'));
 
