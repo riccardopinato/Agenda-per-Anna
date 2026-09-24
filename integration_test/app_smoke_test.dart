@@ -20,6 +20,9 @@ void main() {
     final store = AgendaStore();
     await store.load();
 
+    await store.savePreferences(
+      store.preferences.copyWith(onboardingDone: true),
+    );
     await store.addInboxEntry('Smoke Android');
     await store.setPin('2468');
     expect(store.verifyPin('2468'), isTrue);
@@ -30,6 +33,11 @@ void main() {
     expect(await MediaAssetStore.instance.read(mediaId), isNotNull);
 
     await tester.pumpWidget(AgendaApp(store: store));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Agenda bloccata'), findsOneWidget);
+    await tester.enterText(find.byType(TextField), '2468');
+    await tester.tap(find.text('Sblocca'));
     await tester.pumpAndSettle();
 
     expect(find.text('Agenda per Anna'), findsOneWidget);
