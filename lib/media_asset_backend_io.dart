@@ -6,7 +6,12 @@ import 'package:path_provider/path_provider.dart';
 final Map<String, Uint8List> _testAssets = <String, Uint8List>{};
 final Map<String, int> _testAccessedAt = <String, int>{};
 
-bool get _isTest => Platform.environment['FLUTTER_TEST'] == 'true';
+const bool _integrationTestPersistentStorage =
+    bool.fromEnvironment('ANNAS_DIARY_INTEGRATION_TEST');
+
+bool get _isTest =>
+    Platform.environment['FLUTTER_TEST'] == 'true' &&
+    !_integrationTestPersistentStorage;
 
 Future<Directory> _mediaDirectory() async {
   final root = await getApplicationSupportDirectory();
