@@ -2,6 +2,11 @@ name: Build Anna's Diary Android Release
 
 on:
   workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - ".release-trigger"
+      - ".github/workflows/build.yml"
 
 permissions:
   contents: read
