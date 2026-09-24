@@ -1,0 +1,6 @@
+appId: com.riccardopinato.agenda_per_anna
+---
+- tapOn: "Oggi"
+- extendedWaitUntil:
+    visible: "La mia giornata"
+    timeout: 10000
