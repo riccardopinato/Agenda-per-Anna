@@ -120,6 +120,26 @@ def configure_manifest() -> None:
         'android:label="Anna\'s Diary"',
     )
 
+    auth_deep_link = """
+              <intent-filter>
+                  <action android:name="android.intent.action.VIEW" />
+                  <category android:name="android.intent.category.DEFAULT" />
+                  <category android:name="android.intent.category.BROWSABLE" />
+                  <data
+                      android:scheme="com.riccardopinato.agenda_per_anna"
+                      android:host="login-callback" />
+              </intent-filter>
+"""
+    if "com.riccardopinato.agenda_per_anna" not in manifest:
+        activity_end = manifest.find("</activity>")
+        if activity_end < 0:
+            raise SystemExit("Flutter template drift: </activity> not found")
+        manifest = (
+            manifest[:activity_end]
+            + auth_deep_link
+            + manifest[activity_end:]
+        )
+
     receiver_block = """
         <receiver
             android:exported="false"
@@ -135,6 +155,8 @@ def configure_manifest() -> None:
             </intent-filter>
         </receiver>
 """
+    if "com.riccardopinato.agenda_per_anna" not in manifest:
+        failures.append("auth deep link")
     if "ScheduledNotificationReceiver" not in manifest:
         if "</application>" not in manifest:
             raise SystemExit("Flutter template drift: </application> not found")
