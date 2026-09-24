@@ -1,6 +1,5 @@
 import 'dart:convert';
 import 'dart:math';
-import 'dart:typed_data';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
@@ -515,7 +514,7 @@ class PrivateVaultService extends ChangeNotifier {
   Future<void> setBiometricEnabled(bool enabled) async {
     _requireUnlocked();
     if (kIsWeb || defaultTargetPlatform != TargetPlatform.android) {
-      throw const UnsupportedError(
+      throw UnsupportedError(
         'Sblocco biometrico disponibile solo su Android in questa versione.',
       );
     }
