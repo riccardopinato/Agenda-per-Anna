@@ -181,9 +181,13 @@ void main() {
         File('.github/workflows/applab.yml').readAsStringSync();
     final appLabJourney =
         File('.maestro/applab-journey.json').readAsStringSync();
+    final authGate =
+        File('lib/src/auth/universal_auth_gate.dart').readAsStringSync();
+    final androidPrepare =
+        File('tool/prepare_android_platform.py').readAsStringSync();
 
-    expect(appReleaseVersion, '0.40.0');
-    expect(pubspec, contains('version: 0.40.0+48'));
+    expect(appReleaseVersion, '0.41.0');
+    expect(pubspec, contains('version: 0.41.0+49'));
 
     expect(releaseWorkflow, contains('--release-signing'));
     expect(releaseWorkflow, contains('--obfuscate'));
@@ -214,5 +218,14 @@ void main() {
     expect(appLabJourney, contains('"week"'));
     expect(appLabJourney, contains('"today"'));
     expect(appLabJourney, contains('"memories"'));
+    expect(appLabWorkflow, contains('ANNAS_DIARY_APPLAB_AUTH_BYPASS=true'));
+
+    expect(authGate, contains('Continua con Google'));
+    expect(authGate, contains('Hai già un account email/password?'));
+    expect(
+      androidPrepare,
+      contains('com.riccardopinato.agenda_per_anna'),
+    );
+    expect(androidPrepare, contains('login-callback'));
   });
 }
