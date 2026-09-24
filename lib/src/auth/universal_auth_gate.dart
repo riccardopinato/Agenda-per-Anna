@@ -38,7 +38,8 @@ class _UniversalAuthGateState extends State<_UniversalAuthGate> {
   void _scheduleActivation() {
     final cloud = CloudSyncService.instance;
     final uid = cloud.userId;
-    if (widget.bypass || _environmentAuthGateBypass ||
+    if (widget.bypass ||
+        _environmentAuthGateBypass ||
         !cloud.signedIn ||
         uid == null ||
         activationScheduled ||
