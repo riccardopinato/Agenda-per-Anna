@@ -30,8 +30,7 @@ begin
 
   select owner_id into v_owner
   from public.shared_spaces
-  where id = p_space_id
-  for update;
+  where id = p_space_id;
 
   if v_owner is distinct from v_user then
     raise exception 'only_owner_can_invite';
@@ -120,8 +119,7 @@ begin
 
   select owner_id into v_owner
   from public.shared_spaces
-  where id = p_space_id
-  for update;
+  where id = p_space_id;
 
   if v_owner is distinct from v_user then
     raise exception 'only_owner_can_invite';
@@ -170,7 +168,6 @@ declare
   v_user uuid := (select auth.uid());
   v_hash text;
   v_invite public.space_invites%rowtype;
-  v_inserted integer := 0;
 begin
   if v_user is null then
     raise exception 'authentication_required';
@@ -197,14 +194,10 @@ begin
   values (v_invite.space_id, v_user, 'member')
   on conflict (space_id, user_id) do nothing;
 
-  get diagnostics v_inserted = row_count;
-
-  if v_inserted > 0 then
-    update public.space_invites
-    set uses_count = uses_count + 1,
-        last_used_at = now()
-    where id = v_invite.id;
-  end if;
+  update public.space_invites
+  set uses_count = uses_count + 1,
+      last_used_at = now()
+  where id = v_invite.id;
 
   return v_invite.space_id;
 end;
