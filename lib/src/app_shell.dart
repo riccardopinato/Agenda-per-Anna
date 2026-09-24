@@ -139,7 +139,7 @@ class _OnboardingScreen extends StatelessWidget {
               const SizedBox(height: 12),
               Text(
                 'Appuntamenti, diario, abitudini, idee e ricordi in un unico posto. '
-                'L’app salva prima sul dispositivo; cloud e condivisione si attivano solo quando li scegli.',
+                'Il tuo account mantiene la stessa identità su tutti i dispositivi, mentre l’app continua a salvare prima sul dispositivo.',
                 style: Theme.of(context).textTheme.bodyLarge,
               ),
               const SizedBox(height: 24),
@@ -150,9 +150,9 @@ class _OnboardingScreen extends StatelessWidget {
               ),
               const SizedBox(height: 10),
               const _OnboardingFeature(
-                icon: Icons.favorite_outline,
-                title: 'Diario personale',
-                subtitle: 'Mood, cose belle e abitudini quotidiane.',
+                icon: Icons.account_circle_outlined,
+                title: 'Un solo account',
+                subtitle: 'Google collega agenda, backup, dispositivi e Noi ♡.',
               ),
               const SizedBox(height: 10),
               const _OnboardingFeature(
