@@ -55,11 +55,15 @@ void main() {
       'code': 'a1b2c3d4',
       'expires_at': expires.toIso8601String(),
       'reused': true,
+      'uses_count': 2,
+      'created_at': DateTime.now().toUtc().toIso8601String(),
     });
 
     expect(invite.code, 'A1B2C3D4');
     expect(invite.reused, isTrue);
     expect(invite.expired, isFalse);
+    expect(invite.usesCount, 2);
+    expect(invite.createdAt, isNotNull);
     expect(invite.remaining().inHours, inInclusiveRange(23, 24));
   });
 
@@ -82,11 +86,18 @@ void main() {
       final migration = File(
         'supabase/migrations/016_persistent_multi_member_invites_v041.sql',
       ).readAsStringSync();
+      final identityMigration = File(
+        'supabase/migrations/017_universal_identity_invites_v041.sql',
+      ).readAsStringSync();
+      final concurrencyMigration = File(
+        'supabase/migrations/018_invite_concurrency_hardening_v041.sql',
+      ).readAsStringSync();
       final appLab = File('.github/workflows/applab.yml').readAsStringSync();
 
       expect(authGate, contains('Continua con Google'));
       expect(authGate, contains('Hai già un account email/password?'));
-      expect(authGate, contains("bool.fromEnvironment('FLUTTER_TEST')"));
+      expect(authGate, contains('ANNAS_DIARY_APPLAB_AUTH_BYPASS'));
+      expect(authGate, contains('final bool bypass;'));
       expect(cloud, contains('OAuthProvider.google'));
       expect(
         cloud,
@@ -109,6 +120,14 @@ void main() {
       expect(migration, contains('revoked_at'));
       expect(migration, contains('multi-use for their full 24-hour TTL'));
       expect(migration, isNot(contains('set consumed_at = now()')));
+
+      expect(identityMigration, contains('create_or_get_space_invite'));
+      expect(identityMigration, contains('uses_count'));
+      expect(identityMigration, contains('regenerate_space_invite'));
+      expect(concurrencyMigration, contains('for update'));
+      expect(concurrencyMigration, contains('get diagnostics v_inserted = row_count'));
+      expect(cloud, contains("'create_or_get_space_invite'"));
+      expect(cloud, contains("'regenerate_space_invite'"));
 
       expect(appLab, contains('ANNAS_DIARY_APPLAB_AUTH_BYPASS=true'));
     },
