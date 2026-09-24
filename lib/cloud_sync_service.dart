@@ -388,7 +388,7 @@ class CloudSyncService extends ChangeNotifier {
       final base = Uri.base;
       if ((base.scheme == 'https' || base.scheme == 'http') &&
           base.host.isNotEmpty) {
-        return base.replace(path: '/', query: null, fragment: null).toString();
+        return base.replace(query: null, fragment: null).toString();
       }
     }
     return _productionWebUrl;
