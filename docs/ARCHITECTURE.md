@@ -1,9 +1,10 @@
 # Agenda per Anna — Architecture
 
-## Current structure — v0.40.0
+## Current structure — v0.41.0
 
 Anna's Diary keeps `lib/main.dart` as the compatibility library boundary, but large responsibilities are now split by runtime domain:
 
+- `src/auth/universal_auth_gate.dart`: app-wide Supabase/Google identity gate and legacy-account fallback.
 - `src/store_signals.dart`: granular UI invalidation channels.
 - `src/store/backup_domain.dart`: ZIP/data serialization, backup validation and readable export.
 - `src/agenda_store.dart`: persistence/account/cloud orchestration facade and domain mutation API.
@@ -230,3 +231,16 @@ No Supabase schema migration is required for v0.39.1.
 - Persistence torture tests cover restart, offline-style pending edits, account switching, legacy migration and corrupt queue quarantine.
 - AppLab verifies a release-mode ARM64 APK on Android and preserves per-screen visual baselines for Calendar, Week, Today and Memories.
 - GitHub Pages is the canonical Web runtime and is produced from the same `main` revision as mobile releases.
+
+
+## v0.41.0 — Universal Identity & Noi ♡ Invite v2
+
+- Supabase Auth is the single identity authority for private sync and shared membership.
+- Google OAuth is the primary sign-in surface before onboarding/application content.
+- A persisted Supabase session restores the account automatically; existing local account data remains usable if cloud initialization temporarily fails after a previously established account.
+- Legacy email/password sign-in is intentionally retained only inside the universal gate for migration/recovery.
+- Account activation reuses the existing transactional account-scope switch and legacy guest-claim path.
+- Noi ♡ no longer owns an authentication flow; it assumes the app-level identity.
+- Invite v2 stores a protected server-side plaintext token plus SHA-256 lookup hash, expiry and revocation state. Direct Data API reads remain denied.
+- One active invite is reused for its full 24-hour lifetime. Multi-member joins do not consume it. Explicit regeneration revokes the current token before issuing another.
+- The Android generated platform declares the Supabase OAuth custom-scheme deep link.
