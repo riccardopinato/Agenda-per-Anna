@@ -114,7 +114,10 @@ void main() {
       second.week(DateTime(2026, 9, 25)).focus,
       'Settimana persistente',
     );
-    expect(second.inbox.map((entry) => entry.text), contains('Inbox persistente'));
+    expect(
+      second.inbox.map((entry) => entry.text),
+      contains('Inbox persistente'),
+    );
     expect(second.habits.map((habit) => habit.name), contains('Stretching'));
 
     second.dispose();
