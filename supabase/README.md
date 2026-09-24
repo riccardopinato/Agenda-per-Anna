@@ -6,11 +6,16 @@ This directory contains the versioned cloud schema used by the current applicati
 
 1. Create the dedicated Supabase project.
 2. Apply every SQL file in `supabase/migrations/` in numeric order, starting from `001_cloud_sync.sql` through the latest migration committed in the repository.
-3. In Auth enable Email/Password.
-4. Configure the client with only:
+3. In Auth enable Google as the primary provider. Keep Email/Password enabled only for existing-account migration/recovery.
+4. Google OAuth setup:
+   - Supabase callback: `https://pxsxlorntswypdbeerzw.supabase.co/auth/v1/callback`
+   - Site URL / Web return: `https://riccardopinato.github.io/Agenda-per-Anna/`
+   - Additional redirect URL: `com.riccardopinato.agenda_per_anna://login-callback/**`
+   - Google scopes: `openid`, email, profile
+5. Configure the client with only:
    - Project URL
    - Publishable key
-5. Never put the service-role key in the Flutter client.
+6. Never put the service-role key, Google client secret or other privileged credential in the Flutter client.
 
 Do not skip later migrations: they contain RLS hardening, RPC permissions, interaction cleanup, push infrastructure and shared-media policies required by current releases.
 
@@ -42,3 +47,16 @@ Flutter reads:
 through `--dart-define`. The repository currently also contains production-safe publishable defaults; never add a service-role secret or other privileged credential to source control.
 
 The app remains offline-first when cloud access is unavailable.
+
+
+## v0.41 authentication and invitations
+
+The app calls Supabase Google OAuth from the universal authentication gate. Android returns through the custom scheme configured by `tool/prepare_android_platform.py`; Web returns to the GitHub Pages path.
+
+Migration `016_persistent_multi_member_invites_v041.sql` changes Noi ♡ invitation semantics:
+- one owner-visible code is reused until its 24-hour expiry;
+- the code is usable by multiple authenticated users;
+- reopening the dialog never rotates the active code;
+- explicit regeneration revokes the previous invite;
+- `space_invites` remains unreadable to authenticated clients through the Data API;
+- join lookup still uses the SHA-256 hash and server RPC boundary.
