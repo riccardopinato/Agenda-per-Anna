@@ -1,0 +1,12 @@
+appId: com.riccardopinato.agenda_per_anna
+---
+- tapOn: "Home"
+- scrollUntilVisible:
+    element:
+      text: "I miei ricordi"
+    direction: DOWN
+    timeout: 10000
+- tapOn: "I miei ricordi"
+- extendedWaitUntil:
+    visible: "I miei ricordi"
+    timeout: 10000
