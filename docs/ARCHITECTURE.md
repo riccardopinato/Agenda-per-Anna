@@ -173,3 +173,13 @@ The private journal and Noi ♡ no longer maintain independent diary presentatio
 - Release binaries are obfuscated with split debug symbols preserved for symbolication.
 - `tool/android_size_report.py` reports total compressed APK bytes, grouped compressed/uncompressed payload and the largest archive entries without requiring Android SDK analysis tools.
 - A dedicated pull-request size audit builds the ARM64 release path with production-equivalent compiler flags but uploads only the text report, never an audit-signed APK.
+
+
+## v0.39.0 — Release Candidate & Final QA
+
+- The release candidate adds a cross-feature regression gate rather than another persistence or sync architecture change.
+- Account isolation is exercised as a complete private-data flow: agenda item, diary entry and inbox data survive an account round-trip without leaking into another account.
+- Backup replacement is verified against the v0.34 entity-delta layer so restored aggregate state cannot be shadowed by stale granular mutations.
+- Invalid backup input is verified to leave both in-memory and persisted state unchanged.
+- Repository-level release assertions keep the v0.38 Android packaging contract explicit: deterministic release signing preparation, obfuscation, split symbols, split-per-ABI APKs, AAB output and Android debug CI coverage.
+- Storage schemas, cloud record formats, Supabase migrations and media formats remain unchanged.

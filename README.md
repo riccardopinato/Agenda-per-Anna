@@ -2,7 +2,7 @@
 
 Flutter app for personal planning, private diary and the shared **Noi ♡** space.
 
-Current release line: **v0.38.0**.
+Current release line: **v0.39.0**.
 
 ## Core areas
 
@@ -92,3 +92,13 @@ See `docs/ARCHITECTURE.md` and `supabase/README.md` for implementation details.
 - SHA-256 checksums and compressed APK breakdown reports are generated for every production release.
 - Pull requests affecting runtime/package inputs run an ARM64 production-equivalent size audit without publishing the audit APK.
 - The dependency review found no safe direct dependency removal without removing active product functionality; size work therefore targets native ABI/package structure rather than speculative library deletion.
+
+
+## v0.39.0 — Release Candidate & Final QA
+
+- Adds an end-to-end release-candidate regression gate for private agenda, diary and inbox persistence across account switches.
+- Verifies that full backup restore replaces granular state atomically and clears stale per-entity deltas.
+- Verifies that invalid backup input cannot mutate the active or persisted working set.
+- Locks the Android release contract in tests: production signing preparation, obfuscation, split debug symbols, ARM64 split APK, universal APK and Play Store AAB remain required.
+- Keeps the development Android debug build and production-equivalent ARM64 size-audit paths under automated regression coverage.
+- This release intentionally adds no major product features; it is a stabilization checkpoint before the next feature cycle.
