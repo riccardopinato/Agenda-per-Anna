@@ -2,7 +2,13 @@ part of '../main.dart';
 
 class AgendaApp extends StatelessWidget {
   final AgendaStore store;
-  const AgendaApp({super.key, required this.store});
+  final bool authGateBypass;
+
+  const AgendaApp({
+    super.key,
+    required this.store,
+    this.authGateBypass = false,
+  });
 
   static final Map<String, ThemeData> _themeCache = {};
 
@@ -62,6 +68,7 @@ class AgendaApp extends StatelessWidget {
           darkTheme: _theme(Brightness.dark),
           builder: (context, child) => _UniversalAuthGate(
             store: store,
+            bypass: authGateBypass,
             child: _AuthRecoveryGate(
               store: store,
               child: _PrivacyGate(
