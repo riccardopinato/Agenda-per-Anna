@@ -256,6 +256,12 @@ class AgendaStore extends ChangeNotifier {
     notifyListeners();
   }
 
+  void _notifyAgendaAndSharedChanged() {
+    signals.bumpAgenda();
+    signals.bumpShared();
+    notifyListeners();
+  }
+
   void _notifyInboxChanged() {
     signals.bumpInbox();
     notifyListeners();
@@ -2715,7 +2721,7 @@ class AgendaStore extends ChangeNotifier {
     if (agendaContentFilter == value) return;
     agendaContentFilter = value;
     _invalidateUnifiedAgendaCache();
-    _notifyAllDataChanged();
+    _notifyAgendaAndSharedChanged();
   }
 
   List<UnifiedAgendaEntry> unifiedForDay(DateTime date) {
@@ -3130,7 +3136,7 @@ class AgendaStore extends ChangeNotifier {
       cursorKey: next.toIso8601String(),
     });
 
-    _notifyAllDataChanged();
+    _notifySharedChanged();
   }
 
   Future<void> _cacheSharedAgendaEntries(
@@ -3211,14 +3217,14 @@ class AgendaStore extends ChangeNotifier {
     if (next == sharedUnreadCount(spaceId)) return;
     _sharedUnreadBySpace[spaceId] = next;
     await _saveSharedUnreadCounts();
-    _notifyAllDataChanged();
+    _notifySharedChanged();
   }
 
   Future<void> markSharedSpaceRead(String spaceId) async {
     if (!_sharedUnreadBySpace.containsKey(spaceId)) return;
     _sharedUnreadBySpace.remove(spaceId);
     await _saveSharedUnreadCounts();
-    _notifyAllDataChanged();
+    _notifySharedChanged();
   }
 
   Future<List<SharedPendingOperation>> loadSharedPendingOperations(
@@ -3293,7 +3299,7 @@ class AgendaStore extends ChangeNotifier {
     _sharedAgendaEntriesBySpace[spaceId] = cached;
     _rebuildSharedAgendaDayIndex();
     await _cacheSharedAgendaEntries(spaceId, cached);
-    _notifyAllDataChanged();
+    _notifySharedChanged();
   }
 
   Future<void> enqueueSharedDelete({
@@ -3327,7 +3333,7 @@ class AgendaStore extends ChangeNotifier {
     _sharedAgendaEntriesBySpace[spaceId] = cached;
     _rebuildSharedAgendaDayIndex();
     await _cacheSharedAgendaEntries(spaceId, cached);
-    _notifyAllDataChanged();
+    _notifySharedChanged();
   }
 
   Future<int> pendingSharedChanges(String spaceId) async =>
@@ -3440,7 +3446,7 @@ class AgendaStore extends ChangeNotifier {
     );
     await _saveSharedInteractionPendingOperations(spaceId, operations);
     await refreshPendingSharedInteractionCount(notify: false);
-    _notifyAllDataChanged();
+    _notifySharedChanged();
 
     return SharedEntryComment(
       id: commentId,
@@ -3482,7 +3488,7 @@ class AgendaStore extends ChangeNotifier {
 
     await _saveSharedInteractionPendingOperations(spaceId, operations);
     await refreshPendingSharedInteractionCount(notify: false);
-    _notifyAllDataChanged();
+    _notifySharedChanged();
   }
 
   Future<void> enqueueSharedHeart({
@@ -3508,7 +3514,7 @@ class AgendaStore extends ChangeNotifier {
     );
     await _saveSharedInteractionPendingOperations(spaceId, operations);
     await refreshPendingSharedInteractionCount(notify: false);
-    _notifyAllDataChanged();
+    _notifySharedChanged();
   }
 
   Future<void> refreshPendingSharedInteractionCount({
@@ -3766,7 +3772,7 @@ class AgendaStore extends ChangeNotifier {
     if (uploads.length == before) return;
     await _saveSharedMediaPendingUploads(spaceId, uploads);
     await refreshPendingSharedMediaCount(notify: false);
-    _notifyAllDataChanged();
+    _notifySharedChanged();
   }
 
   Future<void> enqueueSharedMediaUpload(
@@ -3781,7 +3787,7 @@ class AgendaStore extends ChangeNotifier {
     uploads.add(localizedUpload);
     await _saveSharedMediaPendingUploads(localizedUpload.spaceId, uploads);
     await refreshPendingSharedMediaCount(notify: false);
-    _notifyAllDataChanged();
+    _notifySharedChanged();
   }
 
   Future<void> refreshPendingSharedMediaCount({
@@ -3914,7 +3920,7 @@ class AgendaStore extends ChangeNotifier {
   void resetSharedConflictCount() {
     if (_sharedConflictCount == 0) return;
     _sharedConflictCount = 0;
-    _notifyAllDataChanged();
+    _notifySyncChanged();
   }
 
   Future<void> flushSharedPendingOperations({
