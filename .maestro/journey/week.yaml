@@ -1,0 +1,8 @@
+appId: com.riccardopinato.agenda_per_anna
+---
+- tapOn:
+    text: 'Settimana[\s\S]*'
+    retryTapIfNoChange: true
+- extendedWaitUntil:
+    visible: "La mia settimana"
+    timeout: 10000

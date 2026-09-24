@@ -1,0 +1,8 @@
+appId: com.riccardopinato.agenda_per_anna
+---
+- tapOn:
+    text: 'Oggi[\s\S]*'
+    retryTapIfNoChange: true
+- extendedWaitUntil:
+    visible: "La mia giornata"
+    timeout: 10000

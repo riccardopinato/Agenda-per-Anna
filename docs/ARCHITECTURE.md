@@ -1,5 +1,26 @@
 # Agenda per Anna — Architecture
 
+## Current structure — v0.40.0
+
+Anna's Diary keeps `lib/main.dart` as the compatibility library boundary, but large responsibilities are now split by runtime domain:
+
+- `src/store_signals.dart`: granular UI invalidation channels.
+- `src/store/backup_domain.dart`: ZIP/data serialization, backup validation and readable export.
+- `src/agenda_store.dart`: persistence/account/cloud orchestration facade and domain mutation API.
+- `src/screens/home_inbox_search.dart`: shell, Home, Inbox, Search and Archive.
+- `src/screens/backup_settings.dart`: backup and application settings.
+- `src/screens/shared_space.dart`: Noi ♡ hub, shared space and shared media UI.
+- `src/screens/cloud_account.dart`: account/cloud diagnostics and controls.
+- `src/planner_views.dart`: Calendar, Today, Week, Month and Year.
+- `src/diary/diary_components.dart`: shared diary media/components/editors.
+- `src/diary/diary_memories.dart`: private memories search/timeline UI.
+- `src/diary/diary_sketchbook.dart`: photo viewer, sketchbook editor and painter.
+
+The `AgendaStore` public surface remains compatible. UI screens observe domain-specific `ValueListenable` revisions rather than the entire store where possible. This keeps existing persistence/sync semantics unchanged while narrowing rebuild propagation.
+
+The PR production gate is:
+`locked dependencies → analyze/tests → Web release → ARM64 release → AppLab emulator → Maestro → multi-screen screenshots/UI hierarchy → visual QA/regression → Logcat/crash/ANR`.
+
 ## v0.17.0
 
 The application remains a single Dart library rooted at `lib/main.dart`, but the previous 10k-line monolith is split into focused `part` files to preserve private symbol visibility and runtime behavior while improving maintainability.
@@ -198,3 +219,14 @@ This release keeps the v0.39 persistence/cloud model and hardens its boundaries 
 - **Device gate:** an Android emulator integration smoke verifies native persistence/media plus the four primary navigation surfaces.
 
 No Supabase schema migration is required for v0.39.1.
+
+
+## v0.40.0 — Architecture, Fluidity & AppLab Production Gate
+
+- Domain revisions isolate planner, diary, shared, settings and backup rebuilds.
+- Shared-only mutations no longer invalidate private planner/journal/settings channels.
+- Core and diary UI monoliths are physically split while remaining in the same Dart library, preserving private-symbol compatibility.
+- Backup serialization/validation is separated from account/persistence restore orchestration.
+- Persistence torture tests cover restart, offline-style pending edits, account switching, legacy migration and corrupt queue quarantine.
+- AppLab verifies a release-mode ARM64 APK on Android and preserves per-screen visual baselines for Calendar, Week, Today and Memories.
+- GitHub Pages is the canonical Web runtime and is produced from the same `main` revision as mobile releases.

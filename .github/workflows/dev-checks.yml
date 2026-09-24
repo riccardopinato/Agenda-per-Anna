@@ -48,6 +48,10 @@ jobs:
       - name: Generate launcher icons
         run: dart run flutter_launcher_icons -f tool/flutter_launcher_icons_android.yaml
 
+      - name: Format v0.40 modules
+        run: |
+          dart format --output=none --set-exit-if-changed             lib/src/store_signals.dart             test/v040_persistence_torture_test.dart
+
       - name: Analyze
         run: flutter analyze
 
@@ -57,10 +61,11 @@ jobs:
       - name: Build web release
         run: flutter build web --release
 
-      - name: Build Android debug package
+      - name: Build Android ARM64 release gate
         run: |
           FIREBASE_ARG=""
           if [ -f android/app/google-services.json ]; then
             FIREBASE_ARG="--dart-define=FIREBASE_ENABLED=true"
           fi
-          flutter build apk --debug $FIREBASE_ARG
+          flutter build apk             --release             --split-per-abi             --tree-shake-icons             $FIREBASE_ARG
+          test -s build/app/outputs/flutter-apk/app-arm64-v8a-release.apk

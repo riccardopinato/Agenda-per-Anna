@@ -1,0 +1,46 @@
+name: AppLab Production Gate
+# AppLab reusable hardening baseline: 7f0493d6
+
+on:
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: applab-production-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  applab:
+    uses: riccardopinato/AppLab/.github/workflows/external-project-runner.yml@main
+    with:
+      repository: riccardopinato/Agenda-per-Anna
+      ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      working_directory: "."
+      flutter_version: "3.47.5"
+      java_version: "17"
+      prepare_command: >-
+        rm -rf android /tmp/agenda_applab &&
+        flutter create --project-name agenda_per_anna --org com.riccardopinato --platforms=android /tmp/agenda_applab &&
+        cp -R /tmp/agenda_applab/android . &&
+        python3 tool/prepare_android_platform.py
+      post_pub_get_command: >-
+        flutter pub get --enforce-lockfile &&
+        dart run flutter_launcher_icons -f tool/flutter_launcher_icons_android.yaml
+      api_level: "35"
+      emulator_profile: pixel_7_pro
+      apk_path: build/app/outputs/flutter-apk/app-arm64-v8a-release.apk
+      package_id: com.riccardopinato.agenda_per_anna
+      build_command: >-
+        FIREBASE_ARG="";
+        if [ -f android/app/google-services.json ]; then FIREBASE_ARG="--dart-define=FIREBASE_ENABLED=true"; fi;
+        flutter build apk --release --split-per-abi --tree-shake-icons $FIREBASE_ARG
+      run_flutter_tests: true
+      run_maestro: true
+      maestro_flow: .maestro/applab-smoke.yaml
+      history_key: annas-diary
+      cache_verification: false
+      cache_epoch: "1"

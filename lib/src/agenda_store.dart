@@ -25,6 +25,7 @@ class AgendaStore extends ChangeNotifier {
   static const _backupSchemaVersion = 1;
   static const _backupBundleVersion = 1;
   static const _appVersion = appReleaseVersion;
+  static const _AgendaBackupDomain _backupDomain = _AgendaBackupDomain();
 
   final List<AgendaItem> items = [];
   final Map<String, DayJournal> journals = {};
@@ -43,6 +44,7 @@ class AgendaStore extends ChangeNotifier {
   final Map<String, int> _unifiedMonthCountCache = {};
   final ValueNotifier<int> shellRevision = ValueNotifier<int>(0);
   final ValueNotifier<int> syncRevision = ValueNotifier<int>(0);
+  final AgendaStoreSignals signals = AgendaStoreSignals();
   final Map<String, int> _sharedUnreadBySpace = {};
   final Set<String> _unifiedRealtimeSpaceIds = {};
   bool _dayIndexDirty = true;
@@ -90,6 +92,15 @@ class AgendaStore extends ChangeNotifier {
   DateTime? get lastSharedSyncAttemptAt => _lastSharedSyncAttemptAt;
   String? get lastSharedSyncError => _lastSharedSyncError;
   bool get hasSharedSyncError => _lastSharedSyncError != null;
+
+  ValueListenable<int> get agendaRevision => signals.agenda;
+  ValueListenable<int> get journalRevision => signals.journal;
+  ValueListenable<int> get planningRevision => signals.planning;
+  ValueListenable<int> get sharedRevision => signals.shared;
+  ValueListenable<int> get inboxRevision => signals.inbox;
+  ValueListenable<int> get settingsRevision => signals.settings;
+  ValueListenable<int> get backupRevision => signals.backup;
+  ValueListenable<int> get accountRevision => signals.account;
   List<SharedSpace> get sharedAgendaSpaces {
     final result = _sharedAgendaSpaces.values.toList()
       ..sort((a, b) => a.createdAt.compareTo(b.createdAt));
@@ -218,6 +229,58 @@ class AgendaStore extends ChangeNotifier {
 
   void _notifySyncChanged() {
     syncRevision.value = syncRevision.value + 1;
+  }
+
+  void _notifyAgendaChanged() {
+    signals.bumpAgenda();
+    notifyListeners();
+  }
+
+  void _notifyJournalChanged() {
+    signals.bumpJournal();
+    notifyListeners();
+  }
+
+  void _notifyPlanningChanged() {
+    signals.bumpPlanning();
+    notifyListeners();
+  }
+
+  void _notifyJournalAndPlanningChanged() {
+    signals.bumpJournal();
+    signals.bumpPlanning();
+    notifyListeners();
+  }
+
+  void _notifySharedChanged() {
+    signals.bumpShared();
+    notifyListeners();
+  }
+
+  void _notifyAgendaAndSharedChanged() {
+    signals.bumpAgenda();
+    signals.bumpShared();
+    notifyListeners();
+  }
+
+  void _notifyInboxChanged() {
+    signals.bumpInbox();
+    notifyListeners();
+  }
+
+  void _notifySettingsChanged() {
+    signals.bumpSettings();
+    notifyListeners();
+  }
+
+  void _notifyBackupChanged() {
+    signals.bumpBackup();
+    notifyListeners();
+  }
+
+  void _notifyAllDataChanged() {
+    signals.bumpAll();
+    notifyListeners();
   }
 
   void _recordSharedSyncError(Object error) {
@@ -1151,7 +1214,7 @@ class AgendaStore extends ChangeNotifier {
       if (!_accountScopeResolved) {
         _accountScopeResolved = true;
         _notifyShellChanged();
-        notifyListeners();
+        _notifyAllDataChanged();
       }
       return;
     }
@@ -1205,7 +1268,7 @@ class AgendaStore extends ChangeNotifier {
 
     _accountScopeResolved = true;
     _notifyShellChanged();
-    notifyListeners();
+    _notifyAllDataChanged();
   }
 
   void _bindPendingOperationsTo(String ownerId) {
@@ -1439,163 +1502,17 @@ class AgendaStore extends ChangeNotifier {
     });
   }
 
-  Map<String, dynamic> _localDataPayload() => {
-        'items': items.map((e) => e.toJson()).toList(),
-        'journals':
-            journals.map((k, v) => MapEntry(k, v.toLocalJson())),
-        'months': months.map((k, v) => MapEntry(k, v.toJson())),
-        'weeks': weeks.map((k, v) => MapEntry(k, v.toJson())),
-        'habits': habits.map((e) => e.toJson()).toList(),
-        'inbox': inbox.map((e) => e.toJson()).toList(),
-        'preferences': preferences.toJson(),
-      };
+  Map<String, dynamic> _localDataPayload() =>
+      _backupDomain.localDataPayload(this);
 
-  Future<Map<String, dynamic>> _portableBackupDataPayload() async {
-    final portableJournals = <String, dynamic>{};
-    for (final entry in journals.entries) {
-      portableJournals[entry.key] = await _portableJournalJson(entry.value);
-    }
-    return {
-      'items': items.map((e) => e.toJson()).toList(),
-      'journals': portableJournals,
-      'months': months.map((k, v) => MapEntry(k, v.toJson())),
-      'weeks': weeks.map((k, v) => MapEntry(k, v.toJson())),
-      'habits': habits.map((e) => e.toJson()).toList(),
-      'inbox': inbox.map((e) => e.toJson()).toList(),
-      'preferences': preferences.toJson(),
-    };
-  }
+  Future<String> createBackupJson() =>
+      _backupDomain.createBackupJson(this);
 
-  Future<String> createBackupJson() async {
-    final document = {
-      'format': _backupFormat,
-      'schemaVersion': _backupSchemaVersion,
-      'appVersion': _appVersion,
-      'exportedAt': DateTime.now().toIso8601String(),
-      'data': await _portableBackupDataPayload(),
-    };
-    return const JsonEncoder.withIndent('  ').convert(document);
-  }
+  Future<Uint8List> createBackupZip() =>
+      _backupDomain.createBackupZip(this);
 
-  Future<Uint8List> createBackupZip() async {
-    final exportedAt = DateTime.now();
-    final localData = _localDataPayload();
-    final referencedAssetIds = <String>{};
-    _collectAssetIdsFromJson(localData, referencedAssetIds);
-
-    final media = <String, Uint8List>{};
-    final manifestMedia = <Map<String, dynamic>>[];
-    var mediaBytesTotal = 0;
-
-    final sortedIds = referencedAssetIds.toList()..sort();
-    for (final assetId in sortedIds) {
-      final bytes = await MediaAssetStore.instance.read(assetId);
-      if (bytes == null || bytes.isEmpty) {
-        throw FormatException(
-          'Media locale mancante nel backup: $assetId',
-        );
-      }
-      mediaBytesTotal += bytes.lengthInBytes;
-      if (mediaBytesTotal > BackupFileService.maxBackupMediaBytes) {
-        throw const FormatException(
-          'Il backup contiene troppi media per essere creato in sicurezza in memoria.',
-        );
-      }
-      media[assetId] = bytes;
-      manifestMedia.add({
-        'assetId': assetId,
-        'path': 'media/$assetId.bin',
-        'size': bytes.lengthInBytes,
-        'sha256': sha256.convert(bytes).toString(),
-      });
-    }
-
-    final dataDocument = {
-      'format': _backupFormat,
-      'schemaVersion': _backupSchemaVersion,
-      'appVersion': _appVersion,
-      'exportedAt': exportedAt.toIso8601String(),
-      'data': localData,
-    };
-    final dataJson =
-        const JsonEncoder.withIndent('  ').convert(dataDocument);
-
-    final manifest = {
-      'format': _backupBundleFormat,
-      'bundleVersion': _backupBundleVersion,
-      'appVersion': _appVersion,
-      'exportedAt': exportedAt.toIso8601String(),
-      'dataFile': 'data.json',
-      'mediaCount': manifestMedia.length,
-      'media': manifestMedia,
-      'dataSha256': sha256.convert(utf8.encode(dataJson)).toString(),
-    };
-
-    return BackupFileService.instance.buildZipBackup(
-      manifestJson: const JsonEncoder.withIndent('  ').convert(manifest),
-      dataJson: dataJson,
-      media: media,
-    );
-  }
-
-  DecodedZipBackup _decodeAndValidateBackupZip(Uint8List bytes) {
-    final decoded = BackupFileService.instance.decodeZipBackup(bytes);
-
-    final manifestValue = jsonDecode(decoded.manifestJson);
-    if (manifestValue is! Map) {
-      throw const FormatException('Manifest backup non valido.');
-    }
-    final manifest = Map<String, dynamic>.from(manifestValue);
-    if (manifest['format'] != _backupBundleFormat ||
-        manifest['bundleVersion'] != _backupBundleVersion) {
-      throw const FormatException('Formato ZIP del backup non supportato.');
-    }
-
-    final expectedDataHash = manifest['dataSha256']?.toString() ?? '';
-    final actualDataHash =
-        sha256.convert(utf8.encode(decoded.dataJson)).toString();
-    if (expectedDataHash.isEmpty || expectedDataHash != actualDataHash) {
-      throw const FormatException('Il file dati del backup non è integro.');
-    }
-
-    final rawMedia = manifest['media'];
-    if (rawMedia is! List) {
-      throw const FormatException('Indice media del backup non valido.');
-    }
-
-    final declaredIds = <String>{};
-    for (final raw in rawMedia) {
-      if (raw is! Map) {
-        throw const FormatException('Indice media del backup non valido.');
-      }
-      final entry = Map<String, dynamic>.from(raw);
-      final assetId = entry['assetId']?.toString() ?? '';
-      final expectedSize = entry['size'];
-      final expectedHash = entry['sha256']?.toString() ?? '';
-      if (assetId.isEmpty ||
-          expectedSize is! int ||
-          expectedHash.isEmpty ||
-          !declaredIds.add(assetId)) {
-        throw const FormatException('Indice media del backup non valido.');
-      }
-
-      final mediaBytes = decoded.media[assetId];
-      if (mediaBytes == null ||
-          mediaBytes.lengthInBytes != expectedSize ||
-          sha256.convert(mediaBytes).toString() != expectedHash) {
-        throw FormatException(
-          'Media del backup danneggiato o mancante: $assetId',
-        );
-      }
-    }
-
-    if (decoded.media.keys.any((assetId) => !declaredIds.contains(assetId))) {
-      throw const FormatException('Il backup contiene media non dichiarati.');
-    }
-
-    inspectBackup(decoded.dataJson);
-    return decoded;
-  }
+  DecodedZipBackup _decodeAndValidateBackupZip(Uint8List bytes) =>
+      _backupDomain.decodeAndValidateBackupZip(this, bytes);
 
   BackupSummary inspectBackupZip(Uint8List bytes) =>
       inspectBackup(_decodeAndValidateBackupZip(bytes).dataJson);
@@ -1630,41 +1547,8 @@ class AgendaStore extends ChangeNotifier {
     }
   }
 
-  BackupSummary inspectBackup(String raw) {
-    final decoded = jsonDecode(raw);
-    if (decoded is! Map) {
-      throw const FormatException('Il file non contiene un backup valido.');
-    }
-
-    final root = Map<String, dynamic>.from(decoded);
-    if (root['format'] != _backupFormat) {
-      throw const FormatException('Questo file non appartiene ad Anna\'s Diary.');
-    }
-
-    final schema = root['schemaVersion'];
-    if (schema is! int || schema > _backupSchemaVersion || schema < 1) {
-      throw const FormatException('Versione del backup non supportata.');
-    }
-
-    final data = root['data'];
-    if (data is! Map) {
-      throw const FormatException('Il backup non contiene dati leggibili.');
-    }
-
-    final payload = Map<String, dynamic>.from(data);
-    final exportedAt =
-        DateTime.tryParse(root['exportedAt'] as String? ?? '') ??
-            DateTime.now();
-
-    return BackupSummary(
-      exportedAt: exportedAt,
-      itemCount: (payload['items'] as List? ?? const []).length,
-      journalCount: (payload['journals'] as Map? ?? const {}).length,
-      monthCount: (payload['months'] as Map? ?? const {}).length,
-      weekCount: (payload['weeks'] as Map? ?? const {}).length,
-      habitCount: (payload['habits'] as List? ?? const []).length,
-    );
-  }
+  BackupSummary inspectBackup(String raw) =>
+      _backupDomain.inspectBackup(raw);
 
   Future<void> restoreBackup(
     String raw, {
@@ -1865,7 +1749,7 @@ class AgendaStore extends ChangeNotifier {
     }
 
     _notifyShellChanged();
-    notifyListeners();
+    _notifyAllDataChanged();
   }
 
   Future<void> createLocalSnapshot({
@@ -1886,7 +1770,7 @@ class AgendaStore extends ChangeNotifier {
       localSnapshots.removeRange(5, localSnapshots.length);
     }
     await _saveSnapshots(prefs);
-    notifyListeners();
+    _notifyBackupChanged();
   }
 
   Future<void> _maybeCreateAutomaticSnapshot(
@@ -1936,127 +1820,11 @@ class AgendaStore extends ChangeNotifier {
     localSnapshots.removeWhere((e) => e.id == id);
     final prefs = await _localState();
     await _saveSnapshots(prefs);
-    notifyListeners();
+    _notifyBackupChanged();
   }
 
-  String createReadableExport() {
-    final buffer = StringBuffer();
-    final now = DateTime.now();
-
-    buffer.writeln('ANNA\'S DIARY');
-    buffer.writeln('Esportazione del ${DateFormat('d MMMM yyyy, HH:mm', 'it_IT').format(now)}');
-    buffer.writeln();
-    buffer.writeln('============================================================');
-    buffer.writeln('IMPEGNI E ATTIVITÀ');
-    buffer.writeln('============================================================');
-
-    final sortedItems = [...items]..sort((a, b) {
-      final dateCompare = a.date.compareTo(b.date);
-      if (dateCompare != 0) return dateCompare;
-      final am = a.start == null ? 9999 : a.start!.hour * 60 + a.start!.minute;
-      final bm = b.start == null ? 9999 : b.start!.hour * 60 + b.start!.minute;
-      return am.compareTo(bm);
-    });
-
-    if (sortedItems.isEmpty) {
-      buffer.writeln('Nessun impegno salvato.');
-    } else {
-      for (final item in sortedItems) {
-        final date = DateFormat('d MMMM yyyy', 'it_IT').format(item.date);
-        final time = item.start == null ? '' : ' · ${formatTime(item.start!)}';
-        buffer.writeln('- $date$time · ${item.title}');
-        buffer.writeln('  Categoria: ${item.category.label}');
-        if (item.note.trim().isNotEmpty) {
-          buffer.writeln('  Note: ${item.note.trim()}');
-        }
-      }
-    }
-
-    buffer.writeln();
-    buffer.writeln('============================================================');
-    buffer.writeln('DIARIO');
-    buffer.writeln('============================================================');
-
-    final journalEntries = journals.entries.toList()
-      ..sort((a, b) => a.key.compareTo(b.key));
-
-    if (journalEntries.isEmpty) {
-      buffer.writeln('Nessuna pagina di diario salvata.');
-    } else {
-      for (final entry in journalEntries) {
-        final date = DateTime.tryParse(entry.key);
-        final journal = entry.value;
-        buffer.writeln();
-        buffer.writeln(
-          date == null
-              ? entry.key
-              : DateFormat('d MMMM yyyy', 'it_IT').format(date),
-        );
-        if (journal.mood != null) {
-          buffer.writeln('Mood: ${journal.mood!.emoji} ${journal.mood!.label}');
-        }
-        if (journal.gratitude.isNotEmpty) {
-          buffer.writeln('Cose belle:');
-          for (final value in journal.gratitude) {
-            buffer.writeln('  • $value');
-          }
-        }
-        if (journal.beautiful.trim().isNotEmpty) {
-          buffer.writeln('Da ricordare: ${journal.beautiful.trim()}');
-        }
-        if (journal.note.trim().isNotEmpty) {
-          buffer.writeln('Pensieri: ${journal.note.trim()}');
-        }
-      }
-    }
-
-    buffer.writeln();
-    buffer.writeln('============================================================');
-    buffer.writeln('PAGINE MENSILI');
-    buffer.writeln('============================================================');
-
-    final monthEntries = months.entries.toList()
-      ..sort((a, b) => a.key.compareTo(b.key));
-
-    for (final entry in monthEntries) {
-      final parts = entry.key.split('-');
-      if (parts.length != 2) continue;
-      final y = int.tryParse(parts[0]);
-      final m = int.tryParse(parts[1]);
-      if (y == null || m == null) continue;
-      final data = entry.value;
-      buffer.writeln();
-      buffer.writeln(
-        _cap(DateFormat('MMMM yyyy', 'it_IT').format(DateTime(y, m))),
-      );
-      if (data.monthWord.isNotEmpty) {
-        buffer.writeln('Parola del mese: ${data.monthWord}');
-      }
-      if (data.intention.isNotEmpty) {
-        buffer.writeln('Intenzione: ${data.intention}');
-      }
-      if (data.goals.isNotEmpty) {
-        buffer.writeln('Obiettivi: ${data.goals.join(' · ')}');
-      }
-      if (data.books.isNotEmpty) {
-        buffer.writeln('Libri: ${data.books.join(' · ')}');
-      }
-      if (data.films.isNotEmpty) {
-        buffer.writeln('Film e serie: ${data.films.join(' · ')}');
-      }
-      if (data.wishes.isNotEmpty) {
-        buffer.writeln('Desideri: ${data.wishes.join(' · ')}');
-      }
-      if (data.bestMoment.isNotEmpty) {
-        buffer.writeln('Momento più bello: ${data.bestMoment}');
-      }
-      if (data.reflection.isNotEmpty) {
-        buffer.writeln('Riflessione: ${data.reflection}');
-      }
-    }
-
-    return buffer.toString();
-  }
+  String createReadableExport() =>
+      _backupDomain.createReadableExport(this);
 
   void _invalidateDayIndex() {
     _dayIndexDirty = true;
@@ -2102,7 +1870,7 @@ class AgendaStore extends ChangeNotifier {
       payload: item.toJson(),
     );
     await _syncReminders(item);
-    notifyListeners();
+    _notifyAgendaChanged();
   }
 
   Future<void> duplicateItem(AgendaItem item, {DateTime? date}) async {
@@ -2135,10 +1903,13 @@ class AgendaStore extends ChangeNotifier {
       id: id,
       deleted: true,
     );
-    notifyListeners();
+    _notifyAgendaChanged();
   }
 
-  Future<void> _syncReminders(AgendaItem item) async {
+  Future<void> _syncReminders(
+    AgendaItem item, {
+    bool requestPermission = true,
+  }) async {
     final start = item.start;
 
     // Pulisce anche il vecchio ID usato dalla versione a promemoria singolo.
@@ -2173,6 +1944,7 @@ class AgendaStore extends ChangeNotifier {
             ? 'È il momento di iniziare.'
             : _reminderBody(minutes, item.title),
         when: when,
+        requestPermission: requestPermission,
       );
     }
 
@@ -2182,7 +1954,10 @@ class AgendaStore extends ChangeNotifier {
 
   Future<void> reconcileReminders() async {
     for (final item in items) {
-      await _syncReminders(item);
+      await _syncReminders(
+        item,
+        requestPermission: false,
+      );
     }
   }
 
@@ -2204,7 +1979,7 @@ class AgendaStore extends ChangeNotifier {
       payload: items[i].toJson(),
     );
     await _syncReminders(items[i]);
-    notifyListeners();
+    _notifyAgendaChanged();
   }
 
   DayJournal journal(DateTime date) => journals[dateKey(date)] ?? const DayJournal();
@@ -2220,7 +1995,7 @@ class AgendaStore extends ChangeNotifier {
     _scheduleMediaMaintenance(
       delay: const Duration(seconds: 5),
     );
-    notifyListeners();
+    _notifyJournalChanged();
   }
 
   Future<void> initializeCloudSync() async {
@@ -2232,7 +2007,7 @@ class AgendaStore extends ChangeNotifier {
     } else {
       _accountScopeResolved = true;
       _notifyShellChanged();
-      notifyListeners();
+      _notifyAllDataChanged();
     }
 
     if (cloud.signedIn) {
@@ -2266,7 +2041,7 @@ class AgendaStore extends ChangeNotifier {
     } else if (!_accountScopeResolved) {
       _accountScopeResolved = true;
       _notifyShellChanged();
-      notifyListeners();
+      _notifyAllDataChanged();
     }
 
     if (cloud.signedIn) {
@@ -2491,7 +2266,7 @@ class AgendaStore extends ChangeNotifier {
 
       cloud.markSyncSuccess();
       if (remoteChanged || pendingSnapshot.isNotEmpty) {
-        notifyListeners();
+        _notifyAllDataChanged();
       }
     } catch (error) {
       cloud.markSyncError(error);
@@ -2659,7 +2434,7 @@ class AgendaStore extends ChangeNotifier {
     if (agendaContentFilter == value) return;
     agendaContentFilter = value;
     _invalidateUnifiedAgendaCache();
-    notifyListeners();
+    _notifyAgendaAndSharedChanged();
   }
 
   List<UnifiedAgendaEntry> unifiedForDay(DateTime date) {
@@ -2771,7 +2546,7 @@ class AgendaStore extends ChangeNotifier {
       _sharedAgendaEntriesBySpace.clear();
       _sharedAgendaDayIndex.clear();
       _invalidateUnifiedAgendaCache();
-      if (notify) notifyListeners();
+      if (notify) _notifySharedChanged();
       return;
     }
 
@@ -2961,7 +2736,7 @@ class AgendaStore extends ChangeNotifier {
     }
 
     await _bindUnifiedRealtime(spaces);
-    if (notify) notifyListeners();
+    if (notify) _notifySharedChanged();
   }
 
   Future<void> _bindUnifiedRealtime(List<SharedSpace> spaces) async {
@@ -3074,7 +2849,7 @@ class AgendaStore extends ChangeNotifier {
       cursorKey: next.toIso8601String(),
     });
 
-    notifyListeners();
+    _notifySharedChanged();
   }
 
   Future<void> _cacheSharedAgendaEntries(
@@ -3155,14 +2930,14 @@ class AgendaStore extends ChangeNotifier {
     if (next == sharedUnreadCount(spaceId)) return;
     _sharedUnreadBySpace[spaceId] = next;
     await _saveSharedUnreadCounts();
-    notifyListeners();
+    _notifySharedChanged();
   }
 
   Future<void> markSharedSpaceRead(String spaceId) async {
     if (!_sharedUnreadBySpace.containsKey(spaceId)) return;
     _sharedUnreadBySpace.remove(spaceId);
     await _saveSharedUnreadCounts();
-    notifyListeners();
+    _notifySharedChanged();
   }
 
   Future<List<SharedPendingOperation>> loadSharedPendingOperations(
@@ -3237,7 +3012,7 @@ class AgendaStore extends ChangeNotifier {
     _sharedAgendaEntriesBySpace[spaceId] = cached;
     _rebuildSharedAgendaDayIndex();
     await _cacheSharedAgendaEntries(spaceId, cached);
-    notifyListeners();
+    _notifySharedChanged();
   }
 
   Future<void> enqueueSharedDelete({
@@ -3271,7 +3046,7 @@ class AgendaStore extends ChangeNotifier {
     _sharedAgendaEntriesBySpace[spaceId] = cached;
     _rebuildSharedAgendaDayIndex();
     await _cacheSharedAgendaEntries(spaceId, cached);
-    notifyListeners();
+    _notifySharedChanged();
   }
 
   Future<int> pendingSharedChanges(String spaceId) async =>
@@ -3384,7 +3159,7 @@ class AgendaStore extends ChangeNotifier {
     );
     await _saveSharedInteractionPendingOperations(spaceId, operations);
     await refreshPendingSharedInteractionCount(notify: false);
-    notifyListeners();
+    _notifySharedChanged();
 
     return SharedEntryComment(
       id: commentId,
@@ -3426,7 +3201,7 @@ class AgendaStore extends ChangeNotifier {
 
     await _saveSharedInteractionPendingOperations(spaceId, operations);
     await refreshPendingSharedInteractionCount(notify: false);
-    notifyListeners();
+    _notifySharedChanged();
   }
 
   Future<void> enqueueSharedHeart({
@@ -3452,7 +3227,7 @@ class AgendaStore extends ChangeNotifier {
     );
     await _saveSharedInteractionPendingOperations(spaceId, operations);
     await refreshPendingSharedInteractionCount(notify: false);
-    notifyListeners();
+    _notifySharedChanged();
   }
 
   Future<void> refreshPendingSharedInteractionCount({
@@ -3710,7 +3485,7 @@ class AgendaStore extends ChangeNotifier {
     if (uploads.length == before) return;
     await _saveSharedMediaPendingUploads(spaceId, uploads);
     await refreshPendingSharedMediaCount(notify: false);
-    notifyListeners();
+    _notifySharedChanged();
   }
 
   Future<void> enqueueSharedMediaUpload(
@@ -3725,7 +3500,7 @@ class AgendaStore extends ChangeNotifier {
     uploads.add(localizedUpload);
     await _saveSharedMediaPendingUploads(localizedUpload.spaceId, uploads);
     await refreshPendingSharedMediaCount(notify: false);
-    notifyListeners();
+    _notifySharedChanged();
   }
 
   Future<void> refreshPendingSharedMediaCount({
@@ -3858,7 +3633,7 @@ class AgendaStore extends ChangeNotifier {
   void resetSharedConflictCount() {
     if (_sharedConflictCount == 0) return;
     _sharedConflictCount = 0;
-    notifyListeners();
+    _notifySyncChanged();
   }
 
   Future<void> flushSharedPendingOperations({
@@ -4049,7 +3824,7 @@ class AgendaStore extends ChangeNotifier {
       id: entry.id,
       payload: entry.toJson(),
     );
-    notifyListeners();
+    _notifyInboxChanged();
   }
 
   Future<void> deleteInboxEntry(String id) async {
@@ -4059,7 +3834,7 @@ class AgendaStore extends ChangeNotifier {
       id: id,
       deleted: true,
     );
-    notifyListeners();
+    _notifyInboxChanged();
   }
 
   Future<void> toggleInboxPinned(String id) async {
@@ -4071,7 +3846,7 @@ class AgendaStore extends ChangeNotifier {
       id: inbox[index].id,
       payload: inbox[index].toJson(),
     );
-    notifyListeners();
+    _notifyInboxChanged();
   }
 
   Future<void> toggleItemPinned(String id) async {
@@ -4084,7 +3859,7 @@ class AgendaStore extends ChangeNotifier {
       id: items[index].id,
       payload: items[index].toJson(),
     );
-    notifyListeners();
+    _notifyAgendaChanged();
   }
 
   Future<void> setPin(String pin) async {
@@ -4132,7 +3907,7 @@ class AgendaStore extends ChangeNotifier {
     );
     await _queuePreferencesSync();
     _notifyShellChanged();
-    notifyListeners();
+    _notifySettingsChanged();
   }
 
   Future<void> resetPreferences() async {
@@ -4152,7 +3927,7 @@ class AgendaStore extends ChangeNotifier {
       id: habit.id,
       payload: habit.toJson(),
     );
-    notifyListeners();
+    _notifyPlanningChanged();
   }
 
   Future<void> removeHabit(String id) async {
@@ -4193,7 +3968,7 @@ class AgendaStore extends ChangeNotifier {
     }
 
     await _persistEntityMutations(mutations);
-    notifyListeners();
+    _notifyJournalAndPlanningChanged();
   }
 
   Future<void> toggleHabit(DateTime date, String habitId) async {
@@ -4212,7 +3987,7 @@ class AgendaStore extends ChangeNotifier {
       id: key,
       payload: updated.toLocalJson(),
     );
-    notifyListeners();
+    _notifyJournalChanged();
   }
 
   MonthlyData month(int year, int month) => months[monthKey(year, month)] ?? const MonthlyData();
@@ -4225,7 +4000,7 @@ class AgendaStore extends ChangeNotifier {
       id: key,
       payload: value.toJson(),
     );
-    notifyListeners();
+    _notifyPlanningChanged();
   }
 
   WeekData week(DateTime anyDay) {
@@ -4242,7 +4017,7 @@ class AgendaStore extends ChangeNotifier {
       id: key,
       payload: value.toJson(),
     );
-    notifyListeners();
+    _notifyPlanningChanged();
   }
 
   static bool sameDay(DateTime a, DateTime b) =>
@@ -4270,6 +4045,7 @@ class AgendaStore extends ChangeNotifier {
     _unifiedRealtimeSpaceIds.clear();
     shellRevision.dispose();
     syncRevision.dispose();
+    signals.dispose();
     super.dispose();
   }
 }

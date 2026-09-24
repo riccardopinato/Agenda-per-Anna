@@ -1,0 +1,20 @@
+{
+  "checkpoints": [
+    {
+      "name": "calendar",
+      "flow": ".maestro/journey/calendar.yaml"
+    },
+    {
+      "name": "week",
+      "flow": ".maestro/journey/week.yaml"
+    },
+    {
+      "name": "today",
+      "flow": ".maestro/journey/today.yaml"
+    },
+    {
+      "name": "memories",
+      "flow": ".maestro/journey/memories.yaml"
+    }
+  ]
+}

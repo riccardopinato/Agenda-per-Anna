@@ -28,12 +28,19 @@ import 'push_notification_service.dart';
 
 part 'src/app_shell.dart';
 part 'src/domain_models.dart';
+part 'src/store_signals.dart';
+part 'src/store/backup_domain.dart';
 part 'src/agenda_store.dart';
 part 'src/unified_agenda.dart';
-part 'src/screens_core.dart';
+part 'src/screens/home_inbox_search.dart';
+part 'src/screens/backup_settings.dart';
+part 'src/screens/shared_space.dart';
+part 'src/screens/cloud_account.dart';
 part 'src/planner_views.dart';
 part 'src/widgets_editors.dart';
-part 'src/diary_media.dart';
+part 'src/diary/diary_components.dart';
+part 'src/diary/diary_memories.dart';
+part 'src/diary/diary_sketchbook.dart';
 part 'src/shared_memories.dart';
 
 final GlobalKey<NavigatorState> appNavigatorKey = GlobalKey<NavigatorState>();

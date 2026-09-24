@@ -1,0 +1,16 @@
+appId: com.riccardopinato.agenda_per_anna
+---
+- launchApp:
+    clearState: true
+- extendedWaitUntil:
+    visible: "La tua agenda, davvero tua."
+    timeout: 15000
+- tapOn: "Inizia"
+- extendedWaitUntil:
+    visible: "Agenda per Anna"
+    timeout: 15000
+- stopApp
+- launchApp
+- extendedWaitUntil:
+    visible: "Agenda per Anna"
+    timeout: 15000

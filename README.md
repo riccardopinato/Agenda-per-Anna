@@ -2,7 +2,7 @@
 
 Flutter app for personal planning, private diary and the shared **Noi ♡** space.
 
-Current release line: **v0.39.1**.
+Current release line: **v0.40.0**.
 
 ## Core areas
 
@@ -20,9 +20,9 @@ Current release line: **v0.39.1**.
 
 ## Quality gates
 
-GitHub Actions runs locked dependency resolution, Android platform generation/verification, Flutter analyze, the full test suite, a Web release build and an Android debug package on every pull request and every push to `main`.
+GitHub Actions runs locked dependency resolution, Android platform generation/verification, Flutter analyze, the full test suite, a Web release build and an ARM64 release build on every pull request and every push to `main`.
 
-Android release packaging remains manual and uses Flutter 3.47.5 for reproducibility. Pull requests that affect runtime packaging also run an ARM64 release-size audit. Production signing requires the stable keystore credentials in GitHub Secrets; the workflow deliberately refuses ephemeral or cache-backed signing keys.
+Pull requests also run the AppLab Production Gate: release-mode ARM64 build, Android emulator install/launch, Maestro restart smoke, multi-screen visual journey, screenshot/UI hierarchy checks, visual regression, Logcat and crash/ANR scanning. Production distribution remains pinned to Flutter 3.47.5 and the persistent sideload/release signing contracts.
 
 See `docs/ARCHITECTURE.md` and `supabase/README.md` for implementation details.
 
@@ -113,3 +113,16 @@ See `docs/ARCHITECTURE.md` and `supabase/README.md` for implementation details.
 - Railway Web is pinned to Flutter 3.47.5 with the locked dependency graph, matching CI and Android builds.
 - Lightweight ARM64 sideload releases use a persistent cached JKS signing key and explicit release signing.
 - Added Android emulator smoke coverage for native storage/media and primary navigation.
+
+
+## v0.40.0 — Architecture, Fluidity & AppLab Production Gate
+
+- Added domain-specific revision channels for agenda, journal, planning, shared space, inbox, settings, backup and account state.
+- Main planner screens listen only to the domains they render, reducing unrelated rebuilds while preserving the existing AgendaStore API.
+- Split the previous `screens_core.dart` monolith into home/search, backup/settings, shared-space and cloud-account modules.
+- Split the previous `diary_media.dart` monolith into diary components, memories and sketchbook/viewer modules.
+- Extracted ZIP serialization, manifest validation and readable export logic into a dedicated backup domain while AgendaStore remains the compatibility/orchestration facade.
+- Added persistence torture coverage for process-style restart, account isolation with pending edits, legacy upgrade and corrupt shared queues.
+- Pull requests now build an ARM64 release APK instead of relying only on debug packaging.
+- Added AppLab as a first-class PR gate with restart persistence smoke and Calendar / Week / Today / Memories visual checkpoints.
+- GitHub Pages is the canonical Web deployment: https://riccardopinato.github.io/Agenda-per-Anna/

@@ -1,0 +1,8 @@
+appId: com.riccardopinato.agenda_per_anna
+---
+- tapOn:
+    text: 'Mese[\s\S]*'
+    retryTapIfNoChange: true
+- extendedWaitUntil:
+    visible: "Calendario"
+    timeout: 10000
