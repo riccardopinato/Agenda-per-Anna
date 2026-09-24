@@ -60,11 +60,14 @@ class AgendaApp extends StatelessWidget {
           themeMode: mode,
           theme: _theme(Brightness.light),
           darkTheme: _theme(Brightness.dark),
-          builder: (context, child) => _AuthRecoveryGate(
+          builder: (context, child) => _UniversalAuthGate(
             store: store,
-            child: _PrivacyGate(
+            child: _AuthRecoveryGate(
               store: store,
-              child: child ?? const SizedBox.shrink(),
+              child: _PrivacyGate(
+                store: store,
+                child: child ?? const SizedBox.shrink(),
+              ),
             ),
           ),
           home: AgendaRoot(store: store),
