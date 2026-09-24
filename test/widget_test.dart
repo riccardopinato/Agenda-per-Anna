@@ -11,7 +11,13 @@ void main() {
       store.preferences.copyWith(onboardingDone: true),
     );
 
-    await tester.pumpWidget(AgendaApp(store: store, authGateBypass: true));
+    await tester.pumpWidget(
+      AgendaApp(
+        store: store,
+        authGateBypass: true,
+        lifecycleSyncEnabled: false,
+      ),
+    );
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 150));
 
