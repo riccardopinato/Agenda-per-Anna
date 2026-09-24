@@ -745,7 +745,7 @@ class _PrivateVaultScreenState extends State<PrivateVaultScreen>
                 child: ListTile(
                   contentPadding: const EdgeInsets.fromLTRB(16, 10, 8, 10),
                   leading: const CircleAvatar(
-                    child: Icon(Icons.lock_note_outlined),
+                    child: Icon(Icons.note_alt_outlined),
                   ),
                   title: Text(
                     entry.title.isEmpty ? 'Nota privata' : entry.title,
