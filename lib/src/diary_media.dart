@@ -1535,7 +1535,7 @@ class _DiaryMemoriesScreenState extends State<DiaryMemoriesScreen> {
         ),
       ),
       body: AnimatedBuilder(
-        animation: widget.store,
+        animation: widget.store.journalRevision,
         builder: (context, _) {
           final current = _records();
           return Column(
