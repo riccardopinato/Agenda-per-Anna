@@ -334,6 +334,37 @@ class SharedMediaMaintenanceReport {
   });
 }
 
+class SharedSpaceInvite {
+  final String code;
+  final DateTime expiresAt;
+  final bool reused;
+
+  const SharedSpaceInvite({
+    required this.code,
+    required this.expiresAt,
+    required this.reused,
+  });
+
+  factory SharedSpaceInvite.fromRpc(dynamic value) {
+    final raw = value is Map
+        ? Map<String, dynamic>.from(value)
+        : <String, dynamic>{};
+    final code = raw['code']?.toString().trim().toUpperCase() ?? '';
+    final expiresAt =
+        DateTime.tryParse(raw['expires_at']?.toString() ?? '')?.toLocal();
+    if (code.isEmpty || expiresAt == null) {
+      throw const FormatException('Invito condiviso non valido.');
+    }
+    return SharedSpaceInvite(
+      code: code,
+      expiresAt: expiresAt,
+      reused: raw['reused'] == true,
+    );
+  }
+
+  bool get expired => !expiresAt.isAfter(DateTime.now());
+}
+
 class CloudSyncService extends ChangeNotifier {
   CloudSyncService._();
 
@@ -348,7 +379,9 @@ class CloudSyncService extends ChangeNotifier {
     defaultValue: 'sb_publishable_RWgJneLG9V-pu2IcsDRQCg_G14_kqS7',
   );
   static const String _productionWebUrl =
-      'https://agenda-per-anna-production.up.railway.app/';
+      'https://riccardopinato.github.io/Agenda-per-Anna/';
+  static const String _nativeAuthRedirectUrl =
+      'com.riccardopinato.agenda-per-anna://login-callback';
 
   String get _emailRedirectUrl {
     if (kIsWeb) {
@@ -410,6 +443,22 @@ class CloudSyncService extends ChangeNotifier {
   User? get user => _client?.auth.currentUser;
   String? get userId => user?.id;
   String? get email => user?.email;
+  String get displayName {
+    final metadata = user?.userMetadata ?? const <String, dynamic>{};
+    return (metadata['full_name'] ??
+            metadata['name'] ??
+            email?.split('@').first ??
+            'Utente')
+        .toString();
+  }
+
+  String? get avatarUrl {
+    final metadata = user?.userMetadata ?? const <String, dynamic>{};
+    final value = metadata['avatar_url'] ?? metadata['picture'];
+    final text = value?.toString().trim() ?? '';
+    return text.isEmpty ? null : text;
+  }
+
   bool get signedIn => user != null;
   bool get passwordRecoveryPending => _passwordRecoveryPending;
 
@@ -484,6 +533,30 @@ class CloudSyncService extends ChangeNotifier {
         password: password,
       );
       _state = CloudConnectionState.synced;
+    } catch (error) {
+      _state = CloudConnectionState.error;
+      _lastError = error.toString();
+      rethrow;
+    } finally {
+      notifyListeners();
+    }
+  }
+
+  Future<void> signInWithGoogle() async {
+    final client = _requireClient();
+    _state = CloudConnectionState.initializing;
+    _lastError = null;
+    notifyListeners();
+
+    try {
+      final launched = await client.auth.signInWithOAuth(
+        OAuthProvider.google,
+        redirectTo: kIsWeb ? _emailRedirectUrl : _nativeAuthRedirectUrl,
+        scopes: 'openid email profile',
+      );
+      if (!launched) {
+        throw StateError('google_oauth_launch_failed');
+      }
     } catch (error) {
       _state = CloudConnectionState.error;
       _lastError = error.toString();
@@ -765,13 +838,24 @@ class CloudSyncService extends ChangeNotifier {
     return result.toString();
   }
 
-  Future<String> createSpaceInvite(String spaceId) async {
+  Future<SharedSpaceInvite> getOrCreateSpaceInvite(
+    String spaceId, {
+    bool forceNew = false,
+  }) async {
     final client = _requireSignedInClient();
     final result = await client.rpc(
-      'create_space_invite',
-      params: {'p_space_id': spaceId},
+      'get_or_create_space_invite',
+      params: {
+        'p_space_id': spaceId,
+        'p_force_new': forceNew,
+      },
     );
-    return result.toString().toUpperCase();
+    return SharedSpaceInvite.fromRpc(result);
+  }
+
+  Future<String> createSpaceInvite(String spaceId) async {
+    final invite = await getOrCreateSpaceInvite(spaceId);
+    return invite.code;
   }
 
   Future<String> joinSharedSpace(String code) async {
