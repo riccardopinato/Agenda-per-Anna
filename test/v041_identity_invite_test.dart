@@ -23,14 +23,17 @@ void main() {
     final migration = File(
       'supabase/migrations/016_universal_identity_invites_v041.sql',
     ).readAsStringSync();
+    final hardening = File(
+      'supabase/migrations/017_invite_concurrency_hardening_v041.sql',
+    ).readAsStringSync();
 
     expect(migration, contains("now() + interval '24 hours'"));
     expect(migration, contains('code_value text'));
     expect(migration, contains('create_or_get_space_invite'));
     expect(migration, contains('regenerate_space_invite'));
     expect(migration, contains('uses_count = uses_count + 1'));
-    expect(migration, contains('for update;'));
-    expect(migration, contains('get diagnostics v_inserted = row_count'));
+    expect(hardening, contains('for update;'));
+    expect(hardening, contains('get diagnostics v_inserted = row_count'));
     expect(
       migration,
       isNot(contains('set consumed_at = now()')),
