@@ -64,3 +64,12 @@ jobs:
             FIREBASE_ARG="--dart-define=FIREBASE_ENABLED=true"
           fi
           flutter build apk --debug $FIREBASE_ARG
+
+      - name: Upload Android debug APK
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        uses: actions/upload-artifact@v4
+        with:
+          name: annas-diary-debug-apk
+          path: build/app/outputs/flutter-apk/app-debug.apk
+          if-no-files-found: error
+          retention-days: 14
