@@ -217,10 +217,6 @@ class _PrivateVaultScreenState extends State<PrivateVaultScreen>
       final auth = LocalAuthentication();
       final authenticated = await auth.authenticate(
         localizedReason: 'Sblocca la cassaforte privata di Anna\'s Diary',
-        options: const AuthenticationOptions(
-          biometricOnly: true,
-          stickyAuth: true,
-        ),
       );
       if (!authenticated) return;
       final ok = await vault.unlockWithBiometricKey();
@@ -321,7 +317,7 @@ class _PrivateVaultScreenState extends State<PrivateVaultScreen>
         content: Text(
           entry.title.isEmpty
               ? 'Il contenuto verrà eliminato definitivamente.'
-              : '“' + entry.title + '” verrà eliminato definitivamente.',
+              : '“${entry.title}” verrà eliminato definitivamente.',
         ),
         actions: [
           TextButton(
