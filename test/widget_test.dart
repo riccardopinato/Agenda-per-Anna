@@ -6,7 +6,6 @@ void main() {
   testWidgets('Agenda app starts', (tester) async {
     await initializeDateFormatting('it_IT', null);
     final store = AgendaStore();
-    await store.load();
     await tester.pumpWidget(
       AgendaApp(store: store, bypassIdentityForTesting: true),
     );
