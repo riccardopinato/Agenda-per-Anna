@@ -42,6 +42,7 @@ class AgendaStore extends ChangeNotifier {
   final List<UnifiedAgendaEntry> _unifiedAgendaCache = [];
   final Map<String, int> _unifiedMonthCountCache = {};
   final ValueNotifier<int> shellRevision = ValueNotifier<int>(0);
+  final ValueNotifier<int> syncRevision = ValueNotifier<int>(0);
   final Map<String, int> _sharedUnreadBySpace = {};
   final Set<String> _unifiedRealtimeSpaceIds = {};
   bool _dayIndexDirty = true;
@@ -65,6 +66,8 @@ class AgendaStore extends ChangeNotifier {
   int _pendingSharedInteractionCount = 0;
   int _pendingSharedMediaCount = 0;
   DateTime? _lastSharedSyncAt;
+  DateTime? _lastSharedSyncAttemptAt;
+  String? _lastSharedSyncError;
   String? _activeAccountId;
   bool _accountScopeResolved = true;
 
@@ -84,6 +87,9 @@ class AgendaStore extends ChangeNotifier {
       _sharedUnreadBySpace.values.fold(0, (sum, count) => sum + count);
   int sharedUnreadCount(String spaceId) => _sharedUnreadBySpace[spaceId] ?? 0;
   DateTime? get lastSharedSyncAt => _lastSharedSyncAt;
+  DateTime? get lastSharedSyncAttemptAt => _lastSharedSyncAttemptAt;
+  String? get lastSharedSyncError => _lastSharedSyncError;
+  bool get hasSharedSyncError => _lastSharedSyncError != null;
   List<SharedSpace> get sharedAgendaSpaces {
     final result = _sharedAgendaSpaces.values.toList()
       ..sort((a, b) => a.createdAt.compareTo(b.createdAt));
@@ -208,6 +214,15 @@ class AgendaStore extends ChangeNotifier {
 
   void _notifyShellChanged() {
     shellRevision.value = shellRevision.value + 1;
+  }
+
+  void _notifySyncChanged() {
+    syncRevision.value = syncRevision.value + 1;
+  }
+
+  void _recordSharedSyncError(Object error) {
+    _lastSharedSyncError = error.runtimeType.toString();
+    _notifySyncChanged();
   }
 
   Future<void> _applyEntityDeltas(LocalStateStore prefs) async {
@@ -1069,7 +1084,10 @@ class AgendaStore extends ChangeNotifier {
     try {
       return Map<String, dynamic>.from(jsonDecode(raw) as Map);
     } catch (_) {
-      return <String, dynamic>{};
+      _unreadableStorageKeys.add(_accountProfilesKey);
+      throw const FormatException(
+        'Archivio profili account non leggibile: cambio account annullato.',
+      );
     }
   }
 
@@ -1467,6 +1485,7 @@ class AgendaStore extends ChangeNotifier {
 
     final media = <String, Uint8List>{};
     final manifestMedia = <Map<String, dynamic>>[];
+    var mediaBytesTotal = 0;
 
     final sortedIds = referencedAssetIds.toList()..sort();
     for (final assetId in sortedIds) {
@@ -1474,6 +1493,12 @@ class AgendaStore extends ChangeNotifier {
       if (bytes == null || bytes.isEmpty) {
         throw FormatException(
           'Media locale mancante nel backup: $assetId',
+        );
+      }
+      mediaBytesTotal += bytes.lengthInBytes;
+      if (mediaBytesTotal > BackupFileService.maxBackupMediaBytes) {
+        throw const FormatException(
+          'Il backup contiene troppi media per essere creato in sicurezza in memoria.',
         );
       }
       media[assetId] = bytes;
@@ -1581,17 +1606,28 @@ class AgendaStore extends ChangeNotifier {
   }) async {
     final decoded = _decodeAndValidateBackupZip(bytes);
 
-    for (final entry in decoded.media.entries) {
-      await MediaAssetStore.instance.putNamed(
-        entry.key,
-        entry.value,
-      );
-    }
+    final importedOnlyForRestore = <String>[];
+    try {
+      for (final entry in decoded.media.entries) {
+        final alreadyPresent =
+            await MediaAssetStore.instance.read(entry.key) != null;
+        await MediaAssetStore.instance.putNamed(
+          entry.key,
+          entry.value,
+        );
+        if (!alreadyPresent) importedOnlyForRestore.add(entry.key);
+      }
 
-    await restoreBackup(
-      decoded.dataJson,
-      merge: merge,
-    );
+      await restoreBackup(
+        decoded.dataJson,
+        merge: merge,
+      );
+    } catch (_) {
+      for (final assetId in importedOnlyForRestore.reversed) {
+        await MediaAssetStore.instance.delete(assetId);
+      }
+      rethrow;
+    }
   }
 
   BackupSummary inspectBackup(String raw) {
@@ -2254,20 +2290,34 @@ class AgendaStore extends ChangeNotifier {
     }
     if (_activeAccountId != cloud.userId) return;
 
-    await flushSharedMediaUploads();
-    await flushSharedInteractionOperations();
-    await flushSharedPendingOperations();
+    _lastSharedSyncAttemptAt = DateTime.now();
+    _lastSharedSyncError = null;
+    _notifySyncChanged();
 
-    if (!cloud.signedIn ||
-        cloud.userId == null ||
-        _activeAccountId != cloud.userId) {
-      return;
+    try {
+      await flushSharedMediaUploads();
+      await flushSharedInteractionOperations();
+      await flushSharedPendingOperations();
+
+      if (!cloud.signedIn ||
+          cloud.userId == null ||
+          _activeAccountId != cloud.userId) {
+        return;
+      }
+
+      await refreshSharedAgendaCache(pullRemote: true);
+      await refreshPendingSharedCount();
+      await refreshPendingSharedInteractionCount();
+      await refreshPendingSharedMediaCount();
+
+      if (_lastSharedSyncError == null) {
+        _lastSharedSyncAt = DateTime.now();
+      }
+    } catch (error) {
+      _recordSharedSyncError(error);
+    } finally {
+      _notifySyncChanged();
     }
-
-    await refreshSharedAgendaCache(pullRemote: true);
-    await refreshPendingSharedCount();
-    await refreshPendingSharedInteractionCount();
-    await refreshPendingSharedMediaCount();
   }
 
   Future<void> syncAllCloud({
@@ -2750,7 +2800,8 @@ class AgendaStore extends ChangeNotifier {
                 .toList(),
           ),
         );
-      } catch (_) {
+      } catch (error) {
+        _recordSharedSyncError(error);
         spaces = const [];
       }
     }
@@ -2841,7 +2892,8 @@ class AgendaStore extends ChangeNotifier {
             storedCursor,
             records.map((record) => record.clientUpdatedAt),
           );
-        } catch (_) {
+        } catch (error) {
+          _recordSharedSyncError(error);
           // Keep the current in-memory/disk baseline and pending overlay.
         }
       }
@@ -3129,6 +3181,7 @@ class AgendaStore extends ChangeNotifier {
           .where((operation) => operation.entityId.isNotEmpty)
           .toList();
     } catch (_) {
+      _unreadableStorageKeys.add(sharedPendingStorageKey(spaceId));
       return <SharedPendingOperation>[];
     }
   }
@@ -3251,7 +3304,7 @@ class AgendaStore extends ChangeNotifier {
 
     if (next == _pendingSharedChangeCount) return;
     _pendingSharedChangeCount = next;
-    if (notify) notifyListeners();
+    if (notify) _notifySyncChanged();
   }
 
   Future<List<SharedInteractionPendingOperation>>
@@ -3274,6 +3327,7 @@ class AgendaStore extends ChangeNotifier {
           )
           .toList();
     } catch (_) {
+      _unreadableStorageKeys.add(sharedInteractionPendingStorageKey(spaceId));
       return <SharedInteractionPendingOperation>[];
     }
   }
@@ -3419,7 +3473,7 @@ class AgendaStore extends ChangeNotifier {
     }
     if (next == _pendingSharedInteractionCount) return;
     _pendingSharedInteractionCount = next;
-    if (notify) notifyListeners();
+    if (notify) _notifySyncChanged();
   }
 
   Future<void> flushSharedInteractionOperations({
@@ -3515,7 +3569,8 @@ class AgendaStore extends ChangeNotifier {
               latest,
             );
             changed = true;
-          } catch (_) {
+          } catch (error) {
+            _recordSharedSyncError(error);
             // Keep the operation queued for the next resume/periodic sync.
           }
         }
@@ -3524,7 +3579,7 @@ class AgendaStore extends ChangeNotifier {
       _sharedInteractionFlushRunning = false;
       await refreshPendingSharedInteractionCount(notify: false);
       if (changed || before != _pendingSharedInteractionCount) {
-        notifyListeners();
+        _notifySyncChanged();
       }
     }
   }
@@ -3624,6 +3679,7 @@ class AgendaStore extends ChangeNotifier {
       }
       return localized;
     } catch (_) {
+      _unreadableStorageKeys.add(sharedMediaPendingStorageKey(spaceId));
       return <SharedMediaPendingUpload>[];
     }
   }
@@ -3690,7 +3746,7 @@ class AgendaStore extends ChangeNotifier {
     }
     if (next == _pendingSharedMediaCount) return;
     _pendingSharedMediaCount = next;
-    if (notify) notifyListeners();
+    if (notify) _notifySyncChanged();
   }
 
   Future<void> flushSharedMediaUploads({
@@ -3784,7 +3840,8 @@ class AgendaStore extends ChangeNotifier {
                 await cloud.deleteSharedMedia(upload.oldMediaPath);
               } catch (_) {}
             }
-          } catch (_) {
+          } catch (error) {
+            _recordSharedSyncError(error);
             // Keep compressed bytes locally and retry automatically later.
           }
         }
@@ -3793,7 +3850,7 @@ class AgendaStore extends ChangeNotifier {
       _sharedMediaFlushRunning = false;
       await refreshPendingSharedMediaCount(notify: false);
       if (changed || before != _pendingSharedMediaCount) {
-        notifyListeners();
+        _notifySyncChanged();
       }
     }
   }
@@ -3961,6 +4018,8 @@ class AgendaStore extends ChangeNotifier {
               _sharedConflictCount++;
               _lastSharedSyncAt = DateTime.now();
               stateChanged = true;
+            } else {
+              _recordSharedSyncError(error);
             }
             // Network and permission errors stay queued for a later retry.
           }
@@ -3970,7 +4029,7 @@ class AgendaStore extends ChangeNotifier {
       _sharedFlushRunning = false;
       await refreshPendingSharedCount(notify: false);
       if (stateChanged || pendingBefore != _pendingSharedChangeCount) {
-        notifyListeners();
+        _notifySyncChanged();
       }
     }
   }
@@ -4210,6 +4269,7 @@ class AgendaStore extends ChangeNotifier {
     }
     _unifiedRealtimeSpaceIds.clear();
     shellRevision.dispose();
+    syncRevision.dispose();
     super.dispose();
   }
 }
