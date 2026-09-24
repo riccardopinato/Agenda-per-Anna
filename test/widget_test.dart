@@ -12,7 +12,8 @@ void main() {
     );
 
     await tester.pumpWidget(AgendaApp(store: store, authGateBypass: true));
-    await tester.pumpAndSettle();
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 150));
 
     expect(find.text('Agenda per Anna'), findsOneWidget);
     store.dispose();
