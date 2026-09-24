@@ -42,7 +42,7 @@ template. `tool/prepare_android_platform.py` then applies:
 - `allowBackup=false` for private local diary data;
 - core-library desugaring;
 - Firebase Google Services when the checked-in config is present;
-- launcher/notification assets;
+- launcher/notification assets using the Android-only `tool/flutter_launcher_icons_android.yaml` config;
 - stable production signing only when `--release-signing` is requested.
 
 The script is idempotent and intentionally fails when expected Flutter template
