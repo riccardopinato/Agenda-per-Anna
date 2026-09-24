@@ -1,0 +1,42 @@
+name: v0.41 Format Helper
+
+on:
+  push:
+    branches: [v0.41-universal-identity-noi]
+    paths:
+      - ".github/workflows/v041-format-helper.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  format:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: "3.47.5"
+          channel: stable
+          cache: true
+      - name: Format v0.41 files
+        run: |
+          dart format \
+            lib/src/auth/universal_auth_gate.dart \
+            lib/cloud_sync_service.dart \
+            lib/src/screens/cloud_account.dart \
+            lib/src/screens/shared_space.dart \
+            test/v041_identity_invite_test.dart
+      - name: Upload formatted sources
+        uses: actions/upload-artifact@v4
+        with:
+          name: v041-formatted
+          path: |
+            lib/src/auth/universal_auth_gate.dart
+            lib/cloud_sync_service.dart
+            lib/src/screens/cloud_account.dart
+            lib/src/screens/shared_space.dart
+            test/v041_identity_invite_test.dart
+          if-no-files-found: error
