@@ -49,7 +49,15 @@ class HomeScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final now = DateTime.now();
     return AnimatedBuilder(
-      animation: store,
+      animation: Listenable.merge([
+        store.agendaRevision,
+        store.journalRevision,
+        store.planningRevision,
+        store.sharedRevision,
+        store.inboxRevision,
+        store.settingsRevision,
+        store.backupRevision,
+      ]),
       builder: (context, _) {
         final today = store.unifiedForDay(now);
         final upcoming = store.unifiedUpcoming(now);
@@ -680,7 +688,7 @@ class InboxScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return AnimatedBuilder(
-      animation: store,
+      animation: store.inboxRevision,
       builder: (context, _) {
         final entries = [...store.inbox]
           ..sort((a, b) {
@@ -1504,7 +1512,7 @@ class _BackupScreenState extends State<BackupScreen> {
   @override
   Widget build(BuildContext context) {
     return AnimatedBuilder(
-      animation: widget.store,
+      animation: widget.store.backupRevision,
       builder: (context, _) {
         final snapshots = widget.store.localSnapshots;
         return Scaffold(
@@ -2175,7 +2183,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   @override
   Widget build(BuildContext context) {
     return AnimatedBuilder(
-      animation: widget.store,
+      animation: widget.store.settingsRevision,
       builder: (context, _) {
         final prefs = widget.store.preferences;
         final primary = prefs.defaultPrimaryReminder ?? -1;
@@ -2871,7 +2879,11 @@ class _SharedSpaceHubScreenState extends State<SharedSpaceHubScreen> {
   Widget build(BuildContext context) {
     final cloud = CloudSyncService.instance;
     return AnimatedBuilder(
-      animation: Listenable.merge([cloud, widget.store]),
+      animation: Listenable.merge([
+        cloud,
+        widget.store.sharedRevision,
+        widget.store.accountRevision,
+      ]),
       builder: (context, _) {
         return Scaffold(
           appBar: AppBar(
@@ -4793,7 +4805,7 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
     return AnimatedBuilder(
       animation: Listenable.merge([
         CloudSyncService.instance,
-        widget.store,
+        widget.store.sharedRevision,
         widget.store.syncRevision,
       ]),
       builder: (context, _) => Scaffold(
@@ -5410,7 +5422,10 @@ class _CloudAccountScreenState extends State<CloudAccountScreen> {
     return AnimatedBuilder(
       animation: Listenable.merge([cloud, widget.store.syncRevision]),
       builder: (context, _) => AnimatedBuilder(
-        animation: widget.store,
+        animation: Listenable.merge([
+          widget.store.accountRevision,
+          widget.store.settingsRevision,
+        ]),
         builder: (context, _) {
           return Scaffold(
             appBar: AppBar(
