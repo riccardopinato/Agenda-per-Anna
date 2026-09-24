@@ -223,8 +223,12 @@ void main() {
     expect(authGate, contains('Continua con Google'));
     expect(authGate, contains('Hai già un account email/password?'));
     expect(
+      appLabWorkflow,
+      contains('--project-name agenda_per_anna --org com.riccardopinato'),
+    );
+    expect(
       androidPrepare,
-      contains('com.riccardopinato.agenda_per_anna'),
+      contains('com.riccardopinato.agendaperanna'),
     );
     expect(androidPrepare, contains('login-callback'));
   });
