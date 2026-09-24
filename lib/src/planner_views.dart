@@ -86,11 +86,47 @@ class PlannerScreen extends StatefulWidget {
 
 class _PlannerScreenState extends State<PlannerScreen> {
   late DateTime day;
+  final GlobalKey _currentTimeAnchorKey = GlobalKey();
+  String? _lastAutoScrollDayKey;
 
   @override
   void initState() {
     super.initState();
     day = widget.initialDate ?? DateTime.now();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _scrollToCurrentTime();
+    });
+  }
+
+  void _selectDay(DateTime value) {
+    setState(() => day = value);
+    _lastAutoScrollDayKey = null;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _scrollToCurrentTime(force: true);
+    });
+  }
+
+  Future<void> _scrollToCurrentTime({bool force = false}) async {
+    if (!mounted || !AgendaStore.sameDay(day, DateTime.now())) return;
+
+    final civilKey = '${day.year}-${day.month}-${day.day}';
+    if (!force && _lastAutoScrollDayKey == civilKey) return;
+
+    final anchorContext = _currentTimeAnchorKey.currentContext;
+    if (anchorContext == null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _scrollToCurrentTime(force: force);
+      });
+      return;
+    }
+
+    _lastAutoScrollDayKey = civilKey;
+    await Scrollable.ensureVisible(
+      anchorContext,
+      duration: const Duration(milliseconds: 380),
+      curve: Curves.easeOutCubic,
+      alignment: 0.30,
+    );
   }
 
   @override
@@ -133,7 +169,7 @@ class _PlannerScreenState extends State<PlannerScreen> {
             actions: [
               if (!AgendaStore.sameDay(day, DateTime.now()))
                 TextButton(
-                  onPressed: () => setState(() => day = DateTime.now()),
+                  onPressed: () => _selectDay(DateTime.now()),
                   child: const Text('Oggi'),
                 ),
               IconButton(
@@ -146,7 +182,7 @@ class _PlannerScreenState extends State<PlannerScreen> {
             children: [
               DateStrip(
                 selected: day,
-                onSelected: (d) => setState(() => day = d),
+                onSelected: _selectDay,
               ),
               Expanded(
                 child: ListView(
@@ -212,6 +248,7 @@ class _PlannerScreenState extends State<PlannerScreen> {
                       date: day,
                       events: timedPrivate,
                       store: widget.store,
+                      currentTimeAnchorKey: _currentTimeAnchorKey,
                       onChanged: () => setState(() {}),
                     ),
                     const SizedBox(height: 22),
@@ -363,6 +400,7 @@ class DayTimeline extends StatelessWidget {
   final DateTime date;
   final List<AgendaItem> events;
   final AgendaStore store;
+  final GlobalKey? currentTimeAnchorKey;
   final VoidCallback onChanged;
 
   const DayTimeline({
@@ -370,13 +408,29 @@ class DayTimeline extends StatelessWidget {
     required this.date,
     required this.events,
     required this.store,
+    this.currentTimeAnchorKey,
     required this.onChanged,
   });
 
-  static const int startHour = 6;
+  static const int startHour = 0;
   static const int endHour = 24;
   static const double hourHeight = 74;
   static const double timeColumnWidth = 54;
+
+  static double offsetForMinutes(int minutes) {
+    final lower = startHour * 60;
+    final upper = endHour * 60;
+    final clamped = minutes.clamp(lower, upper);
+    return ((clamped - lower) / 60) * hourHeight;
+  }
+
+  static int minutesForOffset(double offset) {
+    final totalHeight = (endHour - startHour) * hourHeight;
+    final clamped = offset.clamp(0.0, totalHeight);
+    final minutes =
+        startHour * 60 + ((clamped / hourHeight) * 60).round();
+    return minutes.clamp(startHour * 60, endHour * 60);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -510,7 +564,7 @@ class DayTimeline extends StatelessWidget {
 
     final endMinutes =
         _endMinutes(event).clamp(startMinutes + 15, upper);
-    final top = ((upper - endMinutes) / 60) * hourHeight;
+    final top = offsetForMinutes(startMinutes);
     final remainingHeight = max(1.0, totalHeightFromTop(top));
     final naturalHeight =
         ((endMinutes - startMinutes) / 60) * hourHeight;
@@ -659,13 +713,14 @@ class DayTimeline extends StatelessWidget {
       return const SizedBox.shrink();
     }
 
-    final top = ((upper - minutes) / 60) * hourHeight;
+    final top = offsetForMinutes(minutes);
     return Positioned(
       top: top,
       left: timeColumnWidth - 3,
       right: 0,
       child: IgnorePointer(
         child: Row(
+          key: currentTimeAnchorKey,
           children: [
             Container(
               width: 9,
@@ -691,8 +746,7 @@ class DayTimeline extends StatelessWidget {
     BuildContext context,
     double y,
   ) async {
-    var minutes =
-        endHour * 60 - ((y / hourHeight) * 60).round();
+    var minutes = minutesForOffset(y);
     minutes = ((minutes / 15).round() * 15).clamp(
       startHour * 60,
       endHour * 60 - 15,
@@ -731,44 +785,47 @@ class _TimelinePainter extends CustomPainter {
       ..color = color.withValues(alpha: 0.35)
       ..strokeWidth = 1;
 
-    for (int hour = DayTimeline.endHour;
-        hour >= DayTimeline.startHour;
-        hour--) {
-      final y = (DayTimeline.endHour - hour) * DayTimeline.hourHeight;
+    for (int hour = DayTimeline.startHour;
+        hour <= DayTimeline.endHour;
+        hour++) {
+      final y = (hour - DayTimeline.startHour) * DayTimeline.hourHeight;
       canvas.drawLine(
         Offset(DayTimeline.timeColumnWidth, y),
         Offset(size.width, y),
         fullPaint,
       );
 
-      if (hour > DayTimeline.startHour) {
+      if (hour < DayTimeline.endHour) {
         final half = y + DayTimeline.hourHeight / 2;
         canvas.drawLine(
           Offset(DayTimeline.timeColumnWidth, half),
           Offset(size.width, half),
           halfPaint,
         );
-
-        final painter = TextPainter(
-          text: TextSpan(
-            text: '${hour.toString().padLeft(2, '0')}:00',
-            style: TextStyle(
-              color: textColor,
-              fontSize: 10.5,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-          textDirection: ui.TextDirection.ltr,
-        )..layout(maxWidth: DayTimeline.timeColumnWidth - 8);
-
-        painter.paint(
-          canvas,
-          Offset(
-            DayTimeline.timeColumnWidth - painter.width - 8,
-            y + 6,
-          ),
-        );
       }
+
+      final painter = TextPainter(
+        text: TextSpan(
+          text: '${hour.toString().padLeft(2, '0')}:00',
+          style: TextStyle(
+            color: textColor,
+            fontSize: 10.5,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        textDirection: ui.TextDirection.ltr,
+      )..layout(maxWidth: DayTimeline.timeColumnWidth - 8);
+
+      final labelY = hour == DayTimeline.endHour
+          ? max(0.0, y - painter.height - 5)
+          : y + 6;
+      painter.paint(
+        canvas,
+        Offset(
+          DayTimeline.timeColumnWidth - painter.width - 8,
+          labelY,
+        ),
+      );
     }
   }
 
