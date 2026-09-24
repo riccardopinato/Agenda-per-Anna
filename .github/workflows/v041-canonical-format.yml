@@ -1,0 +1,49 @@
+name: v0.41 Canonical Format
+
+on:
+  push:
+    branches: [v0.41-universal-identity-noi]
+    paths:
+      - ".github/workflows/v041-canonical-format.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  format:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: "3.47.5"
+          channel: stable
+          cache: true
+      - name: Resolve locked package language versions
+        run: flutter pub get --enforce-lockfile
+      - name: Canonical Dart format
+        run: |
+          dart format \
+            lib/src/auth/universal_auth_gate.dart \
+            lib/cloud_sync_service.dart \
+            lib/src/screens/cloud_account.dart \
+            lib/src/screens/shared_space.dart \
+            test/v041_identity_invite_test.dart
+      - name: Commit canonical formatting
+        run: |
+          if git diff --quiet; then
+            echo "Already canonically formatted."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add \
+            lib/src/auth/universal_auth_gate.dart \
+            lib/cloud_sync_service.dart \
+            lib/src/screens/cloud_account.dart \
+            lib/src/screens/shared_space.dart \
+            test/v041_identity_invite_test.dart
+          git commit -m "style(v0.41): canonical Dart format"
+          git push origin HEAD:v0.41-universal-identity-noi
