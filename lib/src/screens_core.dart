@@ -3991,8 +3991,10 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
     try {
       final fullBytes = await _pickCompressedDiaryImageBytes(
         source,
-        maxSide: 1280,
-        quality: 70,
+        maxSide: 1920,
+        quality: 84,
+        fallbackMaxSide: 1440,
+        fallbackQuality: 78,
       );
       if (fullBytes == null || !mounted) return;
 
