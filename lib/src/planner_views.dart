@@ -15,7 +15,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
   @override
   Widget build(BuildContext context) {
     return AnimatedBuilder(
-      animation: widget.store,
+      animation: Listenable.merge([widget.store.agendaRevision, widget.store.sharedRevision]),
       builder: (context, _) {
         final events = widget.store.unifiedForDay(selected);
         return Scaffold(
@@ -96,7 +96,7 @@ class _PlannerScreenState extends State<PlannerScreen> {
   @override
   Widget build(BuildContext context) {
     return AnimatedBuilder(
-      animation: widget.store,
+      animation: Listenable.merge([widget.store.agendaRevision, widget.store.sharedRevision, widget.store.journalRevision, widget.store.planningRevision]),
       builder: (context, _) {
         final events = widget.store.unifiedForDay(day);
         final tasks = events.where((e) => e.type == ItemType.task).toList();
@@ -792,7 +792,7 @@ class _WeekScreenState extends State<WeekScreen> {
   @override
   Widget build(BuildContext context) {
     return AnimatedBuilder(
-      animation: widget.store,
+      animation: Listenable.merge([widget.store.agendaRevision, widget.store.sharedRevision, widget.store.journalRevision, widget.store.planningRevision]),
       builder: (context, _) {
         final data = widget.store.week(start);
         final end = addCivilDays(start, 6);
@@ -1303,7 +1303,7 @@ class _MonthScreenState extends State<MonthScreen> {
   @override
   Widget build(BuildContext context) {
     return AnimatedBuilder(
-      animation: widget.store,
+      animation: Listenable.merge([widget.store.agendaRevision, widget.store.sharedRevision, widget.store.planningRevision]),
       builder: (context, _) {
         final data = widget.store.month(selected.year, selected.month);
         final spent = data.expenses.fold<int>(0, (a, b) => a + b.cents);
@@ -1795,7 +1795,7 @@ class _YearScreenState extends State<YearScreen> {
   @override
   Widget build(BuildContext context) {
     return AnimatedBuilder(
-      animation: widget.store,
+      animation: Listenable.merge([widget.store.journalRevision, widget.store.planningRevision]),
       builder: (context, _) {
         int expenses = 0;
         int goals = 0;
