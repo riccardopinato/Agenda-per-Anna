@@ -130,7 +130,7 @@ def configure_manifest() -> None:
                       android:host="login-callback" />
               </intent-filter>
 """
-    if "com.riccardopinato.agenda_per_anna" not in manifest:
+    if "com.riccardopinato.agendaperanna" not in manifest:
         activity_end = manifest.find("</activity>")
         if activity_end < 0:
             raise SystemExit("Flutter template drift: </activity> not found")
@@ -322,7 +322,7 @@ def verify() -> None:
         failures.append("FlutterFragmentActivity")
     if 'android:allowBackup="false"' not in manifest:
         failures.append("allowBackup=false")
-    if "com.riccardopinato.agenda_per_anna" not in manifest:
+    if "com.riccardopinato.agendaperanna" not in manifest:
         failures.append("auth deep link")
     if "ScheduledNotificationReceiver" not in manifest:
         failures.append("notification receiver")
