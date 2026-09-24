@@ -1,0 +1,81 @@
+name: Build lightweight ARM64 sideload APK
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - ".sideload-trigger"
+      - ".github/workflows/sideload-arm64.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: annas-diary-arm64-sideload
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: "3.47.5"
+          channel: stable
+          cache: true
+
+      - name: Generate pinned Android platform
+        run: |
+          rm -rf android /tmp/agenda_android
+          flutter create --project-name agenda_per_anna --org com.riccardopinato --platforms=android /tmp/agenda_android
+          cp -R /tmp/agenda_android/android .
+
+      - name: Apply Android configuration
+        run: python3 tool/prepare_android_platform.py
+
+      - name: Install locked dependencies
+        run: flutter pub get --enforce-lockfile
+
+      - name: Generate launcher icons
+        run: dart run flutter_launcher_icons -f tool/flutter_launcher_icons_android.yaml
+
+      - name: Build lightweight ARM64 release APK
+        shell: bash
+        run: |
+          set -euo pipefail
+          FIREBASE_ARG=""
+          if [ -f android/app/google-services.json ]; then
+            FIREBASE_ARG="--dart-define=FIREBASE_ENABLED=true"
+          fi
+
+          flutter build apk \
+            --release \
+            --split-per-abi \
+            --tree-shake-icons \
+            $FIREBASE_ARG
+
+      - name: Prepare direct-install APK
+        shell: bash
+        run: |
+          set -euo pipefail
+          VERSION=$(awk '/^version:/ {print $2; exit}' pubspec.yaml)
+          SAFE_VERSION=$(printf '%s' "$VERSION" | tr '+' '-')
+          mkdir -p build/direct-apk
+          cp build/app/outputs/flutter-apk/app-arm64-v8a-release.apk \
+             "build/direct-apk/Anna-Diary-v\${SAFE_VERSION}-arm64-release.apk"
+          ls -lh build/direct-apk/*.apk
+
+      - name: Upload lightweight ARM64 APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: annas-diary-light-arm64
+          path: build/direct-apk/*.apk
+          if-no-files-found: error
+          retention-days: 30
