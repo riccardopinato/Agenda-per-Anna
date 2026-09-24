@@ -1,0 +1,34 @@
+name: v0.40 Format Helper
+
+on:
+  push:
+    branches: [v0.40-architecture-fluidity]
+    paths:
+      - ".github/workflows/v040-format-helper.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  format:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: "3.47.5"
+          channel: stable
+          cache: true
+      - name: Format v0.40 files
+        run: |
+          dart format             lib/src/store_signals.dart             test/v040_persistence_torture_test.dart
+      - name: Upload formatted sources
+        uses: actions/upload-artifact@v4
+        with:
+          name: v040-formatted
+          path: |
+            lib/src/store_signals.dart
+            test/v040_persistence_torture_test.dart
+          if-no-files-found: error
