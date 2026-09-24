@@ -334,6 +334,42 @@ class SharedMediaMaintenanceReport {
   });
 }
 
+class SpaceInviteDetails {
+  final String code;
+  final DateTime expiresAt;
+  final DateTime createdAt;
+  final int usesCount;
+
+  const SpaceInviteDetails({
+    required this.code,
+    required this.expiresAt,
+    required this.createdAt,
+    required this.usesCount,
+  });
+
+  bool get expired => !expiresAt.isAfter(DateTime.now());
+
+  Map<String, dynamic> toJson() => {
+        'code': code,
+        'expires_at': expiresAt.toUtc().toIso8601String(),
+        'created_at': createdAt.toUtc().toIso8601String(),
+        'uses_count': usesCount,
+      };
+
+  factory SpaceInviteDetails.fromJson(Map<String, dynamic> json) {
+    return SpaceInviteDetails(
+      code: json['code']?.toString().toUpperCase() ?? '',
+      expiresAt: DateTime.tryParse(json['expires_at']?.toString() ?? '')
+              ?.toLocal() ??
+          DateTime.fromMillisecondsSinceEpoch(0),
+      createdAt: DateTime.tryParse(json['created_at']?.toString() ?? '')
+              ?.toLocal() ??
+          DateTime.now(),
+      usesCount: (json['uses_count'] as num?)?.toInt() ?? 0,
+    );
+  }
+}
+
 class CloudSyncService extends ChangeNotifier {
   CloudSyncService._();
 
@@ -348,7 +384,9 @@ class CloudSyncService extends ChangeNotifier {
     defaultValue: 'sb_publishable_RWgJneLG9V-pu2IcsDRQCg_G14_kqS7',
   );
   static const String _productionWebUrl =
-      'https://agenda-per-anna-production.up.railway.app/';
+      'https://riccardopinato.github.io/Agenda-per-Anna/';
+  static const String _mobileAuthRedirectUrl =
+      'io.supabase.annasdiary://login-callback/';
 
   String get _emailRedirectUrl {
     if (kIsWeb) {
@@ -410,6 +448,12 @@ class CloudSyncService extends ChangeNotifier {
   User? get user => _client?.auth.currentUser;
   String? get userId => user?.id;
   String? get email => user?.email;
+  String? get displayName =>
+      user?.userMetadata?['full_name']?.toString() ??
+      user?.userMetadata?['name']?.toString();
+  String? get avatarUrl =>
+      user?.userMetadata?['avatar_url']?.toString() ??
+      user?.userMetadata?['picture']?.toString();
   bool get signedIn => user != null;
   bool get passwordRecoveryPending => _passwordRecoveryPending;
 
@@ -467,6 +511,29 @@ class CloudSyncService extends ChangeNotifier {
     }
 
     notifyListeners();
+  }
+
+  Future<void> signInWithGoogle() async {
+    final client = _requireClient();
+    _state = CloudConnectionState.initializing;
+    _lastError = null;
+    notifyListeners();
+
+    try {
+      final started = await client.auth.signInWithOAuth(
+        OAuthProvider.google,
+        redirectTo: kIsWeb ? _productionWebUrl : _mobileAuthRedirectUrl,
+        scopes: 'openid email profile',
+      );
+      if (!started) {
+        throw const AuthException('Google sign-in could not be started.');
+      }
+    } catch (error) {
+      _state = CloudConnectionState.error;
+      _lastError = error.toString();
+      notifyListeners();
+      rethrow;
+    }
   }
 
   Future<void> signIn({
@@ -765,13 +832,34 @@ class CloudSyncService extends ChangeNotifier {
     return result.toString();
   }
 
-  Future<String> createSpaceInvite(String spaceId) async {
+  Future<SpaceInviteDetails> createOrGetSpaceInvite(
+    String spaceId,
+  ) async {
     final client = _requireSignedInClient();
     final result = await client.rpc(
-      'create_space_invite',
+      'create_or_get_space_invite',
       params: {'p_space_id': spaceId},
     );
-    return result.toString().toUpperCase();
+    return SpaceInviteDetails.fromJson(
+      Map<String, dynamic>.from(result as Map),
+    );
+  }
+
+  Future<SpaceInviteDetails> regenerateSpaceInvite(
+    String spaceId,
+  ) async {
+    final client = _requireSignedInClient();
+    final result = await client.rpc(
+      'regenerate_space_invite',
+      params: {'p_space_id': spaceId},
+    );
+    return SpaceInviteDetails.fromJson(
+      Map<String, dynamic>.from(result as Map),
+    );
+  }
+
+  Future<String> createSpaceInvite(String spaceId) async {
+    return (await createOrGetSpaceInvite(spaceId)).code;
   }
 
   Future<String> joinSharedSpace(String code) async {
