@@ -32,6 +32,7 @@ part 'src/store_signals.dart';
 part 'src/store/backup_domain.dart';
 part 'src/agenda_store.dart';
 part 'src/unified_agenda.dart';
+part 'src/screens/universal_identity.dart';
 part 'src/screens/home_inbox_search.dart';
 part 'src/screens/backup_settings.dart';
 part 'src/screens/shared_space.dart';

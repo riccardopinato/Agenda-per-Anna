@@ -16,7 +16,6 @@ class _CloudAccountScreenState extends State<CloudAccountScreen> {
   final emailController = TextEditingController();
   final passwordController = TextEditingController();
   bool busy = false;
-  bool createMode = false;
 
   @override
   void dispose() {
@@ -46,39 +45,35 @@ class _CloudAccountScreenState extends State<CloudAccountScreen> {
   Future<void> _submit() async {
     final email = emailController.text.trim();
     final password = passwordController.text;
-    final minimumPasswordLength = createMode ? 8 : 6;
-    if (email.isEmpty || password.length < minimumPasswordLength) {
-      _message(
-        createMode
-            ? 'Inserisci email e una password di almeno 8 caratteri.'
-            : 'Inserisci email e password.',
-      );
+    if (email.isEmpty || password.length < 6) {
+      _message('Inserisci email e password.');
       return;
     }
 
     setState(() => busy = true);
     try {
       final cloud = CloudSyncService.instance;
-      if (createMode) {
-        await cloud.signUp(email: email, password: password);
-        if (!cloud.signedIn) {
-          _message(
-            'Account creato. Controlla la tua email per confermare l’accesso.',
-          );
-          return;
-        }
-      } else {
-        await cloud.signIn(email: email, password: password);
-      }
-
+      await cloud.signIn(email: email, password: password);
       await widget.store.activateCloudAccount(cloud.userId);
       await widget.store.syncAllCloud(preferRemoteOnFirstSync: true);
       await PushNotificationService.instance.registerCurrentToken();
       _message('Account connesso e sincronizzato.');
+      if (mounted) {
+        Navigator.of(context).popUntil((route) => route.isFirst);
+      }
     } catch (_) {
-      _message(
-        CloudSyncService.instance.userFacingError,
-      );
+      _message(CloudSyncService.instance.userFacingError);
+    } finally {
+      if (mounted) setState(() => busy = false);
+    }
+  }
+
+  Future<void> _google() async {
+    setState(() => busy = true);
+    try {
+      await CloudSyncService.instance.signInWithGoogle();
+    } catch (_) {
+      _message(CloudSyncService.instance.userFacingError);
     } finally {
       if (mounted) setState(() => busy = false);
     }
@@ -245,14 +240,35 @@ class _CloudAccountScreenState extends State<CloudAccountScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
-                          createMode ? 'Crea account' : 'Accedi',
-                          style: const TextStyle(
+                        const Text(
+                          'Accedi al tuo account',
+                          style: TextStyle(
                             fontWeight: FontWeight.w900,
                             fontSize: 18,
                           ),
                         ),
-                        const SizedBox(height: 12),
+                        const SizedBox(height: 8),
+                        const Text(
+                          'Google è l’accesso principale di Anna\'s Diary. '
+                          'Il login email/password resta solo per gli account creati nelle versioni precedenti.',
+                        ),
+                        const SizedBox(height: 14),
+                        SizedBox(
+                          width: double.infinity,
+                          child: FilledButton.icon(
+                            onPressed: busy ? null : _google,
+                            icon: const Icon(Icons.login),
+                            label: const Text('Continua con Google'),
+                          ),
+                        ),
+                        const SizedBox(height: 18),
+                        const Divider(),
+                        const SizedBox(height: 8),
+                        const Text(
+                          'Account email esistente',
+                          style: TextStyle(fontWeight: FontWeight.w800),
+                        ),
+                        const SizedBox(height: 10),
                         TextField(
                           controller: emailController,
                           keyboardType: TextInputType.emailAddress,
@@ -266,9 +282,7 @@ class _CloudAccountScreenState extends State<CloudAccountScreen> {
                         TextField(
                           controller: passwordController,
                           obscureText: true,
-                          autofillHints: createMode
-                              ? const [AutofillHints.newPassword]
-                              : const [AutofillHints.password],
+                          autofillHints: const [AutofillHints.password],
                           onSubmitted: (_) => busy ? null : _submit(),
                           decoration: const InputDecoration(
                             labelText: 'Password',
@@ -278,39 +292,17 @@ class _CloudAccountScreenState extends State<CloudAccountScreen> {
                         const SizedBox(height: 12),
                         SizedBox(
                           width: double.infinity,
-                          child: FilledButton.icon(
+                          child: OutlinedButton.icon(
                             onPressed: busy ? null : _submit,
-                            icon: Icon(
-                              createMode
-                                  ? Icons.person_add_outlined
-                                  : Icons.login,
-                            ),
-                            label: Text(
-                              createMode ? 'Crea account' : 'Accedi',
-                            ),
+                            icon: const Icon(Icons.login),
+                            label: const Text('Accedi con account esistente'),
                           ),
                         ),
-                        const SizedBox(height: 6),
-                        if (!createMode)
-                          Center(
-                            child: TextButton.icon(
-                              onPressed: busy ? null : _forgotPassword,
-                              icon: const Icon(Icons.lock_reset_outlined),
-                              label: const Text('Password dimenticata?'),
-                            ),
-                          ),
                         Center(
-                          child: TextButton(
-                            onPressed: busy
-                                ? null
-                                : () => setState(
-                                      () => createMode = !createMode,
-                                    ),
-                            child: Text(
-                              createMode
-                                  ? 'Ho già un account'
-                                  : 'Crea un nuovo account',
-                            ),
+                          child: TextButton.icon(
+                            onPressed: busy ? null : _forgotPassword,
+                            icon: const Icon(Icons.lock_reset_outlined),
+                            label: const Text('Password dimenticata?'),
                           ),
                         ),
                       ],
@@ -331,14 +323,28 @@ class _CloudAccountScreenState extends State<CloudAccountScreen> {
                         const SizedBox(height: 10),
                         ListTile(
                           contentPadding: EdgeInsets.zero,
-                          leading: const CircleAvatar(
-                            child: Icon(Icons.person_outline),
+                          leading: CircleAvatar(
+                            backgroundImage: cloud.avatarUrl == null
+                                ? null
+                                : NetworkImage(cloud.avatarUrl!),
+                            child: cloud.avatarUrl == null
+                                ? const Icon(Icons.person_outline)
+                                : null,
                           ),
-                          title: Text(cloud.email ?? 'Account'),
+                          title: Text(
+                            cloud.displayName?.trim().isNotEmpty == true
+                                ? cloud.displayName!
+                                : (cloud.email ?? 'Account'),
+                          ),
                           subtitle: Text(
-                            cloud.lastSyncAt == null
-                                ? 'Nessuna sincronizzazione completata'
-                                : 'Ultimo sync: ${DateFormat('d MMM, HH:mm', 'it_IT').format(cloud.lastSyncAt!)}',
+                            [
+                              if (cloud.displayName?.trim().isNotEmpty == true &&
+                                  cloud.email != null)
+                                cloud.email!,
+                              cloud.lastSyncAt == null
+                                  ? 'Nessuna sincronizzazione completata'
+                                  : 'Ultimo sync: ${DateFormat('d MMM, HH:mm', 'it_IT').format(cloud.lastSyncAt!)}',
+                            ].join('\n'),
                           ),
                         ),
                         const Divider(),

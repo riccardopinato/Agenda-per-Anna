@@ -1,5 +1,5 @@
 name: AppLab Production Gate
-# AppLab reusable hardening baseline: 7f0493d6
+# AppLab pinned verifier: a871a1c1 (v0.6.6)
 
 on:
   pull_request:
@@ -15,7 +15,7 @@ concurrency:
 
 jobs:
   applab:
-    uses: riccardopinato/AppLab/.github/workflows/external-project-runner.yml@main
+    uses: riccardopinato/AppLab/.github/workflows/external-project-runner.yml@a871a1c1e0ab8339c48bc8ee53ee4cc34d634d34
     with:
       repository: riccardopinato/Agenda-per-Anna
       ref: ${{ github.event.pull_request.head.sha || github.sha }}
@@ -37,7 +37,7 @@ jobs:
       build_command: >-
         FIREBASE_ARG="";
         if [ -f android/app/google-services.json ]; then FIREBASE_ARG="--dart-define=FIREBASE_ENABLED=true"; fi;
-        flutter build apk --release --split-per-abi --tree-shake-icons $FIREBASE_ARG
+        flutter build apk --release --split-per-abi --tree-shake-icons --dart-define=ANNAS_DIARY_INTEGRATION_TEST=true $FIREBASE_ARG
       run_flutter_tests: true
       run_maestro: true
       maestro_flow: .maestro/applab-smoke.yaml

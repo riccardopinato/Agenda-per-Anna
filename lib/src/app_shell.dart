@@ -2,7 +2,13 @@ part of '../main.dart';
 
 class AgendaApp extends StatelessWidget {
   final AgendaStore store;
-  const AgendaApp({super.key, required this.store});
+  final bool bypassIdentityForTesting;
+
+  const AgendaApp({
+    super.key,
+    required this.store,
+    this.bypassIdentityForTesting = false,
+  });
 
   static final Map<String, ThemeData> _themeCache = {};
 
@@ -67,7 +73,10 @@ class AgendaApp extends StatelessWidget {
               child: child ?? const SizedBox.shrink(),
             ),
           ),
-          home: AgendaRoot(store: store),
+          home: AgendaRoot(
+            store: store,
+            bypassIdentityForTesting: bypassIdentityForTesting,
+          ),
         );
       },
     );
@@ -76,22 +85,62 @@ class AgendaApp extends StatelessWidget {
 
 class AgendaRoot extends StatelessWidget {
   final AgendaStore store;
+  final bool bypassIdentityForTesting;
 
-  const AgendaRoot({super.key, required this.store});
+  const AgendaRoot({
+    super.key,
+    required this.store,
+    this.bypassIdentityForTesting = false,
+  });
 
   @override
   Widget build(BuildContext context) {
-    if (!store.accountScopeResolved) {
-      return const Scaffold(
-        body: Center(
-          child: CircularProgressIndicator(),
-        ),
-      );
-    }
-    if (!store.preferences.onboardingDone) {
-      return _OnboardingScreen(store: store);
-    }
-    return MainShell(store: store);
+    const integrationTest =
+        bool.fromEnvironment('ANNAS_DIARY_INTEGRATION_TEST');
+    final bypassIdentity =
+        integrationTest || bypassIdentityForTesting;
+
+    return AnimatedBuilder(
+      animation: Listenable.merge([
+        CloudSyncService.instance,
+        store.accountRevision,
+      ]),
+      builder: (context, _) {
+        final cloud = CloudSyncService.instance;
+
+        if (!bypassIdentity) {
+          if (!cloud.initialized &&
+              cloud.state != CloudConnectionState.error) {
+            return const Scaffold(
+              body: Center(child: CircularProgressIndicator()),
+            );
+          }
+
+          if (!cloud.signedIn) {
+            return UniversalIdentityScreen(store: store);
+          }
+
+          final userId = cloud.userId;
+          if (userId != null &&
+              (!store.accountScopeResolved ||
+                  store.activeAccountId != userId)) {
+            return _AccountBindingScreen(
+              store: store,
+              userId: userId,
+            );
+          }
+        } else if (!store.accountScopeResolved) {
+          return const Scaffold(
+            body: Center(child: CircularProgressIndicator()),
+          );
+        }
+
+        if (!store.preferences.onboardingDone) {
+          return _OnboardingScreen(store: store);
+        }
+        return MainShell(store: store);
+      },
+    );
   }
 }
 
@@ -136,7 +185,7 @@ class _OnboardingScreen extends StatelessWidget {
               const SizedBox(height: 12),
               Text(
                 'Appuntamenti, diario, abitudini, idee e ricordi in un unico posto. '
-                'L’app salva prima sul dispositivo; cloud e condivisione si attivano solo quando li scegli.',
+                'L’app salva prima sul dispositivo e usa il tuo account per sincronizzare automaticamente agenda e Noi ♡.',
                 style: Theme.of(context).textTheme.bodyLarge,
               ),
               const SizedBox(height: 24),
