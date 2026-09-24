@@ -222,43 +222,32 @@ class _SharedSpaceHubScreenState extends State<SharedSpaceHubScreen> {
           body: !cloud.signedIn
               ? Center(
                   child: Padding(
-                    padding: const EdgeInsets.all(24),
-                    child: ConstrainedBox(
-                      constraints: const BoxConstraints(maxWidth: 430),
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          const Icon(Icons.favorite_outline, size: 60),
-                          const SizedBox(height: 16),
-                          const Text(
-                            'Uno spazio solo per voi',
-                            textAlign: TextAlign.center,
-                            style: TextStyle(
-                              fontSize: 25,
-                              fontWeight: FontWeight.w900,
-                            ),
+                    padding: const EdgeInsets.all(28),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(Icons.person_off_outlined, size: 50),
+                        const SizedBox(height: 12),
+                        const Text(
+                          'Sessione account scaduta',
+                          style: TextStyle(
+                            fontSize: 21,
+                            fontWeight: FontWeight.w900,
                           ),
-                          const SizedBox(height: 8),
-                          const Text(
-                            'Accedi al cloud per creare o raggiungere uno spazio condiviso. '
-                            'La tua agenda personale resterà separata.',
-                            textAlign: TextAlign.center,
-                          ),
-                          const SizedBox(height: 18),
-                          FilledButton.icon(
-                            onPressed: () => Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (_) => CloudAccountScreen(
-                                  store: widget.store,
-                                ),
-                              ),
-                            ),
-                            icon: const Icon(Icons.cloud_outlined),
-                            label: const Text('Account e sincronizzazione'),
-                          ),
-                        ],
-                      ),
+                        ),
+                        const SizedBox(height: 8),
+                        const Text(
+                          'Noi ♡ usa automaticamente l’account generale di Anna\'s Diary. '
+                          'Non esiste più un login separato qui.',
+                          textAlign: TextAlign.center,
+                        ),
+                        const SizedBox(height: 14),
+                        FilledButton(
+                          onPressed: () => Navigator.of(context)
+                              .popUntil((route) => route.isFirst),
+                          child: const Text('Torna all’accesso'),
+                        ),
+                      ],
                     ),
                   ),
                 )
@@ -1682,43 +1671,105 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
   }
 
   Future<void> _invite() async {
+    final prefs = await widget.store._localState();
+    final owner = CloudSyncService.instance.userId ?? 'unknown';
+    final cacheKey = 'shared_invite_v2_${owner}_${widget.space.id}';
+
+    SpaceInviteDetails? invite;
+    final cachedRaw = prefs.getString(cacheKey);
+    if (cachedRaw != null) {
+      try {
+        final cached = SpaceInviteDetails.fromJson(
+          Map<String, dynamic>.from(jsonDecode(cachedRaw) as Map),
+        );
+        if (!cached.expired) invite = cached;
+      } catch (_) {}
+    }
+
     try {
-      final code =
-          await CloudSyncService.instance.createSpaceInvite(widget.space.id);
-      if (!mounted) return;
-      await showDialog<void>(
-        context: context,
-        builder: (dialogContext) => AlertDialog(
-          title: const Text('Codice per collegarsi'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Text(
-                'Condividi questo codice con la persona che vuoi invitare. '
-                'È valido per 24 ore e può essere usato una sola volta.',
-              ),
-              const SizedBox(height: 18),
-              SelectableText(
-                code,
-                style: const TextStyle(
-                  fontSize: 30,
-                  fontWeight: FontWeight.w900,
-                  letterSpacing: 3,
+      invite = await CloudSyncService.instance
+          .createOrGetSpaceInvite(widget.space.id);
+      await prefs.setString(cacheKey, jsonEncode(invite.toJson()));
+    } catch (_) {
+      if (invite == null) {
+        _message('Non è stato possibile recuperare il codice invito.');
+        return;
+      }
+    }
+
+    if (!mounted || invite == null) return;
+    var current = invite;
+
+    await showDialog<void>(
+      context: context,
+      builder: (dialogContext) => StatefulBuilder(
+        builder: (dialogContext, setDialogState) {
+          final remaining = current.expiresAt.difference(DateTime.now());
+          final hours = remaining.inHours.clamp(0, 24);
+          final minutes = (remaining.inMinutes % 60).clamp(0, 59);
+
+          return AlertDialog(
+            title: const Text('Codice per collegarsi'),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Text(
+                  'Questo codice resta invariato per 24 ore, anche se chiudi '
+                  'l’app, e può essere usato da più persone finché è valido.',
                 ),
+                const SizedBox(height: 18),
+                SelectableText(
+                  current.code,
+                  style: const TextStyle(
+                    fontSize: 30,
+                    fontWeight: FontWeight.w900,
+                    letterSpacing: 3,
+                  ),
+                ),
+                const SizedBox(height: 10),
+                Text(
+                  'Scade tra ${hours}h ${minutes}m · '
+                  '${current.usesCount} utilizzi',
+                  style: const TextStyle(fontWeight: FontWeight.w700),
+                ),
+                const SizedBox(height: 12),
+                TextButton.icon(
+                  onPressed: () async {
+                    try {
+                      final next = await CloudSyncService.instance
+                          .regenerateSpaceInvite(widget.space.id);
+                      await prefs.setString(
+                        cacheKey,
+                        jsonEncode(next.toJson()),
+                      );
+                      setDialogState(() => current = next);
+                    } catch (_) {
+                      if (dialogContext.mounted) {
+                        ScaffoldMessenger.of(dialogContext).showSnackBar(
+                          const SnackBar(
+                            content: Text(
+                              'Non è stato possibile generare un nuovo codice.',
+                            ),
+                          ),
+                        );
+                      }
+                    }
+                  },
+                  icon: const Icon(Icons.refresh),
+                  label: const Text('Genera nuovo codice'),
+                ),
+              ],
+            ),
+            actions: [
+              FilledButton(
+                onPressed: () => Navigator.pop(dialogContext),
+                child: const Text('Chiudi'),
               ),
             ],
-          ),
-          actions: [
-            FilledButton(
-              onPressed: () => Navigator.pop(dialogContext),
-              child: const Text('Chiudi'),
-            ),
-          ],
-        ),
-      );
-    } catch (_) {
-      _message('Non è stato possibile creare il codice invito.');
-    }
+          );
+        },
+      ),
+    );
   }
 
   Future<void> _leaveOrDelete() async {
