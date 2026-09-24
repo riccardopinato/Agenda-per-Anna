@@ -173,3 +173,13 @@ The private journal and Noi ♡ no longer maintain independent diary presentatio
 - Release binaries are obfuscated with split debug symbols preserved for symbolication.
 - `tool/android_size_report.py` reports total compressed APK bytes, grouped compressed/uncompressed payload and the largest archive entries without requiring Android SDK analysis tools.
 - A dedicated pull-request size audit builds the ARM64 release path with production-equivalent compiler flags but uploads only the text report, never an audit-signed APK.
+
+
+## v0.38.0 — Release, APK Size & Platform Hardening
+
+- Platform folders remain generated rather than committed, but Android customization is now a versioned deterministic transformation in `tool/prepare_android_platform.py`.
+- The transformation verifies Flutter template anchors for MainActivity, manifest, Gradle/desugaring and signing. Unexpected template changes fail CI/release instead of silently producing a partially configured app.
+- Development CI exercises the generated Android platform on every pull request/main push with an Android debug build in addition to the existing analyzer, tests and Web release gate.
+- Production Android release generation is isolated from Web/iOS skeleton creation and requires a stable secret-backed keystore. Signing values remain in environment variables and are not serialized into repository files or artifacts.
+- Distribution distinguishes ARM64 sideload, AAB, universal compatibility and legacy ABI artifacts. Release packages use tree shaking, Dart obfuscation and retained split-debug-info symbols.
+- APK size is measured from the actual ZIP structure through a deterministic report grouped by native libraries, Dart/Flutter assets, DEX, Android resources and metadata, with the largest archive entries listed for follow-up optimization.
