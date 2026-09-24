@@ -48,9 +48,13 @@ jobs:
       - name: Generate launcher icons
         run: dart run flutter_launcher_icons -f tool/flutter_launcher_icons_android.yaml
 
-      - name: Format v0.40 modules
+      - name: Format production modules
         run: |
-          dart format --output=none --set-exit-if-changed             lib/src/store_signals.dart             test/v040_persistence_torture_test.dart
+          dart format --output=none --set-exit-if-changed \
+            lib/private_vault_service.dart \
+            lib/src/screens/private_vault.dart \
+            lib/src/screens/home_inbox_search.dart \
+            test/v042_private_vault_test.dart
 
       - name: Analyze
         run: flutter analyze
