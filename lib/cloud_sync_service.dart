@@ -123,6 +123,33 @@ class SharedSpace {
       );
 }
 
+class SpaceInvite {
+  final String code;
+  final DateTime expiresAt;
+  final bool reused;
+
+  const SpaceInvite({
+    required this.code,
+    required this.expiresAt,
+    required this.reused,
+  });
+
+  Duration remaining([DateTime? now]) {
+    final value = expiresAt.difference((now ?? DateTime.now()).toUtc());
+    return value.isNegative ? Duration.zero : value;
+  }
+
+  bool get expired => !expiresAt.isAfter(DateTime.now().toUtc());
+
+  factory SpaceInvite.fromJson(Map<String, dynamic> json) => SpaceInvite(
+        code: (json['code'] ?? '').toString().toUpperCase(),
+        expiresAt:
+            DateTime.tryParse((json['expires_at'] ?? '').toString())?.toUtc() ??
+                DateTime.fromMillisecondsSinceEpoch(0, isUtc: true),
+        reused: json['reused'] as bool? ?? false,
+      );
+}
+
 class SharedSpaceRecord {
   final String recordKey;
   final String spaceId;
@@ -348,14 +375,16 @@ class CloudSyncService extends ChangeNotifier {
     defaultValue: 'sb_publishable_RWgJneLG9V-pu2IcsDRQCg_G14_kqS7',
   );
   static const String _productionWebUrl =
-      'https://agenda-per-anna-production.up.railway.app/';
+      'https://riccardopinato.github.io/Agenda-per-Anna/';
+  static const String _mobileAuthRedirectUrl =
+      'com.riccardopinato.agenda_per_anna://login-callback/';
 
   String get _emailRedirectUrl {
     if (kIsWeb) {
       final base = Uri.base;
       if ((base.scheme == 'https' || base.scheme == 'http') &&
           base.host.isNotEmpty) {
-        return base.replace(path: '/', query: null, fragment: null).toString();
+        return base.replace(query: null, fragment: null).toString();
       }
     }
     return _productionWebUrl;
@@ -390,6 +419,12 @@ class CloudSyncService extends ChangeNotifier {
     if (raw.contains('user already registered')) {
       return 'Esiste già un account con questa email.';
     }
+    if (raw.contains('provider') && raw.contains('not enabled')) {
+      return 'Accesso Google non ancora configurato sul server.';
+    }
+    if (raw.contains('oauth') || raw.contains('redirect')) {
+      return 'Accesso Google non completato. Riprova.';
+    }
     if (raw.contains('weak password') || raw.contains('password should be')) {
       return 'Scegli una password più lunga e difficile da indovinare.';
     }
@@ -412,6 +447,22 @@ class CloudSyncService extends ChangeNotifier {
   String? get email => user?.email;
   bool get signedIn => user != null;
   bool get passwordRecoveryPending => _passwordRecoveryPending;
+  String get authRedirectUrl => kIsWeb ? _emailRedirectUrl : _mobileAuthRedirectUrl;
+  String get displayName {
+    final metadata = user?.userMetadata;
+    final raw = metadata?['full_name'] ?? metadata?['name'];
+    final value = raw?.toString().trim() ?? '';
+    if (value.isNotEmpty) return value;
+    final mail = email ?? '';
+    return mail.contains('@') ? mail.split('@').first : 'Account';
+  }
+
+  String? get avatarUrl {
+    final metadata = user?.userMetadata;
+    final raw = metadata?['avatar_url'] ?? metadata?['picture'];
+    final value = raw?.toString().trim() ?? '';
+    return value.isEmpty ? null : value;
+  }
 
   Future<void> initialize() async {
     if (_initialized || _initializing) return;
@@ -467,6 +518,32 @@ class CloudSyncService extends ChangeNotifier {
     }
 
     notifyListeners();
+  }
+
+  Future<void> signInWithGoogle() async {
+    final client = _requireClient();
+    _state = CloudConnectionState.initializing;
+    _lastError = null;
+    notifyListeners();
+
+    try {
+      await client.auth.signInWithOAuth(
+        OAuthProvider.google,
+        redirectTo: authRedirectUrl,
+        scopes: 'openid email profile',
+      );
+      if (signedIn) {
+        _state = CloudConnectionState.synced;
+      } else {
+        _state = CloudConnectionState.signedOut;
+      }
+    } catch (error) {
+      _state = CloudConnectionState.error;
+      _lastError = error.toString();
+      rethrow;
+    } finally {
+      notifyListeners();
+    }
   }
 
   Future<void> signIn({
@@ -765,13 +842,33 @@ class CloudSyncService extends ChangeNotifier {
     return result.toString();
   }
 
-  Future<String> createSpaceInvite(String spaceId) async {
+  Future<SpaceInvite> getOrCreateSpaceInvite(
+    String spaceId, {
+    bool forceNew = false,
+  }) async {
     final client = _requireSignedInClient();
     final result = await client.rpc(
-      'create_space_invite',
-      params: {'p_space_id': spaceId},
+      'get_or_create_space_invite',
+      params: {
+        'p_space_id': spaceId,
+        'p_force_new': forceNew,
+      },
     );
-    return result.toString().toUpperCase();
+    if (result is Map) {
+      return SpaceInvite.fromJson(Map<String, dynamic>.from(result));
+    }
+    if (result is String) {
+      final decoded = jsonDecode(result);
+      if (decoded is Map) {
+        return SpaceInvite.fromJson(Map<String, dynamic>.from(decoded));
+      }
+    }
+    throw const FormatException('Risposta invito non valida.');
+  }
+
+  Future<String> createSpaceInvite(String spaceId) async {
+    final invite = await getOrCreateSpaceInvite(spaceId);
+    return invite.code;
   }
 
   Future<String> joinSharedSpace(String code) async {
