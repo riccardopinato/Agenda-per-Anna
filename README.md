@@ -2,7 +2,7 @@
 
 Flutter app for personal planning, private diary and the shared **Noi ♡** space.
 
-Current release line: **v0.39.0**.
+Current release line: **v0.39.1**.
 
 ## Core areas
 
@@ -102,3 +102,14 @@ See `docs/ARCHITECTURE.md` and `supabase/README.md` for implementation details.
 - Locks the Android release contract in tests: production signing preparation, obfuscation, split debug symbols, ARM64 split APK, universal APK and Play Store AAB remain required.
 - Keeps the development Android debug build and production-equivalent ARM64 size-audit paths under automated regression coverage.
 - This release intentionally adds no major product features; it is a stabilization checkpoint before the next feature cycle.
+
+
+## v0.39.1 — Media, Data Safety & Release Hardening
+
+- Diary and shared photos now keep a high-quality optimized master; the old destructive 520 px / quality 48 fallback is removed.
+- ZIP backup creation/import is bounded to avoid unbounded in-memory archive expansion; failed restores roll back media imported only for that attempt.
+- Corrupt account-profile archives abort account switching instead of being silently replaced; unreadable shared queues are preserved and surfaced as storage warnings.
+- Shared sync has explicit health state and a dedicated revision notifier, reducing full-agenda rebuilds for sync-only counter changes.
+- Railway Web is pinned to Flutter 3.47.5 with the locked dependency graph, matching CI and Android builds.
+- Lightweight ARM64 sideload releases use a persistent cached JKS signing key and explicit release signing.
+- Added Android emulator smoke coverage for native storage/media and primary navigation.
