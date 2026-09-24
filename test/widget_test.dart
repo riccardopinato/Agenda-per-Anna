@@ -16,7 +16,8 @@ void main() {
     await tester.pumpWidget(
       MaterialApp(home: AgendaRoot(store: store)),
     );
-    await tester.pumpAndSettle();
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 100));
 
     expect(find.text('Agenda per Anna'), findsOneWidget);
     store.dispose();
