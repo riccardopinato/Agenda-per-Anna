@@ -117,6 +117,7 @@ class AgendaRoot extends StatelessWidget {
           }
 
           if (!cloud.signedIn) {
+            PrivateVaultService.instance.lock(notify: false);
             return UniversalIdentityScreen(store: store);
           }
 
