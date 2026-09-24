@@ -47,15 +47,15 @@ void main() {
     expect(find.text('Settimana'), findsOneWidget);
     expect(find.text('Oggi'), findsOneWidget);
 
-    await tester.tap(find.text('Mese'));
+    await tester.tap(find.byType(NavigationDestination).at(1));
     await tester.pumpAndSettle();
     expect(find.text('Mese'), findsWidgets);
 
-    await tester.tap(find.text('Settimana'));
+    await tester.tap(find.byType(NavigationDestination).at(2));
     await tester.pumpAndSettle();
     expect(find.text('Settimana'), findsWidgets);
 
-    await tester.tap(find.text('Oggi'));
+    await tester.tap(find.byType(NavigationDestination).at(3));
     await tester.pumpAndSettle();
     expect(find.text('Oggi'), findsWidgets);
 
