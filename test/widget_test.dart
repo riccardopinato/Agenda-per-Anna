@@ -6,7 +6,10 @@ void main() {
   testWidgets('Agenda app starts', (tester) async {
     await initializeDateFormatting('it_IT', null);
     final store = AgendaStore();
-    await tester.pumpWidget(AgendaApp(store: store));
+    await store.load();
+    await tester.pumpWidget(
+      AgendaApp(store: store, bypassIdentityForTesting: true),
+    );
     await tester.pumpAndSettle();
     expect(find.text('Agenda per Anna'), findsOneWidget);
   });
