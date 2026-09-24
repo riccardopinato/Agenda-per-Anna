@@ -9,11 +9,15 @@ void main() {
 
   setUp(() async {
     SharedPreferences.setMockInitialValues({});
+    PrivateVaultService.instance.resetMemoryForTesting();
     await LocalStateStore.instance.resetForTesting();
   });
 
   tearDown(() async {
-    await PrivateVaultService.instance.destroy();
+    if (PrivateVaultService.instance.initialized) {
+      await PrivateVaultService.instance.destroy();
+    }
+    PrivateVaultService.instance.resetMemoryForTesting();
     await LocalStateStore.instance.resetForTesting();
   });
 
