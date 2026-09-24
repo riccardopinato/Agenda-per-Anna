@@ -11,7 +11,12 @@ void main() {
       store.preferences.copyWith(onboardingDone: true),
     );
 
-    await tester.pumpWidget(AgendaApp(store: store));
+    await tester.pumpWidget(
+      AgendaApp(
+        store: store,
+        authGateBypass: true,
+      ),
+    );
     await tester.pumpAndSettle();
 
     expect(find.text('Agenda per Anna'), findsOneWidget);
