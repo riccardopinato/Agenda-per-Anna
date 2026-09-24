@@ -43,6 +43,7 @@ class AgendaStore extends ChangeNotifier {
   final Map<String, int> _unifiedMonthCountCache = {};
   final ValueNotifier<int> shellRevision = ValueNotifier<int>(0);
   final ValueNotifier<int> syncRevision = ValueNotifier<int>(0);
+  final AgendaStoreSignals signals = AgendaStoreSignals();
   final Map<String, int> _sharedUnreadBySpace = {};
   final Set<String> _unifiedRealtimeSpaceIds = {};
   bool _dayIndexDirty = true;
@@ -90,6 +91,15 @@ class AgendaStore extends ChangeNotifier {
   DateTime? get lastSharedSyncAttemptAt => _lastSharedSyncAttemptAt;
   String? get lastSharedSyncError => _lastSharedSyncError;
   bool get hasSharedSyncError => _lastSharedSyncError != null;
+
+  ValueListenable<int> get agendaRevision => signals.agenda;
+  ValueListenable<int> get journalRevision => signals.journal;
+  ValueListenable<int> get planningRevision => signals.planning;
+  ValueListenable<int> get sharedRevision => signals.shared;
+  ValueListenable<int> get inboxRevision => signals.inbox;
+  ValueListenable<int> get settingsRevision => signals.settings;
+  ValueListenable<int> get backupRevision => signals.backup;
+  ValueListenable<int> get accountRevision => signals.account;
   List<SharedSpace> get sharedAgendaSpaces {
     final result = _sharedAgendaSpaces.values.toList()
       ..sort((a, b) => a.createdAt.compareTo(b.createdAt));
@@ -218,6 +228,52 @@ class AgendaStore extends ChangeNotifier {
 
   void _notifySyncChanged() {
     syncRevision.value = syncRevision.value + 1;
+  }
+
+  void _notifyAgendaChanged() {
+    signals.bumpAgenda();
+    notifyListeners();
+  }
+
+  void _notifyJournalChanged() {
+    signals.bumpJournal();
+    notifyListeners();
+  }
+
+  void _notifyPlanningChanged() {
+    signals.bumpPlanning();
+    notifyListeners();
+  }
+
+  void _notifyJournalAndPlanningChanged() {
+    signals.bumpJournal();
+    signals.bumpPlanning();
+    notifyListeners();
+  }
+
+  void _notifySharedChanged() {
+    signals.bumpShared();
+    notifyListeners();
+  }
+
+  void _notifyInboxChanged() {
+    signals.bumpInbox();
+    notifyListeners();
+  }
+
+  void _notifySettingsChanged() {
+    signals.bumpSettings();
+    notifyListeners();
+  }
+
+  void _notifyBackupChanged() {
+    signals.bumpBackup();
+    notifyListeners();
+  }
+
+  void _notifyAllDataChanged() {
+    signals.bumpAll();
+    notifyListeners();
   }
 
   void _recordSharedSyncError(Object error) {
@@ -1151,7 +1207,7 @@ class AgendaStore extends ChangeNotifier {
       if (!_accountScopeResolved) {
         _accountScopeResolved = true;
         _notifyShellChanged();
-        notifyListeners();
+        _notifyAllDataChanged();
       }
       return;
     }
@@ -1205,7 +1261,7 @@ class AgendaStore extends ChangeNotifier {
 
     _accountScopeResolved = true;
     _notifyShellChanged();
-    notifyListeners();
+    _notifyAllDataChanged();
   }
 
   void _bindPendingOperationsTo(String ownerId) {
@@ -1865,7 +1921,7 @@ class AgendaStore extends ChangeNotifier {
     }
 
     _notifyShellChanged();
-    notifyListeners();
+    _notifyAllDataChanged();
   }
 
   Future<void> createLocalSnapshot({
@@ -1886,7 +1942,7 @@ class AgendaStore extends ChangeNotifier {
       localSnapshots.removeRange(5, localSnapshots.length);
     }
     await _saveSnapshots(prefs);
-    notifyListeners();
+    _notifyBackupChanged();
   }
 
   Future<void> _maybeCreateAutomaticSnapshot(
@@ -1936,7 +1992,7 @@ class AgendaStore extends ChangeNotifier {
     localSnapshots.removeWhere((e) => e.id == id);
     final prefs = await _localState();
     await _saveSnapshots(prefs);
-    notifyListeners();
+    _notifyBackupChanged();
   }
 
   String createReadableExport() {
@@ -2102,7 +2158,7 @@ class AgendaStore extends ChangeNotifier {
       payload: item.toJson(),
     );
     await _syncReminders(item);
-    notifyListeners();
+    _notifyAgendaChanged();
   }
 
   Future<void> duplicateItem(AgendaItem item, {DateTime? date}) async {
@@ -2135,7 +2191,7 @@ class AgendaStore extends ChangeNotifier {
       id: id,
       deleted: true,
     );
-    notifyListeners();
+    _notifyAgendaChanged();
   }
 
   Future<void> _syncReminders(AgendaItem item) async {
@@ -2204,7 +2260,7 @@ class AgendaStore extends ChangeNotifier {
       payload: items[i].toJson(),
     );
     await _syncReminders(items[i]);
-    notifyListeners();
+    _notifyAgendaChanged();
   }
 
   DayJournal journal(DateTime date) => journals[dateKey(date)] ?? const DayJournal();
@@ -2220,7 +2276,7 @@ class AgendaStore extends ChangeNotifier {
     _scheduleMediaMaintenance(
       delay: const Duration(seconds: 5),
     );
-    notifyListeners();
+    _notifyJournalChanged();
   }
 
   Future<void> initializeCloudSync() async {
@@ -2232,7 +2288,7 @@ class AgendaStore extends ChangeNotifier {
     } else {
       _accountScopeResolved = true;
       _notifyShellChanged();
-      notifyListeners();
+      _notifyAllDataChanged();
     }
 
     if (cloud.signedIn) {
@@ -2266,7 +2322,7 @@ class AgendaStore extends ChangeNotifier {
     } else if (!_accountScopeResolved) {
       _accountScopeResolved = true;
       _notifyShellChanged();
-      notifyListeners();
+      _notifyAllDataChanged();
     }
 
     if (cloud.signedIn) {
@@ -2491,7 +2547,7 @@ class AgendaStore extends ChangeNotifier {
 
       cloud.markSyncSuccess();
       if (remoteChanged || pendingSnapshot.isNotEmpty) {
-        notifyListeners();
+        _notifyAllDataChanged();
       }
     } catch (error) {
       cloud.markSyncError(error);
@@ -2659,7 +2715,7 @@ class AgendaStore extends ChangeNotifier {
     if (agendaContentFilter == value) return;
     agendaContentFilter = value;
     _invalidateUnifiedAgendaCache();
-    notifyListeners();
+    _notifyAllDataChanged();
   }
 
   List<UnifiedAgendaEntry> unifiedForDay(DateTime date) {
@@ -2771,7 +2827,7 @@ class AgendaStore extends ChangeNotifier {
       _sharedAgendaEntriesBySpace.clear();
       _sharedAgendaDayIndex.clear();
       _invalidateUnifiedAgendaCache();
-      if (notify) notifyListeners();
+      if (notify) _notifySharedChanged();
       return;
     }
 
@@ -2961,7 +3017,7 @@ class AgendaStore extends ChangeNotifier {
     }
 
     await _bindUnifiedRealtime(spaces);
-    if (notify) notifyListeners();
+    if (notify) _notifySharedChanged();
   }
 
   Future<void> _bindUnifiedRealtime(List<SharedSpace> spaces) async {
@@ -3074,7 +3130,7 @@ class AgendaStore extends ChangeNotifier {
       cursorKey: next.toIso8601String(),
     });
 
-    notifyListeners();
+    _notifyAllDataChanged();
   }
 
   Future<void> _cacheSharedAgendaEntries(
@@ -3155,14 +3211,14 @@ class AgendaStore extends ChangeNotifier {
     if (next == sharedUnreadCount(spaceId)) return;
     _sharedUnreadBySpace[spaceId] = next;
     await _saveSharedUnreadCounts();
-    notifyListeners();
+    _notifyAllDataChanged();
   }
 
   Future<void> markSharedSpaceRead(String spaceId) async {
     if (!_sharedUnreadBySpace.containsKey(spaceId)) return;
     _sharedUnreadBySpace.remove(spaceId);
     await _saveSharedUnreadCounts();
-    notifyListeners();
+    _notifyAllDataChanged();
   }
 
   Future<List<SharedPendingOperation>> loadSharedPendingOperations(
@@ -3237,7 +3293,7 @@ class AgendaStore extends ChangeNotifier {
     _sharedAgendaEntriesBySpace[spaceId] = cached;
     _rebuildSharedAgendaDayIndex();
     await _cacheSharedAgendaEntries(spaceId, cached);
-    notifyListeners();
+    _notifyAllDataChanged();
   }
 
   Future<void> enqueueSharedDelete({
@@ -3271,7 +3327,7 @@ class AgendaStore extends ChangeNotifier {
     _sharedAgendaEntriesBySpace[spaceId] = cached;
     _rebuildSharedAgendaDayIndex();
     await _cacheSharedAgendaEntries(spaceId, cached);
-    notifyListeners();
+    _notifyAllDataChanged();
   }
 
   Future<int> pendingSharedChanges(String spaceId) async =>
@@ -3384,7 +3440,7 @@ class AgendaStore extends ChangeNotifier {
     );
     await _saveSharedInteractionPendingOperations(spaceId, operations);
     await refreshPendingSharedInteractionCount(notify: false);
-    notifyListeners();
+    _notifyAllDataChanged();
 
     return SharedEntryComment(
       id: commentId,
@@ -3426,7 +3482,7 @@ class AgendaStore extends ChangeNotifier {
 
     await _saveSharedInteractionPendingOperations(spaceId, operations);
     await refreshPendingSharedInteractionCount(notify: false);
-    notifyListeners();
+    _notifyAllDataChanged();
   }
 
   Future<void> enqueueSharedHeart({
@@ -3452,7 +3508,7 @@ class AgendaStore extends ChangeNotifier {
     );
     await _saveSharedInteractionPendingOperations(spaceId, operations);
     await refreshPendingSharedInteractionCount(notify: false);
-    notifyListeners();
+    _notifyAllDataChanged();
   }
 
   Future<void> refreshPendingSharedInteractionCount({
@@ -3710,7 +3766,7 @@ class AgendaStore extends ChangeNotifier {
     if (uploads.length == before) return;
     await _saveSharedMediaPendingUploads(spaceId, uploads);
     await refreshPendingSharedMediaCount(notify: false);
-    notifyListeners();
+    _notifyAllDataChanged();
   }
 
   Future<void> enqueueSharedMediaUpload(
@@ -3725,7 +3781,7 @@ class AgendaStore extends ChangeNotifier {
     uploads.add(localizedUpload);
     await _saveSharedMediaPendingUploads(localizedUpload.spaceId, uploads);
     await refreshPendingSharedMediaCount(notify: false);
-    notifyListeners();
+    _notifyAllDataChanged();
   }
 
   Future<void> refreshPendingSharedMediaCount({
@@ -3858,7 +3914,7 @@ class AgendaStore extends ChangeNotifier {
   void resetSharedConflictCount() {
     if (_sharedConflictCount == 0) return;
     _sharedConflictCount = 0;
-    notifyListeners();
+    _notifyAllDataChanged();
   }
 
   Future<void> flushSharedPendingOperations({
@@ -4049,7 +4105,7 @@ class AgendaStore extends ChangeNotifier {
       id: entry.id,
       payload: entry.toJson(),
     );
-    notifyListeners();
+    _notifyInboxChanged();
   }
 
   Future<void> deleteInboxEntry(String id) async {
@@ -4059,7 +4115,7 @@ class AgendaStore extends ChangeNotifier {
       id: id,
       deleted: true,
     );
-    notifyListeners();
+    _notifyInboxChanged();
   }
 
   Future<void> toggleInboxPinned(String id) async {
@@ -4071,7 +4127,7 @@ class AgendaStore extends ChangeNotifier {
       id: inbox[index].id,
       payload: inbox[index].toJson(),
     );
-    notifyListeners();
+    _notifyInboxChanged();
   }
 
   Future<void> toggleItemPinned(String id) async {
@@ -4084,7 +4140,7 @@ class AgendaStore extends ChangeNotifier {
       id: items[index].id,
       payload: items[index].toJson(),
     );
-    notifyListeners();
+    _notifyAgendaChanged();
   }
 
   Future<void> setPin(String pin) async {
@@ -4132,7 +4188,7 @@ class AgendaStore extends ChangeNotifier {
     );
     await _queuePreferencesSync();
     _notifyShellChanged();
-    notifyListeners();
+    _notifySettingsChanged();
   }
 
   Future<void> resetPreferences() async {
@@ -4152,7 +4208,7 @@ class AgendaStore extends ChangeNotifier {
       id: habit.id,
       payload: habit.toJson(),
     );
-    notifyListeners();
+    _notifyPlanningChanged();
   }
 
   Future<void> removeHabit(String id) async {
@@ -4193,7 +4249,7 @@ class AgendaStore extends ChangeNotifier {
     }
 
     await _persistEntityMutations(mutations);
-    notifyListeners();
+    _notifyJournalAndPlanningChanged();
   }
 
   Future<void> toggleHabit(DateTime date, String habitId) async {
@@ -4212,7 +4268,7 @@ class AgendaStore extends ChangeNotifier {
       id: key,
       payload: updated.toLocalJson(),
     );
-    notifyListeners();
+    _notifyJournalChanged();
   }
 
   MonthlyData month(int year, int month) => months[monthKey(year, month)] ?? const MonthlyData();
@@ -4225,7 +4281,7 @@ class AgendaStore extends ChangeNotifier {
       id: key,
       payload: value.toJson(),
     );
-    notifyListeners();
+    _notifyPlanningChanged();
   }
 
   WeekData week(DateTime anyDay) {
@@ -4242,7 +4298,7 @@ class AgendaStore extends ChangeNotifier {
       id: key,
       payload: value.toJson(),
     );
-    notifyListeners();
+    _notifyPlanningChanged();
   }
 
   static bool sameDay(DateTime a, DateTime b) =>
@@ -4270,6 +4326,7 @@ class AgendaStore extends ChangeNotifier {
     _unifiedRealtimeSpaceIds.clear();
     shellRevision.dispose();
     syncRevision.dispose();
+    signals.dispose();
     super.dispose();
   }
 }
