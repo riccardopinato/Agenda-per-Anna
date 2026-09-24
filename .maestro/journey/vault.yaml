@@ -1,0 +1,45 @@
+appId: com.riccardopinato.agenda_per_anna
+---
+- tapOn:
+    text: 'Home[\s\S]*'
+    retryTapIfNoChange: true
+- scrollUntilVisible:
+    element:
+      text: 'Cassaforte privata'
+    direction: UP
+    timeout: 10000
+- tapOn: "Cassaforte privata"
+- extendedWaitUntil:
+    visible: "Crea la tua cassaforte"
+    timeout: 10000
+- tapOn: "PIN o password privata"
+- inputText: "2468"
+- tapOn: "Ripeti PIN/password"
+- inputText: "2468"
+- tapOn: "Crea cassaforte cifrata"
+- extendedWaitUntil:
+    visible: "La cassaforte è vuota"
+    timeout: 10000
+- tapOn: "Nuovo"
+- tapOn: "Titolo"
+- inputText: "Segreto AppLab"
+- tapOn: "Contenuto"
+- inputText: "Persistenza cifrata v042"
+- tapOn: "Salva cifrato"
+- extendedWaitUntil:
+    visible: "Segreto AppLab"
+    timeout: 10000
+- back
+- extendedWaitUntil:
+    visible: "Agenda per Anna"
+    timeout: 10000
+- tapOn: "Cassaforte privata"
+- extendedWaitUntil:
+    visible: "Cassaforte bloccata"
+    timeout: 10000
+- tapOn: "PIN o password privata"
+- inputText: "2468"
+- tapOn: "Sblocca"
+- extendedWaitUntil:
+    visible: "Segreto AppLab"
+    timeout: 10000
