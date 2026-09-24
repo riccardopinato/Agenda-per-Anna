@@ -6,6 +6,7 @@ on:
     paths:
       - "lib/**"
       - "assets/**"
+      - "legal/**"
       - "pubspec.yaml"
       - "pubspec.lock"
       - ".github/workflows/deploy-pages.yml"
@@ -14,6 +15,7 @@ on:
     paths:
       - "lib/**"
       - "assets/**"
+      - "legal/**"
       - "pubspec.yaml"
       - "pubspec.lock"
       - ".github/workflows/deploy-pages.yml"
@@ -61,6 +63,11 @@ jobs:
 
       - name: Build web release
         run: flutter build web --release --base-href "/Agenda-per-Anna/"
+
+      - name: Add public legal pages
+        run: |
+          cp legal/privacy.html build/web/privacy.html
+          cp legal/terms.html build/web/terms.html
 
       - name: Upload Pages artifact
         if: github.event_name != 'pull_request'
