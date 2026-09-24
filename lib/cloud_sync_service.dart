@@ -385,7 +385,7 @@ class CloudSyncService extends ChangeNotifier {
   static const String _productionWebUrl =
       'https://riccardopinato.github.io/Agenda-per-Anna/';
   static const String _mobileAuthRedirectUrl =
-      'com.riccardopinato.agenda_per_anna://login-callback/';
+      'com.riccardopinato.agendaperanna://login-callback/';
 
   String get _emailRedirectUrl {
     if (kIsWeb) {
