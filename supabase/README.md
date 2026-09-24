@@ -10,7 +10,7 @@ This directory contains the versioned cloud schema used by the current applicati
 4. Google OAuth setup:
    - Supabase callback: `https://pxsxlorntswypdbeerzw.supabase.co/auth/v1/callback`
    - Site URL / Web return: `https://riccardopinato.github.io/Agenda-per-Anna/`
-   - Additional redirect URL: `com.riccardopinato.agenda_per_anna://login-callback/**`
+   - Additional redirect URL: `com.riccardopinato.agendaperanna://login-callback/**`
    - Google scopes: `openid`, email, profile
 5. Configure the client with only:
    - Project URL
