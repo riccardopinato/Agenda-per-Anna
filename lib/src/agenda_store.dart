@@ -1906,7 +1906,10 @@ class AgendaStore extends ChangeNotifier {
     _notifyAgendaChanged();
   }
 
-  Future<void> _syncReminders(AgendaItem item) async {
+  Future<void> _syncReminders(
+    AgendaItem item, {
+    bool requestPermission = true,
+  }) async {
     final start = item.start;
 
     // Pulisce anche il vecchio ID usato dalla versione a promemoria singolo.
@@ -1941,6 +1944,7 @@ class AgendaStore extends ChangeNotifier {
             ? 'È il momento di iniziare.'
             : _reminderBody(minutes, item.title),
         when: when,
+        requestPermission: requestPermission,
       );
     }
 
@@ -1950,7 +1954,10 @@ class AgendaStore extends ChangeNotifier {
 
   Future<void> reconcileReminders() async {
     for (final item in items) {
-      await _syncReminders(item);
+      await _syncReminders(
+        item,
+        requestPermission: false,
+      );
     }
   }
 
