@@ -270,13 +270,18 @@ Future<String?> showDiaryCaptionEditor(
   return value;
 }
 
-Future<bool> confirmDiaryContentDelete(BuildContext context) async =>
+Future<bool> confirmDiaryContentDelete(
+  BuildContext context, {
+  bool movesToTrash = false,
+}) async =>
     await showDialog<bool>(
       context: context,
       builder: (dialogContext) => AlertDialog(
         title: const Text('Eliminare dal diario?'),
-        content: const Text(
-          'Questo contenuto verrà rimosso dalla giornata.',
+        content: Text(
+          movesToTrash
+              ? 'Questo contenuto verrà spostato nel Cestino e potrai ripristinarlo.'
+              : 'Questo contenuto verrà rimosso dalla giornata.',
         ),
         actions: [
           TextButton(
@@ -823,12 +828,13 @@ class _DiaryMemoryCardState extends State<DiaryMemoryCard> {
   }
 
   Future<void> _delete(DiaryBlock block) async {
-    final confirmed = await confirmDiaryContentDelete(context);
+    final confirmed = await confirmDiaryContentDelete(
+      context,
+      movesToTrash: true,
+    );
     if (!confirmed) return;
 
-    final blocks = [...widget.store.journal(widget.date).blocks]
-      ..removeWhere((candidate) => candidate.id == block.id);
-    await _saveBlocks(blocks);
+    await widget.store.moveDiaryBlockToTrash(widget.date, block.id);
   }
 
   void _openPhoto(DiaryBlock block) {
