@@ -114,6 +114,8 @@ class _BackupScreenState extends State<BackupScreen> {
             Text('• ${summary.monthCount} pagine mensili'),
             Text('• ${summary.weekCount} settimane'),
             Text('• ${summary.habitCount} abitudini'),
+            if (summary.trashCount > 0)
+              Text('• ${summary.trashCount} elementi nel Cestino'),
             if (selectedBackup.isZip) ...[
               const SizedBox(height: 8),
               const Text(
