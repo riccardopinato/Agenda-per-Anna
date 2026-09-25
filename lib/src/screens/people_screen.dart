@@ -178,7 +178,7 @@ class _PeopleScreenState extends State<PeopleScreen> {
     final recoverableBirthday = birthdayId == null ||
             liveBirthdayIds.contains(birthdayId)
         ? null
-        : widget.store.trashedBirthdayById(birthdayId!);
+        : widget.store.trashedBirthdayById(birthdayId);
     final unavailableBirthdayId = birthdayId != null &&
             !liveBirthdayIds.contains(birthdayId) &&
             recoverableBirthday == null
