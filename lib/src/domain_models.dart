@@ -1469,6 +1469,7 @@ class BackupSummary {
   final int monthCount;
   final int weekCount;
   final int habitCount;
+  final int birthdayCount;
   final int trashCount;
 
   const BackupSummary({
@@ -1478,6 +1479,7 @@ class BackupSummary {
     required this.monthCount,
     required this.weekCount,
     required this.habitCount,
+    this.birthdayCount = 0,
     this.trashCount = 0,
   });
 }
