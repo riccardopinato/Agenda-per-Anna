@@ -215,7 +215,7 @@ extension AgendaStoreDayHub on AgendaStore {
       id: value.id,
       payload: value.toJson(),
     );
-    await _syncBirthdayReminder(value);
+    await _syncBirthdayReminder(value, requestPermission: true);
     _notifyPlanningChanged();
   }
 
