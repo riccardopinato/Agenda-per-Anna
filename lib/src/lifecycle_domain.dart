@@ -589,10 +589,13 @@ extension AgendaStoreLifecycle on AgendaStore {
         _notifyAgendaChanged();
         break;
       case TrashEntityKind.birthday:
-        final restored = birthdays
-            .where((birthday) => birthday.id == localized.entityId)
-            .cast<BirthdayEntry?>()
-            .firstOrNull;
+        BirthdayEntry? restored;
+        for (final birthday in birthdays) {
+          if (birthday.id == localized.entityId) {
+            restored = birthday;
+            break;
+          }
+        }
         if (restored != null) {
           await _syncBirthdayReminder(restored);
         }
