@@ -2785,6 +2785,14 @@ class AgendaStore extends ChangeNotifier {
         final push = PushNotificationService.instance;
         if (push.hasRecentSharedPush(space.id)) return;
 
+        // In an active PWA, the standards-based service worker owns visible
+        // Web Push delivery. Realtime still updates the unread badge but must
+        // not create a second browser notification.
+        if (kIsWeb && WebPushService.instance.lastHealth?.ready == true) {
+          unawaited(markSharedSpaceUnread(space.id));
+          return;
+        }
+
         // A registered FCM token is not proof that a push was delivered.
         // Realtime therefore remains a delayed fallback. If FCM arrives first,
         // this timer exits without duplicating the notification.
