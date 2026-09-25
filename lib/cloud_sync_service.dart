@@ -436,6 +436,11 @@ class CloudSyncService extends ChangeNotifier {
         raw.contains('over_email_send_rate_limit')) {
       return 'Hai fatto troppi tentativi ravvicinati. Riprova tra poco.';
     }
+    if (raw.contains('account_deletion_failed') ||
+        raw.contains('delete-account') ||
+        raw.contains('explicit_confirmation_required')) {
+      return 'Non è stato possibile eliminare l’account. Nessun dato locale è stato cancellato.';
+    }
     if (raw.contains('socket') ||
         raw.contains('network') ||
         raw.contains('failed host lookup') ||
