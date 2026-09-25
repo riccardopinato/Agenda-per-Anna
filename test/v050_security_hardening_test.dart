@@ -12,7 +12,7 @@ void main() {
     expect(source, contains('path.startsWith(requiredPrefix)'));
     expect(
       source,
-      contains('collectMediaPaths(row.payload, mediaPaths, `${spaceId}/`)'),
+      contains(r'collectMediaPaths(row.payload, mediaPaths, `${spaceId}/`)'),
     );
     expect(
       source,
