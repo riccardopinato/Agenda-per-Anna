@@ -1654,6 +1654,15 @@ class AgendaStore extends ChangeNotifier {
           ),
         )
         .toList();
+    final incomingTrash = <TrashEntry>[];
+    for (final rawEntry in payload['trash'] as List? ?? const []) {
+      if (rawEntry is! Map) continue;
+      incomingTrash.add(
+        await _localizeTrashEntry(
+          TrashEntry.fromJson(Map<String, dynamic>.from(rawEntry)),
+        ),
+      );
+    }
     final incomingPreferences = payload['preferences'] is Map
         ? AgendaPreferences.fromJson(
             Map<String, dynamic>.from(payload['preferences'] as Map),
@@ -1671,6 +1680,7 @@ class AgendaStore extends ChangeNotifier {
     final previousWeeks = Map<String, WeekData>.from(weeks);
     final previousHabits = List<HabitDefinition>.from(habits);
     final previousInbox = List<InboxEntry>.from(inbox);
+    final previousTrash = List<TrashEntry>.from(trash);
     final previousPreferences = preferences;
 
     try {
@@ -1702,6 +1712,14 @@ class AgendaStore extends ChangeNotifier {
         inbox
           ..clear()
           ..addAll(inboxById.values);
+
+        final trashById = {for (final entry in trash) entry.id: entry};
+        for (final entry in incomingTrash) {
+          trashById[entry.id] = entry;
+        }
+        trash
+          ..clear()
+          ..addAll(trashById.values);
       } else {
         items
           ..clear()
@@ -1721,6 +1739,9 @@ class AgendaStore extends ChangeNotifier {
         inbox
           ..clear()
           ..addAll(incomingInbox);
+        trash
+          ..clear()
+          ..addAll(incomingTrash);
         if (incomingPreferences != null) {
           preferences = incomingPreferences;
         }
@@ -1769,6 +1790,9 @@ class AgendaStore extends ChangeNotifier {
       inbox
         ..clear()
         ..addAll(previousInbox);
+      trash
+        ..clear()
+        ..addAll(previousTrash);
       preferences = previousPreferences;
       _invalidateDayIndex();
       rethrow;
