@@ -373,7 +373,7 @@ class DayTimeline extends StatelessWidget {
     required this.onChanged,
   });
 
-  static const int startHour = 6;
+  static const int startHour = 0;
   static const int endHour = 24;
   static const double hourHeight = 74;
   static const double timeColumnWidth = 54;
@@ -510,7 +510,7 @@ class DayTimeline extends StatelessWidget {
 
     final endMinutes =
         _endMinutes(event).clamp(startMinutes + 15, upper);
-    final top = ((upper - endMinutes) / 60) * hourHeight;
+    final top = ((startMinutes - lower) / 60) * hourHeight;
     final remainingHeight = max(1.0, totalHeightFromTop(top));
     final naturalHeight =
         ((endMinutes - startMinutes) / 60) * hourHeight;
@@ -659,7 +659,7 @@ class DayTimeline extends StatelessWidget {
       return const SizedBox.shrink();
     }
 
-    final top = ((upper - minutes) / 60) * hourHeight;
+    final top = ((minutes - lower) / 60) * hourHeight;
     return Positioned(
       top: top,
       left: timeColumnWidth - 3,
@@ -692,7 +692,7 @@ class DayTimeline extends StatelessWidget {
     double y,
   ) async {
     var minutes =
-        endHour * 60 - ((y / hourHeight) * 60).round();
+        startHour * 60 + ((y / hourHeight) * 60).round();
     minutes = ((minutes / 15).round() * 15).clamp(
       startHour * 60,
       endHour * 60 - 15,
@@ -731,44 +731,48 @@ class _TimelinePainter extends CustomPainter {
       ..color = color.withValues(alpha: 0.35)
       ..strokeWidth = 1;
 
-    for (int hour = DayTimeline.endHour;
-        hour >= DayTimeline.startHour;
-        hour--) {
-      final y = (DayTimeline.endHour - hour) * DayTimeline.hourHeight;
+    for (int hour = DayTimeline.startHour;
+        hour <= DayTimeline.endHour;
+        hour++) {
+      final y = (hour - DayTimeline.startHour) * DayTimeline.hourHeight;
       canvas.drawLine(
         Offset(DayTimeline.timeColumnWidth, y),
         Offset(size.width, y),
         fullPaint,
       );
 
-      if (hour > DayTimeline.startHour) {
+      if (hour < DayTimeline.endHour) {
         final half = y + DayTimeline.hourHeight / 2;
         canvas.drawLine(
           Offset(DayTimeline.timeColumnWidth, half),
           Offset(size.width, half),
           halfPaint,
         );
-
-        final painter = TextPainter(
-          text: TextSpan(
-            text: '${hour.toString().padLeft(2, '0')}:00',
-            style: TextStyle(
-              color: textColor,
-              fontSize: 10.5,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-          textDirection: ui.TextDirection.ltr,
-        )..layout(maxWidth: DayTimeline.timeColumnWidth - 8);
-
-        painter.paint(
-          canvas,
-          Offset(
-            DayTimeline.timeColumnWidth - painter.width - 8,
-            y + 6,
-          ),
-        );
       }
+
+      final painter = TextPainter(
+        text: TextSpan(
+          text: '${hour.toString().padLeft(2, '0')}:00',
+          style: TextStyle(
+            color: textColor,
+            fontSize: 10.5,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        textDirection: ui.TextDirection.ltr,
+      )..layout(maxWidth: DayTimeline.timeColumnWidth - 8);
+
+      final labelY = hour == DayTimeline.endHour
+          ? max(0.0, y - painter.height - 6)
+          : y + 6;
+
+      painter.paint(
+        canvas,
+        Offset(
+          DayTimeline.timeColumnWidth - painter.width - 8,
+          labelY,
+        ),
+      );
     }
   }
 
