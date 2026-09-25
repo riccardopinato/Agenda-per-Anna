@@ -43,13 +43,6 @@ jobs:
           python3 tool/prepare_android_platform.py
           python3 tool/prepare_web_platform.py
 
-      - name: Apply and verify Android configuration
-        if: ${{ false }}
-        run: echo "superseded by combined platform preparation"
-        run: |
-          python3 -m py_compile             tool/prepare_android_platform.py             tool/android_size_report.py
-          python3 tool/prepare_android_platform.py
-
       - name: Install locked dependencies
         run: flutter pub get --enforce-lockfile
 
