@@ -68,6 +68,9 @@ class PushNotificationService {
   bool _initialized = false;
   bool _remotePushActive = false;
   String? _lastError;
+  DateTime? _lastAnyPushReceivedAt;
+  final Map<String, DateTime> _lastSharedPushReceivedAt = {};
+  final Map<String, DateTime> _lastRealtimeFallbackShownAt = {};
   StreamSubscription<String>? _tokenSubscription;
   StreamSubscription<RemoteMessage>? _messageSubscription;
   StreamSubscription<RemoteMessage>? _openedSubscription;
@@ -81,6 +84,35 @@ class PushNotificationService {
       defaultTargetPlatform == TargetPlatform.android;
 
   bool get remotePushActive => _remotePushActive;
+  DateTime? get lastAnyPushReceivedAt => _lastAnyPushReceivedAt;
+
+  bool hasRecentSharedPush(
+    String spaceId, {
+    Duration maxAge = const Duration(seconds: 6),
+  }) {
+    final receivedAt = _lastSharedPushReceivedAt[spaceId];
+    if (receivedAt == null) return false;
+    return DateTime.now().difference(receivedAt) <= maxAge;
+  }
+
+  void noteRealtimeFallbackShown(String spaceId) {
+    _lastRealtimeFallbackShownAt[spaceId] = DateTime.now();
+  }
+
+  bool _hasRecentRealtimeFallback(
+    String spaceId, {
+    Duration maxAge = const Duration(seconds: 15),
+  }) {
+    final shownAt = _lastRealtimeFallbackShownAt[spaceId];
+    if (shownAt == null) return false;
+    return DateTime.now().difference(shownAt) <= maxAge;
+  }
+
+  void _markSharedPushReceived(String spaceId) {
+    final now = DateTime.now();
+    _lastAnyPushReceivedAt = now;
+    _lastSharedPushReceivedAt[spaceId] = now;
+  }
 
   static void configureBackgroundHandling() {
     if (!firebaseEnabled || kIsWeb) return;
@@ -224,6 +256,7 @@ class PushNotificationService {
         appVersion: appReleaseVersion,
       );
       _remotePushActive = true;
+      _lastError = null;
     } catch (error) {
       _lastError = error.toString();
       _remotePushActive = false;
@@ -328,10 +361,28 @@ class PushNotificationService {
       throw StateError('push_device_not_registered');
     }
 
-    return CloudSyncService.instance.sendPushSelfTest(
-      eventId:
-          'self-test:${DateTime.now().toUtc().microsecondsSinceEpoch}',
-    );
+    try {
+      final result = await CloudSyncService.instance.sendPushSelfTest(
+        eventId:
+            'self-test:${DateTime.now().toUtc().microsecondsSinceEpoch}',
+      );
+      final delivered = (result['delivered'] as num?)?.toInt() ?? 0;
+      final failed = (result['failed'] as num?)?.toInt() ?? 0;
+      final devices = (result['devices'] as num?)?.toInt() ?? 0;
+      if (delivered > 0) {
+        _lastError = null;
+      } else if (failed > 0) {
+        _lastError = 'push_self_test_delivery_failed:$failed';
+      } else if (devices == 0) {
+        _lastError = 'push_self_test_no_registered_devices';
+      } else {
+        _lastError = 'push_self_test_no_delivery';
+      }
+      return result;
+    } catch (error) {
+      _lastError = 'push_self_test: $error';
+      rethrow;
+    }
   }
 
   Future<void> _handleForegroundMessage(RemoteMessage message) async {
@@ -343,21 +394,25 @@ class PushNotificationService {
     final parsed = _parseSharedMessage(message);
     if (parsed == null) return;
 
+    _markSharedPushReceived(parsed.$1);
     await _recordUnreadIfNeeded(
       spaceId: parsed.$1,
       eventId: parsed.$2,
     );
 
-    await NotificationService.instance.showSharedUpdate(
-      spaceId: parsed.$1,
-      spaceName: 'Noi ♡',
-    );
+    if (!_hasRecentRealtimeFallback(parsed.$1)) {
+      await NotificationService.instance.showSharedUpdate(
+        spaceId: parsed.$1,
+        spaceName: 'Noi ♡',
+      );
+    }
   }
 
   Future<void> _handleOpenedMessage(RemoteMessage message) async {
     final parsed = _parseSharedMessage(message);
     if (parsed == null) return;
 
+    _markSharedPushReceived(parsed.$1);
     await _recordUnreadIfNeeded(
       spaceId: parsed.$1,
       eventId: parsed.$2,
@@ -389,6 +444,7 @@ class PushNotificationService {
         final spaceId = decoded['space_id']?.toString().trim() ?? '';
         final eventId = decoded['event_id']?.toString().trim() ?? '';
         if (spaceId.isEmpty || eventId.isEmpty) continue;
+        _markSharedPushReceived(spaceId);
         await _recordUnreadIfNeeded(
           spaceId: spaceId,
           eventId: eventId,
@@ -473,6 +529,9 @@ class PushNotificationService {
     _localTapSubscription = null;
     _initialized = false;
     _remotePushActive = false;
+    _lastAnyPushReceivedAt = null;
+    _lastSharedPushReceivedAt.clear();
+    _lastRealtimeFallbackShownAt.clear();
     _onSharedPushReceived = null;
     _onSharedPushOpened = null;
   }

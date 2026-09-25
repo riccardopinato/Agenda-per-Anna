@@ -112,6 +112,51 @@ function loadFirebase(): FirebaseServiceAccount | null {
   }
 }
 
+function classifyFirebaseError(error: unknown) {
+  const raw = error instanceof Error ? error.message : String(error);
+  if (raw.startsWith("firebase_oauth_")) {
+    return raw.split(":")[0].slice(0, 80);
+  }
+  return "firebase_send_exception";
+}
+
+function deliveryStatus(result: {
+  delivered: number;
+  devices: number;
+  removed: number;
+  failed: number;
+}) {
+  if (result.devices === 0) return "no_devices";
+  if (result.delivered === result.devices) return "delivered";
+  if (result.delivered > 0) return "partial";
+  return "failed";
+}
+
+async function finalizeDeliveryEvent(
+  admin: any,
+  eventId: string,
+  result: {
+    delivered: number;
+    devices: number;
+    removed: number;
+    failed: number;
+  },
+  error?: string,
+) {
+  await admin
+    .from("push_delivery_events")
+    .update({
+      device_count: result.devices,
+      delivered_count: result.delivered,
+      failed_count: result.failed,
+      removed_invalid_tokens: result.removed,
+      delivery_status: deliveryStatus(result),
+      last_error: error ?? null,
+      completed_at: new Date().toISOString(),
+    })
+    .eq("event_id", eventId);
+}
+
 async function sendFirebaseMessages({
   firebase,
   devices,
@@ -282,26 +327,36 @@ Deno.serve(async (req: Request) => {
       return json({ error: "device_lookup_failed" }, 500);
     }
 
-    const result = await sendFirebaseMessages({
-      firebase,
-      devices: ownDevices ?? [],
-      admin,
-      title: "Anna's Diary · Test push",
-      body: "Il canale Firebase funziona correttamente ♡",
-      data: {
-        kind: "push_self_test",
-        event_id: eventId,
-      },
-    });
+    try {
+      const result = await sendFirebaseMessages({
+        firebase,
+        devices: ownDevices ?? [],
+        admin,
+        title: "Anna's Diary · Test push",
+        body: "Il canale Firebase funziona correttamente ♡",
+        data: {
+          kind: "push_self_test",
+          event_id: eventId,
+        },
+      });
 
-    return json({
-      ok: true,
-      self_test: true,
-      delivered: result.delivered,
-      devices: result.devices,
-      removed_invalid_tokens: result.removed,
-      failed: result.failed,
-    });
+      return json({
+        ok: result.delivered > 0 && result.failed === 0,
+        self_test: true,
+        delivered: result.delivered,
+        devices: result.devices,
+        removed_invalid_tokens: result.removed,
+        failed: result.failed,
+        status: deliveryStatus(result),
+      });
+    } catch (error) {
+      return json({
+        ok: false,
+        self_test: true,
+        error: "firebase_delivery_failed",
+        detail: classifyFirebaseError(error),
+      }, 502);
+    }
   }
 
   if (!spaceId) {
@@ -348,6 +403,14 @@ Deno.serve(async (req: Request) => {
     .in("user_id", recipientIds);
 
   if (devicesError) {
+    await admin
+      .from("push_delivery_events")
+      .update({
+        delivery_status: "failed",
+        last_error: "device_lookup_failed",
+        completed_at: new Date().toISOString(),
+      })
+      .eq("event_id", eventId);
     return json({ error: "device_lookup_failed" }, 500);
   }
 
@@ -364,26 +427,47 @@ Deno.serve(async (req: Request) => {
               ? "Un elemento condiviso è stato aggiornato."
               : "C’è una nuova attività condivisa da leggere.";
 
-  const result = await sendFirebaseMessages({
-    firebase,
-    devices: devices ?? [],
-    admin,
-    title: "Anna's Diary · Noi ♡",
-    body: messageBody,
-    data: {
-      kind: "shared_update",
-      space_id: spaceId,
-      event_id: eventId,
-      action,
-      ...(entityId ? { entity_id: entityId } : {}),
-    },
-  });
+  try {
+    const result = await sendFirebaseMessages({
+      firebase,
+      devices: devices ?? [],
+      admin,
+      title: "Anna's Diary · Noi ♡",
+      body: messageBody,
+      data: {
+        kind: "shared_update",
+        space_id: spaceId,
+        event_id: eventId,
+        action,
+        ...(entityId ? { entity_id: entityId } : {}),
+      },
+    });
 
-  return json({
-    ok: true,
-    delivered: result.delivered,
-    devices: result.devices,
-    removed_invalid_tokens: result.removed,
-    failed: result.failed,
-  });
+    await finalizeDeliveryEvent(admin, eventId, result);
+
+    return json({
+      ok: result.delivered > 0 && result.failed === 0,
+      delivered: result.delivered,
+      devices: result.devices,
+      removed_invalid_tokens: result.removed,
+      failed: result.failed,
+      status: deliveryStatus(result),
+    });
+  } catch (error) {
+    const detail = classifyFirebaseError(error);
+    await admin
+      .from("push_delivery_events")
+      .update({
+        delivery_status: "failed",
+        last_error: detail,
+        completed_at: new Date().toISOString(),
+      })
+      .eq("event_id", eventId);
+
+    return json({
+      ok: false,
+      error: "firebase_delivery_failed",
+      detail,
+    }, 502);
+  }
 });

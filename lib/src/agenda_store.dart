@@ -47,6 +47,7 @@ class AgendaStore extends ChangeNotifier {
   final AgendaStoreSignals signals = AgendaStoreSignals();
   final Map<String, int> _sharedUnreadBySpace = {};
   final Set<String> _unifiedRealtimeSpaceIds = {};
+  final Map<String, Timer> _sharedNotificationFallbackTimers = {};
   bool _dayIndexDirty = true;
   bool _unifiedAgendaCacheDirty = true;
   int _pendingUnifiedTaskCountCache = 0;
@@ -2757,19 +2758,8 @@ class AgendaStore extends ChangeNotifier {
         spaceId: space.id,
         listenerKey: 'unified-agenda',
         onUpdatedBy: (updatedBy) {
-          if (updatedBy != null &&
-              updatedBy != cloud.userId &&
-              !PushNotificationService.instance.remotePushActive) {
-            // FCM is the primary unread source when a registered remote token
-            // is active. Realtime remains the fallback when push is unavailable,
-            // avoiding duplicate unread increments and duplicate notifications.
-            unawaited(markSharedSpaceUnread(space.id));
-            unawaited(
-              NotificationService.instance.showSharedUpdate(
-                spaceId: space.id,
-                spaceName: space.name,
-              ),
-            );
+          if (updatedBy != null && updatedBy != cloud.userId) {
+            _scheduleSharedNotificationFallback(space);
           }
         },
         onChanged: () {},
@@ -2784,6 +2774,30 @@ class AgendaStore extends ChangeNotifier {
       );
       _unifiedRealtimeSpaceIds.add(space.id);
     }
+  }
+
+  void _scheduleSharedNotificationFallback(SharedSpace space) {
+    _sharedNotificationFallbackTimers.remove(space.id)?.cancel();
+    _sharedNotificationFallbackTimers[space.id] = Timer(
+      const Duration(seconds: 4),
+      () {
+        _sharedNotificationFallbackTimers.remove(space.id);
+        final push = PushNotificationService.instance;
+        if (push.hasRecentSharedPush(space.id)) return;
+
+        // A registered FCM token is not proof that a push was delivered.
+        // Realtime therefore remains a delayed fallback. If FCM arrives first,
+        // this timer exits without duplicating the notification.
+        push.noteRealtimeFallbackShown(space.id);
+        unawaited(markSharedSpaceUnread(space.id));
+        unawaited(
+          NotificationService.instance.showSharedUpdate(
+            spaceId: space.id,
+            spaceName: space.name,
+          ),
+        );
+      },
+    );
   }
 
   Future<void> _applySharedRealtimeRecordChange(
@@ -4034,6 +4048,10 @@ class AgendaStore extends ChangeNotifier {
     _syncDebounceTimer?.cancel();
     _unifiedRealtimeDebounce?.cancel();
     _deferredCloudSyncTimer?.cancel();
+    for (final timer in _sharedNotificationFallbackTimers.values) {
+      timer.cancel();
+    }
+    _sharedNotificationFallbackTimers.clear();
     for (final spaceId in _unifiedRealtimeSpaceIds.toList()) {
       unawaited(
         CloudSyncService.instance.unsubscribeSharedSpace(
