@@ -282,6 +282,11 @@ class AgendaStore extends ChangeNotifier {
     notifyListeners();
   }
 
+  void _notifyLifecycleChanged() {
+    signals.bumpLifecycle();
+    notifyListeners();
+  }
+
   void _notifyAllDataChanged() {
     signals.bumpAll();
     notifyListeners();
