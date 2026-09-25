@@ -17,6 +17,7 @@ class _AgendaBackupDomain {
         'habits': store.habits.map((e) => e.toJson()).toList(),
         'birthdays': store.birthdays.map((e) => e.toJson()).toList(),
         'people': store.people.map((e) => e.toJson()).toList(),
+        'templates': store.templates.map((e) => e.toJson()).toList(),
         'inbox': store.inbox.map((e) => e.toJson()).toList(),
         'trash': store.trash.map((e) => e.toJson()).toList(),
         'preferences': store.preferences.toJson(),
@@ -42,6 +43,7 @@ class _AgendaBackupDomain {
       'habits': store.habits.map((e) => e.toJson()).toList(),
       'birthdays': store.birthdays.map((e) => e.toJson()).toList(),
       'people': store.people.map((e) => e.toJson()).toList(),
+      'templates': store.templates.map((e) => e.toJson()).toList(),
       'inbox': store.inbox.map((e) => e.toJson()).toList(),
       'trash': portableTrash,
       'preferences': store.preferences.toJson(),
@@ -221,6 +223,7 @@ class _AgendaBackupDomain {
       habitCount: (payload['habits'] as List? ?? const []).length,
       birthdayCount: (payload['birthdays'] as List? ?? const []).length,
       personCount: (payload['people'] as List? ?? const []).length,
+      templateCount: (payload['templates'] as List? ?? const []).length,
       trashCount: (payload['trash'] as List? ?? const []).length,
     );
   }
@@ -265,6 +268,25 @@ class _AgendaBackupDomain {
         if (item.note.trim().isNotEmpty) {
           buffer.writeln('  Note: ${item.note.trim()}');
         }
+      }
+    }
+
+    buffer.writeln();
+    buffer.writeln(
+      '============================================================',
+    );
+    buffer.writeln('MODELLI PERSONALI');
+    buffer.writeln(
+      '============================================================',
+    );
+
+    if (store.templates.isEmpty) {
+      buffer.writeln('Nessun modello personale salvato.');
+    } else {
+      for (final template in store.sortedTemplates) {
+        buffer.writeln(
+          '- ${template.name} · ${template.kind.label} · ${template.summary}',
+        );
       }
     }
 
