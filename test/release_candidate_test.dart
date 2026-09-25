@@ -199,8 +199,15 @@ void main() {
     expect(sizeWorkflow, contains('--split-per-abi'));
     expect(sizeWorkflow, contains('app-arm64-v8a-release.apk'));
 
-    expect(sideloadWorkflow, contains('.signing/sideload.jks'));
-    expect(sideloadWorkflow, contains('annas-diary-sideload-signing-v2'));
+    expect(
+      sideloadWorkflow,
+      contains('ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}'),
+    );
+    expect(
+      sideloadWorkflow,
+      contains('ANDROID_KEYSTORE_PATH: ${{ github.workspace }}/.signing/agenda-release.jks'),
+    );
+    expect(sideloadWorkflow, isNot(contains('annas-diary-sideload-signing-v2')));
     expect(sideloadWorkflow, contains('--release-signing'));
     expect(sideloadWorkflow, contains('app-arm64-v8a-release.apk'));
     expect(dockerfile, startsWith('FROM ghcr.io/cirruslabs/flutter:3.47.5'));
