@@ -1,4 +1,5 @@
 import { createClient } from "jsr:@supabase/supabase-js@2";
+import webpush from "npm:web-push@3.6.7";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -112,6 +113,179 @@ function loadFirebase(): FirebaseServiceAccount | null {
   }
 }
 
+
+type WebPushConfig = {
+  public_key: string;
+  private_key: string;
+  subject: string;
+};
+
+type WebSubscriptionRow = {
+  endpoint: string;
+  p256dh: string;
+  auth: string;
+  user_id: string;
+};
+
+async function ensureWebPushConfig(admin: any): Promise<WebPushConfig> {
+  const { data: existing, error: existingError } = await admin
+    .from("web_push_config")
+    .select("public_key,private_key,subject")
+    .eq("id", "default")
+    .maybeSingle();
+
+  if (existingError) {
+    throw new Error("web_push_config_lookup_failed");
+  }
+  if (existing) {
+    return existing as WebPushConfig;
+  }
+
+  const keyPair = await crypto.subtle.generateKey(
+    { name: "ECDSA", namedCurve: "P-256" },
+    true,
+    ["sign", "verify"],
+  ) as CryptoKeyPair;
+  const publicRaw = new Uint8Array(
+    await crypto.subtle.exportKey("raw", keyPair.publicKey),
+  );
+  const privateJwk = await crypto.subtle.exportKey(
+    "jwk",
+    keyPair.privateKey,
+  );
+  if (!privateJwk.d) {
+    throw new Error("web_push_private_key_export_failed");
+  }
+
+  const generated = {
+    id: "default",
+    public_key: base64UrlBytes(publicRaw),
+    private_key: privateJwk.d,
+    subject: "https://riccardopinato.github.io/Agenda-per-Anna/",
+    updated_at: new Date().toISOString(),
+  };
+
+  const { data: inserted, error: insertError } = await admin
+    .from("web_push_config")
+    .insert(generated)
+    .select("public_key,private_key,subject")
+    .single();
+
+  if (!insertError && inserted) {
+    return inserted as WebPushConfig;
+  }
+
+  // Two first-time clients may race. If another request inserted the key
+  // first, read the canonical row instead of rotating VAPID keys.
+  const { data: raced, error: raceError } = await admin
+    .from("web_push_config")
+    .select("public_key,private_key,subject")
+    .eq("id", "default")
+    .single();
+
+  if (raceError || !raced) {
+    throw new Error("web_push_config_create_failed");
+  }
+  return raced as WebPushConfig;
+}
+
+function classifyWebPushError(error: unknown) {
+  const statusCode = Number((error as any)?.statusCode ?? 0);
+  if (statusCode > 0) return `web_push_http_${statusCode}`;
+  return "web_push_send_exception";
+}
+
+async function sendWebPushMessages({
+  config,
+  subscriptions,
+  admin,
+  title,
+  body,
+  data,
+}: {
+  config: WebPushConfig;
+  subscriptions: WebSubscriptionRow[];
+  admin: any;
+  title: string;
+  body: string;
+  data: Record<string, string>;
+}) {
+  if (subscriptions.length === 0) {
+    return { delivered: 0, devices: 0, removed: 0, failed: 0 };
+  }
+
+  webpush.setVapidDetails(
+    config.subject,
+    config.public_key,
+    config.private_key,
+  );
+
+  let delivered = 0;
+  let removed = 0;
+  let failed = 0;
+
+  for (const subscription of subscriptions) {
+    try {
+      await webpush.sendNotification(
+        {
+          endpoint: subscription.endpoint,
+          keys: {
+            p256dh: subscription.p256dh,
+            auth: subscription.auth,
+          },
+        },
+        JSON.stringify({
+          title,
+          body,
+          data,
+          url: data.space_id
+            ? `./?pushSpace=${encodeURIComponent(data.space_id)}`
+            : "./",
+        }),
+        {
+          TTL: 300,
+          urgency: "high",
+        },
+      );
+      delivered++;
+    } catch (error) {
+      const statusCode = Number((error as any)?.statusCode ?? 0);
+      if (statusCode === 404 || statusCode === 410) {
+        await admin
+          .from("web_push_subscriptions")
+          .delete()
+          .eq("endpoint", subscription.endpoint);
+        removed++;
+      } else {
+        failed++;
+      }
+    }
+  }
+
+  return {
+    delivered,
+    devices: subscriptions.length,
+    removed,
+    failed,
+  };
+}
+
+function combineDeliveryResults(
+  fcm: { delivered: number; devices: number; removed: number; failed: number },
+  web: { delivered: number; devices: number; removed: number; failed: number },
+) {
+  return {
+    delivered: fcm.delivered + web.delivered,
+    devices: fcm.devices + web.devices,
+    removed: fcm.removed + web.removed,
+    failed: fcm.failed + web.failed,
+    fcm_delivered: fcm.delivered,
+    fcm_devices: fcm.devices,
+    web_delivered: web.delivered,
+    web_subscriptions: web.devices,
+  };
+}
+
 function classifyFirebaseError(error: unknown) {
   const raw = error instanceof Error ? error.message : String(error);
   if (raw.startsWith("firebase_oauth_")) {
@@ -140,6 +314,10 @@ async function finalizeDeliveryEvent(
     devices: number;
     removed: number;
     failed: number;
+    fcm_delivered?: number;
+    fcm_devices?: number;
+    web_delivered?: number;
+    web_subscriptions?: number;
   },
   error?: string,
 ) {
@@ -150,6 +328,10 @@ async function finalizeDeliveryEvent(
       delivered_count: result.delivered,
       failed_count: result.failed,
       removed_invalid_tokens: result.removed,
+      fcm_device_count: result.fcm_devices ?? 0,
+      web_subscription_count: result.web_subscriptions ?? 0,
+      fcm_delivered_count: result.fcm_delivered ?? 0,
+      web_delivered_count: result.web_delivered ?? 0,
       delivery_status: deliveryStatus(result),
       last_error: error ?? null,
       completed_at: new Date().toISOString(),
@@ -249,17 +431,145 @@ async function sendFirebaseMessages({
   };
 }
 
+async function processDueWebReminders(admin: any) {
+  const now = new Date();
+  const staleCutoff = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+
+  const { data: reminders, error: remindersError } = await admin
+    .from("web_push_reminders")
+    .select("id,user_id,stable_id,title,body,scheduled_at,attempts")
+    .eq("status", "pending")
+    .lte("scheduled_at", now.toISOString())
+    .gte("scheduled_at", staleCutoff.toISOString())
+    .lt("attempts", 3)
+    .order("scheduled_at", { ascending: true })
+    .limit(100);
+
+  if (remindersError) {
+    throw new Error("due_reminder_lookup_failed");
+  }
+  if (!reminders || reminders.length === 0) {
+    return { processed: 0, delivered: 0, failed: 0, no_subscription: 0 };
+  }
+
+  const config = await ensureWebPushConfig(admin);
+  let deliveredCount = 0;
+  let failedCount = 0;
+  let noSubscriptionCount = 0;
+
+  for (const reminder of reminders) {
+    const attempts = Number(reminder.attempts ?? 0);
+    const { data: subscriptions, error: subscriptionsError } = await admin
+      .from("web_push_subscriptions")
+      .select("endpoint,p256dh,auth,user_id")
+      .eq("user_id", reminder.user_id);
+
+    if (subscriptionsError) {
+      const nextAttempts = attempts + 1;
+      await admin
+        .from("web_push_reminders")
+        .update({
+          attempts: nextAttempts,
+          status: nextAttempts >= 3 ? "failed" : "pending",
+          last_error: "web_subscription_lookup_failed",
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", reminder.id);
+      failedCount++;
+      continue;
+    }
+
+    if (!subscriptions || subscriptions.length === 0) {
+      await admin
+        .from("web_push_reminders")
+        .update({
+          attempts: attempts + 1,
+          status: "no_subscription",
+          last_error: "no_web_push_subscription",
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", reminder.id);
+      noSubscriptionCount++;
+      continue;
+    }
+
+    try {
+      const result = await sendWebPushMessages({
+        config,
+        subscriptions,
+        admin,
+        title: reminder.title,
+        body: reminder.body,
+        data: {
+          kind: "private_reminder",
+          reminder_id: reminder.stable_id,
+        },
+      });
+
+      if (result.delivered > 0) {
+        await admin
+          .from("web_push_reminders")
+          .update({
+            attempts: attempts + 1,
+            status: "delivered",
+            delivered_at: new Date().toISOString(),
+            last_error: result.failed > 0 ? "partial_web_push_delivery" : null,
+            updated_at: new Date().toISOString(),
+          })
+          .eq("id", reminder.id);
+        deliveredCount++;
+      } else {
+        const nextAttempts = attempts + 1;
+        const noSubscription =
+          result.removed > 0 && result.failed === 0;
+        await admin
+          .from("web_push_reminders")
+          .update({
+            attempts: nextAttempts,
+            status: noSubscription
+              ? "no_subscription"
+              : (nextAttempts >= 3 ? "failed" : "pending"),
+            last_error: noSubscription
+              ? "web_push_subscription_expired"
+              : "web_push_delivery_failed",
+            updated_at: new Date().toISOString(),
+          })
+          .eq("id", reminder.id);
+        if (noSubscription) {
+          noSubscriptionCount++;
+        } else {
+          failedCount++;
+        }
+      }
+    } catch (error) {
+      const nextAttempts = attempts + 1;
+      await admin
+        .from("web_push_reminders")
+        .update({
+          attempts: nextAttempts,
+          status: nextAttempts >= 3 ? "failed" : "pending",
+          last_error: classifyWebPushError(error),
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", reminder.id);
+      failedCount++;
+    }
+  }
+
+  return {
+    processed: reminders.length,
+    delivered: deliveredCount,
+    failed: failedCount,
+    no_subscription: noSubscriptionCount,
+  };
+}
+
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
   }
   if (req.method !== "POST") {
     return json({ error: "method_not_allowed" }, 405);
-  }
-
-  const authHeader = req.headers.get("Authorization");
-  if (!authHeader?.startsWith("Bearer ")) {
-    return json({ error: "missing_authorization" }, 401);
   }
 
   const supabaseUrl = Deno.env.get("SUPABASE_URL") ?? "";
@@ -278,11 +588,56 @@ Deno.serve(async (req: Request) => {
     return json({ error: "supabase_keys_unavailable" }, 500);
   }
 
-  const authClient = createClient(supabaseUrl, publicKey, {
-    global: { headers: { Authorization: authHeader } },
+  const admin = createClient(supabaseUrl, adminKey, {
     auth: { persistSession: false },
   });
-  const admin = createClient(supabaseUrl, adminKey, {
+
+  let requestBody: Record<string, unknown>;
+  try {
+    requestBody = await req.json();
+  } catch (_) {
+    return json({ error: "invalid_json" }, 400);
+  }
+
+  const action = String(requestBody.action ?? "updated").trim();
+
+  if (action === "send_due_web_reminders") {
+    const suppliedCronToken = req.headers.get("x-cron-token") ?? "";
+    const { data: config, error: configError } = await admin
+      .from("web_push_config")
+      .select("cron_token")
+      .eq("id", "default")
+      .maybeSingle();
+
+    if (
+      configError ||
+      !config?.cron_token ||
+      suppliedCronToken !== config.cron_token
+    ) {
+      return json({ error: "invalid_cron_authorization" }, 401);
+    }
+
+    try {
+      return json({
+        ok: true,
+        ...(await processDueWebReminders(admin)),
+      });
+    } catch (error) {
+      return json({
+        ok: false,
+        error: "web_reminder_dispatch_failed",
+        detail: classifyWebPushError(error),
+      }, 500);
+    }
+  }
+
+  const authHeader = req.headers.get("Authorization");
+  if (!authHeader?.startsWith("Bearer ")) {
+    return json({ error: "missing_authorization" }, 401);
+  }
+
+  const authClient = createClient(supabaseUrl, publicKey, {
+    global: { headers: { Authorization: authHeader } },
     auth: { persistSession: false },
   });
 
@@ -296,26 +651,30 @@ Deno.serve(async (req: Request) => {
     return json({ error: "invalid_session" }, 401);
   }
 
-  let requestBody: Record<string, unknown>;
-  try {
-    requestBody = await req.json();
-  } catch (_) {
-    return json({ error: "invalid_json" }, 400);
-  }
-
   const spaceId = String(requestBody.space_id ?? "").trim();
   const eventId = String(requestBody.event_id ?? "").trim();
-  const action = String(requestBody.action ?? "updated").trim();
   const entityId = String(requestBody.entity_id ?? "").trim();
+
+  if (action === "web_push_public_key") {
+    try {
+      const config = await ensureWebPushConfig(admin);
+      return json({
+        ok: true,
+        public_key: config.public_key,
+      });
+    } catch (error) {
+      return json({
+        ok: false,
+        error: classifyWebPushError(error),
+      }, 500);
+    }
+  }
 
   if (!eventId) {
     return json({ error: "event_id_required" }, 400);
   }
 
   const firebase = loadFirebase();
-  if (!firebase) {
-    return json({ error: "firebase_not_configured" }, 503);
-  }
 
   if (action === "self_test") {
     const { data: ownDevices, error: ownDevicesError } = await admin
@@ -327,34 +686,71 @@ Deno.serve(async (req: Request) => {
       return json({ error: "device_lookup_failed" }, 500);
     }
 
-    try {
-      const result = await sendFirebaseMessages({
-        firebase,
-        devices: ownDevices ?? [],
-        admin,
-        title: "Anna's Diary · Test push",
-        body: "Il canale Firebase funziona correttamente ♡",
-        data: {
-          kind: "push_self_test",
-          event_id: eventId,
-        },
-      });
+    const { data: ownWebSubscriptions, error: ownWebError } = await admin
+      .from("web_push_subscriptions")
+      .select("endpoint,p256dh,auth,user_id")
+      .eq("user_id", user.id);
 
+    if (ownWebError) {
+      return json({ error: "web_subscription_lookup_failed" }, 500);
+    }
+
+    try {
+      const title = "Anna's Diary · Test push";
+      const body = "Il canale push funziona correttamente ♡";
+      const data = {
+        kind: "push_self_test",
+        event_id: eventId,
+      };
+
+      const fcmResult = firebase
+        ? await sendFirebaseMessages({
+            firebase,
+            devices: ownDevices ?? [],
+            admin,
+            title,
+            body,
+            data,
+          })
+        : { delivered: 0, devices: 0, removed: 0, failed: 0 };
+
+      const webConfig = (ownWebSubscriptions ?? []).length > 0
+        ? await ensureWebPushConfig(admin)
+        : null;
+      const webResult = webConfig
+        ? await sendWebPushMessages({
+            config: webConfig,
+            subscriptions: ownWebSubscriptions ?? [],
+            admin,
+            title,
+            body,
+            data,
+          })
+        : { delivered: 0, devices: 0, removed: 0, failed: 0 };
+
+      const result = combineDeliveryResults(fcmResult, webResult);
       return json({
         ok: result.delivered > 0 && result.failed === 0,
         self_test: true,
         delivered: result.delivered,
         devices: result.devices,
+        fcm_devices: result.fcm_devices,
+        web_subscriptions: result.web_subscriptions,
+        fcm_delivered: result.fcm_delivered,
+        web_delivered: result.web_delivered,
         removed_invalid_tokens: result.removed,
         failed: result.failed,
         status: deliveryStatus(result),
       });
     } catch (error) {
+      const detail = firebase
+        ? classifyFirebaseError(error)
+        : classifyWebPushError(error);
       return json({
         ok: false,
         self_test: true,
-        error: "firebase_delivery_failed",
-        detail: classifyFirebaseError(error),
+        error: "push_delivery_failed",
+        detail,
       }, 502);
     }
   }
@@ -402,16 +798,27 @@ Deno.serve(async (req: Request) => {
     .select("token,user_id")
     .in("user_id", recipientIds);
 
-  if (devicesError) {
+  const { data: webSubscriptions, error: webSubscriptionsError } = await admin
+    .from("web_push_subscriptions")
+    .select("endpoint,p256dh,auth,user_id")
+    .in("user_id", recipientIds);
+
+  if (devicesError || webSubscriptionsError) {
     await admin
       .from("push_delivery_events")
       .update({
         delivery_status: "failed",
-        last_error: "device_lookup_failed",
+        last_error: devicesError
+          ? "device_lookup_failed"
+          : "web_subscription_lookup_failed",
         completed_at: new Date().toISOString(),
       })
       .eq("event_id", eventId);
-    return json({ error: "device_lookup_failed" }, 500);
+    return json({
+      error: devicesError
+        ? "device_lookup_failed"
+        : "web_subscription_lookup_failed",
+    }, 500);
   }
 
   const messageBody =
@@ -428,33 +835,59 @@ Deno.serve(async (req: Request) => {
               : "C’è una nuova attività condivisa da leggere.";
 
   try {
-    const result = await sendFirebaseMessages({
-      firebase,
-      devices: devices ?? [],
-      admin,
-      title: "Anna's Diary · Noi ♡",
-      body: messageBody,
-      data: {
-        kind: "shared_update",
-        space_id: spaceId,
-        event_id: eventId,
-        action,
-        ...(entityId ? { entity_id: entityId } : {}),
-      },
-    });
+    const title = "Anna's Diary · Noi ♡";
+    const data = {
+      kind: "shared_update",
+      space_id: spaceId,
+      event_id: eventId,
+      action,
+      ...(entityId ? { entity_id: entityId } : {}),
+    };
 
+    const fcmResult = firebase
+      ? await sendFirebaseMessages({
+          firebase,
+          devices: devices ?? [],
+          admin,
+          title,
+          body: messageBody,
+          data,
+        })
+      : { delivered: 0, devices: 0, removed: 0, failed: 0 };
+
+    const webConfig = (webSubscriptions ?? []).length > 0
+      ? await ensureWebPushConfig(admin)
+      : null;
+    const webResult = webConfig
+      ? await sendWebPushMessages({
+          config: webConfig,
+          subscriptions: webSubscriptions ?? [],
+          admin,
+          title,
+          body: messageBody,
+          data,
+        })
+      : { delivered: 0, devices: 0, removed: 0, failed: 0 };
+
+    const result = combineDeliveryResults(fcmResult, webResult);
     await finalizeDeliveryEvent(admin, eventId, result);
 
     return json({
       ok: result.delivered > 0 && result.failed === 0,
       delivered: result.delivered,
       devices: result.devices,
+      fcm_devices: result.fcm_devices,
+      web_subscriptions: result.web_subscriptions,
+      fcm_delivered: result.fcm_delivered,
+      web_delivered: result.web_delivered,
       removed_invalid_tokens: result.removed,
       failed: result.failed,
       status: deliveryStatus(result),
     });
   } catch (error) {
-    const detail = classifyFirebaseError(error);
+    const detail = firebase
+      ? classifyFirebaseError(error)
+      : classifyWebPushError(error);
     await admin
       .from("push_delivery_events")
       .update({
@@ -466,7 +899,7 @@ Deno.serve(async (req: Request) => {
 
     return json({
       ok: false,
-      error: "firebase_delivery_failed",
+      error: "push_delivery_failed",
       detail,
     }, 502);
   }

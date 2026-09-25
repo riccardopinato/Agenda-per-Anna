@@ -37,10 +37,11 @@ jobs:
           cp -R /tmp/agenda_base/android .
           cp -R /tmp/agenda_base/web .
 
-      - name: Apply and verify Android configuration
+      - name: Apply and verify platform configuration
         run: |
-          python3 -m py_compile             tool/prepare_android_platform.py             tool/android_size_report.py
+          python3 -m py_compile             tool/prepare_android_platform.py             tool/prepare_web_platform.py             tool/finalize_web_build.py             tool/android_size_report.py
           python3 tool/prepare_android_platform.py
+          python3 tool/prepare_web_platform.py
 
       - name: Install locked dependencies
         run: flutter pub get --enforce-lockfile
@@ -50,7 +51,9 @@ jobs:
 
       - name: Format v0.40 modules
         run: |
-          dart format --output=none --set-exit-if-changed             lib/src/store_signals.dart             test/v040_persistence_torture_test.dart
+          dart format --output=none --set-exit-if-changed \
+            lib/src/store_signals.dart \
+            test/v040_persistence_torture_test.dart
 
       - name: Analyze
         run: flutter analyze
@@ -59,7 +62,9 @@ jobs:
         run: flutter test
 
       - name: Build web release
-        run: flutter build web --release
+        run: |
+          flutter build web --release
+          python3 tool/finalize_web_build.py
 
       - name: Build Android ARM64 release gate
         run: |

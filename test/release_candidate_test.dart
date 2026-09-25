@@ -182,8 +182,8 @@ void main() {
     final appLabJourney =
         File('.maestro/applab-journey.json').readAsStringSync();
 
-    expect(appReleaseVersion, '0.43.0');
-    expect(pubspec, contains('version: 0.43.0+52'));
+    expect(appReleaseVersion, '0.44.0');
+    expect(pubspec, contains('version: 0.44.0+53'));
 
     expect(releaseWorkflow, contains('--release-signing'));
     expect(releaseWorkflow, contains('--obfuscate'));
@@ -199,8 +199,15 @@ void main() {
     expect(sizeWorkflow, contains('--split-per-abi'));
     expect(sizeWorkflow, contains('app-arm64-v8a-release.apk'));
 
-    expect(sideloadWorkflow, contains('.signing/sideload.jks'));
-    expect(sideloadWorkflow, contains('annas-diary-sideload-signing-v2'));
+    expect(
+      sideloadWorkflow,
+      contains(r'ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}'),
+    );
+    expect(
+      sideloadWorkflow,
+      contains(r'ANDROID_KEYSTORE_PATH: ${{ github.workspace }}/.signing/agenda-release.jks'),
+    );
+    expect(sideloadWorkflow, isNot(contains('annas-diary-sideload-signing-v2')));
     expect(sideloadWorkflow, contains('--release-signing'));
     expect(sideloadWorkflow, contains('app-arm64-v8a-release.apk'));
     expect(dockerfile, startsWith('FROM ghcr.io/cirruslabs/flutter:3.47.5'));

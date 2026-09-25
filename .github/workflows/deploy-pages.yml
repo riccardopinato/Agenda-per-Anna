@@ -6,6 +6,11 @@ on:
     paths:
       - "lib/**"
       - "assets/**"
+      - "web_push/**"
+      - "legal/**"
+      - "tool/prepare_web_platform.py"
+      - "tool/finalize_web_build.py"
+      - "tool/finalize_web_build.py"
       - "pubspec.yaml"
       - "pubspec.lock"
       - ".github/workflows/deploy-pages.yml"
@@ -14,6 +19,9 @@ on:
     paths:
       - "lib/**"
       - "assets/**"
+      - "web_push/**"
+      - "legal/**"
+      - "tool/prepare_web_platform.py"
       - "pubspec.yaml"
       - "pubspec.lock"
       - ".github/workflows/deploy-pages.yml"
@@ -49,6 +57,8 @@ jobs:
           flutter create --project-name agenda_per_anna --org com.riccardopinato --platforms=web --no-pub /tmp/agenda_base
           rm -rf web
           cp -R /tmp/agenda_base/web .
+          python3 -m py_compile tool/prepare_web_platform.py
+          python3 tool/prepare_web_platform.py
 
       - name: Decode app icon
         run: |
@@ -61,6 +71,16 @@ jobs:
 
       - name: Build web release
         run: flutter build web --release --base-href "/Agenda-per-Anna/"
+
+      - name: Finalize Flutter service worker with Web Push
+        run: |
+          python3 -m py_compile tool/finalize_web_build.py
+          python3 tool/finalize_web_build.py
+
+      - name: Add public legal pages
+        run: |
+          cp legal/privacy.html build/web/privacy.html
+          cp legal/terms.html build/web/terms.html
 
       - name: Upload Pages artifact
         if: github.event_name != 'pull_request'

@@ -26,6 +26,7 @@ import 'local_state_store.dart';
 import 'media_asset_store.dart';
 import 'push_notification_service.dart';
 import 'vault_service.dart';
+import 'web_push_service.dart';
 
 part 'src/app_shell.dart';
 part 'src/domain_models.dart';
@@ -139,6 +140,19 @@ Future<void> main() async {
         onSharedPushOpened: (spaceId) =>
             _openSharedSpaceFromNotification(store, spaceId),
       );
+
+      if (kIsWeb) {
+        await WebPushService.instance.initialize();
+        await store.reconcileReminders();
+        final initialWebPushSpace =
+            await WebPushService.instance.takeInitialSpaceId();
+        if (initialWebPushSpace != null) {
+          await _openSharedSpaceFromNotification(
+            store,
+            initialWebPushSpace,
+          );
+        }
+      }
     } catch (_) {
       // Cloud e push sono opzionali: l'agenda resta pienamente offline.
     }

@@ -2,7 +2,7 @@
 
 Flutter app for personal planning, private diary and the shared **Noi ♡** space.
 
-Current release line: **v0.40.0**.
+Current release line: **v0.44.0**.
 
 ## Core areas
 
@@ -126,3 +126,36 @@ See `docs/ARCHITECTURE.md` and `supabase/README.md` for implementation details.
 - Pull requests now build an ARM64 release APK instead of relying only on debug packaging.
 - Added AppLab as a first-class PR gate with restart persistence smoke and Calendar / Week / Today / Memories visual checkpoints.
 - GitHub Pages is the canonical Web deployment: https://riccardopinato.github.io/Agenda-per-Anna/
+
+
+## v0.41.0 — Universal Identity & Persistent Noi ♡
+
+- Google-first universal identity is shared by private agenda, sync and Noi ♡.
+- Shared-space invite codes persist server-side for 24 hours and survive navigation/restart.
+- Android OAuth deep-link handling and always-synced shared-space bootstrap are production-gated.
+
+## v0.42.0 — Private Vault
+
+- Local-only encrypted vault with password-derived protection and Android Keystore wrapping.
+- Biometric unlock, automatic relock and FLAG_SECURE protect sensitive local entries.
+- Vault contents are excluded from ordinary cloud sync, search and normal backup flows.
+
+## v0.42.1 — Full Day Timeline
+
+- La mia giornata covers the complete 00:00–24:00 civil day.
+- Timeline, current-time indicator, taps and events use chronological top-to-bottom mapping.
+
+## v0.43.0 — Notification Reliability
+
+- Android notification health now checks app permission, individual channels, exact alarms and scheduled delivery.
+- FCM self-test verifies token registration and backend delivery results.
+- Push delivery telemetry records delivered, failed, missing-device and invalid-token outcomes.
+- Realtime remains a delayed fallback instead of assuming a registered token means successful delivery.
+
+## v0.44.0 — Cross-Platform Notifications & Release Hardening
+
+- Noi ♡ supports standards-based Web Push for the installed iPhone/iPad PWA and compatible desktop browsers.
+- Web Push subscriptions are account-scoped in Supabase and use server-generated VAPID credentials that never enter the repository.
+- Notification taps reopen the correct shared space through the PWA service worker.
+- GitHub Pages deploys public Privacy Policy and Terms of Service for Google OAuth branding.
+- Direct ARM64 sideload builds use the protected stable release signing secrets rather than a generated cached key.

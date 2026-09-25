@@ -1,0 +1,2 @@
+[functions.send-shared-push]
+verify_jwt = false

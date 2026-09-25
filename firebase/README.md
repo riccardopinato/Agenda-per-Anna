@@ -44,3 +44,19 @@ Remote Noi ♡ notifications use Android channel:
 and drawable:
 
 `notification_icon`
+
+
+## Web / iPhone PWA push
+
+v0.44 does not route PWA notifications through Firebase Messaging. The Web
+build uses the standards-based Push API and a dedicated service worker.
+Supabase stores the browser subscription and the Edge Function sends Web Push
+with a VAPID keypair generated server-side on first use.
+
+The private VAPID key is stored only in the backend table
+`web_push_config`, which is inaccessible to authenticated/anonymous clients.
+Only the public key is returned to a signed-in app when a browser explicitly
+enables notifications.
+
+On iPhone/iPad, Web Push requires Anna's Diary to be installed on the Home
+Screen and notification permission must be requested from a direct user action.

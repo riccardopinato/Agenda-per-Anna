@@ -120,7 +120,7 @@ void main() {
       expect(function, contains('finalizeDeliveryEvent'));
       expect(function, contains('delivery_status'));
       expect(function, contains('delivered_count'));
-      expect(function, contains('firebase_delivery_failed'));
+      expect(function, contains('push_delivery_failed'));
       expect(migration, contains('device_count'));
       expect(migration, contains('failed_count'));
       expect(migration, contains('completed_at'));
