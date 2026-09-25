@@ -1201,6 +1201,50 @@ class CloudSyncService extends ChangeNotifier {
     return key;
   }
 
+  Future<void> upsertWebPushReminder({
+    required String stableId,
+    required String title,
+    required String body,
+    required DateTime when,
+  }) async {
+    final client = _requireSignedInClient();
+    final uid = userId!;
+    await client.from('web_push_reminders').upsert(
+      {
+        'user_id': uid,
+        'stable_id': stableId,
+        'title': title,
+        'body': body,
+        'scheduled_at': when.toUtc().toIso8601String(),
+        'status': 'pending',
+        'attempts': 0,
+        'last_error': null,
+        'delivered_at': null,
+        'updated_at': DateTime.now().toUtc().toIso8601String(),
+      },
+      onConflict: 'user_id,stable_id',
+    );
+  }
+
+  Future<void> cancelWebPushReminder(String stableId) async {
+    final client = _requireSignedInClient();
+    final uid = userId!;
+    await client
+        .from('web_push_reminders')
+        .delete()
+        .eq('user_id', uid)
+        .eq('stable_id', stableId);
+  }
+
+  Future<void> clearWebPushReminders() async {
+    final client = _requireSignedInClient();
+    final uid = userId!;
+    await client
+        .from('web_push_reminders')
+        .delete()
+        .eq('user_id', uid);
+  }
+
   Future<Map<String, dynamic>> sendPushSelfTest({
     required String eventId,
   }) async {
