@@ -10,6 +10,7 @@ enum TrashEntityKind {
   week,
   habit,
   birthday,
+  person,
   inbox,
 }
 
@@ -22,6 +23,7 @@ extension TrashEntityKindUi on TrashEntityKind {
         TrashEntityKind.week => 'Pagina settimanale',
         TrashEntityKind.habit => 'Abitudine',
         TrashEntityKind.birthday => 'Compleanno',
+        TrashEntityKind.person => 'Persona',
         TrashEntityKind.inbox => 'Inbox',
       };
 
@@ -33,6 +35,7 @@ extension TrashEntityKindUi on TrashEntityKind {
         TrashEntityKind.week => Icons.view_week_outlined,
         TrashEntityKind.habit => Icons.repeat_outlined,
         TrashEntityKind.birthday => Icons.cake_outlined,
+        TrashEntityKind.person => Icons.person_outline,
         TrashEntityKind.inbox => Icons.inbox_outlined,
       };
 }
@@ -165,6 +168,7 @@ extension AgendaStoreLifecycle on AgendaStore {
       case TrashEntityKind.week:
       case TrashEntityKind.habit:
       case TrashEntityKind.birthday:
+      case TrashEntityKind.person:
       case TrashEntityKind.inbox:
         return entry;
     }
@@ -197,6 +201,7 @@ extension AgendaStoreLifecycle on AgendaStore {
       case TrashEntityKind.week:
       case TrashEntityKind.habit:
       case TrashEntityKind.birthday:
+      case TrashEntityKind.person:
       case TrashEntityKind.inbox:
         return entry.toJson();
     }
@@ -255,6 +260,28 @@ extension AgendaStoreLifecycle on AgendaStore {
     ]);
     signals.bumpLifecycle();
     _notifyInboxChanged();
+    return true;
+  }
+
+  Future<bool> movePersonToTrash(String id) async {
+    final index = people.indexWhere((person) => person.id == id);
+    if (index < 0) return false;
+    final person = people[index];
+    final entry = _newTrashEntry(
+      kind: TrashEntityKind.person,
+      entityId: person.id,
+      title: person.name,
+      payload: person.toJson(),
+    );
+
+    people.removeAt(index);
+    _putTrashInMemory(entry);
+    await _persistEntityMutations([
+      (type: 'person', id: id, payload: null, deleted: true),
+      (type: 'trash', id: entry.id, payload: entry.toJson(), deleted: false),
+    ]);
+    signals.bumpLifecycle();
+    _notifyPlanningChanged();
     return true;
   }
 
@@ -477,6 +504,17 @@ extension AgendaStoreLifecycle on AgendaStore {
           deleted: false,
         ));
         break;
+      case TrashEntityKind.person:
+        final value = PersonEntry.fromJson(localized.payload);
+        people.removeWhere((person) => person.id == value.id);
+        people.add(value);
+        mutations.add((
+          type: 'person',
+          id: value.id,
+          payload: value.toJson(),
+          deleted: false,
+        ));
+        break;
       case TrashEntityKind.inbox:
         final value = InboxEntry.fromJson(localized.payload);
         inbox.removeWhere((entry) => entry.id == value.id);
@@ -601,6 +639,9 @@ extension AgendaStoreLifecycle on AgendaStore {
         }
         _notifyPlanningChanged();
         break;
+      case TrashEntityKind.person:
+        _notifyPlanningChanged();
+        break;
       case TrashEntityKind.inbox:
         _notifyInboxChanged();
         break;
@@ -631,6 +672,11 @@ extension AgendaStoreLifecycle on AgendaStore {
     }
 
     final entry = trash.removeAt(index);
+    if (entry.kind == TrashEntityKind.person) {
+      await _unlinkPurgedPeople({entry.entityId});
+    } else if (entry.kind == TrashEntityKind.birthday) {
+      await _unlinkPurgedBirthdays({entry.entityId});
+    }
     await _persistEntityMutation(
       type: 'trash',
       id: entry.id,
@@ -647,7 +693,17 @@ extension AgendaStoreLifecycle on AgendaStore {
     await createLocalSnapshot(label: 'Prima di svuotare il Cestino');
 
     final removed = [...trash];
+    final purgedPeople = removed
+        .where((entry) => entry.kind == TrashEntityKind.person)
+        .map((entry) => entry.entityId)
+        .toSet();
+    final purgedBirthdays = removed
+        .where((entry) => entry.kind == TrashEntityKind.birthday)
+        .map((entry) => entry.entityId)
+        .toSet();
     trash.clear();
+    await _unlinkPurgedPeople(purgedPeople);
+    await _unlinkPurgedBirthdays(purgedBirthdays);
     await _persistEntityMutations(
       [
         for (final entry in removed)
