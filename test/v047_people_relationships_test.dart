@@ -121,8 +121,15 @@ void main() {
     expect(await store.movePersonToTrash('person-trash'), isTrue);
     expect(store.people, isEmpty);
     expect(store.journal(date).blocks.single.personIds, ['person-trash']);
-    final trashId = store.trash.single.id;
 
+    await store.tagDiaryBlockPeople(
+      date,
+      'memory-trash',
+      ['person-trash'],
+    );
+    expect(store.journal(date).blocks.single.personIds, ['person-trash']);
+
+    final trashId = store.trash.single.id;
     expect(await store.restoreTrashEntry(trashId), isTrue);
     expect(store.people.single.id, 'person-trash');
     expect(store.personMemoryCount('person-trash'), 1);
@@ -162,6 +169,11 @@ void main() {
     );
 
     expect(await store.moveBirthdayToTrash('birthday-linked'), isTrue);
+    await store.savePerson(
+      store.people.single.copyWith(note: 'Compleanno recuperabile'),
+    );
+    expect(store.people.single.birthdayId, 'birthday-linked');
+
     final trashId = store.trash.single.id;
     expect(
       await store.purgeTrashEntry(trashId, createSafetySnapshot: false),
