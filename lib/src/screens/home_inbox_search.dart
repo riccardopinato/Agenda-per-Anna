@@ -1215,6 +1215,18 @@ class ArchiveScreen extends StatelessWidget {
           'Archivio',
           style: TextStyle(fontWeight: FontWeight.w800),
         ),
+        actions: [
+          IconButton(
+            tooltip: 'Cestino',
+            onPressed: () => Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => TrashScreen(store: store),
+              ),
+            ),
+            icon: const Icon(Icons.delete_outline),
+          ),
+        ],
       ),
       body: months.isEmpty
           ? const Center(child: Text('L’archivio è ancora vuoto.'))
