@@ -461,6 +461,8 @@ class _NotificationSettingsCardState
   NotificationHealth? health;
   PushNotificationHealth? pushHealth;
   bool busy = false;
+  String? lastDiagnosticMessage;
+  bool? lastDiagnosticOk;
 
   bool get _isAndroid =>
       !kIsWeb && defaultTargetPlatform == TargetPlatform.android;
@@ -513,44 +515,68 @@ class _NotificationSettingsCardState
 
   Future<void> _testLocal() async {
     await _runBusy(() async {
-      try {
-        await NotificationService.instance.showTestNotification();
-        await _refresh();
-        _snack(
-          health?.notificationsEnabled == false
-              ? 'Le notifiche risultano bloccate dal sistema.'
-              : 'Test locale inviato. Controlla la tendina notifiche.',
-        );
-      } catch (_) {
-        await _refresh();
-        _snack(
-          'Test locale non riuscito. Usa “Ripara notifiche” e riprova.',
-        );
+      final result = await NotificationService.instance.runLocalDiagnostic();
+      await _refresh();
+
+      final message = result.ok
+          ? 'Test locale OK: una notifica è stata inviata subito e un '
+              'promemoria di controllo arriverà tra '
+              '${result.scheduledDelaySeconds} secondi.'
+          : [
+              if (!result.permissionGranted)
+                'Permesso notifiche non concesso.',
+              if (!result.health.notificationsEnabled)
+                'Notifiche bloccate a livello di sistema.',
+              if (!result.health.reminderChannelEnabled)
+                'Canale “Promemoria” disattivato nelle impostazioni Android.',
+              if (result.error != null) 'Errore: ${result.error}',
+            ].join(' ');
+
+      if (mounted) {
+        setState(() {
+          lastDiagnosticMessage = message;
+          lastDiagnosticOk = result.ok;
+        });
       }
+      _snack(message);
     });
   }
 
   Future<void> _testPush() async {
     await _runBusy(() async {
+      String message;
+      bool ok = false;
       try {
         final result = await PushNotificationService.instance.sendSelfTest();
         await _refresh();
         final delivered = (result['delivered'] as num?)?.toInt() ?? 0;
         final devices = (result['devices'] as num?)?.toInt() ?? 0;
-        _snack(
-          delivered > 0
-              ? 'Test Firebase inviato a $delivered dispositivo/i. '
-                  'La notifica dovrebbe comparire ora.'
-              : 'Firebase è raggiungibile, ma non risultano consegne '
-                  '($devices dispositivi registrati).',
-        );
-      } catch (_) {
+        final failed = (result['failed'] as num?)?.toInt() ?? 0;
+        final removed =
+            (result['removed_invalid_tokens'] as num?)?.toInt() ?? 0;
+        ok = delivered > 0 && failed == 0;
+        message = delivered > 0
+            ? 'Firebase OK: $delivered consegna/e su $devices dispositivo/i'
+                '${removed > 0 ? ' · $removed token obsoleti rimossi' : ''}.'
+            : failed > 0
+                ? 'Firebase ha raggiunto il backend ma $failed consegna/e '
+                    'sono fallite. Controlla la diagnostica sotto.'
+                : 'Backend raggiunto, ma nessuna consegna: '
+                    '$devices dispositivo/i registrati.';
+      } catch (error) {
         await _refresh();
-        _snack(
-          'Test Firebase non riuscito. Controlla lo stato qui sotto '
-          'e usa “Ripara notifiche”.',
-        );
+        final raw = error.toString().replaceAll(RegExp(r'\s+'), ' ').trim();
+        final compact = raw.length > 180 ? '${raw.substring(0, 180)}…' : raw;
+        message = 'Test Firebase fallito: $compact';
       }
+
+      if (mounted) {
+        setState(() {
+          lastDiagnosticMessage = message;
+          lastDiagnosticOk = ok;
+        });
+      }
+      _snack(message);
     });
   }
 
@@ -573,17 +599,17 @@ class _NotificationSettingsCardState
       await widget.store.reconcileReminders();
       await _refresh();
 
-      final localOk = health?.available == true &&
-          health?.notificationsEnabled == true;
+      final localOk = health?.reminderDeliveryReady == true;
       final push = pushHealth;
       final pushOk = push?.configured != true ||
           (push?.tokenAvailable == true &&
-              push?.deviceRegistered == true);
+              push?.deviceRegistered == true &&
+              health?.sharedDeliveryReady == true);
       _snack(
         localOk && pushOk
-            ? 'Diagnostica completata: notifiche pronte.'
-            : 'Riparazione completata. Alcune autorizzazioni richiedono '
-                'ancora un intervento nelle impostazioni di sistema.',
+            ? 'Riparazione completata: notifiche pronte.'
+            : 'Riparazione completata, ma almeno un permesso/canale resta '
+                'bloccato. Apri “Impostazioni sistema” per il dettaglio.',
       );
     });
   }
@@ -621,6 +647,8 @@ class _NotificationSettingsCardState
     final push = pushHealth;
     final enabled = local?.notificationsEnabled == true;
     final available = local?.available == true;
+    final reminderChannel = local?.reminderChannelEnabled == true;
+    final sharedChannel = local?.sharedChannelEnabled == true;
     final exact = local?.exactAlarmsEnabled == true;
     final pending = local?.pendingCount ?? 0;
 
@@ -628,7 +656,9 @@ class _NotificationSettingsCardState
     final pushReady = pushConfigured &&
         push?.tokenAvailable == true &&
         push?.deviceRegistered == true &&
-        push?.permissionGranted == true;
+        push?.permissionGranted == true &&
+        enabled &&
+        sharedChannel;
 
     return SimpleCard(
       child: Column(
@@ -651,9 +681,10 @@ class _NotificationSettingsCardState
           ),
           const SizedBox(height: 5),
           Text(
-            'Controlla separatamente promemoria locali e push di Noi ♡. '
-            'Se qualcosa non funziona, “Ripara notifiche” ricrea i canali, '
-            'richiede i permessi e registra di nuovo il dispositivo.',
+            'Verifica la catena completa: permesso Android, canali, '
+            'programmazione locale, token FCM, registrazione Supabase e '
+            'consegna Firebase. “Ripara notifiche” non aggira i canali '
+            'disattivati manualmente: in quel caso usa Impostazioni sistema.',
             style: Theme.of(context).textTheme.bodySmall,
           ),
           const SizedBox(height: 12),
@@ -667,9 +698,16 @@ class _NotificationSettingsCardState
                     ? 'Notifiche locali attive'
                     : 'Notifiche locali bloccate',
             subtitle: available
-                ? '$pending promemoria programmati'
+                ? [
+                    '$pending promemoria programmati',
+                    reminderChannel
+                        ? 'canale Promemoria: attivo'
+                        : 'canale Promemoria: BLOCCATO',
+                    if (local?.lastError != null)
+                      'ultimo errore: ${local!.lastError}',
+                  ].join(' · ')
                 : 'Il plugin locale non è disponibile in questo momento.',
-            ok: available && enabled,
+            ok: available && enabled && reminderChannel,
           ),
           const Divider(),
           _statusRow(
@@ -682,7 +720,9 @@ class _NotificationSettingsCardState
                     ? 'Push Noi ♡ registrate'
                     : 'Push Noi ♡ da riparare',
             subtitle: !pushConfigured
-                ? 'Questa build non contiene Firebase per la piattaforma corrente.'
+                ? (kIsWeb
+                    ? 'Push remote non disponibili nella PWA Web/iPhone in questa versione.'
+                    : 'Questa build non contiene Firebase per la piattaforma corrente.')
                 : [
                     'permesso: ${push?.permissionStatus ?? '...'}',
                     push?.tokenAvailable == true
@@ -693,6 +733,11 @@ class _NotificationSettingsCardState
                             ? 'Supabase: registrato'
                             : 'Supabase: non registrato')
                         : 'cloud: accesso richiesto',
+                    sharedChannel
+                        ? 'canale Noi ♡: attivo'
+                        : 'canale Noi ♡: BLOCCATO',
+                    if (push?.lastError != null)
+                      'errore: ${push!.lastError}',
                   ].join(' · '),
             ok: pushReady,
           ),
@@ -735,7 +780,7 @@ class _NotificationSettingsCardState
               FilledButton.tonalIcon(
                 onPressed: busy ? null : _testLocal,
                 icon: const Icon(Icons.notification_add_outlined),
-                label: const Text('Test locale'),
+                label: const Text('Test locale completo'),
               ),
               if (pushConfigured)
                 FilledButton.tonalIcon(
@@ -751,6 +796,28 @@ class _NotificationSettingsCardState
               ),
             ],
           ),
+          if (lastDiagnosticMessage != null) ...[
+            const SizedBox(height: 12),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: lastDiagnosticOk == true
+                    ? Theme.of(context).colorScheme.primaryContainer
+                    : Theme.of(context).colorScheme.errorContainer,
+                borderRadius: BorderRadius.circular(14),
+              ),
+              child: Text(
+                lastDiagnosticMessage!,
+                style: TextStyle(
+                  color: lastDiagnosticOk == true
+                      ? Theme.of(context).colorScheme.onPrimaryContainer
+                      : Theme.of(context).colorScheme.onErrorContainer,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ),
+          ],
           if (busy) ...[
             const SizedBox(height: 12),
             const LinearProgressIndicator(),
