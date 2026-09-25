@@ -12,14 +12,50 @@ class NotificationHealth {
   final bool available;
   final bool notificationsEnabled;
   final bool exactAlarmsEnabled;
+  final bool reminderChannelEnabled;
+  final bool sharedChannelEnabled;
   final int pendingCount;
+  final String? lastError;
 
   const NotificationHealth({
     required this.available,
     required this.notificationsEnabled,
     required this.exactAlarmsEnabled,
+    required this.reminderChannelEnabled,
+    required this.sharedChannelEnabled,
     required this.pendingCount,
+    this.lastError,
   });
+
+  bool get reminderDeliveryReady =>
+      available && notificationsEnabled && reminderChannelEnabled;
+
+  bool get sharedDeliveryReady =>
+      available && notificationsEnabled && sharedChannelEnabled;
+}
+
+class LocalNotificationDiagnostic {
+  final bool permissionGranted;
+  final bool immediateShown;
+  final bool scheduledCreated;
+  final int scheduledDelaySeconds;
+  final NotificationHealth health;
+  final String? error;
+
+  const LocalNotificationDiagnostic({
+    required this.permissionGranted,
+    required this.immediateShown,
+    required this.scheduledCreated,
+    required this.scheduledDelaySeconds,
+    required this.health,
+    this.error,
+  });
+
+  bool get ok =>
+      permissionGranted &&
+      immediateShown &&
+      scheduledCreated &&
+      health.reminderDeliveryReady;
 }
 
 class NotificationService {
@@ -35,6 +71,7 @@ class NotificationService {
 
   bool _initialized = false;
   bool _available = true;
+  String? _lastError;
   String? _initialPayload;
   final StreamController<String> _tapController =
       StreamController<String>.broadcast();
@@ -126,11 +163,13 @@ class NotificationService {
     if (!initialized) {
       _initialized = false;
       _available = false;
+      _lastError = 'plugin_initialization_failed';
       return;
     }
 
     _initialized = true;
     _available = true;
+    _lastError = null;
 
     try {
       final androidPlugin = _plugin.resolvePlatformSpecificImplementation<
@@ -215,16 +254,21 @@ class NotificationService {
   Future<NotificationHealth> health() async {
     await initialize(force: !_initialized || !_available);
     if (!_available) {
-      return const NotificationHealth(
+      return NotificationHealth(
         available: false,
         notificationsEnabled: false,
         exactAlarmsEnabled: false,
+        reminderChannelEnabled: false,
+        sharedChannelEnabled: false,
         pendingCount: 0,
+        lastError: _lastError,
       );
     }
 
     var enabled = true;
     var exact = true;
+    var reminderChannelEnabled = true;
+    var sharedChannelEnabled = true;
     var pending = 0;
 
     try {
@@ -234,17 +278,35 @@ class NotificationService {
       if (androidEnabled != null) enabled = androidEnabled;
       final androidExact = await android?.canScheduleExactNotifications();
       if (androidExact != null) exact = androidExact;
-    } catch (_) {}
+
+      final channels = await android?.getNotificationChannels();
+      if (channels != null) {
+        for (final channel in channels) {
+          if (channel.id == reminderChannelId) {
+            reminderChannelEnabled = channel.importance != Importance.none;
+          } else if (channel.id == sharedChannelId) {
+            sharedChannelEnabled = channel.importance != Importance.none;
+          }
+        }
+      }
+    } catch (error) {
+      _lastError = 'health_android: $error';
+    }
 
     try {
       pending = (await _plugin.pendingNotificationRequests()).length;
-    } catch (_) {}
+    } catch (error) {
+      _lastError = 'pending_notifications: $error';
+    }
 
     return NotificationHealth(
       available: true,
       notificationsEnabled: enabled,
       exactAlarmsEnabled: exact,
+      reminderChannelEnabled: reminderChannelEnabled,
+      sharedChannelEnabled: sharedChannelEnabled,
       pendingCount: pending,
+      lastError: _lastError,
     );
   }
 
