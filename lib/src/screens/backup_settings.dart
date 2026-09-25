@@ -460,6 +460,7 @@ class _NotificationSettingsCardState
     extends State<_NotificationSettingsCard> {
   NotificationHealth? health;
   PushNotificationHealth? pushHealth;
+  WebPushHealth? webPushHealth;
   bool busy = false;
   String? lastDiagnosticMessage;
   bool? lastDiagnosticOk;
@@ -476,10 +477,12 @@ class _NotificationSettingsCardState
   Future<void> _refresh() async {
     final local = await NotificationService.instance.health();
     final push = await PushNotificationService.instance.health();
+    final web = kIsWeb ? await WebPushService.instance.health() : null;
     if (!mounted) return;
     setState(() {
       health = local;
       pushHealth = push;
+      webPushHealth = web;
     });
   }
 
@@ -580,6 +583,64 @@ class _NotificationSettingsCardState
     });
   }
 
+  Future<void> _enableWebPush() async {
+    await _runBusy(() async {
+      final status = await WebPushService.instance.enable();
+      await _refresh();
+
+      final message = status.ready
+          ? 'Push PWA attive: questo dispositivo è registrato.'
+          : status.isIos && !status.installedPwa
+              ? 'Su iPhone apri Anna\'s Diary dalla schermata Home: '
+                  'Safari non consente Web Push alla sola scheda del browser.'
+              : status.permissionStatus == 'denied'
+                  ? 'Permesso notifiche negato dal browser. Riattivalo '
+                      'dalle impostazioni del sito/dispositivo.'
+                  : 'Web Push non ancora pronta: '
+                      '${status.lastError ?? 'controlla permesso e installazione PWA'}.';
+
+      if (mounted) {
+        setState(() {
+          lastDiagnosticMessage = message;
+          lastDiagnosticOk = status.ready;
+        });
+      }
+      _snack(message);
+    });
+  }
+
+  Future<void> _testWebPush() async {
+    await _runBusy(() async {
+      String message;
+      bool ok = false;
+      try {
+        final result = await WebPushService.instance.sendSelfTest();
+        final delivered = (result['delivered'] as num?)?.toInt() ?? 0;
+        final webDelivered =
+            (result['web_delivered'] as num?)?.toInt() ?? 0;
+        final failed = (result['failed'] as num?)?.toInt() ?? 0;
+        ok = webDelivered > 0 && failed == 0;
+        message = ok
+            ? 'Web Push OK: notifica inviata a questa PWA '
+                '($webDelivered consegna/e, $delivered totali).'
+            : 'Test Web Push non confermato dal backend '
+                '(web: $webDelivered · fallite: $failed).';
+      } catch (error) {
+        final raw = error.toString().replaceAll(RegExp(r'\s+'), ' ').trim();
+        final compact = raw.length > 180 ? '${raw.substring(0, 180)}…' : raw;
+        message = 'Test Web Push fallito: $compact';
+      }
+      await _refresh();
+      if (mounted) {
+        setState(() {
+          lastDiagnosticMessage = message;
+          lastDiagnosticOk = ok;
+        });
+      }
+      _snack(message);
+    });
+  }
+
   Future<void> _openSettings() async {
     await _runBusy(() async {
       await NotificationService.instance.openSystemSettings();
@@ -591,6 +652,18 @@ class _NotificationSettingsCardState
 
   Future<void> _repairAll() async {
     await _runBusy(() async {
+      if (kIsWeb) {
+        final status = await WebPushService.instance.enable();
+        await _refresh();
+        _snack(
+          status.ready
+              ? 'Riparazione completata: Web Push PWA pronta.'
+              : 'Web Push non ancora pronta: verifica installazione PWA '
+                  'e permesso notifiche.',
+        );
+        return;
+      }
+
       await NotificationService.instance.initialize(force: true);
       await NotificationService.instance.requestPermissions();
       if (PushNotificationService.instance.configured) {
@@ -645,6 +718,7 @@ class _NotificationSettingsCardState
   Widget build(BuildContext context) {
     final local = health;
     final push = pushHealth;
+    final web = webPushHealth;
     final enabled = local?.notificationsEnabled == true;
     final available = local?.available == true;
     final reminderChannel = local?.reminderChannelEnabled == true;
@@ -659,6 +733,7 @@ class _NotificationSettingsCardState
         push?.permissionGranted == true &&
         enabled &&
         sharedChannel;
+    final webReady = web?.ready == true;
 
     return SimpleCard(
       child: Column(
@@ -681,14 +756,47 @@ class _NotificationSettingsCardState
           ),
           const SizedBox(height: 5),
           Text(
-            'Verifica la catena completa: permesso Android, canali, '
-            'programmazione locale, token FCM, registrazione Supabase e '
-            'consegna Firebase. “Ripara notifiche” non aggira i canali '
-            'disattivati manualmente: in quel caso usa Impostazioni sistema.',
+            kIsWeb
+                ? 'Su iPhone/PWA verifica installazione nella Home, permesso '
+                    'notifiche, subscription Web Push e registrazione Supabase. '
+                    'Il test invia una push reale dal backend.'
+                : 'Verifica la catena completa: permesso Android, canali, '
+                    'programmazione locale, token FCM, registrazione Supabase e '
+                    'consegna Firebase. “Ripara notifiche” non aggira i canali '
+                    'disattivati manualmente: in quel caso usa Impostazioni sistema.',
             style: Theme.of(context).textTheme.bodySmall,
           ),
           const SizedBox(height: 12),
-          _statusRow(
+          if (kIsWeb)
+            _statusRow(
+              icon: webReady
+                  ? Icons.notifications_active
+                  : Icons.install_mobile_outlined,
+              title: webReady
+                  ? 'Push PWA Noi ♡ attive'
+                  : 'Push PWA da attivare',
+              subtitle: web == null
+                  ? 'Diagnostica Web Push in caricamento...'
+                  : [
+                      web!.isIos
+                          ? (web.installedPwa
+                              ? 'PWA iPhone: installata'
+                              : 'PWA iPhone: aggiungi alla schermata Home')
+                          : 'Browser Web Push: supportato',
+                      'permesso: ${web.permissionStatus}',
+                      web.subscribed
+                          ? 'subscription browser: presente'
+                          : 'subscription browser: assente',
+                      web.backendRegistered
+                          ? 'Supabase: registrata'
+                          : 'Supabase: non registrata',
+                      if (web.lastError != null)
+                        'errore: ${web.lastError}',
+                    ].join(' · '),
+              ok: webReady,
+            ),
+          if (!kIsWeb)
+            _statusRow(
             icon: enabled
                 ? Icons.notifications_active
                 : Icons.notifications_off_outlined,
@@ -709,8 +817,9 @@ class _NotificationSettingsCardState
                 : 'Il plugin locale non è disponibile in questo momento.',
             ok: available && enabled && reminderChannel,
           ),
-          const Divider(),
-          _statusRow(
+          if (!kIsWeb) const Divider(),
+          if (!kIsWeb)
+            _statusRow(
             icon: pushReady
                 ? Icons.cloud_done_outlined
                 : Icons.cloud_off_outlined,
@@ -777,23 +886,37 @@ class _NotificationSettingsCardState
                 icon: const Icon(Icons.build_circle_outlined),
                 label: const Text('Ripara notifiche'),
               ),
-              FilledButton.tonalIcon(
-                onPressed: busy ? null : _testLocal,
-                icon: const Icon(Icons.notification_add_outlined),
-                label: const Text('Test locale completo'),
-              ),
-              if (pushConfigured)
+              if (kIsWeb)
+                FilledButton.tonalIcon(
+                  onPressed: busy ? null : _enableWebPush,
+                  icon: const Icon(Icons.notifications_active_outlined),
+                  label: const Text('Attiva PWA'),
+                ),
+              if (kIsWeb)
+                FilledButton.tonalIcon(
+                  onPressed: busy || !webReady ? null : _testWebPush,
+                  icon: const Icon(Icons.send_outlined),
+                  label: const Text('Test Web Push'),
+                ),
+              if (!kIsWeb)
+                FilledButton.tonalIcon(
+                  onPressed: busy ? null : _testLocal,
+                  icon: const Icon(Icons.notification_add_outlined),
+                  label: const Text('Test locale completo'),
+                ),
+              if (!kIsWeb && pushConfigured)
                 FilledButton.tonalIcon(
                   onPressed:
                       busy || push?.signedIn != true ? null : _testPush,
                   icon: const Icon(Icons.cloud_upload_outlined),
                   label: const Text('Test Firebase'),
                 ),
-              OutlinedButton.icon(
-                onPressed: busy ? null : _openSettings,
-                icon: const Icon(Icons.settings_outlined),
-                label: const Text('Impostazioni sistema'),
-              ),
+              if (!kIsWeb)
+                OutlinedButton.icon(
+                  onPressed: busy ? null : _openSettings,
+                  icon: const Icon(Icons.settings_outlined),
+                  label: const Text('Impostazioni sistema'),
+                ),
             ],
           ),
           if (lastDiagnosticMessage != null) ...[
