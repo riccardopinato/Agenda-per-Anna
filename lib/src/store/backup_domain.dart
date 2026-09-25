@@ -15,6 +15,7 @@ class _AgendaBackupDomain {
         'months': store.months.map((k, v) => MapEntry(k, v.toJson())),
         'weeks': store.weeks.map((k, v) => MapEntry(k, v.toJson())),
         'habits': store.habits.map((e) => e.toJson()).toList(),
+        'birthdays': store.birthdays.map((e) => e.toJson()).toList(),
         'inbox': store.inbox.map((e) => e.toJson()).toList(),
         'trash': store.trash.map((e) => e.toJson()).toList(),
         'preferences': store.preferences.toJson(),
@@ -38,6 +39,7 @@ class _AgendaBackupDomain {
       'months': store.months.map((k, v) => MapEntry(k, v.toJson())),
       'weeks': store.weeks.map((k, v) => MapEntry(k, v.toJson())),
       'habits': store.habits.map((e) => e.toJson()).toList(),
+      'birthdays': store.birthdays.map((e) => e.toJson()).toList(),
       'inbox': store.inbox.map((e) => e.toJson()).toList(),
       'trash': portableTrash,
       'preferences': store.preferences.toJson(),
@@ -215,6 +217,7 @@ class _AgendaBackupDomain {
       monthCount: (payload['months'] as Map? ?? const {}).length,
       weekCount: (payload['weeks'] as Map? ?? const {}).length,
       habitCount: (payload['habits'] as List? ?? const []).length,
+      birthdayCount: (payload['birthdays'] as List? ?? const []).length,
       trashCount: (payload['trash'] as List? ?? const []).length,
     );
   }
