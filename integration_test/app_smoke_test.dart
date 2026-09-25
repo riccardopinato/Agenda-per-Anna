@@ -69,11 +69,7 @@ void main() {
     expect(find.textContaining('Compleanno AppLab'), findsWidgets);
     expect(find.text('Persone importanti'), findsOneWidget);
 
-    await tester.scrollUntilVisible(
-      find.text('Persone importanti'),
-      250,
-      scrollable: find.byType(Scrollable).first,
-    );
+    await tester.ensureVisible(find.text('Persone importanti'));
     await tester.tap(find.text('Persone importanti'));
     await tester.pumpAndSettle();
     expect(find.text('Persona AppLab'), findsOneWidget);
