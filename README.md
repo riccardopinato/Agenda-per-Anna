@@ -2,11 +2,12 @@
 
 Flutter app for personal planning, private diary and the shared **Noi ♡** space.
 
-Current release line: **v0.45.0**.
+Current release line: **v0.46.0**.
 
 ## Core areas
 
 - Private agenda and planner: Today / Week / Month / Year.
+- Day Hub 2.0: daily briefing, persistent birthdays and calendar ↔ diary context.
 - Private diary: Note, Photo and full vector Sketchbook.
 - Noi ♡: shared agenda plus the same Note / Photo / Sketch diary tools.
 - I nostri ricordi: shared memories grouped by memories, days, months, years and timeline.
@@ -170,3 +171,14 @@ See `docs/ARCHITECTURE.md` and `supabase/README.md` for implementation details.
 - Diary media referenced by Trash stay protected from garbage collection; permanent deletion schedules normal MediaAssetStore cleanup.
 - Permanent purge creates a local safety snapshot before removing recoverable content.
 - Shared Noi ♡ deletion keeps its existing collaboration semantics and server tombstones rather than copying shared data into the private Trash.
+
+
+## v0.46.0 — Day Hub 2.0
+
+- Home's existing focus card becomes the Daily Briefing instead of adding a parallel dashboard: today's appointments/tasks, next commitment, Inbox, diary state and next birthday share one compact surface.
+- Birthdays are first-class private entities with optional birth year, notes and annual reminder lead time; they persist locally, sync through the existing private-record pipeline, survive account switching and are included in JSON/ZIP/readable exports.
+- Birthday reminders reuse the existing Android local-notification and PWA Web Push reminder infrastructure and are reconciled on bootstrap/resume.
+- Birthdays use the v0.45 Trash/restore/purge lifecycle from day one instead of introducing a separate delete path.
+- Calendar selected-day context exposes diary state and birthdays with a direct “Apri giornata” action.
+- La mia giornata shows birthdays alongside the same unified agenda and diary data rather than copying them into AgendaItem records.
+- Quick Capture exposes the birthday flow without adding a second capture system.
