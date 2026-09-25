@@ -472,6 +472,7 @@ class _JournalEditorState extends State<JournalEditor> {
                           ) ??
                           false;
                       if (!confirmed) return;
+                      final messenger = ScaffoldMessenger.of(context);
                       final moved =
                           await widget.store.moveJournalToTrash(widget.date);
                       if (!moved || !mounted) return;
@@ -481,7 +482,7 @@ class _JournalEditorState extends State<JournalEditor> {
                         controller.clear();
                       }
                       setState(() => mood = null);
-                      ScaffoldMessenger.of(context).showSnackBar(
+                      messenger.showSnackBar(
                         const SnackBar(
                           content: Text('Giornata spostata nel Cestino.'),
                         ),
