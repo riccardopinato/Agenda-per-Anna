@@ -2,7 +2,7 @@
 
 Flutter app for personal planning, private diary and the shared **Noi ♡** space.
 
-Current release line: **v0.48.0**.
+Current release line: **v0.49.0**.
 
 ## Core areas
 
@@ -202,3 +202,14 @@ See `docs/ARCHITECTURE.md` and `supabase/README.md` for implementation details.
 - Purging an old historical person/birthday/habit version no longer breaks links when the same logical entity is live again.
 - The lifecycle matrix is documented in `docs/LIFECYCLE_AUDIT.md`, including private Trash, shared collaboration semantics, Vault permanent deletion and embedded-page ownership.
 - Regression coverage locks version-safe Trash, restore conflicts and cascade cleanup.
+
+
+## v0.49.0 — Account Erasure & Data Rights
+
+- Account settings now expose a permanent **Elimina account e dati** flow with typed `ELIMINA` confirmation.
+- A dedicated authenticated Supabase Edge Function performs server-side Auth deletion using privileged credentials that never enter the Flutter client.
+- Before Auth deletion, shared media owned by the deleting user is removed; media folders of shared spaces owned by that user are removed with the spaces.
+- Database foreign-key cascades remove private records, memberships, comments, reactions, push registrations, web reminders and owned shared spaces; `updated_by` references use `SET NULL` where history may remain.
+- After remote deletion, the device removes the erased account profile, granular deltas, sync cursors, shared caches/queues and account-scoped backup state, then restores the guest working set.
+- Local notifications are cleared before the account working set is removed; guest reminders are reconciled afterwards.
+- The encrypted local Private Vault remains device-local and separate from cloud account erasure, as explicitly disclosed in the confirmation UI.
