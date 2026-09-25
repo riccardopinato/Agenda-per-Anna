@@ -50,9 +50,16 @@ void main() {
       final migration =
           File('supabase/migrations/019_web_push_pwa_v044.sql')
               .readAsStringSync();
+      final reminderMigration =
+          File('supabase/migrations/020_web_push_reminders_v044.sql')
+              .readAsStringSync();
+      final cronHardening =
+          File('supabase/migrations/021_web_push_cron_hardening_v044.sql')
+              .readAsStringSync();
       final edge = File(
         'supabase/functions/send-shared-push/index.ts',
       ).readAsStringSync();
+      final config = File('supabase/config.toml').readAsStringSync();
 
       expect(migration, contains('web_push_subscriptions'));
       expect(migration, contains('web_push_config'));
@@ -66,6 +73,13 @@ void main() {
       expect(edge, contains('npm:web-push@'));
       expect(edge, contains('web_push_public_key'));
       expect(edge, contains('web_subscription_count'));
+      expect(reminderMigration, contains('web_push_reminders'));
+      expect(reminderMigration, contains('cron.schedule'));
+      expect(reminderMigration, contains('x-cron-token'));
+      expect(cronHardening, contains('cron_token set not null'));
+      expect(edge, contains('send_due_web_reminders'));
+      expect(edge, contains('processDueWebReminders'));
+      expect(config, contains('verify_jwt = false'));
     });
 
     test('Flutter PWA service worker owns both offline cache and Push', () {
@@ -115,6 +129,7 @@ void main() {
       expect(workflow, contains('cp legal/privacy.html'));
       expect(workflow, contains('cp legal/terms.html'));
       expect(privacy, contains('Web Push'));
+      expect(privacy, contains('promemoria PWA'));
       expect(terms, contains('Termini di servizio'));
     });
   });
