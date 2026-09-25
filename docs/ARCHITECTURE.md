@@ -1,6 +1,6 @@
 # Agenda per Anna — Architecture
 
-## Current structure — v0.47.0
+## Current structure — v0.50.0
 
 Anna's Diary keeps `lib/main.dart` as the compatibility library boundary, but large responsibilities are now split by runtime domain:
 
@@ -294,3 +294,12 @@ The lifecycle layer remains a thin extension over AgendaStore and the existing a
 - `AgendaStore.eraseLocalCloudAccount` atomically removes the local account profile and all known account-scoped delta/cursor/cache/queue keys before reloading the guest profile.
 - Local scheduled notifications are cleared before erasure and guest reminders are re-reconciled after the guest working set is restored.
 - Vault data intentionally remains outside account erasure because it is device-local encrypted data, not cloud account data.
+
+
+## v0.50.0 — Security & Production Hardening
+
+- `delete-account` remains the only service-role account-erasure boundary. Media references extracted from mutable shared payloads are accepted only when they remain inside the record's canonical `space_id/` Storage prefix.
+- Web Push client tables keep authenticated user RLS but no longer expose unnecessary table grants to `anon`.
+- Internal shared-space `SECURITY DEFINER` functions retain their existing wrapper architecture because authentication and ownership checks are inside the implementation functions themselves.
+- `pg_net` is audited but not force-relocated: the installed extension is non-relocatable and exposes its runtime objects through the dedicated `net` namespace.
+- Security assumptions and accepted advisor warnings are centralized in `docs/SECURITY_BASELINE.md`.
