@@ -471,7 +471,7 @@ class _JournalEditorState extends State<JournalEditor> {
                             ),
                           ) ??
                           false;
-                      if (!confirmed) return;
+                      if (!confirmed || !mounted) return;
                       final messenger = ScaffoldMessenger.of(context);
                       final moved =
                           await widget.store.moveJournalToTrash(widget.date);
