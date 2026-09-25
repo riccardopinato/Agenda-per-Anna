@@ -59,6 +59,7 @@ class _CloudAccountScreenState extends State<CloudAccountScreen> {
       await PushNotificationService.instance.registerCurrentToken();
       if (kIsWeb) {
         await WebPushService.instance.initialize(force: true);
+        await widget.store.reconcileReminders();
       }
       _message('Account connesso e sincronizzato.');
       if (mounted) {
@@ -132,6 +133,7 @@ class _CloudAccountScreenState extends State<CloudAccountScreen> {
       );
       await PushNotificationService.instance.unregisterCurrentToken();
       if (kIsWeb) {
+        await CloudSyncService.instance.clearWebPushReminders();
         await WebPushService.instance.disable();
       }
       await CloudSyncService.instance.signOut();
