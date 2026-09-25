@@ -16,6 +16,7 @@ class _AgendaBackupDomain {
         'weeks': store.weeks.map((k, v) => MapEntry(k, v.toJson())),
         'habits': store.habits.map((e) => e.toJson()).toList(),
         'birthdays': store.birthdays.map((e) => e.toJson()).toList(),
+        'people': store.people.map((e) => e.toJson()).toList(),
         'inbox': store.inbox.map((e) => e.toJson()).toList(),
         'trash': store.trash.map((e) => e.toJson()).toList(),
         'preferences': store.preferences.toJson(),
@@ -40,6 +41,7 @@ class _AgendaBackupDomain {
       'weeks': store.weeks.map((k, v) => MapEntry(k, v.toJson())),
       'habits': store.habits.map((e) => e.toJson()).toList(),
       'birthdays': store.birthdays.map((e) => e.toJson()).toList(),
+      'people': store.people.map((e) => e.toJson()).toList(),
       'inbox': store.inbox.map((e) => e.toJson()).toList(),
       'trash': portableTrash,
       'preferences': store.preferences.toJson(),
@@ -218,6 +220,7 @@ class _AgendaBackupDomain {
       weekCount: (payload['weeks'] as Map? ?? const {}).length,
       habitCount: (payload['habits'] as List? ?? const []).length,
       birthdayCount: (payload['birthdays'] as List? ?? const []).length,
+      personCount: (payload['people'] as List? ?? const []).length,
       trashCount: (payload['trash'] as List? ?? const []).length,
     );
   }
@@ -261,6 +264,45 @@ class _AgendaBackupDomain {
         buffer.writeln('  Categoria: ${item.category.label}');
         if (item.note.trim().isNotEmpty) {
           buffer.writeln('  Note: ${item.note.trim()}');
+        }
+      }
+    }
+
+    buffer.writeln();
+    buffer.writeln(
+      '============================================================',
+    );
+    buffer.writeln('PERSONE IMPORTANTI');
+    buffer.writeln(
+      '============================================================',
+    );
+
+    if (store.people.isEmpty) {
+      buffer.writeln('Nessuna persona salvata.');
+    } else {
+      final people = [...store.people]
+        ..sort((a, b) {
+          if (a.favorite != b.favorite) return a.favorite ? -1 : 1;
+          return a.name.toLowerCase().compareTo(b.name.toLowerCase());
+        });
+      for (final person in people) {
+        final relationship = person.relationship.trim().isEmpty
+            ? ''
+            : ' · ${person.relationship.trim()}';
+        buffer.writeln('- ${person.name}$relationship');
+        final birthday = store.birthdayForPerson(person);
+        if (birthday != null) {
+          final date = DateTime(2000, birthday.month, birthday.day);
+          buffer.writeln(
+            '  Compleanno: ${DateFormat('d MMMM', 'it_IT').format(date)}',
+          );
+        }
+        final memories = store.personMemoryCount(person.id);
+        if (memories > 0) {
+          buffer.writeln('  Ricordi collegati: $memories');
+        }
+        if (person.note.trim().isNotEmpty) {
+          buffer.writeln('  Note: ${person.note.trim()}');
         }
       }
     }

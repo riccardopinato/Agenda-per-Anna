@@ -418,6 +418,7 @@ class DiaryContentCard extends StatelessWidget {
   final VoidCallback? onEdit;
   final VoidCallback? onEditCaption;
   final VoidCallback? onReplacePhoto;
+  final VoidCallback? onPeople;
   final VoidCallback onDelete;
   final Widget? footer;
   final Widget? statusIcon;
@@ -433,6 +434,7 @@ class DiaryContentCard extends StatelessWidget {
     this.onEdit,
     this.onEditCaption,
     this.onReplacePhoto,
+    this.onPeople,
     this.footer,
     this.statusIcon,
   });
@@ -479,6 +481,7 @@ class DiaryContentCard extends StatelessWidget {
                     if (value == 'edit') onEdit?.call();
                     if (value == 'caption') onEditCaption?.call();
                     if (value == 'replace') onReplacePhoto?.call();
+                    if (value == 'people') onPeople?.call();
                     if (value == 'delete') onDelete();
                   },
                   itemBuilder: (_) => [
@@ -498,6 +501,11 @@ class DiaryContentCard extends StatelessWidget {
                       const PopupMenuItem(
                         value: 'replace',
                         child: Text('Sostituisci foto'),
+                      ),
+                    if (onPeople != null)
+                      const PopupMenuItem(
+                        value: 'people',
+                        child: Text('Collega persone'),
                       ),
                     const PopupMenuItem(
                       value: 'delete',
@@ -827,6 +835,40 @@ class _DiaryMemoryCardState extends State<DiaryMemoryCard> {
     await _saveBlocks(blocks);
   }
 
+  Future<void> _editPeople(DiaryBlock block) async {
+    final selected = await showPeoplePicker(
+      context,
+      widget.store,
+      initialIds: block.personIds,
+    );
+    if (selected == null) return;
+    await widget.store.tagDiaryBlockPeople(widget.date, block.id, selected);
+  }
+
+  Widget? _peopleFooter(DiaryBlock block) {
+    final linked = widget.store.peopleForIds(block.personIds);
+    if (linked.isEmpty) return null;
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(12, 8, 12, 10),
+      child: Wrap(
+        spacing: 6,
+        runSpacing: 6,
+        children: linked
+            .map(
+              (person) => Chip(
+                visualDensity: VisualDensity.compact,
+                avatar: Icon(
+                  person.favorite ? Icons.star : Icons.person_outline,
+                  size: 16,
+                ),
+                label: Text(person.name),
+              ),
+            )
+            .toList(),
+      ),
+    );
+  }
+
   Future<void> _delete(DiaryBlock block) async {
     final confirmed = await confirmDiaryContentDelete(
       context,
@@ -862,6 +904,8 @@ class _DiaryMemoryCardState extends State<DiaryMemoryCard> {
           subtitle: 'Nota · $time',
           onOpen: () => _addNote(block),
           onEdit: () => _addNote(block),
+          onPeople: () => _editPeople(block),
+          footer: _peopleFooter(block),
           onDelete: () => _delete(block),
         );
       case DiaryBlockType.photo:
@@ -884,6 +928,8 @@ class _DiaryMemoryCardState extends State<DiaryMemoryCard> {
           onOpen: () => _openPhoto(block),
           onEditCaption: () => _editPhotoCaption(block),
           onReplacePhoto: () => _replacePhoto(block),
+          onPeople: () => _editPeople(block),
+          footer: _peopleFooter(block),
           onDelete: () => _delete(block),
         );
       case DiaryBlockType.sketch:
@@ -899,6 +945,8 @@ class _DiaryMemoryCardState extends State<DiaryMemoryCard> {
           preview: DiarySketchPagePreview(page: page),
           onOpen: () => _openSketch(block),
           onEdit: () => _openSketch(block),
+          onPeople: () => _editPeople(block),
+          footer: _peopleFooter(block),
           onDelete: () => _delete(block),
         );
     }

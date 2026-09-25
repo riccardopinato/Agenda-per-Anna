@@ -2,12 +2,13 @@
 
 Flutter app for personal planning, private diary and the shared **Noi ♡** space.
 
-Current release line: **v0.46.0**.
+Current release line: **v0.47.0**.
 
 ## Core areas
 
 - Private agenda and planner: Today / Week / Month / Year.
 - Day Hub 2.0: daily briefing, persistent birthdays and calendar ↔ diary context.
+- People & Relationships: lightweight important-person profiles linked to birthdays and private diary memories.
 - Private diary: Note, Photo and full vector Sketchbook.
 - Noi ♡: shared agenda plus the same Note / Photo / Sketch diary tools.
 - I nostri ricordi: shared memories grouped by memories, days, months, years and timeline.
@@ -182,3 +183,12 @@ See `docs/ARCHITECTURE.md` and `supabase/README.md` for implementation details.
 - Calendar selected-day context exposes diary state and birthdays with a direct “Apri giornata” action.
 - La mia giornata shows birthdays alongside the same unified agenda and diary data rather than copying them into AgendaItem records.
 - Quick Capture exposes the birthday flow without adding a second capture system.
+
+
+## v0.47.0 — People & Relationships
+
+- Adds a deliberately lightweight “Persone importanti” area: name, relationship, private note, favorite status and optional link to an existing birthday, without turning Anna's Diary into a contacts/CRM app.
+- Private diary Note / Photo / Sketch blocks can link one or more saved people; the existing memories gallery can then open a person-filtered timeline without duplicating diary content.
+- People are first-class private entities using the existing per-entity persistence, cloud sync, account isolation and backup/export pipeline.
+- Person deletion uses the v0.45 Trash contract. Memory links are preserved while the person is recoverable and are removed only on permanent purge; permanent birthday purge safely clears person links.
+- Home and Quick Capture expose the feature, while AppLab adds a dedicated People visual checkpoint.

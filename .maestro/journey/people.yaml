@@ -1,0 +1,19 @@
+appId: com.riccardopinato.agenda_per_anna
+---
+- back
+- extendedWaitUntil:
+    visible: 'Home[\s\S]*'
+    timeout: 10000
+- tapOn:
+    text: 'Home[\s\S]*'
+    retryTapIfNoChange: true
+- scrollUntilVisible:
+    element:
+      text: 'Persone importanti[\s\S]*'
+    direction: DOWN
+    timeout: 10000
+- tapOn:
+    text: 'Persone importanti[\s\S]*'
+- extendedWaitUntil:
+    visible: "Persone importanti"
+    timeout: 10000

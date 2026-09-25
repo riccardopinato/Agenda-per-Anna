@@ -2,10 +2,14 @@ part of '../../main.dart';
 
 class DiaryMemoriesScreen extends StatefulWidget {
   final AgendaStore store;
+  final String? personId;
+  final String? personName;
 
   const DiaryMemoriesScreen({
     super.key,
     required this.store,
+    this.personId,
+    this.personName,
   });
 
   @override
@@ -47,9 +51,14 @@ class _DiaryMemoriesScreenState extends State<DiaryMemoriesScreen> {
         .expand((page) => page.textElements)
         .map((element) => element.text)
         .join(' ');
+    final peopleText = widget.store
+        .peopleForIds(block.personIds)
+        .map((person) => '${person.name} ${person.relationship}')
+        .join(' ');
     final searchable = [
       block.text,
       sketchText,
+      peopleText,
       DateFormat('d MMMM yyyy', 'it_IT').format(record.date),
       DateFormat('MMMM yyyy', 'it_IT').format(record.date),
       '${record.date.year}',
@@ -65,6 +74,10 @@ class _DiaryMemoriesScreenState extends State<DiaryMemoriesScreen> {
   List<_DiaryMemoryRecord> _records() {
     final query = searchController.text.trim().toLowerCase();
     return _allRecords().where((record) {
+      if (widget.personId != null &&
+          !record.block.personIds.contains(widget.personId)) {
+        return false;
+      }
       if (filter != null && record.block.type != filter) return false;
       return _matchesSearch(record, query);
     }).toList();
@@ -577,11 +590,13 @@ class _DiaryMemoriesScreenState extends State<DiaryMemoriesScreen> {
     );
   }
 
-  Widget _emptyState() => const Center(
+  Widget _emptyState() => Center(
         child: Padding(
-          padding: EdgeInsets.all(28),
+          padding: const EdgeInsets.all(28),
           child: Text(
-            'Nessun ricordo corrisponde a questa ricerca. Aggiungi una nota, una foto o uno sketch in una giornata.',
+            widget.personName == null
+                ? 'Nessun ricordo corrisponde a questa ricerca. Aggiungi una nota, una foto o uno sketch in una giornata.'
+                : 'Nessun ricordo collegato a ${widget.personName}. Apri un ricordo e usa “Collega persone”.',
             textAlign: TextAlign.center,
           ),
         ),
@@ -591,13 +606,18 @@ class _DiaryMemoriesScreenState extends State<DiaryMemoriesScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text(
-          'I miei ricordi',
-          style: TextStyle(fontWeight: FontWeight.w900),
+        title: Text(
+          widget.personName == null
+              ? 'I miei ricordi'
+              : 'Ricordi con ${widget.personName}',
+          style: const TextStyle(fontWeight: FontWeight.w900),
         ),
       ),
       body: AnimatedBuilder(
-        animation: widget.store.journalRevision,
+        animation: Listenable.merge([
+          widget.store.journalRevision,
+          widget.store.planningRevision,
+        ]),
         builder: (context, _) {
           final current = _records();
           return Column(

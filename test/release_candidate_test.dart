@@ -182,8 +182,8 @@ void main() {
     final appLabJourney =
         File('.maestro/applab-journey.json').readAsStringSync();
 
-    expect(appReleaseVersion, '0.46.0');
-    expect(pubspec, contains('version: 0.46.0+55'));
+    expect(appReleaseVersion, '0.47.0');
+    expect(pubspec, contains('version: 0.47.0+56'));
 
     expect(releaseWorkflow, contains('--release-signing'));
     expect(releaseWorkflow, contains('--obfuscate'));
@@ -222,5 +222,6 @@ void main() {
     expect(appLabJourney, contains('"week"'));
     expect(appLabJourney, contains('"today"'));
     expect(appLabJourney, contains('"memories"'));
+    expect(appLabJourney, contains('"people"'));
   });
 }
