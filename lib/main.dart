@@ -130,6 +130,7 @@ Future<void> main() async {
     try {
       await NotificationService.instance.initialize();
       await store.reconcileReminders();
+      await store.reconcileBirthdayReminders();
     } catch (_) {
       // Le notifiche non devono mai impedire l'avvio dell'agenda.
     }
@@ -148,6 +149,7 @@ Future<void> main() async {
       if (kIsWeb) {
         await WebPushService.instance.initialize();
         await store.reconcileReminders();
+        await store.reconcileBirthdayReminders();
         final initialWebPushSpace =
             await WebPushService.instance.takeInitialSpaceId();
         if (initialWebPushSpace != null) {
