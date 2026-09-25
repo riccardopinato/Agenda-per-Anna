@@ -57,6 +57,9 @@ class _CloudAccountScreenState extends State<CloudAccountScreen> {
       await widget.store.activateCloudAccount(cloud.userId);
       await widget.store.syncAllCloud(preferRemoteOnFirstSync: true);
       await PushNotificationService.instance.registerCurrentToken();
+      if (kIsWeb) {
+        await WebPushService.instance.initialize(force: true);
+      }
       _message('Account connesso e sincronizzato.');
       if (mounted) {
         Navigator.of(context).popUntil((route) => route.isFirst);
@@ -128,6 +131,9 @@ class _CloudAccountScreenState extends State<CloudAccountScreen> {
         label: 'Prima della disconnessione account',
       );
       await PushNotificationService.instance.unregisterCurrentToken();
+      if (kIsWeb) {
+        await WebPushService.instance.disable();
+      }
       await CloudSyncService.instance.signOut();
       await widget.store.activateCloudAccount(null);
       _message(
