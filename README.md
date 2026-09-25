@@ -2,7 +2,7 @@
 
 Flutter app for personal planning, private diary and the shared **Noi ♡** space.
 
-Current release line: **v0.44.0**.
+Current release line: **v0.45.0**.
 
 ## Core areas
 
@@ -159,3 +159,14 @@ See `docs/ARCHITECTURE.md` and `supabase/README.md` for implementation details.
 - Notification taps reopen the correct shared space through the PWA service worker.
 - GitHub Pages deploys public Privacy Policy and Terms of Service for Google OAuth branding.
 - Direct ARM64 sideload builds use the protected stable release signing secrets rather than a generated cached key.
+
+
+## v0.45.0 — Lifecycle & Recovery Foundation
+
+- Private agenda items, diary blocks/pages, month/week planning pages, habits and Inbox entries use one account-scoped Trash lifecycle.
+- Trash records ride the existing private sync engine instead of creating a parallel database or cloud channel.
+- Restoring an agenda item reinstates its reminders through the existing notification scheduler.
+- Deleting a habit preserves and restores its historical completion links.
+- Diary media referenced by Trash stay protected from garbage collection; permanent deletion schedules normal MediaAssetStore cleanup.
+- Permanent purge creates a local safety snapshot before removing recoverable content.
+- Shared Noi ♡ deletion keeps its existing collaboration semantics and server tombstones rather than copying shared data into the private Trash.

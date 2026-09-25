@@ -1469,6 +1469,7 @@ class BackupSummary {
   final int monthCount;
   final int weekCount;
   final int habitCount;
+  final int trashCount;
 
   const BackupSummary({
     required this.exportedAt,
@@ -1477,6 +1478,7 @@ class BackupSummary {
     required this.monthCount,
     required this.weekCount,
     required this.habitCount,
+    this.trashCount = 0,
   });
 }
 

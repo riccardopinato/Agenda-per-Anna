@@ -438,6 +438,61 @@ class _JournalEditorState extends State<JournalEditor> {
                   label: const Text('Salva la mia giornata'),
                 ),
               ),
+              if (widget.store.journals.containsKey(
+                AgendaStore.dateKey(widget.date),
+              )) ...[
+                const SizedBox(height: 8),
+                SizedBox(
+                  width: double.infinity,
+                  child: TextButton.icon(
+                    onPressed: () async {
+                      final messenger = ScaffoldMessenger.of(context);
+                      final confirmed = await showDialog<bool>(
+                            context: context,
+                            builder: (dialogContext) => AlertDialog(
+                              title: const Text(
+                                'Spostare la giornata nel Cestino?',
+                              ),
+                              content: const Text(
+                                'Diario, ricordi e stato delle abitudini di questa giornata '
+                                'potranno essere ripristinati dal Cestino.',
+                              ),
+                              actions: [
+                                TextButton(
+                                  onPressed: () =>
+                                      Navigator.pop(dialogContext, false),
+                                  child: const Text('Annulla'),
+                                ),
+                                FilledButton(
+                                  onPressed: () =>
+                                      Navigator.pop(dialogContext, true),
+                                  child: const Text('Sposta nel Cestino'),
+                                ),
+                              ],
+                            ),
+                          ) ??
+                          false;
+                      if (!confirmed || !mounted) return;
+                      final moved =
+                          await widget.store.moveJournalToTrash(widget.date);
+                      if (!moved || !mounted) return;
+                      beautiful.clear();
+                      note.clear();
+                      for (final controller in gratitude) {
+                        controller.clear();
+                      }
+                      setState(() => mood = null);
+                      messenger.showSnackBar(
+                        const SnackBar(
+                          content: Text('Giornata spostata nel Cestino.'),
+                        ),
+                      );
+                    },
+                    icon: const Icon(Icons.delete_outline),
+                    label: const Text('Sposta giornata nel Cestino'),
+                  ),
+                ),
+              ],
             ],
           ),
         ),

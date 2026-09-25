@@ -34,6 +34,7 @@ class AgendaStore extends ChangeNotifier {
   final List<HabitDefinition> habits = [];
   final List<LocalBackupSnapshot> localSnapshots = [];
   final List<InboxEntry> inbox = [];
+  final List<TrashEntry> trash = [];
   final Map<String, CloudSyncOperation> _syncQueue = {};
   final Map<String, String> _syncIndex = {};
   final Map<String, List<AgendaItem>> _dayIndex = {};
@@ -101,6 +102,7 @@ class AgendaStore extends ChangeNotifier {
   ValueListenable<int> get inboxRevision => signals.inbox;
   ValueListenable<int> get settingsRevision => signals.settings;
   ValueListenable<int> get backupRevision => signals.backup;
+  ValueListenable<int> get lifecycleRevision => signals.lifecycle;
   ValueListenable<int> get accountRevision => signals.account;
   List<SharedSpace> get sharedAgendaSpaces {
     final result = _sharedAgendaSpaces.values.toList()
@@ -127,6 +129,7 @@ class AgendaStore extends ChangeNotifier {
         _snapshotsKey,
         _preferencesKey,
         _inboxKey,
+        _trashKey,
         _syncQueueKey,
         _syncIndexKey,
         _syncOwnerKey,
@@ -279,6 +282,11 @@ class AgendaStore extends ChangeNotifier {
     notifyListeners();
   }
 
+  void _notifyLifecycleChanged() {
+    signals.bumpLifecycle();
+    notifyListeners();
+  }
+
   void _notifyAllDataChanged() {
     signals.bumpAll();
     notifyListeners();
@@ -362,6 +370,16 @@ class AgendaStore extends ChangeNotifier {
             if (!deleted && payload is Map) {
               inbox.add(
                 InboxEntry.fromJson(
+                  Map<String, dynamic>.from(payload),
+                ),
+              );
+            }
+            break;
+          case 'trash':
+            trash.removeWhere((entry) => entry.id == id);
+            if (!deleted && payload is Map) {
+              trash.add(
+                TrashEntry.fromJson(
                   Map<String, dynamic>.from(payload),
                 ),
               );
@@ -503,6 +521,11 @@ class AgendaStore extends ChangeNotifier {
         return null;
       case 'inbox':
         for (final entry in inbox) {
+          if (entry.id == id) return entry.toJson();
+        }
+        return null;
+      case 'trash':
+        for (final entry in trash) {
           if (entry.id == id) return entry.toJson();
         }
         return null;
@@ -891,7 +914,13 @@ class AgendaStore extends ChangeNotifier {
       }
     }
 
+    _collectAssetIdsFromJson(
+      trash.map((entry) => entry.toJson()).toList(),
+      referenced,
+    );
+
     for (final key in prefs.getKeys()) {
+      if (key == _journalsKey || key == _trashKey) continue;
       final raw = prefs.getString(key);
       if (raw == null || !raw.contains('AssetId')) continue;
       try {
@@ -936,6 +965,7 @@ class AgendaStore extends ChangeNotifier {
     habits.clear();
     localSnapshots.clear();
     inbox.clear();
+    trash.clear();
     _syncQueue.clear();
     _syncIndex.clear();
     _sharedAgendaSpaces.clear();
@@ -1086,6 +1116,22 @@ class AgendaStore extends ChangeNotifier {
     );
     if (parsedInbox != null) inbox.addAll(parsedInbox);
 
+    final parsedTrash = decodeSection<List<TrashEntry>>(
+      _trashKey,
+      (value) => (value as List)
+          .map(
+            (e) => TrashEntry.fromJson(
+              Map<String, dynamic>.from(e as Map),
+            ),
+          )
+          .toList(),
+    );
+    if (parsedTrash != null) {
+      for (final entry in parsedTrash) {
+        trash.add(await _localizeTrashEntry(entry));
+      }
+    }
+
     final parsedQueue = decodeSection<Map<String, CloudSyncOperation>>(
       _syncQueueKey,
       (value) => Map<String, dynamic>.from(value as Map).map(
@@ -1187,6 +1233,7 @@ class AgendaStore extends ChangeNotifier {
         _habitsKey: jsonEncode(habits.map((e) => e.toJson()).toList()),
         _preferencesKey: jsonEncode(preferences.toJson()),
         _inboxKey: jsonEncode(inbox.map((e) => e.toJson()).toList()),
+        _trashKey: jsonEncode(trash.map((e) => e.toJson()).toList()),
         _privacyGuardKey: jsonEncode(_privacyGuardPayload()),
       };
 
@@ -1198,6 +1245,7 @@ class AgendaStore extends ChangeNotifier {
       _weeksKey,
       _habitsKey,
       _inboxKey,
+      _trashKey,
     ]) {
       final raw = prefs.getString(key);
       if (raw != null && raw != '[]' && raw != '{}') return true;
@@ -1391,6 +1439,11 @@ class AgendaStore extends ChangeNotifier {
         add('inbox', entry.id, entry.toJson());
       }
     }
+    if (includes(_trashKey)) {
+      for (final entry in trash) {
+        add('trash', entry.id, entry.toJson());
+      }
+    }
     if (includes(_preferencesKey)) {
       add('preferences', 'main', _cloudPreferencesPayload());
     }
@@ -1408,6 +1461,7 @@ class AgendaStore extends ChangeNotifier {
         'week' => _weeksKey,
         'habit' => _habitsKey,
         'inbox' => _inboxKey,
+        'trash' => _trashKey,
         'preferences' => _preferencesKey,
         _ => null,
       };
@@ -1605,6 +1659,15 @@ class AgendaStore extends ChangeNotifier {
           ),
         )
         .toList();
+    final incomingTrash = <TrashEntry>[];
+    for (final rawEntry in payload['trash'] as List? ?? const []) {
+      if (rawEntry is! Map) continue;
+      incomingTrash.add(
+        await _localizeTrashEntry(
+          TrashEntry.fromJson(Map<String, dynamic>.from(rawEntry)),
+        ),
+      );
+    }
     final incomingPreferences = payload['preferences'] is Map
         ? AgendaPreferences.fromJson(
             Map<String, dynamic>.from(payload['preferences'] as Map),
@@ -1622,6 +1685,7 @@ class AgendaStore extends ChangeNotifier {
     final previousWeeks = Map<String, WeekData>.from(weeks);
     final previousHabits = List<HabitDefinition>.from(habits);
     final previousInbox = List<InboxEntry>.from(inbox);
+    final previousTrash = List<TrashEntry>.from(trash);
     final previousPreferences = preferences;
 
     try {
@@ -1653,6 +1717,14 @@ class AgendaStore extends ChangeNotifier {
         inbox
           ..clear()
           ..addAll(inboxById.values);
+
+        final trashById = {for (final entry in trash) entry.id: entry};
+        for (final entry in incomingTrash) {
+          trashById[entry.id] = entry;
+        }
+        trash
+          ..clear()
+          ..addAll(trashById.values);
       } else {
         items
           ..clear()
@@ -1672,6 +1744,9 @@ class AgendaStore extends ChangeNotifier {
         inbox
           ..clear()
           ..addAll(incomingInbox);
+        trash
+          ..clear()
+          ..addAll(incomingTrash);
         if (incomingPreferences != null) {
           preferences = incomingPreferences;
         }
@@ -1720,6 +1795,9 @@ class AgendaStore extends ChangeNotifier {
       inbox
         ..clear()
         ..addAll(previousInbox);
+      trash
+        ..clear()
+        ..addAll(previousTrash);
       preferences = previousPreferences;
       _invalidateDayIndex();
       rethrow;
@@ -1894,26 +1972,7 @@ class AgendaStore extends ChangeNotifier {
   }
 
   Future<void> deleteItem(String id) async {
-    items.removeWhere((e) => e.id == id);
-    _invalidateDayIndex();
-    await NotificationService.instance.cancel(id);
-    await NotificationService.instance.cancel('$id:primary');
-    await NotificationService.instance.cancel('$id:secondary');
-    if (kIsWeb && CloudSyncService.instance.signedIn) {
-      try {
-        await CloudSyncService.instance.cancelWebPushReminder('$id:primary');
-        await CloudSyncService.instance.cancelWebPushReminder('$id:secondary');
-      } catch (_) {
-        // Data deletion remains authoritative locally; cloud reconciliation
-        // will run again on the next connected session.
-      }
-    }
-    await _persistEntityMutation(
-      type: 'item',
-      id: id,
-      deleted: true,
-    );
-    _notifyAgendaChanged();
+    await moveItemToTrash(id);
   }
 
   Future<void> _syncReminders(
@@ -2185,7 +2244,8 @@ class AgendaStore extends ChangeNotifier {
               journals.isNotEmpty ||
               months.isNotEmpty ||
               weeks.isNotEmpty ||
-              inbox.isNotEmpty)) {
+              inbox.isNotEmpty ||
+              trash.isNotEmpty)) {
         await createLocalSnapshot(
           label: 'Prima sincronizzazione cloud',
         );
@@ -2280,6 +2340,27 @@ class AgendaStore extends ChangeNotifier {
               ownerId: operation.ownerId,
             ),
           );
+        } else if (operation.entityType == 'trash' &&
+            !operation.deleted &&
+            operation.payload != null) {
+          TrashEntry? current;
+          for (final entry in trash) {
+            if (entry.id == operation.entityId) {
+              current = entry;
+              break;
+            }
+          }
+          final source = current ?? TrashEntry.fromJson(operation.payload!);
+          portablePending.add(
+            CloudSyncOperation(
+              entityType: operation.entityType,
+              entityId: operation.entityId,
+              payload: await _portableTrashJson(source),
+              updatedAt: operation.updatedAt,
+              deleted: operation.deleted,
+              ownerId: operation.ownerId,
+            ),
+          );
         } else {
           portablePending.add(operation);
         }
@@ -2350,6 +2431,12 @@ class AgendaStore extends ChangeNotifier {
           final before = inbox.length;
           inbox.removeWhere((e) => e.id == record.entityId);
           return inbox.length != before;
+        case 'trash':
+          final before = trash.length;
+          trash.removeWhere((e) => e.id == record.entityId);
+          final changed = trash.length != before;
+          if (changed) signals.bumpLifecycle();
+          return changed;
         case 'preferences':
           return false;
       }
@@ -2432,6 +2519,23 @@ class AgendaStore extends ChangeNotifier {
         } else {
           inbox[index] = incoming;
         }
+        return true;
+      case 'trash':
+        final incoming = await _localizeTrashEntry(
+          TrashEntry.fromJson(payload),
+        );
+        final index = trash.indexWhere((entry) => entry.id == incoming.id);
+        if (index >= 0 &&
+            _syncPayloadHash(trash[index].toJson()) ==
+                _syncPayloadHash(incoming.toJson())) {
+          return false;
+        }
+        if (index < 0) {
+          trash.add(incoming);
+        } else {
+          trash[index] = incoming;
+        }
+        signals.bumpLifecycle();
         return true;
       case 'preferences':
         if (_syncPayloadHash(_cloudPreferencesPayload()) ==
@@ -3896,13 +4000,7 @@ class AgendaStore extends ChangeNotifier {
   }
 
   Future<void> deleteInboxEntry(String id) async {
-    inbox.removeWhere((e) => e.id == id);
-    await _persistEntityMutation(
-      type: 'inbox',
-      id: id,
-      deleted: true,
-    );
-    _notifyInboxChanged();
+    await moveInboxToTrash(id);
   }
 
   Future<void> toggleInboxPinned(String id) async {
@@ -3999,44 +4097,7 @@ class AgendaStore extends ChangeNotifier {
   }
 
   Future<void> removeHabit(String id) async {
-    habits.removeWhere((e) => e.id == id);
-    final mutations = <
-        ({
-          String type,
-          String id,
-          Map<String, dynamic>? payload,
-          bool deleted,
-        })>[
-      (
-        type: 'habit',
-        id: id,
-        payload: null,
-        deleted: true,
-      ),
-    ];
-
-    for (final entry in journals.entries.toList()) {
-      final journal = entry.value;
-      if (!journal.completedHabitIds.contains(id)) continue;
-
-      final updated = journal.copyWith(
-        completedHabitIds: journal.completedHabitIds
-            .where((habitId) => habitId != id)
-            .toList(),
-      );
-      journals[entry.key] = updated;
-      mutations.add(
-        (
-          type: 'journal',
-          id: entry.key,
-          payload: updated.toLocalJson(),
-          deleted: false,
-        ),
-      );
-    }
-
-    await _persistEntityMutations(mutations);
-    _notifyJournalAndPlanningChanged();
+    await moveHabitToTrash(id);
   }
 
   Future<void> toggleHabit(DateTime date, String habitId) async {
