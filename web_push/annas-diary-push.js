@@ -29,7 +29,7 @@
     let result = await navigator.serviceWorker.getRegistration("./");
     if (!result && create) {
       result = await navigator.serviceWorker.register(
-        "annas-diary-push-sw.js",
+        "flutter_service_worker.js",
         { scope: "./" },
       );
     }
