@@ -488,38 +488,48 @@ class NotificationService {
   Future<void> showPushSelfTestReceived() async {
     await initialize(force: !_initialized || !_available);
     if (!_available) return;
-    await _plugin.show(
-      id: _notificationId(
-        'annas-diary:fcm-test:${DateTime.now().millisecondsSinceEpoch}',
-      ),
-      title: 'Anna\'s Diary · Test push',
-      body: 'Push Firebase ricevuta correttamente ♡',
-      notificationDetails: const NotificationDetails(
-        android: AndroidNotificationDetails(
-          sharedChannelId,
-          'Noi ♡',
-          channelDescription:
-              'Novità e aggiornamenti dello spazio condiviso Noi ♡',
-          importance: Importance.max,
-          priority: Priority.max,
-          playSound: true,
-          enableVibration: true,
-          category: AndroidNotificationCategory.status,
-          color: Color(0xFFE84A7F),
+    final status = await health();
+    if (!status.sharedDeliveryReady) {
+      _lastError = 'shared_notification_channel_not_ready';
+      return;
+    }
+    try {
+      await _plugin.show(
+        id: _notificationId(
+          'annas-diary:fcm-test:${DateTime.now().millisecondsSinceEpoch}',
         ),
-        iOS: DarwinNotificationDetails(
-          presentAlert: true,
-          presentBadge: true,
-          presentSound: true,
+        title: 'Anna\'s Diary · Test push',
+        body: 'Push Firebase ricevuta correttamente ♡',
+        notificationDetails: const NotificationDetails(
+          android: AndroidNotificationDetails(
+            sharedChannelId,
+            'Noi ♡',
+            channelDescription:
+                'Novità e aggiornamenti dello spazio condiviso Noi ♡',
+            importance: Importance.max,
+            priority: Priority.max,
+            playSound: true,
+            enableVibration: true,
+            category: AndroidNotificationCategory.status,
+            color: Color(0xFFE84A7F),
+          ),
+          iOS: DarwinNotificationDetails(
+            presentAlert: true,
+            presentBadge: true,
+            presentSound: true,
+          ),
+          macOS: DarwinNotificationDetails(
+            presentAlert: true,
+            presentBadge: true,
+            presentSound: true,
+          ),
         ),
-        macOS: DarwinNotificationDetails(
-          presentAlert: true,
-          presentBadge: true,
-          presentSound: true,
-        ),
-      ),
-      payload: 'test:fcm',
-    );
+        payload: 'test:fcm',
+      );
+      _lastError = null;
+    } catch (error) {
+      _lastError = 'push_test_show: $error';
+    }
   }
 
   Future<void> showSharedUpdate({
@@ -529,44 +539,49 @@ class NotificationService {
     await initialize();
     if (!_available) return;
 
-    final enabled = await requestPermissions();
-    if (!enabled) return;
+    final status = await health();
+    if (!status.sharedDeliveryReady) return;
 
     final label =
         (spaceName ?? '').trim().isEmpty ? 'Noi ♡' : spaceName!.trim();
 
-    await _plugin.show(
-      id: _notificationId(
-        'shared:$spaceId:${DateTime.now().millisecondsSinceEpoch ~/ 1000}',
-      ),
-      title: 'Novità in $label',
-      body: 'C’è un nuovo aggiornamento condiviso da leggere.',
-      notificationDetails: const NotificationDetails(
-        android: AndroidNotificationDetails(
-          sharedChannelId,
-          'Noi ♡',
-          channelDescription:
-              'Novità e aggiornamenti dello spazio condiviso Noi ♡',
-          importance: Importance.max,
-          priority: Priority.max,
-          playSound: true,
-          enableVibration: true,
-          category: AndroidNotificationCategory.message,
-          color: Color(0xFFE84A7F),
+    try {
+      await _plugin.show(
+        id: _notificationId(
+          'shared:$spaceId:${DateTime.now().millisecondsSinceEpoch ~/ 1000}',
         ),
-        iOS: DarwinNotificationDetails(
-          presentAlert: true,
-          presentBadge: true,
-          presentSound: true,
+        title: 'Novità in $label',
+        body: 'C’è un nuovo aggiornamento condiviso da leggere.',
+        notificationDetails: const NotificationDetails(
+          android: AndroidNotificationDetails(
+            sharedChannelId,
+            'Noi ♡',
+            channelDescription:
+                'Novità e aggiornamenti dello spazio condiviso Noi ♡',
+            importance: Importance.max,
+            priority: Priority.max,
+            playSound: true,
+            enableVibration: true,
+            category: AndroidNotificationCategory.message,
+            color: Color(0xFFE84A7F),
+          ),
+          iOS: DarwinNotificationDetails(
+            presentAlert: true,
+            presentBadge: true,
+            presentSound: true,
+          ),
+          macOS: DarwinNotificationDetails(
+            presentAlert: true,
+            presentBadge: true,
+            presentSound: true,
+          ),
         ),
-        macOS: DarwinNotificationDetails(
-          presentAlert: true,
-          presentBadge: true,
-          presentSound: true,
-        ),
-      ),
-      payload: 'shared:$spaceId',
-    );
+        payload: 'shared:$spaceId',
+      );
+      _lastError = null;
+    } catch (error) {
+      _lastError = 'shared_show: $error';
+    }
   }
 
   Future<void> schedule({
@@ -587,7 +602,16 @@ class NotificationService {
     final enabled = requestPermission
         ? await requestPermissions()
         : (await health()).notificationsEnabled;
-    if (!enabled) return;
+    if (!enabled) {
+      _lastError = 'notification_permission_denied';
+      return;
+    }
+
+    final status = await health();
+    if (!status.reminderChannelEnabled) {
+      _lastError = 'reminder_channel_disabled';
+      return;
+    }
 
     final id = _notificationId(stableId);
     final scheduled = tz.TZDateTime.from(when, tz.local);
@@ -634,7 +658,9 @@ class NotificationService {
         androidScheduleMode: mode,
         payload: stableId,
       );
-    } catch (_) {
+      _lastError = null;
+    } catch (error) {
+      _lastError = 'schedule:$stableId: $error';
       // Il salvataggio dell'impegno non deve fallire se il sistema blocca
       // temporaneamente la schedulazione.
     }
