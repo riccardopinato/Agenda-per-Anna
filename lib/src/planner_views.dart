@@ -15,9 +15,15 @@ class _CalendarScreenState extends State<CalendarScreen> {
   @override
   Widget build(BuildContext context) {
     return AnimatedBuilder(
-      animation: Listenable.merge([widget.store.agendaRevision, widget.store.sharedRevision]),
+      animation: Listenable.merge([
+        widget.store.agendaRevision,
+        widget.store.sharedRevision,
+        widget.store.journalRevision,
+        widget.store.planningRevision,
+      ]),
       builder: (context, _) {
         final events = widget.store.unifiedForDay(selected);
+        final dayHub = widget.store.dayHubSnapshot(selected);
         return Scaffold(
           appBar: AppBar(title: const Text('Calendario', style: TextStyle(fontWeight: FontWeight.w800))),
           floatingActionButton: FloatingActionButton(
@@ -61,7 +67,26 @@ class _CalendarScreenState extends State<CalendarScreen> {
               if (events.isEmpty)
                 const SimpleCard(child: Text('Nessun impegno.'))
               else
-                ...events.map((e) => UnifiedAgendaTile(store: widget.store, entry: e)),
+                ...events.map(
+                  (e) => UnifiedAgendaTile(
+                    store: widget.store,
+                    entry: e,
+                  ),
+                ),
+              const SizedBox(height: 12),
+              _CalendarDayContextCard(
+                store: widget.store,
+                snapshot: dayHub,
+                onOpenDay: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => PlannerScreen(
+                      store: widget.store,
+                      initialDate: selected,
+                    ),
+                  ),
+                ),
+              ),
             ],
           ),
         );
@@ -99,6 +124,7 @@ class _PlannerScreenState extends State<PlannerScreen> {
       animation: Listenable.merge([widget.store.agendaRevision, widget.store.sharedRevision, widget.store.journalRevision, widget.store.planningRevision]),
       builder: (context, _) {
         final events = widget.store.unifiedForDay(day);
+        final birthdays = widget.store.birthdaysForDay(day);
         final tasks = events.where((e) => e.type == ItemType.task).toList();
         final allDay = events
             .where((e) => e.type == ItemType.appointment && e.start == null)
@@ -155,6 +181,29 @@ class _PlannerScreenState extends State<PlannerScreen> {
                     _DayOpeningCard(date: day),
                     const SizedBox(height: 12),
                     AgendaContentFilterBar(store: widget.store),
+                    if (birthdays.isNotEmpty) ...[
+                      const SizedBox(height: 14),
+                      _DaySmallSection(
+                        title: 'Compleanni',
+                        icon: Icons.cake_outlined,
+                        child: Column(
+                          children: birthdays
+                              .map(
+                                (birthday) => _BirthdayOccurrenceTile(
+                                  occurrence: birthday,
+                                  onTap: () => Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (_) =>
+                                          BirthdaysScreen(store: widget.store),
+                                    ),
+                                  ),
+                                ),
+                              )
+                              .toList(),
+                        ),
+                      ),
+                    ],
                     if (tasks.isNotEmpty) ...[
                       const SizedBox(height: 14),
                       _DaySmallSection(
@@ -223,6 +272,119 @@ class _PlannerScreenState extends State<PlannerScreen> {
           ),
         );
       },
+    );
+  }
+}
+
+class _CalendarDayContextCard extends StatelessWidget {
+  final AgendaStore store;
+  final DayHubSnapshot snapshot;
+  final VoidCallback onOpenDay;
+
+  const _CalendarDayContextCard({
+    required this.store,
+    required this.snapshot,
+    required this.onOpenDay,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final journalText = snapshot.hasJournalContent
+        ? 'Diario già iniziato'
+        : 'Diario ancora vuoto';
+    final birthdayText = snapshot.birthdays.isEmpty
+        ? null
+        : snapshot.birthdays
+            .map((occurrence) => occurrence.birthday.name)
+            .join(', ');
+
+    return Container(
+      padding: const EdgeInsets.all(15),
+      decoration: BoxDecoration(
+        color: scheme.surfaceContainerHighest.withValues(alpha: 0.38),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: scheme.outlineVariant),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(Icons.auto_stories_outlined),
+              const SizedBox(width: 8),
+              const Expanded(
+                child: Text(
+                  'Contesto della giornata',
+                  style: TextStyle(fontWeight: FontWeight.w800),
+                ),
+              ),
+              TextButton(
+                onPressed: onOpenDay,
+                child: const Text('Apri giornata'),
+              ),
+            ],
+          ),
+          const SizedBox(height: 4),
+          Text(journalText),
+          if (birthdayText != null) ...[
+            const SizedBox(height: 7),
+            Row(
+              children: [
+                Icon(Icons.cake_outlined, size: 18, color: scheme.tertiary),
+                const SizedBox(width: 7),
+                Expanded(
+                  child: Text(
+                    birthdayText,
+                    style: const TextStyle(fontWeight: FontWeight.w700),
+                  ),
+                ),
+              ],
+            ),
+          ],
+          if (snapshot.isEmpty) ...[
+            const SizedBox(height: 6),
+            Text(
+              'Giornata libera: puoi comunque usarla come pagina di diario.',
+              style: Theme.of(context).textTheme.bodySmall,
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _BirthdayOccurrenceTile extends StatelessWidget {
+  final BirthdayOccurrence occurrence;
+  final VoidCallback? onTap;
+
+  const _BirthdayOccurrenceTile({
+    required this.occurrence,
+    this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final age = occurrence.age == null ? '' : ' · ${occurrence.age} anni';
+    return ListTile(
+      contentPadding: const EdgeInsets.symmetric(horizontal: 4),
+      leading: const CircleAvatar(
+        child: Icon(Icons.cake_outlined),
+      ),
+      title: Text(
+        occurrence.birthday.name,
+        style: const TextStyle(fontWeight: FontWeight.w800),
+      ),
+      subtitle: Text(
+        occurrence.birthday.note.trim().isEmpty
+            ? 'Compleanno$age'
+            : '${occurrence.birthday.note}$age',
+        maxLines: 2,
+        overflow: TextOverflow.ellipsis,
+      ),
+      trailing: onTap == null ? null : const Icon(Icons.chevron_right),
+      onTap: onTap,
     );
   }
 }
