@@ -586,6 +586,9 @@ class _NotificationSettingsCardState
   Future<void> _enableWebPush() async {
     await _runBusy(() async {
       final status = await WebPushService.instance.enable();
+      if (status.ready) {
+        await widget.store.reconcileReminders();
+      }
       await _refresh();
 
       final message = status.ready
@@ -654,6 +657,9 @@ class _NotificationSettingsCardState
     await _runBusy(() async {
       if (kIsWeb) {
         final status = await WebPushService.instance.enable();
+        if (status.ready) {
+          await widget.store.reconcileReminders();
+        }
         await _refresh();
         _snack(
           status.ready
@@ -773,7 +779,7 @@ class _NotificationSettingsCardState
                   ? Icons.notifications_active
                   : Icons.install_mobile_outlined,
               title: webReady
-                  ? 'Push PWA Noi ♡ attive'
+                  ? 'Push PWA e promemoria attivi'
                   : 'Push PWA da attivare',
               subtitle: web == null
                   ? 'Diagnostica Web Push in caricamento...'
