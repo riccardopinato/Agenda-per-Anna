@@ -15,6 +15,7 @@ class _AgendaBackupDomain {
         'months': store.months.map((k, v) => MapEntry(k, v.toJson())),
         'weeks': store.weeks.map((k, v) => MapEntry(k, v.toJson())),
         'habits': store.habits.map((e) => e.toJson()).toList(),
+        'birthdays': store.birthdays.map((e) => e.toJson()).toList(),
         'inbox': store.inbox.map((e) => e.toJson()).toList(),
         'trash': store.trash.map((e) => e.toJson()).toList(),
         'preferences': store.preferences.toJson(),
@@ -38,6 +39,7 @@ class _AgendaBackupDomain {
       'months': store.months.map((k, v) => MapEntry(k, v.toJson())),
       'weeks': store.weeks.map((k, v) => MapEntry(k, v.toJson())),
       'habits': store.habits.map((e) => e.toJson()).toList(),
+      'birthdays': store.birthdays.map((e) => e.toJson()).toList(),
       'inbox': store.inbox.map((e) => e.toJson()).toList(),
       'trash': portableTrash,
       'preferences': store.preferences.toJson(),
@@ -215,6 +217,7 @@ class _AgendaBackupDomain {
       monthCount: (payload['months'] as Map? ?? const {}).length,
       weekCount: (payload['weeks'] as Map? ?? const {}).length,
       habitCount: (payload['habits'] as List? ?? const []).length,
+      birthdayCount: (payload['birthdays'] as List? ?? const []).length,
       trashCount: (payload['trash'] as List? ?? const []).length,
     );
   }
@@ -258,6 +261,38 @@ class _AgendaBackupDomain {
         buffer.writeln('  Categoria: ${item.category.label}');
         if (item.note.trim().isNotEmpty) {
           buffer.writeln('  Note: ${item.note.trim()}');
+        }
+      }
+    }
+
+    buffer.writeln();
+    buffer.writeln(
+      '============================================================',
+    );
+    buffer.writeln('COMPLEANNI');
+    buffer.writeln(
+      '============================================================',
+    );
+
+    if (store.birthdays.isEmpty) {
+      buffer.writeln('Nessun compleanno salvato.');
+    } else {
+      final birthdays = [...store.birthdays]
+        ..sort((a, b) {
+          final month = a.month.compareTo(b.month);
+          if (month != 0) return month;
+          final day = a.day.compareTo(b.day);
+          if (day != 0) return day;
+          return a.name.toLowerCase().compareTo(b.name.toLowerCase());
+        });
+      for (final birthday in birthdays) {
+        final date = DateTime(2000, birthday.month, birthday.day);
+        final dateText = DateFormat('d MMMM', 'it_IT').format(date);
+        final yearText =
+            birthday.year == null ? '' : ' ${birthday.year}';
+        buffer.writeln('- $dateText$yearText · ${birthday.name}');
+        if (birthday.note.trim().isNotEmpty) {
+          buffer.writeln('  Note: ${birthday.note.trim()}');
         }
       }
     }

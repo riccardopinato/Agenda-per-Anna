@@ -30,6 +30,7 @@ import 'web_push_service.dart';
 
 part 'src/app_shell.dart';
 part 'src/domain_models.dart';
+part 'src/day_hub_domain.dart';
 part 'src/store_signals.dart';
 part 'src/store/backup_domain.dart';
 part 'src/lifecycle_domain.dart';
@@ -37,6 +38,7 @@ part 'src/agenda_store.dart';
 part 'src/unified_agenda.dart';
 part 'src/screens/universal_identity.dart';
 part 'src/screens/private_vault.dart';
+part 'src/screens/birthdays_screen.dart';
 part 'src/screens/home_inbox_search.dart';
 part 'src/screens/trash_screen.dart';
 part 'src/screens/backup_settings.dart';
@@ -128,6 +130,7 @@ Future<void> main() async {
     try {
       await NotificationService.instance.initialize();
       await store.reconcileReminders();
+      await store.reconcileBirthdayReminders();
     } catch (_) {
       // Le notifiche non devono mai impedire l'avvio dell'agenda.
     }
@@ -146,6 +149,7 @@ Future<void> main() async {
       if (kIsWeb) {
         await WebPushService.instance.initialize();
         await store.reconcileReminders();
+        await store.reconcileBirthdayReminders();
         final initialWebPushSpace =
             await WebPushService.instance.takeInitialSpaceId();
         if (initialWebPushSpace != null) {

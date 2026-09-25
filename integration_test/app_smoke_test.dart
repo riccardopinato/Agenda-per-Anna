@@ -25,6 +25,16 @@ void main() {
       store.preferences.copyWith(onboardingDone: true),
     );
     await store.addInboxEntry('Smoke Android');
+    final today = DateTime.now();
+    store.birthdays.add(
+      BirthdayEntry(
+        id: 'smoke-birthday',
+        name: 'Compleanno AppLab',
+        day: today.day,
+        month: today.month,
+        reminderDaysBefore: null,
+      ),
+    );
     await store.setPin('2468');
     expect(store.verifyPin('2468'), isTrue);
 
@@ -46,10 +56,13 @@ void main() {
     expect(find.text('Mese'), findsOneWidget);
     expect(find.text('Settimana'), findsOneWidget);
     expect(find.text('Oggi'), findsOneWidget);
+    expect(find.text('Oggi in breve'), findsOneWidget);
+    expect(find.textContaining('Compleanno AppLab'), findsWidgets);
 
     await tester.tap(find.byType(NavigationDestination).at(1));
     await tester.pumpAndSettle();
     expect(find.text('Mese'), findsWidgets);
+    expect(find.text('Contesto della giornata'), findsOneWidget);
 
     await tester.tap(find.byType(NavigationDestination).at(2));
     await tester.pumpAndSettle();
@@ -58,6 +71,8 @@ void main() {
     await tester.tap(find.byType(NavigationDestination).at(3));
     await tester.pumpAndSettle();
     expect(find.text('Oggi'), findsWidgets);
+    expect(find.text('Compleanni'), findsOneWidget);
+    expect(find.text('Compleanno AppLab'), findsWidgets);
 
     store.dispose();
   });
