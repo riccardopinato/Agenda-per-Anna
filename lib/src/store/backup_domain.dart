@@ -269,6 +269,38 @@ class _AgendaBackupDomain {
     buffer.writeln(
       '============================================================',
     );
+    buffer.writeln('COMPLEANNI');
+    buffer.writeln(
+      '============================================================',
+    );
+
+    if (store.birthdays.isEmpty) {
+      buffer.writeln('Nessun compleanno salvato.');
+    } else {
+      final birthdays = [...store.birthdays]
+        ..sort((a, b) {
+          final month = a.month.compareTo(b.month);
+          if (month != 0) return month;
+          final day = a.day.compareTo(b.day);
+          if (day != 0) return day;
+          return a.name.toLowerCase().compareTo(b.name.toLowerCase());
+        });
+      for (final birthday in birthdays) {
+        final date = DateTime(2000, birthday.month, birthday.day);
+        final dateText = DateFormat('d MMMM', 'it_IT').format(date);
+        final yearText =
+            birthday.year == null ? '' : ' ${birthday.year}';
+        buffer.writeln('- $dateText$yearText · ${birthday.name}');
+        if (birthday.note.trim().isNotEmpty) {
+          buffer.writeln('  Note: ${birthday.note.trim()}');
+        }
+      }
+    }
+
+    buffer.writeln();
+    buffer.writeln(
+      '============================================================',
+    );
     buffer.writeln('DIARIO');
     buffer.writeln(
       '============================================================',
