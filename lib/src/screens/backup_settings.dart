@@ -784,7 +784,7 @@ class _NotificationSettingsCardState
               subtitle: web == null
                   ? 'Diagnostica Web Push in caricamento...'
                   : [
-                      web!.isIos
+                      web.isIos
                           ? (web.installedPwa
                               ? 'PWA iPhone: installata'
                               : 'PWA iPhone: aggiungi alla schermata Home')
