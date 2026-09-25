@@ -82,6 +82,34 @@ extension AgendaStorePeople on AgendaStore {
     return null;
   }
 
+  BirthdayEntry? trashedBirthdayById(String id) {
+    for (final entry in trash) {
+      if (entry.kind != TrashEntityKind.birthday || entry.entityId != id) {
+        continue;
+      }
+      try {
+        return BirthdayEntry.fromJson(entry.payload);
+      } catch (_) {
+        return null;
+      }
+    }
+    return null;
+  }
+
+  PersonEntry? trashedPersonById(String id) {
+    for (final entry in trash) {
+      if (entry.kind != TrashEntityKind.person || entry.entityId != id) {
+        continue;
+      }
+      try {
+        return PersonEntry.fromJson(entry.payload);
+      } catch (_) {
+        return null;
+      }
+    }
+    return null;
+  }
+
   List<PersonEntry> peopleForIds(Iterable<String> ids) {
     final wanted = ids.toSet();
     final result = people.where((person) => wanted.contains(person.id)).toList()
@@ -127,7 +155,8 @@ extension AgendaStorePeople on AgendaStore {
 
     final linkedBirthday = person.birthdayId;
     final birthdayExists = linkedBirthday != null &&
-        birthdays.any((birthday) => birthday.id == linkedBirthday);
+        (birthdays.any((birthday) => birthday.id == linkedBirthday) ||
+            trashedBirthdayById(linkedBirthday) != null);
     final normalized = person.copyWith(
       name: normalizedName,
       relationship: person.relationship.trim(),
@@ -161,10 +190,14 @@ extension AgendaStorePeople on AgendaStore {
     final index = current.blocks.indexWhere((block) => block.id == blockId);
     if (index < 0) return;
 
+    final existingIds = current.blocks[index].personIds.toSet();
     final validIds = <String>[];
     for (final id in personIds) {
       if (validIds.contains(id)) continue;
-      if (people.any((person) => person.id == id)) validIds.add(id);
+      final isLive = people.any((person) => person.id == id);
+      final isRecoverableExisting =
+          existingIds.contains(id) && trashedPersonById(id) != null;
+      if (isLive || isRecoverableExisting) validIds.add(id);
     }
 
     final blocks = [...current.blocks];
