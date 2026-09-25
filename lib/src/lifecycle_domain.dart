@@ -11,6 +11,7 @@ enum TrashEntityKind {
   habit,
   birthday,
   person,
+  template,
   inbox,
 }
 
@@ -24,6 +25,7 @@ extension TrashEntityKindUi on TrashEntityKind {
         TrashEntityKind.habit => 'Abitudine',
         TrashEntityKind.birthday => 'Compleanno',
         TrashEntityKind.person => 'Persona',
+        TrashEntityKind.template => 'Modello',
         TrashEntityKind.inbox => 'Inbox',
       };
 
@@ -36,6 +38,7 @@ extension TrashEntityKindUi on TrashEntityKind {
         TrashEntityKind.habit => Icons.repeat_outlined,
         TrashEntityKind.birthday => Icons.cake_outlined,
         TrashEntityKind.person => Icons.person_outline,
+        TrashEntityKind.template => Icons.copy_all_outlined,
         TrashEntityKind.inbox => Icons.inbox_outlined,
       };
 }
@@ -173,6 +176,7 @@ extension AgendaStoreLifecycle on AgendaStore {
       case TrashEntityKind.habit:
       case TrashEntityKind.birthday:
       case TrashEntityKind.person:
+      case TrashEntityKind.template:
       case TrashEntityKind.inbox:
         return entry;
     }
@@ -206,6 +210,7 @@ extension AgendaStoreLifecycle on AgendaStore {
       case TrashEntityKind.habit:
       case TrashEntityKind.birthday:
       case TrashEntityKind.person:
+      case TrashEntityKind.template:
       case TrashEntityKind.inbox:
         return entry.toJson();
     }
@@ -282,6 +287,28 @@ extension AgendaStoreLifecycle on AgendaStore {
     _putTrashInMemory(entry);
     await _persistEntityMutations([
       (type: 'person', id: id, payload: null, deleted: true),
+      (type: 'trash', id: entry.id, payload: entry.toJson(), deleted: false),
+    ]);
+    signals.bumpLifecycle();
+    _notifyPlanningChanged();
+    return true;
+  }
+
+  Future<bool> moveTemplateToTrash(String id) async {
+    final index = templates.indexWhere((template) => template.id == id);
+    if (index < 0) return false;
+    final template = templates[index];
+    final entry = _newTrashEntry(
+      kind: TrashEntityKind.template,
+      entityId: template.id,
+      title: template.name,
+      payload: template.toJson(),
+    );
+
+    templates.removeAt(index);
+    _putTrashInMemory(entry);
+    await _persistEntityMutations([
+      (type: 'template', id: id, payload: null, deleted: true),
       (type: 'trash', id: entry.id, payload: entry.toJson(), deleted: false),
     ]);
     signals.bumpLifecycle();
@@ -507,6 +534,10 @@ extension AgendaStoreLifecycle on AgendaStore {
         return people.any((person) => person.id == entry.entityId)
             ? 'Questa persona è già presente.'
             : null;
+      case TrashEntityKind.template:
+        return templates.any((template) => template.id == entry.entityId)
+            ? 'Questo modello è già presente.'
+            : null;
       case TrashEntityKind.inbox:
         return inbox.any((value) => value.id == entry.entityId)
             ? 'Questa nota è già presente nell’Inbox.'
@@ -560,6 +591,17 @@ extension AgendaStoreLifecycle on AgendaStore {
         people.add(value);
         mutations.add((
           type: 'person',
+          id: value.id,
+          payload: value.toJson(),
+          deleted: false,
+        ));
+        break;
+      case TrashEntityKind.template:
+        final value = PersonalTemplate.fromJson(localized.payload);
+        templates.removeWhere((template) => template.id == value.id);
+        templates.add(value);
+        mutations.add((
+          type: 'template',
           id: value.id,
           payload: value.toJson(),
           deleted: false,
@@ -690,6 +732,7 @@ extension AgendaStoreLifecycle on AgendaStore {
         _notifyPlanningChanged();
         break;
       case TrashEntityKind.person:
+      case TrashEntityKind.template:
         _notifyPlanningChanged();
         break;
       case TrashEntityKind.inbox:
@@ -797,6 +840,7 @@ extension AgendaStoreLifecycle on AgendaStore {
       case TrashEntityKind.journal:
       case TrashEntityKind.month:
       case TrashEntityKind.week:
+      case TrashEntityKind.template:
       case TrashEntityKind.inbox:
         return false;
     }
