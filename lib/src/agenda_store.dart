@@ -6,6 +6,7 @@ class AgendaStore extends ChangeNotifier {
   static const _monthsKey = 'months_v1';
   static const _weeksKey = 'weeks_v1';
   static const _habitsKey = 'habits_v1';
+  static const _birthdaysKey = 'birthdays_v1';
   static const _snapshotsKey = 'backup_snapshots_v1';
   static const _preferencesKey = 'agenda_preferences_v1';
   static const _inboxKey = 'inbox_v1';
@@ -32,6 +33,7 @@ class AgendaStore extends ChangeNotifier {
   final Map<String, MonthlyData> months = {};
   final Map<String, WeekData> weeks = {};
   final List<HabitDefinition> habits = [];
+  final List<BirthdayEntry> birthdays = [];
   final List<LocalBackupSnapshot> localSnapshots = [];
   final List<InboxEntry> inbox = [];
   final List<TrashEntry> trash = [];
@@ -126,6 +128,7 @@ class AgendaStore extends ChangeNotifier {
         _monthsKey,
         _weeksKey,
         _habitsKey,
+        _birthdaysKey,
         _snapshotsKey,
         _preferencesKey,
         _inboxKey,
@@ -360,6 +363,16 @@ class AgendaStore extends ChangeNotifier {
             if (!deleted && payload is Map) {
               habits.add(
                 HabitDefinition.fromJson(
+                  Map<String, dynamic>.from(payload),
+                ),
+              );
+            }
+            break;
+          case 'birthday':
+            birthdays.removeWhere((birthday) => birthday.id == id);
+            if (!deleted && payload is Map) {
+              birthdays.add(
+                BirthdayEntry.fromJson(
                   Map<String, dynamic>.from(payload),
                 ),
               );
@@ -963,6 +976,7 @@ class AgendaStore extends ChangeNotifier {
     months.clear();
     weeks.clear();
     habits.clear();
+    birthdays.clear();
     localSnapshots.clear();
     inbox.clear();
     trash.clear();
@@ -1049,6 +1063,18 @@ class AgendaStore extends ChangeNotifier {
           .toList(),
     );
     if (parsedHabits != null) habits.addAll(parsedHabits);
+
+    final parsedBirthdays = decodeSection<List<BirthdayEntry>>(
+      _birthdaysKey,
+      (value) => (value as List)
+          .map(
+            (e) => BirthdayEntry.fromJson(
+              Map<String, dynamic>.from(e as Map),
+            ),
+          )
+          .toList(),
+    );
+    if (parsedBirthdays != null) birthdays.addAll(parsedBirthdays);
 
     final parsedSnapshots = decodeSection<List<LocalBackupSnapshot>>(
       _snapshotsKey,
@@ -1231,6 +1257,7 @@ class AgendaStore extends ChangeNotifier {
         _weeksKey:
             jsonEncode(weeks.map((k, v) => MapEntry(k, v.toJson()))),
         _habitsKey: jsonEncode(habits.map((e) => e.toJson()).toList()),
+        _birthdaysKey: jsonEncode(birthdays.map((e) => e.toJson()).toList()),
         _preferencesKey: jsonEncode(preferences.toJson()),
         _inboxKey: jsonEncode(inbox.map((e) => e.toJson()).toList()),
         _trashKey: jsonEncode(trash.map((e) => e.toJson()).toList()),
@@ -1244,6 +1271,7 @@ class AgendaStore extends ChangeNotifier {
       _monthsKey,
       _weeksKey,
       _habitsKey,
+      _birthdaysKey,
       _inboxKey,
       _trashKey,
     ]) {
@@ -1434,6 +1462,11 @@ class AgendaStore extends ChangeNotifier {
         add('habit', habit.id, habit.toJson());
       }
     }
+    if (includes(_birthdaysKey)) {
+      for (final birthday in birthdays) {
+        add('birthday', birthday.id, birthday.toJson());
+      }
+    }
     if (includes(_inboxKey)) {
       for (final entry in inbox) {
         add('inbox', entry.id, entry.toJson());
@@ -1460,6 +1493,7 @@ class AgendaStore extends ChangeNotifier {
         'month' => _monthsKey,
         'week' => _weeksKey,
         'habit' => _habitsKey,
+        'birthday' => _birthdaysKey,
         'inbox' => _inboxKey,
         'trash' => _trashKey,
         'preferences' => _preferencesKey,
@@ -1652,6 +1686,13 @@ class AgendaStore extends ChangeNotifier {
           ),
         )
         .toList();
+    final incomingBirthdays = (payload['birthdays'] as List? ?? const [])
+        .map(
+          (e) => BirthdayEntry.fromJson(
+            Map<String, dynamic>.from(e as Map),
+          ),
+        )
+        .toList();
     final incomingInbox = (payload['inbox'] as List? ?? const [])
         .map(
           (e) => InboxEntry.fromJson(
@@ -1684,6 +1725,7 @@ class AgendaStore extends ChangeNotifier {
     final previousMonths = Map<String, MonthlyData>.from(months);
     final previousWeeks = Map<String, WeekData>.from(weeks);
     final previousHabits = List<HabitDefinition>.from(habits);
+    final previousBirthdays = List<BirthdayEntry>.from(birthdays);
     final previousInbox = List<InboxEntry>.from(inbox);
     final previousTrash = List<TrashEntry>.from(trash);
     final previousPreferences = preferences;
@@ -1709,6 +1751,16 @@ class AgendaStore extends ChangeNotifier {
         habits
           ..clear()
           ..addAll(habitsById.values);
+
+        final birthdaysById = {
+          for (final birthday in birthdays) birthday.id: birthday,
+        };
+        for (final birthday in incomingBirthdays) {
+          birthdaysById[birthday.id] = birthday;
+        }
+        birthdays
+          ..clear()
+          ..addAll(birthdaysById.values);
 
         final inboxById = {for (final entry in inbox) entry.id: entry};
         for (final entry in incomingInbox) {
@@ -1741,6 +1793,9 @@ class AgendaStore extends ChangeNotifier {
         habits
           ..clear()
           ..addAll(incomingHabits);
+        birthdays
+          ..clear()
+          ..addAll(incomingBirthdays);
         inbox
           ..clear()
           ..addAll(incomingInbox);
@@ -1792,6 +1847,9 @@ class AgendaStore extends ChangeNotifier {
       habits
         ..clear()
         ..addAll(previousHabits);
+      birthdays
+        ..clear()
+        ..addAll(previousBirthdays);
       inbox
         ..clear()
         ..addAll(previousInbox);
@@ -1812,6 +1870,7 @@ class AgendaStore extends ChangeNotifier {
     for (final item in items) {
       await _syncReminders(item);
     }
+    await reconcileBirthdayReminders();
 
     // Force a complete queue rebuild after restore. The marker stays on disk
     // until this succeeds, so a crash will retry on the next cloud sync.
@@ -2427,6 +2486,11 @@ class AgendaStore extends ChangeNotifier {
           final before = habits.length;
           habits.removeWhere((e) => e.id == record.entityId);
           return habits.length != before;
+        case 'birthday':
+          final before = birthdays.length;
+          birthdays.removeWhere((e) => e.id == record.entityId);
+          await _cancelBirthdayReminder(record.entityId);
+          return birthdays.length != before;
         case 'inbox':
           final before = inbox.length;
           inbox.removeWhere((e) => e.id == record.entityId);
@@ -2505,6 +2569,21 @@ class AgendaStore extends ChangeNotifier {
         } else {
           habits[index] = incoming;
         }
+        return true;
+      case 'birthday':
+        final incoming = BirthdayEntry.fromJson(payload);
+        final index = birthdays.indexWhere((e) => e.id == incoming.id);
+        if (index >= 0 &&
+            _syncPayloadHash(birthdays[index].toJson()) ==
+                _syncPayloadHash(incoming.toJson())) {
+          return false;
+        }
+        if (index < 0) {
+          birthdays.add(incoming);
+        } else {
+          birthdays[index] = incoming;
+        }
+        await _syncBirthdayReminder(incoming);
         return true;
       case 'inbox':
         final incoming = InboxEntry.fromJson(payload);
