@@ -431,17 +431,145 @@ async function sendFirebaseMessages({
   };
 }
 
+async function processDueWebReminders(admin: any) {
+  const now = new Date();
+  const staleCutoff = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+
+  const { data: reminders, error: remindersError } = await admin
+    .from("web_push_reminders")
+    .select("id,user_id,stable_id,title,body,scheduled_at,attempts")
+    .eq("status", "pending")
+    .lte("scheduled_at", now.toISOString())
+    .gte("scheduled_at", staleCutoff.toISOString())
+    .lt("attempts", 3)
+    .order("scheduled_at", { ascending: true })
+    .limit(100);
+
+  if (remindersError) {
+    throw new Error("due_reminder_lookup_failed");
+  }
+  if (!reminders || reminders.length === 0) {
+    return { processed: 0, delivered: 0, failed: 0, no_subscription: 0 };
+  }
+
+  const config = await ensureWebPushConfig(admin);
+  let deliveredCount = 0;
+  let failedCount = 0;
+  let noSubscriptionCount = 0;
+
+  for (const reminder of reminders) {
+    const attempts = Number(reminder.attempts ?? 0);
+    const { data: subscriptions, error: subscriptionsError } = await admin
+      .from("web_push_subscriptions")
+      .select("endpoint,p256dh,auth,user_id")
+      .eq("user_id", reminder.user_id);
+
+    if (subscriptionsError) {
+      const nextAttempts = attempts + 1;
+      await admin
+        .from("web_push_reminders")
+        .update({
+          attempts: nextAttempts,
+          status: nextAttempts >= 3 ? "failed" : "pending",
+          last_error: "web_subscription_lookup_failed",
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", reminder.id);
+      failedCount++;
+      continue;
+    }
+
+    if (!subscriptions || subscriptions.length === 0) {
+      await admin
+        .from("web_push_reminders")
+        .update({
+          attempts: attempts + 1,
+          status: "no_subscription",
+          last_error: "no_web_push_subscription",
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", reminder.id);
+      noSubscriptionCount++;
+      continue;
+    }
+
+    try {
+      const result = await sendWebPushMessages({
+        config,
+        subscriptions,
+        admin,
+        title: reminder.title,
+        body: reminder.body,
+        data: {
+          kind: "private_reminder",
+          reminder_id: reminder.stable_id,
+        },
+      });
+
+      if (result.delivered > 0) {
+        await admin
+          .from("web_push_reminders")
+          .update({
+            attempts: attempts + 1,
+            status: "delivered",
+            delivered_at: new Date().toISOString(),
+            last_error: result.failed > 0 ? "partial_web_push_delivery" : null,
+            updated_at: new Date().toISOString(),
+          })
+          .eq("id", reminder.id);
+        deliveredCount++;
+      } else {
+        const nextAttempts = attempts + 1;
+        const noSubscription =
+          result.removed > 0 && result.failed === 0;
+        await admin
+          .from("web_push_reminders")
+          .update({
+            attempts: nextAttempts,
+            status: noSubscription
+              ? "no_subscription"
+              : (nextAttempts >= 3 ? "failed" : "pending"),
+            last_error: noSubscription
+              ? "web_push_subscription_expired"
+              : "web_push_delivery_failed",
+            updated_at: new Date().toISOString(),
+          })
+          .eq("id", reminder.id);
+        if (noSubscription) {
+          noSubscriptionCount++;
+        } else {
+          failedCount++;
+        }
+      }
+    } catch (error) {
+      const nextAttempts = attempts + 1;
+      await admin
+        .from("web_push_reminders")
+        .update({
+          attempts: nextAttempts,
+          status: nextAttempts >= 3 ? "failed" : "pending",
+          last_error: classifyWebPushError(error),
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", reminder.id);
+      failedCount++;
+    }
+  }
+
+  return {
+    processed: reminders.length,
+    delivered: deliveredCount,
+    failed: failedCount,
+    no_subscription: noSubscriptionCount,
+  };
+}
+
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
   }
   if (req.method !== "POST") {
     return json({ error: "method_not_allowed" }, 405);
-  }
-
-  const authHeader = req.headers.get("Authorization");
-  if (!authHeader?.startsWith("Bearer ")) {
-    return json({ error: "missing_authorization" }, 401);
   }
 
   const supabaseUrl = Deno.env.get("SUPABASE_URL") ?? "";
@@ -460,11 +588,56 @@ Deno.serve(async (req: Request) => {
     return json({ error: "supabase_keys_unavailable" }, 500);
   }
 
-  const authClient = createClient(supabaseUrl, publicKey, {
-    global: { headers: { Authorization: authHeader } },
+  const admin = createClient(supabaseUrl, adminKey, {
     auth: { persistSession: false },
   });
-  const admin = createClient(supabaseUrl, adminKey, {
+
+  let requestBody: Record<string, unknown>;
+  try {
+    requestBody = await req.json();
+  } catch (_) {
+    return json({ error: "invalid_json" }, 400);
+  }
+
+  const action = String(requestBody.action ?? "updated").trim();
+
+  if (action === "send_due_web_reminders") {
+    const suppliedCronToken = req.headers.get("x-cron-token") ?? "";
+    const { data: config, error: configError } = await admin
+      .from("web_push_config")
+      .select("cron_token")
+      .eq("id", "default")
+      .maybeSingle();
+
+    if (
+      configError ||
+      !config?.cron_token ||
+      suppliedCronToken !== config.cron_token
+    ) {
+      return json({ error: "invalid_cron_authorization" }, 401);
+    }
+
+    try {
+      return json({
+        ok: true,
+        ...(await processDueWebReminders(admin)),
+      });
+    } catch (error) {
+      return json({
+        ok: false,
+        error: "web_reminder_dispatch_failed",
+        detail: classifyWebPushError(error),
+      }, 500);
+    }
+  }
+
+  const authHeader = req.headers.get("Authorization");
+  if (!authHeader?.startsWith("Bearer ")) {
+    return json({ error: "missing_authorization" }, 401);
+  }
+
+  const authClient = createClient(supabaseUrl, publicKey, {
+    global: { headers: { Authorization: authHeader } },
     auth: { persistSession: false },
   });
 
@@ -478,16 +651,8 @@ Deno.serve(async (req: Request) => {
     return json({ error: "invalid_session" }, 401);
   }
 
-  let requestBody: Record<string, unknown>;
-  try {
-    requestBody = await req.json();
-  } catch (_) {
-    return json({ error: "invalid_json" }, 400);
-  }
-
   const spaceId = String(requestBody.space_id ?? "").trim();
   const eventId = String(requestBody.event_id ?? "").trim();
-  const action = String(requestBody.action ?? "updated").trim();
   const entityId = String(requestBody.entity_id ?? "").trim();
 
   if (action === "web_push_public_key") {
