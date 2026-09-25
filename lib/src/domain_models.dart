@@ -732,6 +732,7 @@ class DiaryBlock {
   final String mediaAssetId;
   final String mediaThumbnailAssetId;
   final List<DiarySketchPage> pages;
+  final List<String> personIds;
 
   const DiaryBlock({
     required this.id,
@@ -742,6 +743,7 @@ class DiaryBlock {
     this.mediaAssetId = '',
     this.mediaThumbnailAssetId = '',
     this.pages = const [],
+    this.personIds = const [],
   });
 
   bool get hasPhotoMedia =>
@@ -753,6 +755,7 @@ class DiaryBlock {
     String? mediaAssetId,
     String? mediaThumbnailAssetId,
     List<DiarySketchPage>? pages,
+    List<String>? personIds,
   }) =>
       DiaryBlock(
         id: id,
@@ -764,6 +767,7 @@ class DiaryBlock {
         mediaThumbnailAssetId:
             mediaThumbnailAssetId ?? this.mediaThumbnailAssetId,
         pages: pages ?? this.pages,
+        personIds: personIds ?? this.personIds,
       );
 
   Map<String, dynamic> toJson() => {
@@ -775,6 +779,7 @@ class DiaryBlock {
         'mediaAssetId': mediaAssetId,
         'mediaThumbnailAssetId': mediaThumbnailAssetId,
         'pages': pages.map((page) => page.toJson()).toList(),
+        'personIds': personIds,
       };
 
   Map<String, dynamic> toLocalJson() => {
@@ -804,6 +809,10 @@ class DiaryBlock {
                 Map<String, dynamic>.from(page),
               ),
             )
+            .toList(),
+        personIds: (json['personIds'] as List? ?? const [])
+            .map((value) => value.toString())
+            .where((value) => value.isNotEmpty)
             .toList(),
       );
 }
@@ -1470,6 +1479,7 @@ class BackupSummary {
   final int weekCount;
   final int habitCount;
   final int birthdayCount;
+  final int personCount;
   final int trashCount;
 
   const BackupSummary({
@@ -1480,6 +1490,7 @@ class BackupSummary {
     required this.weekCount,
     required this.habitCount,
     this.birthdayCount = 0,
+    this.personCount = 0,
     this.trashCount = 0,
   });
 }
