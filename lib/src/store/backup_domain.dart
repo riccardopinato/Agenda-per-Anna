@@ -16,6 +16,7 @@ class _AgendaBackupDomain {
         'weeks': store.weeks.map((k, v) => MapEntry(k, v.toJson())),
         'habits': store.habits.map((e) => e.toJson()).toList(),
         'inbox': store.inbox.map((e) => e.toJson()).toList(),
+        'trash': store.trash.map((e) => e.toJson()).toList(),
         'preferences': store.preferences.toJson(),
       };
 
@@ -27,6 +28,10 @@ class _AgendaBackupDomain {
       portableJournals[entry.key] =
           await store._portableJournalJson(entry.value);
     }
+    final portableTrash = <Map<String, dynamic>>[];
+    for (final entry in store.trash) {
+      portableTrash.add(await store._portableTrashJson(entry));
+    }
     return {
       'items': store.items.map((e) => e.toJson()).toList(),
       'journals': portableJournals,
@@ -34,6 +39,7 @@ class _AgendaBackupDomain {
       'weeks': store.weeks.map((k, v) => MapEntry(k, v.toJson())),
       'habits': store.habits.map((e) => e.toJson()).toList(),
       'inbox': store.inbox.map((e) => e.toJson()).toList(),
+      'trash': portableTrash,
       'preferences': store.preferences.toJson(),
     };
   }
@@ -209,6 +215,7 @@ class _AgendaBackupDomain {
       monthCount: (payload['months'] as Map? ?? const {}).length,
       weekCount: (payload['weeks'] as Map? ?? const {}).length,
       habitCount: (payload['habits'] as List? ?? const []).length,
+      trashCount: (payload['trash'] as List? ?? const []).length,
     );
   }
 
