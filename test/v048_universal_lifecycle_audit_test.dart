@@ -200,6 +200,7 @@ void main() {
         TrashEntityKind.habit,
         TrashEntityKind.birthday,
         TrashEntityKind.person,
+        TrashEntityKind.template,
         TrashEntityKind.inbox,
       },
     );
