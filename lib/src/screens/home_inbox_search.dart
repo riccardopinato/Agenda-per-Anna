@@ -418,6 +418,14 @@ Future<void> _showQuickCapture(
             subtitle: const Text('Apri il modulo evento di oggi.'),
             onTap: () => Navigator.pop(sheetContext, 'event'),
           ),
+          ListTile(
+            leading: const CircleAvatar(
+              child: Icon(Icons.cake_outlined),
+            ),
+            title: const Text('Compleanno'),
+            subtitle: const Text('Salva una ricorrenza personale annuale.'),
+            onTap: () => Navigator.pop(sheetContext, 'birthday'),
+          ),
         ],
       ),
     ),
@@ -433,6 +441,16 @@ Future<void> _showQuickCapture(
           store: store,
           initialDate: DateTime.now(),
         ),
+      ),
+    );
+    return;
+  }
+
+  if (action == 'birthday') {
+    await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => BirthdaysScreen(store: store),
       ),
     );
     return;
