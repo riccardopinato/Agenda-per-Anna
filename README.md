@@ -2,7 +2,7 @@
 
 Flutter app for personal planning, private diary and the shared **Noi ♡** space.
 
-Current release line: **v0.51.0**.
+Current release line: **v0.52.0**.
 
 ## Core areas
 
@@ -233,3 +233,13 @@ See `docs/ARCHITECTURE.md` and `supabase/README.md` for implementation details.
 - Development checks still build Android ARM64 on `main` pushes and manual workflow runs.
 - The size-audit workflow now also reacts to changes in Development/AppLab workflow definitions, so CI-gate edits cannot bypass production-equivalent Android coverage.
 - Regression tests lock this split-gate contract so future cleanup cannot accidentally remove Android PR validation.
+
+
+## v0.52.0 — Personal Templates
+
+- Adds account-scoped personal templates for **Giornata**, **Settimana** and **Mese** without introducing a work/project template system.
+- Day templates capture only private agenda appointments/tasks and materialize fresh IDs/dates when applied; diary memories, mood and completion state are never copied.
+- Week templates reuse focus and priorities while preserving the target week's best moment and reflection.
+- Month templates reuse opening/planning fields while preserving target expenses and closing reflections.
+- Templates participate in granular persistence, account isolation, private cloud sync, JSON/ZIP backup, readable export and the universal Trash lifecycle.
+- Home and Quick Capture expose the feature, and AppLab adds a dedicated Templates checkpoint.
