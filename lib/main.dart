@@ -143,6 +143,7 @@ Future<void> main() async {
 
       if (kIsWeb) {
         await WebPushService.instance.initialize();
+        await store.reconcileReminders();
         final initialWebPushSpace =
             await WebPushService.instance.takeInitialSpaceId();
         if (initialWebPushSpace != null) {
