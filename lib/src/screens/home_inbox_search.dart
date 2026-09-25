@@ -61,6 +61,10 @@ class HomeScreen extends StatelessWidget {
       builder: (context, _) {
         final today = store.unifiedForDay(now);
         final upcoming = store.unifiedUpcoming(now);
+        final briefing = store.dayHubSnapshot(now);
+        final birthdayPreview = store.upcomingBirthdays(from: now, limit: 1);
+        final nextBirthday =
+            birthdayPreview.isEmpty ? null : birthdayPreview.first;
         final pendingTasks = store.pendingUnifiedTaskCount;
         final pinnedItems =
             store.agendaContentFilter == AgendaContentFilter.sharedOnly
@@ -253,7 +257,9 @@ class HomeScreen extends StatelessWidget {
               const SizedBox(height: 16),
               _HomeFocusCard(
                 next: upcoming.isEmpty ? null : upcoming.first,
-                pendingTasks: pendingTasks,
+                briefing: briefing,
+                nextBirthday: nextBirthday,
+                globalPendingTasks: pendingTasks,
                 inboxCount: store.inbox.length,
                 hideDetails: store.preferences.hideHomeDetails,
                 onOpenNext: upcoming.isEmpty
@@ -263,6 +269,21 @@ class HomeScreen extends StatelessWidget {
                           store,
                           upcoming.first,
                         ),
+                onOpenDay: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => PlannerScreen(
+                      store: store,
+                      initialDate: now,
+                    ),
+                  ),
+                ),
+                onOpenBirthdays: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => BirthdaysScreen(store: store),
+                  ),
+                ),
                 onOpenInbox: () => Navigator.push(
                   context,
                   MaterialPageRoute(
@@ -577,18 +598,26 @@ class _HomeSyncStatusCard extends StatelessWidget {
 
 class _HomeFocusCard extends StatelessWidget {
   final UnifiedAgendaEntry? next;
-  final int pendingTasks;
+  final DayHubSnapshot briefing;
+  final BirthdayOccurrence? nextBirthday;
+  final int globalPendingTasks;
   final int inboxCount;
   final bool hideDetails;
   final VoidCallback? onOpenNext;
+  final VoidCallback onOpenDay;
+  final VoidCallback onOpenBirthdays;
   final VoidCallback onOpenInbox;
 
   const _HomeFocusCard({
     required this.next,
-    required this.pendingTasks,
+    required this.briefing,
+    required this.nextBirthday,
+    required this.globalPendingTasks,
     required this.inboxCount,
     required this.hideDetails,
     required this.onOpenNext,
+    required this.onOpenDay,
+    required this.onOpenBirthdays,
     required this.onOpenInbox,
   });
 
@@ -603,6 +632,17 @@ class _HomeFocusCard extends StatelessWidget {
                 '${formatTime(next!.start!)} · ${next!.title}'
                 '${next!.isShared ? ' · Noi ♡' : ''}';
 
+    String birthdayText;
+    if (nextBirthday == null) {
+      birthdayText = 'Nessun compleanno salvato';
+    } else if (AgendaStore.sameDay(nextBirthday!.date, briefing.date)) {
+      birthdayText = 'Oggi · ${nextBirthday!.birthday.name} 🎂';
+    } else {
+      birthdayText =
+          '${DateFormat('d MMM', 'it_IT').format(nextBirthday!.date)} · '
+          '${nextBirthday!.birthday.name}';
+    }
+
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -613,11 +653,21 @@ class _HomeFocusCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            'A colpo d’occhio',
-            style: TextStyle(fontWeight: FontWeight.w900, fontSize: 17),
+          Row(
+            children: [
+              const Expanded(
+                child: Text(
+                  'Oggi in breve',
+                  style: TextStyle(fontWeight: FontWeight.w900, fontSize: 17),
+                ),
+              ),
+              TextButton(
+                onPressed: onOpenDay,
+                child: const Text('Apri giornata'),
+              ),
+            ],
           ),
-          const SizedBox(height: 10),
+          const SizedBox(height: 6),
           InkWell(
             borderRadius: BorderRadius.circular(14),
             onTap: onOpenNext,
@@ -641,14 +691,53 @@ class _HomeFocusCard extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 8),
+          InkWell(
+            borderRadius: BorderRadius.circular(14),
+            onTap: onOpenBirthdays,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 4),
+              child: Row(
+                children: [
+                  Icon(Icons.cake_outlined, color: scheme.tertiary),
+                  const SizedBox(width: 9),
+                  Expanded(
+                    child: Text(
+                      birthdayText,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                  const Icon(Icons.chevron_right),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(height: 10),
           Wrap(
             spacing: 8,
             runSpacing: 8,
             children: [
               _MiniPill(
-                icon: Icons.check_circle_outline,
-                text: '$pendingTasks da fare',
+                icon: Icons.today_outlined,
+                text: '${briefing.appointmentCount} impegni oggi',
               ),
+              _MiniPill(
+                icon: Icons.check_circle_outline,
+                text: '${briefing.pendingTaskCount} da fare oggi',
+              ),
+              _MiniPill(
+                icon: briefing.hasJournalContent
+                    ? Icons.auto_stories
+                    : Icons.auto_stories_outlined,
+                text: briefing.hasJournalContent
+                    ? 'Diario iniziato'
+                    : 'Diario da iniziare',
+              ),
+              if (globalPendingTasks > briefing.pendingTaskCount)
+                _MiniPill(
+                  icon: Icons.task_alt_outlined,
+                  text: '$globalPendingTasks task aperti',
+                ),
               ActionChip(
                 avatar: const Icon(Icons.inbox_outlined, size: 17),
                 label: Text('$inboxCount in Inbox'),
