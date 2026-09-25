@@ -56,6 +56,9 @@ void main() {
       final cronHardening =
           File('supabase/migrations/021_web_push_cron_hardening_v044.sql')
               .readAsStringSync();
+      final configDeny =
+          File('supabase/migrations/022_web_push_config_explicit_deny_v044.sql')
+              .readAsStringSync();
       final edge = File(
         'supabase/functions/send-shared-push/index.ts',
       ).readAsStringSync();
@@ -77,6 +80,9 @@ void main() {
       expect(reminderMigration, contains('cron.schedule'));
       expect(reminderMigration, contains('x-cron-token'));
       expect(cronHardening, contains('cron_token set not null'));
+      expect(configDeny, contains('web_push_config_deny_clients'));
+      expect(configDeny, contains('using (false)'));
+      expect(configDeny, contains('with check (false)'));
       expect(edge, contains('send_due_web_reminders'));
       expect(edge, contains('processDueWebReminders'));
       expect(config, contains('verify_jwt = false'));
