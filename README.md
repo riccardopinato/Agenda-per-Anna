@@ -2,7 +2,7 @@
 
 Flutter app for personal planning, private diary and the shared **Noi ♡** space.
 
-Current release line: **v0.51.0**.
+Current release line: **v0.52.0**.
 
 ## Core areas
 
@@ -233,3 +233,11 @@ See `docs/ARCHITECTURE.md` and `supabase/README.md` for implementation details.
 - Development checks still build Android ARM64 on `main` pushes and manual workflow runs.
 - The size-audit workflow now also reacts to changes in Development/AppLab workflow definitions, so CI-gate edits cannot bypass production-equivalent Android coverage.
 - Regression tests lock this split-gate contract so future cleanup cannot accidentally remove Android PR validation.
+
+
+## v0.52.0 — AppLab Critical Journey Expansion
+
+- AppLab visual coverage expands from Calendar / Week / Today / Memories / People to include Home, Noi ♡, Account and Cestino.
+- New Maestro flows are state-aware and chained deliberately to avoid false failures caused by starting from the wrong navigation depth.
+- Home verifies the Daily Briefing surface; Noi ♡ verifies the shared-space hub; Account verifies cloud/account controls; Cestino verifies the lifecycle recovery surface.
+- Release tests lock the complete nine-checkpoint AppLab journey.
