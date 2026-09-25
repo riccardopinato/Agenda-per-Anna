@@ -2,7 +2,7 @@
 
 Flutter app for personal planning, private diary and the shared **Noi ♡** space.
 
-Current release line: **v0.47.0**.
+Current release line: **v0.48.0**.
 
 ## Core areas
 
@@ -192,3 +192,13 @@ See `docs/ARCHITECTURE.md` and `supabase/README.md` for implementation details.
 - People are first-class private entities using the existing per-entity persistence, cloud sync, account isolation and backup/export pipeline.
 - Person deletion uses the v0.45 Trash contract. Memory links are preserved while the person is recoverable and are removed only on permanent purge; permanent birthday purge safely clears person links.
 - Home and Quick Capture expose the feature, while AppLab adds a dedicated People visual checkpoint.
+
+
+## v0.48.0 — Universal Delete & Lifecycle Audit
+
+- Trash preserves historical versions of the same logical content instead of collapsing them by date/key.
+- Restore is conflict-safe: an older Trash version can never overwrite a live item, diary block, day, week, month, habit, birthday, person or Inbox entry with the same identity.
+- Permanent habit purge removes stale completion IDs from both active journals and journals already in Trash.
+- Purging an old historical person/birthday/habit version no longer breaks links when the same logical entity is live again.
+- The lifecycle matrix is documented in `docs/LIFECYCLE_AUDIT.md`, including private Trash, shared collaboration semantics, Vault permanent deletion and embedded-page ownership.
+- Regression coverage locks version-safe Trash, restore conflicts and cascade cleanup.
