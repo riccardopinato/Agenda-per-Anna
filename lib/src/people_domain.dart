@@ -204,6 +204,48 @@ extension AgendaStorePeople on AgendaStore {
       ));
     }
 
+    for (var i = 0; i < trash.length; i++) {
+      final entry = trash[i];
+      if (entry.kind == TrashEntityKind.diaryBlock) {
+        final block = DiaryBlock.fromJson(entry.payload);
+        if (!block.personIds.any(personIds.contains)) continue;
+        final updatedBlock = block.copyWith(
+          personIds:
+              block.personIds.where((id) => !personIds.contains(id)).toList(),
+        );
+        final updatedEntry = entry.copyWith(payload: updatedBlock.toLocalJson());
+        trash[i] = updatedEntry;
+        mutations.add((
+          type: 'trash',
+          id: updatedEntry.id,
+          payload: updatedEntry.toJson(),
+          deleted: false,
+        ));
+      } else if (entry.kind == TrashEntityKind.journal) {
+        final journal = DayJournal.fromJson(entry.payload);
+        var changed = false;
+        final blocks = journal.blocks.map((block) {
+          if (!block.personIds.any(personIds.contains)) return block;
+          changed = true;
+          return block.copyWith(
+            personIds:
+                block.personIds.where((id) => !personIds.contains(id)).toList(),
+          );
+        }).toList();
+        if (!changed) continue;
+        final updatedEntry = entry.copyWith(
+          payload: journal.copyWith(blocks: blocks).toLocalJson(),
+        );
+        trash[i] = updatedEntry;
+        mutations.add((
+          type: 'trash',
+          id: updatedEntry.id,
+          payload: updatedEntry.toJson(),
+          deleted: false,
+        ));
+      }
+    }
+
     if (mutations.isNotEmpty) {
       await _persistEntityMutations(
         mutations,
@@ -235,6 +277,26 @@ extension AgendaStorePeople on AgendaStore {
         type: 'person',
         id: updated.id,
         payload: updated.toJson(),
+        deleted: false,
+      ));
+    }
+
+    for (var i = 0; i < trash.length; i++) {
+      final entry = trash[i];
+      if (entry.kind != TrashEntityKind.person) continue;
+      final person = PersonEntry.fromJson(entry.payload);
+      if (person.birthdayId == null ||
+          !birthdayIds.contains(person.birthdayId)) {
+        continue;
+      }
+      final updatedEntry = entry.copyWith(
+        payload: person.copyWith(clearBirthday: true).toJson(),
+      );
+      trash[i] = updatedEntry;
+      mutations.add((
+        type: 'trash',
+        id: updatedEntry.id,
+        payload: updatedEntry.toJson(),
         deleted: false,
       ));
     }
