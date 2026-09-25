@@ -841,6 +841,46 @@ class _WeekScreenState extends State<WeekScreen> {
                 onPressed: () => setState(() => start = addCivilDays(start, 7)),
                 icon: const Icon(Icons.chevron_right),
               ),
+              PopupMenuButton<String>(
+                tooltip: 'Azioni settimana',
+                onSelected: (value) async {
+                  if (value != 'trash') return;
+                  final confirmed = await showDialog<bool>(
+                        context: context,
+                        builder: (dialogContext) => AlertDialog(
+                          title: const Text(
+                            'Spostare la pagina settimanale nel Cestino?',
+                          ),
+                          content: const Text(
+                            'Focus, priorità e riflessioni della settimana '
+                            'potranno essere ripristinati.',
+                          ),
+                          actions: [
+                            TextButton(
+                              onPressed: () =>
+                                  Navigator.pop(dialogContext, false),
+                              child: const Text('Annulla'),
+                            ),
+                            FilledButton(
+                              onPressed: () =>
+                                  Navigator.pop(dialogContext, true),
+                              child: const Text('Sposta nel Cestino'),
+                            ),
+                          ],
+                        ),
+                      ) ??
+                      false;
+                  if (confirmed) {
+                    await widget.store.moveWeekToTrash(start);
+                  }
+                },
+                itemBuilder: (_) => const [
+                  PopupMenuItem(
+                    value: 'trash',
+                    child: Text('Sposta pagina nel Cestino'),
+                  ),
+                ],
+              ),
             ],
           ),
           body: ListView(
@@ -1328,6 +1368,49 @@ class _MonthScreenState extends State<MonthScreen> {
             actions: [
               IconButton(onPressed: () => setState(() => selected = DateTime(selected.year, selected.month - 1)), icon: const Icon(Icons.chevron_left)),
               IconButton(onPressed: () => setState(() => selected = DateTime(selected.year, selected.month + 1)), icon: const Icon(Icons.chevron_right)),
+              PopupMenuButton<String>(
+                tooltip: 'Azioni mese',
+                onSelected: (value) async {
+                  if (value != 'trash') return;
+                  final confirmed = await showDialog<bool>(
+                        context: context,
+                        builder: (dialogContext) => AlertDialog(
+                          title: const Text(
+                            'Spostare la pagina mensile nel Cestino?',
+                          ),
+                          content: const Text(
+                            'Obiettivi, budget, idee e riflessioni del mese '
+                            'potranno essere ripristinati.',
+                          ),
+                          actions: [
+                            TextButton(
+                              onPressed: () =>
+                                  Navigator.pop(dialogContext, false),
+                              child: const Text('Annulla'),
+                            ),
+                            FilledButton(
+                              onPressed: () =>
+                                  Navigator.pop(dialogContext, true),
+                              child: const Text('Sposta nel Cestino'),
+                            ),
+                          ],
+                        ),
+                      ) ??
+                      false;
+                  if (confirmed) {
+                    await widget.store.moveMonthToTrash(
+                      selected.year,
+                      selected.month,
+                    );
+                  }
+                },
+                itemBuilder: (_) => const [
+                  PopupMenuItem(
+                    value: 'trash',
+                    child: Text('Sposta pagina nel Cestino'),
+                  ),
+                ],
+              ),
             ],
           ),
           body: ListView(
