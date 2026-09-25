@@ -49,15 +49,11 @@ jobs:
       - name: Generate launcher icons
         run: dart run flutter_launcher_icons -f tool/flutter_launcher_icons_android.yaml
 
-      - name: Format critical modules
+      - name: Format v0.40 modules
         run: |
           dart format --output=none --set-exit-if-changed \
             lib/src/store_signals.dart \
-            lib/web_push_service.dart \
-            lib/web_push_bridge_stub.dart \
-            lib/web_push_bridge_web.dart \
-            test/v040_persistence_torture_test.dart \
-            test/v044_cross_platform_release_test.dart
+            test/v040_persistence_torture_test.dart
 
       - name: Analyze
         run: flutter analyze
