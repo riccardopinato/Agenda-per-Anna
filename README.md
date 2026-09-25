@@ -2,7 +2,7 @@
 
 Flutter app for personal planning, private diary and the shared **Noi ♡** space.
 
-Current release line: **v0.49.0**.
+Current release line: **v0.50.0**.
 
 ## Core areas
 
@@ -213,3 +213,14 @@ See `docs/ARCHITECTURE.md` and `supabase/README.md` for implementation details.
 - After remote deletion, the device removes the erased account profile, granular deltas, sync cursors, shared caches/queues and account-scoped backup state, then restores the guest working set.
 - Local notifications are cleared before the account working set is removed; guest reminders are reconciled afterwards.
 - The encrypted local Private Vault remains device-local and separate from cloud account erasure, as explicitly disclosed in the confirmation UI.
+
+
+## v0.50.0 — Security & Production Hardening
+
+- Privileged account-erasure media cleanup now accepts shared media paths only under the source record's own `space_id/` prefix; mutable JSON can no longer nominate an arbitrary Storage path for service-role deletion.
+- The live `delete-account` Edge Function is deployed as version 2 with JWT verification still mandatory.
+- Anonymous table privileges are removed from `web_push_reminders` and `web_push_subscriptions`; authenticated RLS policies and backend service-role delivery remain unchanged.
+- Production RLS, shared-space SECURITY DEFINER functions and Supabase security advisors were audited against the live project.
+- `pg_net` is deliberately left on its supported non-relocatable configuration because its operational API already lives in `net` and forced recreation would endanger scheduled Web Push delivery.
+- `docs/SECURITY_BASELINE.md` records the security model, accepted platform warnings and release-gate requirements.
+- Regression tests lock the Storage path scope, JWT account-erasure contract and anonymous Web Push privilege removal.

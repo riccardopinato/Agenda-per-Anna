@@ -21,9 +21,15 @@ function envJson(name: string): Record<string, string> {
   }
 }
 
-function collectMediaPaths(value: unknown, output: Set<string>) {
+function collectMediaPaths(
+  value: unknown,
+  output: Set<string>,
+  requiredPrefix: string,
+) {
   if (Array.isArray(value)) {
-    for (const item of value) collectMediaPaths(item, output);
+    for (const item of value) {
+      collectMediaPaths(item, output, requiredPrefix);
+    }
     return;
   }
   if (!value || typeof value !== "object") return;
@@ -31,12 +37,14 @@ function collectMediaPaths(value: unknown, output: Set<string>) {
   for (const [key, raw] of Object.entries(value as Record<string, unknown>)) {
     if (
       (key === "mediaPath" || key === "media_path") &&
-      typeof raw === "string" &&
-      raw.trim()
+      typeof raw === "string"
     ) {
-      output.add(raw.trim());
+      const path = raw.trim();
+      if (path && path.startsWith(requiredPrefix)) {
+        output.add(path);
+      }
     } else {
-      collectMediaPaths(raw, output);
+      collectMediaPaths(raw, output, requiredPrefix);
     }
   }
 }
@@ -167,13 +175,20 @@ Deno.serve(async (req: Request) => {
 
     const { data: ownedRecords, error: ownedRecordsError } = await admin
       .from("agenda_records")
-      .select("payload")
+      .select("space_id,payload")
       .eq("owner_id", user.id)
       .eq("visibility", "shared");
     if (ownedRecordsError) throw ownedRecordsError;
 
     for (const row of ownedRecords ?? []) {
-      collectMediaPaths(row.payload, mediaPaths);
+      const spaceId = String(row.space_id ?? "").trim();
+      if (!spaceId) continue;
+
+      // Never trust a media path carried inside a mutable JSON payload when
+      // deleting with service-role privileges. Shared uploads are canonicalized
+      // as <spaceId>/<entryId>/media.ext, so a record may only authorize
+      // deletion under its own space prefix.
+      collectMediaPaths(row.payload, mediaPaths, `${spaceId}/`);
     }
 
     const removedMedia = await removePaths(admin, mediaPaths);

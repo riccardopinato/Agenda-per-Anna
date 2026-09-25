@@ -51,3 +51,10 @@ Flutter reads:
 through `--dart-define`. The repository currently also contains production-safe publishable defaults; never add a service-role secret or other privileged credential to source control.
 
 The app remains offline-first when cloud access is unavailable.
+
+
+## v0.50 security hardening
+
+- Migration `023_web_push_anon_privilege_hardening_v050.sql` revokes unnecessary `anon` privileges from Web Push reminder/subscription tables while preserving authenticated RLS access.
+- Edge Function `delete-account` v2 validates user JWTs and constrains service-role Storage deletion to the source shared record's own `space_id/` prefix.
+- The live project was audited for RLS coverage, table privileges and `SECURITY DEFINER` RPC behavior. See `docs/SECURITY_BASELINE.md` for the resulting contract.
