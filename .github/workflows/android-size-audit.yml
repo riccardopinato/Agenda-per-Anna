@@ -11,6 +11,8 @@ on:
       - "pubspec.lock"
       - "tool/**"
       - ".github/workflows/android-size-audit.yml"
+      - ".github/workflows/dev-checks.yml"
+      - ".github/workflows/applab.yml"
       - ".github/workflows/build.yml"
   workflow_dispatch:
 

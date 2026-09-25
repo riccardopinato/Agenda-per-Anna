@@ -1,6 +1,6 @@
 # Agenda per Anna — Architecture
 
-## Current structure — v0.50.0
+## Current structure — v0.51.0
 
 Anna's Diary keeps `lib/main.dart` as the compatibility library boundary, but large responsibilities are now split by runtime domain:
 
@@ -303,3 +303,12 @@ The lifecycle layer remains a thin extension over AgendaStore and the existing a
 - Internal shared-space `SECURITY DEFINER` functions retain their existing wrapper architecture because authentication and ownership checks are inside the implementation functions themselves.
 - `pg_net` is audited but not force-relocated: the installed extension is non-relocatable and exposes its runtime objects through the dedicated `net` namespace.
 - Security assumptions and accepted advisor warnings are centralized in `docs/SECURITY_BASELINE.md`.
+
+
+## v0.51.0 — CI Throughput & Gate Consolidation
+
+- Pull-request Android validation is intentionally split across two independent gates: the production-equivalent ARM64 size audit and AppLab's release APK + trusted runtime verification.
+- Development checks keep analyze, full tests and Web release build on pull requests, but skip their third redundant Android compilation when `github.event_name == pull_request`.
+- The same Development workflow still executes its ARM64 release gate on `main` pushes and manual dispatch, preserving post-merge/native packaging coverage.
+- Android size audit path filters include `dev-checks.yml` and `applab.yml`, so changes to either Android-validation contract automatically trigger the production-equivalent audit.
+- AppLab remains isolated, pinned and mandatory on pull requests; no emulator/runtime coverage was removed by this throughput optimization.

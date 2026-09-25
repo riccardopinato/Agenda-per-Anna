@@ -2,7 +2,7 @@
 
 Flutter app for personal planning, private diary and the shared **Noi ♡** space.
 
-Current release line: **v0.50.0**.
+Current release line: **v0.51.0**.
 
 ## Core areas
 
@@ -22,7 +22,7 @@ Current release line: **v0.50.0**.
 
 ## Quality gates
 
-GitHub Actions runs locked dependency resolution, Android platform generation/verification, Flutter analyze, the full test suite, a Web release build and an ARM64 release build on every pull request and every push to `main`.
+GitHub Actions runs locked dependency resolution, platform generation/verification, Flutter analyze, the full test suite and a Web release build on pull requests and `main`. Pull requests keep Android coverage through the production-equivalent size audit plus AppLab; the Development ARM64 build is reserved for `main`/manual runs to avoid compiling the same PR three times.
 
 Pull requests also run the AppLab Production Gate: release-mode ARM64 build, Android emulator install/launch, Maestro restart smoke, multi-screen visual journey, screenshot/UI hierarchy checks, visual regression, Logcat and crash/ANR scanning. Production distribution remains pinned to Flutter 3.47.5 and the persistent sideload/release signing contracts.
 
@@ -224,3 +224,12 @@ See `docs/ARCHITECTURE.md` and `supabase/README.md` for implementation details.
 - `pg_net` is deliberately left on its supported non-relocatable configuration because its operational API already lives in `net` and forced recreation would endanger scheduled Web Push delivery.
 - `docs/SECURITY_BASELINE.md` records the security model, accepted platform warnings and release-gate requirements.
 - Regression tests lock the Storage path scope, JWT account-erasure contract and anonymous Web Push privilege removal.
+
+
+## v0.51.0 — CI Throughput & Gate Consolidation
+
+- Pull requests no longer run the duplicate Android ARM64 build inside Development checks.
+- PR Android coverage remains intact through the independent production-equivalent size audit and AppLab release APK/runtime gate.
+- Development checks still build Android ARM64 on `main` pushes and manual workflow runs.
+- The size-audit workflow now also reacts to changes in Development/AppLab workflow definitions, so CI-gate edits cannot bypass production-equivalent Android coverage.
+- Regression tests lock this split-gate contract so future cleanup cannot accidentally remove Android PR validation.
