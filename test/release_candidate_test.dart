@@ -182,8 +182,8 @@ void main() {
     final appLabJourney =
         File('.maestro/applab-journey.json').readAsStringSync();
 
-    expect(appReleaseVersion, '0.50.0');
-    expect(pubspec, contains('version: 0.50.0+59'));
+    expect(appReleaseVersion, '0.51.0');
+    expect(pubspec, contains('version: 0.51.0+60'));
 
     expect(releaseWorkflow, contains('--release-signing'));
     expect(releaseWorkflow, contains('--obfuscate'));
@@ -194,6 +194,7 @@ void main() {
     expect(releaseWorkflow, contains('app-universal-release.apk'));
 
     expect(devWorkflow, contains('Build Android ARM64 release gate'));
+    expect(devWorkflow, contains("if: github.event_name != 'pull_request'"));
     expect(devWorkflow, contains('--release'));
     expect(devWorkflow, contains('app-arm64-v8a-release.apk'));
     expect(sizeWorkflow, contains('--split-per-abi'));
