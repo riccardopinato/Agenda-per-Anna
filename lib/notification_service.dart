@@ -386,7 +386,7 @@ class NotificationService {
     Duration scheduledDelay = const Duration(seconds: 12),
   }) async {
     await initialize(force: true);
-    final delaySeconds = scheduledDelay.inSeconds.clamp(5, 60);
+    final delaySeconds = scheduledDelay.inSeconds.clamp(5, 60).toInt();
 
     if (!_available) {
       final status = await health();
