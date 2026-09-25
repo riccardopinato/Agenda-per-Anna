@@ -277,8 +277,10 @@ class NotificationService {
 
     var enabled = true;
     var exact = true;
-    var reminderChannelEnabled = true;
-    var sharedChannelEnabled = true;
+    final isAndroid =
+        !kIsWeb && defaultTargetPlatform == TargetPlatform.android;
+    var reminderChannelEnabled = !isAndroid;
+    var sharedChannelEnabled = !isAndroid;
     var pending = 0;
 
     try {
