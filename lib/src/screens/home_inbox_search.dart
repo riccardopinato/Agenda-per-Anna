@@ -361,6 +361,18 @@ class HomeScreen extends StatelessWidget {
                   ),
                 ),
               ),
+              const SizedBox(height: 12),
+              NavigationCard(
+                icon: Icons.people_outline,
+                title: 'Persone importanti',
+                subtitle: 'Relazioni, compleanni e ricordi collegati',
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => PeopleScreen(store: store),
+                  ),
+                ),
+              ),
             ],
           ),
         );
@@ -426,6 +438,14 @@ Future<void> _showQuickCapture(
             subtitle: const Text('Salva una ricorrenza personale annuale.'),
             onTap: () => Navigator.pop(sheetContext, 'birthday'),
           ),
+          ListTile(
+            leading: const CircleAvatar(
+              child: Icon(Icons.person_add_alt_1_outlined),
+            ),
+            title: const Text('Persona importante'),
+            subtitle: const Text('Salva una relazione personale da ricordare.'),
+            onTap: () => Navigator.pop(sheetContext, 'person'),
+          ),
         ],
       ),
     ),
@@ -451,6 +471,19 @@ Future<void> _showQuickCapture(
       context,
       MaterialPageRoute(
         builder: (_) => BirthdaysScreen(store: store),
+      ),
+    );
+    return;
+  }
+
+  if (action == 'person') {
+    await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => PeopleScreen(
+          store: store,
+          startAdding: true,
+        ),
       ),
     );
     return;
