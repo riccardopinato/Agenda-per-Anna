@@ -24,9 +24,11 @@ Future<List<String>?> showPeoplePicker(
     return null;
   }
 
-  final selected = initialIds.where(
-    (id) => store.people.any((person) => person.id == id),
-  ).toSet();
+  final selected = initialIds.toSet();
+  final recoverable = initialIds
+      .map(store.trashedPersonById)
+      .whereType<PersonEntry>()
+      .toList();
   final searchController = TextEditingController();
 
   final result = await showDialog<List<String>>(
@@ -67,34 +69,52 @@ Future<List<String>?> showPeoplePicker(
                 ),
                 const SizedBox(height: 10),
                 Expanded(
-                  child: visible.isEmpty
+                  child: visible.isEmpty && recoverable.isEmpty
                       ? const Center(child: Text('Nessuna persona trovata.'))
-                      : ListView.builder(
-                          itemCount: visible.length,
-                          itemBuilder: (context, index) {
-                            final person = visible[index];
-                            return CheckboxListTile(
-                              value: selected.contains(person.id),
-                              title: Text(person.name),
-                              subtitle: person.relationship.trim().isEmpty
-                                  ? null
-                                  : Text(person.relationship),
-                              secondary: Icon(
-                                person.favorite
-                                    ? Icons.star
-                                    : Icons.person_outline,
+                      : ListView(
+                          children: [
+                            for (final person in recoverable)
+                              CheckboxListTile(
+                                value: selected.contains(person.id),
+                                title: Text(person.name),
+                                subtitle: const Text(
+                                  'Nel Cestino · collegamento recuperabile',
+                                ),
+                                secondary:
+                                    const Icon(Icons.restore_from_trash_outlined),
+                                onChanged: (checked) {
+                                  setDialogState(() {
+                                    if (checked == true) {
+                                      selected.add(person.id);
+                                    } else {
+                                      selected.remove(person.id);
+                                    }
+                                  });
+                                },
                               ),
-                              onChanged: (checked) {
-                                setDialogState(() {
-                                  if (checked == true) {
-                                    selected.add(person.id);
-                                  } else {
-                                    selected.remove(person.id);
-                                  }
-                                });
-                              },
-                            );
-                          },
+                            for (final person in visible)
+                              CheckboxListTile(
+                                value: selected.contains(person.id),
+                                title: Text(person.name),
+                                subtitle: person.relationship.trim().isEmpty
+                                    ? null
+                                    : Text(person.relationship),
+                                secondary: Icon(
+                                  person.favorite
+                                      ? Icons.star
+                                      : Icons.person_outline,
+                                ),
+                                onChanged: (checked) {
+                                  setDialogState(() {
+                                    if (checked == true) {
+                                      selected.add(person.id);
+                                    } else {
+                                      selected.remove(person.id);
+                                    }
+                                  });
+                                },
+                              ),
+                          ],
                         ),
                 ),
               ],
@@ -154,6 +174,16 @@ class _PeopleScreenState extends State<PeopleScreen> {
     var favorite = existing?.favorite ?? false;
     final birthdays = [...widget.store.birthdays]
       ..sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
+    final liveBirthdayIds = birthdays.map((birthday) => birthday.id).toSet();
+    final recoverableBirthday = birthdayId == null ||
+            liveBirthdayIds.contains(birthdayId)
+        ? null
+        : widget.store.trashedBirthdayById(birthdayId!);
+    final unavailableBirthdayId = birthdayId != null &&
+            !liveBirthdayIds.contains(birthdayId) &&
+            recoverableBirthday == null
+        ? birthdayId
+        : null;
 
     final result = await showDialog<PersonEntry>(
       context: context,
@@ -197,6 +227,18 @@ class _PeopleScreenState extends State<PeopleScreen> {
                         value: '',
                         child: Text('Nessun compleanno'),
                       ),
+                      if (recoverableBirthday != null)
+                        DropdownMenuItem<String>(
+                          value: recoverableBirthday.id,
+                          child: Text(
+                            '${recoverableBirthday.name} · nel Cestino',
+                          ),
+                        ),
+                      if (unavailableBirthdayId != null)
+                        DropdownMenuItem<String>(
+                          value: unavailableBirthdayId,
+                          child: const Text('Compleanno non disponibile'),
+                        ),
                       ...birthdays.map(
                         (birthday) => DropdownMenuItem<String>(
                           value: birthday.id,
