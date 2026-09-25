@@ -35,6 +35,15 @@ void main() {
         reminderDaysBefore: null,
       ),
     );
+    await store.savePerson(
+      const PersonEntry(
+        id: 'smoke-person',
+        name: 'Persona AppLab',
+        relationship: 'Amica',
+        birthdayId: 'smoke-birthday',
+        favorite: true,
+      ),
+    );
     await store.setPin('2468');
     expect(store.verifyPin('2468'), isTrue);
 
@@ -58,6 +67,18 @@ void main() {
     expect(find.text('Oggi'), findsOneWidget);
     expect(find.text('Oggi in breve'), findsOneWidget);
     expect(find.textContaining('Compleanno AppLab'), findsWidgets);
+    expect(find.text('Persone importanti'), findsOneWidget);
+
+    await tester.scrollUntilVisible(
+      find.text('Persone importanti'),
+      250,
+      scrollable: find.byType(Scrollable).first,
+    );
+    await tester.tap(find.text('Persone importanti'));
+    await tester.pumpAndSettle();
+    expect(find.text('Persona AppLab'), findsOneWidget);
+    await tester.pageBack();
+    await tester.pumpAndSettle();
 
     await tester.tap(find.byType(NavigationDestination).at(1));
     await tester.pumpAndSettle();
