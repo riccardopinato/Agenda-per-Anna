@@ -175,15 +175,15 @@ class PersonalTemplate {
 
   String get summary => switch (kind) {
         PersonalTemplateKind.day =>
-          '\${(payload['items'] as List? ?? const []).length} elementi',
+          '${(payload['items'] as List? ?? const []).length} elementi',
         PersonalTemplateKind.week =>
           (payload['priorities'] as List? ?? const []).isEmpty
               ? 'Focus settimanale'
-              : '\${(payload['priorities'] as List).length} priorità',
+              : '${(payload['priorities'] as List).length} priorità',
         PersonalTemplateKind.month =>
           (payload['goals'] as List? ?? const []).isEmpty
               ? 'Pianificazione mensile'
-              : '\${(payload['goals'] as List).length} obiettivi',
+              : '${(payload['goals'] as List).length} obiettivi',
       };
 }
 
