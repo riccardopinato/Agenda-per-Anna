@@ -25,13 +25,12 @@ def main() -> None:
     html = require(index)
     manifest_data = json.loads(require(manifest))
 
-    for name in ("annas-diary-push.js", "annas-diary-push-sw.js"):
-        source = PUSH / name
-        if not source.is_file():
-            raise SystemExit(
-                f"Missing Web Push source: {source.relative_to(ROOT)}"
-            )
-        shutil.copyfile(source, WEB / name)
+    source = PUSH / "annas-diary-push.js"
+    if not source.is_file():
+        raise SystemExit(
+            f"Missing Web Push source: {source.relative_to(ROOT)}"
+        )
+    shutil.copyfile(source, WEB / source.name)
 
     script_marker = '<script src="annas-diary-push.js"></script>'
     if script_marker not in html:
