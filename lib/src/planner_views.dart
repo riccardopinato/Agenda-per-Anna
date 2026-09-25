@@ -378,6 +378,21 @@ class DayTimeline extends StatelessWidget {
   static const double hourHeight = 74;
   static const double timeColumnWidth = 54;
 
+  static double offsetForMinutes(int minutes) {
+    final lower = startHour * 60;
+    final upper = endHour * 60;
+    final clamped = minutes.clamp(lower, upper);
+    return ((clamped - lower) / 60) * hourHeight;
+  }
+
+  static int minutesForOffset(double y) {
+    final raw = startHour * 60 + ((y / hourHeight) * 60).round();
+    return ((raw / 15).round() * 15).clamp(
+      startHour * 60,
+      endHour * 60 - 15,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final totalHeight = (endHour - startHour) * hourHeight;
@@ -510,7 +525,7 @@ class DayTimeline extends StatelessWidget {
 
     final endMinutes =
         _endMinutes(event).clamp(startMinutes + 15, upper);
-    final top = ((startMinutes - lower) / 60) * hourHeight;
+    final top = offsetForMinutes(startMinutes);
     final remainingHeight = max(1.0, totalHeightFromTop(top));
     final naturalHeight =
         ((endMinutes - startMinutes) / 60) * hourHeight;
@@ -659,7 +674,7 @@ class DayTimeline extends StatelessWidget {
       return const SizedBox.shrink();
     }
 
-    final top = ((minutes - lower) / 60) * hourHeight;
+    final top = offsetForMinutes(minutes);
     return Positioned(
       top: top,
       left: timeColumnWidth - 3,
@@ -691,12 +706,7 @@ class DayTimeline extends StatelessWidget {
     BuildContext context,
     double y,
   ) async {
-    var minutes =
-        startHour * 60 + ((y / hourHeight) * 60).round();
-    minutes = ((minutes / 15).round() * 15).clamp(
-      startHour * 60,
-      endHour * 60 - 15,
-    );
+    final minutes = minutesForOffset(y);
 
     await openUnifiedItemComposer(
       context,
