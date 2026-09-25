@@ -446,6 +446,7 @@ class _JournalEditorState extends State<JournalEditor> {
                   width: double.infinity,
                   child: TextButton.icon(
                     onPressed: () async {
+                      final messenger = ScaffoldMessenger.of(context);
                       final confirmed = await showDialog<bool>(
                             context: context,
                             builder: (dialogContext) => AlertDialog(
@@ -472,7 +473,6 @@ class _JournalEditorState extends State<JournalEditor> {
                           ) ??
                           false;
                       if (!confirmed || !mounted) return;
-                      final messenger = ScaffoldMessenger.of(context);
                       final moved =
                           await widget.store.moveJournalToTrash(widget.date);
                       if (!moved || !mounted) return;
