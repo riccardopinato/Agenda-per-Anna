@@ -56,7 +56,7 @@ class _TemplatesScreenState extends State<TemplatesScreen> {
                       DateFormat(
                         'd MMMM yyyy',
                         'it_IT',
-                      ).format(widget.store.mondayOf(sourceDate)),
+                      ).format(mondayOf(sourceDate)),
                 PersonalTemplateKind.month =>
                   DateFormat('MMMM yyyy', 'it_IT').format(sourceDate),
               };
