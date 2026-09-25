@@ -2213,6 +2213,7 @@ class AgendaStore extends ChangeNotifier {
       await syncAllCloud();
       await PushNotificationService.instance.registerCurrentToken();
     }
+    await reconcileBirthdayReminders();
   }
 
   void _scheduleDeferredSharedCloudSync() {
