@@ -75,7 +75,6 @@ class _CalendarScreenState extends State<CalendarScreen> {
                 ),
               const SizedBox(height: 12),
               _CalendarDayContextCard(
-                store: widget.store,
                 snapshot: dayHub,
                 onOpenDay: () => Navigator.push(
                   context,
@@ -277,12 +276,10 @@ class _PlannerScreenState extends State<PlannerScreen> {
 }
 
 class _CalendarDayContextCard extends StatelessWidget {
-  final AgendaStore store;
   final DayHubSnapshot snapshot;
   final VoidCallback onOpenDay;
 
   const _CalendarDayContextCard({
-    required this.store,
     required this.snapshot,
     required this.onOpenDay,
   });
