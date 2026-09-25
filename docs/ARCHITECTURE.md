@@ -1,15 +1,17 @@
 # Agenda per Anna — Architecture
 
-## Current structure — v0.46.0
+## Current structure — v0.47.0
 
 Anna's Diary keeps `lib/main.dart` as the compatibility library boundary, but large responsibilities are now split by runtime domain:
 
 - `src/store_signals.dart`: granular UI invalidation channels.
 - `src/day_hub_domain.dart`: birthday model, annual occurrence/reminder logic and derived Day Hub snapshots.
+- `src/people_domain.dart`: lightweight important-person model, birthday linkage, diary-memory references and relationship lifecycle cleanup.
 - `src/store/backup_domain.dart`: ZIP/data serialization, backup validation and readable export.
 - `src/agenda_store.dart`: persistence/account/cloud orchestration facade and domain mutation API.
 - `src/screens/home_inbox_search.dart`: shell, Home/Daily Briefing, Inbox, Search and Archive.
 - `src/screens/birthdays_screen.dart`: persistent birthday management using the existing planning/sync/lifecycle infrastructure.
+- `src/screens/people_screen.dart`: important-person management and reusable diary people picker.
 - `src/screens/backup_settings.dart`: backup and application settings.
 - `src/screens/shared_space.dart`: Noi ♡ hub, shared space and shared media UI.
 - `src/screens/cloud_account.dart`: account/cloud diagnostics and controls.
@@ -257,3 +259,15 @@ Day Hub 2.0 deliberately extends existing domains instead of creating a parallel
 - Annual birthday reminders schedule only the next relevant occurrence and are reconciled whenever the app starts/resumes; Android uses `NotificationService`, while Web/PWA uses the existing `web_push_reminders` backend.
 - `DayHubSnapshot` is a derived projection over UnifiedAgenda + birthday occurrences + DayJournal. It owns no duplicate persistence.
 - Home reuses the existing `_HomeFocusCard` as the Daily Briefing. Calendar and Planner consume the same projection/context rather than maintaining independent daily data.
+
+
+## v0.47.0 — People & Relationships
+
+People are intentionally modeled as a small personal-context entity rather than a contact book.
+
+- `PersonEntry` is stored under `people_v1` and synchronized as `entity_type=person` through the same private incremental cloud pipeline used by agenda, journals and birthdays.
+- A person may reference an existing `BirthdayEntry` by ID. The birthday remains the single source of truth for annual dates and reminders.
+- `DiaryBlock.personIds` stores relationship links directly on existing Note / Photo / Sketch memories; no parallel memories table is introduced.
+- Person-filtered memories are a derived projection over the existing journal store, preserving one canonical copy of each diary block and its media.
+- Moving a person to Trash preserves diary links so restore is lossless. Permanent purge removes the orphan person IDs from affected journal blocks and persists those journal deltas. Permanent birthday purge clears only the related `birthdayId` links.
+- People participate in account profiles, JSON/ZIP backup, readable export and private cloud reconciliation. No phone number, email address or external contacts permission is required.
