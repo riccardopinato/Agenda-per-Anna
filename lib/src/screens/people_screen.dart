@@ -187,7 +187,7 @@ class _PeopleScreenState extends State<PeopleScreen> {
                   ),
                   const SizedBox(height: 12),
                   DropdownButtonFormField<String>(
-                    value: birthdayId,
+                    initialValue: birthdayId,
                     decoration: const InputDecoration(
                       labelText: 'Compleanno collegato',
                       prefixIcon: Icon(Icons.cake_outlined),
