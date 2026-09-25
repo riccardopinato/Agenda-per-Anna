@@ -56,6 +56,12 @@ release-size audit. The audit uses production-equivalent release flags
 (obfuscation, tree-shaken icons and split debug info) but does **not** upload the
 audit APK.
 
+The lightweight ARM64 sideload workflow uses the same protected repository
+release-signing secrets as the production workflow. It must never generate a
+fallback key or store signing passwords in workflow source. This keeps direct
+updates installable over previous builds as long as the production key remains
+stable.
+
 Production releases create both ARM64 and universal size reports. Prefer the
 ARM64 APK for direct sideloading; the universal APK is expected to be
 substantially larger because it carries native libraries for multiple ABIs.
