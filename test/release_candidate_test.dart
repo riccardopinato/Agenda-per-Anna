@@ -201,11 +201,11 @@ void main() {
 
     expect(
       sideloadWorkflow,
-      contains('ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}'),
+      contains(r'ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}'),
     );
     expect(
       sideloadWorkflow,
-      contains('ANDROID_KEYSTORE_PATH: ${{ github.workspace }}/.signing/agenda-release.jks'),
+      contains(r'ANDROID_KEYSTORE_PATH: ${{ github.workspace }}/.signing/agenda-release.jks'),
     );
     expect(sideloadWorkflow, isNot(contains('annas-diary-sideload-signing-v2')));
     expect(sideloadWorkflow, contains('--release-signing'));
