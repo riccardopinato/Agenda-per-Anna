@@ -676,6 +676,14 @@ class NotificationService {
     } catch (_) {}
   }
 
+  Future<void> cancelAll() async {
+    await initialize();
+    if (!_available) return;
+    try {
+      await _plugin.cancelAll();
+    } catch (_) {}
+  }
+
   int _notificationId(String value) {
     var hash = 0;
     for (final code in value.codeUnits) {

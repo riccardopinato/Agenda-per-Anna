@@ -146,6 +146,106 @@ class _CloudAccountScreenState extends State<CloudAccountScreen> {
     }
   }
 
+  Future<void> _deleteAccount() async {
+    final cloud = CloudSyncService.instance;
+    final accountId = cloud.userId;
+    if (accountId == null) return;
+
+    final controller = TextEditingController();
+    var canDelete = false;
+    final confirmed = await showDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      builder: (dialogContext) => StatefulBuilder(
+        builder: (dialogContext, setDialogState) {
+          return AlertDialog(
+            icon: Icon(
+              Icons.warning_amber_rounded,
+              color: Theme.of(dialogContext).colorScheme.error,
+            ),
+            title: const Text('Eliminare definitivamente l’account?'),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Questa operazione elimina definitivamente il tuo account cloud e i dati collegati. Non può essere annullata.',
+                ),
+                const SizedBox(height: 10),
+                const Text(
+                  'Se sei proprietario di uno spazio Noi ♡, quello spazio viene eliminato anche per gli altri membri. La Cassaforte privata locale resta separata.',
+                  style: TextStyle(fontWeight: FontWeight.w700),
+                ),
+                const SizedBox(height: 10),
+                const Text(
+                  'Prima di continuare puoi creare un export dalla sezione Backup.',
+                ),
+                const SizedBox(height: 14),
+                const Text('Scrivi ELIMINA per confermare.'),
+                const SizedBox(height: 8),
+                TextField(
+                  controller: controller,
+                  autofocus: true,
+                  textCapitalization: TextCapitalization.characters,
+                  onChanged: (value) {
+                    final enabled = value.trim().toUpperCase() == 'ELIMINA';
+                    if (enabled != canDelete) {
+                      setDialogState(() => canDelete = enabled);
+                    }
+                  },
+                  decoration: const InputDecoration(
+                    labelText: 'Conferma',
+                  ),
+                ),
+              ],
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(dialogContext).pop(false),
+                child: const Text('Annulla'),
+              ),
+              FilledButton(
+                onPressed: canDelete
+                    ? () => Navigator.of(dialogContext).pop(true)
+                    : null,
+                child: const Text('Elimina account e dati'),
+              ),
+            ],
+          );
+        },
+      ),
+    );
+    controller.dispose();
+
+    if (confirmed != true || !mounted) return;
+
+    setState(() => busy = true);
+    var remoteDeleted = false;
+    try {
+      await cloud.deleteCurrentAccount();
+      remoteDeleted = true;
+
+      await PushNotificationService.instance.unregisterCurrentToken();
+      if (kIsWeb) {
+        await WebPushService.instance.disable();
+      }
+      await widget.store.eraseLocalCloudAccount(accountId);
+
+      _message('Account e dati eliminati definitivamente.');
+      if (mounted) {
+        Navigator.of(context).popUntil((route) => route.isFirst);
+      }
+    } catch (_) {
+      _message(
+        remoteDeleted
+            ? 'Account eliminato dal cloud, ma la pulizia locale non è stata completata. Riavvia l’app prima di usarla di nuovo.'
+            : cloud.userFacingError,
+      );
+    } finally {
+      if (mounted) setState(() => busy = false);
+    }
+  }
+
   void _message(String text) {
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
@@ -395,6 +495,29 @@ class _CloudAccountScreenState extends State<CloudAccountScreen> {
                             onPressed: busy ? null : _signOut,
                             icon: const Icon(Icons.logout),
                             label: const Text('Disconnetti account'),
+                          ),
+                        ),
+                        const SizedBox(height: 14),
+                        const Divider(),
+                        const SizedBox(height: 6),
+                        Text(
+                          'Zona dati',
+                          style: TextStyle(
+                            fontWeight: FontWeight.w900,
+                            color: Theme.of(context).colorScheme.error,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        const Text(
+                          'L’eliminazione dell’account è permanente e richiede una conferma esplicita.',
+                        ),
+                        const SizedBox(height: 8),
+                        SizedBox(
+                          width: double.infinity,
+                          child: OutlinedButton.icon(
+                            onPressed: busy ? null : _deleteAccount,
+                            icon: const Icon(Icons.delete_forever_outlined),
+                            label: const Text('Elimina account e dati'),
                           ),
                         ),
                       ],

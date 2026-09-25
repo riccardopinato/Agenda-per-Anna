@@ -1386,6 +1386,76 @@ class AgendaStore extends ChangeNotifier {
     _notifyAllDataChanged();
   }
 
+  Future<void> eraseLocalCloudAccount(String accountId) async {
+    final ownerId = accountId.trim();
+    if (ownerId.isEmpty) return;
+
+    final prefs = await _localState();
+
+    // Clear every app notification before replacing the working set. Guest
+    // reminders are reconciled again after the switch, so reminders belonging
+    // to the erased account cannot survive on the device.
+    if (_activeAccountId == ownerId) {
+      await NotificationService.instance.cancelAll();
+    }
+
+    Map<String, dynamic> profiles;
+    try {
+      profiles = _readAccountProfiles(prefs);
+    } catch (_) {
+      profiles = <String, dynamic>{};
+    }
+    profiles.remove('user:$ownerId');
+
+    final rawGuest = profiles['guest'];
+    final guestProfile = rawGuest is Map
+        ? Map<String, dynamic>.from(rawGuest)
+        : <String, dynamic>{};
+
+    final changes = <String, String?>{
+      _accountProfilesKey: jsonEncode(profiles),
+      ..._workingProfileChanges(guestProfile),
+      _activeAccountKey: null,
+    };
+    if (prefs.getString(_legacyClaimedByKey) == ownerId) {
+      changes[_legacyClaimedByKey] = null;
+    }
+
+    final scopeToken = _entityScopeToken(ownerId);
+    final scopedPrefixes = <String>[
+      '$_entityDeltaPrefix$scopeToken:',
+      '$_sharedSyncCursorPrefix$scopeToken:',
+      'shared_cache_${ownerId}_',
+      'shared_pending_${ownerId}_',
+      'shared_interactions_pending_${ownerId}_',
+      'shared_media_pending_${ownerId}_',
+      'shared_interactions_cache_${ownerId}_',
+    ];
+    final scopedExactKeys = <String>{
+      '$_privateSyncCursorPrefix$scopeToken',
+      'shared_spaces_$ownerId',
+      'shared_unread_$ownerId',
+      'cloud_first_sync_snapshot_$ownerId',
+    };
+    for (final key in prefs.getKeys()) {
+      if (scopedExactKeys.contains(key) ||
+          scopedPrefixes.any(key.startsWith)) {
+        changes[key] = null;
+      }
+    }
+
+    await prefs.writeBatch(changes);
+    await load();
+
+    _accountScopeResolved = true;
+    if (!kIsWeb) {
+      await reconcileReminders();
+      await reconcileBirthdayReminders();
+    }
+    _notifyShellChanged();
+    _notifyAllDataChanged();
+  }
+
   void _bindPendingOperationsTo(String ownerId) {
     for (final entry in _syncQueue.entries.toList()) {
       final operation = entry.value;

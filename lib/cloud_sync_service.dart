@@ -436,6 +436,11 @@ class CloudSyncService extends ChangeNotifier {
         raw.contains('over_email_send_rate_limit')) {
       return 'Hai fatto troppi tentativi ravvicinati. Riprova tra poco.';
     }
+    if (raw.contains('account_deletion_failed') ||
+        raw.contains('delete-account') ||
+        raw.contains('explicit_confirmation_required')) {
+      return 'Non è stato possibile eliminare l’account. Nessun dato locale è stato cancellato.';
+    }
     if (raw.contains('socket') ||
         raw.contains('network') ||
         raw.contains('failed host lookup') ||
@@ -680,6 +685,53 @@ class CloudSyncService extends ChangeNotifier {
     _lastSyncAt = null;
     _state = CloudConnectionState.signedOut;
     notifyListeners();
+  }
+
+  Future<void> deleteCurrentAccount() async {
+    final client = _requireSignedInClient();
+    _state = CloudConnectionState.initializing;
+    _lastError = null;
+    notifyListeners();
+
+    var deleted = false;
+    try {
+      final response = await client.functions.invoke(
+        'delete-account',
+        body: const {
+          'confirm': 'DELETE_MY_ACCOUNT',
+        },
+      );
+      final raw = response.data;
+      final data = raw is Map
+          ? Map<String, dynamic>.from(raw)
+          : <String, dynamic>{};
+      if (data['ok'] != true) {
+        throw StateError(
+          data['error']?.toString() ?? 'account_deletion_failed',
+        );
+      }
+      deleted = true;
+
+      // The user row is already gone server-side. Clear the local auth
+      // session explicitly: access JWTs can otherwise remain valid until
+      // their encoded expiry even after account deletion.
+      try {
+        await client.auth.signOut(scope: SignOutScope.local);
+      } catch (_) {}
+      await _clearSharedChannels();
+      _passwordRecoveryPending = false;
+      _lastSyncAt = null;
+      _state = CloudConnectionState.signedOut;
+      _lastError = null;
+    } catch (error) {
+      _lastError = error.toString();
+      _state = deleted
+          ? CloudConnectionState.signedOut
+          : CloudConnectionState.error;
+      rethrow;
+    } finally {
+      notifyListeners();
+    }
   }
 
   Future<List<CloudRemoteRecord>> pullPrivateRecords({

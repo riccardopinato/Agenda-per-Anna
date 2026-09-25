@@ -48,4 +48,8 @@ Local safety snapshots/backups are recovery artifacts rather than primary user c
 
 ## Account lifecycle
 
-Sign-out preserves the account-scoped local profile so signing back in can recover offline data. Full account erasure is a separate server-side lifecycle operation because Supabase Auth deletion requires privileged server execution and Storage ownership cleanup. It is intentionally not simulated client-side.
+Sign-out preserves the account-scoped local profile so signing back in can recover offline data.
+
+Full account erasure is implemented as a privileged server-side operation. The Flutter client sends an authenticated request only after typed destructive confirmation; the `delete-account` Edge Function verifies the current user, removes affected shared-media objects, and then deletes the Supabase Auth user. Application rows tied to `auth.users` use `ON DELETE CASCADE` or `SET NULL` according to ownership/history semantics.
+
+After the server confirms deletion, the device removes the erased account profile, granular entity deltas, private/shared sync cursors, shared caches and pending queues, clears app notifications and restores the guest working set. The Private Vault remains local-only and separate from cloud account erasure; the confirmation UI states this explicitly.

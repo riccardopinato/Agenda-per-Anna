@@ -284,3 +284,13 @@ The lifecycle layer remains a thin extension over AgendaStore and the existing a
 - Cascades execute only when the logical person/birthday/habit is no longer live or recoverable; purging an obsolete historical Trash record cannot damage links to a current live entity.
 - Media reachability remains unchanged: recoverable diary media stay protected while referenced by Trash and normal MediaAssetStore maintenance runs after permanent purge.
 - `docs/LIFECYCLE_AUDIT.md` is the explicit entity-by-entity lifecycle contract and records intentional exceptions for shared data, embedded page rows, Vault data and backup artifacts.
+
+
+## v0.49.0 — Account Erasure & Data Rights
+
+- Cloud account deletion is executed only by `supabase/functions/delete-account/index.ts`; the client never receives or embeds service-role/secret credentials.
+- The function requires a valid user JWT plus an explicit `DELETE_MY_ACCOUNT` request body marker, verifies the user with Auth, removes shared-media paths affected by the user's ownership, then calls the Admin Auth delete-user API.
+- Existing database foreign keys provide the authoritative cleanup boundary for account-owned private data and collaboration membership/content. Shared-space ownership cascades the owned space; historical updater references that may remain use `SET NULL`.
+- `AgendaStore.eraseLocalCloudAccount` atomically removes the local account profile and all known account-scoped delta/cursor/cache/queue keys before reloading the guest profile.
+- Local scheduled notifications are cleared before erasure and guest reminders are re-reconciled after the guest working set is restored.
+- Vault data intentionally remains outside account erasure because it is device-local encrypted data, not cloud account data.
