@@ -37,7 +37,15 @@ jobs:
           cp -R /tmp/agenda_base/android .
           cp -R /tmp/agenda_base/web .
 
+      - name: Apply and verify platform configuration
+        run: |
+          python3 -m py_compile             tool/prepare_android_platform.py             tool/prepare_web_platform.py             tool/android_size_report.py
+          python3 tool/prepare_android_platform.py
+          python3 tool/prepare_web_platform.py
+
       - name: Apply and verify Android configuration
+        if: ${{ false }}
+        run: echo "superseded by combined platform preparation"
         run: |
           python3 -m py_compile             tool/prepare_android_platform.py             tool/android_size_report.py
           python3 tool/prepare_android_platform.py
