@@ -585,8 +585,7 @@ extension AgendaStoreLifecycle on AgendaStore {
       deleted: true,
       createAutoSnapshot: false,
     );
-    signals.bumpLifecycle();
-    notifyListeners();
+    _notifyLifecycleChanged();
     _scheduleMediaMaintenance(delay: const Duration(milliseconds: 300));
     return true;
   }
@@ -604,8 +603,7 @@ extension AgendaStoreLifecycle on AgendaStore {
       ],
       createAutoSnapshot: false,
     );
-    signals.bumpLifecycle();
-    notifyListeners();
+    _notifyLifecycleChanged();
     _scheduleMediaMaintenance(delay: const Duration(milliseconds: 300));
     return removed.length;
   }
