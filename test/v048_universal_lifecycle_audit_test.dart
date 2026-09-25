@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:intl/date_symbol_data_local.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:agenda_per_anna/local_state_store.dart';
@@ -9,6 +10,7 @@ void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
   setUp(() async {
+    await initializeDateFormatting('it_IT', null);
     await LocalStateStore.instance.resetForTesting();
     await MediaAssetStore.instance.resetForTesting();
     SharedPreferences.setMockInitialValues({});
@@ -106,7 +108,9 @@ void main() {
     final store = AgendaStore();
     await store.load();
     await store.addHabit('Bere acqua');
-    final habit = store.habits.single;
+    final habit = store.habits.singleWhere(
+      (value) => value.name == 'Bere acqua',
+    );
     final date = DateTime(2026, 10, 12);
 
     await store.toggleHabit(date, habit.id);
