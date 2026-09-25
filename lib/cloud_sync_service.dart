@@ -1137,6 +1137,70 @@ class CloudSyncService extends ChangeNotifier {
     return (response as List).isNotEmpty;
   }
 
+  Future<void> registerWebPushSubscription({
+    required String endpoint,
+    required String p256dh,
+    required String auth,
+    required String appVersion,
+  }) async {
+    final client = _requireSignedInClient();
+    final uid = userId!;
+    await client.from('web_push_subscriptions').upsert(
+      {
+        'user_id': uid,
+        'endpoint': endpoint,
+        'p256dh': p256dh,
+        'auth': auth,
+        'app_version': appVersion,
+        'updated_at': DateTime.now().toUtc().toIso8601String(),
+      },
+      onConflict: 'endpoint',
+    );
+  }
+
+  Future<void> unregisterWebPushSubscription(String endpoint) async {
+    final client = _requireSignedInClient();
+    final uid = userId!;
+    await client
+        .from('web_push_subscriptions')
+        .delete()
+        .eq('user_id', uid)
+        .eq('endpoint', endpoint);
+  }
+
+  Future<bool> isWebPushSubscriptionRegistered(String endpoint) async {
+    final client = _requireSignedInClient();
+    final uid = userId!;
+    final response = await client
+        .from('web_push_subscriptions')
+        .select('endpoint')
+        .eq('user_id', uid)
+        .eq('endpoint', endpoint)
+        .limit(1);
+    return (response as List).isNotEmpty;
+  }
+
+  Future<String> getWebPushPublicKey() async {
+    final client = _requireSignedInClient();
+    final response = await client.functions.invoke(
+      'send-shared-push',
+      body: const {
+        'action': 'web_push_public_key',
+      },
+    );
+    final data = response.data;
+    if (data is! Map) {
+      throw StateError('web_push_public_key_invalid_response');
+    }
+    final key = data['public_key']?.toString().trim();
+    if (key == null || key.isEmpty) {
+      throw StateError(
+        data['error']?.toString() ?? 'web_push_public_key_unavailable',
+      );
+    }
+    return key;
+  }
+
   Future<Map<String, dynamic>> sendPushSelfTest({
     required String eventId,
   }) async {
