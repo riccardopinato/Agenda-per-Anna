@@ -44,6 +44,19 @@ void main() {
         favorite: true,
       ),
     );
+    await store.saveTemplate(
+      PersonalTemplate(
+        id: 'smoke-template',
+        name: 'Modello AppLab',
+        kind: PersonalTemplateKind.week,
+        createdAt: today,
+        updatedAt: today,
+        payload: const {
+          'focus': 'Focus AppLab',
+          'priorities': ['Una priorità'],
+        },
+      ),
+    );
     await store.setPin('2468');
     expect(store.verifyPin('2468'), isTrue);
 
@@ -68,11 +81,19 @@ void main() {
     expect(find.text('Oggi in breve'), findsOneWidget);
     expect(find.textContaining('Compleanno AppLab'), findsWidgets);
     expect(find.text('Persone importanti'), findsOneWidget);
+    expect(find.text('Modelli personali'), findsOneWidget);
 
     await tester.ensureVisible(find.text('Persone importanti'));
     await tester.tap(find.text('Persone importanti'));
     await tester.pumpAndSettle();
     expect(find.text('Persona AppLab'), findsOneWidget);
+    await tester.pageBack();
+    await tester.pumpAndSettle();
+
+    await tester.ensureVisible(find.text('Modelli personali'));
+    await tester.tap(find.text('Modelli personali'));
+    await tester.pumpAndSettle();
+    expect(find.text('Modello AppLab'), findsOneWidget);
     await tester.pageBack();
     await tester.pumpAndSettle();
 
