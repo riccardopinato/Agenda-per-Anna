@@ -226,7 +226,10 @@ class NotificationService {
           await android?.requestExactAlarmsPermission();
         }
       }
-    } catch (_) {}
+    } catch (error) {
+      _lastError = 'permission_android: $error';
+      granted = false;
+    }
 
     try {
       final result = await _plugin
@@ -238,7 +241,10 @@ class NotificationService {
             sound: true,
           );
       if (result != null) granted = granted && result;
-    } catch (_) {}
+    } catch (error) {
+      _lastError = 'permission_ios: $error';
+      granted = false;
+    }
 
     try {
       final result = await _plugin
@@ -246,8 +252,12 @@ class NotificationService {
               WebFlutterLocalNotificationsPlugin>()
           ?.requestNotificationsPermission();
       if (result != null) granted = granted && result;
-    } catch (_) {}
+    } catch (error) {
+      _lastError = 'permission_web: $error';
+      granted = false;
+    }
 
+    if (granted) _lastError = null;
     return granted;
   }
 
@@ -325,36 +335,153 @@ class NotificationService {
     if (!_available) {
       throw StateError('notification_service_unavailable');
     }
-    await requestPermissions();
 
-    await _plugin.show(
-      id: _notificationId('annas-diary:test'),
-      title: 'Anna\'s Diary',
-      body: 'Le notifiche funzionano correttamente ♡',
-      notificationDetails: const NotificationDetails(
-        android: AndroidNotificationDetails(
-          reminderChannelId,
-          'Promemoria',
-          channelDescription:
-              'Promemoria di Anna\'s Diary per appuntamenti e cose da fare',
-          importance: Importance.max,
-          priority: Priority.max,
-          playSound: true,
-          enableVibration: true,
-          category: AndroidNotificationCategory.reminder,
+    final permissionGranted = await requestPermissions();
+    final status = await health();
+    if (!permissionGranted || !status.notificationsEnabled) {
+      throw StateError('notification_permission_denied');
+    }
+    if (!status.reminderChannelEnabled) {
+      throw StateError('reminder_channel_disabled');
+    }
+
+    try {
+      await _plugin.show(
+        id: _notificationId('annas-diary:test'),
+        title: 'Anna\'s Diary',
+        body: 'Test immediato: notifiche locali attive ♡',
+        notificationDetails: const NotificationDetails(
+          android: AndroidNotificationDetails(
+            reminderChannelId,
+            'Promemoria',
+            channelDescription:
+                'Promemoria di Anna\'s Diary per appuntamenti e cose da fare',
+            importance: Importance.max,
+            priority: Priority.max,
+            playSound: true,
+            enableVibration: true,
+            category: AndroidNotificationCategory.reminder,
+          ),
+          iOS: DarwinNotificationDetails(
+            presentAlert: true,
+            presentBadge: true,
+            presentSound: true,
+          ),
+          macOS: DarwinNotificationDetails(
+            presentAlert: true,
+            presentBadge: true,
+            presentSound: true,
+          ),
         ),
-        iOS: DarwinNotificationDetails(
-          presentAlert: true,
-          presentBadge: true,
-          presentSound: true,
-        ),
-        macOS: DarwinNotificationDetails(
-          presentAlert: true,
-          presentBadge: true,
-          presentSound: true,
-        ),
-      ),
-      payload: 'test',
+        payload: 'test:local:immediate',
+      );
+      _lastError = null;
+    } catch (error) {
+      _lastError = 'local_show: $error';
+      rethrow;
+    }
+  }
+
+  Future<LocalNotificationDiagnostic> runLocalDiagnostic({
+    Duration scheduledDelay = const Duration(seconds: 12),
+  }) async {
+    await initialize(force: true);
+    final delaySeconds = scheduledDelay.inSeconds.clamp(5, 60);
+
+    if (!_available) {
+      final status = await health();
+      return LocalNotificationDiagnostic(
+        permissionGranted: false,
+        immediateShown: false,
+        scheduledCreated: false,
+        scheduledDelaySeconds: delaySeconds,
+        health: status,
+        error: _lastError ?? 'notification_service_unavailable',
+      );
+    }
+
+    final permissionGranted = await requestPermissions();
+    var immediateShown = false;
+    var scheduledCreated = false;
+    String? diagnosticError;
+
+    final before = await health();
+    if (permissionGranted &&
+        before.notificationsEnabled &&
+        before.reminderChannelEnabled) {
+      try {
+        await showTestNotification();
+        immediateShown = true;
+      } catch (error) {
+        diagnosticError = 'immediate: $error';
+      }
+
+      try {
+        final when = DateTime.now().add(Duration(seconds: delaySeconds));
+        final scheduled = tz.TZDateTime.from(when, tz.local);
+        var mode = AndroidScheduleMode.inexactAllowWhileIdle;
+        if (before.exactAlarmsEnabled) {
+          mode = AndroidScheduleMode.exactAllowWhileIdle;
+        }
+
+        await _plugin.zonedSchedule(
+          id: _notificationId('annas-diary:test:scheduled'),
+          title: 'Anna\'s Diary · Test programmato',
+          body: 'Il promemoria programmato è arrivato correttamente ♡',
+          scheduledDate: scheduled,
+          notificationDetails: const NotificationDetails(
+            android: AndroidNotificationDetails(
+              reminderChannelId,
+              'Promemoria',
+              channelDescription:
+                  'Promemoria di Anna\'s Diary per appuntamenti e cose da fare',
+              importance: Importance.max,
+              priority: Priority.max,
+              playSound: true,
+              enableVibration: true,
+              category: AndroidNotificationCategory.reminder,
+            ),
+            iOS: DarwinNotificationDetails(
+              presentAlert: true,
+              presentBadge: true,
+              presentSound: true,
+            ),
+            macOS: DarwinNotificationDetails(
+              presentAlert: true,
+              presentBadge: true,
+              presentSound: true,
+            ),
+          ),
+          androidScheduleMode: mode,
+          payload: 'test:local:scheduled',
+        );
+        scheduledCreated = true;
+      } catch (error) {
+        diagnosticError =
+            diagnosticError == null
+                ? 'scheduled: $error'
+                : '$diagnosticError · scheduled: $error';
+      }
+    } else if (!permissionGranted || !before.notificationsEnabled) {
+      diagnosticError = 'notification_permission_denied';
+    } else if (!before.reminderChannelEnabled) {
+      diagnosticError = 'reminder_channel_disabled';
+    }
+
+    if (diagnosticError != null) {
+      _lastError = diagnosticError;
+    } else {
+      _lastError = null;
+    }
+
+    final after = await health();
+    return LocalNotificationDiagnostic(
+      permissionGranted: permissionGranted,
+      immediateShown: immediateShown,
+      scheduledCreated: scheduledCreated,
+      scheduledDelaySeconds: delaySeconds,
+      health: after,
+      error: diagnosticError,
     );
   }
 
