@@ -1899,6 +1899,15 @@ class AgendaStore extends ChangeNotifier {
     await NotificationService.instance.cancel(id);
     await NotificationService.instance.cancel('$id:primary');
     await NotificationService.instance.cancel('$id:secondary');
+    if (kIsWeb && CloudSyncService.instance.signedIn) {
+      try {
+        await CloudSyncService.instance.cancelWebPushReminder('$id:primary');
+        await CloudSyncService.instance.cancelWebPushReminder('$id:secondary');
+      } catch (_) {
+        // Data deletion remains authoritative locally; cloud reconciliation
+        // will run again on the next connected session.
+      }
+    }
     await _persistEntityMutation(
       type: 'item',
       id: id,
@@ -1919,6 +1928,14 @@ class AgendaStore extends ChangeNotifier {
     if (start == null || item.done) {
       await NotificationService.instance.cancel('${item.id}:primary');
       await NotificationService.instance.cancel('${item.id}:secondary');
+      if (kIsWeb && CloudSyncService.instance.signedIn) {
+        try {
+          await CloudSyncService.instance
+              .cancelWebPushReminder('${item.id}:primary');
+          await CloudSyncService.instance
+              .cancelWebPushReminder('${item.id}:secondary');
+        } catch (_) {}
+      }
       return;
     }
 
@@ -1932,6 +1949,35 @@ class AgendaStore extends ChangeNotifier {
 
     Future<void> syncOne(String suffix, int? minutes) async {
       final stableId = '${item.id}:$suffix';
+
+      if (kIsWeb) {
+        if (!CloudSyncService.instance.signedIn) return;
+        try {
+          if (minutes == null) {
+            await CloudSyncService.instance.cancelWebPushReminder(stableId);
+            return;
+          }
+
+          final when = eventTime.subtract(Duration(minutes: minutes));
+          if (!when.isAfter(DateTime.now())) {
+            await CloudSyncService.instance.cancelWebPushReminder(stableId);
+            return;
+          }
+
+          await CloudSyncService.instance.upsertWebPushReminder(
+            stableId: stableId,
+            title: item.title,
+            body: minutes == 0
+                ? 'È il momento di iniziare.'
+                : _reminderBody(minutes, item.title),
+            when: when,
+          );
+        } catch (_) {
+          // PWA reminder sync is best-effort and must never block editing.
+        }
+        return;
+      }
+
       if (minutes == null) {
         await NotificationService.instance.cancel(stableId);
         return;
