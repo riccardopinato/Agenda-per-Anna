@@ -373,6 +373,18 @@ class HomeScreen extends StatelessWidget {
                   ),
                 ),
               ),
+              const SizedBox(height: 12),
+              NavigationCard(
+                icon: Icons.copy_all_outlined,
+                title: 'Modelli personali',
+                subtitle: 'Giornate tipo, settimane e mesi da riutilizzare',
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => TemplatesScreen(store: store),
+                  ),
+                ),
+              ),
             ],
           ),
         );
@@ -446,6 +458,14 @@ Future<void> _showQuickCapture(
             subtitle: const Text('Salva una relazione personale da ricordare.'),
             onTap: () => Navigator.pop(sheetContext, 'person'),
           ),
+          ListTile(
+            leading: const CircleAvatar(
+              child: Icon(Icons.copy_all_outlined),
+            ),
+            title: const Text('Modello personale'),
+            subtitle: const Text('Crea un modello da giornata, settimana o mese.'),
+            onTap: () => Navigator.pop(sheetContext, 'template'),
+          ),
         ],
       ),
     ),
@@ -481,6 +501,19 @@ Future<void> _showQuickCapture(
       context,
       MaterialPageRoute(
         builder: (_) => PeopleScreen(
+          store: store,
+          startAdding: true,
+        ),
+      ),
+    );
+    return;
+  }
+
+  if (action == 'template') {
+    await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => TemplatesScreen(
           store: store,
           startAdding: true,
         ),
