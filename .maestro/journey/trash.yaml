@@ -1,0 +1,19 @@
+appId: com.riccardopinato.agenda_per_anna
+---
+- back
+- extendedWaitUntil:
+    visible: 'Home[\\s\\S]*'
+    timeout: 10000
+- tapOn:
+    text: 'Home[\\s\\S]*'
+    retryTapIfNoChange: true
+- tapOn:
+    text: "Archivio"
+- extendedWaitUntil:
+    visible: "Archivio"
+    timeout: 10000
+- tapOn:
+    text: "Cestino"
+- extendedWaitUntil:
+    visible: "Cestino"
+    timeout: 10000
