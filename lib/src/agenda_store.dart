@@ -8,6 +8,7 @@ class AgendaStore extends ChangeNotifier {
   static const _habitsKey = 'habits_v1';
   static const _birthdaysKey = 'birthdays_v1';
   static const _peopleKey = 'people_v1';
+  static const _templatesKey = 'templates_v1';
   static const _snapshotsKey = 'backup_snapshots_v1';
   static const _preferencesKey = 'agenda_preferences_v1';
   static const _inboxKey = 'inbox_v1';
@@ -36,6 +37,7 @@ class AgendaStore extends ChangeNotifier {
   final List<HabitDefinition> habits = [];
   final List<BirthdayEntry> birthdays = [];
   final List<PersonEntry> people = [];
+  final List<PersonalTemplate> templates = [];
   final List<LocalBackupSnapshot> localSnapshots = [];
   final List<InboxEntry> inbox = [];
   final List<TrashEntry> trash = [];
@@ -132,6 +134,7 @@ class AgendaStore extends ChangeNotifier {
         _habitsKey,
         _birthdaysKey,
         _peopleKey,
+        _templatesKey,
         _snapshotsKey,
         _preferencesKey,
         _inboxKey,
@@ -391,6 +394,16 @@ class AgendaStore extends ChangeNotifier {
               );
             }
             break;
+          case 'template':
+            templates.removeWhere((template) => template.id == id);
+            if (!deleted && payload is Map) {
+              templates.add(
+                PersonalTemplate.fromJson(
+                  Map<String, dynamic>.from(payload),
+                ),
+              );
+            }
+            break;
           case 'inbox':
             inbox.removeWhere((entry) => entry.id == id);
             if (!deleted && payload is Map) {
@@ -553,6 +566,11 @@ class AgendaStore extends ChangeNotifier {
       case 'person':
         for (final person in people) {
           if (person.id == id) return person.toJson();
+        }
+        return null;
+      case 'template':
+        for (final template in templates) {
+          if (template.id == id) return template.toJson();
         }
         return null;
       case 'inbox':
@@ -1001,6 +1019,7 @@ class AgendaStore extends ChangeNotifier {
     habits.clear();
     birthdays.clear();
     people.clear();
+    templates.clear();
     localSnapshots.clear();
     inbox.clear();
     trash.clear();
@@ -1111,6 +1130,18 @@ class AgendaStore extends ChangeNotifier {
           .toList(),
     );
     if (parsedPeople != null) people.addAll(parsedPeople);
+
+    final parsedTemplates = decodeSection<List<PersonalTemplate>>(
+      _templatesKey,
+      (value) => (value as List)
+          .map(
+            (e) => PersonalTemplate.fromJson(
+              Map<String, dynamic>.from(e as Map),
+            ),
+          )
+          .toList(),
+    );
+    if (parsedTemplates != null) templates.addAll(parsedTemplates);
 
     final parsedSnapshots = decodeSection<List<LocalBackupSnapshot>>(
       _snapshotsKey,
@@ -1295,6 +1326,7 @@ class AgendaStore extends ChangeNotifier {
         _habitsKey: jsonEncode(habits.map((e) => e.toJson()).toList()),
         _birthdaysKey: jsonEncode(birthdays.map((e) => e.toJson()).toList()),
         _peopleKey: jsonEncode(people.map((e) => e.toJson()).toList()),
+        _templatesKey: jsonEncode(templates.map((e) => e.toJson()).toList()),
         _preferencesKey: jsonEncode(preferences.toJson()),
         _inboxKey: jsonEncode(inbox.map((e) => e.toJson()).toList()),
         _trashKey: jsonEncode(trash.map((e) => e.toJson()).toList()),
@@ -1310,6 +1342,7 @@ class AgendaStore extends ChangeNotifier {
       _habitsKey,
       _birthdaysKey,
       _peopleKey,
+      _templatesKey,
       _inboxKey,
       _trashKey,
     ]) {
@@ -1580,6 +1613,11 @@ class AgendaStore extends ChangeNotifier {
         add('person', person.id, person.toJson());
       }
     }
+    if (includes(_templatesKey)) {
+      for (final template in templates) {
+        add('template', template.id, template.toJson());
+      }
+    }
     if (includes(_inboxKey)) {
       for (final entry in inbox) {
         add('inbox', entry.id, entry.toJson());
@@ -1608,6 +1646,7 @@ class AgendaStore extends ChangeNotifier {
         'habit' => _habitsKey,
         'birthday' => _birthdaysKey,
         'person' => _peopleKey,
+        'template' => _templatesKey,
         'inbox' => _inboxKey,
         'trash' => _trashKey,
         'preferences' => _preferencesKey,
@@ -1814,6 +1853,13 @@ class AgendaStore extends ChangeNotifier {
           ),
         )
         .toList();
+    final incomingTemplates = (payload['templates'] as List? ?? const [])
+        .map(
+          (e) => PersonalTemplate.fromJson(
+            Map<String, dynamic>.from(e as Map),
+          ),
+        )
+        .toList();
     final incomingInbox = (payload['inbox'] as List? ?? const [])
         .map(
           (e) => InboxEntry.fromJson(
@@ -1848,6 +1894,7 @@ class AgendaStore extends ChangeNotifier {
     final previousHabits = List<HabitDefinition>.from(habits);
     final previousBirthdays = List<BirthdayEntry>.from(birthdays);
     final previousPeople = List<PersonEntry>.from(people);
+    final previousTemplates = List<PersonalTemplate>.from(templates);
     final previousInbox = List<InboxEntry>.from(inbox);
     final previousTrash = List<TrashEntry>.from(trash);
     final previousPreferences = preferences;
@@ -1894,6 +1941,16 @@ class AgendaStore extends ChangeNotifier {
           ..clear()
           ..addAll(peopleById.values);
 
+        final templatesById = {
+          for (final template in templates) template.id: template,
+        };
+        for (final template in incomingTemplates) {
+          templatesById[template.id] = template;
+        }
+        templates
+          ..clear()
+          ..addAll(templatesById.values);
+
         final inboxById = {for (final entry in inbox) entry.id: entry};
         for (final entry in incomingInbox) {
           inboxById[entry.id] = entry;
@@ -1931,6 +1988,9 @@ class AgendaStore extends ChangeNotifier {
         people
           ..clear()
           ..addAll(incomingPeople);
+        templates
+          ..clear()
+          ..addAll(incomingTemplates);
         inbox
           ..clear()
           ..addAll(incomingInbox);
@@ -1988,6 +2048,9 @@ class AgendaStore extends ChangeNotifier {
       people
         ..clear()
         ..addAll(previousPeople);
+      templates
+        ..clear()
+        ..addAll(previousTemplates);
       inbox
         ..clear()
         ..addAll(previousInbox);
@@ -2634,6 +2697,10 @@ class AgendaStore extends ChangeNotifier {
           final before = people.length;
           people.removeWhere((e) => e.id == record.entityId);
           return people.length != before;
+        case 'template':
+          final before = templates.length;
+          templates.removeWhere((e) => e.id == record.entityId);
+          return templates.length != before;
         case 'inbox':
           final before = inbox.length;
           inbox.removeWhere((e) => e.id == record.entityId);
@@ -2740,6 +2807,20 @@ class AgendaStore extends ChangeNotifier {
           people.add(incoming);
         } else {
           people[index] = incoming;
+        }
+        return true;
+      case 'template':
+        final incoming = PersonalTemplate.fromJson(payload);
+        final index = templates.indexWhere((e) => e.id == incoming.id);
+        if (index >= 0 &&
+            _syncPayloadHash(templates[index].toJson()) ==
+                _syncPayloadHash(incoming.toJson())) {
+          return false;
+        }
+        if (index < 0) {
+          templates.add(incoming);
+        } else {
+          templates[index] = incoming;
         }
         return true;
       case 'inbox':
