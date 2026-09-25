@@ -76,7 +76,7 @@ class BirthdaysScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: 4),
                   DropdownButtonFormField<int?>(
-                    value: reminderDays,
+                    initialValue: reminderDays,
                     decoration: const InputDecoration(
                       labelText: 'Promemoria',
                       prefixIcon: Icon(Icons.notifications_none),
