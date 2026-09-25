@@ -1,13 +1,15 @@
 # Agenda per Anna — Architecture
 
-## Current structure — v0.45.0
+## Current structure — v0.46.0
 
 Anna's Diary keeps `lib/main.dart` as the compatibility library boundary, but large responsibilities are now split by runtime domain:
 
 - `src/store_signals.dart`: granular UI invalidation channels.
+- `src/day_hub_domain.dart`: birthday model, annual occurrence/reminder logic and derived Day Hub snapshots.
 - `src/store/backup_domain.dart`: ZIP/data serialization, backup validation and readable export.
 - `src/agenda_store.dart`: persistence/account/cloud orchestration facade and domain mutation API.
-- `src/screens/home_inbox_search.dart`: shell, Home, Inbox, Search and Archive.
+- `src/screens/home_inbox_search.dart`: shell, Home/Daily Briefing, Inbox, Search and Archive.
+- `src/screens/birthdays_screen.dart`: persistent birthday management using the existing planning/sync/lifecycle infrastructure.
 - `src/screens/backup_settings.dart`: backup and application settings.
 - `src/screens/shared_space.dart`: Noi ♡ hub, shared space and shared media UI.
 - `src/screens/cloud_account.dart`: account/cloud diagnostics and controls.
@@ -243,3 +245,15 @@ Lifecycle is implemented as a thin domain layer over the existing AgendaStore pe
 - Portable cloud/backup serialization materializes diary media only at the transport boundary and re-localizes it through MediaAssetStore on receipt.
 - Media garbage collection treats live Trash references as reachable and only reclaims them after permanent purge and after recovery snapshots no longer reference them.
 - Noi ♡ keeps explicit collaborative delete/leave semantics and its existing tombstone/media cleanup pipeline.
+
+
+## v0.46.0 — Day Hub 2.0
+
+Day Hub 2.0 deliberately extends existing domains instead of creating a parallel daily-dashboard subsystem.
+
+- `BirthdayEntry` is a small private entity stored under `birthdays_v1` and synchronized as `entity_type=birthday` through the existing per-entity cloud queue.
+- Account profile capture/restore, entity deltas, full backup/restore and readable export all include birthdays.
+- Birthday deletion is delegated to the shared v0.45 lifecycle domain and therefore inherits Trash, restore, permanent purge and safety snapshots.
+- Annual birthday reminders schedule only the next relevant occurrence and are reconciled whenever the app starts/resumes; Android uses `NotificationService`, while Web/PWA uses the existing `web_push_reminders` backend.
+- `DayHubSnapshot` is a derived projection over UnifiedAgenda + birthday occurrences + DayJournal. It owns no duplicate persistence.
+- Home reuses the existing `_HomeFocusCard` as the Daily Briefing. Calendar and Planner consume the same projection/context rather than maintaining independent daily data.
