@@ -9,6 +9,7 @@ enum TrashEntityKind {
   month,
   week,
   habit,
+  birthday,
   inbox,
 }
 
@@ -20,6 +21,7 @@ extension TrashEntityKindUi on TrashEntityKind {
         TrashEntityKind.month => 'Pagina mensile',
         TrashEntityKind.week => 'Pagina settimanale',
         TrashEntityKind.habit => 'Abitudine',
+        TrashEntityKind.birthday => 'Compleanno',
         TrashEntityKind.inbox => 'Inbox',
       };
 
@@ -30,6 +32,7 @@ extension TrashEntityKindUi on TrashEntityKind {
         TrashEntityKind.month => Icons.calendar_month_outlined,
         TrashEntityKind.week => Icons.view_week_outlined,
         TrashEntityKind.habit => Icons.repeat_outlined,
+        TrashEntityKind.birthday => Icons.cake_outlined,
         TrashEntityKind.inbox => Icons.inbox_outlined,
       };
 }
@@ -161,6 +164,7 @@ extension AgendaStoreLifecycle on AgendaStore {
       case TrashEntityKind.month:
       case TrashEntityKind.week:
       case TrashEntityKind.habit:
+      case TrashEntityKind.birthday:
       case TrashEntityKind.inbox:
         return entry;
     }
@@ -192,6 +196,7 @@ extension AgendaStoreLifecycle on AgendaStore {
       case TrashEntityKind.month:
       case TrashEntityKind.week:
       case TrashEntityKind.habit:
+      case TrashEntityKind.birthday:
       case TrashEntityKind.inbox:
         return entry.toJson();
     }
@@ -250,6 +255,29 @@ extension AgendaStoreLifecycle on AgendaStore {
     ]);
     signals.bumpLifecycle();
     _notifyInboxChanged();
+    return true;
+  }
+
+  Future<bool> moveBirthdayToTrash(String id) async {
+    final index = birthdays.indexWhere((birthday) => birthday.id == id);
+    if (index < 0) return false;
+    final birthday = birthdays[index];
+    final entry = _newTrashEntry(
+      kind: TrashEntityKind.birthday,
+      entityId: birthday.id,
+      title: birthday.name,
+      payload: birthday.toJson(),
+    );
+
+    birthdays.removeAt(index);
+    _putTrashInMemory(entry);
+    await _cancelBirthdayReminder(id);
+    await _persistEntityMutations([
+      (type: 'birthday', id: id, payload: null, deleted: true),
+      (type: 'trash', id: entry.id, payload: entry.toJson(), deleted: false),
+    ]);
+    signals.bumpLifecycle();
+    _notifyPlanningChanged();
     return true;
   }
 
@@ -438,6 +466,17 @@ extension AgendaStoreLifecycle on AgendaStore {
         ));
         reminderItem = value;
         break;
+      case TrashEntityKind.birthday:
+        final value = BirthdayEntry.fromJson(localized.payload);
+        birthdays.removeWhere((birthday) => birthday.id == value.id);
+        birthdays.add(value);
+        mutations.add((
+          type: 'birthday',
+          id: value.id,
+          payload: value.toJson(),
+          deleted: false,
+        ));
+        break;
       case TrashEntityKind.inbox:
         final value = InboxEntry.fromJson(localized.payload);
         inbox.removeWhere((entry) => entry.id == value.id);
@@ -548,6 +587,16 @@ extension AgendaStoreLifecycle on AgendaStore {
     switch (localized.kind) {
       case TrashEntityKind.item:
         _notifyAgendaChanged();
+        break;
+      case TrashEntityKind.birthday:
+        final restored = birthdays
+            .where((birthday) => birthday.id == localized.entityId)
+            .cast<BirthdayEntry?>()
+            .firstOrNull;
+        if (restored != null) {
+          await _syncBirthdayReminder(restored);
+        }
+        _notifyPlanningChanged();
         break;
       case TrashEntityKind.inbox:
         _notifyInboxChanged();
