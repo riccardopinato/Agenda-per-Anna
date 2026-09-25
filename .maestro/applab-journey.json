@@ -15,6 +15,10 @@
     {
       "name": "memories",
       "flow": ".maestro/journey/memories.yaml"
+    },
+    {
+      "name": "people",
+      "flow": ".maestro/journey/people.yaml"
     }
   ]
 }
