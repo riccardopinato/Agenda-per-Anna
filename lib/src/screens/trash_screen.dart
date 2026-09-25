@@ -9,10 +9,24 @@ class TrashScreen extends StatelessWidget {
   });
 
   Future<void> _restore(BuildContext context, TrashEntry entry) async {
+    final conflict = store.trashRestoreConflictReason(entry);
+    if (conflict != null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(conflict)),
+      );
+      return;
+    }
+
     final restored = await store.restoreTrashEntry(entry.id);
-    if (!context.mounted || !restored) return;
+    if (!context.mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('“${entry.title}” ripristinato.')),
+      SnackBar(
+        content: Text(
+          restored
+              ? '“${entry.title}” ripristinato.'
+              : 'Impossibile ripristinare “${entry.title}”. Il contenuto è rimasto nel Cestino.',
+        ),
+      ),
     );
   }
 

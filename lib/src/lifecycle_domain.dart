@@ -118,7 +118,11 @@ extension AgendaStoreLifecycle on AgendaStore {
       );
 
   void _putTrashInMemory(TrashEntry entry) {
-    trash.removeWhere((candidate) => candidate.originalKey == entry.originalKey);
+    // Keep historical versions of the same logical entity. A deterministic
+    // entity key (day/week/month) can be deleted, recreated and deleted again;
+    // collapsing by originalKey would silently destroy an older recoverable
+    // version. Only de-duplicate the exact trash record id.
+    trash.removeWhere((candidate) => candidate.id == entry.id);
     trash.insert(0, entry);
   }
 
@@ -465,11 +469,57 @@ extension AgendaStoreLifecycle on AgendaStore {
     return true;
   }
 
+  String? trashRestoreConflictReason(TrashEntry entry) {
+    switch (entry.kind) {
+      case TrashEntityKind.item:
+        return items.any((item) => item.id == entry.entityId)
+            ? 'Questo elemento è già presente nell’agenda.'
+            : null;
+      case TrashEntityKind.diaryBlock:
+        final parentId = entry.parentId;
+        if (parentId == null || parentId.isEmpty) return null;
+        final current = journals[parentId];
+        return current != null &&
+                current.blocks.any((block) => block.id == entry.entityId)
+            ? 'Questo ricordo è già presente nella giornata.'
+            : null;
+      case TrashEntityKind.journal:
+        return journals.containsKey(entry.entityId)
+            ? 'Per questa data esiste già una giornata attiva. Spostala prima nel Cestino per scegliere quale versione ripristinare.'
+            : null;
+      case TrashEntityKind.month:
+        return months.containsKey(entry.entityId)
+            ? 'Per questo mese esiste già una pagina attiva. Spostala prima nel Cestino per scegliere quale versione ripristinare.'
+            : null;
+      case TrashEntityKind.week:
+        return weeks.containsKey(entry.entityId)
+            ? 'Per questa settimana esiste già una pagina attiva. Spostala prima nel Cestino per scegliere quale versione ripristinare.'
+            : null;
+      case TrashEntityKind.habit:
+        return habits.any((habit) => habit.id == entry.entityId)
+            ? 'Questa abitudine è già attiva.'
+            : null;
+      case TrashEntityKind.birthday:
+        return birthdays.any((birthday) => birthday.id == entry.entityId)
+            ? 'Questo compleanno è già presente.'
+            : null;
+      case TrashEntityKind.person:
+        return people.any((person) => person.id == entry.entityId)
+            ? 'Questa persona è già presente.'
+            : null;
+      case TrashEntityKind.inbox:
+        return inbox.any((value) => value.id == entry.entityId)
+            ? 'Questa nota è già presente nell’Inbox.'
+            : null;
+    }
+  }
+
   Future<bool> restoreTrashEntry(String trashId) async {
     final trashIndex = trash.indexWhere((entry) => entry.id == trashId);
     if (trashIndex < 0) return false;
 
     final localized = await _localizeTrashEntry(trash[trashIndex]);
+    if (trashRestoreConflictReason(localized) != null) return false;
     final mutations = <
         ({
           String type,
@@ -661,6 +711,97 @@ extension AgendaStoreLifecycle on AgendaStore {
     return true;
   }
 
+  Future<void> _unlinkPurgedHabits(Set<String> habitIds) async {
+    if (habitIds.isEmpty) return;
+    final mutations = <
+        ({
+          String type,
+          String id,
+          Map<String, dynamic>? payload,
+          bool deleted,
+        })>[];
+
+    for (final entry in journals.entries.toList()) {
+      if (!entry.value.completedHabitIds.any(habitIds.contains)) continue;
+      final updated = entry.value.copyWith(
+        completedHabitIds: entry.value.completedHabitIds
+            .where((id) => !habitIds.contains(id))
+            .toList(),
+      );
+      journals[entry.key] = updated;
+      mutations.add((
+        type: 'journal',
+        id: entry.key,
+        payload: updated.toLocalJson(),
+        deleted: false,
+      ));
+    }
+
+    for (var i = 0; i < trash.length; i++) {
+      final entry = trash[i];
+      if (entry.kind != TrashEntityKind.journal) continue;
+      final journal = DayJournal.fromJson(entry.payload);
+      if (!journal.completedHabitIds.any(habitIds.contains)) continue;
+      final updatedJournal = journal.copyWith(
+        completedHabitIds: journal.completedHabitIds
+            .where((id) => !habitIds.contains(id))
+            .toList(),
+      );
+      final updatedEntry = entry.copyWith(payload: updatedJournal.toLocalJson());
+      trash[i] = updatedEntry;
+      mutations.add((
+        type: 'trash',
+        id: updatedEntry.id,
+        payload: updatedEntry.toJson(),
+        deleted: false,
+      ));
+    }
+
+    if (mutations.isNotEmpty) {
+      await _persistEntityMutations(
+        mutations,
+        createAutoSnapshot: false,
+      );
+      _notifyJournalChanged();
+    }
+  }
+
+  bool _hasLiveOrRecoverableReference(
+    TrashEntityKind kind,
+    String entityId,
+  ) {
+    switch (kind) {
+      case TrashEntityKind.person:
+        return people.any((person) => person.id == entityId) ||
+            trash.any(
+              (entry) =>
+                  entry.kind == TrashEntityKind.person &&
+                  entry.entityId == entityId,
+            );
+      case TrashEntityKind.birthday:
+        return birthdays.any((birthday) => birthday.id == entityId) ||
+            trash.any(
+              (entry) =>
+                  entry.kind == TrashEntityKind.birthday &&
+                  entry.entityId == entityId,
+            );
+      case TrashEntityKind.habit:
+        return habits.any((habit) => habit.id == entityId) ||
+            trash.any(
+              (entry) =>
+                  entry.kind == TrashEntityKind.habit &&
+                  entry.entityId == entityId,
+            );
+      case TrashEntityKind.item:
+      case TrashEntityKind.diaryBlock:
+      case TrashEntityKind.journal:
+      case TrashEntityKind.month:
+      case TrashEntityKind.week:
+      case TrashEntityKind.inbox:
+        return false;
+    }
+  }
+
   Future<bool> purgeTrashEntry(
     String trashId, {
     bool createSafetySnapshot = true,
@@ -672,10 +813,15 @@ extension AgendaStoreLifecycle on AgendaStore {
     }
 
     final entry = trash.removeAt(index);
-    if (entry.kind == TrashEntityKind.person) {
+    final stillRecoverable =
+        _hasLiveOrRecoverableReference(entry.kind, entry.entityId);
+    if (!stillRecoverable && entry.kind == TrashEntityKind.person) {
       await _unlinkPurgedPeople({entry.entityId});
-    } else if (entry.kind == TrashEntityKind.birthday) {
+    } else if (!stillRecoverable &&
+        entry.kind == TrashEntityKind.birthday) {
       await _unlinkPurgedBirthdays({entry.entityId});
+    } else if (!stillRecoverable && entry.kind == TrashEntityKind.habit) {
+      await _unlinkPurgedHabits({entry.entityId});
     }
     await _persistEntityMutation(
       type: 'trash',
@@ -701,9 +847,27 @@ extension AgendaStoreLifecycle on AgendaStore {
         .where((entry) => entry.kind == TrashEntityKind.birthday)
         .map((entry) => entry.entityId)
         .toSet();
+    final purgedHabits = removed
+        .where((entry) => entry.kind == TrashEntityKind.habit)
+        .map((entry) => entry.entityId)
+        .toSet();
     trash.clear();
+
+    // A historical trash version must not break links when the same logical
+    // entity is live again.
+    purgedPeople.removeWhere(
+      (id) => people.any((person) => person.id == id),
+    );
+    purgedBirthdays.removeWhere(
+      (id) => birthdays.any((birthday) => birthday.id == id),
+    );
+    purgedHabits.removeWhere(
+      (id) => habits.any((habit) => habit.id == id),
+    );
+
     await _unlinkPurgedPeople(purgedPeople);
     await _unlinkPurgedBirthdays(purgedBirthdays);
+    await _unlinkPurgedHabits(purgedHabits);
     await _persistEntityMutations(
       [
         for (final entry in removed)

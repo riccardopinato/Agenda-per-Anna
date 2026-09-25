@@ -271,3 +271,16 @@ People are intentionally modeled as a small personal-context entity rather than 
 - Person-filtered memories are a derived projection over the existing journal store, preserving one canonical copy of each diary block and its media.
 - Moving a person to Trash preserves diary links so restore is lossless. Permanent purge removes the orphan person IDs from affected journal blocks and persists those journal deltas. Permanent birthday purge clears only the related `birthdayId` links.
 - People participate in account profiles, JSON/ZIP backup, readable export and private cloud reconciliation. No phone number, email address or external contacts permission is required.
+
+
+## v0.48.0 — Universal Delete & Lifecycle Audit
+
+The lifecycle layer remains a thin extension over AgendaStore and the existing account-scoped persistence/sync pipeline.
+
+- Trash records are versioned by their own UUID; `originalKey` is descriptive identity and is no longer used to collapse historical deleted versions.
+- `trashRestoreConflictReason` guards restore before mutation so recovery cannot overwrite a live entity with the same identity.
+- Deterministic singleton pages (day/week/month) can retain multiple deleted versions safely: move the active version to Trash, then restore the desired historical version.
+- Habit permanent purge scrubs `completedHabitIds` from live journals and trashed journal payloads, matching the existing person/birthday orphan-link cleanup model.
+- Cascades execute only when the logical person/birthday/habit is no longer live or recoverable; purging an obsolete historical Trash record cannot damage links to a current live entity.
+- Media reachability remains unchanged: recoverable diary media stay protected while referenced by Trash and normal MediaAssetStore maintenance runs after permanent purge.
+- `docs/LIFECYCLE_AUDIT.md` is the explicit entity-by-entity lifecycle contract and records intentional exceptions for shared data, embedded page rows, Vault data and backup artifacts.
