@@ -1480,6 +1480,7 @@ class BackupSummary {
   final int habitCount;
   final int birthdayCount;
   final int personCount;
+  final int templateCount;
   final int trashCount;
 
   const BackupSummary({
@@ -1491,6 +1492,7 @@ class BackupSummary {
     required this.habitCount,
     this.birthdayCount = 0,
     this.personCount = 0,
+    this.templateCount = 0,
     this.trashCount = 0,
   });
 }
