@@ -1,6 +1,6 @@
 # Agenda per Anna — Architecture
 
-## Current structure — v0.40.0
+## Current structure — v0.45.0
 
 Anna's Diary keeps `lib/main.dart` as the compatibility library boundary, but large responsibilities are now split by runtime domain:
 
@@ -230,3 +230,16 @@ No Supabase schema migration is required for v0.39.1.
 - Persistence torture tests cover restart, offline-style pending edits, account switching, legacy migration and corrupt queue quarantine.
 - AppLab verifies a release-mode ARM64 APK on Android and preserves per-screen visual baselines for Calendar, Week, Today and Memories.
 - GitHub Pages is the canonical Web runtime and is produced from the same `main` revision as mobile releases.
+
+
+## v0.45.0 — Lifecycle & Recovery Foundation
+
+Lifecycle is implemented as a thin domain layer over the existing AgendaStore persistence/sync facade.
+
+- `src/lifecycle_domain.dart` owns TrashEntry semantics, restore, permanent purge and cascade rules.
+- `src/screens/trash_screen.dart` is the single user-facing Trash surface.
+- Trash persists in the same structured LocalStateStore and account profile as the rest of the private working set.
+- Trash records synchronize as ordinary private `agenda_records` entity type `trash`; no parallel backend is introduced.
+- Portable cloud/backup serialization materializes diary media only at the transport boundary and re-localizes it through MediaAssetStore on receipt.
+- Media garbage collection treats live Trash references as reachable and only reclaims them after permanent purge and after recovery snapshots no longer reference them.
+- Noi ♡ keeps explicit collaborative delete/leave semantics and its existing tombstone/media cleanup pipeline.
