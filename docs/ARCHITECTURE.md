@@ -1,6 +1,6 @@
 # Agenda per Anna — Architecture
 
-## Current structure — v0.51.0
+## Current structure — v0.52.0
 
 Anna's Diary keeps `lib/main.dart` as the compatibility library boundary, but large responsibilities are now split by runtime domain:
 
@@ -312,3 +312,13 @@ The lifecycle layer remains a thin extension over AgendaStore and the existing a
 - The same Development workflow still executes its ARM64 release gate on `main` pushes and manual dispatch, preserving post-merge/native packaging coverage.
 - Android size audit path filters include `dev-checks.yml` and `applab.yml`, so changes to either Android-validation contract automatically trigger the production-equivalent audit.
 - AppLab remains isolated, pinned and mandatory on pull requests; no emulator/runtime coverage was removed by this throughput optimization.
+
+
+## v0.52.0 — Personal Templates
+
+- `src/template_domain.dart` defines `PersonalTemplate`, day agenda blueprints and apply semantics; templates are first-class private entities stored under `templates_v1` and synced as `entity_type=template`.
+- Template scope is deliberately personal: day templates clone private agenda structure, week templates copy only focus/priorities, month templates copy only opening/planning fields. Diary content, habit completion, expenses and closing reflections remain source-of-truth data and are excluded.
+- `AgendaStore` integrates templates into account profiles, entity deltas, full/incremental cloud reconciliation, backup restore rollback and working-set isolation.
+- Template deletion uses the universal Trash contract; restore is conflict-safe and permanent purge has no cross-entity cascade because applying a template creates independent target data.
+- `src/screens/templates_screen.dart` owns create/apply UX, including append confirmation for populated days and fill-empty vs replace-planning choices for populated week/month targets.
+- AppLab adds a `templates` visual checkpoint while the Android smoke test verifies Home navigation into the new surface.
