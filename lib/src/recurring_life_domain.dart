@@ -129,7 +129,7 @@ extension RecurringLifeAgendaStore on AgendaStore {
         break;
       }
     }
-    current ??= edited;
+    final selected = current ?? edited;
 
     if (scope == RecurringEditScope.single) {
       await upsert(edited.copyWith(clearRecurrence: true));
@@ -140,17 +140,17 @@ extension RecurringLifeAgendaStore on AgendaStore {
         ? series
         : series
             .where(
-              (entry) => entry.recurrenceIndex >= current!.recurrenceIndex,
+              (entry) => entry.recurrenceIndex >= selected.recurrenceIndex,
             )
             .toList();
 
     final baseIndex = scope == RecurringEditScope.wholeSeries
         ? series.first.recurrenceIndex
-        : current.recurrenceIndex;
+        : selected.recurrenceIndex;
     final baseDate = scope == RecurringEditScope.wholeSeries
         ? addCivilDays(
             series.first.date,
-            edited.date.difference(current.date).inDays,
+            edited.date.difference(selected.date).inDays,
           )
         : edited.date;
 
