@@ -134,7 +134,7 @@ void main() {
         note: '',
         date: DateTime(2026, 10, 1),
         type: ItemType.appointment,
-        start: TimeOfDay(hour: 18, minute: 0),
+        start: const TimeOfDay(hour: 18, minute: 0),
       ),
       rule: RecurrenceRule.weekly,
       count: 4,
