@@ -483,6 +483,117 @@ extension SearchConnectionsAgendaStore on AgendaStore {
   }
 }
 
+Future<List<String>?> showDiaryConnectionsPicker(
+  BuildContext context,
+  AgendaStore store, {
+  required DiaryBlock source,
+}) async {
+  final candidates = store
+      .allDiaryBlockReferences()
+      .where((reference) => reference.block.id != source.id)
+      .toList();
+  final selected = source.relatedBlockIds
+      .where(
+        (id) => candidates.any((reference) => reference.block.id == id),
+      )
+      .toSet();
+
+  return showModalBottomSheet<List<String>>(
+    context: context,
+    isScrollControlled: true,
+    showDragHandle: true,
+    builder: (sheetContext) => StatefulBuilder(
+      builder: (context, setSheetState) => SafeArea(
+        child: SizedBox(
+          height: MediaQuery.sizeOf(context).height * 0.72,
+          child: Column(
+            children: [
+              ListTile(
+                title: const Text(
+                  'Collega ricordi',
+                  style: TextStyle(fontWeight: FontWeight.w900, fontSize: 20),
+                ),
+                subtitle: Text(
+                  candidates.isEmpty
+                      ? 'Non ci sono ancora altri ricordi da collegare.'
+                      : 'Seleziona fino a 12 ricordi. I collegamenti inversi vengono mostrati automaticamente.',
+                ),
+              ),
+              Expanded(
+                child: candidates.isEmpty
+                    ? const Center(child: Text('Nessun altro ricordo.'))
+                    : ListView.builder(
+                        padding: const EdgeInsets.symmetric(horizontal: 12),
+                        itemCount: candidates.length,
+                        itemBuilder: (context, index) {
+                          final reference = candidates[index];
+                          final block = reference.block;
+                          final checked = selected.contains(block.id);
+                          final disabled = !checked && selected.length >= 12;
+                          return CheckboxListTile(
+                            value: checked,
+                            onChanged: disabled
+                                ? null
+                                : (value) => setSheetState(() {
+                                      if (value == true) {
+                                        selected.add(block.id);
+                                      } else {
+                                        selected.remove(block.id);
+                                      }
+                                    }),
+                            secondary: Icon(
+                              switch (block.type) {
+                                DiaryBlockType.note =>
+                                  Icons.sticky_note_2_outlined,
+                                DiaryBlockType.photo => Icons.photo_outlined,
+                                DiaryBlockType.sketch => Icons.draw_outlined,
+                                DiaryBlockType.voice => Icons.mic_none_outlined,
+                              },
+                            ),
+                            title: Text(
+                              store.diaryBlockDisplayTitle(block),
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            subtitle: Text(
+                              DateFormat('d MMMM yyyy', 'it_IT')
+                                  .format(reference.date),
+                            ),
+                          );
+                        },
+                      ),
+              ),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton(
+                        onPressed: () => Navigator.pop(sheetContext),
+                        child: const Text('Annulla'),
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: FilledButton(
+                        onPressed: () => Navigator.pop(
+                          sheetContext,
+                          selected.toList(growable: false),
+                        ),
+                        child: Text('Salva (${selected.length})'),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    ),
+  );
+}
+
 class PersonalSearchConnectionsScreen extends StatefulWidget {
   final AgendaStore store;
 
