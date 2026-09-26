@@ -19,6 +19,22 @@
     {
       "name": "people",
       "flow": ".maestro/journey/people.yaml"
+    },
+    {
+      "name": "home",
+      "flow": ".maestro/journey/home.yaml"
+    },
+    {
+      "name": "shared",
+      "flow": ".maestro/journey/shared.yaml"
+    },
+    {
+      "name": "account",
+      "flow": ".maestro/journey/account.yaml"
+    },
+    {
+      "name": "trash",
+      "flow": ".maestro/journey/trash.yaml"
     }
   ]
 }

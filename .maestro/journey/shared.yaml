@@ -1,0 +1,7 @@
+appId: com.riccardopinato.agenda_per_anna
+---
+- tapOn:
+    text: "Noi ♡"
+- extendedWaitUntil:
+    visible: "Noi ♡"
+    timeout: 10000

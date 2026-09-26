@@ -1,0 +1,11 @@
+appId: com.riccardopinato.agenda_per_anna
+---
+- back
+- extendedWaitUntil:
+    visible: "La mia agenda"
+    timeout: 10000
+- tapOn:
+    text: "Cloud"
+- extendedWaitUntil:
+    visible: "Account e sincronizzazione"
+    timeout: 10000

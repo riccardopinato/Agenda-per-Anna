@@ -312,3 +312,11 @@ The lifecycle layer remains a thin extension over AgendaStore and the existing a
 - The same Development workflow still executes its ARM64 release gate on `main` pushes and manual dispatch, preserving post-merge/native packaging coverage.
 - Android size audit path filters include `dev-checks.yml` and `applab.yml`, so changes to either Android-validation contract automatically trigger the production-equivalent audit.
 - AppLab remains isolated, pinned and mandatory on pull requests; no emulator/runtime coverage was removed by this throughput optimization.
+
+
+## v0.52.0 — AppLab Critical Journey Expansion
+
+- The AppLab visual journey now covers nine production surfaces: Calendar, Week, Today, Memories, People, Home, Noi ♡, Account and Trash.
+- Checkpoints are intentionally sequenced so each flow inherits a known navigation state from the previous one, preventing accidental app exit or hidden bottom-navigation assumptions.
+- The new checkpoints validate user-visible destinations rather than internal execution only, matching the project acceptance-test rule.
+- AppLab remains the isolated trusted runtime gate; no product persistence or backend model changes are introduced by this release.
