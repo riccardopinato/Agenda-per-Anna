@@ -476,7 +476,7 @@ class HabitDefinition {
       );
 }
 
-enum DiaryBlockType { note, sketch, photo }
+enum DiaryBlockType { note, sketch, photo, voice }
 
 enum DiarySketchTool {
   pen,
@@ -767,8 +767,11 @@ class DiaryBlock {
   // imageBase64 is retained only as a legacy/portable transport field.
   // New local photos live in MediaAssetStore and persist only these IDs.
   final String imageBase64;
+  final String audioBase64;
   final String mediaAssetId;
   final String mediaThumbnailAssetId;
+  final int audioDurationMs;
+  final String audioMimeType;
   final List<DiarySketchPage> pages;
   final List<String> personIds;
 
@@ -778,20 +781,31 @@ class DiaryBlock {
     required this.createdAt,
     this.text = '',
     this.imageBase64 = '',
+    this.audioBase64 = '',
     this.mediaAssetId = '',
     this.mediaThumbnailAssetId = '',
+    this.audioDurationMs = 0,
+    this.audioMimeType = 'audio/mp4',
     this.pages = const [],
     this.personIds = const [],
   });
 
   bool get hasPhotoMedia =>
-      mediaAssetId.isNotEmpty || imageBase64.isNotEmpty;
+      type == DiaryBlockType.photo &&
+      (mediaAssetId.isNotEmpty || imageBase64.isNotEmpty);
+
+  bool get hasVoiceMedia =>
+      type == DiaryBlockType.voice &&
+      (mediaAssetId.isNotEmpty || audioBase64.isNotEmpty);
 
   DiaryBlock copyWith({
     String? text,
     String? imageBase64,
+    String? audioBase64,
     String? mediaAssetId,
     String? mediaThumbnailAssetId,
+    int? audioDurationMs,
+    String? audioMimeType,
     List<DiarySketchPage>? pages,
     List<String>? personIds,
   }) =>
@@ -801,9 +815,12 @@ class DiaryBlock {
         createdAt: createdAt,
         text: text ?? this.text,
         imageBase64: imageBase64 ?? this.imageBase64,
+        audioBase64: audioBase64 ?? this.audioBase64,
         mediaAssetId: mediaAssetId ?? this.mediaAssetId,
         mediaThumbnailAssetId:
             mediaThumbnailAssetId ?? this.mediaThumbnailAssetId,
+        audioDurationMs: audioDurationMs ?? this.audioDurationMs,
+        audioMimeType: audioMimeType ?? this.audioMimeType,
         pages: pages ?? this.pages,
         personIds: personIds ?? this.personIds,
       );
@@ -814,8 +831,11 @@ class DiaryBlock {
         'createdAt': createdAt.toUtc().toIso8601String(),
         'text': text,
         'imageBase64': imageBase64,
+        'audioBase64': audioBase64,
         'mediaAssetId': mediaAssetId,
         'mediaThumbnailAssetId': mediaThumbnailAssetId,
+        'audioDurationMs': audioDurationMs,
+        'audioMimeType': audioMimeType,
         'pages': pages.map((page) => page.toJson()).toList(),
         'personIds': personIds,
       };
@@ -823,6 +843,7 @@ class DiaryBlock {
   Map<String, dynamic> toLocalJson() => {
         ...toJson(),
         if (mediaAssetId.isNotEmpty) 'imageBase64': '',
+        if (mediaAssetId.isNotEmpty) 'audioBase64': '',
         'pages': pages.map((page) => page.toLocalJson()).toList(),
       };
 
@@ -837,9 +858,12 @@ class DiaryBlock {
                 DateTime.now(),
         text: json['text'] as String? ?? '',
         imageBase64: json['imageBase64'] as String? ?? '',
+        audioBase64: json['audioBase64'] as String? ?? '',
         mediaAssetId: json['mediaAssetId'] as String? ?? '',
         mediaThumbnailAssetId:
             json['mediaThumbnailAssetId'] as String? ?? '',
+        audioDurationMs: (json['audioDurationMs'] as num? ?? 0).toInt(),
+        audioMimeType: json['audioMimeType'] as String? ?? 'audio/mp4',
         pages: (json['pages'] as List? ?? const [])
             .whereType<Map>()
             .map(
