@@ -171,6 +171,7 @@ class _PeopleScreenState extends State<PeopleScreen> {
         TextEditingController(text: existing?.relationship ?? '');
     final noteController = TextEditingController(text: existing?.note ?? '');
     String? birthdayId = existing?.birthdayId;
+    DateTime? anniversaryDate = existing?.anniversaryDate;
     var favorite = existing?.favorite ?? false;
     final birthdays = [...widget.store.birthdays]
       ..sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
@@ -266,6 +267,37 @@ class _PeopleScreenState extends State<PeopleScreen> {
                       ),
                     ),
                   ],
+                  const SizedBox(height: 8),
+                  ListTile(
+                    contentPadding: EdgeInsets.zero,
+                    leading: const Icon(Icons.favorite_outline),
+                    title: const Text('Anniversario / data importante'),
+                    subtitle: Text(
+                      anniversaryDate == null
+                          ? 'Nessuna data'
+                          : DateFormat('d MMMM yyyy', 'it_IT')
+                              .format(anniversaryDate!),
+                    ),
+                    trailing: anniversaryDate == null
+                        ? null
+                        : IconButton(
+                            tooltip: 'Rimuovi data',
+                            onPressed: () =>
+                                setDialogState(() => anniversaryDate = null),
+                            icon: const Icon(Icons.close),
+                          ),
+                    onTap: () async {
+                      final picked = await showDatePicker(
+                        context: context,
+                        initialDate: anniversaryDate ?? DateTime.now(),
+                        firstDate: DateTime(1900),
+                        lastDate: DateTime(2100),
+                      );
+                      if (picked != null) {
+                        setDialogState(() => anniversaryDate = picked);
+                      }
+                    },
+                  ),
                   const SizedBox(height: 12),
                   TextField(
                     controller: noteController,
@@ -311,6 +343,7 @@ class _PeopleScreenState extends State<PeopleScreen> {
                     relationship: relationshipController.text.trim(),
                     note: noteController.text.trim(),
                     birthdayId: birthdayId,
+                    anniversaryDate: anniversaryDate,
                     favorite: favorite,
                   ),
                 );
@@ -368,15 +401,200 @@ class _PeopleScreenState extends State<PeopleScreen> {
     );
   }
 
+
+  Future<void> _openRelationshipOverview(PersonEntry person) async {
+    final snapshot = widget.store.relationshipSnapshot(person);
+    final anniversary = person.anniversaryDate;
+    final firstMemory = snapshot.firstMemoryDate;
+    final lastMemory = snapshot.lastMemoryDate;
+
+    await showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      showDragHandle: true,
+      builder: (sheetContext) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
+          child: SingleChildScrollView(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    CircleAvatar(
+                      child: Icon(
+                        person.favorite ? Icons.star : Icons.person_outline,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            person.name,
+                            style: Theme.of(context)
+                                .textTheme
+                                .titleLarge
+                                ?.copyWith(fontWeight: FontWeight.w900),
+                          ),
+                          if (person.relationship.trim().isNotEmpty)
+                            Text(person.relationship.trim()),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 18),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: [
+                    Chip(
+                      avatar: const Icon(Icons.auto_stories_outlined, size: 18),
+                      label: Text(
+                        '${snapshot.memoryCount} '
+                        '${snapshot.memoryCount == 1 ? 'ricordo' : 'ricordi'}',
+                      ),
+                    ),
+                    if (snapshot.birthday != null)
+                      Chip(
+                        avatar: const Icon(Icons.cake_outlined, size: 18),
+                        label: Text(
+                          DateFormat('d MMMM', 'it_IT').format(
+                            DateTime(
+                              2000,
+                              snapshot.birthday!.month,
+                              snapshot.birthday!.day,
+                            ),
+                          ),
+                        ),
+                      ),
+                    if (anniversary != null)
+                      Chip(
+                        avatar:
+                            const Icon(Icons.favorite_outline, size: 18),
+                        label: Text(
+                          'Dal ${DateFormat('d MMM yyyy', 'it_IT').format(anniversary)}',
+                        ),
+                      ),
+                  ],
+                ),
+                if (snapshot.nextAnniversary != null) ...[
+                  const SizedBox(height: 16),
+                  ListTile(
+                    contentPadding: EdgeInsets.zero,
+                    leading: const Icon(Icons.event_repeat_outlined),
+                    title: const Text('Prossimo anniversario'),
+                    subtitle: Text(
+                      DateFormat('EEEE d MMMM yyyy', 'it_IT')
+                          .format(snapshot.nextAnniversary!),
+                    ),
+                  ),
+                ],
+                if (firstMemory != null || lastMemory != null) ...[
+                  const Divider(height: 28),
+                  Text(
+                    'La vostra timeline',
+                    style: Theme.of(context)
+                        .textTheme
+                        .titleMedium
+                        ?.copyWith(fontWeight: FontWeight.w900),
+                  ),
+                  const SizedBox(height: 8),
+                  if (firstMemory != null)
+                    ListTile(
+                      contentPadding: EdgeInsets.zero,
+                      leading: const Icon(Icons.first_page_outlined),
+                      title: const Text('Primo ricordo collegato'),
+                      subtitle: Text(
+                        DateFormat('d MMMM yyyy', 'it_IT').format(firstMemory),
+                      ),
+                    ),
+                  if (lastMemory != null)
+                    ListTile(
+                      contentPadding: EdgeInsets.zero,
+                      leading: const Icon(Icons.history_outlined),
+                      title: const Text('Ricordo più recente'),
+                      subtitle: Text(
+                        DateFormat('d MMMM yyyy', 'it_IT').format(lastMemory),
+                      ),
+                    ),
+                ],
+                if (snapshot.onThisDay.isNotEmpty) ...[
+                  const Divider(height: 28),
+                  Text(
+                    'In questo giorno',
+                    style: Theme.of(context)
+                        .textTheme
+                        .titleMedium
+                        ?.copyWith(fontWeight: FontWeight.w900),
+                  ),
+                  const SizedBox(height: 8),
+                  ...snapshot.onThisDay.take(3).map(
+                        (memory) => ListTile(
+                          contentPadding: EdgeInsets.zero,
+                          leading: const Icon(Icons.history_toggle_off),
+                          title: Text(
+                            memory.block.text.trim().isEmpty
+                                ? 'Ricordo del diario'
+                                : memory.block.text.trim(),
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          subtitle: Text(
+                            DateFormat('d MMMM yyyy', 'it_IT')
+                                .format(memory.date),
+                          ),
+                        ),
+                      ),
+                ],
+                const SizedBox(height: 18),
+                Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton.icon(
+                        onPressed: () {
+                          Navigator.pop(sheetContext);
+                          _edit(person);
+                        },
+                        icon: const Icon(Icons.edit_outlined),
+                        label: const Text('Modifica'),
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: FilledButton.icon(
+                        onPressed: () {
+                          Navigator.pop(sheetContext);
+                          _openMemories(person);
+                        },
+                        icon: const Icon(Icons.auto_stories_outlined),
+                        label: const Text('Ricordi'),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
   Widget _personCard(PersonEntry person) {
     final birthday = widget.store.birthdayForPerson(person);
     final memoryCount = widget.store.personMemoryCount(person.id);
     final lastMemory = widget.store.lastMemoryDateForPerson(person.id);
+    final anniversary = person.anniversaryDate;
 
     final details = <String>[
       if (person.relationship.trim().isNotEmpty) person.relationship.trim(),
       if (birthday != null)
         'Compleanno: ${DateFormat('d MMMM', 'it_IT').format(DateTime(2000, birthday.month, birthday.day))}',
+      if (anniversary != null)
+        'Anniversario: ${DateFormat('d MMMM', 'it_IT').format(anniversary)}',
       '$memoryCount ${memoryCount == 1 ? 'ricordo' : 'ricordi'} collegati',
       if (lastMemory != null)
         'Ultimo: ${DateFormat('d MMM yyyy', 'it_IT').format(lastMemory)}',
@@ -404,7 +622,7 @@ class _PeopleScreenState extends State<PeopleScreen> {
           ],
         ),
         isThreeLine: person.note.trim().isNotEmpty,
-        onTap: () => _edit(person),
+        onTap: () => _openRelationshipOverview(person),
         trailing: PopupMenuButton<String>(
           onSelected: (value) {
             if (value == 'memories') _openMemories(person);
