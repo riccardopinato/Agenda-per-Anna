@@ -145,6 +145,7 @@ Per the active development cadence, AppLab runs once every two feature versions.
 - Existing persistence, sync, backup/restore, lifecycle, notifications and media infrastructure is reused without a parallel subsystem.
 - Material controls retain accessible padded touch targets and standard visual density.
 - Keyboard/accessibility focus follows reading order at the application-shell boundary.
+- Installed Web/PWA clients actively check for a newer service worker and cannot indefinitely retain a stale HTML shell; Web Push subscriptions survive the update path.
 - Release metadata is aligned to v0.62.0.
 - Full regression coverage remains green.
 - Web release validation remains green.
