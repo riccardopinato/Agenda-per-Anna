@@ -2,7 +2,7 @@
 
 Flutter app for personal planning, private diary and the shared **Noi ♡** space.
 
-Current release line: **v0.61.0**.
+Current release line: **v0.62.0**.
 
 ## Core areas
 
@@ -335,3 +335,14 @@ See `docs/ARCHITECTURE.md` and `supabase/README.md` for implementation details.
 - ZIP verification continues to reuse the existing manifest, SHA-256, declared-size, schema and media-index validation instead of adding a second backup format.
 - The Backup & Data screen now exposes the integrity audit and a compact health report.
 - No AI features are introduced.
+
+
+## v0.62.0 — Non-AI Production Consolidation
+
+- Final consolidation checkpoint for the current non-AI roadmap; no generative-AI dependency or product feature is introduced.
+- Existing agenda, diary, Noi ♡, lifecycle, backup, sync, notification and media engines remain the implementation source of truth.
+- Material interaction defaults explicitly preserve padded touch targets and standard visual density across themes.
+- The application shell now uses reading-order focus traversal for predictable keyboard and accessibility navigation.
+- Dedicated regression coverage locks the non-AI dependency boundary, release metadata and the required Development, Web, Android size-audit and AppLab contracts.
+- Production readiness requirements are documented in `docs/PRODUCTION_READINESS_V062.md`.
+- v0.62 can merge only after Development checks, Web, Android size audit and AppLab Trusted Verify are all green.
