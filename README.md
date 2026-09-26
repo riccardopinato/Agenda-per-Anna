@@ -2,7 +2,7 @@
 
 Flutter app for personal planning, private diary and the shared **Noi ♡** space.
 
-Current release line: **v0.62.1**.
+Current release line: **v0.63.0**.
 
 ## Core areas
 
@@ -356,3 +356,15 @@ See `docs/ARCHITECTURE.md` and `supabase/README.md` for implementation details.
 - Existing saved names remain unchanged and continue to sync/restore normally.
 - Home falls back to neutral copy until a name is provided, avoiding empty personalized titles or greetings.
 - No AI features or new persistence subsystem are introduced.
+
+
+## v0.63.0 — Creative & Reminder Upgrade
+
+- Sketchbook Creative Palette 2.0 expands the existing drawing palette from 6 to 16 curated colors without changing the saved sketch format.
+- The palette is horizontally scrollable and keeps accessible labels/selection state while preserving the existing pen, highlighter, text and stroke-width tools.
+- Android agenda reminders now expose quick actions: **Fatto**, **10 min**, **1 ora** and **Apri**.
+- Snooze actions run through the existing local-notification engine without opening the UI and reschedule the same stable reminder identity instead of creating a second reminder subsystem.
+- **Fatto** uses the existing AgendaStore completion path when the app is surfaced, so persistence, recurring reminder cancellation, sync and UI invalidation remain consistent.
+- Quick actions are scoped to ordinary agenda reminders; birthday reminders keep their existing behavior.
+- Android platform generation now registers the flutter_local_notifications action receiver deterministically.
+- No AI dependency, new database or parallel reminder storage is introduced.
