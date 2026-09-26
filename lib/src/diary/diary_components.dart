@@ -433,6 +433,81 @@ Future<String?> showDiaryCaptionEditor(
   return value;
 }
 
+Future<List<String>?> showOrganizationTagsEditor(
+  BuildContext context, {
+  required List<String> initialTags,
+  List<String> suggestions = const [],
+}) async {
+  final controller = TextEditingController(text: initialTags.join(', '));
+  final value = await showDialog<List<String>>(
+    context: context,
+    builder: (dialogContext) => AlertDialog(
+      title: const Text('Tag'),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          TextField(
+            controller: controller,
+            autofocus: true,
+            decoration: const InputDecoration(
+              labelText: 'Tag separati da virgola',
+              hintText: 'es. viaggio, famiglia, idee',
+              border: OutlineInputBorder(),
+            ),
+          ),
+          if (suggestions.isNotEmpty) ...[
+            const SizedBox(height: 12),
+            Text(
+              'Già usati',
+              style: Theme.of(context).textTheme.labelLarge,
+            ),
+            const SizedBox(height: 6),
+            Wrap(
+              spacing: 6,
+              runSpacing: 6,
+              children: suggestions.take(10).map((tag) {
+                return ActionChip(
+                  label: Text(tag),
+                  onPressed: () {
+                    final current = normalizeOrganizationTags(
+                      controller.text.split(','),
+                    );
+                    if (!current.any(
+                      (value) => value.toLowerCase() == tag.toLowerCase(),
+                    )) {
+                      current.add(tag);
+                      controller.text = current.join(', ');
+                      controller.selection = TextSelection.collapsed(
+                        offset: controller.text.length,
+                      );
+                    }
+                  },
+                );
+              }).toList(),
+            ),
+          ],
+        ],
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(dialogContext),
+          child: const Text('Annulla'),
+        ),
+        FilledButton(
+          onPressed: () => Navigator.pop(
+            dialogContext,
+            normalizeOrganizationTags(controller.text.split(',')),
+          ),
+          child: const Text('Salva'),
+        ),
+      ],
+    ),
+  );
+  controller.dispose();
+  return value;
+}
+
 Future<bool> confirmDiaryContentDelete(
   BuildContext context, {
   bool movesToTrash = false,
@@ -599,9 +674,14 @@ class DiaryContentCard extends StatelessWidget {
   final VoidCallback? onEditCaption;
   final VoidCallback? onReplacePhoto;
   final VoidCallback? onPeople;
+  final VoidCallback? onPin;
+  final VoidCallback? onArchive;
+  final VoidCallback? onTags;
   final VoidCallback onDelete;
   final Widget? footer;
   final Widget? statusIcon;
+  final bool pinned;
+  final bool archived;
 
   const DiaryContentCard({
     super.key,
@@ -615,8 +695,13 @@ class DiaryContentCard extends StatelessWidget {
     this.onEditCaption,
     this.onReplacePhoto,
     this.onPeople,
+    this.onPin,
+    this.onArchive,
+    this.onTags,
     this.footer,
     this.statusIcon,
+    this.pinned = false,
+    this.archived = false,
   });
 
   @override
@@ -661,6 +746,9 @@ class DiaryContentCard extends StatelessWidget {
                     if (value == 'edit') onEdit?.call();
                     if (value == 'caption') onEditCaption?.call();
                     if (value == 'replace') onReplacePhoto?.call();
+                    if (value == 'pin') onPin?.call();
+                    if (value == 'archive') onArchive?.call();
+                    if (value == 'tags') onTags?.call();
                     if (value == 'people') onPeople?.call();
                     if (value == 'delete') onDelete();
                   },
@@ -681,6 +769,21 @@ class DiaryContentCard extends StatelessWidget {
                       const PopupMenuItem(
                         value: 'replace',
                         child: Text('Sostituisci foto'),
+                      ),
+                    if (onPin != null)
+                      PopupMenuItem(
+                        value: 'pin',
+                        child: Text(pinned ? 'Togli dai fissati' : 'Fissa'),
+                      ),
+                    if (onTags != null)
+                      const PopupMenuItem(
+                        value: 'tags',
+                        child: Text('Tag'),
+                      ),
+                    if (onArchive != null)
+                      PopupMenuItem(
+                        value: 'archive',
+                        child: Text(archived ? 'Ripristina da archivio' : 'Archivia'),
                       ),
                     if (onPeople != null)
                       const PopupMenuItem(
@@ -854,8 +957,15 @@ class _DiaryMemoryCardState extends State<DiaryMemoryCard> {
   bool voiceBusy = false;
 
   List<DiaryBlock> get _blocks {
-    final result = [...widget.store.journal(widget.date).blocks];
-    result.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+    final result = widget.store
+        .journal(widget.date)
+        .blocks
+        .where((block) => !block.archived)
+        .toList();
+    result.sort((a, b) {
+      if (a.pinned != b.pinned) return a.pinned ? -1 : 1;
+      return b.createdAt.compareTo(a.createdAt);
+    });
     return result;
   }
 
@@ -1105,27 +1215,50 @@ class _DiaryMemoryCardState extends State<DiaryMemoryCard> {
 
   Widget? _peopleFooter(DiaryBlock block) {
     final linked = widget.store.peopleForIds(block.personIds);
-    if (linked.isEmpty) return null;
+    if (linked.isEmpty && block.tags.isEmpty) return null;
     return Padding(
       padding: const EdgeInsets.fromLTRB(12, 8, 12, 10),
       child: Wrap(
         spacing: 6,
         runSpacing: 6,
-        children: linked
-            .map(
-              (person) => Chip(
-                visualDensity: VisualDensity.compact,
-                avatar: Icon(
-                  person.favorite ? Icons.star : Icons.person_outline,
-                  size: 16,
-                ),
-                label: Text(person.name),
+        children: [
+          ...block.tags.map(
+            (tag) => Chip(
+              visualDensity: VisualDensity.compact,
+              avatar: const Icon(Icons.tag, size: 15),
+              label: Text(tag),
+            ),
+          ),
+          ...linked.map(
+            (person) => Chip(
+              visualDensity: VisualDensity.compact,
+              avatar: Icon(
+                person.favorite ? Icons.star : Icons.person_outline,
+                size: 16,
               ),
-            )
-            .toList(),
+              label: Text(person.name),
+            ),
+          ),
+        ],
       ),
     );
   }
+
+  Future<void> _editTags(DiaryBlock block) async {
+    final tags = await showOrganizationTagsEditor(
+      context,
+      initialTags: block.tags,
+      suggestions: widget.store.organizationTags,
+    );
+    if (tags == null) return;
+    await widget.store.setDiaryTags(widget.date, block.id, tags);
+  }
+
+  Future<void> _togglePinned(DiaryBlock block) =>
+      widget.store.toggleDiaryPinned(widget.date, block.id);
+
+  Future<void> _toggleArchived(DiaryBlock block) =>
+      widget.store.toggleDiaryArchived(widget.date, block.id);
 
   Future<void> _delete(DiaryBlock block) async {
     final confirmed = await confirmDiaryContentDelete(
@@ -1163,6 +1296,11 @@ class _DiaryMemoryCardState extends State<DiaryMemoryCard> {
           onOpen: () => _addNote(block),
           onEdit: () => _addNote(block),
           onPeople: () => _editPeople(block),
+          onPin: () => _togglePinned(block),
+          onArchive: () => _toggleArchived(block),
+          onTags: () => _editTags(block),
+          pinned: block.pinned,
+          archived: block.archived,
           footer: _peopleFooter(block),
           onDelete: () => _delete(block),
         );
@@ -1187,6 +1325,11 @@ class _DiaryMemoryCardState extends State<DiaryMemoryCard> {
           onEditCaption: () => _editPhotoCaption(block),
           onReplacePhoto: () => _replacePhoto(block),
           onPeople: () => _editPeople(block),
+          onPin: () => _togglePinned(block),
+          onArchive: () => _toggleArchived(block),
+          onTags: () => _editTags(block),
+          pinned: block.pinned,
+          archived: block.archived,
           footer: _peopleFooter(block),
           onDelete: () => _delete(block),
         );
@@ -1204,6 +1347,11 @@ class _DiaryMemoryCardState extends State<DiaryMemoryCard> {
           onOpen: () => _openSketch(block),
           onEdit: () => _openSketch(block),
           onPeople: () => _editPeople(block),
+          onPin: () => _togglePinned(block),
+          onArchive: () => _toggleArchived(block),
+          onTags: () => _editTags(block),
+          pinned: block.pinned,
+          archived: block.archived,
           footer: _peopleFooter(block),
           onDelete: () => _delete(block),
         );
