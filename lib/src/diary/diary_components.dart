@@ -566,6 +566,7 @@ class DiaryComposerSection extends StatelessWidget {
   final VoidCallback onAddSketch;
   final VoidCallback onAddPhoto;
   final VoidCallback? onAddVoice;
+  final VoidCallback? onTemplates;
   final bool photoBusy;
   final bool voiceBusy;
   final List<Widget> children;
@@ -581,6 +582,7 @@ class DiaryComposerSection extends StatelessWidget {
     required this.onAddSketch,
     required this.onAddPhoto,
     this.onAddVoice,
+    this.onTemplates,
     required this.photoBusy,
     this.voiceBusy = false,
     required this.children,
@@ -653,6 +655,12 @@ class DiaryComposerSection extends StatelessWidget {
                     : const Icon(Icons.add_photo_alternate_outlined),
                 label: const Text('Foto'),
               ),
+              if (onTemplates != null)
+                FilledButton.tonalIcon(
+                  onPressed: onTemplates,
+                  icon: const Icon(Icons.library_books_outlined),
+                  label: const Text('Modelli'),
+                ),
             ],
           ),
           if (children.isEmpty) ...[
@@ -978,6 +986,25 @@ class _DiaryMemoryCardState extends State<DiaryMemoryCard> {
     await widget.store.saveJournal(
       widget.date,
       current.copyWith(blocks: blocks),
+    );
+  }
+
+  Future<void> _applyTemplate() async {
+    final preset = await showDiaryTemplatePicker(context);
+    if (preset == null || !mounted) return;
+    final block = await widget.store.applyDiaryTemplate(
+      widget.date,
+      preset,
+    );
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Modello “${preset.title}” aggiunto al diario.'),
+        action: SnackBarAction(
+          label: 'Modifica',
+          onPressed: () => _addNote(block),
+        ),
+      ),
     );
   }
 
@@ -1398,6 +1425,7 @@ class _DiaryMemoryCardState extends State<DiaryMemoryCard> {
       onAddSketch: () => _openSketch(),
       onAddPhoto: _addPhoto,
       onAddVoice: _addVoice,
+      onTemplates: _applyTemplate,
       photoBusy: photoBusy,
       voiceBusy: voiceBusy,
       children: blocks
