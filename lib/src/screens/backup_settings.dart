@@ -1066,7 +1066,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final value = nameController.text.trim();
     await widget.store.savePreferences(
       widget.store.preferences.copyWith(
-        displayName: value.isEmpty ? 'Anna' : value,
+        displayName: value,
       ),
     );
     if (!mounted) return;
@@ -1221,7 +1221,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       textCapitalization: TextCapitalization.words,
                       decoration: const InputDecoration(
                         labelText: 'Nome',
-                        prefixIcon: Icon(Icons.favorite_outline),
+                        hintText: 'Inserisci il tuo nome',
                       ),
                       onSubmitted: (_) => _saveName(),
                     ),
