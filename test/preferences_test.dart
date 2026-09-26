@@ -10,6 +10,14 @@ void main() {
     SharedPreferences.setMockInitialValues({});
   });
 
+  test('new profiles start without a prefilled personal name', () {
+    const defaults = AgendaPreferences();
+    final legacyMissingName = AgendaPreferences.fromJson(const {});
+
+    expect(defaults.displayName, isEmpty);
+    expect(legacyMissingName.displayName, isEmpty);
+  });
+
   test('preferences round-trip preserves personalization', () {
     const prefs = AgendaPreferences(
       displayName: 'Anna',
