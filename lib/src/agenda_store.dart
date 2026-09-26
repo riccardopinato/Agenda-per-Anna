@@ -776,6 +776,21 @@ class AgendaStore extends ChangeNotifier {
           }
         }
 
+        if (block.type == DiaryBlockType.voice &&
+            block.audioBase64.isNotEmpty) {
+          try {
+            final bytes = base64Decode(block.audioBase64);
+            final assetId = await MediaAssetStore.instance.put(bytes);
+            next = next.copyWith(
+              audioBase64: '',
+              mediaAssetId: assetId,
+            );
+            blockChanged = true;
+          } catch (_) {
+            // Preserve unreadable inline voice data instead of destroying it.
+          }
+        }
+
         if (next.pages.isNotEmpty) {
           final localized = await _localizeSketchPages(next.pages);
           if (localized.changed) {
@@ -823,6 +838,19 @@ class AgendaStore extends ChangeNotifier {
               await MediaAssetStore.instance.read(block.mediaAssetId);
           if (bytes != null) {
             blockJson['imageBase64'] = base64Encode(bytes);
+          }
+        }
+        blockJson.remove('mediaAssetId');
+        blockJson.remove('mediaThumbnailAssetId');
+      }
+
+      if (block.type == DiaryBlockType.voice) {
+        if ((blockJson['audioBase64']?.toString().isEmpty ?? true) &&
+            block.mediaAssetId.isNotEmpty) {
+          final bytes =
+              await MediaAssetStore.instance.read(block.mediaAssetId);
+          if (bytes != null) {
+            blockJson['audioBase64'] = base64Encode(bytes);
           }
         }
         blockJson.remove('mediaAssetId');
