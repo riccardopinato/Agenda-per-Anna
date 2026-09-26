@@ -178,7 +178,7 @@ class AgendaPreferences {
 
 enum ItemType { appointment, task }
 
-enum RecurrenceRule { none, daily, weekly, monthly }
+enum RecurrenceRule { none, daily, weekly, monthly, yearly }
 
 extension RecurrenceRuleUi on RecurrenceRule {
   String get label => switch (this) {
@@ -186,6 +186,7 @@ extension RecurrenceRuleUi on RecurrenceRule {
         RecurrenceRule.daily => 'Ogni giorno',
         RecurrenceRule.weekly => 'Ogni settimana',
         RecurrenceRule.monthly => 'Ogni mese',
+        RecurrenceRule.yearly => 'Ogni anno',
       };
 
   IconData get icon => switch (this) {
@@ -193,6 +194,7 @@ extension RecurrenceRuleUi on RecurrenceRule {
         RecurrenceRule.daily => Icons.today_outlined,
         RecurrenceRule.weekly => Icons.view_week_outlined,
         RecurrenceRule.monthly => Icons.calendar_month_outlined,
+        RecurrenceRule.yearly => Icons.event_repeat_outlined,
       };
 }
 
@@ -251,6 +253,10 @@ class AgendaItem {
   final int? secondaryReminderMinutesBefore;
   final bool done;
   final bool pinned;
+  final RecurrenceRule recurrenceRule;
+  final String? recurrenceSeriesId;
+  final int recurrenceIndex;
+  final int recurrenceCount;
 
   const AgendaItem({
     required this.id,
@@ -265,7 +271,16 @@ class AgendaItem {
     this.end,
     this.done = false,
     this.pinned = false,
+    this.recurrenceRule = RecurrenceRule.none,
+    this.recurrenceSeriesId,
+    this.recurrenceIndex = 0,
+    this.recurrenceCount = 1,
   });
+
+  bool get isRecurring =>
+      recurrenceRule != RecurrenceRule.none &&
+      recurrenceSeriesId != null &&
+      recurrenceSeriesId!.isNotEmpty;
 
   AgendaItem copyWith({
     String? title,
@@ -279,9 +294,14 @@ class AgendaItem {
     int? secondaryReminderMinutesBefore,
     bool? done,
     bool? pinned,
+    RecurrenceRule? recurrenceRule,
+    String? recurrenceSeriesId,
+    int? recurrenceIndex,
+    int? recurrenceCount,
     bool clearTime = false,
     bool clearReminder = false,
     bool clearSecondaryReminder = false,
+    bool clearRecurrence = false,
   }) {
     return AgendaItem(
       id: id,
@@ -299,6 +319,12 @@ class AgendaItem {
       end: clearTime ? null : (end ?? this.end),
       done: done ?? this.done,
       pinned: pinned ?? this.pinned,
+      recurrenceRule:
+          clearRecurrence ? RecurrenceRule.none : (recurrenceRule ?? this.recurrenceRule),
+      recurrenceSeriesId:
+          clearRecurrence ? null : (recurrenceSeriesId ?? this.recurrenceSeriesId),
+      recurrenceIndex: clearRecurrence ? 0 : (recurrenceIndex ?? this.recurrenceIndex),
+      recurrenceCount: clearRecurrence ? 1 : (recurrenceCount ?? this.recurrenceCount),
     );
   }
 
@@ -313,6 +339,10 @@ class AgendaItem {
         'secondaryReminderMinutesBefore': secondaryReminderMinutesBefore,
         'done': done,
         'pinned': pinned,
+        'recurrenceRule': recurrenceRule.name,
+        'recurrenceSeriesId': recurrenceSeriesId,
+        'recurrenceIndex': recurrenceIndex,
+        'recurrenceCount': recurrenceCount,
         'start': start == null ? null : [start!.hour, start!.minute],
         'end': end == null ? null : [end!.hour, end!.minute],
       };
@@ -343,6 +373,14 @@ class AgendaItem {
           json['secondaryReminderMinutesBefore'] as int?,
       done: json['done'] as bool? ?? false,
       pinned: json['pinned'] as bool? ?? false,
+      recurrenceRule: RecurrenceRule.values.firstWhere(
+        (value) => value.name == json['recurrenceRule'],
+        orElse: () => RecurrenceRule.none,
+      ),
+      recurrenceSeriesId: json['recurrenceSeriesId'] as String?,
+      recurrenceIndex: (json['recurrenceIndex'] as num? ?? 0).toInt(),
+      recurrenceCount:
+          max(1, (json['recurrenceCount'] as num? ?? 1).toInt()),
       start: parseTime(json['start']),
       end: parseTime(json['end']),
     );

@@ -2,7 +2,7 @@
 
 Flutter app for personal planning, private diary and the shared **Noi ♡** space.
 
-Current release line: **v0.52.0**.
+Current release line: **v0.53.0**.
 
 ## Core areas
 
@@ -241,3 +241,15 @@ See `docs/ARCHITECTURE.md` and `supabase/README.md` for implementation details.
 - New Maestro flows are state-aware and chained deliberately to avoid false failures caused by starting from the wrong navigation depth.
 - Home verifies the Daily Briefing surface; Noi ♡ verifies the shared-space hub; Account verifies cloud/account controls; Cestino verifies the lifecycle recovery surface.
 - Release tests lock the complete nine-checkpoint AppLab journey.
+
+
+## v0.53.0 — Recurring Life Engine
+
+- Replaces the old editor-only recurrence duplication with persistent recurring-series metadata carried by ordinary agenda items.
+- Supports daily, weekly, monthly and yearly series with civil-calendar-safe month ends and leap-day handling.
+- Existing data remains backward compatible: agenda items without recurrence metadata continue as one-off entries.
+- Recurring items keep using the existing agenda persistence, private cloud sync, reminders, backup/export and Trash lifecycle instead of creating a parallel storage model.
+- Editing or deleting a recurring occurrence can target only that occurrence, that occurrence and all following ones, or the whole series.
+- Editing a single occurrence deliberately detaches it from the series, preserving predictable future-series behavior.
+- Series creation is bounded to 60 occurrences per edit operation to keep reminder scheduling and local/cloud writes controlled.
+- Dedicated regression tests cover serialization, restart persistence, calendar edge cases, scoped edits and Trash-backed scoped deletion.
