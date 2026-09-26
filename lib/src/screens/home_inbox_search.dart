@@ -67,6 +67,7 @@ class HomeScreen extends StatelessWidget {
         final nextBirthday =
             birthdayPreview.isEmpty ? null : birthdayPreview.first;
         final pendingTasks = store.pendingUnifiedTaskCount;
+        final displayName = store.preferences.displayName.trim();
         final pinnedItems =
             store.agendaContentFilter == AgendaContentFilter.sharedOnly
                 ? <AgendaItem>[]
@@ -79,7 +80,7 @@ class HomeScreen extends StatelessWidget {
           ),
           appBar: AppBar(
             title: Text(
-              'Agenda per ${store.preferences.displayName}',
+              displayName.isEmpty ? 'La mia agenda' : 'Agenda per $displayName',
               style: const TextStyle(fontWeight: FontWeight.w800),
             ),
             actions: [
@@ -212,7 +213,9 @@ class HomeScreen extends StatelessWidget {
                     Text(
                       store.preferences.showDailyQuote
                           ? _dailyQuote(now).$1
-                          : 'Ciao ${store.preferences.displayName} ♡',
+                          : displayName.isEmpty
+                              ? 'Ciao ♡'
+                              : 'Ciao $displayName ♡',
                       style: const TextStyle(
                         fontSize: 24,
                         fontWeight: FontWeight.w900,
