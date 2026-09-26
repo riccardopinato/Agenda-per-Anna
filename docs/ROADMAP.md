@@ -16,6 +16,7 @@ Source of truth for the active product sequence after v0.52. The roadmap follows
 | v0.60 | Noi ♡ 2.0 | Completed | Stronger shared memories/agenda collaboration on the existing shared-space infrastructure |
 | v0.61 | Data Safety | Completed | Restore drills, backup verification, orphan checks and long-term data portability hardening |
 | v0.62 | Non-AI Production Consolidation | Completed | Accessibility, performance, regression and release-quality consolidation; no AI features |
+| v0.62.1 | Generic Profile Default | In validation | Neutral first-run name field with preserved existing personalization |
 
 ## Permanent constraints for this sequence
 
@@ -153,3 +154,14 @@ Per the active development cadence, AppLab runs once every two feature versions.
 - Final AppLab Production Gate and Trusted Verify remain green.
 - README, roadmap and production-readiness documentation match the shipped state.
 - Merge to `main` occurs only after every required gate above is green.
+
+
+## v0.62.1 acceptance criteria
+
+- A new profile starts with an empty display name instead of “Anna”.
+- The Settings name field has no heart prefix icon and shows “Inserisci il tuo nome” as its placeholder.
+- Saving an empty field never restores “Anna” automatically.
+- Existing explicitly saved names remain unchanged through persistence, sync, backup and restore.
+- Home renders neutral title/greeting copy while the display name is empty.
+- Release metadata is aligned to v0.62.1+72.
+- Development checks, Web release validation, Android size audit and AppLab remain green before merge.
