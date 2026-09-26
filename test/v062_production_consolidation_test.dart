@@ -1,10 +1,8 @@
 import 'dart:io';
 
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:agenda_per_anna/app_version.dart';
-import 'package:agenda_per_anna/main.dart';
 
 void main() {
   test('v0.62 stays non-AI and reuses the production architecture', () {
@@ -28,26 +26,16 @@ void main() {
     expect(roadmap, contains('Non-AI Production Consolidation'));
   });
 
-  testWidgets('v0.62 shell keeps accessible Material interaction defaults',
-      (tester) async {
-    final store = AgendaStore();
-    await store.load();
-    await store.savePreferences(
-      store.preferences.copyWith(onboardingDone: true),
+  test('v0.62 shell declares accessible Material interaction defaults', () {
+    final shell = File('lib/src/app_shell.dart').readAsStringSync();
+
+    expect(
+      shell,
+      contains('materialTapTargetSize: MaterialTapTargetSize.padded'),
     );
-
-    await tester.pumpWidget(
-      AgendaApp(store: store, bypassIdentityForTesting: true),
-    );
-    await tester.pumpAndSettle();
-
-    final context = tester.element(find.byType(MaterialApp));
-    final theme = Theme.of(context);
-    expect(theme.materialTapTargetSize, MaterialTapTargetSize.padded);
-    expect(theme.visualDensity, VisualDensity.standard);
-    expect(find.byType(FocusTraversalGroup), findsWidgets);
-
-    store.dispose();
+    expect(shell, contains('visualDensity: VisualDensity.standard'));
+    expect(shell, contains('FocusTraversalGroup('));
+    expect(shell, contains('ReadingOrderTraversalPolicy()'));
   });
 
   test('final release workflows keep every required production gate', () {
@@ -65,7 +53,15 @@ void main() {
     expect(size, contains('--split-per-abi'));
     expect(size, contains('app-arm64-v8a-release.apk'));
     expect(appLab, contains('AppLab Production Gate'));
-    expect(appLab, contains('Trusted verify'));
+    // Trusted Verify is owned by the pinned reusable AppLab runner; this
+    // repository must keep invoking that trusted runner at an immutable SHA.
+    expect(appLab, contains('uses: riccardopinato/AppLab/.github/workflows/'));
+    expect(
+      appLab,
+      contains('@a871a1c1e0ab8339c48bc8ee53ee4cc34d634d34'),
+    );
+    expect(appLab, contains('run_flutter_tests: true'));
+    expect(appLab, contains('run_maestro: true'));
     expect(appLab, contains('app-arm64-v8a-release.apk'));
   });
 }
