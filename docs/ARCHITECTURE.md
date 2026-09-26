@@ -332,3 +332,10 @@ The domain logic lives in `src/recurring_life_domain.dart`. It owns calendar-saf
 ## v0.58–v0.59 Diary templates, search and connections
 
 Diary templates are deterministic builders of ordinary `DiaryBlock` notes. Search is a derived local view over the existing domain collections; no secondary search database or cloud index is introduced. Explicit memory connections are stored only as outbound `relatedBlockIds`; backlinks are derived at read time to avoid bidirectional write drift. Permanent diary purge removes references only after the target is no longer live or recoverable.
+
+
+## v0.60–v0.61 Collaboration & Data Safety
+
+Noi ♡ 2.0 extends the existing shared-space model instead of introducing a new workspace layer. Participant listing and owner-controlled member removal are PostgreSQL RPCs over `shared_spaces` and `space_members`; public wrappers are security-invoker functions, privileged implementations stay in the private schema with explicit `auth.uid()` authorization and an empty `search_path`.
+
+Data Safety is a derived audit over the current local payload, MediaAssetStore inventory, storage warning set and pending cloud queues. It creates no persistent health database. ZIP self-verification reuses the existing backup decoder, manifest/data SHA-256 checks, media size/hash checks and schema inspection, so backup creation and restore share one integrity contract.

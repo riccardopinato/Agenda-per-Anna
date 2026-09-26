@@ -60,6 +60,12 @@ class MediaAssetStore {
 
     final cached = _cache.remove(assetId);
     if (cached != null) {
+      if (assetId.startsWith('sha256_') && contentAssetId(cached) != assetId) {
+        _cacheBytes -= cached.lengthInBytes;
+        _corruptAssetIds.add(assetId);
+        return null;
+      }
+      _corruptAssetIds.remove(assetId);
       _cache[assetId] = cached;
       return Uint8List.fromList(cached);
     }
@@ -83,6 +89,9 @@ class MediaAssetStore {
     _corruptAssetIds.remove(assetId);
     return deleteMediaAssetBytes(assetId);
   }
+
+  Future<Set<String>> listStoredAssetIds() async =>
+      (await listMediaAssetIds()).toSet();
 
   Future<int> prune(Set<String> referencedAssetIds) async {
     final existing = await listMediaAssetIds();

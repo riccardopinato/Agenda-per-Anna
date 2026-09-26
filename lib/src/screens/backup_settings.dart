@@ -11,6 +11,7 @@ class BackupScreen extends StatefulWidget {
 
 class _BackupScreenState extends State<BackupScreen> {
   bool busy = false;
+  DataSafetyReport? safetyReport;
 
   String _timestampFileName(String extension) {
     final stamp = DateFormat('yyyy-MM-dd_HH-mm').format(DateTime.now());
@@ -28,6 +29,7 @@ class _BackupScreenState extends State<BackupScreen> {
     setState(() => busy = true);
     try {
       final bytes = await widget.store.createBackupZip();
+      widget.store.verifyBackupZip(bytes);
       final ok = await BackupFileService.instance.saveZipBackup(
         bytes: bytes,
         fileName: _timestampFileName('zip'),
@@ -43,6 +45,26 @@ class _BackupScreenState extends State<BackupScreen> {
             ? error.message.toString()
             : 'Non è stato possibile creare il backup completo.',
       );
+    } finally {
+      if (mounted) setState(() => busy = false);
+    }
+  }
+
+  Future<void> _runSafetyAudit() async {
+    setState(() => busy = true);
+    try {
+      final report = await widget.store.auditDataSafety();
+      if (!mounted) return;
+      setState(() => safetyReport = report);
+      _message(
+        report.integrityHealthy
+            ? report.hasCleanupCandidates
+                ? 'Integrità OK · ${report.orphanMediaIds.length} media non più collegati.'
+                : 'Integrità locale verificata: nessun problema rilevato.'
+            : 'Verifica completata: sono presenti elementi da controllare.',
+      );
+    } catch (_) {
+      _message('Non è stato possibile completare la verifica integrità.');
     } finally {
       if (mounted) setState(() => busy = false);
     }
@@ -305,6 +327,19 @@ class _BackupScreenState extends State<BackupScreen> {
                   ),
                   const SizedBox(height: 10),
                   _BackupActionCard(
+                    icon: Icons.verified_user_outlined,
+                    title: 'Verifica integrità locale',
+                    subtitle:
+                        'Controlla media mancanti o corrotti, file non più collegati, warning dello storage e modifiche cloud ancora in attesa.',
+                    buttonLabel: 'Avvia verifica',
+                    onPressed: busy ? null : _runSafetyAudit,
+                  ),
+                  if (safetyReport != null) ...[
+                    const SizedBox(height: 10),
+                    _DataSafetyCard(report: safetyReport!),
+                  ],
+                  const SizedBox(height: 10),
+                  _BackupActionCard(
                     icon: Icons.description_outlined,
                     title: 'Esporta copia leggibile',
                     subtitle:
@@ -391,6 +426,53 @@ class _BackupScreenState extends State<BackupScreen> {
           ),
         );
       },
+    );
+  }
+}
+
+class _DataSafetyCard extends StatelessWidget {
+  final DataSafetyReport report;
+
+  const _DataSafetyCard({required this.report});
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final healthy = report.integrityHealthy;
+    final details = <String>[
+      '${report.referencedMediaCount} media collegati',
+      '${report.storedMediaCount} media locali',
+      if (report.missingMediaIds.isNotEmpty)
+        '${report.missingMediaIds.length} mancanti',
+      if (report.corruptMediaIds.isNotEmpty)
+        '${report.corruptMediaIds.length} corrotti',
+      if (report.orphanMediaIds.isNotEmpty)
+        '${report.orphanMediaIds.length} non più collegati',
+      if (report.unreadableStorageKeys.isNotEmpty)
+        '${report.unreadableStorageKeys.length} sezioni storage non leggibili',
+      if (report.pendingCloudChanges > 0)
+        '${report.pendingCloudChanges} modifiche cloud in attesa',
+      '${report.localSnapshotCount} backup locali',
+    ];
+
+    return Card(
+      child: ListTile(
+        leading: CircleAvatar(
+          backgroundColor:
+              healthy ? scheme.primaryContainer : scheme.errorContainer,
+          child: Icon(
+            healthy ? Icons.verified_outlined : Icons.warning_amber_rounded,
+            color: healthy
+                ? scheme.onPrimaryContainer
+                : scheme.onErrorContainer,
+          ),
+        ),
+        title: Text(
+          healthy ? 'Integrità dati OK' : 'Controllo dati richiesto',
+          style: const TextStyle(fontWeight: FontWeight.w900),
+        ),
+        subtitle: Text(details.join(' · ')),
+      ),
     );
   }
 }

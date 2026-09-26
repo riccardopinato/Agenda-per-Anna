@@ -123,6 +123,32 @@ class SharedSpace {
       );
 }
 
+class SharedSpaceMember {
+  final String userId;
+  final String role;
+  final String displayName;
+  final String avatarUrl;
+
+  const SharedSpaceMember({
+    required this.userId,
+    required this.role,
+    required this.displayName,
+    required this.avatarUrl,
+  });
+
+  bool get isOwner => role == 'owner';
+
+  factory SharedSpaceMember.fromJson(Map<String, dynamic> json) =>
+      SharedSpaceMember(
+        userId: json['user_id']?.toString() ?? '',
+        role: json['role']?.toString() ?? 'member',
+        displayName: json['display_name']?.toString().trim().isNotEmpty == true
+            ? json['display_name'].toString().trim()
+            : 'Persona',
+        avatarUrl: json['avatar_url']?.toString() ?? '',
+      );
+}
+
 class SharedSpaceRecord {
   final String recordKey;
   final String spaceId;
@@ -924,6 +950,40 @@ class CloudSyncService extends ChangeNotifier {
       params: {'p_code': code.trim().toUpperCase()},
     );
     return result.toString();
+  }
+
+  Future<List<SharedSpaceMember>> listSharedSpaceMembers(
+    String spaceId,
+  ) async {
+    final client = _requireSignedInClient();
+    final result = await client.rpc(
+      'list_shared_space_members',
+      params: {'p_space_id': spaceId},
+    );
+    if (result is! List) return const [];
+    return result
+        .whereType<Map>()
+        .map(
+          (row) => SharedSpaceMember.fromJson(
+            Map<String, dynamic>.from(row),
+          ),
+        )
+        .where((member) => member.userId.isNotEmpty)
+        .toList(growable: false);
+  }
+
+  Future<void> removeSharedSpaceMember(
+    String spaceId,
+    String memberUserId,
+  ) async {
+    final client = _requireSignedInClient();
+    await client.rpc(
+      'remove_shared_space_member',
+      params: {
+        'p_space_id': spaceId,
+        'p_user_id': memberUserId,
+      },
+    );
   }
 
   Future<void> leaveSharedSpace(String spaceId) async {

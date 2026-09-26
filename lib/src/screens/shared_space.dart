@@ -1772,6 +1772,137 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
     );
   }
 
+  Future<void> _openMembers() async {
+    List<SharedSpaceMember> members;
+    try {
+      members = await CloudSyncService.instance
+          .listSharedSpaceMembers(widget.space.id);
+    } catch (_) {
+      _message('Non è stato possibile caricare le persone dello spazio.');
+      return;
+    }
+    if (!mounted) return;
+
+    await showDialog<void>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: Text(
+          'Persone · ${members.length}',
+          style: const TextStyle(fontWeight: FontWeight.w900),
+        ),
+        content: SizedBox(
+          width: 440,
+          child: members.isEmpty
+              ? const Text('Nessuna persona disponibile.')
+              : ListView.separated(
+                  shrinkWrap: true,
+                  itemCount: members.length,
+                  separatorBuilder: (_, __) => const Divider(height: 1),
+                  itemBuilder: (_, index) {
+                    final member = members[index];
+                    final isMe =
+                        member.userId == CloudSyncService.instance.userId;
+                    final initial = member.displayName.trim().isEmpty
+                        ? '?'
+                        : member.displayName.trim()[0].toUpperCase();
+                    return ListTile(
+                      contentPadding: EdgeInsets.zero,
+                      leading: CircleAvatar(child: Text(initial)),
+                      title: Text(
+                        isMe
+                            ? '${member.displayName} · Tu'
+                            : member.displayName,
+                        style: const TextStyle(fontWeight: FontWeight.w800),
+                      ),
+                      subtitle: Text(
+                        member.isOwner ? 'Proprietario' : 'Membro',
+                      ),
+                      trailing: widget.space.isOwner &&
+                              !member.isOwner &&
+                              !isMe
+                          ? IconButton(
+                              tooltip: 'Rimuovi dallo spazio',
+                              icon: const Icon(Icons.person_remove_outlined),
+                              onPressed: () async {
+                                final confirmed = await showDialog<bool>(
+                                      context: dialogContext,
+                                      builder: (confirmContext) => AlertDialog(
+                                        title: const Text(
+                                          'Rimuovere questa persona?',
+                                        ),
+                                        content: Text(
+                                          '${member.displayName} non vedrà più '
+                                          'questo spazio. I contenuti condivisi '
+                                          'restano nello spazio.',
+                                        ),
+                                        actions: [
+                                          TextButton(
+                                            onPressed: () => Navigator.pop(
+                                              confirmContext,
+                                              false,
+                                            ),
+                                            child: const Text('Annulla'),
+                                          ),
+                                          FilledButton(
+                                            onPressed: () => Navigator.pop(
+                                              confirmContext,
+                                              true,
+                                            ),
+                                            child: const Text('Rimuovi'),
+                                          ),
+                                        ],
+                                      ),
+                                    ) ??
+                                    false;
+                                if (!confirmed) return;
+                                try {
+                                  await CloudSyncService.instance
+                                      .removeSharedSpaceMember(
+                                    widget.space.id,
+                                    member.userId,
+                                  );
+                                  if (dialogContext.mounted) {
+                                    Navigator.pop(dialogContext);
+                                  }
+                                  if (mounted) {
+                                    _message(
+                                      '${member.displayName} rimossa dallo spazio.',
+                                    );
+                                    await _openMembers();
+                                  }
+                                } catch (_) {
+                                  if (mounted) {
+                                    _message(
+                                      'Non è stato possibile rimuovere la persona.',
+                                    );
+                                  }
+                                }
+                              },
+                            )
+                          : null,
+                    );
+                  },
+                ),
+        ),
+        actions: [
+          if (widget.space.isOwner)
+            TextButton.icon(
+              onPressed: () {
+                Navigator.pop(dialogContext);
+                _invite();
+              },
+              icon: const Icon(Icons.person_add_alt_1_outlined),
+              label: const Text('Invita'),
+            ),
+          FilledButton(
+            onPressed: () => Navigator.pop(dialogContext),
+            child: const Text('Chiudi'),
+          ),
+        ],
+      ),
+    );
+  }
+
   Future<void> _leaveOrDelete() async {
     final owner = widget.space.isOwner;
     final confirmed = await showDialog<bool>(
@@ -1790,7 +1921,9 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
               ),
               FilledButton(
                 onPressed: () => Navigator.pop(dialogContext, true),
-                child: Text(owner ? 'Elimina' : 'Lascia'),
+                child: Text(
+                  owner ? 'Elimina per tutti' : 'Lascia solo per me',
+                ),
               ),
             ],
           ),
@@ -2193,6 +2326,11 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
               tooltip: 'I nostri ricordi',
               onPressed: _openSharedMemories,
               icon: const Icon(Icons.photo_library_outlined),
+            ),
+            IconButton(
+              tooltip: 'Persone nello spazio',
+              onPressed: _openMembers,
+              icon: const Icon(Icons.group_outlined),
             ),
             if (widget.space.isOwner)
               IconButton(
