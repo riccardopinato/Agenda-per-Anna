@@ -327,3 +327,8 @@ The lifecycle layer remains a thin extension over AgendaStore and the existing a
 Recurring agenda series deliberately stay inside the existing `AgendaItem` pipeline. Every generated occurrence remains an ordinary agenda entity and carries lightweight series metadata (`recurrenceRule`, `recurrenceSeriesId`, `recurrenceIndex`, `recurrenceCount`). This preserves the existing per-entity local delta persistence, cloud reconciliation, reminder scheduling, backup/export, account isolation and Trash lifecycle.
 
 The domain logic lives in `src/recurring_life_domain.dart`. It owns calendar-safe occurrence generation and scoped series mutation while `AgendaStore` remains the persistence/orchestration facade. No recurrence-specific database, cloud table or notification scheduler is introduced.
+
+
+## v0.58–v0.59 Diary templates, search and connections
+
+Diary templates are deterministic builders of ordinary `DiaryBlock` notes. Search is a derived local view over the existing domain collections; no secondary search database or cloud index is introduced. Explicit memory connections are stored only as outbound `relatedBlockIds`; backlinks are derived at read time to avoid bidirectional write drift. Permanent diary purge removes references only after the target is no longer live or recoverable.
