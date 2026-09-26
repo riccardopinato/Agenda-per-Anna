@@ -38,6 +38,16 @@ void main() {
     expect(shell, contains('ReadingOrderTraversalPolicy()'));
   });
 
+  test('web PWA actively refreshes stale installed builds', () {
+    final platform = File('tool/prepare_web_platform.py').readAsStringSync();
+    final push = File('web_push/annas-diary-push.js').readAsStringSync();
+
+    expect(platform, contains('no-cache, no-store, must-revalidate'));
+    expect(push, contains('await result.update()'));
+    expect(push, contains('controllerchange'));
+    expect(push, contains('window.location.reload()'));
+  });
+
   test('final release workflows keep every required production gate', () {
     final development =
         File('.github/workflows/dev-checks.yml').readAsStringSync();
