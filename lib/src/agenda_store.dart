@@ -82,6 +82,8 @@ class AgendaStore extends ChangeNotifier {
   String? get activeAccountId => _activeAccountId;
   bool get accountScopeResolved => _accountScopeResolved;
   bool get hasStorageWarnings => _unreadableStorageKeys.isNotEmpty;
+  Set<String> get unreadableStorageKeys =>
+      Set<String>.unmodifiable(_unreadableStorageKeys);
   int get sharedConflictCount => _sharedConflictCount;
   int get pendingSharedChangeCount => _pendingSharedChangeCount;
   int get pendingSharedInteractionCount => _pendingSharedInteractionCount;
