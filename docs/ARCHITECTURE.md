@@ -320,3 +320,10 @@ The lifecycle layer remains a thin extension over AgendaStore and the existing a
 - Checkpoints are intentionally sequenced so each flow inherits a known navigation state from the previous one, preventing accidental app exit or hidden bottom-navigation assumptions.
 - The new checkpoints validate user-visible destinations rather than internal execution only, matching the project acceptance-test rule.
 - AppLab remains the isolated trusted runtime gate; no product persistence or backend model changes are introduced by this release.
+
+
+## v0.53 Recurring Life Engine
+
+Recurring agenda series deliberately stay inside the existing `AgendaItem` pipeline. Every generated occurrence remains an ordinary agenda entity and carries lightweight series metadata (`recurrenceRule`, `recurrenceSeriesId`, `recurrenceIndex`, `recurrenceCount`). This preserves the existing per-entity local delta persistence, cloud reconciliation, reminder scheduling, backup/export, account isolation and Trash lifecycle.
+
+The domain logic lives in `src/recurring_life_domain.dart`. It owns calendar-safe occurrence generation and scoped series mutation while `AgendaStore` remains the persistence/orchestration facade. No recurrence-specific database, cloud table or notification scheduler is introduced.
