@@ -66,6 +66,7 @@ class _DiaryMemoriesScreenState extends State<DiaryMemoriesScreen> {
         DiaryBlockType.note => 'nota note',
         DiaryBlockType.sketch => 'sketch disegno',
         DiaryBlockType.photo => 'foto immagine',
+        DiaryBlockType.voice => 'voce audio registrazione',
       },
     ].join(' ').toLowerCase();
     return searchable.contains(query);
@@ -196,6 +197,25 @@ class _DiaryMemoriesScreenState extends State<DiaryMemoriesScreen> {
             ? DiarySketchPage(id: block.id)
             : block.pages.first;
         return DiarySketchPagePreview(page: page);
+      case DiaryBlockType.voice:
+        return ColoredBox(
+          color: Theme.of(context).colorScheme.secondaryContainer,
+          child: Center(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(Icons.mic_none_outlined, size: 48),
+                const SizedBox(height: 8),
+                Text(
+                  block.audioDurationMs <= 0
+                      ? 'Nota vocale'
+                      : _formatVoiceDuration(block.audioDurationMs),
+                  style: const TextStyle(fontWeight: FontWeight.w800),
+                ),
+              ],
+            ),
+          ),
+        );
       case DiaryBlockType.note:
         return ColoredBox(
           color: Theme.of(context).colorScheme.primaryContainer,
@@ -287,6 +307,37 @@ class _DiaryMemoriesScreenState extends State<DiaryMemoriesScreen> {
                   ),
                 ),
               ],
+            ),
+          ),
+        );
+      case DiaryBlockType.voice:
+        return Card(
+          child: InkWell(
+            borderRadius: BorderRadius.circular(12),
+            onTap: () => _openRecord(record),
+            child: Padding(
+              padding: const EdgeInsets.all(14),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Icon(Icons.mic_none_outlined),
+                  const SizedBox(height: 10),
+                  Expanded(
+                    child: Text(
+                      block.text.trim().isEmpty ? 'Nota vocale' : block.text,
+                      maxLines: 6,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    block.audioDurationMs <= 0
+                        ? date
+                        : '${_formatVoiceDuration(block.audioDurationMs)} · $date',
+                    style: Theme.of(context).textTheme.bodySmall,
+                  ),
+                ],
+              ),
             ),
           ),
         );
@@ -709,6 +760,7 @@ class _DiaryMemoriesScreenState extends State<DiaryMemoriesScreen> {
                                 Icons.sticky_note_2_outlined,
                               DiaryBlockType.sketch => Icons.draw_outlined,
                               DiaryBlockType.photo => Icons.photo_outlined,
+                              DiaryBlockType.voice => Icons.mic_none_outlined,
                             },
                           ),
                           label: Text(
@@ -716,6 +768,7 @@ class _DiaryMemoriesScreenState extends State<DiaryMemoriesScreen> {
                               DiaryBlockType.note => 'Note',
                               DiaryBlockType.sketch => 'Sketch',
                               DiaryBlockType.photo => 'Foto',
+                              DiaryBlockType.voice => 'Voce',
                             },
                           ),
                           onSelected: (_) => setState(() => filter = type),
