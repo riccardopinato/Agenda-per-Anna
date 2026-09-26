@@ -135,6 +135,39 @@ Future<void> main() async {
 
   Future<void>.delayed(Duration.zero, () async {
     try {
+      await HomeWidgetBridge.instance.initialize();
+      HomeWidgetBridge.instance.onAction = (action) {
+        final context = appNavigatorKey.currentContext;
+        if (context == null) return;
+        if (action == 'quick_capture') {
+          unawaited(_showQuickCapture(context, store));
+        } else if (action == 'today') {
+          unawaited(
+            Navigator.of(context).push(
+              MaterialPageRoute(
+                builder: (_) => PlannerScreen(
+                  store: store,
+                  initialDate: DateTime.now(),
+                ),
+              ),
+            ),
+          );
+        }
+      };
+      await HomeWidgetBridge.instance.sync(store);
+      final initialWidgetAction =
+          await HomeWidgetBridge.instance.takeLaunchAction();
+      if (initialWidgetAction != null) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          HomeWidgetBridge.instance.onAction?.call(initialWidgetAction);
+        });
+      }
+    } catch (_) {
+      // Il widget è opzionale e non deve impedire l'avvio dell'app.
+    }
+
+
+    try {
       await NotificationService.instance.initialize();
       await store.reconcileReminders();
       await store.reconcileBirthdayReminders();
