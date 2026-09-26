@@ -16,7 +16,7 @@ Source of truth for the active product sequence after v0.52. The roadmap follows
 | v0.60 | Noi ♡ 2.0 | Completed | Stronger shared memories/agenda collaboration on the existing shared-space infrastructure |
 | v0.61 | Data Safety | Completed | Restore drills, backup verification, orphan checks and long-term data portability hardening |
 | v0.62 | Non-AI Production Consolidation | Completed | Accessibility, performance, regression and release-quality consolidation; no AI features |
-| v0.62.1 | Generic Profile Default | In validation | Neutral first-run name field with preserved existing personalization |
+| v0.62.1 | Generic Profile Default | Completed | Neutral first-run name field with preserved existing personalization |
 
 ## Permanent constraints for this sequence
 
