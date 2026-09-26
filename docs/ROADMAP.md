@@ -7,10 +7,10 @@ Source of truth for the active product sequence after v0.52. The roadmap follows
 | Version | Scope | Status | Core acceptance target |
 | --- | --- | --- | --- |
 | v0.53 | Recurring Life Engine | Completed | Persistent recurring agenda series; scoped edit/delete; reminders, sync, backup and Trash reuse |
-| v0.54 | Voice Diary | Implemented; paired validation with v0.55 | Record, persist, play and lifecycle-manage diary audio without replacing the original recording |
-| v0.55 | Organization | In paired validation | Personal organization layer that improves findability without turning the app into a work/Notion clone |
-| v0.56 | Widget | In validation | Android home-screen glance + safe ultra-quick capture using existing app data |
-| v0.57 | Memories / Relationships 2.0 | In validation | Richer person-linked memories, anniversaries and “on this day” navigation |
+| v0.54 | Voice Diary | Completed | Record, persist, play and lifecycle-manage diary audio without replacing the original recording |
+| v0.55 | Organization | Completed | Personal organization layer that improves findability without turning the app into a work/Notion clone |
+| v0.56 | Widget | Implemented; paired validation with v0.57 | Android home-screen glance + safe ultra-quick capture using existing app data |
+| v0.57 | Memories / Relationships 2.0 | In paired validation | Richer person-linked memories, anniversaries and “on this day” navigation |
 | v0.58 | Diary 2.0 | Planned | Reusable personal diary templates and richer daily-writing flows |
 | v0.59 | Search / Connections | Planned | Unified local search, filters and explicit connections between personal content |
 | v0.60 | Noi ♡ 2.0 | Planned | Stronger shared memories/agenda collaboration on the existing shared-space infrastructure |
@@ -25,7 +25,7 @@ Source of truth for the active product sequence after v0.52. The roadmap follows
 - User data remains offline-capable and account-isolated where applicable.
 - Every new persisted entity or media type must integrate with lifecycle, backup/restore, sync rules and account erasure as applicable.
 - README and this roadmap are updated in the same version that changes product behavior.
-- A version is complete only after code, tests, required builds, AppLab, Android size/regression audit and documentation gates pass.
+- Feature versions require code, analyze/tests, required builds, Android size/regression audit and documentation gates. AppLab runs cumulatively every two feature versions, plus the final v0.62 release checkpoint.
 
 ## Completed baseline
 
@@ -84,3 +84,12 @@ Per the active development cadence, AppLab runs once every two feature versions.
 - Relationship overview derives from existing people, birthday and diary links.
 - “In questo giorno” is deterministic, historical-only and excludes archived diary blocks.
 - Existing memory/person lifecycle behavior remains unchanged.
+
+
+## Active AppLab cadence
+
+- v0.54 + v0.55 → completed on v0.55
+- v0.56 + v0.57 → AppLab on v0.57
+- v0.58 + v0.59 → AppLab on v0.59
+- v0.60 + v0.61 → AppLab on v0.61
+- v0.62 → final AppLab release validation
