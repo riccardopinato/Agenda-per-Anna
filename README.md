@@ -345,4 +345,5 @@ See `docs/ARCHITECTURE.md` and `supabase/README.md` for implementation details.
 - The application shell now uses reading-order focus traversal for predictable keyboard and accessibility navigation.
 - Dedicated regression coverage locks the non-AI dependency boundary, release metadata and the required Development, Web, Android size-audit and AppLab contracts.
 - Production readiness requirements are documented in `docs/PRODUCTION_READINESS_V062.md`.
+- Web/PWA startup now actively checks the installed service worker for updates and refreshes after controller replacement, while the HTML shell is marked non-stale; existing Web Push subscriptions remain intact.
 - v0.62 can merge only after Development checks, Web, Android size audit and AppLab Trusted Verify are all green.
