@@ -155,9 +155,9 @@ class _VoiceRecordingDialogState extends State<_VoiceRecordingDialog> {
   }
 }
 
-Future<_VoiceCapture?> captureVoiceClip(BuildContext context) async {
+Future<_VoiceCapture?> _captureVoiceClip(BuildContext context) async {
   if (kIsWeb) {
-    final picked = await FilePicker.platform.pickFiles(
+    final picked = await FilePicker.pickFiles(
       type: FileType.audio,
       allowMultiple: false,
       withData: true,
@@ -185,6 +185,11 @@ Future<_VoiceCapture?> captureVoiceClip(BuildContext context) async {
         ),
       );
     }
+    return null;
+  }
+
+  if (!context.mounted) {
+    await VoiceDiaryService.instance.cancelRecording();
     return null;
   }
 
@@ -562,7 +567,7 @@ class DiaryComposerSection extends StatelessWidget {
   final VoidCallback onAddNote;
   final VoidCallback onAddSketch;
   final VoidCallback onAddPhoto;
-  final VoidCallback onAddVoice;
+  final VoidCallback? onAddVoice;
   final bool photoBusy;
   final bool voiceBusy;
   final List<Widget> children;
@@ -577,9 +582,9 @@ class DiaryComposerSection extends StatelessWidget {
     required this.onAddNote,
     required this.onAddSketch,
     required this.onAddPhoto,
-    required this.onAddVoice,
+    this.onAddVoice,
     required this.photoBusy,
-    required this.voiceBusy,
+    this.voiceBusy = false,
     required this.children,
   });
 
@@ -627,17 +632,18 @@ class DiaryComposerSection extends StatelessWidget {
                 icon: const Icon(Icons.draw_outlined),
                 label: const Text('Sketch'),
               ),
-              FilledButton.tonalIcon(
-                onPressed: voiceBusy ? null : onAddVoice,
-                icon: voiceBusy
-                    ? const SizedBox(
-                        width: 18,
-                        height: 18,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      )
-                    : const Icon(Icons.mic_none_outlined),
-                label: const Text('Voce'),
-              ),
+              if (onAddVoice != null)
+                FilledButton.tonalIcon(
+                  onPressed: voiceBusy ? null : onAddVoice,
+                  icon: voiceBusy
+                      ? const SizedBox(
+                          width: 18,
+                          height: 18,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : const Icon(Icons.mic_none_outlined),
+                  label: const Text('Voce'),
+                ),
               FilledButton.tonalIcon(
                 onPressed: photoBusy ? null : onAddPhoto,
                 icon: photoBusy
@@ -1050,7 +1056,7 @@ class _DiaryMemoryCardState extends State<DiaryMemoryCard> {
     if (voiceBusy) return;
     setState(() => voiceBusy = true);
     try {
-      final capture = await captureVoiceClip(context);
+      final capture = await _captureVoiceClip(context);
       if (capture == null || !mounted) return;
 
       final caption = await showDiaryCaptionEditor(
