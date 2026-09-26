@@ -116,12 +116,19 @@ class NotificationService {
   static const String sharedChannelId = 'annas_diary_shared_v1';
 
 
+  static const String reminderDoneActionId = 'reminder_done';
   static const String reminderSnooze10ActionId = 'reminder_snooze_10';
   static const String reminderSnooze60ActionId = 'reminder_snooze_60';
   static const String reminderOpenActionId = 'reminder_open';
 
   static const List<AndroidNotificationAction> _reminderActions =
       <AndroidNotificationAction>[
+    AndroidNotificationAction(
+      reminderDoneActionId,
+      'Fatto',
+      showsUserInterface: true,
+      cancelNotification: true,
+    ),
     AndroidNotificationAction(
       reminderSnooze10ActionId,
       '10 min',
@@ -205,9 +212,9 @@ class NotificationService {
     try {
       final launchDetails = await _plugin.getNotificationAppLaunchDetails();
       if (launchDetails?.didNotificationLaunchApp == true) {
-        final payload = launchDetails?.notificationResponse?.payload?.trim();
-        if (payload != null && payload.isNotEmpty) {
-          _initialPayload = payload;
+        final response = launchDetails?.notificationResponse;
+        if (response != null) {
+          _initialPayload = _routingPayload(response);
         }
       }
     } catch (_) {
@@ -686,6 +693,17 @@ class NotificationService {
     }
   }
 
+  String? _routingPayload(NotificationResponse response) {
+    final rawPayload = response.payload?.trim();
+    final reminder = _ReminderActionPayload.tryParse(rawPayload);
+    if (reminder != null && response.actionId == reminderDoneActionId) {
+      return 'reminder_done:${reminder.stableId}';
+    }
+    if (reminder != null) return reminder.stableId;
+    if (rawPayload == null || rawPayload.isEmpty) return null;
+    return rawPayload;
+  }
+
   Future<void> handleNotificationResponse(
     NotificationResponse response, {
     bool background = false,
@@ -705,8 +723,11 @@ class NotificationService {
       }
     }
 
-    if (!background && rawPayload != null && rawPayload.isNotEmpty) {
-      _tapController.add(reminder?.stableId ?? rawPayload);
+    if (!background) {
+      final routed = _routingPayload(response);
+      if (routed != null && routed.isNotEmpty) {
+        _tapController.add(routed);
+      }
     }
   }
 
