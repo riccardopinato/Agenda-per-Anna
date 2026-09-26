@@ -56,6 +56,169 @@ Future<Uint8List> _diaryThumbnailBytes(Uint8List bytes) async {
   return Uint8List.fromList(bytes);
 }
 
+String _formatVoiceDuration(int milliseconds) {
+  final duration = Duration(milliseconds: max(0, milliseconds));
+  final minutes = duration.inMinutes;
+  final seconds = duration.inSeconds.remainder(60);
+  return '${minutes.toString().padLeft(2, '0')}:${seconds.toString().padLeft(2, '0')}';
+}
+
+class _VoiceCapture {
+  final Uint8List bytes;
+  final int durationMs;
+  final String mimeType;
+
+  const _VoiceCapture({
+    required this.bytes,
+    required this.durationMs,
+    required this.mimeType,
+  });
+}
+
+class _VoiceRecordingDialog extends StatefulWidget {
+  final DateTime startedAt;
+
+  const _VoiceRecordingDialog({required this.startedAt});
+
+  @override
+  State<_VoiceRecordingDialog> createState() => _VoiceRecordingDialogState();
+}
+
+class _VoiceRecordingDialogState extends State<_VoiceRecordingDialog> {
+  Timer? _timer;
+  int _elapsedMs = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _refresh();
+    _timer = Timer.periodic(
+      const Duration(milliseconds: 500),
+      (_) => _refresh(),
+    );
+  }
+
+  void _refresh() {
+    if (!mounted) return;
+    setState(() {
+      _elapsedMs = DateTime.now().difference(widget.startedAt).inMilliseconds;
+    });
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Row(
+        children: [
+          Icon(Icons.mic, color: Colors.red),
+          SizedBox(width: 10),
+          Text('Registrazione in corso'),
+        ],
+      ),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            _formatVoiceDuration(_elapsedMs),
+            style: Theme.of(context).textTheme.displaySmall?.copyWith(
+                  fontWeight: FontWeight.w900,
+                ),
+          ),
+          const SizedBox(height: 12),
+          const LinearProgressIndicator(),
+          const SizedBox(height: 12),
+          const Text(
+            'L’audio originale resterà nel diario finché non lo elimini.',
+            textAlign: TextAlign.center,
+          ),
+        ],
+      ),
+      actions: [
+        TextButton.icon(
+          onPressed: () => Navigator.pop(context, false),
+          icon: const Icon(Icons.delete_outline),
+          label: const Text('Annulla'),
+        ),
+        FilledButton.icon(
+          onPressed: () => Navigator.pop(context, true),
+          icon: const Icon(Icons.stop_circle_outlined),
+          label: const Text('Termina'),
+        ),
+      ],
+    );
+  }
+}
+
+Future<_VoiceCapture?> captureVoiceClip(BuildContext context) async {
+  if (kIsWeb) {
+    final picked = await FilePicker.platform.pickFiles(
+      type: FileType.audio,
+      allowMultiple: false,
+      withData: true,
+    );
+    if (picked == null || picked.files.isEmpty) return null;
+    final file = picked.files.single;
+    final bytes = file.bytes;
+    if (bytes == null || bytes.isEmpty) return null;
+    return _VoiceCapture(
+      bytes: Uint8List.fromList(bytes),
+      durationMs: 0,
+      mimeType: 'audio/*',
+    );
+  }
+
+  try {
+    await VoiceDiaryService.instance.startRecording();
+  } catch (_) {
+    if (context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Consenti l’accesso al microfono e tocca di nuovo “Voce”.',
+          ),
+        ),
+      );
+    }
+    return null;
+  }
+
+  final startedAt = DateTime.now();
+  final save = await showDialog<bool>(
+        context: context,
+        barrierDismissible: false,
+        builder: (_) => _VoiceRecordingDialog(startedAt: startedAt),
+      ) ??
+      false;
+
+  if (!save) {
+    await VoiceDiaryService.instance.cancelRecording();
+    return null;
+  }
+
+  try {
+    final bytes = await VoiceDiaryService.instance.stopRecording();
+    return _VoiceCapture(
+      bytes: bytes,
+      durationMs: DateTime.now().difference(startedAt).inMilliseconds,
+      mimeType: 'audio/mp4',
+    );
+  } catch (_) {
+    await VoiceDiaryService.instance.cancelRecording();
+    if (context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Registrazione non salvata. Riprova.')),
+      );
+    }
+    return null;
+  }
+}
+
 Future<Uint8List?> _readDiaryMediaBytes({
   String assetId = '',
   String fallbackBase64 = '',
@@ -297,19 +460,21 @@ Future<bool> confirmDiaryContentDelete(
     ) ??
     false;
 
-enum DiaryContentKind { note, photo, sketch }
+enum DiaryContentKind { note, photo, sketch, voice }
 
 extension DiaryContentKindUi on DiaryContentKind {
   String get label => switch (this) {
         DiaryContentKind.note => 'Nota',
         DiaryContentKind.photo => 'Foto',
         DiaryContentKind.sketch => 'Sketch',
+        DiaryContentKind.voice => 'Voce',
       };
 
   IconData get icon => switch (this) {
         DiaryContentKind.note => Icons.sticky_note_2_outlined,
         DiaryContentKind.photo => Icons.photo_outlined,
         DiaryContentKind.sketch => Icons.draw_outlined,
+        DiaryContentKind.voice => Icons.mic_none_outlined,
       };
 }
 
@@ -322,7 +487,9 @@ class DiaryComposerSection extends StatelessWidget {
   final VoidCallback onAddNote;
   final VoidCallback onAddSketch;
   final VoidCallback onAddPhoto;
+  final VoidCallback onAddVoice;
   final bool photoBusy;
+  final bool voiceBusy;
   final List<Widget> children;
 
   const DiaryComposerSection({
@@ -335,7 +502,9 @@ class DiaryComposerSection extends StatelessWidget {
     required this.onAddNote,
     required this.onAddSketch,
     required this.onAddPhoto,
+    required this.onAddVoice,
     required this.photoBusy,
+    required this.voiceBusy,
     required this.children,
   });
 
@@ -382,6 +551,17 @@ class DiaryComposerSection extends StatelessWidget {
                 onPressed: onAddSketch,
                 icon: const Icon(Icons.draw_outlined),
                 label: const Text('Sketch'),
+              ),
+              FilledButton.tonalIcon(
+                onPressed: voiceBusy ? null : onAddVoice,
+                icon: voiceBusy
+                    ? const SizedBox(
+                        width: 18,
+                        height: 18,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : const Icon(Icons.mic_none_outlined),
+                label: const Text('Voce'),
               ),
               FilledButton.tonalIcon(
                 onPressed: photoBusy ? null : onAddPhoto,
@@ -671,6 +851,7 @@ class DiaryMemoryCard extends StatefulWidget {
 
 class _DiaryMemoryCardState extends State<DiaryMemoryCard> {
   bool photoBusy = false;
+  bool voiceBusy = false;
 
   List<DiaryBlock> get _blocks {
     final result = [...widget.store.journal(widget.date).blocks];
@@ -752,6 +933,83 @@ class _DiaryMemoryCardState extends State<DiaryMemoryCard> {
       );
     } finally {
       if (mounted) setState(() => photoBusy = false);
+    }
+  }
+
+  Future<void> _addVoice() async {
+    if (voiceBusy) return;
+    setState(() => voiceBusy = true);
+    try {
+      final capture = await captureVoiceClip(context);
+      if (capture == null || !mounted) return;
+
+      final caption = await showDiaryCaptionEditor(
+        context,
+        adding: true,
+      );
+      if (caption == null) return;
+
+      final mediaAssetId = await MediaAssetStore.instance.put(capture.bytes);
+      final blocks = [
+        ...widget.store.journal(widget.date).blocks,
+        DiaryBlock(
+          id: const Uuid().v4(),
+          type: DiaryBlockType.voice,
+          createdAt: DateTime.now(),
+          text: caption,
+          mediaAssetId: mediaAssetId,
+          audioDurationMs: capture.durationMs,
+          audioMimeType: capture.mimeType,
+        ),
+      ];
+      await _saveBlocks(blocks);
+    } finally {
+      if (mounted) setState(() => voiceBusy = false);
+    }
+  }
+
+  Future<void> _editVoiceCaption(DiaryBlock block) async {
+    final value = await showDiaryCaptionEditor(
+      context,
+      initialText: block.text,
+    );
+    if (value == null) return;
+
+    final blocks = [...widget.store.journal(widget.date).blocks];
+    final index = blocks.indexWhere((candidate) => candidate.id == block.id);
+    if (index >= 0) {
+      blocks[index] = block.copyWith(text: value);
+      await _saveBlocks(blocks);
+    }
+  }
+
+  Future<void> _playVoice(DiaryBlock block) async {
+    if (!block.hasVoiceMedia) return;
+    final bytes = await _readDiaryMediaBytes(
+      assetId: block.mediaAssetId,
+      fallbackBase64: block.audioBase64,
+    );
+    if (bytes == null || bytes.isEmpty || !mounted) return;
+
+    if (kIsWeb) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Sul web puoi conservare/importare l’audio; il player integrato è disponibile nell’app Android.',
+          ),
+        ),
+      );
+      return;
+    }
+
+    try {
+      await VoiceDiaryService.instance.play(bytes);
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Non riesco a riprodurre questo audio.')),
+        );
+      }
     }
   }
 
@@ -949,6 +1207,21 @@ class _DiaryMemoryCardState extends State<DiaryMemoryCard> {
           footer: _peopleFooter(block),
           onDelete: () => _delete(block),
         );
+      case DiaryBlockType.voice:
+        final duration = block.audioDurationMs <= 0
+            ? ''
+            : ' · ${_formatVoiceDuration(block.audioDurationMs)}';
+        return DiaryContentCard(
+          kind: DiaryContentKind.voice,
+          title: block.text.trim().isEmpty ? 'Nota vocale' : block.text,
+          subtitle: 'Voce$duration · $time',
+          onOpen: () => _playVoice(block),
+          onEdit: () => _editVoiceCaption(block),
+          onPeople: () => _editPeople(block),
+          footer: _peopleFooter(block),
+          statusIcon: const Icon(Icons.play_circle_outline),
+          onDelete: () => _delete(block),
+        );
     }
   }
 
@@ -972,7 +1245,9 @@ class _DiaryMemoryCardState extends State<DiaryMemoryCard> {
       onAddNote: () => _addNote(),
       onAddSketch: () => _openSketch(),
       onAddPhoto: _addPhoto,
+      onAddVoice: _addVoice,
       photoBusy: photoBusy,
+      voiceBusy: voiceBusy,
       children: blocks
           .map((block) => _blockCard(context, block))
           .toList(growable: false),
