@@ -26,6 +26,7 @@ import 'local_state_store.dart';
 import 'media_asset_store.dart';
 import 'push_notification_service.dart';
 import 'vault_service.dart';
+import 'voice_diary_service.dart';
 import 'web_push_service.dart';
 
 part 'src/app_shell.dart';
