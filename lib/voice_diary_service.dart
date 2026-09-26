@@ -1,5 +1,3 @@
-import 'dart:typed_data';
-
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 
@@ -15,7 +13,7 @@ class VoiceDiaryService {
 
   Future<void> startRecording() async {
     if (kIsWeb) {
-      throw const PlatformException(
+      throw PlatformException(
         code: 'voice_recording_unsupported',
         message: 'La registrazione diretta non è disponibile sul web.',
       );
@@ -25,14 +23,14 @@ class VoiceDiaryService {
 
   Future<Uint8List> stopRecording() async {
     if (kIsWeb) {
-      throw const PlatformException(
+      throw PlatformException(
         code: 'voice_recording_unsupported',
         message: 'La registrazione diretta non è disponibile sul web.',
       );
     }
     final bytes = await _channel.invokeMethod<Uint8List>('stopRecording');
     if (bytes == null || bytes.isEmpty) {
-      throw const PlatformException(
+      throw PlatformException(
         code: 'empty_voice_recording',
         message: 'La registrazione è vuota.',
       );
@@ -48,7 +46,7 @@ class VoiceDiaryService {
   Future<void> play(Uint8List bytes) async {
     if (bytes.isEmpty) return;
     if (kIsWeb) {
-      throw const PlatformException(
+      throw PlatformException(
         code: 'voice_playback_unsupported',
         message: 'La riproduzione diretta non è disponibile sul web.',
       );
