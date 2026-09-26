@@ -40,12 +40,26 @@ void main() {
 
   test('web PWA actively refreshes stale installed builds', () {
     final platform = File('tool/prepare_web_platform.py').readAsStringSync();
+    final finalize = File('tool/finalize_web_build.py').readAsStringSync();
     final push = File('web_push/annas-diary-push.js').readAsStringSync();
+    final pushWorker =
+        File('web_push/annas-diary-push-sw.js').readAsStringSync();
+    final recovery =
+        File('web_push/update-recovery.html').readAsStringSync();
 
     expect(platform, contains('no-cache, no-store, must-revalidate'));
+    expect(push, contains('annas-diary-push-sw.js'));
+    expect(push, contains('updateViaCache: "none"'));
     expect(push, contains('await result.update()'));
     expect(push, contains('controllerchange'));
-    expect(push, contains('window.location.reload()'));
+    expect(pushWorker, contains('self.skipWaiting()'));
+    expect(pushWorker, contains('self.clients.claim()'));
+    expect(finalize, contains('PUSH_WORKER_TARGET'));
+    expect(finalize, isNot(contains('generated +')));
+    expect(recovery, contains('flutter-app-cache'));
+    expect(recovery, contains('caches.delete'));
+    expect(recovery, isNot(contains('indexedDB.deleteDatabase')));
+    expect(recovery, isNot(contains('localStorage.clear')));
   });
 
   test('final release workflows keep every required production gate', () {
