@@ -26,12 +26,14 @@ import 'local_state_store.dart';
 import 'media_asset_store.dart';
 import 'push_notification_service.dart';
 import 'vault_service.dart';
+import 'voice_diary_service.dart';
 import 'web_push_service.dart';
 
 part 'src/app_shell.dart';
 part 'src/domain_models.dart';
 part 'src/day_hub_domain.dart';
 part 'src/recurring_life_domain.dart';
+part 'src/organization_domain.dart';
 part 'src/people_domain.dart';
 part 'src/store_signals.dart';
 part 'src/store/backup_domain.dart';

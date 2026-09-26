@@ -56,6 +56,172 @@ Future<Uint8List> _diaryThumbnailBytes(Uint8List bytes) async {
   return Uint8List.fromList(bytes);
 }
 
+String _formatVoiceDuration(int milliseconds) {
+  final duration = Duration(milliseconds: max(0, milliseconds));
+  final minutes = duration.inMinutes;
+  final seconds = duration.inSeconds.remainder(60);
+  return '${minutes.toString().padLeft(2, '0')}:${seconds.toString().padLeft(2, '0')}';
+}
+
+class _VoiceCapture {
+  final Uint8List bytes;
+  final int durationMs;
+  final String mimeType;
+
+  const _VoiceCapture({
+    required this.bytes,
+    required this.durationMs,
+    required this.mimeType,
+  });
+}
+
+class _VoiceRecordingDialog extends StatefulWidget {
+  final DateTime startedAt;
+
+  const _VoiceRecordingDialog({required this.startedAt});
+
+  @override
+  State<_VoiceRecordingDialog> createState() => _VoiceRecordingDialogState();
+}
+
+class _VoiceRecordingDialogState extends State<_VoiceRecordingDialog> {
+  Timer? _timer;
+  int _elapsedMs = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _refresh();
+    _timer = Timer.periodic(
+      const Duration(milliseconds: 500),
+      (_) => _refresh(),
+    );
+  }
+
+  void _refresh() {
+    if (!mounted) return;
+    setState(() {
+      _elapsedMs = DateTime.now().difference(widget.startedAt).inMilliseconds;
+    });
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Row(
+        children: [
+          Icon(Icons.mic, color: Colors.red),
+          SizedBox(width: 10),
+          Text('Registrazione in corso'),
+        ],
+      ),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            _formatVoiceDuration(_elapsedMs),
+            style: Theme.of(context).textTheme.displaySmall?.copyWith(
+                  fontWeight: FontWeight.w900,
+                ),
+          ),
+          const SizedBox(height: 12),
+          const LinearProgressIndicator(),
+          const SizedBox(height: 12),
+          const Text(
+            'L’audio originale resterà nel diario finché non lo elimini.',
+            textAlign: TextAlign.center,
+          ),
+        ],
+      ),
+      actions: [
+        TextButton.icon(
+          onPressed: () => Navigator.pop(context, false),
+          icon: const Icon(Icons.delete_outline),
+          label: const Text('Annulla'),
+        ),
+        FilledButton.icon(
+          onPressed: () => Navigator.pop(context, true),
+          icon: const Icon(Icons.stop_circle_outlined),
+          label: const Text('Termina'),
+        ),
+      ],
+    );
+  }
+}
+
+Future<_VoiceCapture?> _captureVoiceClip(BuildContext context) async {
+  if (kIsWeb) {
+    final file = await FilePicker.pickFile(
+      type: FileType.audio,
+      dialogTitle: 'Scegli una nota vocale',
+    );
+    if (file == null) return null;
+    final bytes = await file.readAsBytes();
+    if (bytes.isEmpty) return null;
+    return _VoiceCapture(
+      bytes: Uint8List.fromList(bytes),
+      durationMs: 0,
+      mimeType: 'audio/*',
+    );
+  }
+
+  try {
+    await VoiceDiaryService.instance.startRecording();
+  } catch (_) {
+    if (context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Consenti l’accesso al microfono e tocca di nuovo “Voce”.',
+          ),
+        ),
+      );
+    }
+    return null;
+  }
+
+  if (!context.mounted) {
+    await VoiceDiaryService.instance.cancelRecording();
+    return null;
+  }
+
+  final startedAt = DateTime.now();
+  final save = await showDialog<bool>(
+        context: context,
+        barrierDismissible: false,
+        builder: (_) => _VoiceRecordingDialog(startedAt: startedAt),
+      ) ??
+      false;
+
+  if (!save) {
+    await VoiceDiaryService.instance.cancelRecording();
+    return null;
+  }
+
+  try {
+    final bytes = await VoiceDiaryService.instance.stopRecording();
+    return _VoiceCapture(
+      bytes: bytes,
+      durationMs: DateTime.now().difference(startedAt).inMilliseconds,
+      mimeType: 'audio/mp4',
+    );
+  } catch (_) {
+    await VoiceDiaryService.instance.cancelRecording();
+    if (context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Registrazione non salvata. Riprova.')),
+      );
+    }
+    return null;
+  }
+}
+
 Future<Uint8List?> _readDiaryMediaBytes({
   String assetId = '',
   String fallbackBase64 = '',
@@ -270,6 +436,81 @@ Future<String?> showDiaryCaptionEditor(
   return value;
 }
 
+Future<List<String>?> showOrganizationTagsEditor(
+  BuildContext context, {
+  required List<String> initialTags,
+  List<String> suggestions = const [],
+}) async {
+  final controller = TextEditingController(text: initialTags.join(', '));
+  final value = await showDialog<List<String>>(
+    context: context,
+    builder: (dialogContext) => AlertDialog(
+      title: const Text('Tag'),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          TextField(
+            controller: controller,
+            autofocus: true,
+            decoration: const InputDecoration(
+              labelText: 'Tag separati da virgola',
+              hintText: 'es. viaggio, famiglia, idee',
+              border: OutlineInputBorder(),
+            ),
+          ),
+          if (suggestions.isNotEmpty) ...[
+            const SizedBox(height: 12),
+            Text(
+              'Già usati',
+              style: Theme.of(context).textTheme.labelLarge,
+            ),
+            const SizedBox(height: 6),
+            Wrap(
+              spacing: 6,
+              runSpacing: 6,
+              children: suggestions.take(10).map((tag) {
+                return ActionChip(
+                  label: Text(tag),
+                  onPressed: () {
+                    final current = normalizeOrganizationTags(
+                      controller.text.split(','),
+                    );
+                    if (!current.any(
+                      (value) => value.toLowerCase() == tag.toLowerCase(),
+                    )) {
+                      current.add(tag);
+                      controller.text = current.join(', ');
+                      controller.selection = TextSelection.collapsed(
+                        offset: controller.text.length,
+                      );
+                    }
+                  },
+                );
+              }).toList(),
+            ),
+          ],
+        ],
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(dialogContext),
+          child: const Text('Annulla'),
+        ),
+        FilledButton(
+          onPressed: () => Navigator.pop(
+            dialogContext,
+            normalizeOrganizationTags(controller.text.split(',')),
+          ),
+          child: const Text('Salva'),
+        ),
+      ],
+    ),
+  );
+  controller.dispose();
+  return value;
+}
+
 Future<bool> confirmDiaryContentDelete(
   BuildContext context, {
   bool movesToTrash = false,
@@ -297,19 +538,21 @@ Future<bool> confirmDiaryContentDelete(
     ) ??
     false;
 
-enum DiaryContentKind { note, photo, sketch }
+enum DiaryContentKind { note, photo, sketch, voice }
 
 extension DiaryContentKindUi on DiaryContentKind {
   String get label => switch (this) {
         DiaryContentKind.note => 'Nota',
         DiaryContentKind.photo => 'Foto',
         DiaryContentKind.sketch => 'Sketch',
+        DiaryContentKind.voice => 'Voce',
       };
 
   IconData get icon => switch (this) {
         DiaryContentKind.note => Icons.sticky_note_2_outlined,
         DiaryContentKind.photo => Icons.photo_outlined,
         DiaryContentKind.sketch => Icons.draw_outlined,
+        DiaryContentKind.voice => Icons.mic_none_outlined,
       };
 }
 
@@ -322,7 +565,9 @@ class DiaryComposerSection extends StatelessWidget {
   final VoidCallback onAddNote;
   final VoidCallback onAddSketch;
   final VoidCallback onAddPhoto;
+  final VoidCallback? onAddVoice;
   final bool photoBusy;
+  final bool voiceBusy;
   final List<Widget> children;
 
   const DiaryComposerSection({
@@ -335,7 +580,9 @@ class DiaryComposerSection extends StatelessWidget {
     required this.onAddNote,
     required this.onAddSketch,
     required this.onAddPhoto,
+    this.onAddVoice,
     required this.photoBusy,
+    this.voiceBusy = false,
     required this.children,
   });
 
@@ -383,6 +630,18 @@ class DiaryComposerSection extends StatelessWidget {
                 icon: const Icon(Icons.draw_outlined),
                 label: const Text('Sketch'),
               ),
+              if (onAddVoice != null)
+                FilledButton.tonalIcon(
+                  onPressed: voiceBusy ? null : onAddVoice,
+                  icon: voiceBusy
+                      ? const SizedBox(
+                          width: 18,
+                          height: 18,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : const Icon(Icons.mic_none_outlined),
+                  label: const Text('Voce'),
+                ),
               FilledButton.tonalIcon(
                 onPressed: photoBusy ? null : onAddPhoto,
                 icon: photoBusy
@@ -419,9 +678,14 @@ class DiaryContentCard extends StatelessWidget {
   final VoidCallback? onEditCaption;
   final VoidCallback? onReplacePhoto;
   final VoidCallback? onPeople;
+  final VoidCallback? onPin;
+  final VoidCallback? onArchive;
+  final VoidCallback? onTags;
   final VoidCallback onDelete;
   final Widget? footer;
   final Widget? statusIcon;
+  final bool pinned;
+  final bool archived;
 
   const DiaryContentCard({
     super.key,
@@ -435,8 +699,13 @@ class DiaryContentCard extends StatelessWidget {
     this.onEditCaption,
     this.onReplacePhoto,
     this.onPeople,
+    this.onPin,
+    this.onArchive,
+    this.onTags,
     this.footer,
     this.statusIcon,
+    this.pinned = false,
+    this.archived = false,
   });
 
   @override
@@ -481,6 +750,9 @@ class DiaryContentCard extends StatelessWidget {
                     if (value == 'edit') onEdit?.call();
                     if (value == 'caption') onEditCaption?.call();
                     if (value == 'replace') onReplacePhoto?.call();
+                    if (value == 'pin') onPin?.call();
+                    if (value == 'archive') onArchive?.call();
+                    if (value == 'tags') onTags?.call();
                     if (value == 'people') onPeople?.call();
                     if (value == 'delete') onDelete();
                   },
@@ -501,6 +773,21 @@ class DiaryContentCard extends StatelessWidget {
                       const PopupMenuItem(
                         value: 'replace',
                         child: Text('Sostituisci foto'),
+                      ),
+                    if (onPin != null)
+                      PopupMenuItem(
+                        value: 'pin',
+                        child: Text(pinned ? 'Togli dai fissati' : 'Fissa'),
+                      ),
+                    if (onTags != null)
+                      const PopupMenuItem(
+                        value: 'tags',
+                        child: Text('Tag'),
+                      ),
+                    if (onArchive != null)
+                      PopupMenuItem(
+                        value: 'archive',
+                        child: Text(archived ? 'Ripristina da archivio' : 'Archivia'),
                       ),
                     if (onPeople != null)
                       const PopupMenuItem(
@@ -671,10 +958,18 @@ class DiaryMemoryCard extends StatefulWidget {
 
 class _DiaryMemoryCardState extends State<DiaryMemoryCard> {
   bool photoBusy = false;
+  bool voiceBusy = false;
 
   List<DiaryBlock> get _blocks {
-    final result = [...widget.store.journal(widget.date).blocks];
-    result.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+    final result = widget.store
+        .journal(widget.date)
+        .blocks
+        .where((block) => !block.archived)
+        .toList();
+    result.sort((a, b) {
+      if (a.pinned != b.pinned) return a.pinned ? -1 : 1;
+      return b.createdAt.compareTo(a.createdAt);
+    });
     return result;
   }
 
@@ -752,6 +1047,83 @@ class _DiaryMemoryCardState extends State<DiaryMemoryCard> {
       );
     } finally {
       if (mounted) setState(() => photoBusy = false);
+    }
+  }
+
+  Future<void> _addVoice() async {
+    if (voiceBusy) return;
+    setState(() => voiceBusy = true);
+    try {
+      final capture = await _captureVoiceClip(context);
+      if (capture == null || !mounted) return;
+
+      final caption = await showDiaryCaptionEditor(
+        context,
+        adding: true,
+      );
+      if (caption == null) return;
+
+      final mediaAssetId = await MediaAssetStore.instance.put(capture.bytes);
+      final blocks = [
+        ...widget.store.journal(widget.date).blocks,
+        DiaryBlock(
+          id: const Uuid().v4(),
+          type: DiaryBlockType.voice,
+          createdAt: DateTime.now(),
+          text: caption,
+          mediaAssetId: mediaAssetId,
+          audioDurationMs: capture.durationMs,
+          audioMimeType: capture.mimeType,
+        ),
+      ];
+      await _saveBlocks(blocks);
+    } finally {
+      if (mounted) setState(() => voiceBusy = false);
+    }
+  }
+
+  Future<void> _editVoiceCaption(DiaryBlock block) async {
+    final value = await showDiaryCaptionEditor(
+      context,
+      initialText: block.text,
+    );
+    if (value == null) return;
+
+    final blocks = [...widget.store.journal(widget.date).blocks];
+    final index = blocks.indexWhere((candidate) => candidate.id == block.id);
+    if (index >= 0) {
+      blocks[index] = block.copyWith(text: value);
+      await _saveBlocks(blocks);
+    }
+  }
+
+  Future<void> _playVoice(DiaryBlock block) async {
+    if (!block.hasVoiceMedia) return;
+    final bytes = await _readDiaryMediaBytes(
+      assetId: block.mediaAssetId,
+      fallbackBase64: block.audioBase64,
+    );
+    if (bytes == null || bytes.isEmpty || !mounted) return;
+
+    if (kIsWeb) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Sul web puoi conservare/importare l’audio; il player integrato è disponibile nell’app Android.',
+          ),
+        ),
+      );
+      return;
+    }
+
+    try {
+      await VoiceDiaryService.instance.play(bytes);
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Non riesco a riprodurre questo audio.')),
+        );
+      }
     }
   }
 
@@ -847,27 +1219,50 @@ class _DiaryMemoryCardState extends State<DiaryMemoryCard> {
 
   Widget? _peopleFooter(DiaryBlock block) {
     final linked = widget.store.peopleForIds(block.personIds);
-    if (linked.isEmpty) return null;
+    if (linked.isEmpty && block.tags.isEmpty) return null;
     return Padding(
       padding: const EdgeInsets.fromLTRB(12, 8, 12, 10),
       child: Wrap(
         spacing: 6,
         runSpacing: 6,
-        children: linked
-            .map(
-              (person) => Chip(
-                visualDensity: VisualDensity.compact,
-                avatar: Icon(
-                  person.favorite ? Icons.star : Icons.person_outline,
-                  size: 16,
-                ),
-                label: Text(person.name),
+        children: [
+          ...block.tags.map(
+            (tag) => Chip(
+              visualDensity: VisualDensity.compact,
+              avatar: const Icon(Icons.tag, size: 15),
+              label: Text(tag),
+            ),
+          ),
+          ...linked.map(
+            (person) => Chip(
+              visualDensity: VisualDensity.compact,
+              avatar: Icon(
+                person.favorite ? Icons.star : Icons.person_outline,
+                size: 16,
               ),
-            )
-            .toList(),
+              label: Text(person.name),
+            ),
+          ),
+        ],
       ),
     );
   }
+
+  Future<void> _editTags(DiaryBlock block) async {
+    final tags = await showOrganizationTagsEditor(
+      context,
+      initialTags: block.tags,
+      suggestions: widget.store.organizationTags,
+    );
+    if (tags == null) return;
+    await widget.store.setDiaryTags(widget.date, block.id, tags);
+  }
+
+  Future<void> _togglePinned(DiaryBlock block) =>
+      widget.store.toggleDiaryPinned(widget.date, block.id);
+
+  Future<void> _toggleArchived(DiaryBlock block) =>
+      widget.store.toggleDiaryArchived(widget.date, block.id);
 
   Future<void> _delete(DiaryBlock block) async {
     final confirmed = await confirmDiaryContentDelete(
@@ -905,6 +1300,11 @@ class _DiaryMemoryCardState extends State<DiaryMemoryCard> {
           onOpen: () => _addNote(block),
           onEdit: () => _addNote(block),
           onPeople: () => _editPeople(block),
+          onPin: () => _togglePinned(block),
+          onArchive: () => _toggleArchived(block),
+          onTags: () => _editTags(block),
+          pinned: block.pinned,
+          archived: block.archived,
           footer: _peopleFooter(block),
           onDelete: () => _delete(block),
         );
@@ -929,6 +1329,11 @@ class _DiaryMemoryCardState extends State<DiaryMemoryCard> {
           onEditCaption: () => _editPhotoCaption(block),
           onReplacePhoto: () => _replacePhoto(block),
           onPeople: () => _editPeople(block),
+          onPin: () => _togglePinned(block),
+          onArchive: () => _toggleArchived(block),
+          onTags: () => _editTags(block),
+          pinned: block.pinned,
+          archived: block.archived,
           footer: _peopleFooter(block),
           onDelete: () => _delete(block),
         );
@@ -946,7 +1351,27 @@ class _DiaryMemoryCardState extends State<DiaryMemoryCard> {
           onOpen: () => _openSketch(block),
           onEdit: () => _openSketch(block),
           onPeople: () => _editPeople(block),
+          onPin: () => _togglePinned(block),
+          onArchive: () => _toggleArchived(block),
+          onTags: () => _editTags(block),
+          pinned: block.pinned,
+          archived: block.archived,
           footer: _peopleFooter(block),
+          onDelete: () => _delete(block),
+        );
+      case DiaryBlockType.voice:
+        final duration = block.audioDurationMs <= 0
+            ? ''
+            : ' · ${_formatVoiceDuration(block.audioDurationMs)}';
+        return DiaryContentCard(
+          kind: DiaryContentKind.voice,
+          title: block.text.trim().isEmpty ? 'Nota vocale' : block.text,
+          subtitle: 'Voce$duration · $time',
+          onOpen: () => _playVoice(block),
+          onEdit: () => _editVoiceCaption(block),
+          onPeople: () => _editPeople(block),
+          footer: _peopleFooter(block),
+          statusIcon: const Icon(Icons.play_circle_outline),
           onDelete: () => _delete(block),
         );
     }
@@ -972,7 +1397,9 @@ class _DiaryMemoryCardState extends State<DiaryMemoryCard> {
       onAddNote: () => _addNote(),
       onAddSketch: () => _openSketch(),
       onAddPhoto: _addPhoto,
+      onAddVoice: _addVoice,
       photoBusy: photoBusy,
+      voiceBusy: voiceBusy,
       children: blocks
           .map((block) => _blockCard(context, block))
           .toList(growable: false),

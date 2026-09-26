@@ -2,7 +2,7 @@
 
 Flutter app for personal planning, private diary and the shared **Noi ♡** space.
 
-Current release line: **v0.53.0**.
+Current release line: **v0.55.0**.
 
 ## Core areas
 
@@ -253,3 +253,27 @@ See `docs/ARCHITECTURE.md` and `supabase/README.md` for implementation details.
 - Editing a single occurrence deliberately detaches it from the series, preserving predictable future-series behavior.
 - Series creation is bounded to 60 occurrences per edit operation to keep reminder scheduling and local/cloud writes controlled.
 - Dedicated regression tests cover serialization, restart persistence, calendar edge cases, scoped edits and Trash-backed scoped deletion.
+
+
+## v0.54.0 — Voice Diary
+
+- Adds native Android voice recording and playback without introducing an AI or transcription dependency.
+- Voice clips are stored through the existing content-addressed `MediaAssetStore`, not in a parallel media database.
+- The diary supports voice blocks with caption, duration, people links, Trash lifecycle and Memories integration.
+- Quick Capture can save a voice note directly into today's diary.
+- Web keeps the same data model and can import an audio file; integrated native playback/recording remains Android-specific.
+- Private cloud sync materializes voice bytes only at the portable sync boundary and restores them back into local media storage.
+- ZIP backup/restore includes voice media through the existing generic media manifest and integrity hashes.
+- Android platform generation now declares microphone permission and configures a native MediaRecorder/MediaPlayer bridge.
+- Dedicated tests cover serialization, local persistence, backup/restore, Trash recovery and Android platform contract.
+
+## v0.55.0 — Personal Organization
+
+- Extends existing organization primitives instead of creating a new content silo.
+- Inbox entries now support tags and manual archive in addition to the existing pin behavior.
+- Diary blocks now support pin, tags and manual archive while keeping their existing people/media relationships.
+- The day diary hides manually archived blocks and sorts pinned memories first.
+- Archive now surfaces manually archived Inbox entries and diary memories alongside the existing month-by-month historical archive.
+- Tag normalization de-duplicates case-insensitively, trims whitespace and caps per-item tag count to keep payloads bounded.
+- Organization metadata remains backward compatible with older Inbox and diary payloads.
+- Dedicated tests cover tag normalization, persistence, archive state and backward compatibility.
