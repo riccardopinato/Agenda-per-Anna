@@ -741,8 +741,7 @@ class HomeWidgetProvider : AppWidgetProvider() {
     android:updatePeriodMillis="0"
     android:initialLayout="@layout/annas_diary_home_widget"
     android:resizeMode="horizontal|vertical"
-    android:widgetCategory="home_screen"
-    android:description="@string/app_name" />
+    android:widgetCategory="home_screen" />
 ''',
         encoding="utf-8",
     )
