@@ -475,7 +475,7 @@ Future<void> _showQuickCapture(
   }
 
   if (action == 'voice') {
-    final capture = await captureVoiceClip(context);
+    final capture = await _captureVoiceClip(context);
     if (capture == null || !context.mounted) return;
 
     final caption = await showDiaryCaptionEditor(
