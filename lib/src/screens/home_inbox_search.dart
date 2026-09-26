@@ -874,12 +874,25 @@ class InboxScreen extends StatelessWidget {
     );
   }
 
+  Future<void> _editTags(
+    BuildContext context,
+    InboxEntry entry,
+  ) async {
+    final tags = await showOrganizationTagsEditor(
+      context,
+      initialTags: entry.tags,
+      suggestions: store.organizationTags,
+    );
+    if (tags == null) return;
+    await store.setInboxTags(entry.id, tags);
+  }
+
   @override
   Widget build(BuildContext context) {
     return AnimatedBuilder(
       animation: store.inboxRevision,
       builder: (context, _) {
-        final entries = [...store.inbox]
+        final entries = [...store.activeInboxEntries]
           ..sort((a, b) {
             if (a.pinned != b.pinned) return a.pinned ? -1 : 1;
             return b.createdAt.compareTo(a.createdAt);
@@ -928,15 +941,23 @@ class InboxScreen extends StatelessWidget {
                         ),
                         title: Text(entry.text),
                         subtitle: Text(
-                          DateFormat(
-                            'd MMM, HH:mm',
-                            'it_IT',
-                          ).format(entry.createdAt),
+                          [
+                            DateFormat(
+                              'd MMM, HH:mm',
+                              'it_IT',
+                            ).format(entry.createdAt),
+                            if (entry.tags.isNotEmpty)
+                              entry.tags.map((tag) => '#$tag').join(' · '),
+                          ].join(' · '),
                         ),
                         trailing: PopupMenuButton<String>(
                           onSelected: (value) async {
                             if (value == 'pin') {
                               await store.toggleInboxPinned(entry.id);
+                            } else if (value == 'tags') {
+                              await _editTags(context, entry);
+                            } else if (value == 'archive') {
+                              await store.toggleInboxArchived(entry.id);
                             } else if (value == 'task') {
                               await _convertToTask(context, entry);
                             } else if (value == 'delete') {
@@ -949,6 +970,14 @@ class InboxScreen extends StatelessWidget {
                               child: Text(
                                 entry.pinned ? 'Togli dai fissati' : 'Fissa',
                               ),
+                            ),
+                            const PopupMenuItem(
+                              value: 'tags',
+                              child: Text('Tag'),
+                            ),
+                            const PopupMenuItem(
+                              value: 'archive',
+                              child: Text('Archivia'),
                             ),
                             const PopupMenuItem(
                               value: 'task',
