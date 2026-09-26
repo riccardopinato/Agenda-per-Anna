@@ -511,6 +511,7 @@ class _PersonalSearchConnectionsScreenState
           hit.date,
           existing: hit.agendaItem,
         );
+        return;
       case PersonalSearchKind.diary:
         if (!mounted) return;
         await Navigator.push(
@@ -522,6 +523,7 @@ class _PersonalSearchConnectionsScreenState
             ),
           ),
         );
+        return;
       case PersonalSearchKind.person:
         if (!mounted) return;
         await Navigator.push(
@@ -530,6 +532,7 @@ class _PersonalSearchConnectionsScreenState
             builder: (_) => PeopleScreen(store: widget.store),
           ),
         );
+        return;
       case PersonalSearchKind.birthday:
         if (!mounted) return;
         await Navigator.push(
@@ -538,6 +541,7 @@ class _PersonalSearchConnectionsScreenState
             builder: (_) => BirthdaysScreen(store: widget.store),
           ),
         );
+        return;
       case PersonalSearchKind.inbox:
         if (!mounted) return;
         await Navigator.push(
