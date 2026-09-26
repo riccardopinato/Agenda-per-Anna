@@ -1,13 +1,13 @@
 appId: com.riccardopinato.agenda_per_anna
 ---
 - extendedWaitUntil:
-    visible: 'Home[\\s\\S]*'
+    visible: "Home"
     timeout: 10000
 - tapOn:
-    text: 'Home[\\s\\S]*'
+    text: "Home"
     retryTapIfNoChange: true
 - tapOn:
-    text: 'Noi ♡[\\s\\S]*'
+    text: "Noi ♡"
 - extendedWaitUntil:
     visible: "Noi ♡"
     timeout: 10000
