@@ -64,6 +64,10 @@ def configure_activity() -> None:
 
     vault_activity = r'''package com.riccardopinato.agenda_per_anna
 
+import android.Manifest
+import android.content.pm.PackageManager
+import android.media.MediaPlayer
+import android.media.MediaRecorder
 import android.security.keystore.KeyGenParameterSpec
 import android.security.keystore.KeyProperties
 import android.util.Base64
@@ -71,6 +75,7 @@ import android.view.WindowManager
 import io.flutter.embedding.android.FlutterFragmentActivity
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
+import java.io.File
 import java.security.KeyStore
 import javax.crypto.Cipher
 import javax.crypto.KeyGenerator
@@ -80,9 +85,16 @@ import javax.crypto.spec.GCMParameterSpec
 class MainActivity : FlutterFragmentActivity() {
     companion object {
         private const val CHANNEL = "annas_diary/private_vault"
+        private const val VOICE_CHANNEL = "annas_diary/voice_diary"
+        private const val MICROPHONE_REQUEST_CODE = 4411
         private const val KEY_ALIAS = "annas_diary_private_vault_v1"
         private const val IV_BYTES = 12
     }
+
+    private var voiceRecorder: MediaRecorder? = null
+    private var voiceRecordingFile: File? = null
+    private var voicePlayer: MediaPlayer? = null
+    private var voicePlaybackFile: File? = null
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
@@ -137,6 +149,162 @@ class MainActivity : FlutterFragmentActivity() {
                 )
             }
         }
+
+        MethodChannel(
+            flutterEngine.dartExecutor.binaryMessenger,
+            VOICE_CHANNEL,
+        ).setMethodCallHandler { call, result ->
+            try {
+                when (call.method) {
+                    "startRecording" -> {
+                        startVoiceRecording()
+                        result.success(null)
+                    }
+                    "stopRecording" -> {
+                        result.success(stopVoiceRecording())
+                    }
+                    "cancelRecording" -> {
+                        cancelVoiceRecording()
+                        result.success(null)
+                    }
+                    "playRecording" -> {
+                        val bytes = call.arguments as? ByteArray
+                            ?: throw IllegalArgumentException("missing audio bytes")
+                        playVoiceRecording(bytes)
+                        result.success(null)
+                    }
+                    "stopPlayback" -> {
+                        stopVoicePlayback()
+                        result.success(null)
+                    }
+                    else -> result.notImplemented()
+                }
+            } catch (error: SecurityException) {
+                result.error(
+                    "microphone_permission_required",
+                    "Consenti l'accesso al microfono e riprova.",
+                    null,
+                )
+            } catch (error: Throwable) {
+                result.error(
+                    "voice_native_error",
+                    error.message ?: error.javaClass.simpleName,
+                    null,
+                )
+            }
+        }
+    }
+
+    @Suppress("DEPRECATION")
+    private fun startVoiceRecording() {
+        if (checkSelfPermission(Manifest.permission.RECORD_AUDIO) !=
+            PackageManager.PERMISSION_GRANTED
+        ) {
+            requestPermissions(
+                arrayOf(Manifest.permission.RECORD_AUDIO),
+                MICROPHONE_REQUEST_CODE,
+            )
+            throw SecurityException("microphone permission required")
+        }
+
+        cancelVoiceRecording()
+        val file = File.createTempFile(
+            "annas_diary_voice_",
+            ".m4a",
+            cacheDir,
+        )
+        val recorder = MediaRecorder()
+        recorder.setAudioSource(MediaRecorder.AudioSource.MIC)
+        recorder.setOutputFormat(MediaRecorder.OutputFormat.MPEG_4)
+        recorder.setAudioEncoder(MediaRecorder.AudioEncoder.AAC)
+        recorder.setAudioEncodingBitRate(96000)
+        recorder.setAudioSamplingRate(44100)
+        recorder.setOutputFile(file.absolutePath)
+        recorder.prepare()
+        recorder.start()
+
+        voiceRecordingFile = file
+        voiceRecorder = recorder
+    }
+
+    private fun stopVoiceRecording(): ByteArray {
+        val recorder = voiceRecorder
+            ?: throw IllegalStateException("voice recording not active")
+        val file = voiceRecordingFile
+            ?: throw IllegalStateException("voice recording file missing")
+
+        try {
+            recorder.stop()
+        } finally {
+            recorder.reset()
+            recorder.release()
+            voiceRecorder = null
+        }
+
+        val bytes = file.readBytes()
+        file.delete()
+        voiceRecordingFile = null
+        require(bytes.isNotEmpty()) { "empty voice recording" }
+        return bytes
+    }
+
+    private fun cancelVoiceRecording() {
+        val recorder = voiceRecorder
+        if (recorder != null) {
+            try {
+                recorder.stop()
+            } catch (_: Throwable) {
+            }
+            try {
+                recorder.reset()
+                recorder.release()
+            } catch (_: Throwable) {
+            }
+        }
+        voiceRecorder = null
+        voiceRecordingFile?.delete()
+        voiceRecordingFile = null
+    }
+
+    private fun playVoiceRecording(bytes: ByteArray) {
+        stopVoicePlayback()
+        require(bytes.isNotEmpty()) { "empty audio bytes" }
+
+        val file = File.createTempFile(
+            "annas_diary_playback_",
+            ".m4a",
+            cacheDir,
+        )
+        file.writeBytes(bytes)
+
+        val player = MediaPlayer()
+        player.setDataSource(file.absolutePath)
+        player.setOnCompletionListener {
+            stopVoicePlayback()
+        }
+        player.prepare()
+        player.start()
+
+        voicePlaybackFile = file
+        voicePlayer = player
+    }
+
+    private fun stopVoicePlayback() {
+        val player = voicePlayer
+        if (player != null) {
+            try {
+                if (player.isPlaying) player.stop()
+            } catch (_: Throwable) {
+            }
+            try {
+                player.reset()
+                player.release()
+            } catch (_: Throwable) {
+            }
+        }
+        voicePlayer = null
+        voicePlaybackFile?.delete()
+        voicePlaybackFile = null
     }
 
     private fun getOrCreateKey(): SecretKey {
@@ -198,6 +366,7 @@ def configure_manifest() -> None:
         '<uses-permission android:name="android.permission.USE_BIOMETRIC" />',
         '<uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />',
         '<uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />',
+        '<uses-permission android:name="android.permission.RECORD_AUDIO" />',
     ]
     manifest_close = re.search(r"<manifest\b[^>]*>", manifest)
     if manifest_close is None:
