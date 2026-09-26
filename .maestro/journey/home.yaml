@@ -2,16 +2,5 @@ appId: com.riccardopinato.agenda_per_anna
 ---
 - back
 - extendedWaitUntil:
-    visible: "Home"
-    timeout: 10000
-- tapOn:
-    text: "Home"
-    retryTapIfNoChange: true
-- scrollUntilVisible:
-    element:
-      text: "Oggi in breve"
-    direction: UP
-    timeout: 10000
-- extendedWaitUntil:
-    visible: "Oggi in breve"
+    visible: "La mia agenda"
     timeout: 10000
