@@ -53,6 +53,7 @@ part 'src/screens/shared_space.dart';
 part 'src/screens/cloud_account.dart';
 part 'src/planner_views.dart';
 part 'src/widgets_editors.dart';
+part 'src/diary/diary_templates.dart';
 part 'src/diary/diary_components.dart';
 part 'src/diary/diary_memories.dart';
 part 'src/diary/diary_sketchbook.dart';
