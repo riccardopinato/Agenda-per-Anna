@@ -2,7 +2,7 @@
 
 Flutter app for personal planning, private diary and the shared **Noi ♡** space.
 
-Current release line: **v0.55.0**.
+Current release line: **v0.57.0**.
 
 ## Core areas
 
@@ -277,3 +277,21 @@ See `docs/ARCHITECTURE.md` and `supabase/README.md` for implementation details.
 - Tag normalization de-duplicates case-insensitively, trims whitespace and caps per-item tag count to keep payloads bounded.
 - Organization metadata remains backward compatible with older Inbox and diary payloads.
 - Dedicated tests cover tag normalization, persistence, archive state and backward compatibility.
+
+
+## v0.56.0 — Android Home Widget
+
+- Adds a lightweight native Android home-screen widget without introducing a new Flutter/plugin dependency.
+- Reuses existing Day Hub, unified agenda, birthdays, pending tasks and Inbox data.
+- Shows the next commitment, nearest birthday, pending task count and active Inbox count.
+- Includes direct “+ Aggiungi” and “Oggi” actions that return into the existing Quick Capture and Today flows.
+- Widget state is a projection of existing app data; it does not own a second database and cannot diverge as an independent source of truth.
+- The Android platform generator creates the provider, manifest registration and widget resources deterministically for CI/release builds.
+
+## v0.57.0 — Memories & Relationships 2.0
+
+- People can store an anniversary / important relationship date with backward-compatible serialization.
+- Relationship overview combines linked diary memories, birthday information and next anniversary.
+- Adds first-memory / latest-memory timeline anchors.
+- Adds deterministic “In questo giorno” memories for a person, excluding archived diary content.
+- Existing person-to-diary links remain the canonical relationship graph; no duplicate relationship database is introduced.

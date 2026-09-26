@@ -65,6 +65,10 @@ def configure_activity() -> None:
     vault_activity = r'''package com.riccardopinato.agenda_per_anna
 
 import android.Manifest
+import android.app.PendingIntent
+import android.appwidget.AppWidgetManager
+import android.content.ComponentName
+import android.content.Intent
 import android.content.pm.PackageManager
 import android.media.MediaPlayer
 import android.media.MediaRecorder
@@ -86,6 +90,7 @@ class MainActivity : FlutterFragmentActivity() {
     companion object {
         private const val CHANNEL = "annas_diary/private_vault"
         private const val VOICE_CHANNEL = "annas_diary/voice_diary"
+        private const val HOME_WIDGET_CHANNEL = "annas_diary/home_widget"
         private const val MICROPHONE_REQUEST_CODE = 4411
         private const val KEY_ALIAS = "annas_diary_private_vault_v1"
         private const val IV_BYTES = 12
@@ -95,8 +100,12 @@ class MainActivity : FlutterFragmentActivity() {
     private var voiceRecordingFile: File? = null
     private var voicePlayer: MediaPlayer? = null
     private var voicePlaybackFile: File? = null
+    private var homeWidgetChannel: MethodChannel? = null
+    private var pendingHomeWidgetAction: String? = null
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
+        pendingHomeWidgetAction =
+            intent?.getStringExtra(HomeWidgetProvider.EXTRA_ACTION)
         super.configureFlutterEngine(flutterEngine)
         MethodChannel(
             flutterEngine.dartExecutor.binaryMessenger,
@@ -192,6 +201,67 @@ class MainActivity : FlutterFragmentActivity() {
                     null,
                 )
             }
+        }
+
+        homeWidgetChannel = MethodChannel(
+            flutterEngine.dartExecutor.binaryMessenger,
+            HOME_WIDGET_CHANNEL,
+        ).also { channel ->
+            channel.setMethodCallHandler { call, result ->
+                try {
+                    when (call.method) {
+                        "takeLaunchAction" -> {
+                            val action = pendingHomeWidgetAction
+                            pendingHomeWidgetAction = null
+                            result.success(action)
+                        }
+                        "updateWidget" -> {
+                            val args = call.arguments as? Map<*, *>
+                                ?: emptyMap<String, Any>()
+                            val prefs = getSharedPreferences(
+                                HomeWidgetProvider.PREFS,
+                                MODE_PRIVATE,
+                            )
+                            prefs.edit()
+                                .putString("title", args["title"]?.toString() ?: "Anna's Diary")
+                                .putString("next", args["next"]?.toString() ?: "")
+                                .putString("birthday", args["birthday"]?.toString() ?: "")
+                                .putInt("tasks", (args["tasks"] as? Number)?.toInt() ?: 0)
+                                .putInt("inbox", (args["inbox"] as? Number)?.toInt() ?: 0)
+                                .apply()
+
+                            val manager = AppWidgetManager.getInstance(this)
+                            val ids = manager.getAppWidgetIds(
+                                ComponentName(this, HomeWidgetProvider::class.java),
+                            )
+                            sendBroadcast(
+                                Intent(this, HomeWidgetProvider::class.java).apply {
+                                    action = AppWidgetManager.ACTION_APPWIDGET_UPDATE
+                                    putExtra(AppWidgetManager.EXTRA_APPWIDGET_IDS, ids)
+                                },
+                            )
+                            result.success(null)
+                        }
+                        else -> result.notImplemented()
+                    }
+                } catch (error: Throwable) {
+                    result.error(
+                        "home_widget_native_error",
+                        error.message ?: error.javaClass.simpleName,
+                        null,
+                    )
+                }
+            }
+        }
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        val action = intent.getStringExtra(HomeWidgetProvider.EXTRA_ACTION)
+        if (!action.isNullOrBlank()) {
+            pendingHomeWidgetAction = action
+            homeWidgetChannel?.invokeMethod("homeWidgetAction", action)
         }
     }
 
@@ -459,6 +529,27 @@ def configure_manifest() -> None:
             1,
         )
 
+    home_widget_receiver = """
+        <receiver
+            android:name=".HomeWidgetProvider"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/annas_diary_home_widget_info" />
+        </receiver>
+"""
+    if "HomeWidgetProvider" not in manifest:
+        if "</application>" not in manifest:
+            raise SystemExit("Flutter template drift: </application> not found")
+        manifest = manifest.replace(
+            "</application>",
+            home_widget_receiver + "    </application>",
+            1,
+        )
+
     write_if_changed(MANIFEST, manifest)
 
     drawable = ANDROID / "app" / "src" / "main" / "res" / "drawable"
@@ -474,6 +565,184 @@ def configure_manifest() -> None:
         android:pathData="M12,22c1.1,0 2,-0.9 2,-2h-4c0,1.1 0.9,2 2,2zM18,16v-5c0,-3.07 -1.63,-5.64 -4.5,-6.32V3c0,-0.83 -0.67,-1.5 -1.5,-1.5S10.5,2.17 10.5,3v0.68C7.64,4.36 6,6.92 6,10v6l-2,2v1h16v-1l-2,-2z" />
 </vector>
 """,
+        encoding="utf-8",
+    )
+
+
+def configure_home_widget() -> None:
+    package_dir = MAIN_ACTIVITY.parent
+    provider = package_dir / "HomeWidgetProvider.kt"
+    provider.write_text(
+        r'''package com.riccardopinato.agenda_per_anna
+
+import android.app.PendingIntent
+import android.appwidget.AppWidgetManager
+import android.appwidget.AppWidgetProvider
+import android.content.Context
+import android.content.Intent
+import android.widget.RemoteViews
+
+class HomeWidgetProvider : AppWidgetProvider() {
+    companion object {
+        const val PREFS = "annas_diary_home_widget"
+        const val EXTRA_ACTION = "homeWidgetAction"
+        private const val REQUEST_OPEN = 7100
+        private const val REQUEST_CAPTURE = 7101
+        private const val REQUEST_TODAY = 7102
+    }
+
+    override fun onUpdate(
+        context: Context,
+        manager: AppWidgetManager,
+        ids: IntArray,
+    ) {
+        for (id in ids) {
+            manager.updateAppWidget(id, views(context))
+        }
+    }
+
+    private fun views(context: Context): RemoteViews {
+        val prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+        return RemoteViews(context.packageName, R.layout.annas_diary_home_widget).apply {
+            setTextViewText(
+                R.id.widgetTitle,
+                prefs.getString("title", "Anna's Diary") ?: "Anna's Diary",
+            )
+            setTextViewText(
+                R.id.widgetNext,
+                prefs.getString("next", "Apri l’app per aggiornare") ?: "",
+            )
+            setTextViewText(
+                R.id.widgetBirthday,
+                prefs.getString("birthday", "") ?: "",
+            )
+            setTextViewText(
+                R.id.widgetCounters,
+                "Da fare: ${prefs.getInt("tasks", 0)} · Inbox: ${prefs.getInt("inbox", 0)}",
+            )
+            setOnClickPendingIntent(
+                R.id.widgetRoot,
+                openIntent(context, null, REQUEST_OPEN),
+            )
+            setOnClickPendingIntent(
+                R.id.widgetCapture,
+                openIntent(context, "quick_capture", REQUEST_CAPTURE),
+            )
+            setOnClickPendingIntent(
+                R.id.widgetToday,
+                openIntent(context, "today", REQUEST_TODAY),
+            )
+        }
+    }
+
+    private fun openIntent(
+        context: Context,
+        action: String?,
+        requestCode: Int,
+    ): PendingIntent {
+        val intent = Intent(context, MainActivity::class.java).apply {
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+            if (action != null) putExtra(EXTRA_ACTION, action)
+        }
+        return PendingIntent.getActivity(
+            context,
+            requestCode,
+            intent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
+        )
+    }
+}
+''',
+        encoding="utf-8",
+    )
+
+    layout = ANDROID / "app" / "src" / "main" / "res" / "layout"
+    layout.mkdir(parents=True, exist_ok=True)
+    (layout / "annas_diary_home_widget.xml").write_text(
+        r'''<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/widgetRoot"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:padding="16dp"
+    android:background="#FFF8FA">
+
+    <TextView
+        android:id="@+id/widgetTitle"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Anna's Diary"
+        android:textStyle="bold"
+        android:textSize="18sp"
+        android:textColor="#5A2638" />
+
+    <TextView
+        android:id="@+id/widgetNext"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:maxLines="2"
+        android:textSize="14sp"
+        android:textColor="#3D2D33" />
+
+    <TextView
+        android:id="@+id/widgetBirthday"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="4dp"
+        android:maxLines="1"
+        android:textSize="13sp"
+        android:textColor="#6B5960" />
+
+    <TextView
+        android:id="@+id/widgetCounters"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="4dp"
+        android:textSize="12sp"
+        android:textColor="#6B5960" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="10dp"
+        android:orientation="horizontal">
+
+        <Button
+            android:id="@+id/widgetCapture"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="+ Aggiungi"
+            android:textAllCaps="false" />
+
+        <Button
+            android:id="@+id/widgetToday"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="8dp"
+            android:layout_weight="1"
+            android:text="Oggi"
+            android:textAllCaps="false" />
+    </LinearLayout>
+</LinearLayout>
+''',
+        encoding="utf-8",
+    )
+
+    xml = ANDROID / "app" / "src" / "main" / "res" / "xml"
+    xml.mkdir(parents=True, exist_ok=True)
+    (xml / "annas_diary_home_widget_info.xml").write_text(
+        r'''<?xml version="1.0" encoding="utf-8"?>
+<appwidget-provider xmlns:android="http://schemas.android.com/apk/res/android"
+    android:minWidth="250dp"
+    android:minHeight="110dp"
+    android:updatePeriodMillis="0"
+    android:initialLayout="@layout/annas_diary_home_widget"
+    android:resizeMode="horizontal|vertical"
+    android:widgetCategory="home_screen" />
+''',
         encoding="utf-8",
     )
 
@@ -625,6 +894,10 @@ def verify() -> None:
         failures.append("allowBackup=false")
     if "ScheduledNotificationReceiver" not in manifest:
         failures.append("notification receiver")
+    if "HomeWidgetProvider" not in manifest:
+        failures.append("home widget receiver")
+    if "annas_diary/home_widget" not in activity:
+        failures.append("home widget channel")
     if "isCoreLibraryDesugaringEnabled = true" not in gradle:
         failures.append("core library desugaring")
     if not ICON_JPG.is_file() or ICON_JPG.stat().st_size == 0:
@@ -649,6 +922,7 @@ def main() -> None:
 
     configure_activity()
     configure_manifest()
+    configure_home_widget()
     configure_desugaring()
     firebase_enabled = configure_firebase()
     if args.release_signing:

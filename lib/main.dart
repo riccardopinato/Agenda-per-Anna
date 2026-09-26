@@ -9,6 +9,7 @@ import 'package:flutter/foundation.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_image_compress/flutter_image_compress.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/date_symbol_data_local.dart';
@@ -32,6 +33,7 @@ import 'web_push_service.dart';
 part 'src/app_shell.dart';
 part 'src/domain_models.dart';
 part 'src/day_hub_domain.dart';
+part 'src/home_widget_bridge.dart';
 part 'src/recurring_life_domain.dart';
 part 'src/organization_domain.dart';
 part 'src/people_domain.dart';
@@ -132,6 +134,39 @@ Future<void> main() async {
   runApp(AgendaApp(store: store));
 
   Future<void>.delayed(Duration.zero, () async {
+    try {
+      await HomeWidgetBridge.instance.initialize();
+      HomeWidgetBridge.instance.onAction = (action) {
+        final context = appNavigatorKey.currentContext;
+        if (context == null) return;
+        if (action == 'quick_capture') {
+          unawaited(_showQuickCapture(context, store));
+        } else if (action == 'today') {
+          unawaited(
+            Navigator.of(context).push(
+              MaterialPageRoute(
+                builder: (_) => PlannerScreen(
+                  store: store,
+                  initialDate: DateTime.now(),
+                ),
+              ),
+            ),
+          );
+        }
+      };
+      await HomeWidgetBridge.instance.sync(store);
+      final initialWidgetAction =
+          await HomeWidgetBridge.instance.takeLaunchAction();
+      if (initialWidgetAction != null) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          HomeWidgetBridge.instance.onAction?.call(initialWidgetAction);
+        });
+      }
+    } catch (_) {
+      // Il widget è opzionale e non deve impedire l'avvio dell'app.
+    }
+
+
     try {
       await NotificationService.instance.initialize();
       await store.reconcileReminders();

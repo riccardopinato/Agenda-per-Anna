@@ -6,6 +6,7 @@ class PersonEntry {
   final String relationship;
   final String note;
   final String? birthdayId;
+  final DateTime? anniversaryDate;
   final bool favorite;
 
   const PersonEntry({
@@ -14,6 +15,7 @@ class PersonEntry {
     this.relationship = '',
     this.note = '',
     this.birthdayId,
+    this.anniversaryDate,
     this.favorite = false,
   });
 
@@ -22,8 +24,10 @@ class PersonEntry {
     String? relationship,
     String? note,
     String? birthdayId,
+    DateTime? anniversaryDate,
     bool? favorite,
     bool clearBirthday = false,
+    bool clearAnniversary = false,
   }) =>
       PersonEntry(
         id: id,
@@ -31,6 +35,9 @@ class PersonEntry {
         relationship: relationship ?? this.relationship,
         note: note ?? this.note,
         birthdayId: clearBirthday ? null : (birthdayId ?? this.birthdayId),
+        anniversaryDate: clearAnniversary
+            ? null
+            : (anniversaryDate ?? this.anniversaryDate),
         favorite: favorite ?? this.favorite,
       );
 
@@ -40,6 +47,7 @@ class PersonEntry {
         'relationship': relationship,
         'note': note,
         'birthdayId': birthdayId,
+        'anniversaryDate': anniversaryDate?.toIso8601String(),
         'favorite': favorite,
       };
 
@@ -51,6 +59,8 @@ class PersonEntry {
         birthdayId: (json['birthdayId'] as String?)?.trim().isEmpty == true
             ? null
             : json['birthdayId'] as String?,
+        anniversaryDate:
+            DateTime.tryParse(json['anniversaryDate'] as String? ?? ''),
         favorite: json['favorite'] as bool? ?? false,
       );
 }
@@ -63,6 +73,31 @@ class PersonMemoryReference {
     required this.date,
     required this.block,
   });
+}
+
+
+class PersonRelationshipSnapshot {
+  final PersonEntry person;
+  final BirthdayEntry? birthday;
+  final List<PersonMemoryReference> memories;
+  final List<PersonMemoryReference> onThisDay;
+  final DateTime? nextAnniversary;
+
+  const PersonRelationshipSnapshot({
+    required this.person,
+    required this.birthday,
+    required this.memories,
+    required this.onThisDay,
+    required this.nextAnniversary,
+  });
+
+  DateTime? get firstMemoryDate =>
+      memories.isEmpty ? null : memories.last.date;
+
+  DateTime? get lastMemoryDate =>
+      memories.isEmpty ? null : memories.first.date;
+
+  int get memoryCount => memories.length;
 }
 
 extension AgendaStorePeople on AgendaStore {
@@ -141,6 +176,72 @@ extension AgendaStorePeople on AgendaStore {
 
   int personMemoryCount(String personId) =>
       memoriesForPerson(personId).length;
+
+  List<PersonMemoryReference> onThisDayMemories(
+    DateTime day, {
+    String? personId,
+  }) {
+    final result = <PersonMemoryReference>[];
+    for (final entry in journals.entries) {
+      final date = DateTime.tryParse(entry.key);
+      if (date == null ||
+          date.year >= day.year ||
+          date.month != day.month ||
+          date.day != day.day) {
+        continue;
+      }
+      for (final block in entry.value.blocks) {
+        if (block.archived) continue;
+        if (personId != null && !block.personIds.contains(personId)) continue;
+        result.add(PersonMemoryReference(date: date, block: block));
+      }
+    }
+    result.sort((a, b) => b.date.compareTo(a.date));
+    return result;
+  }
+
+  DateTime? nextAnniversaryForPerson(
+    PersonEntry person, {
+    DateTime? from,
+  }) {
+    final anniversary = person.anniversaryDate;
+    if (anniversary == null) return null;
+    final now = from ?? DateTime.now();
+    final year = now.year;
+    final lastDay = DateTime(year, anniversary.month + 1, 0).day;
+    var candidate = DateTime(
+      year,
+      anniversary.month,
+      anniversary.day.clamp(1, lastDay).toInt(),
+    );
+    final today = DateTime(now.year, now.month, now.day);
+    if (candidate.isBefore(today)) {
+      final nextYear = year + 1;
+      final nextLastDay =
+          DateTime(nextYear, anniversary.month + 1, 0).day;
+      candidate = DateTime(
+        nextYear,
+        anniversary.month,
+        anniversary.day.clamp(1, nextLastDay).toInt(),
+      );
+    }
+    return candidate;
+  }
+
+  PersonRelationshipSnapshot relationshipSnapshot(
+    PersonEntry person, {
+    DateTime? now,
+  }) {
+    final anchor = now ?? DateTime.now();
+    final memories = memoriesForPerson(person.id);
+    return PersonRelationshipSnapshot(
+      person: person,
+      birthday: birthdayForPerson(person),
+      memories: memories,
+      onThisDay: onThisDayMemories(anchor, personId: person.id),
+      nextAnniversary: nextAnniversaryForPerson(person, from: anchor),
+    );
+  }
 
   DateTime? lastMemoryDateForPerson(String personId) {
     final memories = memoriesForPerson(personId);

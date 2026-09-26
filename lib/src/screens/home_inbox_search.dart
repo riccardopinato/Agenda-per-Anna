@@ -59,6 +59,7 @@ class HomeScreen extends StatelessWidget {
         store.backupRevision,
       ]),
       builder: (context, _) {
+        unawaited(HomeWidgetBridge.instance.sync(store));
         final today = store.unifiedForDay(now);
         final upcoming = store.unifiedUpcoming(now);
         final briefing = store.dayHubSnapshot(now);
