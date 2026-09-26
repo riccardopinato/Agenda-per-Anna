@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -8,6 +10,26 @@ void main() {
 
   setUp(() {
     SharedPreferences.setMockInitialValues({});
+  });
+
+  test('new profiles start without a prefilled personal name', () {
+    const defaults = AgendaPreferences();
+    final legacyMissingName = AgendaPreferences.fromJson(const {});
+
+    expect(defaults.displayName, isEmpty);
+    expect(legacyMissingName.displayName, isEmpty);
+  });
+
+  test('settings exposes a neutral name field', () {
+    final settings =
+        File('lib/src/screens/backup_settings.dart').readAsStringSync();
+
+    expect(settings, contains("hintText: 'Inserisci il tuo nome'"));
+    expect(
+      settings,
+      isNot(contains('prefixIcon: Icon(Icons.favorite_outline)')),
+    );
+    expect(settings, contains('displayName: value,'));
   });
 
   test('preferences round-trip preserves personalization', () {

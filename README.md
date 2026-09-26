@@ -2,7 +2,7 @@
 
 Flutter app for personal planning, private diary and the shared **Noi ♡** space.
 
-Current release line: **v0.62.0**.
+Current release line: **v0.62.1**.
 
 ## Core areas
 
@@ -347,3 +347,12 @@ See `docs/ARCHITECTURE.md` and `supabase/README.md` for implementation details.
 - Production readiness requirements are documented in `docs/PRODUCTION_READINESS_V062.md`.
 - Web/PWA startup now migrates Web Push to a dedicated non-caching service worker, while Flutter's legacy cache worker is left only for framework migration. A safe `update-recovery.html` path clears obsolete Flutter caches without deleting diary/local application data, allowing clients stranded on old builds such as v0.39 to reach the current v0.62.
 - v0.62 can merge only after Development checks, Web, Android size audit and AppLab Trusted Verify are all green.
+
+
+## v0.62.1 — Generic Profile Default
+
+- New profiles no longer prefill the personal display name with “Anna”.
+- Settings shows the neutral placeholder “Inserisci il tuo nome” and removes the heart icon from the name field.
+- Existing saved names remain unchanged and continue to sync/restore normally.
+- Home falls back to neutral copy until a name is provided, avoiding empty personalized titles or greetings.
+- No AI features or new persistence subsystem are introduced.
