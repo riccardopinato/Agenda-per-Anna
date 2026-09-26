@@ -149,6 +149,31 @@ class NotificationService {
     ),
   ];
 
+  static const NotificationDetails _standardReminderDetails =
+      NotificationDetails(
+    android: AndroidNotificationDetails(
+      reminderChannelId,
+      'Promemoria',
+      channelDescription:
+          'Promemoria di Anna\'s Diary per appuntamenti e cose da fare',
+      importance: Importance.max,
+      priority: Priority.max,
+      playSound: true,
+      enableVibration: true,
+      category: AndroidNotificationCategory.reminder,
+    ),
+    iOS: DarwinNotificationDetails(
+      presentAlert: true,
+      presentBadge: true,
+      presentSound: true,
+    ),
+    macOS: DarwinNotificationDetails(
+      presentAlert: true,
+      presentBadge: true,
+      presentSound: true,
+    ),
+  );
+
   static const NotificationDetails _actionableReminderDetails =
       NotificationDetails(
     android: AndroidNotificationDetails(
@@ -773,6 +798,7 @@ class NotificationService {
     required String body,
     required DateTime when,
     bool requestPermission = true,
+    bool agendaActions = false,
   }) async {
     await initialize();
     if (!_available) return;
@@ -821,9 +847,10 @@ class NotificationService {
         title: title,
         body: body,
         scheduledDate: scheduled,
-        notificationDetails: _actionableReminderDetails,
+        notificationDetails:
+            agendaActions ? _actionableReminderDetails : _standardReminderDetails,
         androidScheduleMode: mode,
-        payload: payload.encode(),
+        payload: agendaActions ? payload.encode() : stableId,
       );
       _lastError = null;
     } catch (error) {
