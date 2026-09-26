@@ -12,7 +12,7 @@ Source of truth for the active product sequence after v0.52. The roadmap follows
 | v0.56 | Widget | Completed | Android home-screen glance + safe ultra-quick capture using existing app data |
 | v0.57 | Memories / Relationships 2.0 | Completed | Richer person-linked memories, anniversaries and “on this day” navigation |
 | v0.58 | Diary 2.0 | Implemented; paired validation with v0.59 | Reusable personal diary templates and richer daily-writing flows |
-| v0.59 | Search / Connections | In implementation | Unified local search, filters and explicit connections between personal content |
+| v0.59 | Search / Connections | In paired validation | Unified local search, filters and explicit connections between personal content |
 | v0.60 | Noi ♡ 2.0 | Planned | Stronger shared memories/agenda collaboration on the existing shared-space infrastructure |
 | v0.61 | Data Safety | Planned | Restore drills, backup verification, orphan checks and long-term data portability hardening |
 | v0.62 | Non-AI Production Consolidation | Planned | Accessibility, performance, regression and release-quality consolidation; no AI features |
@@ -103,3 +103,14 @@ Per the active development cadence, AppLab runs once every two feature versions.
 - Morning, evening, gratitude, travel, special-day and reflection flows are available.
 - Existing photo, voice, sketch, tag and person-link tools remain composable with template output.
 - No parallel persistence, backup or sync path is introduced.
+
+
+## v0.59 acceptance criteria
+
+- Search remains local and deterministic.
+- Multi-word queries narrow results continuously across agenda, diary, people, birthdays, Inbox and monthly pages.
+- Diary search includes tags, person links, sketch text and voice captions; archived content is opt-in.
+- Diary memories support explicit related-memory links with derived backlinks.
+- Connection metadata is backward compatible and persists through the ordinary journal payload.
+- Trash preserves recoverable links; permanent purge removes dangling references.
+- The v0.58 + v0.59 pair closes only after Development, Web, Android size audit and AppLab Trusted Verify pass.
