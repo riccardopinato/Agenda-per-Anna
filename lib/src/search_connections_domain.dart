@@ -1,6 +1,6 @@
 part of '../main.dart';
 
-enum PersonalSearchKind { agenda, diary, person, birthday, inbox }
+enum PersonalSearchKind { agenda, diary, person, birthday, inbox, month }
 
 extension PersonalSearchKindUi on PersonalSearchKind {
   String get label => switch (this) {
@@ -9,6 +9,7 @@ extension PersonalSearchKindUi on PersonalSearchKind {
         PersonalSearchKind.person => 'Persone',
         PersonalSearchKind.birthday => 'Compleanni',
         PersonalSearchKind.inbox => 'Inbox',
+        PersonalSearchKind.month => 'Mesi',
       };
 
   IconData get icon => switch (this) {
@@ -17,6 +18,7 @@ extension PersonalSearchKindUi on PersonalSearchKind {
         PersonalSearchKind.person => Icons.person_outline,
         PersonalSearchKind.birthday => Icons.cake_outlined,
         PersonalSearchKind.inbox => Icons.inbox_outlined,
+        PersonalSearchKind.month => Icons.calendar_month_outlined,
       };
 }
 
@@ -474,6 +476,48 @@ extension SearchConnectionsAgendaStore on AgendaStore {
       }
     }
 
+    if (enabled.contains(PersonalSearchKind.month)) {
+      for (final entry in months.entries) {
+        final parts = entry.key.split('-');
+        if (parts.length != 2) continue;
+        final year = int.tryParse(parts[0]);
+        final month = int.tryParse(parts[1]);
+        if (year == null || month == null) continue;
+        final data = entry.value;
+        if (!_matchesPersonalSearch(query, [
+          data.intention,
+          ...data.goals,
+          ...data.books,
+          ...data.films,
+          ...data.hobbies,
+          ...data.wishes,
+          ...data.ideas,
+          data.monthWord,
+          data.selfCare,
+          data.bestMoment,
+          data.lesson,
+          data.challenge,
+          data.nextMonth,
+          data.reflection,
+          DateFormat('MMMM yyyy', 'it_IT').format(DateTime(year, month)),
+        ])) {
+          continue;
+        }
+        final date = DateTime(year, month);
+        hits.add(
+          PersonalSearchHit(
+            kind: PersonalSearchKind.month,
+            id: entry.key,
+            title: _cap(DateFormat('MMMM yyyy', 'it_IT').format(date)),
+            subtitle: data.intention.trim().isEmpty
+                ? 'Pagina del mese'
+                : data.intention.trim(),
+            date: date,
+          ),
+        );
+      }
+    }
+
     hits.sort((a, b) {
       final dateOrder = b.date.compareTo(a.date);
       if (dateOrder != 0) return dateOrder;
@@ -659,6 +703,18 @@ class _PersonalSearchConnectionsScreenState
           context,
           MaterialPageRoute(
             builder: (_) => InboxScreen(store: widget.store),
+          ),
+        );
+        return;
+      case PersonalSearchKind.month:
+        if (!mounted) return;
+        await Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => MonthScreen(
+              store: widget.store,
+              initialMonth: hit.date,
+            ),
           ),
         );
     }
