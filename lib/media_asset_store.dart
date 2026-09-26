@@ -84,6 +84,9 @@ class MediaAssetStore {
     return deleteMediaAssetBytes(assetId);
   }
 
+  Future<Set<String>> listStoredAssetIds() async =>
+      (await listMediaAssetIds()).toSet();
+
   Future<int> prune(Set<String> referencedAssetIds) async {
     final existing = await listMediaAssetIds();
     var removed = 0;
