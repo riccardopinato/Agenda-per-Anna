@@ -5,7 +5,7 @@ create or replace function private.list_shared_space_members_impl(p_space_id uui
 returns jsonb
 language plpgsql
 security definer
-set search_path = public, auth
+set search_path = ''
 as $func$
 declare
   v_user uuid := (select auth.uid());
@@ -64,7 +64,7 @@ create or replace function public.list_shared_space_members(p_space_id uuid)
 returns jsonb
 language sql
 security invoker
-set search_path = public, private
+set search_path = ''
 as $func$
   select private.list_shared_space_members_impl(p_space_id);
 $func$;
@@ -76,7 +76,7 @@ create or replace function private.remove_shared_space_member_impl(
 returns void
 language plpgsql
 security definer
-set search_path = public, auth
+set search_path = ''
 as $func$
 declare
   v_user uuid := (select auth.uid());
@@ -121,7 +121,7 @@ create or replace function public.remove_shared_space_member(
 returns void
 language sql
 security invoker
-set search_path = public, private
+set search_path = ''
 as $func$
   select private.remove_shared_space_member_impl(p_space_id, p_user_id);
 $func$;
