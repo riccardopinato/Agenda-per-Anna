@@ -392,23 +392,31 @@ class InboxEntry {
   final String text;
   final DateTime createdAt;
   final bool pinned;
+  final bool archived;
+  final List<String> tags;
 
   const InboxEntry({
     required this.id,
     required this.text,
     required this.createdAt,
     this.pinned = false,
+    this.archived = false,
+    this.tags = const [],
   });
 
   InboxEntry copyWith({
     String? text,
     bool? pinned,
+    bool? archived,
+    List<String>? tags,
   }) =>
       InboxEntry(
         id: id,
         text: text ?? this.text,
         createdAt: createdAt,
         pinned: pinned ?? this.pinned,
+        archived: archived ?? this.archived,
+        tags: tags ?? this.tags,
       );
 
   Map<String, dynamic> toJson() => {
@@ -416,6 +424,8 @@ class InboxEntry {
         'text': text,
         'createdAt': createdAt.toIso8601String(),
         'pinned': pinned,
+        'archived': archived,
+        'tags': tags,
       };
 
   factory InboxEntry.fromJson(Map<String, dynamic> json) => InboxEntry(
@@ -424,6 +434,12 @@ class InboxEntry {
         createdAt: DateTime.tryParse(json['createdAt'] as String? ?? '') ??
             DateTime.now(),
         pinned: json['pinned'] as bool? ?? false,
+        archived: json['archived'] as bool? ?? false,
+        tags: (json['tags'] as List? ?? const [])
+            .map((value) => value.toString().trim())
+            .where((value) => value.isNotEmpty)
+            .toSet()
+            .toList(),
       );
 }
 
@@ -772,6 +788,9 @@ class DiaryBlock {
   final String mediaThumbnailAssetId;
   final int audioDurationMs;
   final String audioMimeType;
+  final bool pinned;
+  final bool archived;
+  final List<String> tags;
   final List<DiarySketchPage> pages;
   final List<String> personIds;
 
@@ -786,6 +805,9 @@ class DiaryBlock {
     this.mediaThumbnailAssetId = '',
     this.audioDurationMs = 0,
     this.audioMimeType = 'audio/mp4',
+    this.pinned = false,
+    this.archived = false,
+    this.tags = const [],
     this.pages = const [],
     this.personIds = const [],
   });
@@ -806,6 +828,9 @@ class DiaryBlock {
     String? mediaThumbnailAssetId,
     int? audioDurationMs,
     String? audioMimeType,
+    bool? pinned,
+    bool? archived,
+    List<String>? tags,
     List<DiarySketchPage>? pages,
     List<String>? personIds,
   }) =>
@@ -821,6 +846,9 @@ class DiaryBlock {
             mediaThumbnailAssetId ?? this.mediaThumbnailAssetId,
         audioDurationMs: audioDurationMs ?? this.audioDurationMs,
         audioMimeType: audioMimeType ?? this.audioMimeType,
+        pinned: pinned ?? this.pinned,
+        archived: archived ?? this.archived,
+        tags: tags ?? this.tags,
         pages: pages ?? this.pages,
         personIds: personIds ?? this.personIds,
       );
@@ -836,6 +864,9 @@ class DiaryBlock {
         'mediaThumbnailAssetId': mediaThumbnailAssetId,
         'audioDurationMs': audioDurationMs,
         'audioMimeType': audioMimeType,
+        'pinned': pinned,
+        'archived': archived,
+        'tags': tags,
         'pages': pages.map((page) => page.toJson()).toList(),
         'personIds': personIds,
       };
@@ -864,6 +895,13 @@ class DiaryBlock {
             json['mediaThumbnailAssetId'] as String? ?? '',
         audioDurationMs: (json['audioDurationMs'] as num? ?? 0).toInt(),
         audioMimeType: json['audioMimeType'] as String? ?? 'audio/mp4',
+        pinned: json['pinned'] as bool? ?? false,
+        archived: json['archived'] as bool? ?? false,
+        tags: (json['tags'] as List? ?? const [])
+            .map((value) => value.toString().trim())
+            .where((value) => value.isNotEmpty)
+            .toSet()
+            .toList(),
         pages: (json['pages'] as List? ?? const [])
             .whereType<Map>()
             .map(
