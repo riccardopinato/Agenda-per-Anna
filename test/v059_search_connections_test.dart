@@ -180,6 +180,14 @@ void main() {
       ),
     );
     await store.addInboxEntry('Comprare il regalo montagna');
+    await store.saveMonth(
+      2026,
+      10,
+      const MonthlyData(
+        intention: 'Ottobre lento',
+        bestMoment: 'Weekend sulle Dolomiti',
+      ),
+    );
 
     final diary = store.personalSearch(
       'anna montagna',
@@ -213,6 +221,12 @@ void main() {
       ).map((hit) => hit.diaryBlockId),
       contains('archived'),
     );
+
+    final month = store.personalSearch(
+      'weekend dolomiti',
+      kinds: {PersonalSearchKind.month},
+    );
+    expect(month.single.id, '2026-10');
     store.dispose();
   });
 }
