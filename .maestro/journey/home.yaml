@@ -7,6 +7,11 @@ appId: com.riccardopinato.agenda_per_anna
 - tapOn:
     text: 'Home[\\s\\S]*'
     retryTapIfNoChange: true
+- scrollUntilVisible:
+    element:
+      text: "Oggi in breve"
+    direction: UP
+    timeout: 10000
 - extendedWaitUntil:
     visible: "Oggi in breve"
     timeout: 10000
