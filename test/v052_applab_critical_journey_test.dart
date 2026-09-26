@@ -34,7 +34,7 @@ void main() {
     final account = File('.maestro/journey/account.yaml').readAsStringSync();
     final trash = File('.maestro/journey/trash.yaml').readAsStringSync();
 
-    expect(home, contains('Oggi in breve'));
+    expect(home, contains('La mia agenda'));
     expect(shared, contains('Noi ♡'));
     expect(account, contains('Account e sincronizzazione'));
     expect(trash, contains('Archivio'));
