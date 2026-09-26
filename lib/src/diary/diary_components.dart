@@ -157,15 +157,13 @@ class _VoiceRecordingDialogState extends State<_VoiceRecordingDialog> {
 
 Future<_VoiceCapture?> _captureVoiceClip(BuildContext context) async {
   if (kIsWeb) {
-    final picked = await FilePicker.pickFiles(
+    final file = await FilePicker.pickFile(
       type: FileType.audio,
-      allowMultiple: false,
-      withData: true,
+      dialogTitle: 'Scegli una nota vocale',
     );
-    if (picked == null || picked.files.isEmpty) return null;
-    final file = picked.files.single;
-    final bytes = file.bytes;
-    if (bytes == null || bytes.isEmpty) return null;
+    if (file == null) return null;
+    final bytes = await file.readAsBytes();
+    if (bytes.isEmpty) return null;
     return _VoiceCapture(
       bytes: Uint8List.fromList(bytes),
       durationMs: 0,
