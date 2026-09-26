@@ -36,6 +36,15 @@
     if (create) {
       await navigator.serviceWorker.ready;
     }
+    if (result) {
+      // Ask the browser for the newest worker on every app launch/health check.
+      // update() preserves the existing PushManager subscription.
+      try {
+        await result.update();
+      } catch (_) {
+        // Offline startup must keep working with the installed worker.
+      }
+    }
     return result;
   }
 
@@ -132,6 +141,17 @@
       window.history.replaceState(null, "", url.toString());
     }
     return JSON.stringify({ spaceId });
+  }
+
+  // A newly activated Flutter worker should take control without requiring
+  // users to clear site data. Reload once when the controller actually changes.
+  if ("serviceWorker" in navigator) {
+    let reloadingForUpdate = false;
+    navigator.serviceWorker.addEventListener("controllerchange", () => {
+      if (reloadingForUpdate) return;
+      reloadingForUpdate = true;
+      window.location.reload();
+    });
   }
 
   window.annasDiaryWebPush = {

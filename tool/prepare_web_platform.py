@@ -42,6 +42,14 @@ def main() -> None:
         if "</head>" not in html:
             raise SystemExit("Flutter web template drift: </head> not found")
         html = html.replace("</head>", addition + "</head>", 1)
+    # Prevent the browser/PWA shell from pinning an obsolete index document.
+    # Hashed Flutter assets can still be cached by the generated service worker.
+    cache_meta = '<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">'
+    if cache_meta not in html:
+        if "</head>" not in html:
+            raise SystemExit("Flutter web template drift: </head> not found")
+        html = html.replace("</head>", f"  {cache_meta}\\n</head>", 1)
+
     index.write_text(html, encoding="utf-8")
 
     manifest_data["name"] = "Anna's Diary"
