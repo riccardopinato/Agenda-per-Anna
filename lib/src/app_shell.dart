@@ -27,6 +27,9 @@ class AgendaApp extends StatelessWidget {
     final theme = ThemeData(
       useMaterial3: true,
       colorScheme: scheme,
+      // Keep interactive Material controls at accessible touch-target size.
+      materialTapTargetSize: MaterialTapTargetSize.padded,
+      visualDensity: VisualDensity.standard,
       scaffoldBackgroundColor:
           dark ? const Color(0xFF151316) : const Color(0xFFFFFAFC),
       cardTheme: const CardThemeData(
@@ -66,11 +69,14 @@ class AgendaApp extends StatelessWidget {
           themeMode: mode,
           theme: _theme(Brightness.light),
           darkTheme: _theme(Brightness.dark),
-          builder: (context, child) => _AuthRecoveryGate(
-            store: store,
-            child: _PrivacyGate(
+          builder: (context, child) => FocusTraversalGroup(
+            policy: ReadingOrderTraversalPolicy(),
+            child: _AuthRecoveryGate(
               store: store,
-              child: child ?? const SizedBox.shrink(),
+              child: _PrivacyGate(
+                store: store,
+                child: child ?? const SizedBox.shrink(),
+              ),
             ),
           ),
           home: AgendaRoot(
