@@ -7,8 +7,8 @@ Source of truth for the active product sequence after v0.52. The roadmap follows
 | Version | Scope | Status | Core acceptance target |
 | --- | --- | --- | --- |
 | v0.53 | Recurring Life Engine | Completed | Persistent recurring agenda series; scoped edit/delete; reminders, sync, backup and Trash reuse |
-| v0.54 | Voice Diary | Implemented; paired validation with v0.55 | Record, persist, play and lifecycle-manage diary audio without replacing the original recording |
-| v0.55 | Organization | In paired validation | Personal organization layer that improves findability without turning the app into a work/Notion clone |
+| v0.54 | Voice Diary | Completed | Record, persist, play and lifecycle-manage diary audio without replacing the original recording |
+| v0.55 | Organization | Paired AppLab validation | Personal organization layer that improves findability without turning the app into a work/Notion clone |
 | v0.56 | Widget | Planned | Android home-screen glance + safe ultra-quick capture using existing app data |
 | v0.57 | Memories / Relationships 2.0 | Planned | Richer person-linked memories, anniversaries and “on this day” navigation |
 | v0.58 | Diary 2.0 | Planned | Reusable personal diary templates and richer daily-writing flows |
@@ -25,7 +25,7 @@ Source of truth for the active product sequence after v0.52. The roadmap follows
 - User data remains offline-capable and account-isolated where applicable.
 - Every new persisted entity or media type must integrate with lifecycle, backup/restore, sync rules and account erasure as applicable.
 - README and this roadmap are updated in the same version that changes product behavior.
-- A version is complete only after code, tests, required builds, AppLab, Android size/regression audit and documentation gates pass.
+- Feature versions still require code, analyze/tests, required builds, size/regression audit and documentation gates. AppLab runs cumulatively every two feature versions (or at the final release checkpoint), validating the latest APK of the pair.
 
 ## Completed baseline
 
@@ -69,3 +69,13 @@ Per the active development cadence, AppLab runs once every two feature versions.
 - Archived personal content remains recoverable without using Trash.
 - Archive surfaces manually archived content together with historical month navigation.
 - Older payloads without organization metadata remain readable.
+
+
+## Active AppLab cadence
+
+Starting after v0.53, AppLab is intentionally cumulative every two feature steps:
+- v0.54 + v0.55 → AppLab on v0.55
+- v0.56 + v0.57 → AppLab on v0.57
+- v0.58 + v0.59 → AppLab on v0.59
+- v0.60 + v0.61 → AppLab on v0.61
+- v0.62 → final AppLab release validation
