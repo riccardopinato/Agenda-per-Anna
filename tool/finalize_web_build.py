@@ -1,39 +1,41 @@
 #!/usr/bin/env python3
-"""Append Anna's Diary Web Push handlers to Flutter's generated service worker."""
+"""Finalize Anna's Diary Web build without reusing Flutter's legacy cache worker."""
 
 from __future__ import annotations
 
+import shutil
 from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[1]
-GENERATED = ROOT / "build" / "web" / "flutter_service_worker.js"
-HANDLERS = ROOT / "web_push" / "annas-diary-push-sw.js"
-MARKER = 'annas-diary-push-v044'
+BUILD_WEB = ROOT / "build" / "web"
+FLUTTER_WORKER = BUILD_WEB / "flutter_service_worker.js"
+PUSH_WORKER_SOURCE = ROOT / "web_push" / "annas-diary-push-sw.js"
+PUSH_WORKER_TARGET = BUILD_WEB / "annas-diary-push-sw.js"
+RECOVERY_SOURCE = ROOT / "web_push" / "update-recovery.html"
+RECOVERY_TARGET = BUILD_WEB / "update-recovery.html"
+
+
+def require_file(path: Path, label: str) -> None:
+    if not path.is_file():
+        raise SystemExit(f"{label} is missing: {path.relative_to(ROOT)}")
 
 
 def main() -> None:
-    if not GENERATED.is_file():
-        raise SystemExit("Generated Flutter service worker is missing")
-    if not HANDLERS.is_file():
-        raise SystemExit("Web Push service-worker handlers are missing")
+    require_file(FLUTTER_WORKER, "Generated Flutter migration service worker")
+    require_file(PUSH_WORKER_SOURCE, "Dedicated Web Push service worker")
+    require_file(RECOVERY_SOURCE, "Web cache recovery page")
 
-    generated = GENERATED.read_text(encoding="utf-8")
-    if MARKER in generated:
-        print("Web Push handlers already present")
-        return
+    # Keep Flutter's generated worker untouched. On current Flutter releases it
+    # is a one-shot migration worker that removes obsolete Flutter PWA caches.
+    # Web Push gets its own stable worker so notification delivery is no longer
+    # coupled to Flutter's deprecated PWA cache/service-worker lifecycle.
+    shutil.copyfile(PUSH_WORKER_SOURCE, PUSH_WORKER_TARGET)
+    shutil.copyfile(RECOVERY_SOURCE, RECOVERY_TARGET)
 
-    handlers = HANDLERS.read_text(encoding="utf-8")
-    GENERATED.write_text(
-        generated
-        + "\n\n/* "
-        + MARKER
-        + " */\n"
-        + handlers
-        + "\n",
-        encoding="utf-8",
+    print(
+        "Web build finalized: dedicated Web Push worker + cache recovery page"
     )
-    print("Flutter service worker finalized with Web Push handlers")
 
 
 if __name__ == "__main__":

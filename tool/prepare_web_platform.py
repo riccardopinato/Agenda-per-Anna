@@ -48,7 +48,7 @@ def main() -> None:
     if cache_meta not in html:
         if "</head>" not in html:
             raise SystemExit("Flutter web template drift: </head> not found")
-        html = html.replace("</head>", f"  {cache_meta}\\n</head>", 1)
+        html = html.replace("</head>", f"  {cache_meta}\n</head>", 1)
 
     index.write_text(html, encoding="utf-8")
 

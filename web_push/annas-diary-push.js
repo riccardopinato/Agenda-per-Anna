@@ -26,19 +26,31 @@
 
   async function registration(create) {
     if (!("serviceWorker" in navigator)) return null;
+
+    const dedicatedWorker = "annas-diary-push-sw.js";
+    const dedicatedPath = new URL(dedicatedWorker, document.baseURI).pathname;
     let result = await navigator.serviceWorker.getRegistration("./");
-    if (!result && create) {
-      result = await navigator.serviceWorker.register(
-        "flutter_service_worker.js",
-        { scope: "./" },
-      );
+
+    const activePath = result?.active?.scriptURL
+      ? new URL(result.active.scriptURL).pathname
+      : null;
+    const needsMigration = result && activePath !== dedicatedPath;
+
+    if (needsMigration || (!result && create)) {
+      try {
+        // Reuse the existing registration/scope so an existing PushManager
+        // subscription survives the worker-script migration.
+        result = await navigator.serviceWorker.register(
+          dedicatedWorker,
+          { scope: "./", updateViaCache: "none" },
+        );
+        await navigator.serviceWorker.ready;
+      } catch (e) {
+        if (create) throw e;
+      }
     }
-    if (create) {
-      await navigator.serviceWorker.ready;
-    }
+
     if (result) {
-      // Ask the browser for the newest worker on every app launch/health check.
-      // update() preserves the existing PushManager subscription.
       try {
         await result.update();
       } catch (_) {
@@ -143,7 +155,7 @@
     return JSON.stringify({ spaceId });
   }
 
-  // A newly activated Flutter worker should take control without requiring
+  // A newly activated dedicated worker should take control without requiring
   // users to clear site data. Reload once when the controller actually changes.
   if ("serviceWorker" in navigator) {
     let reloadingForUpdate = false;

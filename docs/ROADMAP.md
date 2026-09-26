@@ -15,7 +15,7 @@ Source of truth for the active product sequence after v0.52. The roadmap follows
 | v0.59 | Search / Connections | Completed | Unified local search, filters and explicit connections between personal content |
 | v0.60 | Noi ♡ 2.0 | Completed | Stronger shared memories/agenda collaboration on the existing shared-space infrastructure |
 | v0.61 | Data Safety | Completed | Restore drills, backup verification, orphan checks and long-term data portability hardening |
-| v0.62 | Non-AI Production Consolidation | In final validation | Accessibility, performance, regression and release-quality consolidation; no AI features |
+| v0.62 | Non-AI Production Consolidation | Completed | Accessibility, performance, regression and release-quality consolidation; no AI features |
 
 ## Permanent constraints for this sequence
 
@@ -145,7 +145,7 @@ Per the active development cadence, AppLab runs once every two feature versions.
 - Existing persistence, sync, backup/restore, lifecycle, notifications and media infrastructure is reused without a parallel subsystem.
 - Material controls retain accessible padded touch targets and standard visual density.
 - Keyboard/accessibility focus follows reading order at the application-shell boundary.
-- Installed Web/PWA clients actively check for a newer service worker and cannot indefinitely retain a stale HTML shell; Web Push subscriptions survive the update path.
+- Installed Web/PWA clients migrate Web Push to a dedicated non-caching worker. A recovery route clears only obsolete Flutter caches, preserves application storage, and lets clients stranded on historical builds reach v0.62.
 - Release metadata is aligned to v0.62.0.
 - Full regression coverage remains green.
 - Web release validation remains green.

@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <title>Aggiornamento Anna's Diary</title>
+</head>
+<body>
+  <main>
+    <h1>Aggiornamento Anna's Diary</h1>
+    <p id="status">Aggiornamento della versione Web in corso…</p>
+  </main>
+  <script>
+    (async () => {
+      const status = document.getElementById("status");
+      try {
+        if ("serviceWorker" in navigator) {
+          const registration = await navigator.serviceWorker.getRegistration("./");
+          if (registration) {
+            await navigator.serviceWorker.register(
+              "annas-diary-push-sw.js",
+              { scope: "./", updateViaCache: "none" },
+            );
+            try {
+              await registration.update();
+            } catch (_) {}
+          }
+        }
+
+        if ("caches" in window) {
+          const names = await caches.keys();
+          const flutterCaches = names.filter((name) =>
+            name === "flutter-app-cache" ||
+            name === "flutter-temp-cache" ||
+            name === "flutter-app-manifest" ||
+            name.startsWith("flutter-")
+          );
+          await Promise.all(flutterCaches.map((name) => caches.delete(name)));
+        }
+
+        status.textContent = "Aggiornamento completato. Riapertura della versione corrente…";
+        window.setTimeout(() => {
+          window.location.replace("./?webRecovery=062");
+        }, 600);
+      } catch (error) {
+        status.textContent =
+          "Impossibile completare automaticamente l'aggiornamento. Ricarica la pagina e riprova.";
+      }
+    })();
+  </script>
+</body>
+</html>
