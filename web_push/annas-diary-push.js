@@ -46,7 +46,7 @@
         );
         await navigator.serviceWorker.ready;
       } catch (e) {
-        if (create) rethrow;
+        if (create) throw e;
       }
     }
 
