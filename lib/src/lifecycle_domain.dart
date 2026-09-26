@@ -142,6 +142,16 @@ extension AgendaStoreLifecycle on AgendaStore {
         );
       } catch (_) {}
     }
+    if (next.type == DiaryBlockType.voice && next.audioBase64.isNotEmpty) {
+      try {
+        final bytes = base64Decode(next.audioBase64);
+        final mediaAssetId = await MediaAssetStore.instance.put(bytes);
+        next = next.copyWith(
+          audioBase64: '',
+          mediaAssetId: mediaAssetId,
+        );
+      } catch (_) {}
+    }
 
     if (next.pages.isNotEmpty) {
       final localized = await _localizeSketchPages(next.pages);
@@ -326,6 +336,7 @@ extension AgendaStoreLifecycle on AgendaStore {
             DiaryBlockType.note => 'Nota del diario',
             DiaryBlockType.photo => 'Foto del diario',
             DiaryBlockType.sketch => 'Sketch del diario',
+            DiaryBlockType.voice => 'Nota vocale del diario',
           };
     final entry = _newTrashEntry(
       kind: TrashEntityKind.diaryBlock,
