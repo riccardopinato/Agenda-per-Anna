@@ -88,7 +88,7 @@ void main() {
       expect(config, contains('verify_jwt = false'));
     });
 
-    test('Flutter PWA service worker owns both offline cache and Push', () {
+    test('Web Push uses its dedicated worker and preserves Flutter migration', () {
       final bridge =
           File('web_push/annas-diary-push.js').readAsStringSync();
       final handlers =
@@ -96,18 +96,15 @@ void main() {
       final finalizer =
           File('tool/finalize_web_build.py').readAsStringSync();
 
-      expect(
-        bridge,
-        contains('flutter_service_worker.js'),
-      );
-      expect(
-        bridge,
-        isNot(contains('register(\n        "annas-diary-push-sw.js"')),
-      );
+      expect(bridge, contains('annas-diary-push-sw.js'));
+      expect(bridge, contains('updateViaCache: "none"'));
       expect(handlers, contains('self.addEventListener("push"'));
       expect(handlers, contains('notificationclick'));
+      expect(handlers, contains('self.skipWaiting()'));
+      expect(handlers, contains('self.clients.claim()'));
       expect(finalizer, contains('flutter_service_worker.js'));
-      expect(finalizer, contains('annas-diary-push-v044'));
+      expect(finalizer, contains('PUSH_WORKER_TARGET'));
+      expect(finalizer, isNot(contains('annas-diary-push-v044')));
     });
 
     test('direct sideload build uses protected stable signing secrets', () {
