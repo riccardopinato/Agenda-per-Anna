@@ -11,10 +11,10 @@ Source of truth for the active product sequence after v0.52. The roadmap follows
 | v0.55 | Organization | Completed | Personal organization layer that improves findability without turning the app into a work/Notion clone |
 | v0.56 | Widget | Completed | Android home-screen glance + safe ultra-quick capture using existing app data |
 | v0.57 | Memories / Relationships 2.0 | Completed | Richer person-linked memories, anniversaries and “on this day” navigation |
-| v0.58 | Diary 2.0 | Implemented; paired validation with v0.59 | Reusable personal diary templates and richer daily-writing flows |
-| v0.59 | Search / Connections | In paired validation | Unified local search, filters and explicit connections between personal content |
-| v0.60 | Noi ♡ 2.0 | Planned | Stronger shared memories/agenda collaboration on the existing shared-space infrastructure |
-| v0.61 | Data Safety | Planned | Restore drills, backup verification, orphan checks and long-term data portability hardening |
+| v0.58 | Diary 2.0 | Completed | Reusable personal diary templates and richer daily-writing flows |
+| v0.59 | Search / Connections | Completed | Unified local search, filters and explicit connections between personal content |
+| v0.60 | Noi ♡ 2.0 | Implemented; paired validation with v0.61 | Stronger shared memories/agenda collaboration on the existing shared-space infrastructure |
+| v0.61 | Data Safety | In paired validation | Restore drills, backup verification, orphan checks and long-term data portability hardening |
 | v0.62 | Non-AI Production Consolidation | Planned | Accessibility, performance, regression and release-quality consolidation; no AI features |
 
 ## Permanent constraints for this sequence
@@ -114,3 +114,26 @@ Per the active development cadence, AppLab runs once every two feature versions.
 - Connection metadata is backward compatible and persists through the ordinary journal payload.
 - Trash preserves recoverable links; permanent purge removes dangling references.
 - The v0.58 + v0.59 pair closes only after Development, Web, Android size audit and AppLab Trusted Verify pass.
+
+
+## v0.60 acceptance criteria
+
+- Existing shared-space infrastructure remains the collaboration source of truth.
+- A signed-in space member can view the people participating in the space.
+- Only the owner can remove another non-owner member; the owner cannot remove themselves.
+- Existing persistent 24-hour multi-use invites remain unchanged and support groups larger than two.
+- Leaving a space affects only the current member; deleting an owned space remains a destructive action for everyone.
+- Shared feed, agenda, memories, interactions, unread state and offline queues keep their existing ownership/sync semantics.
+- Member-management RPCs are authenticated, server-authorized and locked to explicit function privileges.
+- No AI features are introduced.
+
+## v0.61 acceptance criteria
+
+- Local data safety can be audited without mutating user content.
+- Referenced media missing from storage are detected.
+- Corrupt content-addressed local media are detected.
+- Unreferenced local source media are reported separately from the bounded remote-media cache.
+- Existing unreadable-storage warnings and pending cloud/shared mutations are visible in the report.
+- A newly generated complete ZIP backup is fully validated before file delivery.
+- Existing restore rollback, safety snapshots, backup compatibility and media integrity checks remain the implementation path.
+- v0.60 + v0.61 close only after Development, Web, Android size audit and AppLab Trusted Verify all pass.
