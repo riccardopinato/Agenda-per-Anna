@@ -34,6 +34,7 @@ void main() {
         File('tool/prepare_android_platform.py').readAsStringSync();
 
     expect(notifications, contains('agenda_reminder_v1'));
+    expect(notifications, contains('reminder_done'));
     expect(notifications, contains('reminder_snooze_10'));
     expect(notifications, contains('reminder_snooze_60'));
     expect(notifications, contains('reminder_open'));
@@ -47,10 +48,18 @@ void main() {
       ),
     );
     expect(notifications, contains('actions: _reminderActions'));
+    expect(notifications, contains('agendaActions ? _actionableReminderDetails'));
+    expect(notifications, contains("return 'reminder_done:"));
     expect(
       notifications,
       contains('AndroidScheduleMode.inexactAllowWhileIdle'),
     );
+    final store = File('lib/src/agenda_store.dart').readAsStringSync();
+    final main = File('lib/main.dart').readAsStringSync();
+    expect(store, contains('agendaActions: true'));
+    expect(main, contains('_handleLocalReminderAction'));
+    expect(main, contains('reminder_done:'));
+
     expect(
       android,
       contains(
