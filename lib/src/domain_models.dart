@@ -793,6 +793,7 @@ class DiaryBlock {
   final List<String> tags;
   final List<DiarySketchPage> pages;
   final List<String> personIds;
+  final List<String> relatedBlockIds;
 
   const DiaryBlock({
     required this.id,
@@ -810,6 +811,7 @@ class DiaryBlock {
     this.tags = const [],
     this.pages = const [],
     this.personIds = const [],
+    this.relatedBlockIds = const [],
   });
 
   bool get hasPhotoMedia =>
@@ -833,6 +835,7 @@ class DiaryBlock {
     List<String>? tags,
     List<DiarySketchPage>? pages,
     List<String>? personIds,
+    List<String>? relatedBlockIds,
   }) =>
       DiaryBlock(
         id: id,
@@ -851,6 +854,7 @@ class DiaryBlock {
         tags: tags ?? this.tags,
         pages: pages ?? this.pages,
         personIds: personIds ?? this.personIds,
+        relatedBlockIds: relatedBlockIds ?? this.relatedBlockIds,
       );
 
   Map<String, dynamic> toJson() => {
@@ -869,6 +873,7 @@ class DiaryBlock {
         'tags': tags,
         'pages': pages.map((page) => page.toJson()).toList(),
         'personIds': personIds,
+        'relatedBlockIds': relatedBlockIds,
       };
 
   Map<String, dynamic> toLocalJson() => {
@@ -913,6 +918,11 @@ class DiaryBlock {
         personIds: (json['personIds'] as List? ?? const [])
             .map((value) => value.toString())
             .where((value) => value.isNotEmpty)
+            .toList(),
+        relatedBlockIds: (json['relatedBlockIds'] as List? ?? const [])
+            .map((value) => value.toString())
+            .where((value) => value.isNotEmpty)
+            .toSet()
             .toList(),
       );
 }

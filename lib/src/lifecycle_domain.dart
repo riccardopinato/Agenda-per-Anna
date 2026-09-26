@@ -826,6 +826,18 @@ extension AgendaStoreLifecycle on AgendaStore {
     final entry = trash.removeAt(index);
     final stillRecoverable =
         _hasLiveOrRecoverableReference(entry.kind, entry.entityId);
+    final purgedDiaryBlocks = <String>{};
+    if (entry.kind == TrashEntityKind.diaryBlock) {
+      purgedDiaryBlocks.add(entry.entityId);
+    } else if (entry.kind == TrashEntityKind.journal) {
+      try {
+        purgedDiaryBlocks.addAll(
+          DayJournal.fromJson(entry.payload).blocks.map((block) => block.id),
+        );
+      } catch (_) {}
+    }
+    purgedDiaryBlocks.removeWhere(_hasLiveOrRecoverableDiaryBlockId);
+
     if (!stillRecoverable && entry.kind == TrashEntityKind.person) {
       await _unlinkPurgedPeople({entry.entityId});
     } else if (!stillRecoverable &&
@@ -834,6 +846,7 @@ extension AgendaStoreLifecycle on AgendaStore {
     } else if (!stillRecoverable && entry.kind == TrashEntityKind.habit) {
       await _unlinkPurgedHabits({entry.entityId});
     }
+    await _unlinkPurgedDiaryBlockConnections(purgedDiaryBlocks);
     await _persistEntityMutation(
       type: 'trash',
       id: entry.id,
@@ -862,6 +875,18 @@ extension AgendaStoreLifecycle on AgendaStore {
         .where((entry) => entry.kind == TrashEntityKind.habit)
         .map((entry) => entry.entityId)
         .toSet();
+    final purgedDiaryBlocks = <String>{};
+    for (final entry in removed) {
+      if (entry.kind == TrashEntityKind.diaryBlock) {
+        purgedDiaryBlocks.add(entry.entityId);
+      } else if (entry.kind == TrashEntityKind.journal) {
+        try {
+          purgedDiaryBlocks.addAll(
+            DayJournal.fromJson(entry.payload).blocks.map((block) => block.id),
+          );
+        } catch (_) {}
+      }
+    }
     trash.clear();
 
     // A historical trash version must not break links when the same logical
@@ -875,10 +900,12 @@ extension AgendaStoreLifecycle on AgendaStore {
     purgedHabits.removeWhere(
       (id) => habits.any((habit) => habit.id == id),
     );
+    purgedDiaryBlocks.removeWhere(_hasLiveOrRecoverableDiaryBlockId);
 
     await _unlinkPurgedPeople(purgedPeople);
     await _unlinkPurgedBirthdays(purgedBirthdays);
     await _unlinkPurgedHabits(purgedHabits);
+    await _unlinkPurgedDiaryBlockConnections(purgedDiaryBlocks);
     await _persistEntityMutations(
       [
         for (final entry in removed)

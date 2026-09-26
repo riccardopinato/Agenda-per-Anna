@@ -2,7 +2,7 @@
 
 Flutter app for personal planning, private diary and the shared **Noi ♡** space.
 
-Current release line: **v0.57.0**.
+Current release line: **v0.59.0**.
 
 ## Core areas
 
@@ -295,3 +295,23 @@ See `docs/ARCHITECTURE.md` and `supabase/README.md` for implementation details.
 - Adds first-memory / latest-memory timeline anchors.
 - Adds deterministic “In questo giorno” memories for a person, excluding archived diary content.
 - Existing person-to-diary links remain the canonical relationship graph; no duplicate relationship database is introduced.
+
+
+## v0.58.0 — Diary 2.0
+
+- Adds six deterministic, non-AI diary templates: Morning, Evening, Gratitude, Travel, Special Day and Reflection.
+- Templates reuse ordinary editable diary notes instead of introducing a parallel document model.
+- Template prompts support lightweight checklist-style reflection and can be combined immediately with existing photo, voice, sketch, tags and people links.
+- Applying a template appends content without overwriting the existing day journal.
+- Template-created content automatically inherits the existing journal persistence, private sync, backup/export, archive and Trash lifecycle.
+
+
+## v0.59.0 — Search & Connections
+
+- Home search is upgraded to one deterministic local search surface spanning private agenda, diary content, people, birthdays, Inbox and monthly pages.
+- Multi-word queries use narrowing semantics: every typed token must be present, so results refine continuously while typing.
+- Diary search includes captions/text, tags, linked people, sketch text, audio-note captions, dates and content type; archived content stays hidden unless explicitly enabled.
+- Diary memories can explicitly link up to 12 other memories. Backlinks are derived from the existing journals rather than stored twice.
+- Connections persist inside the ordinary DiaryBlock payload and therefore reuse private sync, backup/export and account isolation.
+- Moving a linked memory to Trash preserves relationships for recovery; permanent purge removes dangling links from live and recoverable diary content.
+- The previous monthly-page search remains available inside the expanded global search.

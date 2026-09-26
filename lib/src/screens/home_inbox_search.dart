@@ -88,7 +88,7 @@ class HomeScreen extends StatelessWidget {
                 onPressed: () => Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (_) => SearchScreen(store: store),
+                    builder: (_) => PersonalSearchConnectionsScreen(store: store),
                   ),
                 ),
                 icon: const Icon(Icons.search),
