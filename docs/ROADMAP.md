@@ -6,9 +6,9 @@ Source of truth for the active product sequence after v0.52. The roadmap follows
 
 | Version | Scope | Status | Core acceptance target |
 | --- | --- | --- | --- |
-| v0.53 | Recurring Life Engine | In validation | Persistent recurring agenda series; scoped edit/delete; reminders, sync, backup and Trash reuse |
-| v0.54 | Voice Diary | Planned | Record, persist, play and lifecycle-manage diary audio without replacing the original recording |
-| v0.55 | Organization | Planned | Personal organization layer that improves findability without turning the app into a work/Notion clone |
+| v0.53 | Recurring Life Engine | Completed | Persistent recurring agenda series; scoped edit/delete; reminders, sync, backup and Trash reuse |
+| v0.54 | Voice Diary | Implemented; paired validation with v0.55 | Record, persist, play and lifecycle-manage diary audio without replacing the original recording |
+| v0.55 | Organization | In paired validation | Personal organization layer that improves findability without turning the app into a work/Notion clone |
 | v0.56 | Widget | Planned | Android home-screen glance + safe ultra-quick capture using existing app data |
 | v0.57 | Memories / Relationships 2.0 | Planned | Richer person-linked memories, anniversaries and “on this day” navigation |
 | v0.58 | Diary 2.0 | Planned | Reusable personal diary templates and richer daily-writing flows |
@@ -48,3 +48,24 @@ Source of truth for the active product sequence after v0.52. The roadmap follows
 - Existing local/cloud reminder paths remain the scheduling implementation.
 - Existing private sync, backup/export and account isolation automatically include recurrence metadata through the ordinary AgendaItem payload.
 - No parallel recurrence database/table is introduced.
+
+
+## v0.54-v0.55 paired gate
+
+Per the active development cadence, AppLab runs once every two feature versions. v0.54 and v0.55 therefore share one cumulative runtime gate on the final v0.55 APK. Development checks, unit tests, web release build and Android size audit still apply to the combined branch before merge.
+
+### v0.54 acceptance criteria
+
+- Android can record and play a diary voice clip through the native bridge.
+- Voice blocks persist through the ordinary DayJournal model and MediaAssetStore.
+- Quick Capture can create a voice diary entry.
+- Voice media participates in private sync portability, ZIP backup/restore and Trash recovery.
+- No AI, speech-to-text or generated content is introduced.
+
+### v0.55 acceptance criteria
+
+- Inbox entries support pin, tags and manual archive.
+- Diary blocks support pin, tags and manual archive.
+- Archived personal content remains recoverable without using Trash.
+- Archive surfaces manually archived content together with historical month navigation.
+- Older payloads without organization metadata remain readable.
