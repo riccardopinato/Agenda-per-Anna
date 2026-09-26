@@ -1036,8 +1036,11 @@ Future<void> openItemEditor(
   int secondaryReminder = existing == null
       ? (store.preferences.defaultSecondaryReminder ?? -1)
       : (existing.secondaryReminderMinutesBefore ?? -1);
-  RecurrenceRule recurrence = RecurrenceRule.none;
-  int recurrenceCount = 4;
+  RecurrenceRule recurrence =
+      existing?.recurrenceRule ?? RecurrenceRule.none;
+  int recurrenceCount =
+      existing?.isRecurring == true ? max(2, existing!.recurrenceCount) : 4;
+  RecurringEditScope recurringEditScope = RecurringEditScope.single;
 
   AgendaItem buildItem({
     required String id,
@@ -1060,6 +1063,10 @@ Future<void> openItemEditor(
       end: type == ItemType.task ? null : end,
       done: done,
       pinned: pinned,
+      recurrenceRule: existing?.recurrenceRule ?? RecurrenceRule.none,
+      recurrenceSeriesId: existing?.recurrenceSeriesId,
+      recurrenceIndex: existing?.recurrenceIndex ?? 0,
+      recurrenceCount: existing?.recurrenceCount ?? 1,
     );
   }
 
@@ -1117,7 +1124,7 @@ Future<void> openItemEditor(
                             buildItem(
                               id: const Uuid().v4(),
                               itemDate: date,
-                            ),
+                            ).copyWith(clearRecurrence: true),
                           );
                           if (sheetContext.mounted) Navigator.pop(sheetContext);
                         },
@@ -1322,12 +1329,43 @@ Future<void> openItemEditor(
                       selected: recurrence == value,
                       avatar: Icon(value.icon, size: 17),
                       label: Text(value.label),
-                      onSelected: (_) =>
-                          setLocal(() => recurrence = value),
+                      onSelected: existing?.isRecurring == true
+                          ? null
+                          : (_) => setLocal(() => recurrence = value),
                     );
                   }).toList(),
                 ),
-                if (recurrence != RecurrenceRule.none) ...[
+                if (existing?.isRecurring == true) ...[
+                  const SizedBox(height: 10),
+                  Text(
+                    'Serie di ${existing!.recurrenceCount} occorrenze · '
+                    '${existing.recurrenceRule.label}',
+                    style: const TextStyle(fontWeight: FontWeight.w700),
+                  ),
+                  const SizedBox(height: 10),
+                  Text(
+                    'Applica modifica a',
+                    style: Theme.of(context)
+                        .textTheme
+                        .titleSmall
+                        ?.copyWith(fontWeight: FontWeight.w800),
+                  ),
+                  const SizedBox(height: 8),
+                  SegmentedButton<RecurringEditScope>(
+                    segments: RecurringEditScope.values
+                        .map(
+                          (scope) => ButtonSegment<RecurringEditScope>(
+                            value: scope,
+                            label: Text(scope.shortLabel),
+                          ),
+                        )
+                        .toList(),
+                    selected: {recurringEditScope},
+                    onSelectionChanged: (value) => setLocal(
+                      () => recurringEditScope = value.first,
+                    ),
+                  ),
+                ] else if (recurrence != RecurrenceRule.none) ...[
                   const SizedBox(height: 10),
                   Row(
                     children: [
@@ -1344,8 +1382,8 @@ Future<void> openItemEditor(
                   Slider(
                     value: recurrenceCount.toDouble(),
                     min: 2,
-                    max: 20,
-                    divisions: 18,
+                    max: 60,
+                    divisions: 58,
                     label: recurrenceCount.toString(),
                     onChanged: (value) =>
                         setLocal(() => recurrenceCount = value.round()),
@@ -1359,7 +1397,14 @@ Future<void> openItemEditor(
                         child: OutlinedButton.icon(
                           icon: const Icon(Icons.delete_outline),
                           onPressed: () async {
-                            await store.deleteItem(existing.id);
+                            if (existing.isRecurring) {
+                              await store.deleteRecurringOccurrence(
+                                existing,
+                                scope: recurringEditScope,
+                              );
+                            } else {
+                              await store.deleteItem(existing.id);
+                            }
                             if (sheetContext.mounted) {
                               Navigator.pop(sheetContext);
                             }
@@ -1383,19 +1428,21 @@ Future<void> openItemEditor(
                             done: existing?.done ?? false,
                             pinned: existing?.pinned ?? false,
                           );
-                          await store.upsert(base);
-
-                          if (recurrence != RecurrenceRule.none) {
-                            for (var i = 1; i < recurrenceCount; i++) {
-                              final nextDate =
-                                  _recurrenceDate(date, recurrence, i);
-                              await store.upsert(
-                                buildItem(
-                                  id: const Uuid().v4(),
-                                  itemDate: nextDate,
-                                ),
-                              );
-                            }
+                          if (existing?.isRecurring == true) {
+                            await store.updateRecurringOccurrence(
+                              base,
+                              scope: recurringEditScope,
+                            );
+                          } else if (recurrence == RecurrenceRule.none) {
+                            await store.upsert(
+                              base.copyWith(clearRecurrence: true),
+                            );
+                          } else {
+                            await store.createRecurringSeries(
+                              template: base,
+                              rule: recurrence,
+                              count: recurrenceCount,
+                            );
                           }
 
                           if (sheetContext.mounted) {
@@ -1431,30 +1478,6 @@ const List<DropdownMenuItem<int>> _reminderMenuItems = [
   DropdownMenuItem(value: 120, child: Text('2 ore prima')),
   DropdownMenuItem(value: 1440, child: Text('1 giorno prima')),
 ];
-
-DateTime _recurrenceDate(
-  DateTime start,
-  RecurrenceRule rule,
-  int offset,
-) {
-  switch (rule) {
-    case RecurrenceRule.none:
-      return start;
-    case RecurrenceRule.daily:
-      return addCivilDays(start, offset);
-    case RecurrenceRule.weekly:
-      return addCivilDays(start, 7 * offset);
-    case RecurrenceRule.monthly:
-      final firstOfTarget = DateTime(start.year, start.month + offset, 1);
-      final lastDay = DateTime(
-        firstOfTarget.year,
-        firstOfTarget.month + 1,
-        0,
-      ).day;
-      final day = start.day.clamp(1, lastDay).toInt();
-      return DateTime(firstOfTarget.year, firstOfTarget.month, day);
-  }
-}
 
 const _positiveQuotes = <(String, String)>[
   ('Una cosa alla volta ♡', 'Non serve fare tutto oggi. Basta iniziare da qualcosa che conta.'),
