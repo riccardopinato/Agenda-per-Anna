@@ -416,6 +416,14 @@ Future<void> _showQuickCapture(
           ),
           ListTile(
             leading: const CircleAvatar(
+              child: Icon(Icons.mic_none_outlined),
+            ),
+            title: const Text('Nota vocale'),
+            subtitle: const Text('Registra subito un audio nel diario di oggi.'),
+            onTap: () => Navigator.pop(sheetContext, 'voice'),
+          ),
+          ListTile(
+            leading: const CircleAvatar(
               child: Icon(Icons.check_circle_outline),
             ),
             title: const Text('Attività'),
@@ -463,6 +471,45 @@ Future<void> _showQuickCapture(
         ),
       ),
     );
+    return;
+  }
+
+  if (action == 'voice') {
+    final capture = await captureVoiceClip(context);
+    if (capture == null || !context.mounted) return;
+
+    final caption = await showDiaryCaptionEditor(
+      context,
+      adding: true,
+    );
+    if (caption == null) return;
+
+    final assetId = await MediaAssetStore.instance.put(capture.bytes);
+    final now = DateTime.now();
+    final day = DateTime(now.year, now.month, now.day);
+    final journal = store.journal(day);
+    await store.saveJournal(
+      day,
+      journal.copyWith(
+        blocks: [
+          ...journal.blocks,
+          DiaryBlock(
+            id: const Uuid().v4(),
+            type: DiaryBlockType.voice,
+            createdAt: now,
+            text: caption,
+            mediaAssetId: assetId,
+            audioDurationMs: capture.durationMs,
+            audioMimeType: capture.mimeType,
+          ),
+        ],
+      ),
+    );
+    if (context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Nota vocale salvata nel diario di oggi.')),
+      );
+    }
     return;
   }
 
