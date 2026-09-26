@@ -2,11 +2,8 @@ appId: com.riccardopinato.agenda_per_anna
 ---
 - back
 - extendedWaitUntil:
-    visible: "Home"
+    visible: "La mia agenda"
     timeout: 10000
-- tapOn:
-    text: "Home"
-    retryTapIfNoChange: true
 - tapOn:
     text: "Cloud"
 - extendedWaitUntil:
