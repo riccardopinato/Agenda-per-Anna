@@ -60,7 +60,7 @@ void main() {
     expect(legacy.recurrenceRule, RecurrenceRule.none);
     expect(legacy.recurrenceCount, 1);
 
-    const recurring = AgendaItem(
+    final recurring = AgendaItem(
       id: 'recurring',
       title: 'Corso',
       note: '',
@@ -83,7 +83,7 @@ void main() {
     await store.load();
 
     await store.createRecurringSeries(
-      template: const AgendaItem(
+      template: AgendaItem(
         id: 'first',
         title: 'Controllo mensile',
         note: '',
@@ -128,7 +128,7 @@ void main() {
     await store.load();
 
     await store.createRecurringSeries(
-      template: const AgendaItem(
+      template: AgendaItem(
         id: 'first',
         title: 'Allenamento',
         note: '',
@@ -165,7 +165,7 @@ void main() {
     await store.load();
 
     await store.createRecurringSeries(
-      template: const AgendaItem(
+      template: AgendaItem(
         id: 'first',
         title: 'Pagamento',
         note: '',
