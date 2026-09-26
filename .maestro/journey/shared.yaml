@@ -1,11 +1,5 @@
 appId: com.riccardopinato.agenda_per_anna
 ---
-- extendedWaitUntil:
-    visible: "Home"
-    timeout: 10000
-- tapOn:
-    text: "Home"
-    retryTapIfNoChange: true
 - tapOn:
     text: "Noi ♡"
 - extendedWaitUntil:
