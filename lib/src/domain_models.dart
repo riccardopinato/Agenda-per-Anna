@@ -52,7 +52,7 @@ class AgendaPreferences {
   final bool onboardingDone;
 
   const AgendaPreferences({
-    this.displayName = 'Anna',
+    this.displayName = '',
     this.themeMode = AgendaThemeMode.system,
     this.palette = AgendaPalette.rose,
     this.showDailyQuote = true,
@@ -137,9 +137,7 @@ class AgendaPreferences {
 
   factory AgendaPreferences.fromJson(Map<String, dynamic> json) =>
       AgendaPreferences(
-        displayName: (json['displayName'] as String? ?? 'Anna').trim().isEmpty
-            ? 'Anna'
-            : (json['displayName'] as String? ?? 'Anna').trim(),
+        displayName: (json['displayName'] as String? ?? '').trim(),
         themeMode: AgendaThemeMode.values.firstWhere(
           (e) => e.name == json['themeMode'],
           orElse: () => AgendaThemeMode.system,
