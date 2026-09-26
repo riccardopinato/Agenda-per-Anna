@@ -2,7 +2,7 @@
 
 Flutter app for personal planning, private diary and the shared **Noi ♡** space.
 
-Current release line: **v0.59.0**.
+Current release line: **v0.61.0**.
 
 ## Core areas
 
@@ -315,3 +315,23 @@ See `docs/ARCHITECTURE.md` and `supabase/README.md` for implementation details.
 - Connections persist inside the ordinary DiaryBlock payload and therefore reuse private sync, backup/export and account isolation.
 - Moving a linked memory to Trash preserves relationships for recovery; permanent purge removes dangling links from live and recoverable diary content.
 - The previous monthly-page search remains available inside the expanded global search.
+
+
+## v0.60.0 — Noi ♡ 2.0
+
+- Shared spaces now expose their real participant list instead of treating collaboration as an implicit two-person flow.
+- Existing multi-use 24-hour invites remain the invitation engine; no parallel collaboration model is introduced.
+- Space owners can remove a non-owner member through an authenticated owner-only RPC.
+- Member-management RPCs require an authenticated caller, verify space membership/ownership server-side, use locked search paths and expose only the public invoker wrappers to authenticated clients.
+- Destructive collaboration semantics are explicit in the UI: owners “Elimina per tutti”, while members “Lascia solo per me”.
+- Existing shared feed, agenda, memories, comments, reactions, unread state, offline queues and media maintenance remain the source of truth.
+
+## v0.61.0 — Data Safety
+
+- Adds a read-only local integrity audit over the existing storage and backup architecture.
+- Detects referenced media that are missing or corrupt, local source-media files that are no longer referenced, and unreadable structured-storage sections.
+- Reports pending cloud/shared changes and the current local safety-snapshot count without treating an unsynced queue as local corruption.
+- Complete ZIP backups are validated immediately after creation before they are offered for saving.
+- ZIP verification continues to reuse the existing manifest, SHA-256, declared-size, schema and media-index validation instead of adding a second backup format.
+- The Backup & Data screen now exposes the integrity audit and a compact health report.
+- No AI features are introduced.
