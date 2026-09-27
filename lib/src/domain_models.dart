@@ -1253,6 +1253,8 @@ class SharedEntry {
   final String mediaThumbnailAssetId;
   final List<DiarySketchPage> sketchPages;
   final bool memoryPinned;
+  final bool ownerOnlyEdit;
+  final String creatorId;
 
   const SharedEntry({
     required this.id,
@@ -1272,6 +1274,8 @@ class SharedEntry {
     this.mediaThumbnailAssetId = '',
     this.sketchPages = const [],
     this.memoryPinned = false,
+    this.ownerOnlyEdit = false,
+    this.creatorId = '',
   });
 
   bool get appearsInSharedMemories =>
@@ -1297,6 +1301,8 @@ class SharedEntry {
     String? mediaThumbnailAssetId,
     List<DiarySketchPage>? sketchPages,
     bool? memoryPinned,
+    bool? ownerOnlyEdit,
+    String? creatorId,
     bool clearTime = false,
     bool clearUpdatedBy = false,
     bool clearMedia = false,
@@ -1325,6 +1331,8 @@ class SharedEntry {
         sketchPages:
             clearSketch ? const [] : (sketchPages ?? this.sketchPages),
         memoryPinned: memoryPinned ?? this.memoryPinned,
+        ownerOnlyEdit: ownerOnlyEdit ?? this.ownerOnlyEdit,
+        creatorId: creatorId ?? this.creatorId,
       );
 
   Map<String, dynamic> toJson() => {
@@ -1346,6 +1354,8 @@ class SharedEntry {
         'mediaThumbnailBase64': mediaThumbnailBase64,
         'sketchPages': sketchPages.map((page) => page.toJson()).toList(),
         'memoryPinned': memoryPinned,
+        'ownerOnlyEdit': ownerOnlyEdit,
+        'creatorId': creatorId,
       };
 
   Map<String, dynamic> toCacheJson() => {
@@ -1356,6 +1366,7 @@ class SharedEntry {
             sketchPages.map((page) => page.toLocalJson()).toList(),
         '_updatedBy': updatedBy,
         '_updatedAt': updatedAt?.toUtc().toIso8601String(),
+        '_creatorId': creatorId,
       };
 
   factory SharedEntry.fromCacheJson(Map<String, dynamic> json) =>
@@ -1365,6 +1376,7 @@ class SharedEntry {
         updatedAt: DateTime.tryParse(json['_updatedAt'] as String? ?? ''),
         mediaThumbnailAssetId:
             json['_mediaThumbnailAssetId'] as String? ?? '',
+        creatorId: json['_creatorId'] as String? ?? '',
       );
 
   factory SharedEntry.fromJson(
@@ -1372,6 +1384,7 @@ class SharedEntry {
     String? updatedBy,
     DateTime? updatedAt,
     String mediaThumbnailAssetId = '',
+    String creatorId = '',
   }) {
     TimeOfDay? parseTime(dynamic raw) {
       if (raw is! Map) return null;
@@ -1412,6 +1425,10 @@ class SharedEntry {
           )
           .toList(),
       memoryPinned: json['memoryPinned'] as bool? ?? false,
+      ownerOnlyEdit: json['ownerOnlyEdit'] as bool? ?? false,
+      creatorId: creatorId.isNotEmpty
+          ? creatorId
+          : (json['creatorId'] as String? ?? ''),
     );
   }
 }

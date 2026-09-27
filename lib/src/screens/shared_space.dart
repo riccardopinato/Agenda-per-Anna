@@ -1182,17 +1182,93 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
     return '';
   }
 
+  bool _isSharedEntryCreator(SharedEntry entry) {
+    final uid = CloudSyncService.instance.userId;
+    return uid != null &&
+        uid.isNotEmpty &&
+        entry.creatorId.isNotEmpty &&
+        entry.creatorId == uid;
+  }
+
+  bool _canEditSharedEntry(SharedEntry entry) =>
+      !entry.ownerOnlyEdit || _isSharedEntryCreator(entry);
+
+  void _showReadOnlyEntryMessage() {
+    _message(
+      'Questo sketch è in sola lettura. Puoi comunque visualizzarlo, '
+      'commentarlo e reagire.',
+    );
+  }
+
+  Future<void> _setSketchPermission(SharedEntry entry) async {
+    if (entry.type != SharedEntryType.sketch ||
+        !_isSharedEntryCreator(entry)) {
+      return;
+    }
+
+    final value = await showModalBottomSheet<bool>(
+      context: context,
+      showDragHandle: true,
+      builder: (sheetContext) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const ListTile(
+              leading: CircleAvatar(child: Icon(Icons.lock_outline)),
+              title: Text(
+                'Chi può modificare lo sketch?',
+                style: TextStyle(fontWeight: FontWeight.w900),
+              ),
+              subtitle: Text(
+                'Commenti, reazioni e visualizzazione restano disponibili '
+                'a tutti i membri dello spazio.',
+              ),
+            ),
+            ListTile(
+              leading: Icon(
+                entry.ownerOnlyEdit
+                    ? Icons.radio_button_unchecked
+                    : Icons.radio_button_checked,
+              ),
+              title: const Text('Tutti possono modificare'),
+              subtitle: const Text('Modalità collaborativa'),
+              onTap: () => Navigator.pop(sheetContext, false),
+            ),
+            ListTile(
+              leading: Icon(
+                entry.ownerOnlyEdit
+                    ? Icons.radio_button_checked
+                    : Icons.radio_button_unchecked,
+              ),
+              title: const Text('Solo io posso modificare'),
+              subtitle: const Text(
+                'Gli altri membri vedono lo sketch in sola lettura',
+              ),
+              onTap: () => Navigator.pop(sheetContext, true),
+            ),
+            const SizedBox(height: 8),
+          ],
+        ),
+      ),
+    );
+    if (value == null || value == entry.ownerOnlyEdit) return;
+    await _persistSharedEntry(entry.copyWith(ownerOnlyEdit: value));
+  }
+
   SharedEntry _withLocalMetadata(
     SharedEntry entry,
     DateTime revision,
-  ) =>
-      entry.copyWith(
-        editorName: widget.store.preferences.displayName.trim().isEmpty
-            ? 'Utente'
-            : widget.store.preferences.displayName.trim(),
-        updatedBy: CloudSyncService.instance.userId,
-        updatedAt: revision,
-      );
+  ) {
+    final uid = CloudSyncService.instance.userId ?? '';
+    return entry.copyWith(
+      editorName: widget.store.preferences.displayName.trim().isEmpty
+          ? 'Utente'
+          : widget.store.preferences.displayName.trim(),
+      updatedBy: uid.isEmpty ? null : uid,
+      updatedAt: revision,
+      creatorId: entry.creatorId.isEmpty ? uid : entry.creatorId,
+    );
+  }
 
   Future<void> _persistSharedEntry(SharedEntry result) async {
     final revision = DateTime.now().toUtc();
@@ -1225,6 +1301,11 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
     SharedEntry? existing,
     SharedEntryType? initialType,
   ]) async {
+    if (existing != null && !_canEditSharedEntry(existing)) {
+      _showReadOnlyEntryMessage();
+      return;
+    }
+
     if (widget.store.activeAccountId == null) {
       _message(
         'Accedi al cloud almeno una volta per usare lo spazio condiviso.',
@@ -1623,6 +1704,11 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
   }
 
   Future<void> _delete(SharedEntry entry) async {
+    if (!_canEditSharedEntry(entry)) {
+      _showReadOnlyEntryMessage();
+      return;
+    }
+
     final isDiaryContent =
         entry.type == SharedEntryType.note ||
         entry.type == SharedEntryType.photo ||
@@ -2044,12 +2130,16 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
       SharedEntryType.sketch => DiaryContentKind.sketch,
       _ => throw StateError('not_a_diary_entry'),
     };
+    final canEdit = _canEditSharedEntry(entry);
+    final isCreator = _isSharedEntryCreator(entry);
 
     final meta = <String>[
       kind.label,
       if (showDate)
         _cap(DateFormat('EEE d MMM', 'it_IT').format(entry.date)),
       if (editor.isNotEmpty) editor,
+      if (entry.type == SharedEntryType.sketch && entry.ownerOnlyEdit)
+        canEdit ? 'Solo tu puoi modificare' : 'Sola lettura',
       if (entry.updatedAt != null)
         'Aggiornato ${DateFormat('HH:mm', 'it_IT').format(entry.updatedAt!.toLocal())}',
       if (pending) 'In attesa di sincronizzazione',
@@ -2066,7 +2156,16 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
               ),
             ),
           ),
-      SharedEntryType.sketch => () => _addSharedSketch(entry),
+      SharedEntryType.sketch when canEdit => () => _addSharedSketch(entry),
+      SharedEntryType.sketch => () => Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => SharedSketchViewerScreen(
+                space: widget.space,
+                entry: entry,
+              ),
+            ),
+          ),
       _ => () {},
     };
 
@@ -2102,22 +2201,54 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
       subtitle: meta.join(' · '),
       preview: preview,
       onOpen: openEntry,
-      onEdit: kind == DiaryContentKind.photo ? null : openEntry,
-      onEditCaption: kind == DiaryContentKind.photo
+      onEdit: kind == DiaryContentKind.photo || !canEdit ? null : openEntry,
+      onEditCaption: kind == DiaryContentKind.photo && canEdit
           ? () => _editSharedPhotoCaption(entry)
           : null,
-      onReplacePhoto: kind == DiaryContentKind.photo
+      onReplacePhoto: kind == DiaryContentKind.photo && canEdit
           ? () => _addSharedPhoto(entry)
           : null,
-      onDelete: () => _delete(entry),
-      statusIcon:
-          pending ? const Icon(Icons.schedule_outlined, size: 20) : null,
-      footer: _sharedInteractionFooter(
-        entry,
-        hearts: hearts,
-        comments: comments,
-        likedByMe: likedByMe,
-        seen: seen,
+      onDelete: canEdit
+          ? () => _delete(entry)
+          : _showReadOnlyEntryMessage,
+      statusIcon: entry.ownerOnlyEdit
+          ? Icon(
+              canEdit ? Icons.lock_outline : Icons.lock,
+              size: 20,
+            )
+          : (pending ? const Icon(Icons.schedule_outlined, size: 20) : null),
+      footer: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          _sharedInteractionFooter(
+            entry,
+            hearts: hearts,
+            comments: comments,
+            likedByMe: likedByMe,
+            seen: seen,
+          ),
+          if (entry.type == SharedEntryType.sketch && isCreator)
+            Align(
+              alignment: Alignment.centerLeft,
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(8, 0, 8, 5),
+                child: TextButton.icon(
+                  onPressed: () => _setSketchPermission(entry),
+                  icon: Icon(
+                    entry.ownerOnlyEdit
+                        ? Icons.lock_outline
+                        : Icons.group_outlined,
+                    size: 18,
+                  ),
+                  label: Text(
+                    entry.ownerOnlyEdit
+                        ? 'Modifica: solo io'
+                        : 'Modifica: tutti',
+                  ),
+                ),
+              ),
+            ),
+        ],
       ),
     );
   }

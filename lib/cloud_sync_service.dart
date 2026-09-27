@@ -277,6 +277,7 @@ class SharedMemberRead {
 
 class SharedRealtimeRecordChange {
   final String spaceId;
+  final String ownerId;
   final String entityType;
   final String entityId;
   final Map<String, dynamic>? payload;
@@ -286,6 +287,7 @@ class SharedRealtimeRecordChange {
 
   const SharedRealtimeRecordChange({
     required this.spaceId,
+    required this.ownerId,
     required this.entityType,
     required this.entityId,
     required this.payload,
@@ -302,6 +304,7 @@ class SharedRealtimeRecordChange {
     final source = newRecord.isNotEmpty ? newRecord : oldRecord;
     return SharedRealtimeRecordChange(
       spaceId: source['space_id']?.toString() ?? fallbackSpaceId,
+      ownerId: source['owner_id']?.toString() ?? '',
       entityType: source['entity_type']?.toString() ?? '',
       entityId: source['entity_id']?.toString() ?? '',
       payload: source['payload'] is Map

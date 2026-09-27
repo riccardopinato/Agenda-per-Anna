@@ -19,7 +19,7 @@ Source of truth for the active product sequence after v0.52. The roadmap follows
 | v0.62.1 | Generic Profile Default | Completed | Neutral first-run name field with preserved existing personalization |
 | v0.63 | Creative & Reminder Upgrade | Completed | 16-color Sketchbook palette plus safe agenda notification actions using existing engines |
 | v0.64 | Capture & Writing | Completed | Native Android share-to-diary/Inbox plus distraction-reduced diary writing |
-| v0.65 | Noi ♡ Permissions Lite | Approved | Simple server-enforced edit/read-only control for shared creative memories |
+| v0.65 | Noi ♡ Permissions Lite | In validation | Simple server-enforced edit/read-only control for shared creative memories |
 | v0.66 | Smart Media Search | Approved | Local on-device OCR for diary photos integrated into deterministic search |
 
 ## Permanent constraints for this sequence
@@ -214,3 +214,17 @@ Per the active development cadence, AppLab runs once every two feature versions.
 - Reuse the existing photo model, MediaAssetStore and deterministic global search.
 - OCR failure must never block saving/viewing the photo.
 - No generative AI, semantic embeddings or document-scanner workspace are part of this release.
+
+
+## v0.65 acceptance criteria
+
+- The approved **Noi ♡ Permissions Lite** backlog item extends existing shared sketches only; it does not introduce enterprise ACL roles.
+- A shared sketch defaults to collaborative editing for backward compatibility.
+- Its creator can switch between **Tutti possono modificare** and **Solo io posso modificare**.
+- Non-creators can always view, comment and react to a creator-locked sketch but cannot edit or delete it.
+- Creator identity is derived from the existing shared record owner and survives cache, realtime and offline overlays.
+- Server-side RLS and the shared-record merge function independently enforce the creator-only restriction; Flutter UI is not the security boundary.
+- Existing shared-space membership, sync, pending queues, realtime, comments and reactions remain the implementation path.
+- Production Supabase migration noi_permissions_lite_v065 is applied successfully before merge.
+- Release metadata is aligned to v0.65.0+75.
+- Development, Web, Android size audit and AppLab Trusted Verify must all pass before merge.
