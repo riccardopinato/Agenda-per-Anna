@@ -471,7 +471,7 @@ class _FocusWritingScreenState extends State<FocusWritingScreen> {
                         const Text('Modalità scrittura'),
                         const Spacer(),
                         Text(
-                          '${wordCount} parole · ${controller.text.runes.length} caratteri',
+                          '$wordCount parole · ${controller.text.runes.length} caratteri',
                           style: theme.textTheme.bodySmall,
                         ),
                       ],
