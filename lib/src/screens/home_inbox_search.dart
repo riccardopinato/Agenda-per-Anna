@@ -453,6 +453,13 @@ Future<void> _handleIncomingShareCapture(
     return;
   }
 
+  if (!context.mounted) {
+    if (capture.hasImage) {
+      await ShareCaptureService.instance.discardImage(capture.imageToken);
+    }
+    return;
+  }
+
   if (destination == 'inbox') {
     if (preview.isNotEmpty) {
       await store.addInboxEntry(preview);
