@@ -20,7 +20,7 @@ Source of truth for the active product sequence after v0.52. The roadmap follows
 | v0.63 | Creative & Reminder Upgrade | Completed | 16-color Sketchbook palette plus safe agenda notification actions using existing engines |
 | v0.64 | Capture & Writing | Completed | Native Android share-to-diary/Inbox plus distraction-reduced diary writing |
 | v0.65 | Noi ♡ Permissions Lite | Completed | Simple server-enforced edit/read-only control for shared creative memories |
-| v0.66 | Smart Media Search | In validation | Local on-device OCR for diary photos integrated into deterministic search |
+| v0.66 | Smart Media Search | Completed | Local on-device OCR for diary photos integrated into deterministic search |
 
 ## Permanent constraints for this sequence
 
