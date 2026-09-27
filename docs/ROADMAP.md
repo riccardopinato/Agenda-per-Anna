@@ -17,7 +17,7 @@ Source of truth for the active product sequence after v0.52. The roadmap follows
 | v0.61 | Data Safety | Completed | Restore drills, backup verification, orphan checks and long-term data portability hardening |
 | v0.62 | Non-AI Production Consolidation | Completed | Accessibility, performance, regression and release-quality consolidation; no AI features |
 | v0.62.1 | Generic Profile Default | Completed | Neutral first-run name field with preserved existing personalization |
-| v0.63 | Creative & Reminder Upgrade | In validation | 16-color Sketchbook palette plus safe agenda notification actions using existing engines |
+| v0.63 | Creative & Reminder Upgrade | Completed | 16-color Sketchbook palette plus safe agenda notification actions using existing engines |
 
 ## Permanent constraints for this sequence
 
