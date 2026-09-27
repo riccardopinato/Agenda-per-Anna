@@ -21,10 +21,13 @@ Source of truth for the active product sequence after v0.52. The roadmap follows
 | v0.64 | Capture & Writing | Completed | Native Android share-to-diary/Inbox plus distraction-reduced diary writing |
 | v0.65 | Noi ♡ Permissions Lite | Completed | Simple server-enforced edit/read-only control for shared creative memories |
 | v0.66 | Smart Media Search | Completed | Local on-device OCR for diary photos integrated into deterministic search |
+| v0.67 | Memory Engine Core | Completed | One derived memory projection for timeline, relationships, resurfacing and connections; no new persistence |
+| v0.68 | Places & Context | Approved | Lightweight first-class places linked to diary memories using existing private-data infrastructure |
+| v0.69 | Life Timeline / Momenti | Approved | Cross-domain derived life timeline over agenda, diary, birthdays and context without a monolithic LifeItem store |
 
 ## Permanent constraints for this sequence
 
-- No generative-AI or AI-dependent product features through v0.66.
+- No generative-AI or AI-dependent product features through v0.69.
 - Anna's Diary remains primarily a personal diary / agenda; work and knowledge-management scope belongs to Notes-Ecosistema.
 - Existing verified modules are reused before new infrastructure is introduced.
 - User data remains offline-capable and account-isolated where applicable.
@@ -249,3 +252,32 @@ Per the active development cadence, AppLab runs once every two feature versions.
 - No generative AI, semantic embeddings, remote OCR, PDF scanner or new media database is introduced.
 - Release metadata is aligned to v0.66.0+76.
 - Development, Web, Android size audit and AppLab Trusted Verify must all pass before merge.
+
+
+## v0.67 acceptance criteria
+
+- The red-team **Memory Engine** concept is approved only as a derived architectural layer; DiaryBlock inside DayJournal remains the canonical private-memory model.
+- A single Memory Engine owns canonical memory enumeration/order, person filtering, “In questo giorno”, related-memory lookup, backlinks and basic grouping projections.
+- Existing People & Relationships memory helpers delegate to the Memory Engine instead of maintaining a second journal scan.
+- Existing Search & Connections compatibility APIs delegate to the Memory Engine without breaking existing callers.
+- The Memories gallery consumes Memory Engine records without changing its storage, navigation or lifecycle semantics.
+- Archived-content behavior remains backward compatible.
+- No new persistence key, local database/table, cloud entity, media store or migration is introduced.
+- Release metadata is aligned to v0.67.0+77.
+- Development, Web, Android size audit and AppLab Trusted Verify must all pass before merge.
+
+## v0.68 planned scope — approved
+
+- Add **Places & Context** as a deliberately lightweight personal-context entity, analogous to People rather than a maps/social product.
+- Places are private, local-first entities using the existing per-entity persistence, private sync, backup/export, account isolation and Trash lifecycle.
+- Diary Note / Photo / Sketch / Voice blocks may link places without duplicating the memory.
+- Search and Memories may resolve linked place names through the existing deterministic search/memory engines.
+- No background location tracking, contacts-like external place database or mandatory map SDK is introduced.
+
+## v0.69 planned scope — approved
+
+- Add a **Life Timeline / Momenti** projection that derives chronological life moments from existing agenda, diary, birthdays and approved contextual entities.
+- AgendaItem, DiaryBlock, BirthdayEntry, PersonEntry and PlaceEntry remain their canonical typed models.
+- “Momento” is a reference/projection layer, not a new universal persisted record and not a migration target for existing data.
+- La mia giornata and Daily Briefing continue to reuse Day Hub / Unified Agenda rather than being replaced by a second dashboard.
+- Privacy boundaries, Noi ♡ ownership rules, Vault isolation and local-first sync semantics must remain explicit.

@@ -27,22 +27,15 @@ class _DiaryMemoriesScreenState extends State<DiaryMemoriesScreen> {
     super.dispose();
   }
 
-  List<_DiaryMemoryRecord> _allRecords() {
-    final result = <_DiaryMemoryRecord>[];
-    for (final entry in widget.store.journals.entries) {
-      final date = DateTime.tryParse(entry.key);
-      if (date == null) continue;
-      for (final block in entry.value.blocks) {
-        result.add(_DiaryMemoryRecord(date: date, block: block));
-      }
-    }
-    result.sort((a, b) {
-      final dateOrder = b.date.compareTo(a.date);
-      if (dateOrder != 0) return dateOrder;
-      return b.block.createdAt.compareTo(a.block.createdAt);
-    });
-    return result;
-  }
+  List<_DiaryMemoryRecord> _allRecords() => widget.store
+      .memoryRecords(includeArchived: true)
+      .map(
+        (reference) => _DiaryMemoryRecord(
+          date: reference.date,
+          block: reference.block,
+        ),
+      )
+      .toList();
 
   bool _matchesSearch(_DiaryMemoryRecord record, String query) {
     if (query.isEmpty) return true;

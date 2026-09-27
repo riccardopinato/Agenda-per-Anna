@@ -61,67 +61,26 @@ class PersonalSearchHit {
 extension SearchConnectionsAgendaStore on AgendaStore {
   List<DiaryBlockReference> allDiaryBlockReferences({
     bool includeArchived = false,
-  }) {
-    final result = <DiaryBlockReference>[];
-    for (final entry in journals.entries) {
-      final date = DateTime.tryParse(entry.key);
-      if (date == null) continue;
-      for (final block in entry.value.blocks) {
-        if (!includeArchived && block.archived) continue;
-        result.add(DiaryBlockReference(date: date, block: block));
-      }
-    }
-    result.sort((a, b) {
-      final dateOrder = b.date.compareTo(a.date);
-      if (dateOrder != 0) return dateOrder;
-      return b.block.createdAt.compareTo(a.block.createdAt);
-    });
-    return result;
-  }
+  }) =>
+      memoryRecords(includeArchived: includeArchived);
 
   DiaryBlockReference? diaryBlockReferenceById(
     String blockId, {
     bool includeArchived = true,
-  }) {
-    for (final reference
-        in allDiaryBlockReferences(includeArchived: includeArchived)) {
-      if (reference.block.id == blockId) return reference;
-    }
-    return null;
-  }
+  }) =>
+      memoryRecordById(
+        blockId,
+        includeArchived: includeArchived,
+      );
 
-  String diaryBlockDisplayTitle(DiaryBlock block) {
-    final text = block.text.trim();
-    if (text.isNotEmpty) {
-      final firstLine = text.split('\n').first.trim();
-      if (firstLine.length <= 64) return firstLine;
-      return '${firstLine.substring(0, 61)}…';
-    }
-    return switch (block.type) {
-      DiaryBlockType.note => 'Nota del diario',
-      DiaryBlockType.photo => 'Foto del diario',
-      DiaryBlockType.sketch => 'Sketch del diario',
-      DiaryBlockType.voice => 'Nota vocale',
-    };
-  }
+  String diaryBlockDisplayTitle(DiaryBlock block) =>
+      memoryDisplayTitle(block);
 
-  List<DiaryBlockReference> relatedDiaryBlocks(DiaryBlock block) {
-    final wanted = block.relatedBlockIds.toSet();
-    if (wanted.isEmpty) return const [];
-    return allDiaryBlockReferences(includeArchived: true)
-        .where((reference) => wanted.contains(reference.block.id))
-        .toList();
-  }
+  List<DiaryBlockReference> relatedDiaryBlocks(DiaryBlock block) =>
+      relatedMemoryRecords(block);
 
-  List<DiaryBlockReference> backlinksForDiaryBlock(String targetBlockId) {
-    return allDiaryBlockReferences(includeArchived: true)
-        .where(
-          (reference) =>
-              reference.block.id != targetBlockId &&
-              reference.block.relatedBlockIds.contains(targetBlockId),
-        )
-        .toList();
-  }
+  List<DiaryBlockReference> backlinksForDiaryBlock(String targetBlockId) =>
+      memoryBacklinks(targetBlockId);
 
   Future<void> setDiaryBlockConnections(
     DateTime date,
