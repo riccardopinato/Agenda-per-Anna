@@ -625,6 +625,14 @@ Future<void> _showQuickCapture(
             subtitle: const Text('Salva una relazione personale da ricordare.'),
             onTap: () => Navigator.pop(sheetContext, 'person'),
           ),
+          ListTile(
+            leading: const CircleAvatar(
+              child: Icon(Icons.add_location_alt_outlined),
+            ),
+            title: const Text('Luogo importante'),
+            subtitle: const Text('Salva un posto da collegare ai tuoi ricordi.'),
+            onTap: () => Navigator.pop(sheetContext, 'place'),
+          ),
         ],
       ),
     ),
@@ -699,6 +707,19 @@ Future<void> _showQuickCapture(
       context,
       MaterialPageRoute(
         builder: (_) => PeopleScreen(
+          store: store,
+          startAdding: true,
+        ),
+      ),
+    );
+    return;
+  }
+
+  if (action == 'place') {
+    await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => PlacesScreen(
           store: store,
           startAdding: true,
         ),
