@@ -1363,6 +1363,8 @@ class _DiaryMemoryCardState extends State<DiaryMemoryCard> {
           imageBase64: '',
           mediaAssetId: mediaAssetId,
           mediaThumbnailAssetId: mediaThumbnailAssetId,
+          ocrText: '',
+          ocrScanned: false,
         );
         await _saveBlocks(blocks);
       }
