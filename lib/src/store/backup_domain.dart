@@ -17,6 +17,7 @@ class _AgendaBackupDomain {
         'habits': store.habits.map((e) => e.toJson()).toList(),
         'birthdays': store.birthdays.map((e) => e.toJson()).toList(),
         'people': store.people.map((e) => e.toJson()).toList(),
+        'places': store.places.map((e) => e.toJson()).toList(),
         'inbox': store.inbox.map((e) => e.toJson()).toList(),
         'trash': store.trash.map((e) => e.toJson()).toList(),
         'preferences': store.preferences.toJson(),
@@ -221,6 +222,7 @@ class _AgendaBackupDomain {
       habitCount: (payload['habits'] as List? ?? const []).length,
       birthdayCount: (payload['birthdays'] as List? ?? const []).length,
       personCount: (payload['people'] as List? ?? const []).length,
+      placeCount: (payload['places'] as List? ?? const []).length,
       trashCount: (payload['trash'] as List? ?? const []).length,
     );
   }
@@ -303,6 +305,41 @@ class _AgendaBackupDomain {
         }
         if (person.note.trim().isNotEmpty) {
           buffer.writeln('  Note: ${person.note.trim()}');
+        }
+      }
+    }
+
+    buffer.writeln();
+    buffer.writeln(
+      '============================================================',
+    );
+    buffer.writeln('LUOGHI IMPORTANTI');
+    buffer.writeln(
+      '============================================================',
+    );
+
+    if (store.places.isEmpty) {
+      buffer.writeln('Nessun luogo salvato.');
+    } else {
+      final places = [...store.places]
+        ..sort((a, b) {
+          if (a.favorite != b.favorite) return a.favorite ? -1 : 1;
+          return a.name.toLowerCase().compareTo(b.name.toLowerCase());
+        });
+      for (final place in places) {
+        final context = [
+          if (place.category.trim().isNotEmpty) place.category.trim(),
+          if (place.address.trim().isNotEmpty) place.address.trim(),
+        ].join(' · ');
+        buffer.writeln(
+          context.isEmpty ? '- ${place.name}' : '- ${place.name} · $context',
+        );
+        final memories = store.placeMemoryCount(place.id);
+        if (memories > 0) {
+          buffer.writeln('  Ricordi collegati: $memories');
+        }
+        if (place.note.trim().isNotEmpty) {
+          buffer.writeln('  Note: ${place.note.trim()}');
         }
       }
     }
