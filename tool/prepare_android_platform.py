@@ -70,6 +70,7 @@ import android.appwidget.AppWidgetManager
 import android.content.ComponentName
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.graphics.BitmapFactory
 import android.media.MediaPlayer
 import android.media.MediaRecorder
 import android.net.Uri
@@ -80,6 +81,10 @@ import android.view.WindowManager
 import io.flutter.embedding.android.FlutterFragmentActivity
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
+import com.google.mlkit.vision.common.InputImage
+import com.google.mlkit.vision.text.TextRecognizer
+import com.google.mlkit.vision.text.TextRecognition
+import com.google.mlkit.vision.text.latin.TextRecognizerOptions
 import java.io.File
 import java.security.KeyStore
 import javax.crypto.Cipher
@@ -93,6 +98,7 @@ class MainActivity : FlutterFragmentActivity() {
         private const val VOICE_CHANNEL = "annas_diary/voice_diary"
         private const val HOME_WIDGET_CHANNEL = "annas_diary/home_widget"
         private const val SHARE_CAPTURE_CHANNEL = "annas_diary/share_capture"
+        private const val PHOTO_OCR_CHANNEL = "annas_diary/photo_ocr"
         private const val MICROPHONE_REQUEST_CODE = 4411
         private const val KEY_ALIAS = "annas_diary_private_vault_v1"
         private const val IV_BYTES = 12
@@ -106,6 +112,7 @@ class MainActivity : FlutterFragmentActivity() {
     private var pendingHomeWidgetAction: String? = null
     private var shareCaptureChannel: MethodChannel? = null
     private var pendingSharePayload: Map<String, String>? = null
+    private var textRecognizer: TextRecognizer? = null
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         pendingHomeWidgetAction =
@@ -202,6 +209,28 @@ class MainActivity : FlutterFragmentActivity() {
             } catch (error: Throwable) {
                 result.error(
                     "voice_native_error",
+                    error.message ?: error.javaClass.simpleName,
+                    null,
+                )
+            }
+        }
+
+        MethodChannel(
+            flutterEngine.dartExecutor.binaryMessenger,
+            PHOTO_OCR_CHANNEL,
+        ).setMethodCallHandler { call, result ->
+            if (call.method != "recognizeImage") {
+                result.notImplemented()
+                return@setMethodCallHandler
+            }
+
+            try {
+                val bytes = call.arguments as? ByteArray
+                    ?: throw IllegalArgumentException("missing image bytes")
+                recognizePhotoText(bytes, result)
+            } catch (error: Throwable) {
+                result.error(
+                    "photo_ocr_native_error",
                     error.message ?: error.javaClass.simpleName,
                     null,
                 )
@@ -504,6 +533,41 @@ class MainActivity : FlutterFragmentActivity() {
         voicePlayer = null
         voicePlaybackFile?.delete()
         voicePlaybackFile = null
+    }
+
+    private fun recognizePhotoText(
+        bytes: ByteArray,
+        result: MethodChannel.Result,
+    ) {
+        require(bytes.isNotEmpty()) { "empty image bytes" }
+        require(bytes.size <= 20 * 1024 * 1024) { "image exceeds OCR limit" }
+
+        val bitmap = BitmapFactory.decodeByteArray(bytes, 0, bytes.size)
+            ?: throw IllegalArgumentException("unsupported image")
+        val recognizer = textRecognizer
+            ?: TextRecognition.getClient(TextRecognizerOptions.DEFAULT_OPTIONS)
+                .also { textRecognizer = it }
+        val image = InputImage.fromBitmap(bitmap, 0)
+
+        recognizer.process(image)
+            .addOnSuccessListener { visionText ->
+                result.success(visionText.text)
+            }
+            .addOnFailureListener { error ->
+                result.error(
+                    "photo_ocr_failed",
+                    error.message ?: error.javaClass.simpleName,
+                    null,
+                )
+            }
+    }
+
+    override fun onDestroy() {
+        cancelVoiceRecording()
+        stopVoicePlayback()
+        textRecognizer?.close()
+        textRecognizer = null
+        super.onDestroy()
     }
 
     private fun getOrCreateKey(): SecretKey {
@@ -944,6 +1008,16 @@ def configure_desugaring() -> None:
             f"    {dependency}\n"
             "}\n"
         )
+
+    ocr_dependency = 'implementation("com.google.mlkit:text-recognition:16.0.1")'
+    if ocr_dependency not in gradle:
+        if "dependencies {\n" not in gradle:
+            gradle += "\n\ndependencies {\n}\n"
+        gradle = gradle.replace(
+            "dependencies {\n",
+            "dependencies {\n    " + ocr_dependency + "\n",
+            1,
+        )
     write_if_changed(APP_GRADLE, gradle)
 
 
@@ -1073,6 +1147,12 @@ def verify() -> None:
         failures.append("home widget receiver")
     if "annas_diary/home_widget" not in activity:
         failures.append("home widget channel")
+    if "annas_diary/photo_ocr" not in activity:
+        failures.append("photo OCR channel")
+    if "TextRecognition.getClient" not in activity:
+        failures.append("ML Kit OCR bridge")
+    if 'implementation("com.google.mlkit:text-recognition:16.0.1")' not in gradle:
+        failures.append("ML Kit text recognition dependency")
     if "isCoreLibraryDesugaringEnabled = true" not in gradle:
         failures.append("core library desugaring")
     if not ICON_JPG.is_file() or ICON_JPG.stat().st_size == 0:
