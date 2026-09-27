@@ -19,8 +19,8 @@ Source of truth for the active product sequence after v0.52. The roadmap follows
 | v0.62.1 | Generic Profile Default | Completed | Neutral first-run name field with preserved existing personalization |
 | v0.63 | Creative & Reminder Upgrade | Completed | 16-color Sketchbook palette plus safe agenda notification actions using existing engines |
 | v0.64 | Capture & Writing | Completed | Native Android share-to-diary/Inbox plus distraction-reduced diary writing |
-| v0.65 | Noi ♡ Permissions Lite | In validation | Simple server-enforced edit/read-only control for shared creative memories |
-| v0.66 | Smart Media Search | Approved | Local on-device OCR for diary photos integrated into deterministic search |
+| v0.65 | Noi ♡ Permissions Lite | Completed | Simple server-enforced edit/read-only control for shared creative memories |
+| v0.66 | Smart Media Search | In validation | Local on-device OCR for diary photos integrated into deterministic search |
 
 ## Permanent constraints for this sequence
 
@@ -230,4 +230,22 @@ Per the active development cadence, AppLab runs once every two feature versions.
 - No enterprise role matrix, new ACL table or parallel sync engine is introduced.
 - Production Supabase contains both v0.65 permission migrations.
 - Release metadata is aligned to v0.65.0+75.
+- Development, Web, Android size audit and AppLab Trusted Verify must all pass before merge.
+
+
+## v0.66 acceptance criteria
+
+- The approved **Smart Media Search** idea extends private diary photos and the existing deterministic search; it does not create a document workspace.
+- Android OCR runs locally/on-device through a bundled text-recognition model and sends no photo to a remote OCR service.
+- The original photo remains authoritative; OCR is derived metadata on the existing DiaryBlock.
+- Legacy photos without OCR metadata remain readable and are progressively backfilled without blocking startup.
+- New photos schedule OCR after the normal journal save path.
+- A successful scan with no recognized text is recorded so the same photo is not repeatedly processed.
+- Replacing a photo clears stale OCR metadata and schedules recognition for the replacement.
+- OCR failure never prevents saving, opening, backing up or syncing a photo.
+- OCR text participates in the existing token-based multi-word diary search and remains compatible with tags, people, captions and sketch text.
+- Existing journal persistence automatically carries OCR metadata through backup/restore, Trash, cloud sync and account isolation.
+- Web continues to function without the native OCR bridge and can search OCR metadata previously produced on Android.
+- No generative AI, semantic embeddings, remote OCR, PDF scanner or new media database is introduced.
+- Release metadata is aligned to v0.66.0+76.
 - Development, Web, Android size audit and AppLab Trusted Verify must all pass before merge.
