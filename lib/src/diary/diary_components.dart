@@ -1,21 +1,14 @@
 part of '../../main.dart';
 
-Future<Uint8List?> _pickCompressedDiaryImageBytes(
-  ImageSource source, {
+Future<Uint8List> _compressDiaryImageBytes(
+  Uint8List bytes, {
   int maxSide = 1600,
   int quality = 82,
   int fallbackMaxSide = 1280,
   int fallbackQuality = 76,
   int maxEncodedBytes = 2 * 1024 * 1024,
 }) async {
-  final picked = await ImagePicker().pickImage(
-    source: source,
-    requestFullMetadata: false,
-  );
-  if (picked == null) return null;
-
-  final bytes = await picked.readAsBytes();
-  if (bytes.isEmpty) return null;
+  if (bytes.isEmpty) return bytes;
 
   try {
     final compressed = await FlutterImageCompress.compressWithList(
@@ -37,9 +30,36 @@ Future<Uint8List?> _pickCompressedDiaryImageBytes(
     );
     return fallback.isEmpty ? compressed : fallback;
   } catch (_) {
-    // Never destroy a selected memory just because native compression failed.
+    // Preserve the source bytes if native compression is unavailable.
     return Uint8List.fromList(bytes);
   }
+}
+
+Future<Uint8List?> _pickCompressedDiaryImageBytes(
+  ImageSource source, {
+  int maxSide = 1600,
+  int quality = 82,
+  int fallbackMaxSide = 1280,
+  int fallbackQuality = 76,
+  int maxEncodedBytes = 2 * 1024 * 1024,
+}) async {
+  final picked = await ImagePicker().pickImage(
+    source: source,
+    requestFullMetadata: false,
+  );
+  if (picked == null) return null;
+
+  final bytes = await picked.readAsBytes();
+  if (bytes.isEmpty) return null;
+
+  return _compressDiaryImageBytes(
+    Uint8List.fromList(bytes),
+    maxSide: maxSide,
+    quality: quality,
+    fallbackMaxSide: fallbackMaxSide,
+    fallbackQuality: fallbackQuality,
+    maxEncodedBytes: maxEncodedBytes,
+  );
 }
 
 Future<Uint8List> _diaryThumbnailBytes(Uint8List bytes) async {
@@ -347,6 +367,126 @@ Future<ImageSource?> _chooseDiaryImageSource(BuildContext context) =>
       ),
     );
 
+class FocusWritingScreen extends StatefulWidget {
+  final String initialText;
+  final String title;
+
+  const FocusWritingScreen({
+    super.key,
+    required this.initialText,
+    required this.title,
+  });
+
+  @override
+  State<FocusWritingScreen> createState() => _FocusWritingScreenState();
+}
+
+class _FocusWritingScreenState extends State<FocusWritingScreen> {
+  late final TextEditingController controller;
+
+  @override
+  void initState() {
+    super.initState();
+    controller = TextEditingController(text: widget.initialText)
+      ..addListener(_refreshCount);
+  }
+
+  void _refreshCount() {
+    if (mounted) setState(() {});
+  }
+
+  int get wordCount {
+    final value = controller.text.trim();
+    if (value.isEmpty) return 0;
+    return value.split(RegExp(r'\s+')).where((word) => word.isNotEmpty).length;
+  }
+
+  @override
+  void dispose() {
+    controller
+      ..removeListener(_refreshCount)
+      ..dispose();
+    super.dispose();
+  }
+
+  void _returnText() {
+    Navigator.pop(context, controller.text.trim());
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Scaffold(
+      appBar: AppBar(
+        leading: IconButton(
+          tooltip: 'Torna all’editor',
+          onPressed: _returnText,
+          icon: const Icon(Icons.arrow_back),
+        ),
+        title: Text(widget.title),
+        actions: [
+          TextButton.icon(
+            onPressed: _returnText,
+            icon: const Icon(Icons.check),
+            label: const Text('Fatto'),
+          ),
+          const SizedBox(width: 8),
+        ],
+      ),
+      body: SafeArea(
+        child: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 760),
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(22, 10, 22, 12),
+              child: Column(
+                children: [
+                  Expanded(
+                    child: TextField(
+                      controller: controller,
+                      autofocus: true,
+                      expands: true,
+                      minLines: null,
+                      maxLines: null,
+                      textAlignVertical: TextAlignVertical.top,
+                      textCapitalization: TextCapitalization.sentences,
+                      keyboardType: TextInputType.multiline,
+                      style: theme.textTheme.titleMedium?.copyWith(
+                        height: 1.55,
+                      ),
+                      decoration: const InputDecoration(
+                        hintText:
+                            'Scrivi senza distrazioni. Il testo resta modificabile prima del salvataggio.',
+                        border: InputBorder.none,
+                      ),
+                    ),
+                  ),
+                  const Divider(height: 1),
+                  Padding(
+                    padding: const EdgeInsets.only(top: 9),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.fullscreen, size: 18),
+                        const SizedBox(width: 7),
+                        const Text('Modalità scrittura'),
+                        const Spacer(),
+                        Text(
+                          '$wordCount parole · ${controller.text.runes.length} caratteri',
+                          style: theme.textTheme.bodySmall,
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 Future<String?> showDiaryNoteEditor(
   BuildContext context, {
   String initialText = '',
@@ -355,33 +495,57 @@ Future<String?> showDiaryNoteEditor(
   final controller = TextEditingController(text: initialText);
   final value = await showDialog<String>(
     context: context,
-    builder: (dialogContext) => AlertDialog(
-      title: Text(editing ? 'Modifica nota' : 'Nuova nota'),
-      content: TextField(
-        controller: controller,
-        autofocus: true,
-        minLines: 5,
-        maxLines: 12,
-        textCapitalization: TextCapitalization.sentences,
-        decoration: const InputDecoration(
-          hintText:
-              'Scrivi un ricordo, un pensiero, qualcosa da non dimenticare...',
-          border: OutlineInputBorder(),
-        ),
-      ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(dialogContext),
-          child: const Text('Annulla'),
-        ),
-        FilledButton(
-          onPressed: () => Navigator.pop(
-            dialogContext,
-            controller.text.trim(),
+    builder: (dialogContext) => StatefulBuilder(
+      builder: (dialogContext, setDialogState) => AlertDialog(
+        title: Text(editing ? 'Modifica nota' : 'Nuova nota'),
+        content: TextField(
+          controller: controller,
+          autofocus: true,
+          minLines: 5,
+          maxLines: 12,
+          textCapitalization: TextCapitalization.sentences,
+          decoration: const InputDecoration(
+            hintText:
+                'Scrivi un ricordo, un pensiero, qualcosa da non dimenticare...',
+            border: OutlineInputBorder(),
           ),
-          child: const Text('Salva'),
         ),
-      ],
+        actions: [
+          TextButton.icon(
+            onPressed: () async {
+              final focused = await Navigator.of(dialogContext).push<String>(
+                MaterialPageRoute(
+                  fullscreenDialog: true,
+                  builder: (_) => FocusWritingScreen(
+                    initialText: controller.text,
+                    title: editing ? 'Modifica nota' : 'Nuova nota',
+                  ),
+                ),
+              );
+              if (focused == null) return;
+              controller
+                ..text = focused
+                ..selection = TextSelection.collapsed(
+                  offset: focused.length,
+                );
+              setDialogState(() {});
+            },
+            icon: const Icon(Icons.fullscreen),
+            label: const Text('Scrivi a schermo intero'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext),
+            child: const Text('Annulla'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(
+              dialogContext,
+              controller.text.trim(),
+            ),
+            child: const Text('Salva'),
+          ),
+        ],
+      ),
     ),
   );
   controller.dispose();

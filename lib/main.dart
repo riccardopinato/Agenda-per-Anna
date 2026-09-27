@@ -26,6 +26,7 @@ import 'notification_service.dart';
 import 'local_state_store.dart';
 import 'media_asset_store.dart';
 import 'push_notification_service.dart';
+import 'share_capture_service.dart';
 import 'vault_service.dart';
 import 'voice_diary_service.dart';
 import 'web_push_service.dart';
@@ -156,6 +157,7 @@ Future<void> _handleLocalReminderAction(
 }
 
 StreamSubscription<String>? _localNotificationTapSubscription;
+StreamSubscription<IncomingShareCapture>? _shareCaptureSubscription;
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -185,6 +187,36 @@ Future<void> main() async {
   runApp(AgendaApp(store: store));
 
   Future<void>.delayed(Duration.zero, () async {
+    try {
+      final initialShare = await ShareCaptureService.instance.initialize();
+      await _shareCaptureSubscription?.cancel();
+      _shareCaptureSubscription = ShareCaptureService.instance.stream.listen(
+        (capture) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            final context = appNavigatorKey.currentContext;
+            if (context != null) {
+              unawaited(
+                _handleIncomingShareCapture(context, store, capture),
+              );
+            }
+          });
+        },
+      );
+
+      if (initialShare != null) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          final context = appNavigatorKey.currentContext;
+          if (context != null) {
+            unawaited(
+              _handleIncomingShareCapture(context, store, initialShare),
+            );
+          }
+        });
+      }
+    } catch (_) {
+      // La condivisione esterna è opzionale e non deve bloccare l'avvio.
+    }
+
     try {
       await HomeWidgetBridge.instance.initialize();
       HomeWidgetBridge.instance.onAction = (action) {

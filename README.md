@@ -2,7 +2,7 @@
 
 Flutter app for personal planning, private diary and the shared **Noi ♡** space.
 
-Current release line: **v0.63.0**.
+Current release line: **v0.64.0**.
 
 ## Core areas
 
@@ -368,3 +368,14 @@ See `docs/ARCHITECTURE.md` and `supabase/README.md` for implementation details.
 - Quick actions are scoped to ordinary agenda reminders; birthday reminders keep their existing behavior.
 - Android platform generation now registers the flutter_local_notifications action receiver deterministically.
 - No AI dependency, new database or parallel reminder storage is introduced.
+
+
+## v0.64.0 — Capture & Writing
+
+- Android exposes Anna's Diary as a native share target for **text/links** and **images**, using the existing Quick Capture, Inbox, diary and MediaAssetStore paths instead of a second import database.
+- Shared text/link content can be routed to Inbox or to a normal note in today's diary.
+- Shared images are copied into an app-private bounded temporary area, validated, consumed once, optimized through the existing diary image pipeline and stored as an ordinary photo memory.
+- Incoming image payloads are capped at 30 MB and temporary tokens are canonical-path checked before reads/deletes.
+- Diary notes keep the compact editor and add **Scrivi a schermo intero**, a distraction-reduced Focus Writing surface with live word/character count.
+- Focus Writing returns ordinary note text to the existing DayJournal persistence flow; no proprietary document model or parallel note store is introduced.
+- This release remains non-AI and offline-capable.

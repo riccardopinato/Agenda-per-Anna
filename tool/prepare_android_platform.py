@@ -72,6 +72,7 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.media.MediaPlayer
 import android.media.MediaRecorder
+import android.net.Uri
 import android.security.keystore.KeyGenParameterSpec
 import android.security.keystore.KeyProperties
 import android.util.Base64
@@ -91,6 +92,7 @@ class MainActivity : FlutterFragmentActivity() {
         private const val CHANNEL = "annas_diary/private_vault"
         private const val VOICE_CHANNEL = "annas_diary/voice_diary"
         private const val HOME_WIDGET_CHANNEL = "annas_diary/home_widget"
+        private const val SHARE_CAPTURE_CHANNEL = "annas_diary/share_capture"
         private const val MICROPHONE_REQUEST_CODE = 4411
         private const val KEY_ALIAS = "annas_diary_private_vault_v1"
         private const val IV_BYTES = 12
@@ -102,10 +104,13 @@ class MainActivity : FlutterFragmentActivity() {
     private var voicePlaybackFile: File? = null
     private var homeWidgetChannel: MethodChannel? = null
     private var pendingHomeWidgetAction: String? = null
+    private var shareCaptureChannel: MethodChannel? = null
+    private var pendingSharePayload: Map<String, String>? = null
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         pendingHomeWidgetAction =
             intent?.getStringExtra(HomeWidgetProvider.EXTRA_ACTION)
+        pendingSharePayload = decodeShareIntent(intent)
         super.configureFlutterEngine(flutterEngine)
         MethodChannel(
             flutterEngine.dartExecutor.binaryMessenger,
@@ -253,15 +258,139 @@ class MainActivity : FlutterFragmentActivity() {
                 }
             }
         }
+
+        shareCaptureChannel = MethodChannel(
+            flutterEngine.dartExecutor.binaryMessenger,
+            SHARE_CAPTURE_CHANNEL,
+        ).also { channel ->
+            channel.setMethodCallHandler { call, result ->
+                try {
+                    when (call.method) {
+                        "takeInitialShare" -> {
+                            val payload = pendingSharePayload
+                            pendingSharePayload = null
+                            result.success(payload)
+                        }
+                        "consumeSharedImage" -> {
+                            val token = call.arguments as? String
+                                ?: throw IllegalArgumentException("missing image token")
+                            result.success(consumeSharedImage(token))
+                        }
+                        "discardSharedImage" -> {
+                            val token = call.arguments as? String
+                                ?: throw IllegalArgumentException("missing image token")
+                            sharedImageFile(token)?.delete()
+                            result.success(null)
+                        }
+                        else -> result.notImplemented()
+                    }
+                } catch (error: Throwable) {
+                    result.error(
+                        "share_capture_native_error",
+                        error.message ?: error.javaClass.simpleName,
+                        null,
+                    )
+                }
+            }
+        }
     }
 
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         setIntent(intent)
+
         val action = intent.getStringExtra(HomeWidgetProvider.EXTRA_ACTION)
         if (!action.isNullOrBlank()) {
             pendingHomeWidgetAction = action
             homeWidgetChannel?.invokeMethod("homeWidgetAction", action)
+        }
+
+        val share = decodeShareIntent(intent)
+        if (share != null) {
+            val channel = shareCaptureChannel
+            if (channel == null) {
+                pendingSharePayload = share
+            } else {
+                channel.invokeMethod("sharedContent", share)
+            }
+        }
+    }
+
+    @Suppress("DEPRECATION")
+    private fun decodeShareIntent(incoming: Intent?): Map<String, String>? {
+        if (incoming?.action != Intent.ACTION_SEND) return null
+
+        val mimeType = incoming.type.orEmpty()
+        val text = incoming.getStringExtra(Intent.EXTRA_TEXT)?.trim().orEmpty()
+        var imageToken = ""
+
+        if (mimeType.startsWith("image/")) {
+            val uri = incoming.getParcelableExtra<Uri>(Intent.EXTRA_STREAM)
+            if (uri != null) {
+                imageToken = copySharedImage(uri, mimeType)
+            }
+        }
+
+        if (text.isBlank() && imageToken.isBlank()) return null
+        return mapOf(
+            "text" to text,
+            "mimeType" to mimeType,
+            "imageToken" to imageToken,
+        )
+    }
+
+    private fun copySharedImage(uri: Uri, mimeType: String): String {
+        val directory = File(cacheDir, "share_imports").apply { mkdirs() }
+        val cutoff = System.currentTimeMillis() - 24L * 60L * 60L * 1000L
+        directory.listFiles()?.forEach { candidate ->
+            if (candidate.lastModified() < cutoff) candidate.delete()
+        }
+
+        val extension = when {
+            mimeType.endsWith("png") -> ".png"
+            mimeType.endsWith("webp") -> ".webp"
+            else -> ".jpg"
+        }
+        val target = File(
+            directory,
+            "shared_${System.currentTimeMillis()}_${System.nanoTime()}$extension",
+        )
+        val source = contentResolver.openInputStream(uri)
+            ?: throw IllegalArgumentException("shared image unavailable")
+
+        var total = 0L
+        source.use { input ->
+            target.outputStream().use { output ->
+                val buffer = ByteArray(64 * 1024)
+                while (true) {
+                    val count = input.read(buffer)
+                    if (count <= 0) break
+                    total += count
+                    if (total > 30L * 1024L * 1024L) {
+                        throw IllegalArgumentException("shared image exceeds 30 MB")
+                    }
+                    output.write(buffer, 0, count)
+                }
+            }
+        }
+        require(total > 0) { "shared image is empty" }
+        return target.absolutePath
+    }
+
+    private fun sharedImageFile(token: String): File? {
+        val directory = File(cacheDir, "share_imports").canonicalFile
+        val candidate = File(token).canonicalFile
+        if (candidate.parentFile != directory || !candidate.isFile) return null
+        return candidate
+    }
+
+    private fun consumeSharedImage(token: String): ByteArray {
+        val file = sharedImageFile(token)
+            ?: throw IllegalArgumentException("invalid shared image token")
+        return try {
+            file.readBytes()
+        } finally {
+            file.delete()
         }
     }
 
@@ -497,6 +626,38 @@ def configure_manifest() -> None:
             activity_match.group(1)
             + activity_body
             + auth_deep_link
+            + activity_match.group(3)
+        )
+        manifest = (
+            manifest[: activity_match.start()]
+            + activity_replacement
+            + manifest[activity_match.end() :]
+        )
+
+    share_targets = """
+            <intent-filter>
+                <action android:name="android.intent.action.SEND" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:mimeType="text/plain" />
+            </intent-filter>
+            <intent-filter>
+                <action android:name="android.intent.action.SEND" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:mimeType="image/*" />
+            </intent-filter>
+"""
+    if 'android.intent.action.SEND' not in manifest:
+        activity_pattern = re.compile(
+            r'(<activity\b[^>]*android:name="\.MainActivity"[^>]*>)(.*?)(</activity>)',
+            re.DOTALL,
+        )
+        activity_match = activity_pattern.search(manifest)
+        if activity_match is None:
+            raise SystemExit("Flutter template drift: MainActivity block not found")
+        activity_replacement = (
+            activity_match.group(1)
+            + activity_match.group(2)
+            + share_targets
             + activity_match.group(3)
         )
         manifest = (

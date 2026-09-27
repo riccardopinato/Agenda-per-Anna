@@ -18,10 +18,13 @@ Source of truth for the active product sequence after v0.52. The roadmap follows
 | v0.62 | Non-AI Production Consolidation | Completed | Accessibility, performance, regression and release-quality consolidation; no AI features |
 | v0.62.1 | Generic Profile Default | Completed | Neutral first-run name field with preserved existing personalization |
 | v0.63 | Creative & Reminder Upgrade | Completed | 16-color Sketchbook palette plus safe agenda notification actions using existing engines |
+| v0.64 | Capture & Writing | In validation | Native Android share-to-diary/Inbox plus distraction-reduced diary writing |
+| v0.65 | Noi ♡ Permissions Lite | Approved | Simple server-enforced edit/read-only control for shared creative memories |
+| v0.66 | Smart Media Search | Approved | Local on-device OCR for diary photos integrated into deterministic search |
 
 ## Permanent constraints for this sequence
 
-- No generative-AI or AI-dependent product features through v0.63.
+- No generative-AI or AI-dependent product features through v0.66.
 - Anna's Diary remains primarily a personal diary / agenda; work and knowledge-management scope belongs to Notes-Ecosistema.
 - Existing verified modules are reused before new infrastructure is introduced.
 - User data remains offline-capable and account-isolated where applicable.
@@ -182,3 +185,32 @@ Per the active development cadence, AppLab runs once every two feature versions.
 - No new database, duplicate reminder store or AI dependency is introduced.
 - Release metadata is aligned to v0.63.0+73.
 - Development checks, Web release validation, Android size audit and AppLab Trusted Verify must all be green before merge.
+
+
+## v0.64 acceptance criteria
+
+- The central-backlog ideas **Share to Anna's Diary** and **Focus Writing Mode** are approved for this release.
+- Android accepts ACTION_SEND text/plain and image/* without introducing a third-party share-intent dependency.
+- Shared text/links reuse Inbox or ordinary diary Note persistence.
+- Shared photos reuse MediaAssetStore, the current image optimization/thumbnail pipeline and ordinary diary Photo blocks.
+- Temporary shared-image files are app-private, size-bounded, path-validated and consumed/deleted rather than becoming a second media store.
+- Focus Writing is a presentation/editor mode only; saved output remains an ordinary DiaryBlock note.
+- Existing compact note editing remains available.
+- Release metadata is aligned to v0.64.0+74.
+- Development, Web, Android size audit and AppLab Trusted Verify must all pass before merge.
+
+## v0.65 planned scope — approved
+
+- Implement **Noi ♡ Permissions Lite** on the existing shared-space infrastructure.
+- Keep permissions deliberately simple: collaborative editing or read-only for other members.
+- Enforce authorization server-side as well as in the Flutter UI.
+- Reuse current shared entries, membership, offline queue, interactions and sync semantics.
+- Do not introduce enterprise-style ACL roles.
+
+## v0.66 planned scope — approved
+
+- Implement **Smart Media Search** with local/on-device OCR for private diary photos.
+- OCR text is derived metadata; the original photo remains the source of truth.
+- Reuse the existing photo model, MediaAssetStore and deterministic global search.
+- OCR failure must never block saving/viewing the photo.
+- No generative AI, semantic embeddings or document-scanner workspace are part of this release.
