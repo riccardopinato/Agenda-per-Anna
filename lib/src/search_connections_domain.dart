@@ -347,6 +347,7 @@ extension SearchConnectionsAgendaStore on AgendaStore {
               .map((element) => element.text);
           if (!_matchesPersonalSearch(query, [
             block.text,
+            block.ocrText,
             ...block.tags,
             ...linkedPeople.map((person) => person.name),
             ...linkedPeople.map((person) => person.relationship),
@@ -374,6 +375,9 @@ extension SearchConnectionsAgendaStore on AgendaStore {
                   DiaryBlockType.voice => 'Voce',
                 },
                 DateFormat('d MMMM yyyy', 'it_IT').format(date),
+                if (block.type == DiaryBlockType.photo &&
+                    block.ocrText.trim().isNotEmpty)
+                  'testo foto',
                 if (block.tags.isNotEmpty)
                   block.tags.map((tag) => '#$tag').join(' '),
               ].join(' · '),
@@ -656,6 +660,36 @@ class _PersonalSearchConnectionsScreenState
   String query = '';
   final Set<PersonalSearchKind> selectedKinds = {};
   bool includeArchived = false;
+  bool ocrIndexing = false;
+  int lastOcrIndexed = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    unawaited(_indexPhotoText());
+  }
+
+  Future<void> _indexPhotoText() async {
+    if (ocrIndexing) return;
+    if (mounted) setState(() => ocrIndexing = true);
+    var total = 0;
+    try {
+      for (var pass = 0; pass < 3; pass++) {
+        final indexed = await widget.store.ensurePhotoOcrIndexed(
+          maxPerPass: 12,
+        );
+        total += indexed;
+        if (indexed == 0) break;
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          ocrIndexing = false;
+          lastOcrIndexed = total;
+        });
+      }
+    }
+  }
 
   Future<void> _openHit(PersonalSearchHit hit) async {
     switch (hit.kind) {
@@ -734,9 +768,26 @@ class _PersonalSearchConnectionsScreenState
           'Cerca e collega',
           style: TextStyle(fontWeight: FontWeight.w800),
         ),
+        actions: [
+          IconButton(
+            tooltip: ocrIndexing
+                ? 'Indicizzazione testo foto in corso'
+                : 'Aggiorna testo nelle foto',
+            onPressed: ocrIndexing ? null : _indexPhotoText,
+            icon: ocrIndexing
+                ? const SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : const Icon(Icons.text_snippet_outlined),
+          ),
+        ],
       ),
       body: Column(
         children: [
+          if (ocrIndexing)
+            const LinearProgressIndicator(minHeight: 2),
           Padding(
             padding: const EdgeInsets.fromLTRB(14, 4, 14, 8),
             child: TextField(
