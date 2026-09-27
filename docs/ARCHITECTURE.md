@@ -352,3 +352,15 @@ The red-team “Memory Engine” recommendation is implemented as a **read-only 
 - The engine performs no writes and owns no storage key, cloud entity or media representation. All lifecycle, backup, sync, OCR, voice and account-isolation behavior continues to flow from the underlying journal/block model.
 
 This deliberately rejects a persisted universal Memory table: one diary block remains one memory, and alternative views are projections over it.
+
+
+## v0.68.0 — Places & Context
+
+Places close the remaining People/Places red-team gap while preserving the typed, local-first architecture.
+
+- `PlaceEntry` is a small private contextual entity. It owns descriptive place metadata only, not memories.
+- `DiaryBlock.placeIds` is the relation edge; memory content stays in DayJournal and is projected through Memory Engine.
+- Place CRUD reuses AgendaStore's existing private entity mutation/delta/sync/account-profile pipeline under entity type `place` and storage key `places_v1`.
+- Place deletion uses the existing Trash model. Links are retained while a place is recoverable and removed only after permanent purge.
+- Backup, readable export and deterministic search treat places as another private typed domain.
+- No coordinates, GPS permissions, tracking service, map SDK or external place provider are architectural dependencies.
