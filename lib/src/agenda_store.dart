@@ -65,6 +65,8 @@ class AgendaStore extends ChangeNotifier {
   Timer? _unifiedRealtimeDebounce;
   Timer? _mediaMaintenanceTimer;
   Timer? _deferredCloudSyncTimer;
+  final Set<String> _ocrInFlight = <String>{};
+  bool _ocrBackfillRunning = false;
   bool _cloudSyncRunning = false;
   bool _sharedFlushRunning = false;
   bool _sharedInteractionFlushRunning = false;
@@ -2330,6 +2332,138 @@ class AgendaStore extends ChangeNotifier {
       delay: const Duration(seconds: 5),
     );
     _notifyJournalChanged();
+    _schedulePhotoOcrForJournal(date, journal);
+  }
+
+  void _schedulePhotoOcrForJournal(
+    DateTime date,
+    DayJournal journal,
+  ) {
+    if (kIsWeb) return;
+    for (final block in journal.blocks) {
+      if (block.type != DiaryBlockType.photo ||
+          block.ocrScanned ||
+          !block.hasPhotoMedia ||
+          _ocrInFlight.contains(block.id)) {
+        continue;
+      }
+      unawaited(indexPhotoOcr(date, block.id));
+    }
+  }
+
+  Future<Uint8List?> _photoOcrBytes(DiaryBlock block) async {
+    if (block.mediaAssetId.isNotEmpty) {
+      final stored = await MediaAssetStore.instance.read(block.mediaAssetId);
+      if (stored != null && stored.isNotEmpty) return stored;
+    }
+    if (block.imageBase64.isNotEmpty) {
+      try {
+        final bytes = base64Decode(block.imageBase64);
+        return bytes.isEmpty ? null : bytes;
+      } catch (_) {
+        return null;
+      }
+    }
+    return null;
+  }
+
+  Future<bool> indexPhotoOcr(
+    DateTime date,
+    String blockId, {
+    bool force = false,
+  }) async {
+    if (kIsWeb || _ocrInFlight.contains(blockId)) return false;
+
+    final key = dateKey(date);
+    final initialJournal = journals[key];
+    if (initialJournal == null) return false;
+    final initialIndex =
+        initialJournal.blocks.indexWhere((block) => block.id == blockId);
+    if (initialIndex < 0) return false;
+
+    final source = initialJournal.blocks[initialIndex];
+    if (source.type != DiaryBlockType.photo || !source.hasPhotoMedia) {
+      return false;
+    }
+    if (source.ocrScanned && !force) return false;
+
+    _ocrInFlight.add(blockId);
+    try {
+      final bytes = await _photoOcrBytes(source);
+      if (bytes == null) return false;
+
+      final recognized = await PhotoOcrService.instance.recognize(bytes);
+      if (recognized == null) return false;
+
+      final latestJournal = journals[key];
+      if (latestJournal == null) return false;
+      final latestIndex =
+          latestJournal.blocks.indexWhere((block) => block.id == blockId);
+      if (latestIndex < 0) return false;
+
+      final latest = latestJournal.blocks[latestIndex];
+      if (latest.type != DiaryBlockType.photo ||
+          latest.mediaAssetId != source.mediaAssetId ||
+          latest.imageBase64 != source.imageBase64) {
+        return false;
+      }
+
+      final blocks = [...latestJournal.blocks];
+      blocks[latestIndex] = latest.copyWith(
+        ocrText: recognized,
+        ocrScanned: true,
+      );
+      final updated = latestJournal.copyWith(blocks: blocks);
+      journals[key] = updated;
+      await _persistEntityMutation(
+        type: 'journal',
+        id: key,
+        payload: updated.toLocalJson(),
+      );
+      _notifyJournalChanged();
+      return true;
+    } finally {
+      _ocrInFlight.remove(blockId);
+    }
+  }
+
+  Future<int> ensurePhotoOcrIndexed({
+    int maxPerPass = 8,
+  }) async {
+    if (kIsWeb || _ocrBackfillRunning || maxPerPass <= 0) return 0;
+    _ocrBackfillRunning = true;
+    var processed = 0;
+    try {
+      final pending = <({DateTime date, String blockId})>[];
+      final dates = journals.keys
+          .map(DateTime.tryParse)
+          .whereType<DateTime>()
+          .toList()
+        ..sort((a, b) => b.compareTo(a));
+
+      for (final date in dates) {
+        final journal = journals[dateKey(date)];
+        if (journal == null) continue;
+        for (final block in journal.blocks.reversed) {
+          if (block.type == DiaryBlockType.photo &&
+              block.hasPhotoMedia &&
+              !block.ocrScanned) {
+            pending.add((date: date, blockId: block.id));
+            if (pending.length >= maxPerPass) break;
+          }
+        }
+        if (pending.length >= maxPerPass) break;
+      }
+
+      for (final candidate in pending) {
+        if (await indexPhotoOcr(candidate.date, candidate.blockId)) {
+          processed++;
+        }
+      }
+      return processed;
+    } finally {
+      _ocrBackfillRunning = false;
+    }
   }
 
   Future<void> initializeCloudSync() async {
