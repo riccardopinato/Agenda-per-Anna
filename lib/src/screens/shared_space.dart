@@ -1224,21 +1224,27 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
                 'a tutti i membri dello spazio.',
               ),
             ),
-            RadioListTile<bool>(
-              value: false,
-              groupValue: entry.ownerOnlyEdit,
+            ListTile(
+              leading: Icon(
+                entry.ownerOnlyEdit
+                    ? Icons.radio_button_unchecked
+                    : Icons.radio_button_checked,
+              ),
               title: const Text('Tutti possono modificare'),
               subtitle: const Text('Modalità collaborativa'),
-              onChanged: (selected) =>
-                  Navigator.pop(sheetContext, selected),
+              onTap: () => Navigator.pop(sheetContext, false),
             ),
-            RadioListTile<bool>(
-              value: true,
-              groupValue: entry.ownerOnlyEdit,
+            ListTile(
+              leading: Icon(
+                entry.ownerOnlyEdit
+                    ? Icons.radio_button_checked
+                    : Icons.radio_button_unchecked,
+              ),
               title: const Text('Solo io posso modificare'),
-              subtitle: const Text('Gli altri membri vedono lo sketch in sola lettura'),
-              onChanged: (selected) =>
-                  Navigator.pop(sheetContext, selected),
+              subtitle: const Text(
+                'Gli altri membri vedono lo sketch in sola lettura',
+              ),
+              onTap: () => Navigator.pop(sheetContext, true),
             ),
             const SizedBox(height: 8),
           ],
@@ -2124,6 +2130,8 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
       SharedEntryType.sketch => DiaryContentKind.sketch,
       _ => throw StateError('not_a_diary_entry'),
     };
+    final canEdit = _canEditSharedEntry(entry);
+    final isCreator = _isSharedEntryCreator(entry);
 
     final meta = <String>[
       kind.label,
@@ -2136,9 +2144,6 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
         'Aggiornato ${DateFormat('HH:mm', 'it_IT').format(entry.updatedAt!.toLocal())}',
       if (pending) 'In attesa di sincronizzazione',
     ];
-
-    final canEdit = _canEditSharedEntry(entry);
-    final isCreator = _isSharedEntryCreator(entry);
 
     final VoidCallback openEntry = switch (entry.type) {
       SharedEntryType.note => () => _addSharedNote(entry),
@@ -2203,7 +2208,9 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
       onReplacePhoto: kind == DiaryContentKind.photo && canEdit
           ? () => _addSharedPhoto(entry)
           : null,
-      onDelete: canEdit ? () => _delete(entry) : null,
+      onDelete: canEdit
+          ? () => _delete(entry)
+          : _showReadOnlyEntryMessage,
       statusIcon: entry.ownerOnlyEdit
           ? Icon(
               canEdit ? Icons.lock_outline : Icons.lock,
