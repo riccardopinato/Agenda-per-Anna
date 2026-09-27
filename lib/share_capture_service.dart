@@ -65,6 +65,17 @@ class ShareCaptureService {
     }
   }
 
+  Future<void> discardImage(String imageToken) async {
+    if (kIsWeb || imageToken.trim().isEmpty) return;
+    try {
+      await _channel.invokeMethod<void>('discardSharedImage', imageToken);
+    } on MissingPluginException {
+      return;
+    } on PlatformException {
+      return;
+    }
+  }
+
   Future<Uint8List?> consumeImageBytes(String imageToken) async {
     if (kIsWeb || imageToken.trim().isEmpty) return null;
     try {
