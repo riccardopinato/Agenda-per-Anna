@@ -11,6 +11,7 @@ enum TrashEntityKind {
   habit,
   birthday,
   person,
+  place,
   inbox,
 }
 
@@ -24,6 +25,7 @@ extension TrashEntityKindUi on TrashEntityKind {
         TrashEntityKind.habit => 'Abitudine',
         TrashEntityKind.birthday => 'Compleanno',
         TrashEntityKind.person => 'Persona',
+        TrashEntityKind.place => 'Luogo',
         TrashEntityKind.inbox => 'Inbox',
       };
 
@@ -36,6 +38,7 @@ extension TrashEntityKindUi on TrashEntityKind {
         TrashEntityKind.habit => Icons.repeat_outlined,
         TrashEntityKind.birthday => Icons.cake_outlined,
         TrashEntityKind.person => Icons.person_outline,
+        TrashEntityKind.place => Icons.place_outlined,
         TrashEntityKind.inbox => Icons.inbox_outlined,
       };
 }
@@ -183,6 +186,7 @@ extension AgendaStoreLifecycle on AgendaStore {
       case TrashEntityKind.habit:
       case TrashEntityKind.birthday:
       case TrashEntityKind.person:
+      case TrashEntityKind.place:
       case TrashEntityKind.inbox:
         return entry;
     }
@@ -216,6 +220,7 @@ extension AgendaStoreLifecycle on AgendaStore {
       case TrashEntityKind.habit:
       case TrashEntityKind.birthday:
       case TrashEntityKind.person:
+      case TrashEntityKind.place:
       case TrashEntityKind.inbox:
         return entry.toJson();
     }
@@ -292,6 +297,28 @@ extension AgendaStoreLifecycle on AgendaStore {
     _putTrashInMemory(entry);
     await _persistEntityMutations([
       (type: 'person', id: id, payload: null, deleted: true),
+      (type: 'trash', id: entry.id, payload: entry.toJson(), deleted: false),
+    ]);
+    signals.bumpLifecycle();
+    _notifyPlanningChanged();
+    return true;
+  }
+
+  Future<bool> movePlaceToTrash(String id) async {
+    final index = places.indexWhere((place) => place.id == id);
+    if (index < 0) return false;
+    final place = places[index];
+    final entry = _newTrashEntry(
+      kind: TrashEntityKind.place,
+      entityId: place.id,
+      title: place.name,
+      payload: place.toJson(),
+    );
+
+    places.removeAt(index);
+    _putTrashInMemory(entry);
+    await _persistEntityMutations([
+      (type: 'place', id: id, payload: null, deleted: true),
       (type: 'trash', id: entry.id, payload: entry.toJson(), deleted: false),
     ]);
     signals.bumpLifecycle();
@@ -518,6 +545,10 @@ extension AgendaStoreLifecycle on AgendaStore {
         return people.any((person) => person.id == entry.entityId)
             ? 'Questa persona è già presente.'
             : null;
+      case TrashEntityKind.place:
+        return places.any((place) => place.id == entry.entityId)
+            ? 'Questo luogo è già presente.'
+            : null;
       case TrashEntityKind.inbox:
         return inbox.any((value) => value.id == entry.entityId)
             ? 'Questa nota è già presente nell’Inbox.'
@@ -571,6 +602,17 @@ extension AgendaStoreLifecycle on AgendaStore {
         people.add(value);
         mutations.add((
           type: 'person',
+          id: value.id,
+          payload: value.toJson(),
+          deleted: false,
+        ));
+        break;
+      case TrashEntityKind.place:
+        final value = PlaceEntry.fromJson(localized.payload);
+        places.removeWhere((place) => place.id == value.id);
+        places.add(value);
+        mutations.add((
+          type: 'place',
           id: value.id,
           payload: value.toJson(),
           deleted: false,
@@ -701,6 +743,7 @@ extension AgendaStoreLifecycle on AgendaStore {
         _notifyPlanningChanged();
         break;
       case TrashEntityKind.person:
+      case TrashEntityKind.place:
         _notifyPlanningChanged();
         break;
       case TrashEntityKind.inbox:
@@ -789,6 +832,13 @@ extension AgendaStoreLifecycle on AgendaStore {
                   entry.kind == TrashEntityKind.person &&
                   entry.entityId == entityId,
             );
+      case TrashEntityKind.place:
+        return places.any((place) => place.id == entityId) ||
+            trash.any(
+              (entry) =>
+                  entry.kind == TrashEntityKind.place &&
+                  entry.entityId == entityId,
+            );
       case TrashEntityKind.birthday:
         return birthdays.any((birthday) => birthday.id == entityId) ||
             trash.any(
@@ -840,6 +890,8 @@ extension AgendaStoreLifecycle on AgendaStore {
 
     if (!stillRecoverable && entry.kind == TrashEntityKind.person) {
       await _unlinkPurgedPeople({entry.entityId});
+    } else if (!stillRecoverable && entry.kind == TrashEntityKind.place) {
+      await _unlinkPurgedPlaces({entry.entityId});
     } else if (!stillRecoverable &&
         entry.kind == TrashEntityKind.birthday) {
       await _unlinkPurgedBirthdays({entry.entityId});
@@ -865,6 +917,10 @@ extension AgendaStoreLifecycle on AgendaStore {
     final removed = [...trash];
     final purgedPeople = removed
         .where((entry) => entry.kind == TrashEntityKind.person)
+        .map((entry) => entry.entityId)
+        .toSet();
+    final purgedPlaces = removed
+        .where((entry) => entry.kind == TrashEntityKind.place)
         .map((entry) => entry.entityId)
         .toSet();
     final purgedBirthdays = removed
@@ -894,6 +950,9 @@ extension AgendaStoreLifecycle on AgendaStore {
     purgedPeople.removeWhere(
       (id) => people.any((person) => person.id == id),
     );
+    purgedPlaces.removeWhere(
+      (id) => places.any((place) => place.id == id),
+    );
     purgedBirthdays.removeWhere(
       (id) => birthdays.any((birthday) => birthday.id == id),
     );
@@ -903,6 +962,7 @@ extension AgendaStoreLifecycle on AgendaStore {
     purgedDiaryBlocks.removeWhere(_hasLiveOrRecoverableDiaryBlockId);
 
     await _unlinkPurgedPeople(purgedPeople);
+    await _unlinkPurgedPlaces(purgedPlaces);
     await _unlinkPurgedBirthdays(purgedBirthdays);
     await _unlinkPurgedHabits(purgedHabits);
     await _unlinkPurgedDiaryBlockConnections(purgedDiaryBlocks);
