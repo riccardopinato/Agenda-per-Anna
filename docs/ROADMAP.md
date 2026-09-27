@@ -18,7 +18,7 @@ Source of truth for the active product sequence after v0.52. The roadmap follows
 | v0.62 | Non-AI Production Consolidation | Completed | Accessibility, performance, regression and release-quality consolidation; no AI features |
 | v0.62.1 | Generic Profile Default | Completed | Neutral first-run name field with preserved existing personalization |
 | v0.63 | Creative & Reminder Upgrade | Completed | 16-color Sketchbook palette plus safe agenda notification actions using existing engines |
-| v0.64 | Capture & Writing | In validation | Native Android share-to-diary/Inbox plus distraction-reduced diary writing |
+| v0.64 | Capture & Writing | Completed | Native Android share-to-diary/Inbox plus distraction-reduced diary writing |
 | v0.65 | Noi ♡ Permissions Lite | Approved | Simple server-enforced edit/read-only control for shared creative memories |
 | v0.66 | Smart Media Search | Approved | Local on-device OCR for diary photos integrated into deterministic search |
 
