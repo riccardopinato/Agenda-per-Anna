@@ -110,186 +110,7 @@ Future<void> _openSharedSpaceFromNotification(
 }
 
 String _agendaItemIdFromReminderStableId(String stableId) {
-  return stableId.replaceFirst(RegExp(r':(primary|secondary)
-  WidgetsFlutterBinding.ensureInitialized();
-  PushNotificationService.configureBackgroundHandling();
-
-  try {
-    await initializeDateFormatting('it_IT', null);
-  } catch (_) {}
-
-  final store = AgendaStore();
-  Object? startupStorageError;
-  try {
-    await store.load();
-  } catch (error) {
-    startupStorageError = error;
-  }
-
-  if (startupStorageError != null) {
-    runApp(
-      StartupStorageFailureApp(
-        error: startupStorageError,
-      ),
-    );
-    return;
-  }
-
-  runApp(AgendaApp(store: store));
-
-  Future<void>.delayed(Duration.zero, () async {
-    try {
-      await HomeWidgetBridge.instance.initialize();
-      HomeWidgetBridge.instance.onAction = (action) {
-        final context = appNavigatorKey.currentContext;
-        if (context == null) return;
-        if (action == 'quick_capture') {
-          unawaited(_showQuickCapture(context, store));
-        } else if (action == 'today') {
-          unawaited(
-            Navigator.of(context).push(
-              MaterialPageRoute(
-                builder: (_) => PlannerScreen(
-                  store: store,
-                  initialDate: DateTime.now(),
-                ),
-              ),
-            ),
-          );
-        }
-      };
-      await HomeWidgetBridge.instance.sync(store);
-      final initialWidgetAction =
-          await HomeWidgetBridge.instance.takeLaunchAction();
-      if (initialWidgetAction != null) {
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          HomeWidgetBridge.instance.onAction?.call(initialWidgetAction);
-        });
-      }
-    } catch (_) {
-      // Il widget è opzionale e non deve impedire l'avvio dell'app.
-    }
-
-
-    try {
-      await NotificationService.instance.initialize();
-      await _localNotificationTapSubscription?.cancel();
-      _localNotificationTapSubscription =
-          NotificationService.instance.notificationTapStream.listen(
-        (payload) => unawaited(
-          _handleLocalReminderAction(store, payload),
-        ),
-      );
-
-      await store.reconcileReminders();
-      await store.reconcileBirthdayReminders();
-
-      final initialLocalPayload =
-          NotificationService.instance.takeInitialPayload();
-      if (initialLocalPayload != null) {
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          unawaited(
-            _handleLocalReminderAction(store, initialLocalPayload),
-          );
-        });
-      }
-    } catch (_) {
-      // Le notifiche non devono mai impedire l'avvio dell'agenda.
-    }
-
-    try {
-      await CloudSyncService.instance.initialize();
-      await store.initializeCloudSync();
-      await PushNotificationService.instance.initialize(
-        onSharedPushReceived: (spaceId, eventId) async {
-          await store.markSharedSpaceUnread(spaceId);
-        },
-        onSharedPushOpened: (spaceId) =>
-            _openSharedSpaceFromNotification(store, spaceId),
-      );
-
-      if (kIsWeb) {
-        await WebPushService.instance.initialize();
-        await store.reconcileReminders();
-        await store.reconcileBirthdayReminders();
-        final initialWebPushSpace =
-            await WebPushService.instance.takeInitialSpaceId();
-        if (initialWebPushSpace != null) {
-          await _openSharedSpaceFromNotification(
-            store,
-            initialWebPushSpace,
-          );
-        }
-      }
-    } catch (_) {
-      // Cloud e push sono opzionali: l'agenda resta pienamente offline.
-    }
-  });
-}
-
-
-class StartupStorageFailureApp extends StatelessWidget {
-  final Object error;
-
-  const StartupStorageFailureApp({
-    super.key,
-    required this.error,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      debugShowCheckedModeBanner: false,
-      title: 'Anna\'s Diary',
-      theme: ThemeData(
-        useMaterial3: true,
-        colorSchemeSeed: const Color(0xFFE86D91),
-      ),
-      home: Scaffold(
-        body: SafeArea(
-          child: Center(
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 520),
-              child: Padding(
-                padding: const EdgeInsets.all(28),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const Icon(
-                      Icons.storage_rounded,
-                      size: 56,
-                    ),
-                    const SizedBox(height: 18),
-                    const Text(
-                      'Impossibile aprire i dati locali',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        fontSize: 24,
-                        fontWeight: FontWeight.w900,
-                      ),
-                    ),
-                    const SizedBox(height: 10),
-                    const Text(
-                      'Anna\'s Diary non avvia una copia vuota e non salva in una cartella temporanea quando lo storage persistente non è disponibile. Riavvia l’app; se il problema continua, controlla lo spazio libero del dispositivo.',
-                      textAlign: TextAlign.center,
-                    ),
-                    const SizedBox(height: 14),
-                    Text(
-                      'Dettaglio tecnico: ${error.runtimeType}',
-                      textAlign: TextAlign.center,
-                      style: const TextStyle(fontSize: 12),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-), '');
+  return stableId.replaceFirst(RegExp(r':(primary|secondary)$'), '');
 }
 
 Future<void> _handleLocalReminderAction(
@@ -399,8 +220,26 @@ Future<void> main() async {
 
     try {
       await NotificationService.instance.initialize();
+      await _localNotificationTapSubscription?.cancel();
+      _localNotificationTapSubscription =
+          NotificationService.instance.notificationTapStream.listen(
+        (payload) => unawaited(
+          _handleLocalReminderAction(store, payload),
+        ),
+      );
+
       await store.reconcileReminders();
       await store.reconcileBirthdayReminders();
+
+      final initialLocalPayload =
+          NotificationService.instance.takeInitialPayload();
+      if (initialLocalPayload != null) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          unawaited(
+            _handleLocalReminderAction(store, initialLocalPayload),
+          );
+        });
+      }
     } catch (_) {
       // Le notifiche non devono mai impedire l'avvio dell'agenda.
     }
