@@ -2,7 +2,7 @@
 
 Flutter app for personal planning, private diary and the shared **Noi ♡** space.
 
-Current release line: **v0.64.0**.
+Current release line: **v0.65.0**.
 
 ## Core areas
 
@@ -379,3 +379,16 @@ See `docs/ARCHITECTURE.md` and `supabase/README.md` for implementation details.
 - Diary notes keep the compact editor and add **Scrivi a schermo intero**, a distraction-reduced Focus Writing surface with live word/character count.
 - Focus Writing returns ordinary note text to the existing DayJournal persistence flow; no proprietary document model or parallel note store is introduced.
 - This release remains non-AI and offline-capable.
+
+
+## v0.65.0 — Noi ♡ Permissions Lite
+
+- Shared **Note / Photo / Sketch** memories now carry a deliberately small permission contract: **Tutti nello spazio** or **Solo io**.
+- New creative memories keep the current collaborative default and record a stable edit owner; legacy shared memories remain collaborative and backward compatible.
+- Read-only members can still open the memory, comment, react and see read receipts, but edit/replace/delete controls are removed.
+- Permission changes reuse the existing SharedEntry payload, offline queue, Realtime refresh and deterministic merge path; there is no parallel ACL database.
+- Supabase enforces locked-entry update/delete rules with a database trigger, so the restriction is not only a Flutter UI convention.
+- Shared-photo insert/update/delete Storage policies also consult the entry permission contract; replacing a locked photo requires the edit owner.
+- Media upload retry queues preserve permission metadata across offline/retry flows.
+- Live Supabase migrations noi_permissions_lite_v065 and noi_permissions_media_v065 are applied to the production project.
+- No generative AI or new collaboration role hierarchy is introduced.
