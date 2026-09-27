@@ -2,7 +2,7 @@
 
 Flutter app for personal planning, private diary and the shared **Noi ♡** space.
 
-Current release line: **v0.66.0**.
+Current release line: **v0.67.0**.
 
 ## Core areas
 
@@ -406,3 +406,15 @@ See `docs/ARCHITECTURE.md` and `supabase/README.md` for implementation details.
 - Web remains fully functional; OCR recognition itself is an Android enhancement, while OCR metadata already synced from Android remains searchable as ordinary journal metadata.
 - OCR failures never block photo saving, viewing or diary usage.
 - No semantic embeddings, remote OCR service, document scanner or generative AI is introduced.
+
+
+## v0.67.0 — Memory Engine Core
+
+- Introduces one **derived Memory Engine** over the existing DayJournal / DiaryBlock source of truth; no memories table, database or sync channel is added.
+- Timeline ordering, person-filtered memories, deterministic “In questo giorno”, related memories and backlinks now share one canonical projection API.
+- Existing People & Relationships memory helpers delegate to the Memory Engine instead of rescanning journals independently.
+- Existing Search & Connections APIs keep their public behavior but delegate memory enumeration, titles, links and backlinks to the same engine.
+- The private Memories gallery consumes the canonical Memory Engine record order while preserving its current UI, filters and navigation.
+- Archived-memory semantics remain backward compatible: general/person history can include archived content where requested, while “In questo giorno” remains historical and non-archived.
+- This release is architectural consolidation only: canonical content stays in ordinary diary blocks, so Trash, backup/export, local-first persistence, sync, OCR, voice and people links remain unchanged.
+- No generative AI, semantic embedding store or parallel memory persistence is introduced.
