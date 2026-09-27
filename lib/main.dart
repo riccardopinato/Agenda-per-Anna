@@ -109,6 +109,54 @@ Future<void> _openSharedSpaceFromNotification(
   );
 }
 
+String _agendaItemIdFromReminderStableId(String stableId) {
+  return stableId.replaceFirst(RegExp(r':(primary|secondary)$'), '');
+}
+
+Future<void> _handleLocalReminderAction(
+  AgendaStore store,
+  String payload,
+) async {
+  const donePrefix = 'reminder_done:';
+  final markDone = payload.startsWith(donePrefix);
+  final stableId = markDone ? payload.substring(donePrefix.length) : payload;
+  final itemId = _agendaItemIdFromReminderStableId(stableId);
+
+  AgendaItem? item;
+  for (final candidate in store.items) {
+    if (candidate.id == itemId) {
+      item = candidate;
+      break;
+    }
+  }
+  if (item == null) return;
+
+  if (markDone) {
+    if (!item.done) {
+      await store.toggle(item.id);
+    }
+    return;
+  }
+
+  var navigator = appNavigatorKey.currentState;
+  if (navigator == null) {
+    await Future<void>.delayed(const Duration(milliseconds: 150));
+    navigator = appNavigatorKey.currentState;
+  }
+  if (navigator == null) return;
+
+  await navigator.push(
+    MaterialPageRoute<void>(
+      builder: (_) => PlannerScreen(
+        store: store,
+        initialDate: item!.date,
+      ),
+    ),
+  );
+}
+
+StreamSubscription<String>? _localNotificationTapSubscription;
+
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   PushNotificationService.configureBackgroundHandling();
@@ -172,8 +220,26 @@ Future<void> main() async {
 
     try {
       await NotificationService.instance.initialize();
+      await _localNotificationTapSubscription?.cancel();
+      _localNotificationTapSubscription =
+          NotificationService.instance.notificationTapStream.listen(
+        (payload) => unawaited(
+          _handleLocalReminderAction(store, payload),
+        ),
+      );
+
       await store.reconcileReminders();
       await store.reconcileBirthdayReminders();
+
+      final initialLocalPayload =
+          NotificationService.instance.takeInitialPayload();
+      if (initialLocalPayload != null) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          unawaited(
+            _handleLocalReminderAction(store, initialLocalPayload),
+          );
+        });
+      }
     } catch (_) {
       // Le notifiche non devono mai impedire l'avvio dell'agenda.
     }

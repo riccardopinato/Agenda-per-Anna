@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
 
@@ -7,6 +8,54 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_timezone/flutter_timezone.dart';
 import 'package:timezone/data/latest.dart' as tz_data;
 import 'package:timezone/timezone.dart' as tz;
+
+@pragma('vm:entry-point')
+void notificationTapBackground(NotificationResponse response) async {
+  await NotificationService.instance.handleNotificationResponse(
+    response,
+    background: true,
+  );
+}
+
+class _ReminderActionPayload {
+  static const String kind = 'agenda_reminder_v1';
+
+  final String stableId;
+  final String title;
+  final String body;
+
+  const _ReminderActionPayload({
+    required this.stableId,
+    required this.title,
+    required this.body,
+  });
+
+  String encode() => jsonEncode({
+        'kind': kind,
+        'stableId': stableId,
+        'title': title,
+        'body': body,
+      });
+
+  static _ReminderActionPayload? tryParse(String? raw) {
+    if (raw == null || raw.trim().isEmpty) return null;
+    try {
+      final decoded = jsonDecode(raw);
+      if (decoded is! Map || decoded['kind'] != kind) return null;
+      final stableId = decoded['stableId']?.toString().trim() ?? '';
+      final title = decoded['title']?.toString().trim() ?? '';
+      final body = decoded['body']?.toString().trim() ?? '';
+      if (stableId.isEmpty || title.isEmpty) return null;
+      return _ReminderActionPayload(
+        stableId: stableId,
+        title: title,
+        body: body,
+      );
+    } catch (_) {
+      return null;
+    }
+  }
+}
 
 class NotificationHealth {
   final bool available;
@@ -66,6 +115,91 @@ class NotificationService {
   static const String reminderChannelId = 'annas_diary_reminders_v2';
   static const String sharedChannelId = 'annas_diary_shared_v1';
 
+
+  static const String reminderDoneActionId = 'reminder_done';
+  static const String reminderSnooze10ActionId = 'reminder_snooze_10';
+  static const String reminderSnooze60ActionId = 'reminder_snooze_60';
+  static const String reminderOpenActionId = 'reminder_open';
+
+  static const List<AndroidNotificationAction> _reminderActions =
+      <AndroidNotificationAction>[
+    AndroidNotificationAction(
+      reminderDoneActionId,
+      'Fatto',
+      showsUserInterface: true,
+      cancelNotification: true,
+    ),
+    AndroidNotificationAction(
+      reminderSnooze10ActionId,
+      '10 min',
+      showsUserInterface: false,
+      cancelNotification: true,
+    ),
+    AndroidNotificationAction(
+      reminderSnooze60ActionId,
+      '1 ora',
+      showsUserInterface: false,
+      cancelNotification: true,
+    ),
+    AndroidNotificationAction(
+      reminderOpenActionId,
+      'Apri',
+      showsUserInterface: true,
+      cancelNotification: true,
+    ),
+  ];
+
+  static const NotificationDetails _standardReminderDetails =
+      NotificationDetails(
+    android: AndroidNotificationDetails(
+      reminderChannelId,
+      'Promemoria',
+      channelDescription:
+          'Promemoria di Anna\'s Diary per appuntamenti e cose da fare',
+      importance: Importance.max,
+      priority: Priority.max,
+      playSound: true,
+      enableVibration: true,
+      category: AndroidNotificationCategory.reminder,
+    ),
+    iOS: DarwinNotificationDetails(
+      presentAlert: true,
+      presentBadge: true,
+      presentSound: true,
+    ),
+    macOS: DarwinNotificationDetails(
+      presentAlert: true,
+      presentBadge: true,
+      presentSound: true,
+    ),
+  );
+
+  static const NotificationDetails _actionableReminderDetails =
+      NotificationDetails(
+    android: AndroidNotificationDetails(
+      reminderChannelId,
+      'Promemoria',
+      channelDescription:
+          'Promemoria di Anna\'s Diary per appuntamenti e cose da fare',
+      importance: Importance.max,
+      priority: Priority.max,
+      playSound: true,
+      enableVibration: true,
+      category: AndroidNotificationCategory.reminder,
+      actions: _reminderActions,
+    ),
+    iOS: DarwinNotificationDetails(
+      presentAlert: true,
+      presentBadge: true,
+      presentSound: true,
+    ),
+    macOS: DarwinNotificationDetails(
+      presentAlert: true,
+      presentBadge: true,
+      presentSound: true,
+    ),
+  );
+
   final FlutterLocalNotificationsPlugin _plugin =
       FlutterLocalNotificationsPlugin();
 
@@ -103,9 +237,9 @@ class NotificationService {
     try {
       final launchDetails = await _plugin.getNotificationAppLaunchDetails();
       if (launchDetails?.didNotificationLaunchApp == true) {
-        final payload = launchDetails?.notificationResponse?.payload?.trim();
-        if (payload != null && payload.isNotEmpty) {
-          _initialPayload = payload;
+        final response = launchDetails?.notificationResponse;
+        if (response != null) {
+          _initialPayload = _routingPayload(response);
         }
       }
     } catch (_) {
@@ -116,11 +250,9 @@ class NotificationService {
     final initialized = await _plugin.initialize(
       settings: settings,
       onDidReceiveNotificationResponse: (response) {
-        final payload = response.payload?.trim();
-        if (payload != null && payload.isNotEmpty) {
-          _tapController.add(payload);
-        }
+        unawaited(handleNotificationResponse(response));
       },
+      onDidReceiveBackgroundNotificationResponse: notificationTapBackground,
     );
     return initialized != false;
   }
@@ -586,12 +718,87 @@ class NotificationService {
     }
   }
 
+  String? _routingPayload(NotificationResponse response) {
+    final rawPayload = response.payload?.trim();
+    final reminder = _ReminderActionPayload.tryParse(rawPayload);
+    if (reminder != null && response.actionId == reminderDoneActionId) {
+      return 'reminder_done:${reminder.stableId}';
+    }
+    if (reminder != null) return reminder.stableId;
+    if (rawPayload == null || rawPayload.isEmpty) return null;
+    return rawPayload;
+  }
+
+  Future<void> handleNotificationResponse(
+    NotificationResponse response, {
+    bool background = false,
+  }) async {
+    final rawPayload = response.payload?.trim();
+    final reminder = _ReminderActionPayload.tryParse(rawPayload);
+    final actionId = response.actionId;
+
+    if (reminder != null) {
+      if (actionId == reminderSnooze10ActionId) {
+        await _snoozeReminder(reminder, const Duration(minutes: 10));
+        return;
+      }
+      if (actionId == reminderSnooze60ActionId) {
+        await _snoozeReminder(reminder, const Duration(hours: 1));
+        return;
+      }
+    }
+
+    if (!background) {
+      final routed = _routingPayload(response);
+      if (routed != null && routed.isNotEmpty) {
+        _tapController.add(routed);
+      }
+    }
+  }
+
+  Future<void> _snoozeReminder(
+    _ReminderActionPayload reminder,
+    Duration delay,
+  ) async {
+    tz_data.initializeTimeZones();
+    try {
+      final info = await FlutterTimezone.getLocalTimezone();
+      tz.setLocalLocation(tz.getLocation(info.identifier));
+    } catch (_) {}
+
+    final minutes = delay.inMinutes;
+    final body = minutes >= 60
+        ? 'Promemoria posticipato di 1 ora.'
+        : 'Promemoria posticipato di $minutes minuti.';
+    final payload = _ReminderActionPayload(
+      stableId: reminder.stableId,
+      title: reminder.title,
+      body: body,
+    );
+
+    try {
+      await _plugin.zonedSchedule(
+        id: _notificationId(reminder.stableId),
+        title: reminder.title,
+        body: body,
+        scheduledDate: tz.TZDateTime.now(tz.local).add(delay),
+        notificationDetails: _actionableReminderDetails,
+        androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
+        payload: payload.encode(),
+      );
+      _lastError = null;
+    } catch (error) {
+      _lastError = 'snooze:${reminder.stableId}: $error';
+    }
+  }
+
   Future<void> schedule({
     required String stableId,
     required String title,
     required String body,
     required DateTime when,
     bool requestPermission = true,
+    bool agendaActions = false,
   }) async {
     await initialize();
     if (!_available) return;
@@ -628,37 +835,22 @@ class NotificationService {
       }
     } catch (_) {}
 
+    final payload = _ReminderActionPayload(
+      stableId: stableId,
+      title: title,
+      body: body,
+    );
+
     try {
       await _plugin.zonedSchedule(
         id: id,
         title: title,
         body: body,
         scheduledDate: scheduled,
-        notificationDetails: const NotificationDetails(
-          android: AndroidNotificationDetails(
-            reminderChannelId,
-            'Promemoria',
-            channelDescription:
-                'Promemoria di Anna\'s Diary per appuntamenti e cose da fare',
-            importance: Importance.max,
-            priority: Priority.max,
-            playSound: true,
-            enableVibration: true,
-            category: AndroidNotificationCategory.reminder,
-          ),
-          iOS: DarwinNotificationDetails(
-            presentAlert: true,
-            presentBadge: true,
-            presentSound: true,
-          ),
-          macOS: DarwinNotificationDetails(
-            presentAlert: true,
-            presentBadge: true,
-            presentSound: true,
-          ),
-        ),
+        notificationDetails:
+            agendaActions ? _actionableReminderDetails : _standardReminderDetails,
         androidScheduleMode: mode,
-        payload: stableId,
+        payload: agendaActions ? payload.encode() : stableId,
       );
       _lastError = null;
     } catch (error) {

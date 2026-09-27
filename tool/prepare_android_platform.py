@@ -529,6 +529,20 @@ def configure_manifest() -> None:
             1,
         )
 
+    action_receiver = """
+        <receiver
+            android:exported="false"
+            android:name="com.dexterous.flutterlocalnotifications.ActionBroadcastReceiver" />
+"""
+    if "ActionBroadcastReceiver" not in manifest:
+        if "</application>" not in manifest:
+            raise SystemExit("Flutter template drift: </application> not found")
+        manifest = manifest.replace(
+            "</application>",
+            action_receiver + "    </application>",
+            1,
+        )
+
     home_widget_receiver = """
         <receiver
             android:name=".HomeWidgetProvider"

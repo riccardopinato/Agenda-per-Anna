@@ -129,11 +129,40 @@ class _DiarySketchbookScreenState extends State<DiarySketchbookScreen> {
 
   static const _colors = <int>[
     0xFF222222,
+    0xFF5B5B66,
+    0xFF7A4E3A,
+    0xFFC9414A,
+    0xFFE76F51,
     0xFFE86D91,
+    0xFFD64AA8,
+    0xFF9C5BD6,
     0xFF7868D8,
+    0xFF4F63C9,
     0xFF4F8EC9,
+    0xFF45A6C8,
+    0xFF3E9E91,
     0xFF579D78,
+    0xFF95A94A,
     0xFFE19A43,
+  ];
+
+  static const _colorNames = <String>[
+    'Nero',
+    'Grafite',
+    'Marrone',
+    'Rosso',
+    'Corallo',
+    'Rosa',
+    'Fucsia',
+    'Viola',
+    'Lavanda',
+    'Indaco',
+    'Blu',
+    'Azzurro',
+    'Turchese',
+    'Verde',
+    'Oliva',
+    'Arancio',
   ];
 
   @override
@@ -1327,46 +1356,68 @@ class _DiarySketchbookScreenState extends State<DiarySketchbookScreen> {
                 tool != DiarySketchTool.lasso &&
                 tool != DiarySketchTool.hand)
               SizedBox(
-                height: 42,
-                child: Row(
+                height: 84,
+                child: Column(
                   children: [
-                    const SizedBox(width: 14),
-                    ..._colors.map(
-                      (value) => Padding(
-                        padding: const EdgeInsets.only(right: 7),
-                        child: InkWell(
-                          borderRadius: BorderRadius.circular(999),
-                          onTap: () =>
-                              setState(() => colorValue = value),
-                          child: Container(
-                            width: 27,
-                            height: 27,
-                            decoration: BoxDecoration(
-                              color: Color(value),
-                              shape: BoxShape.circle,
-                              border: Border.all(
-                                color: colorValue == value
-                                    ? Theme.of(context)
-                                        .colorScheme
-                                        .primary
-                                    : Colors.transparent,
-                                width: 3,
+                    SizedBox(
+                      height: 42,
+                      child: ListView.separated(
+                        scrollDirection: Axis.horizontal,
+                        padding: const EdgeInsets.symmetric(horizontal: 14),
+                        itemCount: _colors.length,
+                        separatorBuilder: (_, __) =>
+                            const SizedBox(width: 7),
+                        itemBuilder: (context, index) {
+                          final value = _colors[index];
+                          final selected = colorValue == value;
+                          return Tooltip(
+                            message: _colorNames[index],
+                            child: Semantics(
+                              button: true,
+                              selected: selected,
+                              label: 'Colore ${_colorNames[index]}',
+                              child: InkWell(
+                                borderRadius: BorderRadius.circular(999),
+                                onTap: () =>
+                                    setState(() => colorValue = value),
+                                child: Container(
+                                  width: 29,
+                                  height: 29,
+                                  decoration: BoxDecoration(
+                                    color: Color(value),
+                                    shape: BoxShape.circle,
+                                    border: Border.all(
+                                      color: selected
+                                          ? Theme.of(context)
+                                              .colorScheme
+                                              .primary
+                                          : Colors.transparent,
+                                      width: 3,
+                                    ),
+                                  ),
+                                ),
                               ),
                             ),
-                          ),
-                        ),
+                          );
+                        },
                       ),
                     ),
-                    const SizedBox(width: 8),
-                    const Icon(Icons.line_weight, size: 18),
-                    Expanded(
-                      child: Slider(
-                        value: width.clamp(1, 14),
-                        min: 1,
-                        max: 14,
-                        onChanged: (value) =>
-                            setState(() => width = value),
-                      ),
+                    Row(
+                      children: [
+                        const SizedBox(width: 14),
+                        const Icon(Icons.line_weight, size: 18),
+                        const SizedBox(width: 6),
+                        Expanded(
+                          child: Slider(
+                            value: width.clamp(1, 14),
+                            min: 1,
+                            max: 14,
+                            onChanged: (value) =>
+                                setState(() => width = value),
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                      ],
                     ),
                   ],
                 ),

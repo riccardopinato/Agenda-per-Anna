@@ -2278,6 +2278,7 @@ class AgendaStore extends ChangeNotifier {
             : _reminderBody(minutes, item.title),
         when: when,
         requestPermission: requestPermission,
+        agendaActions: true,
       );
     }
 

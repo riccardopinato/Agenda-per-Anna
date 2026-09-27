@@ -17,10 +17,11 @@ Source of truth for the active product sequence after v0.52. The roadmap follows
 | v0.61 | Data Safety | Completed | Restore drills, backup verification, orphan checks and long-term data portability hardening |
 | v0.62 | Non-AI Production Consolidation | Completed | Accessibility, performance, regression and release-quality consolidation; no AI features |
 | v0.62.1 | Generic Profile Default | Completed | Neutral first-run name field with preserved existing personalization |
+| v0.63 | Creative & Reminder Upgrade | In validation | 16-color Sketchbook palette plus safe agenda notification actions using existing engines |
 
 ## Permanent constraints for this sequence
 
-- No generative-AI or AI-dependent product features through v0.62.
+- No generative-AI or AI-dependent product features through v0.63.
 - Anna's Diary remains primarily a personal diary / agenda; work and knowledge-management scope belongs to Notes-Ecosistema.
 - Existing verified modules are reused before new infrastructure is introduced.
 - User data remains offline-capable and account-isolated where applicable.
@@ -165,3 +166,19 @@ Per the active development cadence, AppLab runs once every two feature versions.
 - Home renders neutral title/greeting copy while the display name is empty.
 - Release metadata is aligned to v0.62.1+72.
 - Development checks, Web release validation, Android size audit and AppLab remain green before merge.
+
+
+## v0.63 acceptance criteria
+
+- Creative Palette 2.0 is approved from the central ideas backlog and extends the existing Sketchbook rather than creating a parallel drawing editor.
+- The Sketchbook exposes 16 curated colors with horizontally scrollable, accessible controls.
+- Existing sketches remain fully compatible because stored stroke/text color values and sketch serialization are unchanged.
+- Reminder Actions 2.0 is approved from the central ideas backlog and reuses NotificationService plus AgendaStore.
+- Android agenda reminders expose **Fatto**, **10 min**, **1 ora** and **Apri**.
+- **10 min** and **1 ora** can run without opening the app, reuse the same stable reminder identity and keep the existing notification channel.
+- **Fatto** resolves the agenda item through its existing stable ID and uses the ordinary completion/persistence path; it must never toggle an already completed item back to pending.
+- Birthday reminders do not receive agenda-only completion actions.
+- Android platform generation includes the plugin ActionBroadcastReceiver required by notification actions.
+- No new database, duplicate reminder store or AI dependency is introduced.
+- Release metadata is aligned to v0.63.0+73.
+- Development checks, Web release validation, Android size audit and AppLab Trusted Verify must all be green before merge.
