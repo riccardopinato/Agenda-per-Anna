@@ -138,6 +138,10 @@ class _BackupScreenState extends State<BackupScreen> {
             Text('• ${summary.habitCount} abitudini'),
             if (summary.birthdayCount > 0)
               Text('• ${summary.birthdayCount} compleanni'),
+            if (summary.personCount > 0)
+              Text('• ${summary.personCount} persone'),
+            if (summary.placeCount > 0)
+              Text('• ${summary.placeCount} luoghi'),
             if (summary.trashCount > 0)
               Text('• ${summary.trashCount} elementi nel Cestino'),
             if (selectedBackup.isZip) ...[
