@@ -1253,6 +1253,8 @@ class SharedEntry {
   final String mediaThumbnailAssetId;
   final List<DiarySketchPage> sketchPages;
   final bool memoryPinned;
+  final bool membersCanEdit;
+  final String editOwnerId;
 
   const SharedEntry({
     required this.id,
@@ -1272,6 +1274,8 @@ class SharedEntry {
     this.mediaThumbnailAssetId = '',
     this.sketchPages = const [],
     this.memoryPinned = false,
+    this.membersCanEdit = true,
+    this.editOwnerId = '',
   });
 
   bool get appearsInSharedMemories =>
@@ -1279,6 +1283,22 @@ class SharedEntry {
       type == SharedEntryType.note ||
       type == SharedEntryType.photo ||
       type == SharedEntryType.sketch;
+
+  bool get supportsEditPermissions =>
+      type == SharedEntryType.note ||
+      type == SharedEntryType.photo ||
+      type == SharedEntryType.sketch;
+
+  bool canEditFor(String? userId) =>
+      !supportsEditPermissions ||
+      membersCanEdit ||
+      editOwnerId.isEmpty ||
+      editOwnerId == userId;
+
+  bool isEditOwner(String? userId) =>
+      supportsEditPermissions &&
+      editOwnerId.isNotEmpty &&
+      editOwnerId == userId;
 
   SharedEntry copyWith({
     SharedEntryType? type,
@@ -1297,6 +1317,8 @@ class SharedEntry {
     String? mediaThumbnailAssetId,
     List<DiarySketchPage>? sketchPages,
     bool? memoryPinned,
+    bool? membersCanEdit,
+    String? editOwnerId,
     bool clearTime = false,
     bool clearUpdatedBy = false,
     bool clearMedia = false,
@@ -1325,6 +1347,8 @@ class SharedEntry {
         sketchPages:
             clearSketch ? const [] : (sketchPages ?? this.sketchPages),
         memoryPinned: memoryPinned ?? this.memoryPinned,
+        membersCanEdit: membersCanEdit ?? this.membersCanEdit,
+        editOwnerId: editOwnerId ?? this.editOwnerId,
       );
 
   Map<String, dynamic> toJson() => {
@@ -1346,6 +1370,8 @@ class SharedEntry {
         'mediaThumbnailBase64': mediaThumbnailBase64,
         'sketchPages': sketchPages.map((page) => page.toJson()).toList(),
         'memoryPinned': memoryPinned,
+        'membersCanEdit': membersCanEdit,
+        'editOwnerId': editOwnerId,
       };
 
   Map<String, dynamic> toCacheJson() => {
@@ -1412,6 +1438,8 @@ class SharedEntry {
           )
           .toList(),
       memoryPinned: json['memoryPinned'] as bool? ?? false,
+      membersCanEdit: json['membersCanEdit'] as bool? ?? true,
+      editOwnerId: json['editOwnerId'] as String? ?? '',
     );
   }
 }
@@ -1515,6 +1543,8 @@ class SharedMediaPendingUpload {
   final DateTime date;
   final String mediaAssetId;
   final String thumbnailAssetId;
+  final bool membersCanEdit;
+  final String editOwnerId;
 
   // Legacy fallback fields for queues created before v0.33.
   final String imageBase64;
@@ -1531,6 +1561,8 @@ class SharedMediaPendingUpload {
     required this.date,
     this.mediaAssetId = '',
     this.thumbnailAssetId = '',
+    this.membersCanEdit = true,
+    this.editOwnerId = '',
     this.imageBase64 = '',
     this.thumbnailBase64 = '',
     required this.oldMediaPath,
@@ -1549,6 +1581,8 @@ class SharedMediaPendingUpload {
         'date': date.toIso8601String(),
         'mediaAssetId': mediaAssetId,
         'thumbnailAssetId': thumbnailAssetId,
+        'membersCanEdit': membersCanEdit,
+        'editOwnerId': editOwnerId,
         'imageBase64': mediaAssetId.isEmpty ? imageBase64 : '',
         'thumbnailBase64':
             thumbnailAssetId.isEmpty ? thumbnailBase64 : '',
@@ -1570,6 +1604,8 @@ class SharedMediaPendingUpload {
                 DateTime.now(),
         mediaAssetId: json['mediaAssetId'] as String? ?? '',
         thumbnailAssetId: json['thumbnailAssetId'] as String? ?? '',
+        membersCanEdit: json['membersCanEdit'] as bool? ?? true,
+        editOwnerId: json['editOwnerId'] as String? ?? '',
         imageBase64: json['imageBase64'] as String? ?? '',
         thumbnailBase64: json['thumbnailBase64'] as String? ?? '',
         oldMediaPath: json['oldMediaPath'] as String? ?? '',
