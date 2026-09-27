@@ -2,7 +2,7 @@
 
 Flutter app for personal planning, private diary and the shared **Noi ♡** space.
 
-Current release line: **v0.67.0**.
+Current release line: **v0.68.0**.
 
 ## Core areas
 
@@ -418,3 +418,16 @@ See `docs/ARCHITECTURE.md` and `supabase/README.md` for implementation details.
 - Archived-memory semantics remain backward compatible: general/person history can include archived content where requested, while “In questo giorno” remains historical and non-archived.
 - This release is architectural consolidation only: canonical content stays in ordinary diary blocks, so Trash, backup/export, local-first persistence, sync, OCR, voice and people links remain unchanged.
 - No generative AI, semantic embedding store or parallel memory persistence is introduced.
+
+
+## v0.68.0 — Places & Context
+
+- Adds lightweight private **Places** as first-class context next to People, without turning Anna's Diary into a maps or tracking app.
+- A place stores only name, optional type/category, address/zone, note and favorite state; there is no background location tracking, coordinate history or external place database.
+- Diary Note / Photo / Sketch / Voice blocks can link one or more places through `placeIds`, exactly as people links are stored as references instead of duplicating the memory.
+- Existing diary cards gain **Collega luoghi**; linked places appear as contextual chips beside people, tags and memory connections.
+- `I miei luoghi` supports add/edit/favorite, linked-memory counts and a detail view that reuses the Memory Engine projection.
+- Quick Capture can create a place, and global deterministic search indexes both place entities and linked-place names/category/address inside diary memories.
+- Places reuse the existing private local-first entity pipeline: Sembast working state, per-entity deltas, cloud queue, account isolation, backup/restore, readable export and Trash recovery.
+- Permanently purging a place removes only dangling `placeIds`; the diary memory itself is never deleted.
+- No map SDK, GPS permission, geofencing, remote place service or generative AI dependency is introduced.
