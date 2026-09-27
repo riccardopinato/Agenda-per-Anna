@@ -219,6 +219,13 @@ Future<void> main() async {
     }
 
     try {
+      await Future<void>.delayed(const Duration(milliseconds: 700));
+      await store.ensurePhotoOcrIndexed(maxPerPass: 8);
+    } catch (_) {
+      // OCR è una derivazione opzionale: foto e diario restano disponibili.
+    }
+
+    try {
       await HomeWidgetBridge.instance.initialize();
       HomeWidgetBridge.instance.onAction = (action) {
         final context = appNavigatorKey.currentContext;
