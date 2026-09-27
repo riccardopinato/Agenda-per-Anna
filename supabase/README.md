@@ -58,3 +58,13 @@ The app remains offline-first when cloud access is unavailable.
 - Migration `023_web_push_anon_privilege_hardening_v050.sql` revokes unnecessary `anon` privileges from Web Push reminder/subscription tables while preserving authenticated RLS access.
 - Edge Function `delete-account` v2 validates user JWTs and constrains service-role Storage deletion to the source shared record's own `space_id/` prefix.
 - The live project was audited for RLS coverage, table privileges and `SECURITY DEFINER` RPC behavior. See `docs/SECURITY_BASELINE.md` for the resulting contract.
+
+
+### v0.65 Permissions Lite
+
+Migrations 025_noi_permissions_lite_v065.sql and
+026_noi_permissions_media_v065.sql keep shared creative memories
+collaborative by default while allowing an entry owner to make a Note, Photo
+or Sketch read-only for other members. The database trigger protects the
+record itself and Storage policies protect deterministic shared-photo objects.
+Legacy entries without the new payload fields remain collaborative.

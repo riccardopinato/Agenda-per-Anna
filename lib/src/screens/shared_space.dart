@@ -1194,9 +1194,44 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
         updatedAt: revision,
       );
 
-  Future<void> _persistSharedEntry(SharedEntry result) async {
+  String? get _currentSharedUserId =>
+      CloudSyncService.instance.userId ?? widget.store.activeAccountId;
+
+  bool _canEditSharedEntry(SharedEntry entry) =>
+      entry.canEditFor(_currentSharedUserId);
+
+  bool _canManageSharedPermissions(SharedEntry entry) =>
+      entry.isEditOwner(_currentSharedUserId);
+
+  SharedEntry _permissionAwareNewEntry(SharedEntry entry) {
+    if (!entry.supportsEditPermissions || entry.editOwnerId.isNotEmpty) {
+      return entry;
+    }
+    return entry.copyWith(editOwnerId: _currentSharedUserId ?? '');
+  }
+
+  Future<void> _persistSharedEntry(
+    SharedEntry result, {
+    bool permissionChange = false,
+  }) async {
+    final currentIndex = entries.indexWhere((entry) => entry.id == result.id);
+    final current = currentIndex < 0 ? null : entries[currentIndex];
+
+    if (current != null && !_canEditSharedEntry(current)) {
+      _message('Questo ricordo è in sola lettura.');
+      return;
+    }
+
+    var normalized = _permissionAwareNewEntry(result);
+    if (current != null && !permissionChange) {
+      normalized = normalized.copyWith(
+        membersCanEdit: current.membersCanEdit,
+        editOwnerId: current.editOwnerId,
+      );
+    }
+
     final revision = DateTime.now().toUtc();
-    final updated = _withLocalMetadata(result, revision);
+    final updated = _withLocalMetadata(normalized, revision);
     final index = entries.indexWhere((entry) => entry.id == updated.id);
     setState(() {
       if (index < 0) {
@@ -1221,10 +1256,108 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
     }
   }
 
+  Future<void> _setSharedEditPermission(SharedEntry entry) async {
+    if (!_canManageSharedPermissions(entry)) {
+      _message('Solo chi ha creato questo ricordo può cambiarne i permessi.');
+      return;
+    }
+
+    final next = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Chi può modificare?'),
+        content: RadioGroup<bool>(
+          groupValue: entry.membersCanEdit,
+          onChanged: (value) {
+            if (value != null) Navigator.pop(dialogContext, value);
+          },
+          child: const Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              RadioListTile<bool>(
+                value: true,
+                title: Text('Tutti nello spazio'),
+                subtitle: Text('I membri di Noi ♡ possono modificare questo ricordo.'),
+              ),
+              RadioListTile<bool>(
+                value: false,
+                title: Text('Solo io'),
+                subtitle: Text('Gli altri possono vedere, commentare e reagire.'),
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext),
+            child: const Text('Annulla'),
+          ),
+        ],
+      ),
+    );
+    if (next == null || next == entry.membersCanEdit) return;
+    await _persistSharedEntry(
+      entry.copyWith(membersCanEdit: next),
+      permissionChange: true,
+    );
+  }
+
+  Future<void> _viewReadOnlySharedEntry(
+    BuildContext context,
+    SharedEntry entry,
+  ) async {
+    if (entry.type == SharedEntryType.photo) {
+      await Navigator.push<void>(
+        context,
+        MaterialPageRoute(
+          builder: (_) => SharedPhotoViewerScreen(
+            space: widget.space,
+            entry: entry,
+          ),
+        ),
+      );
+      return;
+    }
+    if (entry.type == SharedEntryType.sketch) {
+      await Navigator.push<void>(
+        context,
+        MaterialPageRoute(
+          builder: (_) => SharedSketchViewerScreen(
+            space: widget.space,
+            entry: entry,
+          ),
+        ),
+      );
+      return;
+    }
+
+    await showDialog<void>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: Text(entry.title.trim().isEmpty ? 'Nota' : entry.title),
+        content: SingleChildScrollView(
+          child: SelectableText(
+            entry.note.trim().isEmpty ? entry.title : entry.note,
+          ),
+        ),
+        actions: [
+          FilledButton(
+            onPressed: () => Navigator.pop(dialogContext),
+            child: const Text('Chiudi'),
+          ),
+        ],
+      ),
+    );
+  }
+
   Future<void> _edit([
     SharedEntry? existing,
     SharedEntryType? initialType,
   ]) async {
+    if (existing != null && !_canEditSharedEntry(existing)) {
+      await _viewReadOnlySharedEntry(context, existing);
+      return;
+    }
     if (widget.store.activeAccountId == null) {
       _message(
         'Accedi al cloud almeno una volta per usare lo spazio condiviso.',
@@ -1282,11 +1415,17 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
         createdAt:
             existing?.createdAt ?? existing?.updatedAt ?? DateTime.now(),
         memoryPinned: existing?.memoryPinned ?? false,
+        membersCanEdit: existing?.membersCanEdit ?? true,
+        editOwnerId: existing?.editOwnerId ?? (_currentSharedUserId ?? ''),
       ),
     );
   }
 
   Future<void> _editSharedPhotoCaption(SharedEntry entry) async {
+    if (!_canEditSharedEntry(entry)) {
+      _message('Questa foto è in sola lettura.');
+      return;
+    }
     final value = await showDiaryCaptionEditor(
       context,
       initialText: entry.note,
@@ -1296,6 +1435,10 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
   }
 
   Future<void> _addSharedPhoto([SharedEntry? existing]) async {
+    if (existing != null && !_canEditSharedEntry(existing)) {
+      await _viewReadOnlySharedEntry(context, existing);
+      return;
+    }
     if (sharedPhotoBusy) return;
     if (widget.store.activeAccountId == null) {
       _message(
@@ -1348,6 +1491,8 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
         mediaPath: '',
         mediaThumbnailAssetId: thumbnailAssetId,
         memoryPinned: existing?.memoryPinned ?? false,
+        membersCanEdit: existing?.membersCanEdit ?? true,
+        editOwnerId: existing?.editOwnerId ?? (_currentSharedUserId ?? ''),
       );
 
       final revision = DateTime.now().toUtc();
@@ -1369,6 +1514,8 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
           date: localPreview.date,
           mediaAssetId: mediaAssetId,
           thumbnailAssetId: thumbnailAssetId,
+          membersCanEdit: localPreview.membersCanEdit,
+          editOwnerId: localPreview.editOwnerId,
           oldMediaPath: existing?.mediaPath ?? '',
           createdAt: localPreview.createdAt ?? revision,
         ),
@@ -1394,6 +1541,10 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
   }
 
   Future<void> _addSharedSketch([SharedEntry? existing]) async {
+    if (existing != null && !_canEditSharedEntry(existing)) {
+      await _viewReadOnlySharedEntry(context, existing);
+      return;
+    }
     final initialPages = existing?.sketchPages.isNotEmpty == true
         ? existing!.sketchPages
         : [DiarySketchPage(id: const Uuid().v4())];
@@ -1419,6 +1570,8 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
             existing?.createdAt ?? existing?.updatedAt ?? DateTime.now(),
         sketchPages: pages,
         memoryPinned: existing?.memoryPinned ?? false,
+        membersCanEdit: existing?.membersCanEdit ?? true,
+        editOwnerId: existing?.editOwnerId ?? (_currentSharedUserId ?? ''),
       ),
     );
   }
@@ -1623,6 +1776,10 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
   }
 
   Future<void> _delete(SharedEntry entry) async {
+    if (entry.supportsEditPermissions && !_canEditSharedEntry(entry)) {
+      _message('Questo ricordo è in sola lettura.');
+      return;
+    }
     final isDiaryContent =
         entry.type == SharedEntryType.note ||
         entry.type == SharedEntryType.photo ||
@@ -2027,6 +2184,58 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
     );
   }
 
+  Widget _sharedDiaryFooter(
+    SharedEntry entry, {
+    required Set<String> hearts,
+    required List<SharedEntryComment> comments,
+    required bool likedByMe,
+    required String? seen,
+  }) {
+    final canManage = _canManageSharedPermissions(entry);
+    final restricted = !entry.membersCanEdit && entry.editOwnerId.isNotEmpty;
+
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        if (restricted || canManage)
+          Padding(
+            padding: const EdgeInsets.fromLTRB(12, 6, 12, 0),
+            child: Row(
+              children: [
+                Icon(
+                  restricted ? Icons.lock_outline : Icons.group_outlined,
+                  size: 18,
+                ),
+                const SizedBox(width: 7),
+                Expanded(
+                  child: Text(
+                    restricted
+                        ? (_canEditSharedEntry(entry)
+                            ? 'Solo tu puoi modificare'
+                            : 'Sola lettura · modificabile dall’autore')
+                        : 'Modificabile da tutti nello spazio',
+                    style: Theme.of(context).textTheme.bodySmall,
+                  ),
+                ),
+                if (canManage)
+                  TextButton(
+                    onPressed: () => _setSharedEditPermission(entry),
+                    child: const Text('Permessi'),
+                  ),
+              ],
+            ),
+          ),
+        _sharedInteractionFooter(
+          entry,
+          hearts: hearts,
+          comments: comments,
+          likedByMe: likedByMe,
+          seen: seen,
+        ),
+      ],
+    );
+  }
+
   Widget _sharedDiaryContentCard(
     BuildContext context,
     SharedEntry entry, {
@@ -2055,20 +2264,23 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
       if (pending) 'In attesa di sincronizzazione',
     ];
 
-    final VoidCallback openEntry = switch (entry.type) {
-      SharedEntryType.note => () => _addSharedNote(entry),
-      SharedEntryType.photo => () => Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (_) => SharedPhotoViewerScreen(
-                space: widget.space,
-                entry: entry,
-              ),
-            ),
-          ),
-      SharedEntryType.sketch => () => _addSharedSketch(entry),
-      _ => () {},
-    };
+    final canEdit = _canEditSharedEntry(entry);
+    final VoidCallback openEntry = canEdit
+        ? switch (entry.type) {
+            SharedEntryType.note => () => _addSharedNote(entry),
+            SharedEntryType.photo => () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => SharedPhotoViewerScreen(
+                      space: widget.space,
+                      entry: entry,
+                    ),
+                  ),
+                ),
+            SharedEntryType.sketch => () => _addSharedSketch(entry),
+            _ => () {},
+          }
+        : () => _viewReadOnlySharedEntry(context, entry);
 
     final Widget? preview = switch (entry.type) {
       SharedEntryType.photo
@@ -2102,17 +2314,17 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
       subtitle: meta.join(' · '),
       preview: preview,
       onOpen: openEntry,
-      onEdit: kind == DiaryContentKind.photo ? null : openEntry,
-      onEditCaption: kind == DiaryContentKind.photo
+      onEdit: canEdit && kind != DiaryContentKind.photo ? openEntry : null,
+      onEditCaption: canEdit && kind == DiaryContentKind.photo
           ? () => _editSharedPhotoCaption(entry)
           : null,
-      onReplacePhoto: kind == DiaryContentKind.photo
+      onReplacePhoto: canEdit && kind == DiaryContentKind.photo
           ? () => _addSharedPhoto(entry)
           : null,
-      onDelete: () => _delete(entry),
+      onDelete: canEdit ? () => _delete(entry) : null,
       statusIcon:
           pending ? const Icon(Icons.schedule_outlined, size: 20) : null,
-      footer: _sharedInteractionFooter(
+      footer: _sharedDiaryFooter(
         entry,
         hearts: hearts,
         comments: comments,

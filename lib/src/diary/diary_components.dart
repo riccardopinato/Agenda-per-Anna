@@ -854,7 +854,7 @@ class DiaryContentCard extends StatelessWidget {
   final VoidCallback? onPin;
   final VoidCallback? onArchive;
   final VoidCallback? onTags;
-  final VoidCallback onDelete;
+  final VoidCallback? onDelete;
   final Widget? footer;
   final Widget? statusIcon;
   final bool pinned;
@@ -866,7 +866,7 @@ class DiaryContentCard extends StatelessWidget {
     required this.title,
     required this.subtitle,
     required this.onOpen,
-    required this.onDelete,
+    this.onDelete,
     this.preview,
     this.onEdit,
     this.onEditCaption,
@@ -929,7 +929,7 @@ class DiaryContentCard extends StatelessWidget {
                     if (value == 'tags') onTags?.call();
                     if (value == 'people') onPeople?.call();
                     if (value == 'connections') onConnections?.call();
-                    if (value == 'delete') onDelete();
+                    if (value == 'delete') onDelete?.call();
                   },
                   itemBuilder: (_) => [
                     if (kind != DiaryContentKind.photo && onEdit != null)
@@ -974,10 +974,11 @@ class DiaryContentCard extends StatelessWidget {
                         value: 'connections',
                         child: Text('Collega ricordi'),
                       ),
-                    const PopupMenuItem(
-                      value: 'delete',
-                      child: Text('Elimina'),
-                    ),
+                    if (onDelete != null)
+                      const PopupMenuItem(
+                        value: 'delete',
+                        child: Text('Elimina'),
+                      ),
                   ],
                 ),
               ],
