@@ -471,7 +471,7 @@ class _FocusWritingScreenState extends State<FocusWritingScreen> {
                         const Text('Modalità scrittura'),
                         const Spacer(),
                         Text(
-                          '${wordCount} parole · ${controller.text.characters.length} caratteri',
+                          '${wordCount} parole · ${controller.text.runes.length} caratteri',
                           style: theme.textTheme.bodySmall,
                         ),
                       ],
@@ -533,7 +533,6 @@ Future<String?> showDiaryNoteEditor(
             icon: const Icon(Icons.fullscreen),
             label: const Text('Scrivi a schermo intero'),
           ),
-          const Spacer(),
           TextButton(
             onPressed: () => Navigator.pop(dialogContext),
             child: const Text('Annulla'),
