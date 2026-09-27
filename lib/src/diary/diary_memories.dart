@@ -661,6 +661,19 @@ class _DiaryMemoriesScreenState extends State<DiaryMemoriesScreen> {
               : 'Ricordi con ${widget.personName}',
           style: const TextStyle(fontWeight: FontWeight.w900),
         ),
+        actions: [
+          if (widget.personId == null)
+            IconButton(
+              tooltip: 'Momenti',
+              onPressed: () => Navigator.push<void>(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => LifeTimelineScreen(store: widget.store),
+                ),
+              ),
+              icon: const Icon(Icons.timeline),
+            ),
+        ],
       ),
       body: AnimatedBuilder(
         animation: Listenable.merge([
