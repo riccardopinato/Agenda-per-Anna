@@ -21,7 +21,7 @@ Source of truth for the active product sequence after v0.52. The roadmap follows
 | v0.64 | Capture & Writing | Completed | Native Android share-to-diary/Inbox plus distraction-reduced diary writing |
 | v0.65 | Noi ♡ Permissions Lite | Completed | Simple server-enforced edit/read-only control for shared creative memories |
 | v0.66 | Smart Media Search | Completed | Local on-device OCR for diary photos integrated into deterministic search |
-| v0.67 | Memory Engine Core | In validation | One derived memory projection for timeline, relationships, resurfacing and connections; no new persistence |
+| v0.67 | Memory Engine Core | Completed | One derived memory projection for timeline, relationships, resurfacing and connections; no new persistence |
 | v0.68 | Places & Context | Approved | Lightweight first-class places linked to diary memories using existing private-data infrastructure |
 | v0.69 | Life Timeline / Momenti | Approved | Cross-domain derived life timeline over agenda, diary, birthdays and context without a monolithic LifeItem store |
 
