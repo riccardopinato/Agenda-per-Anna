@@ -22,7 +22,7 @@ Source of truth for the active product sequence after v0.52. The roadmap follows
 | v0.65 | Noi ♡ Permissions Lite | Completed | Simple server-enforced edit/read-only control for shared creative memories |
 | v0.66 | Smart Media Search | Completed | Local on-device OCR for diary photos integrated into deterministic search |
 | v0.67 | Memory Engine Core | Completed | One derived memory projection for timeline, relationships, resurfacing and connections; no new persistence |
-| v0.68 | Places & Context | Approved | Lightweight first-class places linked to diary memories using existing private-data infrastructure |
+| v0.68 | Places & Context | In validation | Lightweight first-class places linked to diary memories using existing private-data infrastructure |
 | v0.69 | Life Timeline / Momenti | Approved | Cross-domain derived life timeline over agenda, diary, birthdays and context without a monolithic LifeItem store |
 
 ## Permanent constraints for this sequence
@@ -281,3 +281,19 @@ Per the active development cadence, AppLab runs once every two feature versions.
 - “Momento” is a reference/projection layer, not a new universal persisted record and not a migration target for existing data.
 - La mia giornata and Daily Briefing continue to reuse Day Hub / Unified Agenda rather than being replaced by a second dashboard.
 - Privacy boundaries, Noi ♡ ownership rules, Vault isolation and local-first sync semantics must remain explicit.
+
+
+## v0.68 acceptance criteria
+
+- The red-team **Places & Context** gap is implemented as a lightweight private entity analogous to People, not as a mapping subsystem.
+- PlaceEntry stores name plus optional category, address/zone, note and favorite only; latitude/longitude, GPS history and background tracking are intentionally absent.
+- DiaryBlock links places by stable `placeIds`; the diary block remains the canonical memory and is never copied into a place database.
+- Note / Photo / Sketch / Voice cards can add/remove place links with the same interaction style used for People.
+- Place detail derives its memories from the existing Memory Engine.
+- Global deterministic search indexes PlaceEntry fields and linked place context on diary blocks.
+- Quick Capture exposes lightweight place creation and People exposes a direct path to the Places collection.
+- Places participate in local-first persistence, entity deltas, private sync, account profiles, backup/restore, readable export and Trash lifecycle.
+- Purging a place removes dangling references from live/recoverable diary content without deleting memories.
+- No map SDK, location permission, geofencing, external place database or generative AI dependency is introduced.
+- Release metadata is aligned to v0.68.0+78.
+- Development, Web, Android size audit and AppLab Trusted Verify must all pass before merge.
