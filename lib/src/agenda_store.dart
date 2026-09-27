@@ -8,6 +8,7 @@ class AgendaStore extends ChangeNotifier {
   static const _habitsKey = 'habits_v1';
   static const _birthdaysKey = 'birthdays_v1';
   static const _peopleKey = 'people_v1';
+  static const _placesKey = 'places_v1';
   static const _snapshotsKey = 'backup_snapshots_v1';
   static const _preferencesKey = 'agenda_preferences_v1';
   static const _inboxKey = 'inbox_v1';
@@ -36,6 +37,7 @@ class AgendaStore extends ChangeNotifier {
   final List<HabitDefinition> habits = [];
   final List<BirthdayEntry> birthdays = [];
   final List<PersonEntry> people = [];
+  final List<PlaceEntry> places = [];
   final List<LocalBackupSnapshot> localSnapshots = [];
   final List<InboxEntry> inbox = [];
   final List<TrashEntry> trash = [];
@@ -136,6 +138,7 @@ class AgendaStore extends ChangeNotifier {
         _habitsKey,
         _birthdaysKey,
         _peopleKey,
+        _placesKey,
         _snapshotsKey,
         _preferencesKey,
         _inboxKey,
@@ -395,6 +398,16 @@ class AgendaStore extends ChangeNotifier {
               );
             }
             break;
+          case 'place':
+            places.removeWhere((place) => place.id == id);
+            if (!deleted && payload is Map) {
+              places.add(
+                PlaceEntry.fromJson(
+                  Map<String, dynamic>.from(payload),
+                ),
+              );
+            }
+            break;
           case 'inbox':
             inbox.removeWhere((entry) => entry.id == id);
             if (!deleted && payload is Map) {
@@ -557,6 +570,11 @@ class AgendaStore extends ChangeNotifier {
       case 'person':
         for (final person in people) {
           if (person.id == id) return person.toJson();
+        }
+        return null;
+      case 'place':
+        for (final place in places) {
+          if (place.id == id) return place.toJson();
         }
         return null;
       case 'inbox':
@@ -1033,6 +1051,7 @@ class AgendaStore extends ChangeNotifier {
     habits.clear();
     birthdays.clear();
     people.clear();
+    places.clear();
     localSnapshots.clear();
     inbox.clear();
     trash.clear();
@@ -1143,6 +1162,18 @@ class AgendaStore extends ChangeNotifier {
           .toList(),
     );
     if (parsedPeople != null) people.addAll(parsedPeople);
+
+    final parsedPlaces = decodeSection<List<PlaceEntry>>(
+      _placesKey,
+      (value) => (value as List)
+          .map(
+            (e) => PlaceEntry.fromJson(
+              Map<String, dynamic>.from(e as Map),
+            ),
+          )
+          .toList(),
+    );
+    if (parsedPlaces != null) places.addAll(parsedPlaces);
 
     final parsedSnapshots = decodeSection<List<LocalBackupSnapshot>>(
       _snapshotsKey,
@@ -1327,6 +1358,7 @@ class AgendaStore extends ChangeNotifier {
         _habitsKey: jsonEncode(habits.map((e) => e.toJson()).toList()),
         _birthdaysKey: jsonEncode(birthdays.map((e) => e.toJson()).toList()),
         _peopleKey: jsonEncode(people.map((e) => e.toJson()).toList()),
+        _placesKey: jsonEncode(places.map((e) => e.toJson()).toList()),
         _preferencesKey: jsonEncode(preferences.toJson()),
         _inboxKey: jsonEncode(inbox.map((e) => e.toJson()).toList()),
         _trashKey: jsonEncode(trash.map((e) => e.toJson()).toList()),
@@ -1342,6 +1374,7 @@ class AgendaStore extends ChangeNotifier {
       _habitsKey,
       _birthdaysKey,
       _peopleKey,
+      _placesKey,
       _inboxKey,
       _trashKey,
     ]) {
@@ -1612,6 +1645,11 @@ class AgendaStore extends ChangeNotifier {
         add('person', person.id, person.toJson());
       }
     }
+    if (includes(_placesKey)) {
+      for (final place in places) {
+        add('place', place.id, place.toJson());
+      }
+    }
     if (includes(_inboxKey)) {
       for (final entry in inbox) {
         add('inbox', entry.id, entry.toJson());
@@ -1640,6 +1678,7 @@ class AgendaStore extends ChangeNotifier {
         'habit' => _habitsKey,
         'birthday' => _birthdaysKey,
         'person' => _peopleKey,
+        'place' => _placesKey,
         'inbox' => _inboxKey,
         'trash' => _trashKey,
         'preferences' => _preferencesKey,
@@ -1846,6 +1885,13 @@ class AgendaStore extends ChangeNotifier {
           ),
         )
         .toList();
+    final incomingPlaces = (payload['places'] as List? ?? const [])
+        .map(
+          (e) => PlaceEntry.fromJson(
+            Map<String, dynamic>.from(e as Map),
+          ),
+        )
+        .toList();
     final incomingInbox = (payload['inbox'] as List? ?? const [])
         .map(
           (e) => InboxEntry.fromJson(
@@ -1880,6 +1926,7 @@ class AgendaStore extends ChangeNotifier {
     final previousHabits = List<HabitDefinition>.from(habits);
     final previousBirthdays = List<BirthdayEntry>.from(birthdays);
     final previousPeople = List<PersonEntry>.from(people);
+    final previousPlaces = List<PlaceEntry>.from(places);
     final previousInbox = List<InboxEntry>.from(inbox);
     final previousTrash = List<TrashEntry>.from(trash);
     final previousPreferences = preferences;
@@ -1926,6 +1973,16 @@ class AgendaStore extends ChangeNotifier {
           ..clear()
           ..addAll(peopleById.values);
 
+        final placesById = {
+          for (final place in places) place.id: place,
+        };
+        for (final place in incomingPlaces) {
+          placesById[place.id] = place;
+        }
+        places
+          ..clear()
+          ..addAll(placesById.values);
+
         final inboxById = {for (final entry in inbox) entry.id: entry};
         for (final entry in incomingInbox) {
           inboxById[entry.id] = entry;
@@ -1963,6 +2020,9 @@ class AgendaStore extends ChangeNotifier {
         people
           ..clear()
           ..addAll(incomingPeople);
+        places
+          ..clear()
+          ..addAll(incomingPlaces);
         inbox
           ..clear()
           ..addAll(incomingInbox);
@@ -2020,6 +2080,9 @@ class AgendaStore extends ChangeNotifier {
       people
         ..clear()
         ..addAll(previousPeople);
+      places
+        ..clear()
+        ..addAll(previousPlaces);
       inbox
         ..clear()
         ..addAll(previousInbox);
@@ -2799,6 +2862,10 @@ class AgendaStore extends ChangeNotifier {
           final before = people.length;
           people.removeWhere((e) => e.id == record.entityId);
           return people.length != before;
+        case 'place':
+          final before = places.length;
+          places.removeWhere((e) => e.id == record.entityId);
+          return places.length != before;
         case 'inbox':
           final before = inbox.length;
           inbox.removeWhere((e) => e.id == record.entityId);
@@ -2905,6 +2972,20 @@ class AgendaStore extends ChangeNotifier {
           people.add(incoming);
         } else {
           people[index] = incoming;
+        }
+        return true;
+      case 'place':
+        final incoming = PlaceEntry.fromJson(payload);
+        final index = places.indexWhere((e) => e.id == incoming.id);
+        if (index >= 0 &&
+            _syncPayloadHash(places[index].toJson()) ==
+                _syncPayloadHash(incoming.toJson())) {
+          return false;
+        }
+        if (index < 0) {
+          places.add(incoming);
+        } else {
+          places[index] = incoming;
         }
         return true;
       case 'inbox':
