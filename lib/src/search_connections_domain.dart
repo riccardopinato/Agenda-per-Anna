@@ -1,12 +1,13 @@
 part of '../main.dart';
 
-enum PersonalSearchKind { agenda, diary, person, birthday, inbox, month }
+enum PersonalSearchKind { agenda, diary, person, place, birthday, inbox, month }
 
 extension PersonalSearchKindUi on PersonalSearchKind {
   String get label => switch (this) {
         PersonalSearchKind.agenda => 'Agenda',
         PersonalSearchKind.diary => 'Diario',
         PersonalSearchKind.person => 'Persone',
+        PersonalSearchKind.place => 'Luoghi',
         PersonalSearchKind.birthday => 'Compleanni',
         PersonalSearchKind.inbox => 'Inbox',
         PersonalSearchKind.month => 'Mesi',
@@ -16,6 +17,7 @@ extension PersonalSearchKindUi on PersonalSearchKind {
         PersonalSearchKind.agenda => Icons.event_outlined,
         PersonalSearchKind.diary => Icons.auto_stories_outlined,
         PersonalSearchKind.person => Icons.person_outline,
+        PersonalSearchKind.place => Icons.place_outlined,
         PersonalSearchKind.birthday => Icons.cake_outlined,
         PersonalSearchKind.inbox => Icons.inbox_outlined,
         PersonalSearchKind.month => Icons.calendar_month_outlined,
@@ -41,6 +43,7 @@ class PersonalSearchHit {
   final AgendaItem? agendaItem;
   final String? diaryBlockId;
   final String? personId;
+  final String? placeId;
   final String? birthdayId;
   final String? inboxId;
 
@@ -53,6 +56,7 @@ class PersonalSearchHit {
     this.agendaItem,
     this.diaryBlockId,
     this.personId,
+    this.placeId,
     this.birthdayId,
     this.inboxId,
   });
@@ -301,6 +305,7 @@ extension SearchConnectionsAgendaStore on AgendaStore {
         for (final block in journal.blocks) {
           if (!includeArchived && block.archived) continue;
           final linkedPeople = peopleForIds(block.personIds);
+          final linkedPlaces = placesForIds(block.placeIds);
           final sketchText = block.pages
               .expand((page) => page.textElements)
               .map((element) => element.text);
@@ -310,6 +315,9 @@ extension SearchConnectionsAgendaStore on AgendaStore {
             ...block.tags,
             ...linkedPeople.map((person) => person.name),
             ...linkedPeople.map((person) => person.relationship),
+            ...linkedPlaces.map((place) => place.name),
+            ...linkedPlaces.map((place) => place.category),
+            ...linkedPlaces.map((place) => place.address),
             ...sketchText,
             DateFormat('d MMMM yyyy', 'it_IT').format(date),
             switch (block.type) {
@@ -376,6 +384,34 @@ extension SearchConnectionsAgendaStore on AgendaStore {
             ].join(' · '),
             date: lastMemory ?? DateTime.fromMillisecondsSinceEpoch(0),
             personId: person.id,
+          ),
+        );
+      }
+    }
+
+    if (enabled.contains(PersonalSearchKind.place)) {
+      for (final place in places) {
+        if (!_matchesPersonalSearch(query, [
+          place.name,
+          place.category,
+          place.address,
+          place.note,
+        ])) {
+          continue;
+        }
+        final lastMemory = lastMemoryDateForPlace(place.id);
+        hits.add(
+          PersonalSearchHit(
+            kind: PersonalSearchKind.place,
+            id: place.id,
+            title: place.name,
+            subtitle: [
+              if (place.category.trim().isNotEmpty) place.category.trim(),
+              if (place.address.trim().isNotEmpty) place.address.trim(),
+              '${placeMemoryCount(place.id)} ricordi',
+            ].join(' · '),
+            date: lastMemory ?? DateTime.fromMillisecondsSinceEpoch(0),
+            placeId: place.id,
           ),
         );
       }
@@ -681,6 +717,20 @@ class _PersonalSearchConnectionsScreenState
           ),
         );
         return;
+      case PersonalSearchKind.place:
+        if (!mounted) return;
+        await Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => hit.placeId == null
+                ? PlacesScreen(store: widget.store)
+                : PlaceDetailScreen(
+                    store: widget.store,
+                    placeId: hit.placeId!,
+                  ),
+          ),
+        );
+        return;
       case PersonalSearchKind.birthday:
         if (!mounted) return;
         await Navigator.push(
@@ -753,7 +803,7 @@ class _PersonalSearchConnectionsScreenState
               autofocus: true,
               onChanged: (value) => setState(() => query = value),
               decoration: InputDecoration(
-                hintText: 'Cerca parole, persone, tag, date, ricordi...',
+                hintText: 'Cerca parole, persone, luoghi, tag, date, ricordi...',
                 prefixIcon: const Icon(Icons.search),
                 filled: true,
                 border: OutlineInputBorder(
