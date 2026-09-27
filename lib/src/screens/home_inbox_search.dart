@@ -385,6 +385,166 @@ class HomeScreen extends StatelessWidget {
   }
 }
 
+Future<void> _handleIncomingShareCapture(
+  BuildContext context,
+  AgendaStore store,
+  IncomingShareCapture capture,
+) async {
+  final preview = capture.text.trim();
+  final destination = await showModalBottomSheet<String>(
+    context: context,
+    showDragHandle: true,
+    builder: (sheetContext) => SafeArea(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          ListTile(
+            leading: CircleAvatar(
+              child: Icon(
+                capture.hasImage
+                    ? Icons.photo_outlined
+                    : Icons.ios_share_outlined,
+              ),
+            ),
+            title: Text(
+              capture.hasImage
+                  ? 'Foto condivisa con Anna\'s Diary'
+                  : 'Contenuto condiviso con Anna\'s Diary',
+            ),
+            subtitle: preview.isEmpty
+                ? const Text('Scegli dove salvarlo.')
+                : Text(
+                    preview,
+                    maxLines: 3,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+          ),
+          if (!capture.hasImage)
+            ListTile(
+              leading: const Icon(Icons.inbox_outlined),
+              title: const Text('Salva in Inbox'),
+              subtitle: const Text('Da organizzare in un secondo momento.'),
+              onTap: () => Navigator.pop(sheetContext, 'inbox'),
+            ),
+          ListTile(
+            leading: const Icon(Icons.auto_stories_outlined),
+            title: const Text('Salva nel diario di oggi'),
+            subtitle: Text(
+              capture.hasImage
+                  ? 'Importa la foto come ricordo del giorno.'
+                  : 'Crea una normale nota del diario.',
+            ),
+            onTap: () => Navigator.pop(sheetContext, 'diary'),
+          ),
+          ListTile(
+            leading: const Icon(Icons.close),
+            title: const Text('Annulla'),
+            onTap: () => Navigator.pop(sheetContext, 'cancel'),
+          ),
+        ],
+      ),
+    ),
+  );
+
+  if (destination == null || destination == 'cancel') {
+    if (capture.hasImage) {
+      await ShareCaptureService.instance.discardImage(capture.imageToken);
+    }
+    return;
+  }
+
+  if (destination == 'inbox') {
+    if (preview.isNotEmpty) {
+      await store.addInboxEntry(preview);
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Contenuto condiviso salvato in Inbox.')),
+        );
+      }
+    }
+    return;
+  }
+
+  final now = DateTime.now();
+  final day = DateTime(now.year, now.month, now.day);
+  final journal = store.journal(day);
+
+  if (!capture.hasImage) {
+    final text = await showDiaryNoteEditor(
+      context,
+      initialText: preview,
+    );
+    if (text == null || text.trim().isEmpty) return;
+    await store.saveJournal(
+      day,
+      journal.copyWith(
+        blocks: [
+          ...journal.blocks,
+          DiaryBlock(
+            id: const Uuid().v4(),
+            type: DiaryBlockType.note,
+            createdAt: now,
+            text: text.trim(),
+          ),
+        ],
+      ),
+    );
+    if (context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Contenuto aggiunto al diario di oggi.')),
+      );
+    }
+    return;
+  }
+
+  final rawBytes = await ShareCaptureService.instance.consumeImageBytes(
+    capture.imageToken,
+  );
+  if (rawBytes == null || rawBytes.isEmpty) {
+    if (context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Non riesco a leggere la foto condivisa.')),
+      );
+    }
+    return;
+  }
+
+  final imageBytes = await _compressDiaryImageBytes(rawBytes);
+  if (!context.mounted) return;
+  final caption = await showDiaryCaptionEditor(
+    context,
+    initialText: preview,
+    adding: true,
+  );
+  if (caption == null) return;
+
+  final mediaAssetId = await MediaAssetStore.instance.put(imageBytes);
+  final mediaThumbnailAssetId = await MediaAssetStore.instance.put(
+    await _diaryThumbnailBytes(imageBytes),
+  );
+  await store.saveJournal(
+    day,
+    journal.copyWith(
+      blocks: [
+        ...journal.blocks,
+        DiaryBlock(
+          id: const Uuid().v4(),
+          type: DiaryBlockType.photo,
+          createdAt: now,
+          text: caption.trim(),
+          mediaAssetId: mediaAssetId,
+          mediaThumbnailAssetId: mediaThumbnailAssetId,
+        ),
+      ],
+    ),
+  );
+  if (context.mounted) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Foto condivisa salvata nel diario di oggi.')),
+    );
+  }
+}
+
 Future<void> _showQuickCapture(
   BuildContext context,
   AgendaStore store,
