@@ -72,7 +72,7 @@ void main() {
 
   test('v0.65 release metadata is aligned', () {
     final pubspec = File('pubspec.yaml').readAsStringSync();
-    expect(appReleaseVersion, '0.66.0');
-    expect(pubspec, contains('version: 0.66.0+76'));
+    expect(appReleaseVersion, '0.67.0');
+    expect(pubspec, contains('version: 0.67.0+77'));
   });
 }
