@@ -658,6 +658,16 @@ class _PeopleScreenState extends State<PeopleScreen> {
         ),
         actions: [
           IconButton(
+            tooltip: 'Luoghi',
+            onPressed: () => Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => PlacesScreen(store: widget.store),
+              ),
+            ),
+            icon: const Icon(Icons.place_outlined),
+          ),
+          IconButton(
             tooltip: 'Compleanni',
             onPressed: () => Navigator.push(
               context,
