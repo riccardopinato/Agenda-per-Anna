@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:agenda_per_anna/app_version.dart';
 import 'package:agenda_per_anna/main.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:intl/date_symbol_data_local.dart';
 
 void main() {
   test('v0.66 OCR metadata is backward compatible and portable', () {
@@ -27,7 +28,8 @@ void main() {
     expect(restored.ocrScanned, isTrue);
   });
 
-  test('v0.66 deterministic search includes recognized photo text', () {
+  test('v0.66 deterministic search includes recognized photo text', () async {
+    await initializeDateFormatting('it_IT', null);
     final store = AgendaStore();
     store.journals['2026-09-27'] = DayJournal(
       blocks: [
