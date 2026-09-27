@@ -154,6 +154,7 @@ class SharedSpaceRecord {
   final String spaceId;
   final String ownerId;
   final String? updatedBy;
+  final String ownerId;
   final String entityType;
   final String entityId;
   final Map<String, dynamic>? payload;
@@ -165,6 +166,7 @@ class SharedSpaceRecord {
     required this.spaceId,
     required this.ownerId,
     required this.updatedBy,
+    required this.ownerId,
     required this.entityType,
     required this.entityId,
     required this.payload,
@@ -178,6 +180,7 @@ class SharedSpaceRecord {
         spaceId: json['space_id'] as String,
         ownerId: json['owner_id'] as String,
         updatedBy: json['updated_by'] as String?,
+        ownerId: json['owner_id'] as String,
         entityType: json['entity_type'] as String,
         entityId: json['entity_id'] as String,
         payload: json['payload'] == null
@@ -277,6 +280,7 @@ class SharedMemberRead {
 
 class SharedRealtimeRecordChange {
   final String spaceId;
+  final String ownerId;
   final String entityType;
   final String entityId;
   final Map<String, dynamic>? payload;
@@ -286,6 +290,7 @@ class SharedRealtimeRecordChange {
 
   const SharedRealtimeRecordChange({
     required this.spaceId,
+    required this.ownerId,
     required this.entityType,
     required this.entityId,
     required this.payload,
@@ -302,6 +307,7 @@ class SharedRealtimeRecordChange {
     final source = newRecord.isNotEmpty ? newRecord : oldRecord;
     return SharedRealtimeRecordChange(
       spaceId: source['space_id']?.toString() ?? fallbackSpaceId,
+      ownerId: source['owner_id']?.toString() ?? '',
       entityType: source['entity_type']?.toString() ?? '',
       entityId: source['entity_id']?.toString() ?? '',
       payload: source['payload'] is Map
