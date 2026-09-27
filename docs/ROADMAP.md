@@ -19,7 +19,7 @@ Source of truth for the active product sequence after v0.52. The roadmap follows
 | v0.62.1 | Generic Profile Default | Completed | Neutral first-run name field with preserved existing personalization |
 | v0.63 | Creative & Reminder Upgrade | Completed | 16-color Sketchbook palette plus safe agenda notification actions using existing engines |
 | v0.64 | Capture & Writing | Completed | Native Android share-to-diary/Inbox plus distraction-reduced diary writing |
-| v0.65 | Noi ♡ Permissions Lite | Approved | Simple server-enforced edit/read-only control for shared creative memories |
+| v0.65 | Noi ♡ Permissions Lite | In validation | Simple server-enforced edit/read-only control for shared creative memories |
 | v0.66 | Smart Media Search | Approved | Local on-device OCR for diary photos integrated into deterministic search |
 
 ## Permanent constraints for this sequence
@@ -214,3 +214,20 @@ Per the active development cadence, AppLab runs once every two feature versions.
 - Reuse the existing photo model, MediaAssetStore and deterministic global search.
 - OCR failure must never block saving/viewing the photo.
 - No generative AI, semantic embeddings or document-scanner workspace are part of this release.
+
+
+## v0.65 acceptance criteria
+
+- The approved **Noi ♡ Permissions Lite** idea extends the existing shared-space engine instead of creating team/workspace ACL infrastructure.
+- New shared Note / Photo / Sketch entries keep collaborative editing by default and store a stable edit owner.
+- The edit owner can choose **Tutti nello spazio** or **Solo io**.
+- A member without edit permission can still view the memory, comment, react and participate in read receipts.
+- Read-only users do not receive edit, caption-replace or delete controls for the protected creative memory.
+- Legacy payloads without permission fields remain collaborative.
+- Permission metadata survives shared cache, offline queue, media upload retry and remote round-trip.
+- PostgreSQL blocks unauthorized update/delete of restricted shared entries even if a client bypasses Flutter.
+- Shared-media Storage update/delete policies enforce the same restriction for photo objects.
+- No enterprise role matrix, new ACL table or parallel sync engine is introduced.
+- Production Supabase contains both v0.65 permission migrations.
+- Release metadata is aligned to v0.65.0+75.
+- Development, Web, Android size audit and AppLab Trusted Verify must all pass before merge.
