@@ -3075,6 +3075,7 @@ class AgendaStore extends ChangeNotifier {
                   record.payload!,
                   updatedBy: record.updatedBy,
                   updatedAt: record.clientUpdatedAt,
+                  creatorId: record.ownerId,
                 ),
               );
             }
@@ -3101,6 +3102,7 @@ class AgendaStore extends ChangeNotifier {
               operation.payload!,
               updatedBy: ownerId,
               updatedAt: operation.updatedAt,
+              creatorId: operation.payload!['creatorId']?.toString() ?? ownerId,
               mediaThumbnailAssetId:
                   operation.payload!['_mediaThumbnailAssetId']
                           ?.toString() ??
@@ -3257,6 +3259,7 @@ class AgendaStore extends ChangeNotifier {
             change.payload!,
             updatedBy: change.updatedBy,
             updatedAt: change.clientUpdatedAt,
+            creatorId: change.ownerId,
           ),
         ),
       );
