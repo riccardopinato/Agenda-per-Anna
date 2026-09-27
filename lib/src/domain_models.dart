@@ -784,6 +784,8 @@ class DiaryBlock {
   final String audioBase64;
   final String mediaAssetId;
   final String mediaThumbnailAssetId;
+  final String ocrText;
+  final bool ocrScanned;
   final int audioDurationMs;
   final String audioMimeType;
   final bool pinned;
@@ -802,6 +804,8 @@ class DiaryBlock {
     this.audioBase64 = '',
     this.mediaAssetId = '',
     this.mediaThumbnailAssetId = '',
+    this.ocrText = '',
+    this.ocrScanned = false,
     this.audioDurationMs = 0,
     this.audioMimeType = 'audio/mp4',
     this.pinned = false,
@@ -826,6 +830,8 @@ class DiaryBlock {
     String? audioBase64,
     String? mediaAssetId,
     String? mediaThumbnailAssetId,
+    String? ocrText,
+    bool? ocrScanned,
     int? audioDurationMs,
     String? audioMimeType,
     bool? pinned,
@@ -845,6 +851,8 @@ class DiaryBlock {
         mediaAssetId: mediaAssetId ?? this.mediaAssetId,
         mediaThumbnailAssetId:
             mediaThumbnailAssetId ?? this.mediaThumbnailAssetId,
+        ocrText: ocrText ?? this.ocrText,
+        ocrScanned: ocrScanned ?? this.ocrScanned,
         audioDurationMs: audioDurationMs ?? this.audioDurationMs,
         audioMimeType: audioMimeType ?? this.audioMimeType,
         pinned: pinned ?? this.pinned,
@@ -864,6 +872,8 @@ class DiaryBlock {
         'audioBase64': audioBase64,
         'mediaAssetId': mediaAssetId,
         'mediaThumbnailAssetId': mediaThumbnailAssetId,
+        'ocrText': ocrText,
+        'ocrScanned': ocrScanned,
         'audioDurationMs': audioDurationMs,
         'audioMimeType': audioMimeType,
         'pinned': pinned,
@@ -896,6 +906,8 @@ class DiaryBlock {
         mediaAssetId: json['mediaAssetId'] as String? ?? '',
         mediaThumbnailAssetId:
             json['mediaThumbnailAssetId'] as String? ?? '',
+        ocrText: json['ocrText'] as String? ?? '',
+        ocrScanned: json['ocrScanned'] as bool? ?? false,
         audioDurationMs: (json['audioDurationMs'] as num? ?? 0).toInt(),
         audioMimeType: json['audioMimeType'] as String? ?? 'audio/mp4',
         pinned: json['pinned'] as bool? ?? false,

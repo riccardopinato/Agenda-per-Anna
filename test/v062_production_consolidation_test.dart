@@ -9,8 +9,8 @@ void main() {
     final pubspec = File('pubspec.yaml').readAsStringSync();
     final roadmap = File('docs/ROADMAP.md').readAsStringSync();
 
-    expect(appReleaseVersion, '0.65.0');
-    expect(pubspec, contains('version: 0.65.0+75'));
+    expect(appReleaseVersion, '0.66.0');
+    expect(pubspec, contains('version: 0.66.0+76'));
 
     const forbiddenDependencies = <String>[
       'openai',

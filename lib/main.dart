@@ -23,6 +23,7 @@ import 'app_version.dart';
 import 'backup_service.dart';
 import 'cloud_sync_service.dart';
 import 'notification_service.dart';
+import 'photo_ocr_service.dart';
 import 'local_state_store.dart';
 import 'media_asset_store.dart';
 import 'push_notification_service.dart';
@@ -215,6 +216,13 @@ Future<void> main() async {
       }
     } catch (_) {
       // La condivisione esterna è opzionale e non deve bloccare l'avvio.
+    }
+
+    try {
+      await Future<void>.delayed(const Duration(milliseconds: 700));
+      await store.ensurePhotoOcrIndexed(maxPerPass: 8);
+    } catch (_) {
+      // OCR è una derivazione opzionale: foto e diario restano disponibili.
     }
 
     try {

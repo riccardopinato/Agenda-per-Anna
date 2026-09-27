@@ -2,7 +2,7 @@
 
 Flutter app for personal planning, private diary and the shared **Noi ♡** space.
 
-Current release line: **v0.65.0**.
+Current release line: **v0.66.0**.
 
 ## Core areas
 
@@ -392,3 +392,17 @@ See `docs/ARCHITECTURE.md` and `supabase/README.md` for implementation details.
 - Media upload retry queues preserve permission metadata across offline/retry flows.
 - Live Supabase migrations noi_permissions_lite_v065 and noi_permissions_media_v065 are applied to the production project.
 - No generative AI or new collaboration role hierarchy is introduced.
+
+
+## v0.66.0 — Smart Media Search
+
+- Private diary photos gain **local on-device OCR** on Android using the bundled Google ML Kit Latin text recognizer; no server upload or generative model is required for recognition.
+- Recognized text is stored only as derived metadata on the existing DiaryBlock photo. The original image remains the source of truth and the existing MediaAssetStore remains the only photo store.
+- New photos are indexed automatically after ordinary journal persistence. Recent legacy photos are backfilled opportunistically after startup, and the Search screen can continue indexing additional photos.
+- Empty OCR results are remembered as successfully scanned so photos without text are not processed repeatedly.
+- Replacing a photo invalidates its old OCR metadata and automatically schedules fresh recognition.
+- OCR metadata follows the existing journal payload through local persistence, private cloud sync, backup/restore, Trash recovery and account isolation.
+- The existing deterministic multi-word search now includes OCR text, so a word visible only inside a photo can surface that diary memory.
+- Web remains fully functional; OCR recognition itself is an Android enhancement, while OCR metadata already synced from Android remains searchable as ordinary journal metadata.
+- OCR failures never block photo saving, viewing or diary usage.
+- No semantic embeddings, remote OCR service, document scanner or generative AI is introduced.
