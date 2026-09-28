@@ -12,6 +12,10 @@ void main() {
 
     expect(match, isNotNull);
     final packageVersion = match!.group(1)!;
-    expect(packageVersion, startsWith('$appReleaseVersion+'));
+    expect(
+      packageVersion,
+      '$appReleaseVersion+$appReleaseBuildNumber',
+      reason: 'pubspec.yaml must match the single runtime release metadata source',
+    );
   });
 }
