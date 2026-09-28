@@ -80,8 +80,20 @@ void main() {
 
     expect(
       agendaSource,
-      contains('remoteDeleted != localDeleted'),
+      contains('remoteDeleted && !localDeleted'),
       reason: 'Private sync must explicitly distinguish tombstones from edits.',
+    );
+    expect(
+      agendaSource,
+      contains('_explicitRestoreKeys.contains(record.localKey)'),
+      reason:
+          'An intentional Trash restore must be distinguishable from a stale offline edit.',
+    );
+    expect(
+      lifecycleSource,
+      contains('await _markExplicitRestoreIntent(restoreTarget.$1, restoreTarget.$2);'),
+      reason:
+          'Restoring from Trash must persist explicit restore intent before cloud reconciliation.',
     );
     expect(
       agendaSource,
