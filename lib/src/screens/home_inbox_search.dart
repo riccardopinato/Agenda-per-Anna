@@ -375,8 +375,7 @@ class HomeScreen extends StatelessWidget {
                 title: 'Allenamento',
                 subtitle: store.trainingSessions.isEmpty
                     ? 'Corsa, bici, palestra e altri sport'
-                    : store.trainingSessions.length.toString() +
-                        ' sessioni · piani e schede',
+                    : '${store.trainingSessions.length} sessioni · piani e schede',
                 onTap: () => Navigator.push(
                   context,
                   MaterialPageRoute(
