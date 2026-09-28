@@ -25,6 +25,9 @@ void main() {
       () async {
     final store = AgendaStore();
     await store.load();
+    await store.activateCloudAccount(
+      '11111111-1111-4111-8111-111111111111',
+    );
 
     const spaceId = 'space-v067';
     const entryId = 'entry-v067';
