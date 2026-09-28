@@ -2020,6 +2020,13 @@ class AgendaStore extends ChangeNotifier {
           ),
         )
         .toList();
+    final incomingTraining = (payload['training'] as List? ?? const [])
+        .map(
+          (e) => TrainingEntry.fromJson(
+            Map<String, dynamic>.from(e as Map),
+          ),
+        )
+        .toList();
     final incomingTrash = <TrashEntry>[];
     for (final rawEntry in payload['trash'] as List? ?? const []) {
       if (rawEntry is! Map) continue;
@@ -2049,6 +2056,7 @@ class AgendaStore extends ChangeNotifier {
     final previousPeople = List<PersonEntry>.from(people);
     final previousInbox = List<InboxEntry>.from(inbox);
     final previousShopping = List<ShoppingItem>.from(shoppingItems);
+    final previousTraining = List<TrainingEntry>.from(trainingEntries);
     final previousTrash = List<TrashEntry>.from(trash);
     final previousPreferences = preferences;
 
@@ -2112,6 +2120,16 @@ class AgendaStore extends ChangeNotifier {
           ..clear()
           ..addAll(shoppingById.values);
 
+        final trainingById = {
+          for (final entry in trainingEntries) entry.id: entry,
+        };
+        for (final entry in incomingTraining) {
+          trainingById[entry.id] = entry;
+        }
+        trainingEntries
+          ..clear()
+          ..addAll(trainingById.values);
+
         final trashById = {for (final entry in trash) entry.id: entry};
         for (final entry in incomingTrash) {
           trashById[entry.id] = entry;
@@ -2147,6 +2165,9 @@ class AgendaStore extends ChangeNotifier {
         shoppingItems
           ..clear()
           ..addAll(incomingShopping);
+        trainingEntries
+          ..clear()
+          ..addAll(incomingTraining);
         trash
           ..clear()
           ..addAll(incomingTrash);
@@ -2207,6 +2228,9 @@ class AgendaStore extends ChangeNotifier {
       shoppingItems
         ..clear()
         ..addAll(previousShopping);
+      trainingEntries
+        ..clear()
+        ..addAll(previousTraining);
       trash
         ..clear()
         ..addAll(previousTrash);
