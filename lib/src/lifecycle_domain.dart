@@ -673,6 +673,19 @@ extension AgendaStoreLifecycle on AgendaStore {
     ));
     await _persistEntityMutations(mutations);
 
+    final restoreTarget = switch (localized.kind) {
+      TrashEntityKind.item => ('item', localized.entityId),
+      TrashEntityKind.birthday => ('birthday', localized.entityId),
+      TrashEntityKind.person => ('person', localized.entityId),
+      TrashEntityKind.inbox => ('inbox', localized.entityId),
+      TrashEntityKind.diaryBlock => ('journal', localized.parentId!),
+      TrashEntityKind.journal => ('journal', localized.entityId),
+      TrashEntityKind.month => ('month', localized.entityId),
+      TrashEntityKind.week => ('week', localized.entityId),
+      TrashEntityKind.habit => ('habit', localized.entityId),
+    };
+    await _markExplicitRestoreIntent(restoreTarget.$1, restoreTarget.$2);
+
     if (reminderItem != null) {
       await _syncReminders(reminderItem);
     }
