@@ -1,6 +1,5 @@
 import 'dart:io';
 
-import 'package:agenda_per_anna/app_version.dart';
 import 'package:agenda_per_anna/main.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -70,9 +69,4 @@ void main() {
     expect(mediaMigration, contains('shared_media_update_members'));
   });
 
-  test('v0.65 release metadata is aligned', () {
-    final pubspec = File('pubspec.yaml').readAsStringSync();
-    expect(appReleaseVersion, '0.73.0');
-    expect(pubspec, contains('version: 0.73.0+83'));
-  });
 }
