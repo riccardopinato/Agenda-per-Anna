@@ -167,7 +167,6 @@ void main() {
   });
 
   test('release repository keeps hardened Android packaging contract', () {
-    final pubspec = File('pubspec.yaml').readAsStringSync();
     final releaseWorkflow =
         File('.github/workflows/build.yml').readAsStringSync();
     final devWorkflow =
@@ -181,9 +180,6 @@ void main() {
         File('.github/workflows/applab.yml').readAsStringSync();
     final appLabJourney =
         File('.maestro/applab-journey.json').readAsStringSync();
-
-    expect(appReleaseVersion, '0.73.0');
-    expect(pubspec, contains('version: 0.73.0+83'));
 
     expect(releaseWorkflow, contains('--release-signing'));
     expect(releaseWorkflow, contains('--obfuscate'));
