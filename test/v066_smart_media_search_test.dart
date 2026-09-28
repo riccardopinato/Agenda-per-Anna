@@ -1,6 +1,5 @@
 import 'dart:io';
 
-import 'package:agenda_per_anna/app_version.dart';
 import 'package:agenda_per_anna/main.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:intl/date_symbol_data_local.dart';
@@ -68,9 +67,9 @@ void main() {
     expect(diary, contains('ocrScanned: false'));
   });
 
-  test('v0.66 release metadata is aligned', () {
-    final pubspec = File('pubspec.yaml').readAsStringSync();
-    expect(appReleaseVersion, '0.66.0');
-    expect(pubspec, contains('version: 0.66.0+76'));
+  test('v0.66 Smart Media Search remains documented as a shipped milestone', () {
+    final readme = File('README.md').readAsStringSync();
+    expect(readme, contains('## v0.66.0 — Smart Media Search'));
+    expect(readme, contains('local on-device OCR'));
   });
 }
