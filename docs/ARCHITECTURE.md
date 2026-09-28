@@ -352,3 +352,15 @@ The v0.68–v0.70 cycle deliberately consolidates the personal-memory model with
 - **Lifecycle:** a place reference follows its parent diary memory. Deleting/restoring a block needs no independent place lifecycle.
 - **Compatibility:** missing `places` JSON is interpreted as an empty list, preserving all historical diary payloads.
 - **Regression boundary:** v0.70 adds tests rather than another feature system, locking persistence/reload, backup/restore, Trash/restore, account isolation, search and no-parallel-store invariants.
+
+
+## v0.71 — Shopping List
+
+Shopping is deliberately split only by ownership boundary, not by infrastructure.
+
+- **Private list:** `ShoppingItem` is a small account-scoped entity stored under `shopping_v1` and participates in the same entity-delta/cloud queue used by other private first-class content.
+- **Shared list:** Noi ♡ represents grocery rows as `SharedEntryType.shopping` inside the existing shared JSON payload. No shopping-specific table, RPC or Realtime channel exists.
+- **One UI:** `ShoppingListScreen` renders either the private list or one shared-space list and delegates writes to the corresponding existing persistence path.
+- **Lifecycle:** private deletion uses the global Trash contract; shared deletion uses the established collaborative tombstone semantics.
+- **Backup/account:** the private shopping collection is captured by ordinary account profiles, safety snapshots and JSON/ZIP backup/restore.
+- **Derived convenience:** automatic categories and frequent-item suggestions are local deterministic projections over the canonical item payload.

@@ -2,7 +2,7 @@
 
 Flutter app for personal planning, private diary and the shared **Noi ♡** space.
 
-Current release line: **v0.70.0**.
+Current release line: **v0.71.0**.
 
 ## Core areas
 
@@ -449,3 +449,14 @@ See `docs/ARCHITECTURE.md` and `supabase/README.md` for implementation details.
 - Regression coverage verifies legacy compatibility, persistence/restart, backup/restore, Trash/restore, account isolation and deterministic search for place-linked memories.
 - Architecture assertions prevent reintroduction of duplicate memory-record classes and parallel Places/Memory persistence keys.
 - Existing lifecycle, private sync, media, backup, search and account-profile infrastructure remains authoritative.
+
+
+## v0.71.0 — Shopping List
+
+- Adds a low-friction personal shopping list without turning Anna's Diary into a task manager.
+- Private shopping items support name, optional quantity, deterministic local category suggestion, bought state, manual ordering and frequently purchased shortcuts.
+- Private items reuse the existing entity-delta persistence, account profiles, cloud reconciliation, JSON/ZIP backup and Trash lifecycle.
+- Deleting a private shopping item moves it to the existing Cestino and restores it losslessly.
+- **Noi ♡** exposes a dedicated shared shopping list by reusing the existing generic `SharedEntry` payload, offline pending queue, Realtime refresh and tombstone conflict rules.
+- Shared shopping stays outside the agenda/feed so grocery changes do not pollute the couple timeline.
+- No shopping backend table, new collaboration engine, AI service or external API is introduced.
