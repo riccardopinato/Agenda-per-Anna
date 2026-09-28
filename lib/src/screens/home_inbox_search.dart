@@ -73,7 +73,6 @@ class HomeScreen extends StatelessWidget {
       ]),
       builder: (context, _) {
         unawaited(HomeWidgetBridge.instance.sync(store));
-        final today = agendaEntriesForDayWithExternal(store, now);
         final upcoming = store.unifiedUpcoming(now);
         final briefing = store.dayHubSnapshot(now);
         final birthdayPreview = store.upcomingBirthdays(from: now, limit: 1);
@@ -322,18 +321,19 @@ class HomeScreen extends StatelessWidget {
                     ),
               ],
               const SizedBox(height: 24),
-              const SectionTitle('Oggi'),
-              const SizedBox(height: 10),
-              if (today.isEmpty)
-                const SimpleCard(child: Text('Nessun impegno per oggi.'))
-              else
-                ...today.take(5).map(
-                  (e) => UnifiedAgendaTile(
-                    store: store,
-                    entry: e,
-                    hideDetails: store.preferences.hideHomeDetails,
+              _DayLifeOverviewCard(
+                snapshot: briefing,
+                hideDetails: store.preferences.hideHomeDetails,
+                onOpenDay: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => PlannerScreen(
+                      store: store,
+                      initialDate: now,
+                    ),
                   ),
                 ),
+              ),
               const SizedBox(height: 14),
               _TodayWellbeingCard(store: store, date: now),
               const SizedBox(height: 24),
