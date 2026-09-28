@@ -24,6 +24,7 @@ class AgendaStore extends ChangeNotifier {
   static const _sharedSyncCursorPrefix = 'cloud_shared_cursor_v2_';
   static const _sharedMediaDeleteRetryPrefix = 'shared_media_delete_retry_v1_';
   static const _webReminderDeleteRetryPrefix = 'web_reminder_delete_retry_v1_';
+  static const _restoreIntentPrefix = 'cloud_restore_intents_v1_';
   static const _backupFormat = 'agenda_per_anna_backup';
   static const _backupBundleFormat = 'agenda_per_anna_backup_bundle';
   static const _backupSchemaVersion = 1;
@@ -43,6 +44,7 @@ class AgendaStore extends ChangeNotifier {
   final List<TrashEntry> trash = [];
   final Map<String, CloudSyncOperation> _syncQueue = {};
   final Map<String, String> _syncIndex = {};
+  final Set<String> _explicitRestoreKeys = <String>{};
   final Map<String, List<AgendaItem>> _dayIndex = {};
   final Map<String, SharedSpace> _sharedAgendaSpaces = {};
   final Map<String, List<SharedEntry>> _sharedAgendaEntriesBySpace = {};
@@ -165,6 +167,45 @@ class AgendaStore extends ChangeNotifier {
 
   String _privateSyncCursorKey(String ownerId) =>
       '$_privateSyncCursorPrefix${_entityScopeToken(ownerId)}';
+
+  String _restoreIntentStorageKey(String ownerId) =>
+      '$_restoreIntentPrefix${_entityScopeToken(ownerId)}';
+
+  Future<void> _persistExplicitRestoreIntents() async {
+    final ownerId = _activeAccountId;
+    if (ownerId == null) return;
+    final prefs = await _localState();
+    final key = _restoreIntentStorageKey(ownerId);
+    if (_explicitRestoreKeys.isEmpty) {
+      await prefs.remove(key);
+    } else {
+      await prefs.setString(
+        key,
+        jsonEncode(_explicitRestoreKeys.toList()..sort()),
+      );
+    }
+  }
+
+  Future<void> _markExplicitRestoreIntent(
+    String entityType,
+    String entityId,
+  ) async {
+    if (_activeAccountId == null || entityType.isEmpty || entityId.isEmpty) {
+      return;
+    }
+    _explicitRestoreKeys.add('$entityType:$entityId');
+    await _persistExplicitRestoreIntents();
+  }
+
+  Future<void> _clearExplicitRestoreIntents(Iterable<String> keys) async {
+    var changed = false;
+    for (final key in keys) {
+      changed = _explicitRestoreKeys.remove(key) || changed;
+    }
+    if (changed) {
+      await _persistExplicitRestoreIntents();
+    }
+  }
 
   String _sharedSyncCursorKey(String spaceId) =>
       '$_sharedSyncCursorPrefix${_entityScopeToken(_activeAccountId)}:'
@@ -1040,6 +1081,23 @@ class AgendaStore extends ChangeNotifier {
     trash.clear();
     _syncQueue.clear();
     _syncIndex.clear();
+    _explicitRestoreKeys.clear();
+    final restoreOwner = _activeAccountId;
+    if (restoreOwner != null) {
+      final rawRestoreIntents =
+          prefs.getString(_restoreIntentStorageKey(restoreOwner));
+      if (rawRestoreIntents != null) {
+        try {
+          _explicitRestoreKeys.addAll(
+            (jsonDecode(rawRestoreIntents) as List)
+                .map((value) => value.toString())
+                .where((value) => value.contains(':')),
+          );
+        } catch (_) {
+          _unreadableStorageKeys.add(_restoreIntentStorageKey(restoreOwner));
+        }
+      }
+    }
     _sharedAgendaSpaces.clear();
     _sharedAgendaEntriesBySpace.clear();
     _sharedAgendaDayIndex.clear();
@@ -1469,6 +1527,7 @@ class AgendaStore extends ChangeNotifier {
     final scopedExactKeys = <String>{
       '$_privateSyncCursorPrefix$scopeToken',
       '$_webReminderDeleteRetryPrefix$scopeToken',
+      '$_restoreIntentPrefix$scopeToken',
       'shared_spaces_$ownerId',
       'shared_unread_$ownerId',
       'cloud_first_sync_snapshot_$ownerId',
@@ -2739,17 +2798,32 @@ class AgendaStore extends ChangeNotifier {
         final forceRemote = preferRemoteOnFirstSync && firstSyncForOwner;
         final remoteDeleted = record.deletedAt != null;
         final localDeleted = localOp?.deleted == true;
-        final remoteWins = forceRemote ||
-            localOp == null ||
-            (remoteDeleted != localDeleted
-                ? remoteDeleted
-                : !localOp.updatedAt.isAfter(record.clientUpdatedAt));
+        final explicitRestore =
+            localOp != null && _explicitRestoreKeys.contains(record.localKey);
+
+        final bool remoteWins;
+        if (forceRemote || localOp == null) {
+          remoteWins = true;
+        } else if (remoteDeleted && !localDeleted) {
+          // A tombstone defeats a normal offline edit, but an explicit Trash
+          // restore is allowed to revive the entity when its revision is newer.
+          remoteWins = explicitRestore
+              ? !localOp.updatedAt.isAfter(record.clientUpdatedAt)
+              : true;
+        } else if (!remoteDeleted && localDeleted) {
+          remoteWins = false;
+        } else {
+          remoteWins = !localOp.updatedAt.isAfter(record.clientUpdatedAt);
+        }
 
         if (!remoteWins) continue;
 
         final changed = await _applyRemoteRecord(record);
         remoteChanged = remoteChanged || changed;
         _syncQueue.remove(record.localKey);
+        if (explicitRestore) {
+          await _clearExplicitRestoreIntents([record.localKey]);
+        }
         appliedRemote.add(record);
       }
 
@@ -2834,14 +2908,17 @@ class AgendaStore extends ChangeNotifier {
         return;
       }
 
+      final pushedKeys = <String>[];
       for (final entry in pendingSnapshot.entries) {
         final current = _syncQueue[entry.key];
         if (current != null &&
             current.updatedAt == entry.value.updatedAt &&
             current.ownerId == entry.value.ownerId) {
           _syncQueue.remove(entry.key);
+          pushedKeys.add(entry.key);
         }
       }
+      await _clearExplicitRestoreIntents(pushedKeys);
 
       await _persistSyncMetadata(
         prefs,
