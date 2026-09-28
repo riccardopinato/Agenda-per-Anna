@@ -114,6 +114,27 @@ void main() {
     expect(cleanup, greaterThan(children));
   });
 
+  test('v0.67 preserves deterministic private delete-edit reconciliation', () {
+    final store = File('lib/src/agenda_store.dart').readAsStringSync();
+    final merge = File(
+      'supabase/migrations/'
+      '20260921155617_deterministic_record_merge_v0161.sql',
+    ).readAsStringSync();
+
+    expect(
+      store,
+      contains(
+        '!localOp.updatedAt.isAfter(record.clientUpdatedAt)',
+      ),
+    );
+    expect(
+      merge,
+      contains(
+        'excluded.client_updated_at > agenda_records.client_updated_at',
+      ),
+    );
+  });
+
   test('v0.67 shared delete persists child cache removal', () {
     final screen =
         File('lib/src/screens/shared_space.dart').readAsStringSync();
