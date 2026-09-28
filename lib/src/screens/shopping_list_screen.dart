@@ -418,14 +418,11 @@ class _ShoppingListScreenState extends State<ShoppingListScreen> {
                     shared: widget.shared,
                   ),
                 ),
-                if (_frequentChips(context) case final frequent
-                    when frequent is! SizedBox) ...[
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
-                    child: frequent,
-                  ),
-                  const SizedBox(height: 8),
-                ],
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: _frequentChips(context),
+                ),
+                const SizedBox(height: 8),
                 Padding(
                   padding: const EdgeInsets.fromLTRB(16, 4, 16, 10),
                   child: Row(
