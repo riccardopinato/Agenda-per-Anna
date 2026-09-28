@@ -2812,6 +2812,17 @@ class AgendaStore extends ChangeNotifier {
               : true;
         } else if (!remoteDeleted && localDeleted) {
           remoteWins = false;
+          if (!localOp.updatedAt.isAfter(record.clientUpdatedAt)) {
+            _syncQueue[record.localKey] = CloudSyncOperation(
+              entityType: localOp.entityType,
+              entityId: localOp.entityId,
+              payload: localOp.payload,
+              updatedAt:
+                  record.clientUpdatedAt.add(const Duration(microseconds: 1)),
+              deleted: true,
+              ownerId: localOp.ownerId,
+            );
+          }
         } else {
           remoteWins = !localOp.updatedAt.isAfter(record.clientUpdatedAt);
         }
