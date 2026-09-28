@@ -11,6 +11,7 @@ class AgendaStore extends ChangeNotifier {
   static const _snapshotsKey = 'backup_snapshots_v1';
   static const _preferencesKey = 'agenda_preferences_v1';
   static const _inboxKey = 'inbox_v1';
+  static const _shoppingKey = 'shopping_v1';
   static const _syncQueueKey = 'cloud_sync_queue_v1';
   static const _syncIndexKey = 'cloud_sync_index_v1';
   static const _syncOwnerKey = 'cloud_sync_owner_v1';
@@ -41,6 +42,7 @@ class AgendaStore extends ChangeNotifier {
   final List<PersonEntry> people = [];
   final List<LocalBackupSnapshot> localSnapshots = [];
   final List<InboxEntry> inbox = [];
+  final List<ShoppingItem> shoppingItems = [];
   final List<TrashEntry> trash = [];
   final Map<String, CloudSyncOperation> _syncQueue = {};
   final Map<String, String> _syncIndex = {};
@@ -112,6 +114,7 @@ class AgendaStore extends ChangeNotifier {
   ValueListenable<int> get planningRevision => signals.planning;
   ValueListenable<int> get sharedRevision => signals.shared;
   ValueListenable<int> get inboxRevision => signals.inbox;
+  ValueListenable<int> get shoppingRevision => signals.shopping;
   ValueListenable<int> get settingsRevision => signals.settings;
   ValueListenable<int> get backupRevision => signals.backup;
   ValueListenable<int> get lifecycleRevision => signals.lifecycle;
@@ -121,6 +124,11 @@ class AgendaStore extends ChangeNotifier {
       ..sort((a, b) => a.createdAt.compareTo(b.createdAt));
     return List<SharedSpace>.unmodifiable(result);
   }
+
+  List<SharedEntry> sharedEntriesForSpace(String spaceId) =>
+      List<SharedEntry>.unmodifiable(
+        _sharedAgendaEntriesBySpace[spaceId] ?? const <SharedEntry>[],
+      );
 
   List<UnifiedAgendaEntry> get unifiedAgendaItems {
     _ensureUnifiedAgendaCache();
@@ -143,6 +151,7 @@ class AgendaStore extends ChangeNotifier {
         _snapshotsKey,
         _preferencesKey,
         _inboxKey,
+        _shoppingKey,
         _trashKey,
         _syncQueueKey,
         _syncIndexKey,
@@ -325,6 +334,11 @@ class AgendaStore extends ChangeNotifier {
     notifyListeners();
   }
 
+  void _notifyShoppingChanged() {
+    signals.bumpShopping();
+    notifyListeners();
+  }
+
   void _notifySettingsChanged() {
     signals.bumpSettings();
     notifyListeners();
@@ -443,6 +457,16 @@ class AgendaStore extends ChangeNotifier {
             if (!deleted && payload is Map) {
               inbox.add(
                 InboxEntry.fromJson(
+                  Map<String, dynamic>.from(payload),
+                ),
+              );
+            }
+            break;
+          case 'shopping':
+            shoppingItems.removeWhere((entry) => entry.id == id);
+            if (!deleted && payload is Map) {
+              shoppingItems.add(
+                ShoppingItem.fromJson(
                   Map<String, dynamic>.from(payload),
                 ),
               );
@@ -604,6 +628,11 @@ class AgendaStore extends ChangeNotifier {
         return null;
       case 'inbox':
         for (final entry in inbox) {
+          if (entry.id == id) return entry.toJson();
+        }
+        return null;
+      case 'shopping':
+        for (final entry in shoppingItems) {
           if (entry.id == id) return entry.toJson();
         }
         return null;
@@ -1078,6 +1107,7 @@ class AgendaStore extends ChangeNotifier {
     people.clear();
     localSnapshots.clear();
     inbox.clear();
+    shoppingItems.clear();
     trash.clear();
     _syncQueue.clear();
     _syncIndex.clear();
@@ -1270,6 +1300,18 @@ class AgendaStore extends ChangeNotifier {
     );
     if (parsedInbox != null) inbox.addAll(parsedInbox);
 
+    final parsedShopping = decodeSection<List<ShoppingItem>>(
+      _shoppingKey,
+      (value) => (value as List)
+          .map(
+            (e) => ShoppingItem.fromJson(
+              Map<String, dynamic>.from(e as Map),
+            ),
+          )
+          .toList(),
+    );
+    if (parsedShopping != null) shoppingItems.addAll(parsedShopping);
+
     final parsedTrash = decodeSection<List<TrashEntry>>(
       _trashKey,
       (value) => (value as List)
@@ -1389,6 +1431,8 @@ class AgendaStore extends ChangeNotifier {
         _peopleKey: jsonEncode(people.map((e) => e.toJson()).toList()),
         _preferencesKey: jsonEncode(preferences.toJson()),
         _inboxKey: jsonEncode(inbox.map((e) => e.toJson()).toList()),
+        _shoppingKey:
+            jsonEncode(shoppingItems.map((e) => e.toJson()).toList()),
         _trashKey: jsonEncode(trash.map((e) => e.toJson()).toList()),
         _privacyGuardKey: jsonEncode(_privacyGuardPayload()),
       };
@@ -1403,6 +1447,7 @@ class AgendaStore extends ChangeNotifier {
       _birthdaysKey,
       _peopleKey,
       _inboxKey,
+      _shoppingKey,
       _trashKey,
     ]) {
       final raw = prefs.getString(key);
@@ -1680,6 +1725,11 @@ class AgendaStore extends ChangeNotifier {
         add('inbox', entry.id, entry.toJson());
       }
     }
+    if (includes(_shoppingKey)) {
+      for (final entry in shoppingItems) {
+        add('shopping', entry.id, entry.toJson());
+      }
+    }
     if (includes(_trashKey)) {
       for (final entry in trash) {
         add('trash', entry.id, entry.toJson());
@@ -1704,6 +1754,7 @@ class AgendaStore extends ChangeNotifier {
         'birthday' => _birthdaysKey,
         'person' => _peopleKey,
         'inbox' => _inboxKey,
+        'shopping' => _shoppingKey,
         'trash' => _trashKey,
         'preferences' => _preferencesKey,
         _ => null,
@@ -2995,6 +3046,10 @@ class AgendaStore extends ChangeNotifier {
           final before = inbox.length;
           inbox.removeWhere((e) => e.id == record.entityId);
           return inbox.length != before;
+        case 'shopping':
+          final before = shoppingItems.length;
+          shoppingItems.removeWhere((e) => e.id == record.entityId);
+          return shoppingItems.length != before;
         case 'trash':
           final before = trash.length;
           trash.removeWhere((e) => e.id == record.entityId);
@@ -3111,6 +3166,21 @@ class AgendaStore extends ChangeNotifier {
           inbox.add(incoming);
         } else {
           inbox[index] = incoming;
+        }
+        return true;
+      case 'shopping':
+        final incoming = ShoppingItem.fromJson(payload);
+        final index =
+            shoppingItems.indexWhere((e) => e.id == incoming.id);
+        if (index >= 0 &&
+            _syncPayloadHash(shoppingItems[index].toJson()) ==
+                _syncPayloadHash(incoming.toJson())) {
+          return false;
+        }
+        if (index < 0) {
+          shoppingItems.add(incoming);
+        } else {
+          shoppingItems[index] = incoming;
         }
         return true;
       case 'trash':
