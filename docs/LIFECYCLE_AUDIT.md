@@ -56,3 +56,14 @@ Sign-out preserves the account-scoped local profile so signing back in can recov
 Full account erasure is implemented as a privileged server-side operation. The Flutter client sends an authenticated request only after typed destructive confirmation; the `delete-account` Edge Function verifies the current user, removes affected shared-media objects, and then deletes the Supabase Auth user. Application rows tied to `auth.users` use `ON DELETE CASCADE` or `SET NULL` according to ownership/history semantics.
 
 After the server confirms deletion, the device removes the erased account profile, granular entity deltas, private/shared sync cursors, shared caches and pending queues, clears app notifications and restores the guest working set. The Private Vault remains local-only and separate from cloud account erasure; the confirmation UI states this explicitly.
+
+
+## v0.74 regression lock
+
+v0.74 does not replace the v0.48 lifecycle architecture. It verifies that domains added later continue to obey it.
+
+- Private Shopping, WorkoutSession and WorkoutPlan Trash entries are included in complete backup/restore and remain losslessly restorable.
+- WorkoutSession owns a snapshot of plan name/exercises. Purging or recreating the source WorkoutPlan cannot rewrite past training history.
+- Shared Noi ♡ shopping rows are collaborative entities and therefore continue to use shared tombstones/offline operations instead of private Trash.
+- Android external-calendar events remain outside lifecycle storage because they are read-only projections owned by the system calendar.
+- Release metadata cleanup is part of lifecycle/release maintainability: historical tests verify their feature contract, while one canonical metadata test owns the moving version/build coordinates.
