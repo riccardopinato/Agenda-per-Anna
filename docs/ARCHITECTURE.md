@@ -364,3 +364,15 @@ Shopping is deliberately split only by ownership boundary, not by infrastructure
 - **Lifecycle:** private deletion uses the global Trash contract; shared deletion uses the established collaborative tombstone semantics.
 - **Backup/account:** the private shopping collection is captured by ordinary account profiles, safety snapshots and JSON/ZIP backup/restore.
 - **Derived convenience:** automatic categories and frequent-item suggestions are local deterministic projections over the canonical item payload.
+
+
+## v0.72 — Multisport Training Log
+
+Training is a small first-class private domain, not a gym-specific subsystem.
+
+- `TrainingRecord` represents either a completed session or a saved plan.
+- Sport type is orthogonal to record kind, allowing a saved running plan, cycling plan, gym card or any other program.
+- Canonical session metrics are optional raw values (distance, duration, elevation, calories, RPE); pace/speed are read-time derivations.
+- Palestra exercise details and endurance workout structure share the same editable `details` field rather than introducing a separate exercise database in this release.
+- `training_v1` participates in the existing account-scoped structured storage, entity-delta cloud sync, JSON/ZIP backup and Trash lifecycle.
+- File import is bounded to local text/Markdown and only populates the canonical editable plan text.

@@ -2,7 +2,7 @@
 
 Flutter app for personal planning, private diary and the shared **Noi ♡** space.
 
-Current release line: **v0.71.0**.
+Current release line: **v0.72.0**.
 
 ## Core areas
 
@@ -460,3 +460,14 @@ See `docs/ARCHITECTURE.md` and `supabase/README.md` for implementation details.
 - **Noi ♡** exposes a dedicated shared shopping list by reusing the existing generic `SharedEntry` payload, offline pending queue, Realtime refresh and tombstone conflict rules.
 - Shared shopping stays outside the agenda/feed so grocery changes do not pollute the couple timeline.
 - No shopping backend table, new collaboration engine, AI service or external API is introduced.
+
+
+## v0.72.0 — Multisport Training Log
+
+- Adds one dedicated **Allenamento** section with two internal views: **Registro** and **Schede / Piani**.
+- The activity log is multisport by design: running, cycling, gym, walking, hiking, swimming and custom/other activities share one history and can be filtered by discipline.
+- Sessions support optional distance, duration, elevation, calories, RPE, details/exercises and notes. Running pace and cycling average speed are derived locally when distance + duration are available.
+- Gym sessions can record free-form exercises, sets, reps and loads without forcing the same fields onto endurance sports.
+- Schede/Piani are editable text documents that can be pasted directly or imported from local `.txt` / `.md` files.
+- Training records reuse the existing private entity-delta persistence, account isolation, cloud reconciliation, backup/export and Trash lifecycle.
+- No fitness cloud, wearable dependency, AI model or gym-only data model is introduced.

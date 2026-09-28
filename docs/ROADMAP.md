@@ -26,6 +26,7 @@ Source of truth for the active product sequence after v0.52. The roadmap follows
 | v0.69 | Places Lite | Completed | Lightweight inline place references on diary memories, searchable without a separate Places database |
 | v0.70 | Architecture Regression Gate | Completed | Cross-domain regression lock for memory/place compatibility, lifecycle, backup, account isolation and anti-duplication constraints |
 | v0.71 | Shopping List | Completed | Lightweight private + Noi ♡ grocery list reusing existing local/cloud/shared lifecycle infrastructure |
+| v0.72 | Multisport Training Log | Completed | One standalone training section for plans + running/cycling/gym/walking/hiking/swimming/custom sessions |
 
 ## Permanent constraints for this sequence
 
@@ -325,4 +326,20 @@ Per the active development cadence, AppLab runs once every two feature versions.
 - Shared shopping does not appear as agenda/feed content and introduces no new Supabase table.
 - The same Shopping List screen supports private and shared modes to avoid duplicated UX logic.
 - Release metadata is aligned to v0.71.0+81.
+- Analyze, full tests, Web release, Android size audit and AppLab Trusted Verify must be green before promotion to main.
+
+
+## v0.72 acceptance criteria
+
+- Allenamento is a standalone user-facing section and does not overload diary pages or agenda items.
+- A single TrainingRecord model supports both session history and saved Schede/Piani.
+- Session sport is explicit and supports running, cycling, gym, walking, hiking, swimming and other/custom activity.
+- Distance, duration, elevation, calories and RPE are optional so the same model works for endurance and gym activity.
+- Running pace and cycling average speed are derived locally from canonical distance + duration, never stored as a second source of truth.
+- Gym details may contain exercises/sets/reps/load as free-form editable text.
+- Schede/Piani may be pasted manually or imported from bounded local .txt/.md files and remain editable afterwards.
+- Training records use the existing granular private sync pipeline, account isolation, backup/restore and readable export.
+- Delete uses the existing Trash/recovery contract.
+- No wearable integration, health cloud, AI, secondary training database or gym-only architecture is introduced.
+- Release metadata is aligned to v0.72.0+82.
 - Analyze, full tests, Web release, Android size audit and AppLab Trusted Verify must be green before promotion to main.
