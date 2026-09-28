@@ -404,8 +404,7 @@ class _TrainingScreenState extends State<TrainingScreen> {
                             allowMalformed: true,
                           );
                           detailsController.text = text.trim();
-                          if (titleController.text.trim().isEmpty &&
-                              file != null) {
+                          if (titleController.text.trim().isEmpty) {
                             titleController.text = file.name.replaceFirst(
                               RegExp(
                                 r'\.(txt|md)$',
@@ -513,7 +512,7 @@ class _TrainingScreenState extends State<TrainingScreen> {
     if (pace == null) return '';
     final minutes = pace.inMinutes;
     final seconds = pace.inSeconds.remainder(60);
-    return "${minutes}'${seconds.toString().padLeft(2, '0')}\"/km";
+    return "$minutes'${seconds.toString().padLeft(2, '0')}\"/km";
   }
 
   String _speedText(TrainingRecord record) {
