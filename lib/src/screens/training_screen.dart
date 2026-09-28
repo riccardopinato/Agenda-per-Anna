@@ -385,14 +385,13 @@ class _TrainingScreenState extends State<TrainingScreen> {
                     child: OutlinedButton.icon(
                       onPressed: () async {
                         try {
-                          final picked = await FilePicker.platform.pickFiles(
+                          final file = await FilePicker.pickFile(
                             type: FileType.custom,
                             allowedExtensions: const ['txt', 'md'],
-                            withData: true,
                           );
-                          final file = picked?.files.single;
-                          final bytes = file?.bytes;
-                          if (bytes == null || bytes.isEmpty) return;
+                          if (file == null) return;
+                          final bytes = await file.readAsBytes();
+                          if (bytes.isEmpty) return;
                           if (bytes.lengthInBytes > 512 * 1024) {
                             setLocal(
                               () => importError =
@@ -504,8 +503,8 @@ class _TrainingScreenState extends State<TrainingScreen> {
     if (minutes <= 0) return '';
     final hours = minutes ~/ 60;
     final mins = minutes % 60;
-    if (hours == 0) return '${mins} min';
-    if (mins == 0) return '${hours} h';
+    if (hours == 0) return '$mins min';
+    if (mins == 0) return '$hours h';
     return '${hours}h ${mins}m';
   }
 
