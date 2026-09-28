@@ -56,6 +56,7 @@ class HomeScreen extends StatelessWidget {
         store.sharedRevision,
         store.inboxRevision,
         store.shoppingRevision,
+        store.workoutRevision,
         store.settingsRevision,
         store.backupRevision,
       ]),
@@ -365,6 +366,20 @@ class HomeScreen extends StatelessWidget {
                   context,
                   MaterialPageRoute(
                     builder: (_) => ShoppingListScreen(store: store),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 12),
+              NavigationCard(
+                icon: Icons.sports_outlined,
+                title: 'Allenamento',
+                subtitle: store.workoutSessions.isEmpty
+                    ? 'Sessioni multisport e schede'
+                    : '${store.workoutSessions.length} sessioni · ${store.workoutPlans.length} schede',
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => WorkoutScreen(store: store),
                   ),
                 ),
               ),
