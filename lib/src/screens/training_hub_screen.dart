@@ -16,15 +16,9 @@ class _TrainingHubScreenState extends State<TrainingHubScreen> {
     if (seconds <= 0) return '';
     final d = Duration(seconds: seconds);
     if (d.inHours > 0) {
-      return d.inHours.toString() +
-          'h ' +
-          d.inMinutes.remainder(60).toString().padLeft(2, '0') +
-          'm';
+      return '${d.inHours}h ${d.inMinutes.remainder(60).toString().padLeft(2, '0')}m';
     }
-    return d.inMinutes.toString() +
-        'm ' +
-        d.inSeconds.remainder(60).toString().padLeft(2, '0') +
-        's';
+    return '${d.inMinutes}m ${d.inSeconds.remainder(60).toString().padLeft(2, '0')}s';
   }
 
   int parseDuration(String raw) {
@@ -179,7 +173,7 @@ class _TrainingHubScreenState extends State<TrainingHubScreen> {
                           max: 10,
                           divisions: 10,
                           value: effort.toDouble(),
-                          label: effort == 0 ? '—' : effort.toString() + '/10',
+                          label: effort == 0 ? '—' : '$effort/10',
                           onChanged: (value) =>
                               setLocal(() => effort = value.round()),
                         ),
@@ -289,11 +283,11 @@ class _TrainingHubScreenState extends State<TrainingHubScreen> {
       text: (existing?.exercises ?? const [])
           .map((exercise) {
             final left = exercise.sets > 0 && exercise.reps > 0
-                ? exercise.sets.toString() + 'x' + exercise.reps.toString()
+                ? '${exercise.sets}x${exercise.reps}'
                 : '';
             final weight = exercise.weightKg == null
                 ? ''
-                : exercise.weightKg.toString() + ' kg';
+                : '${exercise.weightKg} kg';
             return [exercise.name, left, weight, exercise.note]
                 .where((part) => part.isNotEmpty)
                 .join(' | ');
@@ -373,14 +367,18 @@ class _TrainingHubScreenState extends State<TrainingHubScreen> {
                             icon: const Icon(Icons.close),
                           ),
                     onTap: () async {
-                      final picked = await FilePicker.platform.pickFiles(
+                      final file = await FilePicker.pickFile(
                         type: FileType.custom,
-                        allowedExtensions: const ['pdf', 'png', 'jpg', 'jpeg', 'txt'],
-                        withData: true,
+                        allowedExtensions: const [
+                          'pdf',
+                          'png',
+                          'jpg',
+                          'jpeg',
+                          'txt',
+                        ],
                       );
-                      if (picked == null || picked.files.isEmpty) return;
-                      final file = picked.files.first;
-                      final bytes = file.bytes;
+                      if (file == null) return;
+                      final bytes = await file.readAsBytes();
                       if (bytes == null) return;
                       if (bytes.lengthInBytes > 3 * 1024 * 1024) {
                         if (context.mounted) {
@@ -488,13 +486,13 @@ class _TrainingHubScreenState extends State<TrainingHubScreen> {
                   spacing: 8,
                   children: [
                     if (entry.distanceKm != null)
-                      Chip(label: Text(entry.distanceKm.toString() + ' km')),
+                      Chip(label: Text('${entry.distanceKm} km')),
                     if (entry.durationSeconds > 0)
                       Chip(label: Text(durationLabel(entry.durationSeconds))),
                     if (entry.elevationMeters != null)
-                      Chip(label: Text(entry.elevationMeters!.round().toString() + ' m D+')),
+                      Chip(label: Text('${entry.elevationMeters!.round()} m D+')),
                     if (entry.effort > 0)
-                      Chip(label: Text('Sforzo ' + entry.effort.toString() + '/10')),
+                      Chip(label: Text('Sforzo ${entry.effort}/10')),
                   ],
                 ),
               ],
@@ -511,9 +509,9 @@ class _TrainingHubScreenState extends State<TrainingHubScreen> {
                     subtitle: Text(
                       [
                         if (exercise.sets > 0 && exercise.reps > 0)
-                          exercise.sets.toString() + '×' + exercise.reps.toString(),
+                          '${exercise.sets}×${exercise.reps}',
                         if (exercise.weightKg != null)
-                          exercise.weightKg.toString() + ' kg',
+                          '${exercise.weightKg} kg',
                         if (exercise.note.isNotEmpty) exercise.note,
                       ].join(' · '),
                     ),
@@ -685,7 +683,7 @@ class _TrainingList extends StatelessWidget {
           entry.sport.label,
           if (entry.kind == TrainingEntryKind.session)
             DateFormat('d MMM yyyy', 'it_IT').format(entry.date),
-          if (entry.distanceKm != null) entry.distanceKm.toString() + ' km',
+          if (entry.distanceKm != null) '${entry.distanceKm} km',
           if (entry.durationSeconds > 0) durationLabel(entry.durationSeconds),
           if (entry.kind == TrainingEntryKind.plan && entry.hasAttachment)
             entry.attachmentName,
