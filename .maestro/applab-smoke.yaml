@@ -7,10 +7,10 @@ appId: com.riccardopinato.agenda_per_anna
     timeout: 15000
 - tapOn: "Inizia"
 - extendedWaitUntil:
-    visible: "La mia agenda"
+    visible: "La mia giornata"
     timeout: 15000
 - stopApp
 - launchApp
 - extendedWaitUntil:
-    visible: "La mia agenda"
+    visible: "La mia giornata"
     timeout: 15000
