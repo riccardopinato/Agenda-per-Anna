@@ -13,6 +13,7 @@ enum TrashEntityKind {
   person,
   inbox,
   shoppingItem,
+  trainingEntry,
 }
 
 extension TrashEntityKindUi on TrashEntityKind {
@@ -27,6 +28,7 @@ extension TrashEntityKindUi on TrashEntityKind {
         TrashEntityKind.person => 'Persona',
         TrashEntityKind.inbox => 'Inbox',
         TrashEntityKind.shoppingItem => 'Spesa',
+        TrashEntityKind.trainingEntry => 'Allenamento',
       };
 
   IconData get icon => switch (this) {
@@ -40,6 +42,7 @@ extension TrashEntityKindUi on TrashEntityKind {
         TrashEntityKind.person => Icons.person_outline,
         TrashEntityKind.inbox => Icons.inbox_outlined,
         TrashEntityKind.shoppingItem => Icons.shopping_cart_outlined,
+        TrashEntityKind.trainingEntry => Icons.fitness_center_outlined,
       };
 }
 
@@ -188,6 +191,7 @@ extension AgendaStoreLifecycle on AgendaStore {
       case TrashEntityKind.person:
       case TrashEntityKind.inbox:
       case TrashEntityKind.shoppingItem:
+      case TrashEntityKind.trainingEntry:
         return entry;
     }
   }
@@ -222,6 +226,7 @@ extension AgendaStoreLifecycle on AgendaStore {
       case TrashEntityKind.person:
       case TrashEntityKind.inbox:
       case TrashEntityKind.shoppingItem:
+      case TrashEntityKind.trainingEntry:
         return entry.toJson();
     }
   }
@@ -296,6 +301,28 @@ extension AgendaStoreLifecycle on AgendaStore {
     ]);
     signals.bumpLifecycle();
     _notifyShoppingChanged();
+    return true;
+  }
+
+  Future<bool> moveTrainingEntryToTrash(String id) async {
+    final index = trainingEntries.indexWhere((entry) => entry.id == id);
+    if (index < 0) return false;
+    final value = trainingEntries[index];
+    final entry = _newTrashEntry(
+      kind: TrashEntityKind.trainingEntry,
+      entityId: value.id,
+      title: value.title,
+      payload: value.toJson(),
+    );
+
+    trainingEntries.removeAt(index);
+    _putTrashInMemory(entry);
+    await _persistEntityMutations([
+      (type: 'training', id: id, payload: null, deleted: true),
+      (type: 'trash', id: entry.id, payload: entry.toJson(), deleted: false),
+    ]);
+    signals.bumpLifecycle();
+    _notifyTrainingChanged();
     return true;
   }
 
@@ -548,6 +575,10 @@ extension AgendaStoreLifecycle on AgendaStore {
         return shoppingItems.any((value) => value.id == entry.entityId)
             ? 'Questo articolo è già presente nella lista della spesa.'
             : null;
+      case TrashEntityKind.trainingEntry:
+        return trainingEntries.any((value) => value.id == entry.entityId)
+            ? 'Questo elemento è già presente in Allenamento.'
+            : null;
     }
   }
 
@@ -619,6 +650,17 @@ extension AgendaStoreLifecycle on AgendaStore {
         shoppingItems.add(value);
         mutations.add((
           type: 'shopping',
+          id: value.id,
+          payload: value.toJson(),
+          deleted: false,
+        ));
+        break;
+      case TrashEntityKind.trainingEntry:
+        final value = TrainingEntry.fromJson(localized.payload);
+        trainingEntries.removeWhere((entry) => entry.id == value.id);
+        trainingEntries.add(value);
+        mutations.add((
+          type: 'training',
           id: value.id,
           payload: value.toJson(),
           deleted: false,
@@ -721,6 +763,7 @@ extension AgendaStoreLifecycle on AgendaStore {
       TrashEntityKind.person => ('person', localized.entityId),
       TrashEntityKind.inbox => ('inbox', localized.entityId),
       TrashEntityKind.shoppingItem => ('shopping', localized.entityId),
+      TrashEntityKind.trainingEntry => ('training', localized.entityId),
       TrashEntityKind.diaryBlock => ('journal', localized.parentId!),
       TrashEntityKind.journal => ('journal', localized.entityId),
       TrashEntityKind.month => ('month', localized.entityId),
@@ -759,6 +802,9 @@ extension AgendaStoreLifecycle on AgendaStore {
         break;
       case TrashEntityKind.shoppingItem:
         _notifyShoppingChanged();
+        break;
+      case TrashEntityKind.trainingEntry:
+        _notifyTrainingChanged();
         break;
       case TrashEntityKind.diaryBlock:
       case TrashEntityKind.journal:
@@ -864,6 +910,7 @@ extension AgendaStoreLifecycle on AgendaStore {
       case TrashEntityKind.week:
       case TrashEntityKind.inbox:
       case TrashEntityKind.shoppingItem:
+      case TrashEntityKind.trainingEntry:
         return false;
     }
   }
