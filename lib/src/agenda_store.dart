@@ -22,6 +22,7 @@ class AgendaStore extends ChangeNotifier {
   static const _entityDeltaPrefix = 'entity_delta_v2_';
   static const _privateSyncCursorPrefix = 'cloud_private_cursor_v2_';
   static const _sharedSyncCursorPrefix = 'cloud_shared_cursor_v2_';
+  static const _sharedMediaDeleteRetryPrefix = 'shared_media_delete_retry_v1_';
   static const _backupFormat = 'agenda_per_anna_backup';
   static const _backupBundleFormat = 'agenda_per_anna_backup_bundle';
   static const _backupSchemaVersion = 1;
@@ -2204,11 +2205,31 @@ class AgendaStore extends ChangeNotifier {
     await moveItemToTrash(id);
   }
 
+  Future<void> _cancelWebPushRemindersForItem(String itemId) async {
+    final cloud = CloudSyncService.instance;
+    if (!cloud.signedIn ||
+        _activeAccountId == null ||
+        cloud.userId != _activeAccountId) {
+      return;
+    }
+    try {
+      await cloud.cancelWebPushReminder('$itemId:primary');
+      await cloud.cancelWebPushReminder('$itemId:secondary');
+    } catch (_) {
+      // Remote PWA reminder cleanup is best-effort. The private tombstone
+      // remains authoritative and a later reconciliation will retry state.
+    }
+  }
+
   Future<void> _syncReminders(
     AgendaItem item, {
     bool requestPermission = true,
   }) async {
     final start = item.start;
+    final cloud = CloudSyncService.instance;
+    final canSyncWebReminder = cloud.signedIn &&
+        _activeAccountId != null &&
+        cloud.userId == _activeAccountId;
 
     // Pulisce anche il vecchio ID usato dalla versione a promemoria singolo.
     await NotificationService.instance.cancel(item.id);
@@ -2216,14 +2237,7 @@ class AgendaStore extends ChangeNotifier {
     if (start == null || item.done) {
       await NotificationService.instance.cancel('${item.id}:primary');
       await NotificationService.instance.cancel('${item.id}:secondary');
-      if (kIsWeb && CloudSyncService.instance.signedIn) {
-        try {
-          await CloudSyncService.instance
-              .cancelWebPushReminder('${item.id}:primary');
-          await CloudSyncService.instance
-              .cancelWebPushReminder('${item.id}:secondary');
-        } catch (_) {}
-      }
+      await _cancelWebPushRemindersForItem(item.id);
       return;
     }
 
@@ -2238,40 +2252,49 @@ class AgendaStore extends ChangeNotifier {
     Future<void> syncOne(String suffix, int? minutes) async {
       final stableId = '${item.id}:$suffix';
 
-      if (kIsWeb) {
-        if (!CloudSyncService.instance.signedIn) return;
-        try {
-          if (minutes == null) {
-            await CloudSyncService.instance.cancelWebPushReminder(stableId);
-            return;
-          }
-
-          final when = eventTime.subtract(Duration(minutes: minutes));
-          if (!when.isAfter(DateTime.now())) {
-            await CloudSyncService.instance.cancelWebPushReminder(stableId);
-            return;
-          }
-
-          await CloudSyncService.instance.upsertWebPushReminder(
-            stableId: stableId,
-            title: item.title,
-            body: minutes == 0
-                ? 'È il momento di iniziare.'
-                : _reminderBody(minutes, item.title),
-            when: when,
-          );
-        } catch (_) {
-          // PWA reminder sync is best-effort and must never block editing.
+      if (minutes == null) {
+        if (canSyncWebReminder) {
+          try {
+            await cloud.cancelWebPushReminder(stableId);
+          } catch (_) {}
+        }
+        if (!kIsWeb) {
+          await NotificationService.instance.cancel(stableId);
         }
         return;
       }
 
-      if (minutes == null) {
+      final when = eventTime.subtract(Duration(minutes: minutes));
+
+      // The backend reminder is account-scoped, not browser-scoped. Keep it
+      // aligned even when the edit happens on Android so the iPhone/PWA cannot
+      // retain an obsolete reminder until it is opened again.
+      if (canSyncWebReminder) {
+        try {
+          if (when.isAfter(DateTime.now())) {
+            await cloud.upsertWebPushReminder(
+              stableId: stableId,
+              title: item.title,
+              body: minutes == 0
+                  ? 'È il momento di iniziare.'
+                  : _reminderBody(minutes, item.title),
+              when: when,
+            );
+          } else {
+            await cloud.cancelWebPushReminder(stableId);
+          }
+        } catch (_) {
+          // Cross-device reminder sync must never block local editing.
+        }
+      }
+
+      if (kIsWeb) return;
+
+      if (!when.isAfter(DateTime.now())) {
         await NotificationService.instance.cancel(stableId);
         return;
       }
 
-      final when = eventTime.subtract(Duration(minutes: minutes));
       await NotificationService.instance.schedule(
         stableId: stableId,
         title: item.title,
@@ -2539,9 +2562,17 @@ class AgendaStore extends ChangeNotifier {
     _notifySyncChanged();
 
     try {
+      // Pull first: a remote tombstone must be observed before an older
+      // offline upsert can be flushed and accidentally resurrect content.
+      await refreshSharedAgendaCache(
+        pullRemote: true,
+        notify: false,
+      );
+
       await flushSharedMediaUploads();
       await flushSharedInteractionOperations();
       await flushSharedPendingOperations();
+      await _flushSharedMediaDeleteRetries();
 
       if (!cloud.signedIn ||
           cloud.userId == null ||
@@ -2549,6 +2580,7 @@ class AgendaStore extends ChangeNotifier {
         return;
       }
 
+      // Confirm the authoritative server state after the pending writes.
       await refreshSharedAgendaCache(pullRemote: true);
       await refreshPendingSharedCount();
       await refreshPendingSharedInteractionCount();
@@ -2644,10 +2676,14 @@ class AgendaStore extends ChangeNotifier {
       final appliedRemote = <CloudRemoteRecord>[];
       for (final record in remote) {
         final localOp = _syncQueue[record.localKey];
-        final remoteWins = preferRemoteOnFirstSync && firstSyncForOwner
-            ? true
-            : localOp == null ||
-                !localOp.updatedAt.isAfter(record.clientUpdatedAt);
+        final forceRemote = preferRemoteOnFirstSync && firstSyncForOwner;
+        final remoteDeleted = record.deletedAt != null;
+        final localDeleted = localOp?.deleted == true;
+        final remoteWins = forceRemote ||
+            localOp == null ||
+            (remoteDeleted != localDeleted
+                ? remoteDeleted
+                : !localOp.updatedAt.isAfter(record.clientUpdatedAt));
 
         if (!remoteWins) continue;
 
@@ -2662,6 +2698,7 @@ class AgendaStore extends ChangeNotifier {
           prefs,
           persist: false,
         );
+        _scheduleMediaMaintenance(delay: const Duration(seconds: 1));
       }
       if (appliedRemote.isNotEmpty) {
         await _persistAppliedRemoteRecords(prefs, appliedRemote);
@@ -2779,6 +2816,7 @@ class AgendaStore extends ChangeNotifier {
               .cancel('${record.entityId}:primary');
           await NotificationService.instance
               .cancel('${record.entityId}:secondary');
+          await _cancelWebPushRemindersForItem(record.entityId);
           return true;
         case 'journal':
           return journals.remove(record.entityId) != null;
@@ -3158,6 +3196,7 @@ class AgendaStore extends ChangeNotifier {
         _sharedAgendaEntriesBySpace[space.id] ?? const <SharedEntry>[],
       );
       var hasBaseline = _sharedAgendaEntriesBySpace.containsKey(space.id);
+      final latestRemoteByEntity = <String, SharedSpaceRecord>{};
 
       if (!hasBaseline) {
         final raw = prefs.getString(sharedCacheStorageKey(space.id));
@@ -3200,6 +3239,11 @@ class AgendaStore extends ChangeNotifier {
 
           for (final record in records) {
             if (record.entityType != 'shared_entry') continue;
+            final previous = latestRemoteByEntity[record.entityId];
+            if (previous == null ||
+                record.clientUpdatedAt.isAfter(previous.clientUpdatedAt)) {
+              latestRemoteByEntity[record.entityId] = record;
+            }
             entries.removeWhere(
               (entry) => entry.id == record.entityId,
             );
@@ -3225,7 +3269,53 @@ class AgendaStore extends ChangeNotifier {
         }
       }
 
-      final pending = await loadSharedPendingOperations(space.id);
+      var pending = await loadSharedPendingOperations(space.id);
+      var pendingChanged = false;
+
+      for (final remoteRecord in latestRemoteByEntity.values) {
+        if (remoteRecord.deletedAt != null) {
+          final before = pending.length;
+          pending.removeWhere(
+            (operation) => operation.entityId == remoteRecord.entityId,
+          );
+          if (pending.length != before) pendingChanged = true;
+          await _discardSharedChildOperationsForEntry(
+            space.id,
+            remoteRecord.entityId,
+          );
+          await cancelSharedMediaUpload(
+            spaceId: space.id,
+            entryId: remoteRecord.entityId,
+          );
+          continue;
+        }
+
+        // A local delete is an explicit destructive intent. If the server has
+        // a newer ordinary edit, advance the tombstone revision just beyond
+        // that edit rather than dropping the delete and reviving the entry.
+        for (var i = 0; i < pending.length; i++) {
+          final operation = pending[i];
+          if (operation.entityId != remoteRecord.entityId ||
+              operation.action != SharedPendingAction.delete ||
+              operation.updatedAt.isAfter(remoteRecord.clientUpdatedAt)) {
+            continue;
+          }
+          pending[i] = SharedPendingOperation(
+            action: SharedPendingAction.delete,
+            entityId: operation.entityId,
+            payload: operation.payload,
+            updatedAt:
+                remoteRecord.clientUpdatedAt.add(const Duration(microseconds: 1)),
+          );
+          pendingChanged = true;
+        }
+      }
+
+      if (pendingChanged) {
+        await _saveSharedPendingOperations(space.id, pending);
+        await refreshPendingSharedCount(notify: false);
+      }
+
       for (final operation in pending) {
         entries.removeWhere((entry) => entry.id == operation.entityId);
         if (operation.action == SharedPendingAction.upsert &&
@@ -3370,14 +3460,59 @@ class AgendaStore extends ChangeNotifier {
       return;
     }
 
-    final pending = await loadSharedPendingOperations(space.id);
-    final localPending = pending.where(
-      (operation) => operation.entityId == change.entityId,
-    );
-    if (localPending.any(
-      (operation) => operation.updatedAt.isAfter(change.clientUpdatedAt),
-    )) {
-      return;
+    var pending = await loadSharedPendingOperations(space.id);
+    var localPending = pending
+        .where((operation) => operation.entityId == change.entityId)
+        .toList();
+
+    if (change.deletedAt != null) {
+      // Remote tombstones dominate ordinary offline edits. Shared entries do
+      // not have a restore workflow, so keeping an upsert here would only
+      // resurrect a deleted memory on the next reconnect.
+      if (localPending.isNotEmpty) {
+        pending.removeWhere(
+          (operation) => operation.entityId == change.entityId,
+        );
+        await _saveSharedPendingOperations(space.id, pending);
+        await refreshPendingSharedCount(notify: false);
+      }
+      await _discardSharedChildOperationsForEntry(
+        space.id,
+        change.entityId,
+      );
+      await cancelSharedMediaUpload(
+        spaceId: space.id,
+        entryId: change.entityId,
+      );
+    } else {
+      final localDeleteIndex = pending.indexWhere(
+        (operation) =>
+            operation.entityId == change.entityId &&
+            operation.action == SharedPendingAction.delete,
+      );
+      if (localDeleteIndex >= 0) {
+        final localDelete = pending[localDeleteIndex];
+        if (!localDelete.updatedAt.isAfter(change.clientUpdatedAt)) {
+          pending[localDeleteIndex] = SharedPendingOperation(
+            action: SharedPendingAction.delete,
+            entityId: localDelete.entityId,
+            payload: localDelete.payload,
+            updatedAt:
+                change.clientUpdatedAt.add(const Duration(microseconds: 1)),
+          );
+          await _saveSharedPendingOperations(space.id, pending);
+        }
+        return;
+      }
+
+      localPending = pending
+          .where((operation) => operation.entityId == change.entityId)
+          .toList();
+      if (localPending.any(
+        (operation) => operation.updatedAt.isAfter(change.clientUpdatedAt),
+      )) {
+        return;
+      }
     }
 
     final entries = List<SharedEntry>.from(
@@ -3552,6 +3687,84 @@ class AgendaStore extends ChangeNotifier {
     }
   }
 
+  Future<void> _discardSharedChildOperationsForEntry(
+    String spaceId,
+    String entryId,
+  ) async {
+    final operations =
+        await loadSharedInteractionPendingOperations(spaceId);
+    final before = operations.length;
+    operations.removeWhere((operation) => operation.entryId == entryId);
+    if (operations.length == before) return;
+    await _saveSharedInteractionPendingOperations(spaceId, operations);
+    await refreshPendingSharedInteractionCount(notify: false);
+  }
+
+  String _sharedMediaDeleteRetryStorageKey(String spaceId) {
+    final owner = _activeAccountId ?? 'guest';
+    return '$_sharedMediaDeleteRetryPrefix${_entityScopeToken(owner)}:$spaceId';
+  }
+
+  Future<void> _queueSharedMediaDeleteRetry(
+    String spaceId,
+    String mediaPath,
+  ) async {
+    final normalized = mediaPath.trim();
+    if (normalized.isEmpty) return;
+    final prefs = await _localState();
+    final key = _sharedMediaDeleteRetryStorageKey(spaceId);
+    final pending = <String>{};
+    final raw = prefs.getString(key);
+    if (raw != null) {
+      try {
+        pending.addAll(
+          (jsonDecode(raw) as List).map((value) => value.toString()),
+        );
+      } catch (_) {}
+    }
+    pending.add(normalized);
+    await prefs.setString(key, jsonEncode(pending.toList()));
+  }
+
+  Future<void> _flushSharedMediaDeleteRetries() async {
+    final cloud = CloudSyncService.instance;
+    final ownerId = _activeAccountId;
+    if (!cloud.signedIn || ownerId == null || cloud.userId != ownerId) {
+      return;
+    }
+
+    final prefs = await _localState();
+    final prefix =
+        '$_sharedMediaDeleteRetryPrefix${_entityScopeToken(ownerId)}:';
+    final keys =
+        prefs.getKeys().where((key) => key.startsWith(prefix)).toList();
+
+    for (final key in keys) {
+      final raw = prefs.getString(key);
+      if (raw == null) continue;
+      final spaceId = key.substring(prefix.length);
+      final remaining = <String>[];
+      try {
+        final paths =
+            (jsonDecode(raw) as List).map((value) => value.toString()).toSet();
+        for (final path in paths) {
+          try {
+            await cloud.deleteSharedMedia(path);
+          } catch (_) {
+            remaining.add(path);
+          }
+        }
+        if (remaining.isEmpty) {
+          await prefs.remove(key);
+        } else {
+          await prefs.setString(key, jsonEncode(remaining));
+        }
+      } catch (_) {
+        // Preserve unreadable retry state instead of silently losing cleanup.
+      }
+    }
+  }
+
   Future<void> enqueueSharedUpsert({
     required String spaceId,
     required SharedEntry entry,
@@ -3598,6 +3811,7 @@ class AgendaStore extends ChangeNotifier {
       spaceId: spaceId,
       entryId: entityId,
     );
+    await _discardSharedChildOperationsForEntry(spaceId, entityId);
     final revision = (updatedAt ?? DateTime.now()).toUtc();
     final operations = await loadSharedPendingOperations(spaceId);
     operations.removeWhere((operation) => operation.entityId == entityId);
@@ -4190,7 +4404,12 @@ class AgendaStore extends ChangeNotifier {
                 upload.oldMediaPath != mediaPath) {
               try {
                 await cloud.deleteSharedMedia(upload.oldMediaPath);
-              } catch (_) {}
+              } catch (_) {
+                await _queueSharedMediaDeleteRetry(
+                  currentSpaceId,
+                  upload.oldMediaPath,
+                );
+              }
             }
           } catch (error) {
             _recordSharedSyncError(error);
@@ -4309,8 +4528,12 @@ class AgendaStore extends ChangeNotifier {
                 try {
                   await cloud.deleteSharedMedia(mediaPath);
                 } catch (_) {
-                  // Record deletion is authoritative; stale media cleanup can
-                  // be retried manually without resurrecting the entry.
+                  // The tombstone remains authoritative, while the exact
+                  // object path is retained for a later cleanup retry.
+                  await _queueSharedMediaDeleteRetry(
+                    currentSpaceId,
+                    mediaPath,
+                  );
                 }
               }
             } else if (operation.payload != null) {
