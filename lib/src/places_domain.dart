@@ -139,7 +139,6 @@ extension AgendaStorePlaces on AgendaStore {
       final isRecoverableExisting =
           existingIds.contains(id) && trashedPlaceById(id) != null;
       if (isLive || isRecoverableExisting) validIds.add(id);
-      if (validIds.length >= 8) break;
     }
 
     final blocks = [...current.blocks];
@@ -236,7 +235,19 @@ Future<List<String>?> showPlacesPicker(
   AgendaStore store, {
   Iterable<String> initialIds = const [],
 }) async {
-  final selected = initialIds.toSet();
+  final initial = initialIds
+      .map((id) => id.trim())
+      .where((id) => id.isNotEmpty)
+      .toSet();
+  final selected = {...initial};
+  final liveIds = store.places.map((place) => place.id).toSet();
+  final recoverable = initial
+      .where((id) => !liveIds.contains(id))
+      .map(store.trashedPlaceById)
+      .whereType<PlaceEntry>()
+      .toList()
+    ..sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
+
   return showModalBottomSheet<List<String>>(
     context: context,
     showDragHandle: true,
@@ -248,6 +259,7 @@ Future<List<String>?> showPlacesPicker(
             if (a.favorite != b.favorite) return a.favorite ? -1 : 1;
             return a.name.toLowerCase().compareTo(b.name.toLowerCase());
           });
+
         return SafeArea(
           child: SizedBox(
             height: MediaQuery.sizeOf(sheetContext).height * .72,
@@ -256,10 +268,12 @@ Future<List<String>?> showPlacesPicker(
                 const ListTile(
                   leading: Icon(Icons.place_outlined),
                   title: Text('Collega luoghi'),
-                  subtitle: Text('I luoghi restano dati privati del diario.'),
+                  subtitle: Text(
+                    'I luoghi restano dati privati del diario.',
+                  ),
                 ),
                 Expanded(
-                  child: places.isEmpty
+                  child: places.isEmpty && recoverable.isEmpty
                       ? const Center(
                           child: Padding(
                             padding: EdgeInsets.all(28),
@@ -269,32 +283,61 @@ Future<List<String>?> showPlacesPicker(
                             ),
                           ),
                         )
-                      : ListView.builder(
-                          itemCount: places.length,
-                          itemBuilder: (context, index) {
-                            final place = places[index];
-                            return CheckboxListTile(
-                              value: selected.contains(place.id),
-                              title: Text(place.name),
-                              subtitle: [
-                                place.category,
-                                place.address,
-                              ].where((value) => value.trim().isNotEmpty).isEmpty
-                                  ? null
-                                  : Text(
-                                      [place.category, place.address]
-                                          .where((value) => value.trim().isNotEmpty)
-                                          .join(' · '),
-                                    ),
-                              onChanged: (checked) => setSheetState(() {
-                                if (checked == true) {
-                                  selected.add(place.id);
-                                } else {
-                                  selected.remove(place.id);
-                                }
-                              }),
-                            );
-                          },
+                      : ListView(
+                          children: [
+                            for (final place in recoverable)
+                              CheckboxListTile(
+                                value: selected.contains(place.id),
+                                title: Text(place.name),
+                                subtitle: const Text(
+                                  'Nel Cestino · collegamento recuperabile',
+                                ),
+                                secondary: const Icon(
+                                  Icons.restore_from_trash_outlined,
+                                ),
+                                onChanged: (checked) {
+                                  setSheetState(() {
+                                    if (checked == true) {
+                                      selected.add(place.id);
+                                    } else {
+                                      selected.remove(place.id);
+                                    }
+                                  });
+                                },
+                              ),
+                            for (final place in places)
+                              CheckboxListTile(
+                                value: selected.contains(place.id),
+                                title: Text(place.name),
+                                subtitle: [
+                                  place.category,
+                                  place.address,
+                                ].where((value) => value.trim().isNotEmpty).isEmpty
+                                    ? null
+                                    : Text(
+                                        [place.category, place.address]
+                                            .where(
+                                              (value) =>
+                                                  value.trim().isNotEmpty,
+                                            )
+                                            .join(' · '),
+                                      ),
+                                secondary: Icon(
+                                  place.favorite
+                                      ? Icons.star
+                                      : Icons.place_outlined,
+                                ),
+                                onChanged: (checked) {
+                                  setSheetState(() {
+                                    if (checked == true) {
+                                      selected.add(place.id);
+                                    } else {
+                                      selected.remove(place.id);
+                                    }
+                                  });
+                                },
+                              ),
+                          ],
                         ),
                 ),
                 Padding(
