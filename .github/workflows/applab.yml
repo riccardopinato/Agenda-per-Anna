@@ -3,7 +3,7 @@ name: AppLab Production Gate
 
 on:
   pull_request:
-    branches: [main]
+    branches: [main, v066-ci-baseline]
   workflow_dispatch:
 
 permissions:
