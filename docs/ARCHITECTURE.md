@@ -388,3 +388,14 @@ External calendars are an **ephemeral read-only projection**, not a new source o
 - Android platform generation owns the `READ_CALENDAR` permission and Calendar Provider bridge in `tool/prepare_android_platform.py`; generated `android/` files remain disposable.
 - No external-calendar entity is written to private cloud sync, Supabase, backups, Trash, Noi ♡, Diary or Memory.
 - Web/PWA does not emulate device calendar access; the settings surface reports the platform limitation instead.
+
+
+## v0.74 — Lifecycle Integrity & Metadata Ownership
+
+The v0.48 Trash engine remains authoritative. v0.74 adds no persistence layer and no lifecycle store.
+
+- Newer first-class private domains (Shopping, WorkoutSession, WorkoutPlan) are regression-tested through the same Trash + backup/restore pipeline.
+- Workout history remains snapshot-based: plan lifecycle changes cannot retroactively mutate completed sessions.
+- Shared shopping stays in the shared-space tombstone path, preserving collaboration ownership semantics.
+- External calendar events are explicitly non-canonical and therefore have no Trash lifecycle.
+- Release coordinates are centralized in runtime metadata and validated by one canonical test rather than copied through historical feature suites.
