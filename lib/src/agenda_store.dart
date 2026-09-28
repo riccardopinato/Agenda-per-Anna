@@ -12,6 +12,7 @@ class AgendaStore extends ChangeNotifier {
   static const _preferencesKey = 'agenda_preferences_v1';
   static const _inboxKey = 'inbox_v1';
   static const _shoppingKey = 'shopping_v1';
+  static const _workoutsKey = 'workouts_v1';
   static const _syncQueueKey = 'cloud_sync_queue_v1';
   static const _syncIndexKey = 'cloud_sync_index_v1';
   static const _syncOwnerKey = 'cloud_sync_owner_v1';
@@ -43,6 +44,8 @@ class AgendaStore extends ChangeNotifier {
   final List<LocalBackupSnapshot> localSnapshots = [];
   final List<InboxEntry> inbox = [];
   final List<ShoppingItem> shoppingItems = [];
+  final List<WorkoutSession> workoutSessions = [];
+  final List<WorkoutPlan> workoutPlans = [];
   final List<TrashEntry> trash = [];
   final Map<String, CloudSyncOperation> _syncQueue = {};
   final Map<String, String> _syncIndex = {};
@@ -115,6 +118,7 @@ class AgendaStore extends ChangeNotifier {
   ValueListenable<int> get sharedRevision => signals.shared;
   ValueListenable<int> get inboxRevision => signals.inbox;
   ValueListenable<int> get shoppingRevision => signals.shopping;
+  ValueListenable<int> get workoutRevision => signals.workout;
   ValueListenable<int> get settingsRevision => signals.settings;
   ValueListenable<int> get backupRevision => signals.backup;
   ValueListenable<int> get lifecycleRevision => signals.lifecycle;
@@ -152,6 +156,7 @@ class AgendaStore extends ChangeNotifier {
         _preferencesKey,
         _inboxKey,
         _shoppingKey,
+        _workoutsKey,
         _trashKey,
         _syncQueueKey,
         _syncIndexKey,
@@ -339,6 +344,11 @@ class AgendaStore extends ChangeNotifier {
     notifyListeners();
   }
 
+  void _notifyWorkoutChanged() {
+    signals.bumpWorkout();
+    notifyListeners();
+  }
+
   void _notifySettingsChanged() {
     signals.bumpSettings();
     notifyListeners();
@@ -467,6 +477,26 @@ class AgendaStore extends ChangeNotifier {
             if (!deleted && payload is Map) {
               shoppingItems.add(
                 ShoppingItem.fromJson(
+                  Map<String, dynamic>.from(payload),
+                ),
+              );
+            }
+            break;
+          case 'workout_session':
+            workoutSessions.removeWhere((entry) => entry.id == id);
+            if (!deleted && payload is Map) {
+              workoutSessions.add(
+                WorkoutSession.fromJson(
+                  Map<String, dynamic>.from(payload),
+                ),
+              );
+            }
+            break;
+          case 'workout_plan':
+            workoutPlans.removeWhere((entry) => entry.id == id);
+            if (!deleted && payload is Map) {
+              workoutPlans.add(
+                WorkoutPlan.fromJson(
                   Map<String, dynamic>.from(payload),
                 ),
               );
@@ -633,6 +663,16 @@ class AgendaStore extends ChangeNotifier {
         return null;
       case 'shopping':
         for (final entry in shoppingItems) {
+          if (entry.id == id) return entry.toJson();
+        }
+        return null;
+      case 'workout_session':
+        for (final entry in workoutSessions) {
+          if (entry.id == id) return entry.toJson();
+        }
+        return null;
+      case 'workout_plan':
+        for (final entry in workoutPlans) {
           if (entry.id == id) return entry.toJson();
         }
         return null;
@@ -1108,6 +1148,8 @@ class AgendaStore extends ChangeNotifier {
     localSnapshots.clear();
     inbox.clear();
     shoppingItems.clear();
+    workoutSessions.clear();
+    workoutPlans.clear();
     trash.clear();
     _syncQueue.clear();
     _syncIndex.clear();
@@ -1312,6 +1354,31 @@ class AgendaStore extends ChangeNotifier {
     );
     if (parsedShopping != null) shoppingItems.addAll(parsedShopping);
 
+    final parsedWorkouts = decodeSection<Map<String, dynamic>>(
+      _workoutsKey,
+      (value) => Map<String, dynamic>.from(value as Map),
+    );
+    if (parsedWorkouts != null) {
+      workoutSessions.addAll(
+        (parsedWorkouts['sessions'] as List? ?? const [])
+            .whereType<Map>()
+            .map(
+              (value) => WorkoutSession.fromJson(
+                Map<String, dynamic>.from(value),
+              ),
+            ),
+      );
+      workoutPlans.addAll(
+        (parsedWorkouts['plans'] as List? ?? const [])
+            .whereType<Map>()
+            .map(
+              (value) => WorkoutPlan.fromJson(
+                Map<String, dynamic>.from(value),
+              ),
+            ),
+      );
+    }
+
     final parsedTrash = decodeSection<List<TrashEntry>>(
       _trashKey,
       (value) => (value as List)
@@ -1433,6 +1500,10 @@ class AgendaStore extends ChangeNotifier {
         _inboxKey: jsonEncode(inbox.map((e) => e.toJson()).toList()),
         _shoppingKey:
             jsonEncode(shoppingItems.map((e) => e.toJson()).toList()),
+        _workoutsKey: jsonEncode({
+          'sessions': workoutSessions.map((e) => e.toJson()).toList(),
+          'plans': workoutPlans.map((e) => e.toJson()).toList(),
+        }),
         _trashKey: jsonEncode(trash.map((e) => e.toJson()).toList()),
         _privacyGuardKey: jsonEncode(_privacyGuardPayload()),
       };
@@ -1448,6 +1519,7 @@ class AgendaStore extends ChangeNotifier {
       _peopleKey,
       _inboxKey,
       _shoppingKey,
+      _workoutsKey,
       _trashKey,
     ]) {
       final raw = prefs.getString(key);
@@ -1730,6 +1802,14 @@ class AgendaStore extends ChangeNotifier {
         add('shopping', entry.id, entry.toJson());
       }
     }
+    if (includes(_workoutsKey)) {
+      for (final entry in workoutSessions) {
+        add('workout_session', entry.id, entry.toJson());
+      }
+      for (final entry in workoutPlans) {
+        add('workout_plan', entry.id, entry.toJson());
+      }
+    }
     if (includes(_trashKey)) {
       for (final entry in trash) {
         add('trash', entry.id, entry.toJson());
@@ -1755,6 +1835,8 @@ class AgendaStore extends ChangeNotifier {
         'person' => _peopleKey,
         'inbox' => _inboxKey,
         'shopping' => _shoppingKey,
+        'workout_session' => _workoutsKey,
+        'workout_plan' => _workoutsKey,
         'trash' => _trashKey,
         'preferences' => _preferencesKey,
         _ => null,
@@ -1974,6 +2056,24 @@ class AgendaStore extends ChangeNotifier {
           ),
         )
         .toList();
+    final incomingWorkoutSessions =
+        (payload['workoutSessions'] as List? ?? const [])
+            .whereType<Map>()
+            .map(
+              (e) => WorkoutSession.fromJson(
+                Map<String, dynamic>.from(e),
+              ),
+            )
+            .toList();
+    final incomingWorkoutPlans =
+        (payload['workoutPlans'] as List? ?? const [])
+            .whereType<Map>()
+            .map(
+              (e) => WorkoutPlan.fromJson(
+                Map<String, dynamic>.from(e),
+              ),
+            )
+            .toList();
     final incomingTrash = <TrashEntry>[];
     for (final rawEntry in payload['trash'] as List? ?? const []) {
       if (rawEntry is! Map) continue;
@@ -2003,6 +2103,9 @@ class AgendaStore extends ChangeNotifier {
     final previousPeople = List<PersonEntry>.from(people);
     final previousInbox = List<InboxEntry>.from(inbox);
     final previousShopping = List<ShoppingItem>.from(shoppingItems);
+    final previousWorkoutSessions =
+        List<WorkoutSession>.from(workoutSessions);
+    final previousWorkoutPlans = List<WorkoutPlan>.from(workoutPlans);
     final previousTrash = List<TrashEntry>.from(trash);
     final previousPreferences = preferences;
 
@@ -2066,6 +2169,26 @@ class AgendaStore extends ChangeNotifier {
           ..clear()
           ..addAll(shoppingById.values);
 
+        final workoutSessionsById = {
+          for (final item in workoutSessions) item.id: item,
+        };
+        for (final item in incomingWorkoutSessions) {
+          workoutSessionsById[item.id] = item;
+        }
+        workoutSessions
+          ..clear()
+          ..addAll(workoutSessionsById.values);
+
+        final workoutPlansById = {
+          for (final item in workoutPlans) item.id: item,
+        };
+        for (final item in incomingWorkoutPlans) {
+          workoutPlansById[item.id] = item;
+        }
+        workoutPlans
+          ..clear()
+          ..addAll(workoutPlansById.values);
+
         final trashById = {for (final entry in trash) entry.id: entry};
         for (final entry in incomingTrash) {
           trashById[entry.id] = entry;
@@ -2101,6 +2224,12 @@ class AgendaStore extends ChangeNotifier {
         shoppingItems
           ..clear()
           ..addAll(incomingShopping);
+        workoutSessions
+          ..clear()
+          ..addAll(incomingWorkoutSessions);
+        workoutPlans
+          ..clear()
+          ..addAll(incomingWorkoutPlans);
         trash
           ..clear()
           ..addAll(incomingTrash);
@@ -2161,6 +2290,12 @@ class AgendaStore extends ChangeNotifier {
       shoppingItems
         ..clear()
         ..addAll(previousShopping);
+      workoutSessions
+        ..clear()
+        ..addAll(previousWorkoutSessions);
+      workoutPlans
+        ..clear()
+        ..addAll(previousWorkoutPlans);
       trash
         ..clear()
         ..addAll(previousTrash);
@@ -2835,6 +2970,8 @@ class AgendaStore extends ChangeNotifier {
               weeks.isNotEmpty ||
               inbox.isNotEmpty ||
               shoppingItems.isNotEmpty ||
+              workoutSessions.isNotEmpty ||
+              workoutPlans.isNotEmpty ||
               trash.isNotEmpty)) {
         await createLocalSnapshot(
           label: 'Prima sincronizzazione cloud',
@@ -3075,6 +3212,14 @@ class AgendaStore extends ChangeNotifier {
           final before = shoppingItems.length;
           shoppingItems.removeWhere((e) => e.id == record.entityId);
           return shoppingItems.length != before;
+        case 'workout_session':
+          final before = workoutSessions.length;
+          workoutSessions.removeWhere((e) => e.id == record.entityId);
+          return workoutSessions.length != before;
+        case 'workout_plan':
+          final before = workoutPlans.length;
+          workoutPlans.removeWhere((e) => e.id == record.entityId);
+          return workoutPlans.length != before;
         case 'trash':
           final before = trash.length;
           trash.removeWhere((e) => e.id == record.entityId);
@@ -3206,6 +3351,35 @@ class AgendaStore extends ChangeNotifier {
           shoppingItems.add(incoming);
         } else {
           shoppingItems[index] = incoming;
+        }
+        return true;
+      case 'workout_session':
+        final incoming = WorkoutSession.fromJson(payload);
+        final index =
+            workoutSessions.indexWhere((e) => e.id == incoming.id);
+        if (index >= 0 &&
+            _syncPayloadHash(workoutSessions[index].toJson()) ==
+                _syncPayloadHash(incoming.toJson())) {
+          return false;
+        }
+        if (index < 0) {
+          workoutSessions.add(incoming);
+        } else {
+          workoutSessions[index] = incoming;
+        }
+        return true;
+      case 'workout_plan':
+        final incoming = WorkoutPlan.fromJson(payload);
+        final index = workoutPlans.indexWhere((e) => e.id == incoming.id);
+        if (index >= 0 &&
+            _syncPayloadHash(workoutPlans[index].toJson()) ==
+                _syncPayloadHash(incoming.toJson())) {
+          return false;
+        }
+        if (index < 0) {
+          workoutPlans.add(incoming);
+        } else {
+          workoutPlans[index] = incoming;
         }
         return true;
       case 'trash':
