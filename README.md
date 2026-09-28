@@ -2,7 +2,7 @@
 
 Flutter app for personal planning, private diary and the shared **Noi ♡** space.
 
-Current release line: **v0.71.0**.
+Current release line: **v0.72.0**.
 
 ## Core areas
 
@@ -460,3 +460,14 @@ See `docs/ARCHITECTURE.md` and `supabase/README.md` for implementation details.
 - **Noi ♡** exposes a dedicated shared shopping list by reusing the existing generic `SharedEntry` payload, offline pending queue, Realtime refresh and tombstone conflict rules.
 - Shared shopping stays outside the agenda/feed so grocery changes do not pollute the couple timeline.
 - No shopping backend table, new collaboration engine, AI service or external API is introduced.
+
+
+## v0.72.0 — Multi-sport Training
+
+- Adds a standalone **Allenamento** area designed around sessions, not around a single gym workflow.
+- Free sessions can represent running, cycling, walking, hiking, swimming, football, tennis/padel, gym or a custom sport.
+- Distance, elapsed time, elevation, notes and optional structured exercises are stored per session; every session remains individually consultable in the training history.
+- Running/walking/hiking sessions derive pace when distance and time are available; distance sports also derive average speed locally.
+- Workout plans are optional templates. They can target weekdays/date ranges, prefill exercises and appear in Day Hub/Home as “today’s plan”.
+- A plan can preserve its original photo/PDF (up to 15 MB) in the existing MediaAssetStore while its editable structure remains ordinary app data.
+- Plans and sessions reuse private entity-delta sync, account isolation, backup/restore and Trash. No fitness backend, exercise catalogue, calorie engine, 1RM tracker or AI workout system is introduced.

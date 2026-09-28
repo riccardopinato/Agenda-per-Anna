@@ -364,3 +364,16 @@ Shopping is deliberately split only by ownership boundary, not by infrastructure
 - **Lifecycle:** private deletion uses the global Trash contract; shared deletion uses the established collaborative tombstone semantics.
 - **Backup/account:** the private shopping collection is captured by ordinary account profiles, safety snapshots and JSON/ZIP backup/restore.
 - **Derived convenience:** automatic categories and frequent-item suggestions are local deterministic projections over the canonical item payload.
+
+
+## v0.72 — Multi-sport Training
+
+Training deliberately owns two lightweight private entity types: `TrainingPlan` and `TrainingSession`.
+
+- **Session is canonical history:** a completed activity is a standalone TrainingSession. It may link to a plan, but running/cycling/custom activities never require one.
+- **Plan is optional structure:** TrainingPlan provides weekday/date-range scheduling, notes, exercises and an optional source attachment. It is not a duplicate agenda event.
+- **Day Hub projection:** today's training plans are derived from plan scheduling rules and surfaced in Home/Day Hub without creating AgendaItem copies.
+- **Media reuse:** original photo/PDF plan files are content-addressed in MediaAssetStore. Local payloads retain asset IDs; cloud/portable backup boundaries materialize bytes as Base64 and re-localize them on receipt.
+- **Persistence reuse:** both training entities participate in the existing account-scoped entity delta/private cloud queue and account-profile model.
+- **Lifecycle reuse:** plan/session deletion uses the universal Trash contract; plan attachment bytes remain reachable while live or recoverable and are reclaimed by ordinary media maintenance after purge.
+- **Scope boundary:** pace/speed are deterministic derived values only. There is no exercise catalogue, coaching engine, calorie model, 1RM/progression tracker, AI workout or social fitness layer.

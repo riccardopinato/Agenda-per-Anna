@@ -26,6 +26,7 @@ Source of truth for the active product sequence after v0.52. The roadmap follows
 | v0.69 | Places Lite | Completed | Lightweight inline place references on diary memories, searchable without a separate Places database |
 | v0.70 | Architecture Regression Gate | Completed | Cross-domain regression lock for memory/place compatibility, lifecycle, backup, account isolation and anti-duplication constraints |
 | v0.71 | Shopping List | Completed | Lightweight private + Noi ♡ grocery list reusing existing local/cloud/shared lifecycle infrastructure |
+| v0.72 | Multi-sport Training | Completed | Standalone training history + optional workout plans for gym, running, cycling and other sports |
 
 ## Permanent constraints for this sequence
 
@@ -325,4 +326,19 @@ Per the active development cadence, AppLab runs once every two feature versions.
 - Shared shopping does not appear as agenda/feed content and introduces no new Supabase table.
 - The same Shopping List screen supports private and shared modes to avoid duplicated UX logic.
 - Release metadata is aligned to v0.71.0+81.
+- Analyze, full tests, Web release, Android size audit and AppLab Trusted Verify must be green before promotion to main.
+
+
+## v0.72 acceptance criteria
+
+- Allenamento is a standalone personal section and is not limited to gym workouts.
+- Free sessions support at least gym, running, cycling, walking, hiking, swimming, football, tennis/padel and a custom sport.
+- A session can store date, title, distance, duration, elevation, notes and optional exercises; every saved session remains individually consultable in the history.
+- Distance/time sessions derive simple pace/speed locally without introducing a fitness analytics engine.
+- Workout plans are optional and can define weekdays/date range, notes and structured exercises.
+- A plan can preserve the original photo/PDF in MediaAssetStore; transport boundaries materialize media through the existing backup/private-sync patterns.
+- Day Hub/Home can show the plan scheduled for the current day without copying it into AgendaItem.
+- Plans and sessions use granular private sync, account profiles, backup/restore and the existing Trash lifecycle.
+- No exercise database, calorie tracker, 1RM/progression engine, AI workout generator or social fitness subsystem is introduced.
+- Release metadata is aligned to v0.72.0+82.
 - Analyze, full tests, Web release, Android size audit and AppLab Trusted Verify must be green before promotion to main.
