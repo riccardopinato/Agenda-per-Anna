@@ -22,43 +22,100 @@ class UnifiedAgendaEntry {
   final AgendaItem? privateItem;
   final SharedEntry? sharedEntry;
   final SharedSpace? space;
+  final ExternalCalendarEvent? externalEvent;
 
   const UnifiedAgendaEntry.private(this.privateItem)
       : sharedEntry = null,
-        space = null;
+        space = null,
+        externalEvent = null;
 
   const UnifiedAgendaEntry.shared(this.sharedEntry, this.space)
-      : privateItem = null;
+      : privateItem = null,
+        externalEvent = null;
+
+  const UnifiedAgendaEntry.external(this.externalEvent)
+      : privateItem = null,
+        sharedEntry = null,
+        space = null;
 
   bool get isShared => sharedEntry != null;
   bool get isPrivate => privateItem != null;
+  bool get isExternal => externalEvent != null;
 
-  String get id => privateItem?.id ?? sharedEntry!.id;
-  String get title => privateItem?.title ?? sharedEntry!.title;
-  String get note => privateItem?.note ?? sharedEntry!.note;
-  DateTime get date => privateItem?.date ?? sharedEntry!.date;
-  TimeOfDay? get start =>
-      privateItem != null ? privateItem!.start : sharedEntry!.start;
-  TimeOfDay? get end =>
-      privateItem != null ? privateItem!.end : sharedEntry!.end;
-  bool get done => privateItem?.done ?? sharedEntry!.done;
+  String get id =>
+      privateItem?.id ?? sharedEntry?.id ?? externalEvent!.id;
+  String get title =>
+      privateItem?.title ?? sharedEntry?.title ?? externalEvent!.title;
+  String get note =>
+      privateItem?.note ?? sharedEntry?.note ?? externalEvent!.description;
+  DateTime get date =>
+      privateItem?.date ?? sharedEntry?.date ?? externalEvent!.date;
+  TimeOfDay? get start => privateItem != null
+      ? privateItem!.start
+      : sharedEntry != null
+          ? sharedEntry!.start
+          : externalEvent!.startTime;
+  TimeOfDay? get end => privateItem != null
+      ? privateItem!.end
+      : sharedEntry != null
+          ? sharedEntry!.end
+          : externalEvent!.endTime;
+  bool get done => privateItem?.done ?? sharedEntry?.done ?? false;
 
   ItemType get type {
     if (privateItem != null) return privateItem!.type;
-    return sharedEntry!.type == SharedEntryType.task
-        ? ItemType.task
-        : ItemType.appointment;
+    if (sharedEntry != null) {
+      return sharedEntry!.type == SharedEntryType.task
+          ? ItemType.task
+          : ItemType.appointment;
+    }
+    return ItemType.appointment;
   }
 
-  AgendaCategory get category =>
-      privateItem?.category ?? AgendaCategory.couple;
+  AgendaCategory get category {
+    if (privateItem != null) return privateItem!.category;
+    if (sharedEntry != null) return AgendaCategory.couple;
+    return AgendaCategory.other;
+  }
 
-  String get visibilityLabel => isShared
-      ? (space?.name.trim().isNotEmpty == true ? space!.name : 'Noi ♡')
-      : 'Privato';
+  String get visibilityLabel {
+    if (isShared) {
+      return space?.name.trim().isNotEmpty == true ? space!.name : 'Noi ♡';
+    }
+    if (isExternal) return externalEvent!.calendarName;
+    return 'Privato';
+  }
 
   int get sortMinutes =>
       start == null ? 24 * 60 + 1 : start!.hour * 60 + start!.minute;
+}
+
+List<UnifiedAgendaEntry> agendaEntriesForDayWithExternal(
+  AgendaStore store,
+  DateTime date,
+) {
+  final result = <UnifiedAgendaEntry>[
+    ...store.unifiedForDay(date),
+  ];
+  if (store.agendaContentFilter == AgendaContentFilter.all) {
+    result.addAll(
+      ExternalCalendarService.instance
+          .eventsForDay(date)
+          .map(UnifiedAgendaEntry.external),
+    );
+  }
+  result.sort((a, b) {
+    final aHasTime = a.start != null;
+    final bHasTime = b.start != null;
+    if (aHasTime && bHasTime) {
+      final time = b.sortMinutes.compareTo(a.sortMinutes);
+      if (time != 0) return time;
+    } else if (aHasTime != bHasTime) {
+      return aHasTime ? -1 : 1;
+    }
+    return b.title.toLowerCase().compareTo(a.title.toLowerCase());
+  });
+  return List<UnifiedAgendaEntry>.unmodifiable(result);
 }
 
 class AgendaContentFilterBar extends StatelessWidget {
@@ -117,6 +174,47 @@ class UnifiedAgendaTile extends StatelessWidget {
         item: privateItem,
         compact: compact,
         hideDetails: hideDetails,
+      );
+    }
+
+    final external = entry.externalEvent;
+    if (external != null) {
+      final color = external.colorValue == null
+          ? Theme.of(context).colorScheme.tertiary
+          : Color(external.colorValue!);
+      final timeText = external.allDay
+          ? 'Tutto il giorno'
+          : '${formatTime(external.startTime!)}'
+              '${external.endTime == null ? '' : ' – ${formatTime(external.endTime!)}'}';
+      final details = <String>[
+        timeText,
+        external.calendarName,
+        if (!hideDetails && external.location.isNotEmpty) external.location,
+      ];
+      return Card(
+        margin: EdgeInsets.only(bottom: compact ? 6 : 10),
+        child: ListTile(
+          dense: compact,
+          contentPadding: EdgeInsets.only(
+            left: compact ? 10 : 12,
+            right: compact ? 10 : 12,
+          ),
+          leading: CircleAvatar(
+            backgroundColor: color.withValues(alpha: 0.16),
+            foregroundColor: color,
+            child: const Icon(Icons.event_available_outlined),
+          ),
+          title: Text(
+            hideDetails ? 'Evento esterno nascosto' : external.title,
+            style: const TextStyle(fontWeight: FontWeight.w700),
+          ),
+          subtitle: Text(details.join(' · ')),
+          trailing: const Tooltip(
+            message: 'Sola lettura',
+            child: Icon(Icons.lock_outline, size: 18),
+          ),
+          onTap: () => openUnifiedAgendaEntry(context, store, entry),
+        ),
       );
     }
 
@@ -229,6 +327,50 @@ Future<void> openUnifiedAgendaEntry(
       store,
       entry.date,
       existing: entry.privateItem,
+    );
+    return;
+  }
+
+  if (entry.externalEvent != null) {
+    final event = entry.externalEvent!;
+    final when = event.allDay
+        ? 'Tutto il giorno'
+        : '${formatTime(event.startTime!)}'
+            '${event.endTime == null ? '' : ' – ${formatTime(event.endTime!)}'}';
+    await showDialog<void>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: Text(event.title),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(when, style: const TextStyle(fontWeight: FontWeight.w800)),
+            const SizedBox(height: 6),
+            Text(event.calendarName),
+            if (event.location.isNotEmpty) ...[
+              const SizedBox(height: 8),
+              Text(event.location),
+            ],
+            if (event.description.isNotEmpty) ...[
+              const SizedBox(height: 8),
+              Text(event.description),
+            ],
+            const SizedBox(height: 12),
+            Text(
+              'Evento del calendario di sistema · sola lettura. '
+              'Non viene copiato nel Diario, nella Memoria o nel cloud di Anna\'s Diary.',
+              style: Theme.of(dialogContext).textTheme.bodySmall,
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext),
+            child: const Text('Chiudi'),
+          ),
+        ],
+      ),
     );
     return;
   }
