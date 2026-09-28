@@ -339,3 +339,15 @@ Diary templates are deterministic builders of ordinary `DiaryBlock` notes. Searc
 Noi ♡ 2.0 extends the existing shared-space model instead of introducing a new workspace layer. Participant listing and owner-controlled member removal are PostgreSQL RPCs over `shared_spaces` and `space_members`; public wrappers are security-invoker functions, privileged implementations stay in the private schema with explicit `auth.uid()` authorization and an empty `search_path`.
 
 Data Safety is a derived audit over the current local payload, MediaAssetStore inventory, storage warning set and pending cloud queues. It creates no persistent health database. ZIP self-verification reuses the existing backup decoder, manifest/data SHA-256 checks, media size/hash checks and schema inspection, so backup creation and restore share one integrity contract.
+
+
+## v0.67 — Lifecycle & Reference Integrity
+
+v0.67 hardens boundaries around the existing lifecycle architecture rather than introducing another content abstraction.
+
+- Private agenda, diary, People, birthdays, habits and Inbox continue to use the established account-scoped Trash and deterministic private cloud reconciliation. Existing delete/restore/purge semantics remain the source of truth.
+- `enqueueSharedDelete` now cancels pending interaction operations for the same shared entry in addition to pending media uploads.
+- Shared sync ordering is parent-first: media uploads settle, then shared entry upserts/tombstones, then comment/reaction operations. A child operation cannot intentionally outrun a queued delete for its parent.
+- Supabase owns the cross-user cascade that the client RLS model cannot perform: tombstoning an `agenda_records/shared_entry` row removes matching `shared_entry_comments` and `shared_entry_reactions`. The trigger function is isolated in the private schema, pins an empty `search_path`, and is not directly executable by client roles.
+- Shared Storage deletion remains best-effort relative to the authoritative tombstone, but failures are no longer forgotten. Paths are retained under the existing account scope and retried by shared reconciliation until cleanup succeeds.
+- The change adds no second shared database, no second sync engine and no generalized LifeItem/MemoryEngine layer.
