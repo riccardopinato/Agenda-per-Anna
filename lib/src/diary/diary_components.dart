@@ -1651,15 +1651,4 @@ class _DiaryMemoryCardState extends State<DiaryMemoryCard> {
     );
   }
 }
-
-class _DiaryMemoryRecord {
-  final DateTime date;
-  final DiaryBlock block;
-
-  const _DiaryMemoryRecord({
-    required this.date,
-    required this.block,
-  });
-}
-
 enum _DiaryMemoriesView { memories, days, months, years }
