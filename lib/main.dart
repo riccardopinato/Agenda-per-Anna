@@ -20,6 +20,7 @@ import 'package:table_calendar/table_calendar.dart';
 import 'package:uuid/uuid.dart';
 
 import 'app_version.dart';
+import 'external_calendar_service.dart';
 import 'backup_service.dart';
 import 'cloud_sync_service.dart';
 import 'notification_service.dart';
