@@ -13,6 +13,24 @@ class _CalendarScreenState extends State<CalendarScreen> {
   DateTime focused = DateTime.now();
 
   @override
+  void initState() {
+    super.initState();
+    unawaited(
+      ExternalCalendarService.instance.initialize().then(
+        (_) => _loadVisibleMonth(focused),
+      ),
+    );
+  }
+
+  Future<void> _loadVisibleMonth(DateTime anchor) {
+    final start = DateTime(anchor.year, anchor.month, 1)
+        .subtract(const Duration(days: 7));
+    final end = DateTime(anchor.year, anchor.month + 1, 1)
+        .add(const Duration(days: 7));
+    return ExternalCalendarService.instance.loadRange(start, end);
+  }
+
+  @override
   Widget build(BuildContext context) {
     return AnimatedBuilder(
       animation: Listenable.merge([
@@ -20,9 +38,11 @@ class _CalendarScreenState extends State<CalendarScreen> {
         widget.store.sharedRevision,
         widget.store.journalRevision,
         widget.store.planningRevision,
+        ExternalCalendarService.instance,
       ]),
       builder: (context, _) {
-        final events = widget.store.unifiedForDay(selected);
+        final events =
+            agendaEntriesForDayWithExternal(widget.store, selected);
         final dayHub = widget.store.dayHubSnapshot(selected);
         return Scaffold(
           appBar: AppBar(title: const Text('Calendario', style: TextStyle(fontWeight: FontWeight.w800))),
@@ -42,12 +62,19 @@ class _CalendarScreenState extends State<CalendarScreen> {
                     lastDay: DateTime(2040),
                     focusedDay: focused,
                     selectedDayPredicate: (d) => isSameDay(d, selected),
-                    eventLoader: widget.store.unifiedForDay,
-                    onDaySelected: (s, f) => setState(() {
-                      selected = s;
+                    eventLoader: (day) =>
+                        agendaEntriesForDayWithExternal(widget.store, day),
+                    onDaySelected: (s, f) {
+                      setState(() {
+                        selected = s;
+                        focused = f;
+                      });
+                      unawaited(_loadVisibleMonth(f));
+                    },
+                    onPageChanged: (f) {
                       focused = f;
-                    }),
-                    onPageChanged: (f) => focused = f,
+                      unawaited(_loadVisibleMonth(f));
+                    },
                     headerStyle: const HeaderStyle(formatButtonVisible: false, titleCentered: true),
                     calendarStyle: CalendarStyle(
                       outsideDaysVisible: false,
@@ -115,19 +142,49 @@ class _PlannerScreenState extends State<PlannerScreen> {
   void initState() {
     super.initState();
     day = widget.initialDate ?? DateTime.now();
+    unawaited(
+      ExternalCalendarService.instance.initialize().then(
+        (_) => _loadDay(day),
+      ),
+    );
+  }
+
+  Future<void> _loadDay(DateTime value) {
+    final start = DateTime(value.year, value.month, value.day);
+    return ExternalCalendarService.instance.loadRange(
+      start,
+      start.add(const Duration(days: 1)),
+    );
+  }
+
+  void _selectDay(DateTime value) {
+    setState(() => day = value);
+    unawaited(_loadDay(value));
   }
 
   @override
   Widget build(BuildContext context) {
     return AnimatedBuilder(
-      animation: Listenable.merge([widget.store.agendaRevision, widget.store.sharedRevision, widget.store.journalRevision, widget.store.planningRevision]),
+      animation: Listenable.merge([
+        widget.store.agendaRevision,
+        widget.store.sharedRevision,
+        widget.store.journalRevision,
+        widget.store.planningRevision,
+        ExternalCalendarService.instance,
+      ]),
       builder: (context, _) {
-        final events = widget.store.unifiedForDay(day);
+        final events =
+            agendaEntriesForDayWithExternal(widget.store, day);
         final birthdays = widget.store.birthdaysForDay(day);
         final tasks = events.where((e) => e.type == ItemType.task).toList();
         final allDay = events
-            .where((e) => e.type == ItemType.appointment && e.start == null)
+            .where((e) =>
+                !e.isExternal &&
+                e.type == ItemType.appointment &&
+                e.start == null)
             .toList();
+        final externalEvents =
+            events.where((e) => e.isExternal).toList();
         final timedPrivate = events
             .where((e) =>
                 e.type == ItemType.appointment &&
@@ -158,7 +215,7 @@ class _PlannerScreenState extends State<PlannerScreen> {
             actions: [
               if (!AgendaStore.sameDay(day, DateTime.now()))
                 TextButton(
-                  onPressed: () => setState(() => day = DateTime.now()),
+                  onPressed: () => _selectDay(DateTime.now()),
                   child: const Text('Oggi'),
                 ),
               IconButton(
@@ -171,7 +228,7 @@ class _PlannerScreenState extends State<PlannerScreen> {
             children: [
               DateStrip(
                 selected: day,
-                onSelected: (d) => setState(() => day = d),
+                onSelected: _selectDay,
               ),
               Expanded(
                 child: ListView(
@@ -226,6 +283,22 @@ class _PlannerScreenState extends State<PlannerScreen> {
                         icon: Icons.event_outlined,
                         child: Column(
                           children: allDay
+                              .map((e) => UnifiedAgendaTile(
+                                    store: widget.store,
+                                    entry: e,
+                                    compact: true,
+                                  ))
+                              .toList(),
+                        ),
+                      ),
+                    ],
+                    if (externalEvents.isNotEmpty) ...[
+                      const SizedBox(height: 14),
+                      _DaySmallSection(
+                        title: 'Calendario esterno',
+                        icon: Icons.event_available_outlined,
+                        child: Column(
+                          children: externalEvents
                               .map((e) => UnifiedAgendaTile(
                                     store: widget.store,
                                     entry: e,
@@ -963,15 +1036,51 @@ class _WeekScreenState extends State<WeekScreen> {
   late DateTime start = mondayOf(DateTime.now());
 
   @override
+  void initState() {
+    super.initState();
+    unawaited(
+      ExternalCalendarService.instance.initialize().then(
+        (_) => _loadWeek(),
+      ),
+    );
+  }
+
+  Future<void> _loadWeek() {
+    return ExternalCalendarService.instance.loadRange(
+      start,
+      addCivilDays(start, 7),
+    );
+  }
+
+  void _moveWeek(int days) {
+    setState(() => start = addCivilDays(start, days));
+    unawaited(_loadWeek());
+  }
+
+  void _goToCurrentWeek() {
+    setState(() => start = mondayOf(DateTime.now()));
+    unawaited(_loadWeek());
+  }
+
+  @override
   Widget build(BuildContext context) {
     return AnimatedBuilder(
-      animation: Listenable.merge([widget.store.agendaRevision, widget.store.sharedRevision, widget.store.journalRevision, widget.store.planningRevision]),
+      animation: Listenable.merge([
+        widget.store.agendaRevision,
+        widget.store.sharedRevision,
+        widget.store.journalRevision,
+        widget.store.planningRevision,
+        ExternalCalendarService.instance,
+      ]),
       builder: (context, _) {
         final data = widget.store.week(start);
         final end = addCivilDays(start, 6);
         final events = <UnifiedAgendaEntry>[
           for (int i = 6; i >= 0; i--)
-            ...widget.store.unifiedForDay(addCivilDays(start, i)),
+            ...agendaEntriesForDayWithExternal(
+              widget.store,
+              addCivilDays(start, i),
+            ),
         ];
         final completedTasks = events.where((e) => e.type == ItemType.task && e.done).length;
         final totalTasks = events.where((e) => e.type == ItemType.task).length;
@@ -987,17 +1096,17 @@ class _WeekScreenState extends State<WeekScreen> {
             actions: [
               IconButton(
                 tooltip: 'Settimana precedente',
-                onPressed: () => setState(() => start = addCivilDays(start, -7)),
+                onPressed: () => _moveWeek(-7),
                 icon: const Icon(Icons.chevron_left),
               ),
               IconButton(
                 tooltip: 'Questa settimana',
-                onPressed: () => setState(() => start = mondayOf(DateTime.now())),
+                onPressed: _goToCurrentWeek,
                 icon: const Icon(Icons.today_outlined),
               ),
               IconButton(
                 tooltip: 'Settimana successiva',
-                onPressed: () => setState(() => start = addCivilDays(start, 7)),
+                onPressed: () => _moveWeek(7),
                 icon: const Icon(Icons.chevron_right),
               ),
               PopupMenuButton<String>(
@@ -1312,7 +1421,7 @@ class _WeekDayCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final items = store.unifiedForDay(day);
+    final items = agendaEntriesForDayWithExternal(store, day);
     final journal = store.journal(day);
     final isToday = AgendaStore.sameDay(day, DateTime.now());
 
