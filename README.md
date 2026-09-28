@@ -429,5 +429,6 @@ See `docs/ARCHITECTURE.md` and `supabase/README.md` for implementation details.
 - `I miei luoghi` supports add/edit/favorite, linked-memory counts and a detail view that reuses the Memory Engine projection.
 - Quick Capture can create a place, and global deterministic search indexes both place entities and linked-place names/category/address inside diary memories.
 - Places reuse the existing private local-first entity pipeline: Sembast working state, per-entity deltas, cloud queue, account isolation, backup/restore, readable export and Trash recovery.
+- Portable JSON backups now include PlaceEntry records as well as `placeIds`; recoverable links remain editable while a place is in Trash, and the picker no longer silently truncates selections.
 - Permanently purging a place removes only dangling `placeIds`; the diary memory itself is never deleted.
 - No map SDK, GPS permission, geofencing, remote place service or generative AI dependency is introduced.
