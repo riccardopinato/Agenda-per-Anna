@@ -86,6 +86,7 @@ class DayHubSnapshot {
   final List<BirthdayOccurrence> birthdays;
   final int pendingTaskCount;
   final int appointmentCount;
+  final List<TrainingPlan> trainingPlans;
   final DayJournal journal;
 
   const DayHubSnapshot({
@@ -94,6 +95,7 @@ class DayHubSnapshot {
     required this.birthdays,
     required this.pendingTaskCount,
     required this.appointmentCount,
+    required this.trainingPlans,
     required this.journal,
   });
 
@@ -105,7 +107,10 @@ class DayHubSnapshot {
       journal.blocks.isNotEmpty;
 
   bool get isEmpty =>
-      agenda.isEmpty && birthdays.isEmpty && !hasJournalContent;
+      agenda.isEmpty &&
+      birthdays.isEmpty &&
+      trainingPlans.isEmpty &&
+      !hasJournalContent;
 }
 
 extension AgendaStoreDayHub on AgendaStore {
@@ -183,6 +188,7 @@ extension AgendaStoreDayHub on AgendaStore {
           .length,
       appointmentCount:
           agenda.where((entry) => entry.type == ItemType.appointment).length,
+      trainingPlans: trainingPlansForDay(normalized),
       journal: journal(normalized),
     );
   }
