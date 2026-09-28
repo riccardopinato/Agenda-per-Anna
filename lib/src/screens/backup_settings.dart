@@ -1530,7 +1530,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     const Text(
-                      'Avvio e Home',
+                      'Avvio e giornata',
                       style: TextStyle(
                         fontWeight: FontWeight.w900,
                         fontSize: 18,
@@ -1538,12 +1538,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     ),
                     const SizedBox(height: 10),
                     DropdownButtonFormField<StartTab>(
-                      initialValue: prefs.startTab,
+                      initialValue: prefs.startTab.isLegacyHome
+                          ? StartTab.today
+                          : prefs.startTab,
                       decoration: const InputDecoration(
                         labelText: 'Apri l’app su',
-                        prefixIcon: Icon(Icons.home_outlined),
+                        prefixIcon: Icon(Icons.today_outlined),
                       ),
-                      items: StartTab.values
+                      items: selectableStartTabs
                           .map(
                             (value) => DropdownMenuItem(
                               value: value,
@@ -1563,7 +1565,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       contentPadding: EdgeInsets.zero,
                       title: const Text('Frase positiva del giorno'),
                       subtitle: const Text(
-                        'Mostra la frase nella testata della Home.',
+                        'Mostra la frase nella testata della giornata.',
                       ),
                       value: prefs.showDailyQuote,
                       onChanged: (value) =>
