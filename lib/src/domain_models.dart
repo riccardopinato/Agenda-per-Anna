@@ -385,6 +385,228 @@ class AgendaItem {
   }
 }
 
+enum TrainingEntryKind { session, plan }
+
+enum TrainingSport {
+  running,
+  cycling,
+  gym,
+  walking,
+  hiking,
+  swimming,
+  football,
+  tennis,
+  padel,
+  yoga,
+  skiing,
+  other,
+}
+
+extension TrainingSportUi on TrainingSport {
+  String get label => switch (this) {
+        TrainingSport.running => 'Corsa',
+        TrainingSport.cycling => 'Bici',
+        TrainingSport.gym => 'Palestra',
+        TrainingSport.walking => 'Camminata',
+        TrainingSport.hiking => 'Trekking',
+        TrainingSport.swimming => 'Nuoto',
+        TrainingSport.football => 'Calcio',
+        TrainingSport.tennis => 'Tennis',
+        TrainingSport.padel => 'Padel',
+        TrainingSport.yoga => 'Yoga',
+        TrainingSport.skiing => 'Sci',
+        TrainingSport.other => 'Altro',
+      };
+
+  IconData get icon => switch (this) {
+        TrainingSport.running => Icons.directions_run,
+        TrainingSport.cycling => Icons.directions_bike_outlined,
+        TrainingSport.gym => Icons.fitness_center_outlined,
+        TrainingSport.walking => Icons.directions_walk,
+        TrainingSport.hiking => Icons.hiking_outlined,
+        TrainingSport.swimming => Icons.pool_outlined,
+        TrainingSport.football => Icons.sports_soccer_outlined,
+        TrainingSport.tennis => Icons.sports_tennis_outlined,
+        TrainingSport.padel => Icons.sports_tennis_outlined,
+        TrainingSport.yoga => Icons.self_improvement_outlined,
+        TrainingSport.skiing => Icons.downhill_skiing_outlined,
+        TrainingSport.other => Icons.sports_outlined,
+      };
+}
+
+class TrainingExercise {
+  final String name;
+  final int sets;
+  final int reps;
+  final double? weightKg;
+  final String note;
+
+  const TrainingExercise({
+    required this.name,
+    this.sets = 0,
+    this.reps = 0,
+    this.weightKg,
+    this.note = '',
+  });
+
+  Map<String, dynamic> toJson() => {
+        'name': name,
+        'sets': sets,
+        'reps': reps,
+        'weightKg': weightKg,
+        'note': note,
+      };
+
+  factory TrainingExercise.fromJson(Map<String, dynamic> json) =>
+      TrainingExercise(
+        name: json['name']?.toString() ?? '',
+        sets: (json['sets'] as num? ?? 0).toInt(),
+        reps: (json['reps'] as num? ?? 0).toInt(),
+        weightKg: (json['weightKg'] as num?)?.toDouble(),
+        note: json['note']?.toString() ?? '',
+      );
+}
+
+class TrainingEntry {
+  final String id;
+  final TrainingEntryKind kind;
+  final TrainingSport sport;
+  final String title;
+  final DateTime date;
+  final int durationSeconds;
+  final double? distanceKm;
+  final double? elevationMeters;
+  final int effort;
+  final String notes;
+  final String planId;
+  final List<TrainingExercise> exercises;
+  final String attachmentName;
+  final String attachmentMimeType;
+  final String attachmentBase64;
+  final DateTime createdAt;
+
+  const TrainingEntry({
+    required this.id,
+    required this.kind,
+    required this.sport,
+    required this.title,
+    required this.date,
+    required this.createdAt,
+    this.durationSeconds = 0,
+    this.distanceKm,
+    this.elevationMeters,
+    this.effort = 0,
+    this.notes = '',
+    this.planId = '',
+    this.exercises = const [],
+    this.attachmentName = '',
+    this.attachmentMimeType = '',
+    this.attachmentBase64 = '',
+  });
+
+  bool get hasAttachment =>
+      attachmentName.isNotEmpty && attachmentBase64.isNotEmpty;
+
+  TrainingEntry copyWith({
+    TrainingSport? sport,
+    String? title,
+    DateTime? date,
+    int? durationSeconds,
+    double? distanceKm,
+    bool clearDistance = false,
+    double? elevationMeters,
+    bool clearElevation = false,
+    int? effort,
+    String? notes,
+    String? planId,
+    List<TrainingExercise>? exercises,
+    String? attachmentName,
+    String? attachmentMimeType,
+    String? attachmentBase64,
+    bool clearAttachment = false,
+  }) =>
+      TrainingEntry(
+        id: id,
+        kind: kind,
+        sport: sport ?? this.sport,
+        title: title ?? this.title,
+        date: date ?? this.date,
+        durationSeconds: durationSeconds ?? this.durationSeconds,
+        distanceKm: clearDistance ? null : (distanceKm ?? this.distanceKm),
+        elevationMeters:
+            clearElevation ? null : (elevationMeters ?? this.elevationMeters),
+        effort: effort ?? this.effort,
+        notes: notes ?? this.notes,
+        planId: planId ?? this.planId,
+        exercises: exercises ?? this.exercises,
+        attachmentName: clearAttachment
+            ? ''
+            : (attachmentName ?? this.attachmentName),
+        attachmentMimeType: clearAttachment
+            ? ''
+            : (attachmentMimeType ?? this.attachmentMimeType),
+        attachmentBase64: clearAttachment
+            ? ''
+            : (attachmentBase64 ?? this.attachmentBase64),
+        createdAt: createdAt,
+      );
+
+  Map<String, dynamic> toJson() => {
+        'id': id,
+        'kind': kind.name,
+        'sport': sport.name,
+        'title': title,
+        'date': date.toUtc().toIso8601String(),
+        'durationSeconds': durationSeconds,
+        'distanceKm': distanceKm,
+        'elevationMeters': elevationMeters,
+        'effort': effort,
+        'notes': notes,
+        'planId': planId,
+        'exercises': exercises.map((exercise) => exercise.toJson()).toList(),
+        'attachmentName': attachmentName,
+        'attachmentMimeType': attachmentMimeType,
+        'attachmentBase64': attachmentBase64,
+        'createdAt': createdAt.toUtc().toIso8601String(),
+      };
+
+  factory TrainingEntry.fromJson(Map<String, dynamic> json) => TrainingEntry(
+        id: json['id']?.toString() ?? const Uuid().v4(),
+        kind: TrainingEntryKind.values.firstWhere(
+          (value) => value.name == json['kind'],
+          orElse: () => TrainingEntryKind.session,
+        ),
+        sport: TrainingSport.values.firstWhere(
+          (value) => value.name == json['sport'],
+          orElse: () => TrainingSport.other,
+        ),
+        title: json['title']?.toString() ?? '',
+        date: DateTime.tryParse(json['date']?.toString() ?? '')?.toLocal() ??
+            DateTime.now(),
+        durationSeconds: (json['durationSeconds'] as num? ?? 0).toInt(),
+        distanceKm: (json['distanceKm'] as num?)?.toDouble(),
+        elevationMeters: (json['elevationMeters'] as num?)?.toDouble(),
+        effort: (json['effort'] as num? ?? 0).toInt().clamp(0, 10),
+        notes: json['notes']?.toString() ?? '',
+        planId: json['planId']?.toString() ?? '',
+        exercises: (json['exercises'] as List? ?? const [])
+            .whereType<Map>()
+            .map(
+              (value) => TrainingExercise.fromJson(
+                Map<String, dynamic>.from(value),
+              ),
+            )
+            .where((exercise) => exercise.name.trim().isNotEmpty)
+            .toList(),
+        attachmentName: json['attachmentName']?.toString() ?? '',
+        attachmentMimeType: json['attachmentMimeType']?.toString() ?? '',
+        attachmentBase64: json['attachmentBase64']?.toString() ?? '',
+        createdAt:
+            DateTime.tryParse(json['createdAt']?.toString() ?? '')?.toLocal() ??
+                DateTime.now(),
+      );
+}
+
 enum ShoppingCategory {
   produce,
   dairy,
