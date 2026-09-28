@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:intl/date_symbol_data_local.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:agenda_per_anna/local_state_store.dart';
@@ -9,6 +10,10 @@ import 'package:agenda_per_anna/media_asset_store.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
+
+  setUpAll(() async {
+    await initializeDateFormatting('it_IT', null);
+  });
 
   setUp(() async {
     await LocalStateStore.instance.resetForTesting();
