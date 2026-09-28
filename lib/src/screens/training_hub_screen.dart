@@ -379,7 +379,6 @@ class _TrainingHubScreenState extends State<TrainingHubScreen> {
                       );
                       if (file == null) return;
                       final bytes = await file.readAsBytes();
-                      if (bytes == null) return;
                       if (bytes.lengthInBytes > 3 * 1024 * 1024) {
                         if (context.mounted) {
                           ScaffoldMessenger.of(context).showSnackBar(
