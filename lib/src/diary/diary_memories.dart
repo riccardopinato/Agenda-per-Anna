@@ -48,10 +48,15 @@ class _DiaryMemoriesScreenState extends State<DiaryMemoriesScreen> {
         .peopleForIds(block.personIds)
         .map((person) => '${person.name} ${person.relationship}')
         .join(' ');
+    final placesText = widget.store
+        .placesForIds(block.placeIds)
+        .map((place) => '${place.name} ${place.category} ${place.address}')
+        .join(' ');
     final searchable = [
       block.text,
       sketchText,
       peopleText,
+      placesText,
       DateFormat('d MMMM yyyy', 'it_IT').format(record.date),
       DateFormat('MMMM yyyy', 'it_IT').format(record.date),
       '${record.date.year}',

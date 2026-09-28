@@ -850,6 +850,7 @@ class DiaryContentCard extends StatelessWidget {
   final VoidCallback? onEditCaption;
   final VoidCallback? onReplacePhoto;
   final VoidCallback? onPeople;
+  final VoidCallback? onPlaces;
   final VoidCallback? onConnections;
   final VoidCallback? onPin;
   final VoidCallback? onArchive;
@@ -872,6 +873,7 @@ class DiaryContentCard extends StatelessWidget {
     this.onEditCaption,
     this.onReplacePhoto,
     this.onPeople,
+    this.onPlaces,
     this.onConnections,
     this.onPin,
     this.onArchive,
@@ -928,6 +930,7 @@ class DiaryContentCard extends StatelessWidget {
                     if (value == 'archive') onArchive?.call();
                     if (value == 'tags') onTags?.call();
                     if (value == 'people') onPeople?.call();
+                    if (value == 'places') onPlaces?.call();
                     if (value == 'connections') onConnections?.call();
                     if (value == 'delete') onDelete?.call();
                   },
@@ -968,6 +971,11 @@ class DiaryContentCard extends StatelessWidget {
                       const PopupMenuItem(
                         value: 'people',
                         child: Text('Collega persone'),
+                      ),
+                    if (onPlaces != null)
+                      const PopupMenuItem(
+                        value: 'places',
+                        child: Text('Collega luoghi'),
                       ),
                     if (onConnections != null)
                       const PopupMenuItem(
@@ -1419,11 +1427,23 @@ class _DiaryMemoryCardState extends State<DiaryMemoryCard> {
     await widget.store.tagDiaryBlockPeople(widget.date, block.id, selected);
   }
 
+  Future<void> _editPlaces(DiaryBlock block) async {
+    final selected = await showPlacesPicker(
+      context,
+      widget.store,
+      initialIds: block.placeIds,
+    );
+    if (selected == null) return;
+    await widget.store.tagDiaryBlockPlaces(widget.date, block.id, selected);
+  }
+
   Widget? _peopleFooter(DiaryBlock block) {
     final linked = widget.store.peopleForIds(block.personIds);
+    final linkedPlaces = widget.store.placesForIds(block.placeIds);
     final outgoing = widget.store.relatedDiaryBlocks(block);
     final backlinks = widget.store.backlinksForDiaryBlock(block.id);
     if (linked.isEmpty &&
+        linkedPlaces.isEmpty &&
         block.tags.isEmpty &&
         outgoing.isEmpty &&
         backlinks.isEmpty) {
@@ -1450,6 +1470,16 @@ class _DiaryMemoryCardState extends State<DiaryMemoryCard> {
                 size: 16,
               ),
               label: Text(person.name),
+            ),
+          ),
+          ...linkedPlaces.map(
+            (place) => Chip(
+              visualDensity: VisualDensity.compact,
+              avatar: Icon(
+                place.favorite ? Icons.star : Icons.place_outlined,
+                size: 16,
+              ),
+              label: Text(place.name),
             ),
           ),
           if (outgoing.isNotEmpty)
@@ -1535,6 +1565,7 @@ class _DiaryMemoryCardState extends State<DiaryMemoryCard> {
           onOpen: () => _addNote(block),
           onEdit: () => _addNote(block),
           onPeople: () => _editPeople(block),
+          onPlaces: () => _editPlaces(block),
           onConnections: () => _editConnections(block),
           onPin: () => _togglePinned(block),
           onArchive: () => _toggleArchived(block),
@@ -1565,6 +1596,7 @@ class _DiaryMemoryCardState extends State<DiaryMemoryCard> {
           onEditCaption: () => _editPhotoCaption(block),
           onReplacePhoto: () => _replacePhoto(block),
           onPeople: () => _editPeople(block),
+          onPlaces: () => _editPlaces(block),
           onConnections: () => _editConnections(block),
           onPin: () => _togglePinned(block),
           onArchive: () => _toggleArchived(block),
@@ -1588,6 +1620,7 @@ class _DiaryMemoryCardState extends State<DiaryMemoryCard> {
           onOpen: () => _openSketch(block),
           onEdit: () => _openSketch(block),
           onPeople: () => _editPeople(block),
+          onPlaces: () => _editPlaces(block),
           onConnections: () => _editConnections(block),
           onPin: () => _togglePinned(block),
           onArchive: () => _toggleArchived(block),
@@ -1608,6 +1641,7 @@ class _DiaryMemoryCardState extends State<DiaryMemoryCard> {
           onOpen: () => _playVoice(block),
           onEdit: () => _editVoiceCaption(block),
           onPeople: () => _editPeople(block),
+          onPlaces: () => _editPlaces(block),
           onConnections: () => _editConnections(block),
           onPin: () => _togglePinned(block),
           onArchive: () => _toggleArchived(block),

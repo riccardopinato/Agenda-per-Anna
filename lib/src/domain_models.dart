@@ -793,6 +793,7 @@ class DiaryBlock {
   final List<String> tags;
   final List<DiarySketchPage> pages;
   final List<String> personIds;
+  final List<String> placeIds;
   final List<String> relatedBlockIds;
 
   const DiaryBlock({
@@ -813,6 +814,7 @@ class DiaryBlock {
     this.tags = const [],
     this.pages = const [],
     this.personIds = const [],
+    this.placeIds = const [],
     this.relatedBlockIds = const [],
   });
 
@@ -839,6 +841,7 @@ class DiaryBlock {
     List<String>? tags,
     List<DiarySketchPage>? pages,
     List<String>? personIds,
+    List<String>? placeIds,
     List<String>? relatedBlockIds,
   }) =>
       DiaryBlock(
@@ -860,6 +863,7 @@ class DiaryBlock {
         tags: tags ?? this.tags,
         pages: pages ?? this.pages,
         personIds: personIds ?? this.personIds,
+        placeIds: placeIds ?? this.placeIds,
         relatedBlockIds: relatedBlockIds ?? this.relatedBlockIds,
       );
 
@@ -881,6 +885,7 @@ class DiaryBlock {
         'tags': tags,
         'pages': pages.map((page) => page.toJson()).toList(),
         'personIds': personIds,
+        'placeIds': placeIds,
         'relatedBlockIds': relatedBlockIds,
       };
 
@@ -928,6 +933,11 @@ class DiaryBlock {
         personIds: (json['personIds'] as List? ?? const [])
             .map((value) => value.toString())
             .where((value) => value.isNotEmpty)
+            .toList(),
+        placeIds: (json['placeIds'] as List? ?? const [])
+            .map((value) => value.toString())
+            .where((value) => value.isNotEmpty)
+            .toSet()
             .toList(),
         relatedBlockIds: (json['relatedBlockIds'] as List? ?? const [])
             .map((value) => value.toString())
@@ -1636,6 +1646,7 @@ class BackupSummary {
   final int habitCount;
   final int birthdayCount;
   final int personCount;
+  final int placeCount;
   final int trashCount;
 
   const BackupSummary({
@@ -1647,6 +1658,7 @@ class BackupSummary {
     required this.habitCount,
     this.birthdayCount = 0,
     this.personCount = 0,
+    this.placeCount = 0,
     this.trashCount = 0,
   });
 }
