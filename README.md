@@ -416,6 +416,6 @@ See `docs/ARCHITECTURE.md` and `supabase/README.md` for implementation details.
 - PostgreSQL now cascades a shared-entry tombstone to all comments and reactions for that entry, including rows created by other members, while keeping the existing collaboration RLS model.
 - Failed shared-media deletion no longer becomes a permanent orphan: the Storage path moves to an account-scoped durable cleanup queue and is retried on later shared sync.
 - Deleting a shared entry also removes its local interaction cache; deleting/leaving a shared space removes the associated pending media-cleanup queue.
-- Existing private last-write-wins reconciliation, DiaryBlock reference cleanup, reminder cancellation/restore and recoverable-media reachability remain unchanged and covered by their existing lifecycle contracts.
+- Existing private last-write-wins reconciliation, DiaryBlock reference cleanup, reminder cancellation/restore and recoverable-media reachability remain unchanged; v0.67 adds a regression lock around the established timestamp/RPC merge contract.
 - Production Supabase migration `shared_entry_lifecycle_integrity_v067` is applied and tracked in the repository.
 - No new user-facing data model, collaboration role system or AI feature is introduced.
