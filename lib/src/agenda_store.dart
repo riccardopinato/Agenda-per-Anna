@@ -12,6 +12,8 @@ class AgendaStore extends ChangeNotifier {
   static const _preferencesKey = 'agenda_preferences_v1';
   static const _inboxKey = 'inbox_v1';
   static const _shoppingKey = 'shopping_v1';
+  static const _trainingPlansKey = 'training_plans_v1';
+  static const _trainingSessionsKey = 'training_sessions_v1';
   static const _syncQueueKey = 'cloud_sync_queue_v1';
   static const _syncIndexKey = 'cloud_sync_index_v1';
   static const _syncOwnerKey = 'cloud_sync_owner_v1';
@@ -43,6 +45,8 @@ class AgendaStore extends ChangeNotifier {
   final List<LocalBackupSnapshot> localSnapshots = [];
   final List<InboxEntry> inbox = [];
   final List<ShoppingItem> shoppingItems = [];
+  final List<TrainingPlan> trainingPlans = [];
+  final List<TrainingSession> trainingSessions = [];
   final List<TrashEntry> trash = [];
   final Map<String, CloudSyncOperation> _syncQueue = {};
   final Map<String, String> _syncIndex = {};
@@ -115,6 +119,7 @@ class AgendaStore extends ChangeNotifier {
   ValueListenable<int> get sharedRevision => signals.shared;
   ValueListenable<int> get inboxRevision => signals.inbox;
   ValueListenable<int> get shoppingRevision => signals.shopping;
+  ValueListenable<int> get trainingRevision => signals.training;
   ValueListenable<int> get settingsRevision => signals.settings;
   ValueListenable<int> get backupRevision => signals.backup;
   ValueListenable<int> get lifecycleRevision => signals.lifecycle;
@@ -152,6 +157,8 @@ class AgendaStore extends ChangeNotifier {
         _preferencesKey,
         _inboxKey,
         _shoppingKey,
+        _trainingPlansKey,
+        _trainingSessionsKey,
         _trashKey,
         _syncQueueKey,
         _syncIndexKey,
@@ -339,6 +346,11 @@ class AgendaStore extends ChangeNotifier {
     notifyListeners();
   }
 
+  void _notifyTrainingChanged() {
+    signals.bumpTraining();
+    notifyListeners();
+  }
+
   void _notifySettingsChanged() {
     signals.bumpSettings();
     notifyListeners();
@@ -467,6 +479,26 @@ class AgendaStore extends ChangeNotifier {
             if (!deleted && payload is Map) {
               shoppingItems.add(
                 ShoppingItem.fromJson(
+                  Map<String, dynamic>.from(payload),
+                ),
+              );
+            }
+            break;
+          case 'training_plan':
+            trainingPlans.removeWhere((entry) => entry.id == id);
+            if (!deleted && payload is Map) {
+              trainingPlans.add(
+                TrainingPlan.fromJson(
+                  Map<String, dynamic>.from(payload),
+                ),
+              );
+            }
+            break;
+          case 'training_session':
+            trainingSessions.removeWhere((entry) => entry.id == id);
+            if (!deleted && payload is Map) {
+              trainingSessions.add(
+                TrainingSession.fromJson(
                   Map<String, dynamic>.from(payload),
                 ),
               );
@@ -633,6 +665,16 @@ class AgendaStore extends ChangeNotifier {
         return null;
       case 'shopping':
         for (final entry in shoppingItems) {
+          if (entry.id == id) return entry.toJson();
+        }
+        return null;
+      case 'training_plan':
+        for (final entry in trainingPlans) {
+          if (entry.id == id) return entry.toLocalJson();
+        }
+        return null;
+      case 'training_session':
+        for (final entry in trainingSessions) {
           if (entry.id == id) return entry.toJson();
         }
         return null;
@@ -943,6 +985,37 @@ class AgendaStore extends ChangeNotifier {
     return payload;
   }
 
+  Future<TrainingPlan> _localizeTrainingPlan(TrainingPlan plan) async {
+    if (plan.attachmentBase64.isEmpty) return plan;
+    try {
+      final bytes = base64Decode(plan.attachmentBase64);
+      final assetId = await MediaAssetStore.instance.put(bytes);
+      return plan.copyWith(
+        attachmentAssetId: assetId,
+        attachmentBase64: '',
+        attachmentSizeBytes: bytes.lengthInBytes,
+      );
+    } catch (_) {
+      return plan;
+    }
+  }
+
+  Future<Map<String, dynamic>> _portableTrainingPlanJson(
+    TrainingPlan plan,
+  ) async {
+    final payload = Map<String, dynamic>.from(plan.toJson());
+    if ((payload['attachmentBase64']?.toString().isEmpty ?? true) &&
+        plan.attachmentAssetId.isNotEmpty) {
+      final bytes = await MediaAssetStore.instance.read(plan.attachmentAssetId);
+      if (bytes != null && bytes.isNotEmpty) {
+        payload['attachmentBase64'] = base64Encode(bytes);
+        payload['attachmentSizeBytes'] = bytes.lengthInBytes;
+      }
+    }
+    payload.remove('attachmentAssetId');
+    return payload;
+  }
+
   Future<SharedEntry> _localizeSharedThumbnail(
     SharedEntry entry,
   ) async {
@@ -1108,6 +1181,8 @@ class AgendaStore extends ChangeNotifier {
     localSnapshots.clear();
     inbox.clear();
     shoppingItems.clear();
+    trainingPlans.clear();
+    trainingSessions.clear();
     trash.clear();
     _syncQueue.clear();
     _syncIndex.clear();
@@ -1312,6 +1387,36 @@ class AgendaStore extends ChangeNotifier {
     );
     if (parsedShopping != null) shoppingItems.addAll(parsedShopping);
 
+    final parsedTrainingPlans = decodeSection<List<TrainingPlan>>(
+      _trainingPlansKey,
+      (value) => (value as List)
+          .map(
+            (e) => TrainingPlan.fromJson(
+              Map<String, dynamic>.from(e as Map),
+            ),
+          )
+          .toList(),
+    );
+    if (parsedTrainingPlans != null) {
+      for (final plan in parsedTrainingPlans) {
+        trainingPlans.add(await _localizeTrainingPlan(plan));
+      }
+    }
+
+    final parsedTrainingSessions = decodeSection<List<TrainingSession>>(
+      _trainingSessionsKey,
+      (value) => (value as List)
+          .map(
+            (e) => TrainingSession.fromJson(
+              Map<String, dynamic>.from(e as Map),
+            ),
+          )
+          .toList(),
+    );
+    if (parsedTrainingSessions != null) {
+      trainingSessions.addAll(parsedTrainingSessions);
+    }
+
     final parsedTrash = decodeSection<List<TrashEntry>>(
       _trashKey,
       (value) => (value as List)
@@ -1433,6 +1538,10 @@ class AgendaStore extends ChangeNotifier {
         _inboxKey: jsonEncode(inbox.map((e) => e.toJson()).toList()),
         _shoppingKey:
             jsonEncode(shoppingItems.map((e) => e.toJson()).toList()),
+        _trainingPlansKey:
+            jsonEncode(trainingPlans.map((e) => e.toLocalJson()).toList()),
+        _trainingSessionsKey:
+            jsonEncode(trainingSessions.map((e) => e.toJson()).toList()),
         _trashKey: jsonEncode(trash.map((e) => e.toJson()).toList()),
         _privacyGuardKey: jsonEncode(_privacyGuardPayload()),
       };
@@ -1448,6 +1557,8 @@ class AgendaStore extends ChangeNotifier {
       _peopleKey,
       _inboxKey,
       _shoppingKey,
+      _trainingPlansKey,
+      _trainingSessionsKey,
       _trashKey,
     ]) {
       final raw = prefs.getString(key);
@@ -1730,6 +1841,16 @@ class AgendaStore extends ChangeNotifier {
         add('shopping', entry.id, entry.toJson());
       }
     }
+    if (includes(_trainingPlansKey)) {
+      for (final entry in trainingPlans) {
+        add('training_plan', entry.id, entry.toLocalJson());
+      }
+    }
+    if (includes(_trainingSessionsKey)) {
+      for (final entry in trainingSessions) {
+        add('training_session', entry.id, entry.toJson());
+      }
+    }
     if (includes(_trashKey)) {
       for (final entry in trash) {
         add('trash', entry.id, entry.toJson());
@@ -1755,6 +1876,8 @@ class AgendaStore extends ChangeNotifier {
         'person' => _peopleKey,
         'inbox' => _inboxKey,
         'shopping' => _shoppingKey,
+        'training_plan' => _trainingPlansKey,
+        'training_session' => _trainingSessionsKey,
         'trash' => _trashKey,
         'preferences' => _preferencesKey,
         _ => null,
@@ -2835,6 +2958,8 @@ class AgendaStore extends ChangeNotifier {
               weeks.isNotEmpty ||
               inbox.isNotEmpty ||
               shoppingItems.isNotEmpty ||
+              trainingPlans.isNotEmpty ||
+              trainingSessions.isNotEmpty ||
               trash.isNotEmpty)) {
         await createLocalSnapshot(
           label: 'Prima sincronizzazione cloud',
@@ -2961,6 +3086,27 @@ class AgendaStore extends ChangeNotifier {
               ownerId: operation.ownerId,
             ),
           );
+        } else if (operation.entityType == 'training_plan' &&
+            !operation.deleted &&
+            operation.payload != null) {
+          TrainingPlan? current;
+          for (final plan in trainingPlans) {
+            if (plan.id == operation.entityId) {
+              current = plan;
+              break;
+            }
+          }
+          final source = current ?? TrainingPlan.fromJson(operation.payload!);
+          portablePending.add(
+            CloudSyncOperation(
+              entityType: operation.entityType,
+              entityId: operation.entityId,
+              payload: await _portableTrainingPlanJson(source),
+              updatedAt: operation.updatedAt,
+              deleted: operation.deleted,
+              ownerId: operation.ownerId,
+            ),
+          );
         } else if (operation.entityType == 'trash' &&
             !operation.deleted &&
             operation.payload != null) {
@@ -3075,6 +3221,14 @@ class AgendaStore extends ChangeNotifier {
           final before = shoppingItems.length;
           shoppingItems.removeWhere((e) => e.id == record.entityId);
           return shoppingItems.length != before;
+        case 'training_plan':
+          final before = trainingPlans.length;
+          trainingPlans.removeWhere((e) => e.id == record.entityId);
+          return trainingPlans.length != before;
+        case 'training_session':
+          final before = trainingSessions.length;
+          trainingSessions.removeWhere((e) => e.id == record.entityId);
+          return trainingSessions.length != before;
         case 'trash':
           final before = trash.length;
           trash.removeWhere((e) => e.id == record.entityId);
@@ -3206,6 +3360,37 @@ class AgendaStore extends ChangeNotifier {
           shoppingItems.add(incoming);
         } else {
           shoppingItems[index] = incoming;
+        }
+        return true;
+      case 'training_plan':
+        final incoming =
+            await _localizeTrainingPlan(TrainingPlan.fromJson(payload));
+        final index =
+            trainingPlans.indexWhere((e) => e.id == incoming.id);
+        if (index >= 0 &&
+            _syncPayloadHash(trainingPlans[index].toLocalJson()) ==
+                _syncPayloadHash(incoming.toLocalJson())) {
+          return false;
+        }
+        if (index < 0) {
+          trainingPlans.add(incoming);
+        } else {
+          trainingPlans[index] = incoming;
+        }
+        return true;
+      case 'training_session':
+        final incoming = TrainingSession.fromJson(payload);
+        final index =
+            trainingSessions.indexWhere((e) => e.id == incoming.id);
+        if (index >= 0 &&
+            _syncPayloadHash(trainingSessions[index].toJson()) ==
+                _syncPayloadHash(incoming.toJson())) {
+          return false;
+        }
+        if (index < 0) {
+          trainingSessions.add(incoming);
+        } else {
+          trainingSessions[index] = incoming;
         }
         return true;
       case 'trash':
