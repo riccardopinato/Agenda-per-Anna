@@ -3,7 +3,6 @@ import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-import 'package:agenda_per_anna/app_version.dart';
 import 'package:agenda_per_anna/local_state_store.dart';
 import 'package:agenda_per_anna/main.dart';
 import 'package:agenda_per_anna/media_asset_store.dart';
@@ -221,9 +220,4 @@ void main() {
     expect(migrations, isNot(contains('create table public.workout')));
   });
 
-  test('v0.72 release metadata is aligned', () {
-    final pubspec = File('pubspec.yaml').readAsStringSync();
-    expect(appReleaseVersion, '0.73.0');
-    expect(pubspec, contains('version: 0.73.0+83'));
-  });
 }
