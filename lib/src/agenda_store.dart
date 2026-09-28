@@ -2834,6 +2834,7 @@ class AgendaStore extends ChangeNotifier {
               months.isNotEmpty ||
               weeks.isNotEmpty ||
               inbox.isNotEmpty ||
+              shoppingItems.isNotEmpty ||
               trash.isNotEmpty)) {
         await createLocalSnapshot(
           label: 'Prima sincronizzazione cloud',
