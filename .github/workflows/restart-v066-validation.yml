@@ -12,8 +12,8 @@ permissions:
   id-token: write
 
 concurrency:
-  group: restart-v066-clean-gates-${{ github.sha }}
-  cancel-in-progress: false
+  group: restart-v066-clean-gates-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   development:

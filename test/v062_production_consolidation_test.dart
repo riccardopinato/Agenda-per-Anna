@@ -10,7 +10,7 @@ void main() {
     final roadmap = File('docs/ROADMAP.md').readAsStringSync();
 
     expect(appReleaseVersion, '0.67.0');
-    expect(pubspec, contains('version: 0.67.0+76'));
+    expect(pubspec, contains('version: 0.67.0+77'));
 
     const forbiddenDependencies = <String>[
       'openai',
