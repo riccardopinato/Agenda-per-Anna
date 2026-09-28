@@ -26,6 +26,7 @@ Source of truth for the active product sequence after v0.52. The roadmap follows
 | v0.69 | Places Lite | Completed | Lightweight inline place references on diary memories, searchable without a separate Places database |
 | v0.70 | Architecture Regression Gate | Completed | Cross-domain regression lock for memory/place compatibility, lifecycle, backup, account isolation and anti-duplication constraints |
 | v0.71 | Shopping List | Completed | Lightweight private + Noi ♡ grocery list reusing existing local/cloud/shared lifecycle infrastructure |
+| v0.72 | Training Hub | Completed | Multi-sport session history plus optional plans/schede using one account-scoped training entity path |
 
 ## Permanent constraints for this sequence
 
@@ -325,4 +326,20 @@ Per the active development cadence, AppLab runs once every two feature versions.
 - Shared shopping does not appear as agenda/feed content and introduces no new Supabase table.
 - The same Shopping List screen supports private and shared modes to avoid duplicated UX logic.
 - Release metadata is aligned to v0.71.0+81.
+- Analyze, full tests, Web release, Android size audit and AppLab Trusted Verify must be green before promotion to main.
+
+
+## v0.72 acceptance criteria
+
+- Allenamento is a standalone section with its own historical session view.
+- The model is multi-sport and does not assume gym-only usage.
+- Endurance activities can be saved with distance/time without requiring exercises.
+- Gym-style plans and sessions can preserve structured exercise rows.
+- A session may optionally link to a saved plan/scheda and inherit its exercises as a starting point.
+- Plans may preserve a bounded PDF/image/TXT attachment up to 3 MB.
+- Training remains account-scoped and participates in the existing private entity-delta cloud sync.
+- Backup/restore and readable export include training sessions and plans.
+- Delete/restore uses the existing Trash contract.
+- No second workout database, AI parser, wearable SDK or external fitness backend is introduced.
+- Release metadata is aligned to v0.72.0+82.
 - Analyze, full tests, Web release, Android size audit and AppLab Trusted Verify must be green before promotion to main.

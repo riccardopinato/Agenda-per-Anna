@@ -364,3 +364,16 @@ Shopping is deliberately split only by ownership boundary, not by infrastructure
 - **Lifecycle:** private deletion uses the global Trash contract; shared deletion uses the established collaborative tombstone semantics.
 - **Backup/account:** the private shopping collection is captured by ordinary account profiles, safety snapshots and JSON/ZIP backup/restore.
 - **Derived convenience:** automatic categories and frequent-item suggestions are local deterministic projections over the canonical item payload.
+
+
+## v0.72 — Training Hub
+
+Training uses one account-scoped first-class entity family rather than separate databases for each sport.
+
+- `TrainingEntry.kind=session` stores completed activity history.
+- `TrainingEntry.kind=plan` stores a reusable plan/scheda.
+- `TrainingSport` is presentation metadata on the same entry model; running, cycling and gym therefore share persistence/sync/lifecycle.
+- Structured `TrainingExercise` rows are optional. Distance/duration/elevation fields remain available to endurance sports without exercises.
+- A session can reference a plan ID and copy its exercise rows while remaining a self-contained historical record.
+- Attachments are bounded to 3 MB and embedded in the plan payload so private sync and backup stay on the established entity path.
+- Training uses `training_v1`, private entity type `training`, account profiles and global Trash. No new backend table is required.

@@ -202,6 +202,7 @@ void main() {
         TrashEntityKind.person,
         TrashEntityKind.inbox,
         TrashEntityKind.shoppingItem,
+        TrashEntityKind.trainingEntry,
       },
     );
   });

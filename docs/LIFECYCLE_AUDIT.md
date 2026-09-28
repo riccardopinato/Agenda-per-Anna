@@ -18,6 +18,7 @@ These entities use the account-scoped Trash contract:
 | Person | Trash | Yes | Yes | Diary links survive while recoverable; permanent purge removes orphan tags |
 | Inbox entry | Trash | Yes | Yes | Account-scoped persistence and sync |
 | Shopping item | Trash | Yes | Yes | Account-scoped persistence, sync and backup; no independent cascade |
+| Training entry | Trash | Yes | Yes | Sessions and plans use the same account-scoped training entity lifecycle |
 
 Trash keeps historical versions instead of collapsing them by logical key. Restore never overwrites an active entity with the same identity. For day/week/month content this means a user can keep multiple deleted versions and explicitly choose which one to restore.
 
