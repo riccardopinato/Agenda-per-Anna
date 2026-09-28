@@ -114,6 +114,21 @@ void main() {
     expect(cleanup, greaterThan(children));
   });
 
+  test('v0.67 shared delete persists child cache removal', () {
+    final screen =
+        File('lib/src/screens/shared_space.dart').readAsStringSync();
+    final deleteStart =
+        screen.indexOf('Future<void> _delete(SharedEntry entry)');
+    final deleteEnd = screen.indexOf('Future<void> _invite()', deleteStart);
+    expect(deleteStart, greaterThanOrEqualTo(0));
+    expect(deleteEnd, greaterThan(deleteStart));
+
+    final block = screen.substring(deleteStart, deleteEnd);
+    expect(block, contains('commentsByEntry.remove(entry.id)'));
+    expect(block, contains('heartsByEntry.remove(entry.id)'));
+    expect(block, contains('await _saveInteractionCache('));
+  });
+
   test('v0.67 migration owns cross-user child cascade securely', () {
     final migration = File(
       'supabase/migrations/'
