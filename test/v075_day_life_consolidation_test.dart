@@ -50,13 +50,16 @@ void main() {
       ),
     );
 
-    await store.addWorkoutSession(
-      sport: WorkoutSport.running,
-      date: day,
-      title: '15 km',
-      durationSeconds: 3900,
-      distanceKm: 15,
-      createdAt: DateTime(2026, 9, 29, 18, 0),
+    await store.saveWorkoutSession(
+      WorkoutSession(
+        id: 'run',
+        sport: WorkoutSport.running,
+        date: day,
+        title: '15 km',
+        durationSeconds: 3900,
+        distanceKm: 15,
+        createdAt: DateTime(2026, 9, 29, 18, 0),
+      ),
     );
 
     await store.saveJournal(
@@ -91,7 +94,7 @@ void main() {
     expect(snapshot.lifeEntries.map((entry) => entry.id), [
       'birthday:birthday',
       'agenda:meeting',
-      startsWith('workout:'),
+      'workout:run',
       'diary:voice',
     ]);
 
