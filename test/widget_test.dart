@@ -10,6 +10,6 @@ void main() {
       AgendaApp(store: store, bypassIdentityForTesting: true),
     );
     await tester.pumpAndSettle();
-    expect(find.text('La mia agenda'), findsOneWidget);
+    expect(find.text('La mia giornata'), findsOneWidget);
   });
 }
