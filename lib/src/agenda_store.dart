@@ -12,6 +12,7 @@ class AgendaStore extends ChangeNotifier {
   static const _preferencesKey = 'agenda_preferences_v1';
   static const _inboxKey = 'inbox_v1';
   static const _shoppingKey = 'shopping_v1';
+  static const _trainingKey = 'training_v1';
   static const _syncQueueKey = 'cloud_sync_queue_v1';
   static const _syncIndexKey = 'cloud_sync_index_v1';
   static const _syncOwnerKey = 'cloud_sync_owner_v1';
@@ -43,6 +44,7 @@ class AgendaStore extends ChangeNotifier {
   final List<LocalBackupSnapshot> localSnapshots = [];
   final List<InboxEntry> inbox = [];
   final List<ShoppingItem> shoppingItems = [];
+  final List<TrainingRecord> trainingRecords = [];
   final List<TrashEntry> trash = [];
   final Map<String, CloudSyncOperation> _syncQueue = {};
   final Map<String, String> _syncIndex = {};
@@ -115,6 +117,7 @@ class AgendaStore extends ChangeNotifier {
   ValueListenable<int> get sharedRevision => signals.shared;
   ValueListenable<int> get inboxRevision => signals.inbox;
   ValueListenable<int> get shoppingRevision => signals.shopping;
+  ValueListenable<int> get trainingRevision => signals.training;
   ValueListenable<int> get settingsRevision => signals.settings;
   ValueListenable<int> get backupRevision => signals.backup;
   ValueListenable<int> get lifecycleRevision => signals.lifecycle;
@@ -152,6 +155,7 @@ class AgendaStore extends ChangeNotifier {
         _preferencesKey,
         _inboxKey,
         _shoppingKey,
+        _trainingKey,
         _trashKey,
         _syncQueueKey,
         _syncIndexKey,
@@ -339,6 +343,11 @@ class AgendaStore extends ChangeNotifier {
     notifyListeners();
   }
 
+  void _notifyTrainingChanged() {
+    signals.bumpTraining();
+    notifyListeners();
+  }
+
   void _notifySettingsChanged() {
     signals.bumpSettings();
     notifyListeners();
@@ -467,6 +476,16 @@ class AgendaStore extends ChangeNotifier {
             if (!deleted && payload is Map) {
               shoppingItems.add(
                 ShoppingItem.fromJson(
+                  Map<String, dynamic>.from(payload),
+                ),
+              );
+            }
+            break;
+          case 'training':
+            trainingRecords.removeWhere((entry) => entry.id == id);
+            if (!deleted && payload is Map) {
+              trainingRecords.add(
+                TrainingRecord.fromJson(
                   Map<String, dynamic>.from(payload),
                 ),
               );
@@ -633,6 +652,11 @@ class AgendaStore extends ChangeNotifier {
         return null;
       case 'shopping':
         for (final entry in shoppingItems) {
+          if (entry.id == id) return entry.toJson();
+        }
+        return null;
+      case 'training':
+        for (final entry in trainingRecords) {
           if (entry.id == id) return entry.toJson();
         }
         return null;
@@ -1108,6 +1132,7 @@ class AgendaStore extends ChangeNotifier {
     localSnapshots.clear();
     inbox.clear();
     shoppingItems.clear();
+    trainingRecords.clear();
     trash.clear();
     _syncQueue.clear();
     _syncIndex.clear();
@@ -1312,6 +1337,18 @@ class AgendaStore extends ChangeNotifier {
     );
     if (parsedShopping != null) shoppingItems.addAll(parsedShopping);
 
+    final parsedTraining = decodeSection<List<TrainingRecord>>(
+      _trainingKey,
+      (value) => (value as List)
+          .map(
+            (e) => TrainingRecord.fromJson(
+              Map<String, dynamic>.from(e as Map),
+            ),
+          )
+          .toList(),
+    );
+    if (parsedTraining != null) trainingRecords.addAll(parsedTraining);
+
     final parsedTrash = decodeSection<List<TrashEntry>>(
       _trashKey,
       (value) => (value as List)
@@ -1433,6 +1470,8 @@ class AgendaStore extends ChangeNotifier {
         _inboxKey: jsonEncode(inbox.map((e) => e.toJson()).toList()),
         _shoppingKey:
             jsonEncode(shoppingItems.map((e) => e.toJson()).toList()),
+        _trainingKey:
+            jsonEncode(trainingRecords.map((e) => e.toJson()).toList()),
         _trashKey: jsonEncode(trash.map((e) => e.toJson()).toList()),
         _privacyGuardKey: jsonEncode(_privacyGuardPayload()),
       };
@@ -1448,6 +1487,7 @@ class AgendaStore extends ChangeNotifier {
       _peopleKey,
       _inboxKey,
       _shoppingKey,
+      _trainingKey,
       _trashKey,
     ]) {
       final raw = prefs.getString(key);
@@ -1730,6 +1770,11 @@ class AgendaStore extends ChangeNotifier {
         add('shopping', entry.id, entry.toJson());
       }
     }
+    if (includes(_trainingKey)) {
+      for (final entry in trainingRecords) {
+        add('training', entry.id, entry.toJson());
+      }
+    }
     if (includes(_trashKey)) {
       for (final entry in trash) {
         add('trash', entry.id, entry.toJson());
@@ -1755,6 +1800,7 @@ class AgendaStore extends ChangeNotifier {
         'person' => _peopleKey,
         'inbox' => _inboxKey,
         'shopping' => _shoppingKey,
+        'training' => _trainingKey,
         'trash' => _trashKey,
         'preferences' => _preferencesKey,
         _ => null,
@@ -2835,6 +2881,7 @@ class AgendaStore extends ChangeNotifier {
               weeks.isNotEmpty ||
               inbox.isNotEmpty ||
               shoppingItems.isNotEmpty ||
+              trainingRecords.isNotEmpty ||
               trash.isNotEmpty)) {
         await createLocalSnapshot(
           label: 'Prima sincronizzazione cloud',
@@ -3075,6 +3122,10 @@ class AgendaStore extends ChangeNotifier {
           final before = shoppingItems.length;
           shoppingItems.removeWhere((e) => e.id == record.entityId);
           return shoppingItems.length != before;
+        case 'training':
+          final before = trainingRecords.length;
+          trainingRecords.removeWhere((e) => e.id == record.entityId);
+          return trainingRecords.length != before;
         case 'trash':
           final before = trash.length;
           trash.removeWhere((e) => e.id == record.entityId);
@@ -3206,6 +3257,21 @@ class AgendaStore extends ChangeNotifier {
           shoppingItems.add(incoming);
         } else {
           shoppingItems[index] = incoming;
+        }
+        return true;
+      case 'training':
+        final incoming = TrainingRecord.fromJson(payload);
+        final index =
+            trainingRecords.indexWhere((e) => e.id == incoming.id);
+        if (index >= 0 &&
+            _syncPayloadHash(trainingRecords[index].toJson()) ==
+                _syncPayloadHash(incoming.toJson())) {
+          return false;
+        }
+        if (index < 0) {
+          trainingRecords.add(incoming);
+        } else {
+          trainingRecords[index] = incoming;
         }
         return true;
       case 'trash':

@@ -385,6 +385,145 @@ class AgendaItem {
   }
 }
 
+enum TrainingRecordKind { session, plan }
+
+enum TrainingSport {
+  running,
+  cycling,
+  gym,
+  walking,
+  hiking,
+  swimming,
+  other,
+}
+
+extension TrainingSportUi on TrainingSport {
+  String get label => switch (this) {
+        TrainingSport.running => 'Corsa',
+        TrainingSport.cycling => 'Bici',
+        TrainingSport.gym => 'Palestra',
+        TrainingSport.walking => 'Camminata',
+        TrainingSport.hiking => 'Trekking',
+        TrainingSport.swimming => 'Nuoto',
+        TrainingSport.other => 'Altro',
+      };
+
+  IconData get icon => switch (this) {
+        TrainingSport.running => Icons.directions_run,
+        TrainingSport.cycling => Icons.directions_bike,
+        TrainingSport.gym => Icons.fitness_center,
+        TrainingSport.walking => Icons.directions_walk,
+        TrainingSport.hiking => Icons.hiking,
+        TrainingSport.swimming => Icons.pool,
+        TrainingSport.other => Icons.sports_outlined,
+      };
+}
+
+class TrainingRecord {
+  final String id;
+  final TrainingRecordKind kind;
+  final TrainingSport sport;
+  final String title;
+  final DateTime date;
+  final int durationMinutes;
+  final double distanceKm;
+  final int elevationMeters;
+  final int calories;
+  final int rpe;
+  final String details;
+  final String notes;
+  final DateTime createdAt;
+
+  const TrainingRecord({
+    required this.id,
+    required this.kind,
+    required this.sport,
+    required this.title,
+    required this.date,
+    required this.createdAt,
+    this.durationMinutes = 0,
+    this.distanceKm = 0,
+    this.elevationMeters = 0,
+    this.calories = 0,
+    this.rpe = 0,
+    this.details = '',
+    this.notes = '',
+  });
+
+  bool get isPlan => kind == TrainingRecordKind.plan;
+  bool get isSession => kind == TrainingRecordKind.session;
+
+  TrainingRecord copyWith({
+    TrainingRecordKind? kind,
+    TrainingSport? sport,
+    String? title,
+    DateTime? date,
+    int? durationMinutes,
+    double? distanceKm,
+    int? elevationMeters,
+    int? calories,
+    int? rpe,
+    String? details,
+    String? notes,
+  }) =>
+      TrainingRecord(
+        id: id,
+        kind: kind ?? this.kind,
+        sport: sport ?? this.sport,
+        title: title ?? this.title,
+        date: date ?? this.date,
+        durationMinutes: durationMinutes ?? this.durationMinutes,
+        distanceKm: distanceKm ?? this.distanceKm,
+        elevationMeters: elevationMeters ?? this.elevationMeters,
+        calories: calories ?? this.calories,
+        rpe: rpe ?? this.rpe,
+        details: details ?? this.details,
+        notes: notes ?? this.notes,
+        createdAt: createdAt,
+      );
+
+  Map<String, dynamic> toJson() => {
+        'id': id,
+        'kind': kind.name,
+        'sport': sport.name,
+        'title': title,
+        'date': date.toUtc().toIso8601String(),
+        'durationMinutes': durationMinutes,
+        'distanceKm': distanceKm,
+        'elevationMeters': elevationMeters,
+        'calories': calories,
+        'rpe': rpe,
+        'details': details,
+        'notes': notes,
+        'createdAt': createdAt.toUtc().toIso8601String(),
+      };
+
+  factory TrainingRecord.fromJson(Map<String, dynamic> json) => TrainingRecord(
+        id: json['id'] as String? ?? const Uuid().v4(),
+        kind: TrainingRecordKind.values.firstWhere(
+          (value) => value.name == json['kind'],
+          orElse: () => TrainingRecordKind.session,
+        ),
+        sport: TrainingSport.values.firstWhere(
+          (value) => value.name == json['sport'],
+          orElse: () => TrainingSport.other,
+        ),
+        title: json['title'] as String? ?? '',
+        date: DateTime.tryParse(json['date'] as String? ?? '')?.toLocal() ??
+            DateTime.now(),
+        durationMinutes: (json['durationMinutes'] as num? ?? 0).toInt(),
+        distanceKm: (json['distanceKm'] as num? ?? 0).toDouble(),
+        elevationMeters: (json['elevationMeters'] as num? ?? 0).toInt(),
+        calories: (json['calories'] as num? ?? 0).toInt(),
+        rpe: (json['rpe'] as num? ?? 0).toInt().clamp(0, 10),
+        details: json['details'] as String? ?? '',
+        notes: json['notes'] as String? ?? '',
+        createdAt:
+            DateTime.tryParse(json['createdAt'] as String? ?? '')?.toLocal() ??
+                DateTime.now(),
+      );
+}
+
 enum ShoppingCategory {
   produce,
   dairy,
