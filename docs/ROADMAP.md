@@ -25,6 +25,7 @@ Source of truth for the active product sequence after v0.52. The roadmap follows
 | v0.68 | Memory Primitive Review | Completed | One derived diary-memory reference path reused by Ricordi, People and On This Day without a new memory store |
 | v0.69 | Places Lite | Completed | Lightweight inline place references on diary memories, searchable without a separate Places database |
 | v0.70 | Architecture Regression Gate | Completed | Cross-domain regression lock for memory/place compatibility, lifecycle, backup, account isolation and anti-duplication constraints |
+| v0.71 | Shopping List | Completed | Lightweight private + Noi ♡ grocery list reusing existing local/cloud/shared lifecycle infrastructure |
 
 ## Permanent constraints for this sequence
 
@@ -309,4 +310,19 @@ Per the active development cadence, AppLab runs once every two feature versions.
 - No `places_v1`, `_placesKey`, MemoryEngine persistence key, Life Core store or new Places backend table is introduced.
 - Existing lifecycle, sync, backup/media and account-erasure paths remain the source of truth.
 - Release metadata is aligned to v0.70.0+80.
+- Analyze, full tests, Web release, Android size audit and AppLab Trusted Verify must be green before promotion to main.
+
+
+## v0.71 acceptance criteria
+
+- The private shopping list stores only lightweight item data: name, optional quantity, category, order and bought/frequency metadata.
+- Category suggestion is deterministic and local; no AI/API is required.
+- Private shopping items use the existing granular entity-delta persistence and private cloud reconciliation rather than a second sync engine.
+- Shopping remains account-isolated and is included in existing backup/restore and readable export.
+- Private delete uses the existing Trash → restore → permanent purge lifecycle.
+- Frequently purchased shortcuts are derived from purchase metadata on the same ShoppingItem, not stored in another favorites database.
+- Noi ♡ shopping items reuse `SharedEntryType.shopping`, the existing shared cache/pending queue/Realtime path and server tombstones.
+- Shared shopping does not appear as agenda/feed content and introduces no new Supabase table.
+- The same Shopping List screen supports private and shared modes to avoid duplicated UX logic.
+- Release metadata is aligned to v0.71.0+81.
 - Analyze, full tests, Web release, Android size audit and AppLab Trusted Verify must be green before promotion to main.

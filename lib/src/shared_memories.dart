@@ -274,6 +274,7 @@ class _SharedMemoriesScreenState extends State<SharedMemoriesScreen> {
         SharedEntryType.note => 'nota pensiero messaggio ricordo',
         SharedEntryType.appointment => 'appuntamento evento momento',
         SharedEntryType.task => 'attività da fare momento',
+        SharedEntryType.shopping => 'spesa acquisti lista',
       },
       for (final comment in comments) comment.body,
       for (final comment in comments) comment.authorName,

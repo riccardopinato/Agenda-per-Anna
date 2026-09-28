@@ -11,6 +11,7 @@ class AgendaStoreSignals {
   final ValueNotifier<int> planning = ValueNotifier<int>(0);
   final ValueNotifier<int> shared = ValueNotifier<int>(0);
   final ValueNotifier<int> inbox = ValueNotifier<int>(0);
+  final ValueNotifier<int> shopping = ValueNotifier<int>(0);
   final ValueNotifier<int> settings = ValueNotifier<int>(0);
   final ValueNotifier<int> backup = ValueNotifier<int>(0);
   final ValueNotifier<int> lifecycle = ValueNotifier<int>(0);
@@ -21,6 +22,7 @@ class AgendaStoreSignals {
   void bumpPlanning() => planning.value++;
   void bumpShared() => shared.value++;
   void bumpInbox() => inbox.value++;
+  void bumpShopping() => shopping.value++;
   void bumpSettings() => settings.value++;
   void bumpBackup() => backup.value++;
   void bumpLifecycle() => lifecycle.value++;
@@ -32,6 +34,7 @@ class AgendaStoreSignals {
     bumpPlanning();
     bumpShared();
     bumpInbox();
+    bumpShopping();
     bumpSettings();
     bumpBackup();
     bumpLifecycle();
@@ -44,6 +47,7 @@ class AgendaStoreSignals {
     planning.dispose();
     shared.dispose();
     inbox.dispose();
+    shopping.dispose();
     settings.dispose();
     backup.dispose();
     lifecycle.dispose();

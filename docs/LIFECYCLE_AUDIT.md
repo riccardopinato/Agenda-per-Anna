@@ -17,6 +17,7 @@ These entities use the account-scoped Trash contract:
 | Birthday | Trash | Yes | Yes | Reminder cancelled/restored; permanent purge clears person links |
 | Person | Trash | Yes | Yes | Diary links survive while recoverable; permanent purge removes orphan tags |
 | Inbox entry | Trash | Yes | Yes | Account-scoped persistence and sync |
+| Shopping item | Trash | Yes | Yes | Account-scoped persistence, sync and backup; no independent cascade |
 
 Trash keeps historical versions instead of collapsing them by logical key. Restore never overwrites an active entity with the same identity. For day/week/month content this means a user can keep multiple deleted versions and explicitly choose which one to restore.
 
@@ -30,7 +31,7 @@ Sketch selection/page edits remain editor-level operations; deleting the diary S
 
 Shared data intentionally does not enter the private Trash:
 
-- shared entries use server tombstones and the offline shared-operation queue;
+- shared entries, including Noi ♡ shopping rows, use server tombstones and the offline shared-operation queue;
 - shared comments/reactions use the shared interaction queue and server authorization;
 - deleting a shared space is an owner-only destructive action for all members;
 - leaving a shared space removes only the current member;

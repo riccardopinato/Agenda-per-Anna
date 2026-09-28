@@ -18,6 +18,7 @@ class _AgendaBackupDomain {
         'birthdays': store.birthdays.map((e) => e.toJson()).toList(),
         'people': store.people.map((e) => e.toJson()).toList(),
         'inbox': store.inbox.map((e) => e.toJson()).toList(),
+        'shopping': store.shoppingItems.map((e) => e.toJson()).toList(),
         'trash': store.trash.map((e) => e.toJson()).toList(),
         'preferences': store.preferences.toJson(),
       };
@@ -43,6 +44,7 @@ class _AgendaBackupDomain {
       'birthdays': store.birthdays.map((e) => e.toJson()).toList(),
       'people': store.people.map((e) => e.toJson()).toList(),
       'inbox': store.inbox.map((e) => e.toJson()).toList(),
+      'shopping': store.shoppingItems.map((e) => e.toJson()).toList(),
       'trash': portableTrash,
       'preferences': store.preferences.toJson(),
     };
@@ -336,6 +338,35 @@ class _AgendaBackupDomain {
         if (birthday.note.trim().isNotEmpty) {
           buffer.writeln('  Note: ${birthday.note.trim()}');
         }
+      }
+    }
+
+    buffer.writeln();
+    buffer.writeln(
+      '============================================================',
+    );
+    buffer.writeln('LISTA DELLA SPESA');
+    buffer.writeln(
+      '============================================================',
+    );
+
+    if (store.shoppingItems.isEmpty) {
+      buffer.writeln('Nessun articolo salvato.');
+    } else {
+      final shopping = [...store.shoppingItems]
+        ..sort((a, b) {
+          if (a.done != b.done) return a.done ? 1 : -1;
+          final category = a.category.index.compareTo(b.category.index);
+          if (category != 0) return category;
+          return a.sortOrder.compareTo(b.sortOrder);
+        });
+      for (final item in shopping) {
+        final mark = item.done ? '✓' : '•';
+        final quantity =
+            item.quantity.trim().isEmpty ? '' : ' · ${item.quantity.trim()}';
+        buffer.writeln(
+          '$mark ${item.name}$quantity · ${item.category.label}',
+        );
       }
     }
 

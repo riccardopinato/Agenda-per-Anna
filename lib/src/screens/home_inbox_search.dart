@@ -55,6 +55,7 @@ class HomeScreen extends StatelessWidget {
         store.planningRevision,
         store.sharedRevision,
         store.inboxRevision,
+        store.shoppingRevision,
         store.settingsRevision,
         store.backupRevision,
       ]),
@@ -352,6 +353,20 @@ class HomeScreen extends StatelessWidget {
                     ),
                   ),
                 ],
+              ),
+              const SizedBox(height: 12),
+              NavigationCard(
+                icon: Icons.shopping_cart_outlined,
+                title: 'Lista della spesa',
+                subtitle: store.activeShoppingItems.isEmpty
+                    ? 'Privata o condivisa in Noi ♡'
+                    : '${store.activeShoppingItems.length} da comprare · privata o Noi ♡',
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => ShoppingListScreen(store: store),
+                  ),
+                ),
               ),
               const SizedBox(height: 12),
               NavigationCard(
