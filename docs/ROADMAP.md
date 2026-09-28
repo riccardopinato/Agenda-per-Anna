@@ -27,6 +27,8 @@ Source of truth for the active product sequence after v0.52. The roadmap follows
 | v0.70 | Architecture Regression Gate | Completed | Cross-domain regression lock for memory/place compatibility, lifecycle, backup, account isolation and anti-duplication constraints |
 | v0.71 | Shopping List | Completed | Lightweight private + Noi ♡ grocery list reusing existing local/cloud/shared lifecycle infrastructure |
 | v0.72 | Multisport Workout | Completed | Dedicated Allenamento history + reusable plans for gym, running, cycling, swimming and other sports on existing private infrastructure |
+| v0.73 | External Calendar Overlay | Completed | Read-only Android system-calendar projection with explicit opt-in and no canonical-store duplication |
+| v0.74 | Lifecycle Integrity & Release Metadata Cleanup | In validation | Extend lifecycle regression coverage to post-v0.48 domains and remove release-version duplication from historical tests |
 
 ## Permanent constraints for this sequence
 
@@ -328,6 +330,18 @@ Per the active development cadence, AppLab runs once every two feature versions.
 - Release metadata is aligned to v0.71.0+81.
 - Analyze, full tests, Web release, Android size audit and AppLab Trusted Verify must be green before promotion to main.
 
+
+## v0.74 acceptance criteria
+
+- The existing v0.48 universal lifecycle engine remains the only private Trash implementation.
+- Shopping items, workout sessions and workout plans survive complete backup/restore while in Trash and restore losslessly.
+- Permanently purging an obsolete workout-plan version cannot mutate an existing historical WorkoutSession snapshot or a recreated live plan with the same ID.
+- Noi ♡ shopping deletion remains on the shared tombstone/offline-operation path and never creates a private Trash copy.
+- External calendar events remain excluded from Trash because they are an ephemeral read-only projection, not canonical Anna's Diary content.
+- Current release coordinates are defined once in runtime metadata and checked once by the canonical release metadata test.
+- Historical feature tests must not hardcode the current release version/build number.
+- Release metadata is aligned to v0.74.0+84.
+- Development checks, Web release, Android size audit and AppLab Trusted Verify must all pass before merge.
 
 ## v0.72 acceptance criteria
 

@@ -1,6 +1,5 @@
 import 'dart:io';
 
-import 'package:agenda_per_anna/app_version.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
@@ -39,9 +38,4 @@ void main() {
     expect(diary, isNot(contains('focus_note_database')));
   });
 
-  test('v0.64 release metadata is aligned', () {
-    final pubspec = File('pubspec.yaml').readAsStringSync();
-    expect(appReleaseVersion, '0.73.0');
-    expect(pubspec, contains('version: 0.73.0+83'));
-  });
 }

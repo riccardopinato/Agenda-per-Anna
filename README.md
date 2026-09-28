@@ -2,7 +2,7 @@
 
 Flutter app for personal planning, private diary and the shared **Noi ♡** space.
 
-Current release line: **v0.73.0**.
+Current release line: **v0.74.0**.
 
 ## Core areas
 
@@ -461,6 +461,15 @@ See `docs/ARCHITECTURE.md` and `supabase/README.md` for implementation details.
 - Shared shopping stays outside the agenda/feed so grocery changes do not pollute the couple timeline.
 - No shopping backend table, new collaboration engine, AI service or external API is introduced.
 
+
+## v0.74.0 — Lifecycle Integrity & Release Metadata Cleanup
+
+- Revalidates the existing universal Trash contract against the newer Shopping and Workout domains instead of introducing a second lifecycle engine.
+- Complete backup/restore coverage now explicitly proves that trashed shopping items, workout sessions and workout plans remain recoverable.
+- Workout-plan purge is regression-tested so historical sessions keep their copied plan snapshot even when the originating plan is deleted, recreated or permanently purged.
+- Noi ♡ shopping deletion remains intentionally separate from private Trash and continues to use the existing shared tombstone/offline-queue path.
+- Release coordinates are owned by one canonical metadata gate; historical feature tests no longer hardcode the current app version/build number.
+- Runtime version and build number are centralized in `lib/app_version.dart` and must exactly match `pubspec.yaml`.
 
 ## v0.73.0 — External Calendar Overlay
 
