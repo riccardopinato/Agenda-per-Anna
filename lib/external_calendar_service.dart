@@ -150,8 +150,9 @@ class ExternalCalendarService extends ChangeNotifier {
       'external_calendar_selection_initialized_v1';
 
   bool _initialized = false;
-  bool _initializing = false;
   bool _busy = false;
+  Future<void>? _initializeFuture;
+  Future<void>? _rangeLoadFuture;
   bool _enabled = false;
   bool _selectionInitialized = false;
   bool _permissionGranted = false;
@@ -174,9 +175,17 @@ class ExternalCalendarService extends ChangeNotifier {
   Set<String> get selectedCalendarIds =>
       Set<String>.unmodifiable(_selectedCalendarIds);
 
-  Future<void> initialize() async {
-    if (_initialized || _initializing) return;
-    _initializing = true;
+  Future<void> initialize() {
+    if (_initialized) return Future<void>.value();
+    final pending = _initializeFuture;
+    if (pending != null) return pending;
+
+    final future = _initializeInternal();
+    _initializeFuture = future;
+    return future;
+  }
+
+  Future<void> _initializeInternal() async {
     try {
       final prefs = await SharedPreferences.getInstance();
       _enabled = prefs.getBool(_enabledKey) ?? false;
@@ -195,7 +204,7 @@ class ExternalCalendarService extends ChangeNotifier {
       }
       _initialized = true;
     } finally {
-      _initializing = false;
+      _initializeFuture = null;
       notifyListeners();
     }
   }
@@ -304,13 +313,33 @@ class ExternalCalendarService extends ChangeNotifier {
     );
     if (!end.isAfter(start)) return;
 
-    if (_loadedStart != null &&
-        _loadedEnd != null &&
-        !start.isBefore(_loadedStart!) &&
-        !end.isAfter(_loadedEnd!)) {
-      return;
+    if (_rangeCovers(start, end)) return;
+
+    final inFlight = _rangeLoadFuture;
+    if (inFlight != null) {
+      await inFlight;
+      if (_rangeCovers(start, end)) return;
     }
 
+    final future = _loadRangeInternal(start, end);
+    _rangeLoadFuture = future;
+    try {
+      await future;
+    } finally {
+      if (identical(_rangeLoadFuture, future)) {
+        _rangeLoadFuture = null;
+      }
+    }
+  }
+
+  bool _rangeCovers(DateTime start, DateTime end) {
+    return _loadedStart != null &&
+        _loadedEnd != null &&
+        !start.isBefore(_loadedStart!) &&
+        !end.isAfter(_loadedEnd!);
+  }
+
+  Future<void> _loadRangeInternal(DateTime start, DateTime end) async {
     _busy = true;
     _lastError = null;
     notifyListeners();
