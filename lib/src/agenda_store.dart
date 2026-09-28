@@ -71,10 +71,12 @@ class AgendaStore extends ChangeNotifier {
   bool _sharedFlushRunning = false;
   bool _sharedInteractionFlushRunning = false;
   bool _sharedMediaFlushRunning = false;
+  bool _sharedMediaCleanupRunning = false;
   int _sharedConflictCount = 0;
   int _pendingSharedChangeCount = 0;
   int _pendingSharedInteractionCount = 0;
   int _pendingSharedMediaCount = 0;
+  int _pendingSharedMediaCleanupCount = 0;
   DateTime? _lastSharedSyncAt;
   DateTime? _lastSharedSyncAttemptAt;
   String? _lastSharedSyncError;
@@ -90,11 +92,13 @@ class AgendaStore extends ChangeNotifier {
   int get pendingSharedChangeCount => _pendingSharedChangeCount;
   int get pendingSharedInteractionCount => _pendingSharedInteractionCount;
   int get pendingSharedMediaCount => _pendingSharedMediaCount;
+  int get pendingSharedMediaCleanupCount => _pendingSharedMediaCleanupCount;
   int get totalPendingCloudChanges =>
       pendingCloudChanges +
       _pendingSharedChangeCount +
       _pendingSharedInteractionCount +
-      _pendingSharedMediaCount;
+      _pendingSharedMediaCount +
+      _pendingSharedMediaCleanupCount;
   int get totalSharedUnreadCount =>
       _sharedUnreadBySpace.values.fold(0, (sum, count) => sum + count);
   int sharedUnreadCount(String spaceId) => _sharedUnreadBySpace[spaceId] ?? 0;
@@ -1046,6 +1050,7 @@ class AgendaStore extends ChangeNotifier {
     _pendingSharedChangeCount = 0;
     _pendingSharedInteractionCount = 0;
     _pendingSharedMediaCount = 0;
+    _pendingSharedMediaCleanupCount = 0;
     preferences = const AgendaPreferences();
 
     T? decodeSection<T>(
@@ -1264,6 +1269,7 @@ class AgendaStore extends ChangeNotifier {
     await refreshPendingSharedInteractionCount(notify: false);
     await _migrateSharedMediaQueues(prefs);
     await refreshPendingSharedMediaCount(notify: false);
+    await refreshPendingSharedMediaCleanupCount(notify: false);
     _scheduleMediaMaintenance();
   }
 
@@ -1461,6 +1467,7 @@ class AgendaStore extends ChangeNotifier {
       'shared_pending_${ownerId}_',
       'shared_interactions_pending_${ownerId}_',
       'shared_media_pending_${ownerId}_',
+      'shared_media_cleanup_${ownerId}_',
       'shared_interactions_cache_${ownerId}_',
     ];
     final scopedExactKeys = <String>{
@@ -2539,9 +2546,13 @@ class AgendaStore extends ChangeNotifier {
     _notifySyncChanged();
 
     try {
+      // Parent shared records (including tombstones) must reach the server
+      // before child interactions. This prevents offline comments/reactions
+      // from racing a later delete of the same entry.
       await flushSharedMediaUploads();
-      await flushSharedInteractionOperations();
       await flushSharedPendingOperations();
+      await flushSharedInteractionOperations();
+      await flushSharedMediaCleanup();
 
       if (!cloud.signedIn ||
           cloud.userId == null ||
@@ -2553,6 +2564,7 @@ class AgendaStore extends ChangeNotifier {
       await refreshPendingSharedCount();
       await refreshPendingSharedInteractionCount();
       await refreshPendingSharedMediaCount();
+      await refreshPendingSharedMediaCleanupCount();
 
       if (_lastSharedSyncError == null) {
         _lastSharedSyncAt = DateTime.now();
@@ -3455,6 +3467,11 @@ class AgendaStore extends ChangeNotifier {
     return 'shared_media_pending_${owner}_$spaceId';
   }
 
+  String sharedMediaCleanupStorageKey(String spaceId) {
+    final owner = _activeAccountId ?? 'guest';
+    return 'shared_media_cleanup_${owner}_$spaceId';
+  }
+
 
   String get sharedSpacesCacheStorageKey {
     final owner = _activeAccountId ?? 'guest';
@@ -3598,6 +3615,10 @@ class AgendaStore extends ChangeNotifier {
       spaceId: spaceId,
       entryId: entityId,
     );
+    await cancelSharedInteractionsForEntry(
+      spaceId: spaceId,
+      entryId: entityId,
+    );
     final revision = (updatedAt ?? DateTime.now()).toUtc();
     final operations = await loadSharedPendingOperations(spaceId);
     operations.removeWhere((operation) => operation.entityId == entityId);
@@ -3696,6 +3717,19 @@ class AgendaStore extends ChangeNotifier {
         ),
       );
     }
+  }
+
+  Future<void> cancelSharedInteractionsForEntry({
+    required String spaceId,
+    required String entryId,
+  }) async {
+    final operations = await loadSharedInteractionPendingOperations(spaceId);
+    final before = operations.length;
+    operations.removeWhere((operation) => operation.entryId == entryId);
+    if (operations.length == before) return;
+    await _saveSharedInteractionPendingOperations(spaceId, operations);
+    await refreshPendingSharedInteractionCount(notify: false);
+    _notifySharedChanged();
   }
 
   Future<SharedEntryComment> enqueueSharedComment({
@@ -4207,6 +4241,138 @@ class AgendaStore extends ChangeNotifier {
     }
   }
 
+
+  Future<List<String>> loadSharedMediaCleanupPaths(String spaceId) async {
+    final prefs = await _localState();
+    final raw = prefs.getString(sharedMediaCleanupStorageKey(spaceId));
+    if (raw == null) return <String>[];
+    try {
+      return (jsonDecode(raw) as List)
+          .map((value) => value.toString().trim())
+          .where(
+            (path) =>
+                path.isNotEmpty &&
+                path.startsWith('$spaceId/'),
+          )
+          .toSet()
+          .toList();
+    } catch (_) {
+      _unreadableStorageKeys.add(sharedMediaCleanupStorageKey(spaceId));
+      return <String>[];
+    }
+  }
+
+  Future<void> _saveSharedMediaCleanupPaths(
+    String spaceId,
+    List<String> paths,
+  ) async {
+    final prefs = await _localState();
+    final key = sharedMediaCleanupStorageKey(spaceId);
+    final normalized = paths
+        .map((path) => path.trim())
+        .where(
+          (path) =>
+              path.isNotEmpty &&
+              path.startsWith('$spaceId/'),
+        )
+        .toSet()
+        .toList();
+    if (normalized.isEmpty) {
+      await prefs.remove(key);
+    } else {
+      await prefs.setString(key, jsonEncode(normalized));
+    }
+  }
+
+  Future<void> enqueueSharedMediaCleanup({
+    required String spaceId,
+    required String mediaPath,
+  }) async {
+    final path = mediaPath.trim();
+    if (spaceId.isEmpty || path.isEmpty || !path.startsWith('$spaceId/')) {
+      return;
+    }
+    final paths = await loadSharedMediaCleanupPaths(spaceId);
+    if (!paths.contains(path)) paths.add(path);
+    await _saveSharedMediaCleanupPaths(spaceId, paths);
+    await refreshPendingSharedMediaCleanupCount(notify: false);
+    _notifySyncChanged();
+  }
+
+  Future<void> refreshPendingSharedMediaCleanupCount({
+    bool notify = true,
+  }) async {
+    final ownerId = _activeAccountId;
+    var next = 0;
+    if (ownerId != null) {
+      final prefs = await _localState();
+      final prefix = 'shared_media_cleanup_${ownerId}_';
+      for (final key in prefs.getKeys().where((key) => key.startsWith(prefix))) {
+        final spaceId = key.substring(prefix.length);
+        if (spaceId.isEmpty) continue;
+        next += (await loadSharedMediaCleanupPaths(spaceId)).length;
+      }
+    }
+    if (next == _pendingSharedMediaCleanupCount) return;
+    _pendingSharedMediaCleanupCount = next;
+    if (notify) _notifySyncChanged();
+  }
+
+  Future<void> flushSharedMediaCleanup({
+    String? spaceId,
+  }) async {
+    final cloud = CloudSyncService.instance;
+    final ownerId = _activeAccountId;
+    if (!cloud.signedIn ||
+        ownerId == null ||
+        cloud.userId != ownerId ||
+        _sharedMediaCleanupRunning) {
+      return;
+    }
+
+    _sharedMediaCleanupRunning = true;
+    final before = _pendingSharedMediaCleanupCount;
+    var changed = false;
+    try {
+      final prefs = await _localState();
+      final prefix = 'shared_media_cleanup_${ownerId}_';
+      final keys = prefs
+          .getKeys()
+          .where(
+            (key) =>
+                key.startsWith(prefix) &&
+                (spaceId == null ||
+                    key == sharedMediaCleanupStorageKey(spaceId)),
+          )
+          .toList();
+
+      for (final key in keys) {
+        final currentSpaceId = key.substring(prefix.length);
+        if (currentSpaceId.isEmpty) continue;
+        final paths = await loadSharedMediaCleanupPaths(currentSpaceId);
+        for (final path in List<String>.from(paths)) {
+          try {
+            await cloud.deleteSharedMedia(path);
+            final latest =
+                await loadSharedMediaCleanupPaths(currentSpaceId);
+            latest.remove(path);
+            await _saveSharedMediaCleanupPaths(currentSpaceId, latest);
+            changed = true;
+          } catch (error) {
+            _recordSharedSyncError(error);
+            // Keep the path queued for the next resume/periodic sync.
+          }
+        }
+      }
+    } finally {
+      _sharedMediaCleanupRunning = false;
+      await refreshPendingSharedMediaCleanupCount(notify: false);
+      if (changed || before != _pendingSharedMediaCleanupCount) {
+        _notifySyncChanged();
+      }
+    }
+  }
+
   void resetSharedConflictCount() {
     if (_sharedConflictCount == 0) return;
     _sharedConflictCount = 0;
@@ -4309,8 +4475,13 @@ class AgendaStore extends ChangeNotifier {
                 try {
                   await cloud.deleteSharedMedia(mediaPath);
                 } catch (_) {
-                  // Record deletion is authoritative; stale media cleanup can
-                  // be retried manually without resurrecting the entry.
+                  // The tombstone is authoritative. Keep media cleanup in a
+                  // separate durable queue so a transient Storage failure
+                  // cannot leave a permanent orphan.
+                  await enqueueSharedMediaCleanup(
+                    spaceId: currentSpaceId,
+                    mediaPath: mediaPath,
+                  );
                 }
               }
             } else if (operation.payload != null) {

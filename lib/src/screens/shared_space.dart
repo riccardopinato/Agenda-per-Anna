@@ -1733,6 +1733,11 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
       updatedAt: revision,
     );
     await _saveCache();
+    await _saveInteractionCache(
+      commentsByEntry,
+      heartsByEntry,
+      memberReads,
+    );
     if (CloudSyncService.instance.signedIn) {
       await _flushPending();
     }
@@ -1810,6 +1815,8 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
     setState(() {
       entries.removeWhere((candidate) => candidate.id == entry.id);
       pendingIds.add(entry.id);
+      commentsByEntry.remove(entry.id);
+      heartsByEntry.remove(entry.id);
     });
     await widget.store.enqueueSharedDelete(
       spaceId: widget.space.id,
@@ -1819,6 +1826,11 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
           entry.type == SharedEntryType.photo ? entry.mediaPath : '',
     );
     await _saveCache();
+    await _saveInteractionCache(
+      commentsByEntry,
+      heartsByEntry,
+      memberReads,
+    );
     if (CloudSyncService.instance.signedIn) {
       await _flushPending();
       await _refresh(silent: true);
@@ -2113,6 +2125,9 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
       await prefs.remove(
         widget.store.sharedMediaPendingStorageKey(widget.space.id),
       );
+      await prefs.remove(
+        widget.store.sharedMediaCleanupStorageKey(widget.space.id),
+      );
       final ownerId = CloudSyncService.instance.userId ?? 'unknown';
       await prefs.remove(
         'shared_invite_v2_${ownerId}_${widget.space.id}',
@@ -2120,6 +2135,7 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
       await widget.store.refreshPendingSharedCount(notify: false);
       await widget.store.refreshPendingSharedInteractionCount(notify: false);
       await widget.store.refreshPendingSharedMediaCount(notify: false);
+      await widget.store.refreshPendingSharedMediaCleanupCount(notify: false);
       await widget.store.refreshSharedAgendaCache(pullRemote: true);
       if (mounted) Navigator.pop(context);
     } catch (_) {
