@@ -38,6 +38,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
         widget.store.sharedRevision,
         widget.store.journalRevision,
         widget.store.planningRevision,
+        widget.store.workoutRevision,
         ExternalCalendarService.instance,
       ]),
       builder: (context, _) {
