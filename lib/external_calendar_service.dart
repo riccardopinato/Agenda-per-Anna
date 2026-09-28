@@ -116,9 +116,20 @@ class ExternalCalendarEvent {
   bool occursOn(DateTime day) {
     final target = DateTime(day.year, day.month, day.day);
     final first = DateTime(start.year, start.month, start.day);
-    var lastExclusive = allDay
-        ? DateTime(end.year, end.month, end.day)
-        : DateTime(end.year, end.month, end.day).add(const Duration(days: 1));
+    DateTime lastExclusive;
+    if (allDay) {
+      lastExclusive = DateTime(end.year, end.month, end.day);
+    } else {
+      final effectiveEnd = end.isAfter(start)
+          ? end.subtract(const Duration(microseconds: 1))
+          : start;
+      final lastDay = DateTime(
+        effectiveEnd.year,
+        effectiveEnd.month,
+        effectiveEnd.day,
+      );
+      lastExclusive = lastDay.add(const Duration(days: 1));
+    }
     if (!lastExclusive.isAfter(first)) {
       lastExclusive = first.add(const Duration(days: 1));
     }
