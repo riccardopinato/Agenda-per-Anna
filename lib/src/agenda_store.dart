@@ -2097,6 +2097,24 @@ class AgendaStore extends ChangeNotifier {
           ),
         )
         .toList();
+    final incomingTrainingPlans = <TrainingPlan>[];
+    for (final raw in payload['trainingPlans'] as List? ?? const []) {
+      if (raw is! Map) continue;
+      incomingTrainingPlans.add(
+        await _localizeTrainingPlan(
+          TrainingPlan.fromJson(Map<String, dynamic>.from(raw)),
+        ),
+      );
+    }
+    final incomingTrainingSessions =
+        (payload['trainingSessions'] as List? ?? const [])
+            .whereType<Map>()
+            .map(
+              (e) => TrainingSession.fromJson(
+                Map<String, dynamic>.from(e),
+              ),
+            )
+            .toList();
     final incomingTrash = <TrashEntry>[];
     for (final rawEntry in payload['trash'] as List? ?? const []) {
       if (rawEntry is! Map) continue;
@@ -2126,6 +2144,9 @@ class AgendaStore extends ChangeNotifier {
     final previousPeople = List<PersonEntry>.from(people);
     final previousInbox = List<InboxEntry>.from(inbox);
     final previousShopping = List<ShoppingItem>.from(shoppingItems);
+    final previousTrainingPlans = List<TrainingPlan>.from(trainingPlans);
+    final previousTrainingSessions =
+        List<TrainingSession>.from(trainingSessions);
     final previousTrash = List<TrashEntry>.from(trash);
     final previousPreferences = preferences;
 
@@ -2189,6 +2210,26 @@ class AgendaStore extends ChangeNotifier {
           ..clear()
           ..addAll(shoppingById.values);
 
+        final plansById = {
+          for (final plan in trainingPlans) plan.id: plan,
+        };
+        for (final plan in incomingTrainingPlans) {
+          plansById[plan.id] = plan;
+        }
+        trainingPlans
+          ..clear()
+          ..addAll(plansById.values);
+
+        final sessionsById = {
+          for (final session in trainingSessions) session.id: session,
+        };
+        for (final session in incomingTrainingSessions) {
+          sessionsById[session.id] = session;
+        }
+        trainingSessions
+          ..clear()
+          ..addAll(sessionsById.values);
+
         final trashById = {for (final entry in trash) entry.id: entry};
         for (final entry in incomingTrash) {
           trashById[entry.id] = entry;
@@ -2224,6 +2265,12 @@ class AgendaStore extends ChangeNotifier {
         shoppingItems
           ..clear()
           ..addAll(incomingShopping);
+        trainingPlans
+          ..clear()
+          ..addAll(incomingTrainingPlans);
+        trainingSessions
+          ..clear()
+          ..addAll(incomingTrainingSessions);
         trash
           ..clear()
           ..addAll(incomingTrash);
@@ -2284,6 +2331,12 @@ class AgendaStore extends ChangeNotifier {
       shoppingItems
         ..clear()
         ..addAll(previousShopping);
+      trainingPlans
+        ..clear()
+        ..addAll(previousTrainingPlans);
+      trainingSessions
+        ..clear()
+        ..addAll(previousTrainingSessions);
       trash
         ..clear()
         ..addAll(previousTrash);
