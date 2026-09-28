@@ -24,6 +24,7 @@ Source of truth for the active product sequence after v0.52. The roadmap follows
 | v0.67 | Lifecycle & Reference Integrity | Completed | Tombstone-safe offline reconciliation, cross-device reminder cleanup and orphan-safe Noi ♡ lifecycle hardening |
 | v0.68 | Memory Primitive Review | Completed | One derived diary-memory reference path reused by Ricordi, People and On This Day without a new memory store |
 | v0.69 | Places Lite | Completed | Lightweight inline place references on diary memories, searchable without a separate Places database |
+| v0.70 | Architecture Regression Gate | Completed | Cross-domain regression lock for memory/place compatibility, lifecycle, backup, account isolation and anti-duplication constraints |
 
 ## Permanent constraints for this sequence
 
@@ -293,3 +294,19 @@ Per the active development cadence, AppLab runs once every two feature versions.
 - Ricordi text filtering includes place names.
 - Journal persistence automatically carries places through private sync, backup/restore, Trash and account isolation.
 - Release metadata is aligned to v0.69.0+79.
+
+
+## v0.70 acceptance criteria
+
+- v0.68 and v0.69 remain additive/consolidating changes over the existing DiaryBlock/DayJournal architecture, not a Life Core rewrite.
+- Legacy DiaryBlock payloads without Places Lite metadata remain readable.
+- Place references survive ordinary local persistence and process-style reload.
+- Place references survive JSON backup/restore through the existing backup pipeline.
+- Moving a place-linked diary block to Trash and restoring it preserves the place reference and optional coordinates.
+- Place metadata remains isolated across account profiles through the existing account-switching mechanism.
+- Deterministic diary/place search resolves place-linked memories without a secondary search database.
+- Ricordi, People and On This Day share DiaryBlockReference; duplicate memory record classes stay removed.
+- No `places_v1`, `_placesKey`, MemoryEngine persistence key, Life Core store or new Places backend table is introduced.
+- Existing lifecycle, sync, backup/media and account-erasure paths remain the source of truth.
+- Release metadata is aligned to v0.70.0+80.
+- Analyze, full tests, Web release, Android size audit and AppLab Trusted Verify must be green before promotion to main.

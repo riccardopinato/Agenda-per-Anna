@@ -339,3 +339,16 @@ Diary templates are deterministic builders of ordinary `DiaryBlock` notes. Searc
 Noi ♡ 2.0 extends the existing shared-space model instead of introducing a new workspace layer. Participant listing and owner-controlled member removal are PostgreSQL RPCs over `shared_spaces` and `space_members`; public wrappers are security-invoker functions, privileged implementations stay in the private schema with explicit `auth.uid()` authorization and an empty `search_path`.
 
 Data Safety is a derived audit over the current local payload, MediaAssetStore inventory, storage warning set and pending cloud queues. It creates no persistent health database. ZIP self-verification reuses the existing backup decoder, manifest/data SHA-256 checks, media size/hash checks and schema inspection, so backup creation and restore share one integrity contract.
+
+
+## v0.68–v0.70 — Memory references, Places Lite & regression gate
+
+The v0.68–v0.70 cycle deliberately consolidates the personal-memory model without introducing a universal Life Core or a persistent Memory Engine.
+
+- **Canonical memory primitive:** `DiaryBlockReference` is a derived `date + DiaryBlock` view over existing journals. Ricordi, People relationship memories and “In questo giorno” reuse this projection.
+- **Places Lite:** `DiaryPlaceReference` is embedded metadata on `DiaryBlock`. A place has a name and optional coordinates; there is no places table, repository, storage section or sync queue.
+- **Persistence inheritance:** because people links, memory connections and places live in the ordinary DiaryBlock payload, the existing journal local persistence, private cloud record, backup/restore, Trash and account profile paths carry them automatically.
+- **Search:** place names participate in the existing deterministic personal search. The Luoghi result type is derived at read time from diary blocks and does not maintain a secondary index.
+- **Lifecycle:** a place reference follows its parent diary memory. Deleting/restoring a block needs no independent place lifecycle.
+- **Compatibility:** missing `places` JSON is interpreted as an empty list, preserving all historical diary payloads.
+- **Regression boundary:** v0.70 adds tests rather than another feature system, locking persistence/reload, backup/restore, Trash/restore, account isolation, search and no-parallel-store invariants.

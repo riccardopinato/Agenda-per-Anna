@@ -2,7 +2,7 @@
 
 Flutter app for personal planning, private diary and the shared **Noi ♡** space.
 
-Current release line: **v0.69.0**.
+Current release line: **v0.70.0**.
 
 ## Core areas
 
@@ -439,3 +439,13 @@ See `docs/ARCHITECTURE.md` and `supabase/README.md` for implementation details.
 - Ricordi search also matches linked place names.
 - Legacy DiaryBlock payloads without places remain fully compatible.
 - Places automatically inherit existing journal persistence, cloud sync, backup/restore, Trash and account isolation because no parallel store is introduced.
+
+
+## v0.70.0 — Architecture Regression Gate
+
+- Closes the v0.68–v0.70 consolidation cycle without adding another product domain.
+- Memory surfaces remain derived from the existing DiaryBlock/DayJournal source of truth through one DiaryBlockReference projection.
+- Places Lite remains inline DiaryBlock metadata; it introduces no standalone store, cloud table, sync queue or lifecycle entity.
+- Regression coverage verifies legacy compatibility, persistence/restart, backup/restore, Trash/restore, account isolation and deterministic search for place-linked memories.
+- Architecture assertions prevent reintroduction of duplicate memory-record classes and parallel Places/Memory persistence keys.
+- Existing lifecycle, private sync, media, backup, search and account-profile infrastructure remains authoritative.
