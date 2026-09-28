@@ -31,10 +31,11 @@ Sketch selection/page edits remain editor-level operations; deleting the diary S
 Shared data intentionally does not enter the private Trash:
 
 - shared entries use server tombstones and the offline shared-operation queue;
-- shared comments/reactions use the shared interaction queue and server authorization;
+- deleting an entry removes queued local comment/reaction operations for that entry before reconnect, and shared reconciliation flushes parent entry mutations/tombstones before child interaction operations;
+- shared comments/reactions use the shared interaction queue and server authorization; a database trigger cascades a shared-entry tombstone to all child comments/reactions, including other members' rows that ordinary client RLS cannot delete;
 - deleting a shared space is an owner-only destructive action for all members;
 - leaving a shared space removes only the current member;
-- shared media is deleted with its shared entry/space or by the media-maintenance path.
+- shared media is deleted with its shared entry/space; a failed Storage deletion is retained in an account-scoped durable cleanup queue and retried by the existing shared-sync cycle.
 
 This preserves collaboration ownership semantics and avoids creating private recoverable copies of data that belongs to multiple accounts.
 
