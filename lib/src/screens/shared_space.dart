@@ -1130,7 +1130,11 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
 
   List<SharedEntry> get _selectedEntries {
     final selectedEntries = entries
-        .where((entry) => AgendaStore.sameDay(entry.date, selected))
+        .where(
+          (entry) =>
+              entry.type != SharedEntryType.shopping &&
+              AgendaStore.sameDay(entry.date, selected),
+        )
         .toList();
     selectedEntries.sort((a, b) {
       final aMinutes =
@@ -1150,7 +1154,9 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
   }
 
   List<SharedEntry> get _feedEntries {
-    final feed = [...entries];
+    final feed = entries
+        .where((entry) => entry.type != SharedEntryType.shopping)
+        .toList();
     feed.sort((a, b) {
       final aUpdated = a.updatedAt ?? a.date;
       final bUpdated = b.updatedAt ?? b.date;
@@ -1647,6 +1653,16 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
                 title: const Text('Da fare'),
                 onTap: () => Navigator.pop(sheetContext, 'task'),
               ),
+              ListTile(
+                leading: const CircleAvatar(
+                  child: Icon(Icons.shopping_cart_outlined),
+                ),
+                title: const Text('Lista della spesa'),
+                subtitle: const Text(
+                  'Apri la lista condivisa e aggiungi ciò che serve',
+                ),
+                onTap: () => Navigator.pop(sheetContext, 'shopping'),
+              ),
             ],
           ),
         ),
@@ -1669,6 +1685,9 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
         return;
       case 'task':
         await _edit(null, SharedEntryType.task);
+        return;
+      case 'shopping':
+        await _openSharedShopping();
         return;
     }
   }
@@ -1752,6 +1771,21 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
           ? 'Aggiunto a I nostri ricordi.'
           : 'Rimosso da I nostri ricordi.',
     );
+  }
+
+  Future<void> _openSharedShopping() async {
+    await Navigator.push<void>(
+      context,
+      MaterialPageRoute(
+        builder: (_) => ShoppingListScreen(
+          store: widget.store,
+          sharedSpace: widget.space,
+        ),
+      ),
+    );
+    if (mounted) {
+      await _refresh(silent: true);
+    }
   }
 
   Future<void> _openSharedMemories() async {
@@ -2608,6 +2642,24 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
               _syncCard(context),
               const SizedBox(height: 10),
               _sharedDiaryCard(context),
+              const SizedBox(height: 10),
+              Card(
+                margin: EdgeInsets.zero,
+                child: ListTile(
+                  leading: const CircleAvatar(
+                    child: Icon(Icons.shopping_cart_outlined),
+                  ),
+                  title: const Text(
+                    'Lista della spesa',
+                    style: TextStyle(fontWeight: FontWeight.w900),
+                  ),
+                  subtitle: Text(
+                    '${widget.store.sharedShoppingItems(widget.space.id).where((entry) => !entry.done).length} da comprare · condivisa e offline-first',
+                  ),
+                  trailing: const Icon(Icons.chevron_right),
+                  onTap: _openSharedShopping,
+                ),
+              ),
               const SizedBox(height: 10),
               Card(
                 margin: EdgeInsets.zero,
