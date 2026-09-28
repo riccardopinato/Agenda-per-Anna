@@ -364,3 +364,16 @@ Shopping is deliberately split only by ownership boundary, not by infrastructure
 - **Lifecycle:** private deletion uses the global Trash contract; shared deletion uses the established collaborative tombstone semantics.
 - **Backup/account:** the private shopping collection is captured by ordinary account profiles, safety snapshots and JSON/ZIP backup/restore.
 - **Derived convenience:** automatic categories and frequent-item suggestions are local deterministic projections over the canonical item payload.
+
+
+## v0.72 — Multisport Workout
+
+Allenamento is one personal domain with two first-class private entities:
+
+- **WorkoutSession:** an immutable historical record of a completed activity. It carries sport, date, optional duration/distance/elevation/RPE/notes and, when started from a plan, a snapshot of the plan name and exercise rows.
+- **WorkoutPlan:** a reusable template that can model gym exercises or free-form blocks for any sport.
+- **Local storage:** both collections share the account-scoped `workouts_v1` aggregate so switching profiles remains atomic with the rest of the working set.
+- **Cloud delta sync:** sessions and plans use the existing private `agenda_records` pipeline as `workout_session` and `workout_plan`; there is no workout backend table.
+- **Lifecycle:** both are recoverable through the existing Trash contract.
+- **Backup/export:** the ordinary structured backup and readable export include both collections. Plan imports are converted immediately to model rows and do not create a second file repository.
+- **History integrity:** a session owns its copied exercise snapshot. A future edit or deletion of the originating plan cannot mutate past sessions.

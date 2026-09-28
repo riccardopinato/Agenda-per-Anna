@@ -26,6 +26,7 @@ Source of truth for the active product sequence after v0.52. The roadmap follows
 | v0.69 | Places Lite | Completed | Lightweight inline place references on diary memories, searchable without a separate Places database |
 | v0.70 | Architecture Regression Gate | Completed | Cross-domain regression lock for memory/place compatibility, lifecycle, backup, account isolation and anti-duplication constraints |
 | v0.71 | Shopping List | Completed | Lightweight private + Noi ♡ grocery list reusing existing local/cloud/shared lifecycle infrastructure |
+| v0.72 | Multisport Workout | Completed | Dedicated Allenamento history + reusable plans for gym, running, cycling, swimming and other sports on existing private infrastructure |
 
 ## Permanent constraints for this sequence
 
@@ -325,4 +326,20 @@ Per the active development cadence, AppLab runs once every two feature versions.
 - Shared shopping does not appear as agenda/feed content and introduces no new Supabase table.
 - The same Shopping List screen supports private and shared modes to avoid duplicated UX logic.
 - Release metadata is aligned to v0.71.0+81.
+- Analyze, full tests, Web release, Android size audit and AppLab Trusted Verify must be green before promotion to main.
+
+
+## v0.72 acceptance criteria
+
+- Allenamento is a dedicated user-facing section with **Sessioni** and **Schede** views.
+- A completed session is independent from gym-specific concepts and can represent running, cycling, swimming, walking, hiking, gym, yoga/mobility, team sports or another activity.
+- Session fields are optional where appropriate: distance, duration, elevation, RPE and notes never prevent logging a sport that does not use them.
+- Running/walking/hiking derive pace when distance and duration exist; other distance activities derive average speed.
+- A workout plan is reusable and may contain structured exercise rows or free-text training blocks.
+- TXT/CSV plan import is local, bounded and uses the existing file-picker dependency.
+- Starting from a plan copies a snapshot of its exercises into the new session; subsequent plan edits/deletion do not rewrite workout history.
+- Workout sessions/plans are account-scoped, offline-first and use the existing private entity-delta/cloud reconciliation path.
+- Existing JSON/ZIP backup, readable export and Trash → restore → purge lifecycle include both sessions and plans.
+- No workout-specific Supabase table, AI parser, remote plan service or second sync engine is introduced.
+- Release metadata is aligned to v0.72.0+82.
 - Analyze, full tests, Web release, Android size audit and AppLab Trusted Verify must be green before promotion to main.
