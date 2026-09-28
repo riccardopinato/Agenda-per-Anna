@@ -21,10 +21,11 @@ Source of truth for the active product sequence after v0.52. The roadmap follows
 | v0.64 | Capture & Writing | Completed | Native Android share-to-diary/Inbox plus distraction-reduced diary writing |
 | v0.65 | Noi ♡ Permissions Lite | Completed | Simple server-enforced edit/read-only control for shared creative memories |
 | v0.66 | Smart Media Search | Completed | Local on-device OCR for diary photos integrated into deterministic search |
+| v0.67 | Lifecycle & Reference Integrity | Validation | Close real delete/reference/offline-reconnect gaps without replacing the existing lifecycle architecture |
 
 ## Permanent constraints for this sequence
 
-- No generative-AI or AI-dependent product features through v0.66.
+- No generative-AI or AI-dependent product features are introduced by the v0.67 lifecycle hardening step.
 - Anna's Diary remains primarily a personal diary / agenda; work and knowledge-management scope belongs to Notes-Ecosistema.
 - Existing verified modules are reused before new infrastructure is introduced.
 - User data remains offline-capable and account-isolated where applicable.
@@ -249,3 +250,17 @@ Per the active development cadence, AppLab runs once every two feature versions.
 - No generative AI, semantic embeddings, remote OCR, PDF scanner or new media database is introduced.
 - Release metadata is aligned to v0.66.0+76.
 - Development, Web, Android size audit and AppLab Trusted Verify must all pass before merge.
+
+
+## v0.67 acceptance criteria
+
+- v0.66 is the fixed implementation baseline; private Trash, DiaryBlock purge links, agenda reminder lifecycle and deterministic private LWW reconciliation are reused rather than rebuilt.
+- Deleting a shared entry clears pending offline comments/reactions for the same entry before reconnect.
+- Shared reconciliation processes shared entry upserts/tombstones before queued child interactions.
+- A shared-entry tombstone removes all matching server comments/reactions regardless of which member authored them, without weakening client RLS.
+- A failed shared-media Storage delete is retained in an account-scoped durable cleanup queue and automatically retried.
+- Shared-entry deletion removes its local interaction cache; shared-space removal clears all related pending upload/interaction/media-cleanup state.
+- Supabase contains the tracked `shared_entry_lifecycle_integrity_v067` migration and the lifecycle trigger has locked-down execution privileges.
+- No current orphan comments/reactions remain in production after migration verification.
+- Release metadata is aligned to v0.67.0+77.
+- Development checks, Web release validation, Android size audit and AppLab Trusted Verify must all pass before merge.
