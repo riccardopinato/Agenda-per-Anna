@@ -2,7 +2,7 @@
 
 Flutter app for personal planning, private diary and the shared **Noi ♡** space.
 
-Current release line: **v0.66.0**.
+Current release line: **v0.67.0**.
 
 ## Core areas
 
@@ -406,3 +406,15 @@ See `docs/ARCHITECTURE.md` and `supabase/README.md` for implementation details.
 - Web remains fully functional; OCR recognition itself is an Android enhancement, while OCR metadata already synced from Android remains searchable as ordinary journal metadata.
 - OCR failures never block photo saving, viewing or diary usage.
 - No semantic embeddings, remote OCR service, document scanner or generative AI is introduced.
+
+
+## v0.67.0 — Lifecycle & Reference Integrity
+
+- Restarts the active product line directly from the verified v0.66 baseline.
+- Private cloud reconciliation treats deletion tombstones as authoritative over stale offline edits, while an explicit **Restore from Trash** remains a distinct recoverable user action.
+- Shared **Noi ♡** deletion removes pending child interaction operations and cancels pending shared-media uploads for the deleted entry.
+- Shared-media object deletions that fail transiently are retained in a durable retry queue instead of becoming silent orphans.
+- Agenda reminder changes and deletions keep account-scoped PWA/Web Push reminders aligned even when the action originates from Android; failed remote reminder cleanup is retried after reconnect.
+- Existing database-side cleanup of shared comments/reactions remains the source of truth and is not duplicated.
+- No Life Core rewrite, monolithic Memory Engine or parallel lifecycle subsystem is introduced.
+- Release metadata is aligned to v0.67.0+77.
