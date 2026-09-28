@@ -3806,7 +3806,6 @@ class AgendaStore extends ChangeNotifier {
     for (final key in keys) {
       final raw = prefs.getString(key);
       if (raw == null) continue;
-      final spaceId = key.substring(prefix.length);
       final remaining = <String>[];
       try {
         final paths =
