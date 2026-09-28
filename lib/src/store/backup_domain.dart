@@ -19,6 +19,7 @@ class _AgendaBackupDomain {
         'people': store.people.map((e) => e.toJson()).toList(),
         'inbox': store.inbox.map((e) => e.toJson()).toList(),
         'shopping': store.shoppingItems.map((e) => e.toJson()).toList(),
+        'training': store.trainingEntries.map((e) => e.toJson()).toList(),
         'trash': store.trash.map((e) => e.toJson()).toList(),
         'preferences': store.preferences.toJson(),
       };
@@ -45,6 +46,7 @@ class _AgendaBackupDomain {
       'people': store.people.map((e) => e.toJson()).toList(),
       'inbox': store.inbox.map((e) => e.toJson()).toList(),
       'shopping': store.shoppingItems.map((e) => e.toJson()).toList(),
+      'training': store.trainingEntries.map((e) => e.toJson()).toList(),
       'trash': portableTrash,
       'preferences': store.preferences.toJson(),
     };
@@ -367,6 +369,43 @@ class _AgendaBackupDomain {
         buffer.writeln(
           '$mark ${item.name}$quantity · ${item.category.label}',
         );
+      }
+    }
+
+    buffer.writeln();
+    buffer.writeln(
+      '============================================================',
+    );
+    buffer.writeln('ALLENAMENTO');
+    buffer.writeln(
+      '============================================================',
+    );
+    final sessions = store.trainingSessions;
+    if (sessions.isEmpty) {
+      buffer.writeln('Nessun allenamento salvato.');
+    } else {
+      for (final entry in sessions) {
+        final date = DateFormat('d MMMM yyyy', 'it_IT').format(entry.date);
+        final duration = entry.durationSeconds <= 0
+            ? ''
+            : ' · ${Duration(seconds: entry.durationSeconds).toString().split('.').first}';
+        final distance =
+            entry.distanceKm == null ? '' : ' · ${entry.distanceKm} km';
+        buffer.writeln(
+          '- $date · ${entry.sport.label} · ${entry.title}$distance$duration',
+        );
+        if (entry.notes.trim().isNotEmpty) {
+          buffer.writeln('  Note: ${entry.notes.trim()}');
+        }
+      }
+    }
+    if (store.trainingPlans.isNotEmpty) {
+      buffer.writeln();
+      buffer.writeln('Piani / schede:');
+      for (final plan in store.trainingPlans) {
+        final attachment =
+            plan.attachmentName.isEmpty ? '' : ' · ${plan.attachmentName}';
+        buffer.writeln('- ${plan.title} · ${plan.sport.label}$attachment');
       }
     }
 
