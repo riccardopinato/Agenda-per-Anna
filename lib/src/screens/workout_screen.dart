@@ -811,15 +811,21 @@ Future<WorkoutPlan?> showWorkoutPlanEditor(
     builder: (sheetContext) => StatefulBuilder(
       builder: (context, setLocal) {
         Future<void> importTextFile() async {
-          final picked = await FilePicker.platform.pickFiles(
+          final file = await FilePicker.pickFile(
             type: FileType.custom,
             allowedExtensions: const ['txt', 'csv'],
-            withData: true,
           );
-          if (picked == null || picked.files.isEmpty) return;
-          final file = picked.files.single;
-          final bytes = file.bytes;
-          if (bytes == null || bytes.isEmpty) {
+          if (file == null) return;
+          Uint8List bytes;
+          try {
+            bytes = await file.readAsBytes();
+          } catch (_) {
+            setLocal(
+              () => error = 'Non riesco a leggere questo file.',
+            );
+            return;
+          }
+          if (bytes.isEmpty) {
             setLocal(
               () => error = 'Non riesco a leggere questo file.',
             );
