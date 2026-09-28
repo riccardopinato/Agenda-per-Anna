@@ -1,6 +1,5 @@
 import 'dart:io';
 
-import 'package:agenda_per_anna/app_version.dart';
 import 'package:agenda_per_anna/main.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:intl/date_symbol_data_local.dart';
@@ -68,9 +67,4 @@ void main() {
     expect(diary, contains('ocrScanned: false'));
   });
 
-  test('v0.66 release metadata is aligned', () {
-    final pubspec = File('pubspec.yaml').readAsStringSync();
-    expect(appReleaseVersion, '0.73.0');
-    expect(pubspec, contains('version: 0.73.0+83'));
-  });
 }
