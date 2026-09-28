@@ -194,6 +194,18 @@ Future<void> main() async {
 
   Future<void>.delayed(Duration.zero, () async {
     try {
+      await ExternalCalendarService.instance.initialize();
+      final now = DateTime.now();
+      final start = DateTime(now.year, now.month, now.day);
+      await ExternalCalendarService.instance.loadRange(
+        start,
+        start.add(const Duration(days: 45)),
+      );
+    } catch (_) {
+      // L'overlay calendario esterno è opzionale e resta locale al dispositivo.
+    }
+
+    try {
       final initialShare = await ShareCaptureService.instance.initialize();
       await _shareCaptureSubscription?.cancel();
       _shareCaptureSubscription = ShareCaptureService.instance.stream.listen(
