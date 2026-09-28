@@ -90,6 +90,12 @@ void main() {
           'An intentional Trash restore must be distinguishable from a stale offline edit.',
     );
     expect(
+      agendaSource,
+      contains('record.clientUpdatedAt.add(const Duration(microseconds: 1))'),
+      reason:
+          'Deletion-dominant conflicts must advance their tombstone beyond the ordinary remote edit.',
+    );
+    expect(
       lifecycleSource,
       contains('await _markExplicitRestoreIntent(restoreTarget.$1, restoreTarget.$2);'),
       reason:
