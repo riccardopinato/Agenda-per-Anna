@@ -19,6 +19,7 @@ class _AgendaBackupDomain {
         'people': store.people.map((e) => e.toJson()).toList(),
         'inbox': store.inbox.map((e) => e.toJson()).toList(),
         'shopping': store.shoppingItems.map((e) => e.toJson()).toList(),
+        'training': store.trainingRecords.map((e) => e.toJson()).toList(),
         'trash': store.trash.map((e) => e.toJson()).toList(),
         'preferences': store.preferences.toJson(),
       };
@@ -45,6 +46,7 @@ class _AgendaBackupDomain {
       'people': store.people.map((e) => e.toJson()).toList(),
       'inbox': store.inbox.map((e) => e.toJson()).toList(),
       'shopping': store.shoppingItems.map((e) => e.toJson()).toList(),
+      'training': store.trainingRecords.map((e) => e.toJson()).toList(),
       'trash': portableTrash,
       'preferences': store.preferences.toJson(),
     };
@@ -367,6 +369,45 @@ class _AgendaBackupDomain {
         buffer.writeln(
           '$mark ${item.name}$quantity · ${item.category.label}',
         );
+      }
+    }
+
+    buffer.writeln();
+    buffer.writeln(
+      '============================================================',
+    );
+    buffer.writeln('ALLENAMENTO');
+    buffer.writeln(
+      '============================================================',
+    );
+
+    final training = [...store.trainingRecords]
+      ..sort((a, b) => b.date.compareTo(a.date));
+    if (training.isEmpty) {
+      buffer.writeln('Nessun allenamento o piano salvato.');
+    } else {
+      for (final record in training) {
+        final kind = record.isPlan ? 'Scheda' : 'Sessione';
+        final date = DateFormat('d MMMM yyyy', 'it_IT').format(record.date);
+        buffer.writeln('- $kind · $date · ${record.sport.label} · ${record.title}');
+        if (record.distanceKm > 0) {
+          buffer.writeln('  Distanza: ${record.distanceKm} km');
+        }
+        if (record.durationMinutes > 0) {
+          buffer.writeln('  Durata: ${record.durationMinutes} min');
+        }
+        if (record.elevationMeters > 0) {
+          buffer.writeln('  Dislivello: +${record.elevationMeters} m');
+        }
+        if (record.rpe > 0) {
+          buffer.writeln('  RPE: ${record.rpe}/10');
+        }
+        if (record.details.trim().isNotEmpty) {
+          buffer.writeln('  Dettagli: ${record.details.trim()}');
+        }
+        if (record.notes.trim().isNotEmpty) {
+          buffer.writeln('  Note: ${record.notes.trim()}');
+        }
       }
     }
 
