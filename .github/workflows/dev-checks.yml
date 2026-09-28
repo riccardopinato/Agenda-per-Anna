@@ -2,7 +2,7 @@ name: Development checks
 
 on:
   push:
-    branches: [main]
+    branches: [main, v066-ci-baseline]
   pull_request:
     branches: [main]
   workflow_dispatch:
