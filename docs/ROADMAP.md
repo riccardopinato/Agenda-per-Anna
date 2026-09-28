@@ -293,6 +293,8 @@ Per the active development cadence, AppLab runs once every two feature versions.
 - Global deterministic search indexes PlaceEntry fields and linked place context on diary blocks.
 - Quick Capture exposes lightweight place creation and People exposes a direct path to the Places collection.
 - Places participate in local-first persistence, entity deltas, private sync, account profiles, backup/restore, readable export and Trash lifecycle.
+- JSON and ZIP backup paths both preserve PlaceEntry data and diary place references.
+- Recoverable linked places remain visible/removable from the picker while in Trash; place selection has no silent truncation.
 - Purging a place removes dangling references from live/recoverable diary content without deleting memories.
 - No map SDK, location permission, geofencing, external place database or generative AI dependency is introduced.
 - Release metadata is aligned to v0.68.0+78.
