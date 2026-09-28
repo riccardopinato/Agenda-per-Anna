@@ -1967,6 +1967,13 @@ class AgendaStore extends ChangeNotifier {
           ),
         )
         .toList();
+    final incomingShopping = (payload['shopping'] as List? ?? const [])
+        .map(
+          (e) => ShoppingItem.fromJson(
+            Map<String, dynamic>.from(e as Map),
+          ),
+        )
+        .toList();
     final incomingTrash = <TrashEntry>[];
     for (final rawEntry in payload['trash'] as List? ?? const []) {
       if (rawEntry is! Map) continue;
@@ -1995,6 +2002,7 @@ class AgendaStore extends ChangeNotifier {
     final previousBirthdays = List<BirthdayEntry>.from(birthdays);
     final previousPeople = List<PersonEntry>.from(people);
     final previousInbox = List<InboxEntry>.from(inbox);
+    final previousShopping = List<ShoppingItem>.from(shoppingItems);
     final previousTrash = List<TrashEntry>.from(trash);
     final previousPreferences = preferences;
 
@@ -2048,6 +2056,16 @@ class AgendaStore extends ChangeNotifier {
           ..clear()
           ..addAll(inboxById.values);
 
+        final shoppingById = {
+          for (final item in shoppingItems) item.id: item,
+        };
+        for (final item in incomingShopping) {
+          shoppingById[item.id] = item;
+        }
+        shoppingItems
+          ..clear()
+          ..addAll(shoppingById.values);
+
         final trashById = {for (final entry in trash) entry.id: entry};
         for (final entry in incomingTrash) {
           trashById[entry.id] = entry;
@@ -2080,6 +2098,9 @@ class AgendaStore extends ChangeNotifier {
         inbox
           ..clear()
           ..addAll(incomingInbox);
+        shoppingItems
+          ..clear()
+          ..addAll(incomingShopping);
         trash
           ..clear()
           ..addAll(incomingTrash);
@@ -2137,6 +2158,9 @@ class AgendaStore extends ChangeNotifier {
       inbox
         ..clear()
         ..addAll(previousInbox);
+      shoppingItems
+        ..clear()
+        ..addAll(previousShopping);
       trash
         ..clear()
         ..addAll(previousTrash);
