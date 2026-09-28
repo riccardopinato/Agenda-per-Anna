@@ -8,6 +8,8 @@ on:
 
 permissions:
   contents: read
+  pages: write
+  id-token: write
 
 concurrency:
   group: restart-v066-clean-gates-${{ github.ref }}
@@ -57,12 +59,28 @@ jobs:
 
       - name: Build web release
         run: |
-          flutter build web --release
+          flutter build web --release --base-href "/Agenda-per-Anna/"
           python3 tool/finalize_web_build.py
+
+      - name: Add public legal pages
+        run: |
+          cp legal/privacy.html build/web/privacy.html
+          cp legal/terms.html build/web/terms.html
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: build/web
 
   android-size:
     runs-on: ubuntu-latest
     timeout-minutes: 35
+    env:
+      ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+      ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+      ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+      ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+      ANDROID_KEYSTORE_PATH: ${{ github.workspace }}/.signing/agenda-release.jks
     steps:
       - name: Checkout exact restart head
         uses: actions/checkout@v4
@@ -82,24 +100,15 @@ jobs:
           flutter create --project-name agenda_per_anna --org com.riccardopinato --platforms=android /tmp/agenda_restart_android
           cp -R /tmp/agenda_restart_android/android .
 
-      - name: Create disposable validation signing key
-        shell: bash
-        run: |
-          set -euo pipefail
-          STORE="$RUNNER_TEMP/agenda-restart-validation.jks"
-          keytool -genkeypair -storetype JKS -keystore "$STORE"             -storepass restart-store-pass -keypass restart-key-pass             -alias restart -keyalg RSA -keysize 2048 -validity 2             -dname "CN=Anna Diary Restart Validation,O=CI,C=IT" -noprompt
-          B64=$(base64 -w0 "$STORE")
-          echo "::add-mask::$B64"
-          {
-            echo "ANDROID_KEYSTORE_BASE64=$B64"
-            echo "ANDROID_KEYSTORE_PASSWORD=restart-store-pass"
-            echo "ANDROID_KEY_ALIAS=restart"
-            echo "ANDROID_KEY_PASSWORD=restart-key-pass"
-            echo "ANDROID_KEYSTORE_PATH=$GITHUB_WORKSPACE/.signing/agenda-release.jks"
-          } >> "$GITHUB_ENV"
-
-      - name: Apply Android release configuration
+      - name: Apply stable Android release configuration
         run: python3 tool/prepare_android_platform.py --release-signing
+
+      - name: Verify stable release keystore
+        run: |
+          keytool -list \
+            -keystore "$ANDROID_KEYSTORE_PATH" \
+            -storepass "$ANDROID_KEYSTORE_PASSWORD" \
+            -alias "$ANDROID_KEY_ALIAS" >/dev/null
 
       - name: Install locked dependencies
         run: flutter pub get --enforce-lockfile
@@ -119,8 +128,42 @@ jobs:
 
       - name: Generate ARM64 size report
         run: |
-          python3 tool/android_size_report.py             build/app/outputs/flutter-apk/app-arm64-v8a-release.apk             --output build/restart-arm64-size.txt
+          python3 tool/android_size_report.py \
+            build/app/outputs/flutter-apk/app-arm64-v8a-release.apk \
+            --output build/restart-arm64-size.txt
           cat build/restart-arm64-size.txt
+
+      - name: Prepare installable APK
+        run: |
+          mkdir -p build/delivery
+          cp build/app/outputs/flutter-apk/app-arm64-v8a-release.apk \
+            build/delivery/Anna-Diary-v0.67.0-arm64.apk
+          sha256sum build/delivery/Anna-Diary-v0.67.0-arm64.apk \
+            > build/delivery/SHA256SUMS.txt
+
+      - name: Upload installable ARM64 APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: annas-diary-v067-arm64
+          path: |
+            build/delivery/Anna-Diary-v0.67.0-arm64.apk
+            build/delivery/SHA256SUMS.txt
+          if-no-files-found: error
+          retention-days: 30
+
+  deploy-web:
+    needs: development
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Configure Pages
+        uses: actions/configure-pages@v5
+
+      - name: Deploy Anna's Diary PWA
+        id: deployment
+        uses: actions/deploy-pages@v4
 
   applab:
     uses: riccardopinato/AppLab/.github/workflows/external-project-runner.yml@a871a1c1e0ab8339c48bc8ee53ee4cc34d634d34
