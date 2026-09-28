@@ -42,9 +42,7 @@ extension WorkoutAgendaStore on AgendaStore {
               : null,
       clearElevation:
           session.elevationGainM == null || session.elevationGainM! < 0,
-      effort: session.effort != null
-          ? session.effort!.clamp(1, 10).toInt()
-          : null,
+      effort: session.effort?.clamp(1, 10).toInt(),
       clearEffort: session.effort == null,
       note: session.note.trim(),
       planName: session.planName.trim(),
@@ -213,15 +211,12 @@ extension WorkoutAgendaStore on AgendaStore {
     final minutes = (safe % 3600) ~/ 60;
     final secs = safe % 60;
     if (hours > 0) {
-      return hours.toString().padLeft(2, '0') +
-          ':' +
-          minutes.toString().padLeft(2, '0') +
-          ':' +
-          secs.toString().padLeft(2, '0');
+      return '${hours.toString().padLeft(2, '0')}:'
+          '${minutes.toString().padLeft(2, '0')}:'
+          '${secs.toString().padLeft(2, '0')}';
     }
-    return minutes.toString().padLeft(2, '0') +
-        ':' +
-        secs.toString().padLeft(2, '0');
+    return '${minutes.toString().padLeft(2, '0')}:'
+        '${secs.toString().padLeft(2, '0')}';
   }
 
   String? workoutPerformanceLabel(WorkoutSession session) {
@@ -235,13 +230,10 @@ extension WorkoutAgendaStore on AgendaStore {
       if (pace == null) return null;
       final minutes = pace ~/ 60;
       final seconds = pace % 60;
-      return minutes.toString() +
-          ':' +
-          seconds.toString().padLeft(2, '0') +
-          ' /km';
+      return '$minutes:${seconds.toString().padLeft(2, '0')} /km';
     }
     final speed = session.averageSpeedKmh;
     if (speed == null) return null;
-    return speed.toStringAsFixed(1) + ' km/h';
+    return '${speed.toStringAsFixed(1)} km/h';
   }
 }
