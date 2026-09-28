@@ -2,7 +2,7 @@ name: Android size audit
 
 on:
   pull_request:
-    branches: [main]
+    branches: [main, v066-ci-baseline]
     paths:
       - "lib/**"
       - "assets/**"
