@@ -116,10 +116,7 @@ void main() {
 
   test('v0.67 preserves deterministic private delete-edit reconciliation', () {
     final store = File('lib/src/agenda_store.dart').readAsStringSync();
-    final merge = File(
-      'supabase/migrations/'
-      '20260921155617_deterministic_record_merge_v0161.sql',
-    ).readAsStringSync();
+    final cloud = File('lib/cloud_sync_service.dart').readAsStringSync();
 
     expect(
       store,
@@ -127,12 +124,10 @@ void main() {
         '!localOp.updatedAt.isAfter(record.clientUpdatedAt)',
       ),
     );
-    expect(
-      merge,
-      contains(
-        'excluded.client_updated_at > agenda_records.client_updated_at',
-      ),
-    );
+    expect(cloud, contains("'merge_agenda_record'"));
+    expect(cloud, contains("StateError('remote_record_is_newer')"));
+    expect(cloud, contains("'p_client_updated_at'"));
+    expect(cloud, contains("'p_deleted_at'"));
   });
 
   test('v0.67 shared delete persists child cache removal', () {
