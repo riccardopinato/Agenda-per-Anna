@@ -385,6 +385,125 @@ class AgendaItem {
   }
 }
 
+enum ShoppingCategory {
+  produce,
+  dairy,
+  bakery,
+  pantry,
+  drinks,
+  frozen,
+  household,
+  personalCare,
+  other,
+}
+
+extension ShoppingCategoryUi on ShoppingCategory {
+  String get label => switch (this) {
+        ShoppingCategory.produce => 'Frutta e verdura',
+        ShoppingCategory.dairy => 'Latticini',
+        ShoppingCategory.bakery => 'Pane e forno',
+        ShoppingCategory.pantry => 'Dispensa',
+        ShoppingCategory.drinks => 'Bevande',
+        ShoppingCategory.frozen => 'Surgelati',
+        ShoppingCategory.household => 'Casa',
+        ShoppingCategory.personalCare => 'Cura personale',
+        ShoppingCategory.other => 'Altro',
+      };
+
+  IconData get icon => switch (this) {
+        ShoppingCategory.produce => Icons.eco_outlined,
+        ShoppingCategory.dairy => Icons.breakfast_dining_outlined,
+        ShoppingCategory.bakery => Icons.bakery_dining_outlined,
+        ShoppingCategory.pantry => Icons.kitchen_outlined,
+        ShoppingCategory.drinks => Icons.local_drink_outlined,
+        ShoppingCategory.frozen => Icons.ac_unit_outlined,
+        ShoppingCategory.household => Icons.home_outlined,
+        ShoppingCategory.personalCare => Icons.spa_outlined,
+        ShoppingCategory.other => Icons.shopping_basket_outlined,
+      };
+}
+
+class ShoppingItem {
+  final String id;
+  final String name;
+  final String quantity;
+  final ShoppingCategory category;
+  final bool done;
+  final int sortOrder;
+  final int purchaseCount;
+  final DateTime createdAt;
+  final DateTime? lastPurchasedAt;
+
+  const ShoppingItem({
+    required this.id,
+    required this.name,
+    required this.createdAt,
+    this.quantity = '',
+    this.category = ShoppingCategory.other,
+    this.done = false,
+    this.sortOrder = 0,
+    this.purchaseCount = 0,
+    this.lastPurchasedAt,
+  });
+
+  String get normalizedName => name.trim().toLowerCase();
+
+  ShoppingItem copyWith({
+    String? name,
+    String? quantity,
+    ShoppingCategory? category,
+    bool? done,
+    int? sortOrder,
+    int? purchaseCount,
+    DateTime? lastPurchasedAt,
+    bool clearLastPurchasedAt = false,
+  }) =>
+      ShoppingItem(
+        id: id,
+        name: name ?? this.name,
+        quantity: quantity ?? this.quantity,
+        category: category ?? this.category,
+        done: done ?? this.done,
+        sortOrder: sortOrder ?? this.sortOrder,
+        purchaseCount: purchaseCount ?? this.purchaseCount,
+        createdAt: createdAt,
+        lastPurchasedAt: clearLastPurchasedAt
+            ? null
+            : (lastPurchasedAt ?? this.lastPurchasedAt),
+      );
+
+  Map<String, dynamic> toJson() => {
+        'id': id,
+        'name': name,
+        'quantity': quantity,
+        'category': category.name,
+        'done': done,
+        'sortOrder': sortOrder,
+        'purchaseCount': purchaseCount,
+        'createdAt': createdAt.toUtc().toIso8601String(),
+        'lastPurchasedAt': lastPurchasedAt?.toUtc().toIso8601String(),
+      };
+
+  factory ShoppingItem.fromJson(Map<String, dynamic> json) => ShoppingItem(
+        id: json['id'] as String? ?? const Uuid().v4(),
+        name: json['name'] as String? ?? '',
+        quantity: json['quantity'] as String? ?? '',
+        category: ShoppingCategory.values.firstWhere(
+          (value) => value.name == json['category'],
+          orElse: () => ShoppingCategory.other,
+        ),
+        done: json['done'] as bool? ?? false,
+        sortOrder: (json['sortOrder'] as num? ?? 0).toInt(),
+        purchaseCount: (json['purchaseCount'] as num? ?? 0).toInt(),
+        createdAt:
+            DateTime.tryParse(json['createdAt'] as String? ?? '')?.toLocal() ??
+                DateTime.now(),
+        lastPurchasedAt:
+            DateTime.tryParse(json['lastPurchasedAt'] as String? ?? '')
+                ?.toLocal(),
+      );
+}
+
 class InboxEntry {
   final String id;
   final String text;
@@ -1266,7 +1385,7 @@ class _LocalSyncEntity {
   String get localKey => '$entityType:$entityId';
 }
 
-enum SharedEntryType { appointment, task, note, photo, sketch }
+enum SharedEntryType { appointment, task, note, photo, sketch, shopping }
 
 extension SharedEntryTypeUi on SharedEntryType {
   String get label => switch (this) {
@@ -1275,6 +1394,7 @@ extension SharedEntryTypeUi on SharedEntryType {
         SharedEntryType.note => 'Nota',
         SharedEntryType.photo => 'Foto',
         SharedEntryType.sketch => 'Sketch',
+        SharedEntryType.shopping => 'Spesa',
       };
 
   IconData get icon => switch (this) {
@@ -1283,6 +1403,7 @@ extension SharedEntryTypeUi on SharedEntryType {
         SharedEntryType.note => Icons.sticky_note_2_outlined,
         SharedEntryType.photo => Icons.photo_outlined,
         SharedEntryType.sketch => Icons.draw_outlined,
+        SharedEntryType.shopping => Icons.shopping_cart_outlined,
       };
 
   bool get supportsTime =>
@@ -1313,6 +1434,11 @@ class SharedEntry {
   final bool memoryPinned;
   final bool membersCanEdit;
   final String editOwnerId;
+  final String shoppingQuantity;
+  final ShoppingCategory shoppingCategory;
+  final int shoppingOrder;
+  final int shoppingPurchaseCount;
+  final DateTime? shoppingLastPurchasedAt;
 
   const SharedEntry({
     required this.id,
@@ -1334,6 +1460,11 @@ class SharedEntry {
     this.memoryPinned = false,
     this.membersCanEdit = true,
     this.editOwnerId = '',
+    this.shoppingQuantity = '',
+    this.shoppingCategory = ShoppingCategory.other,
+    this.shoppingOrder = 0,
+    this.shoppingPurchaseCount = 0,
+    this.shoppingLastPurchasedAt,
   });
 
   bool get appearsInSharedMemories =>
@@ -1377,6 +1508,12 @@ class SharedEntry {
     bool? memoryPinned,
     bool? membersCanEdit,
     String? editOwnerId,
+    String? shoppingQuantity,
+    ShoppingCategory? shoppingCategory,
+    int? shoppingOrder,
+    int? shoppingPurchaseCount,
+    DateTime? shoppingLastPurchasedAt,
+    bool clearShoppingLastPurchasedAt = false,
     bool clearTime = false,
     bool clearUpdatedBy = false,
     bool clearMedia = false,
@@ -1407,6 +1544,14 @@ class SharedEntry {
         memoryPinned: memoryPinned ?? this.memoryPinned,
         membersCanEdit: membersCanEdit ?? this.membersCanEdit,
         editOwnerId: editOwnerId ?? this.editOwnerId,
+        shoppingQuantity: shoppingQuantity ?? this.shoppingQuantity,
+        shoppingCategory: shoppingCategory ?? this.shoppingCategory,
+        shoppingOrder: shoppingOrder ?? this.shoppingOrder,
+        shoppingPurchaseCount:
+            shoppingPurchaseCount ?? this.shoppingPurchaseCount,
+        shoppingLastPurchasedAt: clearShoppingLastPurchasedAt
+            ? null
+            : (shoppingLastPurchasedAt ?? this.shoppingLastPurchasedAt),
       );
 
   Map<String, dynamic> toJson() => {
@@ -1430,6 +1575,12 @@ class SharedEntry {
         'memoryPinned': memoryPinned,
         'membersCanEdit': membersCanEdit,
         'editOwnerId': editOwnerId,
+        'shoppingQuantity': shoppingQuantity,
+        'shoppingCategory': shoppingCategory.name,
+        'shoppingOrder': shoppingOrder,
+        'shoppingPurchaseCount': shoppingPurchaseCount,
+        'shoppingLastPurchasedAt':
+            shoppingLastPurchasedAt?.toUtc().toIso8601String(),
       };
 
   Map<String, dynamic> toCacheJson() => {
@@ -1498,6 +1649,17 @@ class SharedEntry {
       memoryPinned: json['memoryPinned'] as bool? ?? false,
       membersCanEdit: json['membersCanEdit'] as bool? ?? true,
       editOwnerId: json['editOwnerId'] as String? ?? '',
+      shoppingQuantity: json['shoppingQuantity'] as String? ?? '',
+      shoppingCategory: ShoppingCategory.values.firstWhere(
+        (value) => value.name == json['shoppingCategory'],
+        orElse: () => ShoppingCategory.other,
+      ),
+      shoppingOrder: (json['shoppingOrder'] as num? ?? 0).toInt(),
+      shoppingPurchaseCount:
+          (json['shoppingPurchaseCount'] as num? ?? 0).toInt(),
+      shoppingLastPurchasedAt:
+          DateTime.tryParse(json['shoppingLastPurchasedAt'] as String? ?? '')
+              ?.toLocal(),
     );
   }
 }
