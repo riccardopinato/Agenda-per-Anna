@@ -239,12 +239,7 @@ extension AgendaStoreLifecycle on AgendaStore {
     await NotificationService.instance.cancel(id);
     await NotificationService.instance.cancel('$id:primary');
     await NotificationService.instance.cancel('$id:secondary');
-    if (kIsWeb && CloudSyncService.instance.signedIn) {
-      try {
-        await CloudSyncService.instance.cancelWebPushReminder('$id:primary');
-        await CloudSyncService.instance.cancelWebPushReminder('$id:secondary');
-      } catch (_) {}
-    }
+    await _cancelWebPushRemindersForItem(id);
 
     await _persistEntityMutations([
       (type: 'item', id: id, payload: null, deleted: true),
