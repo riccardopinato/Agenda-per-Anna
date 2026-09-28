@@ -13,6 +13,8 @@ enum TrashEntityKind {
   person,
   inbox,
   shoppingItem,
+  trainingPlan,
+  trainingSession,
 }
 
 extension TrashEntityKindUi on TrashEntityKind {
@@ -27,6 +29,8 @@ extension TrashEntityKindUi on TrashEntityKind {
         TrashEntityKind.person => 'Persona',
         TrashEntityKind.inbox => 'Inbox',
         TrashEntityKind.shoppingItem => 'Spesa',
+        TrashEntityKind.trainingPlan => 'Scheda allenamento',
+        TrashEntityKind.trainingSession => 'Allenamento',
       };
 
   IconData get icon => switch (this) {
@@ -40,6 +44,8 @@ extension TrashEntityKindUi on TrashEntityKind {
         TrashEntityKind.person => Icons.person_outline,
         TrashEntityKind.inbox => Icons.inbox_outlined,
         TrashEntityKind.shoppingItem => Icons.shopping_cart_outlined,
+        TrashEntityKind.trainingPlan => Icons.assignment_outlined,
+        TrashEntityKind.trainingSession => Icons.fitness_center_outlined,
       };
 }
 
@@ -180,6 +186,10 @@ extension AgendaStoreLifecycle on AgendaStore {
         return entry.copyWith(
           payload: journal.copyWith(blocks: blocks).toLocalJson(),
         );
+      case TrashEntityKind.trainingPlan:
+        final plan =
+            await _localizeTrainingPlan(TrainingPlan.fromJson(entry.payload));
+        return entry.copyWith(payload: plan.toLocalJson());
       case TrashEntityKind.item:
       case TrashEntityKind.month:
       case TrashEntityKind.week:
@@ -188,6 +198,7 @@ extension AgendaStoreLifecycle on AgendaStore {
       case TrashEntityKind.person:
       case TrashEntityKind.inbox:
       case TrashEntityKind.shoppingItem:
+      case TrashEntityKind.trainingSession:
         return entry;
     }
   }
@@ -214,6 +225,11 @@ extension AgendaStoreLifecycle on AgendaStore {
                   await _portableJournalJson(DayJournal.fromJson(entry.payload)),
             )
             .toJson();
+      case TrashEntityKind.trainingPlan:
+        final plan = TrainingPlan.fromJson(entry.payload);
+        return entry
+            .copyWith(payload: await _portableTrainingPlanJson(plan))
+            .toJson();
       case TrashEntityKind.item:
       case TrashEntityKind.month:
       case TrashEntityKind.week:
@@ -222,6 +238,7 @@ extension AgendaStoreLifecycle on AgendaStore {
       case TrashEntityKind.person:
       case TrashEntityKind.inbox:
       case TrashEntityKind.shoppingItem:
+      case TrashEntityKind.trainingSession:
         return entry.toJson();
     }
   }
@@ -296,6 +313,49 @@ extension AgendaStoreLifecycle on AgendaStore {
     ]);
     signals.bumpLifecycle();
     _notifyShoppingChanged();
+    return true;
+  }
+
+  Future<bool> moveTrainingPlanToTrash(String id) async {
+    final index = trainingPlans.indexWhere((plan) => plan.id == id);
+    if (index < 0) return false;
+    final value = trainingPlans[index];
+    final entry = _newTrashEntry(
+      kind: TrashEntityKind.trainingPlan,
+      entityId: value.id,
+      title: value.title,
+      payload: value.toLocalJson(),
+    );
+    trainingPlans.removeAt(index);
+    _putTrashInMemory(entry);
+    await _persistEntityMutations([
+      (type: 'training_plan', id: id, payload: null, deleted: true),
+      (type: 'trash', id: entry.id, payload: entry.toJson(), deleted: false),
+    ]);
+    signals.bumpLifecycle();
+    _scheduleMediaMaintenance(delay: const Duration(seconds: 1));
+    _notifyTrainingChanged();
+    return true;
+  }
+
+  Future<bool> moveTrainingSessionToTrash(String id) async {
+    final index = trainingSessions.indexWhere((session) => session.id == id);
+    if (index < 0) return false;
+    final value = trainingSessions[index];
+    final entry = _newTrashEntry(
+      kind: TrashEntityKind.trainingSession,
+      entityId: value.id,
+      title: value.title,
+      payload: value.toJson(),
+    );
+    trainingSessions.removeAt(index);
+    _putTrashInMemory(entry);
+    await _persistEntityMutations([
+      (type: 'training_session', id: id, payload: null, deleted: true),
+      (type: 'trash', id: entry.id, payload: entry.toJson(), deleted: false),
+    ]);
+    signals.bumpLifecycle();
+    _notifyTrainingChanged();
     return true;
   }
 
@@ -548,6 +608,14 @@ extension AgendaStoreLifecycle on AgendaStore {
         return shoppingItems.any((value) => value.id == entry.entityId)
             ? 'Questo articolo è già presente nella lista della spesa.'
             : null;
+      case TrashEntityKind.trainingPlan:
+        return trainingPlans.any((value) => value.id == entry.entityId)
+            ? 'Questa scheda è già presente in Allenamento.'
+            : null;
+      case TrashEntityKind.trainingSession:
+        return trainingSessions.any((value) => value.id == entry.entityId)
+            ? 'Questo allenamento è già presente nello storico.'
+            : null;
     }
   }
 
@@ -619,6 +687,29 @@ extension AgendaStoreLifecycle on AgendaStore {
         shoppingItems.add(value);
         mutations.add((
           type: 'shopping',
+          id: value.id,
+          payload: value.toJson(),
+          deleted: false,
+        ));
+        break;
+      case TrashEntityKind.trainingPlan:
+        final value =
+            await _localizeTrainingPlan(TrainingPlan.fromJson(localized.payload));
+        trainingPlans.removeWhere((plan) => plan.id == value.id);
+        trainingPlans.add(value);
+        mutations.add((
+          type: 'training_plan',
+          id: value.id,
+          payload: value.toLocalJson(),
+          deleted: false,
+        ));
+        break;
+      case TrashEntityKind.trainingSession:
+        final value = TrainingSession.fromJson(localized.payload);
+        trainingSessions.removeWhere((session) => session.id == value.id);
+        trainingSessions.add(value);
+        mutations.add((
+          type: 'training_session',
           id: value.id,
           payload: value.toJson(),
           deleted: false,
@@ -721,6 +812,8 @@ extension AgendaStoreLifecycle on AgendaStore {
       TrashEntityKind.person => ('person', localized.entityId),
       TrashEntityKind.inbox => ('inbox', localized.entityId),
       TrashEntityKind.shoppingItem => ('shopping', localized.entityId),
+      TrashEntityKind.trainingPlan => ('training_plan', localized.entityId),
+      TrashEntityKind.trainingSession => ('training_session', localized.entityId),
       TrashEntityKind.diaryBlock => ('journal', localized.parentId!),
       TrashEntityKind.journal => ('journal', localized.entityId),
       TrashEntityKind.month => ('month', localized.entityId),
@@ -759,6 +852,13 @@ extension AgendaStoreLifecycle on AgendaStore {
         break;
       case TrashEntityKind.shoppingItem:
         _notifyShoppingChanged();
+        break;
+      case TrashEntityKind.trainingPlan:
+        _scheduleMediaMaintenance(delay: const Duration(seconds: 1));
+        _notifyTrainingChanged();
+        break;
+      case TrashEntityKind.trainingSession:
+        _notifyTrainingChanged();
         break;
       case TrashEntityKind.diaryBlock:
       case TrashEntityKind.journal:
@@ -864,6 +964,8 @@ extension AgendaStoreLifecycle on AgendaStore {
       case TrashEntityKind.week:
       case TrashEntityKind.inbox:
       case TrashEntityKind.shoppingItem:
+      case TrashEntityKind.trainingPlan:
+      case TrashEntityKind.trainingSession:
         return false;
     }
   }
