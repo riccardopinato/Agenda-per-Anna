@@ -1,0 +1,154 @@
+name: Restart v0.66 clean gates
+
+on:
+  push:
+    branches:
+      - restart-v066-lifecycle-integrity
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: restart-v066-clean-gates-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  development:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - name: Checkout exact restart head
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: "3.47.5"
+          channel: stable
+          cache: true
+
+      - name: Create pinned platform skeletons
+        run: |
+          rm -rf android web /tmp/agenda_restart
+          flutter create --project-name agenda_per_anna --org com.riccardopinato --platforms=android,web /tmp/agenda_restart
+          cp -R /tmp/agenda_restart/android .
+          cp -R /tmp/agenda_restart/web .
+
+      - name: Apply and verify platform configuration
+        run: |
+          python3 -m py_compile             tool/prepare_android_platform.py             tool/prepare_web_platform.py             tool/finalize_web_build.py             tool/android_size_report.py
+          python3 tool/prepare_android_platform.py
+          python3 tool/prepare_web_platform.py
+
+      - name: Install locked dependencies
+        run: flutter pub get --enforce-lockfile
+
+      - name: Generate launcher icons
+        run: dart run flutter_launcher_icons -f tool/flutter_launcher_icons_android.yaml
+
+      - name: Analyze
+        run: flutter analyze
+
+      - name: Unit and regression tests
+        run: flutter test
+
+      - name: Build web release
+        run: |
+          flutter build web --release
+          python3 tool/finalize_web_build.py
+
+  android-size:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - name: Checkout exact restart head
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: "3.47.5"
+          channel: stable
+          cache: true
+
+      - name: Generate pinned Android platform
+        run: |
+          rm -rf android /tmp/agenda_restart_android
+          flutter create --project-name agenda_per_anna --org com.riccardopinato --platforms=android /tmp/agenda_restart_android
+          cp -R /tmp/agenda_restart_android/android .
+
+      - name: Create disposable validation signing key
+        shell: bash
+        run: |
+          set -euo pipefail
+          STORE="$RUNNER_TEMP/agenda-restart-validation.jks"
+          keytool -genkeypair -storetype JKS -keystore "$STORE"             -storepass restart-store-pass -keypass restart-key-pass             -alias restart -keyalg RSA -keysize 2048 -validity 2             -dname "CN=Anna Diary Restart Validation,O=CI,C=IT" -noprompt
+          B64=$(base64 -w0 "$STORE")
+          echo "::add-mask::$B64"
+          {
+            echo "ANDROID_KEYSTORE_BASE64=$B64"
+            echo "ANDROID_KEYSTORE_PASSWORD=restart-store-pass"
+            echo "ANDROID_KEY_ALIAS=restart"
+            echo "ANDROID_KEY_PASSWORD=restart-key-pass"
+            echo "ANDROID_KEYSTORE_PATH=$GITHUB_WORKSPACE/.signing/agenda-release.jks"
+          } >> "$GITHUB_ENV"
+
+      - name: Apply Android release configuration
+        run: python3 tool/prepare_android_platform.py --release-signing
+
+      - name: Install locked dependencies
+        run: flutter pub get --enforce-lockfile
+
+      - name: Generate launcher icons
+        run: dart run flutter_launcher_icons -f tool/flutter_launcher_icons_android.yaml
+
+      - name: Build production-equivalent ARM64 APK
+        shell: bash
+        run: |
+          set -euo pipefail
+          FIREBASE_ARG=""
+          if [ -f android/app/google-services.json ]; then
+            FIREBASE_ARG="--dart-define=FIREBASE_ENABLED=true"
+          fi
+          flutter build apk             --release             --split-per-abi             --obfuscate             --tree-shake-icons             --split-debug-info=build/restart-size-symbols             $FIREBASE_ARG
+
+      - name: Generate ARM64 size report
+        run: |
+          python3 tool/android_size_report.py             build/app/outputs/flutter-apk/app-arm64-v8a-release.apk             --output build/restart-arm64-size.txt
+          cat build/restart-arm64-size.txt
+
+  applab:
+    uses: riccardopinato/AppLab/.github/workflows/external-project-runner.yml@a871a1c1e0ab8339c48bc8ee53ee4cc34d634d34
+    with:
+      repository: riccardopinato/Agenda-per-Anna
+      ref: ${{ github.sha }}
+      working_directory: "."
+      flutter_version: "3.47.5"
+      java_version: "17"
+      prepare_command: >-
+        rm -rf android /tmp/agenda_restart_applab &&
+        flutter create --project-name agenda_per_anna --org com.riccardopinato --platforms=android /tmp/agenda_restart_applab &&
+        cp -R /tmp/agenda_restart_applab/android . &&
+        python3 tool/prepare_android_platform.py
+      post_pub_get_command: >-
+        flutter pub get --enforce-lockfile &&
+        dart run flutter_launcher_icons -f tool/flutter_launcher_icons_android.yaml
+      api_level: "35"
+      emulator_profile: pixel_7_pro
+      apk_path: build/app/outputs/flutter-apk/app-arm64-v8a-release.apk
+      package_id: com.riccardopinato.agenda_per_anna
+      build_command: >-
+        FIREBASE_ARG="";
+        if [ -f android/app/google-services.json ]; then FIREBASE_ARG="--dart-define=FIREBASE_ENABLED=true"; fi;
+        flutter build apk --release --split-per-abi --tree-shake-icons --dart-define=ANNAS_DIARY_INTEGRATION_TEST=true $FIREBASE_ARG
+      run_flutter_tests: true
+      run_maestro: true
+      maestro_flow: .maestro/applab-smoke.yaml
+      history_key: annas-diary-v066-restart
+      cache_verification: false
+      cache_epoch: "1"
