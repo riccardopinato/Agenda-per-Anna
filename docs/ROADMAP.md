@@ -21,6 +21,7 @@ Source of truth for the active product sequence after v0.52. The roadmap follows
 | v0.64 | Capture & Writing | Completed | Native Android share-to-diary/Inbox plus distraction-reduced diary writing |
 | v0.65 | Noi ♡ Permissions Lite | Completed | Simple server-enforced edit/read-only control for shared creative memories |
 | v0.66 | Smart Media Search | Completed | Local on-device OCR for diary photos integrated into deterministic search |
+| v0.67 | Lifecycle & Reference Integrity | Completed | Tombstone-safe offline reconciliation, cross-device reminder cleanup and orphan-safe Noi ♡ lifecycle hardening |
 
 ## Permanent constraints for this sequence
 
@@ -249,3 +250,20 @@ Per the active development cadence, AppLab runs once every two feature versions.
 - No generative AI, semantic embeddings, remote OCR, PDF scanner or new media database is introduced.
 - Release metadata is aligned to v0.66.0+76.
 - Development, Web, Android size audit and AppLab Trusted Verify must all pass before merge.
+
+
+## v0.67 acceptance criteria
+
+- v0.66 is the frozen functional baseline for this development line; later abandoned v0.67/v0.68 work on the old `main` is not part of this release.
+- Private remote tombstones defeat ordinary stale offline edits and cannot be silently resurrected on reconnect.
+- An explicit Trash restore remains a supported user intent and can revive the entity without being mistaken for a stale edit.
+- A local private delete remains authoritative over an ordinary remote edit and advances its tombstone revision when required by last-write-wins reconciliation.
+- Shared synchronization pulls authoritative remote tombstones before flushing pending entity writes.
+- Deleting a Noi ♡ shared entry removes queued child interactions and cancels pending media uploads tied to that entry.
+- Existing server-side cascade cleanup for shared comments/reactions remains authoritative.
+- Failed exact shared-media deletions and failed account-scoped PWA reminder deletions persist as retryable cleanup work.
+- Deleting or completing an agenda item from Android also reconciles the corresponding account-scoped Web/PWA reminder state.
+- Account erasure removes the new lifecycle retry/restore-intent state together with the existing account-scoped data.
+- No parallel lifecycle engine, Life Core rewrite or monolithic Memory Engine is introduced.
+- Release metadata is aligned to v0.67.0+77.
+- Analyze, full tests, Web release, production-equivalent ARM64 build/size audit and AppLab must be green before this line is promoted.
