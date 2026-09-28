@@ -79,6 +79,32 @@ extension SearchConnectionsAgendaStore on AgendaStore {
     return result;
   }
 
+  List<DiaryBlockReference> memoryReferences({
+    bool includeArchived = false,
+    String? personId,
+  }) {
+    return allDiaryBlockReferences(includeArchived: includeArchived)
+        .where(
+          (reference) =>
+              personId == null || reference.block.personIds.contains(personId),
+        )
+        .toList(growable: false);
+  }
+
+  List<DiaryBlockReference> memoryReferencesOnThisDay(
+    DateTime day, {
+    String? personId,
+  }) {
+    return memoryReferences(personId: personId)
+        .where(
+          (reference) =>
+              reference.date.year < day.year &&
+              reference.date.month == day.month &&
+              reference.date.day == day.day,
+        )
+        .toList(growable: false);
+  }
+
   DiaryBlockReference? diaryBlockReferenceById(
     String blockId, {
     bool includeArchived = true,

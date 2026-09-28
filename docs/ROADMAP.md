@@ -22,6 +22,7 @@ Source of truth for the active product sequence after v0.52. The roadmap follows
 | v0.65 | Noi ♡ Permissions Lite | Completed | Simple server-enforced edit/read-only control for shared creative memories |
 | v0.66 | Smart Media Search | Completed | Local on-device OCR for diary photos integrated into deterministic search |
 | v0.67 | Lifecycle & Reference Integrity | Completed | Tombstone-safe offline reconciliation, cross-device reminder cleanup and orphan-safe Noi ♡ lifecycle hardening |
+| v0.68 | Memory Primitive Review | Completed | One derived diary-memory reference path reused by Ricordi, People and On This Day without a new memory store |
 
 ## Permanent constraints for this sequence
 
@@ -267,3 +268,14 @@ Per the active development cadence, AppLab runs once every two feature versions.
 - No parallel lifecycle engine, Life Core rewrite or monolithic Memory Engine is introduced.
 - Release metadata is aligned to v0.67.0+77.
 - Analyze, full tests, Web release, production-equivalent ARM64 build/size audit and AppLab must be green before this line is promoted.
+
+
+## v0.68 acceptance criteria
+
+- The existing DiaryBlock/DayJournal data model remains the source of truth for private memories.
+- `DiaryBlockReference` is the single derived in-memory primitive for diary-memory projections.
+- People-linked memories delegate to the same derived reference path instead of maintaining a parallel scan/model.
+- “In questo giorno” delegates to the same derived reference path and keeps its historical-only, non-archived behavior.
+- The Ricordi screen consumes the same derived references instead of maintaining its own local memory-record class.
+- No MemoryEngine database, Life Core entity, new storage key, cloud table, sync queue or lifecycle type is introduced.
+- Release metadata is aligned to v0.68.0+78.

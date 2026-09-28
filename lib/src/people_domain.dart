@@ -65,16 +65,7 @@ class PersonEntry {
       );
 }
 
-class PersonMemoryReference {
-  final DateTime date;
-  final DiaryBlock block;
-
-  const PersonMemoryReference({
-    required this.date,
-    required this.block,
-  });
-}
-
+typedef PersonMemoryReference = DiaryBlockReference;
 
 class PersonRelationshipSnapshot {
   final PersonEntry person;
@@ -155,24 +146,11 @@ extension AgendaStorePeople on AgendaStore {
     return result;
   }
 
-  List<PersonMemoryReference> memoriesForPerson(String personId) {
-    final result = <PersonMemoryReference>[];
-    for (final entry in journals.entries) {
-      final date = DateTime.tryParse(entry.key);
-      if (date == null) continue;
-      for (final block in entry.value.blocks) {
-        if (block.personIds.contains(personId)) {
-          result.add(PersonMemoryReference(date: date, block: block));
-        }
-      }
-    }
-    result.sort((a, b) {
-      final dateOrder = b.date.compareTo(a.date);
-      if (dateOrder != 0) return dateOrder;
-      return b.block.createdAt.compareTo(a.block.createdAt);
-    });
-    return result;
-  }
+  List<PersonMemoryReference> memoriesForPerson(String personId) =>
+      memoryReferences(
+        includeArchived: true,
+        personId: personId,
+      );
 
   int personMemoryCount(String personId) =>
       memoriesForPerson(personId).length;
@@ -180,25 +158,8 @@ extension AgendaStorePeople on AgendaStore {
   List<PersonMemoryReference> onThisDayMemories(
     DateTime day, {
     String? personId,
-  }) {
-    final result = <PersonMemoryReference>[];
-    for (final entry in journals.entries) {
-      final date = DateTime.tryParse(entry.key);
-      if (date == null ||
-          date.year >= day.year ||
-          date.month != day.month ||
-          date.day != day.day) {
-        continue;
-      }
-      for (final block in entry.value.blocks) {
-        if (block.archived) continue;
-        if (personId != null && !block.personIds.contains(personId)) continue;
-        result.add(PersonMemoryReference(date: date, block: block));
-      }
-    }
-    result.sort((a, b) => b.date.compareTo(a.date));
-    return result;
-  }
+  }) =>
+      memoryReferencesOnThisDay(day, personId: personId);
 
   DateTime? nextAnniversaryForPerson(
     PersonEntry person, {

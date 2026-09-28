@@ -27,24 +27,13 @@ class _DiaryMemoriesScreenState extends State<DiaryMemoriesScreen> {
     super.dispose();
   }
 
-  List<_DiaryMemoryRecord> _allRecords() {
-    final result = <_DiaryMemoryRecord>[];
-    for (final entry in widget.store.journals.entries) {
-      final date = DateTime.tryParse(entry.key);
-      if (date == null) continue;
-      for (final block in entry.value.blocks) {
-        result.add(_DiaryMemoryRecord(date: date, block: block));
-      }
-    }
-    result.sort((a, b) {
-      final dateOrder = b.date.compareTo(a.date);
-      if (dateOrder != 0) return dateOrder;
-      return b.block.createdAt.compareTo(a.block.createdAt);
-    });
-    return result;
-  }
+  List<DiaryBlockReference> _allRecords() =>
+      widget.store.memoryReferences(
+        includeArchived: true,
+        personId: widget.personId,
+      );
 
-  bool _matchesSearch(_DiaryMemoryRecord record, String query) {
+  bool _matchesSearch(DiaryBlockReference record, String query) {
     if (query.isEmpty) return true;
     final block = record.block;
     final sketchText = block.pages
@@ -72,7 +61,7 @@ class _DiaryMemoriesScreenState extends State<DiaryMemoriesScreen> {
     return searchable.contains(query);
   }
 
-  List<_DiaryMemoryRecord> _records() {
+  List<DiaryBlockReference> _records() {
     final query = searchController.text.trim().toLowerCase();
     return _allRecords().where((record) {
       if (widget.personId != null &&
@@ -84,10 +73,10 @@ class _DiaryMemoriesScreenState extends State<DiaryMemoriesScreen> {
     }).toList();
   }
 
-  Map<String, List<_DiaryMemoryRecord>> _groupByDay(
-    List<_DiaryMemoryRecord> records,
+  Map<String, List<DiaryBlockReference>> _groupByDay(
+    List<DiaryBlockReference> records,
   ) {
-    final result = <String, List<_DiaryMemoryRecord>>{};
+    final result = <String, List<DiaryBlockReference>>{};
     for (final record in records) {
       final key = AgendaStore.dateKey(record.date);
       result.putIfAbsent(key, () => []).add(record);
@@ -95,10 +84,10 @@ class _DiaryMemoriesScreenState extends State<DiaryMemoriesScreen> {
     return result;
   }
 
-  Map<String, List<_DiaryMemoryRecord>> _groupByMonth(
-    List<_DiaryMemoryRecord> records,
+  Map<String, List<DiaryBlockReference>> _groupByMonth(
+    List<DiaryBlockReference> records,
   ) {
-    final result = <String, List<_DiaryMemoryRecord>>{};
+    final result = <String, List<DiaryBlockReference>>{};
     for (final record in records) {
       final key =
           '${record.date.year}-${record.date.month.toString().padLeft(2, '0')}';
@@ -107,17 +96,17 @@ class _DiaryMemoriesScreenState extends State<DiaryMemoriesScreen> {
     return result;
   }
 
-  Map<int, List<_DiaryMemoryRecord>> _groupByYear(
-    List<_DiaryMemoryRecord> records,
+  Map<int, List<DiaryBlockReference>> _groupByYear(
+    List<DiaryBlockReference> records,
   ) {
-    final result = <int, List<_DiaryMemoryRecord>>{};
+    final result = <int, List<DiaryBlockReference>>{};
     for (final record in records) {
       result.putIfAbsent(record.date.year, () => []).add(record);
     }
     return result;
   }
 
-  _DiaryMemoryRecord _coverRecord(List<_DiaryMemoryRecord> records) {
+  DiaryBlockReference _coverRecord(List<DiaryBlockReference> records) {
     for (final record in records) {
       if (record.block.type == DiaryBlockType.photo &&
           record.block.hasPhotoMedia) {
@@ -131,15 +120,15 @@ class _DiaryMemoriesScreenState extends State<DiaryMemoriesScreen> {
   }
 
   int _countType(
-    List<_DiaryMemoryRecord> records,
+    List<DiaryBlockReference> records,
     DiaryBlockType type,
   ) =>
       records.where((record) => record.block.type == type).length;
 
-  int _distinctDays(List<_DiaryMemoryRecord> records) =>
+  int _distinctDays(List<DiaryBlockReference> records) =>
       records.map((record) => AgendaStore.dateKey(record.date)).toSet().length;
 
-  Future<void> _openRecord(_DiaryMemoryRecord record) async {
+  Future<void> _openRecord(DiaryBlockReference record) async {
     await Navigator.push(
       context,
       MaterialPageRoute(
@@ -152,7 +141,7 @@ class _DiaryMemoriesScreenState extends State<DiaryMemoriesScreen> {
     if (mounted) setState(() {});
   }
 
-  Future<void> _openPhoto(_DiaryMemoryRecord record) async {
+  Future<void> _openPhoto(DiaryBlockReference record) async {
     await Navigator.push(
       context,
       MaterialPageRoute(
@@ -168,7 +157,7 @@ class _DiaryMemoriesScreenState extends State<DiaryMemoriesScreen> {
 
   Widget _coverPreview(
     BuildContext context,
-    _DiaryMemoryRecord record, {
+    DiaryBlockReference record, {
     BoxFit fit = BoxFit.cover,
   }) {
     final block = record.block;
@@ -241,7 +230,7 @@ class _DiaryMemoriesScreenState extends State<DiaryMemoriesScreen> {
 
   Widget _memoryTile(
     BuildContext context,
-    _DiaryMemoryRecord record,
+    DiaryBlockReference record,
   ) {
     final block = record.block;
     final date = DateFormat('d MMMM yyyy', 'it_IT').format(record.date);
@@ -375,7 +364,7 @@ class _DiaryMemoriesScreenState extends State<DiaryMemoriesScreen> {
 
   Widget _dayCoverCard(
     BuildContext context,
-    List<_DiaryMemoryRecord> records,
+    List<DiaryBlockReference> records,
   ) {
     final cover = _coverRecord(records);
     final date = cover.date;
@@ -464,7 +453,7 @@ class _DiaryMemoriesScreenState extends State<DiaryMemoriesScreen> {
 
   Widget _periodCard(
     BuildContext context, {
-    required List<_DiaryMemoryRecord> records,
+    required List<DiaryBlockReference> records,
     required String title,
     required String subtitle,
     required VoidCallback onTap,
@@ -541,7 +530,7 @@ class _DiaryMemoriesScreenState extends State<DiaryMemoriesScreen> {
 
   Widget _memoriesView(
     BuildContext context,
-    List<_DiaryMemoryRecord> records,
+    List<DiaryBlockReference> records,
   ) {
     return GridView.builder(
       padding: const EdgeInsets.fromLTRB(12, 4, 12, 24),
@@ -558,7 +547,7 @@ class _DiaryMemoriesScreenState extends State<DiaryMemoriesScreen> {
 
   Widget _daysView(
     BuildContext context,
-    List<_DiaryMemoryRecord> records,
+    List<DiaryBlockReference> records,
   ) {
     final groups = _groupByDay(records).values.toList();
     return GridView.builder(
@@ -579,7 +568,7 @@ class _DiaryMemoriesScreenState extends State<DiaryMemoriesScreen> {
 
   Widget _monthsView(
     BuildContext context,
-    List<_DiaryMemoryRecord> records,
+    List<DiaryBlockReference> records,
   ) {
     final groups = _groupByMonth(records);
     return ListView(
@@ -610,7 +599,7 @@ class _DiaryMemoriesScreenState extends State<DiaryMemoriesScreen> {
 
   Widget _yearsView(
     BuildContext context,
-    List<_DiaryMemoryRecord> records,
+    List<DiaryBlockReference> records,
   ) {
     final groups = _groupByYear(records);
     return ListView(

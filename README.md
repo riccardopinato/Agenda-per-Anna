@@ -2,7 +2,7 @@
 
 Flutter app for personal planning, private diary and the shared **Noi ♡** space.
 
-Current release line: **v0.67.0**.
+Current release line: **v0.68.0**.
 
 ## Core areas
 
@@ -418,3 +418,12 @@ See `docs/ARCHITECTURE.md` and `supabase/README.md` for implementation details.
 - Existing database-side cleanup of shared comments/reactions remains the source of truth and is not duplicated.
 - No Life Core rewrite, monolithic Memory Engine or parallel lifecycle subsystem is introduced.
 - Release metadata is aligned to v0.67.0+77.
+
+
+## v0.68.0 — Memory Primitive Review
+
+- Consolidates private diary memory projections on the existing `DiaryBlockReference` instead of creating a new Memory database or engine.
+- Ricordi, People relationship memories and “In questo giorno” now derive from the same reference path and ordering rules.
+- No new persistence key, cloud table, sync queue or lifecycle type is introduced.
+- Existing DiaryBlock, DayJournal, People, Connections, Search, Trash and backup formats remain authoritative.
+- This is deliberately a consolidation release: it removes duplicate in-memory representations without changing the user’s stored diary data.
