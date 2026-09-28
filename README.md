@@ -2,7 +2,7 @@
 
 Flutter app for personal planning, private diary and the shared **Noi ♡** space.
 
-Current release line: **v0.67.0**.
+Current release line: **v0.70.0**.
 
 ## Core areas
 
@@ -418,3 +418,34 @@ See `docs/ARCHITECTURE.md` and `supabase/README.md` for implementation details.
 - Existing database-side cleanup of shared comments/reactions remains the source of truth and is not duplicated.
 - No Life Core rewrite, monolithic Memory Engine or parallel lifecycle subsystem is introduced.
 - Release metadata is aligned to v0.67.0+77.
+
+
+## v0.68.0 — Memory Primitive Review
+
+- Consolidates private diary memory projections on the existing `DiaryBlockReference` instead of creating a new Memory database or engine.
+- Ricordi, People relationship memories and “In questo giorno” now derive from the same reference path and ordering rules.
+- No new persistence key, cloud table, sync queue or lifecycle type is introduced.
+- Existing DiaryBlock, DayJournal, People, Connections, Search, Trash and backup formats remain authoritative.
+- This is deliberately a consolidation release: it removes duplicate in-memory representations without changing the user’s stored diary data.
+
+
+## v0.69.0 — Places Lite
+
+- Diary memories can carry lightweight inline place references without creating a Places database or management module.
+- A place stores a human-readable name plus optional latitude/longitude directly inside the existing DiaryBlock payload.
+- The diary card menu exposes **Luoghi** alongside people, tags and related memories; linked places appear as compact chips.
+- Previously used place names are offered as lightweight suggestions.
+- Deterministic global search indexes place names and exposes a derived **Luoghi** result type; opening a place result returns to the day that contains the latest matching memory.
+- Ricordi search also matches linked place names.
+- Legacy DiaryBlock payloads without places remain fully compatible.
+- Places automatically inherit existing journal persistence, cloud sync, backup/restore, Trash and account isolation because no parallel store is introduced.
+
+
+## v0.70.0 — Architecture Regression Gate
+
+- Closes the v0.68–v0.70 consolidation cycle without adding another product domain.
+- Memory surfaces remain derived from the existing DiaryBlock/DayJournal source of truth through one DiaryBlockReference projection.
+- Places Lite remains inline DiaryBlock metadata; it introduces no standalone store, cloud table, sync queue or lifecycle entity.
+- Regression coverage verifies legacy compatibility, persistence/restart, backup/restore, Trash/restore, account isolation and deterministic search for place-linked memories.
+- Architecture assertions prevent reintroduction of duplicate memory-record classes and parallel Places/Memory persistence keys.
+- Existing lifecycle, private sync, media, backup, search and account-profile infrastructure remains authoritative.

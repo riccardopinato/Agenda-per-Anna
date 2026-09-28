@@ -22,6 +22,9 @@ Source of truth for the active product sequence after v0.52. The roadmap follows
 | v0.65 | Noi ♡ Permissions Lite | Completed | Simple server-enforced edit/read-only control for shared creative memories |
 | v0.66 | Smart Media Search | Completed | Local on-device OCR for diary photos integrated into deterministic search |
 | v0.67 | Lifecycle & Reference Integrity | Completed | Tombstone-safe offline reconciliation, cross-device reminder cleanup and orphan-safe Noi ♡ lifecycle hardening |
+| v0.68 | Memory Primitive Review | Completed | One derived diary-memory reference path reused by Ricordi, People and On This Day without a new memory store |
+| v0.69 | Places Lite | Completed | Lightweight inline place references on diary memories, searchable without a separate Places database |
+| v0.70 | Architecture Regression Gate | Completed | Cross-domain regression lock for memory/place compatibility, lifecycle, backup, account isolation and anti-duplication constraints |
 
 ## Permanent constraints for this sequence
 
@@ -267,3 +270,43 @@ Per the active development cadence, AppLab runs once every two feature versions.
 - No parallel lifecycle engine, Life Core rewrite or monolithic Memory Engine is introduced.
 - Release metadata is aligned to v0.67.0+77.
 - Analyze, full tests, Web release, production-equivalent ARM64 build/size audit and AppLab must be green before this line is promoted.
+
+
+## v0.68 acceptance criteria
+
+- The existing DiaryBlock/DayJournal data model remains the source of truth for private memories.
+- `DiaryBlockReference` is the single derived in-memory primitive for diary-memory projections.
+- People-linked memories delegate to the same derived reference path instead of maintaining a parallel scan/model.
+- “In questo giorno” delegates to the same derived reference path and keeps its historical-only, non-archived behavior.
+- The Ricordi screen consumes the same derived references instead of maintaining its own local memory-record class.
+- No MemoryEngine database, Life Core entity, new storage key, cloud table, sync queue or lifecycle type is introduced.
+- Release metadata is aligned to v0.68.0+78.
+
+
+## v0.69 acceptance criteria
+
+- Places are lightweight references attached to the existing DiaryBlock payload; there is no separate Places database/table/store.
+- Each linked place has a name and may optionally preserve latitude/longitude.
+- Legacy DiaryBlock JSON without place metadata remains readable with an empty place list.
+- The private diary editor can add, remove and reuse place references without creating a profile-management flow.
+- Place chips coexist with tags, people and memory connections on the existing diary card.
+- Global deterministic search includes place names and exposes a derived Luoghi filter/result type.
+- Ricordi text filtering includes place names.
+- Journal persistence automatically carries places through private sync, backup/restore, Trash and account isolation.
+- Release metadata is aligned to v0.69.0+79.
+
+
+## v0.70 acceptance criteria
+
+- v0.68 and v0.69 remain additive/consolidating changes over the existing DiaryBlock/DayJournal architecture, not a Life Core rewrite.
+- Legacy DiaryBlock payloads without Places Lite metadata remain readable.
+- Place references survive ordinary local persistence and process-style reload.
+- Place references survive JSON backup/restore through the existing backup pipeline.
+- Moving a place-linked diary block to Trash and restoring it preserves the place reference and optional coordinates.
+- Place metadata remains isolated across account profiles through the existing account-switching mechanism.
+- Deterministic diary/place search resolves place-linked memories without a secondary search database.
+- Ricordi, People and On This Day share DiaryBlockReference; duplicate memory record classes stay removed.
+- No `places_v1`, `_placesKey`, MemoryEngine persistence key, Life Core store or new Places backend table is introduced.
+- Existing lifecycle, sync, backup/media and account-erasure paths remain the source of truth.
+- Release metadata is aligned to v0.70.0+80.
+- Analyze, full tests, Web release, Android size audit and AppLab Trusted Verify must be green before promotion to main.

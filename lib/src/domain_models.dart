@@ -772,6 +772,38 @@ class DiarySketchPage {
       );
 }
 
+class DiaryPlaceReference {
+  final String name;
+  final double? latitude;
+  final double? longitude;
+
+  const DiaryPlaceReference({
+    required this.name,
+    this.latitude,
+    this.longitude,
+  });
+
+  bool get hasCoordinates => latitude != null && longitude != null;
+
+  String get normalizedName => name.trim().toLowerCase();
+
+  Map<String, dynamic> toJson() => {
+        'name': name,
+        'latitude': latitude,
+        'longitude': longitude,
+      };
+
+  factory DiaryPlaceReference.fromJson(Map<String, dynamic> json) {
+    double? number(dynamic value) =>
+        value is num ? value.toDouble() : double.tryParse(value?.toString() ?? '');
+    return DiaryPlaceReference(
+      name: json['name']?.toString().trim() ?? '',
+      latitude: number(json['latitude']),
+      longitude: number(json['longitude']),
+    );
+  }
+}
+
 class DiaryBlock {
   final String id;
   final DiaryBlockType type;
@@ -793,6 +825,7 @@ class DiaryBlock {
   final List<String> tags;
   final List<DiarySketchPage> pages;
   final List<String> personIds;
+  final List<DiaryPlaceReference> places;
   final List<String> relatedBlockIds;
 
   const DiaryBlock({
@@ -813,6 +846,7 @@ class DiaryBlock {
     this.tags = const [],
     this.pages = const [],
     this.personIds = const [],
+    this.places = const [],
     this.relatedBlockIds = const [],
   });
 
@@ -839,6 +873,7 @@ class DiaryBlock {
     List<String>? tags,
     List<DiarySketchPage>? pages,
     List<String>? personIds,
+    List<DiaryPlaceReference>? places,
     List<String>? relatedBlockIds,
   }) =>
       DiaryBlock(
@@ -860,6 +895,7 @@ class DiaryBlock {
         tags: tags ?? this.tags,
         pages: pages ?? this.pages,
         personIds: personIds ?? this.personIds,
+        places: places ?? this.places,
         relatedBlockIds: relatedBlockIds ?? this.relatedBlockIds,
       );
 
@@ -881,6 +917,7 @@ class DiaryBlock {
         'tags': tags,
         'pages': pages.map((page) => page.toJson()).toList(),
         'personIds': personIds,
+        'places': places.map((place) => place.toJson()).toList(),
         'relatedBlockIds': relatedBlockIds,
       };
 
@@ -928,6 +965,15 @@ class DiaryBlock {
         personIds: (json['personIds'] as List? ?? const [])
             .map((value) => value.toString())
             .where((value) => value.isNotEmpty)
+            .toList(),
+        places: (json['places'] as List? ?? const [])
+            .whereType<Map>()
+            .map(
+              (value) => DiaryPlaceReference.fromJson(
+                Map<String, dynamic>.from(value),
+              ),
+            )
+            .where((place) => place.name.isNotEmpty)
             .toList(),
         relatedBlockIds: (json['relatedBlockIds'] as List? ?? const [])
             .map((value) => value.toString())
