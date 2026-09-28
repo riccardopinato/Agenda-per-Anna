@@ -46,11 +46,6 @@ class _CalendarScreenState extends State<CalendarScreen> {
             agendaEntriesForDayWithExternal(widget.store, selected);
         final dayHub = widget.store.dayHubSnapshot(selected);
         return Scaffold(
-          floatingActionButton: FloatingActionButton.extended(
-            onPressed: () => _showQuickCapture(context, widget.store),
-            icon: const Icon(Icons.add),
-            label: const Text('Cattura'),
-          ),
           appBar: AppBar(title: const Text('Calendario', style: TextStyle(fontWeight: FontWeight.w800))),
           floatingActionButton: FloatingActionButton(
             onPressed: () => openUnifiedItemComposer(context, widget.store, selected),
@@ -176,6 +171,7 @@ class _PlannerScreenState extends State<PlannerScreen> {
         widget.store.sharedRevision,
         widget.store.journalRevision,
         widget.store.planningRevision,
+        widget.store.workoutRevision,
         ExternalCalendarService.instance,
       ]),
       builder: (context, _) {
@@ -189,6 +185,11 @@ class _PlannerScreenState extends State<PlannerScreen> {
             .toList();
 
         return Scaffold(
+          floatingActionButton: FloatingActionButton.extended(
+            onPressed: () => _showQuickCapture(context, widget.store),
+            icon: const Icon(Icons.add),
+            label: const Text('Cattura'),
+          ),
           appBar: AppBar(
             title: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -349,40 +350,6 @@ class _CalendarDayContextCard extends StatelessWidget {
           ],
         ],
       ),
-    );
-  }
-}
-
-class _BirthdayOccurrenceTile extends StatelessWidget {
-  final BirthdayOccurrence occurrence;
-  final VoidCallback? onTap;
-
-  const _BirthdayOccurrenceTile({
-    required this.occurrence,
-    this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final age = occurrence.age == null ? '' : ' · ${occurrence.age} anni';
-    return ListTile(
-      contentPadding: const EdgeInsets.symmetric(horizontal: 4),
-      leading: const CircleAvatar(
-        child: Icon(Icons.cake_outlined),
-      ),
-      title: Text(
-        occurrence.birthday.name,
-        style: const TextStyle(fontWeight: FontWeight.w800),
-      ),
-      subtitle: Text(
-        occurrence.birthday.note.trim().isEmpty
-            ? 'Compleanno$age'
-            : '${occurrence.birthday.note}$age',
-        maxLines: 2,
-        overflow: TextOverflow.ellipsis,
-      ),
-      trailing: onTap == null ? null : const Icon(Icons.chevron_right),
-      onTap: onTap,
     );
   }
 }
@@ -811,39 +778,6 @@ Future<void> _openDayLifeEntry(
         ),
       );
       return;
-  }
-}
-
-class _DaySmallSection extends StatelessWidget {
-  final String title;
-  final IconData icon;
-  final Widget child;
-
-  const _DaySmallSection({
-    required this.title,
-    required this.icon,
-    required this.child,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return SimpleCard(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Icon(icon, size: 20),
-              const SizedBox(width: 8),
-              Text(title,
-                  style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 17)),
-            ],
-          ),
-          const SizedBox(height: 10),
-          child,
-        ],
-      ),
-    );
   }
 }
 
