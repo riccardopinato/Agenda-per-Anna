@@ -1826,6 +1826,11 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
           entry.type == SharedEntryType.photo ? entry.mediaPath : '',
     );
     await _saveCache();
+    await _saveInteractionCache(
+      commentsByEntry,
+      heartsByEntry,
+      memberReads,
+    );
     if (CloudSyncService.instance.signedIn) {
       await _flushPending();
       await _refresh(silent: true);
