@@ -93,6 +93,8 @@ void main() {
     store.dispose();
   });
 
+  // Parent-before-child ordering is a lifecycle invariant: the shared entry
+  // tombstone must win before any queued interaction can be retried.
   test('v0.67 shared sync keeps parent mutations before child interactions',
       () {
     final source = File('lib/src/agenda_store.dart').readAsStringSync();
