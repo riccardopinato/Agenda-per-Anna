@@ -126,7 +126,7 @@ class _ShoppingListScreenState extends State<ShoppingListScreen> {
                   ),
                   const SizedBox(height: 12),
                   DropdownButtonFormField<ShoppingCategory>(
-                    value: selectedCategory,
+                    initialValue: selectedCategory,
                     decoration: const InputDecoration(
                       labelText: 'Categoria',
                       prefixIcon: Icon(Icons.category_outlined),
@@ -250,7 +250,6 @@ class _ShoppingListScreenState extends State<ShoppingListScreen> {
 
   Future<void> _reorderPrivate(int oldIndex, int newIndex) async {
     final list = widget.store.activeShoppingItems;
-    if (newIndex > oldIndex) newIndex--;
     final item = list.removeAt(oldIndex);
     list.insert(newIndex, item);
     await widget.store.reorderShoppingItems(
@@ -260,7 +259,6 @@ class _ShoppingListScreenState extends State<ShoppingListScreen> {
 
   Future<void> _reorderShared(int oldIndex, int newIndex) async {
     final list = _sharedItems;
-    if (newIndex > oldIndex) newIndex--;
     final item = list.removeAt(oldIndex);
     list.insert(newIndex, item);
     await widget.store.reorderSharedShoppingItems(
@@ -476,7 +474,7 @@ class _ShoppingListScreenState extends State<ShoppingListScreen> {
       return ReorderableListView.builder(
         padding: const EdgeInsets.fromLTRB(12, 0, 12, 24),
         itemCount: items.length,
-        onReorder: _reorderPrivate,
+        onReorderItem: _reorderPrivate,
         itemBuilder: (context, index) {
           final item = items[index];
           return _PrivateShoppingTile(
@@ -530,7 +528,7 @@ class _ShoppingListScreenState extends State<ShoppingListScreen> {
       return ReorderableListView.builder(
         padding: const EdgeInsets.fromLTRB(12, 0, 12, 24),
         itemCount: items.length,
-        onReorder: _reorderShared,
+        onReorderItem: _reorderShared,
         itemBuilder: (context, index) {
           final entry = items[index];
           return _SharedShoppingTile(
