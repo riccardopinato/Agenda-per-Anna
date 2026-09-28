@@ -41,22 +41,30 @@ extension ShoppingAgendaStore on AgendaStore {
       'mela', 'mele', 'banana', 'banane', 'pera', 'pere', 'arancia',
       'limone', 'insalata', 'pomodor', 'zucchin', 'carot', 'patat',
       'cipoll', 'verdura', 'frutta', 'aglio', 'spinaci', 'funghi',
-    ])) return ShoppingCategory.produce;
+    ])) {
+      return ShoppingCategory.produce;
+    }
 
     if (has(const [
       'latte', 'yogurt', 'formaggio', 'mozzarella', 'burro', 'panna',
       'ricotta', 'uova',
-    ])) return ShoppingCategory.dairy;
+    ])) {
+      return ShoppingCategory.dairy;
+    }
 
     if (has(const [
       'pane', 'panino', 'panini', 'focaccia', 'pizza', 'brioche',
       'cracker', 'grissini',
-    ])) return ShoppingCategory.bakery;
+    ])) {
+      return ShoppingCategory.bakery;
+    }
 
     if (has(const [
       'acqua', 'vino', 'birra', 'succo', 'cola', 'bibita', 'caffè',
       'caffe', 'tè', 'the',
-    ])) return ShoppingCategory.drinks;
+    ])) {
+      return ShoppingCategory.drinks;
+    }
 
     if (has(const ['surgel', 'gelato', 'ghiaccio', 'frozen'])) {
       return ShoppingCategory.frozen;
@@ -65,18 +73,24 @@ extension ShoppingAgendaStore on AgendaStore {
     if (has(const [
       'detersiv', 'candeggina', 'spugna', 'carta casa', 'carta igien',
       'sacchi', 'sapone piatti', 'lavastoviglie', 'ammorbidente',
-    ])) return ShoppingCategory.household;
+    ])) {
+      return ShoppingCategory.household;
+    }
 
     if (has(const [
       'shampoo', 'bagnoschiuma', 'dentifricio', 'deodorante',
       'crema', 'rasoio', 'assorbenti',
-    ])) return ShoppingCategory.personalCare;
+    ])) {
+      return ShoppingCategory.personalCare;
+    }
 
     if (has(const [
       'pasta', 'riso', 'farina', 'zucchero', 'sale', 'olio', 'aceto',
       'biscotti', 'cereali', 'tonno', 'legumi', 'passata', 'salsa',
       'cioccolato',
-    ])) return ShoppingCategory.pantry;
+    ])) {
+      return ShoppingCategory.pantry;
+    }
 
     return ShoppingCategory.other;
   }
