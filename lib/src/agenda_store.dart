@@ -1464,9 +1464,11 @@ class AgendaStore extends ChangeNotifier {
       'shared_interactions_pending_${ownerId}_',
       'shared_media_pending_${ownerId}_',
       'shared_interactions_cache_${ownerId}_',
+      '$_sharedMediaDeleteRetryPrefix$scopeToken:',
     ];
     final scopedExactKeys = <String>{
       '$_privateSyncCursorPrefix$scopeToken',
+      '$_webReminderDeleteRetryPrefix$scopeToken',
       'shared_spaces_$ownerId',
       'shared_unread_$ownerId',
       'cloud_first_sync_snapshot_$ownerId',
