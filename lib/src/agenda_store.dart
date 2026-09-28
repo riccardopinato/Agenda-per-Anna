@@ -23,6 +23,7 @@ class AgendaStore extends ChangeNotifier {
   static const _privateSyncCursorPrefix = 'cloud_private_cursor_v2_';
   static const _sharedSyncCursorPrefix = 'cloud_shared_cursor_v2_';
   static const _sharedMediaDeleteRetryPrefix = 'shared_media_delete_retry_v1_';
+  static const _webReminderDeleteRetryPrefix = 'web_reminder_delete_retry_v1_';
   static const _backupFormat = 'agenda_per_anna_backup';
   static const _backupBundleFormat = 'agenda_per_anna_backup_bundle';
   static const _backupSchemaVersion = 1;
@@ -2205,20 +2206,78 @@ class AgendaStore extends ChangeNotifier {
     await moveItemToTrash(id);
   }
 
-  Future<void> _cancelWebPushRemindersForItem(String itemId) async {
+  String _webReminderDeleteRetryStorageKey(String ownerId) =>
+      '$_webReminderDeleteRetryPrefix${_entityScopeToken(ownerId)}';
+
+  Future<void> _cancelWebPushReminderStableId(String stableId) async {
     final cloud = CloudSyncService.instance;
-    if (!cloud.signedIn ||
-        _activeAccountId == null ||
-        cloud.userId != _activeAccountId) {
+    final ownerId = _activeAccountId;
+    if (!cloud.signedIn || ownerId == null || cloud.userId != ownerId) {
       return;
     }
-    try {
-      await cloud.cancelWebPushReminder('$itemId:primary');
-      await cloud.cancelWebPushReminder('$itemId:secondary');
-    } catch (_) {
-      // Remote PWA reminder cleanup is best-effort. The private tombstone
-      // remains authoritative and a later reconciliation will retry state.
+
+    final prefs = await _localState();
+    final key = _webReminderDeleteRetryStorageKey(ownerId);
+    final pending = <String>{};
+    final raw = prefs.getString(key);
+    if (raw != null) {
+      try {
+        pending.addAll(
+          (jsonDecode(raw) as List).map((value) => value.toString()),
+        );
+      } catch (_) {}
     }
+
+    try {
+      await cloud.cancelWebPushReminder(stableId);
+      pending.remove(stableId);
+    } catch (_) {
+      pending.add(stableId);
+    }
+
+    if (pending.isEmpty) {
+      await prefs.remove(key);
+    } else {
+      await prefs.setString(key, jsonEncode(pending.toList()));
+    }
+  }
+
+  Future<void> _flushWebReminderDeleteRetries() async {
+    final cloud = CloudSyncService.instance;
+    final ownerId = _activeAccountId;
+    if (!cloud.signedIn || ownerId == null || cloud.userId != ownerId) {
+      return;
+    }
+
+    final prefs = await _localState();
+    final key = _webReminderDeleteRetryStorageKey(ownerId);
+    final raw = prefs.getString(key);
+    if (raw == null) return;
+
+    final remaining = <String>[];
+    try {
+      final stableIds =
+          (jsonDecode(raw) as List).map((value) => value.toString()).toSet();
+      for (final stableId in stableIds) {
+        try {
+          await cloud.cancelWebPushReminder(stableId);
+        } catch (_) {
+          remaining.add(stableId);
+        }
+      }
+      if (remaining.isEmpty) {
+        await prefs.remove(key);
+      } else {
+        await prefs.setString(key, jsonEncode(remaining));
+      }
+    } catch (_) {
+      // Keep unreadable retry state rather than silently losing cleanup intent.
+    }
+  }
+
+  Future<void> _cancelWebPushRemindersForItem(String itemId) async {
+    await _cancelWebPushReminderStableId('$itemId:primary');
+    await _cancelWebPushReminderStableId('$itemId:secondary');
   }
 
   Future<void> _syncReminders(
@@ -2254,9 +2313,7 @@ class AgendaStore extends ChangeNotifier {
 
       if (minutes == null) {
         if (canSyncWebReminder) {
-          try {
-            await cloud.cancelWebPushReminder(stableId);
-          } catch (_) {}
+          await _cancelWebPushReminderStableId(stableId);
         }
         if (!kIsWeb) {
           await NotificationService.instance.cancel(stableId);
@@ -2281,7 +2338,7 @@ class AgendaStore extends ChangeNotifier {
               when: when,
             );
           } else {
-            await cloud.cancelWebPushReminder(stableId);
+            await _cancelWebPushReminderStableId(stableId);
           }
         } catch (_) {
           // Cross-device reminder sync must never block local editing.
@@ -2573,6 +2630,7 @@ class AgendaStore extends ChangeNotifier {
       await flushSharedInteractionOperations();
       await flushSharedPendingOperations();
       await _flushSharedMediaDeleteRetries();
+      await _flushWebReminderDeleteRetries();
 
       if (!cloud.signedIn ||
           cloud.userId == null ||
@@ -2791,6 +2849,12 @@ class AgendaStore extends ChangeNotifier {
           if (forceFullSync) _forceFullSyncKey: null,
         },
       );
+
+      // Reconcile remote PWA reminder state after connectivity is confirmed.
+      // Active items are rewritten from current local truth; deleted items are
+      // covered by the durable stable-id retry set.
+      await _flushWebReminderDeleteRetries();
+      await reconcileReminders();
 
       cloud.markSyncSuccess();
       if (remoteChanged || pendingSnapshot.isNotEmpty) {
