@@ -397,10 +397,9 @@ class _AgendaBackupDomain {
           final parts = <String>[
             session.sport.label,
             if (session.distanceKm != null)
-              session.distanceKm!.toStringAsFixed(
+              '${session.distanceKm!.toStringAsFixed(
                     session.distanceKm! % 1 == 0 ? 0 : 2,
-                  ) +
-                  ' km',
+                  )} km',
             if (session.durationSeconds > 0)
               store.formatWorkoutDuration(session.durationSeconds),
             if (store.workoutPerformanceLabel(session) case final value?)
