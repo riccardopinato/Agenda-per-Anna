@@ -1204,7 +1204,7 @@ class ExternalCalendarSettingsCard extends StatelessWidget {
                         size: 16,
                         color: calendar.colorValue == null
                             ? Theme.of(context).colorScheme.primary
-                            : Color(calendar.colorValue!),
+                            : Color(calendar.colorValue! & 0xFFFFFFFF),
                       ),
                       onChanged: service.busy
                           ? null
