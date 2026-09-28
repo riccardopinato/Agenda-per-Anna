@@ -43,6 +43,7 @@ class _AgendaBackupDomain {
       'habits': store.habits.map((e) => e.toJson()).toList(),
       'birthdays': store.birthdays.map((e) => e.toJson()).toList(),
       'people': store.people.map((e) => e.toJson()).toList(),
+      'places': store.places.map((e) => e.toJson()).toList(),
       'inbox': store.inbox.map((e) => e.toJson()).toList(),
       'trash': portableTrash,
       'preferences': store.preferences.toJson(),
