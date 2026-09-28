@@ -173,7 +173,7 @@ extension AgendaStoreDayHub on AgendaStore {
 
   DayHubSnapshot dayHubSnapshot(DateTime date) {
     final normalized = DateTime(date.year, date.month, date.day);
-    final agenda = unifiedForDay(normalized);
+    final agenda = agendaEntriesForDayWithExternal(this, normalized);
     return DayHubSnapshot(
       date: normalized,
       agenda: agenda,
