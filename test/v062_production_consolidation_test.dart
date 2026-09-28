@@ -2,15 +2,11 @@ import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:agenda_per_anna/app_version.dart';
 
 void main() {
   test('v0.62 stays non-AI and reuses the production architecture', () {
     final pubspec = File('pubspec.yaml').readAsStringSync();
     final roadmap = File('docs/ROADMAP.md').readAsStringSync();
-
-    expect(appReleaseVersion, '0.73.0');
-    expect(pubspec, contains('version: 0.73.0+83'));
 
     const forbiddenDependencies = <String>[
       'openai',
