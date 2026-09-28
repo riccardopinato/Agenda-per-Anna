@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:agenda_per_anna/app_version.dart';
@@ -93,6 +94,39 @@ void main() {
     expect(pubspec, isNot(contains('mapbox')));
     expect(places, isNot(contains('latitude')));
     expect(places, isNot(contains('longitude')));
+  });
+
+  test('v0.68 portable JSON backup preserves place entities', () async {
+    final store = AgendaStore();
+    store.places.add(
+      const PlaceEntry(
+        id: 'p-json',
+        name: 'Rifugio',
+        category: 'Montagna',
+      ),
+    );
+
+    final raw = await store.createBackupJson();
+    final root = jsonDecode(raw) as Map<String, dynamic>;
+    final data = Map<String, dynamic>.from(root['data'] as Map);
+    final places = data['places'] as List;
+
+    expect(places, hasLength(1));
+    expect((places.single as Map)['name'], 'Rifugio');
+    store.dispose();
+  });
+
+  test('v0.68 place picker exposes recoverable links without silent truncation',
+      () {
+    final places =
+        File('lib/src/places_domain.dart').readAsStringSync();
+
+    expect(
+      places,
+      contains('Nel Cestino · collegamento recuperabile'),
+    );
+    expect(places, contains('map(store.trashedPlaceById)'));
+    expect(places, isNot(contains('if (validIds.length >= 8) break;')));
   });
 
   test('v0.68 release metadata is aligned', () {
