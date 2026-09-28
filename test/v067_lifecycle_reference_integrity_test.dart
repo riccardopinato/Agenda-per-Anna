@@ -97,6 +97,18 @@ void main() {
     );
     expect(
       agendaSource,
+      contains('web_reminder_delete_retry_v1_'),
+      reason:
+          'Failed remote reminder deletions must survive offline reconnects.',
+    );
+    expect(
+      agendaSource,
+      contains('await _flushWebReminderDeleteRetries();'),
+      reason:
+          'Connectivity recovery must retry durable PWA reminder cleanup.',
+    );
+    expect(
+      agendaSource,
       contains('await _discardSharedChildOperationsForEntry('),
       reason:
           'Deleting a Noi entry must not leave queued comments or reactions behind.',
