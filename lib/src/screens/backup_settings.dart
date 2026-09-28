@@ -1146,6 +1146,7 @@ class ExternalCalendarSettingsCard extends StatelessWidget {
                             if (granted) {
                               await service.setEnabled(true);
                               await _primeVisibleRange();
+                              if (!context.mounted) return;
                               _message(
                                 context,
                                 'Calendari esterni attivati in sola lettura.',
