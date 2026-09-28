@@ -100,10 +100,24 @@ jobs:
           flutter create --project-name agenda_per_anna --org com.riccardopinato --platforms=android /tmp/agenda_restart_android
           cp -R /tmp/agenda_restart_android/android .
 
-      - name: Apply stable Android release configuration
-        run: python3 tool/prepare_android_platform.py --release-signing
+      - name: Apply Android configuration
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ -n "${ANDROID_KEYSTORE_BASE64:-}" ] && \
+             [ -n "${ANDROID_KEYSTORE_PASSWORD:-}" ] && \
+             [ -n "${ANDROID_KEY_ALIAS:-}" ] && \
+             [ -n "${ANDROID_KEY_PASSWORD:-}" ]; then
+            python3 tool/prepare_android_platform.py --release-signing
+            echo "CUSTOM_RELEASE_SIGNING=1" >> "$GITHUB_ENV"
+          else
+            python3 tool/prepare_android_platform.py
+            echo "CUSTOM_RELEASE_SIGNING=0" >> "$GITHUB_ENV"
+            echo "::notice::Repository release-signing secrets are not configured; using the generated Flutter Android signing contract for this sideload artifact."
+          fi
 
       - name: Verify stable release keystore
+        if: env.CUSTOM_RELEASE_SIGNING == '1'
         run: |
           keytool -list \
             -keystore "$ANDROID_KEYSTORE_PATH" \
