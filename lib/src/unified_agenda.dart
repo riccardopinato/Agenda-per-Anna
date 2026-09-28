@@ -181,7 +181,7 @@ class UnifiedAgendaTile extends StatelessWidget {
     if (external != null) {
       final color = external.colorValue == null
           ? Theme.of(context).colorScheme.tertiary
-          : Color(external.colorValue!);
+          : Color(external.colorValue! & 0xFFFFFFFF);
       final timeText = external.allDay
           ? 'Tutto il giorno'
           : '${formatTime(external.startTime!)}'
