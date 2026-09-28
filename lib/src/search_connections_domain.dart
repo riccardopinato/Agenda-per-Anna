@@ -1,12 +1,13 @@
 part of '../main.dart';
 
-enum PersonalSearchKind { agenda, diary, person, birthday, inbox, month }
+enum PersonalSearchKind { agenda, diary, person, place, birthday, inbox, month }
 
 extension PersonalSearchKindUi on PersonalSearchKind {
   String get label => switch (this) {
         PersonalSearchKind.agenda => 'Agenda',
         PersonalSearchKind.diary => 'Diario',
         PersonalSearchKind.person => 'Persone',
+        PersonalSearchKind.place => 'Luoghi',
         PersonalSearchKind.birthday => 'Compleanni',
         PersonalSearchKind.inbox => 'Inbox',
         PersonalSearchKind.month => 'Mesi',
@@ -16,6 +17,7 @@ extension PersonalSearchKindUi on PersonalSearchKind {
         PersonalSearchKind.agenda => Icons.event_outlined,
         PersonalSearchKind.diary => Icons.auto_stories_outlined,
         PersonalSearchKind.person => Icons.person_outline,
+        PersonalSearchKind.place => Icons.place_outlined,
         PersonalSearchKind.birthday => Icons.cake_outlined,
         PersonalSearchKind.inbox => Icons.inbox_outlined,
         PersonalSearchKind.month => Icons.calendar_month_outlined,
@@ -41,6 +43,7 @@ class PersonalSearchHit {
   final AgendaItem? agendaItem;
   final String? diaryBlockId;
   final String? personId;
+  final String? placeName;
   final String? birthdayId;
   final String? inboxId;
 
@@ -53,6 +56,7 @@ class PersonalSearchHit {
     this.agendaItem,
     this.diaryBlockId,
     this.personId,
+    this.placeName,
     this.birthdayId,
     this.inboxId,
   });
@@ -103,6 +107,76 @@ extension SearchConnectionsAgendaStore on AgendaStore {
               reference.date.day == day.day,
         )
         .toList(growable: false);
+  }
+
+  List<String> get diaryPlaceNames {
+    final labels = <String, String>{};
+    for (final reference in memoryReferences(includeArchived: true)) {
+      for (final place in reference.block.places) {
+        final name = place.name.trim();
+        if (name.isEmpty) continue;
+        labels.putIfAbsent(name.toLowerCase(), () => name);
+      }
+    }
+    final result = labels.values.toList()
+      ..sort((a, b) => a.toLowerCase().compareTo(b.toLowerCase()));
+    return result;
+  }
+
+  List<DiaryBlockReference> memoriesForPlace(
+    String placeName, {
+    bool includeArchived = false,
+  }) {
+    final wanted = placeName.trim().toLowerCase();
+    if (wanted.isEmpty) return const [];
+    return memoryReferences(includeArchived: includeArchived)
+        .where(
+          (reference) => reference.block.places.any(
+            (place) => place.normalizedName == wanted,
+          ),
+        )
+        .toList(growable: false);
+  }
+
+  Future<void> setDiaryBlockPlaces(
+    DateTime date,
+    String blockId,
+    Iterable<DiaryPlaceReference> places,
+  ) async {
+    final key = AgendaStore.dateKey(date);
+    final current = journals[key];
+    if (current == null) return;
+    final index = current.blocks.indexWhere((block) => block.id == blockId);
+    if (index < 0) return;
+
+    final normalized = <DiaryPlaceReference>[];
+    final seen = <String>{};
+    for (final raw in places) {
+      final name = raw.name.trim();
+      final normalizedName = name.toLowerCase();
+      if (name.isEmpty || !seen.add(normalizedName)) continue;
+
+      final lat = raw.latitude;
+      final lon = raw.longitude;
+      final validCoordinates = lat != null &&
+          lon != null &&
+          lat >= -90 &&
+          lat <= 90 &&
+          lon >= -180 &&
+          lon <= 180;
+      normalized.add(
+        DiaryPlaceReference(
+          name: name,
+          latitude: validCoordinates ? lat : null,
+          longitude: validCoordinates ? lon : null,
+        ),
+      );
+      if (normalized.length >= 6) break;
+    }
+
+    final blocks = [...current.blocks];
+    blocks[index] = blocks[index].copyWith(places: normalized);
+    await saveJournal(date, current.copyWith(blocks: blocks));
   }
 
   DiaryBlockReference? diaryBlockReferenceById(
@@ -377,6 +451,7 @@ extension SearchConnectionsAgendaStore on AgendaStore {
             ...block.tags,
             ...linkedPeople.map((person) => person.name),
             ...linkedPeople.map((person) => person.relationship),
+            ...block.places.map((place) => place.name),
             ...sketchText,
             DateFormat('d MMMM yyyy', 'it_IT').format(date),
             switch (block.type) {
@@ -406,6 +481,8 @@ extension SearchConnectionsAgendaStore on AgendaStore {
                   'testo foto',
                 if (block.tags.isNotEmpty)
                   block.tags.map((tag) => '#$tag').join(' '),
+                if (block.places.isNotEmpty)
+                  block.places.map((place) => '📍 ${place.name}').join(' · '),
               ].join(' · '),
               date: date,
               diaryBlockId: block.id,
@@ -443,6 +520,43 @@ extension SearchConnectionsAgendaStore on AgendaStore {
             ].join(' · '),
             date: lastMemory ?? DateTime.fromMillisecondsSinceEpoch(0),
             personId: person.id,
+          ),
+        );
+      }
+    }
+
+    if (enabled.contains(PersonalSearchKind.place)) {
+      final latestByPlace = <String, DiaryBlockReference>{};
+      final labels = <String, String>{};
+      for (final reference
+          in memoryReferences(includeArchived: includeArchived)) {
+        for (final place in reference.block.places) {
+          final label = place.name.trim();
+          if (label.isEmpty ||
+              !_matchesPersonalSearch(query, [
+                label,
+                if (place.latitude != null) place.latitude.toString(),
+                if (place.longitude != null) place.longitude.toString(),
+              ])) {
+            continue;
+          }
+          final key = label.toLowerCase();
+          labels.putIfAbsent(key, () => label);
+          latestByPlace.putIfAbsent(key, () => reference);
+        }
+      }
+      for (final entry in latestByPlace.entries) {
+        final reference = entry.value;
+        hits.add(
+          PersonalSearchHit(
+            kind: PersonalSearchKind.place,
+            id: 'place:${entry.key}',
+            title: labels[entry.key]!,
+            subtitle:
+                'Luogo · ${DateFormat('d MMMM yyyy', 'it_IT').format(reference.date)}',
+            date: reference.date,
+            diaryBlockId: reference.block.id,
+            placeName: labels[entry.key],
           ),
         );
       }
@@ -748,6 +862,18 @@ class _PersonalSearchConnectionsScreenState
           ),
         );
         return;
+      case PersonalSearchKind.place:
+        if (!mounted) return;
+        await Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => PlannerScreen(
+              store: widget.store,
+              initialDate: hit.date,
+            ),
+          ),
+        );
+        return;
       case PersonalSearchKind.birthday:
         if (!mounted) return;
         await Navigator.push(
@@ -820,7 +946,7 @@ class _PersonalSearchConnectionsScreenState
               autofocus: true,
               onChanged: (value) => setState(() => query = value),
               decoration: InputDecoration(
-                hintText: 'Cerca parole, persone, tag, date, ricordi...',
+                hintText: 'Cerca parole, persone, luoghi, tag, date, ricordi...',
                 prefixIcon: const Icon(Icons.search),
                 filled: true,
                 border: OutlineInputBorder(

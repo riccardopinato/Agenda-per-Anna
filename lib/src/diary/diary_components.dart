@@ -675,6 +675,214 @@ Future<List<String>?> showOrganizationTagsEditor(
   return value;
 }
 
+
+Future<List<DiaryPlaceReference>?> showDiaryPlacesEditor(
+  BuildContext context, {
+  required List<DiaryPlaceReference> initialPlaces,
+  List<String> suggestions = const [],
+}) async {
+  final nameController = TextEditingController();
+  final latitudeController = TextEditingController();
+  final longitudeController = TextEditingController();
+  final places = <DiaryPlaceReference>[...initialPlaces];
+  String? validationError;
+
+  final result = await showDialog<List<DiaryPlaceReference>>(
+    context: context,
+    builder: (dialogContext) => StatefulBuilder(
+      builder: (context, setDialogState) {
+        void addPlace() {
+          final name = nameController.text.trim();
+          if (name.isEmpty) {
+            setDialogState(() => validationError = 'Inserisci il nome del luogo.');
+            return;
+          }
+
+          final latText = latitudeController.text.trim().replaceAll(',', '.');
+          final lonText = longitudeController.text.trim().replaceAll(',', '.');
+          final hasLat = latText.isNotEmpty;
+          final hasLon = lonText.isNotEmpty;
+          final lat = hasLat ? double.tryParse(latText) : null;
+          final lon = hasLon ? double.tryParse(lonText) : null;
+          if (hasLat != hasLon ||
+              (hasLat &&
+                  (lat == null ||
+                      lon == null ||
+                      lat < -90 ||
+                      lat > 90 ||
+                      lon < -180 ||
+                      lon > 180))) {
+            setDialogState(
+              () => validationError =
+                  'Coordinate non valide. Inserisci latitudine e longitudine insieme.',
+            );
+            return;
+          }
+
+          final key = name.toLowerCase();
+          places.removeWhere((place) => place.normalizedName == key);
+          places.add(
+            DiaryPlaceReference(
+              name: name,
+              latitude: lat,
+              longitude: lon,
+            ),
+          );
+          if (places.length > 6) places.removeAt(0);
+          nameController.clear();
+          latitudeController.clear();
+          longitudeController.clear();
+          setDialogState(() => validationError = null);
+        }
+
+        return AlertDialog(
+          title: const Text('Luoghi'),
+          content: SingleChildScrollView(
+            child: SizedBox(
+              width: 420,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  if (places.isNotEmpty) ...[
+                    Wrap(
+                      spacing: 6,
+                      runSpacing: 6,
+                      children: places
+                          .map(
+                            (place) => InputChip(
+                              avatar: const Icon(Icons.place_outlined, size: 16),
+                              label: Text(place.name),
+                              tooltip: place.hasCoordinates
+                                  ? '${place.latitude!.toStringAsFixed(5)}, ${place.longitude!.toStringAsFixed(5)}'
+                                  : null,
+                              onDeleted: () => setDialogState(
+                                () => places.remove(place),
+                              ),
+                            ),
+                          )
+                          .toList(),
+                    ),
+                    const SizedBox(height: 14),
+                  ],
+                  TextField(
+                    controller: nameController,
+                    autofocus: places.isEmpty,
+                    textCapitalization: TextCapitalization.words,
+                    decoration: const InputDecoration(
+                      labelText: 'Nome luogo',
+                      hintText: 'es. Lago di Braies',
+                      prefixIcon: Icon(Icons.place_outlined),
+                      border: OutlineInputBorder(),
+                    ),
+                  ),
+                  if (suggestions.isNotEmpty) ...[
+                    const SizedBox(height: 8),
+                    Wrap(
+                      spacing: 6,
+                      runSpacing: 6,
+                      children: suggestions
+                          .where(
+                            (name) => !places.any(
+                              (place) =>
+                                  place.normalizedName ==
+                                  name.trim().toLowerCase(),
+                            ),
+                          )
+                          .take(8)
+                          .map(
+                            (name) => ActionChip(
+                              label: Text(name),
+                              onPressed: () {
+                                nameController.text = name;
+                                nameController.selection =
+                                    TextSelection.collapsed(
+                                  offset: nameController.text.length,
+                                );
+                              },
+                            ),
+                          )
+                          .toList(),
+                    ),
+                  ],
+                  const SizedBox(height: 12),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: TextField(
+                          controller: latitudeController,
+                          keyboardType: const TextInputType.numberWithOptions(
+                            decimal: true,
+                            signed: true,
+                          ),
+                          decoration: const InputDecoration(
+                            labelText: 'Latitudine (opz.)',
+                            border: OutlineInputBorder(),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: TextField(
+                          controller: longitudeController,
+                          keyboardType: const TextInputType.numberWithOptions(
+                            decimal: true,
+                            signed: true,
+                          ),
+                          decoration: const InputDecoration(
+                            labelText: 'Longitudine (opz.)',
+                            border: OutlineInputBorder(),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: OutlinedButton.icon(
+                      onPressed: addPlace,
+                      icon: const Icon(Icons.add_location_alt_outlined),
+                      label: const Text('Aggiungi luogo'),
+                    ),
+                  ),
+                  if (validationError != null) ...[
+                    const SizedBox(height: 6),
+                    Text(
+                      validationError!,
+                      style: TextStyle(
+                        color: Theme.of(context).colorScheme.error,
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext),
+              child: const Text('Annulla'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.pop(
+                dialogContext,
+                List<DiaryPlaceReference>.unmodifiable(places),
+              ),
+              child: const Text('Salva'),
+            ),
+          ],
+        );
+      },
+    ),
+  );
+
+  nameController.dispose();
+  latitudeController.dispose();
+  longitudeController.dispose();
+  return result;
+}
+
 Future<bool> confirmDiaryContentDelete(
   BuildContext context, {
   bool movesToTrash = false,
@@ -850,6 +1058,7 @@ class DiaryContentCard extends StatelessWidget {
   final VoidCallback? onEditCaption;
   final VoidCallback? onReplacePhoto;
   final VoidCallback? onPeople;
+  final VoidCallback? onPlaces;
   final VoidCallback? onConnections;
   final VoidCallback? onPin;
   final VoidCallback? onArchive;
@@ -872,6 +1081,7 @@ class DiaryContentCard extends StatelessWidget {
     this.onEditCaption,
     this.onReplacePhoto,
     this.onPeople,
+    this.onPlaces,
     this.onConnections,
     this.onPin,
     this.onArchive,
@@ -928,6 +1138,7 @@ class DiaryContentCard extends StatelessWidget {
                     if (value == 'archive') onArchive?.call();
                     if (value == 'tags') onTags?.call();
                     if (value == 'people') onPeople?.call();
+                    if (value == 'places') onPlaces?.call();
                     if (value == 'connections') onConnections?.call();
                     if (value == 'delete') onDelete?.call();
                   },
@@ -968,6 +1179,11 @@ class DiaryContentCard extends StatelessWidget {
                       const PopupMenuItem(
                         value: 'people',
                         child: Text('Collega persone'),
+                      ),
+                    if (onPlaces != null)
+                      const PopupMenuItem(
+                        value: 'places',
+                        child: Text('Luoghi'),
                       ),
                     if (onConnections != null)
                       const PopupMenuItem(
@@ -1419,12 +1635,27 @@ class _DiaryMemoryCardState extends State<DiaryMemoryCard> {
     await widget.store.tagDiaryBlockPeople(widget.date, block.id, selected);
   }
 
-  Widget? _peopleFooter(DiaryBlock block) {
+  Future<void> _editPlaces(DiaryBlock block) async {
+    final selected = await showDiaryPlacesEditor(
+      context,
+      initialPlaces: block.places,
+      suggestions: widget.store.diaryPlaceNames,
+    );
+    if (selected == null) return;
+    await widget.store.setDiaryBlockPlaces(
+      widget.date,
+      block.id,
+      selected,
+    );
+  }
+
+  Widget? _metadataFooter(DiaryBlock block) {
     final linked = widget.store.peopleForIds(block.personIds);
     final outgoing = widget.store.relatedDiaryBlocks(block);
     final backlinks = widget.store.backlinksForDiaryBlock(block.id);
     if (linked.isEmpty &&
         block.tags.isEmpty &&
+        block.places.isEmpty &&
         outgoing.isEmpty &&
         backlinks.isEmpty) {
       return null;
@@ -1440,6 +1671,13 @@ class _DiaryMemoryCardState extends State<DiaryMemoryCard> {
               visualDensity: VisualDensity.compact,
               avatar: const Icon(Icons.tag, size: 15),
               label: Text(tag),
+            ),
+          ),
+          ...block.places.map(
+            (place) => Chip(
+              visualDensity: VisualDensity.compact,
+              avatar: const Icon(Icons.place_outlined, size: 16),
+              label: Text(place.name),
             ),
           ),
           ...linked.map(
@@ -1535,13 +1773,14 @@ class _DiaryMemoryCardState extends State<DiaryMemoryCard> {
           onOpen: () => _addNote(block),
           onEdit: () => _addNote(block),
           onPeople: () => _editPeople(block),
+          onPlaces: () => _editPlaces(block),
           onConnections: () => _editConnections(block),
           onPin: () => _togglePinned(block),
           onArchive: () => _toggleArchived(block),
           onTags: () => _editTags(block),
           pinned: block.pinned,
           archived: block.archived,
-          footer: _peopleFooter(block),
+          footer: _metadataFooter(block),
           onDelete: () => _delete(block),
         );
       case DiaryBlockType.photo:
@@ -1565,13 +1804,14 @@ class _DiaryMemoryCardState extends State<DiaryMemoryCard> {
           onEditCaption: () => _editPhotoCaption(block),
           onReplacePhoto: () => _replacePhoto(block),
           onPeople: () => _editPeople(block),
+          onPlaces: () => _editPlaces(block),
           onConnections: () => _editConnections(block),
           onPin: () => _togglePinned(block),
           onArchive: () => _toggleArchived(block),
           onTags: () => _editTags(block),
           pinned: block.pinned,
           archived: block.archived,
-          footer: _peopleFooter(block),
+          footer: _metadataFooter(block),
           onDelete: () => _delete(block),
         );
       case DiaryBlockType.sketch:
@@ -1588,13 +1828,14 @@ class _DiaryMemoryCardState extends State<DiaryMemoryCard> {
           onOpen: () => _openSketch(block),
           onEdit: () => _openSketch(block),
           onPeople: () => _editPeople(block),
+          onPlaces: () => _editPlaces(block),
           onConnections: () => _editConnections(block),
           onPin: () => _togglePinned(block),
           onArchive: () => _toggleArchived(block),
           onTags: () => _editTags(block),
           pinned: block.pinned,
           archived: block.archived,
-          footer: _peopleFooter(block),
+          footer: _metadataFooter(block),
           onDelete: () => _delete(block),
         );
       case DiaryBlockType.voice:
@@ -1608,13 +1849,14 @@ class _DiaryMemoryCardState extends State<DiaryMemoryCard> {
           onOpen: () => _playVoice(block),
           onEdit: () => _editVoiceCaption(block),
           onPeople: () => _editPeople(block),
+          onPlaces: () => _editPlaces(block),
           onConnections: () => _editConnections(block),
           onPin: () => _togglePinned(block),
           onArchive: () => _toggleArchived(block),
           onTags: () => _editTags(block),
           pinned: block.pinned,
           archived: block.archived,
-          footer: _peopleFooter(block),
+          footer: _metadataFooter(block),
           statusIcon: const Icon(Icons.play_circle_outline),
           onDelete: () => _delete(block),
         );

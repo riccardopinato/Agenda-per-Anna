@@ -23,6 +23,7 @@ Source of truth for the active product sequence after v0.52. The roadmap follows
 | v0.66 | Smart Media Search | Completed | Local on-device OCR for diary photos integrated into deterministic search |
 | v0.67 | Lifecycle & Reference Integrity | Completed | Tombstone-safe offline reconciliation, cross-device reminder cleanup and orphan-safe Noi ♡ lifecycle hardening |
 | v0.68 | Memory Primitive Review | Completed | One derived diary-memory reference path reused by Ricordi, People and On This Day without a new memory store |
+| v0.69 | Places Lite | Completed | Lightweight inline place references on diary memories, searchable without a separate Places database |
 
 ## Permanent constraints for this sequence
 
@@ -279,3 +280,16 @@ Per the active development cadence, AppLab runs once every two feature versions.
 - The Ricordi screen consumes the same derived references instead of maintaining its own local memory-record class.
 - No MemoryEngine database, Life Core entity, new storage key, cloud table, sync queue or lifecycle type is introduced.
 - Release metadata is aligned to v0.68.0+78.
+
+
+## v0.69 acceptance criteria
+
+- Places are lightweight references attached to the existing DiaryBlock payload; there is no separate Places database/table/store.
+- Each linked place has a name and may optionally preserve latitude/longitude.
+- Legacy DiaryBlock JSON without place metadata remains readable with an empty place list.
+- The private diary editor can add, remove and reuse place references without creating a profile-management flow.
+- Place chips coexist with tags, people and memory connections on the existing diary card.
+- Global deterministic search includes place names and exposes a derived Luoghi filter/result type.
+- Ricordi text filtering includes place names.
+- Journal persistence automatically carries places through private sync, backup/restore, Trash and account isolation.
+- Release metadata is aligned to v0.69.0+79.

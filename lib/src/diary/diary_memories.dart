@@ -48,6 +48,7 @@ class _DiaryMemoriesScreenState extends State<DiaryMemoriesScreen> {
       block.text,
       sketchText,
       peopleText,
+      ...block.places.map((place) => place.name),
       DateFormat('d MMMM yyyy', 'it_IT').format(record.date),
       DateFormat('MMMM yyyy', 'it_IT').format(record.date),
       '${record.date.year}',

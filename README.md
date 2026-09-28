@@ -2,7 +2,7 @@
 
 Flutter app for personal planning, private diary and the shared **Noi ♡** space.
 
-Current release line: **v0.68.0**.
+Current release line: **v0.69.0**.
 
 ## Core areas
 
@@ -427,3 +427,15 @@ See `docs/ARCHITECTURE.md` and `supabase/README.md` for implementation details.
 - No new persistence key, cloud table, sync queue or lifecycle type is introduced.
 - Existing DiaryBlock, DayJournal, People, Connections, Search, Trash and backup formats remain authoritative.
 - This is deliberately a consolidation release: it removes duplicate in-memory representations without changing the user’s stored diary data.
+
+
+## v0.69.0 — Places Lite
+
+- Diary memories can carry lightweight inline place references without creating a Places database or management module.
+- A place stores a human-readable name plus optional latitude/longitude directly inside the existing DiaryBlock payload.
+- The diary card menu exposes **Luoghi** alongside people, tags and related memories; linked places appear as compact chips.
+- Previously used place names are offered as lightweight suggestions.
+- Deterministic global search indexes place names and exposes a derived **Luoghi** result type; opening a place result returns to the day that contains the latest matching memory.
+- Ricordi search also matches linked place names.
+- Legacy DiaryBlock payloads without places remain fully compatible.
+- Places automatically inherit existing journal persistence, cloud sync, backup/restore, Trash and account isolation because no parallel store is introduced.
