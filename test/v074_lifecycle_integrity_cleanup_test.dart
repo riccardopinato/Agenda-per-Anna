@@ -161,7 +161,11 @@ void main() {
         .listSync()
         .whereType<File>()
         .where((file) => file.path.endsWith('_test.dart'))
-        .where((file) => !file.path.endsWith('release_metadata_test.dart'));
+        .where((file) => !file.path.endsWith('release_metadata_test.dart'))
+        .where(
+          (file) =>
+              !file.path.endsWith('v074_lifecycle_integrity_cleanup_test.dart'),
+        );
 
     for (final file in files) {
       final source = file.readAsStringSync();
