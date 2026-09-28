@@ -97,7 +97,7 @@ void main() {
     );
     expect(
       lifecycleSource,
-      contains('await _markExplicitRestoreIntent(restoreTarget.$1, restoreTarget.$2);'),
+      contains('await _markExplicitRestoreIntent(restoreTarget.'),
       reason:
           'Restoring from Trash must persist explicit restore intent before cloud reconciliation.',
     );
