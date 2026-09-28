@@ -26,12 +26,25 @@ enum StartTab { home, month, week, today }
 
 extension StartTabUi on StartTab {
   String get label => switch (this) {
-        StartTab.home => 'Home',
+        StartTab.home || StartTab.today => 'Oggi',
         StartTab.month => 'Mese',
         StartTab.week => 'Settimana',
-        StartTab.today => 'Oggi',
       };
+
+  int get shellIndex => switch (this) {
+        StartTab.home || StartTab.today => 0,
+        StartTab.month => 1,
+        StartTab.week => 2,
+      };
+
+  bool get isLegacyHome => this == StartTab.home;
 }
+
+const List<StartTab> selectableStartTabs = <StartTab>[
+  StartTab.today,
+  StartTab.month,
+  StartTab.week,
+];
 
 class AgendaPreferences {
   final String displayName;
@@ -56,7 +69,7 @@ class AgendaPreferences {
     this.themeMode = AgendaThemeMode.system,
     this.palette = AgendaPalette.rose,
     this.showDailyQuote = true,
-    this.startTab = StartTab.home,
+    this.startTab = StartTab.today,
     this.defaultCategory = AgendaCategory.personal,
     this.defaultEventMinutes = 60,
     this.defaultPrimaryReminder = 30,
@@ -149,7 +162,7 @@ class AgendaPreferences {
         showDailyQuote: json['showDailyQuote'] as bool? ?? true,
         startTab: StartTab.values.firstWhere(
           (e) => e.name == json['startTab'],
-          orElse: () => StartTab.home,
+          orElse: () => StartTab.today,
         ),
         defaultCategory: AgendaCategory.values.firstWhere(
           (e) => e.name == json['defaultCategory'],
