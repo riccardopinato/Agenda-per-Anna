@@ -20,6 +20,7 @@ import 'package:table_calendar/table_calendar.dart';
 import 'package:uuid/uuid.dart';
 
 import 'app_version.dart';
+import 'external_calendar_service.dart';
 import 'backup_service.dart';
 import 'cloud_sync_service.dart';
 import 'notification_service.dart';
@@ -192,6 +193,18 @@ Future<void> main() async {
   runApp(AgendaApp(store: store));
 
   Future<void>.delayed(Duration.zero, () async {
+    try {
+      await ExternalCalendarService.instance.initialize();
+      final now = DateTime.now();
+      final start = DateTime(now.year, now.month, now.day);
+      await ExternalCalendarService.instance.loadRange(
+        start,
+        start.add(const Duration(days: 45)),
+      );
+    } catch (_) {
+      // L'overlay calendario esterno è opzionale e resta locale al dispositivo.
+    }
+
     try {
       final initialShare = await ShareCaptureService.instance.initialize();
       await _shareCaptureSubscription?.cancel();

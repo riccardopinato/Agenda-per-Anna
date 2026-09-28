@@ -68,12 +68,14 @@ import android.Manifest
 import android.app.PendingIntent
 import android.appwidget.AppWidgetManager
 import android.content.ComponentName
+import android.content.ContentUris
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.BitmapFactory
 import android.media.MediaPlayer
 import android.media.MediaRecorder
 import android.net.Uri
+import android.provider.CalendarContract
 import android.security.keystore.KeyGenParameterSpec
 import android.security.keystore.KeyProperties
 import android.util.Base64
@@ -99,7 +101,9 @@ class MainActivity : FlutterFragmentActivity() {
         private const val HOME_WIDGET_CHANNEL = "annas_diary/home_widget"
         private const val SHARE_CAPTURE_CHANNEL = "annas_diary/share_capture"
         private const val PHOTO_OCR_CHANNEL = "annas_diary/photo_ocr"
+        private const val EXTERNAL_CALENDAR_CHANNEL = "annas_diary/external_calendar"
         private const val MICROPHONE_REQUEST_CODE = 4411
+        private const val CALENDAR_REQUEST_CODE = 4412
         private const val KEY_ALIAS = "annas_diary_private_vault_v1"
         private const val IV_BYTES = 12
     }
@@ -113,6 +117,7 @@ class MainActivity : FlutterFragmentActivity() {
     private var shareCaptureChannel: MethodChannel? = null
     private var pendingSharePayload: Map<String, String>? = null
     private var textRecognizer: TextRecognizer? = null
+    private var pendingCalendarPermissionResult: MethodChannel.Result? = null
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         pendingHomeWidgetAction =
@@ -237,6 +242,65 @@ class MainActivity : FlutterFragmentActivity() {
             }
         }
 
+
+        MethodChannel(
+            flutterEngine.dartExecutor.binaryMessenger,
+            EXTERNAL_CALENDAR_CHANNEL,
+        ).setMethodCallHandler { call, result ->
+            try {
+                when (call.method) {
+                    "status" -> {
+                        result.success(
+                            mapOf(
+                                "granted" to hasCalendarPermission(),
+                            ),
+                        )
+                    }
+                    "requestPermission" -> {
+                        requestCalendarPermission(result)
+                    }
+                    "listCalendars" -> {
+                        requireCalendarPermission()
+                        result.success(readCalendars())
+                    }
+                    "listEvents" -> {
+                        requireCalendarPermission()
+                        val args = call.arguments as? Map<*, *>
+                            ?: emptyMap<String, Any>()
+                        val startMs = (args["startMs"] as? Number)?.toLong()
+                            ?: throw IllegalArgumentException("missing startMs")
+                        val endMs = (args["endMs"] as? Number)?.toLong()
+                            ?: throw IllegalArgumentException("missing endMs")
+                        val calendarIds = (args["calendarIds"] as? List<*>)
+                            ?.mapNotNull { value ->
+                                value?.toString()?.toLongOrNull()
+                            }
+                            ?: emptyList()
+                        result.success(
+                            readCalendarEvents(
+                                startMs = startMs,
+                                endMs = endMs,
+                                calendarIds = calendarIds,
+                            ),
+                        )
+                    }
+                    else -> result.notImplemented()
+                }
+            } catch (error: SecurityException) {
+                result.error(
+                    "calendar_permission_required",
+                    "Consenti l'accesso in lettura al calendario e riprova.",
+                    null,
+                )
+            } catch (error: Throwable) {
+                result.error(
+                    "external_calendar_native_error",
+                    error.message ?: error.javaClass.simpleName,
+                    null,
+                )
+            }
+        }
+
         homeWidgetChannel = MethodChannel(
             flutterEngine.dartExecutor.binaryMessenger,
             HOME_WIDGET_CHANNEL,
@@ -322,6 +386,176 @@ class MainActivity : FlutterFragmentActivity() {
                 }
             }
         }
+    }
+
+
+    private fun hasCalendarPermission(): Boolean {
+        return checkSelfPermission(Manifest.permission.READ_CALENDAR) ==
+            PackageManager.PERMISSION_GRANTED
+    }
+
+    private fun requireCalendarPermission() {
+        if (!hasCalendarPermission()) {
+            throw SecurityException("calendar permission required")
+        }
+    }
+
+    private fun requestCalendarPermission(result: MethodChannel.Result) {
+        if (hasCalendarPermission()) {
+            result.success(true)
+            return
+        }
+        if (pendingCalendarPermissionResult != null) {
+            result.error(
+                "calendar_permission_busy",
+                "Una richiesta di accesso al calendario è già in corso.",
+                null,
+            )
+            return
+        }
+        pendingCalendarPermissionResult = result
+        requestPermissions(
+            arrayOf(Manifest.permission.READ_CALENDAR),
+            CALENDAR_REQUEST_CODE,
+        )
+    }
+
+    override fun onRequestPermissionsResult(
+        requestCode: Int,
+        permissions: Array<out String>,
+        grantResults: IntArray,
+    ) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        if (requestCode != CALENDAR_REQUEST_CODE) return
+
+        val granted = grantResults.isNotEmpty() &&
+            grantResults[0] == PackageManager.PERMISSION_GRANTED
+        pendingCalendarPermissionResult?.success(granted)
+        pendingCalendarPermissionResult = null
+    }
+
+    private fun readCalendars(): List<Map<String, Any?>> {
+        val projection = arrayOf(
+            CalendarContract.Calendars._ID,
+            CalendarContract.Calendars.CALENDAR_DISPLAY_NAME,
+            CalendarContract.Calendars.ACCOUNT_NAME,
+            CalendarContract.Calendars.CALENDAR_COLOR,
+            CalendarContract.Calendars.VISIBLE,
+        )
+        val result = mutableListOf<Map<String, Any?>>()
+        contentResolver.query(
+            CalendarContract.Calendars.CONTENT_URI,
+            projection,
+            "${CalendarContract.Calendars.VISIBLE} = 1",
+            null,
+            "${CalendarContract.Calendars.ACCOUNT_NAME} ASC, " +
+                "${CalendarContract.Calendars.CALENDAR_DISPLAY_NAME} ASC",
+        )?.use { cursor ->
+            val idIndex = cursor.getColumnIndexOrThrow(CalendarContract.Calendars._ID)
+            val nameIndex = cursor.getColumnIndexOrThrow(
+                CalendarContract.Calendars.CALENDAR_DISPLAY_NAME,
+            )
+            val accountIndex = cursor.getColumnIndexOrThrow(
+                CalendarContract.Calendars.ACCOUNT_NAME,
+            )
+            val colorIndex = cursor.getColumnIndexOrThrow(
+                CalendarContract.Calendars.CALENDAR_COLOR,
+            )
+            while (cursor.moveToNext()) {
+                result += mapOf(
+                    "id" to cursor.getLong(idIndex).toString(),
+                    "name" to cursor.getString(nameIndex).orEmpty(),
+                    "accountName" to cursor.getString(accountIndex).orEmpty(),
+                    "color" to cursor.getInt(colorIndex),
+                )
+            }
+        }
+        return result
+    }
+
+    private fun readCalendarEvents(
+        startMs: Long,
+        endMs: Long,
+        calendarIds: List<Long>,
+    ): List<Map<String, Any?>> {
+        if (calendarIds.isEmpty() || endMs <= startMs) return emptyList()
+
+        val uriBuilder = CalendarContract.Instances.CONTENT_URI.buildUpon()
+        ContentUris.appendId(uriBuilder, startMs)
+        ContentUris.appendId(uriBuilder, endMs)
+
+        val projection = arrayOf(
+            CalendarContract.Instances.EVENT_ID,
+            CalendarContract.Instances.TITLE,
+            CalendarContract.Instances.BEGIN,
+            CalendarContract.Instances.END,
+            CalendarContract.Instances.ALL_DAY,
+            CalendarContract.Instances.CALENDAR_ID,
+            CalendarContract.Instances.CALENDAR_DISPLAY_NAME,
+            CalendarContract.Instances.EVENT_LOCATION,
+            CalendarContract.Instances.DESCRIPTION,
+            CalendarContract.Instances.CALENDAR_COLOR,
+        )
+        val placeholders = calendarIds.joinToString(",") { "?" }
+        val selection =
+            "${CalendarContract.Instances.CALENDAR_ID} IN ($placeholders)"
+        val selectionArgs = calendarIds.map { it.toString() }.toTypedArray()
+        val result = mutableListOf<Map<String, Any?>>()
+
+        contentResolver.query(
+            uriBuilder.build(),
+            projection,
+            selection,
+            selectionArgs,
+            CalendarContract.Instances.BEGIN + " ASC",
+        )?.use { cursor ->
+            val eventIdIndex = cursor.getColumnIndexOrThrow(
+                CalendarContract.Instances.EVENT_ID,
+            )
+            val titleIndex = cursor.getColumnIndexOrThrow(
+                CalendarContract.Instances.TITLE,
+            )
+            val beginIndex = cursor.getColumnIndexOrThrow(
+                CalendarContract.Instances.BEGIN,
+            )
+            val endIndex = cursor.getColumnIndexOrThrow(
+                CalendarContract.Instances.END,
+            )
+            val allDayIndex = cursor.getColumnIndexOrThrow(
+                CalendarContract.Instances.ALL_DAY,
+            )
+            val calendarIdIndex = cursor.getColumnIndexOrThrow(
+                CalendarContract.Instances.CALENDAR_ID,
+            )
+            val calendarNameIndex = cursor.getColumnIndexOrThrow(
+                CalendarContract.Instances.CALENDAR_DISPLAY_NAME,
+            )
+            val locationIndex = cursor.getColumnIndexOrThrow(
+                CalendarContract.Instances.EVENT_LOCATION,
+            )
+            val descriptionIndex = cursor.getColumnIndexOrThrow(
+                CalendarContract.Instances.DESCRIPTION,
+            )
+            val colorIndex = cursor.getColumnIndexOrThrow(
+                CalendarContract.Instances.CALENDAR_COLOR,
+            )
+
+            while (cursor.moveToNext()) {
+                result += mapOf(
+                    "eventId" to cursor.getLong(eventIdIndex).toString(),
+                    "calendarId" to cursor.getLong(calendarIdIndex).toString(),
+                    "calendarName" to cursor.getString(calendarNameIndex).orEmpty(),
+                    "title" to cursor.getString(titleIndex).orEmpty(),
+                    "description" to cursor.getString(descriptionIndex).orEmpty(),
+                    "location" to cursor.getString(locationIndex).orEmpty(),
+                    "startMs" to cursor.getLong(beginIndex),
+                    "endMs" to cursor.getLong(endIndex),
+                    "allDay" to (cursor.getInt(allDayIndex) != 0),
+                    "color" to cursor.getInt(colorIndex),
+                )
+            }
+        }
+        return result
     }
 
     override fun onNewIntent(intent: Intent) {
@@ -630,6 +864,7 @@ def configure_manifest() -> None:
         '<uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />',
         '<uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />',
         '<uses-permission android:name="android.permission.RECORD_AUDIO" />',
+        '<uses-permission android:name="android.permission.READ_CALENDAR" />',
     ]
     manifest_close = re.search(r"<manifest\b[^>]*>", manifest)
     if manifest_close is None:
@@ -1155,6 +1390,14 @@ def verify() -> None:
         failures.append("ML Kit text recognition dependency")
     if "isCoreLibraryDesugaringEnabled = true" not in gradle:
         failures.append("core library desugaring")
+    activity = require_file(MAIN_ACTIVITY)
+    manifest = require_file(MANIFEST)
+    if 'annas_diary/external_calendar' not in activity:
+        failures.append("external calendar native channel")
+    if 'Manifest.permission.READ_CALENDAR' not in activity:
+        failures.append("external calendar native permission handling")
+    if 'android.permission.READ_CALENDAR' not in manifest:
+        failures.append("external calendar manifest permission")
     if not ICON_JPG.is_file() or ICON_JPG.stat().st_size == 0:
         failures.append("decoded launcher icon")
     if failures:

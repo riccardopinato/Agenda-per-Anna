@@ -1043,6 +1043,227 @@ class _NotificationSettingsCardState
   }
 }
 
+class ExternalCalendarSettingsCard extends StatelessWidget {
+  const ExternalCalendarSettingsCard({super.key});
+
+  Future<void> _primeVisibleRange() async {
+    final now = DateTime.now();
+    final start = DateTime(now.year, now.month, now.day)
+        .subtract(const Duration(days: 7));
+    final end = DateTime(now.year, now.month + 2, 1);
+    await ExternalCalendarService.instance.loadRange(start, end);
+  }
+
+  void _message(BuildContext context, String value) {
+    if (!context.mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(value)),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final service = ExternalCalendarService.instance;
+    unawaited(service.initialize());
+
+    return AnimatedBuilder(
+      animation: service,
+      builder: (context, _) {
+        if (!service.initialized) {
+          return const SimpleCard(
+            child: Row(
+              children: [
+                SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                ),
+                SizedBox(width: 12),
+                Expanded(
+                  child: Text('Preparazione calendari esterni…'),
+                ),
+              ],
+            ),
+          );
+        }
+
+        if (!service.supported) {
+          return const SimpleCard(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Calendari esterni',
+                  style: TextStyle(
+                    fontWeight: FontWeight.w900,
+                    fontSize: 18,
+                  ),
+                ),
+                SizedBox(height: 6),
+                Text(
+                  'In questa prima release l’overlay legge il calendario '
+                  'di sistema Android. Su Web/PWA il browser non espone '
+                  'direttamente gli eventi del dispositivo.',
+                ),
+                SizedBox(height: 8),
+                Text(
+                  'Gli eventi esterni restano separati: non diventano '
+                  'Diario, Memoria, Noi ♡ o dati cloud di Anna’s Diary.',
+                  style: TextStyle(fontWeight: FontWeight.w700),
+                ),
+              ],
+            ),
+          );
+        }
+
+        return SimpleCard(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Calendari esterni',
+                style: TextStyle(
+                  fontWeight: FontWeight.w900,
+                  fontSize: 18,
+                ),
+              ),
+              const SizedBox(height: 5),
+              Text(
+                'Mostra in sola lettura gli eventi dei calendari già '
+                'configurati sul dispositivo.',
+                style: Theme.of(context).textTheme.bodySmall,
+              ),
+              const SizedBox(height: 10),
+              if (!service.permissionGranted)
+                SizedBox(
+                  width: double.infinity,
+                  child: FilledButton.tonalIcon(
+                    onPressed: service.busy
+                        ? null
+                        : () async {
+                            final granted = await service.requestAccess();
+                            if (!context.mounted) return;
+                            if (granted) {
+                              await service.setEnabled(true);
+                              await _primeVisibleRange();
+                              if (!context.mounted) return;
+                              _message(
+                                context,
+                                'Calendari esterni attivati in sola lettura.',
+                              );
+                            } else {
+                              _message(
+                                context,
+                                'Permesso calendario non concesso.',
+                              );
+                            }
+                          },
+                    icon: const Icon(Icons.event_available_outlined),
+                    label: const Text('Consenti accesso al calendario'),
+                  ),
+                )
+              else ...[
+                SwitchListTile(
+                  contentPadding: EdgeInsets.zero,
+                  title: const Text('Mostra eventi esterni'),
+                  subtitle: const Text(
+                    'Overlay locale nell’Agenda; nessuna copia nel diario.',
+                  ),
+                  value: service.enabled,
+                  onChanged: service.busy
+                      ? null
+                      : (value) async {
+                          await service.setEnabled(value);
+                          if (value) await _primeVisibleRange();
+                        },
+                ),
+                if (service.calendars.isEmpty)
+                  const Padding(
+                    padding: EdgeInsets.only(top: 6),
+                    child: Text(
+                      'Nessun calendario visibile trovato sul dispositivo.',
+                    ),
+                  )
+                else ...[
+                  const Divider(),
+                  const Text(
+                    'Calendari visibili',
+                    style: TextStyle(fontWeight: FontWeight.w800),
+                  ),
+                  const SizedBox(height: 4),
+                  ...service.calendars.map(
+                    (calendar) => CheckboxListTile(
+                      contentPadding: EdgeInsets.zero,
+                      dense: true,
+                      value: service.selectedCalendarIds.contains(calendar.id),
+                      title: Text(calendar.name),
+                      subtitle: calendar.accountName.isEmpty
+                          ? null
+                          : Text(calendar.accountName),
+                      secondary: Icon(
+                        Icons.circle,
+                        size: 16,
+                        color: calendar.colorValue == null
+                            ? Theme.of(context).colorScheme.primary
+                            : Color(calendar.colorValue! & 0xFFFFFFFF),
+                      ),
+                      onChanged: service.busy
+                          ? null
+                          : (value) async {
+                              await service.setCalendarSelected(
+                                calendar.id,
+                                value ?? false,
+                              );
+                              if (service.enabled) await _primeVisibleRange();
+                            },
+                    ),
+                  ),
+                ],
+                const SizedBox(height: 6),
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: TextButton.icon(
+                    onPressed: service.busy
+                        ? null
+                        : () async {
+                            await service.refreshCalendars();
+                            if (service.enabled) await _primeVisibleRange();
+                          },
+                    icon: const Icon(Icons.refresh),
+                    label: const Text('Aggiorna calendari'),
+                  ),
+                ),
+              ],
+              if (service.lastError != null) ...[
+                const SizedBox(height: 8),
+                Text(
+                  service.lastError!,
+                  style: TextStyle(
+                    color: Theme.of(context).colorScheme.error,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ],
+              if (service.busy) ...[
+                const SizedBox(height: 8),
+                const LinearProgressIndicator(),
+              ],
+              const SizedBox(height: 8),
+              Text(
+                'Privacy: Anna’s Diary richiede solo lettura. Gli eventi '
+                'rimangono nel calendario originale, non vengono sincronizzati '
+                'dal backend dell’app e non alimentano automaticamente Diario '
+                'o Memoria.',
+                style: Theme.of(context).textTheme.bodySmall,
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+}
+
 class SettingsScreen extends StatefulWidget {
   final AgendaStore store;
 
@@ -1484,6 +1705,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
               ),
               const SizedBox(height: 12),
               _NotificationSettingsCard(store: widget.store),
+              const SizedBox(height: 12),
+              const ExternalCalendarSettingsCard(),
               const SizedBox(height: 12),
               SimpleCard(
                 child: Column(

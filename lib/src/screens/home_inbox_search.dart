@@ -59,10 +59,11 @@ class HomeScreen extends StatelessWidget {
         store.workoutRevision,
         store.settingsRevision,
         store.backupRevision,
+        ExternalCalendarService.instance,
       ]),
       builder: (context, _) {
         unawaited(HomeWidgetBridge.instance.sync(store));
-        final today = store.unifiedForDay(now);
+        final today = agendaEntriesForDayWithExternal(store, now);
         final upcoming = store.unifiedUpcoming(now);
         final briefing = store.dayHubSnapshot(now);
         final birthdayPreview = store.upcomingBirthdays(from: now, limit: 1);

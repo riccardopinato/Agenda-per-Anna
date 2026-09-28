@@ -2,7 +2,7 @@
 
 Flutter app for personal planning, private diary and the shared **Noi ♡** space.
 
-Current release line: **v0.72.0**.
+Current release line: **v0.73.0**.
 
 ## Core areas
 
@@ -461,6 +461,16 @@ See `docs/ARCHITECTURE.md` and `supabase/README.md` for implementation details.
 - Shared shopping stays outside the agenda/feed so grocery changes do not pollute the couple timeline.
 - No shopping backend table, new collaboration engine, AI service or external API is introduced.
 
+
+## v0.73.0 — External Calendar Overlay
+
+- Android can show events from calendars already configured on the device through the system Calendar Provider.
+- Access is explicitly opt-in and read-only; Anna's Diary requests `READ_CALENDAR` but never writes to the external calendar.
+- Users can enable/disable the overlay and choose which visible device calendars are shown.
+- External events appear in Home/Today, Calendar, Day Hub and Week surfaces without entering the canonical private/shared agenda store.
+- External events never become Diary, Memory, Noi ♡, backup payloads or cloud-sync entities automatically.
+- Calendar selection and overlay state remain local to the device. Web/PWA surfaces explain that direct device-calendar access is not available in this release.
+- Android platform generation, manifest permission and MethodChannel bridging remain versioned in `tool/prepare_android_platform.py`, so CI-generated Android builds preserve the feature.
 
 ## v0.72.0 — Multisport Workout
 

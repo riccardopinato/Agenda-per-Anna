@@ -377,3 +377,14 @@ Allenamento is one personal domain with two first-class private entities:
 - **Lifecycle:** both are recoverable through the existing Trash contract.
 - **Backup/export:** the ordinary structured backup and readable export include both collections. Plan imports are converted immediately to model rows and do not create a second file repository.
 - **History integrity:** a session owns its copied exercise snapshot. A future edit or deletion of the originating plan cannot mutate past sessions.
+
+
+## External Calendar Overlay (v0.73)
+
+External calendars are an **ephemeral read-only projection**, not a new source of truth.
+
+- `ExternalCalendarService` reads visible Android system calendars through a single MethodChannel and keeps only a bounded in-memory event window plus local device preferences.
+- `UnifiedAgendaEntry.external` adapts those events for existing agenda UI surfaces without inserting them into `AgendaStore.items`, shared queues, diary blocks or memory references.
+- Android platform generation owns the `READ_CALENDAR` permission and Calendar Provider bridge in `tool/prepare_android_platform.py`; generated `android/` files remain disposable.
+- No external-calendar entity is written to private cloud sync, Supabase, backups, Trash, Noi ♡, Diary or Memory.
+- Web/PWA does not emulate device calendar access; the settings surface reports the platform limitation instead.
