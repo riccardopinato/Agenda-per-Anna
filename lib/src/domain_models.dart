@@ -504,6 +504,313 @@ class ShoppingItem {
       );
 }
 
+enum WorkoutSport {
+  gym,
+  running,
+  cycling,
+  swimming,
+  walking,
+  hiking,
+  yogaMobility,
+  teamSport,
+  other,
+}
+
+extension WorkoutSportUi on WorkoutSport {
+  String get label => switch (this) {
+        WorkoutSport.gym => 'Palestra',
+        WorkoutSport.running => 'Corsa',
+        WorkoutSport.cycling => 'Bici',
+        WorkoutSport.swimming => 'Nuoto',
+        WorkoutSport.walking => 'Camminata',
+        WorkoutSport.hiking => 'Trekking',
+        WorkoutSport.yogaMobility => 'Yoga / Mobilità',
+        WorkoutSport.teamSport => 'Sport di squadra',
+        WorkoutSport.other => 'Altro',
+      };
+
+  IconData get icon => switch (this) {
+        WorkoutSport.gym => Icons.fitness_center,
+        WorkoutSport.running => Icons.directions_run,
+        WorkoutSport.cycling => Icons.directions_bike,
+        WorkoutSport.swimming => Icons.pool,
+        WorkoutSport.walking => Icons.directions_walk,
+        WorkoutSport.hiking => Icons.hiking,
+        WorkoutSport.yogaMobility => Icons.self_improvement,
+        WorkoutSport.teamSport => Icons.sports_soccer,
+        WorkoutSport.other => Icons.sports_outlined,
+      };
+
+  bool get supportsDistance => switch (this) {
+        WorkoutSport.running ||
+        WorkoutSport.cycling ||
+        WorkoutSport.swimming ||
+        WorkoutSport.walking ||
+        WorkoutSport.hiking => true,
+        _ => false,
+      };
+
+  bool get prefersPace => switch (this) {
+        WorkoutSport.running ||
+        WorkoutSport.walking ||
+        WorkoutSport.hiking => true,
+        _ => false,
+      };
+}
+
+class WorkoutExercise {
+  final String id;
+  final String name;
+  final int sets;
+  final String reps;
+  final double? loadKg;
+  final String note;
+
+  const WorkoutExercise({
+    required this.id,
+    required this.name,
+    this.sets = 0,
+    this.reps = '',
+    this.loadKg,
+    this.note = '',
+  });
+
+  WorkoutExercise copyWith({
+    String? name,
+    int? sets,
+    String? reps,
+    double? loadKg,
+    bool clearLoad = false,
+    String? note,
+  }) =>
+      WorkoutExercise(
+        id: id,
+        name: name ?? this.name,
+        sets: sets ?? this.sets,
+        reps: reps ?? this.reps,
+        loadKg: clearLoad ? null : (loadKg ?? this.loadKg),
+        note: note ?? this.note,
+      );
+
+  Map<String, dynamic> toJson() => {
+        'id': id,
+        'name': name,
+        'sets': sets,
+        'reps': reps,
+        'loadKg': loadKg,
+        'note': note,
+      };
+
+  factory WorkoutExercise.fromJson(Map<String, dynamic> json) =>
+      WorkoutExercise(
+        id: json['id'] as String? ?? const Uuid().v4(),
+        name: json['name'] as String? ?? '',
+        sets: max(0, (json['sets'] as num? ?? 0).toInt()),
+        reps: json['reps'] as String? ?? '',
+        loadKg: (json['loadKg'] as num?)?.toDouble(),
+        note: json['note'] as String? ?? '',
+      );
+}
+
+class WorkoutPlan {
+  final String id;
+  final String name;
+  final WorkoutSport sport;
+  final String note;
+  final List<WorkoutExercise> exercises;
+  final DateTime createdAt;
+  final DateTime updatedAt;
+
+  const WorkoutPlan({
+    required this.id,
+    required this.name,
+    required this.sport,
+    required this.createdAt,
+    required this.updatedAt,
+    this.note = '',
+    this.exercises = const [],
+  });
+
+  WorkoutPlan copyWith({
+    String? name,
+    WorkoutSport? sport,
+    String? note,
+    List<WorkoutExercise>? exercises,
+    DateTime? updatedAt,
+  }) =>
+      WorkoutPlan(
+        id: id,
+        name: name ?? this.name,
+        sport: sport ?? this.sport,
+        note: note ?? this.note,
+        exercises: exercises ?? this.exercises,
+        createdAt: createdAt,
+        updatedAt: updatedAt ?? this.updatedAt,
+      );
+
+  Map<String, dynamic> toJson() => {
+        'id': id,
+        'name': name,
+        'sport': sport.name,
+        'note': note,
+        'exercises': exercises.map((exercise) => exercise.toJson()).toList(),
+        'createdAt': createdAt.toUtc().toIso8601String(),
+        'updatedAt': updatedAt.toUtc().toIso8601String(),
+      };
+
+  factory WorkoutPlan.fromJson(Map<String, dynamic> json) {
+    final created =
+        DateTime.tryParse(json['createdAt'] as String? ?? '')?.toLocal() ??
+            DateTime.now();
+    return WorkoutPlan(
+      id: json['id'] as String? ?? const Uuid().v4(),
+      name: json['name'] as String? ?? '',
+      sport: WorkoutSport.values.firstWhere(
+        (sport) => sport.name == json['sport'],
+        orElse: () => WorkoutSport.gym,
+      ),
+      note: json['note'] as String? ?? '',
+      exercises: (json['exercises'] as List? ?? const [])
+          .whereType<Map>()
+          .map(
+            (value) => WorkoutExercise.fromJson(
+              Map<String, dynamic>.from(value),
+            ),
+          )
+          .where((exercise) => exercise.name.trim().isNotEmpty)
+          .toList(growable: false),
+      createdAt: created,
+      updatedAt:
+          DateTime.tryParse(json['updatedAt'] as String? ?? '')?.toLocal() ??
+              created,
+    );
+  }
+}
+
+class WorkoutSession {
+  final String id;
+  final WorkoutSport sport;
+  final String title;
+  final DateTime date;
+  final int durationSeconds;
+  final double? distanceKm;
+  final int? elevationGainM;
+  final int? effort;
+  final String note;
+  final String planName;
+  final List<WorkoutExercise> exercises;
+  final DateTime createdAt;
+
+  const WorkoutSession({
+    required this.id,
+    required this.sport,
+    required this.title,
+    required this.date,
+    required this.createdAt,
+    this.durationSeconds = 0,
+    this.distanceKm,
+    this.elevationGainM,
+    this.effort,
+    this.note = '',
+    this.planName = '',
+    this.exercises = const [],
+  });
+
+  double? get averageSpeedKmh {
+    if (distanceKm == null || distanceKm! <= 0 || durationSeconds <= 0) {
+      return null;
+    }
+    return distanceKm! / (durationSeconds / 3600);
+  }
+
+  int? get paceSecondsPerKm {
+    if (distanceKm == null || distanceKm! <= 0 || durationSeconds <= 0) {
+      return null;
+    }
+    return (durationSeconds / distanceKm!).round();
+  }
+
+  WorkoutSession copyWith({
+    WorkoutSport? sport,
+    String? title,
+    DateTime? date,
+    int? durationSeconds,
+    double? distanceKm,
+    bool clearDistance = false,
+    int? elevationGainM,
+    bool clearElevation = false,
+    int? effort,
+    bool clearEffort = false,
+    String? note,
+    String? planName,
+    List<WorkoutExercise>? exercises,
+  }) =>
+      WorkoutSession(
+        id: id,
+        sport: sport ?? this.sport,
+        title: title ?? this.title,
+        date: date ?? this.date,
+        durationSeconds: durationSeconds ?? this.durationSeconds,
+        distanceKm: clearDistance ? null : (distanceKm ?? this.distanceKm),
+        elevationGainM:
+            clearElevation ? null : (elevationGainM ?? this.elevationGainM),
+        effort: clearEffort ? null : (effort ?? this.effort),
+        note: note ?? this.note,
+        planName: planName ?? this.planName,
+        exercises: exercises ?? this.exercises,
+        createdAt: createdAt,
+      );
+
+  Map<String, dynamic> toJson() => {
+        'id': id,
+        'sport': sport.name,
+        'title': title,
+        'date': date.toUtc().toIso8601String(),
+        'durationSeconds': durationSeconds,
+        'distanceKm': distanceKm,
+        'elevationGainM': elevationGainM,
+        'effort': effort,
+        'note': note,
+        'planName': planName,
+        'exercises': exercises.map((exercise) => exercise.toJson()).toList(),
+        'createdAt': createdAt.toUtc().toIso8601String(),
+      };
+
+  factory WorkoutSession.fromJson(Map<String, dynamic> json) {
+    final date =
+        DateTime.tryParse(json['date'] as String? ?? '')?.toLocal() ??
+            DateTime.now();
+    return WorkoutSession(
+      id: json['id'] as String? ?? const Uuid().v4(),
+      sport: WorkoutSport.values.firstWhere(
+        (sport) => sport.name == json['sport'],
+        orElse: () => WorkoutSport.other,
+      ),
+      title: json['title'] as String? ?? '',
+      date: date,
+      durationSeconds:
+          max(0, (json['durationSeconds'] as num? ?? 0).toInt()),
+      distanceKm: (json['distanceKm'] as num?)?.toDouble(),
+      elevationGainM: (json['elevationGainM'] as num?)?.toInt(),
+      effort: (json['effort'] as num?)?.toInt(),
+      note: json['note'] as String? ?? '',
+      planName: json['planName'] as String? ?? '',
+      exercises: (json['exercises'] as List? ?? const [])
+          .whereType<Map>()
+          .map(
+            (value) => WorkoutExercise.fromJson(
+              Map<String, dynamic>.from(value),
+            ),
+          )
+          .where((exercise) => exercise.name.trim().isNotEmpty)
+          .toList(growable: false),
+      createdAt:
+          DateTime.tryParse(json['createdAt'] as String? ?? '')?.toLocal() ??
+              date,
+    );
+  }
+}
+
 class InboxEntry {
   final String id;
   final String text;

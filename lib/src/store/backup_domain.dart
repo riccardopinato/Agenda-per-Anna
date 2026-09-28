@@ -19,6 +19,9 @@ class _AgendaBackupDomain {
         'people': store.people.map((e) => e.toJson()).toList(),
         'inbox': store.inbox.map((e) => e.toJson()).toList(),
         'shopping': store.shoppingItems.map((e) => e.toJson()).toList(),
+        'workoutSessions':
+            store.workoutSessions.map((e) => e.toJson()).toList(),
+        'workoutPlans': store.workoutPlans.map((e) => e.toJson()).toList(),
         'trash': store.trash.map((e) => e.toJson()).toList(),
         'preferences': store.preferences.toJson(),
       };
@@ -45,6 +48,9 @@ class _AgendaBackupDomain {
       'people': store.people.map((e) => e.toJson()).toList(),
       'inbox': store.inbox.map((e) => e.toJson()).toList(),
       'shopping': store.shoppingItems.map((e) => e.toJson()).toList(),
+      'workoutSessions':
+          store.workoutSessions.map((e) => e.toJson()).toList(),
+      'workoutPlans': store.workoutPlans.map((e) => e.toJson()).toList(),
       'trash': portableTrash,
       'preferences': store.preferences.toJson(),
     };
@@ -367,6 +373,55 @@ class _AgendaBackupDomain {
         buffer.writeln(
           '$mark ${item.name}$quantity · ${item.category.label}',
         );
+      }
+    }
+
+    buffer.writeln();
+    buffer.writeln(
+      '============================================================',
+    );
+    buffer.writeln('ALLENAMENTO');
+    buffer.writeln(
+      '============================================================',
+    );
+
+    if (store.workoutSessions.isEmpty && store.workoutPlans.isEmpty) {
+      buffer.writeln('Nessun allenamento o scheda salvata.');
+    } else {
+      final sessions = [...store.workoutHistory];
+      if (sessions.isNotEmpty) {
+        buffer.writeln('Sessioni:');
+        for (final session in sessions) {
+          final date =
+              DateFormat('d MMMM yyyy', 'it_IT').format(session.date);
+          final parts = <String>[
+            session.sport.label,
+            if (session.distanceKm != null)
+              '${session.distanceKm!.toStringAsFixed(
+                    session.distanceKm! % 1 == 0 ? 0 : 2,
+                  )} km',
+            if (session.durationSeconds > 0)
+              store.formatWorkoutDuration(session.durationSeconds),
+            if (store.workoutPerformanceLabel(session) case final value?)
+              value,
+          ];
+          buffer.writeln('- $date · ${session.title}');
+          buffer.writeln('  ${parts.join(' · ')}');
+          if (session.note.trim().isNotEmpty) {
+            buffer.writeln('  Note: ${session.note.trim()}');
+          }
+        }
+      }
+
+      if (store.workoutPlans.isNotEmpty) {
+        buffer.writeln();
+        buffer.writeln('Schede:');
+        for (final plan in store.workoutPlansSorted) {
+          buffer.writeln(
+            '- ${plan.name} · ${plan.sport.label} · '
+            '${plan.exercises.length} esercizi',
+          );
+        }
       }
     }
 

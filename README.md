@@ -2,7 +2,7 @@
 
 Flutter app for personal planning, private diary and the shared **Noi ♡** space.
 
-Current release line: **v0.71.0**.
+Current release line: **v0.72.0**.
 
 ## Core areas
 
@@ -460,3 +460,16 @@ See `docs/ARCHITECTURE.md` and `supabase/README.md` for implementation details.
 - **Noi ♡** exposes a dedicated shared shopping list by reusing the existing generic `SharedEntry` payload, offline pending queue, Realtime refresh and tombstone conflict rules.
 - Shared shopping stays outside the agenda/feed so grocery changes do not pollute the couple timeline.
 - No shopping backend table, new collaboration engine, AI service or external API is introduced.
+
+
+## v0.72.0 — Multisport Workout
+
+- Adds one dedicated **Allenamento** section that stores both completed sessions and reusable plans without mixing workout history into the diary.
+- Sessions are sport-agnostic: gym, running, cycling, swimming, walking, hiking, yoga/mobility, team sports and custom/other activities share the same lightweight model.
+- Endurance sessions can record distance, duration and optional elevation; running/walking/hiking derive pace, while cycling/swimming and other distance sports can derive average speed.
+- Intensity (RPE 1–10) and free notes are optional, so an entry can be as simple as “15 km corsa · 1:05:20” or “50 km bici · 1:45:00”.
+- Reusable workout plans support structured rows such as `Panca 4x8 @ 60kg` as well as free-text blocks.
+- TXT/CSV plan import reuses the existing file picker and parses locally; no AI, OCR service or new upload backend is introduced.
+- Starting a session from a plan copies the plan/exercise snapshot into the historical session so later plan edits cannot rewrite past training history.
+- Sessions and plans reuse existing account profiles, granular private sync, backup/restore and Trash lifecycle through `workout_session` and `workout_plan` entities.
+- No workout-specific backend table or parallel cloud engine is introduced.
