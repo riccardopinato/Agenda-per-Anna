@@ -208,6 +208,148 @@ extension ShoppingAgendaStore on AgendaStore {
     _notifyShoppingChanged();
   }
 
+  int _nextSharedShoppingOrder(String spaceId) {
+    final entries = sharedShoppingItems(spaceId)
+        .where((entry) => !entry.done)
+        .toList(growable: false);
+    if (entries.isEmpty) return 0;
+    return entries.map((entry) => entry.shoppingOrder).fold<int>(0, max) + 1;
+  }
+
+  Future<SharedEntry?> addSharedShoppingItem(
+    String spaceId,
+    String name, {
+    String quantity = '',
+    ShoppingCategory? category,
+  }) async {
+    final cleanName = name.trim();
+    if (cleanName.isEmpty) return null;
+    final normalized = cleanName.toLowerCase();
+    SharedEntry? existing;
+    for (final entry in sharedShoppingItems(spaceId)) {
+      if (entry.title.trim().toLowerCase() == normalized) {
+        existing = entry;
+        break;
+      }
+    }
+
+    final revision = DateTime.now().toUtc();
+    final next = existing == null
+        ? SharedEntry(
+            id: const Uuid().v4(),
+            type: SharedEntryType.shopping,
+            title: cleanName,
+            note: '',
+            date: DateTime.now(),
+            createdAt: DateTime.now(),
+            shoppingQuantity: quantity.trim(),
+            shoppingCategory: category ?? inferShoppingCategory(cleanName),
+            shoppingOrder: _nextSharedShoppingOrder(spaceId),
+            shoppingPurchaseCount: 0,
+          )
+        : existing.copyWith(
+            title: cleanName,
+            done: false,
+            shoppingQuantity: quantity.trim().isEmpty
+                ? existing.shoppingQuantity
+                : quantity.trim(),
+            shoppingCategory: category ?? existing.shoppingCategory,
+            shoppingOrder: _nextSharedShoppingOrder(spaceId),
+          );
+
+    await enqueueSharedUpsert(
+      spaceId: spaceId,
+      entry: next,
+      updatedAt: revision,
+    );
+    _scheduleDeferredSharedCloudSync();
+    return next;
+  }
+
+  Future<void> updateSharedShoppingItem(
+    String spaceId,
+    SharedEntry entry, {
+    String? name,
+    String? quantity,
+    ShoppingCategory? category,
+  }) async {
+    if (entry.type != SharedEntryType.shopping) return;
+    final cleanName = (name ?? entry.title).trim();
+    if (cleanName.isEmpty) return;
+    final revision = DateTime.now().toUtc();
+    await enqueueSharedUpsert(
+      spaceId: spaceId,
+      entry: entry.copyWith(
+        title: cleanName,
+        shoppingQuantity: quantity?.trim(),
+        shoppingCategory: category,
+      ),
+      updatedAt: revision,
+    );
+    _scheduleDeferredSharedCloudSync();
+  }
+
+  Future<void> toggleSharedShoppingItem(
+    String spaceId,
+    SharedEntry entry,
+  ) async {
+    if (entry.type != SharedEntryType.shopping) return;
+    final completing = !entry.done;
+    final revision = DateTime.now().toUtc();
+    await enqueueSharedUpsert(
+      spaceId: spaceId,
+      entry: entry.copyWith(
+        done: completing,
+        shoppingPurchaseCount: completing
+            ? entry.shoppingPurchaseCount + 1
+            : entry.shoppingPurchaseCount,
+        shoppingLastPurchasedAt:
+            completing ? DateTime.now() : entry.shoppingLastPurchasedAt,
+        shoppingOrder: completing
+            ? entry.shoppingOrder
+            : _nextSharedShoppingOrder(spaceId),
+      ),
+      updatedAt: revision,
+    );
+    _scheduleDeferredSharedCloudSync();
+  }
+
+  Future<void> reorderSharedShoppingItems(
+    String spaceId,
+    List<String> orderedIds,
+  ) async {
+    if (orderedIds.isEmpty) return;
+    final entries = {
+      for (final entry in sharedShoppingItems(spaceId)) entry.id: entry,
+    };
+    final revision = DateTime.now().toUtc();
+    for (var index = 0; index < orderedIds.length; index++) {
+      final entry = entries[orderedIds[index]];
+      if (entry == null || entry.done || entry.shoppingOrder == index) {
+        continue;
+      }
+      await enqueueSharedUpsert(
+        spaceId: spaceId,
+        entry: entry.copyWith(shoppingOrder: index),
+        updatedAt: revision.add(Duration(microseconds: index)),
+      );
+    }
+    _scheduleDeferredSharedCloudSync();
+  }
+
+  Future<void> deleteSharedShoppingItem(
+    String spaceId,
+    SharedEntry entry,
+  ) async {
+    if (entry.type != SharedEntryType.shopping) return;
+    await enqueueSharedDelete(
+      spaceId: spaceId,
+      entityId: entry.id,
+      updatedAt: DateTime.now().toUtc(),
+    );
+    _scheduleDeferredSharedCloudSync();
+  }
+
   List<SharedEntry> sharedShoppingItems(String spaceId) {
     final result = sharedEntriesForSpace(spaceId)
         .where((entry) => entry.type == SharedEntryType.shopping)
