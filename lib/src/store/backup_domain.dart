@@ -19,6 +19,8 @@ class _AgendaBackupDomain {
         'people': store.people.map((e) => e.toJson()).toList(),
         'inbox': store.inbox.map((e) => e.toJson()).toList(),
         'shopping': store.shoppingItems.map((e) => e.toJson()).toList(),
+        'trainingPlans': store.trainingPlans.map((e) => e.toLocalJson()).toList(),
+        'trainingSessions': store.trainingSessions.map((e) => e.toJson()).toList(),
         'trash': store.trash.map((e) => e.toJson()).toList(),
         'preferences': store.preferences.toJson(),
       };
@@ -45,6 +47,11 @@ class _AgendaBackupDomain {
       'people': store.people.map((e) => e.toJson()).toList(),
       'inbox': store.inbox.map((e) => e.toJson()).toList(),
       'shopping': store.shoppingItems.map((e) => e.toJson()).toList(),
+      'trainingPlans': [
+        for (final plan in store.trainingPlans)
+          await store._portableTrainingPlanJson(plan),
+      ],
+      'trainingSessions': store.trainingSessions.map((e) => e.toJson()).toList(),
       'trash': portableTrash,
       'preferences': store.preferences.toJson(),
     };
@@ -367,6 +374,47 @@ class _AgendaBackupDomain {
         buffer.writeln(
           '$mark ${item.name}$quantity · ${item.category.label}',
         );
+      }
+    }
+
+    buffer.writeln();
+    buffer.writeln(
+      '============================================================',
+    );
+    buffer.writeln('ALLENAMENTO');
+    buffer.writeln(
+      '============================================================',
+    );
+
+    if (store.trainingSessions.isEmpty && store.trainingPlans.isEmpty) {
+      buffer.writeln('Nessun allenamento o scheda salvata.');
+    } else {
+      if (store.trainingPlans.isNotEmpty) {
+        buffer.writeln('Schede:');
+        for (final plan in store.trainingPlans) {
+          final days = plan.weekdays
+              .map((day) => const ['Lun', 'Mar', 'Mer', 'Gio', 'Ven', 'Sab', 'Dom'][day - 1])
+              .join(', ');
+          buffer.writeln(
+            '- ${plan.title} · ${plan.sportLabel}'
+            '${days.isEmpty ? '' : ' · $days'}'
+            '${plan.attachmentName.isEmpty ? '' : ' · file: ${plan.attachmentName}'}',
+          );
+        }
+      }
+      if (store.trainingSessions.isNotEmpty) {
+        buffer.writeln('Storico:');
+        for (final session in store.trainingHistory) {
+          final distance = session.distanceKm == null
+              ? ''
+              : ' · ${session.distanceKm!.toStringAsFixed(2)} km';
+          final duration =
+              session.durationLabel.isEmpty ? '' : ' · ${session.durationLabel}';
+          buffer.writeln(
+            '- ${DateFormat('d MMMM yyyy', 'it_IT').format(session.date)} · '
+            '${session.sportLabel} · ${session.title}$distance$duration',
+          );
+        }
       }
     }
 
