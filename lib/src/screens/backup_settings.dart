@@ -1417,9 +1417,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
         return Scaffold(
           appBar: AppBar(
-            title: const Text(
-              'Impostazioni',
-              style: TextStyle(fontWeight: FontWeight.w800),
+            title: Text(
+              AgendaLocalization.text(context, 'settings.title'),
+              style: const TextStyle(fontWeight: FontWeight.w800),
             ),
           ),
           body: ListView(
@@ -1453,6 +1453,49 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         onPressed: _saveName,
                         child: const Text('Salva nome'),
                       ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 12),
+              SimpleCard(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      AgendaLocalization.text(context, 'settings.language'),
+                      style: const TextStyle(
+                        fontWeight: FontWeight.w900,
+                        fontSize: 18,
+                      ),
+                    ),
+                    const SizedBox(height: 5),
+                    Text(
+                      AgendaLocalization.text(context, 'settings.languageHelp'),
+                      style: Theme.of(context).textTheme.bodySmall,
+                    ),
+                    const SizedBox(height: 12),
+                    DropdownButtonFormField<AppLanguage>(
+                      initialValue: prefs.language,
+                      decoration: InputDecoration(
+                        prefixIcon: const Icon(Icons.translate_outlined),
+                        labelText:
+                            AgendaLocalization.text(context, 'settings.language'),
+                      ),
+                      items: AppLanguage.values
+                          .map(
+                            (value) => DropdownMenuItem(
+                              value: value,
+                              child: Text(value.nativeLabel),
+                            ),
+                          )
+                          .toList(),
+                      onChanged: (value) {
+                        if (value == null) return;
+                        widget.store.savePreferences(
+                          prefs.copyWith(language: value),
+                        );
+                      },
                     ),
                   ],
                 ),
