@@ -123,7 +123,7 @@ class BirthdaysScreen extends StatelessWidget {
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(dialogContext),
-              child: const Text('Annulla'),
+              child: Text(strings.cancel),
             ),
             FilledButton(
               onPressed: () {
@@ -142,7 +142,7 @@ class BirthdaysScreen extends StatelessWidget {
                   ),
                 );
               },
-              child: const Text('Salva'),
+              child: Text(strings.save),
             ),
           ],
         ),
@@ -159,21 +159,22 @@ class BirthdaysScreen extends StatelessWidget {
     BuildContext context,
     BirthdayEntry birthday,
   ) async {
+    final strings = AnnaStrings.of(context);
     final confirmed = await showDialog<bool>(
           context: context,
           builder: (dialogContext) => AlertDialog(
-            title: const Text('Spostare nel Cestino?'),
+            title: Text(strings.moveToTrashQuestion),
             content: Text(
-              'Il compleanno di “${birthday.name}” potrà essere ripristinato dal Cestino.',
+              strings.birthdayTrashDescription(birthday.name),
             ),
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(dialogContext, false),
-                child: const Text('Annulla'),
+                child: Text(strings.cancel),
               ),
               FilledButton(
                 onPressed: () => Navigator.pop(dialogContext, true),
-                child: const Text('Sposta nel Cestino'),
+                child: Text(strings.moveToTrash),
               ),
             ],
           ),
@@ -188,18 +189,19 @@ class BirthdaysScreen extends StatelessWidget {
     return AnimatedBuilder(
       animation: store.planningRevision,
       builder: (context, _) {
+        final strings = AnnaStrings.of(context);
         final upcoming = store.upcomingBirthdays(limit: 100);
         return Scaffold(
           appBar: AppBar(
-            title: const Text(
-              'Compleanni',
-              style: TextStyle(fontWeight: FontWeight.w800),
+            title: Text(
+              strings.birthdays,
+              style: const TextStyle(fontWeight: FontWeight.w800),
             ),
           ),
           floatingActionButton: FloatingActionButton.extended(
             onPressed: () => _edit(context),
             icon: const Icon(Icons.add),
-            label: const Text('Aggiungi'),
+            label: Text(strings.add),
           ),
           body: upcoming.isEmpty
               ? Center(
@@ -211,14 +213,14 @@ class BirthdaysScreen extends StatelessWidget {
                         const Icon(Icons.cake_outlined, size: 54),
                         const SizedBox(height: 12),
                         Text(
-                          'Nessun compleanno salvato',
+                          strings.noBirthdaysSaved,
                           style: Theme.of(context).textTheme.titleMedium?.copyWith(
                                 fontWeight: FontWeight.w800,
                               ),
                         ),
                         const SizedBox(height: 6),
-                        const Text(
-                          'Aggiungili una volta: compariranno ogni anno nella giornata giusta e nei promemoria.',
+                        Text(
+                          strings.birthdaysEmptyDescription,
                           textAlign: TextAlign.center,
                         ),
                       ],
@@ -234,12 +236,12 @@ class BirthdaysScreen extends StatelessWidget {
                     final birthday = occurrence.birthday;
                     final age = occurrence.age == null
                         ? ''
-                        : ' · ${occurrence.age} anni';
+                        : ' · ${strings.ageYears(occurrence.age!)}';
                     final reminder = birthday.reminderDaysBefore == null
-                        ? 'Promemoria disattivato'
+                        ? strings.reminderDisabled
                         : birthday.reminderDaysBefore == 0
-                            ? 'Promemoria il giorno stesso'
-                            : 'Promemoria ${birthday.reminderDaysBefore} gg prima';
+                            ? strings.reminderSameDay
+                            : strings.reminderDaysBeforeShort(birthday.reminderDaysBefore!);
                     return Card(
                       child: ListTile(
                         leading: const CircleAvatar(
@@ -250,7 +252,7 @@ class BirthdaysScreen extends StatelessWidget {
                           style: const TextStyle(fontWeight: FontWeight.w800),
                         ),
                         subtitle: Text(
-                          '${DateFormat('d MMMM yyyy', 'it_IT').format(occurrence.date)}$age\n$reminder',
+                          '${DateFormat('d MMMM yyyy', AnnaStrings.intlLocale(context)).format(occurrence.date)}$age\n$reminder',
                         ),
                         isThreeLine: true,
                         onTap: () => _edit(context, existing: birthday),
@@ -262,14 +264,14 @@ class BirthdaysScreen extends StatelessWidget {
                               _delete(context, birthday);
                             }
                           },
-                          itemBuilder: (_) => const [
+                          itemBuilder: (_) => [
                             PopupMenuItem(
                               value: 'edit',
-                              child: Text('Modifica'),
+                              child: Text(strings.edit),
                             ),
                             PopupMenuItem(
                               value: 'delete',
-                              child: Text('Sposta nel Cestino'),
+                              child: Text(strings.moveToTrash),
                             ),
                           ],
                         ),
