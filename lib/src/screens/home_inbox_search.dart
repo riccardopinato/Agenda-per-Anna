@@ -1000,23 +1000,23 @@ class InboxScreen extends StatelessWidget {
                                 entry.pinned ? strings.unpin : strings.pin,
                               ),
                             ),
-                            const PopupMenuItem(
+                            PopupMenuItem(
                               value: 'tags',
                               child: Text(strings.tags),
                             ),
-                            const PopupMenuItem(
+                            PopupMenuItem(
                               value: 'archive',
                               child: Text(strings.archiveAction),
                             ),
-                            const PopupMenuItem(
+                            PopupMenuItem(
                               value: 'notes',
                               child: Text(strings.copyForNotes),
                             ),
-                            const PopupMenuItem(
+                            PopupMenuItem(
                               value: 'task',
                               child: Text(strings.convertToTask),
                             ),
-                            const PopupMenuItem(
+                            PopupMenuItem(
                               value: 'delete',
                               child: Text(strings.delete),
                             ),
