@@ -34,6 +34,43 @@ class DiaryBlockReference {
   });
 }
 
+enum MemoryRecallFacetKind { person, place }
+
+class MemoryRecallFacet {
+  final MemoryRecallFacetKind kind;
+  final String id;
+  final String label;
+  final int count;
+
+  const MemoryRecallFacet({
+    required this.kind,
+    required this.id,
+    required this.label,
+    required this.count,
+  });
+}
+
+class MemoryRecallSnapshot {
+  final DateTime anchor;
+  final List<DiaryBlockReference> onThisDay;
+  final List<DiaryBlockReference> sameMonthPastYears;
+  final List<DiaryBlockReference> yearHighlights;
+  final List<MemoryRecallFacet> people;
+  final List<MemoryRecallFacet> places;
+
+  const MemoryRecallSnapshot({
+    required this.anchor,
+    required this.onThisDay,
+    required this.sameMonthPastYears,
+    required this.yearHighlights,
+    required this.people,
+    required this.places,
+  });
+
+  bool get isEmpty => yearHighlights.isEmpty;
+  int get historicalYears => yearHighlights.length;
+}
+
 class PersonalSearchHit {
   final PersonalSearchKind kind;
   final String id;
@@ -107,6 +144,124 @@ extension SearchConnectionsAgendaStore on AgendaStore {
               reference.date.day == day.day,
         )
         .toList(growable: false);
+  }
+
+  MemoryRecallSnapshot memoryRecallSnapshot(
+    DateTime anchor, {
+    String? personId,
+    Iterable<DiaryBlockReference>? references,
+  }) {
+    final anchorDay = DateTime(anchor.year, anchor.month, anchor.day);
+    final historical = (references ??
+            memoryReferences(
+              personId: personId,
+            ))
+        .where(
+          (reference) =>
+              !reference.block.archived &&
+              reference.date.isBefore(anchorDay) &&
+              (personId == null ||
+                  reference.block.personIds.contains(personId)),
+        )
+        .toList(growable: false)
+      ..sort((a, b) {
+        final dateOrder = b.date.compareTo(a.date);
+        if (dateOrder != 0) return dateOrder;
+        return b.block.createdAt.compareTo(a.block.createdAt);
+      });
+
+    final onThisDay = historical
+        .where(
+          (reference) =>
+              reference.date.month == anchorDay.month &&
+              reference.date.day == anchorDay.day,
+        )
+        .toList(growable: false);
+
+    final sameMonthPastYears = historical
+        .where(
+          (reference) =>
+              reference.date.month == anchorDay.month &&
+              reference.date.day != anchorDay.day,
+        )
+        .toList(growable: false);
+
+    final highlightByYear = <int, DiaryBlockReference>{};
+    for (final reference in historical) {
+      final current = highlightByYear[reference.date.year];
+      if (current == null ||
+          (current.block.type != DiaryBlockType.photo &&
+              reference.block.type == DiaryBlockType.photo)) {
+        highlightByYear[reference.date.year] = reference;
+      }
+    }
+    final highlightYears = highlightByYear.keys.toList()
+      ..sort((a, b) => b.compareTo(a));
+    final yearHighlights = highlightYears
+        .map((year) => highlightByYear[year]!)
+        .toList(growable: false);
+
+    final personCounts = <String, int>{};
+    final placeCounts = <String, int>{};
+    final placeLabels = <String, String>{};
+
+    for (final reference in historical) {
+      for (final id in reference.block.personIds.toSet()) {
+        if (!people.any((person) => person.id == id)) continue;
+        personCounts[id] = (personCounts[id] ?? 0) + 1;
+      }
+
+      final seenPlaces = <String>{};
+      for (final place in reference.block.places) {
+        final label = place.name.trim();
+        final key = place.normalizedName;
+        if (label.isEmpty || key.isEmpty || !seenPlaces.add(key)) continue;
+        placeLabels.putIfAbsent(key, () => label);
+        placeCounts[key] = (placeCounts[key] ?? 0) + 1;
+      }
+    }
+
+    final recurringPeople = personCounts.entries
+        .map((entry) {
+          final person = people.firstWhere((person) => person.id == entry.key);
+          return MemoryRecallFacet(
+            kind: MemoryRecallFacetKind.person,
+            id: entry.key,
+            label: person.name,
+            count: entry.value,
+          );
+        })
+        .toList(growable: false)
+      ..sort((a, b) {
+        final countOrder = b.count.compareTo(a.count);
+        if (countOrder != 0) return countOrder;
+        return a.label.toLowerCase().compareTo(b.label.toLowerCase());
+      });
+
+    final recurringPlaces = placeCounts.entries
+        .map(
+          (entry) => MemoryRecallFacet(
+            kind: MemoryRecallFacetKind.place,
+            id: entry.key,
+            label: placeLabels[entry.key] ?? entry.key,
+            count: entry.value,
+          ),
+        )
+        .toList(growable: false)
+      ..sort((a, b) {
+        final countOrder = b.count.compareTo(a.count);
+        if (countOrder != 0) return countOrder;
+        return a.label.toLowerCase().compareTo(b.label.toLowerCase());
+      });
+
+    return MemoryRecallSnapshot(
+      anchor: anchorDay,
+      onThisDay: onThisDay,
+      sameMonthPastYears: sameMonthPastYears,
+      yearHighlights: yearHighlights,
+      people: recurringPeople,
+      places: recurringPlaces,
+    );
   }
 
   List<String> get diaryPlaceNames {
