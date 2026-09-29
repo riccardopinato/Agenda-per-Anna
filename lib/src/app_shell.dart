@@ -66,6 +66,15 @@ class AgendaApp extends StatelessWidget {
           navigatorKey: appNavigatorKey,
           debugShowCheckedModeBanner: false,
           title: 'Anna\'s Diary',
+          locale: store.preferences.appLanguage.locale,
+          supportedLocales: AnnaStrings.supportedLocales,
+          localizationsDelegates: const [
+            GlobalMaterialLocalizations.delegate,
+            GlobalWidgetsLocalizations.delegate,
+            GlobalCupertinoLocalizations.delegate,
+          ],
+          localeResolutionCallback: (locale, _) =>
+              AnnaStrings.resolveLocale(locale),
           themeMode: mode,
           theme: _theme(Brightness.light),
           darkTheme: _theme(Brightness.dark),

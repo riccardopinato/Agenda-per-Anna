@@ -1412,14 +1412,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
       animation: widget.store.settingsRevision,
       builder: (context, _) {
         final prefs = widget.store.preferences;
+        final strings = AnnaStrings.of(context);
         final primary = prefs.defaultPrimaryReminder ?? -1;
         final secondary = prefs.defaultSecondaryReminder ?? -1;
 
         return Scaffold(
           appBar: AppBar(
-            title: const Text(
-              'Impostazioni',
-              style: TextStyle(fontWeight: FontWeight.w800),
+            title: Text(
+              strings.settings,
+              style: const TextStyle(fontWeight: FontWeight.w800),
             ),
           ),
           body: ListView(
@@ -1429,9 +1430,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
-                      'La mia agenda',
-                      style: TextStyle(
+                    Text(
+                      strings.myAgendaSection,
+                      style: const TextStyle(
                         fontWeight: FontWeight.w900,
                         fontSize: 18,
                       ),
@@ -1440,9 +1441,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     TextField(
                       controller: nameController,
                       textCapitalization: TextCapitalization.words,
-                      decoration: const InputDecoration(
-                        labelText: 'Nome',
-                        hintText: 'Inserisci il tuo nome',
+                      decoration: InputDecoration(
+                        labelText: strings.name,
+                        hintText: strings.enterName,
                       ),
                       onSubmitted: (_) => _saveName(),
                     ),
@@ -1451,7 +1452,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       width: double.infinity,
                       child: FilledButton.tonal(
                         onPressed: _saveName,
-                        child: const Text('Salva nome'),
+                        child: Text(strings.saveName),
                       ),
                     ),
                   ],
@@ -1462,30 +1463,76 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
-                      'Aspetto',
-                      style: TextStyle(
+                    Text(
+                      strings.language,
+                      style: const TextStyle(
+                        fontWeight: FontWeight.w900,
+                        fontSize: 18,
+                      ),
+                    ),
+                    const SizedBox(height: 5),
+                    Text(
+                      strings.languageDescription,
+                      style: Theme.of(context).textTheme.bodySmall,
+                    ),
+                    const SizedBox(height: 12),
+                    DropdownButtonFormField<AppLanguage>(
+                      initialValue: prefs.appLanguage,
+                      decoration: InputDecoration(
+                        labelText: strings.language,
+                        prefixIcon: const Icon(Icons.language_outlined),
+                      ),
+                      items: AppLanguage.values
+                          .map(
+                            (value) => DropdownMenuItem(
+                              value: value,
+                              child: Text(
+                                value == AppLanguage.system
+                                    ? strings.systemTheme
+                                    : value.nativeLabel,
+                              ),
+                            ),
+                          )
+                          .toList(growable: false),
+                      onChanged: (value) {
+                        if (value == null) return;
+                        widget.store.savePreferences(
+                          prefs.copyWith(appLanguage: value),
+                        );
+                      },
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 12),
+              SimpleCard(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      strings.appearance,
+                      style: const TextStyle(
                         fontWeight: FontWeight.w900,
                         fontSize: 18,
                       ),
                     ),
                     const SizedBox(height: 12),
                     SegmentedButton<AgendaThemeMode>(
-                      segments: const [
+                      segments: [
                         ButtonSegment(
                           value: AgendaThemeMode.system,
-                          label: Text('Sistema'),
-                          icon: Icon(Icons.brightness_auto_outlined),
+                          label: Text(strings.systemTheme),
+                          icon: const Icon(Icons.brightness_auto_outlined),
                         ),
                         ButtonSegment(
                           value: AgendaThemeMode.light,
-                          label: Text('Chiaro'),
-                          icon: Icon(Icons.light_mode_outlined),
+                          label: Text(strings.lightTheme),
+                          icon: const Icon(Icons.light_mode_outlined),
                         ),
                         ButtonSegment(
                           value: AgendaThemeMode.dark,
-                          label: Text('Scuro'),
-                          icon: Icon(Icons.dark_mode_outlined),
+                          label: Text(strings.darkTheme),
+                          icon: const Icon(Icons.dark_mode_outlined),
                         ),
                       ],
                       selected: {prefs.themeMode},
@@ -1496,7 +1543,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     ),
                     const SizedBox(height: 16),
                     Text(
-                      'Colore dell’agenda',
+                      strings.agendaColor,
                       style: Theme.of(context).textTheme.titleSmall?.copyWith(
                             fontWeight: FontWeight.w800,
                           ),
@@ -1529,9 +1576,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
-                      'Avvio e giornata',
-                      style: TextStyle(
+                    Text(
+                      strings.startupAndDay,
+                      style: const TextStyle(
                         fontWeight: FontWeight.w900,
                         fontSize: 18,
                       ),
@@ -1539,15 +1586,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     const SizedBox(height: 10),
                     DropdownButtonFormField<StartTab>(
                       initialValue: prefs.startTab,
-                      decoration: const InputDecoration(
-                        labelText: 'Apri l’app su',
-                        prefixIcon: Icon(Icons.home_outlined),
+                      decoration: InputDecoration(
+                        labelText: strings.openAppOn,
+                        prefixIcon: const Icon(Icons.home_outlined),
                       ),
                       items: StartTab.values
                           .map(
                             (value) => DropdownMenuItem(
                               value: value,
-                              child: Text(value.label),
+                              child: Text(strings.startTab(value)),
                             ),
                           )
                           .toList(),
@@ -1561,10 +1608,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     const SizedBox(height: 8),
                     SwitchListTile(
                       contentPadding: EdgeInsets.zero,
-                      title: const Text('Frase positiva del giorno'),
-                      subtitle: const Text(
-                        'Mostra la frase nella testata della giornata.',
-                      ),
+                      title: Text(strings.positiveQuote),
+                      subtitle: Text(strings.positiveQuoteDescription),
                       value: prefs.showDailyQuote,
                       onChanged: (value) =>
                           widget.store.savePreferences(

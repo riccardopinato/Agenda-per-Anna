@@ -4,7 +4,7 @@ appId: com.riccardopinato.agenda_per_anna
     text: 'Home[\s\S]*'
     retryTapIfNoChange: true
 - tapOn:
-    text: 'Archivio'
+    text: '(Archivio|Archive|Archivo|Archives|Arquivo)'
 - extendedWaitUntil:
     visible: "Archivio della vita"
     timeout: 10000
@@ -20,6 +20,6 @@ appId: com.riccardopinato.agenda_per_anna
     text: 'Allenamenti'
 - back
 - extendedWaitUntil:
-    visible: "La mia agenda"
+    visible: "(La mia agenda|My agenda|Mi agenda|Mon agenda|A minha agenda)"
     timeout: 10000
 

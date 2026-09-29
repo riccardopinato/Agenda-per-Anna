@@ -19,6 +19,7 @@ class _MainShellState extends State<MainShell> {
 
   @override
   Widget build(BuildContext context) {
+    final strings = AnnaStrings.of(context);
     final pages = [
       HomeScreen(store: widget.store),
       CalendarScreen(store: widget.store),
@@ -30,26 +31,26 @@ class _MainShellState extends State<MainShell> {
       bottomNavigationBar: NavigationBar(
         selectedIndex: index,
         onDestinationSelected: (v) => setState(() => index = v),
-        destinations: const [
+        destinations: [
           NavigationDestination(
-            icon: Icon(Icons.home_outlined),
-            selectedIcon: Icon(Icons.home),
-            label: 'Home',
+            icon: const Icon(Icons.home_outlined),
+            selectedIcon: const Icon(Icons.home),
+            label: strings.navHome,
           ),
           NavigationDestination(
-            icon: Icon(Icons.calendar_month_outlined),
-            selectedIcon: Icon(Icons.calendar_month),
-            label: 'Mese',
+            icon: const Icon(Icons.calendar_month_outlined),
+            selectedIcon: const Icon(Icons.calendar_month),
+            label: strings.navMonth,
           ),
           NavigationDestination(
-            icon: Icon(Icons.view_week_outlined),
-            selectedIcon: Icon(Icons.view_week),
-            label: 'Settimana',
+            icon: const Icon(Icons.view_week_outlined),
+            selectedIcon: const Icon(Icons.view_week),
+            label: strings.navWeek,
           ),
           NavigationDestination(
-            icon: Icon(Icons.today_outlined),
-            selectedIcon: Icon(Icons.today),
-            label: 'Oggi',
+            icon: const Icon(Icons.today_outlined),
+            selectedIcon: const Icon(Icons.today),
+            label: strings.navToday,
           ),
         ],
       ),
@@ -64,6 +65,7 @@ class HomeScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final now = DateTime.now();
+    final strings = AnnaStrings.of(context);
     return AnimatedBuilder(
       animation: Listenable.merge([
         store.agendaRevision,
@@ -94,16 +96,16 @@ class HomeScreen extends StatelessWidget {
           floatingActionButton: FloatingActionButton.extended(
             onPressed: () => _showQuickCapture(context, store),
             icon: const Icon(Icons.add),
-            label: const Text('Aggiungi'),
+            label: Text(strings.add),
           ),
           appBar: AppBar(
             title: Text(
-              displayName.isEmpty ? 'La mia agenda' : 'Agenda per $displayName',
+              displayName.isEmpty ? strings.myAgenda : strings.agendaFor(displayName),
               style: const TextStyle(fontWeight: FontWeight.w800),
             ),
             actions: [
               IconButton(
-                tooltip: 'Cerca',
+                tooltip: strings.search,
                 onPressed: () => Navigator.push(
                   context,
                   MaterialPageRoute(
@@ -127,7 +129,7 @@ class HomeScreen extends StatelessWidget {
                 ),
               ),
               IconButton(
-                tooltip: 'Archivio',
+                tooltip: strings.archive,
                 onPressed: () => Navigator.push(
                   context,
                   MaterialPageRoute(
@@ -137,7 +139,7 @@ class HomeScreen extends StatelessWidget {
                 icon: const Icon(Icons.inventory_2_outlined),
               ),
               IconButton(
-                tooltip: 'Backup',
+                tooltip: strings.backup,
                 onPressed: () => Navigator.push(
                   context,
                   MaterialPageRoute(
@@ -175,7 +177,7 @@ class HomeScreen extends StatelessWidget {
                 ),
               ),
               IconButton(
-                tooltip: 'Cloud',
+                tooltip: strings.cloud,
                 onPressed: () => Navigator.push(
                   context,
                   MaterialPageRoute(
@@ -198,7 +200,7 @@ class HomeScreen extends StatelessWidget {
                 ),
               ),
               IconButton(
-                tooltip: 'Impostazioni',
+                tooltip: strings.settings,
                 onPressed: () => Navigator.push(
                   context,
                   MaterialPageRoute(
@@ -224,16 +226,19 @@ class HomeScreen extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      _cap(DateFormat('EEEE d MMMM', 'it_IT').format(now)),
+                      _cap(
+                        DateFormat(
+                          'EEEE d MMMM',
+                          AnnaStrings.intlLocale(context),
+                        ).format(now),
+                      ),
                       style: Theme.of(context).textTheme.titleMedium,
                     ),
                     const SizedBox(height: 8),
                     Text(
                       store.preferences.showDailyQuote
                           ? _dailyQuote(now).$1
-                          : displayName.isEmpty
-                              ? 'Ciao ♡'
-                              : 'Ciao $displayName ♡',
+                          : strings.hello(displayName),
                       style: const TextStyle(
                         fontSize: 24,
                         fontWeight: FontWeight.w900,
@@ -243,7 +248,7 @@ class HomeScreen extends StatelessWidget {
                     Text(
                       store.preferences.showDailyQuote
                           ? _dailyQuote(now).$2
-                          : 'Questa è la tua pagina di oggi.',
+                          : strings.todayPage,
                     ),
                   ],
                 ),

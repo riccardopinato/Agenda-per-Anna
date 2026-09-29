@@ -462,3 +462,16 @@ Notes Bridge Lite is deliberately a transfer projection, not an integration subs
 - Anna's Diary remains the canonical owner of personal diary content; Notes-Ecosistema receives only the text the user explicitly chooses to copy.
 - No cross-app database, sync protocol, backend table, lifecycle coupling or binary-media contract is introduced.
 
+## v0.81 — Localization Foundation
+
+Localization is configuration over the existing application shell, not a new data domain.
+
+- `AppLanguage` is part of `AgendaPreferences`; account/local persistence and cloud preference sync therefore continue to use the existing preference path.
+- `AnnaStrings` owns the first localized chrome strings and deterministic locale fallback.
+- `MaterialApp` applies Flutter Material/Widgets/Cupertino localization delegates for en/it/es/fr/pt.
+- `AppLanguage.system` delegates to the device language; unsupported device languages resolve to English.
+- Primary navigation, Home chrome and primary Settings chrome consume the same resolved locale.
+- Locale-aware date formatting uses the same locale resolution rather than a parallel date-language setting.
+- Feature-specific strings can migrate incrementally onto this foundation without changing persistence or introducing another localization framework.
+- No localization database, remote translation service, new sync channel or backend schema is introduced.
+

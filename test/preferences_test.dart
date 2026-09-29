@@ -20,11 +20,14 @@ void main() {
     expect(legacyMissingName.displayName, isEmpty);
   });
 
-  test('settings exposes a neutral name field', () {
+  test('settings exposes a neutral localized name field', () {
     final settings =
         File('lib/src/screens/backup_settings.dart').readAsStringSync();
+    final localization =
+        File('lib/src/localization.dart').readAsStringSync();
 
-    expect(settings, contains("hintText: 'Inserisci il tuo nome'"));
+    expect(settings, contains('hintText: strings.enterName'));
+    expect(localization, contains("it: 'Inserisci il tuo nome'"));
     expect(
       settings,
       isNot(contains('prefixIcon: Icon(Icons.favorite_outline)')),
@@ -43,6 +46,7 @@ void main() {
       defaultEventMinutes: 90,
       defaultPrimaryReminder: 60,
       defaultSecondaryReminder: 10,
+      appLanguage: AppLanguage.french,
     );
 
     final restored = AgendaPreferences.fromJson(prefs.toJson());
@@ -56,6 +60,7 @@ void main() {
     expect(restored.defaultEventMinutes, 90);
     expect(restored.defaultPrimaryReminder, 60);
     expect(restored.defaultSecondaryReminder, 10);
+    expect(restored.appLanguage, AppLanguage.french);
   });
 
   test('preferences are included in backup restore', () async {

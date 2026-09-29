@@ -8,6 +8,7 @@ import 'package:crypto/crypto.dart';
 import 'package:flutter/foundation.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_image_compress/flutter_image_compress.dart';
@@ -35,6 +36,7 @@ import 'web_push_service.dart';
 
 part 'src/app_shell.dart';
 part 'src/domain_models.dart';
+part 'src/localization.dart';
 part 'src/day_hub_domain.dart';
 part 'src/unified_capture.dart';
 part 'src/home_widget_bridge.dart';
@@ -173,7 +175,9 @@ Future<void> main() async {
   PushNotificationService.configureBackgroundHandling();
 
   try {
-    await initializeDateFormatting('it_IT', null);
+    for (final locale in const ['en', 'it', 'es', 'fr', 'pt']) {
+      await initializeDateFormatting(locale, null);
+    }
   } catch (_) {}
 
   final store = AgendaStore();

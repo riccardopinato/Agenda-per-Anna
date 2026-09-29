@@ -35,6 +35,7 @@ Source of truth for the active product sequence after v0.52. The roadmap follows
 | v0.78 | Open Life Archive | Completed | One derived historical surface over diary, agenda, workouts and archived Inbox without duplicating storage |
 | v0.79 | Privacy Architecture Finalization | Completed | One Privacy Center over the existing lock, Vault, backup/data-safety and account/data-rights systems |
 | v0.80 | Notes Bridge Lite | Completed | Explicit one-way copy from private diary/Inbox into portable Notes-friendly text without coupling the two apps |
+| v0.81 | Localization Foundation | Completed | Device/manual locale selection plus localized app chrome on the existing preferences path |
 
 ## Permanent constraints for this sequence
 
@@ -335,6 +336,22 @@ Per the active development cadence, AppLab runs once every two feature versions.
 - The same Shopping List screen supports private and shared modes to avoid duplicated UX logic.
 - Release metadata is aligned to v0.71.0+81.
 - Analyze, full tests, Web release, Android size audit and AppLab Trusted Verify must be green before promotion to main.
+
+
+## v0.81 acceptance criteria
+
+- Supported product locales are English, Italian, Spanish, French and Portuguese.
+- Language can follow the device locale or be selected manually in Settings.
+- Unsupported device locales fall back deterministically to English.
+- The selected language is persisted only through the existing AgendaPreferences payload; no parallel language store is introduced.
+- Material/Cupertino delegates, primary navigation, Home chrome and primary Settings chrome react to the resolved locale.
+- Date formatting used by localized chrome follows the same resolved locale.
+- Existing payloads that do not contain appLanguage remain readable and resolve to the system-language behavior.
+- Maestro selectors for localized navigation chrome remain valid across all supported languages.
+- Feature-specific legacy strings not yet migrated are explicitly outside this foundation step and must not be represented as already fully localized.
+- No translation backend, language database, new sync queue or remote localization dependency is introduced.
+- Release metadata is aligned to v0.81.0+91.
+- Development checks, Web release, Android size audit and AppLab Trusted Verify must all pass before merge.
 
 
 ## v0.80 acceptance criteria
