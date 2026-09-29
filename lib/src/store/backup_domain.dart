@@ -443,13 +443,13 @@ class _AgendaBackupDomain {
       if (block.tags.isNotEmpty) {
         buffer.writeln('- Tags: ${block.tags.join(', ')}');
       }
-      if (block.mediaAssetId.isNotEmpty &&
-          mediaPaths[block.mediaAssetId] case final path?) {
-        buffer.writeln('- Media: ../$path');
+      final mediaPath = mediaPaths[block.mediaAssetId];
+      if (block.mediaAssetId.isNotEmpty && mediaPath != null) {
+        buffer.writeln('- Media: ../$mediaPath');
       }
-      if (block.mediaThumbnailAssetId.isNotEmpty &&
-          mediaPaths[block.mediaThumbnailAssetId] case final path?) {
-        buffer.writeln('- Thumbnail: ../$path');
+      final thumbnailPath = mediaPaths[block.mediaThumbnailAssetId];
+      if (block.mediaThumbnailAssetId.isNotEmpty && thumbnailPath != null) {
+        buffer.writeln('- Thumbnail: ../$thumbnailPath');
       }
       buffer.writeln();
     }
