@@ -466,7 +466,7 @@ class _AgendaBackupDomain {
 
     buffer.writeln('ANNA\'S DIARY');
     buffer.writeln(
-      'Esportazione del ${DateFormat('d MMMM yyyy, HH:mm', 'it_IT').format(now)}',
+      'Esportazione del ${DateFormat('d MMMM yyyy, HH:mm').format(now)}',
     );
     buffer.writeln();
     buffer.writeln(
@@ -492,7 +492,7 @@ class _AgendaBackupDomain {
     } else {
       for (final item in sortedItems) {
         final date =
-            DateFormat('d MMMM yyyy', 'it_IT').format(item.date);
+            DateFormat('d MMMM yyyy').format(item.date);
         final time =
             item.start == null ? '' : ' · ${formatTime(item.start!)}';
         buffer.writeln('- $date$time · ${item.title}');
@@ -529,7 +529,7 @@ class _AgendaBackupDomain {
         if (birthday != null) {
           final date = DateTime(2000, birthday.month, birthday.day);
           buffer.writeln(
-            '  Compleanno: ${DateFormat('d MMMM', 'it_IT').format(date)}',
+            '  Compleanno: ${DateFormat('d MMMM').format(date)}',
           );
         }
         final memories = store.personMemoryCount(person.id);
@@ -564,7 +564,7 @@ class _AgendaBackupDomain {
         });
       for (final birthday in birthdays) {
         final date = DateTime(2000, birthday.month, birthday.day);
-        final dateText = DateFormat('d MMMM', 'it_IT').format(date);
+        final dateText = DateFormat('d MMMM').format(date);
         final yearText =
             birthday.year == null ? '' : ' ${birthday.year}';
         buffer.writeln('- $dateText$yearText · ${birthday.name}');
@@ -620,7 +620,7 @@ class _AgendaBackupDomain {
         buffer.writeln('Sessioni:');
         for (final session in sessions) {
           final date =
-              DateFormat('d MMMM yyyy', 'it_IT').format(session.date);
+              DateFormat('d MMMM yyyy').format(session.date);
           final parts = <String>[
             session.sport.label,
             if (session.distanceKm != null)
@@ -674,7 +674,7 @@ class _AgendaBackupDomain {
         buffer.writeln(
           date == null
               ? entry.key
-              : DateFormat('d MMMM yyyy', 'it_IT').format(date),
+              : DateFormat('d MMMM yyyy').format(date),
         );
         if (journal.mood != null) {
           buffer.writeln(
@@ -717,7 +717,7 @@ class _AgendaBackupDomain {
       final data = entry.value;
       buffer.writeln();
       buffer.writeln(
-        _cap(DateFormat('MMMM yyyy', 'it_IT').format(DateTime(y, m))),
+        _cap(DateFormat('MMMM yyyy').format(DateTime(y, m))),
       );
       if (data.monthWord.isNotEmpty) {
         buffer.writeln('Parola del mese: ${data.monthWord}');
