@@ -39,6 +39,10 @@
     {
       "name": "trash",
       "flow": ".maestro/journey/trash.yaml"
+    },
+    {
+      "name": "settings",
+      "flow": ".maestro/journey/settings.yaml"
     }
   ]
 }
