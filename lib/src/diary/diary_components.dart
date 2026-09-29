@@ -1063,6 +1063,7 @@ class DiaryContentCard extends StatelessWidget {
   final VoidCallback? onPin;
   final VoidCallback? onArchive;
   final VoidCallback? onTags;
+  final VoidCallback? onCopyToNotes;
   final VoidCallback? onDelete;
   final Widget? footer;
   final Widget? statusIcon;
@@ -1086,6 +1087,7 @@ class DiaryContentCard extends StatelessWidget {
     this.onPin,
     this.onArchive,
     this.onTags,
+    this.onCopyToNotes,
     this.footer,
     this.statusIcon,
     this.pinned = false,
@@ -1140,6 +1142,7 @@ class DiaryContentCard extends StatelessWidget {
                     if (value == 'people') onPeople?.call();
                     if (value == 'places') onPlaces?.call();
                     if (value == 'connections') onConnections?.call();
+                    if (value == 'notes') onCopyToNotes?.call();
                     if (value == 'delete') onDelete?.call();
                   },
                   itemBuilder: (_) => [
@@ -1189,6 +1192,11 @@ class DiaryContentCard extends StatelessWidget {
                       const PopupMenuItem(
                         value: 'connections',
                         child: Text('Collega ricordi'),
+                      ),
+                    if (onCopyToNotes != null)
+                      const PopupMenuItem(
+                        value: 'notes',
+                        child: Text('Copia per Notes'),
                       ),
                     if (onDelete != null)
                       const PopupMenuItem(
@@ -1737,6 +1745,11 @@ class _DiaryMemoryCardState extends State<DiaryMemoryCard> {
   Future<void> _toggleArchived(DiaryBlock block) =>
       widget.store.toggleDiaryArchived(widget.date, block.id);
 
+  Future<void> _copyToNotes(DiaryBlock block) async {
+    final text = widget.store.notesBridgeTextForDiary(widget.date, block);
+    await copyNotesBridgePayload(context, text);
+  }
+
   Future<void> _delete(DiaryBlock block) async {
     final confirmed = await confirmDiaryContentDelete(
       context,
@@ -1778,6 +1791,7 @@ class _DiaryMemoryCardState extends State<DiaryMemoryCard> {
           onPin: () => _togglePinned(block),
           onArchive: () => _toggleArchived(block),
           onTags: () => _editTags(block),
+          onCopyToNotes: () => _copyToNotes(block),
           pinned: block.pinned,
           archived: block.archived,
           footer: _metadataFooter(block),
@@ -1809,6 +1823,7 @@ class _DiaryMemoryCardState extends State<DiaryMemoryCard> {
           onPin: () => _togglePinned(block),
           onArchive: () => _toggleArchived(block),
           onTags: () => _editTags(block),
+          onCopyToNotes: () => _copyToNotes(block),
           pinned: block.pinned,
           archived: block.archived,
           footer: _metadataFooter(block),
@@ -1833,6 +1848,7 @@ class _DiaryMemoryCardState extends State<DiaryMemoryCard> {
           onPin: () => _togglePinned(block),
           onArchive: () => _toggleArchived(block),
           onTags: () => _editTags(block),
+          onCopyToNotes: () => _copyToNotes(block),
           pinned: block.pinned,
           archived: block.archived,
           footer: _metadataFooter(block),
@@ -1854,6 +1870,7 @@ class _DiaryMemoryCardState extends State<DiaryMemoryCard> {
           onPin: () => _togglePinned(block),
           onArchive: () => _toggleArchived(block),
           onTags: () => _editTags(block),
+          onCopyToNotes: () => _copyToNotes(block),
           pinned: block.pinned,
           archived: block.archived,
           footer: _metadataFooter(block),
