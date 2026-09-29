@@ -1,0 +1,44 @@
+appId: com.riccardopinato.agenda_per_anna
+---
+- back
+- back
+- extendedWaitUntil:
+    visible: "La mia agenda"
+    timeout: 10000
+- tapOn:
+    text: "Impostazioni"
+- extendedWaitUntil:
+    visible: "Impostazioni"
+    timeout: 10000
+- scrollUntilVisible:
+    element:
+      text: "Privacy Center"
+    direction: DOWN
+    timeout: 10000
+- assertVisible:
+    text: "Privacy Center"
+- scrollUntilVisible:
+    element:
+      text: "Cassaforte privata"
+    direction: DOWN
+    timeout: 10000
+- assertVisible:
+    text: "Cassaforte privata"
+- scrollUntilVisible:
+    element:
+      text: "Backup e sicurezza dati"
+    direction: DOWN
+    timeout: 10000
+- assertVisible:
+    text: "Backup e sicurezza dati"
+- scrollUntilVisible:
+    element:
+      text: "Account e diritti sui dati"
+    direction: DOWN
+    timeout: 10000
+- assertVisible:
+    text: "Account e diritti sui dati"
+- back
+- extendedWaitUntil:
+    visible: "La mia agenda"
+    timeout: 10000
