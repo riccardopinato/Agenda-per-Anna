@@ -25,6 +25,10 @@
       "flow": ".maestro/journey/home.yaml"
     },
     {
+      "name": "archive",
+      "flow": ".maestro/journey/archive.yaml"
+    },
+    {
       "name": "shared",
       "flow": ".maestro/journey/shared.yaml"
     },

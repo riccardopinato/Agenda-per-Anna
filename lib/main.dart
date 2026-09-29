@@ -40,6 +40,7 @@ part 'src/unified_capture.dart';
 part 'src/home_widget_bridge.dart';
 part 'src/recurring_life_domain.dart';
 part 'src/organization_domain.dart';
+part 'src/life_archive_domain.dart';
 part 'src/shopping_domain.dart';
 part 'src/workout_domain.dart';
 part 'src/people_domain.dart';

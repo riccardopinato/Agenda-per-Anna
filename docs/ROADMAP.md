@@ -32,6 +32,7 @@ Source of truth for the active product sequence after v0.52. The roadmap follows
 | v0.75 | Day / Life Consolidation | Completed | Make La mia giornata the central projection for agenda, birthdays, workouts and diary moments |
 | v0.76 | Unified Capture | Completed | One capture surface and one set of existing persistence paths for text, voice, photos, Inbox and agenda actions |
 | v0.77 | Memory Recall 2.0 | Completed | Derived resurfacing across dates, years, people and places using the existing DiaryBlockReference memory primitive |
+| v0.78 | Open Life Archive | Completed | One derived historical surface over diary, agenda, workouts and archived Inbox without duplicating storage |
 
 ## Permanent constraints for this sequence
 
@@ -332,6 +333,19 @@ Per the active development cadence, AppLab runs once every two feature versions.
 - The same Shopping List screen supports private and shared modes to avoid duplicated UX logic.
 - Release metadata is aligned to v0.71.0+81.
 - Analyze, full tests, Web release, Android size audit and AppLab Trusted Verify must be green before promotion to main.
+
+
+## v0.78 acceptance criteria
+
+- Archivio della vita is a derived read surface over existing DiaryBlock, AgendaItem, WorkoutSession and archived InboxEntry records.
+- Historical browsing must not create a new archive entity, persistence key, cloud table, sync queue or lifecycle subsystem.
+- Future agenda entries do not appear in historical results.
+- Multi-word search and type filters operate directly on the derived projection without a secondary search database.
+- Manually archived diary and Inbox content remains recoverable through the existing unarchive actions.
+- Opening an archive entry delegates to the existing Planner, Workout or Inbox screens.
+- Month browsing remains available and includes workout context without changing MonthlyData persistence.
+- Release metadata is aligned to v0.78.0+88.
+- Development checks, Web release, Android size audit and AppLab Trusted Verify must all pass before merge.
 
 
 ## v0.77 acceptance criteria

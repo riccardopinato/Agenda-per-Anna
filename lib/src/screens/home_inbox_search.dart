@@ -1404,21 +1404,38 @@ class _SearchScreenState extends State<SearchScreen> {
   }
 }
 
-class ArchiveScreen extends StatelessWidget {
+class ArchiveScreen extends StatefulWidget {
   final AgendaStore store;
 
   const ArchiveScreen({super.key, required this.store});
 
+  @override
+  State<ArchiveScreen> createState() => _ArchiveScreenState();
+}
+
+class _ArchiveScreenState extends State<ArchiveScreen> {
+  final TextEditingController searchController = TextEditingController();
+  LifeArchiveKind? filter;
+
+  @override
+  void dispose() {
+    searchController.dispose();
+    super.dispose();
+  }
+
   List<DateTime> _months() {
     final keys = <String>{};
 
-    for (final item in store.items) {
+    for (final item in widget.store.items) {
       keys.add(AgendaStore.monthKey(item.date.year, item.date.month));
     }
-    for (final key in store.journals.keys) {
+    for (final key in widget.store.journals.keys) {
       if (key.length >= 7) keys.add(key.substring(0, 7));
     }
-    keys.addAll(store.months.keys);
+    for (final session in widget.store.workoutSessions) {
+      keys.add(AgendaStore.monthKey(session.date.year, session.date.month));
+    }
+    keys.addAll(widget.store.months.keys);
 
     final months = <DateTime>[];
     for (final key in keys) {
@@ -1434,41 +1451,277 @@ class ArchiveScreen extends StatelessWidget {
     return months;
   }
 
+  Map<int, List<LifeArchiveEntry>> _groupByYear(
+    List<LifeArchiveEntry> entries,
+  ) {
+    final result = <int, List<LifeArchiveEntry>>{};
+    for (final entry in entries) {
+      result.putIfAbsent(entry.date.year, () => []).add(entry);
+    }
+    return result;
+  }
+
+  Future<void> _openEntry(LifeArchiveEntry entry) async {
+    switch (entry.kind) {
+      case LifeArchiveKind.diary:
+        final reference = entry.diaryReference;
+        if (reference == null) return;
+        await Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => PlannerScreen(
+              store: widget.store,
+              initialDate: reference.date,
+            ),
+          ),
+        );
+        break;
+      case LifeArchiveKind.agenda:
+        final item = entry.agendaItem;
+        if (item == null) return;
+        await Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => PlannerScreen(
+              store: widget.store,
+              initialDate: item.date,
+            ),
+          ),
+        );
+        break;
+      case LifeArchiveKind.workout:
+        await Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => WorkoutScreen(store: widget.store),
+          ),
+        );
+        break;
+      case LifeArchiveKind.inbox:
+        await Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => InboxScreen(store: widget.store),
+          ),
+        );
+        break;
+    }
+    if (mounted) setState(() {});
+  }
+
+  Future<void> _restoreEntry(LifeArchiveEntry entry) async {
+    if (!entry.archived) return;
+    switch (entry.kind) {
+      case LifeArchiveKind.diary:
+        final reference = entry.diaryReference;
+        if (reference == null) return;
+        await widget.store.toggleDiaryArchived(
+          reference.date,
+          reference.block.id,
+        );
+        break;
+      case LifeArchiveKind.inbox:
+        final inbox = entry.inboxEntry;
+        if (inbox == null) return;
+        await widget.store.toggleInboxArchived(inbox.id);
+        break;
+      case LifeArchiveKind.agenda:
+      case LifeArchiveKind.workout:
+        return;
+    }
+    if (mounted) setState(() {});
+  }
+
+  Widget _summaryCard(
+    BuildContext context,
+    List<LifeArchiveEntry> entries,
+  ) {
+    final years = entries.map((entry) => entry.date.year).toSet().length;
+    int count(LifeArchiveKind kind) =>
+        entries.where((entry) => entry.kind == kind).length;
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Theme.of(context)
+            .colorScheme
+            .primaryContainer
+            .withValues(alpha: 0.42),
+        borderRadius: BorderRadius.circular(22),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Row(
+            children: [
+              Icon(Icons.history_rounded),
+              SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  'La tua storia, in un unico posto',
+                  style: TextStyle(
+                    fontWeight: FontWeight.w900,
+                    fontSize: 18,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 6),
+          Text(
+            entries.isEmpty
+                ? 'Qui ritrovi diario, agenda, allenamenti e contenuti conservati senza creare copie dei tuoi dati.'
+                : '${entries.length} momenti · $years ${years == 1 ? 'anno' : 'anni'}',
+          ),
+          if (entries.isNotEmpty) ...[
+            const SizedBox(height: 12),
+            Wrap(
+              spacing: 7,
+              runSpacing: 7,
+              children: LifeArchiveKind.values.map((kind) {
+                final total = count(kind);
+                if (total == 0) return const SizedBox.shrink();
+                return Chip(
+                  avatar: Icon(kind.icon, size: 17),
+                  label: Text('${kind.label} · $total'),
+                );
+              }).toList(growable: false),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _entryTile(
+    BuildContext context,
+    LifeArchiveEntry entry,
+  ) {
+    final dateText = DateFormat('d MMMM yyyy', 'it_IT').format(entry.date);
+    return Card(
+      child: ListTile(
+        contentPadding: const EdgeInsets.fromLTRB(14, 6, 8, 6),
+        leading: CircleAvatar(
+          child: Icon(entry.kind.icon, size: 20),
+        ),
+        title: Text(
+          entry.title,
+          maxLines: 2,
+          overflow: TextOverflow.ellipsis,
+          style: const TextStyle(fontWeight: FontWeight.w800),
+        ),
+        subtitle: Text(
+          [
+            dateText,
+            if (entry.subtitle.trim().isNotEmpty) entry.subtitle.trim(),
+          ].join(' · '),
+          maxLines: 2,
+          overflow: TextOverflow.ellipsis,
+        ),
+        onTap: () => _openEntry(entry),
+        trailing: entry.archived &&
+                (entry.kind == LifeArchiveKind.diary ||
+                    entry.kind == LifeArchiveKind.inbox)
+            ? IconButton(
+                tooltip: entry.kind == LifeArchiveKind.diary
+                    ? 'Ripristina nel diario'
+                    : 'Ripristina in Inbox',
+                onPressed: () => _restoreEntry(entry),
+                icon: const Icon(Icons.unarchive_outlined),
+              )
+            : const Icon(Icons.chevron_right),
+      ),
+    );
+  }
+
+  Widget _monthArchive(
+    BuildContext context,
+    List<DateTime> months,
+  ) {
+    if (months.isEmpty) return const SizedBox.shrink();
+
+    return ExpansionTile(
+      tilePadding: EdgeInsets.zero,
+      leading: const Icon(Icons.calendar_month_outlined),
+      title: const Text(
+        'Esplora per mese',
+        style: TextStyle(fontWeight: FontWeight.w900),
+      ),
+      subtitle: Text('${months.length} mesi con contenuti'),
+      children: months.map((month) {
+        final data = widget.store.month(month.year, month.month);
+        final events = widget.store.items
+            .where(
+              (item) =>
+                  item.date.year == month.year &&
+                  item.date.month == month.month,
+            )
+            .length;
+        final prefix =
+            '${month.year}-${month.month.toString().padLeft(2, '0')}-';
+        final journalDays =
+            widget.store.journals.keys.where((key) => key.startsWith(prefix)).length;
+        final workouts = widget.store.workoutSessions
+            .where(
+              (session) =>
+                  session.date.year == month.year &&
+                  session.date.month == month.month,
+            )
+            .length;
+
+        return ListTile(
+          contentPadding: const EdgeInsets.symmetric(horizontal: 8),
+          title: Text(
+            _cap(DateFormat('MMMM yyyy', 'it_IT').format(month)),
+            style: const TextStyle(fontWeight: FontWeight.w800),
+          ),
+          subtitle: Text(
+            [
+              if (events > 0) '$events impegni',
+              if (journalDays > 0) '$journalDays giorni raccontati',
+              if (workouts > 0) '$workouts allenamenti',
+              if (data.goals.isNotEmpty) '${data.goals.length} obiettivi',
+            ].join(' · '),
+          ),
+          trailing: const Icon(Icons.chevron_right),
+          onTap: () => Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => MonthScreen(
+                store: widget.store,
+                initialMonth: month,
+              ),
+            ),
+          ),
+        );
+      }).toList(growable: false),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return AnimatedBuilder(
       animation: Listenable.merge([
-        store.inboxRevision,
-        store.journalRevision,
-        store.planningRevision,
+        widget.store.agendaRevision,
+        widget.store.inboxRevision,
+        widget.store.journalRevision,
+        widget.store.planningRevision,
+        widget.store.workoutRevision,
       ]),
       builder: (context, _) {
-        final months = _months();
-        final archivedInbox = [...store.archivedInboxEntries]
-          ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
-        final archivedBlocks = <({DateTime date, DiaryBlock block})>[];
-        for (final entry in store.journals.entries) {
-          final date = DateTime.tryParse(entry.key);
-          if (date == null) continue;
-          for (final block in entry.value.blocks) {
-            if (block.archived) {
-              archivedBlocks.add((date: date, block: block));
-            }
-          }
-        }
-        archivedBlocks.sort(
-          (a, b) => b.block.createdAt.compareTo(a.block.createdAt),
+        final allEntries = widget.store.lifeArchiveEntries();
+        final entries = widget.store.lifeArchiveEntries(
+          query: searchController.text,
+          kind: filter,
         );
-
-        final empty = months.isEmpty &&
-            archivedInbox.isEmpty &&
-            archivedBlocks.isEmpty;
+        final years = _groupByYear(entries);
+        final months = _months();
 
         return Scaffold(
           appBar: AppBar(
             title: const Text(
-              'Archivio',
-              style: TextStyle(fontWeight: FontWeight.w800),
+              'Archivio della vita',
+              style: TextStyle(fontWeight: FontWeight.w900),
             ),
             actions: [
               IconButton(
@@ -1476,167 +1729,101 @@ class ArchiveScreen extends StatelessWidget {
                 onPressed: () => Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (_) => TrashScreen(store: store),
+                    builder: (_) => TrashScreen(store: widget.store),
                   ),
                 ),
                 icon: const Icon(Icons.delete_outline),
               ),
             ],
           ),
-          body: empty
-              ? const Center(child: Text('L’archivio è ancora vuoto.'))
-              : ListView(
-                  padding: const EdgeInsets.fromLTRB(14, 8, 14, 40),
+          body: ListView(
+            padding: const EdgeInsets.fromLTRB(14, 8, 14, 40),
+            children: [
+              _summaryCard(context, allEntries),
+              const SizedBox(height: 12),
+              SearchBar(
+                controller: searchController,
+                hintText: 'Cerca in tutta la tua storia...',
+                leading: const Icon(Icons.search),
+                trailing: searchController.text.isEmpty
+                    ? null
+                    : [
+                        IconButton(
+                          tooltip: 'Cancella ricerca',
+                          onPressed: () {
+                            searchController.clear();
+                            setState(() {});
+                          },
+                          icon: const Icon(Icons.close),
+                        ),
+                      ],
+                onChanged: (_) => setState(() {}),
+              ),
+              const SizedBox(height: 10),
+              SizedBox(
+                height: 44,
+                child: ListView(
+                  scrollDirection: Axis.horizontal,
                   children: [
-                    if (archivedInbox.isNotEmpty) ...[
-                      const SectionTitle('Inbox archiviata'),
-                      const SizedBox(height: 8),
-                      ...archivedInbox.map(
-                        (entry) => Card(
-                          child: ListTile(
-                            leading: const Icon(Icons.inventory_2_outlined),
-                            title: Text(entry.text),
-                            subtitle: Text(
-                              [
-                                DateFormat('d MMM, HH:mm', 'it_IT')
-                                    .format(entry.createdAt),
-                                if (entry.tags.isNotEmpty)
-                                  entry.tags.map((tag) => '#$tag').join(' · '),
-                              ].join(' · '),
-                            ),
-                            trailing: IconButton(
-                              tooltip: 'Ripristina in Inbox',
-                              icon: const Icon(Icons.unarchive_outlined),
-                              onPressed: () =>
-                                  store.toggleInboxArchived(entry.id),
-                            ),
-                          ),
+                    Padding(
+                      padding: const EdgeInsets.only(right: 7),
+                      child: FilterChip(
+                        selected: filter == null,
+                        label: const Text('Tutto'),
+                        avatar: const Icon(Icons.layers_outlined),
+                        onSelected: (_) => setState(() => filter = null),
+                      ),
+                    ),
+                    ...LifeArchiveKind.values.map(
+                      (kind) => Padding(
+                        padding: const EdgeInsets.only(right: 7),
+                        child: FilterChip(
+                          selected: filter == kind,
+                          avatar: Icon(kind.icon),
+                          label: Text(kind.label),
+                          onSelected: (_) => setState(() => filter = kind),
                         ),
                       ),
-                      const SizedBox(height: 18),
-                    ],
-                    if (archivedBlocks.isNotEmpty) ...[
-                      const SectionTitle('Ricordi archiviati'),
-                      const SizedBox(height: 8),
-                      ...archivedBlocks.map(
-                        (record) => Card(
-                          child: ListTile(
-                            leading: Icon(
-                              switch (record.block.type) {
-                                DiaryBlockType.note =>
-                                  Icons.sticky_note_2_outlined,
-                                DiaryBlockType.photo => Icons.photo_outlined,
-                                DiaryBlockType.sketch => Icons.draw_outlined,
-                                DiaryBlockType.voice => Icons.mic_none_outlined,
-                              },
-                            ),
-                            title: Text(
-                              record.block.text.trim().isEmpty
-                                  ? switch (record.block.type) {
-                                      DiaryBlockType.note => 'Nota',
-                                      DiaryBlockType.photo => 'Foto',
-                                      DiaryBlockType.sketch => 'Sketch',
-                                      DiaryBlockType.voice => 'Nota vocale',
-                                    }
-                                  : record.block.text,
-                            ),
-                            subtitle: Text(
-                              [
-                                DateFormat('d MMMM yyyy', 'it_IT')
-                                    .format(record.date),
-                                if (record.block.tags.isNotEmpty)
-                                  record.block.tags
-                                      .map((tag) => '#$tag')
-                                      .join(' · '),
-                              ].join(' · '),
-                            ),
-                            onTap: () => Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (_) => PlannerScreen(
-                                  store: store,
-                                  initialDate: record.date,
-                                ),
-                              ),
-                            ),
-                            trailing: IconButton(
-                              tooltip: 'Ripristina nel diario',
-                              icon: const Icon(Icons.unarchive_outlined),
-                              onPressed: () => store.toggleDiaryArchived(
-                                record.date,
-                                record.block.id,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 18),
-                    ],
-                    if (months.isNotEmpty) ...[
-                      const SectionTitle('Archivio per mese'),
-                      const SizedBox(height: 8),
-                      ...months.map((month) {
-                        final data = store.month(month.year, month.month);
-                        final events = store.items
-                            .where(
-                              (e) =>
-                                  e.date.year == month.year &&
-                                  e.date.month == month.month,
-                            )
-                            .length;
-                        final prefix =
-                            '${month.year}-${month.month.toString().padLeft(2, '0')}-';
-                        final journalDays = store.journals.keys
-                            .where((key) => key.startsWith(prefix))
-                            .length;
-
-                        return Padding(
-                          padding: const EdgeInsets.only(bottom: 9),
-                          child: Card(
-                            child: ListTile(
-                              contentPadding: const EdgeInsets.symmetric(
-                                horizontal: 16,
-                                vertical: 8,
-                              ),
-                              leading: const CircleAvatar(
-                                child: Icon(Icons.auto_stories_outlined),
-                              ),
-                              title: Text(
-                                _cap(
-                                  DateFormat('MMMM yyyy', 'it_IT')
-                                      .format(month),
-                                ),
-                                style: const TextStyle(
-                                  fontWeight: FontWeight.w800,
-                                ),
-                              ),
-                              subtitle: Text(
-                                [
-                                  '$events impegni',
-                                  '$journalDays giorni raccontati',
-                                  if (data.goals.isNotEmpty)
-                                    '${data.goals.length} obiettivi',
-                                ].join(' · '),
-                              ),
-                              trailing: const Icon(Icons.chevron_right),
-                              onTap: () => Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (_) => MonthScreen(
-                                    store: store,
-                                    initialMonth: month,
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ),
-                        );
-                      }),
-                    ],
+                    ),
                   ],
                 ),
+              ),
+              const SizedBox(height: 6),
+              if (entries.isEmpty)
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 28),
+                  child: Text(
+                    searchController.text.trim().isEmpty && filter == null
+                        ? 'L’archivio è ancora vuoto.'
+                        : 'Nessun momento corrisponde a questa ricerca.',
+                    textAlign: TextAlign.center,
+                  ),
+                )
+              else
+                ...years.entries.expand(
+                  (group) => [
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(2, 16, 2, 6),
+                      child: Text(
+                        '${group.key}',
+                        style: Theme.of(context)
+                            .textTheme
+                            .titleLarge
+                            ?.copyWith(fontWeight: FontWeight.w900),
+                      ),
+                    ),
+                    ...group.value.map(
+                      (entry) => _entryTile(context, entry),
+                    ),
+                  ],
+                ),
+              const SizedBox(height: 10),
+              _monthArchive(context, months),
+            ],
+          ),
         );
       },
     );
   }
 }
+
