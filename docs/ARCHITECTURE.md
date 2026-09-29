@@ -451,3 +451,14 @@ Privacy is consolidated at the presentation layer rather than reimplemented.
 - Privacy Center only aggregates navigation, status and user-facing explanations across those established systems.
 - No privacy database, encryption rewrite, new sync channel or new cloud schema is introduced.
 
+## v0.80 — Notes Bridge Lite
+
+Notes Bridge Lite is deliberately a transfer projection, not an integration subsystem.
+
+- `NotesBridgePayload` derives portable text from existing InboxEntry and DiaryBlock data.
+- The bridge reads existing tags, people and places but owns no persisted metadata.
+- Transfer is explicit through the platform clipboard; no background process, account link or network call is involved.
+- Photo/audio binaries and sketch graphics remain owned by Anna's Diary. Only captions and textual sketch elements are included.
+- Anna's Diary remains the canonical owner of personal diary content; Notes-Ecosistema receives only the text the user explicitly chooses to copy.
+- No cross-app database, sync protocol, backend table, lifecycle coupling or binary-media contract is introduced.
+
