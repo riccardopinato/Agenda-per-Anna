@@ -884,7 +884,7 @@ class InboxScreen extends StatelessWidget {
     await store.deleteInboxEntry(entry.id);
     if (!context.mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Nota trasformata in attività.')),
+      SnackBar(content: Text(AnnaStrings.of(context).noteConvertedTask)),
     );
   }
 
@@ -914,6 +914,7 @@ class InboxScreen extends StatelessWidget {
     return AnimatedBuilder(
       animation: store.inboxRevision,
       builder: (context, _) {
+        final strings = AnnaStrings.of(context);
         final entries = [...store.activeInboxEntries]
           ..sort((a, b) {
             if (a.pinned != b.pinned) return a.pinned ? -1 : 1;
@@ -922,9 +923,9 @@ class InboxScreen extends StatelessWidget {
 
         return Scaffold(
           appBar: AppBar(
-            title: const Text(
-              'Inbox',
-              style: TextStyle(fontWeight: FontWeight.w900),
+            title: Text(
+              strings.inbox,
+              style: const TextStyle(fontWeight: FontWeight.w900),
             ),
           ),
           floatingActionButton: FloatingActionButton.extended(
@@ -934,14 +935,14 @@ class InboxScreen extends StatelessWidget {
               entryPoint: UnifiedCaptureEntryPoint.inbox,
             ),
             icon: const Icon(Icons.add),
-            label: const Text('Cattura'),
+            label: Text(strings.capture),
           ),
           body: entries.isEmpty
-              ? const Center(
+              ? Center(
                   child: Padding(
-                    padding: EdgeInsets.all(32),
+                    padding: const EdgeInsets.all(32),
                     child: Text(
-                      'Qui finiranno le idee e le note catturate al volo.',
+                      strings.inboxEmpty,
                       textAlign: TextAlign.center,
                     ),
                   ),
@@ -970,7 +971,7 @@ class InboxScreen extends StatelessWidget {
                           [
                             DateFormat(
                               'd MMM, HH:mm',
-                              'it_IT',
+                              AnnaStrings.intlLocale(context),
                             ).format(entry.createdAt),
                             if (entry.tags.isNotEmpty)
                               entry.tags.map((tag) => '#$tag').join(' · '),
@@ -996,28 +997,28 @@ class InboxScreen extends StatelessWidget {
                             PopupMenuItem(
                               value: 'pin',
                               child: Text(
-                                entry.pinned ? 'Togli dai fissati' : 'Fissa',
+                                entry.pinned ? strings.unpin : strings.pin,
                               ),
                             ),
-                            const PopupMenuItem(
+                            PopupMenuItem(
                               value: 'tags',
-                              child: Text('Tag'),
+                              child: Text(strings.tags),
                             ),
-                            const PopupMenuItem(
+                            PopupMenuItem(
                               value: 'archive',
-                              child: Text('Archivia'),
+                              child: Text(strings.archiveAction),
                             ),
-                            const PopupMenuItem(
+                            PopupMenuItem(
                               value: 'notes',
-                              child: Text('Copia per Notes'),
+                              child: Text(strings.copyForNotes),
                             ),
-                            const PopupMenuItem(
+                            PopupMenuItem(
                               value: 'task',
-                              child: Text('Trasforma in attività'),
+                              child: Text(strings.convertToTask),
                             ),
-                            const PopupMenuItem(
+                            PopupMenuItem(
                               value: 'delete',
-                              child: Text('Elimina'),
+                              child: Text(strings.delete),
                             ),
                           ],
                         ),
@@ -1555,6 +1556,7 @@ class _ArchiveScreenState extends State<ArchiveScreen> {
     BuildContext context,
     List<LifeArchiveEntry> entries,
   ) {
+    final strings = AnnaStrings.of(context);
     final years = entries.map((entry) => entry.date.year).toSet().length;
     int count(LifeArchiveKind kind) =>
         entries.where((entry) => entry.kind == kind).length;
@@ -1571,14 +1573,14 @@ class _ArchiveScreenState extends State<ArchiveScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Row(
+          Row(
             children: [
-              Icon(Icons.history_rounded),
-              SizedBox(width: 8),
+              const Icon(Icons.history_rounded),
+              const SizedBox(width: 8),
               Expanded(
                 child: Text(
-                  'La tua storia, in un unico posto',
-                  style: TextStyle(
+                  strings.storyOnePlace,
+                  style: const TextStyle(
                     fontWeight: FontWeight.w900,
                     fontSize: 18,
                   ),
@@ -1589,8 +1591,8 @@ class _ArchiveScreenState extends State<ArchiveScreen> {
           const SizedBox(height: 6),
           Text(
             entries.isEmpty
-                ? 'Qui ritrovi diario, agenda, allenamenti e contenuti conservati senza creare copie dei tuoi dati.'
-                : '${entries.length} momenti · $years ${years == 1 ? 'anno' : 'anni'}',
+                ? strings.storyArchiveEmptyDescription
+                : strings.momentsYears(entries.length, years),
           ),
           if (entries.isNotEmpty) ...[
             const SizedBox(height: 12),
@@ -1602,7 +1604,7 @@ class _ArchiveScreenState extends State<ArchiveScreen> {
                 if (total == 0) return const SizedBox.shrink();
                 return Chip(
                   avatar: Icon(kind.icon, size: 17),
-                  label: Text('${kind.label} · $total'),
+                  label: Text('${strings.archiveKind(kind)} · $total'),
                 );
               }).toList(growable: false),
             ),
@@ -1616,7 +1618,11 @@ class _ArchiveScreenState extends State<ArchiveScreen> {
     BuildContext context,
     LifeArchiveEntry entry,
   ) {
-    final dateText = DateFormat('d MMMM yyyy', 'it_IT').format(entry.date);
+    final strings = AnnaStrings.of(context);
+    final dateText = DateFormat(
+      'd MMMM yyyy',
+      AnnaStrings.intlLocale(context),
+    ).format(entry.date);
     return Card(
       child: ListTile(
         contentPadding: const EdgeInsets.fromLTRB(14, 6, 8, 6),
@@ -1643,8 +1649,8 @@ class _ArchiveScreenState extends State<ArchiveScreen> {
                     entry.kind == LifeArchiveKind.inbox)
             ? IconButton(
                 tooltip: entry.kind == LifeArchiveKind.diary
-                    ? 'Ripristina nel diario'
-                    : 'Ripristina in Inbox',
+                    ? strings.restoreToDiary
+                    : strings.restoreToInbox,
                 onPressed: () => _restoreEntry(entry),
                 icon: const Icon(Icons.unarchive_outlined),
               )
@@ -1658,15 +1664,16 @@ class _ArchiveScreenState extends State<ArchiveScreen> {
     List<DateTime> months,
   ) {
     if (months.isEmpty) return const SizedBox.shrink();
+    final strings = AnnaStrings.of(context);
 
     return ExpansionTile(
       tilePadding: EdgeInsets.zero,
       leading: const Icon(Icons.calendar_month_outlined),
-      title: const Text(
-        'Esplora per mese',
-        style: TextStyle(fontWeight: FontWeight.w900),
+      title: Text(
+        strings.exploreByMonth,
+        style: const TextStyle(fontWeight: FontWeight.w900),
       ),
-      subtitle: Text('${months.length} mesi con contenuti'),
+      subtitle: Text(strings.monthsWithContent(months.length)),
       children: months.map((month) {
         final data = widget.store.month(month.year, month.month);
         final events = widget.store.items
@@ -1691,15 +1698,21 @@ class _ArchiveScreenState extends State<ArchiveScreen> {
         return ListTile(
           contentPadding: const EdgeInsets.symmetric(horizontal: 8),
           title: Text(
-            _cap(DateFormat('MMMM yyyy', 'it_IT').format(month)),
+            _cap(
+              DateFormat(
+                'MMMM yyyy',
+                AnnaStrings.intlLocale(context),
+              ).format(month),
+            ),
             style: const TextStyle(fontWeight: FontWeight.w800),
           ),
           subtitle: Text(
             [
-              if (events > 0) '$events impegni',
-              if (journalDays > 0) '$journalDays giorni raccontati',
-              if (workouts > 0) '$workouts allenamenti',
-              if (data.goals.isNotEmpty) '${data.goals.length} obiettivi',
+              if (events > 0) strings.commitmentsCount(events),
+              if (journalDays > 0) strings.journalDaysCount(journalDays),
+              if (workouts > 0) strings.workoutsCount(workouts),
+              if (data.goals.isNotEmpty)
+                strings.goalsCount(data.goals.length),
             ].join(' · '),
           ),
           trailing: const Icon(Icons.chevron_right),
@@ -1728,6 +1741,7 @@ class _ArchiveScreenState extends State<ArchiveScreen> {
         widget.store.workoutRevision,
       ]),
       builder: (context, _) {
+        final strings = AnnaStrings.of(context);
         final allEntries = widget.store.lifeArchiveEntries();
         final entries = widget.store.lifeArchiveEntries(
           query: searchController.text,
@@ -1738,13 +1752,13 @@ class _ArchiveScreenState extends State<ArchiveScreen> {
 
         return Scaffold(
           appBar: AppBar(
-            title: const Text(
-              'Archivio della vita',
-              style: TextStyle(fontWeight: FontWeight.w900),
+            title: Text(
+              strings.lifeArchive,
+              style: const TextStyle(fontWeight: FontWeight.w900),
             ),
             actions: [
               IconButton(
-                tooltip: 'Cestino',
+                tooltip: strings.trash,
                 onPressed: () => Navigator.push(
                   context,
                   MaterialPageRoute(
@@ -1762,13 +1776,13 @@ class _ArchiveScreenState extends State<ArchiveScreen> {
               const SizedBox(height: 12),
               SearchBar(
                 controller: searchController,
-                hintText: 'Cerca in tutta la tua storia...',
+                hintText: strings.searchWholeStory,
                 leading: const Icon(Icons.search),
                 trailing: searchController.text.isEmpty
                     ? null
                     : [
                         IconButton(
-                          tooltip: 'Cancella ricerca',
+                          tooltip: strings.clearSearch,
                           onPressed: () {
                             searchController.clear();
                             setState(() {});
@@ -1788,7 +1802,7 @@ class _ArchiveScreenState extends State<ArchiveScreen> {
                       padding: const EdgeInsets.only(right: 7),
                       child: FilterChip(
                         selected: filter == null,
-                        label: const Text('Tutto'),
+                        label: Text(strings.all),
                         avatar: const Icon(Icons.layers_outlined),
                         onSelected: (_) => setState(() => filter = null),
                       ),
@@ -1799,7 +1813,7 @@ class _ArchiveScreenState extends State<ArchiveScreen> {
                         child: FilterChip(
                           selected: filter == kind,
                           avatar: Icon(kind.icon),
-                          label: Text(kind.label),
+                          label: Text(strings.archiveKind(kind)),
                           onSelected: (_) => setState(() => filter = kind),
                         ),
                       ),
@@ -1813,8 +1827,8 @@ class _ArchiveScreenState extends State<ArchiveScreen> {
                   padding: const EdgeInsets.symmetric(vertical: 28),
                   child: Text(
                     searchController.text.trim().isEmpty && filter == null
-                        ? 'L’archivio è ancora vuoto.'
-                        : 'Nessun momento corrisponde a questa ricerca.',
+                        ? strings.archiveStillEmpty
+                        : strings.noMomentMatches,
                     textAlign: TextAlign.center,
                   ),
                 )

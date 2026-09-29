@@ -128,34 +128,33 @@ Future<void> _saveUnifiedCapturePhoto(
 Future<ImageSource?> _chooseUnifiedCaptureImageSource(
   BuildContext context,
 ) {
+  final strings = AnnaStrings.of(context);
   return showModalBottomSheet<ImageSource>(
     context: context,
     showDragHandle: true,
     builder: (sheetContext) => SafeArea(
       child: Wrap(
         children: [
-          const ListTile(
+          ListTile(
             title: Text(
-              'Aggiungi una foto',
-              style: TextStyle(fontWeight: FontWeight.w900),
+              strings.addPhoto,
+              style: const TextStyle(fontWeight: FontWeight.w900),
             ),
-            subtitle: Text(
-              'La foto viene salvata come normale momento del diario.',
-            ),
+            subtitle: Text(strings.photoStoredAsDiaryMoment),
           ),
           if (!kIsWeb)
             ListTile(
               leading: const CircleAvatar(
                 child: Icon(Icons.photo_camera_outlined),
               ),
-              title: const Text('Scatta una foto'),
+              title: Text(strings.takePhoto),
               onTap: () => Navigator.pop(sheetContext, ImageSource.camera),
             ),
           ListTile(
             leading: const CircleAvatar(
               child: Icon(Icons.photo_library_outlined),
             ),
-            title: const Text(kIsWeb ? 'Scegli una foto' : 'Scegli dalla galleria'),
+            title: Text(kIsWeb ? strings.choosePhoto : strings.chooseGallery),
             onTap: () => Navigator.pop(sheetContext, ImageSource.gallery),
           ),
         ],
@@ -165,30 +164,31 @@ Future<ImageSource?> _chooseUnifiedCaptureImageSource(
 }
 
 Future<String?> _showUnifiedInboxEditor(BuildContext context) async {
+  final strings = AnnaStrings.of(context);
   final controller = TextEditingController();
   final value = await showDialog<String>(
     context: context,
     builder: (dialogContext) => AlertDialog(
-      title: const Text('Nota rapida'),
+      title: Text(strings.quickNote),
       content: TextField(
         controller: controller,
         autofocus: true,
         minLines: 2,
         maxLines: 6,
         textCapitalization: TextCapitalization.sentences,
-        decoration: const InputDecoration(
-          hintText: 'Scrivi al volo...',
+        decoration: InputDecoration(
+          hintText: strings.writeQuickly,
         ),
       ),
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(dialogContext),
-          child: const Text('Annulla'),
+          child: Text(strings.cancel),
         ),
         FilledButton(
           onPressed: () =>
               Navigator.pop(dialogContext, controller.text.trim()),
-          child: const Text('Salva'),
+          child: Text(strings.save),
         ),
       ],
     ),
@@ -203,10 +203,9 @@ Future<void> showUnifiedCapture(
   DateTime? initialDate,
   UnifiedCaptureEntryPoint entryPoint = UnifiedCaptureEntryPoint.home,
 }) async {
+  final strings = AnnaStrings.of(context);
   final targetDay = _normalizeUnifiedCaptureDay(initialDate);
-  final dayLabel = AgendaStore.sameDay(targetDay, DateTime.now())
-      ? 'oggi'
-      : DateFormat('d MMMM', 'it_IT').format(targetDay);
+  final dayLabel = strings.dayWord(targetDay);
 
   final action = await showModalBottomSheet<_UnifiedCaptureAction>(
     context: context,
@@ -218,22 +217,22 @@ Future<void> showUnifiedCapture(
           mainAxisSize: MainAxisSize.min,
           children: [
             ListTile(
-              title: const Text(
-                'Cattura',
-                style: TextStyle(fontWeight: FontWeight.w900),
+              title: Text(
+                strings.capture,
+                style: const TextStyle(fontWeight: FontWeight.w900),
               ),
               subtitle: Text(
                 entryPoint == UnifiedCaptureEntryPoint.inbox
-                    ? 'Scrivi al volo oppure salva un momento nella giornata.'
-                    : 'Testo, voce e foto entrano nello stesso flusso della giornata.',
+                    ? strings.captureInboxDescription
+                    : strings.captureDayDescription,
               ),
             ),
             ListTile(
               leading: const CircleAvatar(
                 child: Icon(Icons.edit_note_outlined),
               ),
-              title: const Text('Scrivi un momento'),
-              subtitle: Text('Aggiungi una nota al diario di $dayLabel.'),
+              title: Text(strings.writeMoment),
+              subtitle: Text(strings.addDiaryNote(dayLabel)),
               onTap: () =>
                   Navigator.pop(sheetContext, _UnifiedCaptureAction.text),
             ),
@@ -241,8 +240,8 @@ Future<void> showUnifiedCapture(
               leading: const CircleAvatar(
                 child: Icon(Icons.mic_none_outlined),
               ),
-              title: const Text('Nota vocale'),
-              subtitle: Text('Registra un audio nel diario di $dayLabel.'),
+              title: Text(strings.voiceNote),
+              subtitle: Text(strings.recordDiaryAudio(dayLabel)),
               onTap: () =>
                   Navigator.pop(sheetContext, _UnifiedCaptureAction.voice),
             ),
@@ -250,8 +249,8 @@ Future<void> showUnifiedCapture(
               leading: const CircleAvatar(
                 child: Icon(Icons.photo_camera_back_outlined),
               ),
-              title: const Text('Foto'),
-              subtitle: Text('Salva una foto come momento di $dayLabel.'),
+              title: Text(strings.photo),
+              subtitle: Text(strings.savePhotoMoment(dayLabel)),
               onTap: () =>
                   Navigator.pop(sheetContext, _UnifiedCaptureAction.photo),
             ),
@@ -259,39 +258,39 @@ Future<void> showUnifiedCapture(
               leading: const CircleAvatar(
                 child: Icon(Icons.inbox_outlined),
               ),
-              title: const Text('Nota rapida in Inbox'),
-              subtitle: const Text('Da organizzare in un secondo momento.'),
+              title: Text(strings.quickInboxNote),
+              subtitle: Text(strings.organizeLater),
               onTap: () =>
                   Navigator.pop(sheetContext, _UnifiedCaptureAction.inbox),
             ),
             const Divider(height: 1),
             ListTile(
               leading: const Icon(Icons.check_circle_outline),
-              title: const Text('Attività'),
+              title: Text(strings.task),
               onTap: () =>
                   Navigator.pop(sheetContext, _UnifiedCaptureAction.task),
             ),
             ListTile(
               leading: const Icon(Icons.event_outlined),
-              title: const Text('Appuntamento'),
+              title: Text(strings.appointment),
               onTap: () =>
                   Navigator.pop(sheetContext, _UnifiedCaptureAction.event),
             ),
             ListTile(
               leading: const Icon(Icons.cake_outlined),
-              title: const Text('Compleanno'),
+              title: Text(strings.birthday),
               onTap: () =>
                   Navigator.pop(sheetContext, _UnifiedCaptureAction.birthday),
             ),
             ListTile(
               leading: const Icon(Icons.person_add_alt_1_outlined),
-              title: const Text('Persona importante'),
+              title: Text(strings.importantPerson),
               onTap: () =>
                   Navigator.pop(sheetContext, _UnifiedCaptureAction.person),
             ),
             ListTile(
               leading: const Icon(Icons.close),
-              title: const Text('Chiudi'),
+              title: Text(strings.close),
               onTap: () => Navigator.pop(sheetContext),
             ),
           ],
@@ -309,7 +308,7 @@ Future<void> showUnifiedCapture(
       await _saveUnifiedCaptureText(store, targetDay, text);
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Momento salvato nel diario di $dayLabel.')),
+          SnackBar(content: Text(strings.momentSaved(dayLabel))),
         );
       }
       return;
@@ -327,7 +326,7 @@ Future<void> showUnifiedCapture(
       );
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Nota vocale salvata nel diario di $dayLabel.')),
+          SnackBar(content: Text(strings.voiceSaved(dayLabel))),
         );
       }
       return;
@@ -347,7 +346,7 @@ Future<void> showUnifiedCapture(
       );
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Foto salvata nel diario di $dayLabel.')),
+          SnackBar(content: Text(strings.photoSaved(dayLabel))),
         );
       }
       return;
@@ -363,7 +362,7 @@ Future<void> showUnifiedCapture(
       );
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Nota salvata in Inbox.')),
+          SnackBar(content: Text(strings.inboxSaved)),
         );
       }
       return;

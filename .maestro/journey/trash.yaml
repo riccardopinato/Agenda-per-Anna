@@ -7,10 +7,10 @@ appId: com.riccardopinato.agenda_per_anna
 - tapOn:
     text: "(Archivio|Archive|Archivo|Archives|Arquivo)"
 - extendedWaitUntil:
-    visible: "Archivio della vita"
+    visible: '(Archivio della vita|Life archive|Archivo de vida|Archives de vie|Arquivo da vida)'
     timeout: 10000
 - tapOn:
-    text: "Cestino"
+    text: '(Cestino|Trash|Papelera|Corbeille|Lixo)'
 - extendedWaitUntil:
     visible: "Cestino"
     timeout: 10000

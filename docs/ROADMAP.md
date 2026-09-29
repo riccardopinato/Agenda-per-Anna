@@ -36,6 +36,7 @@ Source of truth for the active product sequence after v0.52. The roadmap follows
 | v0.79 | Privacy Architecture Finalization | Completed | One Privacy Center over the existing lock, Vault, backup/data-safety and account/data-rights systems |
 | v0.80 | Notes Bridge Lite | Completed | Explicit one-way copy from private diary/Inbox into portable Notes-friendly text without coupling the two apps |
 | v0.81 | Localization Foundation | Completed | Device/manual locale selection plus localized app chrome on the existing preferences path |
+| v0.82 | Localization Coverage | Completed | Calendar/Today, Unified Capture, Inbox and Open Life Archive migrated onto the shared localization foundation |
 
 ## Permanent constraints for this sequence
 
@@ -336,6 +337,21 @@ Per the active development cadence, AppLab runs once every two feature versions.
 - The same Shopping List screen supports private and shared modes to avoid duplicated UX logic.
 - Release metadata is aligned to v0.71.0+81.
 - Analyze, full tests, Web release, Android size audit and AppLab Trusted Verify must be green before promotion to main.
+
+
+## v0.82 acceptance criteria
+
+- Calendar/Today, Unified Capture, Inbox and Open Life Archive consume the v0.81 AnnaStrings localization foundation.
+- These flows must not introduce a second localization package, translation service or language persistence path.
+- User-facing date formatting in the migrated flows follows the resolved app locale instead of hardcoded Italian locale IDs.
+- Unified Capture localizes its action sheet, quick-note editor, photo-source chooser and save feedback.
+- Inbox localizes empty state, capture action, action menu and timestamps.
+- Open Life Archive localizes title, search, filters, restore actions, month exploration and aggregate counts.
+- Calendar/Today localizes top-level titles, timeline/day-context chrome and relevant empty states.
+- Maestro/AppLab selectors for migrated navigation and capture/archive flows remain valid across en/it/es/fr/pt.
+- Lower-frequency legacy strings may continue to migrate incrementally in subsequent coverage versions without changing localization architecture.
+- Release metadata is aligned to v0.82.0+92.
+- Development checks, Web release, Android size audit and AppLab Trusted Verify must all pass before merge.
 
 
 ## v0.81 acceptance criteria

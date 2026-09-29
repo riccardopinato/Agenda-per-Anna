@@ -161,7 +161,7 @@ void main() {
     expect(memories, contains("label: const Text('Riscopri')"));
     expect(memories, contains('memoryRecallSnapshot('));
     expect(planner, contains('memoryRecallSnapshot(day)'));
-    expect(planner, contains("'In questo giorno'"));
+    expect(planner, contains('strings.onThisDay'));
 
     for (final forbidden in [
       'memory_engine',

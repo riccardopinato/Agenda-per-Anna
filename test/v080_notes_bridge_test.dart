@@ -133,7 +133,7 @@ void main() {
     expect(domain, contains('class NotesBridgePayload'));
     expect(domain, contains('notesBridgeTextForInbox'));
     expect(domain, contains('notesBridgeTextForDiary'));
-    expect(inbox, contains("'Copia per Notes'"));
+    expect(inbox, contains('strings.copyForNotes'));
     expect(diary, contains("'Copia per Notes'"));
 
     for (final forbidden in [

@@ -6,18 +6,18 @@ appId: com.riccardopinato.agenda_per_anna
 - tapOn:
     text: '(Archivio|Archive|Archivo|Archives|Arquivo)'
 - extendedWaitUntil:
-    visible: "Archivio della vita"
+    visible: '(Archivio della vita|Life archive|Archivo de vida|Archives de vie|Arquivo da vida)'
     timeout: 10000
 - assertVisible:
-    text: 'Cerca in tutta la tua storia[\s\S]*'
+    text: '(Cerca in tutta la tua storia|Search your whole story|Busca en toda tu historia|Recherche dans toute ton histoire|Pesquisa em toda a tua história)[\s\S]*'
 - assertVisible:
-    text: 'Tutto'
+    text: '(Tutto|All|Todo|Tout|Tudo)'
 - assertVisible:
-    text: 'Diario'
+    text: '(Diario|Diary|Journal|Diário)'
 - assertVisible:
-    text: 'Agenda'
+    text: '(Agenda|My agenda|Mi agenda|Mon agenda|A minha agenda)'
 - assertVisible:
-    text: 'Allenamenti'
+    text: '(Allenamenti|Workouts|Entrenamientos|Entraînements|Treinos)'
 - back
 - extendedWaitUntil:
     visible: "(La mia agenda|My agenda|Mi agenda|Mon agenda|A minha agenda)"

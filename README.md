@@ -2,7 +2,7 @@
 
 Flutter app for personal planning, private diary and the shared **Noi ♡** space.
 
-Current release line: **v0.81.0**.
+Current release line: **v0.82.0**.
 
 ## Core areas
 
@@ -481,6 +481,20 @@ See `docs/ARCHITECTURE.md` and `supabase/README.md` for implementation details.
 - Share-target text and images now reuse the same capture persistence helpers instead of maintaining separate diary-save logic.
 - Capturing from `La mia giornata` respects the day currently being viewed, including past/future days, while preserving the current time as the moment ordering time inside that day.
 - No capture database, parallel media store, AI layer or new cloud schema is introduced.
+
+## v0.82.0 — Localization Coverage
+
+- Extends the v0.81 localization foundation across the highest-frequency daily flows: Calendar/Today, Unified Capture, Inbox and Open Life Archive.
+- These surfaces reuse the same `AnnaStrings`, resolved locale and existing AppLanguage preference introduced in v0.81.
+- Calendar, planner and archive date formatting now follows the selected/resolved app locale rather than hardcoded Italian formatting.
+- Unified Capture localizes its sheet, quick Inbox editor, photo-source chooser and success feedback.
+- Inbox localizes empty state, capture action, menus and timestamps.
+- Open Life Archive localizes title, search, filters, restore actions, month exploration and aggregate counts.
+- AppLab/Maestro selectors accept the localized labels for these flows across en/it/es/fr/pt.
+- Feature-specific lower-frequency strings not migrated in this step remain on the same incremental localization roadmap.
+- No second localization framework, translation backend, database or language sync channel is introduced.
+- Release metadata is aligned to v0.82.0+92.
+
 
 ## v0.81.0 — Localization Foundation
 

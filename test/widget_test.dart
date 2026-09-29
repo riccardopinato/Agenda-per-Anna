@@ -6,6 +6,9 @@ void main() {
   testWidgets('Agenda app starts', (tester) async {
     await initializeDateFormatting('it_IT', null);
     final store = AgendaStore();
+    store.preferences = const AgendaPreferences(
+      appLanguage: AppLanguage.italian,
+    );
     await tester.pumpWidget(
       AgendaApp(store: store, bypassIdentityForTesting: true),
     );
