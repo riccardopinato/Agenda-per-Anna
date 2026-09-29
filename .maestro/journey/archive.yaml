@@ -1,0 +1,20 @@
+appId: com.riccardopinato.agenda_per_anna
+---
+- tapOn:
+    text: 'Home[\s\S]*'
+    retryTapIfNoChange: true
+- tapOn:
+    text: 'Archivio'
+- extendedWaitUntil:
+    visible: "Archivio della vita"
+    timeout: 10000
+- assertVisible:
+    text: 'Cerca in tutta la tua storia[\s\S]*'
+- assertVisible:
+    text: 'Tutto'
+- assertVisible:
+    text: 'Diario'
+- assertVisible:
+    text: 'Agenda'
+- assertVisible:
+    text: 'Allenamenti'
