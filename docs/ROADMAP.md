@@ -35,6 +35,7 @@ Source of truth for the active product sequence after v0.52. The roadmap follows
 | v0.78 | Open Life Archive | Completed | One derived historical surface over diary, agenda, workouts and archived Inbox without duplicating storage |
 | v0.79 | Privacy Architecture Finalization | Completed | One Privacy Center over the existing lock, Vault, backup/data-safety and account/data-rights systems |
 | v0.80 | Notes Bridge Lite | Completed | Explicit one-way copy from private diary/Inbox into portable Notes-friendly text without coupling the two apps |
+| v0.81 | Release Candidate Consolidation | Completed | Final post-v0.80 production guardrails, lightweight-app policy and expanded trusted critical journey |
 
 ## Permanent constraints for this sequence
 
@@ -335,6 +336,20 @@ Per the active development cadence, AppLab runs once every two feature versions.
 - The same Shopping List screen supports private and shared modes to avoid duplicated UX logic.
 - Release metadata is aligned to v0.71.0+81.
 - Analyze, full tests, Web release, Android size audit and AppLab Trusted Verify must be green before promotion to main.
+
+
+## v0.81 acceptance criteria
+
+- The release candidate adds no overlapping content, memory, archive, privacy, sync or AI subsystem.
+- No bundled local LLM/model asset (.gguf, .onnx, .tflite, .safetensors, .pt, .pth, .task) is allowed in the app bundle.
+- Heavy AI/runtime dependencies remain absent unless a future dedicated product/size decision explicitly approves them.
+- The cumulative AppLab journey includes Settings / Privacy Center in addition to the existing critical product surfaces.
+- Privacy Center runtime coverage verifies reachability of Private Vault, Backup/Data Safety and Account/Data Rights.
+- Architecture documentation reflects the current post-v0.80 runtime domains rather than the historical v0.51 structure.
+- A dedicated v0.81 production-readiness document records product boundaries, lightweight-app policy and required release gates.
+- Full localization and any bundled local LLM remain deliberately deferred instead of being partially introduced.
+- Release metadata is aligned to v0.81.0+91.
+- Development checks, Web release, Android size audit and AppLab Trusted Verify must all pass before merge.
 
 
 ## v0.80 acceptance criteria
