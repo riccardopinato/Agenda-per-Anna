@@ -2,7 +2,7 @@
 
 Flutter app for personal planning, private diary and the shared **Noi ♡** space.
 
-Current release line: **v0.80.0**.
+Current release line: **v0.81.0**.
 
 ## Core areas
 
@@ -481,6 +481,20 @@ See `docs/ARCHITECTURE.md` and `supabase/README.md` for implementation details.
 - Share-target text and images now reuse the same capture persistence helpers instead of maintaining separate diary-save logic.
 - Capturing from `La mia giornata` respects the day currently being viewed, including past/future days, while preserving the current time as the moment ordering time inside that day.
 - No capture database, parallel media store, AI layer or new cloud schema is introduced.
+
+## v0.81.0 — Localization Foundation
+
+- Adds the localization foundation for English, Italian, Spanish, French and Portuguese.
+- Language can follow the device or be selected manually from Settings.
+- Unsupported device locales fall back to English.
+- The selected language is stored in the existing AgendaPreferences payload and therefore reuses the established account/local-first preference lifecycle.
+- Material/Cupertino system strings, primary bottom navigation, Home chrome and the main Settings chrome now react to the selected locale.
+- Date formatting for the localized Home header follows the resolved app locale.
+- Existing Maestro journeys accept localized navigation labels so runtime validation remains stable across device locales.
+- This release is intentionally a foundation: legacy feature-specific strings not yet migrated remain unchanged until subsequent coverage steps.
+- No localization database, remote translation service, new sync queue or parallel preference store is introduced.
+- Release metadata is aligned to v0.81.0+91.
+
 
 ## v0.80.0 — Notes Bridge Lite
 
