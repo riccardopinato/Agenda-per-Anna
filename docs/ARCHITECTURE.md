@@ -475,3 +475,13 @@ Localization is configuration over the existing application shell, not a new dat
 - Feature-specific strings can migrate incrementally onto this foundation without changing persistence or introducing another localization framework.
 - No localization database, remote translation service, new sync channel or backend schema is introduced.
 
+## v0.82 — Localization Coverage
+
+v0.82 expands coverage without changing the localization architecture established in v0.81.
+
+- Calendar/Today, Unified Capture, Inbox and Open Life Archive obtain strings from `AnnaStrings.of(context)`.
+- Date/time presentation in migrated flows uses `AnnaStrings.intlLocale(context)` or the same resolved language through `dayWord`.
+- Domain records, enums, persistence payloads and sync contracts remain language-neutral; only presentation strings are localized.
+- Maestro selectors accept all five supported labels for migrated runtime checkpoints.
+- New translations remain part of the existing `AnnaStrings` module; no parallel ARB/service/database layer is introduced.
+
