@@ -32,23 +32,23 @@ class _MainShellState extends State<MainShell> {
         onDestinationSelected: (v) => setState(() => index = v),
         destinations: [
           NavigationDestination(
-            icon: Icon(Icons.home_outlined),
-            selectedIcon: Icon(Icons.home),
+            icon: const Icon(Icons.home_outlined),
+            selectedIcon: const Icon(Icons.home),
             label: AgendaLocalization.text(context, 'nav.home'),
           ),
           NavigationDestination(
-            icon: Icon(Icons.calendar_month_outlined),
-            selectedIcon: Icon(Icons.calendar_month),
+            icon: const Icon(Icons.calendar_month_outlined),
+            selectedIcon: const Icon(Icons.calendar_month),
             label: AgendaLocalization.text(context, 'nav.month'),
           ),
           NavigationDestination(
-            icon: Icon(Icons.view_week_outlined),
-            selectedIcon: Icon(Icons.view_week),
+            icon: const Icon(Icons.view_week_outlined),
+            selectedIcon: const Icon(Icons.view_week),
             label: AgendaLocalization.text(context, 'nav.week'),
           ),
           NavigationDestination(
-            icon: Icon(Icons.today_outlined),
-            selectedIcon: Icon(Icons.today),
+            icon: const Icon(Icons.today_outlined),
+            selectedIcon: const Icon(Icons.today),
             label: AgendaLocalization.text(context, 'nav.today'),
           ),
         ],
