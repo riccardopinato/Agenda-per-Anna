@@ -447,6 +447,7 @@ class AnnaStrings {
   String get importWorkoutPlan => _pick(en: 'Import TXT / CSV plan', it: 'Importa scheda TXT / CSV', es: 'Importar plan TXT / CSV', fr: 'Importer un programme TXT / CSV', pt: 'Importar plano TXT / CSV');
   String get freeTextWorkoutPlanHelp => _pick(en: 'You can also use free text: anything that does not match the sets × reps format is still saved as a plan entry.', it: 'Puoi usare anche testo libero: ciò che non segue il formato serie × ripetizioni resta comunque salvato come voce della scheda.', es: 'También puedes usar texto libre: lo que no siga el formato series × repeticiones se guardará igualmente como elemento del plan.', fr: 'Tu peux aussi utiliser du texte libre : ce qui ne suit pas le format séries × répétitions est tout de même enregistré comme élément du programme.', pt: 'Também podes usar texto livre: o que não seguir o formato séries × repetições será guardado como item do plano.');
   String get saveWorkoutPlan => _pick(en: 'Save plan', it: 'Salva scheda', es: 'Guardar plan', fr: 'Enregistrer le programme', pt: 'Guardar plano');
+  String workoutSets(int count) => _pick(en: '$count sets', it: '$count serie', es: '$count series', fr: '$count séries', pt: '$count séries');
   String workoutSportLabel(WorkoutSport sport) => switch (sport) {
         WorkoutSport.gym => _pick(en: 'Gym', it: 'Palestra', es: 'Gimnasio', fr: 'Salle', pt: 'Ginásio'),
         WorkoutSport.running => _pick(en: 'Running', it: 'Corsa', es: 'Carrera', fr: 'Course', pt: 'Corrida'),
