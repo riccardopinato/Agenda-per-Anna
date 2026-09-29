@@ -18,6 +18,11 @@ class _BackupScreenState extends State<BackupScreen> {
     return 'Annas-Diary_backup_$stamp.$extension';
   }
 
+  String _openArchiveFileName() {
+    final stamp = DateFormat('yyyy-MM-dd_HH-mm').format(DateTime.now());
+    return 'Annas-Diary_open-life_$stamp.zip';
+  }
+
   void _message(String text) {
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
@@ -65,6 +70,30 @@ class _BackupScreenState extends State<BackupScreen> {
       );
     } catch (_) {
       _message('Non è stato possibile completare la verifica integrità.');
+    } finally {
+      if (mounted) setState(() => busy = false);
+    }
+  }
+
+  Future<void> _exportOpenLifeArchive() async {
+    setState(() => busy = true);
+    try {
+      final bytes = await widget.store.createOpenLifeArchive();
+      final ok = await BackupFileService.instance.saveOpenLifeArchive(
+        bytes: bytes,
+        fileName: _openArchiveFileName(),
+      );
+      _message(
+        ok
+            ? 'Open Life Archive esportato.'
+            : 'Esportazione annullata o non riuscita.',
+      );
+    } catch (error) {
+      _message(
+        error is FormatException
+            ? error.message.toString()
+            : 'Non è stato possibile creare l’Open Life Archive.',
+      );
     } finally {
       if (mounted) setState(() => busy = false);
     }
@@ -128,7 +157,7 @@ class _BackupScreenState extends State<BackupScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Creato il ${DateFormat('d MMMM yyyy, HH:mm', 'it_IT').format(summary.exportedAt)}',
+              'Creato il ${DateFormat('d MMMM yyyy, HH:mm').format(summary.exportedAt)}',
             ),
             const SizedBox(height: 12),
             Text('• ${summary.itemCount} impegni e attività'),
@@ -232,7 +261,7 @@ class _BackupScreenState extends State<BackupScreen> {
             title: const Text('Ripristinare questo backup locale?'),
             content: Text(
               '${snapshot.label}\n'
-              '${DateFormat('d MMMM yyyy, HH:mm', 'it_IT').format(snapshot.createdAt)}',
+              '${DateFormat('d MMMM yyyy, HH:mm').format(snapshot.createdAt)}',
             ),
             actions: [
               TextButton(
@@ -338,6 +367,23 @@ class _BackupScreenState extends State<BackupScreen> {
                     const SizedBox(height: 10),
                     _DataSafetyCard(report: safetyReport!),
                   ],
+                  const SizedBox(height: 10),
+                  _BackupActionCard(
+                    icon: Icons.folder_zip_outlined,
+                    title: AgendaLocalization.text(
+                      context,
+                      'archive.openTitle',
+                    ),
+                    subtitle: AgendaLocalization.text(
+                      context,
+                      'archive.openSubtitle',
+                    ),
+                    buttonLabel: AgendaLocalization.text(
+                      context,
+                      'archive.export',
+                    ),
+                    onPressed: busy ? null : _exportOpenLifeArchive,
+                  ),
                   const SizedBox(height: 10),
                   _BackupActionCard(
                     icon: Icons.description_outlined,
