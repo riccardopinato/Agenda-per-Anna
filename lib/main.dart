@@ -175,7 +175,9 @@ Future<void> main() async {
   PushNotificationService.configureBackgroundHandling();
 
   try {
-    await initializeDateFormatting('it_IT', null);
+    for (final locale in const ['en', 'it', 'es', 'fr', 'pt']) {
+      await initializeDateFormatting(locale, null);
+    }
   } catch (_) {}
 
   final store = AgendaStore();
