@@ -2,6 +2,32 @@ part of '../main.dart';
 
 enum AgendaThemeMode { system, light, dark }
 
+enum AppLanguage { system, italian, english, spanish, french, portuguese }
+
+extension AppLanguageUi on AppLanguage {
+  String get code => switch (this) {
+        AppLanguage.system => '',
+        AppLanguage.italian => 'it',
+        AppLanguage.english => 'en',
+        AppLanguage.spanish => 'es',
+        AppLanguage.french => 'fr',
+        AppLanguage.portuguese => 'pt',
+      };
+
+  String get nativeLabel => switch (this) {
+        AppLanguage.system => 'Sistema',
+        AppLanguage.italian => 'Italiano',
+        AppLanguage.english => 'English',
+        AppLanguage.spanish => 'Español',
+        AppLanguage.french => 'Français',
+        AppLanguage.portuguese => 'Português',
+      };
+
+  Locale? get locale =>
+      this == AppLanguage.system ? null : Locale(code);
+}
+
+
 enum AgendaPalette { rose, lilac, sage, peach, sky }
 
 extension AgendaPaletteUi on AgendaPalette {
@@ -36,6 +62,7 @@ extension StartTabUi on StartTab {
 class AgendaPreferences {
   final String displayName;
   final AgendaThemeMode themeMode;
+  final AppLanguage appLanguage;
   final AgendaPalette palette;
   final bool showDailyQuote;
   final StartTab startTab;
@@ -54,6 +81,7 @@ class AgendaPreferences {
   const AgendaPreferences({
     this.displayName = '',
     this.themeMode = AgendaThemeMode.system,
+    this.appLanguage = AppLanguage.system,
     this.palette = AgendaPalette.rose,
     this.showDailyQuote = true,
     this.startTab = StartTab.today,
@@ -73,6 +101,7 @@ class AgendaPreferences {
   AgendaPreferences copyWith({
     String? displayName,
     AgendaThemeMode? themeMode,
+    AppLanguage? appLanguage,
     AgendaPalette? palette,
     bool? showDailyQuote,
     StartTab? startTab,
@@ -94,6 +123,7 @@ class AgendaPreferences {
     return AgendaPreferences(
       displayName: displayName ?? this.displayName,
       themeMode: themeMode ?? this.themeMode,
+      appLanguage: appLanguage ?? this.appLanguage,
       palette: palette ?? this.palette,
       showDailyQuote: showDailyQuote ?? this.showDailyQuote,
       startTab: startTab ?? this.startTab,
@@ -119,6 +149,7 @@ class AgendaPreferences {
   Map<String, dynamic> toJson() => {
         'displayName': displayName,
         'themeMode': themeMode.name,
+        'appLanguage': appLanguage.name,
         'palette': palette.name,
         'showDailyQuote': showDailyQuote,
         'startTab': startTab.name,
@@ -141,6 +172,10 @@ class AgendaPreferences {
         themeMode: AgendaThemeMode.values.firstWhere(
           (e) => e.name == json['themeMode'],
           orElse: () => AgendaThemeMode.system,
+        ),
+        appLanguage: AppLanguage.values.firstWhere(
+          (e) => e.name == json['appLanguage'],
+          orElse: () => AppLanguage.system,
         ),
         palette: AgendaPalette.values.firstWhere(
           (e) => e.name == json['palette'],
