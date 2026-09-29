@@ -173,8 +173,8 @@ void main() {
 
     expect(shell, contains('HomeScreen(store: widget.store)'));
     expect(shell, contains('PlannerScreen(store: widget.store)'));
-    expect(shell, contains("label: 'Home'"));
-    expect(shell, contains("label: 'Oggi'"));
+    expect(shell, contains('label: strings.navHome'));
+    expect(shell, contains('label: strings.navToday'));
     expect(StartTab.home.index, 0);
     expect(StartTab.today.index, 3);
   });
