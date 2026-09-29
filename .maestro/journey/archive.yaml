@@ -18,3 +18,8 @@ appId: com.riccardopinato.agenda_per_anna
     text: 'Agenda'
 - assertVisible:
     text: 'Allenamenti'
+- back
+- extendedWaitUntil:
+    visible: "La mia agenda"
+    timeout: 10000
+
