@@ -1511,7 +1511,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   children: [
                     Text(
                       strings.appearance,
-                      style: TextStyle(
+                      style: const TextStyle(
                         fontWeight: FontWeight.w900,
                         fontSize: 18,
                       ),
