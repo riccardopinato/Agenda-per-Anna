@@ -758,7 +758,7 @@ Future<WorkoutSession?> showWorkoutSessionEditor(
                     for (final exercise
                         in (existing?.exercises ?? plan?.exercises ?? const [])
                             .take(8))
-                      Text('• ${_workoutExerciseLabel(exercise)}'),
+                      Text('• ${_workoutExerciseLabel(exercise, strings)}'),
                   ],
                   if (error != null) ...[
                     const SizedBox(height: 10),
@@ -832,7 +832,7 @@ Future<WorkoutPlan?> showWorkoutPlanEditor(
           }
           if (bytes.isEmpty) {
             setLocal(
-              () => error = 'Non riesco a leggere questo file.',
+              () => error = strings.cannotReadFile,
             );
             return;
           }
