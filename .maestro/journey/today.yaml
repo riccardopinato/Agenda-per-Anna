@@ -4,7 +4,7 @@ appId: com.riccardopinato.agenda_per_anna
     text: 'Oggi[\\s\\S]*'
     retryTapIfNoChange: true
 - extendedWaitUntil:
-    visible: "La mia giornata"
+    visible: 'La mia giornata[\\s\\S]*'
     timeout: 10000
 - extendedWaitUntil:
     visible: "Cattura"
