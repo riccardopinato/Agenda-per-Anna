@@ -2,7 +2,7 @@
 
 Flutter app for personal planning, private diary and the shared **Noi ♡** space.
 
-Current release line: **v0.79.0**.
+Current release line: **v0.80.0**.
 
 ## Core areas
 
@@ -481,6 +481,18 @@ See `docs/ARCHITECTURE.md` and `supabase/README.md` for implementation details.
 - Share-target text and images now reuse the same capture persistence helpers instead of maintaining separate diary-save logic.
 - Capturing from `La mia giornata` respects the day currently being viewed, including past/future days, while preserving the current time as the moment ordering time inside that day.
 - No capture database, parallel media store, AI layer or new cloud schema is introduced.
+
+## v0.80.0 — Notes Bridge Lite
+
+- Adds an explicit one-way **Copia per Notes** action to private diary content and Inbox entries.
+- The bridge produces portable plain text with source, date, tags and existing people/place metadata when available.
+- Diary notes copy their text directly; photo/audio entries copy their captions plus a clear notice that the original media remains in Anna's Diary.
+- Sketches export only their textual elements; strokes and embedded images remain in the diary.
+- Transfer uses the system clipboard and requires an explicit user action. There is no background sync, direct Notes account access or cross-app database.
+- Anna's Diary and Notes-Ecosistema remain separate products and separate sources of truth.
+- No new persistence key, cloud table, sync queue, HTTP dependency or binary-media transfer is introduced.
+- Release metadata is aligned to v0.80.0+90.
+
 
 ## v0.79.0 — Privacy Architecture Finalization
 
