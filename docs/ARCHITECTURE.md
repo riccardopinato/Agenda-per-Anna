@@ -439,3 +439,15 @@ The historical archive is a read projection, not another content domain.
 - Future agenda items are intentionally excluded from the history projection.
 - No archive database, cloud table, search index or backup schema is introduced.
 
+## v0.79 — Privacy Architecture Finalization
+
+Privacy is consolidated at the presentation layer rather than reimplemented.
+
+- The Settings **Privacy Center** reads and writes the existing AppPreferences fields used by `_PrivacyGate`; it introduces no second privacy state.
+- PIN verification, biometric unlock and auto-lock continue to be enforced by the existing application-level privacy gate.
+- `PrivateVaultService` remains a separate encrypted local-only domain with its existing key wrapping and secure-screen behavior.
+- Backup integrity/restore remains owned by the existing backup/data-safety pipeline.
+- Cloud identity, sync, sign-out and permanent account erasure remain owned by `CloudAccountScreen` and the existing backend erasure flow.
+- Privacy Center only aggregates navigation, status and user-facing explanations across those established systems.
+- No privacy database, encryption rewrite, new sync channel or new cloud schema is introduced.
+
