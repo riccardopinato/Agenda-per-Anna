@@ -32,6 +32,7 @@ Source of truth for the active product sequence after v0.52. The roadmap follows
 | v0.75 | Day / Life Consolidation | Completed | Make La mia giornata the central projection for agenda, birthdays, workouts and diary moments |
 | v0.76 | Unified Capture | Completed | One capture surface and one set of existing persistence paths for text, voice, photos, Inbox and agenda actions |
 | v0.77 | Memory Recall 2.0 | Completed | Derived resurfacing across dates, years, people and places using the existing DiaryBlockReference memory primitive |
+| v0.78 | Open Life Archive + Localization | Completed | Portable non-restore archive plus device/manual locale foundation with English fallback |
 
 ## Permanent constraints for this sequence
 
@@ -332,6 +333,20 @@ Per the active development cadence, AppLab runs once every two feature versions.
 - The same Shopping List screen supports private and shared modes to avoid duplicated UX logic.
 - Release metadata is aligned to v0.71.0+81.
 - Analyze, full tests, Web release, Android size audit and AppLab Trusted Verify must be green before promotion to main.
+
+
+## v0.78 acceptance criteria
+
+- Open Life Archive is a separate portable export and is never accepted as the technical restore backup.
+- The ZIP contains readable text, structured open JSON, yearly Markdown chapters and every locally available media asset referenced by exported live content.
+- Trash and app preferences are excluded from the public Open Life dataset; canonical user data remains unchanged.
+- Archive generation reads existing stores/media only and creates no new persistent entity, storage key, cloud table or sync queue.
+- Language preference supports Sistema / Automatico plus IT, EN, ES, FR, DE and PT.
+- Automatic language follows the device when supported and falls back to English otherwise.
+- The selected override persists through AgendaPreferences and participates in existing account/local preference persistence.
+- Material widgets and Intl date formatting use the resolved locale; core shell/onboarding/export surfaces use the localization layer.
+- Release metadata is aligned to v0.78.0+88.
+- Development checks, Web release, Android size audit and AppLab Trusted Verify must all pass before merge.
 
 
 ## v0.77 acceptance criteria
