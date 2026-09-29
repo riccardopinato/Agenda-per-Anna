@@ -29,7 +29,7 @@ Source of truth for the active product sequence after v0.52. The roadmap follows
 | v0.72 | Multisport Workout | Completed | Dedicated Allenamento history + reusable plans for gym, running, cycling, swimming and other sports on existing private infrastructure |
 | v0.73 | External Calendar Overlay | Completed | Read-only Android system-calendar projection with explicit opt-in and no canonical-store duplication |
 | v0.74 | Lifecycle Integrity & Release Metadata Cleanup | Completed | Universal lifecycle regression coverage + canonical release metadata ownership |
-| v0.75 | Day / Life Consolidation | In validation | Make La mia giornata the central projection for agenda, birthdays, workouts and diary moments |
+| v0.75 | Day / Life Consolidation | Completed | Make La mia giornata the central projection for agenda, birthdays, workouts and diary moments |
 
 ## Permanent constraints for this sequence
 
