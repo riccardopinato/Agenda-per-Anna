@@ -341,6 +341,7 @@ Per the active development cadence, AppLab runs once every two feature versions.
 - Quick Capture is directly reachable from `La mia giornata`.
 - Archived diary blocks must not reappear in the day stream.
 - Existing StartTab preferences remain valid; new/default profiles open on `Oggi`.
+- Home remains an explicit reachable destination so memories, people, Noi ♡, backup/account/settings and utility modules are not orphaned by the day-first IA.
 - Release metadata is aligned to v0.75.0+85.
 - Development checks, Web release, Android size audit and AppLab Trusted Verify must all pass before merge.
 
