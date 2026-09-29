@@ -427,3 +427,15 @@ Memory Recall stays entirely at the projection layer.
 - Search/type-filtered Ricordi results may be passed directly into the same snapshot function, avoiding a second memory/search index.
 - No Memory Engine database, Life Core store, embedding index, AI model, cloud table, sync queue or lifecycle entity is introduced.
 
+## v0.78 — Open Life Archive + Localization
+
+Open Life Archive is a derived export, not another persistence layer.
+
+- `createOpenLifeArchive()` reads canonical private data plus referenced MediaAssetStore bytes and produces a disposable ZIP.
+- `life.json` uses an open export envelope, not the restore-backup contract; `life.txt` and `years/*.md` are human-readable projections.
+- Media stays content-addressed in the app; the export adds portable filenames and a media index without mutating stored records.
+- Trash and application preferences are intentionally excluded from the open public dataset.
+- `AppLanguage` is stored inside existing AgendaPreferences. No localization database exists.
+- Device language resolution supports IT/EN/ES/FR/DE/PT and falls back to English.
+- Flutter Material localization delegates and Intl share the same resolved locale.
+
