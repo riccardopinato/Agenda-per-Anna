@@ -896,6 +896,14 @@ class InboxScreen extends StatelessWidget {
     await store.setInboxTags(entry.id, tags);
   }
 
+  Future<void> _copyToNotes(
+    BuildContext context,
+    InboxEntry entry,
+  ) async {
+    final text = store.notesBridgeTextForInbox(entry);
+    await copyNotesBridgePayload(context, text);
+  }
+
   @override
   Widget build(BuildContext context) {
     return AnimatedBuilder(
@@ -971,6 +979,8 @@ class InboxScreen extends StatelessWidget {
                               await _editTags(context, entry);
                             } else if (value == 'archive') {
                               await store.toggleInboxArchived(entry.id);
+                            } else if (value == 'notes') {
+                              await _copyToNotes(context, entry);
                             } else if (value == 'task') {
                               await _convertToTask(context, entry);
                             } else if (value == 'delete') {
@@ -991,6 +1001,10 @@ class InboxScreen extends StatelessWidget {
                             const PopupMenuItem(
                               value: 'archive',
                               child: Text('Archivia'),
+                            ),
+                            const PopupMenuItem(
+                              value: 'notes',
+                              child: Text('Copia per Notes'),
                             ),
                             const PopupMenuItem(
                               value: 'task',
