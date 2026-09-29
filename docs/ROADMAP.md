@@ -31,6 +31,7 @@ Source of truth for the active product sequence after v0.52. The roadmap follows
 | v0.74 | Lifecycle Integrity & Release Metadata Cleanup | Completed | Universal lifecycle regression coverage + canonical release metadata ownership |
 | v0.75 | Day / Life Consolidation | Completed | Make La mia giornata the central projection for agenda, birthdays, workouts and diary moments |
 | v0.76 | Unified Capture | Completed | One capture surface and one set of existing persistence paths for text, voice, photos, Inbox and agenda actions |
+| v0.77 | Memory Recall 2.0 | Completed | Derived resurfacing across dates, years, people and places using the existing DiaryBlockReference memory primitive |
 
 ## Permanent constraints for this sequence
 
@@ -331,6 +332,19 @@ Per the active development cadence, AppLab runs once every two feature versions.
 - The same Shopping List screen supports private and shared modes to avoid duplicated UX logic.
 - Release metadata is aligned to v0.71.0+81.
 - Analyze, full tests, Web release, Android size audit and AppLab Trusted Verify must be green before promotion to main.
+
+
+## v0.77 acceptance criteria
+
+- `DiaryBlockReference` remains the only private diary-memory primitive.
+- Riscopri is a derived read model over existing non-archived diary memories; it must not create a new storage key, database/table, cloud queue or lifecycle type.
+- “In questo giorno” is historical-only and appears in `La mia giornata` when the selected date has older matches.
+- Same-month recall and one-per-year highlights are deterministic and require no AI, embeddings or remote service.
+- People and place recurrence counts are derived from the existing `personIds` and inline `DiaryPlaceReference` metadata.
+- Ricordi search/type filters can feed the same recall projection without a second search index.
+- Existing People, Places, Search, Trash, backup/restore and account isolation remain authoritative.
+- Release metadata is aligned to v0.77.0+87.
+- Development checks, Web release, Android size audit and AppLab Trusted Verify must all pass before merge.
 
 
 ## v0.76 acceptance criteria

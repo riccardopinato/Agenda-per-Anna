@@ -529,6 +529,264 @@ class _DiaryMemoriesScreenState extends State<DiaryMemoriesScreen> {
     );
   }
 
+  Widget _recallSectionHeader(
+    BuildContext context, {
+    required String title,
+    required String subtitle,
+    required IconData icon,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.only(top: 14, bottom: 8),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(icon, size: 21),
+          const SizedBox(width: 9),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w900,
+                    fontSize: 17,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  subtitle,
+                  style: Theme.of(context).textTheme.bodySmall,
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _recallMemoryRow(
+    BuildContext context,
+    DiaryBlockReference record,
+  ) {
+    final block = record.block;
+    final title = widget.store.diaryBlockDisplayTitle(block);
+    final date = DateFormat('d MMMM yyyy', 'it_IT').format(record.date);
+
+    return Card(
+      margin: const EdgeInsets.only(bottom: 8),
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: () => _openRecord(record),
+        child: SizedBox(
+          height: 104,
+          child: Row(
+            children: [
+              SizedBox(
+                width: 104,
+                child: _coverPreview(context, record),
+              ),
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(13, 11, 10, 11),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        title,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(fontWeight: FontWeight.w800),
+                      ),
+                      const Spacer(),
+                      Text(
+                        date,
+                        style: Theme.of(context).textTheme.bodySmall,
+                      ),
+                      if (block.personIds.isNotEmpty ||
+                          block.places.isNotEmpty) ...[
+                        const SizedBox(height: 3),
+                        Text(
+                          [
+                            if (block.personIds.isNotEmpty)
+                              '${block.personIds.length} persone',
+                            if (block.places.isNotEmpty)
+                              '${block.places.length} luoghi',
+                          ].join(' · '),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: Theme.of(context).textTheme.bodySmall,
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+              ),
+              const Padding(
+                padding: EdgeInsets.only(right: 8),
+                child: Icon(Icons.chevron_right),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _recallFacetSection(
+    BuildContext context, {
+    required String title,
+    required IconData icon,
+    required List<MemoryRecallFacet> facets,
+  }) {
+    if (facets.isEmpty) return const SizedBox.shrink();
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _recallSectionHeader(
+          context,
+          title: title,
+          subtitle: 'Collegamenti derivati dai ricordi già salvati.',
+          icon: icon,
+        ),
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          children: facets.map((facet) {
+            return ActionChip(
+              avatar: Icon(
+                facet.kind == MemoryRecallFacetKind.person
+                    ? Icons.person_outline
+                    : Icons.place_outlined,
+                size: 18,
+              ),
+              label: Text('${facet.label} · ${facet.count}'),
+              onPressed: () {
+                if (facet.kind == MemoryRecallFacetKind.person) {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => DiaryMemoriesScreen(
+                        store: widget.store,
+                        personId: facet.id,
+                        personName: facet.label,
+                      ),
+                    ),
+                  );
+                  return;
+                }
+
+                searchController.text = facet.label;
+                setState(() {
+                  filter = null;
+                  view = _DiaryMemoriesView.memories;
+                });
+              },
+            );
+          }).toList(growable: false),
+        ),
+      ],
+    );
+  }
+
+  Widget _rediscoverView(
+    BuildContext context,
+    List<DiaryBlockReference> records,
+  ) {
+    final now = DateTime.now();
+    final snapshot = widget.store.memoryRecallSnapshot(
+      now,
+      personId: widget.personId,
+      references: records,
+    );
+    final linkedPeople = snapshot.people
+        .where((facet) => facet.id != widget.personId)
+        .take(8)
+        .toList(growable: false);
+    final linkedPlaces = snapshot.places.take(8).toList(growable: false);
+    final alreadyShown = <String>{
+      ...snapshot.onThisDay.take(4).map((entry) => entry.block.id),
+      ...snapshot.sameMonthPastYears.take(4).map((entry) => entry.block.id),
+    };
+    final yearHighlights = snapshot.yearHighlights
+        .where((entry) => !alreadyShown.contains(entry.block.id))
+        .take(6)
+        .toList(growable: false);
+    final monthName = _cap(DateFormat('MMMM', 'it_IT').format(now));
+
+    return ListView(
+      padding: const EdgeInsets.fromLTRB(14, 8, 14, 28),
+      children: [
+        const Text(
+          'Riscopri i tuoi ricordi',
+          style: TextStyle(
+            fontWeight: FontWeight.w900,
+            fontSize: 22,
+          ),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          snapshot.isEmpty
+              ? 'Quando avrai ricordi di mesi o anni precedenti, qui ritroverai i momenti che tornano nel tempo.'
+              : '${snapshot.historicalYears} anni del diario riletti attraverso date, persone e luoghi.',
+          style: Theme.of(context).textTheme.bodyMedium,
+        ),
+        if (snapshot.onThisDay.isNotEmpty) ...[
+          _recallSectionHeader(
+            context,
+            title: 'In questo giorno',
+            subtitle:
+                '${snapshot.onThisDay.length} ${snapshot.onThisDay.length == 1 ? 'ricordo' : 'ricordi'} della stessa data negli anni passati.',
+            icon: Icons.history_toggle_off,
+          ),
+          ...snapshot.onThisDay.take(4).map(
+                (record) => _recallMemoryRow(context, record),
+              ),
+        ],
+        if (snapshot.sameMonthPastYears.isNotEmpty) ...[
+          _recallSectionHeader(
+            context,
+            title: '$monthName negli anni',
+            subtitle: 'Altri momenti dello stesso mese negli anni passati.',
+            icon: Icons.calendar_month_outlined,
+          ),
+          ...snapshot.sameMonthPastYears.take(4).map(
+                (record) => _recallMemoryRow(context, record),
+              ),
+        ],
+        if (yearHighlights.isNotEmpty) ...[
+          _recallSectionHeader(
+            context,
+            title: 'Un salto negli anni',
+            subtitle:
+                'Un momento rappresentativo per anno, preferendo una foto quando disponibile.',
+            icon: Icons.auto_awesome_outlined,
+          ),
+          ...yearHighlights.map(
+            (record) => _recallMemoryRow(context, record),
+          ),
+        ],
+        if (widget.personId == null)
+          _recallFacetSection(
+            context,
+            title: 'Persone che tornano',
+            icon: Icons.people_outline,
+            facets: linkedPeople,
+          ),
+        _recallFacetSection(
+          context,
+          title: widget.personId == null
+              ? 'Luoghi che tornano'
+              : 'Luoghi nei ricordi insieme',
+          icon: Icons.place_outlined,
+          facets: linkedPlaces,
+        ),
+      ],
+    );
+  }
+
   Widget _memoriesView(
     BuildContext context,
     List<DiaryBlockReference> records,
@@ -699,6 +957,14 @@ class _DiaryMemoriesScreenState extends State<DiaryMemoriesScreen> {
                     ),
                     const SizedBox(width: 7),
                     ChoiceChip(
+                      selected: view == _DiaryMemoriesView.rediscover,
+                      avatar: const Icon(Icons.history_toggle_off),
+                      label: const Text('Riscopri'),
+                      onSelected: (_) =>
+                          setState(() => view = _DiaryMemoriesView.rediscover),
+                    ),
+                    const SizedBox(width: 7),
+                    ChoiceChip(
                       selected: view == _DiaryMemoriesView.days,
                       avatar: const Icon(Icons.today_outlined),
                       label: const Text('Giornate'),
@@ -785,18 +1051,22 @@ class _DiaryMemoriesScreenState extends State<DiaryMemoriesScreen> {
                 ),
               ),
               Expanded(
-                child: current.isEmpty
-                    ? _emptyState()
-                    : switch (view) {
-                        _DiaryMemoriesView.memories =>
-                          _memoriesView(context, current),
-                        _DiaryMemoriesView.days =>
-                          _daysView(context, current),
-                        _DiaryMemoriesView.months =>
-                          _monthsView(context, current),
-                        _DiaryMemoriesView.years =>
-                          _yearsView(context, current),
-                      },
+                child: switch (view) {
+                  _DiaryMemoriesView.rediscover =>
+                    _rediscoverView(context, current),
+                  _DiaryMemoriesView.memories => current.isEmpty
+                      ? _emptyState()
+                      : _memoriesView(context, current),
+                  _DiaryMemoriesView.days => current.isEmpty
+                      ? _emptyState()
+                      : _daysView(context, current),
+                  _DiaryMemoriesView.months => current.isEmpty
+                      ? _emptyState()
+                      : _monthsView(context, current),
+                  _DiaryMemoriesView.years => current.isEmpty
+                      ? _emptyState()
+                      : _yearsView(context, current),
+                },
               ),
             ],
           );

@@ -411,3 +411,19 @@ The daily experience is consolidated at the projection layer, not by migrating s
 - Home and Planner consume the same daily projection, reducing competing interpretations of "today".
 - The hourly timeline remains a specialized visualization of private timed appointments rather than a second daily source of truth.
 - Diary editing continues to persist through the existing DayJournal model.
+
+## v0.76 — Unified Capture
+
+Unified Capture is a write-surface consolidation, not a new storage domain. Text, voice and photo actions persist through the existing DayJournal/DiaryBlock path; Inbox and agenda actions keep their existing canonical models. Share-target persistence delegates to the same helpers.
+
+## v0.77 — Memory Recall 2.0
+
+Memory Recall stays entirely at the projection layer.
+
+- `memoryRecallSnapshot(...)` consumes the canonical `DiaryBlockReference` stream and returns ephemeral on-this-day, same-month, year-highlight, people and place projections.
+- The Riscopri tab and the day-level “In questo giorno” card consume that projection; they do not own persistence.
+- Archived blocks are excluded from resurfacing, while ordinary Ricordi/archive behavior remains unchanged.
+- Person and place recurrence uses the existing `personIds` and inline `DiaryPlaceReference` metadata.
+- Search/type-filtered Ricordi results may be passed directly into the same snapshot function, avoiding a second memory/search index.
+- No Memory Engine database, Life Core store, embedding index, AI model, cloud table, sync queue or lifecycle entity is introduced.
+

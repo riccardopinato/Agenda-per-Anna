@@ -13,3 +13,10 @@ appId: com.riccardopinato.agenda_per_anna
 - extendedWaitUntil:
     visible: "I miei ricordi"
     timeout: 10000
+- assertVisible:
+    text: 'Riscopri[\s\S]*'
+- tapOn:
+    text: 'Riscopri[\s\S]*'
+- extendedWaitUntil:
+    visible: "Riscopri i tuoi ricordi"
+    timeout: 10000
