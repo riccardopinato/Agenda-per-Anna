@@ -155,7 +155,7 @@ Future<ImageSource?> _chooseUnifiedCaptureImageSource(
             leading: const CircleAvatar(
               child: Icon(Icons.photo_library_outlined),
             ),
-            title: Text(kIsWeb ? 'Scegli una foto' : 'Scegli dalla galleria'),
+            title: const Text(kIsWeb ? 'Scegli una foto' : 'Scegli dalla galleria'),
             onTap: () => Navigator.pop(sheetContext, ImageSource.gallery),
           ),
         ],
