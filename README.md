@@ -2,7 +2,7 @@
 
 Flutter app for personal planning, private diary and the shared **Noi ♡** space.
 
-Current release line: **v0.80.0**.
+Current release line: **v0.81.0**.
 
 ## Core areas
 
@@ -481,6 +481,18 @@ See `docs/ARCHITECTURE.md` and `supabase/README.md` for implementation details.
 - Share-target text and images now reuse the same capture persistence helpers instead of maintaining separate diary-save logic.
 - Capturing from `La mia giornata` respects the day currently being viewed, including past/future days, while preserving the current time as the moment ordering time inside that day.
 - No capture database, parallel media store, AI layer or new cloud schema is introduced.
+
+## v0.81.0 — Release Candidate Consolidation
+
+- Consolidates the post-v0.80 product into a release-candidate baseline instead of adding another overlapping feature subsystem.
+- Adds permanent regression guards against bundled heavyweight local-LLM/model assets and AI runtime dependencies.
+- Keeps the lightweight install policy explicit: future local intelligence requires a separate value/size decision.
+- Extends the cumulative AppLab critical journey with Settings / Privacy Center, including reachability of Private Vault, Backup/Data Safety and Account/Data Rights.
+- Refreshes the architecture source-of-truth to include the current Life Archive, Notes Bridge, Shopping, Workout and Private Vault domains.
+- Adds a v0.81 production-readiness contract covering product boundaries and the four mandatory release gates.
+- Full localization is intentionally deferred rather than shipping an incomplete mixed-language mode.
+- Release metadata is aligned to v0.81.0+91.
+
 
 ## v0.80.0 — Notes Bridge Lite
 
