@@ -11,13 +11,13 @@ appId: com.riccardopinato.agenda_per_anna
     timeout: 10000
 - tapOn: "Cattura"
 - extendedWaitUntil:
-    visible: "Scrivi un momento"
+    visible: "Scrivi un momento[\\s\\S]*"
     timeout: 10000
 - extendedWaitUntil:
-    visible: "Nota vocale"
+    visible: "Nota vocale[\\s\\S]*"
     timeout: 10000
 - extendedWaitUntil:
-    visible: "Foto"
+    visible: "Foto[\\s\\S]*"
     timeout: 10000
 - scrollUntilVisible:
     element:
