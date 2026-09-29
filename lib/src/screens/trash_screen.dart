@@ -115,7 +115,7 @@ class TrashScreen extends StatelessWidget {
               if (entries.isNotEmpty)
                 TextButton(
                   onPressed: () => _empty(context),
-                  child: const Text('Svuota'),
+                  child: Text(strings.emptyTrash),
                 ),
             ],
           ),
@@ -160,8 +160,10 @@ class TrashScreen extends StatelessWidget {
                           style: const TextStyle(fontWeight: FontWeight.w800),
                         ),
                         subtitle: Text(
-                          '${entry.kind.label} · eliminato '
-                          '${DateFormat('d MMM yyyy, HH:mm', AnnaStrings.intlLocale(context)).format(entry.deletedAt)}',
+                          strings.trashEntrySubtitle(
+                            entry.kind.label,
+                            DateFormat('d MMM yyyy, HH:mm', AnnaStrings.intlLocale(context)).format(entry.deletedAt),
+                          ),
                         ),
                         trailing: PopupMenuButton<String>(
                           tooltip: strings.trashActions,
