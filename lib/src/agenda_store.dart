@@ -5110,6 +5110,13 @@ class AgendaStore extends ChangeNotifier {
 
   Future<void> savePreferences(AgendaPreferences value) async {
     preferences = value;
+
+    // Preferences drive shell-level navigation (including onboarding and the
+    // preferred start surface). Publish the in-memory state immediately so UI
+    // transitions never wait for local persistence or cloud queue work.
+    _notifyShellChanged();
+    _notifySettingsChanged();
+
     final prefs = await _localState();
     if (!_unreadableStorageKeys.contains(_preferencesKey)) {
       await prefs.setString(
@@ -5122,8 +5129,6 @@ class AgendaStore extends ChangeNotifier {
       jsonEncode(_privacyGuardPayload()),
     );
     await _queuePreferencesSync();
-    _notifyShellChanged();
-    _notifySettingsChanged();
   }
 
   Future<void> resetPreferences() async {
