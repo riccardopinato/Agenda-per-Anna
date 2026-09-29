@@ -353,6 +353,45 @@ class AnnaStrings {
         LifeArchiveKind.inbox => inbox,
       };
 
+
+  String get birthdays => _pick(en: 'Birthdays', it: 'Compleanni', es: 'Cumpleaños', fr: 'Anniversaires', pt: 'Aniversários');
+  String get newBirthday => _pick(en: 'New birthday', it: 'Nuovo compleanno', es: 'Nuevo cumpleaños', fr: 'Nouvel anniversaire', pt: 'Novo aniversário');
+  String get editBirthday => _pick(en: 'Edit birthday', it: 'Modifica compleanno', es: 'Editar cumpleaños', fr: 'Modifier l’anniversaire', pt: 'Editar aniversário');
+  String get date => _pick(en: 'Date', it: 'Data', es: 'Fecha', fr: 'Date', pt: 'Data');
+  String get birthDate => _pick(en: 'Date of birth', it: 'Data di nascita', es: 'Fecha de nacimiento', fr: 'Date de naissance', pt: 'Data de nascimento');
+  String get rememberYear => _pick(en: 'Remember the year too', it: 'Ricorda anche l’anno', es: 'Recordar también el año', fr: 'Mémoriser aussi l’année', pt: 'Guardar também o ano');
+  String get yearOnlyForAge => _pick(en: 'Only used to show the age.', it: 'Serve solo per mostrare l’età.', es: 'Solo se usa para mostrar la edad.', fr: 'Sert uniquement à afficher l’âge.', pt: 'Serve apenas para mostrar a idade.');
+  String get reminder => _pick(en: 'Reminder', it: 'Promemoria', es: 'Recordatorio', fr: 'Rappel', pt: 'Lembrete');
+  String get noReminder => _pick(en: 'No reminder', it: 'Nessun promemoria', es: 'Sin recordatorio', fr: 'Aucun rappel', pt: 'Sem lembrete');
+  String get reminderSameDayTime => _pick(en: 'Same day · 09:00', it: 'Il giorno stesso · 09:00', es: 'El mismo día · 09:00', fr: 'Le jour même · 09:00', pt: 'No próprio dia · 09:00');
+  String reminderDaysBeforeTime(int days) => _pick(en: '$days day${days == 1 ? '' : 's'} before · 09:00', it: '$days ${days == 1 ? 'giorno' : 'giorni'} prima · 09:00', es: '$days ${days == 1 ? 'día' : 'días'} antes · 09:00', fr: '$days ${days == 1 ? 'jour' : 'jours'} avant · 09:00', pt: '$days ${days == 1 ? 'dia' : 'dias'} antes · 09:00');
+  String get optionalNote => _pick(en: 'Optional note', it: 'Nota facoltativa', es: 'Nota opcional', fr: 'Note facultative', pt: 'Nota opcional');
+  String get moveToTrashQuestion => _pick(en: 'Move to Trash?', it: 'Spostare nel Cestino?', es: '¿Mover a la papelera?', fr: 'Déplacer vers la corbeille ?', pt: 'Mover para o lixo?');
+  String get moveToTrash => _pick(en: 'Move to Trash', it: 'Sposta nel Cestino', es: 'Mover a la papelera', fr: 'Déplacer vers la corbeille', pt: 'Mover para o lixo');
+  String birthdayTrashDescription(String name) => _pick(en: 'The birthday of “$name” can be restored from Trash.', it: 'Il compleanno di “$name” potrà essere ripristinato dal Cestino.', es: 'El cumpleaños de “$name” podrá restaurarse desde la papelera.', fr: 'L’anniversaire de « $name » pourra être restauré depuis la corbeille.', pt: 'O aniversário de “$name” poderá ser restaurado do lixo.');
+  String get noBirthdaysSaved => _pick(en: 'No birthdays saved', it: 'Nessun compleanno salvato', es: 'No hay cumpleaños guardados', fr: 'Aucun anniversaire enregistré', pt: 'Nenhum aniversário guardado');
+  String get birthdaysEmptyDescription => _pick(en: 'Add them once: they will appear every year on the right day and in reminders.', it: 'Aggiungili una volta: compariranno ogni anno nella giornata giusta e nei promemoria.', es: 'Añádelos una vez: aparecerán cada año en el día correcto y en los recordatorios.', fr: 'Ajoute-les une fois : ils réapparaîtront chaque année au bon jour et dans les rappels.', pt: 'Adiciona-os uma vez: aparecerão todos os anos no dia certo e nos lembretes.');
+  String ageYears(int age) => _pick(en: '$age years', it: '$age anni', es: '$age años', fr: '$age ans', pt: '$age anos');
+  String get reminderDisabled => _pick(en: 'Reminder disabled', it: 'Promemoria disattivato', es: 'Recordatorio desactivado', fr: 'Rappel désactivé', pt: 'Lembrete desativado');
+  String get reminderSameDay => _pick(en: 'Reminder on the same day', it: 'Promemoria il giorno stesso', es: 'Recordatorio el mismo día', fr: 'Rappel le jour même', pt: 'Lembrete no próprio dia');
+  String reminderDaysBeforeShort(int days) => _pick(en: 'Reminder $days day${days == 1 ? '' : 's'} before', it: 'Promemoria $days gg prima', es: 'Recordatorio $days ${days == 1 ? 'día' : 'días'} antes', fr: 'Rappel $days ${days == 1 ? 'jour' : 'jours'} avant', pt: 'Lembrete $days ${days == 1 ? 'dia' : 'dias'} antes');
+  String get edit => _pick(en: 'Edit', it: 'Modifica', es: 'Editar', fr: 'Modifier', pt: 'Editar');
+
+  String restoredFromTrash(String title) => _pick(en: '“$title” restored.', it: '“$title” ripristinato.', es: '“$title” restaurado.', fr: '« $title » restauré.', pt: '“$title” restaurado.');
+  String restoreFailedTrash(String title) => _pick(en: 'Could not restore “$title”. The content stayed in Trash.', it: 'Impossibile ripristinare “$title”. Il contenuto è rimasto nel Cestino.', es: 'No se pudo restaurar “$title”. El contenido permaneció en la papelera.', fr: 'Impossible de restaurer « $title ». Le contenu est resté dans la corbeille.', pt: 'Não foi possível restaurar “$title”. O conteúdo permaneceu no lixo.');
+  String get deletePermanentlyQuestion => _pick(en: 'Delete permanently?', it: 'Eliminare definitivamente?', es: '¿Eliminar definitivamente?', fr: 'Supprimer définitivement ?', pt: 'Eliminar definitivamente?');
+  String purgeTrashDescription(String title) => _pick(en: '“$title” will be removed from Trash. A local restore point will be created first.', it: '“$title” verrà rimosso dal Cestino. Prima dell’operazione verrà creato un punto di ripristino locale.', es: '“$title” se eliminará de la papelera. Antes se creará un punto de restauración local.', fr: '« $title » sera supprimé de la corbeille. Un point de restauration local sera créé auparavant.', pt: '“$title” será removido do lixo. Antes será criado um ponto de restauro local.');
+  String get deletePermanently => _pick(en: 'Delete permanently', it: 'Elimina definitivamente', es: 'Eliminar definitivamente', fr: 'Supprimer définitivement', pt: 'Eliminar definitivamente');
+  String get itemDeletedPermanently => _pick(en: 'Item deleted permanently.', it: 'Elemento eliminato definitivamente.', es: 'Elemento eliminado definitivamente.', fr: 'Élément supprimé définitivement.', pt: 'Item eliminado definitivamente.');
+  String get emptyTrashQuestion => _pick(en: 'Empty Trash?', it: 'Svuotare il Cestino?', es: '¿Vaciar la papelera?', fr: 'Vider la corbeille ?', pt: 'Esvaziar o lixo?');
+  String emptyTrashDescription(int count) => _pick(en: '$count items will be deleted permanently. Anna’s Diary will create a local restore point first.', it: '$count elementi verranno eliminati definitivamente. Anna’s Diary creerà prima un punto di ripristino locale.', es: '$count elementos se eliminarán definitivamente. Anna’s Diary creará antes un punto de restauración local.', fr: '$count éléments seront supprimés définitivement. Anna’s Diary créera d’abord un point de restauration local.', pt: '$count itens serão eliminados definitivamente. Anna’s Diary criará primeiro um ponto de restauro local.');
+  String get emptyTrash => _pick(en: 'Empty', it: 'Svuota', es: 'Vaciar', fr: 'Vider', pt: 'Esvaziar');
+  String removedFromTrash(int count) => _pick(en: '$count items removed from Trash.', it: '$count elementi rimossi dal Cestino.', es: '$count elementos eliminados de la papelera.', fr: '$count éléments supprimés de la corbeille.', pt: '$count itens removidos do lixo.');
+  String get trashEmpty => _pick(en: 'Trash is empty.', it: 'Il Cestino è vuoto.', es: 'La papelera está vacía.', fr: 'La corbeille est vide.', pt: 'O lixo está vazio.');
+  String get trashEmptyDescription => _pick(en: 'Items deleted reversibly will appear here.', it: 'Gli elementi eliminati in modo reversibile compariranno qui.', es: 'Los elementos eliminados de forma reversible aparecerán aquí.', fr: 'Les éléments supprimés de façon réversible apparaîtront ici.', pt: 'Os itens eliminados de forma reversível aparecerão aqui.');
+  String get trashActions => _pick(en: 'Trash actions', it: 'Azioni Cestino', es: 'Acciones de la papelera', fr: 'Actions de la corbeille', pt: 'Ações do lixo');
+  String get restore => _pick(en: 'Restore', it: 'Ripristina', es: 'Restaurar', fr: 'Restaurer', pt: 'Restaurar');
+
   String startTab(StartTab tab) => switch (tab) {
         StartTab.home => navHome,
         StartTab.month => navMonth,
