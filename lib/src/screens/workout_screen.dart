@@ -912,7 +912,7 @@ Future<WorkoutPlan?> showWorkoutPlanEditor(
                         .map(
                           (value) => DropdownMenuItem(
                             value: value,
-                            child: Text(value.label),
+                            child: Text(strings.workoutSportLabel(value)),
                           ),
                         )
                         .toList(),
