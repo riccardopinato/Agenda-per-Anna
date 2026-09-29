@@ -26,25 +26,12 @@ enum StartTab { home, month, week, today }
 
 extension StartTabUi on StartTab {
   String get label => switch (this) {
-        StartTab.home || StartTab.today => 'Oggi',
+        StartTab.home => 'Home',
         StartTab.month => 'Mese',
         StartTab.week => 'Settimana',
+        StartTab.today => 'Oggi',
       };
-
-  int get shellIndex => switch (this) {
-        StartTab.home || StartTab.today => 0,
-        StartTab.month => 1,
-        StartTab.week => 2,
-      };
-
-  bool get isLegacyHome => this == StartTab.home;
 }
-
-const List<StartTab> selectableStartTabs = <StartTab>[
-  StartTab.today,
-  StartTab.month,
-  StartTab.week,
-];
 
 class AgendaPreferences {
   final String displayName;
