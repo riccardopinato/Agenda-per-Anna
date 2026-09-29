@@ -59,6 +59,25 @@ class BackupFileService {
     }
   }
 
+  Future<bool> saveOpenLifeArchive({
+    required Uint8List bytes,
+    required String fileName,
+  }) async {
+    try {
+      final uri = await FilePicker.saveFile(
+        fileName: fileName,
+        bytes: bytes,
+        mimeType: 'application/zip',
+        type: FileType.custom,
+        allowedExtensions: const ['zip'],
+        dialogTitle: 'Esporta Open Life Archive',
+      );
+      return uri != null;
+    } catch (_) {
+      return false;
+    }
+  }
+
   Future<bool> saveZipBackup({
     required Uint8List bytes,
     required String fileName,
@@ -103,6 +122,57 @@ class BackupFileService {
     } catch (_) {
       return null;
     }
+  }
+
+  Uint8List buildPortableArchive({
+    required Map<String, Uint8List> files,
+  }) {
+    if (files.isEmpty || files.length > _maxArchiveEntries) {
+      throw const FormatException('Archivio aperto non valido.');
+    }
+
+    var totalBytes = 0;
+    final archive = Archive();
+    final names = <String>{};
+
+    for (final entry in files.entries) {
+      final path = entry.key.replaceAll('\\', '/');
+      final safePath = path.isNotEmpty &&
+          !path.startsWith('/') &&
+          !path.contains('../') &&
+          !path.contains('/..') &&
+          !path.contains('//');
+      if (!safePath || !names.add(path)) {
+        throw const FormatException('Percorso archivio non valido.');
+      }
+
+      final bytes = entry.value;
+      if (bytes.lengthInBytes > maxSingleEntryBytes) {
+        throw const FormatException(
+          'Un contenuto dell’archivio è troppo grande.',
+        );
+      }
+
+      totalBytes += bytes.lengthInBytes;
+      if (totalBytes > maxUncompressedArchiveBytes) {
+        throw const FormatException(
+          'L’archivio è troppo grande per essere creato in sicurezza.',
+        );
+      }
+
+      archive.addFile(ArchiveFile.bytes(path, bytes));
+    }
+
+    final encoded = ZipEncoder().encodeBytes(
+      archive,
+      level: DeflateLevel.bestSpeed,
+    );
+    if (encoded.lengthInBytes > maxCompressedArchiveBytes) {
+      throw const FormatException(
+        'L’archivio ZIP risultante è troppo grande.',
+      );
+    }
+    return encoded;
   }
 
   Uint8List buildZipBackup({
