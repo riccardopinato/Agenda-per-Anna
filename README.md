@@ -466,7 +466,7 @@ See `docs/ARCHITECTURE.md` and `supabase/README.md` for implementation details.
 
 - `La mia giornata` becomes the central daily surface instead of treating agenda, diary and life records as separate products.
 - `DayHubSnapshot` now projects agenda entries, birthdays, workouts and non-archived diary blocks into one chronological `DayLifeEntry` stream.
-- Home and the detailed day view reuse the same day overview projection.
+- Home and the detailed day view reuse the same day overview projection; Home remains reachable for memories, people, Noi ♡, data and utility modules while new profiles open directly on Oggi.
 - The detailed day view replaces multiple parallel mini-sections with one `Momenti del giorno` stream plus an optional expandable hourly timeline.
 - Quick Capture is available directly from the day surface.
 - Workout sessions recorded for a date participate in the same daily context without being duplicated into the agenda store.
