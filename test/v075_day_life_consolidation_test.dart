@@ -166,6 +166,19 @@ void main() {
     );
   });
 
+  test('day-first navigation keeps Home and all primary destinations reachable',
+      () {
+    final shell =
+        File('lib/src/screens/home_inbox_search.dart').readAsStringSync();
+
+    expect(shell, contains('HomeScreen(store: widget.store)'));
+    expect(shell, contains('PlannerScreen(store: widget.store)'));
+    expect(shell, contains("label: 'Home'"));
+    expect(shell, contains("label: 'Oggi'"));
+    expect(StartTab.home.index, 0);
+    expect(StartTab.today.index, 3);
+  });
+
   test('Home and Planner share the same day overview projection', () {
     final home =
         File('lib/src/screens/home_inbox_search.dart').readAsStringSync();
