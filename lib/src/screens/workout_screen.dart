@@ -51,13 +51,14 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final strings = AnnaStrings.of(context);
     return AnimatedBuilder(
       animation: widget.store.workoutRevision,
       builder: (context, _) => Scaffold(
         appBar: AppBar(
-          title: const Text(
-            'Allenamento',
-            style: TextStyle(fontWeight: FontWeight.w900),
+          title: Text(
+            strings.workout,
+            style: const TextStyle(fontWeight: FontWeight.w900),
           ),
         ),
         floatingActionButton: FloatingActionButton.extended(
@@ -71,8 +72,8 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
           ),
           label: Text(
             section == _WorkoutSection.sessions
-                ? 'Registra'
-                : 'Nuova scheda',
+                ? strings.record
+                : strings.newWorkoutPlan,
           ),
         ),
         body: SafeArea(
@@ -82,16 +83,16 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
                 padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
                 child: SegmentedButton<_WorkoutSection>(
                   showSelectedIcon: false,
-                  segments: const [
+                  segments: [
                     ButtonSegment(
                       value: _WorkoutSection.sessions,
-                      icon: Icon(Icons.history_rounded),
-                      label: Text('Sessioni'),
+                      icon: const Icon(Icons.history_rounded),
+                      label: Text(strings.workoutSessions),
                     ),
                     ButtonSegment(
                       value: _WorkoutSection.plans,
-                      icon: Icon(Icons.assignment_outlined),
-                      label: Text('Schede'),
+                      icon: const Icon(Icons.assignment_outlined),
+                      label: Text(strings.workoutPlans),
                     ),
                   ],
                   selected: {section},
@@ -131,7 +132,7 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
             padding: const EdgeInsets.symmetric(horizontal: 3),
             child: FilterChip(
               selected: sportFilter == null,
-              label: const Text('Tutti'),
+              label: Text(AnnaStrings.of(context).all),
               onSelected: (_) => setState(() => sportFilter = null),
             ),
           ),
@@ -141,7 +142,7 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
               child: FilterChip(
                 selected: sportFilter == sport,
                 avatar: Icon(sport.icon, size: 17),
-                label: Text(sport.label),
+                label: Text(AnnaStrings.of(context).workoutSportLabel(sport)),
                 onSelected: (_) => setState(() => sportFilter = sport),
               ),
             ),
@@ -151,13 +152,13 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
   }
 
   Widget _buildSessions() {
+    final strings = AnnaStrings.of(context);
     final sessions = _sessions;
     if (sessions.isEmpty) {
-      return const _WorkoutEmptyState(
+      return _WorkoutEmptyState(
         icon: Icons.sports_outlined,
-        title: 'Nessun allenamento registrato',
-        subtitle:
-            'Corsa, bici, palestra, nuoto, trekking o qualsiasi altra attività: tutto resta nello stesso storico.',
+        title: strings.noWorkouts,
+        subtitle: strings.noWorkoutsDescription,
       );
     }
 
@@ -187,8 +188,8 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
                   await widget.store.moveWorkoutSessionToTrash(session.id);
               if (!mounted || !removed) return;
               ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Allenamento spostato nel Cestino.'),
+                SnackBar(
+                  content: Text(strings.workoutMovedToTrash),
                 ),
               );
             },
@@ -198,13 +199,13 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
   }
 
   Widget _buildPlans() {
+    final strings = AnnaStrings.of(context);
     final plans = widget.store.workoutPlansSorted;
     if (plans.isEmpty) {
-      return const _WorkoutEmptyState(
+      return _WorkoutEmptyState(
         icon: Icons.assignment_outlined,
-        title: 'Nessuna scheda salvata',
-        subtitle:
-            'Crea una scheda manualmente oppure importa un file TXT/CSV. Potrai poi registrare una sessione partendo da quella scheda.',
+        title: strings.noWorkoutPlans,
+        subtitle: strings.noWorkoutPlansDescription,
       );
     }
 
@@ -237,7 +238,7 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
                               ),
                             ),
                             Text(
-                              '${plan.sport.label} · ${plan.exercises.length} voci',
+                              '${strings.workoutSportLabel(plan.sport)} · ${strings.workoutPlanEntries(plan.exercises.length)}',
                             ),
                           ],
                         ),
@@ -251,21 +252,20 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
                                 .moveWorkoutPlanToTrash(plan.id);
                             if (!mounted || !removed) return;
                             ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content:
-                                    Text('Scheda spostata nel Cestino.'),
+                              SnackBar(
+                                content: Text(strings.workoutPlanMovedToTrash),
                               ),
                             );
                           }
                         },
-                        itemBuilder: (_) => const [
+                        itemBuilder: (_) => [
                           PopupMenuItem(
                             value: 'edit',
-                            child: Text('Modifica'),
+                            child: Text(strings.edit),
                           ),
                           PopupMenuItem(
                             value: 'delete',
-                            child: Text('Elimina'),
+                            child: Text(strings.delete),
                           ),
                         ],
                       ),
@@ -281,14 +281,14 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
                       Padding(
                         padding: const EdgeInsets.only(bottom: 4),
                         child: Text(
-                          '• ${_workoutExerciseLabel(exercise)}',
+                          '• ${_workoutExerciseLabel(exercise, strings)}',
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                         ),
                       ),
                     if (plan.exercises.length > 5)
                       Text(
-                        '+ ${plan.exercises.length - 5} altre voci',
+                        strings.moreEntries(plan.exercises.length - 5),
                         style: Theme.of(context).textTheme.bodySmall,
                       ),
                   ],
@@ -296,7 +296,7 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
                   FilledButton.icon(
                     onPressed: () => _openSessionEditor(plan: plan),
                     icon: const Icon(Icons.play_arrow_rounded),
-                    label: const Text('Registra da questa scheda'),
+                    label: Text(strings.recordFromPlan),
                   ),
                 ],
               ),
@@ -333,7 +333,7 @@ class _WorkoutSummaryCard extends StatelessWidget {
             _WorkoutMetric(
               icon: Icons.sports_outlined,
               value: '$sessions',
-              label: 'sessioni',
+              label: AnnaStrings.of(context).sessionsMetric,
             ),
             if (totalDistance > 0)
               _WorkoutMetric(
@@ -347,7 +347,7 @@ class _WorkoutSummaryCard extends StatelessWidget {
               _WorkoutMetric(
                 icon: Icons.timer_outlined,
                 value: store.formatWorkoutDuration(totalSeconds),
-                label: 'tempo',
+                label: AnnaStrings.of(context).timeMetric,
               ),
           ],
         ),
@@ -400,9 +400,10 @@ class _WorkoutSessionCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final strings = AnnaStrings.of(context);
     final performance = store.workoutPerformanceLabel(session);
     final facts = <String>[
-      DateFormat('d MMM yyyy', 'it_IT').format(session.date),
+      DateFormat('d MMM yyyy', AnnaStrings.intlLocale(context)).format(session.date),
       if (session.distanceKm != null)
         '${session.distanceKm!.toStringAsFixed(session.distanceKm! % 1 == 0 ? 0 : 2)} km',
       if (session.durationSeconds > 0)
@@ -425,9 +426,9 @@ class _WorkoutSessionCard extends StatelessWidget {
         subtitle: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('${session.sport.label} · ${facts.join(' · ')}'),
+            Text('${strings.workoutSportLabel(session.sport)} · ${facts.join(' · ')}'),
             if (session.planName.isNotEmpty)
-              Text('Scheda: ${session.planName}'),
+              Text(strings.workoutPlanPrefix(session.planName)),
             if (session.note.trim().isNotEmpty)
               Text(
                 session.note.trim(),
@@ -444,9 +445,9 @@ class _WorkoutSessionCard extends StatelessWidget {
             if (value == 'edit') onEdit();
             if (value == 'delete') onDelete();
           },
-          itemBuilder: (_) => const [
-            PopupMenuItem(value: 'edit', child: Text('Modifica')),
-            PopupMenuItem(value: 'delete', child: Text('Elimina')),
+          itemBuilder: (_) => [
+            PopupMenuItem(value: 'edit', child: Text(strings.edit)),
+            PopupMenuItem(value: 'delete', child: Text(strings.delete)),
           ],
         ),
       ),
@@ -498,6 +499,7 @@ Future<WorkoutSession?> showWorkoutSessionEditor(
   WorkoutSession? existing,
   WorkoutPlan? plan,
 }) async {
+  final strings = AnnaStrings.of(context);
   var sport = existing?.sport ?? plan?.sport ?? WorkoutSport.running;
   var date = existing?.date ?? DateTime.now();
   final titleController = TextEditingController(
@@ -556,7 +558,7 @@ Future<WorkoutSession?> showWorkoutSessionEditor(
           if (seconds < 0) {
             setLocal(
               () => error =
-                  'Durata non valida. Usa MM:SS, HH:MM:SS oppure i minuti.',
+                  strings.invalidWorkoutDuration,
             );
             return;
           }
@@ -566,12 +568,12 @@ Future<WorkoutSession?> showWorkoutSessionEditor(
           final elevation = int.tryParse(elevationController.text.trim());
           if (distanceController.text.trim().isNotEmpty &&
               (distance == null || distance <= 0)) {
-            setLocal(() => error = 'Distanza non valida.');
+            setLocal(() => error = strings.invalidWorkoutDistance);
             return;
           }
           if (elevationController.text.trim().isNotEmpty &&
               (elevation == null || elevation < 0)) {
-            setLocal(() => error = 'Dislivello non valido.');
+            setLocal(() => error = strings.invalidWorkoutElevation);
             return;
           }
 
@@ -612,28 +614,28 @@ Future<WorkoutSession?> showWorkoutSessionEditor(
                 children: [
                   Text(
                     existing == null
-                        ? 'Registra allenamento'
-                        : 'Modifica allenamento',
+                        ? strings.recordWorkout
+                        : strings.editWorkout,
                     style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                           fontWeight: FontWeight.w900,
                         ),
                   ),
                   if (plan != null) ...[
                     const SizedBox(height: 5),
-                    Text('Da scheda: ${plan.name}'),
+                    Text(strings.fromWorkoutPlan(plan.name)),
                   ],
                   const SizedBox(height: 14),
                   DropdownButtonFormField<WorkoutSport>(
                     initialValue: sport,
-                    decoration: const InputDecoration(
-                      labelText: 'Sport',
+                    decoration: InputDecoration(
+                      labelText: strings.sport,
                       prefixIcon: Icon(Icons.sports_outlined),
                     ),
                     items: WorkoutSport.values
                         .map(
                           (value) => DropdownMenuItem(
                             value: value,
-                            child: Text(value.label),
+                            child: Text(strings.workoutSportLabel(value)),
                           ),
                         )
                         .toList(),
@@ -646,12 +648,12 @@ Future<WorkoutSession?> showWorkoutSessionEditor(
                     controller: titleController,
                     textCapitalization: TextCapitalization.sentences,
                     decoration: InputDecoration(
-                      labelText: 'Titolo (opzionale)',
+                      labelText: strings.optionalTitle,
                       hintText: sport == WorkoutSport.running
-                          ? 'es. Lungo collinare'
+                          ? strings.workoutRunningHint
                           : sport == WorkoutSport.cycling
-                              ? 'es. Giro in bici'
-                              : 'es. Sessione serale',
+                              ? strings.workoutCyclingHint
+                              : strings.workoutGenericHint,
                     ),
                   ),
                   const SizedBox(height: 10),
@@ -659,7 +661,7 @@ Future<WorkoutSession?> showWorkoutSessionEditor(
                     onPressed: pickDate,
                     icon: const Icon(Icons.calendar_today_outlined),
                     label: Text(
-                      DateFormat('EEEE d MMMM yyyy', 'it_IT').format(date),
+                      DateFormat('EEEE d MMMM yyyy', AnnaStrings.intlLocale(context)).format(date),
                     ),
                   ),
                   const SizedBox(height: 10),
@@ -669,8 +671,8 @@ Future<WorkoutSession?> showWorkoutSessionEditor(
                         child: TextField(
                           controller: durationController,
                           keyboardType: TextInputType.datetime,
-                          decoration: const InputDecoration(
-                            labelText: 'Tempo',
+                          decoration: InputDecoration(
+                            labelText: strings.duration,
                             hintText: 'es. 1:05:20',
                             prefixIcon: Icon(Icons.timer_outlined),
                           ),
@@ -683,8 +685,8 @@ Future<WorkoutSession?> showWorkoutSessionEditor(
                           keyboardType: const TextInputType.numberWithOptions(
                             decimal: true,
                           ),
-                          decoration: const InputDecoration(
-                            labelText: 'Distanza km',
+                          decoration: InputDecoration(
+                            labelText: strings.distanceKm,
                             hintText: 'es. 15',
                             prefixIcon: Icon(Icons.route_outlined),
                           ),
@@ -699,9 +701,9 @@ Future<WorkoutSession?> showWorkoutSessionEditor(
                         child: TextField(
                           controller: elevationController,
                           keyboardType: TextInputType.number,
-                          decoration: const InputDecoration(
-                            labelText: 'Dislivello +m',
-                            hintText: 'opzionale',
+                          decoration: InputDecoration(
+                            labelText: strings.elevationGain,
+                            hintText: strings.optional,
                             prefixIcon: Icon(Icons.terrain_outlined),
                           ),
                         ),
@@ -710,8 +712,8 @@ Future<WorkoutSession?> showWorkoutSessionEditor(
                       Expanded(
                         child: DropdownButtonFormField<int?>(
                           initialValue: effort,
-                          decoration: const InputDecoration(
-                            labelText: 'Intensità',
+                          decoration: InputDecoration(
+                            labelText: strings.intensity,
                             prefixIcon: Icon(Icons.speed_outlined),
                           ),
                           items: [
@@ -737,10 +739,9 @@ Future<WorkoutSession?> showWorkoutSessionEditor(
                     minLines: 2,
                     maxLines: 5,
                     textCapitalization: TextCapitalization.sentences,
-                    decoration: const InputDecoration(
-                      labelText: 'Note',
-                      hintText:
-                          'Sensazioni, percorso, esercizi extra, dettagli...',
+                    decoration: InputDecoration(
+                      labelText: strings.notes,
+                      hintText: strings.workoutNotesHint,
                       alignLabelWithHint: true,
                     ),
                   ),
@@ -748,7 +749,7 @@ Future<WorkoutSession?> showWorkoutSessionEditor(
                       .isNotEmpty) ...[
                     const SizedBox(height: 12),
                     Text(
-                      'Scheda usata',
+                      strings.planUsed,
                       style: Theme.of(context).textTheme.titleSmall?.copyWith(
                             fontWeight: FontWeight.w900,
                           ),
@@ -772,7 +773,7 @@ Future<WorkoutSession?> showWorkoutSessionEditor(
                   FilledButton.icon(
                     onPressed: save,
                     icon: const Icon(Icons.save_outlined),
-                    label: const Text('Salva allenamento'),
+                    label: Text(strings.saveWorkout),
                   ),
                 ],
               ),
@@ -796,11 +797,15 @@ Future<WorkoutPlan?> showWorkoutPlanEditor(
   required AgendaStore store,
   WorkoutPlan? existing,
 }) async {
+  final strings = AnnaStrings.of(context);
   var sport = existing?.sport ?? WorkoutSport.gym;
   final nameController = TextEditingController(text: existing?.name ?? '');
   final noteController = TextEditingController(text: existing?.note ?? '');
   final exercisesController = TextEditingController(
-    text: existing?.exercises.map(_workoutExerciseLabel).join('\n') ?? '',
+    text: existing?.exercises
+            .map((exercise) => _workoutExerciseLabel(exercise, strings))
+            .join('\n') ??
+        '',
   );
   String? error;
 
@@ -821,7 +826,7 @@ Future<WorkoutPlan?> showWorkoutPlanEditor(
             bytes = await file.readAsBytes();
           } catch (_) {
             setLocal(
-              () => error = 'Non riesco a leggere questo file.',
+              () => error = strings.cannotReadFile,
             );
             return;
           }
@@ -833,13 +838,13 @@ Future<WorkoutPlan?> showWorkoutPlanEditor(
           }
           if (bytes.lengthInBytes > 1024 * 1024) {
             setLocal(
-              () => error = 'La scheda supera il limite di 1 MB.',
+              () => error = strings.workoutPlanFileTooLarge,
             );
             return;
           }
           final text = utf8.decode(bytes, allowMalformed: true).trim();
           if (text.isEmpty) {
-            setLocal(() => error = 'Il file non contiene testo.');
+            setLocal(() => error = strings.fileContainsNoText);
             return;
           }
           exercisesController.text = text;
@@ -849,7 +854,7 @@ Future<WorkoutPlan?> showWorkoutPlanEditor(
         void save() {
           final name = nameController.text.trim();
           if (name.isEmpty) {
-            setLocal(() => error = 'Dai un nome alla scheda.');
+            setLocal(() => error = strings.givePlanName);
             return;
           }
           final exercises =
@@ -882,7 +887,7 @@ Future<WorkoutPlan?> showWorkoutPlanEditor(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   Text(
-                    existing == null ? 'Nuova scheda' : 'Modifica scheda',
+                    existing == null ? strings.newWorkoutPlan : strings.editWorkoutPlan,
                     style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                           fontWeight: FontWeight.w900,
                         ),
@@ -891,16 +896,16 @@ Future<WorkoutPlan?> showWorkoutPlanEditor(
                   TextField(
                     controller: nameController,
                     textCapitalization: TextCapitalization.sentences,
-                    decoration: const InputDecoration(
-                      labelText: 'Nome scheda',
-                      hintText: 'es. Forza A, Preparazione 10 km...',
+                    decoration: InputDecoration(
+                      labelText: strings.workoutPlanName,
+                      hintText: strings.workoutPlanNameHint,
                     ),
                   ),
                   const SizedBox(height: 10),
                   DropdownButtonFormField<WorkoutSport>(
                     initialValue: sport,
-                    decoration: const InputDecoration(
-                      labelText: 'Sport',
+                    decoration: InputDecoration(
+                      labelText: strings.sport,
                       prefixIcon: Icon(Icons.sports_outlined),
                     ),
                     items: WorkoutSport.values
@@ -920,8 +925,8 @@ Future<WorkoutPlan?> showWorkoutPlanEditor(
                     controller: noteController,
                     minLines: 2,
                     maxLines: 4,
-                    decoration: const InputDecoration(
-                      labelText: 'Note generali',
+                    decoration: InputDecoration(
+                      labelText: strings.generalNotes,
                       alignLabelWithHint: true,
                     ),
                   ),
@@ -930,10 +935,9 @@ Future<WorkoutPlan?> showWorkoutPlanEditor(
                     controller: exercisesController,
                     minLines: 7,
                     maxLines: 14,
-                    decoration: const InputDecoration(
-                      labelText: 'Scheda / esercizi',
-                      hintText:
-                          'Un esercizio o blocco per riga\nPanca 4x8 @ 60kg\nSquat 4x6 @ 80kg\nCorsa facile 30 min',
+                    decoration: InputDecoration(
+                      labelText: strings.planExercises,
+                      hintText: strings.planExercisesHint,
                       alignLabelWithHint: true,
                     ),
                   ),
@@ -941,10 +945,10 @@ Future<WorkoutPlan?> showWorkoutPlanEditor(
                   OutlinedButton.icon(
                     onPressed: importTextFile,
                     icon: const Icon(Icons.upload_file_outlined),
-                    label: const Text('Importa scheda TXT / CSV'),
+                    label: Text(strings.importWorkoutPlan),
                   ),
                   Text(
-                    'Puoi usare anche testo libero: ciò che non segue il formato serie × ripetizioni resta comunque salvato come voce della scheda.',
+                    strings.freeTextWorkoutPlanHelp,
                     style: Theme.of(context).textTheme.bodySmall,
                   ),
                   if (error != null) ...[
@@ -960,7 +964,7 @@ Future<WorkoutPlan?> showWorkoutPlanEditor(
                   FilledButton.icon(
                     onPressed: save,
                     icon: const Icon(Icons.save_outlined),
-                    label: const Text('Salva scheda'),
+                    label: Text(strings.saveWorkoutPlan),
                   ),
                 ],
               ),
@@ -977,12 +981,12 @@ Future<WorkoutPlan?> showWorkoutPlanEditor(
   return result;
 }
 
-String _workoutExerciseLabel(WorkoutExercise exercise) {
+String _workoutExerciseLabel(WorkoutExercise exercise, AnnaStrings strings) {
   final parts = <String>[exercise.name.trim()];
   if (exercise.sets > 0 && exercise.reps.trim().isNotEmpty) {
     parts.add('${exercise.sets}×${exercise.reps.trim()}');
   } else if (exercise.sets > 0) {
-    parts.add('${exercise.sets} serie');
+    parts.add(strings.workoutSets(exercise.sets));
   } else if (exercise.reps.trim().isNotEmpty) {
     parts.add(exercise.reps.trim());
   }
