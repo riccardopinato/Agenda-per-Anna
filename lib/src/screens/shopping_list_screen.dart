@@ -113,7 +113,7 @@ class _ShoppingListScreenState extends State<ShoppingListScreen> {
                     textCapitalization: TextCapitalization.sentences,
                     decoration: InputDecoration(
                       labelText: strings.item,
-                      prefixIcon: Icon(Icons.shopping_basket_outlined),
+                      prefixIcon: const Icon(Icons.shopping_basket_outlined),
                     ),
                   ),
                   const SizedBox(height: 12),
@@ -122,7 +122,7 @@ class _ShoppingListScreenState extends State<ShoppingListScreen> {
                     decoration: InputDecoration(
                       labelText: strings.optionalQuantity,
                       hintText: strings.optionalQuantityHint,
-                      prefixIcon: Icon(Icons.numbers_outlined),
+                      prefixIcon: const Icon(Icons.numbers_outlined),
                     ),
                   ),
                   const SizedBox(height: 12),
@@ -130,7 +130,7 @@ class _ShoppingListScreenState extends State<ShoppingListScreen> {
                     initialValue: selectedCategory,
                     decoration: InputDecoration(
                       labelText: strings.category,
-                      prefixIcon: Icon(Icons.category_outlined),
+                      prefixIcon: const Icon(Icons.category_outlined),
                     ),
                     items: ShoppingCategory.values
                         .map(
