@@ -176,6 +176,7 @@ class _PlannerScreenState extends State<PlannerScreen> {
       ]),
       builder: (context, _) {
         final snapshot = widget.store.dayHubSnapshot(day);
+        final memoryRecall = widget.store.memoryRecallSnapshot(day);
         final timedPrivate = snapshot.agenda
             .where((entry) =>
                 entry.type == ItemType.appointment &&
@@ -238,6 +239,14 @@ class _PlannerScreenState extends State<PlannerScreen> {
                       hideDetails: false,
                     ),
                     const SizedBox(height: 14),
+                    if (memoryRecall.onThisDay.isNotEmpty) ...[
+                      _DayMemoryRecallCard(
+                        store: widget.store,
+                        anchor: day,
+                        memories: memoryRecall.onThisDay,
+                      ),
+                      const SizedBox(height: 14),
+                    ],
                     _DayLifeStream(
                       snapshot: snapshot,
                       store: widget.store,
@@ -353,6 +362,99 @@ class _CalendarDayContextCard extends StatelessWidget {
               style: Theme.of(context).textTheme.bodySmall,
             ),
           ],
+        ],
+      ),
+    );
+  }
+}
+
+class _DayMemoryRecallCard extends StatelessWidget {
+  final AgendaStore store;
+  final DateTime anchor;
+  final List<DiaryBlockReference> memories;
+
+  const _DayMemoryRecallCard({
+    required this.store,
+    required this.anchor,
+    required this.memories,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Container(
+      padding: const EdgeInsets.fromLTRB(14, 12, 14, 10),
+      decoration: BoxDecoration(
+        color: scheme.secondaryContainer.withValues(alpha: 0.42),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: scheme.outlineVariant),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(Icons.history_toggle_off),
+              const SizedBox(width: 8),
+              const Expanded(
+                child: Text(
+                  'In questo giorno',
+                  style: TextStyle(fontWeight: FontWeight.w900),
+                ),
+              ),
+              TextButton(
+                onPressed: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => DiaryMemoriesScreen(store: store),
+                  ),
+                ),
+                child: const Text('Ricordi'),
+              ),
+            ],
+          ),
+          ...memories.take(3).map((memory) {
+            final years = anchor.year - memory.date.year;
+            return ListTile(
+              dense: true,
+              contentPadding: EdgeInsets.zero,
+              leading: Icon(
+                switch (memory.block.type) {
+                  DiaryBlockType.note => Icons.sticky_note_2_outlined,
+                  DiaryBlockType.sketch => Icons.draw_outlined,
+                  DiaryBlockType.photo => Icons.photo_outlined,
+                  DiaryBlockType.voice => Icons.mic_none_outlined,
+                },
+              ),
+              title: Text(
+                store.diaryBlockDisplayTitle(memory.block),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+              subtitle: Text(
+                '${years == 1 ? '1 anno fa' : '$years anni fa'} · '
+                '${DateFormat('d MMMM yyyy', 'it_IT').format(memory.date)}',
+              ),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => PlannerScreen(
+                    store: store,
+                    initialDate: memory.date,
+                  ),
+                ),
+              ),
+            );
+          }),
+          if (memories.length > 3)
+            Padding(
+              padding: const EdgeInsets.only(top: 2),
+              child: Text(
+                '+ ${memories.length - 3} altri ricordi della stessa data',
+                style: Theme.of(context).textTheme.bodySmall,
+              ),
+            ),
         ],
       ),
     );
