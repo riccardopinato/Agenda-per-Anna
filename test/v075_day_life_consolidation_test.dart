@@ -187,7 +187,7 @@ void main() {
     expect(home, contains('_DayLifeOverviewCard('));
     expect(planner, contains('_DayLifeOverviewCard('));
     expect(planner, contains('_DayLifeStream('));
-    expect(planner, contains("const SectionTitle('Diario')"));
-    expect(planner, contains("label: const Text('Cattura')"));
+    expect(planner, contains('SectionTitle(strings.diary)'));
+    expect(planner, contains('label: Text(strings.capture)'));
   });
 }
