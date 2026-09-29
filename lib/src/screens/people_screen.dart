@@ -62,8 +62,8 @@ Future<List<String>?> showPeoplePicker(
                   onChanged: (_) => setDialogState(() {}),
                   decoration: InputDecoration(
                     hintText: strings.searchPersonHint,
-                    prefixIcon: Icon(Icons.search),
-                    border: OutlineInputBorder(),
+                    prefixIcon: const Icon(Icons.search),
+                    border: const OutlineInputBorder(),
                   ),
                 ),
                 const SizedBox(height: 10),
@@ -201,7 +201,7 @@ class _PeopleScreenState extends State<PeopleScreen> {
                     textCapitalization: TextCapitalization.words,
                     decoration: InputDecoration(
                       labelText: '${strings.name} *',
-                      prefixIcon: Icon(Icons.person_outline),
+                      prefixIcon: const Icon(Icons.person_outline),
                     ),
                   ),
                   const SizedBox(height: 12),
@@ -211,7 +211,7 @@ class _PeopleScreenState extends State<PeopleScreen> {
                     decoration: InputDecoration(
                       labelText: strings.relationship,
                       hintText: strings.relationshipHint,
-                      prefixIcon: Icon(Icons.favorite_border),
+                      prefixIcon: const Icon(Icons.favorite_border),
                     ),
                   ),
                   const SizedBox(height: 12),
@@ -219,7 +219,7 @@ class _PeopleScreenState extends State<PeopleScreen> {
                     initialValue: birthdayId,
                     decoration: InputDecoration(
                       labelText: strings.linkedBirthday,
-                      prefixIcon: Icon(Icons.cake_outlined),
+                      prefixIcon: const Icon(Icons.cake_outlined),
                     ),
                     items: [
                       DropdownMenuItem<String>(
