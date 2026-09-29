@@ -110,6 +110,7 @@ class AgendaRoot extends StatelessWidget {
       animation: Listenable.merge([
         CloudSyncService.instance,
         store.accountRevision,
+        store.shellRevision,
       ]),
       builder: (context, _) {
         final cloud = CloudSyncService.instance;
