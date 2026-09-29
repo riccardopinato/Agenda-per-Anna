@@ -1712,17 +1712,60 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
-                      'Privacy',
-                      style: TextStyle(
-                        fontWeight: FontWeight.w900,
-                        fontSize: 18,
-                      ),
+                    const Row(
+                      children: [
+                        Icon(Icons.shield_outlined),
+                        SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            'Privacy Center',
+                            style: TextStyle(
+                              fontWeight: FontWeight.w900,
+                              fontSize: 18,
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                     const SizedBox(height: 5),
                     Text(
-                      'Proteggi l’agenda quando il telefono passa ad altre app o resta inattivo.',
+                      'Un unico punto per protezione dell’app, visibilità, '
+                      'Cassaforte, backup e diritti sui dati. I controlli '
+                      'continuano a usare i sistemi già esistenti.',
                       style: Theme.of(context).textTheme.bodySmall,
+                    ),
+                    const SizedBox(height: 12),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: [
+                        Chip(
+                          avatar: Icon(
+                            prefs.privacyLockEnabled
+                                ? Icons.lock_outline
+                                : Icons.lock_open_outlined,
+                            size: 18,
+                          ),
+                          label: Text(
+                            prefs.privacyLockEnabled
+                                ? 'Blocco app attivo'
+                                : 'Blocco app disattivo',
+                          ),
+                        ),
+                        Chip(
+                          avatar: const Icon(Icons.visibility_off_outlined, size: 18),
+                          label: Text(
+                            prefs.hideHomeDetails
+                                ? 'Home protetta'
+                                : 'Dettagli Home visibili',
+                          ),
+                        ),
+                        if (prefs.biometricUnlock && prefs.privacyLockEnabled)
+                          const Chip(
+                            avatar: Icon(Icons.fingerprint, size: 18),
+                            label: Text('Biometria attiva'),
+                          ),
+                      ],
                     ),
                     const SizedBox(height: 10),
                     if (prefs.pinHash == null)
@@ -1835,6 +1878,60 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           widget.store.savePreferences(
                         prefs.copyWith(hideHomeDetails: value),
                       ),
+                    ),
+                    const Divider(height: 24),
+                    ListTile(
+                      contentPadding: EdgeInsets.zero,
+                      leading: const Icon(Icons.lock_person_outlined),
+                      title: const Text('Cassaforte privata'),
+                      subtitle: const Text(
+                        'Spazio cifrato locale, separato da cloud, ricerca e backup ordinario.',
+                      ),
+                      trailing: const Icon(Icons.chevron_right),
+                      onTap: () => Navigator.push(
+                        context,
+                        MaterialPageRoute<void>(
+                          builder: (_) => const PrivateVaultScreen(),
+                        ),
+                      ),
+                    ),
+                    ListTile(
+                      contentPadding: EdgeInsets.zero,
+                      leading: const Icon(Icons.verified_user_outlined),
+                      title: const Text('Backup e sicurezza dati'),
+                      subtitle: const Text(
+                        'Backup verificato, ripristino e controllo dell’integrità locale.',
+                      ),
+                      trailing: const Icon(Icons.chevron_right),
+                      onTap: () => Navigator.push(
+                        context,
+                        MaterialPageRoute<void>(
+                          builder: (_) => BackupScreen(store: widget.store),
+                        ),
+                      ),
+                    ),
+                    ListTile(
+                      contentPadding: EdgeInsets.zero,
+                      leading: const Icon(Icons.manage_accounts_outlined),
+                      title: const Text('Account e diritti sui dati'),
+                      subtitle: const Text(
+                        'Sincronizzazione, disconnessione ed eliminazione definitiva dell’account cloud.',
+                      ),
+                      trailing: const Icon(Icons.chevron_right),
+                      onTap: () => Navigator.push(
+                        context,
+                        MaterialPageRoute<void>(
+                          builder: (_) =>
+                              CloudAccountScreen(store: widget.store),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      'La Cassaforte resta locale anche se elimini l’account cloud. '
+                      'I dati ordinari dell’agenda restano local-first e vengono '
+                      'sincronizzati solo tramite il sistema account già esistente.',
+                      style: Theme.of(context).textTheme.bodySmall,
                     ),
                   ],
                 ),
