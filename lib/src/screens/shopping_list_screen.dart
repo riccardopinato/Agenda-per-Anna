@@ -92,6 +92,7 @@ class _ShoppingListScreenState extends State<ShoppingListScreen> {
     required String quantity,
     required ShoppingCategory category,
   }) async {
+    final strings = AnnaStrings.of(context);
     final nameController = TextEditingController(text: name);
     final quantityController = TextEditingController(text: quantity);
     var selectedCategory = category;
@@ -99,7 +100,7 @@ class _ShoppingListScreenState extends State<ShoppingListScreen> {
       context: context,
       builder: (dialogContext) => StatefulBuilder(
         builder: (context, setLocal) => AlertDialog(
-          title: const Text('Modifica articolo'),
+          title: Text(strings.editShoppingItem),
           content: SingleChildScrollView(
             child: SizedBox(
               width: 420,
@@ -110,32 +111,32 @@ class _ShoppingListScreenState extends State<ShoppingListScreen> {
                     controller: nameController,
                     autofocus: true,
                     textCapitalization: TextCapitalization.sentences,
-                    decoration: const InputDecoration(
-                      labelText: 'Articolo',
+                    decoration: InputDecoration(
+                      labelText: strings.item,
                       prefixIcon: Icon(Icons.shopping_basket_outlined),
                     ),
                   ),
                   const SizedBox(height: 12),
                   TextField(
                     controller: quantityController,
-                    decoration: const InputDecoration(
-                      labelText: 'Quantità (opzionale)',
-                      hintText: 'es. 2, 500 g, 1 confezione',
+                    decoration: InputDecoration(
+                      labelText: strings.optionalQuantity,
+                      hintText: strings.optionalQuantityHint,
                       prefixIcon: Icon(Icons.numbers_outlined),
                     ),
                   ),
                   const SizedBox(height: 12),
                   DropdownButtonFormField<ShoppingCategory>(
                     initialValue: selectedCategory,
-                    decoration: const InputDecoration(
-                      labelText: 'Categoria',
+                    decoration: InputDecoration(
+                      labelText: strings.category,
                       prefixIcon: Icon(Icons.category_outlined),
                     ),
                     items: ShoppingCategory.values
                         .map(
                           (category) => DropdownMenuItem(
                             value: category,
-                            child: Text(category.label),
+                            child: Text(strings.shoppingCategoryLabel(category)),
                           ),
                         )
                         .toList(),
@@ -152,7 +153,7 @@ class _ShoppingListScreenState extends State<ShoppingListScreen> {
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(dialogContext),
-              child: const Text('Annulla'),
+              child: Text(strings.cancel),
             ),
             FilledButton(
               onPressed: () {
@@ -167,7 +168,7 @@ class _ShoppingListScreenState extends State<ShoppingListScreen> {
                   ),
                 );
               },
-              child: const Text('Salva'),
+              child: Text(strings.save),
             ),
           ],
         ),
@@ -213,26 +214,27 @@ class _ShoppingListScreenState extends State<ShoppingListScreen> {
     final removed = await widget.store.moveShoppingItemToTrash(item.id);
     if (!mounted || !removed) return;
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Articolo spostato nel Cestino.')),
+      SnackBar(content: Text(AnnaStrings.of(context).shoppingItemMovedToTrash)),
     );
   }
 
   Future<void> _deleteShared(SharedEntry entry) async {
+    final strings = AnnaStrings.of(context);
     final confirmed = await showDialog<bool>(
           context: context,
           builder: (dialogContext) => AlertDialog(
-            title: const Text('Eliminare dalla spesa condivisa?'),
+            title: Text(strings.deleteSharedShoppingQuestion),
             content: Text(
-              '“${entry.title}” verrà eliminato per tutte le persone nello spazio Noi ♡.',
+              strings.sharedShoppingDeleteDescription(entry.title),
             ),
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(dialogContext, false),
-                child: const Text('Annulla'),
+                child: Text(strings.cancel),
               ),
               FilledButton(
                 onPressed: () => Navigator.pop(dialogContext, true),
-                child: const Text('Elimina per tutti'),
+                child: Text(strings.deleteForEveryone),
               ),
             ],
           ),
@@ -268,10 +270,11 @@ class _ShoppingListScreenState extends State<ShoppingListScreen> {
   }
 
   Future<void> _openSharedList() async {
+    final strings = AnnaStrings.of(context);
     if (widget.store.sharedAgendaSpaces.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Crea o unisciti prima a uno spazio Noi ♡.'),
+        SnackBar(
+          content: Text(strings.sharedSpaceRequired),
         ),
       );
       return;
@@ -285,14 +288,12 @@ class _ShoppingListScreenState extends State<ShoppingListScreen> {
           shrinkWrap: true,
           padding: const EdgeInsets.fromLTRB(12, 0, 12, 18),
           children: [
-            const ListTile(
+            ListTile(
               title: Text(
-                'Spesa condivisa · Noi ♡',
-                style: TextStyle(fontWeight: FontWeight.w900),
+                strings.sharedShopping,
+                style: const TextStyle(fontWeight: FontWeight.w900),
               ),
-              subtitle: Text(
-                'Scegli lo spazio: gli articoli saranno visibili e modificabili da entrambi.',
-              ),
+              subtitle: Text(strings.sharedShoppingSelectDescription),
             ),
             ...widget.store.sharedAgendaSpaces.map(
               (space) => ListTile(
@@ -366,6 +367,7 @@ class _ShoppingListScreenState extends State<ShoppingListScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final strings = AnnaStrings.of(context);
     final listenable = widget.shared
         ? widget.store.sharedRevision
         : widget.store.shoppingRevision;
@@ -384,20 +386,20 @@ class _ShoppingListScreenState extends State<ShoppingListScreen> {
           appBar: AppBar(
             title: Text(
               widget.shared
-                  ? 'Spesa · ${widget.sharedSpace!.name}'
-                  : 'Lista della spesa',
+                  ? strings.sharedShoppingFor(widget.sharedSpace!.name)
+                  : strings.shoppingList,
               style: const TextStyle(fontWeight: FontWeight.w900),
             ),
             actions: [
               if (!widget.shared)
                 IconButton(
-                  tooltip: 'Spesa condivisa · Noi ♡',
+                  tooltip: strings.sharedShopping,
                   onPressed: _openSharedList,
                   icon: const Icon(Icons.favorite_outline),
                 ),
               if (widget.shared)
                 IconButton(
-                  tooltip: 'Aggiorna',
+                  tooltip: strings.refresh,
                   onPressed: _refreshShared,
                   icon: const Icon(Icons.refresh),
                 ),
@@ -427,16 +429,16 @@ class _ShoppingListScreenState extends State<ShoppingListScreen> {
                     children: [
                       Expanded(
                         child: SegmentedButton<bool>(
-                          segments: const [
+                          segments: [
                             ButtonSegment<bool>(
                               value: false,
-                              icon: Icon(Icons.shopping_cart_outlined),
-                              label: Text('Da comprare'),
+                              icon: const Icon(Icons.shopping_cart_outlined),
+                              label: Text(strings.toBuy),
                             ),
                             ButtonSegment<bool>(
                               value: true,
-                              icon: Icon(Icons.check_circle_outline),
-                              label: Text('Acquistati'),
+                              icon: const Icon(Icons.check_circle_outline),
+                              label: Text(strings.purchased),
                             ),
                           ],
                           selected: {purchased},
@@ -593,6 +595,7 @@ class _ShoppingQuickAddCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final strings = AnnaStrings.of(context);
     return Material(
       color: Theme.of(context)
           .colorScheme
@@ -612,8 +615,8 @@ class _ShoppingQuickAddCard extends StatelessWidget {
                 Expanded(
                   child: Text(
                     shared
-                        ? 'Lista condivisa in Noi ♡'
-                        : 'Aggiungi con un solo gesto',
+                        ? strings.sharedListQuickAdd
+                        : strings.quickAddShopping,
                     style: const TextStyle(fontWeight: FontWeight.w800),
                   ),
                 ),
@@ -630,9 +633,9 @@ class _ShoppingQuickAddCard extends StatelessWidget {
                     textInputAction: TextInputAction.done,
                     textCapitalization: TextCapitalization.sentences,
                     onSubmitted: (_) => onAdd(),
-                    decoration: const InputDecoration(
-                      labelText: 'Cosa serve?',
-                      hintText: 'Latte, pane, mele...',
+                    decoration: InputDecoration(
+                      labelText: strings.whatDoYouNeed,
+                      hintText: strings.shoppingItemHint,
                       filled: true,
                     ),
                   ),
@@ -644,16 +647,16 @@ class _ShoppingQuickAddCard extends StatelessWidget {
                     controller: quantityController,
                     textInputAction: TextInputAction.done,
                     onSubmitted: (_) => onAdd(),
-                    decoration: const InputDecoration(
-                      labelText: 'Quantità',
-                      hintText: '2, 500 g...',
+                    decoration: InputDecoration(
+                      labelText: strings.quantity,
+                      hintText: strings.quantityHint,
                       filled: true,
                     ),
                   ),
                 ),
                 const SizedBox(width: 8),
                 IconButton.filled(
-                  tooltip: 'Aggiungi',
+                  tooltip: strings.add,
                   onPressed: adding ? null : onAdd,
                   icon: adding
                       ? const SizedBox(
@@ -683,6 +686,7 @@ class _FrequentShoppingSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final strings = AnnaStrings.of(context);
     return Align(
       alignment: Alignment.centerLeft,
       child: Wrap(
@@ -691,7 +695,7 @@ class _FrequentShoppingSection extends StatelessWidget {
         crossAxisAlignment: WrapCrossAlignment.center,
         children: [
           Text(
-            'Frequenti',
+            strings.frequent,
             style: Theme.of(context).textTheme.labelLarge,
           ),
           for (var index = 0; index < labels.length; index++)
@@ -798,6 +802,7 @@ class _ShoppingTileShell extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final strings = AnnaStrings.of(context);
     return Card(
       margin: const EdgeInsets.only(bottom: 7),
       child: ListTile(
@@ -815,9 +820,9 @@ class _ShoppingTileShell extends StatelessWidget {
         subtitle: Text(
           [
             if (quantity.trim().isNotEmpty) quantity.trim(),
-            category.label,
+            strings.shoppingCategoryLabel(category),
             if (shared) 'Noi ♡',
-            if (purchaseCount > 1) 'preso $purchaseCount volte',
+            if (purchaseCount > 1) strings.purchasedTimes(purchaseCount),
           ].join(' · '),
         ),
         onTap: onEdit,
@@ -837,14 +842,14 @@ class _ShoppingTileShell extends StatelessWidget {
                 if (value == 'edit') onEdit();
                 if (value == 'delete') onDelete();
               },
-              itemBuilder: (_) => const [
+              itemBuilder: (_) => [
                 PopupMenuItem(
                   value: 'edit',
-                  child: Text('Modifica'),
+                  child: Text(strings.edit),
                 ),
                 PopupMenuItem(
                   value: 'delete',
-                  child: Text('Elimina'),
+                  child: Text(strings.delete),
                 ),
               ],
             ),
@@ -866,6 +871,7 @@ class _ShoppingEmptyState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final strings = AnnaStrings.of(context);
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(28),
@@ -881,8 +887,8 @@ class _ShoppingEmptyState extends StatelessWidget {
             const SizedBox(height: 12),
             Text(
               purchased
-                  ? 'Nessun acquisto recente'
-                  : 'La lista è vuota',
+                  ? strings.noRecentPurchases
+                  : strings.shoppingListEmpty,
               style: const TextStyle(
                 fontSize: 19,
                 fontWeight: FontWeight.w900,
@@ -891,10 +897,10 @@ class _ShoppingEmptyState extends StatelessWidget {
             const SizedBox(height: 6),
             Text(
               purchased
-                  ? 'Gli articoli spuntati compariranno qui.'
+                  ? strings.purchasedItemsHere
                   : shared
-                      ? 'Aggiungete quello che serve: la lista resta sincronizzata in Noi ♡.'
-                      : 'Scrivi cosa serve qui sopra. La categoria viene suggerita automaticamente.',
+                      ? strings.sharedShoppingEmpty
+                      : strings.privateShoppingEmpty,
               textAlign: TextAlign.center,
             ),
           ],
