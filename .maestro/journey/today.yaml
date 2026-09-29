@@ -1,7 +1,7 @@
 appId: com.riccardopinato.agenda_per_anna
 ---
 - tapOn:
-    text: "Oggi[\\s\\S]*"
+    text: "(Oggi|Today|Hoy|Aujourd’hui|Hoje)[\\s\\S]*"
     retryTapIfNoChange: true
 - extendedWaitUntil:
     visible: "La mia giornata[\\s\\S]*"
