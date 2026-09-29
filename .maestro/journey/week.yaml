@@ -1,7 +1,7 @@
 appId: com.riccardopinato.agenda_per_anna
 ---
 - tapOn:
-    text: '(Settimana|Week|Semana|Semaine)[\\s\\S]*'
+    text: '(Settimana|Week|Semana|Semaine)[\s\S]*'
     retryTapIfNoChange: true
 - extendedWaitUntil:
     visible: "La mia settimana"
