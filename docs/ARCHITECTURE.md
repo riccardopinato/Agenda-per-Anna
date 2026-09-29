@@ -427,3 +427,15 @@ Memory Recall stays entirely at the projection layer.
 - Search/type-filtered Ricordi results may be passed directly into the same snapshot function, avoiding a second memory/search index.
 - No Memory Engine database, Life Core store, embedding index, AI model, cloud table, sync queue or lifecycle entity is introduced.
 
+## v0.78 — Open Life Archive
+
+The historical archive is a read projection, not another content domain.
+
+- `LifeArchiveEntry` adapts existing DiaryBlockReference, AgendaItem, WorkoutSession and archived InboxEntry records.
+- `lifeArchiveEntries(...)` performs deterministic local filtering and ordering at read time.
+- The archive owns no payloads, IDs, sync state or lifecycle state; source-domain records remain authoritative.
+- Diary and Inbox archive flags retain their original restore behavior.
+- Historical agenda/workout navigation delegates to the existing domain screens.
+- Future agenda items are intentionally excluded from the history projection.
+- No archive database, cloud table, search index or backup schema is introduced.
+
