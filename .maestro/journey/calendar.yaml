@@ -4,5 +4,5 @@ appId: com.riccardopinato.agenda_per_anna
     text: '(Mese|Month|Mes|Mois|Mês)[\s\S]*'
     retryTapIfNoChange: true
 - extendedWaitUntil:
-    visible: "Calendario"
+    visible: '(Calendario|Calendar|Calendrier|Calendário)'
     timeout: 10000
