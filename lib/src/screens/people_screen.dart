@@ -230,7 +230,7 @@ class _PeopleScreenState extends State<PeopleScreen> {
                         DropdownMenuItem<String>(
                           value: recoverableBirthday.id,
                           child: Text(
-                            '${recoverableBirthday.name} · nel Cestino',
+                            strings.recoverableBirthdayLabel(recoverableBirthday.name),
                           ),
                         ),
                       if (unavailableBirthdayId != null)
