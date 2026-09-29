@@ -180,7 +180,7 @@ void main() {
 
     expect(main, contains("part 'src/life_archive_domain.dart';"));
     expect(domain, contains('List<LifeArchiveEntry> lifeArchiveEntries('));
-    expect(screen, contains("'Archivio della vita'"));
+    expect(screen, contains('strings.lifeArchive'));
     expect(screen, contains('lifeArchiveEntries('));
 
     for (final forbidden in [
