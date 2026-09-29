@@ -4,27 +4,27 @@ appId: com.riccardopinato.agenda_per_anna
     text: "(Oggi|Today|Hoy|Aujourd’hui|Hoje)[\\s\\S]*"
     retryTapIfNoChange: true
 - extendedWaitUntil:
-    visible: "La mia giornata[\\s\\S]*"
+    visible: '(La mia giornata|My day|Mi día|Ma journée|O meu dia)[\s\S]*'
     timeout: 10000
 - extendedWaitUntil:
-    visible: "Cattura"
+    visible: '(Cattura|Capture|Capturar|Capturer)'
     timeout: 10000
-- tapOn: "Cattura"
+- tapOn: '(Cattura|Capture|Capturar|Capturer)'
 - extendedWaitUntil:
-    visible: "Scrivi un momento[\\s\\S]*"
-    timeout: 10000
-- extendedWaitUntil:
-    visible: "Nota vocale[\\s\\S]*"
+    visible: '(Scrivi un momento|Write a moment|Escribir un momento|Écrire un moment|Escrever um momento)[\s\S]*'
     timeout: 10000
 - extendedWaitUntil:
-    visible: "Foto[\\s\\S]*"
+    visible: '(Nota vocale|Voice note|Nota de voz|Note vocale)[\s\S]*'
+    timeout: 10000
+- extendedWaitUntil:
+    visible: '(Foto|Photo)[\s\S]*'
     timeout: 10000
 - scrollUntilVisible:
     element:
-      text: "Chiudi"
+      text: '(Chiudi|Close|Cerrar|Fermer|Fechar)'
     direction: DOWN
     timeout: 10000
-- tapOn: "Chiudi"
+- tapOn: '(Chiudi|Close|Cerrar|Fermer|Fechar)'
 - scrollUntilVisible:
     element:
       text: "Momenti del giorno[\\s\\S]*"
