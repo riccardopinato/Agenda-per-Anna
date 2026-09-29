@@ -199,7 +199,7 @@ extension AgendaStoreLifeArchive on AgendaStore {
         entry.title,
         entry.subtitle,
         entry.searchableText,
-        DateFormat('d MMMM yyyy', 'it_IT').format(entry.date),
+        '${entry.date.day} ${entry.date.month} ${entry.date.year}',
         '${entry.date.year}',
       ].join(' ').toLowerCase();
       return !tokens.every(haystack.contains);
