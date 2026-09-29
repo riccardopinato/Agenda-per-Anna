@@ -42,11 +42,17 @@ class _CalendarScreenState extends State<CalendarScreen> {
         ExternalCalendarService.instance,
       ]),
       builder: (context, _) {
+        final strings = AnnaStrings.of(context);
         final events =
             agendaEntriesForDayWithExternal(widget.store, selected);
         final dayHub = widget.store.dayHubSnapshot(selected);
         return Scaffold(
-          appBar: AppBar(title: const Text('Calendario', style: TextStyle(fontWeight: FontWeight.w800))),
+          appBar: AppBar(
+            title: Text(
+              strings.calendar,
+              style: const TextStyle(fontWeight: FontWeight.w800),
+            ),
+          ),
           floatingActionButton: FloatingActionButton(
             onPressed: () => openUnifiedItemComposer(context, widget.store, selected),
             child: const Icon(Icons.add),
@@ -58,7 +64,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
                 child: Padding(
                   padding: const EdgeInsets.all(8),
                   child: TableCalendar<UnifiedAgendaEntry>(
-                    locale: 'it_IT',
+                    locale: AnnaStrings.intlLocale(context),
                     firstDay: DateTime(2020),
                     lastDay: DateTime(2040),
                     focusedDay: focused,
@@ -90,10 +96,17 @@ class _CalendarScreenState extends State<CalendarScreen> {
               const SizedBox(height: 12),
               AgendaContentFilterBar(store: widget.store),
               const SizedBox(height: 18),
-              SectionTitle(_cap(DateFormat('EEEE d MMMM', 'it_IT').format(selected))),
+              SectionTitle(
+                _cap(
+                  DateFormat(
+                    'EEEE d MMMM',
+                    AnnaStrings.intlLocale(context),
+                  ).format(selected),
+                ),
+              ),
               const SizedBox(height: 10),
               if (events.isEmpty)
-                const SimpleCard(child: Text('Nessun impegno.'))
+                SimpleCard(child: Text(strings.noCommitments))
               else
                 ...events.map(
                   (e) => UnifiedAgendaTile(
@@ -175,6 +188,7 @@ class _PlannerScreenState extends State<PlannerScreen> {
         ExternalCalendarService.instance,
       ]),
       builder: (context, _) {
+        final strings = AnnaStrings.of(context);
         final snapshot = widget.store.dayHubSnapshot(day);
         final memoryRecall = widget.store.memoryRecallSnapshot(day);
         final timedPrivate = snapshot.agenda
@@ -194,16 +208,23 @@ class _PlannerScreenState extends State<PlannerScreen> {
               entryPoint: UnifiedCaptureEntryPoint.day,
             ),
             icon: const Icon(Icons.add),
-            label: const Text('Cattura'),
+            label: Text(strings.capture),
           ),
           appBar: AppBar(
             title: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text('La mia giornata',
-                    style: TextStyle(fontWeight: FontWeight.w800)),
                 Text(
-                  _cap(DateFormat('EEEE d MMMM', 'it_IT').format(day)),
+                  strings.myDay,
+                  style: const TextStyle(fontWeight: FontWeight.w800),
+                ),
+                Text(
+                  _cap(
+                    DateFormat(
+                      'EEEE d MMMM',
+                      AnnaStrings.intlLocale(context),
+                    ).format(day),
+                  ),
                   style: Theme.of(context).textTheme.bodySmall,
                 ),
               ],
@@ -212,7 +233,7 @@ class _PlannerScreenState extends State<PlannerScreen> {
               if (!AgendaStore.sameDay(day, DateTime.now()))
                 TextButton(
                   onPressed: () => _selectDay(DateTime.now()),
-                  child: const Text('Oggi'),
+                  child: Text(strings.navToday),
                 ),
               IconButton(
                 onPressed: () => openUnifiedItemComposer(context, widget.store, day),
@@ -256,14 +277,12 @@ class _PlannerScreenState extends State<PlannerScreen> {
                       tilePadding: const EdgeInsets.symmetric(horizontal: 8),
                       childrenPadding: const EdgeInsets.only(bottom: 8),
                       leading: const Icon(Icons.schedule_outlined),
-                      title: const Text(
-                        'Timeline oraria',
-                        style: TextStyle(fontWeight: FontWeight.w800),
+                      title: Text(
+                        strings.hourlyTimeline,
+                        style: const TextStyle(fontWeight: FontWeight.w800),
                       ),
                       subtitle: Text(
-                        timedPrivate.isEmpty
-                            ? 'Nessun appuntamento privato con orario'
-                            : '${timedPrivate.length} appuntamenti privati con orario',
+                        strings.noPrivateTimedAppointments(timedPrivate.length),
                       ),
                       children: [
                         _TimelineHint(eventCount: timedPrivate.length),
@@ -277,7 +296,7 @@ class _PlannerScreenState extends State<PlannerScreen> {
                       ],
                     ),
                     const SizedBox(height: 18),
-                    const SectionTitle('Diario'),
+                    SectionTitle(strings.diary),
                     const SizedBox(height: 8),
                     JournalEditor(store: widget.store, date: day),
                   ],
@@ -303,9 +322,10 @@ class _CalendarDayContextCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
+    final strings = AnnaStrings.of(context);
     final journalText = snapshot.hasJournalContent
-        ? 'Diario già iniziato'
-        : 'Diario ancora vuoto';
+        ? strings.journalStarted
+        : strings.journalEmpty;
     final birthdayText = snapshot.birthdays.isEmpty
         ? null
         : snapshot.birthdays
@@ -326,15 +346,15 @@ class _CalendarDayContextCard extends StatelessWidget {
             children: [
               const Icon(Icons.auto_stories_outlined),
               const SizedBox(width: 8),
-              const Expanded(
+              Expanded(
                 child: Text(
-                  'Contesto della giornata',
-                  style: TextStyle(fontWeight: FontWeight.w800),
+                  strings.dayContext,
+                  style: const TextStyle(fontWeight: FontWeight.w800),
                 ),
               ),
               TextButton(
                 onPressed: onOpenDay,
-                child: const Text('Apri giornata'),
+                child: Text(strings.openDay),
               ),
             ],
           ),
@@ -358,7 +378,7 @@ class _CalendarDayContextCard extends StatelessWidget {
           if (snapshot.isEmpty) ...[
             const SizedBox(height: 6),
             Text(
-              'Giornata libera: puoi comunque usarla come pagina di diario.',
+              strings.freeDayDiaryHint,
               style: Theme.of(context).textTheme.bodySmall,
             ),
           ],
@@ -382,6 +402,7 @@ class _DayMemoryRecallCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
+    final strings = AnnaStrings.of(context);
     return Container(
       padding: const EdgeInsets.fromLTRB(14, 12, 14, 10),
       decoration: BoxDecoration(
@@ -396,10 +417,10 @@ class _DayMemoryRecallCard extends StatelessWidget {
             children: [
               const Icon(Icons.history_toggle_off),
               const SizedBox(width: 8),
-              const Expanded(
+              Expanded(
                 child: Text(
-                  'In questo giorno',
-                  style: TextStyle(fontWeight: FontWeight.w900),
+                  strings.onThisDay,
+                  style: const TextStyle(fontWeight: FontWeight.w900),
                 ),
               ),
               TextButton(
@@ -409,7 +430,7 @@ class _DayMemoryRecallCard extends StatelessWidget {
                     builder: (_) => DiaryMemoriesScreen(store: store),
                   ),
                 ),
-                child: const Text('Ricordi'),
+                child: Text(strings.memories),
               ),
             ],
           ),
