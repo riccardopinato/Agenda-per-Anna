@@ -19,6 +19,11 @@ appId: com.riccardopinato.agenda_per_anna
 - extendedWaitUntil:
     visible: "Foto"
     timeout: 10000
+- scrollUntilVisible:
+    element:
+      text: "Chiudi"
+    direction: DOWN
+    timeout: 10000
 - tapOn: "Chiudi"
 - scrollUntilVisible:
     element:
