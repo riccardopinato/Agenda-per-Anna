@@ -1893,4 +1893,4 @@ class _DiaryMemoryCardState extends State<DiaryMemoryCard> {
     );
   }
 }
-enum _DiaryMemoriesView { memories, days, months, years }
+enum _DiaryMemoriesView { memories, rediscover, days, months, years }
