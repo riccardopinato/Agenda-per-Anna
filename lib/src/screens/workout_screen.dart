@@ -629,7 +629,7 @@ Future<WorkoutSession?> showWorkoutSessionEditor(
                     initialValue: sport,
                     decoration: InputDecoration(
                       labelText: strings.sport,
-                      prefixIcon: Icon(Icons.sports_outlined),
+                      prefixIcon: const Icon(Icons.sports_outlined),
                     ),
                     items: WorkoutSport.values
                         .map(
@@ -674,7 +674,7 @@ Future<WorkoutSession?> showWorkoutSessionEditor(
                           decoration: InputDecoration(
                             labelText: strings.duration,
                             hintText: 'es. 1:05:20',
-                            prefixIcon: Icon(Icons.timer_outlined),
+                            prefixIcon: const Icon(Icons.timer_outlined),
                           ),
                         ),
                       ),
@@ -688,7 +688,7 @@ Future<WorkoutSession?> showWorkoutSessionEditor(
                           decoration: InputDecoration(
                             labelText: strings.distanceKm,
                             hintText: 'es. 15',
-                            prefixIcon: Icon(Icons.route_outlined),
+                            prefixIcon: const Icon(Icons.route_outlined),
                           ),
                         ),
                       ),
@@ -704,7 +704,7 @@ Future<WorkoutSession?> showWorkoutSessionEditor(
                           decoration: InputDecoration(
                             labelText: strings.elevationGain,
                             hintText: strings.optional,
-                            prefixIcon: Icon(Icons.terrain_outlined),
+                            prefixIcon: const Icon(Icons.terrain_outlined),
                           ),
                         ),
                       ),
@@ -714,7 +714,7 @@ Future<WorkoutSession?> showWorkoutSessionEditor(
                           initialValue: effort,
                           decoration: InputDecoration(
                             labelText: strings.intensity,
-                            prefixIcon: Icon(Icons.speed_outlined),
+                            prefixIcon: const Icon(Icons.speed_outlined),
                           ),
                           items: [
                             const DropdownMenuItem<int?>(
@@ -906,7 +906,7 @@ Future<WorkoutPlan?> showWorkoutPlanEditor(
                     initialValue: sport,
                     decoration: InputDecoration(
                       labelText: strings.sport,
-                      prefixIcon: Icon(Icons.sports_outlined),
+                      prefixIcon: const Icon(Icons.sports_outlined),
                     ),
                     items: WorkoutSport.values
                         .map(
