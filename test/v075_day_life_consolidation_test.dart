@@ -142,6 +142,15 @@ void main() {
     expect(const AgendaPreferences().startTab, StartTab.today);
   });
 
+  test('onboarding completion invalidates the root shell', () {
+    final shell = File('lib/src/app_shell.dart').readAsStringSync();
+    expect(shell, contains('store.shellRevision,'));
+    expect(
+      shell,
+      contains('store.preferences.copyWith(onboardingDone: true)'),
+    );
+  });
+
   test('Home and Planner share the same day overview projection', () {
     final home =
         File('lib/src/screens/home_inbox_search.dart').readAsStringSync();
