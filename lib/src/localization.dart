@@ -354,6 +354,46 @@ class AnnaStrings {
       };
 
 
+
+  String get noPeopleSaved => _pick(en: 'No people saved', it: 'Nessuna persona salvata', es: 'No hay personas guardadas', fr: 'Aucune personne enregistrée', pt: 'Nenhuma pessoa guardada');
+  String get addPersonBeforeLink => _pick(en: 'Add a person in “Important people” first, then you can link them to memories.', it: 'Aggiungi prima una persona da “Persone importanti”, poi potrai collegarla ai ricordi.', es: 'Añade primero una persona en “Personas importantes” y luego podrás vincularla a los recuerdos.', fr: 'Ajoute d’abord une personne dans « Personnes importantes », puis tu pourras la lier aux souvenirs.', pt: 'Adiciona primeiro uma pessoa em “Pessoas importantes” e depois poderás ligá-la às memórias.');
+  String get peopleInMemory => _pick(en: 'People in this memory', it: 'Persone nel ricordo', es: 'Personas en este recuerdo', fr: 'Personnes dans ce souvenir', pt: 'Pessoas nesta memória');
+  String get searchPersonHint => _pick(en: 'Search for a person...', it: 'Cerca una persona...', es: 'Buscar una persona...', fr: 'Rechercher une personne...', pt: 'Pesquisar uma pessoa...');
+  String get noPersonFound => _pick(en: 'No people found.', it: 'Nessuna persona trovata.', es: 'No se encontraron personas.', fr: 'Aucune personne trouvée.', pt: 'Nenhuma pessoa encontrada.');
+  String get recoverableTrashLink => _pick(en: 'In Trash · recoverable link', it: 'Nel Cestino · collegamento recuperabile', es: 'En la papelera · vínculo recuperable', fr: 'Dans la corbeille · lien récupérable', pt: 'No lixo · ligação recuperável');
+  String get newPerson => _pick(en: 'New person', it: 'Nuova persona', es: 'Nueva persona', fr: 'Nouvelle personne', pt: 'Nova pessoa');
+  String get editPerson => _pick(en: 'Edit person', it: 'Modifica persona', es: 'Editar persona', fr: 'Modifier la personne', pt: 'Editar pessoa');
+  String get relationship => _pick(en: 'Relationship', it: 'Relazione', es: 'Relación', fr: 'Relation', pt: 'Relação');
+  String get relationshipHint => _pick(en: 'e.g. friend, sister, colleague...', it: 'Es. amica, sorella, collega...', es: 'p. ej. amiga, hermana, compañera...', fr: 'ex. amie, sœur, collègue...', pt: 'ex. amiga, irmã, colega...');
+  String get linkedBirthday => _pick(en: 'Linked birthday', it: 'Compleanno collegato', es: 'Cumpleaños vinculado', fr: 'Anniversaire lié', pt: 'Aniversário associado');
+  String get noBirthday => _pick(en: 'No birthday', it: 'Nessun compleanno', es: 'Sin cumpleaños', fr: 'Aucun anniversaire', pt: 'Sem aniversário');
+  String get birthdayUnavailable => _pick(en: 'Birthday unavailable', it: 'Compleanno non disponibile', es: 'Cumpleaños no disponible', fr: 'Anniversaire indisponible', pt: 'Aniversário indisponível');
+  String get addBirthdaysFromDedicatedScreen => _pick(en: 'You can add birthdays from the dedicated screen.', it: 'Puoi aggiungere i compleanni dalla schermata dedicata.', es: 'Puedes añadir cumpleaños desde la pantalla dedicada.', fr: 'Tu peux ajouter les anniversaires depuis l’écran dédié.', pt: 'Podes adicionar aniversários no ecrã dedicado.');
+  String get anniversaryImportantDate => _pick(en: 'Anniversary / important date', it: 'Anniversario / data importante', es: 'Aniversario / fecha importante', fr: 'Anniversaire / date importante', pt: 'Aniversário / data importante');
+  String get noDate => _pick(en: 'No date', it: 'Nessuna data', es: 'Sin fecha', fr: 'Aucune date', pt: 'Sem data');
+  String get removeDate => _pick(en: 'Remove date', it: 'Rimuovi data', es: 'Quitar fecha', fr: 'Supprimer la date', pt: 'Remover data');
+  String get personalNote => _pick(en: 'Personal note', it: 'Nota personale', es: 'Nota personal', fr: 'Note personnelle', pt: 'Nota pessoal');
+  String get personalNoteHint => _pick(en: 'Details you want to remember...', it: 'Dettagli che vuoi ricordare...', es: 'Detalles que quieres recordar...', fr: 'Détails que tu veux retenir...', pt: 'Detalhes que queres recordar...');
+  String get showFirstInList => _pick(en: 'Show this person first in the list.', it: 'Mostrala per prima nell’elenco.', es: 'Muéstrala primero en la lista.', fr: 'Afficher cette personne en premier dans la liste.', pt: 'Mostrar esta pessoa primeiro na lista.');
+  String personTrashDescription(String name) => _pick(en: '$name will be removed from the list, but memory links will remain ready for a possible restore.', it: '$name verrà rimossa dall’elenco, ma i collegamenti ai ricordi resteranno pronti per un eventuale ripristino.', es: '$name se eliminará de la lista, pero los vínculos a los recuerdos quedarán listos para una posible restauración.', fr: '$name sera retirée de la liste, mais les liens vers les souvenirs resteront disponibles pour une éventuelle restauration.', pt: '$name será removida da lista, mas as ligações às memórias ficarão prontas para um possível restauro.');
+  String memoriesCount(int count) => _pick(en: '$count ${count == 1 ? 'memory' : 'memories'}', it: '$count ${count == 1 ? 'ricordo' : 'ricordi'}', es: '$count ${count == 1 ? 'recuerdo' : 'recuerdos'}', fr: '$count ${count == 1 ? 'souvenir' : 'souvenirs'}', pt: '$count ${count == 1 ? 'memória' : 'memórias'}');
+  String get nextAnniversary => _pick(en: 'Next anniversary', it: 'Prossimo anniversario', es: 'Próximo aniversario', fr: 'Prochain anniversaire', pt: 'Próximo aniversário');
+  String get yourTimeline => _pick(en: 'Your timeline', it: 'La vostra timeline', es: 'Vuestra línea temporal', fr: 'Votre chronologie', pt: 'A vossa linha temporal');
+  String get firstLinkedMemory => _pick(en: 'First linked memory', it: 'Primo ricordo collegato', es: 'Primer recuerdo vinculado', fr: 'Premier souvenir lié', pt: 'Primeira memória associada');
+  String get latestMemory => _pick(en: 'Latest memory', it: 'Ricordo più recente', es: 'Recuerdo más reciente', fr: 'Souvenir le plus récent', pt: 'Memória mais recente');
+  String get diaryMemory => _pick(en: 'Diary memory', it: 'Ricordo del diario', es: 'Recuerdo del diario', fr: 'Souvenir du journal', pt: 'Memória do diário');
+  String get seeLinkedMemories => _pick(en: 'See linked memories', it: 'Vedi ricordi collegati', es: 'Ver recuerdos vinculados', fr: 'Voir les souvenirs liés', pt: 'Ver memórias associadas');
+  String get importantPeople => _pick(en: 'Important people', it: 'Persone importanti', es: 'Personas importantes', fr: 'Personnes importantes', pt: 'Pessoas importantes');
+  String get person => _pick(en: 'Person', it: 'Persona', es: 'Persona', fr: 'Personne', pt: 'Pessoa');
+  String get peopleThatMatter => _pick(en: 'The people who matter', it: 'Le persone che contano', es: 'Las personas que importan', fr: 'Les personnes qui comptent', pt: 'As pessoas que importam');
+  String get importantPeopleDescription => _pick(en: 'Save only the name, relationship, a note and an optional birthday. Then link these people to diary memories.', it: 'Salva solo nome, relazione, una nota e l’eventuale compleanno. Poi collega queste persone ai ricordi del diario.', es: 'Guarda solo el nombre, la relación, una nota y, si quieres, el cumpleaños. Después vincula estas personas a los recuerdos del diario.', fr: 'Enregistre seulement le nom, la relation, une note et éventuellement l’anniversaire. Puis lie ces personnes aux souvenirs du journal.', pt: 'Guarda apenas o nome, a relação, uma nota e, se quiseres, o aniversário. Depois liga estas pessoas às memórias do diário.');
+  String get addPerson => _pick(en: 'Add person', it: 'Aggiungi persona', es: 'Añadir persona', fr: 'Ajouter une personne', pt: 'Adicionar pessoa');
+  String birthdayDetail(String value) => _pick(en: 'Birthday: $value', it: 'Compleanno: $value', es: 'Cumpleaños: $value', fr: 'Anniversaire : $value', pt: 'Aniversário: $value');
+  String anniversaryDetail(String value) => _pick(en: 'Anniversary: $value', it: 'Anniversario: $value', es: 'Aniversario: $value', fr: 'Anniversaire : $value', pt: 'Aniversário: $value');
+  String linkedMemoriesCount(int count) => _pick(en: '$count linked ${count == 1 ? 'memory' : 'memories'}', it: '$count ${count == 1 ? 'ricordo collegato' : 'ricordi collegati'}', es: '$count ${count == 1 ? 'recuerdo vinculado' : 'recuerdos vinculados'}', fr: '$count ${count == 1 ? 'souvenir lié' : 'souvenirs liés'}', pt: '$count ${count == 1 ? 'memória associada' : 'memórias associadas'}');
+  String lastMemoryDetail(String value) => _pick(en: 'Last: $value', it: 'Ultimo: $value', es: 'Último: $value', fr: 'Dernier : $value', pt: 'Última: $value');
+  String sinceDate(String value) => _pick(en: 'Since $value', it: 'Dal $value', es: 'Desde $value', fr: 'Depuis $value', pt: 'Desde $value');
+
   String get birthdays => _pick(en: 'Birthdays', it: 'Compleanni', es: 'Cumpleaños', fr: 'Anniversaires', pt: 'Aniversários');
   String get newBirthday => _pick(en: 'New birthday', it: 'Nuovo compleanno', es: 'Nuevo cumpleaños', fr: 'Nouvel anniversaire', pt: 'Novo aniversário');
   String get editBirthday => _pick(en: 'Edit birthday', it: 'Modifica compleanno', es: 'Editar cumpleaños', fr: 'Modifier l’anniversaire', pt: 'Editar aniversário');
