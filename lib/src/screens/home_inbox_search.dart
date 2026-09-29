@@ -14,15 +14,16 @@ class _MainShellState extends State<MainShell> {
   @override
   void initState() {
     super.initState();
-    index = widget.store.preferences.startTab.shellIndex;
+    index = widget.store.preferences.startTab.index;
   }
 
   @override
   Widget build(BuildContext context) {
     final pages = [
-      PlannerScreen(store: widget.store),
+      HomeScreen(store: widget.store),
       CalendarScreen(store: widget.store),
       WeekScreen(store: widget.store),
+      PlannerScreen(store: widget.store),
     ];
     return Scaffold(
       body: IndexedStack(index: index, children: pages),
@@ -31,9 +32,9 @@ class _MainShellState extends State<MainShell> {
         onDestinationSelected: (v) => setState(() => index = v),
         destinations: const [
           NavigationDestination(
-            icon: Icon(Icons.today_outlined),
-            selectedIcon: Icon(Icons.today),
-            label: 'Oggi',
+            icon: Icon(Icons.home_outlined),
+            selectedIcon: Icon(Icons.home),
+            label: 'Home',
           ),
           NavigationDestination(
             icon: Icon(Icons.calendar_month_outlined),
@@ -44,6 +45,11 @@ class _MainShellState extends State<MainShell> {
             icon: Icon(Icons.view_week_outlined),
             selectedIcon: Icon(Icons.view_week),
             label: 'Settimana',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.today_outlined),
+            selectedIcon: Icon(Icons.today),
+            label: 'Oggi',
           ),
         ],
       ),
