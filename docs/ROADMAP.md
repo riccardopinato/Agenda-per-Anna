@@ -33,6 +33,7 @@ Source of truth for the active product sequence after v0.52. The roadmap follows
 | v0.76 | Unified Capture | Completed | One capture surface and one set of existing persistence paths for text, voice, photos, Inbox and agenda actions |
 | v0.77 | Memory Recall 2.0 | Completed | Derived resurfacing across dates, years, people and places using the existing DiaryBlockReference memory primitive |
 | v0.78 | Open Life Archive | Completed | One derived historical surface over diary, agenda, workouts and archived Inbox without duplicating storage |
+| v0.79 | Privacy Architecture Finalization | Completed | One Privacy Center over the existing lock, Vault, backup/data-safety and account/data-rights systems |
 
 ## Permanent constraints for this sequence
 
@@ -333,6 +334,19 @@ Per the active development cadence, AppLab runs once every two feature versions.
 - The same Shopping List screen supports private and shared modes to avoid duplicated UX logic.
 - Release metadata is aligned to v0.71.0+81.
 - Analyze, full tests, Web release, Android size audit and AppLab Trusted Verify must be green before promotion to main.
+
+
+## v0.79 acceptance criteria
+
+- Privacy Center is a presentation/consolidation layer over the existing privacy and security mechanisms.
+- PIN, app lock, biometric unlock, automatic relock and Home-detail hiding remain stored only in the existing AppPreferences contract.
+- The encrypted Private Vault keeps its independent device-local lifecycle, Android Keystore wrapping and FLAG_SECURE behavior.
+- Backup/data-safety controls remain owned by BackupScreen and the existing integrity-audit pipeline.
+- Cloud sign-in, sign-out and permanent account/data deletion remain owned by CloudAccountScreen and the existing authenticated erasure backend.
+- The UI explicitly states that deleting the cloud account does not delete the separate local Private Vault.
+- No new persistence key, privacy database, cloud table, sync queue, encryption subsystem or parallel account-erasure path is introduced.
+- Release metadata is aligned to v0.79.0+89.
+- Development checks, Web release, Android size audit and AppLab Trusted Verify must all pass before merge.
 
 
 ## v0.78 acceptance criteria
