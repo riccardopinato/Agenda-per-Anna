@@ -2,7 +2,7 @@
 
 Flutter app for personal planning, private diary and the shared **Noi ♡** space.
 
-Current release line: **v0.76.0**.
+Current release line: **v0.77.0**.
 
 ## Core areas
 
@@ -481,6 +481,18 @@ See `docs/ARCHITECTURE.md` and `supabase/README.md` for implementation details.
 - Share-target text and images now reuse the same capture persistence helpers instead of maintaining separate diary-save logic.
 - Capturing from `La mia giornata` respects the day currently being viewed, including past/future days, while preserving the current time as the moment ordering time inside that day.
 - No capture database, parallel media store, AI layer or new cloud schema is introduced.
+
+## v0.77.0 — Memory Recall 2.0
+
+- Adds a deterministic **Riscopri** view inside I miei ricordi without creating a persistent Memory Engine.
+- “In questo giorno” reuses the canonical `DiaryBlockReference` path and now surfaces directly inside `La mia giornata` when historical matches exist.
+- Riscopri groups same-month memories from previous years and derives one year highlight, preferring a photo when available.
+- Recurring people and places are derived from existing person/place links and remain navigable through the current Ricordi/search flows.
+- Search/type filters can feed the same recall projection, so filtered memory exploration does not require another index.
+- Archived memories stay out of recall resurfacing.
+- No new storage key, database/table, cloud queue, lifecycle entity, AI model or embedding index is introduced.
+- Release metadata is aligned to v0.77.0+87.
+
 
 ## v0.74.0 — Lifecycle Integrity & Release Metadata Cleanup
 
