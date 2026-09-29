@@ -5,14 +5,13 @@ Future<List<String>?> showPeoplePicker(
   AgendaStore store, {
   Iterable<String> initialIds = const [],
 }) async {
+  final strings = AnnaStrings.of(context);
   if (store.people.isEmpty) {
     await showDialog<void>(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        title: const Text('Nessuna persona salvata'),
-        content: const Text(
-          'Aggiungi prima una persona da “Persone importanti”, poi potrai collegarla ai ricordi.',
-        ),
+        title: Text(strings.noPeopleSaved),
+        content: Text(strings.addPersonBeforeLink),
         actions: [
           FilledButton(
             onPressed: () => Navigator.pop(dialogContext),
@@ -51,7 +50,7 @@ Future<List<String>?> showPeoplePicker(
         }).toList();
 
         return AlertDialog(
-          title: const Text('Persone nel ricordo'),
+          title: Text(strings.peopleInMemory),
           content: SizedBox(
             width: 430,
             height: 390,
@@ -61,8 +60,8 @@ Future<List<String>?> showPeoplePicker(
                   controller: searchController,
                   autofocus: true,
                   onChanged: (_) => setDialogState(() {}),
-                  decoration: const InputDecoration(
-                    hintText: 'Cerca una persona...',
+                  decoration: InputDecoration(
+                    hintText: strings.searchPersonHint,
                     prefixIcon: Icon(Icons.search),
                     border: OutlineInputBorder(),
                   ),
@@ -70,16 +69,14 @@ Future<List<String>?> showPeoplePicker(
                 const SizedBox(height: 10),
                 Expanded(
                   child: visible.isEmpty && recoverable.isEmpty
-                      ? const Center(child: Text('Nessuna persona trovata.'))
+                      ? Center(child: Text(strings.noPersonFound))
                       : ListView(
                           children: [
                             for (final person in recoverable)
                               CheckboxListTile(
                                 value: selected.contains(person.id),
                                 title: Text(person.name),
-                                subtitle: const Text(
-                                  'Nel Cestino · collegamento recuperabile',
-                                ),
+                                subtitle: Text(strings.recoverableTrashLink),
                                 secondary:
                                     const Icon(Icons.restore_from_trash_outlined),
                                 onChanged: (checked) {
@@ -123,12 +120,12 @@ Future<List<String>?> showPeoplePicker(
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(dialogContext),
-              child: const Text('Annulla'),
+              child: Text(strings.cancel),
             ),
             FilledButton(
               onPressed: () =>
                   Navigator.pop(dialogContext, selected.toList()),
-              child: const Text('Salva'),
+              child: Text(strings.save),
             ),
           ],
         );
@@ -166,6 +163,7 @@ class _PeopleScreenState extends State<PeopleScreen> {
   }
 
   Future<void> _edit([PersonEntry? existing]) async {
+    final strings = AnnaStrings.of(context);
     final nameController = TextEditingController(text: existing?.name ?? '');
     final relationshipController =
         TextEditingController(text: existing?.relationship ?? '');
@@ -190,7 +188,7 @@ class _PeopleScreenState extends State<PeopleScreen> {
       context: context,
       builder: (dialogContext) => StatefulBuilder(
         builder: (context, setDialogState) => AlertDialog(
-          title: Text(existing == null ? 'Nuova persona' : 'Modifica persona'),
+          title: Text(existing == null ? strings.newPerson : strings.editPerson),
           content: SizedBox(
             width: 450,
             child: SingleChildScrollView(
@@ -201,8 +199,8 @@ class _PeopleScreenState extends State<PeopleScreen> {
                     controller: nameController,
                     autofocus: existing == null,
                     textCapitalization: TextCapitalization.words,
-                    decoration: const InputDecoration(
-                      labelText: 'Nome *',
+                    decoration: InputDecoration(
+                      labelText: '${strings.name} *',
                       prefixIcon: Icon(Icons.person_outline),
                     ),
                   ),
@@ -210,23 +208,23 @@ class _PeopleScreenState extends State<PeopleScreen> {
                   TextField(
                     controller: relationshipController,
                     textCapitalization: TextCapitalization.sentences,
-                    decoration: const InputDecoration(
-                      labelText: 'Relazione',
-                      hintText: 'Es. amica, sorella, collega...',
+                    decoration: InputDecoration(
+                      labelText: strings.relationship,
+                      hintText: strings.relationshipHint,
                       prefixIcon: Icon(Icons.favorite_border),
                     ),
                   ),
                   const SizedBox(height: 12),
                   DropdownButtonFormField<String>(
                     initialValue: birthdayId,
-                    decoration: const InputDecoration(
-                      labelText: 'Compleanno collegato',
+                    decoration: InputDecoration(
+                      labelText: strings.linkedBirthday,
                       prefixIcon: Icon(Icons.cake_outlined),
                     ),
                     items: [
-                      const DropdownMenuItem<String>(
+                      DropdownMenuItem<String>(
                         value: '',
-                        child: Text('Nessun compleanno'),
+                        child: Text(strings.noBirthday),
                       ),
                       if (recoverableBirthday != null)
                         DropdownMenuItem<String>(
@@ -238,14 +236,14 @@ class _PeopleScreenState extends State<PeopleScreen> {
                       if (unavailableBirthdayId != null)
                         DropdownMenuItem<String>(
                           value: unavailableBirthdayId,
-                          child: const Text('Compleanno non disponibile'),
+                          child: Text(strings.birthdayUnavailable),
                         ),
                       ...birthdays.map(
                         (birthday) => DropdownMenuItem<String>(
                           value: birthday.id,
                           child: Text(
                             '${birthday.name} · '
-                            '${DateFormat('d MMMM', 'it_IT').format(DateTime(2000, birthday.month, birthday.day))}',
+                            '${DateFormat('d MMMM', AnnaStrings.intlLocale(context)).format(DateTime(2000, birthday.month, birthday.day))}',
                           ),
                         ),
                       ),
@@ -259,11 +257,11 @@ class _PeopleScreenState extends State<PeopleScreen> {
                   ),
                   if (birthdays.isEmpty) ...[
                     const SizedBox(height: 6),
-                    const Align(
+                    Align(
                       alignment: Alignment.centerLeft,
                       child: Text(
-                        'Puoi aggiungere i compleanni dalla schermata dedicata.',
-                        style: TextStyle(fontSize: 12),
+                        strings.addBirthdaysFromDedicatedScreen,
+                        style: const TextStyle(fontSize: 12),
                       ),
                     ),
                   ],
@@ -271,17 +269,17 @@ class _PeopleScreenState extends State<PeopleScreen> {
                   ListTile(
                     contentPadding: EdgeInsets.zero,
                     leading: const Icon(Icons.favorite_outline),
-                    title: const Text('Anniversario / data importante'),
+                    title: Text(strings.anniversaryImportantDate),
                     subtitle: Text(
                       anniversaryDate == null
-                          ? 'Nessuna data'
-                          : DateFormat('d MMMM yyyy', 'it_IT')
+                          ? strings.noDate
+                          : DateFormat('d MMMM yyyy', AnnaStrings.intlLocale(context))
                               .format(anniversaryDate!),
                     ),
                     trailing: anniversaryDate == null
                         ? null
                         : IconButton(
-                            tooltip: 'Rimuovi data',
+                            tooltip: strings.removeDate,
                             onPressed: () =>
                                 setDialogState(() => anniversaryDate = null),
                             icon: const Icon(Icons.close),
@@ -304,9 +302,9 @@ class _PeopleScreenState extends State<PeopleScreen> {
                     minLines: 2,
                     maxLines: 4,
                     textCapitalization: TextCapitalization.sentences,
-                    decoration: const InputDecoration(
-                      labelText: 'Nota personale',
-                      hintText: 'Dettagli che vuoi ricordare...',
+                    decoration: InputDecoration(
+                      labelText: strings.personalNote,
+                      hintText: strings.personalNoteHint,
                       alignLabelWithHint: true,
                     ),
                   ),
@@ -314,10 +312,8 @@ class _PeopleScreenState extends State<PeopleScreen> {
                   SwitchListTile(
                     contentPadding: EdgeInsets.zero,
                     value: favorite,
-                    title: const Text('Persona importante'),
-                    subtitle: const Text(
-                      'Mostrala per prima nell’elenco.',
-                    ),
+                    title: Text(strings.importantPerson),
+                    subtitle: Text(strings.showFirstInList),
                     secondary: const Icon(Icons.star_outline),
                     onChanged: (value) =>
                         setDialogState(() => favorite = value),
@@ -329,7 +325,7 @@ class _PeopleScreenState extends State<PeopleScreen> {
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(dialogContext),
-              child: const Text('Annulla'),
+              child: Text(strings.cancel),
             ),
             FilledButton(
               onPressed: () {
@@ -348,7 +344,7 @@ class _PeopleScreenState extends State<PeopleScreen> {
                   ),
                 );
               },
-              child: const Text('Salva'),
+              child: Text(strings.save),
             ),
           ],
         ),
@@ -364,21 +360,22 @@ class _PeopleScreenState extends State<PeopleScreen> {
   }
 
   Future<void> _delete(PersonEntry person) async {
+    final strings = AnnaStrings.of(context);
     final confirmed = await showDialog<bool>(
           context: context,
           builder: (dialogContext) => AlertDialog(
-            title: const Text('Spostare nel Cestino?'),
+            title: Text(strings.moveToTrashQuestion),
             content: Text(
-              '${person.name} verrà rimossa dall’elenco, ma i collegamenti ai ricordi resteranno pronti per un eventuale ripristino.',
+              strings.personTrashDescription(person.name),
             ),
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(dialogContext, false),
-                child: const Text('Annulla'),
+                child: Text(strings.cancel),
               ),
               FilledButton(
                 onPressed: () => Navigator.pop(dialogContext, true),
-                child: const Text('Sposta nel Cestino'),
+                child: Text(strings.moveToTrash),
               ),
             ],
           ),
@@ -403,6 +400,7 @@ class _PeopleScreenState extends State<PeopleScreen> {
 
 
   Future<void> _openRelationshipOverview(PersonEntry person) async {
+    final strings = AnnaStrings.of(context);
     final snapshot = widget.store.relationshipSnapshot(person);
     final anniversary = person.anniversaryDate;
     final firstMemory = snapshot.firstMemoryDate;
@@ -453,15 +451,14 @@ class _PeopleScreenState extends State<PeopleScreen> {
                     Chip(
                       avatar: const Icon(Icons.auto_stories_outlined, size: 18),
                       label: Text(
-                        '${snapshot.memoryCount} '
-                        '${snapshot.memoryCount == 1 ? 'ricordo' : 'ricordi'}',
+                        strings.memoriesCount(snapshot.memoryCount),
                       ),
                     ),
                     if (snapshot.birthday != null)
                       Chip(
                         avatar: const Icon(Icons.cake_outlined, size: 18),
                         label: Text(
-                          DateFormat('d MMMM', 'it_IT').format(
+                          DateFormat('d MMMM', AnnaStrings.intlLocale(context)).format(
                             DateTime(
                               2000,
                               snapshot.birthday!.month,
@@ -475,7 +472,7 @@ class _PeopleScreenState extends State<PeopleScreen> {
                         avatar:
                             const Icon(Icons.favorite_outline, size: 18),
                         label: Text(
-                          'Dal ${DateFormat('d MMM yyyy', 'it_IT').format(anniversary)}',
+                          strings.sinceDate(DateFormat('d MMM yyyy', AnnaStrings.intlLocale(context)).format(anniversary)),
                         ),
                       ),
                   ],
@@ -485,9 +482,9 @@ class _PeopleScreenState extends State<PeopleScreen> {
                   ListTile(
                     contentPadding: EdgeInsets.zero,
                     leading: const Icon(Icons.event_repeat_outlined),
-                    title: const Text('Prossimo anniversario'),
+                    title: Text(strings.nextAnniversary),
                     subtitle: Text(
-                      DateFormat('EEEE d MMMM yyyy', 'it_IT')
+                      DateFormat('EEEE d MMMM yyyy', AnnaStrings.intlLocale(context))
                           .format(snapshot.nextAnniversary!),
                     ),
                   ),
@@ -495,7 +492,7 @@ class _PeopleScreenState extends State<PeopleScreen> {
                 if (firstMemory != null || lastMemory != null) ...[
                   const Divider(height: 28),
                   Text(
-                    'La vostra timeline',
+                    strings.yourTimeline,
                     style: Theme.of(context)
                         .textTheme
                         .titleMedium
@@ -506,25 +503,25 @@ class _PeopleScreenState extends State<PeopleScreen> {
                     ListTile(
                       contentPadding: EdgeInsets.zero,
                       leading: const Icon(Icons.first_page_outlined),
-                      title: const Text('Primo ricordo collegato'),
+                      title: Text(strings.firstLinkedMemory),
                       subtitle: Text(
-                        DateFormat('d MMMM yyyy', 'it_IT').format(firstMemory),
+                        DateFormat('d MMMM yyyy', AnnaStrings.intlLocale(context)).format(firstMemory),
                       ),
                     ),
                   if (lastMemory != null)
                     ListTile(
                       contentPadding: EdgeInsets.zero,
                       leading: const Icon(Icons.history_outlined),
-                      title: const Text('Ricordo più recente'),
+                      title: Text(strings.latestMemory),
                       subtitle: Text(
-                        DateFormat('d MMMM yyyy', 'it_IT').format(lastMemory),
+                        DateFormat('d MMMM yyyy', AnnaStrings.intlLocale(context)).format(lastMemory),
                       ),
                     ),
                 ],
                 if (snapshot.onThisDay.isNotEmpty) ...[
                   const Divider(height: 28),
                   Text(
-                    'In questo giorno',
+                    strings.onThisDay,
                     style: Theme.of(context)
                         .textTheme
                         .titleMedium
@@ -537,13 +534,13 @@ class _PeopleScreenState extends State<PeopleScreen> {
                           leading: const Icon(Icons.history_toggle_off),
                           title: Text(
                             memory.block.text.trim().isEmpty
-                                ? 'Ricordo del diario'
+                                ? strings.diaryMemory
                                 : memory.block.text.trim(),
                             maxLines: 2,
                             overflow: TextOverflow.ellipsis,
                           ),
                           subtitle: Text(
-                            DateFormat('d MMMM yyyy', 'it_IT')
+                            DateFormat('d MMMM yyyy', AnnaStrings.intlLocale(context))
                                 .format(memory.date),
                           ),
                         ),
@@ -559,7 +556,7 @@ class _PeopleScreenState extends State<PeopleScreen> {
                           _edit(person);
                         },
                         icon: const Icon(Icons.edit_outlined),
-                        label: const Text('Modifica'),
+                        label: Text(strings.edit),
                       ),
                     ),
                     const SizedBox(width: 10),
@@ -570,7 +567,7 @@ class _PeopleScreenState extends State<PeopleScreen> {
                           _openMemories(person);
                         },
                         icon: const Icon(Icons.auto_stories_outlined),
-                        label: const Text('Ricordi'),
+                        label: Text(strings.memories),
                       ),
                     ),
                   ],
@@ -584,6 +581,7 @@ class _PeopleScreenState extends State<PeopleScreen> {
   }
 
   Widget _personCard(PersonEntry person) {
+    final strings = AnnaStrings.of(context);
     final birthday = widget.store.birthdayForPerson(person);
     final memoryCount = widget.store.personMemoryCount(person.id);
     final lastMemory = widget.store.lastMemoryDateForPerson(person.id);
@@ -592,12 +590,12 @@ class _PeopleScreenState extends State<PeopleScreen> {
     final details = <String>[
       if (person.relationship.trim().isNotEmpty) person.relationship.trim(),
       if (birthday != null)
-        'Compleanno: ${DateFormat('d MMMM', 'it_IT').format(DateTime(2000, birthday.month, birthday.day))}',
+        strings.birthdayDetail(DateFormat('d MMMM', AnnaStrings.intlLocale(context)).format(DateTime(2000, birthday.month, birthday.day))),
       if (anniversary != null)
-        'Anniversario: ${DateFormat('d MMMM', 'it_IT').format(anniversary)}',
-      '$memoryCount ${memoryCount == 1 ? 'ricordo' : 'ricordi'} collegati',
+        strings.anniversaryDetail(DateFormat('d MMMM', AnnaStrings.intlLocale(context)).format(anniversary)),
+      strings.linkedMemoriesCount(memoryCount),
       if (lastMemory != null)
-        'Ultimo: ${DateFormat('d MMM yyyy', 'it_IT').format(lastMemory)}',
+        strings.lastMemoryDetail(DateFormat('d MMM yyyy', AnnaStrings.intlLocale(context)).format(lastMemory)),
     ];
 
     return Card(
@@ -629,18 +627,18 @@ class _PeopleScreenState extends State<PeopleScreen> {
             if (value == 'edit') _edit(person);
             if (value == 'delete') _delete(person);
           },
-          itemBuilder: (_) => const [
+          itemBuilder: (_) => [
             PopupMenuItem(
               value: 'memories',
-              child: Text('Vedi ricordi collegati'),
+              child: Text(strings.seeLinkedMemories),
             ),
             PopupMenuItem(
               value: 'edit',
-              child: Text('Modifica'),
+              child: Text(strings.edit),
             ),
             PopupMenuItem(
               value: 'delete',
-              child: Text('Sposta nel Cestino'),
+              child: Text(strings.moveToTrash),
             ),
           ],
         ),
@@ -650,15 +648,16 @@ class _PeopleScreenState extends State<PeopleScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final strings = AnnaStrings.of(context);
     return Scaffold(
       appBar: AppBar(
-        title: const Text(
-          'Persone importanti',
-          style: TextStyle(fontWeight: FontWeight.w900),
+        title: Text(
+          strings.importantPeople,
+          style: const TextStyle(fontWeight: FontWeight.w900),
         ),
         actions: [
           IconButton(
-            tooltip: 'Compleanni',
+            tooltip: strings.birthdays,
             onPressed: () => Navigator.push(
               context,
               MaterialPageRoute(
@@ -672,7 +671,7 @@ class _PeopleScreenState extends State<PeopleScreen> {
       floatingActionButton: FloatingActionButton.extended(
         onPressed: _edit,
         icon: const Icon(Icons.person_add_alt_1_outlined),
-        label: const Text('Persona'),
+        label: Text(strings.person),
       ),
       body: AnimatedBuilder(
         animation: Listenable.merge([
@@ -697,23 +696,23 @@ class _PeopleScreenState extends State<PeopleScreen> {
                     children: [
                       const Icon(Icons.people_outline, size: 52),
                       const SizedBox(height: 14),
-                      const Text(
-                        'Le persone che contano',
-                        style: TextStyle(
+                      Text(
+                        strings.peopleThatMatter,
+                        style: const TextStyle(
                           fontWeight: FontWeight.w900,
                           fontSize: 20,
                         ),
                       ),
                       const SizedBox(height: 8),
-                      const Text(
-                        'Salva solo nome, relazione, una nota e l’eventuale compleanno. Poi collega queste persone ai ricordi del diario.',
+                      Text(
+                        strings.importantPeopleDescription,
                         textAlign: TextAlign.center,
                       ),
                       const SizedBox(height: 16),
                       FilledButton.icon(
                         onPressed: _edit,
                         icon: const Icon(Icons.person_add_alt_1_outlined),
-                        label: const Text('Aggiungi persona'),
+                        label: Text(strings.addPerson),
                       ),
                     ],
                   ),
