@@ -1538,14 +1538,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     ),
                     const SizedBox(height: 10),
                     DropdownButtonFormField<StartTab>(
-                      initialValue: prefs.startTab.isLegacyHome
-                          ? StartTab.today
-                          : prefs.startTab,
+                      initialValue: prefs.startTab,
                       decoration: const InputDecoration(
                         labelText: 'Apri l’app su',
-                        prefixIcon: Icon(Icons.today_outlined),
+                        prefixIcon: Icon(Icons.home_outlined),
                       ),
-                      items: selectableStartTabs
+                      items: StartTab.values
                           .map(
                             (value) => DropdownMenuItem(
                               value: value,
