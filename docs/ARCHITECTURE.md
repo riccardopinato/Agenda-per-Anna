@@ -1,29 +1,38 @@
 # Agenda per Anna — Architecture
 
-## Current structure — v0.51.0
+## Current structure — v0.81.0
 
-Anna's Diary keeps `lib/main.dart` as the compatibility library boundary, but large responsibilities are now split by runtime domain:
+Anna's Diary keeps `lib/main.dart` as the compatibility library boundary while runtime responsibilities are split by domain:
 
+- `src/app_shell.dart`: theme, identity binding, onboarding and the application-level privacy gate.
 - `src/store_signals.dart`: granular UI invalidation channels.
-- `src/day_hub_domain.dart`: birthday model, annual occurrence/reminder logic and derived Day Hub snapshots.
-- `src/people_domain.dart`: lightweight important-person model, birthday linkage, diary-memory references and relationship lifecycle cleanup.
-- `src/store/backup_domain.dart`: ZIP/data serialization, backup validation and readable export.
-- `src/agenda_store.dart`: persistence/account/cloud orchestration facade and domain mutation API.
-- `src/screens/home_inbox_search.dart`: shell, Home/Daily Briefing, Inbox, Search and Archive.
-- `src/screens/birthdays_screen.dart`: persistent birthday management using the existing planning/sync/lifecycle infrastructure.
-- `src/screens/people_screen.dart`: important-person management and reusable diary people picker.
-- `src/screens/backup_settings.dart`: backup and application settings.
-- `src/screens/shared_space.dart`: Noi ♡ hub, shared space and shared media UI.
-- `src/screens/cloud_account.dart`: account/cloud diagnostics and controls.
+- `src/day_hub_domain.dart`: derived Day Hub / Daily Briefing snapshots and birthday context.
+- `src/unified_capture.dart`: one capture surface delegating to existing diary, Inbox and agenda write paths.
+- `src/organization_domain.dart`: pin/tag/archive organization metadata on canonical records.
+- `src/people_domain.dart`: important-person profiles and derived diary-memory relationships.
+- `src/search_connections_domain.dart`: deterministic search, DiaryBlockReference memory projection, connections and Memory Recall.
+- `src/life_archive_domain.dart`: derived Open Life Archive across existing diary, agenda, workout and archived Inbox records.
+- `src/notes_bridge.dart`: explicit one-way text transfer projection for Notes-Ecosistema; no cross-app persistence or sync.
+- `src/shopping_domain.dart`: private/shared lightweight shopping-list behavior on existing lifecycle/sync infrastructure.
+- `src/workout_domain.dart`: multisport sessions and reusable workout plans.
+- `src/data_safety_domain.dart`: local integrity/orphan audits.
+- `src/store/backup_domain.dart`: ZIP/data serialization, validation and readable export.
+- `src/lifecycle_domain.dart`: universal private Trash / restore / permanent-purge behavior.
+- `src/agenda_store.dart`: persistence, account, lifecycle and cloud orchestration facade.
+- `src/screens/private_vault.dart` + `vault_service.dart`: intentionally separate local encrypted Vault with secure-screen behavior.
+- `src/screens/home_inbox_search.dart`: Home, Inbox, Search and Open Life Archive UI.
+- `src/screens/backup_settings.dart`: settings, Privacy Center, notification diagnostics, backup and data-safety entry points.
+- `src/screens/shared_space.dart`: Noi ♡ collaboration UI.
+- `src/screens/cloud_account.dart`: account, sync and permanent cloud-data erasure controls.
 - `src/planner_views.dart`: Calendar, Today, Week, Month and Year.
-- `src/diary/diary_components.dart`: shared diary media/components/editors.
-- `src/diary/diary_memories.dart`: private memories search/timeline UI.
-- `src/diary/diary_sketchbook.dart`: photo viewer, sketchbook editor and painter.
+- `src/diary/*`: shared diary components, memories/recall and Sketchbook/viewer UI.
 
-The `AgendaStore` public surface remains compatible. UI screens observe domain-specific `ValueListenable` revisions rather than the entire store where possible. This keeps existing persistence/sync semantics unchanged while narrowing rebuild propagation.
+The `AgendaStore` public surface remains the canonical private-data facade. Derived systems such as Memory Recall, Open Life Archive and Notes Bridge own no parallel persistence.
 
 The PR production gate is:
-`locked dependencies → analyze/tests → Web release → ARM64 release → AppLab emulator → Maestro → multi-screen screenshots/UI hierarchy → visual QA/regression → Logcat/crash/ANR`.
+`locked dependencies → analyze/tests → Web release → ARM64 size audit → AppLab production APK → Trusted Verify / cumulative Maestro journey → visual/runtime/crash checks`.
+
+The release candidate also enforces a lightweight-app guard: no bundled heavyweight local model or LLM runtime enters the product without a dedicated future decision.
 
 ## v0.17.0
 
