@@ -2,7 +2,7 @@
 
 Flutter app for personal planning, private diary and the shared **Noi ♡** space.
 
-Current release line: **v0.77.0**.
+Current release line: **v0.78.0**.
 
 ## Core areas
 
@@ -481,6 +481,19 @@ See `docs/ARCHITECTURE.md` and `supabase/README.md` for implementation details.
 - Share-target text and images now reuse the same capture persistence helpers instead of maintaining separate diary-save logic.
 - Capturing from `La mia giornata` respects the day currently being viewed, including past/future days, while preserving the current time as the moment ordering time inside that day.
 - No capture database, parallel media store, AI layer or new cloud schema is introduced.
+
+## v0.78.0 — Open Life Archive
+
+- Replaces the narrow archive list with **Archivio della vita**, a unified historical view over existing diary, agenda, workout and archived Inbox data.
+- Search is local, deterministic and multi-word across titles, notes, tags, people, places, sports and dates.
+- Type filters let the same history be explored as Diario, Agenda, Allenamenti or Inbox without a secondary index.
+- Historical entries remain owned by their original domains; opening a result returns to the existing day, workout or Inbox flow.
+- Manually archived diary/Inbox items keep their existing restore semantics.
+- Month browsing remains available and now includes workout activity in the historical context.
+- Future agenda entries are excluded from the historical archive.
+- No archive database, cloud table, sync queue, lifecycle type or duplicated copy of user data is introduced.
+- Release metadata is aligned to v0.78.0+88.
+
 
 ## v0.77.0 — Memory Recall 2.0
 
