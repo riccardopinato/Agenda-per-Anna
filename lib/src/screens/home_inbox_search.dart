@@ -1475,6 +1475,7 @@ class _ArchiveScreenState extends State<ArchiveScreen> {
             ),
           ),
         );
+        break;
       case LifeArchiveKind.agenda:
         final item = entry.agendaItem;
         if (item == null) return;
@@ -1487,6 +1488,7 @@ class _ArchiveScreenState extends State<ArchiveScreen> {
             ),
           ),
         );
+        break;
       case LifeArchiveKind.workout:
         await Navigator.push(
           context,
@@ -1494,6 +1496,7 @@ class _ArchiveScreenState extends State<ArchiveScreen> {
             builder: (_) => WorkoutScreen(store: widget.store),
           ),
         );
+        break;
       case LifeArchiveKind.inbox:
         await Navigator.push(
           context,
@@ -1501,6 +1504,7 @@ class _ArchiveScreenState extends State<ArchiveScreen> {
             builder: (_) => InboxScreen(store: widget.store),
           ),
         );
+        break;
     }
     if (mounted) setState(() {});
   }
@@ -1515,10 +1519,12 @@ class _ArchiveScreenState extends State<ArchiveScreen> {
           reference.date,
           reference.block.id,
         );
+        break;
       case LifeArchiveKind.inbox:
         final inbox = entry.inboxEntry;
         if (inbox == null) return;
         await widget.store.toggleInboxArchived(inbox.id);
+        break;
       case LifeArchiveKind.agenda:
       case LifeArchiveKind.workout:
         return;
