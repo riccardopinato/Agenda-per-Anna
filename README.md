@@ -2,7 +2,7 @@
 
 Flutter app for personal planning, private diary and the shared **Noi ♡** space.
 
-Current release line: **v0.78.0**.
+Current release line: **v0.79.0**.
 
 ## Core areas
 
@@ -481,6 +481,17 @@ See `docs/ARCHITECTURE.md` and `supabase/README.md` for implementation details.
 - Share-target text and images now reuse the same capture persistence helpers instead of maintaining separate diary-save logic.
 - Capturing from `La mia giornata` respects the day currently being viewed, including past/future days, while preserving the current time as the moment ordering time inside that day.
 - No capture database, parallel media store, AI layer or new cloud schema is introduced.
+
+## v0.79.0 — Privacy Architecture Finalization
+
+- Consolidates the existing privacy controls into a single **Privacy Center** inside Settings.
+- App lock, PIN, biometric unlock, auto-lock and Home-detail hiding keep using the existing AppPreferences and PrivacyGate paths.
+- Privacy Center links directly to the existing encrypted Private Vault, verified backup/data-safety tools and cloud account/data-rights controls.
+- The UI explicitly distinguishes ordinary local-first agenda data from the device-local encrypted Vault and from optional cloud account data.
+- Account deletion remains the existing authenticated cloud-erasure flow; Vault deletion/lifecycle stays separate and local.
+- No new privacy database, key store, sync engine, cloud table or parallel security state is introduced.
+- Release metadata is aligned to v0.79.0+89.
+
 
 ## v0.78.0 — Open Life Archive
 
