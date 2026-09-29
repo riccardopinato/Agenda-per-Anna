@@ -25,7 +25,7 @@ void main() {
     final store = AgendaStore();
     await store.load();
 
-    await store.add(
+    await store.upsert(
       AgendaItem(
         id: 'agenda-past',
         title: 'Dentista',
@@ -34,7 +34,7 @@ void main() {
         type: ItemType.appointment,
       ),
     );
-    await store.add(
+    await store.upsert(
       AgendaItem(
         id: 'agenda-future',
         title: 'Futuro',
