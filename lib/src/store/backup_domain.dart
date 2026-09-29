@@ -233,6 +233,233 @@ class _AgendaBackupDomain {
     );
   }
 
+  Future<Uint8List> createOpenLifeArchive(AgendaStore store) async {
+    final exportedAt = DateTime.now();
+    final raw = localDataPayload(store);
+    final openData = <String, dynamic>{
+      'items': raw['items'],
+      'journals': raw['journals'],
+      'months': raw['months'],
+      'weeks': raw['weeks'],
+      'habits': raw['habits'],
+      'birthdays': raw['birthdays'],
+      'people': raw['people'],
+      'inbox': raw['inbox'],
+      'shopping': raw['shopping'],
+      'workoutSessions': raw['workoutSessions'],
+      'workoutPlans': raw['workoutPlans'],
+    };
+
+    final referencedAssetIds = <String>{};
+    store._collectAssetIdsFromJson(openData, referencedAssetIds);
+
+    final files = <String, Uint8List>{};
+    final mediaIndex = <Map<String, dynamic>>[];
+    final mediaPaths = <String, String>{};
+
+    for (final assetId in referencedAssetIds.toList()..sort()) {
+      final bytes = await MediaAssetStore.instance.read(assetId);
+      if (bytes == null || bytes.isEmpty) continue;
+      final extension = _openArchiveMediaExtension(bytes);
+      final path = 'media/$assetId.$extension';
+      mediaPaths[assetId] = path;
+      files[path] = bytes;
+      mediaIndex.add({
+        'assetId': assetId,
+        'path': path,
+        'size': bytes.lengthInBytes,
+        'sha256': sha256.convert(bytes).toString(),
+      });
+    }
+
+    final archiveDocument = {
+      'format': 'annas_diary_open_life_archive',
+      'version': 1,
+      'appVersion': AgendaStore._appVersion,
+      'exportedAt': exportedAt.toIso8601String(),
+      'restoreBackup': false,
+      'data': openData,
+      'media': mediaIndex,
+    };
+
+    final intro = StringBuffer()
+      ..writeln('ANNA\'S DIARY — OPEN LIFE ARCHIVE')
+      ..writeln()
+      ..writeln('Questa cartella ZIP è pensata per essere letta e riutilizzata')
+      ..writeln('anche senza Anna\'s Diary. Non è un backup di ripristino.')
+      ..writeln()
+      ..writeln('This ZIP is designed to remain readable and reusable outside')
+      ..writeln('Anna\'s Diary. It is not a restore backup.')
+      ..writeln()
+      ..writeln('Contenuti / Contents:')
+      ..writeln('- life.txt: esportazione leggibile')
+      ..writeln('- life.json: dati strutturati aperti')
+      ..writeln('- years/: capitoli annuali Markdown')
+      ..writeln('- media/: media originali disponibili')
+      ..writeln()
+      ..writeln('Esportato / Exported: ${exportedAt.toIso8601String()}');
+
+    files['README.txt'] = Uint8List.fromList(utf8.encode(intro.toString()));
+    files['life.txt'] = Uint8List.fromList(
+      utf8.encode(createReadableExport(store)),
+    );
+    files['life.json'] = Uint8List.fromList(
+      utf8.encode(const JsonEncoder.withIndent('  ').convert(archiveDocument)),
+    );
+
+    final byYear = <int, List<DiaryBlockReference>>{};
+    for (final reference
+        in store.allDiaryBlockReferences(includeArchived: true)) {
+      byYear.putIfAbsent(reference.date.year, () => []).add(reference);
+    }
+
+    final years = byYear.keys.toList()..sort();
+    for (final year in years) {
+      final records = byYear[year]!
+        ..sort((a, b) {
+          final dateOrder = a.date.compareTo(b.date);
+          if (dateOrder != 0) return dateOrder;
+          return a.block.createdAt.compareTo(b.block.createdAt);
+        });
+      final chapter = _openArchiveYearMarkdown(
+        store,
+        year,
+        records,
+        mediaPaths,
+      );
+      files['years/$year.md'] =
+          Uint8List.fromList(utf8.encode(chapter));
+    }
+
+    return BackupFileService.instance.buildPortableArchive(files: files);
+  }
+
+  String _openArchiveMediaExtension(Uint8List bytes) {
+    if (bytes.length >= 4 &&
+        bytes[0] == 0x89 &&
+        bytes[1] == 0x50 &&
+        bytes[2] == 0x4E &&
+        bytes[3] == 0x47) {
+      return 'png';
+    }
+    if (bytes.length >= 3 &&
+        bytes[0] == 0xFF &&
+        bytes[1] == 0xD8 &&
+        bytes[2] == 0xFF) {
+      return 'jpg';
+    }
+    if (bytes.length >= 12 &&
+        ascii.decode(bytes.sublist(0, 4), allowInvalid: true) == 'RIFF' &&
+        ascii.decode(bytes.sublist(8, 12), allowInvalid: true) == 'WEBP') {
+      return 'webp';
+    }
+    if (bytes.length >= 8 &&
+        ascii.decode(bytes.sublist(4, 8), allowInvalid: true) == 'ftyp') {
+      return 'm4a';
+    }
+    if (bytes.length >= 4 &&
+        ascii.decode(bytes.sublist(0, 4), allowInvalid: true) == 'OggS') {
+      return 'ogg';
+    }
+    if (bytes.length >= 3 &&
+        ascii.decode(bytes.sublist(0, 3), allowInvalid: true) == 'ID3') {
+      return 'mp3';
+    }
+    if (bytes.length >= 4 &&
+        bytes[0] == 0x1A &&
+        bytes[1] == 0x45 &&
+        bytes[2] == 0xDF &&
+        bytes[3] == 0xA3) {
+      return 'webm';
+    }
+    return 'bin';
+  }
+
+  String _openArchiveYearMarkdown(
+    AgendaStore store,
+    int year,
+    List<DiaryBlockReference> records,
+    Map<String, String> mediaPaths,
+  ) {
+    final buffer = StringBuffer()
+      ..writeln('# $year')
+      ..writeln()
+      ..writeln('Anna\'s Diary — Open Life Archive')
+      ..writeln();
+
+    String? lastDay;
+    for (final record in records) {
+      final dayKey = AgendaStore.dateKey(record.date);
+      if (dayKey != lastDay) {
+        lastDay = dayKey;
+        buffer
+          ..writeln()
+          ..writeln(
+            '## ${DateFormat('d MMMM yyyy').format(record.date)}',
+          )
+          ..writeln();
+      }
+
+      final block = record.block;
+      final typeLabel = switch (block.type) {
+        DiaryBlockType.note => 'Nota / Note',
+        DiaryBlockType.sketch => 'Sketch',
+        DiaryBlockType.photo => 'Foto / Photo',
+        DiaryBlockType.voice => 'Voce / Voice',
+      };
+      buffer.writeln(
+        '### $typeLabel · ${DateFormat('HH:mm').format(block.createdAt)}'
+        '${block.archived ? ' · archived' : ''}',
+      );
+
+      final text = block.text.trim();
+      if (text.isNotEmpty) {
+        buffer
+          ..writeln()
+          ..writeln(text);
+      }
+
+      final sketchText = block.pages
+          .expand((page) => page.textElements)
+          .map((element) => element.text.trim())
+          .where((value) => value.isNotEmpty)
+          .join(' · ');
+      if (sketchText.isNotEmpty) {
+        buffer.writeln('- Sketch text: $sketchText');
+      }
+
+      final people = store.peopleForIds(block.personIds)
+          .map((person) => person.name)
+          .where((name) => name.trim().isNotEmpty)
+          .toList(growable: false);
+      if (people.isNotEmpty) {
+        buffer.writeln('- People: ${people.join(', ')}');
+      }
+      if (block.places.isNotEmpty) {
+        buffer.writeln(
+          '- Places: ${block.places.map((place) => place.name).join(', ')}',
+        );
+      }
+      if (block.tags.isNotEmpty) {
+        buffer.writeln('- Tags: ${block.tags.join(', ')}');
+      }
+      if (block.mediaAssetId.isNotEmpty &&
+          mediaPaths[block.mediaAssetId] case final path?) {
+        buffer.writeln('- Media: ../$path');
+      }
+      if (block.mediaThumbnailAssetId.isNotEmpty &&
+          mediaPaths[block.mediaThumbnailAssetId] case final path?) {
+        buffer.writeln('- Thumbnail: ../$path');
+      }
+      buffer.writeln();
+    }
+
+    if (records.isEmpty) {
+      buffer.writeln('_Nessun contenuto di diario / No diary content._');
+    }
+    return buffer.toString();
+  }
+
   String createReadableExport(AgendaStore store) {
     final buffer = StringBuffer();
     final now = DateTime.now();
