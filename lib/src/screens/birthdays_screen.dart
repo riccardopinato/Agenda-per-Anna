@@ -12,6 +12,7 @@ class BirthdaysScreen extends StatelessWidget {
     BuildContext context, {
     BirthdayEntry? existing,
   }) async {
+    final strings = AnnaStrings.of(context);
     final name = TextEditingController(text: existing?.name ?? '');
     final note = TextEditingController(text: existing?.note ?? '');
     final now = DateTime.now();
@@ -27,7 +28,7 @@ class BirthdaysScreen extends StatelessWidget {
       context: context,
       builder: (dialogContext) => StatefulBuilder(
         builder: (context, setDialogState) => AlertDialog(
-          title: Text(existing == null ? 'Nuovo compleanno' : 'Modifica compleanno'),
+          title: Text(existing == null ? strings.newBirthday : strings.editBirthday),
           content: SizedBox(
             width: 420,
             child: SingleChildScrollView(
@@ -38,8 +39,8 @@ class BirthdaysScreen extends StatelessWidget {
                     controller: name,
                     autofocus: true,
                     textCapitalization: TextCapitalization.words,
-                    decoration: const InputDecoration(
-                      labelText: 'Nome',
+                    decoration: InputDecoration(
+                      labelText: strings.name,
                       prefixIcon: Icon(Icons.cake_outlined),
                     ),
                   ),
@@ -47,11 +48,11 @@ class BirthdaysScreen extends StatelessWidget {
                   ListTile(
                     contentPadding: EdgeInsets.zero,
                     leading: const Icon(Icons.event_outlined),
-                    title: const Text('Data'),
+                    title: Text(strings.date),
                     subtitle: Text(
                       keepYear
-                          ? DateFormat('d MMMM yyyy', 'it_IT').format(selectedDate)
-                          : DateFormat('d MMMM', 'it_IT').format(selectedDate),
+                          ? DateFormat('d MMMM yyyy', AnnaStrings.intlLocale(context)).format(selectedDate)
+                          : DateFormat('d MMMM', AnnaStrings.intlLocale(context)).format(selectedDate),
                     ),
                     trailing: const Icon(Icons.edit_calendar_outlined),
                     onTap: () async {
@@ -60,7 +61,7 @@ class BirthdaysScreen extends StatelessWidget {
                         initialDate: selectedDate,
                         firstDate: DateTime(1900),
                         lastDate: DateTime(now.year + 1),
-                        helpText: 'Data di nascita',
+                        helpText: strings.birthDate,
                       );
                       if (picked != null) {
                         setDialogState(() => selectedDate = picked);
@@ -70,37 +71,37 @@ class BirthdaysScreen extends StatelessWidget {
                   SwitchListTile(
                     contentPadding: EdgeInsets.zero,
                     value: keepYear,
-                    title: const Text('Ricorda anche l’anno'),
-                    subtitle: const Text('Serve solo per mostrare l’età.'),
+                    title: Text(strings.rememberYear),
+                    subtitle: Text(strings.yearOnlyForAge),
                     onChanged: (value) => setDialogState(() => keepYear = value),
                   ),
                   const SizedBox(height: 4),
                   DropdownButtonFormField<int?>(
                     initialValue: reminderDays,
-                    decoration: const InputDecoration(
-                      labelText: 'Promemoria',
+                    decoration: InputDecoration(
+                      labelText: strings.reminder,
                       prefixIcon: Icon(Icons.notifications_none),
                     ),
-                    items: const [
+                    items: [
                       DropdownMenuItem<int?>(
                         value: null,
-                        child: Text('Nessun promemoria'),
+                        child: Text(strings.noReminder),
                       ),
                       DropdownMenuItem<int?>(
                         value: 0,
-                        child: Text('Il giorno stesso · 09:00'),
+                        child: Text(strings.reminderSameDayTime),
                       ),
                       DropdownMenuItem<int?>(
                         value: 1,
-                        child: Text('1 giorno prima · 09:00'),
+                        child: Text(strings.reminderDaysBeforeTime(1)),
                       ),
                       DropdownMenuItem<int?>(
                         value: 3,
-                        child: Text('3 giorni prima · 09:00'),
+                        child: Text(strings.reminderDaysBeforeTime(3)),
                       ),
                       DropdownMenuItem<int?>(
                         value: 7,
-                        child: Text('7 giorni prima · 09:00'),
+                        child: Text(strings.reminderDaysBeforeTime(7)),
                       ),
                     ],
                     onChanged: (value) =>
@@ -110,8 +111,8 @@ class BirthdaysScreen extends StatelessWidget {
                   TextField(
                     controller: note,
                     maxLines: 2,
-                    decoration: const InputDecoration(
-                      labelText: 'Nota facoltativa',
+                    decoration: InputDecoration(
+                      labelText: strings.optionalNote,
                       prefixIcon: Icon(Icons.notes_outlined),
                     ),
                   ),
