@@ -41,7 +41,7 @@ class BirthdaysScreen extends StatelessWidget {
                     textCapitalization: TextCapitalization.words,
                     decoration: InputDecoration(
                       labelText: strings.name,
-                      prefixIcon: Icon(Icons.cake_outlined),
+                      prefixIcon: const Icon(Icons.cake_outlined),
                     ),
                   ),
                   const SizedBox(height: 12),
@@ -80,7 +80,7 @@ class BirthdaysScreen extends StatelessWidget {
                     initialValue: reminderDays,
                     decoration: InputDecoration(
                       labelText: strings.reminder,
-                      prefixIcon: Icon(Icons.notifications_none),
+                      prefixIcon: const Icon(Icons.notifications_none),
                     ),
                     items: [
                       DropdownMenuItem<int?>(
@@ -113,7 +113,7 @@ class BirthdaysScreen extends StatelessWidget {
                     maxLines: 2,
                     decoration: InputDecoration(
                       labelText: strings.optionalNote,
-                      prefixIcon: Icon(Icons.notes_outlined),
+                      prefixIcon: const Icon(Icons.notes_outlined),
                     ),
                   ),
                 ],
