@@ -507,9 +507,16 @@ Future<void> _handleIncomingShareCapture(
     return;
   }
 
+  final day = _normalizeUnifiedCaptureDay(DateTime.now());
+
   if (destination == 'inbox') {
     if (preview.isNotEmpty) {
-      await store.addInboxEntry(preview);
+      await _saveUnifiedCaptureText(
+        store,
+        day,
+        preview,
+        toInbox: true,
+      );
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Contenuto condiviso salvato in Inbox.')),
@@ -519,30 +526,13 @@ Future<void> _handleIncomingShareCapture(
     return;
   }
 
-  final now = DateTime.now();
-  final day = DateTime(now.year, now.month, now.day);
-  final journal = store.journal(day);
-
   if (!capture.hasImage) {
     final text = await showDiaryNoteEditor(
       context,
       initialText: preview,
     );
     if (text == null || text.trim().isEmpty) return;
-    await store.saveJournal(
-      day,
-      journal.copyWith(
-        blocks: [
-          ...journal.blocks,
-          DiaryBlock(
-            id: const Uuid().v4(),
-            type: DiaryBlockType.note,
-            createdAt: now,
-            text: text.trim(),
-          ),
-        ],
-      ),
-    );
+    await _saveUnifiedCaptureText(store, day, text);
     if (context.mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Contenuto aggiunto al diario di oggi.')),
@@ -572,25 +562,11 @@ Future<void> _handleIncomingShareCapture(
   );
   if (caption == null) return;
 
-  final mediaAssetId = await MediaAssetStore.instance.put(imageBytes);
-  final mediaThumbnailAssetId = await MediaAssetStore.instance.put(
-    await _diaryThumbnailBytes(imageBytes),
-  );
-  await store.saveJournal(
+  await _saveUnifiedCapturePhoto(
+    store,
     day,
-    journal.copyWith(
-      blocks: [
-        ...journal.blocks,
-        DiaryBlock(
-          id: const Uuid().v4(),
-          type: DiaryBlockType.photo,
-          createdAt: now,
-          text: caption.trim(),
-          mediaAssetId: mediaAssetId,
-          mediaThumbnailAssetId: mediaThumbnailAssetId,
-        ),
-      ],
-    ),
+    imageBytes,
+    caption: caption,
   );
   if (context.mounted) {
     ScaffoldMessenger.of(context).showSnackBar(
@@ -601,200 +577,15 @@ Future<void> _handleIncomingShareCapture(
 
 Future<void> _showQuickCapture(
   BuildContext context,
-  AgendaStore store,
-) async {
-  final action = await showModalBottomSheet<String>(
-    context: context,
-    showDragHandle: true,
-    builder: (sheetContext) => SafeArea(
-      child: Wrap(
-        children: [
-          const ListTile(
-            title: Text(
-              'Cattura veloce',
-              style: TextStyle(fontWeight: FontWeight.w900),
-            ),
-            subtitle: Text('Aggiungi senza interrompere quello che stai facendo.'),
-          ),
-          ListTile(
-            leading: const CircleAvatar(
-              child: Icon(Icons.sticky_note_2_outlined),
-            ),
-            title: const Text('Nota veloce'),
-            subtitle: const Text('Finisce nell’Inbox, da sistemare dopo.'),
-            onTap: () => Navigator.pop(sheetContext, 'note'),
-          ),
-          ListTile(
-            leading: const CircleAvatar(
-              child: Icon(Icons.auto_stories_outlined),
-            ),
-            title: const Text('Diario di oggi'),
-            subtitle: const Text('Aggiungi una nota, una foto o uno sketch.'),
-            onTap: () => Navigator.pop(sheetContext, 'diary'),
-          ),
-          ListTile(
-            leading: const CircleAvatar(
-              child: Icon(Icons.mic_none_outlined),
-            ),
-            title: const Text('Nota vocale'),
-            subtitle: const Text('Registra subito un audio nel diario di oggi.'),
-            onTap: () => Navigator.pop(sheetContext, 'voice'),
-          ),
-          ListTile(
-            leading: const CircleAvatar(
-              child: Icon(Icons.check_circle_outline),
-            ),
-            title: const Text('Attività'),
-            subtitle: const Text('Crea subito una cosa da fare.'),
-            onTap: () => Navigator.pop(sheetContext, 'task'),
-          ),
-          ListTile(
-            leading: const CircleAvatar(
-              child: Icon(Icons.event_outlined),
-            ),
-            title: const Text('Appuntamento'),
-            subtitle: const Text('Apri il modulo evento di oggi.'),
-            onTap: () => Navigator.pop(sheetContext, 'event'),
-          ),
-          ListTile(
-            leading: const CircleAvatar(
-              child: Icon(Icons.cake_outlined),
-            ),
-            title: const Text('Compleanno'),
-            subtitle: const Text('Salva una ricorrenza personale annuale.'),
-            onTap: () => Navigator.pop(sheetContext, 'birthday'),
-          ),
-          ListTile(
-            leading: const CircleAvatar(
-              child: Icon(Icons.person_add_alt_1_outlined),
-            ),
-            title: const Text('Persona importante'),
-            subtitle: const Text('Salva una relazione personale da ricordare.'),
-            onTap: () => Navigator.pop(sheetContext, 'person'),
-          ),
-        ],
-      ),
-    ),
-  );
-
-  if (!context.mounted || action == null) return;
-
-  if (action == 'diary') {
-    await Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (_) => PlannerScreen(
-          store: store,
-          initialDate: DateTime.now(),
-        ),
-      ),
-    );
-    return;
-  }
-
-  if (action == 'voice') {
-    final capture = await _captureVoiceClip(context);
-    if (capture == null || !context.mounted) return;
-
-    final caption = await showDiaryCaptionEditor(
-      context,
-      adding: true,
-    );
-    if (caption == null) return;
-
-    final assetId = await MediaAssetStore.instance.put(capture.bytes);
-    final now = DateTime.now();
-    final day = DateTime(now.year, now.month, now.day);
-    final journal = store.journal(day);
-    await store.saveJournal(
-      day,
-      journal.copyWith(
-        blocks: [
-          ...journal.blocks,
-          DiaryBlock(
-            id: const Uuid().v4(),
-            type: DiaryBlockType.voice,
-            createdAt: now,
-            text: caption,
-            mediaAssetId: assetId,
-            audioDurationMs: capture.durationMs,
-            audioMimeType: capture.mimeType,
-          ),
-        ],
-      ),
-    );
-    if (context.mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Nota vocale salvata nel diario di oggi.')),
-      );
-    }
-    return;
-  }
-
-  if (action == 'birthday') {
-    await Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (_) => BirthdaysScreen(store: store),
-      ),
-    );
-    return;
-  }
-
-  if (action == 'person') {
-    await Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (_) => PeopleScreen(
-          store: store,
-          startAdding: true,
-        ),
-      ),
-    );
-    return;
-  }
-
-  if (action == 'note') {
-    final controller = TextEditingController();
-    final value = await showDialog<String>(
-      context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: const Text('Nota veloce'),
-        content: TextField(
-          controller: controller,
-          autofocus: true,
-          minLines: 2,
-          maxLines: 5,
-          textCapitalization: TextCapitalization.sentences,
-          decoration: const InputDecoration(
-            hintText: 'Scrivi al volo...',
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(dialogContext),
-            child: const Text('Annulla'),
-          ),
-          FilledButton(
-            onPressed: () =>
-                Navigator.pop(dialogContext, controller.text.trim()),
-            child: const Text('Salva'),
-          ),
-        ],
-      ),
-    );
-    controller.dispose();
-    if (value != null && value.isNotEmpty) {
-      await store.addInboxEntry(value);
-    }
-    return;
-  }
-
-  await openUnifiedItemComposer(
+  AgendaStore store, {
+  DateTime? captureDate,
+  UnifiedCaptureEntryPoint entryPoint = UnifiedCaptureEntryPoint.home,
+}) {
+  return showUnifiedCapture(
     context,
     store,
-    DateTime.now(),
-    initialType: action == 'task' ? ItemType.task : ItemType.appointment,
+    initialDate: captureDate,
+    entryPoint: entryPoint,
   );
 }
 
@@ -1124,7 +915,11 @@ class InboxScreen extends StatelessWidget {
             ),
           ),
           floatingActionButton: FloatingActionButton.extended(
-            onPressed: () => _showQuickCapture(context, store),
+            onPressed: () => _showQuickCapture(
+              context,
+              store,
+              entryPoint: UnifiedCaptureEntryPoint.inbox,
+            ),
             icon: const Icon(Icons.add),
             label: const Text('Cattura'),
           ),

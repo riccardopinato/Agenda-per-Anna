@@ -30,6 +30,7 @@ Source of truth for the active product sequence after v0.52. The roadmap follows
 | v0.73 | External Calendar Overlay | Completed | Read-only Android system-calendar projection with explicit opt-in and no canonical-store duplication |
 | v0.74 | Lifecycle Integrity & Release Metadata Cleanup | Completed | Universal lifecycle regression coverage + canonical release metadata ownership |
 | v0.75 | Day / Life Consolidation | Completed | Make La mia giornata the central projection for agenda, birthdays, workouts and diary moments |
+| v0.76 | Unified Capture | Completed | One capture surface and one set of existing persistence paths for text, voice, photos, Inbox and agenda actions |
 
 ## Permanent constraints for this sequence
 
@@ -331,6 +332,18 @@ Per the active development cadence, AppLab runs once every two feature versions.
 - Release metadata is aligned to v0.71.0+81.
 - Analyze, full tests, Web release, Android size audit and AppLab Trusted Verify must be green before promotion to main.
 
+
+## v0.76 acceptance criteria
+
+- Home, Inbox and `La mia giornata` must open the same Unified Capture surface rather than maintaining separate capture menus.
+- Text captured into the day must remain an ordinary `DiaryBlockType.note`; quick notes must remain ordinary `InboxEntry` records.
+- Voice capture must reuse the existing Voice Diary + `MediaAssetStore` path and save an ordinary `DiaryBlockType.voice`.
+- Photo capture must reuse the existing optimized image + thumbnail + OCR-compatible media pipeline and save an ordinary `DiaryBlockType.photo`.
+- Android share-target text/images must reuse the same capture persistence helpers instead of duplicating diary write logic.
+- Capturing from a non-today day surface must preserve that selected date.
+- No new persistence store, cloud schema, capture database or AI dependency may be introduced.
+- Release metadata is aligned to v0.76.0+86.
+- Development checks, Web release, Android size audit and AppLab Trusted Verify must all pass before merge.
 
 ## v0.75 acceptance criteria
 
