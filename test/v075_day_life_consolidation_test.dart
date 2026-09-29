@@ -142,6 +142,21 @@ void main() {
     expect(const AgendaPreferences().startTab, StartTab.today);
   });
 
+  test('preference changes publish shell state before persistence completes',
+      () async {
+    final store = AgendaStore();
+    await store.load();
+    final before = store.shellRevision.value;
+
+    final save = store.savePreferences(
+      store.preferences.copyWith(onboardingDone: true),
+    );
+
+    expect(store.shellRevision.value, before + 1);
+    await save;
+    store.dispose();
+  });
+
   test('onboarding completion invalidates the root shell', () {
     final shell = File('lib/src/app_shell.dart').readAsStringSync();
     expect(shell, contains('store.shellRevision,'));
