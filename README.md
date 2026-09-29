@@ -2,7 +2,7 @@
 
 Flutter app for personal planning, private diary and the shared **Noi ♡** space.
 
-Current release line: **v0.77.0**.
+Current release line: **v0.78.0**.
 
 ## Core areas
 
@@ -481,6 +481,19 @@ See `docs/ARCHITECTURE.md` and `supabase/README.md` for implementation details.
 - Share-target text and images now reuse the same capture persistence helpers instead of maintaining separate diary-save logic.
 - Capturing from `La mia giornata` respects the day currently being viewed, including past/future days, while preserving the current time as the moment ordering time inside that day.
 - No capture database, parallel media store, AI layer or new cloud schema is introduced.
+
+## v0.78.0 — Open Life Archive + Localization
+
+- Adds **Open Life Archive**, a portable ZIP explicitly separate from the restore backup.
+- The archive contains a bilingual README, readable `life.txt`, structured `life.json`, yearly Markdown chapters and all locally available referenced media.
+- The open export excludes Trash and app preferences from its public dataset while preserving canonical user content and media references.
+- Year chapters provide a human-readable base for future year-book generation without introducing a new database.
+- Adds persistent language preference with **Sistema / Automatico**, Italian, English, Spanish, French, German and Portuguese.
+- System language falls back to English when unsupported; Material localizations and Intl date formatting follow the resolved locale.
+- Primary navigation, onboarding and the language/export surfaces are localized through the new native localization layer.
+- No parallel archive store, cloud table, sync queue, AI translation service or restore format is introduced.
+- Release metadata is aligned to v0.78.0+88.
+
 
 ## v0.77.0 — Memory Recall 2.0
 

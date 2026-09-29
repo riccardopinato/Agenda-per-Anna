@@ -30,26 +30,26 @@ class _MainShellState extends State<MainShell> {
       bottomNavigationBar: NavigationBar(
         selectedIndex: index,
         onDestinationSelected: (v) => setState(() => index = v),
-        destinations: const [
+        destinations: [
           NavigationDestination(
-            icon: Icon(Icons.home_outlined),
-            selectedIcon: Icon(Icons.home),
-            label: 'Home',
+            icon: const Icon(Icons.home_outlined),
+            selectedIcon: const Icon(Icons.home),
+            label: AgendaLocalization.text(context, 'nav.home'),
           ),
           NavigationDestination(
-            icon: Icon(Icons.calendar_month_outlined),
-            selectedIcon: Icon(Icons.calendar_month),
-            label: 'Mese',
+            icon: const Icon(Icons.calendar_month_outlined),
+            selectedIcon: const Icon(Icons.calendar_month),
+            label: AgendaLocalization.text(context, 'nav.month'),
           ),
           NavigationDestination(
-            icon: Icon(Icons.view_week_outlined),
-            selectedIcon: Icon(Icons.view_week),
-            label: 'Settimana',
+            icon: const Icon(Icons.view_week_outlined),
+            selectedIcon: const Icon(Icons.view_week),
+            label: AgendaLocalization.text(context, 'nav.week'),
           ),
           NavigationDestination(
-            icon: Icon(Icons.today_outlined),
-            selectedIcon: Icon(Icons.today),
-            label: 'Oggi',
+            icon: const Icon(Icons.today_outlined),
+            selectedIcon: const Icon(Icons.today),
+            label: AgendaLocalization.text(context, 'nav.today'),
           ),
         ],
       ),
@@ -94,16 +94,18 @@ class HomeScreen extends StatelessWidget {
           floatingActionButton: FloatingActionButton.extended(
             onPressed: () => _showQuickCapture(context, store),
             icon: const Icon(Icons.add),
-            label: const Text('Aggiungi'),
+            label: Text(AgendaLocalization.text(context, 'home.add')),
           ),
           appBar: AppBar(
             title: Text(
-              displayName.isEmpty ? 'La mia agenda' : 'Agenda per $displayName',
+              displayName.isEmpty
+                  ? AgendaLocalization.text(context, 'home.myAgenda')
+                  : '${AgendaLocalization.text(context, 'home.agendaFor')} $displayName',
               style: const TextStyle(fontWeight: FontWeight.w800),
             ),
             actions: [
               IconButton(
-                tooltip: 'Cerca',
+                tooltip: AgendaLocalization.text(context, 'home.search'),
                 onPressed: () => Navigator.push(
                   context,
                   MaterialPageRoute(
@@ -127,7 +129,7 @@ class HomeScreen extends StatelessWidget {
                 ),
               ),
               IconButton(
-                tooltip: 'Archivio',
+                tooltip: AgendaLocalization.text(context, 'home.archive'),
                 onPressed: () => Navigator.push(
                   context,
                   MaterialPageRoute(
@@ -137,7 +139,7 @@ class HomeScreen extends StatelessWidget {
                 icon: const Icon(Icons.inventory_2_outlined),
               ),
               IconButton(
-                tooltip: 'Backup',
+                tooltip: AgendaLocalization.text(context, 'home.backup'),
                 onPressed: () => Navigator.push(
                   context,
                   MaterialPageRoute(
@@ -198,7 +200,7 @@ class HomeScreen extends StatelessWidget {
                 ),
               ),
               IconButton(
-                tooltip: 'Impostazioni',
+                tooltip: AgendaLocalization.text(context, 'home.settings'),
                 onPressed: () => Navigator.push(
                   context,
                   MaterialPageRoute(
@@ -224,7 +226,7 @@ class HomeScreen extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      _cap(DateFormat('EEEE d MMMM', 'it_IT').format(now)),
+                      _cap(DateFormat('EEEE d MMMM').format(now)),
                       style: Theme.of(context).textTheme.titleMedium,
                     ),
                     const SizedBox(height: 8),

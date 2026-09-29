@@ -2404,6 +2404,9 @@ class AgendaStore extends ChangeNotifier {
     _notifyBackupChanged();
   }
 
+  Future<Uint8List> createOpenLifeArchive() =>
+      _backupDomain.createOpenLifeArchive(this);
+
   String createReadableExport() =>
       _backupDomain.createReadableExport(this);
 

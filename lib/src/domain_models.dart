@@ -37,6 +37,7 @@ class AgendaPreferences {
   final String displayName;
   final AgendaThemeMode themeMode;
   final AgendaPalette palette;
+  final AppLanguage language;
   final bool showDailyQuote;
   final StartTab startTab;
   final AgendaCategory defaultCategory;
@@ -55,6 +56,7 @@ class AgendaPreferences {
     this.displayName = '',
     this.themeMode = AgendaThemeMode.system,
     this.palette = AgendaPalette.rose,
+    this.language = AppLanguage.system,
     this.showDailyQuote = true,
     this.startTab = StartTab.today,
     this.defaultCategory = AgendaCategory.personal,
@@ -74,6 +76,7 @@ class AgendaPreferences {
     String? displayName,
     AgendaThemeMode? themeMode,
     AgendaPalette? palette,
+    AppLanguage? language,
     bool? showDailyQuote,
     StartTab? startTab,
     AgendaCategory? defaultCategory,
@@ -95,6 +98,7 @@ class AgendaPreferences {
       displayName: displayName ?? this.displayName,
       themeMode: themeMode ?? this.themeMode,
       palette: palette ?? this.palette,
+      language: language ?? this.language,
       showDailyQuote: showDailyQuote ?? this.showDailyQuote,
       startTab: startTab ?? this.startTab,
       defaultCategory: defaultCategory ?? this.defaultCategory,
@@ -120,6 +124,7 @@ class AgendaPreferences {
         'displayName': displayName,
         'themeMode': themeMode.name,
         'palette': palette.name,
+        'language': language.name,
         'showDailyQuote': showDailyQuote,
         'startTab': startTab.name,
         'defaultCategory': defaultCategory.name,
@@ -145,6 +150,10 @@ class AgendaPreferences {
         palette: AgendaPalette.values.firstWhere(
           (e) => e.name == json['palette'],
           orElse: () => AgendaPalette.rose,
+        ),
+        language: AppLanguage.values.firstWhere(
+          (e) => e.name == json['language'],
+          orElse: () => AppLanguage.system,
         ),
         showDailyQuote: json['showDailyQuote'] as bool? ?? true,
         startTab: StartTab.values.firstWhere(
