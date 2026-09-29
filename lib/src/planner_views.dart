@@ -38,6 +38,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
         widget.store.sharedRevision,
         widget.store.journalRevision,
         widget.store.planningRevision,
+        widget.store.workoutRevision,
         ExternalCalendarService.instance,
       ]),
       builder: (context, _) {
@@ -170,36 +171,25 @@ class _PlannerScreenState extends State<PlannerScreen> {
         widget.store.sharedRevision,
         widget.store.journalRevision,
         widget.store.planningRevision,
+        widget.store.workoutRevision,
         ExternalCalendarService.instance,
       ]),
       builder: (context, _) {
-        final events =
-            agendaEntriesForDayWithExternal(widget.store, day);
-        final birthdays = widget.store.birthdaysForDay(day);
-        final tasks = events.where((e) => e.type == ItemType.task).toList();
-        final allDay = events
-            .where((e) =>
-                !e.isExternal &&
-                e.type == ItemType.appointment &&
-                e.start == null)
-            .toList();
-        final externalEvents =
-            events.where((e) => e.isExternal).toList();
-        final timedPrivate = events
-            .where((e) =>
-                e.type == ItemType.appointment &&
-                e.start != null &&
-                e.isPrivate)
-            .map((e) => e.privateItem!)
-            .toList();
-        final timedShared = events
-            .where((e) =>
-                e.type == ItemType.appointment &&
-                e.start != null &&
-                e.isShared)
+        final snapshot = widget.store.dayHubSnapshot(day);
+        final timedPrivate = snapshot.agenda
+            .where((entry) =>
+                entry.type == ItemType.appointment &&
+                entry.start != null &&
+                entry.isPrivate)
+            .map((entry) => entry.privateItem!)
             .toList();
 
         return Scaffold(
+          floatingActionButton: FloatingActionButton.extended(
+            onPressed: () => _showQuickCapture(context, widget.store),
+            icon: const Icon(Icons.add),
+            label: const Text('Cattura'),
+          ),
           appBar: AppBar(
             title: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -237,105 +227,44 @@ class _PlannerScreenState extends State<PlannerScreen> {
                     _DayOpeningCard(date: day),
                     const SizedBox(height: 12),
                     AgendaContentFilterBar(store: widget.store),
-                    if (birthdays.isNotEmpty) ...[
-                      const SizedBox(height: 14),
-                      _DaySmallSection(
-                        title: 'Compleanni',
-                        icon: Icons.cake_outlined,
-                        child: Column(
-                          children: birthdays
-                              .map(
-                                (birthday) => _BirthdayOccurrenceTile(
-                                  occurrence: birthday,
-                                  onTap: () => Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (_) =>
-                                          BirthdaysScreen(store: widget.store),
-                                    ),
-                                  ),
-                                ),
-                              )
-                              .toList(),
-                        ),
-                      ),
-                    ],
-                    if (tasks.isNotEmpty) ...[
-                      const SizedBox(height: 14),
-                      _DaySmallSection(
-                        title: 'Da fare',
-                        icon: Icons.check_circle_outline,
-                        child: Column(
-                          children: tasks
-                              .map((e) => UnifiedAgendaTile(
-                                    store: widget.store,
-                                    entry: e,
-                                    compact: true,
-                                  ))
-                              .toList(),
-                        ),
-                      ),
-                    ],
-                    if (allDay.isNotEmpty) ...[
-                      const SizedBox(height: 14),
-                      _DaySmallSection(
-                        title: 'Tutto il giorno',
-                        icon: Icons.event_outlined,
-                        child: Column(
-                          children: allDay
-                              .map((e) => UnifiedAgendaTile(
-                                    store: widget.store,
-                                    entry: e,
-                                    compact: true,
-                                  ))
-                              .toList(),
-                        ),
-                      ),
-                    ],
-                    if (externalEvents.isNotEmpty) ...[
-                      const SizedBox(height: 14),
-                      _DaySmallSection(
-                        title: 'Calendario esterno',
-                        icon: Icons.event_available_outlined,
-                        child: Column(
-                          children: externalEvents
-                              .map((e) => UnifiedAgendaTile(
-                                    store: widget.store,
-                                    entry: e,
-                                    compact: true,
-                                  ))
-                              .toList(),
-                        ),
-                      ),
-                    ],
-                    if (timedShared.isNotEmpty) ...[
-                      const SizedBox(height: 14),
-                      _DaySmallSection(
-                        title: 'Noi ♡ · con orario',
-                        icon: Icons.favorite_outline,
-                        child: Column(
-                          children: timedShared
-                              .map((e) => UnifiedAgendaTile(
-                                    store: widget.store,
-                                    entry: e,
-                                    compact: true,
-                                  ))
-                              .toList(),
-                        ),
-                      ),
-                    ],
-                    const SizedBox(height: 18),
-                    const SectionTitle('La mia giornata'),
-                    const SizedBox(height: 8),
-                    _TimelineHint(eventCount: timedPrivate.length),
-                    const SizedBox(height: 10),
-                    DayTimeline(
-                      date: day,
-                      events: timedPrivate,
-                      store: widget.store,
-                      onChanged: () => setState(() {}),
+                    const SizedBox(height: 12),
+                    _DayLifeOverviewCard(
+                      snapshot: snapshot,
+                      hideDetails: false,
                     ),
-                    const SizedBox(height: 22),
+                    const SizedBox(height: 14),
+                    _DayLifeStream(
+                      snapshot: snapshot,
+                      store: widget.store,
+                    ),
+                    const SizedBox(height: 14),
+                    ExpansionTile(
+                      tilePadding: const EdgeInsets.symmetric(horizontal: 8),
+                      childrenPadding: const EdgeInsets.only(bottom: 8),
+                      leading: const Icon(Icons.schedule_outlined),
+                      title: const Text(
+                        'Timeline oraria',
+                        style: TextStyle(fontWeight: FontWeight.w800),
+                      ),
+                      subtitle: Text(
+                        timedPrivate.isEmpty
+                            ? 'Nessun appuntamento privato con orario'
+                            : '${timedPrivate.length} appuntamenti privati con orario',
+                      ),
+                      children: [
+                        _TimelineHint(eventCount: timedPrivate.length),
+                        const SizedBox(height: 10),
+                        DayTimeline(
+                          date: day,
+                          events: timedPrivate,
+                          store: widget.store,
+                          onChanged: () => setState(() {}),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 18),
+                    const SectionTitle('Diario'),
+                    const SizedBox(height: 8),
                     JournalEditor(store: widget.store, date: day),
                   ],
                 ),
@@ -425,40 +354,6 @@ class _CalendarDayContextCard extends StatelessWidget {
   }
 }
 
-class _BirthdayOccurrenceTile extends StatelessWidget {
-  final BirthdayOccurrence occurrence;
-  final VoidCallback? onTap;
-
-  const _BirthdayOccurrenceTile({
-    required this.occurrence,
-    this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final age = occurrence.age == null ? '' : ' · ${occurrence.age} anni';
-    return ListTile(
-      contentPadding: const EdgeInsets.symmetric(horizontal: 4),
-      leading: const CircleAvatar(
-        child: Icon(Icons.cake_outlined),
-      ),
-      title: Text(
-        occurrence.birthday.name,
-        style: const TextStyle(fontWeight: FontWeight.w800),
-      ),
-      subtitle: Text(
-        occurrence.birthday.note.trim().isEmpty
-            ? 'Compleanno$age'
-            : '${occurrence.birthday.note}$age',
-        maxLines: 2,
-        overflow: TextOverflow.ellipsis,
-      ),
-      trailing: onTap == null ? null : const Icon(Icons.chevron_right),
-      onTap: onTap,
-    );
-  }
-}
-
 class _DayOpeningCard extends StatelessWidget {
   final DateTime date;
   const _DayOpeningCard({required this.date});
@@ -498,36 +393,391 @@ class _DayOpeningCard extends StatelessWidget {
   }
 }
 
-class _DaySmallSection extends StatelessWidget {
-  final String title;
-  final IconData icon;
-  final Widget child;
+class _DayLifeOverviewCard extends StatelessWidget {
+  final DayHubSnapshot snapshot;
+  final VoidCallback? onOpenDay;
+  final bool hideDetails;
 
-  const _DaySmallSection({
-    required this.title,
-    required this.icon,
-    required this.child,
+  const _DayLifeOverviewCard({
+    required this.snapshot,
+    this.onOpenDay,
+    this.hideDetails = false,
   });
 
   @override
   Widget build(BuildContext context) {
-    return SimpleCard(
+    final scheme = Theme.of(context).colorScheme;
+    final activeDiaryBlocks =
+        snapshot.journal.blocks.where((block) => !block.archived).length;
+    final metrics = <({IconData icon, String text})>[
+      if (snapshot.pendingTaskCount > 0)
+        (
+          icon: Icons.check_circle_outline,
+          text: '${snapshot.pendingTaskCount} da fare',
+        ),
+      if (snapshot.appointmentCount > 0)
+        (
+          icon: Icons.event_outlined,
+          text: '${snapshot.appointmentCount} impegni',
+        ),
+      if (snapshot.birthdays.isNotEmpty)
+        (
+          icon: Icons.cake_outlined,
+          text: '${snapshot.birthdays.length} compleanni',
+        ),
+      if (snapshot.workouts.isNotEmpty)
+        (
+          icon: Icons.sports_outlined,
+          text: '${snapshot.workouts.length} allenamenti',
+        ),
+      if (activeDiaryBlocks > 0)
+        (
+          icon: Icons.auto_stories_outlined,
+          text: '$activeDiaryBlocks momenti',
+        ),
+    ];
+
+    return Container(
+      key: const ValueKey('day-life-overview'),
+      padding: const EdgeInsets.all(17),
+      decoration: BoxDecoration(
+        color: scheme.surfaceContainerHighest.withValues(alpha: 0.42),
+        borderRadius: BorderRadius.circular(22),
+        border: Border.all(color: scheme.outlineVariant),
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              Icon(icon, size: 20),
+              Icon(Icons.wb_sunny_outlined, color: scheme.primary),
               const SizedBox(width: 8),
-              Text(title,
-                  style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 17)),
+              const Expanded(
+                child: Text(
+                  'La mia giornata',
+                  style: TextStyle(
+                    fontWeight: FontWeight.w900,
+                    fontSize: 18,
+                  ),
+                ),
+              ),
+              if (onOpenDay != null)
+                TextButton(
+                  onPressed: onOpenDay,
+                  child: const Text('Apri'),
+                ),
             ],
           ),
-          const SizedBox(height: 10),
-          child,
+          const SizedBox(height: 5),
+          Text(
+            snapshot.isEmpty
+                ? 'La giornata è ancora tutta da raccontare.'
+                : snapshot.hasJournalContent
+                    ? 'Impegni, persone, allenamenti e diario nello stesso posto.'
+                    : 'Gli impegni di oggi sono già qui. Puoi aggiungere anche ciò che vuoi ricordare.',
+            style: Theme.of(context).textTheme.bodySmall,
+          ),
+          if (metrics.isNotEmpty) ...[
+            const SizedBox(height: 12),
+            Wrap(
+              spacing: 7,
+              runSpacing: 7,
+              children: metrics
+                  .map(
+                    (metric) => Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 7,
+                      ),
+                      decoration: BoxDecoration(
+                        color: scheme.surface,
+                        borderRadius: BorderRadius.circular(999),
+                        border: Border.all(color: scheme.outlineVariant),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(metric.icon, size: 15, color: scheme.primary),
+                          const SizedBox(width: 5),
+                          Text(
+                            hideDetails ? '•••' : metric.text,
+                            style: const TextStyle(
+                              fontWeight: FontWeight.w700,
+                              fontSize: 12,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  )
+                  .toList(),
+            ),
+          ],
+          if (!hideDetails && snapshot.lifeEntries.isNotEmpty) ...[
+            const SizedBox(height: 12),
+            ...snapshot.lifeEntries.take(3).map(
+                  (entry) => _DayLifePreviewRow(
+                    entry: entry,
+                    date: snapshot.date,
+                  ),
+                ),
+            if (snapshot.lifeEntries.length > 3)
+              Padding(
+                padding: const EdgeInsets.only(top: 4),
+                child: Text(
+                  '+ ${snapshot.lifeEntries.length - 3} altri momenti',
+                  style: Theme.of(context).textTheme.bodySmall,
+                ),
+              ),
+          ],
         ],
       ),
     );
+  }
+}
+
+class _DayLifePreviewRow extends StatelessWidget {
+  final DayLifeEntry entry;
+  final DateTime date;
+
+  const _DayLifePreviewRow({
+    required this.entry,
+    required this.date,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final data = _dayLifePresentation(entry, date);
+    return Padding(
+      padding: const EdgeInsets.only(top: 7),
+      child: Row(
+        children: [
+          Icon(data.icon, size: 16),
+          const SizedBox(width: 7),
+          Expanded(
+            child: Text(
+              data.title,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(fontWeight: FontWeight.w700),
+            ),
+          ),
+          const SizedBox(width: 8),
+          Text(
+            data.timeLabel,
+            style: Theme.of(context).textTheme.bodySmall,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _DayLifeStream extends StatelessWidget {
+  final DayHubSnapshot snapshot;
+  final AgendaStore store;
+
+  const _DayLifeStream({
+    required this.snapshot,
+    required this.store,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final entries = snapshot.lifeEntries;
+    return SimpleCard(
+      key: const ValueKey('day-life-stream'),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Row(
+            children: [
+              Icon(Icons.view_timeline_outlined),
+              SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  'Momenti del giorno',
+                  style: TextStyle(
+                    fontWeight: FontWeight.w900,
+                    fontSize: 18,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 5),
+          Text(
+            'Agenda, compleanni, allenamenti e contenuti del diario in un’unica sequenza.',
+            style: Theme.of(context).textTheme.bodySmall,
+          ),
+          const SizedBox(height: 10),
+          if (entries.isEmpty)
+            const Padding(
+              padding: EdgeInsets.symmetric(vertical: 8),
+              child: Text(
+                'Nessun momento ancora. Usa Cattura per aggiungere qualcosa.',
+              ),
+            )
+          else
+            ...entries.map(
+              (entry) {
+                final data = _dayLifePresentation(entry, snapshot.date);
+                return ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  leading: CircleAvatar(
+                    child: Icon(data.icon, size: 19),
+                  ),
+                  title: Text(
+                    data.title,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(fontWeight: FontWeight.w800),
+                  ),
+                  subtitle: data.subtitle.isEmpty
+                      ? null
+                      : Text(
+                          data.subtitle,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                  trailing: Text(
+                    data.timeLabel,
+                    style: Theme.of(context).textTheme.bodySmall,
+                  ),
+                  onTap: () => _openDayLifeEntry(context, store, entry),
+                );
+              },
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+typedef _DayLifePresentation = ({
+  IconData icon,
+  String title,
+  String subtitle,
+  String timeLabel,
+});
+
+_DayLifePresentation _dayLifePresentation(
+  DayLifeEntry entry,
+  DateTime date,
+) {
+  switch (entry.kind) {
+    case DayLifeEntryKind.agenda:
+      final value = entry.agenda!;
+      final when = value.start == null ? 'Giornata' : formatTime(value.start!);
+      return (
+        icon: value.isExternal
+            ? Icons.event_available_outlined
+            : value.isShared
+                ? Icons.favorite_outline
+                : value.type == ItemType.task
+                    ? Icons.check_circle_outline
+                    : Icons.event_outlined,
+        title: value.title,
+        subtitle: value.visibilityLabel,
+        timeLabel: when,
+      );
+    case DayLifeEntryKind.birthday:
+      final value = entry.birthday!;
+      final age = value.age == null ? '' : ' · ${value.age} anni';
+      return (
+        icon: Icons.cake_outlined,
+        title: value.birthday.name,
+        subtitle: value.birthday.note.trim().isEmpty
+            ? 'Compleanno$age'
+            : '${value.birthday.note}$age',
+        timeLabel: 'Giornata',
+      );
+    case DayLifeEntryKind.workout:
+      final value = entry.workout!;
+      final metrics = <String>[
+        value.sport.label,
+        if (value.distanceKm != null && value.distanceKm! > 0)
+          '${value.distanceKm!.toStringAsFixed(value.distanceKm! % 1 == 0 ? 0 : 1)} km',
+        if (value.durationSeconds > 0)
+          _dayLifeDuration(value.durationSeconds),
+      ];
+      return (
+        icon: value.sport.icon,
+        title: value.title.trim().isEmpty ? value.sport.label : value.title,
+        subtitle: metrics.join(' · '),
+        timeLabel: _dayLifeClock(value.createdAt, date),
+      );
+    case DayLifeEntryKind.diaryBlock:
+      final value = entry.diaryBlock!;
+      final type = switch (value.type) {
+        DiaryBlockType.note => 'Nota',
+        DiaryBlockType.sketch => 'Sketch',
+        DiaryBlockType.photo => 'Foto',
+        DiaryBlockType.voice => 'Voce',
+      };
+      final icon = switch (value.type) {
+        DiaryBlockType.note => Icons.sticky_note_2_outlined,
+        DiaryBlockType.sketch => Icons.draw_outlined,
+        DiaryBlockType.photo => Icons.photo_outlined,
+        DiaryBlockType.voice => Icons.mic_none_outlined,
+      };
+      final title = value.text.trim().isEmpty ? type : value.text.trim();
+      return (
+        icon: icon,
+        title: title,
+        subtitle: 'Diario · $type',
+        timeLabel: _dayLifeClock(value.createdAt, date),
+      );
+  }
+}
+
+String _dayLifeClock(DateTime value, DateTime day) {
+  if (!AgendaStore.sameDay(value, day)) return 'Giornata';
+  return formatTime(TimeOfDay(hour: value.hour, minute: value.minute));
+}
+
+String _dayLifeDuration(int seconds) {
+  final duration = Duration(seconds: seconds);
+  final hours = duration.inHours;
+  final minutes = duration.inMinutes.remainder(60);
+  if (hours > 0 && minutes > 0) return '${hours}h ${minutes}m';
+  if (hours > 0) return '${hours}h';
+  return '${max(1, minutes)} min';
+}
+
+Future<void> _openDayLifeEntry(
+  BuildContext context,
+  AgendaStore store,
+  DayLifeEntry entry,
+) async {
+  switch (entry.kind) {
+    case DayLifeEntryKind.agenda:
+      await openUnifiedAgendaEntry(context, store, entry.agenda!);
+      return;
+    case DayLifeEntryKind.birthday:
+      await Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => BirthdaysScreen(store: store),
+        ),
+      );
+      return;
+    case DayLifeEntryKind.workout:
+      await Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => WorkoutScreen(store: store),
+        ),
+      );
+      return;
+    case DayLifeEntryKind.diaryBlock:
+      await Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => DiaryMemoriesScreen(store: store),
+        ),
+      );
+      return;
   }
 }
 

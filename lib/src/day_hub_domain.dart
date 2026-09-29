@@ -80,10 +80,79 @@ class BirthdayOccurrence {
   });
 }
 
+enum DayLifeEntryKind { agenda, birthday, workout, diaryBlock }
+
+class DayLifeEntry {
+  final DayLifeEntryKind kind;
+  final UnifiedAgendaEntry? agenda;
+  final BirthdayOccurrence? birthday;
+  final WorkoutSession? workout;
+  final DiaryBlock? diaryBlock;
+
+  const DayLifeEntry.agenda(this.agenda)
+      : kind = DayLifeEntryKind.agenda,
+        birthday = null,
+        workout = null,
+        diaryBlock = null;
+
+  const DayLifeEntry.birthday(this.birthday)
+      : kind = DayLifeEntryKind.birthday,
+        agenda = null,
+        workout = null,
+        diaryBlock = null;
+
+  const DayLifeEntry.workout(this.workout)
+      : kind = DayLifeEntryKind.workout,
+        agenda = null,
+        birthday = null,
+        diaryBlock = null;
+
+  const DayLifeEntry.diaryBlock(this.diaryBlock)
+      : kind = DayLifeEntryKind.diaryBlock,
+        agenda = null,
+        birthday = null,
+        workout = null;
+
+  String get id => switch (kind) {
+        DayLifeEntryKind.agenda => 'agenda:${agenda!.id}',
+        DayLifeEntryKind.birthday => 'birthday:${birthday!.birthday.id}',
+        DayLifeEntryKind.workout => 'workout:${workout!.id}',
+        DayLifeEntryKind.diaryBlock => 'diary:${diaryBlock!.id}',
+      };
+
+  DateTime sortAt(DateTime day) {
+    final base = DateTime(day.year, day.month, day.day);
+    return switch (kind) {
+      DayLifeEntryKind.agenda => agenda!.start == null
+          ? base
+          : DateTime(
+              day.year,
+              day.month,
+              day.day,
+              agenda!.start!.hour,
+              agenda!.start!.minute,
+            ),
+      DayLifeEntryKind.birthday => base,
+      DayLifeEntryKind.workout => _sameCivilDay(workout!.createdAt, day)
+          ? workout!.createdAt
+          : base.add(const Duration(hours: 18)),
+      DayLifeEntryKind.diaryBlock => _sameCivilDay(diaryBlock!.createdAt, day)
+          ? diaryBlock!.createdAt
+          : base.add(const Duration(hours: 20)),
+    };
+  }
+
+  static bool _sameCivilDay(DateTime left, DateTime right) =>
+      left.year == right.year &&
+      left.month == right.month &&
+      left.day == right.day;
+}
+
 class DayHubSnapshot {
   final DateTime date;
   final List<UnifiedAgendaEntry> agenda;
   final List<BirthdayOccurrence> birthdays;
+  final List<WorkoutSession> workouts;
   final int pendingTaskCount;
   final int appointmentCount;
   final DayJournal journal;
@@ -92,6 +161,7 @@ class DayHubSnapshot {
     required this.date,
     required this.agenda,
     required this.birthdays,
+    required this.workouts,
     required this.pendingTaskCount,
     required this.appointmentCount,
     required this.journal,
@@ -102,10 +172,30 @@ class DayHubSnapshot {
       journal.note.trim().isNotEmpty ||
       journal.gratitude.any((entry) => entry.trim().isNotEmpty) ||
       journal.mood != null ||
-      journal.blocks.isNotEmpty;
+      journal.blocks.any((block) => !block.archived);
+
+  List<DayLifeEntry> get lifeEntries {
+    final result = <DayLifeEntry>[
+      ...agenda.map(DayLifeEntry.agenda),
+      ...birthdays.map(DayLifeEntry.birthday),
+      ...workouts.map(DayLifeEntry.workout),
+      ...journal.blocks
+          .where((block) => !block.archived)
+          .map(DayLifeEntry.diaryBlock),
+    ];
+    result.sort((left, right) {
+      final time = left.sortAt(date).compareTo(right.sortAt(date));
+      if (time != 0) return time;
+      return left.id.compareTo(right.id);
+    });
+    return List<DayLifeEntry>.unmodifiable(result);
+  }
 
   bool get isEmpty =>
-      agenda.isEmpty && birthdays.isEmpty && !hasJournalContent;
+      agenda.isEmpty &&
+      birthdays.isEmpty &&
+      workouts.isEmpty &&
+      !hasJournalContent;
 }
 
 extension AgendaStoreDayHub on AgendaStore {
@@ -174,10 +264,15 @@ extension AgendaStoreDayHub on AgendaStore {
   DayHubSnapshot dayHubSnapshot(DateTime date) {
     final normalized = DateTime(date.year, date.month, date.day);
     final agenda = agendaEntriesForDayWithExternal(this, normalized);
+    final workoutsForDay = workoutSessions
+        .where((session) => AgendaStore.sameDay(session.date, normalized))
+        .toList()
+      ..sort((left, right) => left.createdAt.compareTo(right.createdAt));
     return DayHubSnapshot(
       date: normalized,
       agenda: agenda,
       birthdays: birthdaysForDay(normalized),
+      workouts: List<WorkoutSession>.unmodifiable(workoutsForDay),
       pendingTaskCount: agenda
           .where((entry) => entry.type == ItemType.task && !entry.done)
           .length,

@@ -1,8 +1,16 @@
 appId: com.riccardopinato.agenda_per_anna
 ---
 - tapOn:
-    text: 'Oggi[\s\S]*'
+    text: "Oggi[\\s\\S]*"
     retryTapIfNoChange: true
 - extendedWaitUntil:
-    visible: "La mia giornata"
+    visible: "La mia giornata[\\s\\S]*"
+    timeout: 10000
+- extendedWaitUntil:
+    visible: "Cattura"
+    timeout: 10000
+- scrollUntilVisible:
+    element:
+      text: "Momenti del giorno[\\s\\S]*"
+    direction: DOWN
     timeout: 10000

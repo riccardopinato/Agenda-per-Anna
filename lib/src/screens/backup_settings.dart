@@ -1530,7 +1530,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     const Text(
-                      'Avvio e Home',
+                      'Avvio e giornata',
                       style: TextStyle(
                         fontWeight: FontWeight.w900,
                         fontSize: 18,
@@ -1563,7 +1563,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       contentPadding: EdgeInsets.zero,
                       title: const Text('Frase positiva del giorno'),
                       subtitle: const Text(
-                        'Mostra la frase nella testata della Home.',
+                        'Mostra la frase nella testata della giornata.',
                       ),
                       value: prefs.showDailyQuote,
                       onChanged: (value) =>

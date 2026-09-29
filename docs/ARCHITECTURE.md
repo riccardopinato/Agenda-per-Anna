@@ -399,3 +399,15 @@ The v0.48 Trash engine remains authoritative. v0.74 adds no persistence layer an
 - Shared shopping stays in the shared-space tombstone path, preserving collaboration ownership semantics.
 - External calendar events are explicitly non-canonical and therefore have no Trash lifecycle.
 - Release coordinates are centralized in runtime metadata and validated by one canonical test rather than copied through historical feature suites.
+
+
+## v0.75 — Unified Day / Life Projection
+
+The daily experience is consolidated at the projection layer, not by migrating source entities.
+
+- `DayHubSnapshot` remains the daily read model.
+- `DayLifeEntry` is an ephemeral adapter over canonical agenda entries, birthdays, WorkoutSession records and non-archived DiaryBlock records.
+- No new day database/table/store is introduced.
+- Home and Planner consume the same daily projection, reducing competing interpretations of "today".
+- The hourly timeline remains a specialized visualization of private timed appointments rather than a second daily source of truth.
+- Diary editing continues to persist through the existing DayJournal model.

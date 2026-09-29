@@ -56,7 +56,7 @@ class AgendaPreferences {
     this.themeMode = AgendaThemeMode.system,
     this.palette = AgendaPalette.rose,
     this.showDailyQuote = true,
-    this.startTab = StartTab.home,
+    this.startTab = StartTab.today,
     this.defaultCategory = AgendaCategory.personal,
     this.defaultEventMinutes = 60,
     this.defaultPrimaryReminder = 30,
@@ -149,7 +149,7 @@ class AgendaPreferences {
         showDailyQuote: json['showDailyQuote'] as bool? ?? true,
         startTab: StartTab.values.firstWhere(
           (e) => e.name == json['startTab'],
-          orElse: () => StartTab.home,
+          orElse: () => StartTab.today,
         ),
         defaultCategory: AgendaCategory.values.firstWhere(
           (e) => e.name == json['defaultCategory'],

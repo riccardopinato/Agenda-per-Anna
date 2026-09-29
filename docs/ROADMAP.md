@@ -28,7 +28,8 @@ Source of truth for the active product sequence after v0.52. The roadmap follows
 | v0.71 | Shopping List | Completed | Lightweight private + Noi ♡ grocery list reusing existing local/cloud/shared lifecycle infrastructure |
 | v0.72 | Multisport Workout | Completed | Dedicated Allenamento history + reusable plans for gym, running, cycling, swimming and other sports on existing private infrastructure |
 | v0.73 | External Calendar Overlay | Completed | Read-only Android system-calendar projection with explicit opt-in and no canonical-store duplication |
-| v0.74 | Lifecycle Integrity & Release Metadata Cleanup | In validation | Extend lifecycle regression coverage to post-v0.48 domains and remove release-version duplication from historical tests |
+| v0.74 | Lifecycle Integrity & Release Metadata Cleanup | Completed | Universal lifecycle regression coverage + canonical release metadata ownership |
+| v0.75 | Day / Life Consolidation | Completed | Make La mia giornata the central projection for agenda, birthdays, workouts and diary moments |
 
 ## Permanent constraints for this sequence
 
@@ -330,6 +331,19 @@ Per the active development cadence, AppLab runs once every two feature versions.
 - Release metadata is aligned to v0.71.0+81.
 - Analyze, full tests, Web release, Android size audit and AppLab Trusted Verify must be green before promotion to main.
 
+
+## v0.75 acceptance criteria
+
+- Home and the detailed day page must reuse the same `DayHubSnapshot` / day overview projection.
+- The daily projection must include agenda entries, birthdays, WorkoutSession records and non-archived DiaryBlock records without copying them into a new persistence model.
+- `Momenti del giorno` must provide a single chronological sequence across those source domains.
+- The detailed hourly timeline remains available for precise private timed appointments but is secondary to the unified day stream.
+- Quick Capture is directly reachable from `La mia giornata`.
+- Archived diary blocks must not reappear in the day stream.
+- Existing StartTab preferences remain valid; new/default profiles open on `Oggi`.
+- Home remains an explicit reachable destination so memories, people, Noi ♡, backup/account/settings and utility modules are not orphaned by the day-first IA.
+- Release metadata is aligned to v0.75.0+85.
+- Development checks, Web release, Android size audit and AppLab Trusted Verify must all pass before merge.
 
 ## v0.74 acceptance criteria
 

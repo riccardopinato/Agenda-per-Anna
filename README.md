@@ -2,7 +2,7 @@
 
 Flutter app for personal planning, private diary and the shared **Noi ♡** space.
 
-Current release line: **v0.74.0**.
+Current release line: **v0.75.0**.
 
 ## Core areas
 
@@ -461,6 +461,16 @@ See `docs/ARCHITECTURE.md` and `supabase/README.md` for implementation details.
 - Shared shopping stays outside the agenda/feed so grocery changes do not pollute the couple timeline.
 - No shopping backend table, new collaboration engine, AI service or external API is introduced.
 
+
+## v0.75.0 — Day / Life Consolidation
+
+- `La mia giornata` becomes the central daily surface instead of treating agenda, diary and life records as separate products.
+- `DayHubSnapshot` now projects agenda entries, birthdays, workouts and non-archived diary blocks into one chronological `DayLifeEntry` stream.
+- Home and the detailed day view reuse the same day overview projection; Home remains reachable for memories, people, Noi ♡, data and utility modules while new profiles open directly on Oggi.
+- The detailed day view replaces multiple parallel mini-sections with one `Momenti del giorno` stream plus an optional expandable hourly timeline.
+- Quick Capture is available directly from the day surface.
+- Workout sessions recorded for a date participate in the same daily context without being duplicated into the agenda store.
+- New profiles default to the `Oggi / La mia giornata` start surface while preserving existing users' stored preference.
 
 ## v0.74.0 — Lifecycle Integrity & Release Metadata Cleanup
 
