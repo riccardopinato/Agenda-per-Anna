@@ -9,11 +9,11 @@ appId: com.riccardopinato.agenda_per_anna
     retryTapIfNoChange: true
 - scrollUntilVisible:
     element:
-      text: 'Persone importanti[\s\S]*'
+      text: '(Persone importanti|Important people|Personas importantes|Personnes importantes|Pessoas importantes)[\s\S]*'
     direction: DOWN
     timeout: 10000
 - tapOn:
-    text: 'Persone importanti[\s\S]*'
+    text: '(Persone importanti|Important people|Personas importantes|Personnes importantes|Pessoas importantes)[\s\S]*'
 - extendedWaitUntil:
-    visible: "Persone importanti"
+    visible: '(Persone importanti|Important people|Personas importantes|Personnes importantes|Pessoas importantes)'
     timeout: 10000
