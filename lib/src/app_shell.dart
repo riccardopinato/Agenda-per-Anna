@@ -62,10 +62,24 @@ class AgendaApp extends StatelessWidget {
           AgendaThemeMode.dark => ThemeMode.dark,
         };
 
+        final resolvedLocale = AgendaLocalization.resolvedForPreference(
+          store.preferences.language,
+          ui.PlatformDispatcher.instance.locale,
+        );
+        AgendaLocalization.applyIntlLocale(
+          store.preferences.language,
+          ui.PlatformDispatcher.instance.locale,
+        );
+
         return MaterialApp(
           navigatorKey: appNavigatorKey,
           debugShowCheckedModeBanner: false,
           title: 'Anna\'s Diary',
+          locale: store.preferences.language.locale,
+          supportedLocales: AgendaLocalization.supportedLocales,
+          localizationsDelegates: GlobalMaterialLocalizations.delegates,
+          localeResolutionCallback: (locale, supportedLocales) =>
+              AgendaLocalization.resolveLocale(locale ?? resolvedLocale),
           themeMode: mode,
           theme: _theme(Brightness.light),
           darkTheme: _theme(Brightness.dark),
@@ -181,9 +195,9 @@ class _OnboardingScreen extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 24),
-              const Text(
-                'La tua agenda, davvero tua.',
-                style: TextStyle(
+              Text(
+                AgendaLocalization.text(context, 'onboarding.title'),
+                style: const TextStyle(
                   fontSize: 32,
                   fontWeight: FontWeight.w900,
                   height: 1.05,
@@ -191,34 +205,32 @@ class _OnboardingScreen extends StatelessWidget {
               ),
               const SizedBox(height: 12),
               Text(
-                'Appuntamenti, diario, abitudini, idee e ricordi in un unico posto. '
-                'L’app salva prima sul dispositivo e usa il tuo account per sincronizzare automaticamente agenda e Noi ♡.',
+                AgendaLocalization.text(context, 'onboarding.body'),
                 style: Theme.of(context).textTheme.bodyLarge,
               ),
               const SizedBox(height: 24),
-              const _OnboardingFeature(
+              _OnboardingFeature(
                 icon: Icons.bolt_outlined,
-                title: 'Cattura veloce',
-                subtitle: 'Aggiungi un pensiero o un impegno in pochi secondi.',
+                title: AgendaLocalization.text(context, 'onboarding.captureTitle'),
+                subtitle: AgendaLocalization.text(context, 'onboarding.captureSubtitle'),
               ),
               const SizedBox(height: 10),
-              const _OnboardingFeature(
+              _OnboardingFeature(
                 icon: Icons.favorite_outline,
-                title: 'Diario personale',
-                subtitle: 'Mood, cose belle e abitudini quotidiane.',
+                title: AgendaLocalization.text(context, 'onboarding.diaryTitle'),
+                subtitle: AgendaLocalization.text(context, 'onboarding.diarySubtitle'),
               ),
               const SizedBox(height: 10),
-              const _OnboardingFeature(
+              _OnboardingFeature(
                 icon: Icons.favorite_outline,
-                title: 'Privato o Noi ♡',
-                subtitle:
-                    'Privato è sempre il default; condividi solo ciò che scegli esplicitamente.',
+                title: AgendaLocalization.text(context, 'onboarding.privateTitle'),
+                subtitle: AgendaLocalization.text(context, 'onboarding.privateSubtitle'),
               ),
               const SizedBox(height: 10),
-              const _OnboardingFeature(
+              _OnboardingFeature(
                 icon: Icons.lock_outline,
-                title: 'Privacy opzionale',
-                subtitle: 'PIN e biometria se vuoi proteggere l’agenda.',
+                title: AgendaLocalization.text(context, 'onboarding.privacyTitle'),
+                subtitle: AgendaLocalization.text(context, 'onboarding.privacySubtitle'),
               ),
               const Spacer(),
               SizedBox(
@@ -228,7 +240,9 @@ class _OnboardingScreen extends StatelessWidget {
                     store.preferences.copyWith(onboardingDone: true),
                   ),
                   icon: const Icon(Icons.arrow_forward),
-                  label: const Text('Inizia'),
+                  label: Text(
+                    AgendaLocalization.text(context, 'onboarding.start'),
+                  ),
                 ),
               ),
             ],
