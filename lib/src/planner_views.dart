@@ -186,7 +186,12 @@ class _PlannerScreenState extends State<PlannerScreen> {
 
         return Scaffold(
           floatingActionButton: FloatingActionButton.extended(
-            onPressed: () => _showQuickCapture(context, widget.store),
+            onPressed: () => _showQuickCapture(
+              context,
+              widget.store,
+              captureDate: day,
+              entryPoint: UnifiedCaptureEntryPoint.day,
+            ),
             icon: const Icon(Icons.add),
             label: const Text('Cattura'),
           ),

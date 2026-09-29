@@ -7,6 +7,7 @@ void main() {
     final service = File('lib/share_capture_service.dart').readAsStringSync();
     final home =
         File('lib/src/screens/home_inbox_search.dart').readAsStringSync();
+    final capture = File('lib/src/unified_capture.dart').readAsStringSync();
     final android =
         File('tool/prepare_android_platform.py').readAsStringSync();
     final main = File('lib/main.dart').readAsStringSync();
@@ -15,9 +16,11 @@ void main() {
     expect(service, contains("'takeInitialShare'"));
     expect(service, contains("'consumeSharedImage'"));
     expect(home, contains('_handleIncomingShareCapture'));
-    expect(home, contains("store.addInboxEntry(preview)"));
-    expect(home, contains('DiaryBlockType.photo'));
+    expect(home, contains('_saveUnifiedCaptureText('));
+    expect(home, contains('_saveUnifiedCapturePhoto('));
     expect(home, contains('_compressDiaryImageBytes(rawBytes)'));
+    expect(capture, contains('store.addInboxEntry(value)'));
+    expect(capture, contains('DiaryBlockType.photo'));
     expect(main, contains('ShareCaptureService.instance.initialize()'));
     expect(android, contains('android.intent.action.SEND'));
     expect(android, contains('android:mimeType="text/plain"'));

@@ -2,7 +2,7 @@
 
 Flutter app for personal planning, private diary and the shared **Noi ♡** space.
 
-Current release line: **v0.75.0**.
+Current release line: **v0.76.0**.
 
 ## Core areas
 
@@ -471,6 +471,16 @@ See `docs/ARCHITECTURE.md` and `supabase/README.md` for implementation details.
 - Quick Capture is available directly from the day surface.
 - Workout sessions recorded for a date participate in the same daily context without being duplicated into the agenda store.
 - New profiles default to the `Oggi / La mia giornata` start surface while preserving existing users' stored preference.
+
+
+## v0.76.0 — Unified Capture
+
+- `Cattura` is now one shared entry surface for text, voice, photo, Inbox, tasks and appointments instead of several partially duplicated write flows.
+- Text, voice and photo captures are persisted as ordinary `DiaryBlock` records in the existing `DayJournal`; quick notes continue to use the existing `InboxEntry` model.
+- Voice capture reuses the existing native/Web voice path and `MediaAssetStore`; photo capture reuses the existing optimized image, thumbnail and OCR-compatible media path.
+- Share-target text and images now reuse the same capture persistence helpers instead of maintaining separate diary-save logic.
+- Capturing from `La mia giornata` respects the day currently being viewed, including past/future days, while preserving the current time as the moment ordering time inside that day.
+- No capture database, parallel media store, AI layer or new cloud schema is introduced.
 
 ## v0.74.0 — Lifecycle Integrity & Release Metadata Cleanup
 

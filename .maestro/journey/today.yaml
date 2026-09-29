@@ -9,6 +9,22 @@ appId: com.riccardopinato.agenda_per_anna
 - extendedWaitUntil:
     visible: "Cattura"
     timeout: 10000
+- tapOn: "Cattura"
+- extendedWaitUntil:
+    visible: "Scrivi un momento[\\s\\S]*"
+    timeout: 10000
+- extendedWaitUntil:
+    visible: "Nota vocale[\\s\\S]*"
+    timeout: 10000
+- extendedWaitUntil:
+    visible: "Foto[\\s\\S]*"
+    timeout: 10000
+- scrollUntilVisible:
+    element:
+      text: "Chiudi"
+    direction: DOWN
+    timeout: 10000
+- tapOn: "Chiudi"
 - scrollUntilVisible:
     element:
       text: "Momenti del giorno[\\s\\S]*"
