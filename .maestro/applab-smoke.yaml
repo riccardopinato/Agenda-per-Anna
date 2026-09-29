@@ -6,17 +6,23 @@ appId: com.riccardopinato.agenda_per_anna
     visible: "La tua agenda, davvero tua."
     timeout: 15000
 - tapOn: "Inizia"
+- tapOn:
+    text: '(Oggi|Today|Hoy|Aujourd’hui|Hoje)[\s\S]*'
+    retryTapIfNoChange: true
 - extendedWaitUntil:
-    visible: "La mia giornata[\\s\\S]*"
+    visible: '(La mia giornata|My day|Mi día|Ma journée|O meu dia)[\s\S]*'
     timeout: 15000
 - extendedWaitUntil:
-    visible: "Cattura"
+    visible: '(Cattura|Capture|Capturar|Capturer)'
     timeout: 10000
 - stopApp
 - launchApp
+- tapOn:
+    text: '(Oggi|Today|Hoy|Aujourd’hui|Hoje)[\s\S]*'
+    retryTapIfNoChange: true
 - extendedWaitUntil:
-    visible: "La mia giornata[\\s\\S]*"
+    visible: '(La mia giornata|My day|Mi día|Ma journée|O meu dia)[\s\S]*'
     timeout: 15000
 - extendedWaitUntil:
-    visible: "Cattura"
+    visible: '(Cattura|Capture|Capturar|Capturer)'
     timeout: 10000
