@@ -1,0 +1,7 @@
+# Local Android signing material - never commit.
+.signing/
+.signing-local/
+*.jks
+*.keystore
+SIGNING-RECOVERY.json
+signing-recovery*.json
