@@ -112,6 +112,8 @@ Password Noi ♡ must preserve all of these invariants:
 - the server stores only a key fingerprint, never the raw space key;
 - additional devices obtain the key only through an explicit E2EE pairing or encrypted recovery package;
 - credential updates/deletions are revision-checked; stale writes must fail instead of overwriting silently;
+- shared credential modification time is server-authoritative after commit;
+- pairing envelopes are consumed atomically and cannot be redeemed twice through the supported client path;
 - Noi ♡ is authoritative and the Private Vault mirror must not diverge;
 - authoritative membership reconciliation removes stale local shared-password keys and mirrors;
 - removed/offline devices cannot be remotely wiped while disconnected; local purge happens at the next successful authoritative membership reconciliation while the Vault is available.
