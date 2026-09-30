@@ -312,6 +312,302 @@ class _PrivateVaultScreenState extends State<PrivateVaultScreen>
     body.dispose();
   }
 
+
+  Future<void> _showCredentialEditor([PrivateVaultEntry? entry]) async {
+    final strings = AnnaStrings.of(context);
+    final serviceController =
+        TextEditingController(text: entry?.service ?? '');
+    final usernameController =
+        TextEditingController(text: entry?.username ?? '');
+    final emailController = TextEditingController(text: entry?.email ?? '');
+    final credentialPasswordController =
+        TextEditingController(text: entry?.password ?? '');
+    final notesController = TextEditingController(text: entry?.notes ?? '');
+    var revealPassword = false;
+
+    final result = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => StatefulBuilder(
+        builder: (dialogContext, setDialogState) => AlertDialog(
+          title: Text(
+            entry == null
+                ? strings.vaultNewPassword
+                : strings.vaultEditPassword,
+          ),
+          content: SizedBox(
+            width: 540,
+            child: SingleChildScrollView(
+              child: AutofillGroup(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    TextField(
+                      controller: serviceController,
+                      autofocus: true,
+                      maxLength: 160,
+                      textCapitalization: TextCapitalization.words,
+                      decoration: InputDecoration(
+                        labelText: strings.vaultServiceName,
+                        hintText: strings.vaultServiceHint,
+                        prefixIcon: const Icon(Icons.apps_outlined),
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    TextField(
+                      controller: usernameController,
+                      maxLength: 320,
+                      autofillHints: const [AutofillHints.username],
+                      autocorrect: false,
+                      enableSuggestions: false,
+                      decoration: InputDecoration(
+                        labelText: strings.vaultUsername,
+                        prefixIcon: const Icon(Icons.person_outline),
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    TextField(
+                      controller: emailController,
+                      maxLength: 320,
+                      keyboardType: TextInputType.emailAddress,
+                      autofillHints: const [AutofillHints.email],
+                      autocorrect: false,
+                      enableSuggestions: false,
+                      decoration: InputDecoration(
+                        labelText: strings.vaultEmail,
+                        prefixIcon: const Icon(Icons.alternate_email),
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    TextField(
+                      controller: credentialPasswordController,
+                      obscureText: !revealPassword,
+                      autofillHints: const [AutofillHints.password],
+                      autocorrect: false,
+                      enableSuggestions: false,
+                      decoration: InputDecoration(
+                        labelText: strings.vaultPasswordField,
+                        prefixIcon: const Icon(Icons.key_outlined),
+                        suffixIcon: IconButton(
+                          tooltip: revealPassword
+                              ? strings.vaultHidePassword
+                              : strings.vaultShowPassword,
+                          onPressed: () => setDialogState(
+                            () => revealPassword = !revealPassword,
+                          ),
+                          icon: Icon(
+                            revealPassword
+                                ? Icons.visibility_off_outlined
+                                : Icons.visibility_outlined,
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    TextField(
+                      controller: notesController,
+                      minLines: 3,
+                      maxLines: 7,
+                      maxLength: 12000,
+                      textCapitalization: TextCapitalization.sentences,
+                      decoration: InputDecoration(
+                        labelText: strings.vaultNotes,
+                        hintText: strings.vaultPasswordNotesHint,
+                        alignLabelWithHint: true,
+                        prefixIcon: const Icon(Icons.notes_outlined),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext, false),
+              child: Text(strings.cancel),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.pop(dialogContext, true),
+              child: Text(strings.save),
+            ),
+          ],
+        ),
+      ),
+    );
+
+    if (result == true) {
+      try {
+        await vault.upsertCredential(
+          id: entry?.id,
+          service: serviceController.text,
+          username: usernameController.text,
+          email: emailController.text,
+          password: credentialPasswordController.text,
+          notes: notesController.text,
+        );
+      } on FormatException catch (error) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(error.message.toString())),
+          );
+        }
+      }
+    }
+
+    serviceController.clear();
+    usernameController.clear();
+    emailController.clear();
+    credentialPasswordController.clear();
+    notesController.clear();
+    serviceController.dispose();
+    usernameController.dispose();
+    emailController.dispose();
+    credentialPasswordController.dispose();
+    notesController.dispose();
+  }
+
+  Future<void> _copySensitive(String value, String fieldLabel) async {
+    if (value.isEmpty) return;
+    final strings = AnnaStrings.of(context);
+    await Clipboard.setData(ClipboardData(text: value));
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(strings.vaultCopiedToClipboard(fieldLabel))),
+      );
+    }
+
+    unawaited(
+      Future<void>.delayed(const Duration(seconds: 30), () async {
+        try {
+          final current = await Clipboard.getData('text/plain');
+          if (current?.text == value) {
+            await Clipboard.setData(const ClipboardData(text: ''));
+          }
+        } catch (_) {
+          // Clipboard cleanup is best effort and must never block the Vault.
+        }
+      }),
+    );
+  }
+
+  Future<void> _showCredentialDetails(PrivateVaultEntry entry) async {
+    final strings = AnnaStrings.of(context);
+    var revealPassword = false;
+
+    final edit = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => StatefulBuilder(
+        builder: (dialogContext, setDialogState) {
+          Widget fieldRow({
+            required String label,
+            required String value,
+            bool secret = false,
+          }) {
+            final display = value.isEmpty
+                ? strings.vaultNoValue
+                : secret && !revealPassword
+                    ? '••••••••'
+                    : value;
+            return ListTile(
+              contentPadding: EdgeInsets.zero,
+              title: Text(
+                label,
+                style: Theme.of(dialogContext).textTheme.labelLarge,
+              ),
+              subtitle: SelectableText(display),
+              trailing: value.isEmpty
+                  ? null
+                  : Wrap(
+                      spacing: 2,
+                      children: [
+                        if (secret)
+                          IconButton(
+                            tooltip: revealPassword
+                                ? strings.vaultHidePassword
+                                : strings.vaultShowPassword,
+                            onPressed: () => setDialogState(
+                              () => revealPassword = !revealPassword,
+                            ),
+                            icon: Icon(
+                              revealPassword
+                                  ? Icons.visibility_off_outlined
+                                  : Icons.visibility_outlined,
+                            ),
+                          ),
+                        IconButton(
+                          tooltip: strings.vaultCopy,
+                          onPressed: () => unawaited(
+                            _copySensitive(value, label),
+                          ),
+                          icon: const Icon(Icons.copy_outlined),
+                        ),
+                      ],
+                    ),
+            );
+          }
+
+          return AlertDialog(
+            title: Row(
+              children: [
+                const Icon(Icons.key_outlined),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    entry.service,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              ],
+            ),
+            content: SizedBox(
+              width: 520,
+              child: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    fieldRow(
+                      label: strings.vaultUsername,
+                      value: entry.username,
+                    ),
+                    fieldRow(
+                      label: strings.vaultEmail,
+                      value: entry.email,
+                    ),
+                    fieldRow(
+                      label: strings.vaultPasswordField,
+                      value: entry.password,
+                      secret: true,
+                    ),
+                    if (entry.notes.isNotEmpty)
+                      fieldRow(
+                        label: strings.vaultNotes,
+                        value: entry.notes,
+                      ),
+                  ],
+                ),
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(dialogContext, false),
+                child: Text(strings.close),
+              ),
+              FilledButton.icon(
+                onPressed: () => Navigator.pop(dialogContext, true),
+                icon: const Icon(Icons.edit_outlined),
+                label: Text(strings.edit),
+              ),
+            ],
+          );
+        },
+      ),
+    );
+
+    if (edit == true && mounted) {
+      await _showCredentialEditor(entry);
+    }
+  }
+
   Future<void> _delete(PrivateVaultEntry entry) async {
     final confirmed = await showDialog<bool>(
       context: context,
