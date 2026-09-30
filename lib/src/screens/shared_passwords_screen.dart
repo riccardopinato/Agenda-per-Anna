@@ -146,9 +146,8 @@ class _SharedPasswordsScreenState extends State<SharedPasswordsScreen>
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Text(
-              'Inserisci il codice di sicurezza generato dal proprietario. '
-              'Serve una sola volta per ricevere la chiave E2EE.',
+            Text(
+              AnnaStrings.of(context).sharedPasswordsPairingInputDescription,
             ),
             const SizedBox(height: 14),
             TextField(
@@ -227,8 +226,10 @@ class _SharedPasswordsScreenState extends State<SharedPasswordsScreen>
                   await Clipboard.setData(ClipboardData(text: code));
                   if (dialogContext.mounted) {
                     ScaffoldMessenger.of(dialogContext).showSnackBar(
-                      const SnackBar(
-                        content: Text('Codice copiato negli appunti.'),
+                      SnackBar(
+                        content: Text(
+                          AnnaStrings.of(context).sharedPasswordsCodeCopied,
+                        ),
                       ),
                     );
                   }
@@ -257,7 +258,7 @@ class _SharedPasswordsScreenState extends State<SharedPasswordsScreen>
           actions: [
             FilledButton(
               onPressed: () => Navigator.pop(dialogContext),
-              child: const Text('Chiudi'),
+              child: Text(AnnaStrings.of(context).close),
             ),
           ],
         ),
@@ -397,12 +398,16 @@ class _SharedPasswordsScreenState extends State<SharedPasswordsScreen>
           email: emailController.text,
           password: passwordController.text,
           notes: notesController.text,
+          expectedRevision: existing?.revision ?? 0,
         );
         await _refresh(silent: true);
       } on FormatException catch (error) {
         _message(error.message.toString());
+      } on SharedPasswordConflictException {
+        _message(AnnaStrings.of(context).sharedPasswordsConflict);
+        await _refresh(silent: true);
       } catch (_) {
-        _message('Salvataggio non riuscito. Controlla la connessione.');
+        _message(AnnaStrings.of(context).sharedPasswordsSaveFailed);
       }
     }
 
@@ -446,10 +451,14 @@ class _SharedPasswordsScreenState extends State<SharedPasswordsScreen>
       await service.deleteCredential(
         spaceId: widget.space.id,
         credentialId: credential.id,
+        expectedRevision: credential.revision,
       );
       await _refresh(silent: true);
+    } on SharedPasswordConflictException {
+      _message(AnnaStrings.of(context).sharedPasswordsConflict);
+      await _refresh(silent: true);
     } catch (_) {
-      _message('Eliminazione non riuscita. Controlla la connessione.');
+      _message(AnnaStrings.of(context).sharedPasswordsDeleteFailed);
     }
   }
 
@@ -612,7 +621,7 @@ class _SharedPasswordsScreenState extends State<SharedPasswordsScreen>
               Text(
                 vault.configured
                     ? AnnaStrings.of(context).sharedPasswordsVaultRequired
-                    : 'Configura la Cassaforte privata',
+                    : AnnaStrings.of(context).vaultConfigure,
                 style: const TextStyle(
                   fontSize: 22,
                   fontWeight: FontWeight.w900,
@@ -629,7 +638,9 @@ class _SharedPasswordsScreenState extends State<SharedPasswordsScreen>
                 onPressed: _openVault,
                 icon: const Icon(Icons.lock_open_outlined),
                 label: Text(
-                  vault.configured ? 'Sblocca cassaforte' : 'Apri cassaforte',
+                  vault.configured
+                      ? AnnaStrings.of(context).vaultUnlock
+                      : AnnaStrings.of(context).vaultOpen,
                 ),
               ),
             ],
@@ -699,7 +710,7 @@ class _SharedPasswordsScreenState extends State<SharedPasswordsScreen>
                   icon: const Icon(Icons.vpn_key_outlined),
                 ),
               IconButton(
-                tooltip: 'Aggiorna',
+                tooltip: AnnaStrings.of(context).refresh,
                 onPressed: loading ? null : _refresh,
                 icon: const Icon(Icons.refresh),
               ),
@@ -822,14 +833,18 @@ class _SharedPasswordsScreenState extends State<SharedPasswordsScreen>
                                             unawaited(_delete(credential));
                                           }
                                         },
-                                        itemBuilder: (_) => const [
+                                        itemBuilder: (_) => [
                                           PopupMenuItem(
                                             value: 'edit',
-                                            child: Text('Modifica'),
+                                            child: Text(
+                                              AnnaStrings.of(context).edit,
+                                            ),
                                           ),
                                           PopupMenuItem(
                                             value: 'delete',
-                                            child: Text('Elimina'),
+                                            child: Text(
+                                              AnnaStrings.of(context).delete,
+                                            ),
                                           ),
                                         ],
                                       ),
