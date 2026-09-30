@@ -15,8 +15,8 @@ v0.86 keeps the existing Vault and Noi ♡ storage boundaries and hardens their 
 - Migration 027 makes key metadata an atomic owner-only first claim and immutable afterwards.
 - Shared credential writes and deletions use revision checks under row locking. Stale mutations fail instead of replacing a newer secret.
 - Shared credential timestamps are generated at commit time by PostgreSQL; client clocks do not define the authoritative “last updated” value.
-- The legacy generic merge RPC rejects protected shared credential/key-metadata entity types, so callers cannot bypass the dedicated compare-and-swap functions.
-- Pairing-envelope redemption uses a row-locked atomic consume RPC. The supported path returns a live envelope once and tombstones it in the same transaction.
+- The legacy generic merge RPC and direct Data API writes reject all protected shared-password entity types (credential, key metadata and pairing envelope), so mutations cannot bypass their dedicated RPC contracts.
+- Pairing-envelope creation is owner-only through a dedicated RPC; redemption uses a row-locked atomic consume RPC that returns a live envelope once and tombstones it in the same transaction.
 - The database rejects plaintext credential fields and invalid encrypted/tombstone payload shapes.
 - One-time pairing remains explicit and short-lived. v0.86 also supports an explicitly created recovery package encrypted with a separate recovery password; it is not part of ordinary backup.
 - Successful authoritative membership refresh purges stale local shared-password keys and mirrors when the Vault is unlocked. Offline devices cannot be remotely wiped; purge occurs at the next successful reconnect/reconcile.
