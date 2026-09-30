@@ -502,6 +502,7 @@ class SharedPasswordService {
       password: credential.password,
       notes: credential.notes,
       updatedAt: credential.updatedAt,
+      sharedRevision: credential.revision,
     );
   }
 
