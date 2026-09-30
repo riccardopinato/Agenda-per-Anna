@@ -656,14 +656,171 @@ class _SharedPasswordsScreenState extends State<SharedPasswordsScreen>
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text(
-          'Password Noi ♡',
-          style: TextStyle(fontWeight: FontWeight.w900),
-        ),
-      ),
-      body: const SizedBox.shrink(),
+    return AnimatedBuilder(
+      animation: vault,
+      builder: (context, _) {
+        final keyReady = vault.unlocked && service.hasKey(widget.space.id);
+        return Scaffold(
+          appBar: AppBar(
+            title: const Text(
+              'Password Noi ♡',
+              style: TextStyle(fontWeight: FontWeight.w900),
+            ),
+            actions: [
+              if (vault.unlocked &&
+                  keyReady &&
+                  widget.space.isOwner &&
+                  CloudSyncService.instance.signedIn)
+                IconButton(
+                  tooltip: 'Condividi chiave E2EE',
+                  onPressed: _showPairingCode,
+                  icon: const Icon(Icons.vpn_key_outlined),
+                ),
+              IconButton(
+                tooltip: 'Aggiorna',
+                onPressed: loading ? null : _refresh,
+                icon: const Icon(Icons.refresh),
+              ),
+            ],
+          ),
+          floatingActionButton: keyReady
+              ? FloatingActionButton.extended(
+                  onPressed: () => _showEditor(),
+                  icon: const Icon(Icons.add),
+                  label: const Text('Nuova password'),
+                )
+              : null,
+          body: !vault.unlocked
+              ? _lockedBody()
+              : !keyReady
+                  ? _pairingBody()
+                  : loading
+                      ? const Center(child: CircularProgressIndicator())
+                      : RefreshIndicator(
+                          onRefresh: _refresh,
+                          child: ListView(
+                            padding:
+                                const EdgeInsets.fromLTRB(16, 12, 16, 100),
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.all(16),
+                                decoration: BoxDecoration(
+                                  color: Theme.of(context)
+                                      .colorScheme
+                                      .secondaryContainer
+                                      .withValues(alpha: 0.55),
+                                  borderRadius: BorderRadius.circular(20),
+                                ),
+                                child: const Row(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Icon(Icons.security_outlined),
+                                    SizedBox(width: 10),
+                                    Expanded(
+                                      child: Text(
+                                        'Cifrate end-to-end. Noi ♡ è la sorgente '
+                                        'autorevole: modifiche ed eliminazioni si '
+                                        'riflettono anche nella Cassaforte privata.',
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              if (errorText != null) ...[
+                                const SizedBox(height: 10),
+                                Text(
+                                  errorText!,
+                                  style: TextStyle(
+                                    color: Theme.of(context).colorScheme.error,
+                                  ),
+                                ),
+                              ],
+                              const SizedBox(height: 12),
+                              if (credentials.isEmpty)
+                                const Padding(
+                                  padding: EdgeInsets.symmetric(vertical: 50),
+                                  child: Column(
+                                    children: [
+                                      Icon(Icons.password_outlined, size: 56),
+                                      SizedBox(height: 12),
+                                      Text(
+                                        'Nessuna password condivisa',
+                                        style: TextStyle(
+                                          fontSize: 20,
+                                          fontWeight: FontWeight.w900,
+                                        ),
+                                      ),
+                                      SizedBox(height: 6),
+                                      Text(
+                                        'Aggiungi un servizio: comparirà anche '
+                                        'nella Cassaforte privata dei dispositivi '
+                                        'Noi ♡ collegati.',
+                                        textAlign: TextAlign.center,
+                                      ),
+                                    ],
+                                  ),
+                                )
+                              else
+                                ...credentials.map(
+                                  (credential) => Card(
+                                    child: ListTile(
+                                      contentPadding:
+                                          const EdgeInsets.symmetric(
+                                        horizontal: 16,
+                                        vertical: 8,
+                                      ),
+                                      leading: const CircleAvatar(
+                                        child: Icon(Icons.password_outlined),
+                                      ),
+                                      title: Text(
+                                        credential.service,
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: const TextStyle(
+                                          fontWeight: FontWeight.w900,
+                                        ),
+                                      ),
+                                      subtitle: Text(
+                                        [
+                                          if (credential.username.isNotEmpty)
+                                            credential.username,
+                                          if (credential.email.isNotEmpty)
+                                            credential.email,
+                                          '••••••••',
+                                        ].join(' · '),
+                                        maxLines: 2,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                      onTap: () => _showDetails(credential),
+                                      trailing: PopupMenuButton<String>(
+                                        onSelected: (value) {
+                                          if (value == 'edit') {
+                                            unawaited(
+                                              _showEditor(credential),
+                                            );
+                                          } else if (value == 'delete') {
+                                            unawaited(_delete(credential));
+                                          }
+                                        },
+                                        itemBuilder: (_) => const [
+                                          PopupMenuItem(
+                                            value: 'edit',
+                                            child: Text('Modifica'),
+                                          ),
+                                          PopupMenuItem(
+                                            value: 'delete',
+                                            child: Text('Elimina'),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                            ],
+                          ),
+                        ),
+        );
+      },
     );
   }
 }
