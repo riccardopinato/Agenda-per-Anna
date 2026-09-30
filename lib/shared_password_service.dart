@@ -67,6 +67,8 @@ class SharedPasswordService {
 
   static const _credentialEntityType = 'shared_credential';
   static const _keyEnvelopeEntityType = 'shared_password_key_envelope';
+  static const _keyMetaEntityType = 'shared_password_key_meta';
+  static const _keyMetaEntityId = 'v1';
   static const _payloadVersion = 1;
   static const _pairingIterations = 180000;
   static const _tagBits = 128;
@@ -82,10 +84,49 @@ class SharedPasswordService {
 
   Future<void> ensureOwnerKey(String spaceId) async {
     final vault = PrivateVaultService.instance;
+    final cloud = CloudSyncService.instance;
     if (!vault.unlocked) {
       throw StateError('Sblocca prima la Cassaforte privata.');
     }
-    await vault.ensureSharedPasswordKey(spaceId);
+    if (!cloud.signedIn) {
+      throw StateError('Accedi prima a Noi ♡.');
+    }
+
+    final records = await cloud.pullSharedRecords(spaceId);
+    final meta = _activeKeyMeta(records);
+    final local = vault.sharedPasswordKeyCopy(spaceId);
+
+    if (meta != null) {
+      if (local == null) {
+        throw StateError(
+          'Esiste già una chiave Password Noi ♡. Importala da un dispositivo collegato.',
+        );
+      }
+      try {
+        if (!_fingerprintMatches(local, meta)) {
+          throw StateError('Chiave Password Noi ♡ non coerente con lo spazio.');
+        }
+        return;
+      } finally {
+        _zero(local);
+      }
+    }
+
+    if (local != null) {
+      try {
+        await _publishKeyMeta(spaceId, local);
+        return;
+      } finally {
+        _zero(local);
+      }
+    }
+
+    final created = await vault.ensureSharedPasswordKey(spaceId);
+    try {
+      await _publishKeyMeta(spaceId, created);
+    } finally {
+      _zero(created);
+    }
   }
 
   Future<String> createPairingCode(String spaceId) async {
@@ -151,6 +192,7 @@ class SharedPasswordService {
     if (normalized.length != 32) return false;
     final codeHash = sha256.convert(utf8.encode(normalized)).toString();
     final records = await cloud.pullSharedRecords(spaceId);
+    final keyMeta = _activeKeyMeta(records);
     SharedSpaceRecord? match;
     for (final record in records) {
       if (record.entityType == _keyEnvelopeEntityType &&
@@ -181,7 +223,13 @@ class SharedPasswordService {
           aad: _keyEnvelopeAad(spaceId),
         );
         if (spaceKey.length != _keyLength) return false;
+        if (keyMeta != null && !_fingerprintMatches(spaceKey, keyMeta)) {
+          return false;
+        }
         await vault.importSharedPasswordKey(spaceId, spaceKey);
+        if (keyMeta == null) {
+          await _publishKeyMeta(spaceId, spaceKey);
+        }
       } finally {
         _zero(wrappingKey);
         if (spaceKey != null) _zero(spaceKey);
@@ -207,6 +255,16 @@ class SharedPasswordService {
     }
 
     final records = await cloud.pullSharedRecords(spaceId);
+    final meta = _activeKeyMeta(records);
+    final keyForCheck = vault.sharedPasswordKeyCopy(spaceId);
+    if (keyForCheck == null) return const [];
+    try {
+      if (meta != null && !_fingerprintMatches(keyForCheck, meta)) {
+        throw StateError('Chiave Password Noi ♡ non coerente con lo spazio.');
+      }
+    } finally {
+      _zero(keyForCheck);
+    }
     final activeIds = <String>{};
     final result = <SharedPasswordCredential>[];
 
@@ -444,6 +502,37 @@ class SharedPasswordService {
     } finally {
       _zero(key);
     }
+  }
+
+  SharedSpaceRecord? _activeKeyMeta(List<SharedSpaceRecord> records) {
+    for (final record in records) {
+      if (record.entityType == _keyMetaEntityType &&
+          record.entityId == _keyMetaEntityId &&
+          record.deletedAt == null &&
+          record.payload != null) {
+        return record;
+      }
+    }
+    return null;
+  }
+
+  Future<void> _publishKeyMeta(String spaceId, Uint8List key) async {
+    await CloudSyncService.instance.upsertSharedRecord(
+      spaceId: spaceId,
+      entityType: _keyMetaEntityType,
+      entityId: _keyMetaEntityId,
+      payload: {
+        'v': _payloadVersion,
+        'fingerprint': sha256.convert(key).toString(),
+        'createdAt': DateTime.now().toUtc().toIso8601String(),
+      },
+    );
+  }
+
+  bool _fingerprintMatches(Uint8List key, SharedSpaceRecord meta) {
+    final expected = meta.payload?['fingerprint']?.toString() ?? '';
+    if (expected.isEmpty) return false;
+    return sha256.convert(key).toString() == expected;
   }
 
   Uint8List _derivePairingKey(String code, Uint8List salt) {
