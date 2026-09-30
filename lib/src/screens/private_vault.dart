@@ -711,6 +711,15 @@ class _PrivateVaultScreenState extends State<PrivateVaultScreen>
         } else {
           await vault.delete(entry.id);
         }
+      } on SharedPasswordConflictException {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(strings.sharedPasswordsConflict)),
+          );
+        }
+        unawaited(
+          SharedPasswordService.instance.refreshAllAvailableSpacesSafe(),
+        );
       } catch (_) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -796,6 +805,41 @@ class _PrivateVaultScreenState extends State<PrivateVaultScreen>
     );
   }
 
+  Widget _vaultWebSecurityWarning(
+    BuildContext context,
+    AnnaStrings strings,
+  ) {
+    final scheme = Theme.of(context).colorScheme;
+    return Semantics(
+      container: true,
+      label: strings.vaultWebSecurityWarning,
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: scheme.errorContainer.withValues(alpha: 0.72),
+          borderRadius: BorderRadius.circular(14),
+        ),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Icon(
+              Icons.warning_amber_rounded,
+              color: scheme.onErrorContainer,
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Text(
+                strings.vaultWebSecurityWarning,
+                style: TextStyle(color: scheme.onErrorContainer),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _buildSetup(BuildContext context) {
     final strings = AnnaStrings.of(context);
     final scheme = Theme.of(context).colorScheme;
@@ -829,6 +873,10 @@ class _PrivateVaultScreenState extends State<PrivateVaultScreen>
                       ),
                       const SizedBox(height: 8),
                       Text(strings.vaultSetupDescription),
+                      if (kIsWeb) ...[
+                        const SizedBox(height: 12),
+                        _vaultWebSecurityWarning(context, strings),
+                      ],
                       const SizedBox(height: 20),
                       TextField(
                         controller: passwordController,
@@ -954,6 +1002,10 @@ class _PrivateVaultScreenState extends State<PrivateVaultScreen>
                     strings.vaultLockedDescription,
                     textAlign: TextAlign.center,
                   ),
+                  if (kIsWeb) ...[
+                    const SizedBox(height: 12),
+                    _vaultWebSecurityWarning(context, strings),
+                  ],
                   const SizedBox(height: 22),
                   TextField(
                     controller: passwordController,
@@ -1058,6 +1110,11 @@ class _PrivateVaultScreenState extends State<PrivateVaultScreen>
       ),
       body: Column(
         children: [
+          if (kIsWeb)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(18, 12, 18, 0),
+              child: _vaultWebSecurityWarning(context, strings),
+            ),
           Padding(
             padding: const EdgeInsets.fromLTRB(18, 12, 18, 4),
             child: SizedBox(
