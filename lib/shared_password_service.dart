@@ -358,6 +358,21 @@ class SharedPasswordService {
     );
   }
 
+  Future<void> refreshAllAvailableSpaces() async {
+    final vault = PrivateVaultService.instance;
+    final cloud = CloudSyncService.instance;
+    if (!vault.unlocked || !cloud.signedIn) return;
+
+    final spaces = await cloud.listSharedSpaces();
+    final activeIds = spaces.map((space) => space.id).toSet();
+    await vault.reconcileSharedPasswordSpaces(activeIds);
+
+    for (final space in spaces) {
+      if (!hasKey(space.id)) continue;
+      await refreshSpace(space.id);
+    }
+  }
+
   Future<void> reconcileMembership() async {
     final vault = PrivateVaultService.instance;
     final cloud = CloudSyncService.instance;
