@@ -609,23 +609,30 @@ class _PrivateVaultScreenState extends State<PrivateVaultScreen>
   }
 
   Future<void> _delete(PrivateVaultEntry entry) async {
+    final strings = AnnaStrings.of(context);
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        title: const Text('Eliminare dalla cassaforte?'),
+        title: Text(
+          entry.isCredential
+              ? strings.vaultCredentialDeleteQuestion
+              : 'Eliminare dalla cassaforte?',
+        ),
         content: Text(
-          entry.title.isEmpty
-              ? 'Il contenuto verrà eliminato definitivamente.'
-              : '“${entry.title}” verrà eliminato definitivamente.',
+          entry.isCredential
+              ? strings.vaultCredentialDeleteDescription(entry.service)
+              : entry.title.isEmpty
+                  ? 'Il contenuto verrà eliminato definitivamente.'
+                  : '“${entry.title}” verrà eliminato definitivamente.',
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(dialogContext, false),
-            child: const Text('Annulla'),
+            child: Text(strings.cancel),
           ),
           FilledButton(
             onPressed: () => Navigator.pop(dialogContext, true),
-            child: const Text('Elimina'),
+            child: Text(strings.delete),
           ),
         ],
       ),
