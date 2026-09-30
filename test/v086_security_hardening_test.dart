@@ -134,6 +134,12 @@ void main() {
     expect(service, contains('_recoveryIterations = 600000'));
     expect(service, contains('pullSharedRecordsByType'));
     expect(service, isNot(contains('pullSharedRecords(spaceId')));
+    expect(service, contains('authoritativeUpdatedAt: record.clientUpdatedAt'));
+    expect(service, contains('authoritativeUpdatedBy: record.updatedBy'));
+    expect(service, contains('authoritativeUpdatedAt: change.clientUpdatedAt'));
+    expect(service, contains('authoritativeUpdatedBy: change.updatedBy'));
+    expect(service, contains('updatedAt: authoritativeUpdatedAt.toLocal()'));
+    expect(service, isNot(contains('updatedAt: base.updatedAt,')));
 
     expect(backendContract, contains('stale_update_was_not_rejected'));
     expect(backendContract, contains('stale_delete_was_not_rejected'));
