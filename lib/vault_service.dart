@@ -373,6 +373,11 @@ class PrivateVaultService extends ChangeNotifier {
     final now = DateTime.now();
     final existingIndex =
         id == null ? -1 : _entries.indexWhere((entry) => entry.id == id);
+    if (existingIndex >= 0 && _entries[existingIndex].isSharedCredential) {
+      throw StateError(
+        'Le credenziali Noi ♡ si modificano tramite la sincronizzazione condivisa.',
+      );
+    }
     if (existingIndex >= 0) {
       final previous = _entries[existingIndex];
       _entries[existingIndex] = PrivateVaultEntry(
