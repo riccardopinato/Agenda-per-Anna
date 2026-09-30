@@ -54,6 +54,7 @@ class _SharedPasswordsScreenState extends State<SharedPasswordsScreen>
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
     _realtimeDebounce?.cancel();
+    vault.lock();
     unawaited(
       CloudSyncService.instance.unsubscribeSharedSpace(
         spaceId: widget.space.id,
@@ -891,9 +892,12 @@ class _SharedPasswordsScreenState extends State<SharedPasswordsScreen>
 
   @override
   Widget build(BuildContext context) {
-    return AnimatedBuilder(
-      animation: vault,
-      builder: (context, _) {
+    return Listener(
+      behavior: HitTestBehavior.translucent,
+      onPointerDown: (_) => vault.noteUserActivity(),
+      child: AnimatedBuilder(
+        animation: vault,
+        builder: (context, _) {
         final keyReady = vault.unlocked && service.hasKey(widget.space.id);
         return Scaffold(
           appBar: AppBar(
@@ -1094,7 +1098,8 @@ class _SharedPasswordsScreenState extends State<SharedPasswordsScreen>
                           ),
                         ),
         );
-      },
+        },
+      ),
     );
   }
 }
