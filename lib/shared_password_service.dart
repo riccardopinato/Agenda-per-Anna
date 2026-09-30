@@ -361,6 +361,7 @@ class SharedPasswordService {
     required String email,
     required String password,
     required String notes,
+    int expectedRevision = 0,
   }) async {
     final vault = PrivateVaultService.instance;
     final cloud = CloudSyncService.instance;
@@ -381,49 +382,77 @@ class SharedPasswordService {
     }
 
     final cleanService = service.trim();
+    final cleanUsername = username.trim();
+    final cleanEmail = email.trim();
+    final cleanNotes = notes.trim();
     if (cleanService.isEmpty) {
       throw const FormatException('Inserisci il nome del servizio.');
     }
+    if (cleanService.length > 160) {
+      throw const FormatException('Il nome del servizio è troppo lungo.');
+    }
+    if (cleanUsername.length > 320 || cleanEmail.length > 320) {
+      throw const FormatException('Nome utente o email troppo lunghi.');
+    }
+    if (password.length > 4096) {
+      throw const FormatException('La password è troppo lunga.');
+    }
+    if (cleanNotes.length > 12000) {
+      throw const FormatException('Le note sono troppo lunghe.');
+    }
+
     final id = credentialId?.trim().isNotEmpty == true
         ? credentialId!.trim()
         : _uuid.v4();
     final now = DateTime.now();
-    final credential = SharedPasswordCredential(
+    final pending = SharedPasswordCredential(
       id: id,
       spaceId: spaceId,
       service: cleanService,
-      username: username.trim(),
-      email: email.trim(),
+      username: cleanUsername,
+      email: cleanEmail,
       password: password,
-      notes: notes.trim(),
+      notes: cleanNotes,
       updatedAt: now,
       updatedBy: cloud.userId ?? '',
+      revision: expectedRevision,
     );
 
-    final payload = _encryptCredential(credential);
-    await cloud.upsertSharedRecord(
-      spaceId: spaceId,
-      entityType: _credentialEntityType,
-      entityId: id,
-      payload: payload,
-      updatedAt: now,
-    );
-    await vault.upsertSharedCredentialMirror(
-      spaceId: spaceId,
-      credentialId: id,
-      service: credential.service,
-      username: credential.username,
-      email: credential.email,
-      password: credential.password,
-      notes: credential.notes,
-      updatedAt: now,
-    );
-    return credential;
+    final payload = _encryptCredential(pending);
+    try {
+      final mutation = await cloud.upsertSharedPasswordCredential(
+        spaceId: spaceId,
+        entityId: id,
+        payload: payload,
+        expectedRevision: expectedRevision,
+        updatedAt: now,
+      );
+      final committed = pending.withServerRevision(
+        revision: mutation.revision,
+        updatedAt: mutation.clientUpdatedAt,
+      );
+      await vault.upsertSharedCredentialMirror(
+        spaceId: spaceId,
+        credentialId: id,
+        service: committed.service,
+        username: committed.username,
+        email: committed.email,
+        password: committed.password,
+        notes: committed.notes,
+        updatedAt: committed.updatedAt,
+        sharedRevision: committed.revision,
+      );
+      return committed;
+    } catch (error) {
+      _throwIfRevisionConflict(error);
+      rethrow;
+    }
   }
 
   Future<void> deleteCredential({
     required String spaceId,
     required String credentialId,
+    int expectedRevision = 0,
   }) async {
     final vault = PrivateVaultService.instance;
     final cloud = CloudSyncService.instance;
@@ -433,12 +462,17 @@ class SharedPasswordService {
     if (!cloud.signedIn) {
       throw StateError('Accedi prima a Noi ♡.');
     }
-    await cloud.deleteSharedRecord(
-      spaceId: spaceId,
-      entityType: _credentialEntityType,
-      entityId: credentialId,
-    );
-    await vault.deleteSharedCredentialMirror(spaceId, credentialId);
+    try {
+      await cloud.deleteSharedPasswordCredential(
+        spaceId: spaceId,
+        entityId: credentialId,
+        expectedRevision: expectedRevision,
+      );
+      await vault.deleteSharedCredentialMirror(spaceId, credentialId);
+    } catch (error) {
+      _throwIfRevisionConflict(error);
+      rethrow;
+    }
   }
 
   Future<void> applyRealtimeChange(SharedRealtimeRecordChange change) async {
