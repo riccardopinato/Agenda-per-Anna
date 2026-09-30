@@ -143,6 +143,7 @@ class SharedPasswordService {
     if (spaceKey == null) {
       throw StateError('Inizializza prima Password Noi ♡.');
     }
+    await _assertLocalKeyMatchesServer(spaceId, spaceKey);
 
     final code = _newPairingCode();
     final normalized = _normalizePairingCode(code);
@@ -325,6 +326,16 @@ class SharedPasswordService {
     if (!cloud.signedIn) {
       throw StateError('Accedi prima a Noi ♡.');
     }
+    final localKey = vault.sharedPasswordKeyCopy(spaceId);
+    if (localKey == null) {
+      throw StateError('Chiave Password Noi ♡ non disponibile.');
+    }
+    try {
+      await _assertLocalKeyMatchesServer(spaceId, localKey);
+    } finally {
+      _zero(localKey);
+    }
+
     final cleanService = service.trim();
     if (cleanService.isEmpty) {
       throw const FormatException('Inserisci il nome del servizio.');
@@ -501,6 +512,21 @@ class SharedPasswordService {
       return credential;
     } finally {
       _zero(key);
+    }
+  }
+
+  Future<void> _assertLocalKeyMatchesServer(
+    String spaceId,
+    Uint8List key,
+  ) async {
+    final records = await CloudSyncService.instance.pullSharedRecords(spaceId);
+    final meta = _activeKeyMeta(records);
+    if (meta == null) {
+      await _publishKeyMeta(spaceId, key);
+      return;
+    }
+    if (!_fingerprintMatches(key, meta)) {
+      throw StateError('Chiave Password Noi ♡ non coerente con lo spazio.');
     }
   }
 
