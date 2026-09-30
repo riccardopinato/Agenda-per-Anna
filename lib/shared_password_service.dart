@@ -417,6 +417,8 @@ class SharedPasswordService {
         spaceId: spaceId,
         credentialId: record.entityId,
         payload: record.payload!,
+        authoritativeUpdatedAt: record.clientUpdatedAt,
+        authoritativeUpdatedBy: record.updatedBy,
       );
       activeIds.add(record.entityId);
       result.add(credential);
@@ -586,6 +588,8 @@ class SharedPasswordService {
       spaceId: change.spaceId,
       credentialId: change.entityId,
       payload: change.payload!,
+      authoritativeUpdatedAt: change.clientUpdatedAt,
+      authoritativeUpdatedBy: change.updatedBy,
     );
     await vault.upsertSharedCredentialMirror(
       spaceId: change.spaceId,
@@ -684,6 +688,8 @@ class SharedPasswordService {
     required String spaceId,
     required String credentialId,
     required Map<String, dynamic> payload,
+    required DateTime authoritativeUpdatedAt,
+    String? authoritativeUpdatedBy,
   }) {
     if ((payload['v'] as num?)?.toInt() != _payloadVersion) {
       throw const FormatException('Versione Password Noi ♡ non supportata.');
@@ -718,8 +724,8 @@ class SharedPasswordService {
         email: base.email,
         password: base.password,
         notes: base.notes,
-        updatedAt: base.updatedAt,
-        updatedBy: base.updatedBy,
+        updatedAt: authoritativeUpdatedAt.toLocal(),
+        updatedBy: authoritativeUpdatedBy ?? base.updatedBy,
         revision: revision,
       );
     } finally {
