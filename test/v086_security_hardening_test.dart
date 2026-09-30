@@ -119,12 +119,16 @@ void main() {
     expect(migration, contains('agenda_records_shared_password_guard'));
     expect(migration, contains('shared_password_dedicated_rpc_required'));
     expect(migration, contains('consume_shared_password_key_envelope'));
+    expect(migration, contains('upsert_shared_password_key_envelope'));
+    expect(migration, contains('private.is_shared_password_record_type'));
+    expect(migration, contains('coalesce(v_user, old.updated_by)'));
     expect(migration, contains('v_at timestamptz := clock_timestamp()'));
 
     expect(cloud, contains('claimSharedPasswordKeyMeta'));
     expect(cloud, contains('upsertSharedPasswordCredential'));
     expect(cloud, contains('deleteSharedPasswordCredential'));
     expect(cloud, contains('consumeSharedPasswordKeyEnvelope'));
+    expect(cloud, contains('upsertSharedPasswordKeyEnvelope'));
     expect(cloud, contains('pullSharedRecordsByType'));
 
     expect(service, contains('expectedRevision'));
@@ -133,6 +137,7 @@ void main() {
     expect(service, contains('importRecoveryPackage'));
     expect(service, contains('_recoveryIterations = 600000'));
     expect(service, contains('pullSharedRecordsByType'));
+    expect(service, contains('upsertSharedPasswordKeyEnvelope'));
     expect(service, isNot(contains('pullSharedRecords(spaceId')));
     expect(service, contains('authoritativeUpdatedAt: record.clientUpdatedAt'));
     expect(service, contains('authoritativeUpdatedBy: record.updatedBy'));
@@ -146,6 +151,14 @@ void main() {
     expect(backendContract, contains('generic_merge_bypass_was_not_rejected'));
     expect(backendContract, contains('removed_member_was_not_rejected'));
     expect(backendContract, contains('pairing_envelope_was_consumed_twice'));
+    expect(
+      backendContract,
+      contains('non_owner_pairing_envelope_was_not_rejected'),
+    );
+    expect(
+      backendContract,
+      contains('generic_envelope_merge_bypass_was_not_rejected'),
+    );
     expect(
       backendContract,
       contains('shared_password_timestamp_not_server_authoritative'),
