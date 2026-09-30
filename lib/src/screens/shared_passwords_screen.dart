@@ -127,6 +127,136 @@ class _SharedPasswordsScreenState extends State<SharedPasswordsScreen>
     }
   }
 
+  Future<void> _openVault() async {
+    await Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => const PrivateVaultScreen(),
+      ),
+    );
+    if (!mounted) return;
+    await _refresh();
+  }
+
+  Future<void> _importPairingCode() async {
+    final controller = TextEditingController();
+    final code = await showDialog<String>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Collega Password Noi ♡'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text(
+              'Inserisci il codice di sicurezza generato dal proprietario. '
+              'Serve una sola volta per ricevere la chiave E2EE.',
+            ),
+            const SizedBox(height: 14),
+            TextField(
+              controller: controller,
+              autofocus: true,
+              autocorrect: false,
+              enableSuggestions: false,
+              textCapitalization: TextCapitalization.characters,
+              decoration: const InputDecoration(
+                labelText: 'Codice di sicurezza',
+                prefixIcon: Icon(Icons.key_outlined),
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext),
+            child: const Text('Annulla'),
+          ),
+          FilledButton(
+            onPressed: () =>
+                Navigator.pop(dialogContext, controller.text.trim()),
+            child: const Text('Collega'),
+          ),
+        ],
+      ),
+    );
+    controller.clear();
+    controller.dispose();
+    if (code == null || code.trim().isEmpty) return;
+
+    setState(() => loading = true);
+    final ok = await service.importPairingCode(
+      spaceId: widget.space.id,
+      code: code,
+    );
+    if (!mounted) return;
+    if (!ok) {
+      setState(() => loading = false);
+      _message('Codice non valido, scaduto o già usato.');
+      return;
+    }
+    await _refresh();
+  }
+
+  Future<void> _showPairingCode() async {
+    try {
+      final code = await service.createPairingCode(widget.space.id);
+      if (!mounted) return;
+      await showDialog<void>(
+        context: context,
+        builder: (dialogContext) => AlertDialog(
+          title: const Text('Codice Password Noi ♡'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text(
+                'Condividilo solo con una persona già membro di Noi ♡. '
+                'Scade dopo 15 minuti e viene invalidato al primo uso.',
+              ),
+              const SizedBox(height: 18),
+              SelectableText(
+                code,
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  fontSize: 23,
+                  fontWeight: FontWeight.w900,
+                  letterSpacing: 1.5,
+                ),
+              ),
+              const SizedBox(height: 12),
+              TextButton.icon(
+                onPressed: () async {
+                  await Clipboard.setData(ClipboardData(text: code));
+                  if (dialogContext.mounted) {
+                    ScaffoldMessenger.of(dialogContext).showSnackBar(
+                      const SnackBar(
+                        content: Text('Codice copiato negli appunti.'),
+                      ),
+                    );
+                  }
+                },
+                icon: const Icon(Icons.copy_outlined),
+                label: const Text('Copia codice'),
+              ),
+            ],
+          ),
+          actions: [
+            FilledButton(
+              onPressed: () => Navigator.pop(dialogContext),
+              child: const Text('Chiudi'),
+            ),
+          ],
+        ),
+      );
+    } catch (_) {
+      _message('Impossibile generare il codice di sicurezza.');
+    }
+  }
+
+  void _message(String value) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(value)),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
