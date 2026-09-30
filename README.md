@@ -2,7 +2,7 @@
 
 Flutter app for personal planning, private diary and the shared **Noi ♡** space.
 
-Current release line: **v0.84.0**.
+Current release line: **v0.85.0**.
 
 ## Core areas
 
@@ -481,6 +481,22 @@ See `docs/ARCHITECTURE.md` and `supabase/README.md` for implementation details.
 - Share-target text and images now reuse the same capture persistence helpers instead of maintaining separate diary-save logic.
 - Capturing from `La mia giornata` respects the day currently being viewed, including past/future days, while preserving the current time as the moment ordering time inside that day.
 - No capture database, parallel media store, AI layer or new cloud schema is introduced.
+
+## v0.85.0 — Noi ♡ Shared Passwords
+
+- Adds a dedicated **Password Noi ♡** surface while keeping the v0.84 Private Vault as the local security boundary.
+- Noi ♡ is the authoritative source for shared credentials; the Private Vault keeps an encrypted local mirror tagged with the originating space and credential ID.
+- Editing or deleting a Noi ♡ mirror from the Private Vault routes the operation back through the shared authoritative record, preventing divergent local copies.
+- Shared credential records reuse the existing `agenda_records` shared channel with entity type `shared_credential`; no password-specific cloud table or migration is introduced.
+- Credential content is encrypted client-side with **AES-256-GCM** and AAD bound to the Noi ♡ space and credential ID. The backend receives ciphertext, nonce, version metadata and timestamps, but not service name, username, email, password or notes in plaintext.
+- Each Noi ♡ space uses a random 256-bit password key stored only inside the existing encrypted Private Vault payload. A public SHA-256 fingerprint detects key mismatches and prevents silent multi-device split-brain.
+- Additional devices receive the E2EE space key through a one-time 128-bit pairing code. The code derives a wrapping key with PBKDF2-HMAC-SHA256 (180,000 iterations), expires after 15 minutes and its envelope is tombstoned after successful import.
+- Shared-password changes and tombstones are applied through the existing global Noi ♡ Realtime subscription; unlocking the Private Vault also performs an authoritative membership/password reconciliation for changes received while the Vault was locked.
+- Leaving or deleting a Noi ♡ space removes its local shared-password key and mirrors. If a member is removed while a device is offline, the local copy is purged on the next authoritative membership reconciliation after that device reconnects and unlocks the Vault.
+- Shared credentials remain hidden by default, use secure-screen protection, and keep conditional clipboard cleanup. Pairing codes are also cleared from the clipboard on a best-effort timer.
+- Personal Private Vault credentials remain private and are never promoted to Noi ♡ automatically.
+- No new ordinary backup path, global-search index, credential sync queue, database table or persistence key is introduced.
+- Release metadata is aligned to v0.85.0+95.
 
 ## v0.84.0 — Password Vault
 
