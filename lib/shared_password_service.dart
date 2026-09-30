@@ -143,21 +143,23 @@ class SharedPasswordService {
     if (spaceKey == null) {
       throw StateError('Inizializza prima Password Noi ♡.');
     }
-    await _assertLocalKeyMatchesServer(spaceId, spaceKey);
 
-    final code = _newPairingCode();
-    final normalized = _normalizePairingCode(code);
-    final codeHash = sha256.convert(utf8.encode(normalized)).toString();
-    final salt = _randomBytes(16);
-    final wrappingKey = _derivePairingKey(normalized, salt);
-    final wrapped = _encrypt(
-      key: wrappingKey,
-      plaintext: spaceKey,
-      aad: _keyEnvelopeAad(spaceId),
-    );
-    final expiresAt = DateTime.now().toUtc().add(_pairingLifetime);
-
+    Uint8List? wrappingKey;
     try {
+      await _assertLocalKeyMatchesServer(spaceId, spaceKey);
+
+      final code = _newPairingCode();
+      final normalized = _normalizePairingCode(code);
+      final codeHash = sha256.convert(utf8.encode(normalized)).toString();
+      final salt = _randomBytes(16);
+      wrappingKey = _derivePairingKey(normalized, salt);
+      final wrapped = _encrypt(
+        key: wrappingKey,
+        plaintext: spaceKey,
+        aad: _keyEnvelopeAad(spaceId),
+      );
+      final expiresAt = DateTime.now().toUtc().add(_pairingLifetime);
+
       await cloud.upsertSharedRecord(
         spaceId: spaceId,
         entityType: _keyEnvelopeEntityType,
@@ -172,7 +174,7 @@ class SharedPasswordService {
       return code;
     } finally {
       _zero(spaceKey);
-      _zero(wrappingKey);
+      if (wrappingKey != null) _zero(wrappingKey);
     }
   }
 
@@ -260,7 +262,9 @@ class SharedPasswordService {
     final keyForCheck = vault.sharedPasswordKeyCopy(spaceId);
     if (keyForCheck == null) return const [];
     try {
-      if (meta != null && !_fingerprintMatches(keyForCheck, meta)) {
+      if (meta == null) {
+        await _publishKeyMeta(spaceId, keyForCheck);
+      } else if (!_fingerprintMatches(keyForCheck, meta)) {
         throw StateError('Chiave Password Noi ♡ non coerente con lo spazio.');
       }
     } finally {
