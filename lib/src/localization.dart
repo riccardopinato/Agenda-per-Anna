@@ -563,6 +563,14 @@ class AnnaStrings {
   String get vaultShowPassword => _pick(en: 'Show password', it: 'Mostra password', es: 'Mostrar contraseña', fr: 'Afficher le mot de passe', pt: 'Mostrar palavra-passe');
   String get vaultHidePassword => _pick(en: 'Hide password', it: 'Nascondi password', es: 'Ocultar contraseña', fr: 'Masquer le mot de passe', pt: 'Ocultar palavra-passe');
   String get vaultNoValue => '—';
+  String passwordUpdatedAt(String value) => _pick(
+        en: 'Updated on $value',
+        it: 'Aggiornato in data $value',
+        es: 'Actualizado el $value',
+        fr: 'Mis à jour le $value',
+        pt: 'Atualizado em $value',
+      );
+
 
   String get sharedPasswords => _pick(en: 'Shared passwords', it: 'Password Noi ♡', es: 'Contraseñas compartidas', fr: 'Mots de passe partagés', pt: 'Palavras-passe partilhadas');
   String get sharedPasswordNew => _pick(en: 'New shared password', it: 'Nuova password condivisa', es: 'Nueva contraseña compartida', fr: 'Nouveau mot de passe partagé', pt: 'Nova palavra-passe partilhada');
