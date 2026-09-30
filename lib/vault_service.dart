@@ -529,6 +529,12 @@ class PrivateVaultService extends ChangeNotifier {
 
   Future<void> delete(String id) async {
     _requireUnlocked();
+    final targetIndex = _entries.indexWhere((entry) => entry.id == id);
+    if (targetIndex >= 0 && _entries[targetIndex].isSharedCredential) {
+      throw StateError(
+        'Le credenziali Noi ♡ si eliminano dalla sorgente condivisa.',
+      );
+    }
     _entries.removeWhere((entry) => entry.id == id);
     await _persistEntries();
     notifyListeners();
