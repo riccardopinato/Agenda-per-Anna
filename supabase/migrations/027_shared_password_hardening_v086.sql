@@ -269,7 +269,7 @@ declare
   v_record_key text;
   v_current_revision bigint := 0;
   v_next_revision bigint;
-  v_at timestamptz := coalesce(p_client_updated_at, now());
+  v_at timestamptz := clock_timestamp();
   v_payload jsonb;
 begin
   if v_user is null then
@@ -516,6 +516,97 @@ as $func$
   );
 $func$;
 
+
+
+create or replace function private.consume_shared_password_key_envelope_impl(
+  p_space_id uuid,
+  p_entity_id text
+)
+returns jsonb
+language plpgsql
+security definer
+set search_path = ''
+as $func$
+declare
+  v_user uuid := (select auth.uid());
+  v_record public.agenda_records%rowtype;
+  v_at timestamptz := clock_timestamp();
+  v_payload jsonb;
+begin
+  if v_user is null then
+    raise exception 'authentication_required';
+  end if;
+
+  if not exists (
+    select 1
+    from public.space_members sm
+    where sm.space_id = p_space_id
+      and sm.user_id = v_user
+  ) then
+    raise exception 'shared_space_membership_required';
+  end if;
+
+  select ar.*
+    into v_record
+  from public.agenda_records ar
+  where ar.record_key =
+    p_space_id::text || ':shared:shared_password_key_envelope:' || trim(p_entity_id)
+  for update;
+
+  if not found
+     or v_record.visibility <> 'shared'
+     or v_record.space_id is distinct from p_space_id
+     or v_record.entity_type <> 'shared_password_key_envelope'
+     or v_record.entity_id <> trim(p_entity_id)
+     or v_record.deleted_at is not null
+     or v_record.payload is null then
+    raise exception 'shared_password_pairing_code_unavailable';
+  end if;
+
+  v_payload := v_record.payload;
+
+  update public.agenda_records
+  set
+    payload = jsonb_build_object(
+      'v', 1,
+      'tombstone', true
+    ),
+    client_updated_at = v_at,
+    deleted_at = v_at
+  where record_key = v_record.record_key;
+
+  return v_payload;
+end;
+$func$;
+
+create or replace function public.consume_shared_password_key_envelope(
+  p_space_id uuid,
+  p_entity_id text
+)
+returns jsonb
+language sql
+security invoker
+set search_path = ''
+as $func$
+  select private.consume_shared_password_key_envelope_impl(
+    p_space_id,
+    p_entity_id
+  );
+$func$;
+
+revoke all on function private.consume_shared_password_key_envelope_impl(
+  uuid, text
+) from public, anon;
+grant execute on function private.consume_shared_password_key_envelope_impl(
+  uuid, text
+) to authenticated;
+
+revoke all on function public.consume_shared_password_key_envelope(
+  uuid, text
+) from public, anon;
+grant execute on function public.consume_shared_password_key_envelope(
+  uuid, text
+) to authenticated;
 
 -- Prevent the legacy/generic merge endpoint from bypassing the dedicated
 -- shared-password compare-and-swap contract. Pairing envelopes remain on the
