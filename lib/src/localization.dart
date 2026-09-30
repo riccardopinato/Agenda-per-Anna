@@ -542,6 +542,7 @@ class AnnaStrings {
 
 
   String get vaultPrivateNotes => _pick(en: 'Private notes', it: 'Note private', es: 'Notas privadas', fr: 'Notes privées', pt: 'Notas privadas');
+  String get vaultNewPrivateNote => _pick(en: 'New note', it: 'Nuova nota', es: 'Nueva nota', fr: 'Nouvelle note', pt: 'Nova nota');
   String get vaultPasswords => _pick(en: 'Passwords', it: 'Password', es: 'Contraseñas', fr: 'Mots de passe', pt: 'Palavras-passe');
   String get vaultNewPassword => _pick(en: 'New password', it: 'Nuova password', es: 'Nueva contraseña', fr: 'Nouveau mot de passe', pt: 'Nova palavra-passe');
   String get vaultEditPassword => _pick(en: 'Edit password', it: 'Modifica password', es: 'Editar contraseña', fr: 'Modifier le mot de passe', pt: 'Editar palavra-passe');
