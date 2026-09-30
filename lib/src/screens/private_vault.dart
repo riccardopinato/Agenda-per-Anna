@@ -23,9 +23,12 @@ class _PrivateVaultHomeCardState extends State<PrivateVaultHomeCard> {
 
   @override
   Widget build(BuildContext context) {
-    return AnimatedBuilder(
-      animation: vault,
-      builder: (context, _) {
+    return Listener(
+      behavior: HitTestBehavior.translucent,
+      onPointerDown: (_) => vault.noteUserActivity(),
+      child: AnimatedBuilder(
+        animation: vault,
+        builder: (context, _) {
         final scheme = Theme.of(context).colorScheme;
         final configured = vault.configured;
         return Material(
@@ -801,8 +804,9 @@ class _PrivateVaultScreenState extends State<PrivateVaultScreen>
         }
         if (!vault.configured) return _buildSetup(context);
         if (!vault.unlocked) return _buildLocked(context);
-        return _buildUnlocked(context);
-      },
+          return _buildUnlocked(context);
+        },
+      ),
     );
   }
 
