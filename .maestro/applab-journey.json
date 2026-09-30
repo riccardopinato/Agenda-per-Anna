@@ -37,10 +37,6 @@
       "flow": ".maestro/journey/account.yaml"
     },
     {
-      "name": "vault",
-      "flow": ".maestro/journey/vault.yaml"
-    },
-    {
       "name": "trash",
       "flow": ".maestro/journey/trash.yaml"
     }
