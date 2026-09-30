@@ -649,6 +649,7 @@ declare
   v_owner uuid;
   v_record_key text;
   v_expires timestamptz;
+  v_rows integer;
 begin
   if v_user is null then
     raise exception 'authentication_required';
@@ -667,7 +668,91 @@ begin
     raise exception 'shared_password_key_owner_required';
   end if;
 
-  if coalesce(p_entity_id, '') !~ '^[0-9a-f]{64}
+  if coalesce(p_entity_id, '') !~ '^[0-9a-f]{64}$' then
+    raise exception 'shared_password_envelope_id_invalid';
+  end if;
+
+  if p_payload is null
+     or jsonb_typeof(p_payload) <> 'object'
+     or coalesce(p_payload ->> 'v', '') <> '1'
+     or coalesce(p_payload ->> 'salt', '') = ''
+     or jsonb_typeof(p_payload -> 'wrapped') <> 'object'
+     or coalesce(p_payload #>> '{wrapped,nonce}', '') = ''
+     or coalesce(p_payload #>> '{wrapped,data}', '') = ''
+     or coalesce(p_payload ->> 'expiresAt', '') = '' then
+    raise exception 'shared_password_envelope_invalid';
+  end if;
+
+  begin
+    v_expires := (p_payload ->> 'expiresAt')::timestamptz;
+  exception when others then
+    raise exception 'shared_password_envelope_expiry_invalid';
+  end;
+
+  if v_expires <= clock_timestamp()
+     or v_expires > clock_timestamp() + interval '20 minutes' then
+    raise exception 'shared_password_envelope_expiry_invalid';
+  end if;
+
+  v_record_key :=
+    p_space_id::text || ':shared:shared_password_key_envelope:' || p_entity_id;
+
+  insert into public.agenda_records(
+    record_key,
+    owner_id,
+    space_id,
+    visibility,
+    entity_type,
+    entity_id,
+    payload,
+    client_updated_at,
+    deleted_at
+  )
+  values (
+    v_record_key,
+    v_user,
+    p_space_id,
+    'shared',
+    'shared_password_key_envelope',
+    p_entity_id,
+    p_payload,
+    coalesce(p_client_updated_at, clock_timestamp()),
+    null
+  )
+  on conflict (record_key) do nothing;
+
+  get diagnostics v_rows = row_count;
+  if v_rows <> 1 then
+    raise exception 'shared_password_envelope_already_exists';
+  end if;
+
+  return true;
+end;
+$func$;
+
+create or replace function public.upsert_shared_password_key_envelope(
+  p_space_id uuid,
+  p_entity_id text,
+  p_payload jsonb,
+  p_client_updated_at timestamptz
+)
+returns boolean
+language sql
+security invoker
+set search_path = ''
+as $func$
+  select private.upsert_shared_password_key_envelope_impl(
+    p_space_id,
+    p_entity_id,
+    p_payload,
+    p_client_updated_at
+  );
+$func$;
+
+create or replace function private.consume_shared_password_key_envelope_impl(
+  p_space_id uuid,
+  p_entity_id text
+)
 returns jsonb
 language plpgsql
 security definer
