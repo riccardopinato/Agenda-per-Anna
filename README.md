@@ -2,7 +2,7 @@
 
 Flutter app for personal planning, private diary and the shared **Noi ♡** space.
 
-Current release line: **v0.83.0**.
+Current release line: **v0.84.0**.
 
 ## Core areas
 
@@ -481,6 +481,22 @@ See `docs/ARCHITECTURE.md` and `supabase/README.md` for implementation details.
 - Share-target text and images now reuse the same capture persistence helpers instead of maintaining separate diary-save logic.
 - Capturing from `La mia giornata` respects the day currently being viewed, including past/future days, while preserving the current time as the moment ordering time inside that day.
 - No capture database, parallel media store, AI layer or new cloud schema is introduced.
+
+## v0.84.0 — Password Vault
+
+- Extends the existing encrypted **Cassaforte privata** instead of creating a parallel password database or sync path.
+- Adds a dedicated **Password** section alongside existing private notes.
+- Each credential stores: service name, username, email, password and optional notes.
+- Credential records reuse the existing AES-GCM Vault payload, password-derived key wrapping, optional biometric unlock and secure-screen protection.
+- Existing Vault notes remain backward compatible: payloads without an entry type continue to decode as private notes.
+- Passwords are hidden by default in both editor and detail views; reveal is explicit.
+- Username, email, password and notes can be copied from the detail view. Clipboard cleanup runs after 30 seconds and clears only when the clipboard still contains the copied Vault value.
+- Credential list rows never render the password.
+- Credential deletion is explicit and permanent; credentials do not enter the ordinary Trash lifecycle.
+- Password Vault stays device-local and remains excluded from ordinary cloud sync, Noi ♡, global search and standard backup.
+- No new persistence key, database, cloud table or credential sync queue is introduced.
+- Privacy Center now explicitly identifies personal credentials as content protected by the local encrypted Vault.
+- Release metadata is aligned to v0.84.0+94.
 
 ## v0.83.0 — Life & Recovery Localization
 

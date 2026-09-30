@@ -540,6 +540,30 @@ class AnnaStrings {
   String get trashActions => _pick(en: 'Trash actions', it: 'Azioni Cestino', es: 'Acciones de la papelera', fr: 'Actions de la corbeille', pt: 'Ações do lixo');
   String get restore => _pick(en: 'Restore', it: 'Ripristina', es: 'Restaurar', fr: 'Restaurer', pt: 'Restaurar');
 
+
+  String get vaultPrivateNotes => _pick(en: 'Private notes', it: 'Note private', es: 'Notas privadas', fr: 'Notes privées', pt: 'Notas privadas');
+  String get vaultNewPrivateNote => _pick(en: 'New note', it: 'Nuova nota', es: 'Nueva nota', fr: 'Nouvelle note', pt: 'Nova nota');
+  String get vaultPasswords => _pick(en: 'Passwords', it: 'Password', es: 'Contraseñas', fr: 'Mots de passe', pt: 'Palavras-passe');
+  String get vaultNewPassword => _pick(en: 'New password', it: 'Nuova password', es: 'Nueva contraseña', fr: 'Nouveau mot de passe', pt: 'Nova palavra-passe');
+  String get vaultEditPassword => _pick(en: 'Edit password', it: 'Modifica password', es: 'Editar contraseña', fr: 'Modifier le mot de passe', pt: 'Editar palavra-passe');
+  String get vaultPasswordDetails => _pick(en: 'Password details', it: 'Dettagli password', es: 'Detalles de la contraseña', fr: 'Détails du mot de passe', pt: 'Detalhes da palavra-passe');
+  String get vaultServiceName => _pick(en: 'Service name', it: 'Nome servizio', es: 'Nombre del servicio', fr: 'Nom du service', pt: 'Nome do serviço');
+  String get vaultServiceHint => _pick(en: 'e.g. Netflix, Google, Amazon', it: 'Es. Netflix, Google, Amazon', es: 'p. ej. Netflix, Google, Amazon', fr: 'ex. Netflix, Google, Amazon', pt: 'ex. Netflix, Google, Amazon');
+  String get vaultUsername => _pick(en: 'Username', it: 'Nome utente', es: 'Nombre de usuario', fr: 'Nom d’utilisateur', pt: 'Nome de utilizador');
+  String get vaultEmail => 'Email';
+  String get vaultPasswordField => _pick(en: 'Password', it: 'Password', es: 'Contraseña', fr: 'Mot de passe', pt: 'Palavra-passe');
+  String get vaultNotes => _pick(en: 'Notes', it: 'Note', es: 'Notas', fr: 'Notes', pt: 'Notas');
+  String get vaultPasswordNotesHint => _pick(en: 'Optional notes about this account', it: 'Note facoltative su questo account', es: 'Notas opcionales sobre esta cuenta', fr: 'Notes facultatives sur ce compte', pt: 'Notas opcionais sobre esta conta');
+  String get vaultNoPasswords => _pick(en: 'No passwords saved', it: 'Nessuna password salvata', es: 'No hay contraseñas guardadas', fr: 'Aucun mot de passe enregistré', pt: 'Nenhuma palavra-passe guardada');
+  String get vaultNoPasswordsDescription => _pick(en: 'Save personal credentials here. They stay inside the encrypted private Vault.', it: 'Salva qui le credenziali personali. Restano dentro la Cassaforte privata cifrata.', es: 'Guarda aquí tus credenciales personales. Permanecen dentro de la Caja fuerte privada cifrada.', fr: 'Enregistre ici tes identifiants personnels. Ils restent dans le Coffre privé chiffré.', pt: 'Guarda aqui as credenciais pessoais. Permanecem dentro do Cofre privado cifrado.');
+  String get vaultCredentialDeleteQuestion => _pick(en: 'Delete this password?', it: 'Eliminare questa password?', es: '¿Eliminar esta contraseña?', fr: 'Supprimer ce mot de passe ?', pt: 'Eliminar esta palavra-passe?');
+  String vaultCredentialDeleteDescription(String service) => _pick(en: '“$service” will be deleted permanently from the private Vault.', it: '“$service” verrà eliminato definitivamente dalla Cassaforte privata.', es: '“$service” se eliminará definitivamente de la Caja fuerte privada.', fr: '« $service » sera supprimé définitivement du Coffre privé.', pt: '“$service” será eliminado definitivamente do Cofre privado.');
+  String vaultCopiedToClipboard(String field) => _pick(en: '$field copied. Clipboard will be cleared automatically.', it: '$field copiato. Gli appunti verranno svuotati automaticamente.', es: '$field copiado. El portapapeles se borrará automáticamente.', fr: '$field copié. Le presse-papiers sera effacé automatiquement.', pt: '$field copiado. A área de transferência será limpa automaticamente.');
+  String get vaultCopy => _pick(en: 'Copy', it: 'Copia', es: 'Copiar', fr: 'Copier', pt: 'Copiar');
+  String get vaultShowPassword => _pick(en: 'Show password', it: 'Mostra password', es: 'Mostrar contraseña', fr: 'Afficher le mot de passe', pt: 'Mostrar palavra-passe');
+  String get vaultHidePassword => _pick(en: 'Hide password', it: 'Nascondi password', es: 'Ocultar contraseña', fr: 'Masquer le mot de passe', pt: 'Ocultar palavra-passe');
+  String get vaultNoValue => '—';
+
   String startTab(StartTab tab) => switch (tab) {
         StartTab.home => navHome,
         StartTab.month => navMonth,

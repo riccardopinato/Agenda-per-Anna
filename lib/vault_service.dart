@@ -7,41 +7,69 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import 'local_state_store.dart';
 
+enum PrivateVaultEntryKind { note, credential }
+
 class PrivateVaultEntry {
   final String id;
+  final PrivateVaultEntryKind kind;
   final String title;
   final String body;
+  final String username;
+  final String email;
+  final String password;
   final DateTime createdAt;
   final DateTime updatedAt;
 
   const PrivateVaultEntry({
     required this.id,
+    this.kind = PrivateVaultEntryKind.note,
     required this.title,
     required this.body,
+    this.username = '',
+    this.email = '',
+    this.password = '',
     required this.createdAt,
     required this.updatedAt,
   });
 
+  bool get isCredential => kind == PrivateVaultEntryKind.credential;
+  String get service => title;
+  String get notes => body;
+
   Map<String, dynamic> toJson() => {
         'id': id,
+        'kind': kind.name,
         'title': title,
         'body': body,
+        if (isCredential) 'username': username,
+        if (isCredential) 'email': email,
+        if (isCredential) 'password': password,
         'createdAt': createdAt.toUtc().toIso8601String(),
         'updatedAt': updatedAt.toUtc().toIso8601String(),
       };
 
-  factory PrivateVaultEntry.fromJson(Map<String, dynamic> json) =>
-      PrivateVaultEntry(
-        id: json['id']?.toString() ?? '',
-        title: json['title']?.toString() ?? '',
-        body: json['body']?.toString() ?? '',
-        createdAt: DateTime.tryParse(json['createdAt']?.toString() ?? '')
-                ?.toLocal() ??
-            DateTime.now(),
-        updatedAt: DateTime.tryParse(json['updatedAt']?.toString() ?? '')
-                ?.toLocal() ??
-            DateTime.now(),
-      );
+  factory PrivateVaultEntry.fromJson(Map<String, dynamic> json) {
+    final rawKind = json['kind']?.toString();
+    final kind = PrivateVaultEntryKind.values.firstWhere(
+      (value) => value.name == rawKind,
+      orElse: () => PrivateVaultEntryKind.note,
+    );
+    return PrivateVaultEntry(
+      id: json['id']?.toString() ?? '',
+      kind: kind,
+      title: json['title']?.toString() ?? '',
+      body: json['body']?.toString() ?? '',
+      username: json['username']?.toString() ?? '',
+      email: json['email']?.toString() ?? '',
+      password: json['password']?.toString() ?? '',
+      createdAt: DateTime.tryParse(json['createdAt']?.toString() ?? '')
+              ?.toLocal() ??
+          DateTime.now(),
+      updatedAt: DateTime.tryParse(json['updatedAt']?.toString() ?? '')
+              ?.toLocal() ??
+          DateTime.now(),
+    );
+  }
 }
 
 class PrivateVaultService extends ChangeNotifier {
@@ -76,6 +104,13 @@ class PrivateVaultService extends ChangeNotifier {
       (_meta?['biometricWrap'] as String?)?.isNotEmpty == true;
   List<PrivateVaultEntry> get entries =>
       List<PrivateVaultEntry>.unmodifiable(_entries);
+  List<PrivateVaultEntry> get noteEntries => List<PrivateVaultEntry>.unmodifiable(
+        _entries.where((entry) => !entry.isCredential),
+      );
+  List<PrivateVaultEntry> get credentialEntries =>
+      List<PrivateVaultEntry>.unmodifiable(
+        _entries.where((entry) => entry.isCredential),
+      );
 
   Future<void> initialize() async {
     if (_initialized) return;
@@ -245,6 +280,7 @@ class PrivateVaultService extends ChangeNotifier {
       final previous = _entries[existingIndex];
       _entries[existingIndex] = PrivateVaultEntry(
         id: previous.id,
+        kind: PrivateVaultEntryKind.note,
         title: cleanTitle,
         body: cleanBody,
         createdAt: previous.createdAt,
@@ -254,8 +290,76 @@ class PrivateVaultService extends ChangeNotifier {
       _entries.add(
         PrivateVaultEntry(
           id: id ?? _newId(),
+          kind: PrivateVaultEntryKind.note,
           title: cleanTitle,
           body: cleanBody,
+          createdAt: now,
+          updatedAt: now,
+        ),
+      );
+    }
+    _sortEntries();
+    await _persistEntries();
+    notifyListeners();
+  }
+
+  Future<void> upsertCredential({
+    String? id,
+    required String service,
+    required String username,
+    required String email,
+    required String password,
+    required String notes,
+  }) async {
+    _requireUnlocked();
+    final cleanService = service.trim();
+    final cleanUsername = username.trim();
+    final cleanEmail = email.trim();
+    final cleanPassword = password;
+    final cleanNotes = notes.trim();
+
+    if (cleanService.isEmpty) {
+      throw const FormatException('Inserisci il nome del servizio.');
+    }
+    if (cleanService.length > 160) {
+      throw const FormatException('Il nome del servizio è troppo lungo.');
+    }
+    if (cleanUsername.length > 320 || cleanEmail.length > 320) {
+      throw const FormatException('Nome utente o email troppo lunghi.');
+    }
+    if (cleanPassword.length > 4096) {
+      throw const FormatException('La password è troppo lunga.');
+    }
+    if (cleanNotes.length > 12000) {
+      throw const FormatException('Le note sono troppo lunghe.');
+    }
+
+    final now = DateTime.now();
+    final existingIndex =
+        id == null ? -1 : _entries.indexWhere((entry) => entry.id == id);
+    if (existingIndex >= 0) {
+      final previous = _entries[existingIndex];
+      _entries[existingIndex] = PrivateVaultEntry(
+        id: previous.id,
+        kind: PrivateVaultEntryKind.credential,
+        title: cleanService,
+        body: cleanNotes,
+        username: cleanUsername,
+        email: cleanEmail,
+        password: cleanPassword,
+        createdAt: previous.createdAt,
+        updatedAt: now,
+      );
+    } else {
+      _entries.add(
+        PrivateVaultEntry(
+          id: id ?? _newId(),
+          kind: PrivateVaultEntryKind.credential,
+          title: cleanService,
+          body: cleanNotes,
+          username: cleanUsername,
+          email: cleanEmail,
+          password: cleanPassword,
           createdAt: now,
           updatedAt: now,
         ),

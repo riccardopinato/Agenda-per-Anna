@@ -92,6 +92,8 @@ class _PrivateVaultHomeCardState extends State<PrivateVaultHomeCard> {
   }
 }
 
+enum _VaultSection { notes, passwords }
+
 class PrivateVaultScreen extends StatefulWidget {
   const PrivateVaultScreen({super.key});
 
@@ -110,6 +112,7 @@ class _PrivateVaultScreenState extends State<PrivateVaultScreen>
   bool biometricSupported = false;
   bool enableBiometric = true;
   bool obscurePassword = true;
+  _VaultSection section = _VaultSection.notes;
   String? errorText;
 
   @override
@@ -309,24 +312,327 @@ class _PrivateVaultScreenState extends State<PrivateVaultScreen>
     body.dispose();
   }
 
+
+  Future<void> _showCredentialEditor([PrivateVaultEntry? entry]) async {
+    final strings = AnnaStrings.of(context);
+    final serviceController =
+        TextEditingController(text: entry?.service ?? '');
+    final usernameController =
+        TextEditingController(text: entry?.username ?? '');
+    final emailController = TextEditingController(text: entry?.email ?? '');
+    final credentialPasswordController =
+        TextEditingController(text: entry?.password ?? '');
+    final notesController = TextEditingController(text: entry?.notes ?? '');
+    var revealPassword = false;
+
+    final result = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => StatefulBuilder(
+        builder: (dialogContext, setDialogState) => AlertDialog(
+          title: Text(
+            entry == null
+                ? strings.vaultNewPassword
+                : strings.vaultEditPassword,
+          ),
+          content: SizedBox(
+            width: 540,
+            child: SingleChildScrollView(
+              child: AutofillGroup(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    TextField(
+                      controller: serviceController,
+                      autofocus: true,
+                      maxLength: 160,
+                      textCapitalization: TextCapitalization.words,
+                      decoration: InputDecoration(
+                        labelText: strings.vaultServiceName,
+                        hintText: strings.vaultServiceHint,
+                        prefixIcon: const Icon(Icons.apps_outlined),
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    TextField(
+                      controller: usernameController,
+                      maxLength: 320,
+                      autofillHints: const [AutofillHints.username],
+                      autocorrect: false,
+                      enableSuggestions: false,
+                      decoration: InputDecoration(
+                        labelText: strings.vaultUsername,
+                        prefixIcon: const Icon(Icons.person_outline),
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    TextField(
+                      controller: emailController,
+                      maxLength: 320,
+                      keyboardType: TextInputType.emailAddress,
+                      autofillHints: const [AutofillHints.email],
+                      autocorrect: false,
+                      enableSuggestions: false,
+                      decoration: InputDecoration(
+                        labelText: strings.vaultEmail,
+                        prefixIcon: const Icon(Icons.alternate_email),
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    TextField(
+                      controller: credentialPasswordController,
+                      obscureText: !revealPassword,
+                      autofillHints: const [AutofillHints.password],
+                      autocorrect: false,
+                      enableSuggestions: false,
+                      decoration: InputDecoration(
+                        labelText: strings.vaultPasswordField,
+                        prefixIcon: const Icon(Icons.key_outlined),
+                        suffixIcon: IconButton(
+                          tooltip: revealPassword
+                              ? strings.vaultHidePassword
+                              : strings.vaultShowPassword,
+                          onPressed: () => setDialogState(
+                            () => revealPassword = !revealPassword,
+                          ),
+                          icon: Icon(
+                            revealPassword
+                                ? Icons.visibility_off_outlined
+                                : Icons.visibility_outlined,
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    TextField(
+                      controller: notesController,
+                      minLines: 3,
+                      maxLines: 7,
+                      maxLength: 12000,
+                      textCapitalization: TextCapitalization.sentences,
+                      decoration: InputDecoration(
+                        labelText: strings.vaultNotes,
+                        hintText: strings.vaultPasswordNotesHint,
+                        alignLabelWithHint: true,
+                        prefixIcon: const Icon(Icons.notes_outlined),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext, false),
+              child: Text(strings.cancel),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.pop(dialogContext, true),
+              child: Text(strings.save),
+            ),
+          ],
+        ),
+      ),
+    );
+
+    if (result == true) {
+      try {
+        await vault.upsertCredential(
+          id: entry?.id,
+          service: serviceController.text,
+          username: usernameController.text,
+          email: emailController.text,
+          password: credentialPasswordController.text,
+          notes: notesController.text,
+        );
+      } on FormatException catch (error) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(error.message.toString())),
+          );
+        }
+      }
+    }
+
+    serviceController.clear();
+    usernameController.clear();
+    emailController.clear();
+    credentialPasswordController.clear();
+    notesController.clear();
+    serviceController.dispose();
+    usernameController.dispose();
+    emailController.dispose();
+    credentialPasswordController.dispose();
+    notesController.dispose();
+  }
+
+  Future<void> _copySensitive(String value, String fieldLabel) async {
+    if (value.isEmpty) return;
+    final strings = AnnaStrings.of(context);
+    await Clipboard.setData(ClipboardData(text: value));
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(strings.vaultCopiedToClipboard(fieldLabel))),
+      );
+    }
+
+    unawaited(
+      Future<void>.delayed(const Duration(seconds: 30), () async {
+        try {
+          final current = await Clipboard.getData('text/plain');
+          if (current?.text == value) {
+            await Clipboard.setData(const ClipboardData(text: ''));
+          }
+        } catch (_) {
+          // Clipboard cleanup is best effort and must never block the Vault.
+        }
+      }),
+    );
+  }
+
+  Future<void> _showCredentialDetails(PrivateVaultEntry entry) async {
+    final strings = AnnaStrings.of(context);
+    var revealPassword = false;
+
+    final edit = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => StatefulBuilder(
+        builder: (dialogContext, setDialogState) {
+          Widget fieldRow({
+            required String label,
+            required String value,
+            bool secret = false,
+          }) {
+            final display = value.isEmpty
+                ? strings.vaultNoValue
+                : secret && !revealPassword
+                    ? '••••••••'
+                    : value;
+            return ListTile(
+              contentPadding: EdgeInsets.zero,
+              title: Text(
+                label,
+                style: Theme.of(dialogContext).textTheme.labelLarge,
+              ),
+              subtitle: SelectableText(display),
+              trailing: value.isEmpty
+                  ? null
+                  : Wrap(
+                      spacing: 2,
+                      children: [
+                        if (secret)
+                          IconButton(
+                            tooltip: revealPassword
+                                ? strings.vaultHidePassword
+                                : strings.vaultShowPassword,
+                            onPressed: () => setDialogState(
+                              () => revealPassword = !revealPassword,
+                            ),
+                            icon: Icon(
+                              revealPassword
+                                  ? Icons.visibility_off_outlined
+                                  : Icons.visibility_outlined,
+                            ),
+                          ),
+                        IconButton(
+                          tooltip: strings.vaultCopy,
+                          onPressed: () => unawaited(
+                            _copySensitive(value, label),
+                          ),
+                          icon: const Icon(Icons.copy_outlined),
+                        ),
+                      ],
+                    ),
+            );
+          }
+
+          return AlertDialog(
+            title: Row(
+              children: [
+                const Icon(Icons.key_outlined),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    entry.service,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              ],
+            ),
+            content: SizedBox(
+              width: 520,
+              child: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    fieldRow(
+                      label: strings.vaultUsername,
+                      value: entry.username,
+                    ),
+                    fieldRow(
+                      label: strings.vaultEmail,
+                      value: entry.email,
+                    ),
+                    fieldRow(
+                      label: strings.vaultPasswordField,
+                      value: entry.password,
+                      secret: true,
+                    ),
+                    if (entry.notes.isNotEmpty)
+                      fieldRow(
+                        label: strings.vaultNotes,
+                        value: entry.notes,
+                      ),
+                  ],
+                ),
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(dialogContext, false),
+                child: Text(strings.close),
+              ),
+              FilledButton.icon(
+                onPressed: () => Navigator.pop(dialogContext, true),
+                icon: const Icon(Icons.edit_outlined),
+                label: Text(strings.edit),
+              ),
+            ],
+          );
+        },
+      ),
+    );
+
+    if (edit == true && mounted) {
+      await _showCredentialEditor(entry);
+    }
+  }
+
   Future<void> _delete(PrivateVaultEntry entry) async {
+    final strings = AnnaStrings.of(context);
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        title: const Text('Eliminare dalla cassaforte?'),
+        title: Text(
+          entry.isCredential
+              ? strings.vaultCredentialDeleteQuestion
+              : 'Eliminare dalla cassaforte?',
+        ),
         content: Text(
-          entry.title.isEmpty
-              ? 'Il contenuto verrà eliminato definitivamente.'
-              : '“${entry.title}” verrà eliminato definitivamente.',
+          entry.isCredential
+              ? strings.vaultCredentialDeleteDescription(entry.service)
+              : entry.title.isEmpty
+                  ? 'Il contenuto verrà eliminato definitivamente.'
+                  : '“${entry.title}” verrà eliminato definitivamente.',
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(dialogContext, false),
-            child: const Text('Annulla'),
+            child: Text(strings.cancel),
           ),
           FilledButton(
             onPressed: () => Navigator.pop(dialogContext, true),
-            child: const Text('Elimina'),
+            child: Text(strings.delete),
           ),
         ],
       ),
@@ -614,7 +920,11 @@ class _PrivateVaultScreenState extends State<PrivateVaultScreen>
   }
 
   Widget _buildUnlocked(BuildContext context) {
-    final entries = vault.entries;
+    final strings = AnnaStrings.of(context);
+    final passwordMode = section == _VaultSection.passwords;
+    final entries =
+        passwordMode ? vault.credentialEntries : vault.noteEntries;
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Cassaforte privata'),
@@ -659,74 +969,185 @@ class _PrivateVaultScreenState extends State<PrivateVaultScreen>
         ],
       ),
       floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => _showEditor(),
-        icon: const Icon(Icons.add),
-        label: const Text('Nuovo'),
+        onPressed: passwordMode
+            ? () => _showCredentialEditor()
+            : () => _showEditor(),
+        icon: Icon(passwordMode ? Icons.key_outlined : Icons.add),
+        label: Text(
+          passwordMode
+              ? strings.vaultNewPassword
+              : strings.vaultNewPrivateNote,
+        ),
       ),
-      body: entries.isEmpty
-          ? const Center(
-              child: Padding(
-                padding: EdgeInsets.all(28),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(Icons.shield_outlined, size: 58),
-                    SizedBox(height: 14),
-                    Text(
-                      'La cassaforte è vuota',
-                      style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.w900,
+      body: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(18, 12, 18, 4),
+            child: SizedBox(
+              width: double.infinity,
+              child: SegmentedButton<_VaultSection>(
+                showSelectedIcon: false,
+                segments: [
+                  ButtonSegment<_VaultSection>(
+                    value: _VaultSection.notes,
+                    icon: const Icon(Icons.note_alt_outlined),
+                    label: Text(strings.vaultPrivateNotes),
+                  ),
+                  ButtonSegment<_VaultSection>(
+                    value: _VaultSection.passwords,
+                    icon: const Icon(Icons.password_outlined),
+                    label: Text(strings.vaultPasswords),
+                  ),
+                ],
+                selected: {section},
+                onSelectionChanged: (selected) {
+                  if (selected.isEmpty) return;
+                  setState(() => section = selected.first);
+                },
+              ),
+            ),
+          ),
+          Expanded(
+            child: entries.isEmpty
+                ? Center(
+                    child: Padding(
+                      padding: const EdgeInsets.all(28),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            passwordMode
+                                ? Icons.key_off_outlined
+                                : Icons.shield_outlined,
+                            size: 58,
+                          ),
+                          const SizedBox(height: 14),
+                          Text(
+                            passwordMode
+                                ? strings.vaultNoPasswords
+                                : 'La cassaforte è vuota',
+                            style: const TextStyle(
+                              fontSize: 20,
+                              fontWeight: FontWeight.w900,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                          const SizedBox(height: 6),
+                          Text(
+                            passwordMode
+                                ? strings.vaultNoPasswordsDescription
+                                : 'Aggiungi note e informazioni che vuoi tenere separate dal resto dell’app.',
+                            textAlign: TextAlign.center,
+                          ),
+                        ],
                       ),
                     ),
-                    SizedBox(height: 6),
-                    Text(
-                      'Aggiungi note e informazioni che vuoi tenere separate dal resto dell’app.',
-                      textAlign: TextAlign.center,
-                    ),
-                  ],
-                ),
-              ),
-            )
-          : ListView.separated(
-              padding: const EdgeInsets.fromLTRB(18, 12, 18, 100),
-              itemCount: entries.length,
-              separatorBuilder: (_, __) => const SizedBox(height: 10),
-              itemBuilder: (context, index) {
-                final entry = entries[index];
-                return Card(
-                  child: ListTile(
-                    contentPadding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 8,
-                    ),
-                    leading: const CircleAvatar(
-                      child: Icon(Icons.lock_outline),
-                    ),
-                    title: Text(
-                      entry.title.isEmpty ? 'Contenuto privato' : entry.title,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(fontWeight: FontWeight.w800),
-                    ),
-                    subtitle: Text(
-                      entry.body.isEmpty
-                          ? DateFormat('d MMM yyyy · HH:mm', 'it_IT')
-                              .format(entry.updatedAt)
-                          : entry.body,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    onTap: () => _showEditor(entry),
-                    trailing: IconButton(
-                      tooltip: 'Elimina',
-                      onPressed: () => _delete(entry),
-                      icon: const Icon(Icons.delete_outline),
-                    ),
+                  )
+                : ListView.separated(
+                    padding: const EdgeInsets.fromLTRB(18, 12, 18, 100),
+                    itemCount: entries.length,
+                    separatorBuilder: (_, __) =>
+                        const SizedBox(height: 10),
+                    itemBuilder: (context, index) {
+                      final entry = entries[index];
+                      if (entry.isCredential) {
+                        final details = [
+                          if (entry.username.isNotEmpty) entry.username,
+                          if (entry.email.isNotEmpty) entry.email,
+                        ];
+                        final subtitle = details.isNotEmpty
+                            ? details.join(' · ')
+                            : DateFormat(
+                                'd MMM yyyy · HH:mm',
+                                AnnaStrings.intlLocale(context),
+                              ).format(entry.updatedAt);
+                        return Card(
+                          child: ListTile(
+                            contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 8,
+                            ),
+                            leading: const CircleAvatar(
+                              child: Icon(Icons.key_outlined),
+                            ),
+                            title: Text(
+                              entry.service,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style:
+                                  const TextStyle(fontWeight: FontWeight.w800),
+                            ),
+                            subtitle: Text(
+                              subtitle,
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            onTap: () => _showCredentialDetails(entry),
+                            trailing: PopupMenuButton<String>(
+                              onSelected: (value) {
+                                if (value == 'edit') {
+                                  unawaited(_showCredentialEditor(entry));
+                                } else if (value == 'delete') {
+                                  unawaited(_delete(entry));
+                                }
+                              },
+                              itemBuilder: (_) => [
+                                PopupMenuItem(
+                                  value: 'edit',
+                                  child: Text(strings.edit),
+                                ),
+                                PopupMenuItem(
+                                  value: 'delete',
+                                  child: Text(strings.delete),
+                                ),
+                              ],
+                            ),
+                          ),
+                        );
+                      }
+
+                      return Card(
+                        child: ListTile(
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 8,
+                          ),
+                          leading: const CircleAvatar(
+                            child: Icon(Icons.lock_outline),
+                          ),
+                          title: Text(
+                            entry.title.isEmpty
+                                ? 'Contenuto privato'
+                                : entry.title,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style:
+                                const TextStyle(fontWeight: FontWeight.w800),
+                          ),
+                          subtitle: Text(
+                            entry.body.isEmpty
+                                ? DateFormat(
+                                    'd MMM yyyy · HH:mm',
+                                    AnnaStrings.intlLocale(context),
+                                  ).format(entry.updatedAt)
+                                : entry.body,
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          onTap: () => _showEditor(entry),
+                          trailing: IconButton(
+                            tooltip: strings.delete,
+                            onPressed: () => _delete(entry),
+                            icon: const Icon(Icons.delete_outline),
+                          ),
+                        ),
+                      );
+                    },
                   ),
-                );
-              },
-            ),
+          ),
+        ],
+      ),
     );
   }
+
 }
