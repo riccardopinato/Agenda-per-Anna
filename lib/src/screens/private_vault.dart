@@ -160,8 +160,10 @@ class _PrivateVaultScreenState extends State<PrivateVaultScreen>
 
   Future<void> _setup() async {
     final password = passwordController.text;
-    if (password.length < 8) {
-      setState(() => errorText = 'Usa almeno 8 caratteri.');
+    if (password.length < 12) {
+      setState(
+        () => errorText = AnnaStrings.of(context).vaultPasswordTooShort,
+      );
       return;
     }
     if (password != confirmController.text) {
@@ -180,7 +182,7 @@ class _PrivateVaultScreenState extends State<PrivateVaultScreen>
       );
       passwordController.clear();
       confirmController.clear();
-      unawaited(SharedPasswordService.instance.refreshAllAvailableSpaces());
+      unawaited(SharedPasswordService.instance.refreshAllAvailableSpacesSafe());
       if (mounted) setState(() {});
     } on FormatException catch (error) {
       if (mounted) setState(() => errorText = error.message.toString());
@@ -210,7 +212,7 @@ class _PrivateVaultScreenState extends State<PrivateVaultScreen>
       if (!ok) errorText = 'Password non corretta.';
     });
     if (ok) {
-      unawaited(SharedPasswordService.instance.refreshAllAvailableSpaces());
+      unawaited(SharedPasswordService.instance.refreshAllAvailableSpacesSafe());
     }
   }
 
@@ -233,7 +235,7 @@ class _PrivateVaultScreenState extends State<PrivateVaultScreen>
               'Sblocco biometrico non disponibile. Usa la password.',
         );
       } else if (ok) {
-        unawaited(SharedPasswordService.instance.refreshAllAvailableSpaces());
+        unawaited(SharedPasswordService.instance.refreshAllAvailableSpacesSafe());
       }
     } catch (_) {
       if (mounted) {
@@ -452,6 +454,7 @@ class _PrivateVaultScreenState extends State<PrivateVaultScreen>
             email: emailController.text,
             password: credentialPasswordController.text,
             notes: notesController.text,
+            expectedRevision: entry.sharedRevision,
           );
         } else {
           await vault.upsertCredential(
@@ -469,6 +472,19 @@ class _PrivateVaultScreenState extends State<PrivateVaultScreen>
             SnackBar(content: Text(error.message.toString())),
           );
         }
+      } on SharedPasswordConflictException {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                AnnaStrings.of(context).sharedPasswordsConflict,
+              ),
+            ),
+          );
+        }
+        unawaited(
+          SharedPasswordService.instance.refreshAllAvailableSpacesSafe(),
+        );
       } catch (_) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -688,6 +704,7 @@ class _PrivateVaultScreenState extends State<PrivateVaultScreen>
           await SharedPasswordService.instance.deleteCredential(
             spaceId: entry.sharedSpaceId,
             credentialId: entry.sharedCredentialId,
+            expectedRevision: entry.sharedRevision,
           );
         } else {
           await vault.delete(entry.id);
