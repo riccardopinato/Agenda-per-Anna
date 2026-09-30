@@ -192,6 +192,50 @@ class SharedSpaceRecord {
       );
 }
 
+class SharedPasswordKeyClaimResult {
+  final String fingerprint;
+  final bool claimed;
+  final DateTime clientUpdatedAt;
+
+  const SharedPasswordKeyClaimResult({
+    required this.fingerprint,
+    required this.claimed,
+    required this.clientUpdatedAt,
+  });
+
+  factory SharedPasswordKeyClaimResult.fromJson(Map<String, dynamic> json) =>
+      SharedPasswordKeyClaimResult(
+        fingerprint: json['fingerprint']?.toString() ?? '',
+        claimed: json['claimed'] == true,
+        clientUpdatedAt: DateTime.tryParse(
+              json['clientUpdatedAt']?.toString() ?? '',
+            )?.toLocal() ??
+            DateTime.now(),
+      );
+}
+
+class SharedPasswordMutationResult {
+  final int revision;
+  final DateTime clientUpdatedAt;
+  final bool alreadyDeleted;
+
+  const SharedPasswordMutationResult({
+    required this.revision,
+    required this.clientUpdatedAt,
+    this.alreadyDeleted = false,
+  });
+
+  factory SharedPasswordMutationResult.fromJson(Map<String, dynamic> json) =>
+      SharedPasswordMutationResult(
+        revision: (json['revision'] as num?)?.toInt() ?? 0,
+        clientUpdatedAt: DateTime.tryParse(
+              json['clientUpdatedAt']?.toString() ?? '',
+            )?.toLocal() ??
+            DateTime.now(),
+        alreadyDeleted: json['alreadyDeleted'] == true,
+      );
+}
+
 class SharedEntryComment {
   final String id;
   final String spaceId;
@@ -1045,6 +1089,107 @@ class CloudSyncService extends ChangeNotifier {
     }
 
     return records;
+  }
+
+  Future<List<SharedSpaceRecord>> pullSharedRecordsByType(
+    String spaceId,
+    String entityType, {
+    String? entityId,
+  }) async {
+    final client = _requireSignedInClient();
+    const pageSize = 500;
+    final records = <SharedSpaceRecord>[];
+
+    for (var from = 0;; from += pageSize) {
+      var base = client
+          .from('agenda_records')
+          .select(
+            'record_key,space_id,owner_id,updated_by,entity_type,entity_id,payload,client_updated_at,deleted_at',
+          )
+          .eq('space_id', spaceId)
+          .eq('visibility', 'shared')
+          .eq('entity_type', entityType);
+
+      if (entityId != null && entityId.isNotEmpty) {
+        base = base.eq('entity_id', entityId);
+      }
+
+      final response = await base
+          .order('client_updated_at')
+          .order('record_key')
+          .range(from, from + pageSize - 1);
+
+      final page = (response as List)
+          .map(
+            (row) => SharedSpaceRecord.fromJson(
+              Map<String, dynamic>.from(row as Map),
+            ),
+          )
+          .toList();
+      records.addAll(page);
+      if (page.length < pageSize) break;
+    }
+
+    return records;
+  }
+
+  Future<SharedPasswordKeyClaimResult> claimSharedPasswordKeyMeta({
+    required String spaceId,
+    required String fingerprint,
+  }) async {
+    final client = _requireSignedInClient();
+    final result = await client.rpc(
+      'claim_shared_password_key_meta',
+      params: {
+        'p_space_id': spaceId,
+        'p_fingerprint': fingerprint,
+      },
+    );
+    return SharedPasswordKeyClaimResult.fromJson(
+      Map<String, dynamic>.from(result as Map),
+    );
+  }
+
+  Future<SharedPasswordMutationResult> upsertSharedPasswordCredential({
+    required String spaceId,
+    required String entityId,
+    required Map<String, dynamic> payload,
+    required int expectedRevision,
+    required DateTime updatedAt,
+  }) async {
+    final client = _requireSignedInClient();
+    final result = await client.rpc(
+      'upsert_shared_password_credential',
+      params: {
+        'p_space_id': spaceId,
+        'p_entity_id': entityId,
+        'p_payload': payload,
+        'p_expected_revision': expectedRevision,
+        'p_client_updated_at': updatedAt.toUtc().toIso8601String(),
+      },
+    );
+    return SharedPasswordMutationResult.fromJson(
+      Map<String, dynamic>.from(result as Map),
+    );
+  }
+
+  Future<SharedPasswordMutationResult> deleteSharedPasswordCredential({
+    required String spaceId,
+    required String entityId,
+    required int expectedRevision,
+  }) async {
+    final client = _requireSignedInClient();
+    final result = await client.rpc(
+      'delete_shared_password_credential',
+      params: {
+        'p_space_id': spaceId,
+        'p_entity_id': entityId,
+        'p_expected_revision': expectedRevision,
+      },
+    );
+    return SharedPasswordMutationResult.fromJson(
+      Map<String, dynamic>.from(result as Map),
+    );
   }
 
   Future<void> upsertSharedRecord({
