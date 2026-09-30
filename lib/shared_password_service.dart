@@ -235,24 +235,13 @@ class SharedPasswordService {
     final codeHash = sha256.convert(utf8.encode(normalized)).toString();
 
     final keyMeta = await _loadKeyMeta(spaceId);
-    final envelopeRecords = await cloud.pullSharedRecordsByType(
-      spaceId,
-      _keyEnvelopeEntityType,
-      entityId: codeHash,
-    );
-    SharedSpaceRecord? match;
-    for (final record in envelopeRecords) {
-      if (record.entityId == codeHash &&
-          record.deletedAt == null &&
-          record.payload != null) {
-        match = record;
-        break;
-      }
-    }
-    if (match == null || keyMeta == null) return false;
+    if (keyMeta == null) return false;
 
     try {
-      final payload = match.payload!;
+      final payload = await cloud.consumeSharedPasswordKeyEnvelope(
+        spaceId: spaceId,
+        entityId: codeHash,
+      );
       final expiresAt =
           DateTime.tryParse(payload['expiresAt']?.toString() ?? '')?.toUtc();
       if (expiresAt == null || !expiresAt.isAfter(DateTime.now().toUtc())) {
@@ -276,11 +265,6 @@ class SharedPasswordService {
         if (spaceKey != null) _zero(spaceKey);
       }
 
-      await cloud.deleteSharedRecord(
-        spaceId: spaceId,
-        entityType: _keyEnvelopeEntityType,
-        entityId: codeHash,
-      );
       await refreshSpace(spaceId);
       return true;
     } catch (_) {
