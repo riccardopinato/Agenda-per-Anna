@@ -13,6 +13,7 @@ v0.86 is a security/governance hardening release. It keeps the established local
 - immediate local key/mirror purge after authoritative membership reconciliation when the Vault is unlocked;
 - encrypted E2EE recovery package kept outside ordinary backup;
 - Private Vault password-wrap hardening with backward-compatible upgrade;
+- five-minute inactivity auto-lock plus immediate lock when leaving Password Noi ♡;
 - explicit Web security-boundary disclosure;
 - Vault/shared-password localization alignment;
 - canonical Product Bible and v0.86 documentation alignment.
