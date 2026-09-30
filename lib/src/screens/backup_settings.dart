@@ -1930,7 +1930,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       leading: const Icon(Icons.lock_person_outlined),
                       title: const Text('Cassaforte privata'),
                       subtitle: const Text(
-                        'Spazio cifrato locale, separato da cloud, ricerca e backup ordinario.',
+                        'Spazio cifrato locale, separato da cloud, ricerca e backup ordinario. Include note private e credenziali personali protette.',
                       ),
                       trailing: const Icon(Icons.chevron_right),
                       onTap: () => Navigator.push(
