@@ -17,6 +17,9 @@ The script creates one RSA-4096 JKS locally, generates random store/key password
 The secret values are never committed to the repository.
 
 The bootstrap is idempotent: if the local signing backup already exists, rerunning the same command reuses that exact keystore and restores the GitHub secrets instead of rotating the Android signing identity.
+Before generating a new key, the bootstrap tries to recover the historical sideload JKS from the old GitHub Actions cache. The cached JKS is encrypted in CI with a temporary migration passphrase created on the local PC, downloaded through authenticated GitHub CLI, decrypted locally, and verified against the known historical certificate fingerprint. The temporary migration secret is deleted immediately afterwards.
+
+If the historical cache is no longer available, the script creates the first permanent replacement key and clearly warns that older test APKs signed with the historical key may require one uninstall/reinstall. From that point onward the new key is stable.
 
 ## Required repository secrets
 
