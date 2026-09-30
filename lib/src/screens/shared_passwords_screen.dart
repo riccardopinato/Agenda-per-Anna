@@ -553,11 +553,17 @@ class _SharedPasswordsScreenState extends State<SharedPasswordsScreen>
                       contentPadding: EdgeInsets.zero,
                       leading: const Icon(Icons.lock_outline),
                       title: Text(AnnaStrings.of(context).sharedPasswordsE2ee),
-                      subtitle: Text(
-                        'Aggiornata ${DateFormat(
-                          'd MMM yyyy · HH:mm',
-                          AnnaStrings.intlLocale(context),
-                        ).format(credential.updatedAt)}',
+                    ),
+                    ListTile(
+                      contentPadding: EdgeInsets.zero,
+                      leading: const Icon(Icons.schedule_outlined),
+                      title: Text(
+                        AnnaStrings.of(context).passwordUpdatedAt(
+                          DateFormat(
+                            'd MMMM yyyy · HH:mm',
+                            AnnaStrings.intlLocale(context),
+                          ).format(credential.updatedAt),
+                        ),
                       ),
                     ),
                   ],
