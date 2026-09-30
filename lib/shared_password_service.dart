@@ -638,21 +638,32 @@ class SharedPasswordService {
     String spaceId,
     Uint8List key,
   ) async {
-    final records = await CloudSyncService.instance.pullSharedRecords(spaceId);
-    final meta = _activeKeyMeta(records);
-    if (meta == null) {
-      await _publishKeyMeta(spaceId, key);
+    final meta = await _loadKeyMeta(spaceId);
+    if (meta != null) {
+      if (!_fingerprintMatches(key, meta)) {
+        throw StateError('Chiave Password Noi ♡ non coerente con lo spazio.');
+      }
       return;
     }
-    if (!_fingerprintMatches(key, meta)) {
+
+    final fingerprint = _fingerprint(key);
+    final claim = await CloudSyncService.instance.claimSharedPasswordKeyMeta(
+      spaceId: spaceId,
+      fingerprint: fingerprint,
+    );
+    if (claim.fingerprint != fingerprint) {
       throw StateError('Chiave Password Noi ♡ non coerente con lo spazio.');
     }
   }
 
-  SharedSpaceRecord? _activeKeyMeta(List<SharedSpaceRecord> records) {
+  Future<SharedSpaceRecord?> _loadKeyMeta(String spaceId) async {
+    final records = await CloudSyncService.instance.pullSharedRecordsByType(
+      spaceId,
+      _keyMetaEntityType,
+      entityId: _keyMetaEntityId,
+    );
     for (final record in records) {
-      if (record.entityType == _keyMetaEntityType &&
-          record.entityId == _keyMetaEntityId &&
+      if (record.entityId == _keyMetaEntityId &&
           record.deletedAt == null &&
           record.payload != null) {
         return record;
@@ -661,24 +672,13 @@ class SharedPasswordService {
     return null;
   }
 
-  Future<void> _publishKeyMeta(String spaceId, Uint8List key) async {
-    await CloudSyncService.instance.upsertSharedRecord(
-      spaceId: spaceId,
-      entityType: _keyMetaEntityType,
-      entityId: _keyMetaEntityId,
-      payload: {
-        'v': _payloadVersion,
-        'fingerprint': sha256.convert(key).toString(),
-        'createdAt': DateTime.now().toUtc().toIso8601String(),
-      },
-    );
-  }
-
   bool _fingerprintMatches(Uint8List key, SharedSpaceRecord meta) {
     final expected = meta.payload?['fingerprint']?.toString() ?? '';
     if (expected.isEmpty) return false;
-    return sha256.convert(key).toString() == expected;
+    return _fingerprint(key) == expected;
   }
+
+  String _fingerprint(Uint8List key) => sha256.convert(key).toString();
 
   Uint8List _derivePairingKey(String code, Uint8List salt) {
     final derivator = PBKDF2KeyDerivator(HMac(SHA256Digest(), 64))
@@ -754,6 +754,14 @@ class SharedPasswordService {
 
   String _keyEnvelopeAad(String spaceId) =>
       'annas-diary-noi-password-key:$spaceId:v1';
+
+  void _throwIfRevisionConflict(Object error) {
+    final text = error.toString();
+    if (text.contains('shared_password_revision_conflict') ||
+        text.contains('40001')) {
+      throw const SharedPasswordConflictException();
+    }
+  }
 
   void _zero(Uint8List bytes) {
     for (var i = 0; i < bytes.length; i++) {
