@@ -1150,6 +1150,21 @@ class CloudSyncService extends ChangeNotifier {
     );
   }
 
+  Future<Map<String, dynamic>> consumeSharedPasswordKeyEnvelope({
+    required String spaceId,
+    required String entityId,
+  }) async {
+    final client = _requireSignedInClient();
+    final result = await client.rpc(
+      'consume_shared_password_key_envelope',
+      params: {
+        'p_space_id': spaceId,
+        'p_entity_id': entityId,
+      },
+    );
+    return Map<String, dynamic>.from(result as Map);
+  }
+
   Future<SharedPasswordMutationResult> upsertSharedPasswordCredential({
     required String spaceId,
     required String entityId,
