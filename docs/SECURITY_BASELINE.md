@@ -9,6 +9,7 @@ v0.86 keeps the existing Vault and Noi ♡ storage boundaries and hardens their 
 - New Vault password wraps use PBKDF2-HMAC-SHA256 with 600,000 iterations and a 12-character minimum. Existing 180,000-iteration wraps remain readable and are upgraded after a successful password unlock.
 - The Vault payload remains AES-GCM encrypted under a random 256-bit master key and remains excluded from ordinary cloud sync, global search and standard backup.
 - Android keeps Keystore wrapping and secure-screen protection. Web keeps encrypted-at-rest payloads but cannot provide the same native Keystore/screenshot boundary; this difference is disclosed in-product.
+- An unlocked Vault is re-locked after five minutes without pointer interaction, on app background/inactive states and when leaving the Password Noi ♡ surface. Explicit manual lock remains available.
 - Password Noi ♡ credential plaintext is encrypted client-side with AES-256-GCM and AAD bound to shared-space and credential identity.
 - The server stores only ciphertext metadata plus a SHA-256 key fingerprint, never the raw shared password key.
 - Migration 027 makes key metadata an atomic owner-only first claim and immutable afterwards.
