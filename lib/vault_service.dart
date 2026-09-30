@@ -17,6 +17,8 @@ class PrivateVaultEntry {
   final String username;
   final String email;
   final String password;
+  final String sharedSpaceId;
+  final String sharedCredentialId;
   final DateTime createdAt;
   final DateTime updatedAt;
 
@@ -28,11 +30,15 @@ class PrivateVaultEntry {
     this.username = '',
     this.email = '',
     this.password = '',
+    this.sharedSpaceId = '',
+    this.sharedCredentialId = '',
     required this.createdAt,
     required this.updatedAt,
   });
 
   bool get isCredential => kind == PrivateVaultEntryKind.credential;
+  bool get isSharedCredential =>
+      isCredential && sharedSpaceId.isNotEmpty && sharedCredentialId.isNotEmpty;
   String get service => title;
   String get notes => body;
 
@@ -44,6 +50,8 @@ class PrivateVaultEntry {
         if (isCredential) 'username': username,
         if (isCredential) 'email': email,
         if (isCredential) 'password': password,
+        if (isSharedCredential) 'sharedSpaceId': sharedSpaceId,
+        if (isSharedCredential) 'sharedCredentialId': sharedCredentialId,
         'createdAt': createdAt.toUtc().toIso8601String(),
         'updatedAt': updatedAt.toUtc().toIso8601String(),
       };
@@ -62,6 +70,8 @@ class PrivateVaultEntry {
       username: json['username']?.toString() ?? '',
       email: json['email']?.toString() ?? '',
       password: json['password']?.toString() ?? '',
+      sharedSpaceId: json['sharedSpaceId']?.toString() ?? '',
+      sharedCredentialId: json['sharedCredentialId']?.toString() ?? '',
       createdAt: DateTime.tryParse(json['createdAt']?.toString() ?? '')
               ?.toLocal() ??
           DateTime.now(),
@@ -91,6 +101,7 @@ class PrivateVaultService extends ChangeNotifier {
 
   final Random _random = Random.secure();
   final List<PrivateVaultEntry> _entries = [];
+  final Map<String, Uint8List> _sharedPasswordKeys = {};
 
   LocalStateStore? _store;
   Uint8List? _masterKey;
@@ -111,6 +122,22 @@ class PrivateVaultService extends ChangeNotifier {
       List<PrivateVaultEntry>.unmodifiable(
         _entries.where((entry) => entry.isCredential),
       );
+
+  List<PrivateVaultEntry> sharedCredentialEntries(String spaceId) =>
+      List<PrivateVaultEntry>.unmodifiable(
+        _entries.where(
+          (entry) => entry.isSharedCredential && entry.sharedSpaceId == spaceId,
+        ),
+      );
+
+  bool hasSharedPasswordKey(String spaceId) =>
+      _sharedPasswordKeys.containsKey(spaceId);
+
+  Uint8List? sharedPasswordKeyCopy(String spaceId) {
+    _requireUnlocked();
+    final key = _sharedPasswordKeys[spaceId];
+    return key == null ? null : Uint8List.fromList(key);
+  }
 
   Future<void> initialize() async {
     if (_initialized) return;
@@ -258,6 +285,10 @@ class PrivateVaultService extends ChangeNotifier {
     if (key != null) _zero(key);
     _masterKey = null;
     _entries.clear();
+    for (final key in _sharedPasswordKeys.values) {
+      _zero(key);
+    }
+    _sharedPasswordKeys.clear();
     notifyListeners();
   }
 
@@ -276,6 +307,11 @@ class PrivateVaultService extends ChangeNotifier {
     final now = DateTime.now();
     final existingIndex =
         id == null ? -1 : _entries.indexWhere((entry) => entry.id == id);
+    if (existingIndex >= 0 && _entries[existingIndex].isSharedCredential) {
+      throw StateError(
+        'Le credenziali Noi ♡ si modificano tramite la sincronizzazione condivisa.',
+      );
+    }
     if (existingIndex >= 0) {
       final previous = _entries[existingIndex];
       _entries[existingIndex] = PrivateVaultEntry(
@@ -370,6 +406,127 @@ class PrivateVaultService extends ChangeNotifier {
     notifyListeners();
   }
 
+  Future<Uint8List> ensureSharedPasswordKey(String spaceId) async {
+    _requireUnlocked();
+    final normalized = spaceId.trim();
+    if (normalized.isEmpty) {
+      throw const FormatException('Spazio condiviso non valido.');
+    }
+    final existing = _sharedPasswordKeys[normalized];
+    if (existing != null) return Uint8List.fromList(existing);
+
+    final key = _randomBytes(_masterKeyLength);
+    _sharedPasswordKeys[normalized] = Uint8List.fromList(key);
+    await _persistEntries();
+    notifyListeners();
+    return Uint8List.fromList(key);
+  }
+
+  Future<void> importSharedPasswordKey(
+    String spaceId,
+    Uint8List key,
+  ) async {
+    _requireUnlocked();
+    final normalized = spaceId.trim();
+    if (normalized.isEmpty || key.length != _masterKeyLength) {
+      throw const FormatException('Chiave Noi ♡ non valida.');
+    }
+    final previous = _sharedPasswordKeys[normalized];
+    if (previous != null) _zero(previous);
+    _sharedPasswordKeys[normalized] = Uint8List.fromList(key);
+    await _persistEntries();
+    notifyListeners();
+  }
+
+  Future<void> upsertSharedCredentialMirror({
+    required String spaceId,
+    required String credentialId,
+    required String service,
+    required String username,
+    required String email,
+    required String password,
+    required String notes,
+    required DateTime updatedAt,
+  }) async {
+    _requireUnlocked();
+    final mirrorId = 'shared:$spaceId:$credentialId';
+    final index = _entries.indexWhere((entry) => entry.id == mirrorId);
+    final createdAt = index >= 0 ? _entries[index].createdAt : updatedAt;
+    final mirror = PrivateVaultEntry(
+      id: mirrorId,
+      kind: PrivateVaultEntryKind.credential,
+      title: service.trim(),
+      body: notes.trim(),
+      username: username.trim(),
+      email: email.trim(),
+      password: password,
+      sharedSpaceId: spaceId,
+      sharedCredentialId: credentialId,
+      createdAt: createdAt,
+      updatedAt: updatedAt,
+    );
+    if (index >= 0) {
+      _entries[index] = mirror;
+    } else {
+      _entries.add(mirror);
+    }
+    _sortEntries();
+    await _persistEntries();
+    notifyListeners();
+  }
+
+  Future<void> deleteSharedCredentialMirror(
+    String spaceId,
+    String credentialId,
+  ) async {
+    _requireUnlocked();
+    final before = _entries.length;
+    _entries.removeWhere(
+      (entry) =>
+          entry.isSharedCredential &&
+          entry.sharedSpaceId == spaceId &&
+          entry.sharedCredentialId == credentialId,
+    );
+    if (_entries.length == before) return;
+    await _persistEntries();
+    notifyListeners();
+  }
+
+  Future<void> removeSharedPasswordSpace(String spaceId) async {
+    _requireUnlocked();
+    final key = _sharedPasswordKeys.remove(spaceId);
+    if (key != null) _zero(key);
+    _entries.removeWhere(
+      (entry) => entry.isSharedCredential && entry.sharedSpaceId == spaceId,
+    );
+    await _persistEntries();
+    notifyListeners();
+  }
+
+  Future<void> reconcileSharedPasswordSpaces(Set<String> activeSpaceIds) async {
+    _requireUnlocked();
+    final staleSpaces = <String>{
+      ..._sharedPasswordKeys.keys.where((id) => !activeSpaceIds.contains(id)),
+      ..._entries
+          .where(
+            (entry) =>
+                entry.isSharedCredential &&
+                !activeSpaceIds.contains(entry.sharedSpaceId),
+          )
+          .map((entry) => entry.sharedSpaceId),
+    };
+    if (staleSpaces.isEmpty) return;
+    for (final spaceId in staleSpaces) {
+      final key = _sharedPasswordKeys.remove(spaceId);
+      if (key != null) _zero(key);
+      _entries.removeWhere(
+        (entry) => entry.isSharedCredential && entry.sharedSpaceId == spaceId,
+      );
+    }
+    await _persistEntries();
+    notifyListeners();
+  }
+
   Future<void> delete(String id) async {
     _requireUnlocked();
     _entries.removeWhere((entry) => entry.id == id);
@@ -429,6 +586,22 @@ class PrivateVaultService extends ChangeNotifier {
       jsonDecode(utf8.decode(plaintext)) as Map,
     );
     final list = decoded['entries'] as List? ?? const [];
+    for (final key in _sharedPasswordKeys.values) {
+      _zero(key);
+    }
+    _sharedPasswordKeys.clear();
+    final rawSharedKeys = decoded['sharedPasswordKeys'];
+    if (rawSharedKeys is Map) {
+      for (final rawEntry in rawSharedKeys.entries) {
+        try {
+          final key = base64Url.decode(rawEntry.value.toString());
+          if (key.length == _masterKeyLength) {
+            _sharedPasswordKeys[rawEntry.key.toString()] =
+                Uint8List.fromList(key);
+          }
+        } catch (_) {}
+      }
+    }
     _entries
       ..clear()
       ..addAll(
@@ -447,6 +620,10 @@ class PrivateVaultService extends ChangeNotifier {
       utf8.encode(
         jsonEncode({
           'entries': _entries.map((entry) => entry.toJson()).toList(),
+          'sharedPasswordKeys': {
+            for (final entry in _sharedPasswordKeys.entries)
+              entry.key: base64UrlEncode(entry.value),
+          },
         }),
       ),
     );
