@@ -513,11 +513,22 @@ class SharedPasswordService {
 
     final spaces = await cloud.listSharedSpaces();
     final activeIds = spaces.map((space) => space.id).toSet();
-    await vault.reconcileSharedPasswordSpaces(activeIds);
+    await reconcileMembershipWithSpaceIds(activeIds);
 
     for (final space in spaces) {
       if (!hasKey(space.id)) continue;
       await refreshSpace(space.id);
+    }
+  }
+
+  Future<bool> refreshAllAvailableSpacesSafe() async {
+    try {
+      _lastReconcileError = null;
+      await refreshAllAvailableSpaces();
+      return true;
+    } catch (error) {
+      _lastReconcileError = error;
+      return false;
     }
   }
 
@@ -526,9 +537,17 @@ class SharedPasswordService {
     final cloud = CloudSyncService.instance;
     if (!vault.unlocked || !cloud.signedIn) return;
     final spaces = await cloud.listSharedSpaces();
-    await vault.reconcileSharedPasswordSpaces(
+    await reconcileMembershipWithSpaceIds(
       spaces.map((space) => space.id).toSet(),
     );
+  }
+
+  Future<void> reconcileMembershipWithSpaceIds(
+    Set<String> activeSpaceIds,
+  ) async {
+    final vault = PrivateVaultService.instance;
+    if (!vault.unlocked) return;
+    await vault.reconcileSharedPasswordSpaces(activeSpaceIds);
   }
 
   Future<void> revokeLocalSpace(String spaceId) async {
