@@ -295,24 +295,25 @@ class SharedPasswordService {
       return const [];
     }
 
-    final records = await cloud.pullSharedRecords(spaceId);
-    final meta = _activeKeyMeta(records);
+    final meta = await _loadKeyMeta(spaceId);
     final keyForCheck = vault.sharedPasswordKeyCopy(spaceId);
     if (keyForCheck == null) return const [];
     try {
-      if (meta == null) {
-        await _publishKeyMeta(spaceId, keyForCheck);
-      } else if (!_fingerprintMatches(keyForCheck, meta)) {
+      if (meta == null || !_fingerprintMatches(keyForCheck, meta)) {
         throw StateError('Chiave Password Noi ♡ non coerente con lo spazio.');
       }
     } finally {
       _zero(keyForCheck);
     }
+
+    final records = await cloud.pullSharedRecordsByType(
+      spaceId,
+      _credentialEntityType,
+    );
     final activeIds = <String>{};
     final result = <SharedPasswordCredential>[];
 
     for (final record in records) {
-      if (record.entityType != _credentialEntityType) continue;
       if (record.deletedAt != null || record.payload == null) {
         await vault.deleteSharedCredentialMirror(spaceId, record.entityId);
         continue;
@@ -334,6 +335,7 @@ class SharedPasswordService {
         password: credential.password,
         notes: credential.notes,
         updatedAt: credential.updatedAt,
+        sharedRevision: credential.revision,
       );
     }
 
