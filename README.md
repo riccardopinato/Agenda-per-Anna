@@ -2,7 +2,7 @@
 
 Flutter app for personal planning, private diary and the shared **Noi ♡** space.
 
-Current release line: **v0.82.0**.
+Current release line: **v0.83.0**.
 
 ## Core areas
 
@@ -481,6 +481,17 @@ See `docs/ARCHITECTURE.md` and `supabase/README.md` for implementation details.
 - Share-target text and images now reuse the same capture persistence helpers instead of maintaining separate diary-save logic.
 - Capturing from `La mia giornata` respects the day currently being viewed, including past/future days, while preserving the current time as the moment ordering time inside that day.
 - No capture database, parallel media store, AI layer or new cloud schema is introduced.
+
+## v0.83.0 — Life & Recovery Localization
+
+- Extends the existing `AnnaStrings` localization path across the main secondary private-life surfaces: Important People, Birthdays, Workouts, Shopping List and Trash.
+- People and relationship views localize editor chrome, relationship summaries, memory actions and all visible dates while preserving the existing Person/DiaryBlock relationship model.
+- Birthday creation, reminders, list states and actions now follow the selected language and locale-aware date formatting.
+- Workout history, plans and editors localize their UI vocabulary and render sport labels through locale-aware presentation helpers without changing persisted enum values.
+- Shopping List localizes private/shared list chrome, editors, filters, empty states and shopping category labels while keeping the canonical shopping models language-neutral.
+- Trash/recovery localizes destructive confirmations, restore feedback and deleted-at timestamps without changing the v0.45 lifecycle semantics.
+- No localization database, remote translation service, new sync channel or localized persistence values are introduced.
+- Release metadata is aligned to v0.83.0+93.
 
 ## v0.82.0 — Localization Coverage
 

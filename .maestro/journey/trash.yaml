@@ -12,5 +12,5 @@ appId: com.riccardopinato.agenda_per_anna
 - tapOn:
     text: '(Cestino|Trash|Papelera|Corbeille|Lixo)'
 - extendedWaitUntil:
-    visible: "Cestino"
+    visible: '(Cestino|Trash|Papelera|Corbeille|Lixo)'
     timeout: 10000
