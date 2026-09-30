@@ -34,42 +34,59 @@ $BackupDir = Join-Path $HOME ".annas-diary-signing"
 $KeystorePath = Join-Path $BackupDir "agenda-release.jks"
 $RecoveryPath = Join-Path $BackupDir "SIGNING-RECOVERY.json"
 
-if ((Test-Path $KeystorePath) -or (Test-Path $RecoveryPath)) {
-  throw "Esiste gia una identita di firma in $BackupDir. Lo script non la sovrascrive per evitare una rotazione accidentale della chiave."
+$HasKeystore = Test-Path $KeystorePath
+$HasRecovery = Test-Path $RecoveryPath
+
+if ($HasKeystore -xor $HasRecovery) {
+  throw "Backup signing incompleto in $BackupDir. Non genero una nuova chiave: ripristina prima la cartella completa."
 }
 
 New-Item -ItemType Directory -Path $BackupDir -Force | Out-Null
 
-$StorePassword = New-RandomSecret
-$KeyPassword = New-RandomSecret
-$Alias = "annas-diary-release"
+if ($HasKeystore -and $HasRecovery) {
+  Write-Host "Riutilizzo la keystore release stabile esistente..."
+  $Recovery = Get-Content -Raw -Path $RecoveryPath | ConvertFrom-Json
+  $Alias = [string]$Recovery.alias
+  $StorePassword = [string]$Recovery.keystorePassword
+  $KeyPassword = [string]$Recovery.keyPassword
 
-Write-Host "Genero la keystore release stabile..."
-& keytool -genkeypair -storetype JKS -keystore $KeystorePath -storepass $StorePassword -keypass $KeyPassword -alias $Alias -keyalg RSA -keysize 4096 -validity 10000 -dname "CN=Annas Diary, OU=Mobile, O=Riccardo Pinato, C=IT" -noprompt
-if ($LASTEXITCODE -ne 0 -or -not (Test-Path $KeystorePath)) {
-  throw "Creazione keystore fallita."
+  if ([string]::IsNullOrWhiteSpace($Alias) -or
+      [string]::IsNullOrWhiteSpace($StorePassword) -or
+      [string]::IsNullOrWhiteSpace($KeyPassword)) {
+    throw "SIGNING-RECOVERY.json non contiene i dati necessari."
+  }
+} else {
+  $StorePassword = New-RandomSecret
+  $KeyPassword = New-RandomSecret
+  $Alias = "annas-diary-release"
+
+  Write-Host "Genero la keystore release stabile..."
+  & keytool -genkeypair -storetype JKS -keystore $KeystorePath -storepass $StorePassword -keypass $KeyPassword -alias $Alias -keyalg RSA -keysize 4096 -validity 10000 -dname "CN=Annas Diary, OU=Mobile, O=Riccardo Pinato, C=IT" -noprompt
+  if ($LASTEXITCODE -ne 0 -or -not (Test-Path $KeystorePath)) {
+    throw "Creazione keystore fallita."
+  }
+
+  $Recovery = [ordered]@{
+    repository = $Repo
+    createdAtUtc = [DateTime]::UtcNow.ToString("o")
+    keystoreFile = "agenda-release.jks"
+    alias = $Alias
+    keystorePassword = $StorePassword
+    keyPassword = $KeyPassword
+    note = "BACKUP CRITICO: senza questa keystore non puoi firmare aggiornamenti con la stessa identita."
+  }
+  $Recovery | ConvertTo-Json -Depth 3 | Set-Content -Path $RecoveryPath -Encoding UTF8
 }
 
 & keytool -list -keystore $KeystorePath -storepass $StorePassword -alias $Alias | Out-Null
 if ($LASTEXITCODE -ne 0) {
-  throw "La keystore appena generata non supera la verifica locale."
+  throw "La keystore release non supera la verifica locale."
 }
 
 $KeystoreBase64 = [Convert]::ToBase64String([System.IO.File]::ReadAllBytes($KeystorePath))
 
-$Recovery = [ordered]@{
-  repository = $Repo
-  createdAtUtc = [DateTime]::UtcNow.ToString("o")
-  keystoreFile = "agenda-release.jks"
-  alias = $Alias
-  keystorePassword = $StorePassword
-  keyPassword = $KeyPassword
-  note = "BACKUP CRITICO: senza questa keystore non puoi firmare aggiornamenti con la stessa identita."
-}
-$Recovery | ConvertTo-Json -Depth 3 | Set-Content -Path $RecoveryPath -Encoding UTF8
-
 try {
-  & icacls $BackupDir /inheritance:r /grant:r "$env:USERNAME:(OI)(CI)F" | Out-Null
+  & icacls $BackupDir /inheritance:r /grant:r "${env:USERNAME}:(OI)(CI)F" | Out-Null
 } catch {
   Write-Warning "Proteggi manualmente la cartella di signing: non sono riuscito a restringere automaticamente i permessi NTFS."
 }
