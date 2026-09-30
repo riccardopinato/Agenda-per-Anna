@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:math';
 import 'package:flutter/foundation.dart';
@@ -99,6 +100,7 @@ class PrivateVaultService extends ChangeNotifier {
   static const _tagBits = 128;
   static const _nonceLength = 12;
   static const _masterKeyLength = 32;
+  static const autoLockTimeout = Duration(minutes: 5);
   static const _keyAad = 'annas-diary-vault-key-v1';
   static const _payloadAad = 'annas-diary-vault-payload-v1';
   static const MethodChannel _native =
@@ -112,6 +114,7 @@ class PrivateVaultService extends ChangeNotifier {
   Uint8List? _masterKey;
   Map<String, dynamic>? _meta;
   bool _initialized = false;
+  Timer? _autoLockTimer;
 
   bool get initialized => _initialized;
   bool get configured => _meta != null;
@@ -231,6 +234,7 @@ class PrivateVaultService extends ChangeNotifier {
       _masterKey = Uint8List.fromList(master);
       _entries.clear();
       _sharedPasswordKeys.clear();
+      _armAutoLock();
       notifyListeners();
     } finally {
       _zero(passwordKey);
@@ -271,6 +275,7 @@ class PrivateVaultService extends ChangeNotifier {
         }
       }
 
+      _armAutoLock();
       notifyListeners();
       return true;
     } catch (_) {
@@ -304,6 +309,7 @@ class PrivateVaultService extends ChangeNotifier {
         if (master.length != _masterKeyLength) return false;
         _masterKey = Uint8List.fromList(master);
         await _loadEntries();
+        _armAutoLock();
         notifyListeners();
         return true;
       } finally {
@@ -332,7 +338,20 @@ class PrivateVaultService extends ChangeNotifier {
     }
   }
 
+  void noteUserActivity() {
+    if (!unlocked) return;
+    _armAutoLock();
+  }
+
+  void _armAutoLock() {
+    _autoLockTimer?.cancel();
+    if (!unlocked) return;
+    _autoLockTimer = Timer(autoLockTimeout, lock);
+  }
+
   void lock() {
+    _autoLockTimer?.cancel();
+    _autoLockTimer = null;
     final key = _masterKey;
     if (key != null) _zero(key);
     _masterKey = null;
