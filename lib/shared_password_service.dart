@@ -233,19 +233,23 @@ class SharedPasswordService {
     final normalized = _normalizePairingCode(code);
     if (normalized.length != 32) return false;
     final codeHash = sha256.convert(utf8.encode(normalized)).toString();
-    final records = await cloud.pullSharedRecords(spaceId);
-    final keyMeta = _activeKeyMeta(records);
+
+    final keyMeta = await _loadKeyMeta(spaceId);
+    final envelopeRecords = await cloud.pullSharedRecordsByType(
+      spaceId,
+      _keyEnvelopeEntityType,
+      entityId: codeHash,
+    );
     SharedSpaceRecord? match;
-    for (final record in records) {
-      if (record.entityType == _keyEnvelopeEntityType &&
-          record.entityId == codeHash &&
+    for (final record in envelopeRecords) {
+      if (record.entityId == codeHash &&
           record.deletedAt == null &&
           record.payload != null) {
         match = record;
         break;
       }
     }
-    if (match == null) return false;
+    if (match == null || keyMeta == null) return false;
 
     try {
       final payload = match.payload!;
@@ -265,13 +269,8 @@ class SharedPasswordService {
           aad: _keyEnvelopeAad(spaceId),
         );
         if (spaceKey.length != _keyLength) return false;
-        if (keyMeta != null && !_fingerprintMatches(spaceKey, keyMeta)) {
-          return false;
-        }
+        if (!_fingerprintMatches(spaceKey, keyMeta)) return false;
         await vault.importSharedPasswordKey(spaceId, spaceKey);
-        if (keyMeta == null) {
-          await _publishKeyMeta(spaceId, spaceKey);
-        }
       } finally {
         _zero(wrappingKey);
         if (spaceKey != null) _zero(spaceKey);
