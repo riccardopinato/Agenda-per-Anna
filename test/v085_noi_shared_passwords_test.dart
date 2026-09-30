@@ -153,6 +153,8 @@ void main() {
     final service =
         File('lib/shared_password_service.dart').readAsStringSync();
     final vault = File('lib/vault_service.dart').readAsStringSync();
+    final privateVault =
+        File('lib/src/screens/private_vault.dart').readAsStringSync();
     final sharedScreen =
         File('lib/src/screens/shared_passwords_screen.dart').readAsStringSync();
     final sharedSpace =
@@ -181,11 +183,18 @@ void main() {
     expect(vault, contains('deleteSharedCredentialMirror'));
     expect(vault, isNot(contains('private_vault_shared_passwords')));
 
+    expect(privateVault, contains('passwordUpdatedAt('));
+    expect(privateVault, contains("'d MMMM yyyy · HH:mm'"));
+    expect(privateVault, contains('entry.updatedAt'));
+
     expect(sharedScreen, contains('SharedPasswordsScreen'));
     expect(sharedScreen, contains('service.upsertCredential('));
     expect(sharedScreen, contains('service.deleteCredential('));
     expect(sharedScreen, contains('Duration(seconds: 30)'));
     expect(sharedScreen, contains('Duration(seconds: 60)'));
+    expect(sharedScreen, contains('passwordUpdatedAt('));
+    expect(sharedScreen, contains("'d MMMM yyyy · HH:mm'"));
+    expect(sharedScreen, contains('credential.updatedAt'));
 
     expect(sharedSpace, contains('_openSharedPasswords'));
     expect(sharedSpace, contains('revokeLocalSpace'));
