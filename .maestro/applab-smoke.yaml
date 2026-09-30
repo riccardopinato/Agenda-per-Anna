@@ -32,7 +32,7 @@ appId: com.riccardopinato.agenda_per_anna
 # Oggi is a bottom-navigation tab, not a pushed route: Android Back would exit
 # the app. Select Home explicitly before opening Settings.
 - tapOn:
-    text: "(Home|Inicio|Accueil|Início)"
+    text: '(Home|Inicio|Accueil|Início)[\s\S]*'
     retryTapIfNoChange: true
 - extendedWaitUntil:
     visible: "(La mia agenda|My agenda|Mi agenda|Mon agenda|A minha agenda)"
