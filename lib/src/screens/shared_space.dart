@@ -1963,6 +1963,14 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
     );
   }
 
+  Future<void> _openSharedPasswords() async {
+    await Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => SharedPasswordsScreen(space: widget.space),
+      ),
+    );
+  }
+
   Future<void> _openMembers() async {
     List<SharedSpaceMember> members;
     try {
@@ -2137,6 +2145,9 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
       } else {
         await CloudSyncService.instance.leaveSharedSpace(widget.space.id);
       }
+      await SharedPasswordService.instance.revokeLocalSpace(
+        widget.space.id,
+      );
       final prefs = await widget.store._localState();
       await prefs.remove(_cacheKey);
       await prefs.remove(_pendingKey);
@@ -2572,6 +2583,11 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
               tooltip: 'I nostri ricordi',
               onPressed: _openSharedMemories,
               icon: const Icon(Icons.photo_library_outlined),
+            ),
+            IconButton(
+              tooltip: 'Password Noi ♡',
+              onPressed: _openSharedPasswords,
+              icon: const Icon(Icons.password_outlined),
             ),
             IconButton(
               tooltip: 'Persone nello spazio',
