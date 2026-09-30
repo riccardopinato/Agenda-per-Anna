@@ -489,7 +489,7 @@ See `docs/ARCHITECTURE.md` and `supabase/README.md` for implementation details.
 - Makes the Noi ♡ shared-password key a **first-writer-wins atomic owner claim** on the backend, preventing concurrent owner devices from silently creating different accepted E2EE keys.
 - Shared credential update/delete operations use server-side **compare-and-swap revisions** with row locking. A stale device receives an explicit conflict instead of overwriting a newer password.
 - Shared credential modification timestamps are committed by the backend rather than trusted from the device clock.
-- Pairing envelopes are consumed through an atomic one-shot RPC, and the legacy generic merge RPC is blocked from mutating protected shared-credential/key-metadata records.
+- Pairing envelopes are created through an owner-only dedicated RPC and consumed through an atomic one-shot RPC; the Data API and legacy generic merge RPC are blocked from mutating all protected shared-password records.
 - Shared-password backend guards reject plaintext credential fields and enforce valid AES-256-GCM envelope/tombstone shapes.
 - Password-specific reads now query only key metadata, pairing envelopes or shared credentials instead of downloading every shared-space record.
 - Authoritative membership reconciliation purges removed-space password keys and encrypted mirrors immediately when the Vault is already unlocked; offline devices still purge on the next successful reconnect/reconcile.
