@@ -54,6 +54,14 @@ void main() {
       jsonDecode(rawMeta!) as Map,
     );
     expect(meta['iterations'], 600000);
+    expect(
+      File('lib/vault_service.dart').readAsStringSync(),
+      contains('_legacyIterations = 180000'),
+    );
+    expect(
+      File('lib/vault_service.dart').readAsStringSync(),
+      contains('_upgradePasswordWrap'),
+    );
     expect(rawMeta, isNot(contains('correct-horse-battery-staple')));
     expect(rawPayload, isNot(contains('correct-horse-battery-staple')));
   });
@@ -97,6 +105,9 @@ void main() {
     final cloud = File('lib/cloud_sync_service.dart').readAsStringSync();
     final service =
         File('lib/shared_password_service.dart').readAsStringSync();
+    final backendContract = File(
+      'supabase/tests/027_shared_password_hardening_contract.sql',
+    ).readAsStringSync();
 
     expect(migration, contains('claim_shared_password_key_meta'));
     expect(migration, contains('on conflict (record_key) do nothing'));
@@ -106,6 +117,7 @@ void main() {
     expect(migration, contains('shared_password_ciphertext_payload_invalid'));
     expect(migration, contains("array['service', 'username', 'email', 'password', 'notes']"));
     expect(migration, contains('agenda_records_shared_password_guard'));
+    expect(migration, contains('shared_password_dedicated_rpc_required'));
 
     expect(cloud, contains('claimSharedPasswordKeyMeta'));
     expect(cloud, contains('upsertSharedPasswordCredential'));
@@ -119,6 +131,12 @@ void main() {
     expect(service, contains('_recoveryIterations = 600000'));
     expect(service, contains('pullSharedRecordsByType'));
     expect(service, isNot(contains('pullSharedRecords(spaceId')));
+
+    expect(backendContract, contains('stale_update_was_not_rejected'));
+    expect(backendContract, contains('stale_delete_was_not_rejected'));
+    expect(backendContract, contains('generic_merge_bypass_was_not_rejected'));
+    expect(backendContract, contains('removed_member_was_not_rejected'));
+    expect(backendContract, contains('rollback;'));
   });
 
   test('v0.86 UI carries revisions and reconciles membership immediately', () {
