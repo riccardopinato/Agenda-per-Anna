@@ -1,16 +1,22 @@
 appId: com.riccardopinato.agenda_per_anna
 ---
+# The previous visual checkpoint is the Private Vault. Return through
+# Settings to the Home/agenda hub before opening the Life Archive.
 - back
 - extendedWaitUntil:
-    visible: "(La mia agenda|My agenda|Mi agenda|Mon agenda|A minha agenda)"
+    visible: ".*(Impostazioni|Settings|Ajustes|Paramètres|Definições).*"
+    timeout: 10000
+- back
+- extendedWaitUntil:
+    visible: ".*(La mia agenda|My agenda|Mi agenda|Mon agenda|A minha agenda).*"
     timeout: 10000
 - tapOn:
-    text: "(Archivio|Archive|Archivo|Archives|Arquivo)"
+    text: ".*(Archivio|Archive|Archivo|Archives|Arquivo).*"
 - extendedWaitUntil:
-    visible: '(Archivio della vita|Life archive|Archivo de vida|Archives de vie|Arquivo da vida)'
+    visible: ".*(Archivio della vita|Life archive|Archivo de vida|Archives de vie|Arquivo da vida).*"
     timeout: 10000
 - tapOn:
-    text: '(Cestino|Trash|Papelera|Corbeille|Lixo)'
+    text: ".*(Cestino|Trash|Papelera|Corbeille|Lixo).*"
 - extendedWaitUntil:
-    visible: '(Cestino|Trash|Papelera|Corbeille|Lixo)'
+    visible: ".*(Cestino|Trash|Papelera|Corbeille|Lixo).*"
     timeout: 10000
