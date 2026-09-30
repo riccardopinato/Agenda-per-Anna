@@ -567,16 +567,20 @@ class SharedPasswordService {
     try {
       final plaintext =
           Uint8List.fromList(utf8.encode(jsonEncode(credential.toJson())));
-      final encrypted = _encrypt(
-        key: key,
-        plaintext: plaintext,
-        aad: _credentialAad(credential.spaceId, credential.id),
-      );
-      return {
-        'v': _payloadVersion,
-        'cipher': 'AES-256-GCM',
-        ...encrypted,
-      };
+      try {
+        final encrypted = _encrypt(
+          key: key,
+          plaintext: plaintext,
+          aad: _credentialAad(credential.spaceId, credential.id),
+        );
+        return {
+          'v': _payloadVersion,
+          'cipher': 'AES-256-GCM',
+          ...encrypted,
+        };
+      } finally {
+        _zero(plaintext);
+      }
     } finally {
       _zero(key);
     }
@@ -590,12 +594,17 @@ class SharedPasswordService {
     if ((payload['v'] as num?)?.toInt() != _payloadVersion) {
       throw const FormatException('Versione Password Noi ♡ non supportata.');
     }
+    final revision = (payload['revision'] as num?)?.toInt() ?? 0;
+    if (revision <= 0) {
+      throw const FormatException('Revisione Password Noi ♡ non valida.');
+    }
     final key = PrivateVaultService.instance.sharedPasswordKeyCopy(spaceId);
     if (key == null) {
       throw StateError('Chiave Password Noi ♡ non disponibile.');
     }
+    Uint8List? plaintext;
     try {
-      final plaintext = _decrypt(
+      plaintext = _decrypt(
         key: key,
         envelope: payload,
         aad: _credentialAad(spaceId, credentialId),
@@ -603,13 +612,25 @@ class SharedPasswordService {
       final decoded = Map<String, dynamic>.from(
         jsonDecode(utf8.decode(plaintext)) as Map,
       );
-      final credential = SharedPasswordCredential.fromJson(decoded);
-      if (credential.id != credentialId || credential.spaceId != spaceId) {
+      final base = SharedPasswordCredential.fromJson(decoded);
+      if (base.id != credentialId || base.spaceId != spaceId) {
         throw const FormatException('Credenziale Noi ♡ non valida.');
       }
-      return credential;
+      return SharedPasswordCredential(
+        id: base.id,
+        spaceId: base.spaceId,
+        service: base.service,
+        username: base.username,
+        email: base.email,
+        password: base.password,
+        notes: base.notes,
+        updatedAt: base.updatedAt,
+        updatedBy: base.updatedBy,
+        revision: revision,
+      );
     } finally {
       _zero(key);
+      if (plaintext != null) _zero(plaintext);
     }
   }
 
