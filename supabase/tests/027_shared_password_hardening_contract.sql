@@ -41,6 +41,7 @@ declare
   v_invite text;
   v_claim jsonb;
   v_mutation jsonb;
+  v_envelope jsonb;
   v_payload jsonb := jsonb_build_object(
     'v', 1,
     'cipher', 'AES-256-GCM',
@@ -79,6 +80,26 @@ begin
     raise exception 'key_claim_not_atomic';
   end if;
 
+  perform public.merge_agenda_record(
+    v_space::text || ':shared:shared_password_key_envelope:contract-envelope',
+    v_user_a,
+    v_space,
+    'shared',
+    'shared_password_key_envelope',
+    'contract-envelope',
+    jsonb_build_object(
+      'v', 1,
+      'salt', 'AAAAAAAAAAAAAAAAAAAAAA==',
+      'wrapped', jsonb_build_object(
+        'nonce', 'AAAAAAAAAAAAAAAA',
+        'data', 'BBBBBBBBBBBBBBBBBBBB'
+      ),
+      'expiresAt', (clock_timestamp() + interval '15 minutes')::text
+    ),
+    clock_timestamp(),
+    null
+  );
+
   perform set_config(
     'request.jwt.claims',
     jsonb_build_object(
@@ -89,6 +110,32 @@ begin
   );
 
   perform public.join_shared_space(v_invite);
+
+  v_envelope := public.consume_shared_password_key_envelope(
+    v_space,
+    'contract-envelope'
+  );
+  if coalesce(v_envelope ->> 'salt', '') = '' then
+    raise exception 'pairing_envelope_first_consume_failed';
+  end if;
+
+  v_failed := false;
+  begin
+    perform public.consume_shared_password_key_envelope(
+      v_space,
+      'contract-envelope'
+    );
+  exception
+    when others then
+      if position('shared_password_pairing_code_unavailable' in sqlerrm) > 0 then
+        v_failed := true;
+      else
+        raise;
+      end if;
+  end;
+  if not v_failed then
+    raise exception 'pairing_envelope_was_consumed_twice';
+  end if;
 
   v_failed := false;
   begin
@@ -113,10 +160,14 @@ begin
     'credential-contract',
     v_payload,
     0,
-    clock_timestamp()
+    '2100-01-01T00:00:00Z'::timestamptz
   );
   if (v_mutation ->> 'revision')::bigint <> 1 then
     raise exception 'initial_revision_not_one';
+  end if;
+  if (v_mutation ->> 'clientUpdatedAt')::timestamptz >
+      clock_timestamp() + interval '5 minutes' then
+    raise exception 'shared_password_timestamp_not_server_authoritative';
   end if;
 
   perform set_config(
