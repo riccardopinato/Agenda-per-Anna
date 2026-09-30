@@ -437,14 +437,26 @@ class _PrivateVaultScreenState extends State<PrivateVaultScreen>
 
     if (result == true) {
       try {
-        await vault.upsertCredential(
-          id: entry?.id,
-          service: serviceController.text,
-          username: usernameController.text,
-          email: emailController.text,
-          password: credentialPasswordController.text,
-          notes: notesController.text,
-        );
+        if (entry?.isSharedCredential == true) {
+          await SharedPasswordService.instance.upsertCredential(
+            spaceId: entry!.sharedSpaceId,
+            credentialId: entry.sharedCredentialId,
+            service: serviceController.text,
+            username: usernameController.text,
+            email: emailController.text,
+            password: credentialPasswordController.text,
+            notes: notesController.text,
+          );
+        } else {
+          await vault.upsertCredential(
+            id: entry?.id,
+            service: serviceController.text,
+            username: usernameController.text,
+            email: emailController.text,
+            password: credentialPasswordController.text,
+            notes: notesController.text,
+          );
+        }
       } on FormatException catch (error) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -549,7 +561,11 @@ class _PrivateVaultScreenState extends State<PrivateVaultScreen>
           return AlertDialog(
             title: Row(
               children: [
-                const Icon(Icons.key_outlined),
+                Icon(
+                  entry.isSharedCredential
+                      ? Icons.favorite_outline
+                      : Icons.key_outlined,
+                ),
                 const SizedBox(width: 10),
                 Expanded(
                   child: Text(
@@ -638,7 +654,14 @@ class _PrivateVaultScreenState extends State<PrivateVaultScreen>
       ),
     );
     if (confirmed == true) {
-      await vault.delete(entry.id);
+      if (entry.isSharedCredential) {
+        await SharedPasswordService.instance.deleteCredential(
+          spaceId: entry.sharedSpaceId,
+          credentialId: entry.sharedCredentialId,
+        );
+      } else {
+        await vault.delete(entry.id);
+      }
     }
   }
 
