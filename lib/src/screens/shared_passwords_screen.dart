@@ -196,6 +196,8 @@ class _SharedPasswordsScreenState extends State<SharedPasswordsScreen>
   }
 
   Future<void> _showPairingCode() async {
+    final keyUnavailable =
+        AnnaStrings.of(context).sharedPasswordsKeyUnavailable;
     try {
       final code = await service.createPairingCode(widget.space.id);
       if (!mounted) return;
@@ -261,7 +263,7 @@ class _SharedPasswordsScreenState extends State<SharedPasswordsScreen>
         ),
       );
     } catch (_) {
-      _message(AnnaStrings.of(context).sharedPasswordsKeyUnavailable);
+      _message(keyUnavailable);
     }
   }
 
@@ -453,8 +455,10 @@ class _SharedPasswordsScreenState extends State<SharedPasswordsScreen>
 
   Future<void> _copySensitive(String value, String label) async {
     if (value.isEmpty) return;
+    final copiedMessage =
+        AnnaStrings.of(context).vaultCopiedToClipboard(label);
     await Clipboard.setData(ClipboardData(text: value));
-    _message(AnnaStrings.of(context).vaultCopiedToClipboard(label));
+    _message(copiedMessage);
     unawaited(
       Future<void>.delayed(const Duration(seconds: 30), () async {
         try {
@@ -756,7 +760,7 @@ class _SharedPasswordsScreenState extends State<SharedPasswordsScreen>
                                       const SizedBox(height: 12),
                                       Text(
                                         AnnaStrings.of(context).sharedPasswordsEmpty,
-                                        style: TextStyle(
+                                        style: const TextStyle(
                                           fontSize: 20,
                                           fontWeight: FontWeight.w900,
                                         ),
