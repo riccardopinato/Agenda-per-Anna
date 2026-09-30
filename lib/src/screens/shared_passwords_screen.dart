@@ -142,7 +142,7 @@ class _SharedPasswordsScreenState extends State<SharedPasswordsScreen>
     final code = await showDialog<String>(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        title: const Text('Collega Password Noi ♡'),
+        title: Text(AnnaStrings.of(context).sharedPasswordsConnect),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -158,7 +158,7 @@ class _SharedPasswordsScreenState extends State<SharedPasswordsScreen>
               enableSuggestions: false,
               textCapitalization: TextCapitalization.characters,
               decoration: const InputDecoration(
-                labelText: 'Codice di sicurezza',
+                labelText: AnnaStrings.of(context).sharedPasswordsSecurityCode,
                 prefixIcon: Icon(Icons.key_outlined),
               ),
             ),
@@ -172,7 +172,7 @@ class _SharedPasswordsScreenState extends State<SharedPasswordsScreen>
           FilledButton(
             onPressed: () =>
                 Navigator.pop(dialogContext, controller.text.trim()),
-            child: const Text('Collega'),
+            child: Text(AnnaStrings.of(context).sharedPasswordsEnterCode),
           ),
         ],
       ),
@@ -189,7 +189,7 @@ class _SharedPasswordsScreenState extends State<SharedPasswordsScreen>
     if (!mounted) return;
     if (!ok) {
       setState(() => loading = false);
-      _message('Codice non valido, scaduto o già usato.');
+      _message(AnnaStrings.of(context).sharedPasswordsInvalidCode);
       return;
     }
     await _refresh();
@@ -202,13 +202,12 @@ class _SharedPasswordsScreenState extends State<SharedPasswordsScreen>
       await showDialog<void>(
         context: context,
         builder: (dialogContext) => AlertDialog(
-          title: const Text('Codice Password Noi ♡'),
+          title: Text(AnnaStrings.of(context).sharedPasswordsPairingTitle),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Text(
-                'Condividilo solo con una persona già membro di Noi ♡. '
-                'Scade dopo 15 minuti e viene invalidato al primo uso.',
+              Text(
+                AnnaStrings.of(context).sharedPasswordsPairingDescription,
               ),
               const SizedBox(height: 18),
               SelectableText(
@@ -249,7 +248,7 @@ class _SharedPasswordsScreenState extends State<SharedPasswordsScreen>
                   );
                 },
                 icon: const Icon(Icons.copy_outlined),
-                label: const Text('Copia codice'),
+                label: Text(AnnaStrings.of(context).sharedPasswordsCopyCode),
               ),
             ],
           ),
@@ -262,7 +261,7 @@ class _SharedPasswordsScreenState extends State<SharedPasswordsScreen>
         ),
       );
     } catch (_) {
-      _message('Impossibile generare il codice di sicurezza.');
+      _message(AnnaStrings.of(context).sharedPasswordsKeyUnavailable);
     }
   }
 
@@ -283,8 +282,8 @@ class _SharedPasswordsScreenState extends State<SharedPasswordsScreen>
         builder: (dialogContext, setDialogState) => AlertDialog(
           title: Text(
             existing == null
-                ? 'Nuova password condivisa'
-                : 'Modifica password condivisa',
+                ? AnnaStrings.of(context).sharedPasswordNew
+                : AnnaStrings.of(context).sharedPasswordEdit,
           ),
           content: SizedBox(
             width: 540,
@@ -299,8 +298,8 @@ class _SharedPasswordsScreenState extends State<SharedPasswordsScreen>
                       maxLength: 160,
                       textCapitalization: TextCapitalization.words,
                       decoration: const InputDecoration(
-                        labelText: 'Nome servizio',
-                        hintText: 'Es. Netflix, Google, Amazon',
+                        labelText: AnnaStrings.of(context).vaultServiceName,
+                        hintText: AnnaStrings.of(context).vaultServiceHint,
                         prefixIcon: Icon(Icons.apps_outlined),
                       ),
                     ),
@@ -312,7 +311,7 @@ class _SharedPasswordsScreenState extends State<SharedPasswordsScreen>
                       autocorrect: false,
                       enableSuggestions: false,
                       decoration: const InputDecoration(
-                        labelText: 'Nome utente',
+                        labelText: AnnaStrings.of(context).vaultUsername,
                         prefixIcon: Icon(Icons.person_outline),
                       ),
                     ),
@@ -325,7 +324,7 @@ class _SharedPasswordsScreenState extends State<SharedPasswordsScreen>
                       autocorrect: false,
                       enableSuggestions: false,
                       decoration: const InputDecoration(
-                        labelText: 'Email',
+                        labelText: AnnaStrings.of(context).vaultEmail,
                         prefixIcon: Icon(Icons.alternate_email),
                       ),
                     ),
@@ -337,12 +336,12 @@ class _SharedPasswordsScreenState extends State<SharedPasswordsScreen>
                       autocorrect: false,
                       enableSuggestions: false,
                       decoration: InputDecoration(
-                        labelText: 'Password',
+                        labelText: AnnaStrings.of(context).vaultPasswordField,
                         prefixIcon: const Icon(Icons.password_outlined),
                         suffixIcon: IconButton(
                           tooltip: revealPassword
-                              ? 'Nascondi password'
-                              : 'Mostra password',
+                              ? AnnaStrings.of(context).vaultHidePassword
+                              : AnnaStrings.of(context).vaultShowPassword,
                           onPressed: () => setDialogState(
                             () => revealPassword = !revealPassword,
                           ),
@@ -362,7 +361,7 @@ class _SharedPasswordsScreenState extends State<SharedPasswordsScreen>
                       maxLength: 12000,
                       textCapitalization: TextCapitalization.sentences,
                       decoration: const InputDecoration(
-                        labelText: 'Note',
+                        labelText: AnnaStrings.of(context).vaultNotes,
                         alignLabelWithHint: true,
                         prefixIcon: Icon(Icons.notes_outlined),
                       ),
@@ -421,7 +420,7 @@ class _SharedPasswordsScreenState extends State<SharedPasswordsScreen>
     final confirmed = await showDialog<bool>(
           context: context,
           builder: (dialogContext) => AlertDialog(
-            title: const Text('Eliminare la password condivisa?'),
+            title: Text(AnnaStrings.of(context).sharedPasswordsDeleteQuestion),
             content: Text(
               '“${credential.service}” verrà eliminata da Noi ♡ e dalle '
               'Cassaforti private sincronizzate.',
@@ -549,7 +548,7 @@ class _SharedPasswordsScreenState extends State<SharedPasswordsScreen>
                     ListTile(
                       contentPadding: EdgeInsets.zero,
                       leading: const Icon(Icons.lock_outline),
-                      title: const Text('Cifratura end-to-end'),
+                      title: Text(AnnaStrings.of(context).sharedPasswordsE2ee),
                       subtitle: Text(
                         'Aggiornata ${DateFormat(
                           'd MMM yyyy · HH:mm',
@@ -602,7 +601,7 @@ class _SharedPasswordsScreenState extends State<SharedPasswordsScreen>
               const SizedBox(height: 14),
               Text(
                 vault.configured
-                    ? 'Sblocca la Cassaforte privata'
+                    ? AnnaStrings.of(context).sharedPasswordsVaultRequired
                     : 'Configura la Cassaforte privata',
                 style: const TextStyle(
                   fontSize: 22,
@@ -611,9 +610,8 @@ class _SharedPasswordsScreenState extends State<SharedPasswordsScreen>
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 8),
-              const Text(
-                'Le password Noi ♡ usano la Cassaforte per custodire la chiave '
-                'E2EE e la copia locale cifrata.',
+              Text(
+                AnnaStrings.of(context).sharedPasswordsVaultDescription,
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 16),
@@ -651,17 +649,15 @@ class _SharedPasswordsScreenState extends State<SharedPasswordsScreen>
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 8),
-              const Text(
-                'Questo dispositivo è già membro di Noi ♡, ma non possiede la '
-                'chiave delle password. Inserisci il codice E2EE generato dal '
-                'proprietario.',
+              Text(
+                AnnaStrings.of(context).sharedPasswordsConnectDescription,
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 16),
               FilledButton.icon(
                 onPressed: _importPairingCode,
                 icon: const Icon(Icons.link_outlined),
-                label: const Text('Inserisci codice'),
+                label: Text(AnnaStrings.of(context).sharedPasswordsEnterCode),
               ),
             ],
           ),
@@ -688,7 +684,7 @@ class _SharedPasswordsScreenState extends State<SharedPasswordsScreen>
                   widget.space.isOwner &&
                   CloudSyncService.instance.signedIn)
                 IconButton(
-                  tooltip: 'Condividi chiave E2EE',
+                  tooltip: AnnaStrings.of(context).sharedPasswordsShareKey,
                   onPressed: _showPairingCode,
                   icon: const Icon(Icons.vpn_key_outlined),
                 ),
@@ -703,7 +699,7 @@ class _SharedPasswordsScreenState extends State<SharedPasswordsScreen>
               ? FloatingActionButton.extended(
                   onPressed: () => _showEditor(),
                   icon: const Icon(Icons.add),
-                  label: const Text('Nuova password'),
+                  label: Text(AnnaStrings.of(context).sharedPasswordNew),
                 )
               : null,
           body: !vault.unlocked
@@ -734,9 +730,8 @@ class _SharedPasswordsScreenState extends State<SharedPasswordsScreen>
                                     SizedBox(width: 10),
                                     Expanded(
                                       child: Text(
-                                        'Cifrate end-to-end. Noi ♡ è la sorgente '
-                                        'autorevole: modifiche ed eliminazioni si '
-                                        'riflettono anche nella Cassaforte privata.',
+                                        AnnaStrings.of(context)
+                                            .sharedPasswordsE2eeBanner,
                                       ),
                                     ),
                                   ],
@@ -768,9 +763,8 @@ class _SharedPasswordsScreenState extends State<SharedPasswordsScreen>
                                       ),
                                       SizedBox(height: 6),
                                       Text(
-                                        'Aggiungi un servizio: comparirà anche '
-                                        'nella Cassaforte privata dei dispositivi '
-                                        'Noi ♡ collegati.',
+                                        AnnaStrings.of(context)
+                                            .sharedPasswordsEmptyDescription,
                                         textAlign: TextAlign.center,
                                       ),
                                     ],
