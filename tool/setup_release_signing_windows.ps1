@@ -117,6 +117,7 @@ function Try-RecoverLegacySigning(
   New-Item -ItemType Directory -Path $tempRoot -Force | Out-Null
 
   $temporarySecretCreated = $false
+  $recoveryCommitted = $false
   try {
     Write-Host "Cerco la firma sideload storica nella GitHub Actions cache..."
 
@@ -188,6 +189,7 @@ function Try-RecoverLegacySigning(
       note = "BACKUP CRITICO: questa e la firma storica usata dagli APK sideload precedenti."
     }
     $recovery | ConvertTo-Json -Depth 3 | Set-Content -Path $RecoveryPath -Encoding UTF8
+    $recoveryCommitted = $true
 
     Write-Host "Firma sideload storica recuperata e verificata."
     return [PSCustomObject]@{
@@ -198,6 +200,9 @@ function Try-RecoverLegacySigning(
     }
   } finally {
     Remove-Item Env:SIGNING_MIGRATION_PASSPHRASE_LOCAL -ErrorAction SilentlyContinue
+    if (-not $recoveryCommitted -and (Test-Path $KeystorePath) -and -not (Test-Path $RecoveryPath)) {
+      Remove-Item -Force $KeystorePath -ErrorAction SilentlyContinue
+    }
     if ($temporarySecretCreated) {
       & gh secret delete SIGNING_MIGRATION_PASSPHRASE --repo $RepoName 2>$null | Out-Null
     }
