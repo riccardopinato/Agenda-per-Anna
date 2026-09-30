@@ -252,6 +252,7 @@ class _PrivateVaultScreenState extends State<PrivateVaultScreen>
   }
 
   Future<void> _showEditor([PrivateVaultEntry? entry]) async {
+    final strings = AnnaStrings.of(context);
     final title = TextEditingController(text: entry?.title ?? '');
     final body = TextEditingController(text: entry?.body ?? '');
 
@@ -271,9 +272,9 @@ class _PrivateVaultScreenState extends State<PrivateVaultScreen>
                 autofocus: true,
                 maxLength: 120,
                 textCapitalization: TextCapitalization.sentences,
-                decoration: const InputDecoration(
+                decoration: InputDecoration(
                   labelText: strings.vaultPrivateTitleField,
-                  prefixIcon: Icon(Icons.title),
+                  prefixIcon: const Icon(Icons.title),
                 ),
               ),
               const SizedBox(height: 10),
@@ -283,10 +284,10 @@ class _PrivateVaultScreenState extends State<PrivateVaultScreen>
                 maxLines: 12,
                 maxLength: 12000,
                 textCapitalization: TextCapitalization.sentences,
-                decoration: const InputDecoration(
+                decoration: InputDecoration(
                   labelText: strings.vaultPrivateContentField,
                   alignLabelWithHint: true,
-                  prefixIcon: Icon(Icons.lock_outline),
+                  prefixIcon: const Icon(Icons.lock_outline),
                 ),
               ),
             ],
