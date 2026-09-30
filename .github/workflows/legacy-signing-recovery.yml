@@ -1,0 +1,59 @@
+name: Recover legacy Android signing cache
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  recover:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      MIGRATION_PASSPHRASE: ${{ secrets.SIGNING_MIGRATION_PASSPHRASE }}
+
+    steps:
+      - name: Require temporary migration passphrase
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ -z "${MIGRATION_PASSPHRASE:-}" ]; then
+            echo "::error title=Missing temporary migration secret::SIGNING_MIGRATION_PASSPHRASE is required"
+            exit 1
+          fi
+
+      - name: Restore legacy stable signing cache
+        id: legacy
+        uses: actions/cache/restore@v4
+        with:
+          path: .signing/sideload.jks
+          key: annas-diary-sideload-signing-v2
+
+      - name: Encrypt recovered keystore
+        if: steps.legacy.outputs.cache-hit == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -s .signing/sideload.jks
+          mkdir -p build/signing-recovery
+          openssl enc -aes-256-cbc -pbkdf2 -iter 250000 -md sha256 -salt \
+            -in .signing/sideload.jks \
+            -out build/signing-recovery/legacy-sideload.jks.enc \
+            -pass env:MIGRATION_PASSPHRASE
+          sha256sum build/signing-recovery/legacy-sideload.jks.enc > build/signing-recovery/SHA256.txt
+
+      - name: Mark legacy cache miss
+        if: steps.legacy.outputs.cache-hit != 'true'
+        shell: bash
+        run: |
+          mkdir -p build/signing-recovery
+          echo "Legacy signing cache not available." > build/signing-recovery/LEGACY_CACHE_MISS.txt
+
+      - name: Upload encrypted recovery result
+        uses: actions/upload-artifact@v4
+        with:
+          name: annas-diary-legacy-signing-recovery
+          path: build/signing-recovery/*
+          if-no-files-found: error
+          retention-days: 1
