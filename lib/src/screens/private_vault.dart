@@ -920,7 +920,11 @@ class _PrivateVaultScreenState extends State<PrivateVaultScreen>
   }
 
   Widget _buildUnlocked(BuildContext context) {
-    final entries = vault.entries;
+    final strings = AnnaStrings.of(context);
+    final passwordMode = section == _VaultSection.passwords;
+    final entries =
+        passwordMode ? vault.credentialEntries : vault.noteEntries;
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Cassaforte privata'),
@@ -965,74 +969,185 @@ class _PrivateVaultScreenState extends State<PrivateVaultScreen>
         ],
       ),
       floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => _showEditor(),
-        icon: const Icon(Icons.add),
-        label: const Text('Nuovo'),
+        onPressed: passwordMode
+            ? () => _showCredentialEditor()
+            : () => _showEditor(),
+        icon: Icon(passwordMode ? Icons.key_outlined : Icons.add),
+        label: Text(
+          passwordMode
+              ? strings.vaultNewPassword
+              : strings.vaultNewPrivateNote,
+        ),
       ),
-      body: entries.isEmpty
-          ? const Center(
-              child: Padding(
-                padding: EdgeInsets.all(28),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(Icons.shield_outlined, size: 58),
-                    SizedBox(height: 14),
-                    Text(
-                      'La cassaforte è vuota',
-                      style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.w900,
+      body: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(18, 12, 18, 4),
+            child: SizedBox(
+              width: double.infinity,
+              child: SegmentedButton<_VaultSection>(
+                showSelectedIcon: false,
+                segments: [
+                  ButtonSegment<_VaultSection>(
+                    value: _VaultSection.notes,
+                    icon: const Icon(Icons.lock_note_outlined),
+                    label: Text(strings.vaultPrivateNotes),
+                  ),
+                  ButtonSegment<_VaultSection>(
+                    value: _VaultSection.passwords,
+                    icon: const Icon(Icons.password_outlined),
+                    label: Text(strings.vaultPasswords),
+                  ),
+                ],
+                selected: {section},
+                onSelectionChanged: (selected) {
+                  if (selected.isEmpty) return;
+                  setState(() => section = selected.first);
+                },
+              ),
+            ),
+          ),
+          Expanded(
+            child: entries.isEmpty
+                ? Center(
+                    child: Padding(
+                      padding: const EdgeInsets.all(28),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            passwordMode
+                                ? Icons.key_off_outlined
+                                : Icons.shield_outlined,
+                            size: 58,
+                          ),
+                          const SizedBox(height: 14),
+                          Text(
+                            passwordMode
+                                ? strings.vaultNoPasswords
+                                : 'La cassaforte è vuota',
+                            style: const TextStyle(
+                              fontSize: 20,
+                              fontWeight: FontWeight.w900,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                          const SizedBox(height: 6),
+                          Text(
+                            passwordMode
+                                ? strings.vaultNoPasswordsDescription
+                                : 'Aggiungi note e informazioni che vuoi tenere separate dal resto dell’app.',
+                            textAlign: TextAlign.center,
+                          ),
+                        ],
                       ),
                     ),
-                    SizedBox(height: 6),
-                    Text(
-                      'Aggiungi note e informazioni che vuoi tenere separate dal resto dell’app.',
-                      textAlign: TextAlign.center,
-                    ),
-                  ],
-                ),
-              ),
-            )
-          : ListView.separated(
-              padding: const EdgeInsets.fromLTRB(18, 12, 18, 100),
-              itemCount: entries.length,
-              separatorBuilder: (_, __) => const SizedBox(height: 10),
-              itemBuilder: (context, index) {
-                final entry = entries[index];
-                return Card(
-                  child: ListTile(
-                    contentPadding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 8,
-                    ),
-                    leading: const CircleAvatar(
-                      child: Icon(Icons.lock_outline),
-                    ),
-                    title: Text(
-                      entry.title.isEmpty ? 'Contenuto privato' : entry.title,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(fontWeight: FontWeight.w800),
-                    ),
-                    subtitle: Text(
-                      entry.body.isEmpty
-                          ? DateFormat('d MMM yyyy · HH:mm', 'it_IT')
-                              .format(entry.updatedAt)
-                          : entry.body,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    onTap: () => _showEditor(entry),
-                    trailing: IconButton(
-                      tooltip: 'Elimina',
-                      onPressed: () => _delete(entry),
-                      icon: const Icon(Icons.delete_outline),
-                    ),
+                  )
+                : ListView.separated(
+                    padding: const EdgeInsets.fromLTRB(18, 12, 18, 100),
+                    itemCount: entries.length,
+                    separatorBuilder: (_, __) =>
+                        const SizedBox(height: 10),
+                    itemBuilder: (context, index) {
+                      final entry = entries[index];
+                      if (entry.isCredential) {
+                        final details = [
+                          if (entry.username.isNotEmpty) entry.username,
+                          if (entry.email.isNotEmpty) entry.email,
+                        ];
+                        final subtitle = details.isNotEmpty
+                            ? details.join(' · ')
+                            : DateFormat(
+                                'd MMM yyyy · HH:mm',
+                                AnnaStrings.intlLocale(context),
+                              ).format(entry.updatedAt);
+                        return Card(
+                          child: ListTile(
+                            contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 8,
+                            ),
+                            leading: const CircleAvatar(
+                              child: Icon(Icons.key_outlined),
+                            ),
+                            title: Text(
+                              entry.service,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style:
+                                  const TextStyle(fontWeight: FontWeight.w800),
+                            ),
+                            subtitle: Text(
+                              subtitle,
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            onTap: () => _showCredentialDetails(entry),
+                            trailing: PopupMenuButton<String>(
+                              onSelected: (value) {
+                                if (value == 'edit') {
+                                  unawaited(_showCredentialEditor(entry));
+                                } else if (value == 'delete') {
+                                  unawaited(_delete(entry));
+                                }
+                              },
+                              itemBuilder: (_) => [
+                                PopupMenuItem(
+                                  value: 'edit',
+                                  child: Text(strings.edit),
+                                ),
+                                PopupMenuItem(
+                                  value: 'delete',
+                                  child: Text(strings.delete),
+                                ),
+                              ],
+                            ),
+                          ),
+                        );
+                      }
+
+                      return Card(
+                        child: ListTile(
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 8,
+                          ),
+                          leading: const CircleAvatar(
+                            child: Icon(Icons.lock_outline),
+                          ),
+                          title: Text(
+                            entry.title.isEmpty
+                                ? 'Contenuto privato'
+                                : entry.title,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style:
+                                const TextStyle(fontWeight: FontWeight.w800),
+                          ),
+                          subtitle: Text(
+                            entry.body.isEmpty
+                                ? DateFormat(
+                                    'd MMM yyyy · HH:mm',
+                                    AnnaStrings.intlLocale(context),
+                                  ).format(entry.updatedAt)
+                                : entry.body,
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          onTap: () => _showEditor(entry),
+                          trailing: IconButton(
+                            tooltip: strings.delete,
+                            onPressed: () => _delete(entry),
+                            icon: const Icon(Icons.delete_outline),
+                          ),
+                        ),
+                      );
+                    },
                   ),
-                );
-              },
-            ),
+          ),
+        ],
+      ),
     );
   }
+
 }
