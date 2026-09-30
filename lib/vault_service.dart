@@ -19,6 +19,7 @@ class PrivateVaultEntry {
   final String password;
   final String sharedSpaceId;
   final String sharedCredentialId;
+  final int sharedRevision;
   final DateTime createdAt;
   final DateTime updatedAt;
 
@@ -32,6 +33,7 @@ class PrivateVaultEntry {
     this.password = '',
     this.sharedSpaceId = '',
     this.sharedCredentialId = '',
+    this.sharedRevision = 0,
     required this.createdAt,
     required this.updatedAt,
   });
@@ -52,6 +54,7 @@ class PrivateVaultEntry {
         if (isCredential) 'password': password,
         if (isSharedCredential) 'sharedSpaceId': sharedSpaceId,
         if (isSharedCredential) 'sharedCredentialId': sharedCredentialId,
+        if (isSharedCredential) 'sharedRevision': sharedRevision,
         'createdAt': createdAt.toUtc().toIso8601String(),
         'updatedAt': updatedAt.toUtc().toIso8601String(),
       };
@@ -72,6 +75,7 @@ class PrivateVaultEntry {
       password: json['password']?.toString() ?? '',
       sharedSpaceId: json['sharedSpaceId']?.toString() ?? '',
       sharedCredentialId: json['sharedCredentialId']?.toString() ?? '',
+      sharedRevision: (json['sharedRevision'] as num?)?.toInt() ?? 0,
       createdAt: DateTime.tryParse(json['createdAt']?.toString() ?? '')
               ?.toLocal() ??
           DateTime.now(),
@@ -90,7 +94,8 @@ class PrivateVaultService extends ChangeNotifier {
   static const _metaKey = 'private_vault_meta_v1';
   static const _payloadKey = 'private_vault_payload_v1';
   static const _version = 1;
-  static const _iterations = 180000;
+  static const _legacyIterations = 180000;
+  static const _currentIterations = 600000;
   static const _tagBits = 128;
   static const _nonceLength = 12;
   static const _masterKeyLength = 32;
@@ -452,6 +457,7 @@ class PrivateVaultService extends ChangeNotifier {
     required String password,
     required String notes,
     required DateTime updatedAt,
+    int sharedRevision = 0,
   }) async {
     _requireUnlocked();
     final mirrorId = 'shared:$spaceId:$credentialId';
@@ -467,6 +473,7 @@ class PrivateVaultService extends ChangeNotifier {
       password: password,
       sharedSpaceId: spaceId,
       sharedCredentialId: credentialId,
+      sharedRevision: sharedRevision,
       createdAt: createdAt,
       updatedAt: updatedAt,
     );
@@ -646,9 +653,13 @@ class PrivateVaultService extends ChangeNotifier {
     await _store!.setString(_payloadKey, jsonEncode(envelope));
   }
 
-  Uint8List _derivePasswordKey(String password, Uint8List salt) {
+  Uint8List _derivePasswordKey(
+    String password,
+    Uint8List salt,
+    int iterations,
+  ) {
     final derivator = PBKDF2KeyDerivator(HMac(SHA256Digest(), 64))
-      ..init(Pbkdf2Parameters(salt, _iterations, 32));
+      ..init(Pbkdf2Parameters(salt, iterations, 32));
     return derivator.process(
       Uint8List.fromList(utf8.encode(password)),
     );
@@ -719,9 +730,9 @@ class PrivateVaultService extends ChangeNotifier {
   }
 
   void _validatePassword(String value) {
-    if (value.length < 8) {
+    if (value.length < 12) {
       throw const FormatException(
-        'La password della cassaforte deve avere almeno 8 caratteri.',
+        'La password della cassaforte deve avere almeno 12 caratteri.',
       );
     }
   }
