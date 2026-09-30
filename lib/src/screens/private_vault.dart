@@ -615,6 +615,19 @@ class _PrivateVaultScreenState extends State<PrivateVaultScreen>
                         label: strings.vaultNotes,
                         value: entry.notes,
                       ),
+                    const Divider(),
+                    ListTile(
+                      contentPadding: EdgeInsets.zero,
+                      leading: const Icon(Icons.schedule_outlined),
+                      title: Text(
+                        strings.passwordUpdatedAt(
+                          DateFormat(
+                            'd MMMM yyyy · HH:mm',
+                            AnnaStrings.intlLocale(context),
+                          ).format(entry.updatedAt),
+                        ),
+                      ),
+                    ),
                   ],
                 ),
               ),
