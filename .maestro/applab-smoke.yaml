@@ -26,3 +26,36 @@ appId: com.riccardopinato.agenda_per_anna
 - extendedWaitUntil:
     visible: '(Cattura|Capture|Capturar|Capturer)'
     timeout: 10000
+
+# Functional Vault coverage. The Vault is intentionally excluded from visual
+# screenshot regression because Android FLAG_SECURE must blank screenshots.
+- back
+- extendedWaitUntil:
+    visible: "(La mia agenda|My agenda|Mi agenda|Mon agenda|A minha agenda)"
+    timeout: 10000
+- tapOn:
+    text: "(Impostazioni|Settings|Ajustes|Paramètres|Definições)"
+- extendedWaitUntil:
+    visible: "(Impostazioni|Settings|Ajustes|Paramètres|Definições)"
+    timeout: 10000
+- scrollUntilVisible:
+    element:
+      text: ".*(Privacy Center).*"
+    direction: DOWN
+    timeout: 30000
+    speed: 45
+    visibilityPercentage: 20
+    centerElement: false
+- scrollUntilVisible:
+    element:
+      text: ".*(Cassaforte privata|Private Vault|Caja fuerte privada|Coffre privé|Cofre privado).*"
+    direction: DOWN
+    timeout: 30000
+    speed: 35
+    visibilityPercentage: 15
+    centerElement: false
+- tapOn:
+    text: ".*(Cassaforte privata|Private Vault|Caja fuerte privada|Coffre privé|Cofre privado).*"
+- extendedWaitUntil:
+    visible: ".*(Uno spazio solo tuo|A space just for you|Un espacio solo para ti|Un espace rien qu’à toi|Um espaço só teu|Cassaforte bloccata|Vault locked|Caja fuerte bloqueada|Coffre verrouillé|Cofre bloqueado).*"
+    timeout: 15000
