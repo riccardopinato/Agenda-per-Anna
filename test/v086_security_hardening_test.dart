@@ -176,6 +176,13 @@ void main() {
     expect(privateVault, contains('expectedRevision: entry.sharedRevision'));
     expect(privateVault, contains('refreshAllAvailableSpacesSafe()'));
     expect(privateVault, contains('vaultWebSecurityWarning'));
+    expect(privateVault, contains('vault.noteUserActivity()'));
+    expect(sharedScreen, contains('vault.noteUserActivity()'));
+    expect(sharedScreen, contains('vault.lock();'));
+    expect(
+      File('lib/vault_service.dart').readAsStringSync(),
+      contains('autoLockTimeout = Duration(minutes: 5)'),
+    );
 
     expect(store, contains('remoteSpacesLoaded && PrivateVaultService.instance.unlocked'));
     expect(store, contains('reconcileMembershipWithSpaceIds(activeSpaceIds)'));
