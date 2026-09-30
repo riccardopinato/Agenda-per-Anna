@@ -3790,6 +3790,15 @@ class AgendaStore extends ChangeNotifier {
     _rebuildSharedAgendaDayIndex();
 
     final activeSpaceIds = spaces.map((space) => space.id).toSet();
+    if (remoteSpacesLoaded && PrivateVaultService.instance.unlocked) {
+      try {
+        await SharedPasswordService.instance
+            .reconcileMembershipWithSpaceIds(activeSpaceIds);
+      } catch (_) {
+        // Shared agenda refresh must stay available even if Vault cleanup
+        // fails; the next Vault unlock/reconcile retries the purge.
+      }
+    }
     final staleUnreadIds = _sharedUnreadBySpace.keys
         .where((spaceId) => !activeSpaceIds.contains(spaceId))
         .toList();
