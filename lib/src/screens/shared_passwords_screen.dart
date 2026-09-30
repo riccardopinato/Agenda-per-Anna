@@ -407,7 +407,7 @@ class _SharedPasswordsScreenState extends State<SharedPasswordsScreen>
           builder: (dialogContext) => AlertDialog(
             title: const Text('Eliminare la password condivisa?'),
             content: Text(
-              '“\${credential.service}” verrà eliminata da Noi ♡ e dalle '
+              '“${credential.service}” verrà eliminata da Noi ♡ e dalle '
               'Cassaforti private sincronizzate.',
             ),
             actions: [
@@ -439,7 +439,7 @@ class _SharedPasswordsScreenState extends State<SharedPasswordsScreen>
   Future<void> _copySensitive(String value, String label) async {
     if (value.isEmpty) return;
     await Clipboard.setData(ClipboardData(text: value));
-    _message('\$label copiato. Gli appunti verranno svuotati automaticamente.');
+    _message('$label copiato. Gli appunti verranno svuotati automaticamente.');
     unawaited(
       Future<void>.delayed(const Duration(seconds: 30), () async {
         try {
@@ -535,7 +535,7 @@ class _SharedPasswordsScreenState extends State<SharedPasswordsScreen>
                       leading: const Icon(Icons.lock_outline),
                       title: const Text('Cifratura end-to-end'),
                       subtitle: Text(
-                        'Aggiornata \${DateFormat(
+                        'Aggiornata ${DateFormat(
                           'd MMM yyyy · HH:mm',
                           AnnaStrings.intlLocale(context),
                         ).format(credential.updatedAt)}',
