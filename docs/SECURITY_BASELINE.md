@@ -1,6 +1,21 @@
-# Security Baseline — v0.50
+# Security Baseline — v0.86
 
 Anna's Diary uses a layered security model across Flutter, Supabase Auth, Row Level Security, Edge Functions and Storage.
+
+## Private Vault and shared-password security
+
+v0.86 keeps the existing Vault and Noi ♡ storage boundaries and hardens their cryptographic/concurrency contracts.
+
+- New Vault password wraps use PBKDF2-HMAC-SHA256 with 600,000 iterations and a 12-character minimum. Existing 180,000-iteration wraps remain readable and are upgraded after a successful password unlock.
+- The Vault payload remains AES-GCM encrypted under a random 256-bit master key and remains excluded from ordinary cloud sync, global search and standard backup.
+- Android keeps Keystore wrapping and secure-screen protection. Web keeps encrypted-at-rest payloads but cannot provide the same native Keystore/screenshot boundary; this difference is disclosed in-product.
+- Password Noi ♡ credential plaintext is encrypted client-side with AES-256-GCM and AAD bound to shared-space and credential identity.
+- The server stores only ciphertext metadata plus a SHA-256 key fingerprint, never the raw shared password key.
+- Migration 027 makes key metadata an atomic owner-only first claim and immutable afterwards.
+- Shared credential writes and deletions use revision checks under row locking. Stale mutations fail instead of replacing a newer secret.
+- The database rejects plaintext credential fields and invalid encrypted/tombstone payload shapes.
+- One-time pairing remains explicit and short-lived. v0.86 also supports an explicitly created recovery package encrypted with a separate recovery password; it is not part of ordinary backup.
+- Successful authoritative membership refresh purges stale local shared-password keys and mirrors when the Vault is unlocked. Offline devices cannot be remotely wiped; purge occurs at the next successful reconnect/reconcile.
 
 ## Account deletion
 
