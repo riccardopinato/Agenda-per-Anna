@@ -46,7 +46,7 @@ function Decrypt-OpenSslAes256CbcPbkdf2(
   $ciphertext = New-Object byte[] ($payload.Length - 16)
   [Array]::Copy($payload, 16, $ciphertext, 0, $ciphertext.Length)
 
-  $derive = New-Object System.Security.Cryptography.Rfc2898DeriveBytes(
+  $derive = [System.Security.Cryptography.Rfc2898DeriveBytes]::new(
     $Password,
     $salt,
     250000,
