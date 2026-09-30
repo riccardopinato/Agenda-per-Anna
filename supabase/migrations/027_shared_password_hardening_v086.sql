@@ -92,6 +92,10 @@ using (
     visibility = 'shared'
     and private.is_space_member(agenda_records.space_id)
     and not private.is_shared_password_record_type(entity_type)
+    and (
+      owner_id = (select auth.uid())
+      or coalesce(payload ->> 'ownerOnlyEdit', 'false') <> 'true'
+    )
   )
 )
 with check (
@@ -105,6 +109,10 @@ with check (
     visibility = 'shared'
     and private.is_space_member(agenda_records.space_id)
     and not private.is_shared_password_record_type(entity_type)
+    and (
+      owner_id = (select auth.uid())
+      or coalesce(payload ->> 'ownerOnlyEdit', 'false') <> 'true'
+    )
   )
 );
 
@@ -123,6 +131,10 @@ using (
     visibility = 'shared'
     and private.is_space_member(agenda_records.space_id)
     and not private.is_shared_password_record_type(entity_type)
+    and (
+      owner_id = (select auth.uid())
+      or coalesce(payload ->> 'ownerOnlyEdit', 'false') <> 'true'
+    )
   )
 );
 
