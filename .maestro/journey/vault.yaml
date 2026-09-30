@@ -11,11 +11,14 @@ appId: com.riccardopinato.agenda_per_anna
     timeout: 10000
 - scrollUntilVisible:
     element:
-      text: "Cassaforte privata"
+      text: "(Cassaforte privata|Private Vault|Caja fuerte privada|Coffre privé|Cofre privado)"
     direction: DOWN
-    timeout: 15000
+    timeout: 30000
+    speed: 80
+    visibilityPercentage: 55
+    centerElement: true
 - tapOn:
-    text: "Cassaforte privata"
+    text: "(Cassaforte privata|Private Vault|Caja fuerte privada|Coffre privé|Cofre privado)"
 - extendedWaitUntil:
     visible: "(Uno spazio solo tuo|A space just for you|Un espacio solo para ti|Un espace rien qu’à toi|Um espaço só teu|Cassaforte bloccata|Vault locked|Caja fuerte bloqueada|Coffre verrouillé|Cofre bloqueado)"
-    timeout: 10000
+    timeout: 15000
