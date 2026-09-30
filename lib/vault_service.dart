@@ -177,48 +177,65 @@ class PrivateVaultService extends ChangeNotifier {
 
     final salt = _randomBytes(16);
     final master = _randomBytes(_masterKeyLength);
-    final passwordKey = _derivePasswordKey(password, salt);
-    final wrapped = _encrypt(
-      key: passwordKey,
-      plaintext: master,
-      aad: _keyAad,
+    final passwordKey = _derivePasswordKey(
+      password,
+      salt,
+      _currentIterations,
     );
+    try {
+      final wrapped = _encrypt(
+        key: passwordKey,
+        plaintext: master,
+        aad: _keyAad,
+      );
 
-    String? biometricWrap;
-    if (enableBiometric && !kIsWeb) {
-      try {
-        biometricWrap = await _native.invokeMethod<String>(
-          'protectMasterKey',
-          {'key': base64UrlEncode(master)},
-        );
-      } catch (_) {
-        biometricWrap = null;
+      String? biometricWrap;
+      if (enableBiometric && !kIsWeb) {
+        try {
+          biometricWrap = await _native.invokeMethod<String>(
+            'protectMasterKey',
+            {'key': base64UrlEncode(master)},
+          );
+        } catch (_) {
+          biometricWrap = null;
+        }
       }
-    }
 
-    _meta = {
-      'v': _version,
-      'salt': base64UrlEncode(salt),
-      'iterations': _iterations,
-      'passwordWrap': wrapped,
-      'biometricWrap': biometricWrap,
-      'createdAt': DateTime.now().toUtc().toIso8601String(),
-    };
-    _masterKey = Uint8List.fromList(master);
-    _entries.clear();
-
-    await _store!.writeBatch({
-      _metaKey: jsonEncode(_meta),
-      _payloadKey: jsonEncode(
-        _encrypt(
+      final nextMeta = <String, dynamic>{
+        'v': _version,
+        'salt': base64UrlEncode(salt),
+        'iterations': _currentIterations,
+        'passwordWrap': wrapped,
+        'biometricWrap': biometricWrap,
+        'createdAt': DateTime.now().toUtc().toIso8601String(),
+      };
+      final initialPlaintext =
+          Uint8List.fromList(utf8.encode('{"entries":[]}'));
+      Map<String, dynamic> initialEnvelope;
+      try {
+        initialEnvelope = _encrypt(
           key: master,
-          plaintext: Uint8List.fromList(utf8.encode('{"entries":[]}')),
+          plaintext: initialPlaintext,
           aad: _payloadAad,
-        ),
-      ),
-    });
-    _zero(passwordKey);
-    notifyListeners();
+        );
+      } finally {
+        _zero(initialPlaintext);
+      }
+
+      await _store!.writeBatch({
+        _metaKey: jsonEncode(nextMeta),
+        _payloadKey: jsonEncode(initialEnvelope),
+      });
+
+      _meta = nextMeta;
+      _masterKey = Uint8List.fromList(master);
+      _entries.clear();
+      _sharedPasswordKeys.clear();
+      notifyListeners();
+    } finally {
+      _zero(passwordKey);
+      _zero(master);
+    }
   }
 
   Future<bool> unlockWithPassword(String password) async {
@@ -226,23 +243,49 @@ class PrivateVaultService extends ChangeNotifier {
     final meta = _meta;
     if (meta == null) return false;
 
+    Uint8List? passwordKey;
+    Uint8List? master;
     try {
       final salt = base64Url.decode(meta['salt'] as String);
-      final passwordKey = _derivePasswordKey(password, salt);
+      final iterations =
+          (meta['iterations'] as num?)?.toInt() ?? _legacyIterations;
+      if (iterations < 100000 || iterations > 2000000) return false;
+      passwordKey = _derivePasswordKey(password, salt, iterations);
       final wrapped = Map<String, dynamic>.from(meta['passwordWrap'] as Map);
-      final master = _decrypt(
+      master = _decrypt(
         key: passwordKey,
         envelope: wrapped,
         aad: _keyAad,
       );
-      _zero(passwordKey);
       if (master.length != _masterKeyLength) return false;
+
       _masterKey = Uint8List.fromList(master);
       await _loadEntries();
+
+      if (iterations < _currentIterations) {
+        try {
+          await _upgradePasswordWrap(password, master);
+        } catch (_) {
+          // A failed hardening write must not lock the user out. The existing
+          // wrap remains valid and the upgrade is retried on a later unlock.
+        }
+      }
+
       notifyListeners();
       return true;
     } catch (_) {
+      final active = _masterKey;
+      if (active != null) _zero(active);
+      _masterKey = null;
+      _entries.clear();
+      for (final key in _sharedPasswordKeys.values) {
+        _zero(key);
+      }
+      _sharedPasswordKeys.clear();
       return false;
+    } finally {
+      if (passwordKey != null) _zero(passwordKey);
+      if (master != null) _zero(master);
     }
   }
 
@@ -257,11 +300,15 @@ class PrivateVaultService extends ChangeNotifier {
       );
       if (encoded == null) return false;
       final master = base64Url.decode(encoded);
-      if (master.length != _masterKeyLength) return false;
-      _masterKey = Uint8List.fromList(master);
-      await _loadEntries();
-      notifyListeners();
-      return true;
+      try {
+        if (master.length != _masterKeyLength) return false;
+        _masterKey = Uint8List.fromList(master);
+        await _loadEntries();
+        notifyListeners();
+        return true;
+      } finally {
+        _zero(master);
+      }
     } catch (_) {
       return false;
     }
@@ -645,12 +692,49 @@ class PrivateVaultService extends ChangeNotifier {
         }),
       ),
     );
-    final envelope = _encrypt(
-      key: master,
-      plaintext: plaintext,
-      aad: _payloadAad,
+    try {
+      final envelope = _encrypt(
+        key: master,
+        plaintext: plaintext,
+        aad: _payloadAad,
+      );
+      await _store!.setString(_payloadKey, jsonEncode(envelope));
+    } finally {
+      _zero(plaintext);
+    }
+  }
+
+  Future<void> _upgradePasswordWrap(
+    String password,
+    Uint8List master,
+  ) async {
+    final current = _meta;
+    if (current == null) return;
+
+    final salt = _randomBytes(16);
+    final passwordKey = _derivePasswordKey(
+      password,
+      salt,
+      _currentIterations,
     );
-    await _store!.setString(_payloadKey, jsonEncode(envelope));
+    try {
+      final wrapped = _encrypt(
+        key: passwordKey,
+        plaintext: master,
+        aad: _keyAad,
+      );
+      final upgraded = <String, dynamic>{
+        ...current,
+        'salt': base64UrlEncode(salt),
+        'iterations': _currentIterations,
+        'passwordWrap': wrapped,
+        'kdfUpgradedAt': DateTime.now().toUtc().toIso8601String(),
+      };
+      await _store!.setString(_metaKey, jsonEncode(upgraded));
+      _meta = upgraded;
+    } finally {
+      _zero(passwordKey);
+    }
   }
 
   Uint8List _derivePasswordKey(
