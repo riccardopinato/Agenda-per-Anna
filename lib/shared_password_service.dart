@@ -128,19 +128,20 @@ class SharedPasswordService {
       throw StateError('Accedi prima a Noi ♡.');
     }
 
-    final records = await cloud.pullSharedRecords(spaceId);
-    final meta = _activeKeyMeta(records);
     final local = vault.sharedPasswordKeyCopy(spaceId);
-
-    if (meta != null) {
-      if (local == null) {
-        throw StateError(
-          'Esiste già una chiave Password Noi ♡. Importala da un dispositivo collegato.',
-        );
-      }
+    if (local != null) {
       try {
-        if (!_fingerprintMatches(local, meta)) {
-          throw StateError('Chiave Password Noi ♡ non coerente con lo spazio.');
+        final localFingerprint = _fingerprint(local);
+        final claim = await cloud.claimSharedPasswordKeyMeta(
+          spaceId: spaceId,
+          fingerprint: localFingerprint,
+        );
+        if (claim.fingerprint != localFingerprint) {
+          await vault.removeSharedPasswordSpace(spaceId);
+          throw StateError(
+            'Esiste già una chiave Password Noi ♡ diversa. '
+            'Importala da un dispositivo collegato.',
+          );
         }
         return;
       } finally {
@@ -148,20 +149,22 @@ class SharedPasswordService {
       }
     }
 
-    if (local != null) {
-      try {
-        await _publishKeyMeta(spaceId, local);
-        return;
-      } finally {
-        _zero(local);
-      }
-    }
-
-    final created = await vault.ensureSharedPasswordKey(spaceId);
+    final candidate = _randomBytes(_keyLength);
     try {
-      await _publishKeyMeta(spaceId, created);
+      final fingerprint = _fingerprint(candidate);
+      final claim = await cloud.claimSharedPasswordKeyMeta(
+        spaceId: spaceId,
+        fingerprint: fingerprint,
+      );
+      if (!claim.claimed || claim.fingerprint != fingerprint) {
+        throw StateError(
+          'Esiste già una chiave Password Noi ♡. '
+          'Importala da un dispositivo collegato.',
+        );
+      }
+      await vault.importSharedPasswordKey(spaceId, candidate);
     } finally {
-      _zero(created);
+      _zero(candidate);
     }
   }
 
