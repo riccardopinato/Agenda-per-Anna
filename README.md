@@ -2,7 +2,9 @@
 
 Flutter app for personal planning, private diary and the shared **Noi ♡** space.
 
-Current release line: **v0.85.0**.
+Current release line: **v0.86.0**.
+
+Canonical product scope and security boundaries: `docs/PRODUCT_BIBLE.md`.
 
 ## Core areas
 
@@ -481,6 +483,21 @@ See `docs/ARCHITECTURE.md` and `supabase/README.md` for implementation details.
 - Share-target text and images now reuse the same capture persistence helpers instead of maintaining separate diary-save logic.
 - Capturing from `La mia giornata` respects the day currently being viewed, including past/future days, while preserving the current time as the moment ordering time inside that day.
 - No capture database, parallel media store, AI layer or new cloud schema is introduced.
+
+## v0.86.0 — Security & Governance Hardening
+
+- Makes the Noi ♡ shared-password key a **first-writer-wins atomic owner claim** on the backend, preventing concurrent owner devices from silently creating different accepted E2EE keys.
+- Shared credential update/delete operations use server-side **compare-and-swap revisions** with row locking. A stale device receives an explicit conflict instead of overwriting a newer password.
+- Shared-password backend guards reject plaintext credential fields and enforce valid AES-256-GCM envelope/tombstone shapes.
+- Password-specific reads now query only key metadata, pairing envelopes or shared credentials instead of downloading every shared-space record.
+- Authoritative membership reconciliation purges removed-space password keys and encrypted mirrors immediately when the Vault is already unlocked; offline devices still purge on the next successful reconnect/reconcile.
+- Adds an explicit **encrypted recovery package** for the Noi ♡ password-space key. Recovery uses a separate password, PBKDF2-HMAC-SHA256 at 600,000 iterations and AES-GCM; raw keys remain excluded from ordinary backup.
+- New Private Vault setups use PBKDF2-HMAC-SHA256 at **600,000 iterations** and require at least 12 characters. Existing 180,000-iteration Vaults remain compatible and upgrade their password wrap after a successful password unlock.
+- Temporary plaintext/key buffers are zeroed more consistently across Vault/shared-password crypto operations.
+- Web Vault and shared-password screens disclose the reduced browser security boundary where Android Keystore and FLAG_SECURE are unavailable.
+- Vault/shared-password security UI is consolidated onto the existing en/it/es/fr/pt localization path.
+- Adds the canonical Product Bible and realigns roadmap, architecture, security and release-readiness documentation under the SHOS governance model.
+- Release metadata is aligned to v0.86.0+96.
 
 ## v0.85.0 — Noi ♡ Shared Passwords
 
