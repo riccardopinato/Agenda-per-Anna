@@ -16,6 +16,8 @@ The script creates one RSA-4096 JKS locally, generates random store/key password
 
 The secret values are never committed to the repository.
 
+The bootstrap is idempotent: if the local signing backup already exists, rerunning the same command reuses that exact keystore and restores the GitHub secrets instead of rotating the Android signing identity.
+
 ## Required repository secrets
 
 - ANDROID_KEYSTORE_BASE64
