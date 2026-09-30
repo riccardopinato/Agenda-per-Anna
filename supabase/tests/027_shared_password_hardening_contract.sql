@@ -42,6 +42,7 @@ declare
   v_claim jsonb;
   v_mutation jsonb;
   v_envelope jsonb;
+  v_envelope_id text := repeat('e', 64);
   v_payload jsonb := jsonb_build_object(
     'v', 1,
     'cipher', 'AES-256-GCM',
@@ -80,13 +81,9 @@ begin
     raise exception 'key_claim_not_atomic';
   end if;
 
-  perform public.merge_agenda_record(
-    v_space::text || ':shared:shared_password_key_envelope:contract-envelope',
-    v_user_a,
+  perform public.upsert_shared_password_key_envelope(
     v_space,
-    'shared',
-    'shared_password_key_envelope',
-    'contract-envelope',
+    v_envelope_id,
     jsonb_build_object(
       'v', 1,
       'salt', 'AAAAAAAAAAAAAAAAAAAAAA==',
@@ -96,8 +93,7 @@ begin
       ),
       'expiresAt', (clock_timestamp() + interval '15 minutes')::text
     ),
-    clock_timestamp(),
-    null
+    clock_timestamp()
   );
 
   perform set_config(
@@ -111,9 +107,37 @@ begin
 
   perform public.join_shared_space(v_invite);
 
+  v_failed := false;
+  begin
+    perform public.upsert_shared_password_key_envelope(
+      v_space,
+      repeat('f', 64),
+      jsonb_build_object(
+        'v', 1,
+        'salt', 'AAAAAAAAAAAAAAAAAAAAAA==',
+        'wrapped', jsonb_build_object(
+          'nonce', 'AAAAAAAAAAAAAAAA',
+          'data', 'BBBBBBBBBBBBBBBBBBBB'
+        ),
+        'expiresAt', (clock_timestamp() + interval '15 minutes')::text
+      ),
+      clock_timestamp()
+    );
+  exception
+    when others then
+      if position('shared_password_key_owner_required' in sqlerrm) > 0 then
+        v_failed := true;
+      else
+        raise;
+      end if;
+  end;
+  if not v_failed then
+    raise exception 'non_owner_pairing_envelope_was_not_rejected';
+  end if;
+
   v_envelope := public.consume_shared_password_key_envelope(
     v_space,
-    'contract-envelope'
+    v_envelope_id
   );
   if coalesce(v_envelope ->> 'salt', '') = '' then
     raise exception 'pairing_envelope_first_consume_failed';
@@ -123,7 +147,7 @@ begin
   begin
     perform public.consume_shared_password_key_envelope(
       v_space,
-      'contract-envelope'
+      v_envelope_id
     );
   exception
     when others then
@@ -230,6 +254,39 @@ begin
   end;
   if not v_failed then
     raise exception 'generic_merge_bypass_was_not_rejected';
+  end if;
+
+  v_failed := false;
+  begin
+    perform public.merge_agenda_record(
+      v_space::text || ':shared:shared_password_key_envelope:' || repeat('d', 64),
+      v_user_a,
+      v_space,
+      'shared',
+      'shared_password_key_envelope',
+      repeat('d', 64),
+      jsonb_build_object(
+        'v', 1,
+        'salt', 'AAAAAAAAAAAAAAAAAAAAAA==',
+        'wrapped', jsonb_build_object(
+          'nonce', 'AAAAAAAAAAAAAAAA',
+          'data', 'BBBBBBBBBBBBBBBBBBBB'
+        ),
+        'expiresAt', (clock_timestamp() + interval '15 minutes')::text
+      ),
+      clock_timestamp(),
+      null
+    );
+  exception
+    when others then
+      if position('shared_password_dedicated_rpc_required' in sqlerrm) > 0 then
+        v_failed := true;
+      else
+        raise;
+      end if;
+  end;
+  if not v_failed then
+    raise exception 'generic_envelope_merge_bypass_was_not_rejected';
   end if;
 
   perform set_config(
