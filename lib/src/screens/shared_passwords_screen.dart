@@ -268,6 +268,197 @@ class _SharedPasswordsScreenState extends State<SharedPasswordsScreen>
     }
   }
 
+  Future<void> _showRecoveryBackup() async {
+    final strings = AnnaStrings.of(context);
+    final password = TextEditingController();
+    final confirm = TextEditingController();
+    final accepted = await showDialog<bool>(
+          context: context,
+          builder: (dialogContext) => AlertDialog(
+            title: Text(strings.sharedPasswordsRecoveryBackup),
+            content: SizedBox(
+              width: 520,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(strings.sharedPasswordsRecoveryDescription),
+                  const SizedBox(height: 14),
+                  TextField(
+                    controller: password,
+                    obscureText: true,
+                    autofocus: true,
+                    decoration: InputDecoration(
+                      labelText: strings.sharedPasswordsRecoveryPassword,
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  TextField(
+                    controller: confirm,
+                    obscureText: true,
+                    decoration: InputDecoration(
+                      labelText: strings.vaultRepeatPassword,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(dialogContext, false),
+                child: Text(strings.cancel),
+              ),
+              FilledButton(
+                onPressed: () => Navigator.pop(dialogContext, true),
+                child: Text(strings.sharedPasswordsCreateRecovery),
+              ),
+            ],
+          ),
+        ) ??
+        false;
+
+    if (!accepted) {
+      password.clear();
+      confirm.clear();
+      password.dispose();
+      confirm.dispose();
+      return;
+    }
+    if (password.text != confirm.text) {
+      _message(strings.vaultPasswordsDoNotMatch);
+      password.clear();
+      confirm.clear();
+      password.dispose();
+      confirm.dispose();
+      return;
+    }
+
+    try {
+      final package = await service.createRecoveryPackage(
+        spaceId: widget.space.id,
+        recoveryPassword: password.text,
+      );
+      password.clear();
+      confirm.clear();
+      if (!mounted) return;
+      await showDialog<void>(
+        context: context,
+        builder: (dialogContext) => AlertDialog(
+          title: Text(strings.sharedPasswordsRecoveryPackage),
+          content: SizedBox(
+            width: 560,
+            child: SingleChildScrollView(
+              child: SelectableText(package),
+            ),
+          ),
+          actions: [
+            TextButton.icon(
+              onPressed: () async {
+                await Clipboard.setData(ClipboardData(text: package));
+                if (dialogContext.mounted) {
+                  ScaffoldMessenger.of(dialogContext).showSnackBar(
+                    SnackBar(
+                      content: Text(strings.sharedPasswordsRecoveryCopied),
+                    ),
+                  );
+                }
+              },
+              icon: const Icon(Icons.copy_outlined),
+              label: Text(strings.vaultCopy),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.pop(dialogContext),
+              child: Text(strings.close),
+            ),
+          ],
+        ),
+      );
+    } on FormatException catch (error) {
+      _message(error.message.toString());
+    } catch (_) {
+      _message(strings.sharedPasswordsKeyUnavailable);
+    } finally {
+      password.clear();
+      confirm.clear();
+      password.dispose();
+      confirm.dispose();
+    }
+  }
+
+  Future<void> _importRecoveryBackup() async {
+    final strings = AnnaStrings.of(context);
+    final package = TextEditingController();
+    final password = TextEditingController();
+    final accepted = await showDialog<bool>(
+          context: context,
+          builder: (dialogContext) => AlertDialog(
+            title: Text(strings.sharedPasswordsImportRecovery),
+            content: SizedBox(
+              width: 560,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  TextField(
+                    controller: package,
+                    minLines: 3,
+                    maxLines: 6,
+                    autocorrect: false,
+                    enableSuggestions: false,
+                    decoration: InputDecoration(
+                      labelText: strings.sharedPasswordsRecoveryPackage,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: password,
+                    obscureText: true,
+                    decoration: InputDecoration(
+                      labelText: strings.sharedPasswordsRecoveryPassword,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(dialogContext, false),
+                child: Text(strings.cancel),
+              ),
+              FilledButton(
+                onPressed: () => Navigator.pop(dialogContext, true),
+                child: Text(strings.sharedPasswordsImportRecovery),
+              ),
+            ],
+          ),
+        ) ??
+        false;
+
+    if (!accepted) {
+      package.clear();
+      password.clear();
+      package.dispose();
+      password.dispose();
+      return;
+    }
+
+    setState(() => loading = true);
+    final ok = await service.importRecoveryPackage(
+      spaceId: widget.space.id,
+      package: package.text.trim(),
+      recoveryPassword: password.text,
+    );
+    package.clear();
+    password.clear();
+    package.dispose();
+    password.dispose();
+    if (!mounted) return;
+    if (!ok) {
+      setState(() => loading = false);
+      _message(strings.sharedPasswordsRecoveryInvalid);
+      return;
+    }
+    await _refresh();
+  }
+
   Future<void> _showEditor([SharedPasswordCredential? existing]) async {
     final serviceController =
         TextEditingController(text: existing?.service ?? '');
@@ -680,6 +871,14 @@ class _SharedPasswordsScreenState extends State<SharedPasswordsScreen>
                 icon: const Icon(Icons.link_outlined),
                 label: Text(AnnaStrings.of(context).sharedPasswordsEnterCode),
               ),
+              const SizedBox(height: 8),
+              OutlinedButton.icon(
+                onPressed: _importRecoveryBackup,
+                icon: const Icon(Icons.settings_backup_restore_outlined),
+                label: Text(
+                  AnnaStrings.of(context).sharedPasswordsImportRecovery,
+                ),
+              ),
             ],
           ),
         ),
@@ -708,6 +907,16 @@ class _SharedPasswordsScreenState extends State<SharedPasswordsScreen>
                   tooltip: AnnaStrings.of(context).sharedPasswordsShareKey,
                   onPressed: _showPairingCode,
                   icon: const Icon(Icons.vpn_key_outlined),
+                ),
+              if (vault.unlocked &&
+                  keyReady &&
+                  widget.space.isOwner &&
+                  CloudSyncService.instance.signedIn)
+                IconButton(
+                  tooltip:
+                      AnnaStrings.of(context).sharedPasswordsRecoveryBackup,
+                  onPressed: _showRecoveryBackup,
+                  icon: const Icon(Icons.health_and_safety_outlined),
                 ),
               IconButton(
                 tooltip: AnnaStrings.of(context).refresh,
@@ -758,6 +967,33 @@ class _SharedPasswordsScreenState extends State<SharedPasswordsScreen>
                                   ],
                                 ),
                               ),
+                              if (kIsWeb) ...[
+                                const SizedBox(height: 10),
+                                Container(
+                                  padding: const EdgeInsets.all(12),
+                                  decoration: BoxDecoration(
+                                    color: Theme.of(context)
+                                        .colorScheme
+                                        .errorContainer
+                                        .withValues(alpha: 0.72),
+                                    borderRadius: BorderRadius.circular(16),
+                                  ),
+                                  child: Row(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      const Icon(Icons.warning_amber_rounded),
+                                      const SizedBox(width: 10),
+                                      Expanded(
+                                        child: Text(
+                                          AnnaStrings.of(context)
+                                              .vaultWebSecurityWarning,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
                               if (errorText != null) ...[
                                 const SizedBox(height: 10),
                                 Text(
