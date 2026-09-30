@@ -496,6 +496,7 @@ See `docs/ARCHITECTURE.md` and `supabase/README.md` for implementation details.
 - Adds an explicit **encrypted recovery package** for the Noi ♡ password-space key. Recovery uses a separate password, PBKDF2-HMAC-SHA256 at 600,000 iterations and AES-GCM; raw keys remain excluded from ordinary backup.
 - New Private Vault setups use PBKDF2-HMAC-SHA256 at **600,000 iterations** and require at least 12 characters. Existing 180,000-iteration Vaults remain compatible and upgrade their password wrap after a successful password unlock.
 - Temporary plaintext/key buffers are zeroed more consistently across Vault/shared-password crypto operations.
+- The Vault auto-locks after five minutes without user interaction; leaving the Password Noi ♡ surface also locks the Vault immediately.
 - Web Vault and shared-password screens disclose the reduced browser security boundary where Android Keystore and FLAG_SECURE are unavailable.
 - Vault/shared-password security UI is consolidated onto the existing en/it/es/fr/pt localization path.
 - Adds the canonical Product Bible and realigns roadmap, architecture, security and release-readiness documentation under the SHOS governance model.
