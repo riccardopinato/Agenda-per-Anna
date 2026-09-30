@@ -231,6 +231,22 @@ class _SharedPasswordsScreenState extends State<SharedPasswordsScreen>
                       ),
                     );
                   }
+                  unawaited(
+                    Future<void>.delayed(
+                      const Duration(seconds: 60),
+                      () async {
+                        try {
+                          final current =
+                              await Clipboard.getData('text/plain');
+                          if (current?.text == code) {
+                            await Clipboard.setData(
+                              const ClipboardData(text: ''),
+                            );
+                          }
+                        } catch (_) {}
+                      },
+                    ),
+                  );
                 },
                 icon: const Icon(Icons.copy_outlined),
                 label: const Text('Copia codice'),
