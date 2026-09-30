@@ -180,6 +180,7 @@ class _PrivateVaultScreenState extends State<PrivateVaultScreen>
       );
       passwordController.clear();
       confirmController.clear();
+      unawaited(SharedPasswordService.instance.refreshAllAvailableSpaces());
       if (mounted) setState(() {});
     } on FormatException catch (error) {
       if (mounted) setState(() => errorText = error.message.toString());
@@ -208,6 +209,9 @@ class _PrivateVaultScreenState extends State<PrivateVaultScreen>
       busy = false;
       if (!ok) errorText = 'Password non corretta.';
     });
+    if (ok) {
+      unawaited(SharedPasswordService.instance.refreshAllAvailableSpaces());
+    }
   }
 
   Future<void> _unlockBiometric() async {
@@ -228,6 +232,8 @@ class _PrivateVaultScreenState extends State<PrivateVaultScreen>
           () => errorText =
               'Sblocco biometrico non disponibile. Usa la password.',
         );
+      } else if (ok) {
+        unawaited(SharedPasswordService.instance.refreshAllAvailableSpaces());
       }
     } catch (_) {
       if (mounted) {
@@ -437,18 +443,40 @@ class _PrivateVaultScreenState extends State<PrivateVaultScreen>
 
     if (result == true) {
       try {
-        await vault.upsertCredential(
-          id: entry?.id,
-          service: serviceController.text,
-          username: usernameController.text,
-          email: emailController.text,
-          password: credentialPasswordController.text,
-          notes: notesController.text,
-        );
+        if (entry?.isSharedCredential == true) {
+          await SharedPasswordService.instance.upsertCredential(
+            spaceId: entry!.sharedSpaceId,
+            credentialId: entry.sharedCredentialId,
+            service: serviceController.text,
+            username: usernameController.text,
+            email: emailController.text,
+            password: credentialPasswordController.text,
+            notes: notesController.text,
+          );
+        } else {
+          await vault.upsertCredential(
+            id: entry?.id,
+            service: serviceController.text,
+            username: usernameController.text,
+            email: emailController.text,
+            password: credentialPasswordController.text,
+            notes: notesController.text,
+          );
+        }
       } on FormatException catch (error) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text(error.message.toString())),
+          );
+        }
+      } catch (_) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text(
+                'Aggiornamento Noi ♡ non riuscito. Controlla la connessione.',
+              ),
+            ),
           );
         }
       }
@@ -549,7 +577,11 @@ class _PrivateVaultScreenState extends State<PrivateVaultScreen>
           return AlertDialog(
             title: Row(
               children: [
-                const Icon(Icons.key_outlined),
+                Icon(
+                  entry.isSharedCredential
+                      ? Icons.favorite_outline
+                      : Icons.key_outlined,
+                ),
                 const SizedBox(width: 10),
                 Expanded(
                   child: Text(
@@ -583,6 +615,19 @@ class _PrivateVaultScreenState extends State<PrivateVaultScreen>
                         label: strings.vaultNotes,
                         value: entry.notes,
                       ),
+                    const Divider(),
+                    ListTile(
+                      contentPadding: EdgeInsets.zero,
+                      leading: const Icon(Icons.schedule_outlined),
+                      title: Text(
+                        strings.passwordUpdatedAt(
+                          DateFormat(
+                            'd MMMM yyyy · HH:mm',
+                            AnnaStrings.intlLocale(context),
+                          ).format(entry.updatedAt),
+                        ),
+                      ),
+                    ),
                   ],
                 ),
               ),
@@ -638,7 +683,26 @@ class _PrivateVaultScreenState extends State<PrivateVaultScreen>
       ),
     );
     if (confirmed == true) {
-      await vault.delete(entry.id);
+      try {
+        if (entry.isSharedCredential) {
+          await SharedPasswordService.instance.deleteCredential(
+            spaceId: entry.sharedSpaceId,
+            credentialId: entry.sharedCredentialId,
+          );
+        } else {
+          await vault.delete(entry.id);
+        }
+      } catch (_) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text(
+                'Eliminazione Noi ♡ non riuscita. Controlla la connessione.',
+              ),
+            ),
+          );
+        }
+      }
     }
   }
 
@@ -1067,8 +1131,12 @@ class _PrivateVaultScreenState extends State<PrivateVaultScreen>
                               horizontal: 16,
                               vertical: 8,
                             ),
-                            leading: const CircleAvatar(
-                              child: Icon(Icons.key_outlined),
+                            leading: CircleAvatar(
+                              child: Icon(
+                                entry.isSharedCredential
+                                    ? Icons.favorite_outline
+                                    : Icons.key_outlined,
+                              ),
                             ),
                             title: Text(
                               entry.service,
@@ -1078,7 +1146,9 @@ class _PrivateVaultScreenState extends State<PrivateVaultScreen>
                                   const TextStyle(fontWeight: FontWeight.w800),
                             ),
                             subtitle: Text(
-                              subtitle,
+                              entry.isSharedCredential
+                                  ? 'Noi ♡ · $subtitle'
+                                  : subtitle,
                               maxLines: 2,
                               overflow: TextOverflow.ellipsis,
                             ),

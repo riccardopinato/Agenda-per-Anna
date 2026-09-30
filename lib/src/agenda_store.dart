@@ -3878,8 +3878,16 @@ class AgendaStore extends ChangeNotifier {
   ) async {
     if (_activeAccountId == null ||
         change.spaceId != space.id ||
-        change.entityType != 'shared_entry' ||
         change.entityId.isEmpty) {
+      return;
+    }
+
+    if (change.entityType == 'shared_credential') {
+      await SharedPasswordService.instance.applyRealtimeChange(change);
+      return;
+    }
+
+    if (change.entityType != 'shared_entry') {
       return;
     }
 
