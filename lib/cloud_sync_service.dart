@@ -1150,6 +1150,27 @@ class CloudSyncService extends ChangeNotifier {
     );
   }
 
+  Future<void> upsertSharedPasswordKeyEnvelope({
+    required String spaceId,
+    required String entityId,
+    required Map<String, dynamic> payload,
+    required DateTime updatedAt,
+  }) async {
+    final client = _requireSignedInClient();
+    final result = await client.rpc(
+      'upsert_shared_password_key_envelope',
+      params: {
+        'p_space_id': spaceId,
+        'p_entity_id': entityId,
+        'p_payload': payload,
+        'p_client_updated_at': updatedAt.toUtc().toIso8601String(),
+      },
+    );
+    if (result != true) {
+      throw StateError('shared_password_envelope_write_failed');
+    }
+  }
+
   Future<Map<String, dynamic>> consumeSharedPasswordKeyEnvelope({
     required String spaceId,
     required String entityId,
