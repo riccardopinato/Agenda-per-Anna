@@ -157,9 +157,9 @@ class _SharedPasswordsScreenState extends State<SharedPasswordsScreen>
               autocorrect: false,
               enableSuggestions: false,
               textCapitalization: TextCapitalization.characters,
-              decoration: const InputDecoration(
+              decoration: InputDecoration(
                 labelText: AnnaStrings.of(context).sharedPasswordsSecurityCode,
-                prefixIcon: Icon(Icons.key_outlined),
+                prefixIcon: const Icon(Icons.key_outlined),
               ),
             ),
           ],
@@ -297,10 +297,10 @@ class _SharedPasswordsScreenState extends State<SharedPasswordsScreen>
                       autofocus: true,
                       maxLength: 160,
                       textCapitalization: TextCapitalization.words,
-                      decoration: const InputDecoration(
+                      decoration: InputDecoration(
                         labelText: AnnaStrings.of(context).vaultServiceName,
                         hintText: AnnaStrings.of(context).vaultServiceHint,
-                        prefixIcon: Icon(Icons.apps_outlined),
+                        prefixIcon: const Icon(Icons.apps_outlined),
                       ),
                     ),
                     const SizedBox(height: 8),
@@ -310,9 +310,9 @@ class _SharedPasswordsScreenState extends State<SharedPasswordsScreen>
                       autofillHints: const [AutofillHints.username],
                       autocorrect: false,
                       enableSuggestions: false,
-                      decoration: const InputDecoration(
+                      decoration: InputDecoration(
                         labelText: AnnaStrings.of(context).vaultUsername,
-                        prefixIcon: Icon(Icons.person_outline),
+                        prefixIcon: const Icon(Icons.person_outline),
                       ),
                     ),
                     const SizedBox(height: 8),
@@ -323,9 +323,9 @@ class _SharedPasswordsScreenState extends State<SharedPasswordsScreen>
                       autofillHints: const [AutofillHints.email],
                       autocorrect: false,
                       enableSuggestions: false,
-                      decoration: const InputDecoration(
+                      decoration: InputDecoration(
                         labelText: AnnaStrings.of(context).vaultEmail,
-                        prefixIcon: Icon(Icons.alternate_email),
+                        prefixIcon: const Icon(Icons.alternate_email),
                       ),
                     ),
                     const SizedBox(height: 8),
@@ -360,10 +360,10 @@ class _SharedPasswordsScreenState extends State<SharedPasswordsScreen>
                       maxLines: 7,
                       maxLength: 12000,
                       textCapitalization: TextCapitalization.sentences,
-                      decoration: const InputDecoration(
+                      decoration: InputDecoration(
                         labelText: AnnaStrings.of(context).vaultNotes,
                         alignLabelWithHint: true,
-                        prefixIcon: Icon(Icons.notes_outlined),
+                        prefixIcon: const Icon(Icons.notes_outlined),
                       ),
                     ),
                   ],
