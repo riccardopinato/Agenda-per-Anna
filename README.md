@@ -495,6 +495,7 @@ See `docs/ARCHITECTURE.md` and `supabase/README.md` for implementation details.
 - Leaving or deleting a Noi ♡ space removes its local shared-password key and mirrors. If a member is removed while a device is offline, the local copy is purged on the next authoritative membership reconciliation after that device reconnects and unlocks the Vault.
 - Shared credentials remain hidden by default, use secure-screen protection, and keep conditional clipboard cleanup. Pairing codes are also cleared from the clipboard on a best-effort timer.
 - Personal Private Vault credentials remain private and are never promoted to Noi ♡ automatically.
+- Private and Noi ♡ credential detail views show a locale-aware **last updated** footer sourced from each record's existing `updatedAt`; shared mirrors preserve the authoritative Noi ♡ modification timestamp rather than the local sync time.
 - No new ordinary backup path, global-search index, credential sync queue, database table or persistence key is introduced.
 - Release metadata is aligned to v0.85.0+95.
 
