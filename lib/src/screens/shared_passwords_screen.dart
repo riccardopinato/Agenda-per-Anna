@@ -195,8 +195,9 @@ class _SharedPasswordsScreenState extends State<SharedPasswordsScreen>
   }
 
   Future<void> _showPairingCode() async {
-    final keyUnavailable =
-        AnnaStrings.of(context).sharedPasswordsKeyUnavailable;
+    final strings = AnnaStrings.of(context);
+    final keyUnavailable = strings.sharedPasswordsKeyUnavailable;
+    final codeCopied = strings.sharedPasswordsCodeCopied;
     try {
       final code = await service.createPairingCode(widget.space.id);
       if (!mounted) return;
@@ -228,7 +229,7 @@ class _SharedPasswordsScreenState extends State<SharedPasswordsScreen>
                     ScaffoldMessenger.of(dialogContext).showSnackBar(
                       SnackBar(
                         content: Text(
-                          AnnaStrings.of(context).sharedPasswordsCodeCopied,
+                          codeCopied,
                         ),
                       ),
                     );
@@ -460,6 +461,7 @@ class _SharedPasswordsScreenState extends State<SharedPasswordsScreen>
   }
 
   Future<void> _showEditor([SharedPasswordCredential? existing]) async {
+    final strings = AnnaStrings.of(context);
     final serviceController =
         TextEditingController(text: existing?.service ?? '');
     final usernameController =
@@ -595,10 +597,10 @@ class _SharedPasswordsScreenState extends State<SharedPasswordsScreen>
       } on FormatException catch (error) {
         _message(error.message.toString());
       } on SharedPasswordConflictException {
-        _message(AnnaStrings.of(context).sharedPasswordsConflict);
+        _message(strings.sharedPasswordsConflict);
         await _refresh(silent: true);
       } catch (_) {
-        _message(AnnaStrings.of(context).sharedPasswordsSaveFailed);
+        _message(strings.sharedPasswordsSaveFailed);
       }
     }
 
@@ -615,6 +617,7 @@ class _SharedPasswordsScreenState extends State<SharedPasswordsScreen>
   }
 
   Future<void> _delete(SharedPasswordCredential credential) async {
+    final strings = AnnaStrings.of(context);
     final confirmed = await showDialog<bool>(
           context: context,
           builder: (dialogContext) => AlertDialog(
@@ -646,10 +649,10 @@ class _SharedPasswordsScreenState extends State<SharedPasswordsScreen>
       );
       await _refresh(silent: true);
     } on SharedPasswordConflictException {
-      _message(AnnaStrings.of(context).sharedPasswordsConflict);
+      _message(strings.sharedPasswordsConflict);
       await _refresh(silent: true);
     } catch (_) {
-      _message(AnnaStrings.of(context).sharedPasswordsDeleteFailed);
+      _message(strings.sharedPasswordsDeleteFailed);
     }
   }
 
