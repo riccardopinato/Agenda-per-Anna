@@ -573,6 +573,87 @@ class _SharedPasswordsScreenState extends State<SharedPasswordsScreen>
     );
   }
 
+  Widget _lockedBody() {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(28),
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 480),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(Icons.lock_person_outlined, size: 62),
+              const SizedBox(height: 14),
+              Text(
+                vault.configured
+                    ? 'Sblocca la Cassaforte privata'
+                    : 'Configura la Cassaforte privata',
+                style: const TextStyle(
+                  fontSize: 22,
+                  fontWeight: FontWeight.w900,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 8),
+              const Text(
+                'Le password Noi ♡ usano la Cassaforte per custodire la chiave '
+                'E2EE e la copia locale cifrata.',
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 16),
+              FilledButton.icon(
+                onPressed: _openVault,
+                icon: const Icon(Icons.lock_open_outlined),
+                label: Text(
+                  vault.configured ? 'Sblocca cassaforte' : 'Apri cassaforte',
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _pairingBody() {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(28),
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 520),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(Icons.key_off_outlined, size: 62),
+              const SizedBox(height: 14),
+              const Text(
+                'Collega le password condivise',
+                style: TextStyle(
+                  fontSize: 22,
+                  fontWeight: FontWeight.w900,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 8),
+              const Text(
+                'Questo dispositivo è già membro di Noi ♡, ma non possiede la '
+                'chiave delle password. Inserisci il codice E2EE generato dal '
+                'proprietario.',
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 16),
+              FilledButton.icon(
+                onPressed: _importPairingCode,
+                icon: const Icon(Icons.link_outlined),
+                label: const Text('Inserisci codice'),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
