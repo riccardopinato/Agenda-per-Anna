@@ -9,6 +9,17 @@ import 'package:uuid/uuid.dart';
 import 'cloud_sync_service.dart';
 import 'vault_service.dart';
 
+class SharedPasswordConflictException implements Exception {
+  final String message;
+
+  const SharedPasswordConflictException([
+    this.message = 'shared_password_revision_conflict',
+  ]);
+
+  @override
+  String toString() => message;
+}
+
 class SharedPasswordCredential {
   final String id;
   final String spaceId;
@@ -19,6 +30,7 @@ class SharedPasswordCredential {
   final String notes;
   final DateTime updatedAt;
   final String updatedBy;
+  final int revision;
 
   const SharedPasswordCredential({
     required this.id,
@@ -30,6 +42,7 @@ class SharedPasswordCredential {
     required this.notes,
     required this.updatedAt,
     required this.updatedBy,
+    this.revision = 0,
   });
 
   Map<String, dynamic> toJson() => {
@@ -57,6 +70,24 @@ class SharedPasswordCredential {
             DateTime.tryParse(json['updatedAt']?.toString() ?? '')?.toLocal() ??
                 DateTime.now(),
         updatedBy: json['updatedBy']?.toString() ?? '',
+        revision: (json['revision'] as num?)?.toInt() ?? 0,
+      );
+
+  SharedPasswordCredential withServerRevision({
+    required int revision,
+    required DateTime updatedAt,
+  }) =>
+      SharedPasswordCredential(
+        id: id,
+        spaceId: spaceId,
+        service: service,
+        username: username,
+        email: email,
+        password: password,
+        notes: notes,
+        updatedAt: updatedAt,
+        updatedBy: updatedBy,
+        revision: revision,
       );
 }
 
@@ -71,12 +102,17 @@ class SharedPasswordService {
   static const _keyMetaEntityId = 'v1';
   static const _payloadVersion = 1;
   static const _pairingIterations = 180000;
+  static const _recoveryIterations = 600000;
   static const _tagBits = 128;
   static const _nonceLength = 12;
   static const _keyLength = 32;
   static const _pairingLifetime = Duration(minutes: 15);
+  static const _recoveryPrefix = 'ADSP1.';
 
   final Random _random = Random.secure();
+  Object? _lastReconcileError;
+
+  Object? get lastReconcileError => _lastReconcileError;
   final Uuid _uuid = const Uuid();
 
   bool hasKey(String spaceId) =>
