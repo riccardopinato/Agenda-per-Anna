@@ -97,7 +97,6 @@ class SharedPasswordService {
   static final SharedPasswordService instance = SharedPasswordService._();
 
   static const _credentialEntityType = 'shared_credential';
-  static const _keyEnvelopeEntityType = 'shared_password_key_envelope';
   static const _keyMetaEntityType = 'shared_password_key_meta';
   static const _keyMetaEntityId = 'v1';
   static const _payloadVersion = 1;
