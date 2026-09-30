@@ -39,7 +39,7 @@ void main() {
         id: 'agenda-future',
         title: 'Futuro',
         note: '',
-        date: DateTime(2027, 1, 1),
+        date: DateTime(2200, 1, 1),
         type: ItemType.appointment,
       ),
     );
@@ -74,7 +74,7 @@ void main() {
     await store.toggleInboxArchived(inboxId);
 
     final entries = store.lifeArchiveEntries(
-      through: DateTime(2026, 9, 29),
+      through: DateTime(2100, 1, 1),
     );
 
     expect(entries.map((entry) => entry.id), contains('agenda:agenda-past'));
@@ -158,7 +158,7 @@ void main() {
     await store.toggleInboxArchived(store.inbox.single.id);
 
     final entries = store.lifeArchiveEntries(
-      through: DateTime(2026, 9, 29),
+      through: DateTime(2100, 1, 1),
     );
     expect(
       entries.firstWhere((entry) => entry.id == 'diary:archived-memory').archived,
