@@ -208,4 +208,19 @@ void main() {
     expect(const AnnaStrings('fr').vaultWebSecurityWarning, isNotEmpty);
     expect(const AnnaStrings('pt').sharedPasswordsImportRecovery, isNotEmpty);
   });
+
+  test('FLAG_SECURE Vault stays functional without visual screenshot checkpoint', () {
+    final journey =
+        File('.maestro/applab-journey.json').readAsStringSync();
+    final smoke =
+        File('.maestro/applab-smoke.yaml').readAsStringSync();
+
+    expect(journey, isNot(contains('"name": "vault"')));
+    expect(
+      smoke,
+      contains('Cassaforte privata|Private Vault|Caja fuerte privada|Coffre privé|Cofre privado'),
+    );
+    expect(smoke, contains('FLAG_SECURE'));
+  });
+
 }
