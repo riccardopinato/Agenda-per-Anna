@@ -167,7 +167,7 @@ class _SharedPasswordsScreenState extends State<SharedPasswordsScreen>
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(dialogContext),
-            child: const Text('Annulla'),
+            child: Text(AnnaStrings.of(context).cancel),
           ),
           FilledButton(
             onPressed: () =>
@@ -374,11 +374,11 @@ class _SharedPasswordsScreenState extends State<SharedPasswordsScreen>
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(dialogContext, false),
-              child: const Text('Annulla'),
+              child: Text(AnnaStrings.of(context).cancel),
             ),
             FilledButton(
               onPressed: () => Navigator.pop(dialogContext, true),
-              child: const Text('Salva'),
+              child: Text(AnnaStrings.of(context).save),
             ),
           ],
         ),
@@ -422,17 +422,17 @@ class _SharedPasswordsScreenState extends State<SharedPasswordsScreen>
           builder: (dialogContext) => AlertDialog(
             title: Text(AnnaStrings.of(context).sharedPasswordsDeleteQuestion),
             content: Text(
-              '“${credential.service}” verrà eliminata da Noi ♡ e dalle '
-              'Cassaforti private sincronizzate.',
+              AnnaStrings.of(context)
+                  .sharedPasswordsDeleteDescription(credential.service),
             ),
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(dialogContext, false),
-                child: const Text('Annulla'),
+                child: Text(AnnaStrings.of(context).cancel),
               ),
               FilledButton(
                 onPressed: () => Navigator.pop(dialogContext, true),
-                child: const Text('Elimina definitivamente'),
+                child: Text(AnnaStrings.of(context).deletePermanently),
               ),
             ],
           ),
@@ -454,7 +454,7 @@ class _SharedPasswordsScreenState extends State<SharedPasswordsScreen>
   Future<void> _copySensitive(String value, String label) async {
     if (value.isEmpty) return;
     await Clipboard.setData(ClipboardData(text: value));
-    _message('$label copiato. Gli appunti verranno svuotati automaticamente.');
+    _message(AnnaStrings.of(context).vaultCopiedToClipboard(label));
     unawaited(
       Future<void>.delayed(const Duration(seconds: 30), () async {
         try {
@@ -498,8 +498,8 @@ class _SharedPasswordsScreenState extends State<SharedPasswordsScreen>
                         if (secret)
                           IconButton(
                             tooltip: revealPassword
-                                ? 'Nascondi password'
-                                : 'Mostra password',
+                                ? AnnaStrings.of(context).vaultHidePassword
+                                : AnnaStrings.of(context).vaultShowPassword,
                             onPressed: () => setDialogState(
                               () => revealPassword = !revealPassword,
                             ),
@@ -510,7 +510,7 @@ class _SharedPasswordsScreenState extends State<SharedPasswordsScreen>
                             ),
                           ),
                         IconButton(
-                          tooltip: 'Copia',
+                          tooltip: AnnaStrings.of(context).vaultCopy,
                           onPressed: () =>
                               unawaited(_copySensitive(value, label)),
                           icon: const Icon(Icons.copy_outlined),
@@ -539,11 +539,11 @@ class _SharedPasswordsScreenState extends State<SharedPasswordsScreen>
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    field('Nome utente', credential.username),
-                    field('Email', credential.email),
-                    field('Password', credential.password, secret: true),
+                    field(AnnaStrings.of(context).vaultUsername, credential.username),
+                    field(AnnaStrings.of(context).vaultEmail, credential.email),
+                    field(AnnaStrings.of(context).vaultPasswordField, credential.password, secret: true),
                     if (credential.notes.isNotEmpty)
-                      field('Note', credential.notes),
+                      field(AnnaStrings.of(context).vaultNotes, credential.notes),
                     const Divider(),
                     ListTile(
                       contentPadding: EdgeInsets.zero,
@@ -563,12 +563,12 @@ class _SharedPasswordsScreenState extends State<SharedPasswordsScreen>
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(dialogContext, false),
-                child: const Text('Chiudi'),
+                child: Text(AnnaStrings.of(context).close),
               ),
               FilledButton.icon(
                 onPressed: () => Navigator.pop(dialogContext, true),
                 icon: const Icon(Icons.edit_outlined),
-                label: const Text('Modifica'),
+                label: Text(AnnaStrings.of(context).edit),
               ),
             ],
           );
@@ -640,9 +640,9 @@ class _SharedPasswordsScreenState extends State<SharedPasswordsScreen>
             children: [
               const Icon(Icons.key_off_outlined, size: 62),
               const SizedBox(height: 14),
-              const Text(
-                'Collega le password condivise',
-                style: TextStyle(
+              Text(
+                AnnaStrings.of(context).sharedPasswordsConnect,
+                style: const TextStyle(
                   fontSize: 22,
                   fontWeight: FontWeight.w900,
                 ),
@@ -674,9 +674,9 @@ class _SharedPasswordsScreenState extends State<SharedPasswordsScreen>
         final keyReady = vault.unlocked && service.hasKey(widget.space.id);
         return Scaffold(
           appBar: AppBar(
-            title: const Text(
-              'Password Noi ♡',
-              style: TextStyle(fontWeight: FontWeight.w900),
+            title: Text(
+              AnnaStrings.of(context).sharedPasswords,
+              style: const TextStyle(fontWeight: FontWeight.w900),
             ),
             actions: [
               if (vault.unlocked &&
@@ -723,11 +723,11 @@ class _SharedPasswordsScreenState extends State<SharedPasswordsScreen>
                                       .withValues(alpha: 0.55),
                                   borderRadius: BorderRadius.circular(20),
                                 ),
-                                child: const Row(
+                                child: Row(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    Icon(Icons.security_outlined),
-                                    SizedBox(width: 10),
+                                    const Icon(Icons.security_outlined),
+                                    const SizedBox(width: 10),
                                     Expanded(
                                       child: Text(
                                         AnnaStrings.of(context)
@@ -748,20 +748,20 @@ class _SharedPasswordsScreenState extends State<SharedPasswordsScreen>
                               ],
                               const SizedBox(height: 12),
                               if (credentials.isEmpty)
-                                const Padding(
-                                  padding: EdgeInsets.symmetric(vertical: 50),
+                                Padding(
+                                  padding: const EdgeInsets.symmetric(vertical: 50),
                                   child: Column(
                                     children: [
-                                      Icon(Icons.password_outlined, size: 56),
-                                      SizedBox(height: 12),
+                                      const Icon(Icons.password_outlined, size: 56),
+                                      const SizedBox(height: 12),
                                       Text(
-                                        'Nessuna password condivisa',
+                                        AnnaStrings.of(context).sharedPasswordsEmpty,
                                         style: TextStyle(
                                           fontSize: 20,
                                           fontWeight: FontWeight.w900,
                                         ),
                                       ),
-                                      SizedBox(height: 6),
+                                      const SizedBox(height: 6),
                                       Text(
                                         AnnaStrings.of(context)
                                             .sharedPasswordsEmptyDescription,
