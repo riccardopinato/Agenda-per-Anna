@@ -78,6 +78,9 @@ Migration `027_shared_password_hardening_v086.sql` keeps Password Noi ♡ on the
 - revision metadata for shared credentials;
 - atomic owner claim for the shared password key fingerprint;
 - revision-checked credential update/delete RPCs;
+- server-authoritative credential commit timestamps;
+- an atomic one-shot pairing-envelope consume RPC;
+- explicit rejection of shared credential/key-metadata writes through the legacy generic merge RPC;
 - database guards for encrypted payload shape and stale-write rejection.
 
 The Flutter v0.86 client uses these dedicated RPCs for credential mutation. Migration deployment must be coordinated with v0.86 client availability because v0.85 clients do not send revision-aware shared-password mutations.
