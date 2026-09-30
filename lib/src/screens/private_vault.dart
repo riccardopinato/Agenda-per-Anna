@@ -990,7 +990,7 @@ class _PrivateVaultScreenState extends State<PrivateVaultScreen>
                 segments: [
                   ButtonSegment<_VaultSection>(
                     value: _VaultSection.notes,
-                    icon: const Icon(Icons.lock_note_outlined),
+                    icon: const Icon(Icons.note_alt_outlined),
                     label: Text(strings.vaultPrivateNotes),
                   ),
                   ButtonSegment<_VaultSection>(
