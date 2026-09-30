@@ -92,6 +92,8 @@ class _PrivateVaultHomeCardState extends State<PrivateVaultHomeCard> {
   }
 }
 
+enum _VaultSection { notes, passwords }
+
 class PrivateVaultScreen extends StatefulWidget {
   const PrivateVaultScreen({super.key});
 
@@ -110,6 +112,7 @@ class _PrivateVaultScreenState extends State<PrivateVaultScreen>
   bool biometricSupported = false;
   bool enableBiometric = true;
   bool obscurePassword = true;
+  _VaultSection section = _VaultSection.notes;
   String? errorText;
 
   @override
