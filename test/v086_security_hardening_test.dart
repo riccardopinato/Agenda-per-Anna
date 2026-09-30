@@ -118,10 +118,13 @@ void main() {
     expect(migration, contains("array['service', 'username', 'email', 'password', 'notes']"));
     expect(migration, contains('agenda_records_shared_password_guard'));
     expect(migration, contains('shared_password_dedicated_rpc_required'));
+    expect(migration, contains('consume_shared_password_key_envelope'));
+    expect(migration, contains('v_at timestamptz := clock_timestamp()'));
 
     expect(cloud, contains('claimSharedPasswordKeyMeta'));
     expect(cloud, contains('upsertSharedPasswordCredential'));
     expect(cloud, contains('deleteSharedPasswordCredential'));
+    expect(cloud, contains('consumeSharedPasswordKeyEnvelope'));
     expect(cloud, contains('pullSharedRecordsByType'));
 
     expect(service, contains('expectedRevision'));
@@ -136,6 +139,11 @@ void main() {
     expect(backendContract, contains('stale_delete_was_not_rejected'));
     expect(backendContract, contains('generic_merge_bypass_was_not_rejected'));
     expect(backendContract, contains('removed_member_was_not_rejected'));
+    expect(backendContract, contains('pairing_envelope_was_consumed_twice'));
+    expect(
+      backendContract,
+      contains('shared_password_timestamp_not_server_authoritative'),
+    );
     expect(backendContract, contains('rollback;'));
   });
 
