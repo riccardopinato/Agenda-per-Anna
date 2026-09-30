@@ -199,9 +199,8 @@ class SharedPasswordService {
       );
       final expiresAt = DateTime.now().toUtc().add(_pairingLifetime);
 
-      await cloud.upsertSharedRecord(
+      await cloud.upsertSharedPasswordKeyEnvelope(
         spaceId: spaceId,
-        entityType: _keyEnvelopeEntityType,
         entityId: codeHash,
         payload: {
           'v': _payloadVersion,
@@ -209,6 +208,7 @@ class SharedPasswordService {
           'wrapped': wrapped,
           'expiresAt': expiresAt.toIso8601String(),
         },
+        updatedAt: DateTime.now(),
       );
       return code;
     } finally {
