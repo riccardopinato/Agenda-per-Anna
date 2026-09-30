@@ -597,6 +597,8 @@ class AnnaStrings {
   String get vaultLocked => _pick(en: 'Vault locked', it: 'Cassaforte bloccata', es: 'Caja fuerte bloqueada', fr: 'Coffre verrouillé', pt: 'Cofre bloqueado');
   String get vaultLockedDescription => _pick(en: 'Content remains encrypted until you unlock it.', it: 'Il contenuto resta cifrato finché non la sblocchi.', es: 'El contenido permanece cifrado hasta que lo desbloquees.', fr: 'Le contenu reste chiffré jusqu’à son déverrouillage.', pt: 'O conteúdo permanece cifrado até o desbloqueares.');
   String get vaultUnlock => _pick(en: 'Unlock', it: 'Sblocca', es: 'Desbloquear', fr: 'Déverrouiller', pt: 'Desbloquear');
+  String get vaultOpen => _pick(en: 'Open Vault', it: 'Apri cassaforte', es: 'Abrir Caja fuerte', fr: 'Ouvrir le Coffre', pt: 'Abrir Cofre');
+  String get vaultConfigure => _pick(en: 'Set up the private Vault', it: 'Configura la Cassaforte privata', es: 'Configura la Caja fuerte privada', fr: 'Configurer le Coffre privé', pt: 'Configurar o Cofre privado');
   String get vaultUseBiometric => _pick(en: 'Use fingerprint / biometrics', it: 'Usa impronta/biometria', es: 'Usar huella/biometría', fr: 'Utiliser empreinte/biométrie', pt: 'Usar impressão digital/biometria');
   String get vaultEnableBiometric => _pick(en: 'Enable biometrics', it: 'Attiva biometria', es: 'Activar biometría', fr: 'Activer la biométrie', pt: 'Ativar biometria');
   String get vaultLockNow => _pick(en: 'Lock now', it: 'Blocca adesso', es: 'Bloquear ahora', fr: 'Verrouiller maintenant', pt: 'Bloquear agora');
