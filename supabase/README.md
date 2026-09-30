@@ -5,7 +5,7 @@ This directory contains the versioned cloud schema used by the current applicati
 ## Migration order
 
 1. Create the dedicated Supabase project.
-2. Apply every SQL file in `supabase/migrations/` in numeric order, starting from `001_cloud_sync.sql` through the latest migration committed in the repository.
+2. Apply every SQL file in `supabase/migrations/` in numeric order, starting from `001_cloud_sync.sql` through `027_shared_password_hardening_v086.sql` (or any later migration subsequently committed).
 3. In Auth enable Email/Password.
 4. Configure the client with only:
    - Project URL
@@ -68,3 +68,16 @@ collaborative by default while allowing an entry owner to make a Note, Photo
 or Sketch read-only for other members. The database trigger protects the
 record itself and Storage policies protect deterministic shared-photo objects.
 Legacy entries without the new payload fields remain collaborative.
+
+
+### v0.86 Shared-password hardening
+
+Migration `027_shared_password_hardening_v086.sql` keeps Password Noi ♡ on the existing `agenda_records` channel and adds:
+
+- a filtered index for shared credential/key lookups;
+- revision metadata for shared credentials;
+- atomic owner claim for the shared password key fingerprint;
+- revision-checked credential update/delete RPCs;
+- database guards for encrypted payload shape and stale-write rejection.
+
+The Flutter v0.86 client uses these dedicated RPCs for credential mutation. Migration deployment must be coordinated with v0.86 client availability because v0.85 clients do not send revision-aware shared-password mutations.
