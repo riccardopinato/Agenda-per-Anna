@@ -288,6 +288,116 @@ class SharedPasswordService {
     }
   }
 
+  Future<String> createRecoveryPackage({
+    required String spaceId,
+    required String recoveryPassword,
+  }) async {
+    final vault = PrivateVaultService.instance;
+    final cloud = CloudSyncService.instance;
+    if (!vault.unlocked) {
+      throw StateError('Sblocca prima la Cassaforte privata.');
+    }
+    if (!cloud.signedIn) {
+      throw StateError('Accedi prima a Noi ♡.');
+    }
+    if (recoveryPassword.length < 12) {
+      throw const FormatException(
+        'Usa almeno 12 caratteri per la password di recupero.',
+      );
+    }
+
+    final key = vault.sharedPasswordKeyCopy(spaceId);
+    if (key == null) {
+      throw StateError('Chiave Password Noi ♡ non disponibile.');
+    }
+    final salt = _randomBytes(16);
+    Uint8List? wrappingKey;
+    try {
+      await _assertLocalKeyMatchesServer(spaceId, key);
+      wrappingKey = _deriveSecretKey(
+        recoveryPassword,
+        salt,
+        _recoveryIterations,
+      );
+      final wrapped = _encrypt(
+        key: wrappingKey,
+        plaintext: key,
+        aad: _recoveryAad(spaceId),
+      );
+      final package = {
+        'v': 1,
+        'spaceId': spaceId,
+        'iterations': _recoveryIterations,
+        'salt': base64UrlEncode(salt),
+        'fingerprint': _fingerprint(key),
+        'wrapped': wrapped,
+      };
+      return _recoveryPrefix +
+          base64UrlEncode(utf8.encode(jsonEncode(package)));
+    } finally {
+      _zero(key);
+      if (wrappingKey != null) _zero(wrappingKey);
+    }
+  }
+
+  Future<bool> importRecoveryPackage({
+    required String spaceId,
+    required String package,
+    required String recoveryPassword,
+  }) async {
+    final vault = PrivateVaultService.instance;
+    final cloud = CloudSyncService.instance;
+    if (!vault.unlocked || !cloud.signedIn) return false;
+    if (!package.startsWith(_recoveryPrefix) ||
+        recoveryPassword.length < 12) {
+      return false;
+    }
+
+    Uint8List? wrappingKey;
+    Uint8List? spaceKey;
+    try {
+      final encoded = package.substring(_recoveryPrefix.length);
+      final decoded = Map<String, dynamic>.from(
+        jsonDecode(utf8.decode(base64Url.decode(encoded))) as Map,
+      );
+      if ((decoded['v'] as num?)?.toInt() != 1 ||
+          decoded['spaceId']?.toString() != spaceId) {
+        return false;
+      }
+      final iterations = (decoded['iterations'] as num?)?.toInt() ?? 0;
+      if (iterations < 100000 || iterations > 2000000) return false;
+      final salt = base64Url.decode(decoded['salt']?.toString() ?? '');
+      wrappingKey = _deriveSecretKey(
+        recoveryPassword,
+        salt,
+        iterations,
+      );
+      spaceKey = _decrypt(
+        key: wrappingKey,
+        envelope: Map<String, dynamic>.from(decoded['wrapped'] as Map),
+        aad: _recoveryAad(spaceId),
+      );
+      if (spaceKey.length != _keyLength) return false;
+
+      final packageFingerprint = decoded['fingerprint']?.toString() ?? '';
+      if (packageFingerprint != _fingerprint(spaceKey)) return false;
+
+      final meta = await _loadKeyMeta(spaceId);
+      if (meta == null || !_fingerprintMatches(spaceKey, meta)) {
+        return false;
+      }
+
+      await vault.importSharedPasswordKey(spaceId, spaceKey);
+      await refreshSpace(spaceId);
+      return true;
+    } catch (_) {
+      return false;
+    } finally {
+      if (wrappingKey != null) _zero(wrappingKey);
+      if (spaceKey != null) _zero(spaceKey);
+    }
+  }
+
   Future<List<SharedPasswordCredential>> refreshSpace(String spaceId) async {
     final vault = PrivateVaultService.instance;
     final cloud = CloudSyncService.instance;
@@ -680,11 +790,18 @@ class SharedPasswordService {
 
   String _fingerprint(Uint8List key) => sha256.convert(key).toString();
 
-  Uint8List _derivePairingKey(String code, Uint8List salt) {
+  Uint8List _derivePairingKey(String code, Uint8List salt) =>
+      _deriveSecretKey(code, salt, _pairingIterations);
+
+  Uint8List _deriveSecretKey(
+    String secret,
+    Uint8List salt,
+    int iterations,
+  ) {
     final derivator = PBKDF2KeyDerivator(HMac(SHA256Digest(), 64))
-      ..init(Pbkdf2Parameters(salt, _pairingIterations, _keyLength));
+      ..init(Pbkdf2Parameters(salt, iterations, _keyLength));
     return derivator.process(
-      Uint8List.fromList(utf8.encode(code)),
+      Uint8List.fromList(utf8.encode(secret)),
     );
   }
 
@@ -754,6 +871,9 @@ class SharedPasswordService {
 
   String _keyEnvelopeAad(String spaceId) =>
       'annas-diary-noi-password-key:$spaceId:v1';
+
+  String _recoveryAad(String spaceId) =>
+      'annas-diary-noi-password-recovery:$spaceId:v1';
 
   void _throwIfRevisionConflict(Object error) {
     final text = error.toString();
