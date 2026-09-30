@@ -7,9 +7,9 @@ v0.86 is a security/governance hardening release. It keeps the established local
 - atomic owner claim for the Noi ♡ shared-password key fingerprint;
 - revision-safe shared credential create/update/delete under row locking;
 - server-authoritative shared credential modification timestamps;
-- atomic one-shot pairing-envelope consumption;
+- owner-only pairing-envelope creation plus atomic one-shot consumption;
 - database rejection of plaintext shared credential fields and invalid encrypted/tombstone payloads;
-- explicit rejection of protected password writes through the legacy generic merge RPC;
+- explicit rejection of protected password writes through both the Data API and legacy generic merge RPC;
 - immediate local key/mirror purge after authoritative membership reconciliation when the Vault is unlocked;
 - encrypted E2EE recovery package kept outside ordinary backup;
 - Private Vault password-wrap hardening with backward-compatible upgrade;
