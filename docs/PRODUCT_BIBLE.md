@@ -1,8 +1,8 @@
 # Anna's Diary — Product Bible
 
 **Status:** canonical product source of truth  
-**Current release line:** v0.86  
-**Last aligned:** 30 September 2026
+**Current release line:** v0.88  
+**Last aligned:** 1 October 2026
 
 This document defines what Anna's Diary is, what it is not, and the product/security invariants that future work must preserve. Implementation details belong in `docs/ARCHITECTURE.md`; execution sequencing belongs in `docs/ROADMAP.md`.
 
@@ -30,6 +30,7 @@ The product includes a deliberately bounded shared area, **Noi ♡**, for memori
 - one-way explicit copy toward Notes-compatible text;
 - Noi ♡ shared agenda, memories, interactions and lightweight shared utilities;
 - encrypted Private Vault and Password Vault;
+- private menstrual-cycle tracking inside the encrypted Vault, with deterministic estimates and no health diagnosis;
 - E2EE Noi ♡ shared passwords.
 
 ### Out of scope
@@ -95,7 +96,9 @@ The Private Vault is a distinct local security boundary:
 - excluded from ordinary cloud sync;
 - excluded from global search;
 - excluded from ordinary backup;
-- permanent deletion is explicit.
+- permanent deletion is explicit;
+- menstrual-cycle data belongs to this same Vault boundary and must not enter ordinary sync, search or backup;
+- cycle/fertility estimates are deterministic projections over user-entered data and must never be presented as contraception, diagnosis or medical advice.
 
 Personal credentials are never automatically promoted to Noi ♡.
 
@@ -145,7 +148,7 @@ Future AI may assist with capture, retrieval or organization only when it provid
 
 ## 9. Free/Premium status
 
-As of v0.86 there is **no production Premium/RevenueCat entitlement system** and no paywall is part of the current product contract.
+As of v0.88 there is **no production Premium/RevenueCat entitlement system** and no paywall is part of the current product contract. The v0.88 cycle tracker core is therefore fully usable without a Premium entitlement.
 
 If monetization is introduced later:
 

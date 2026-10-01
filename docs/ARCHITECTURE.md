@@ -1,6 +1,6 @@
 # Agenda per Anna — Architecture
 
-## Current structure — v0.86.0
+## Current structure — v0.88.0
 
 Anna's Diary keeps `lib/main.dart` as the compatibility library boundary, but large responsibilities are now split by runtime domain:
 
@@ -24,6 +24,15 @@ The `AgendaStore` public surface remains compatible. UI screens observe domain-s
 
 The PR production gate is:
 `locked dependencies → analyze/tests → Web release → ARM64 release → AppLab emulator → Maestro → multi-screen screenshots/UI hierarchy → visual QA/regression → Logcat/crash/ANR`.
+
+## v0.88.0 — Private cycle domain
+
+- `cycle_tracker_domain.dart` owns immutable cycle settings/day logs and deterministic history/prediction projections.
+- `PrivateVaultService` remains the only persistence owner: `cycleTracker` is nested inside the existing encrypted Vault payload instead of creating a parallel database.
+- `src/screens/cycle_tracker_screen.dart` is a protected presentation surface and renders no intimate data when the Vault is locked.
+- Normal cloud sync, global search and ordinary backup remain unaware of `CycleTrackerState`.
+- The existing local notification service is reused for a single privacy-safe period reminder; discreet copy is the default.
+- No medical inference engine, cloud health service or generative AI is introduced.
 
 ## v0.86.0 — Security and shared-secret boundaries
 

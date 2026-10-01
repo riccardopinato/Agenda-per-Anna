@@ -6,6 +6,7 @@ import 'package:flutter/services.dart';
 import 'package:pointycastle/export.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'cycle_tracker_domain.dart';
 import 'local_state_store.dart';
 import 'src/security/vault_password_kdf.dart';
 
@@ -110,6 +111,7 @@ class PrivateVaultService extends ChangeNotifier {
   final Random _random = Random.secure();
   final List<PrivateVaultEntry> _entries = [];
   final Map<String, Uint8List> _sharedPasswordKeys = {};
+  CycleTrackerState _cycleTrackerState = const CycleTrackerState();
 
   LocalStateStore? _store;
   Uint8List? _masterKey;
@@ -131,6 +133,10 @@ class PrivateVaultService extends ChangeNotifier {
       List<PrivateVaultEntry>.unmodifiable(
         _entries.where((entry) => entry.isCredential),
       );
+  CycleTrackerState get cycleTrackerState {
+    _requireUnlocked();
+    return _cycleTrackerState;
+  }
 
   List<PrivateVaultEntry> sharedCredentialEntries(String spaceId) =>
       List<PrivateVaultEntry>.unmodifiable(
@@ -236,6 +242,7 @@ class PrivateVaultService extends ChangeNotifier {
       _masterKey = Uint8List.fromList(master);
       _entries.clear();
       _sharedPasswordKeys.clear();
+      _cycleTrackerState = const CycleTrackerState();
       _armAutoLock();
       notifyListeners();
     } finally {
@@ -294,6 +301,7 @@ class PrivateVaultService extends ChangeNotifier {
         _zero(key);
       }
       _sharedPasswordKeys.clear();
+      _cycleTrackerState = const CycleTrackerState();
       return false;
     } finally {
       if (passwordKey != null) _zero(passwordKey);
@@ -367,6 +375,7 @@ class PrivateVaultService extends ChangeNotifier {
       _zero(key);
     }
     _sharedPasswordKeys.clear();
+    _cycleTrackerState = const CycleTrackerState();
     notifyListeners();
   }
 
@@ -485,6 +494,45 @@ class PrivateVaultService extends ChangeNotifier {
       );
     }
     _sortEntries();
+    await _persistEntries();
+    notifyListeners();
+  }
+
+  Future<void> upsertCycleDayLog(CycleDayLog log) async {
+    _requireUnlocked();
+    final now = DateTime.now();
+    final existing = _cycleTrackerState.logFor(log.date);
+    final normalized = CycleDayLog(
+      date: cycleDateOnly(log.date),
+      flow: log.flow,
+      painLevel: log.painLevel.clamp(0, 5),
+      energyLevel: log.energyLevel.clamp(0, 5),
+      symptoms: List<String>.unmodifiable(log.symptoms),
+      moods: List<String>.unmodifiable(log.moods),
+      discharge: log.discharge.trim(),
+      hadSex: log.hadSex,
+      basalTemperature: log.basalTemperature,
+      ovulationTest: log.ovulationTest.trim(),
+      notes: log.notes.trim(),
+      createdAt: existing?.createdAt ?? now,
+      updatedAt: now,
+    );
+    _cycleTrackerState = _cycleTrackerState.upsertLog(normalized);
+    await _persistEntries();
+    notifyListeners();
+  }
+
+  Future<void> deleteCycleDayLog(DateTime date) async {
+    _requireUnlocked();
+    if (_cycleTrackerState.logFor(date) == null) return;
+    _cycleTrackerState = _cycleTrackerState.removeLog(date);
+    await _persistEntries();
+    notifyListeners();
+  }
+
+  Future<void> updateCycleSettings(CycleSettings settings) async {
+    _requireUnlocked();
+    _cycleTrackerState = _cycleTrackerState.withSettings(settings);
     await _persistEntries();
     notifyListeners();
   }
@@ -677,6 +725,12 @@ class PrivateVaultService extends ChangeNotifier {
       jsonDecode(utf8.decode(plaintext)) as Map,
     );
     final list = decoded['entries'] as List? ?? const [];
+    final rawCycleTracker = decoded['cycleTracker'];
+    _cycleTrackerState = rawCycleTracker is Map
+        ? CycleTrackerState.fromJson(
+            Map<String, dynamic>.from(rawCycleTracker),
+          )
+        : const CycleTrackerState();
     for (final key in _sharedPasswordKeys.values) {
       _zero(key);
     }
@@ -715,6 +769,7 @@ class PrivateVaultService extends ChangeNotifier {
             for (final entry in _sharedPasswordKeys.entries)
               entry.key: base64UrlEncode(entry.value),
           },
+          'cycleTracker': _cycleTrackerState.toJson(),
         }),
       ),
     );
