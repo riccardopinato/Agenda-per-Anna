@@ -43,6 +43,7 @@ Source of execution truth for Anna's Diary. Product identity and boundaries are 
 | v0.86 | Security & Governance Hardening | Completed | Atomic E2EE key ownership, revision-safe shared credentials, recovery, Vault KDF hardening and SHOS documentation alignment |
 | v0.87 | Private Vault Web Unlock Hotfix | Completed | Async browser-native PBKDF2 unlock with unchanged Vault format, explicit unlock states and Chrome regression coverage |
 | v0.88 | Private Cycle Tracker MVP | Completed | Vault-only cycle calendar, daily logs, history, deterministic estimates, privacy-safe reminders and five-language UI |
+| v0.89 | Cycle Premium Engine | In progress | Centralized premium-ready access, advanced trends, fertility observations, custom symptoms and explicit private report |
 
 ## Permanent constraints for this sequence
 
@@ -521,3 +522,15 @@ Per the active development cadence, AppLab runs once every two feature versions.
 - Existing v0.87 Vault payloads remain readable without migration or password reset.
 - Analyze, full tests, Web release, Android size audit and AppLab trusted verification must pass before promotion to main.
 - Release metadata is v0.88.0+98.
+
+## v0.89 acceptance criteria
+
+- The v0.88 FREE cycle core remains fully usable and no existing cycle record is gated, deleted or migrated destructively.
+- Premium capability decisions are centralized and the cycle UI contains no direct RevenueCat/billing-provider dependency.
+- Advanced trends are deterministic projections over local Vault data and never claim diagnosis, causation or contraceptive reliability.
+- Basal temperature, cervical mucus, sexual activity, ovulation-test observations and custom symptoms stay inside the encrypted Vault payload.
+- Up to 12 custom symptom labels are normalized/deduplicated and old v0.88 payloads remain readable.
+- The private report is generated locally and copied only after explicit user action; it is never uploaded automatically.
+- en/it/es/fr/pt cover all new Premium-cycle UI copy.
+- Analyze, full tests, Web release, Android size audit and AppLab trusted verification must pass before promotion to main.
+- Release metadata is v0.89.0+99.
