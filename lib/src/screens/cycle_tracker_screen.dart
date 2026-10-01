@@ -1369,6 +1369,35 @@ class _PrivateCycleTrackerScreenState extends State<PrivateCycleTrackerScreen> {
                   ),
                 ),
               ),
+              ListTile(
+                title: Text(strings.cycleRegularity),
+                trailing: DropdownButton<String>(
+                  value: settings.regularityMode,
+                  items: [
+                    DropdownMenuItem(
+                      value: 'unknown',
+                      child: Text(strings.cycleRegularityUnknown),
+                    ),
+                    DropdownMenuItem(
+                      value: 'regular',
+                      child: Text(strings.cycleRegularityRegular),
+                    ),
+                    DropdownMenuItem(
+                      value: 'irregular',
+                      child: Text(strings.cycleRegularityIrregular),
+                    ),
+                  ],
+                  onChanged: (value) {
+                    if (value != null) {
+                      unawaited(
+                        _saveSettings(
+                          settings.copyWith(regularityMode: value),
+                        ),
+                      );
+                    }
+                  },
+                ),
+              ),
               SwitchListTile(
                 value: settings.trackFertility,
                 onChanged: (value) => _saveSettings(
@@ -1392,18 +1421,72 @@ class _PrivateCycleTrackerScreenState extends State<PrivateCycleTrackerScreen> {
                   await _saveSettings(
                     settings.copyWith(periodReminderEnabled: value),
                   );
-                  await _syncPeriodReminder();
+                  await _syncCycleReminders();
                 },
                 title: Text(strings.cyclePeriodReminder),
                 subtitle: Text(strings.cyclePeriodReminderDescription),
               ),
+              SwitchListTile(
+                value: settings.dailyLogReminderEnabled,
+                onChanged: (value) async {
+                  await _saveSettings(
+                    settings.copyWith(dailyLogReminderEnabled: value),
+                  );
+                  await _syncCycleReminders();
+                },
+                title: Text(strings.cycleDailyLogReminder),
+                subtitle: Text(strings.cycleDailyLogReminderDescription),
+              ),
+              if (settings.dailyLogReminderEnabled)
+                ListTile(
+                  title: Text(strings.cycleReminderTime),
+                  subtitle: Text(
+                    MaterialLocalizations.of(context).formatTimeOfDay(
+                      TimeOfDay(
+                        hour: settings.dailyLogReminderHour,
+                        minute: settings.dailyLogReminderMinute,
+                      ),
+                    ),
+                  ),
+                  trailing: const Icon(Icons.schedule_outlined),
+                  onTap: () => _pickDailyReminderTime(settings),
+                ),
+              SwitchListTile(
+                value: settings.contraceptiveReminderEnabled,
+                onChanged: (value) async {
+                  await _saveSettings(
+                    settings.copyWith(
+                      contraceptiveReminderEnabled: value,
+                    ),
+                  );
+                  await _syncCycleReminders();
+                },
+                title: Text(strings.cycleContraceptiveReminder),
+                subtitle: Text(
+                  strings.cycleContraceptiveReminderDescription,
+                ),
+              ),
+              if (settings.contraceptiveReminderEnabled)
+                ListTile(
+                  title: Text(strings.cycleReminderTime),
+                  subtitle: Text(
+                    MaterialLocalizations.of(context).formatTimeOfDay(
+                      TimeOfDay(
+                        hour: settings.contraceptiveReminderHour,
+                        minute: settings.contraceptiveReminderMinute,
+                      ),
+                    ),
+                  ),
+                  trailing: const Icon(Icons.schedule_outlined),
+                  onTap: () => _pickContraceptiveReminderTime(settings),
+                ),
               SwitchListTile(
                 value: settings.discreetNotifications,
                 onChanged: (value) async {
                   await _saveSettings(
                     settings.copyWith(discreetNotifications: value),
                   );
-                  await _syncPeriodReminder();
+                  await _syncCycleReminders();
                 },
                 title: Text(strings.cycleDiscreetNotifications),
                 subtitle: Text(strings.cycleDiscreetNotificationsDescription),
@@ -1425,8 +1508,17 @@ class _PrivateCycleTrackerScreenState extends State<PrivateCycleTrackerScreen> {
     await vault.updateCycleSettings(settings);
   }
 
+  Future<void> _syncCycleReminders() async {
+    if (!mounted || !vault.unlocked) return;
+    await _syncPeriodReminder();
+    if (!mounted || !vault.unlocked) return;
+    await _syncDailyLogReminder();
+    if (!mounted || !vault.unlocked) return;
+    await _syncContraceptiveReminder();
+  }
+
   Future<void> _syncPeriodReminder() async {
-    if (!vault.unlocked) return;
+    if (!mounted || !vault.unlocked) return;
     final state = vault.cycleTrackerState;
     final settings = state.settings;
     if (!settings.periodReminderEnabled) {
@@ -1456,6 +1548,86 @@ class _PrivateCycleTrackerScreenState extends State<PrivateCycleTrackerScreen> {
           : strings.cyclePeriodReminderBody,
       when: when,
     );
+  }
+
+  Future<void> _syncDailyLogReminder() async {
+    if (!mounted || !vault.unlocked) return;
+    final settings = vault.cycleTrackerState.settings;
+    if (!settings.dailyLogReminderEnabled) {
+      await NotificationService.instance.cancel(_dailyLogReminderId);
+      return;
+    }
+    final strings = AnnaStrings.of(context);
+    await NotificationService.instance.scheduleDaily(
+      stableId: _dailyLogReminderId,
+      title: settings.discreetNotifications
+          ? 'Anna\'s Diary'
+          : strings.cycleTitle,
+      body: settings.discreetNotifications
+          ? strings.cyclePrivateReminder
+          : strings.cycleDailyLogReminderBody,
+      hour: settings.dailyLogReminderHour,
+      minute: settings.dailyLogReminderMinute,
+    );
+  }
+
+  Future<void> _syncContraceptiveReminder() async {
+    if (!mounted || !vault.unlocked) return;
+    final settings = vault.cycleTrackerState.settings;
+    if (!settings.contraceptiveReminderEnabled) {
+      await NotificationService.instance.cancel(_contraceptiveReminderId);
+      return;
+    }
+    final strings = AnnaStrings.of(context);
+    await NotificationService.instance.scheduleDaily(
+      stableId: _contraceptiveReminderId,
+      title: settings.discreetNotifications
+          ? 'Anna\'s Diary'
+          : strings.cycleTitle,
+      body: settings.discreetNotifications
+          ? strings.cyclePrivateReminder
+          : strings.cycleContraceptiveReminderBody,
+      hour: settings.contraceptiveReminderHour,
+      minute: settings.contraceptiveReminderMinute,
+    );
+  }
+
+  Future<void> _pickDailyReminderTime(CycleSettings settings) async {
+    final picked = await showTimePicker(
+      context: context,
+      initialTime: TimeOfDay(
+        hour: settings.dailyLogReminderHour,
+        minute: settings.dailyLogReminderMinute,
+      ),
+    );
+    if (picked == null || !mounted || !vault.unlocked) return;
+    await _saveSettings(
+      settings.copyWith(
+        dailyLogReminderHour: picked.hour,
+        dailyLogReminderMinute: picked.minute,
+      ),
+    );
+    if (mounted && vault.unlocked) await _syncCycleReminders();
+  }
+
+  Future<void> _pickContraceptiveReminderTime(
+    CycleSettings settings,
+  ) async {
+    final picked = await showTimePicker(
+      context: context,
+      initialTime: TimeOfDay(
+        hour: settings.contraceptiveReminderHour,
+        minute: settings.contraceptiveReminderMinute,
+      ),
+    );
+    if (picked == null || !mounted || !vault.unlocked) return;
+    await _saveSettings(
+      settings.copyWith(
+        contraceptiveReminderHour: picked.hour,
+        contraceptiveReminderMinute: picked.minute,
+      ),
+    );
+    if (mounted && vault.unlocked) await _syncCycleReminders();
   }
 
   Future<void> _showDayEditor(DateTime date) async {
