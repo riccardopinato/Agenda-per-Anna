@@ -1,6 +1,6 @@
 # Anna's Diary — Roadmap
 
-Source of truth for the active product sequence after v0.52. The roadmap follows the project Master Prompt: REUSE-FIRST, one stable version at a time, no next-version branch before the current version passes all required quality gates and is merged to `main`.
+Source of execution truth for Anna's Diary. Product identity and boundaries are defined by `docs/PRODUCT_BIBLE.md`. The roadmap follows the project Master Prompt: REUSE-FIRST, one stable version at a time, and no release is complete until its required quality gates and documentation are aligned.
 
 ## Active sequence
 
@@ -37,6 +37,10 @@ Source of truth for the active product sequence after v0.52. The roadmap follows
 | v0.80 | Notes Bridge Lite | Completed | Explicit one-way copy from private diary/Inbox into portable Notes-friendly text without coupling the two apps |
 | v0.81 | Localization Foundation | Completed | Device/manual locale selection plus localized app chrome on the existing preferences path |
 | v0.82 | Localization Coverage | Completed | Calendar/Today, Unified Capture, Inbox and Open Life Archive migrated onto the shared localization foundation |
+| v0.83 | Life & Recovery Localization | Completed | People, birthdays, workout, shopping and Trash localization coverage |
+| v0.84 | Password Vault | Completed | Personal credentials inside the existing encrypted Private Vault |
+| v0.85 | Noi ♡ Shared Passwords | Completed | E2EE shared credentials with encrypted local Vault mirrors and one-time pairing |
+| v0.86 | Security & Governance Hardening | In progress | Atomic E2EE key ownership, revision-safe shared credentials, recovery, Vault KDF hardening and SHOS documentation alignment |
 
 ## Permanent constraints for this sequence
 
@@ -474,3 +478,20 @@ Per the active development cadence, AppLab runs once every two feature versions.
 - No workout-specific Supabase table, AI parser, remote plan service or second sync engine is introduced.
 - Release metadata is aligned to v0.72.0+82.
 - Analyze, full tests, Web release, Android size audit and AppLab Trusted Verify must be green before promotion to main.
+
+
+## v0.86 acceptance criteria
+
+- `docs/PRODUCT_BIBLE.md` is the canonical source of product truth and remains consistent with the implementation.
+- Shared-password key initialization is atomic and owner-authorized; concurrent owner devices cannot create two accepted space keys.
+- Shared-password writes and tombstones use server-checked revisions; stale edits/deletes fail explicitly rather than overwriting a newer secret.
+- Shared-password queries are scoped to the relevant shared entity types instead of loading the entire shared-space record set.
+- An authoritative membership refresh purges stale shared-password keys and mirrors immediately when the Private Vault is unlocked.
+- The shared password key can be exported only as an explicitly requested, password-encrypted recovery package; the raw key never enters ordinary backup.
+- New Vault password wraps use PBKDF2-HMAC-SHA256 with 600,000 iterations and a 12-character minimum; legacy 180,000-iteration Vaults remain unlockable and upgrade their password wrap after a successful password unlock.
+- Web Vault / shared-password surfaces disclose that native Keystore and screenshot blocking are unavailable.
+- Vault and shared-password security vocabulary is localized through the existing en/it/es/fr/pt `AnnaStrings` path.
+- v0.86 regression tests lock SQL/RPC security invariants, encrypted mirror revisions, KDF parameters, UI revision propagation and membership reconciliation.
+- Release metadata is aligned to v0.86.0+96.
+- Development, Web, Android size audit and AppLab gates must be green before merge.
+- A public/store release remains blocked unless signing-key custody is explicitly accepted or rotated before distribution.

@@ -160,12 +160,16 @@ class _PrivateVaultScreenState extends State<PrivateVaultScreen>
 
   Future<void> _setup() async {
     final password = passwordController.text;
-    if (password.length < 8) {
-      setState(() => errorText = 'Usa almeno 8 caratteri.');
+    if (password.length < 12) {
+      setState(
+        () => errorText = AnnaStrings.of(context).vaultPasswordTooShort,
+      );
       return;
     }
     if (password != confirmController.text) {
-      setState(() => errorText = 'Le password non coincidono.');
+      setState(
+        () => errorText = AnnaStrings.of(context).vaultPasswordsDoNotMatch,
+      );
       return;
     }
 
@@ -180,7 +184,7 @@ class _PrivateVaultScreenState extends State<PrivateVaultScreen>
       );
       passwordController.clear();
       confirmController.clear();
-      unawaited(SharedPasswordService.instance.refreshAllAvailableSpaces());
+      unawaited(SharedPasswordService.instance.refreshAllAvailableSpacesSafe());
       if (mounted) setState(() {});
     } on FormatException catch (error) {
       if (mounted) setState(() => errorText = error.message.toString());
@@ -188,7 +192,7 @@ class _PrivateVaultScreenState extends State<PrivateVaultScreen>
       if (mounted) {
         setState(
           () => errorText =
-              'Non è stato possibile creare la cassaforte. Riprova.',
+              AnnaStrings.of(context).vaultCreateFailed,
         );
       }
     } finally {
@@ -207,10 +211,10 @@ class _PrivateVaultScreenState extends State<PrivateVaultScreen>
     if (!mounted) return;
     setState(() {
       busy = false;
-      if (!ok) errorText = 'Password non corretta.';
+      if (!ok) errorText = AnnaStrings.of(context).vaultIncorrectPassword;
     });
     if (ok) {
-      unawaited(SharedPasswordService.instance.refreshAllAvailableSpaces());
+      unawaited(SharedPasswordService.instance.refreshAllAvailableSpacesSafe());
     }
   }
 
@@ -223,23 +227,23 @@ class _PrivateVaultScreenState extends State<PrivateVaultScreen>
     try {
       final auth = LocalAuthentication();
       final authenticated = await auth.authenticate(
-        localizedReason: 'Sblocca la cassaforte privata di Anna\'s Diary',
+        localizedReason: AnnaStrings.of(context).vaultUnlockReason,
       );
       if (!authenticated) return;
       final ok = await vault.unlockWithBiometricKey();
       if (!ok && mounted) {
         setState(
           () => errorText =
-              'Sblocco biometrico non disponibile. Usa la password.',
+              AnnaStrings.of(context).vaultBiometricUnavailableUsePassword,
         );
       } else if (ok) {
-        unawaited(SharedPasswordService.instance.refreshAllAvailableSpaces());
+        unawaited(SharedPasswordService.instance.refreshAllAvailableSpacesSafe());
       }
     } catch (_) {
       if (mounted) {
         setState(
           () => errorText =
-              'Biometria non disponibile. Usa la password.',
+              AnnaStrings.of(context).vaultBiometricUnavailableUsePassword,
         );
       }
     } finally {
@@ -248,13 +252,16 @@ class _PrivateVaultScreenState extends State<PrivateVaultScreen>
   }
 
   Future<void> _showEditor([PrivateVaultEntry? entry]) async {
+    final strings = AnnaStrings.of(context);
     final title = TextEditingController(text: entry?.title ?? '');
     final body = TextEditingController(text: entry?.body ?? '');
 
     final result = await showDialog<bool>(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        title: Text(entry == null ? 'Nuovo contenuto privato' : 'Modifica'),
+        title: Text(
+          entry == null ? strings.vaultNewPrivateContent : strings.edit,
+        ),
         content: SizedBox(
           width: 520,
           child: Column(
@@ -265,9 +272,9 @@ class _PrivateVaultScreenState extends State<PrivateVaultScreen>
                 autofocus: true,
                 maxLength: 120,
                 textCapitalization: TextCapitalization.sentences,
-                decoration: const InputDecoration(
-                  labelText: 'Titolo',
-                  prefixIcon: Icon(Icons.title),
+                decoration: InputDecoration(
+                  labelText: strings.vaultPrivateTitleField,
+                  prefixIcon: const Icon(Icons.title),
                 ),
               ),
               const SizedBox(height: 10),
@@ -277,10 +284,10 @@ class _PrivateVaultScreenState extends State<PrivateVaultScreen>
                 maxLines: 12,
                 maxLength: 12000,
                 textCapitalization: TextCapitalization.sentences,
-                decoration: const InputDecoration(
-                  labelText: 'Contenuto privato',
+                decoration: InputDecoration(
+                  labelText: strings.vaultPrivateContentField,
                   alignLabelWithHint: true,
-                  prefixIcon: Icon(Icons.lock_outline),
+                  prefixIcon: const Icon(Icons.lock_outline),
                 ),
               ),
             ],
@@ -289,11 +296,11 @@ class _PrivateVaultScreenState extends State<PrivateVaultScreen>
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(dialogContext, false),
-            child: const Text('Annulla'),
+            child: Text(strings.cancel),
           ),
           FilledButton(
             onPressed: () => Navigator.pop(dialogContext, true),
-            child: const Text('Salva'),
+            child: Text(strings.save),
           ),
         ],
       ),
@@ -452,6 +459,7 @@ class _PrivateVaultScreenState extends State<PrivateVaultScreen>
             email: emailController.text,
             password: credentialPasswordController.text,
             notes: notesController.text,
+            expectedRevision: entry.sharedRevision,
           );
         } else {
           await vault.upsertCredential(
@@ -469,13 +477,24 @@ class _PrivateVaultScreenState extends State<PrivateVaultScreen>
             SnackBar(content: Text(error.message.toString())),
           );
         }
+      } on SharedPasswordConflictException {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                AnnaStrings.of(context).sharedPasswordsConflict,
+              ),
+            ),
+          );
+        }
+        unawaited(
+          SharedPasswordService.instance.refreshAllAvailableSpacesSafe(),
+        );
       } catch (_) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text(
-                'Aggiornamento Noi ♡ non riuscito. Controlla la connessione.',
-              ),
+            SnackBar(
+              content: Text(strings.vaultSharedUpdateFailed),
             ),
           );
         }
@@ -661,14 +680,14 @@ class _PrivateVaultScreenState extends State<PrivateVaultScreen>
         title: Text(
           entry.isCredential
               ? strings.vaultCredentialDeleteQuestion
-              : 'Eliminare dalla cassaforte?',
+              : strings.vaultDeletePrivateQuestion,
         ),
         content: Text(
           entry.isCredential
               ? strings.vaultCredentialDeleteDescription(entry.service)
               : entry.title.isEmpty
-                  ? 'Il contenuto verrà eliminato definitivamente.'
-                  : '“${entry.title}” verrà eliminato definitivamente.',
+                  ? strings.vaultDeletePrivateDescription
+                  : strings.vaultDeletePrivateNamed(entry.title),
         ),
         actions: [
           TextButton(
@@ -688,17 +707,25 @@ class _PrivateVaultScreenState extends State<PrivateVaultScreen>
           await SharedPasswordService.instance.deleteCredential(
             spaceId: entry.sharedSpaceId,
             credentialId: entry.sharedCredentialId,
+            expectedRevision: entry.sharedRevision,
           );
         } else {
           await vault.delete(entry.id);
         }
+      } on SharedPasswordConflictException {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(strings.sharedPasswordsConflict)),
+          );
+        }
+        unawaited(
+          SharedPasswordService.instance.refreshAllAvailableSpacesSafe(),
+        );
       } catch (_) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text(
-                'Eliminazione Noi ♡ non riuscita. Controlla la connessione.',
-              ),
+            SnackBar(
+              content: Text(strings.vaultSharedDeleteFailed),
             ),
           );
         }
@@ -707,25 +734,23 @@ class _PrivateVaultScreenState extends State<PrivateVaultScreen>
   }
 
   Future<void> _destroyVault() async {
+    final strings = AnnaStrings.of(context);
     final controller = TextEditingController();
     final password = await showDialog<String>(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        title: const Text('Elimina cassaforte'),
+        title: Text(strings.vaultDeleteVault),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Text(
-              'Tutti i contenuti cifrati verranno eliminati definitivamente. '
-              'Inserisci la password della cassaforte per confermare.',
-            ),
+            Text(strings.vaultDestroyDescription),
             const SizedBox(height: 14),
             TextField(
               controller: controller,
               obscureText: true,
               autofocus: true,
-              decoration: const InputDecoration(
-                labelText: 'Password cassaforte',
+              decoration: InputDecoration(
+                labelText: strings.vaultPasswordLabel,
               ),
             ),
           ],
@@ -733,12 +758,12 @@ class _PrivateVaultScreenState extends State<PrivateVaultScreen>
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(dialogContext),
-            child: const Text('Annulla'),
+            child: Text(strings.cancel),
           ),
           FilledButton(
             onPressed: () =>
                 Navigator.pop(dialogContext, controller.text),
-            child: const Text('Elimina definitivamente'),
+            child: Text(strings.deletePermanently),
           ),
         ],
       ),
@@ -750,7 +775,7 @@ class _PrivateVaultScreenState extends State<PrivateVaultScreen>
     if (!ok) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Password non corretta.')),
+          SnackBar(content: Text(strings.vaultIncorrectPassword)),
         );
       }
       return;
@@ -766,25 +791,65 @@ class _PrivateVaultScreenState extends State<PrivateVaultScreen>
 
   @override
   Widget build(BuildContext context) {
-    return AnimatedBuilder(
-      animation: vault,
-      builder: (context, _) {
-        if (loading || !vault.initialized) {
-          return const Scaffold(
-            body: Center(child: CircularProgressIndicator()),
-          );
-        }
-        if (!vault.configured) return _buildSetup(context);
-        if (!vault.unlocked) return _buildLocked(context);
-        return _buildUnlocked(context);
-      },
+    return Listener(
+      behavior: HitTestBehavior.translucent,
+      onPointerDown: (_) => vault.noteUserActivity(),
+      child: AnimatedBuilder(
+        animation: vault,
+        builder: (context, _) {
+          if (loading || !vault.initialized) {
+            return const Scaffold(
+              body: Center(child: CircularProgressIndicator()),
+            );
+          }
+          if (!vault.configured) return _buildSetup(context);
+          if (!vault.unlocked) return _buildLocked(context);
+          return _buildUnlocked(context);
+        },
+      ),
+    );
+  }
+
+  Widget _vaultWebSecurityWarning(
+    BuildContext context,
+    AnnaStrings strings,
+  ) {
+    final scheme = Theme.of(context).colorScheme;
+    return Semantics(
+      container: true,
+      label: strings.vaultWebSecurityWarning,
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: scheme.errorContainer.withValues(alpha: 0.72),
+          borderRadius: BorderRadius.circular(14),
+        ),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Icon(
+              Icons.warning_amber_rounded,
+              color: scheme.onErrorContainer,
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Text(
+                strings.vaultWebSecurityWarning,
+                style: TextStyle(color: scheme.onErrorContainer),
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 
   Widget _buildSetup(BuildContext context) {
+    final strings = AnnaStrings.of(context);
     final scheme = Theme.of(context).colorScheme;
     return Scaffold(
-      appBar: AppBar(title: const Text('Cassaforte privata')),
+      appBar: AppBar(title: Text(strings.vaultTitle)),
       body: SafeArea(
         child: Center(
           child: SingleChildScrollView(
@@ -804,19 +869,19 @@ class _PrivateVaultScreenState extends State<PrivateVaultScreen>
                         child: const Icon(Icons.lock_person_outlined, size: 30),
                       ),
                       const SizedBox(height: 18),
-                      const Text(
-                        'Uno spazio solo tuo',
-                        style: TextStyle(
+                      Text(
+                        strings.vaultSetupTitle,
+                        style: const TextStyle(
                           fontSize: 25,
                           fontWeight: FontWeight.w900,
                         ),
                       ),
                       const SizedBox(height: 8),
-                      const Text(
-                        'I contenuti della cassaforte vengono cifrati prima di '
-                        'essere salvati sul dispositivo. Non entrano nel cloud, '
-                        'in Noi ♡, nella ricerca o nei backup normali.',
-                      ),
+                      Text(strings.vaultSetupDescription),
+                      if (kIsWeb) ...[
+                        const SizedBox(height: 12),
+                        _vaultWebSecurityWarning(context, strings),
+                      ],
                       const SizedBox(height: 20),
                       TextField(
                         controller: passwordController,
@@ -824,7 +889,7 @@ class _PrivateVaultScreenState extends State<PrivateVaultScreen>
                         enabled: !busy,
                         autofillHints: const [AutofillHints.newPassword],
                         decoration: InputDecoration(
-                          labelText: 'Password cassaforte',
+                          labelText: strings.vaultPasswordLabel,
                           prefixIcon: const Icon(Icons.password_outlined),
                           suffixIcon: IconButton(
                             onPressed: () => setState(
@@ -845,7 +910,7 @@ class _PrivateVaultScreenState extends State<PrivateVaultScreen>
                         enabled: !busy,
                         onSubmitted: (_) => busy ? null : _setup(),
                         decoration: InputDecoration(
-                          labelText: 'Ripeti password',
+                          labelText: strings.vaultRepeatPassword,
                           prefixIcon: const Icon(Icons.lock_outline),
                           errorText: errorText,
                         ),
@@ -859,9 +924,9 @@ class _PrivateVaultScreenState extends State<PrivateVaultScreen>
                               ? null
                               : (value) =>
                                   setState(() => enableBiometric = value),
-                          title: const Text('Sblocco con impronta/biometria'),
-                          subtitle: const Text(
-                            'La password resta sempre disponibile come recupero.',
+                          title: Text(strings.vaultBiometricUnlock),
+                          subtitle: Text(
+                            strings.vaultBiometricRecoveryDescription,
                           ),
                           secondary: const Icon(Icons.fingerprint),
                         ),
@@ -873,7 +938,7 @@ class _PrivateVaultScreenState extends State<PrivateVaultScreen>
                           onPressed: busy ? null : _setup,
                           icon: const Icon(Icons.shield_outlined),
                           label: Text(
-                            busy ? 'Creazione…' : 'Crea cassaforte',
+                            busy ? strings.vaultCreating : strings.vaultCreate,
                           ),
                         ),
                       ),
@@ -889,19 +954,20 @@ class _PrivateVaultScreenState extends State<PrivateVaultScreen>
   }
 
   Widget _buildLocked(BuildContext context) {
+    final strings = AnnaStrings.of(context);
     final scheme = Theme.of(context).colorScheme;
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Cassaforte privata'),
+        title: Text(strings.vaultTitle),
         actions: [
           PopupMenuButton<String>(
             onSelected: (value) {
               if (value == 'destroy') unawaited(_destroyVault());
             },
-            itemBuilder: (_) => const [
+            itemBuilder: (_) => [
               PopupMenuItem(
                 value: 'destroy',
-                child: Text('Elimina cassaforte'),
+                child: Text(strings.vaultDeleteVault),
               ),
             ],
           ),
@@ -929,18 +995,22 @@ class _PrivateVaultScreenState extends State<PrivateVaultScreen>
                     ),
                   ),
                   const SizedBox(height: 20),
-                  const Text(
-                    'Cassaforte bloccata',
-                    style: TextStyle(
+                  Text(
+                    strings.vaultLocked,
+                    style: const TextStyle(
                       fontSize: 26,
                       fontWeight: FontWeight.w900,
                     ),
                   ),
                   const SizedBox(height: 7),
-                  const Text(
-                    'Il contenuto resta cifrato finché non la sblocchi.',
+                  Text(
+                    strings.vaultLockedDescription,
                     textAlign: TextAlign.center,
                   ),
+                  if (kIsWeb) ...[
+                    const SizedBox(height: 12),
+                    _vaultWebSecurityWarning(context, strings),
+                  ],
                   const SizedBox(height: 22),
                   TextField(
                     controller: passwordController,
@@ -949,7 +1019,7 @@ class _PrivateVaultScreenState extends State<PrivateVaultScreen>
                     autofocus: !vault.biometricAvailable,
                     onSubmitted: (_) => busy ? null : _unlockPassword(),
                     decoration: InputDecoration(
-                      labelText: 'Password cassaforte',
+                      labelText: strings.vaultPasswordLabel,
                       prefixIcon: const Icon(Icons.password_outlined),
                       errorText: errorText,
                     ),
@@ -960,7 +1030,7 @@ class _PrivateVaultScreenState extends State<PrivateVaultScreen>
                     child: FilledButton.icon(
                       onPressed: busy ? null : _unlockPassword,
                       icon: const Icon(Icons.lock_open_outlined),
-                      label: const Text('Sblocca'),
+                      label: Text(strings.vaultUnlock),
                     ),
                   ),
                   if (biometricSupported && vault.biometricAvailable) ...[
@@ -970,7 +1040,7 @@ class _PrivateVaultScreenState extends State<PrivateVaultScreen>
                       child: OutlinedButton.icon(
                         onPressed: busy ? null : _unlockBiometric,
                         icon: const Icon(Icons.fingerprint),
-                        label: const Text('Usa impronta/biometria'),
+                        label: Text(strings.vaultUseBiometric),
                       ),
                     ),
                   ],
@@ -991,11 +1061,11 @@ class _PrivateVaultScreenState extends State<PrivateVaultScreen>
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Cassaforte privata'),
+        title: Text(strings.vaultTitle),
         actions: [
           if (biometricSupported && !vault.biometricAvailable)
             IconButton(
-              tooltip: 'Attiva biometria',
+              tooltip: strings.vaultEnableBiometric,
               onPressed: () async {
                 final ok = await vault.enableBiometricForCurrentKey();
                 if (!context.mounted) return;
@@ -1003,8 +1073,8 @@ class _PrivateVaultScreenState extends State<PrivateVaultScreen>
                   SnackBar(
                     content: Text(
                       ok
-                          ? 'Sblocco biometrico attivato.'
-                          : 'Biometria non disponibile.',
+                          ? strings.vaultBiometricEnabled
+                          : strings.vaultBiometricUnavailable,
                     ),
                   ),
                 );
@@ -1012,7 +1082,7 @@ class _PrivateVaultScreenState extends State<PrivateVaultScreen>
               icon: const Icon(Icons.fingerprint),
             ),
           IconButton(
-            tooltip: 'Blocca adesso',
+            tooltip: strings.vaultLockNow,
             onPressed: () {
               vault.lock();
               setState(() {});
@@ -1023,10 +1093,10 @@ class _PrivateVaultScreenState extends State<PrivateVaultScreen>
             onSelected: (value) {
               if (value == 'destroy') unawaited(_destroyVault());
             },
-            itemBuilder: (_) => const [
+            itemBuilder: (_) => [
               PopupMenuItem(
                 value: 'destroy',
-                child: Text('Elimina cassaforte'),
+                child: Text(strings.vaultDeleteVault),
               ),
             ],
           ),
@@ -1045,6 +1115,11 @@ class _PrivateVaultScreenState extends State<PrivateVaultScreen>
       ),
       body: Column(
         children: [
+          if (kIsWeb)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(18, 12, 18, 0),
+              child: _vaultWebSecurityWarning(context, strings),
+            ),
           Padding(
             padding: const EdgeInsets.fromLTRB(18, 12, 18, 4),
             child: SizedBox(
@@ -1089,7 +1164,7 @@ class _PrivateVaultScreenState extends State<PrivateVaultScreen>
                           Text(
                             passwordMode
                                 ? strings.vaultNoPasswords
-                                : 'La cassaforte è vuota',
+                                : strings.vaultEmpty,
                             style: const TextStyle(
                               fontSize: 20,
                               fontWeight: FontWeight.w900,
@@ -1100,7 +1175,7 @@ class _PrivateVaultScreenState extends State<PrivateVaultScreen>
                           Text(
                             passwordMode
                                 ? strings.vaultNoPasswordsDescription
-                                : 'Aggiungi note e informazioni che vuoi tenere separate dal resto dell’app.',
+                                : strings.vaultEmptyDescription,
                             textAlign: TextAlign.center,
                           ),
                         ],

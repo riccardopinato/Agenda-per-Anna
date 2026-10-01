@@ -9,6 +9,17 @@ import 'package:uuid/uuid.dart';
 import 'cloud_sync_service.dart';
 import 'vault_service.dart';
 
+class SharedPasswordConflictException implements Exception {
+  final String message;
+
+  const SharedPasswordConflictException([
+    this.message = 'shared_password_revision_conflict',
+  ]);
+
+  @override
+  String toString() => message;
+}
+
 class SharedPasswordCredential {
   final String id;
   final String spaceId;
@@ -19,6 +30,7 @@ class SharedPasswordCredential {
   final String notes;
   final DateTime updatedAt;
   final String updatedBy;
+  final int revision;
 
   const SharedPasswordCredential({
     required this.id,
@@ -30,6 +42,7 @@ class SharedPasswordCredential {
     required this.notes,
     required this.updatedAt,
     required this.updatedBy,
+    this.revision = 0,
   });
 
   Map<String, dynamic> toJson() => {
@@ -57,6 +70,24 @@ class SharedPasswordCredential {
             DateTime.tryParse(json['updatedAt']?.toString() ?? '')?.toLocal() ??
                 DateTime.now(),
         updatedBy: json['updatedBy']?.toString() ?? '',
+        revision: (json['revision'] as num?)?.toInt() ?? 0,
+      );
+
+  SharedPasswordCredential withServerRevision({
+    required int revision,
+    required DateTime updatedAt,
+  }) =>
+      SharedPasswordCredential(
+        id: id,
+        spaceId: spaceId,
+        service: service,
+        username: username,
+        email: email,
+        password: password,
+        notes: notes,
+        updatedAt: updatedAt,
+        updatedBy: updatedBy,
+        revision: revision,
       );
 }
 
@@ -66,17 +97,21 @@ class SharedPasswordService {
   static final SharedPasswordService instance = SharedPasswordService._();
 
   static const _credentialEntityType = 'shared_credential';
-  static const _keyEnvelopeEntityType = 'shared_password_key_envelope';
   static const _keyMetaEntityType = 'shared_password_key_meta';
   static const _keyMetaEntityId = 'v1';
   static const _payloadVersion = 1;
   static const _pairingIterations = 180000;
+  static const _recoveryIterations = 600000;
   static const _tagBits = 128;
   static const _nonceLength = 12;
   static const _keyLength = 32;
   static const _pairingLifetime = Duration(minutes: 15);
+  static const _recoveryPrefix = 'ADSP1.';
 
   final Random _random = Random.secure();
+  Object? _lastReconcileError;
+
+  Object? get lastReconcileError => _lastReconcileError;
   final Uuid _uuid = const Uuid();
 
   bool hasKey(String spaceId) =>
@@ -92,19 +127,20 @@ class SharedPasswordService {
       throw StateError('Accedi prima a Noi ♡.');
     }
 
-    final records = await cloud.pullSharedRecords(spaceId);
-    final meta = _activeKeyMeta(records);
     final local = vault.sharedPasswordKeyCopy(spaceId);
-
-    if (meta != null) {
-      if (local == null) {
-        throw StateError(
-          'Esiste già una chiave Password Noi ♡. Importala da un dispositivo collegato.',
-        );
-      }
+    if (local != null) {
       try {
-        if (!_fingerprintMatches(local, meta)) {
-          throw StateError('Chiave Password Noi ♡ non coerente con lo spazio.');
+        final localFingerprint = _fingerprint(local);
+        final claim = await cloud.claimSharedPasswordKeyMeta(
+          spaceId: spaceId,
+          fingerprint: localFingerprint,
+        );
+        if (claim.fingerprint != localFingerprint) {
+          await vault.removeSharedPasswordSpace(spaceId);
+          throw StateError(
+            'Esiste già una chiave Password Noi ♡ diversa. '
+            'Importala da un dispositivo collegato.',
+          );
         }
         return;
       } finally {
@@ -112,20 +148,22 @@ class SharedPasswordService {
       }
     }
 
-    if (local != null) {
-      try {
-        await _publishKeyMeta(spaceId, local);
-        return;
-      } finally {
-        _zero(local);
-      }
-    }
-
-    final created = await vault.ensureSharedPasswordKey(spaceId);
+    final candidate = _randomBytes(_keyLength);
     try {
-      await _publishKeyMeta(spaceId, created);
+      final fingerprint = _fingerprint(candidate);
+      final claim = await cloud.claimSharedPasswordKeyMeta(
+        spaceId: spaceId,
+        fingerprint: fingerprint,
+      );
+      if (!claim.claimed || claim.fingerprint != fingerprint) {
+        throw StateError(
+          'Esiste già una chiave Password Noi ♡. '
+          'Importala da un dispositivo collegato.',
+        );
+      }
+      await vault.importSharedPasswordKey(spaceId, candidate);
     } finally {
-      _zero(created);
+      _zero(candidate);
     }
   }
 
@@ -160,9 +198,8 @@ class SharedPasswordService {
       );
       final expiresAt = DateTime.now().toUtc().add(_pairingLifetime);
 
-      await cloud.upsertSharedRecord(
+      await cloud.upsertSharedPasswordKeyEnvelope(
         spaceId: spaceId,
-        entityType: _keyEnvelopeEntityType,
         entityId: codeHash,
         payload: {
           'v': _payloadVersion,
@@ -170,6 +207,7 @@ class SharedPasswordService {
           'wrapped': wrapped,
           'expiresAt': expiresAt.toIso8601String(),
         },
+        updatedAt: DateTime.now(),
       );
       return code;
     } finally {
@@ -194,22 +232,15 @@ class SharedPasswordService {
     final normalized = _normalizePairingCode(code);
     if (normalized.length != 32) return false;
     final codeHash = sha256.convert(utf8.encode(normalized)).toString();
-    final records = await cloud.pullSharedRecords(spaceId);
-    final keyMeta = _activeKeyMeta(records);
-    SharedSpaceRecord? match;
-    for (final record in records) {
-      if (record.entityType == _keyEnvelopeEntityType &&
-          record.entityId == codeHash &&
-          record.deletedAt == null &&
-          record.payload != null) {
-        match = record;
-        break;
-      }
-    }
-    if (match == null) return false;
+
+    final keyMeta = await _loadKeyMeta(spaceId);
+    if (keyMeta == null) return false;
 
     try {
-      final payload = match.payload!;
+      final payload = await cloud.consumeSharedPasswordKeyEnvelope(
+        spaceId: spaceId,
+        entityId: codeHash,
+      );
       final expiresAt =
           DateTime.tryParse(payload['expiresAt']?.toString() ?? '')?.toUtc();
       if (expiresAt == null || !expiresAt.isAfter(DateTime.now().toUtc())) {
@@ -226,27 +257,127 @@ class SharedPasswordService {
           aad: _keyEnvelopeAad(spaceId),
         );
         if (spaceKey.length != _keyLength) return false;
-        if (keyMeta != null && !_fingerprintMatches(spaceKey, keyMeta)) {
-          return false;
-        }
+        if (!_fingerprintMatches(spaceKey, keyMeta)) return false;
         await vault.importSharedPasswordKey(spaceId, spaceKey);
-        if (keyMeta == null) {
-          await _publishKeyMeta(spaceId, spaceKey);
-        }
       } finally {
         _zero(wrappingKey);
         if (spaceKey != null) _zero(spaceKey);
       }
 
-      await cloud.deleteSharedRecord(
-        spaceId: spaceId,
-        entityType: _keyEnvelopeEntityType,
-        entityId: codeHash,
-      );
       await refreshSpace(spaceId);
       return true;
     } catch (_) {
       return false;
+    }
+  }
+
+  Future<String> createRecoveryPackage({
+    required String spaceId,
+    required String recoveryPassword,
+  }) async {
+    final vault = PrivateVaultService.instance;
+    final cloud = CloudSyncService.instance;
+    if (!vault.unlocked) {
+      throw StateError('Sblocca prima la Cassaforte privata.');
+    }
+    if (!cloud.signedIn) {
+      throw StateError('Accedi prima a Noi ♡.');
+    }
+    if (recoveryPassword.length < 12) {
+      throw const FormatException(
+        'Usa almeno 12 caratteri per la password di recupero.',
+      );
+    }
+
+    final key = vault.sharedPasswordKeyCopy(spaceId);
+    if (key == null) {
+      throw StateError('Chiave Password Noi ♡ non disponibile.');
+    }
+    final salt = _randomBytes(16);
+    Uint8List? wrappingKey;
+    try {
+      await _assertLocalKeyMatchesServer(spaceId, key);
+      wrappingKey = _deriveSecretKey(
+        recoveryPassword,
+        salt,
+        _recoveryIterations,
+      );
+      final wrapped = _encrypt(
+        key: wrappingKey,
+        plaintext: key,
+        aad: _recoveryAad(spaceId),
+      );
+      final package = {
+        'v': 1,
+        'spaceId': spaceId,
+        'iterations': _recoveryIterations,
+        'salt': base64UrlEncode(salt),
+        'fingerprint': _fingerprint(key),
+        'wrapped': wrapped,
+      };
+      return _recoveryPrefix +
+          base64UrlEncode(utf8.encode(jsonEncode(package)));
+    } finally {
+      _zero(key);
+      if (wrappingKey != null) _zero(wrappingKey);
+    }
+  }
+
+  Future<bool> importRecoveryPackage({
+    required String spaceId,
+    required String package,
+    required String recoveryPassword,
+  }) async {
+    final vault = PrivateVaultService.instance;
+    final cloud = CloudSyncService.instance;
+    if (!vault.unlocked || !cloud.signedIn) return false;
+    if (!package.startsWith(_recoveryPrefix) ||
+        recoveryPassword.length < 12) {
+      return false;
+    }
+
+    Uint8List? wrappingKey;
+    Uint8List? spaceKey;
+    try {
+      final encoded = package.substring(_recoveryPrefix.length);
+      final decoded = Map<String, dynamic>.from(
+        jsonDecode(utf8.decode(base64Url.decode(encoded))) as Map,
+      );
+      if ((decoded['v'] as num?)?.toInt() != 1 ||
+          decoded['spaceId']?.toString() != spaceId) {
+        return false;
+      }
+      final iterations = (decoded['iterations'] as num?)?.toInt() ?? 0;
+      if (iterations < 100000 || iterations > 2000000) return false;
+      final salt = base64Url.decode(decoded['salt']?.toString() ?? '');
+      wrappingKey = _deriveSecretKey(
+        recoveryPassword,
+        salt,
+        iterations,
+      );
+      spaceKey = _decrypt(
+        key: wrappingKey,
+        envelope: Map<String, dynamic>.from(decoded['wrapped'] as Map),
+        aad: _recoveryAad(spaceId),
+      );
+      if (spaceKey.length != _keyLength) return false;
+
+      final packageFingerprint = decoded['fingerprint']?.toString() ?? '';
+      if (packageFingerprint != _fingerprint(spaceKey)) return false;
+
+      final meta = await _loadKeyMeta(spaceId);
+      if (meta == null || !_fingerprintMatches(spaceKey, meta)) {
+        return false;
+      }
+
+      await vault.importSharedPasswordKey(spaceId, spaceKey);
+      await refreshSpace(spaceId);
+      return true;
+    } catch (_) {
+      return false;
+    } finally {
+      if (wrappingKey != null) _zero(wrappingKey);
+      if (spaceKey != null) _zero(spaceKey);
     }
   }
 
@@ -257,24 +388,25 @@ class SharedPasswordService {
       return const [];
     }
 
-    final records = await cloud.pullSharedRecords(spaceId);
-    final meta = _activeKeyMeta(records);
+    final meta = await _loadKeyMeta(spaceId);
     final keyForCheck = vault.sharedPasswordKeyCopy(spaceId);
     if (keyForCheck == null) return const [];
     try {
-      if (meta == null) {
-        await _publishKeyMeta(spaceId, keyForCheck);
-      } else if (!_fingerprintMatches(keyForCheck, meta)) {
+      if (meta == null || !_fingerprintMatches(keyForCheck, meta)) {
         throw StateError('Chiave Password Noi ♡ non coerente con lo spazio.');
       }
     } finally {
       _zero(keyForCheck);
     }
+
+    final records = await cloud.pullSharedRecordsByType(
+      spaceId,
+      _credentialEntityType,
+    );
     final activeIds = <String>{};
     final result = <SharedPasswordCredential>[];
 
     for (final record in records) {
-      if (record.entityType != _credentialEntityType) continue;
       if (record.deletedAt != null || record.payload == null) {
         await vault.deleteSharedCredentialMirror(spaceId, record.entityId);
         continue;
@@ -284,6 +416,8 @@ class SharedPasswordService {
         spaceId: spaceId,
         credentialId: record.entityId,
         payload: record.payload!,
+        authoritativeUpdatedAt: record.clientUpdatedAt,
+        authoritativeUpdatedBy: record.updatedBy,
       );
       activeIds.add(record.entityId);
       result.add(credential);
@@ -296,6 +430,7 @@ class SharedPasswordService {
         password: credential.password,
         notes: credential.notes,
         updatedAt: credential.updatedAt,
+        sharedRevision: credential.revision,
       );
     }
 
@@ -321,6 +456,7 @@ class SharedPasswordService {
     required String email,
     required String password,
     required String notes,
+    int expectedRevision = 0,
   }) async {
     final vault = PrivateVaultService.instance;
     final cloud = CloudSyncService.instance;
@@ -341,49 +477,77 @@ class SharedPasswordService {
     }
 
     final cleanService = service.trim();
+    final cleanUsername = username.trim();
+    final cleanEmail = email.trim();
+    final cleanNotes = notes.trim();
     if (cleanService.isEmpty) {
       throw const FormatException('Inserisci il nome del servizio.');
     }
+    if (cleanService.length > 160) {
+      throw const FormatException('Il nome del servizio è troppo lungo.');
+    }
+    if (cleanUsername.length > 320 || cleanEmail.length > 320) {
+      throw const FormatException('Nome utente o email troppo lunghi.');
+    }
+    if (password.length > 4096) {
+      throw const FormatException('La password è troppo lunga.');
+    }
+    if (cleanNotes.length > 12000) {
+      throw const FormatException('Le note sono troppo lunghe.');
+    }
+
     final id = credentialId?.trim().isNotEmpty == true
         ? credentialId!.trim()
         : _uuid.v4();
     final now = DateTime.now();
-    final credential = SharedPasswordCredential(
+    final pending = SharedPasswordCredential(
       id: id,
       spaceId: spaceId,
       service: cleanService,
-      username: username.trim(),
-      email: email.trim(),
+      username: cleanUsername,
+      email: cleanEmail,
       password: password,
-      notes: notes.trim(),
+      notes: cleanNotes,
       updatedAt: now,
       updatedBy: cloud.userId ?? '',
+      revision: expectedRevision,
     );
 
-    final payload = _encryptCredential(credential);
-    await cloud.upsertSharedRecord(
-      spaceId: spaceId,
-      entityType: _credentialEntityType,
-      entityId: id,
-      payload: payload,
-      updatedAt: now,
-    );
-    await vault.upsertSharedCredentialMirror(
-      spaceId: spaceId,
-      credentialId: id,
-      service: credential.service,
-      username: credential.username,
-      email: credential.email,
-      password: credential.password,
-      notes: credential.notes,
-      updatedAt: now,
-    );
-    return credential;
+    final payload = _encryptCredential(pending);
+    try {
+      final mutation = await cloud.upsertSharedPasswordCredential(
+        spaceId: spaceId,
+        entityId: id,
+        payload: payload,
+        expectedRevision: expectedRevision,
+        updatedAt: now,
+      );
+      final committed = pending.withServerRevision(
+        revision: mutation.revision,
+        updatedAt: mutation.clientUpdatedAt,
+      );
+      await vault.upsertSharedCredentialMirror(
+        spaceId: spaceId,
+        credentialId: id,
+        service: committed.service,
+        username: committed.username,
+        email: committed.email,
+        password: committed.password,
+        notes: committed.notes,
+        updatedAt: committed.updatedAt,
+        sharedRevision: committed.revision,
+      );
+      return committed;
+    } catch (error) {
+      _throwIfRevisionConflict(error);
+      rethrow;
+    }
   }
 
   Future<void> deleteCredential({
     required String spaceId,
     required String credentialId,
+    int expectedRevision = 0,
   }) async {
     final vault = PrivateVaultService.instance;
     final cloud = CloudSyncService.instance;
@@ -393,12 +557,17 @@ class SharedPasswordService {
     if (!cloud.signedIn) {
       throw StateError('Accedi prima a Noi ♡.');
     }
-    await cloud.deleteSharedRecord(
-      spaceId: spaceId,
-      entityType: _credentialEntityType,
-      entityId: credentialId,
-    );
-    await vault.deleteSharedCredentialMirror(spaceId, credentialId);
+    try {
+      await cloud.deleteSharedPasswordCredential(
+        spaceId: spaceId,
+        entityId: credentialId,
+        expectedRevision: expectedRevision,
+      );
+      await vault.deleteSharedCredentialMirror(spaceId, credentialId);
+    } catch (error) {
+      _throwIfRevisionConflict(error);
+      rethrow;
+    }
   }
 
   Future<void> applyRealtimeChange(SharedRealtimeRecordChange change) async {
@@ -418,6 +587,8 @@ class SharedPasswordService {
       spaceId: change.spaceId,
       credentialId: change.entityId,
       payload: change.payload!,
+      authoritativeUpdatedAt: change.clientUpdatedAt,
+      authoritativeUpdatedBy: change.updatedBy,
     );
     await vault.upsertSharedCredentialMirror(
       spaceId: change.spaceId,
@@ -428,6 +599,7 @@ class SharedPasswordService {
       password: credential.password,
       notes: credential.notes,
       updatedAt: credential.updatedAt,
+      sharedRevision: credential.revision,
     );
   }
 
@@ -438,11 +610,22 @@ class SharedPasswordService {
 
     final spaces = await cloud.listSharedSpaces();
     final activeIds = spaces.map((space) => space.id).toSet();
-    await vault.reconcileSharedPasswordSpaces(activeIds);
+    await reconcileMembershipWithSpaceIds(activeIds);
 
     for (final space in spaces) {
       if (!hasKey(space.id)) continue;
       await refreshSpace(space.id);
+    }
+  }
+
+  Future<bool> refreshAllAvailableSpacesSafe() async {
+    try {
+      _lastReconcileError = null;
+      await refreshAllAvailableSpaces();
+      return true;
+    } catch (error) {
+      _lastReconcileError = error;
+      return false;
     }
   }
 
@@ -451,9 +634,17 @@ class SharedPasswordService {
     final cloud = CloudSyncService.instance;
     if (!vault.unlocked || !cloud.signedIn) return;
     final spaces = await cloud.listSharedSpaces();
-    await vault.reconcileSharedPasswordSpaces(
+    await reconcileMembershipWithSpaceIds(
       spaces.map((space) => space.id).toSet(),
     );
+  }
+
+  Future<void> reconcileMembershipWithSpaceIds(
+    Set<String> activeSpaceIds,
+  ) async {
+    final vault = PrivateVaultService.instance;
+    if (!vault.unlocked) return;
+    await vault.reconcileSharedPasswordSpaces(activeSpaceIds);
   }
 
   Future<void> revokeLocalSpace(String spaceId) async {
@@ -473,16 +664,20 @@ class SharedPasswordService {
     try {
       final plaintext =
           Uint8List.fromList(utf8.encode(jsonEncode(credential.toJson())));
-      final encrypted = _encrypt(
-        key: key,
-        plaintext: plaintext,
-        aad: _credentialAad(credential.spaceId, credential.id),
-      );
-      return {
-        'v': _payloadVersion,
-        'cipher': 'AES-256-GCM',
-        ...encrypted,
-      };
+      try {
+        final encrypted = _encrypt(
+          key: key,
+          plaintext: plaintext,
+          aad: _credentialAad(credential.spaceId, credential.id),
+        );
+        return {
+          'v': _payloadVersion,
+          'cipher': 'AES-256-GCM',
+          ...encrypted,
+        };
+      } finally {
+        _zero(plaintext);
+      }
     } finally {
       _zero(key);
     }
@@ -492,16 +687,23 @@ class SharedPasswordService {
     required String spaceId,
     required String credentialId,
     required Map<String, dynamic> payload,
+    required DateTime authoritativeUpdatedAt,
+    String? authoritativeUpdatedBy,
   }) {
     if ((payload['v'] as num?)?.toInt() != _payloadVersion) {
       throw const FormatException('Versione Password Noi ♡ non supportata.');
+    }
+    final revision = (payload['revision'] as num?)?.toInt() ?? 0;
+    if (revision <= 0) {
+      throw const FormatException('Revisione Password Noi ♡ non valida.');
     }
     final key = PrivateVaultService.instance.sharedPasswordKeyCopy(spaceId);
     if (key == null) {
       throw StateError('Chiave Password Noi ♡ non disponibile.');
     }
+    Uint8List? plaintext;
     try {
-      final plaintext = _decrypt(
+      plaintext = _decrypt(
         key: key,
         envelope: payload,
         aad: _credentialAad(spaceId, credentialId),
@@ -509,13 +711,25 @@ class SharedPasswordService {
       final decoded = Map<String, dynamic>.from(
         jsonDecode(utf8.decode(plaintext)) as Map,
       );
-      final credential = SharedPasswordCredential.fromJson(decoded);
-      if (credential.id != credentialId || credential.spaceId != spaceId) {
+      final base = SharedPasswordCredential.fromJson(decoded);
+      if (base.id != credentialId || base.spaceId != spaceId) {
         throw const FormatException('Credenziale Noi ♡ non valida.');
       }
-      return credential;
+      return SharedPasswordCredential(
+        id: base.id,
+        spaceId: base.spaceId,
+        service: base.service,
+        username: base.username,
+        email: base.email,
+        password: base.password,
+        notes: base.notes,
+        updatedAt: authoritativeUpdatedAt.toLocal(),
+        updatedBy: authoritativeUpdatedBy ?? base.updatedBy,
+        revision: revision,
+      );
     } finally {
       _zero(key);
+      if (plaintext != null) _zero(plaintext);
     }
   }
 
@@ -523,21 +737,32 @@ class SharedPasswordService {
     String spaceId,
     Uint8List key,
   ) async {
-    final records = await CloudSyncService.instance.pullSharedRecords(spaceId);
-    final meta = _activeKeyMeta(records);
-    if (meta == null) {
-      await _publishKeyMeta(spaceId, key);
+    final meta = await _loadKeyMeta(spaceId);
+    if (meta != null) {
+      if (!_fingerprintMatches(key, meta)) {
+        throw StateError('Chiave Password Noi ♡ non coerente con lo spazio.');
+      }
       return;
     }
-    if (!_fingerprintMatches(key, meta)) {
+
+    final fingerprint = _fingerprint(key);
+    final claim = await CloudSyncService.instance.claimSharedPasswordKeyMeta(
+      spaceId: spaceId,
+      fingerprint: fingerprint,
+    );
+    if (claim.fingerprint != fingerprint) {
       throw StateError('Chiave Password Noi ♡ non coerente con lo spazio.');
     }
   }
 
-  SharedSpaceRecord? _activeKeyMeta(List<SharedSpaceRecord> records) {
+  Future<SharedSpaceRecord?> _loadKeyMeta(String spaceId) async {
+    final records = await CloudSyncService.instance.pullSharedRecordsByType(
+      spaceId,
+      _keyMetaEntityType,
+      entityId: _keyMetaEntityId,
+    );
     for (final record in records) {
-      if (record.entityType == _keyMetaEntityType &&
-          record.entityId == _keyMetaEntityId &&
+      if (record.entityId == _keyMetaEntityId &&
           record.deletedAt == null &&
           record.payload != null) {
         return record;
@@ -546,30 +771,26 @@ class SharedPasswordService {
     return null;
   }
 
-  Future<void> _publishKeyMeta(String spaceId, Uint8List key) async {
-    await CloudSyncService.instance.upsertSharedRecord(
-      spaceId: spaceId,
-      entityType: _keyMetaEntityType,
-      entityId: _keyMetaEntityId,
-      payload: {
-        'v': _payloadVersion,
-        'fingerprint': sha256.convert(key).toString(),
-        'createdAt': DateTime.now().toUtc().toIso8601String(),
-      },
-    );
-  }
-
   bool _fingerprintMatches(Uint8List key, SharedSpaceRecord meta) {
     final expected = meta.payload?['fingerprint']?.toString() ?? '';
     if (expected.isEmpty) return false;
-    return sha256.convert(key).toString() == expected;
+    return _fingerprint(key) == expected;
   }
 
-  Uint8List _derivePairingKey(String code, Uint8List salt) {
+  String _fingerprint(Uint8List key) => sha256.convert(key).toString();
+
+  Uint8List _derivePairingKey(String code, Uint8List salt) =>
+      _deriveSecretKey(code, salt, _pairingIterations);
+
+  Uint8List _deriveSecretKey(
+    String secret,
+    Uint8List salt,
+    int iterations,
+  ) {
     final derivator = PBKDF2KeyDerivator(HMac(SHA256Digest(), 64))
-      ..init(Pbkdf2Parameters(salt, _pairingIterations, _keyLength));
+      ..init(Pbkdf2Parameters(salt, iterations, _keyLength));
     return derivator.process(
-      Uint8List.fromList(utf8.encode(code)),
+      Uint8List.fromList(utf8.encode(secret)),
     );
   }
 
@@ -639,6 +860,17 @@ class SharedPasswordService {
 
   String _keyEnvelopeAad(String spaceId) =>
       'annas-diary-noi-password-key:$spaceId:v1';
+
+  String _recoveryAad(String spaceId) =>
+      'annas-diary-noi-password-recovery:$spaceId:v1';
+
+  void _throwIfRevisionConflict(Object error) {
+    final text = error.toString();
+    if (text.contains('shared_password_revision_conflict') ||
+        text.contains('40001')) {
+      throw const SharedPasswordConflictException();
+    }
+  }
 
   void _zero(Uint8List bytes) {
     for (var i = 0; i < bytes.length; i++) {

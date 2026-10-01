@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:math';
 import 'package:flutter/foundation.dart';
@@ -19,6 +20,7 @@ class PrivateVaultEntry {
   final String password;
   final String sharedSpaceId;
   final String sharedCredentialId;
+  final int sharedRevision;
   final DateTime createdAt;
   final DateTime updatedAt;
 
@@ -32,6 +34,7 @@ class PrivateVaultEntry {
     this.password = '',
     this.sharedSpaceId = '',
     this.sharedCredentialId = '',
+    this.sharedRevision = 0,
     required this.createdAt,
     required this.updatedAt,
   });
@@ -52,6 +55,7 @@ class PrivateVaultEntry {
         if (isCredential) 'password': password,
         if (isSharedCredential) 'sharedSpaceId': sharedSpaceId,
         if (isSharedCredential) 'sharedCredentialId': sharedCredentialId,
+        if (isSharedCredential) 'sharedRevision': sharedRevision,
         'createdAt': createdAt.toUtc().toIso8601String(),
         'updatedAt': updatedAt.toUtc().toIso8601String(),
       };
@@ -72,6 +76,7 @@ class PrivateVaultEntry {
       password: json['password']?.toString() ?? '',
       sharedSpaceId: json['sharedSpaceId']?.toString() ?? '',
       sharedCredentialId: json['sharedCredentialId']?.toString() ?? '',
+      sharedRevision: (json['sharedRevision'] as num?)?.toInt() ?? 0,
       createdAt: DateTime.tryParse(json['createdAt']?.toString() ?? '')
               ?.toLocal() ??
           DateTime.now(),
@@ -90,10 +95,12 @@ class PrivateVaultService extends ChangeNotifier {
   static const _metaKey = 'private_vault_meta_v1';
   static const _payloadKey = 'private_vault_payload_v1';
   static const _version = 1;
-  static const _iterations = 180000;
+  static const _legacyIterations = 180000;
+  static const _currentIterations = 600000;
   static const _tagBits = 128;
   static const _nonceLength = 12;
   static const _masterKeyLength = 32;
+  static const autoLockTimeout = Duration(minutes: 5);
   static const _keyAad = 'annas-diary-vault-key-v1';
   static const _payloadAad = 'annas-diary-vault-payload-v1';
   static const MethodChannel _native =
@@ -107,6 +114,7 @@ class PrivateVaultService extends ChangeNotifier {
   Uint8List? _masterKey;
   Map<String, dynamic>? _meta;
   bool _initialized = false;
+  Timer? _autoLockTimer;
 
   bool get initialized => _initialized;
   bool get configured => _meta != null;
@@ -172,48 +180,66 @@ class PrivateVaultService extends ChangeNotifier {
 
     final salt = _randomBytes(16);
     final master = _randomBytes(_masterKeyLength);
-    final passwordKey = _derivePasswordKey(password, salt);
-    final wrapped = _encrypt(
-      key: passwordKey,
-      plaintext: master,
-      aad: _keyAad,
+    final passwordKey = _derivePasswordKey(
+      password,
+      salt,
+      _currentIterations,
     );
+    try {
+      final wrapped = _encrypt(
+        key: passwordKey,
+        plaintext: master,
+        aad: _keyAad,
+      );
 
-    String? biometricWrap;
-    if (enableBiometric && !kIsWeb) {
-      try {
-        biometricWrap = await _native.invokeMethod<String>(
-          'protectMasterKey',
-          {'key': base64UrlEncode(master)},
-        );
-      } catch (_) {
-        biometricWrap = null;
+      String? biometricWrap;
+      if (enableBiometric && !kIsWeb) {
+        try {
+          biometricWrap = await _native.invokeMethod<String>(
+            'protectMasterKey',
+            {'key': base64UrlEncode(master)},
+          );
+        } catch (_) {
+          biometricWrap = null;
+        }
       }
-    }
 
-    _meta = {
-      'v': _version,
-      'salt': base64UrlEncode(salt),
-      'iterations': _iterations,
-      'passwordWrap': wrapped,
-      'biometricWrap': biometricWrap,
-      'createdAt': DateTime.now().toUtc().toIso8601String(),
-    };
-    _masterKey = Uint8List.fromList(master);
-    _entries.clear();
-
-    await _store!.writeBatch({
-      _metaKey: jsonEncode(_meta),
-      _payloadKey: jsonEncode(
-        _encrypt(
+      final nextMeta = <String, dynamic>{
+        'v': _version,
+        'salt': base64UrlEncode(salt),
+        'iterations': _currentIterations,
+        'passwordWrap': wrapped,
+        'biometricWrap': biometricWrap,
+        'createdAt': DateTime.now().toUtc().toIso8601String(),
+      };
+      final initialPlaintext =
+          Uint8List.fromList(utf8.encode('{"entries":[]}'));
+      Map<String, dynamic> initialEnvelope;
+      try {
+        initialEnvelope = _encrypt(
           key: master,
-          plaintext: Uint8List.fromList(utf8.encode('{"entries":[]}')),
+          plaintext: initialPlaintext,
           aad: _payloadAad,
-        ),
-      ),
-    });
-    _zero(passwordKey);
-    notifyListeners();
+        );
+      } finally {
+        _zero(initialPlaintext);
+      }
+
+      await _store!.writeBatch({
+        _metaKey: jsonEncode(nextMeta),
+        _payloadKey: jsonEncode(initialEnvelope),
+      });
+
+      _meta = nextMeta;
+      _masterKey = Uint8List.fromList(master);
+      _entries.clear();
+      _sharedPasswordKeys.clear();
+      _armAutoLock();
+      notifyListeners();
+    } finally {
+      _zero(passwordKey);
+      _zero(master);
+    }
   }
 
   Future<bool> unlockWithPassword(String password) async {
@@ -221,23 +247,50 @@ class PrivateVaultService extends ChangeNotifier {
     final meta = _meta;
     if (meta == null) return false;
 
+    Uint8List? passwordKey;
+    Uint8List? master;
     try {
       final salt = base64Url.decode(meta['salt'] as String);
-      final passwordKey = _derivePasswordKey(password, salt);
+      final iterations =
+          (meta['iterations'] as num?)?.toInt() ?? _legacyIterations;
+      if (iterations < 100000 || iterations > 2000000) return false;
+      passwordKey = _derivePasswordKey(password, salt, iterations);
       final wrapped = Map<String, dynamic>.from(meta['passwordWrap'] as Map);
-      final master = _decrypt(
+      master = _decrypt(
         key: passwordKey,
         envelope: wrapped,
         aad: _keyAad,
       );
-      _zero(passwordKey);
       if (master.length != _masterKeyLength) return false;
+
       _masterKey = Uint8List.fromList(master);
       await _loadEntries();
+
+      if (iterations < _currentIterations) {
+        try {
+          await _upgradePasswordWrap(password, master);
+        } catch (_) {
+          // A failed hardening write must not lock the user out. The existing
+          // wrap remains valid and the upgrade is retried on a later unlock.
+        }
+      }
+
+      _armAutoLock();
       notifyListeners();
       return true;
     } catch (_) {
+      final active = _masterKey;
+      if (active != null) _zero(active);
+      _masterKey = null;
+      _entries.clear();
+      for (final key in _sharedPasswordKeys.values) {
+        _zero(key);
+      }
+      _sharedPasswordKeys.clear();
       return false;
+    } finally {
+      if (passwordKey != null) _zero(passwordKey);
+      if (master != null) _zero(master);
     }
   }
 
@@ -252,11 +305,16 @@ class PrivateVaultService extends ChangeNotifier {
       );
       if (encoded == null) return false;
       final master = base64Url.decode(encoded);
-      if (master.length != _masterKeyLength) return false;
-      _masterKey = Uint8List.fromList(master);
-      await _loadEntries();
-      notifyListeners();
-      return true;
+      try {
+        if (master.length != _masterKeyLength) return false;
+        _masterKey = Uint8List.fromList(master);
+        await _loadEntries();
+        _armAutoLock();
+        notifyListeners();
+        return true;
+      } finally {
+        _zero(master);
+      }
     } catch (_) {
       return false;
     }
@@ -280,7 +338,20 @@ class PrivateVaultService extends ChangeNotifier {
     }
   }
 
+  void noteUserActivity() {
+    if (!unlocked) return;
+    _armAutoLock();
+  }
+
+  void _armAutoLock() {
+    _autoLockTimer?.cancel();
+    if (!unlocked) return;
+    _autoLockTimer = Timer(autoLockTimeout, lock);
+  }
+
   void lock() {
+    _autoLockTimer?.cancel();
+    _autoLockTimer = null;
     final key = _masterKey;
     if (key != null) _zero(key);
     _masterKey = null;
@@ -452,6 +523,7 @@ class PrivateVaultService extends ChangeNotifier {
     required String password,
     required String notes,
     required DateTime updatedAt,
+    int sharedRevision = 0,
   }) async {
     _requireUnlocked();
     final mirrorId = 'shared:$spaceId:$credentialId';
@@ -467,6 +539,7 @@ class PrivateVaultService extends ChangeNotifier {
       password: password,
       sharedSpaceId: spaceId,
       sharedCredentialId: credentialId,
+      sharedRevision: sharedRevision,
       createdAt: createdAt,
       updatedAt: updatedAt,
     );
@@ -638,17 +711,58 @@ class PrivateVaultService extends ChangeNotifier {
         }),
       ),
     );
-    final envelope = _encrypt(
-      key: master,
-      plaintext: plaintext,
-      aad: _payloadAad,
-    );
-    await _store!.setString(_payloadKey, jsonEncode(envelope));
+    try {
+      final envelope = _encrypt(
+        key: master,
+        plaintext: plaintext,
+        aad: _payloadAad,
+      );
+      await _store!.setString(_payloadKey, jsonEncode(envelope));
+    } finally {
+      _zero(plaintext);
+    }
   }
 
-  Uint8List _derivePasswordKey(String password, Uint8List salt) {
+  Future<void> _upgradePasswordWrap(
+    String password,
+    Uint8List master,
+  ) async {
+    final current = _meta;
+    if (current == null) return;
+
+    final salt = _randomBytes(16);
+    final passwordKey = _derivePasswordKey(
+      password,
+      salt,
+      _currentIterations,
+    );
+    try {
+      final wrapped = _encrypt(
+        key: passwordKey,
+        plaintext: master,
+        aad: _keyAad,
+      );
+      final upgraded = <String, dynamic>{
+        ...current,
+        'salt': base64UrlEncode(salt),
+        'iterations': _currentIterations,
+        'passwordWrap': wrapped,
+        'kdfUpgradedAt': DateTime.now().toUtc().toIso8601String(),
+      };
+      await _store!.setString(_metaKey, jsonEncode(upgraded));
+      _meta = upgraded;
+    } finally {
+      _zero(passwordKey);
+    }
+  }
+
+  Uint8List _derivePasswordKey(
+    String password,
+    Uint8List salt,
+    int iterations,
+  ) {
     final derivator = PBKDF2KeyDerivator(HMac(SHA256Digest(), 64))
-      ..init(Pbkdf2Parameters(salt, _iterations, 32));
+      ..init(Pbkdf2Parameters(salt, iterations, 32));
     return derivator.process(
       Uint8List.fromList(utf8.encode(password)),
     );
@@ -719,9 +833,9 @@ class PrivateVaultService extends ChangeNotifier {
   }
 
   void _validatePassword(String value) {
-    if (value.length < 8) {
+    if (value.length < 12) {
       throw const FormatException(
-        'La password della cassaforte deve avere almeno 8 caratteri.',
+        'La password della cassaforte deve avere almeno 12 caratteri.',
       );
     }
   }

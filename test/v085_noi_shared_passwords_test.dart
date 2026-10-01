@@ -162,7 +162,7 @@ void main() {
     final store = File('lib/src/agenda_store.dart').readAsStringSync();
 
     expect(service, contains("'shared_credential'"));
-    expect(service, contains("'shared_password_key_envelope'"));
+    expect(service, contains('upsertSharedPasswordKeyEnvelope'));
     expect(service, contains("'shared_password_key_meta'"));
     expect(service, contains("'AES-256-GCM'"));
     expect(service, contains('GCMBlockCipher(AESEngine())'));

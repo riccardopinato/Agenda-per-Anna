@@ -1,6 +1,6 @@
 # Agenda per Anna — Architecture
 
-## Current structure — v0.51.0
+## Current structure — v0.86.0
 
 Anna's Diary keeps `lib/main.dart` as the compatibility library boundary, but large responsibilities are now split by runtime domain:
 
@@ -24,6 +24,19 @@ The `AgendaStore` public surface remains compatible. UI screens observe domain-s
 
 The PR production gate is:
 `locked dependencies → analyze/tests → Web release → ARM64 release → AppLab emulator → Maestro → multi-screen screenshots/UI hierarchy → visual QA/regression → Logcat/crash/ANR`.
+
+## v0.86.0 — Security and shared-secret boundaries
+
+The existing architecture remains intact; v0.86 hardens boundaries rather than introducing a parallel subsystem.
+
+- `vault_service.dart` remains the local encrypted security boundary for private notes, personal credentials, Noi ♡ password-space keys and encrypted shared-credential mirrors.
+- `shared_password_service.dart` owns client-side E2EE, pairing/recovery, revision propagation and reconciliation. It does not own a second database.
+- `cloud_sync_service.dart` exposes password-specific filtered reads and authenticated RPC wrappers for atomic key claim and revision-safe credential mutation.
+- `agenda_records` remains the shared cloud record channel. Migration 027 adds guards/RPCs/indexing but no password-specific table.
+- `AgendaStore` continues as the compatibility/orchestration facade; successful authoritative shared-space membership refreshes also trigger local shared-password membership reconciliation when the Vault is unlocked.
+- Shared credentials use Noi ♡ as the authoritative source. Private Vault mirrors carry the server revision so edits/deletes originating from the Vault still participate in the same compare-and-swap contract.
+- Key recovery is explicit and password-encrypted; it does not enter the normal backup engine.
+- Web keeps the same encrypted payload format but cannot provide Android Keystore/FLAG_SECURE, so the UI exposes that weaker platform boundary.
 
 ## v0.17.0
 
