@@ -39,7 +39,7 @@ jobs:
 
       - name: Apply and verify platform configuration
         run: |
-          python3 -m py_compile             tool/prepare_android_platform.py             tool/prepare_web_platform.py             tool/finalize_web_build.py             tool/android_size_report.py
+          python3 -m py_compile             tool/prepare_android_platform.py             tool/prepare_web_platform.py             tool/finalize_web_build.py             tool/android_size_report.py             tool/validate_premium_release.py
           python3 tool/prepare_android_platform.py
           python3 tool/prepare_web_platform.py
 
