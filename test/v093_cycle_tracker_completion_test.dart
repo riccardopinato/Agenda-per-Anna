@@ -78,8 +78,8 @@ void main() {
   });
 
   test('irregular user setting prevents an overconfident high estimate', () {
-    var state = CycleTrackerState(
-      settings: const CycleSettings(
+    var state = const CycleTrackerState(
+      settings: CycleSettings(
         onboardingComplete: true,
         regularityMode: 'irregular',
       ),
