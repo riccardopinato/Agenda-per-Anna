@@ -42,6 +42,7 @@ Source of execution truth for Anna's Diary. Product identity and boundaries are 
 | v0.85 | Noi ♡ Shared Passwords | Completed | E2EE shared credentials with encrypted local Vault mirrors and one-time pairing |
 | v0.86 | Security & Governance Hardening | Completed | Atomic E2EE key ownership, revision-safe shared credentials, recovery, Vault KDF hardening and SHOS documentation alignment |
 | v0.87 | Private Vault Web Unlock Hotfix | Completed | Async browser-native PBKDF2 unlock with unchanged Vault format, explicit unlock states and Chrome regression coverage |
+| v0.88 | Private Cycle Tracker MVP | In progress | Vault-only cycle calendar, daily logs, history, deterministic estimates, privacy-safe reminders and five-language UI |
 
 ## Permanent constraints for this sequence
 
@@ -507,3 +508,16 @@ Per the active development cadence, AppLab runs once every two feature versions.
 - A Chrome browser regression verifies the WebCrypto PBKDF2-SHA256 output against a known compatibility vector.
 - Analyze, full tests, dedicated browser crypto test, Web release build and the existing Android/AppLab gates must be green before promotion to main.
 - Release metadata is aligned to v0.87.0+97.
+
+## v0.88 acceptance criteria
+
+- The cycle tracker is reachable only from an unlocked Private Vault and immediately hides content when the Vault locks.
+- Cycle day logs, symptoms, mood, pain, energy and notes persist only inside the existing encrypted Vault payload.
+- No cycle data enters ordinary cloud sync, global search or standard backup.
+- Calendar, overview and history operate from the same canonical Vault-owned cycle state with no parallel database.
+- Period and fertility estimates are deterministic, explainable and explicitly non-medical/non-contraceptive.
+- Period reminders default to discreet notification copy.
+- English, Italian, Spanish, French and Portuguese are covered.
+- Existing v0.87 Vault payloads remain readable without migration or password reset.
+- Analyze, full tests, Web release, Android size audit and AppLab trusted verification must pass before promotion to main.
+- Release metadata is v0.88.0+98.
