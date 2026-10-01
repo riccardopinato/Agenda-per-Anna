@@ -564,30 +564,24 @@ class _PrivateCycleTrackerScreenState extends State<PrivateCycleTrackerScreen> {
           ),
         ),
         const SizedBox(height: 16),
-        Row(
-          children: [
-            Expanded(
-              child: FilledButton.icon(
-                onPressed: () => _showDayEditor(
-                  cycleDateOnly(DateTime.now()),
-                ),
-                icon: const Icon(Icons.add_circle_outline),
-                label: Text(
-                  todayLog == null
-                      ? strings.cycleLogToday
-                      : strings.cycleEditToday,
-                ),
-              ),
+        _responsivePair(
+          context,
+          FilledButton.icon(
+            onPressed: () => _showDayEditor(
+              cycleDateOnly(DateTime.now()),
             ),
-            const SizedBox(width: 10),
-            Expanded(
-              child: OutlinedButton.icon(
-                onPressed: _showQuickPeriodRange,
-                icon: const Icon(Icons.water_drop_outlined),
-                label: Text(strings.cycleQuickPeriodAction),
-              ),
+            icon: const Icon(Icons.add_circle_outline),
+            label: Text(
+              todayLog == null
+                  ? strings.cycleLogToday
+                  : strings.cycleEditToday,
             ),
-          ],
+          ),
+          OutlinedButton.icon(
+            onPressed: _showQuickPeriodRange,
+            icon: const Icon(Icons.water_drop_outlined),
+            label: Text(strings.cycleQuickPeriodAction),
+          ),
         ),
         const SizedBox(height: 12),
         if (todayLog != null)
