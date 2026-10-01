@@ -61,6 +61,9 @@ jobs:
       - name: Test
         run: flutter test
 
+      - name: Test Web Vault crypto
+        run: flutter test --platform chrome test_web/v087_web_vault_kdf_test.dart
+
       - name: Build web release
         run: |
           flutter build web --release
