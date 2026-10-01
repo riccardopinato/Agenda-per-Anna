@@ -60,6 +60,7 @@ part 'src/unified_agenda.dart';
 part 'src/screens/universal_identity.dart';
 part 'src/screens/private_vault.dart';
 part 'src/screens/cycle_tracker_screen.dart';
+part 'src/screens/premium_screen.dart';
 part 'src/screens/birthdays_screen.dart';
 part 'src/screens/people_screen.dart';
 part 'src/screens/shopping_list_screen.dart';
@@ -174,6 +175,14 @@ Future<void> _handleLocalReminderAction(
 
 StreamSubscription<String>? _localNotificationTapSubscription;
 StreamSubscription<IncomingShareCapture>? _shareCaptureSubscription;
+
+void _syncPremiumIdentityFromCloud() {
+  unawaited(
+    PremiumEntitlementService.instance.syncIdentity(
+      CloudSyncService.instance.userId,
+    ),
+  );
+}
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -339,6 +348,16 @@ Future<void> main() async {
       }
     } catch (_) {
       // Cloud e push sono opzionali: l'agenda resta pienamente offline.
+    }
+
+    try {
+      final cloud = CloudSyncService.instance;
+      await PremiumEntitlementService.instance.initialize(
+        appUserId: cloud.userId,
+      );
+      cloud.addListener(_syncPremiumIdentityFromCloud);
+    } catch (_) {
+      // Premium non deve mai impedire l'avvio o l'uso del core gratuito.
     }
   });
 }

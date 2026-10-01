@@ -2,7 +2,7 @@
 
 Flutter app for personal planning, private diary and the shared **Noi ♡** space.
 
-Current release line: **v0.90.0**.
+Current release line: **v0.91.0**.
 
 Canonical product scope and security boundaries: `docs/PRODUCT_BIBLE.md`.
 
@@ -483,6 +483,19 @@ See `docs/ARCHITECTURE.md` and `supabase/README.md` for implementation details.
 - Share-target text and images now reuse the same capture persistence helpers instead of maintaining separate diary-save logic.
 - Capturing from `La mia giornata` respects the day currently being viewed, including past/future days, while preserving the current time as the moment ordering time inside that day.
 - No capture database, parallel media store, AI layer or new cloud schema is introduced.
+
+## v0.91.0 — Premium Store Foundation
+
+- Replaces the temporary cycle-only Premium bridge with a centralized RevenueCat-backed entitlement source of truth.
+- Uses one `premium` entitlement for current and future Premium capabilities; store products/prices come from the current RevenueCat Offering rather than being hardcoded in the app.
+- Adds a cross-platform custom Flutter paywall so Android/iOS/Web share the same product UX without depending on RevenueCat Paywalls UI.
+- Supports monthly, lifetime and additional Offering packages; native Android/iOS purchase restoration is exposed explicitly.
+- Flutter Web uses RevenueCat's Web-capable SDK path, while native-style restore remains disabled on Web according to provider limitations.
+- Signed-in users are identified to RevenueCat with the existing Supabase UUID; anonymous users remain supported. Email, diary, Vault and cycle-health contents are never sent as purchase identity.
+- Adds Google Play Billing permission to the generated Android platform contract.
+- The FREE diary/agenda/Vault/basic-cycle core remains available independently of Premium.
+- Premium preview remains enabled for the current pre-store development builds; store release builds must explicitly disable preview after RevenueCat keys/products are configured.
+- Release metadata is aligned to v0.91.0+101.
 
 ## v0.90.0 — Vault Recovery & Privacy Hardening
 

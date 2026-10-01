@@ -45,6 +45,7 @@ Source of execution truth for Anna's Diary. Product identity and boundaries are 
 | v0.88 | Private Cycle Tracker MVP | Completed | Vault-only cycle calendar, daily logs, history, deterministic estimates, privacy-safe reminders and five-language UI |
 | v0.89 | Cycle Premium Engine | Completed | Centralized premium-ready access, advanced trends, fertility observations, custom symptoms and explicit private report |
 | v0.90 | Vault Recovery & Privacy Hardening | Completed | Portable encrypted Vault recovery, non-destructive validation, clipboard hardening and cycle accessibility improvements |
+| v0.91 | Premium Store Foundation | Completed | RevenueCat entitlement source, custom paywall, Supabase identity binding, restore flow and Android Billing contract |
 
 ## Permanent constraints for this sequence
 
@@ -548,3 +549,18 @@ Per the active development cadence, AppLab runs once every two feature versions.
 - Ordinary backup/cloud sync/global search remain unaware of Vault recovery contents.
 - Analyze, full tests, Web release, Android size audit and AppLab trusted verification must pass before promotion to main.
 - Release metadata is v0.90.0+100.
+
+## v0.91 acceptance criteria
+
+- One centralized `premium` entitlement owns all Premium capability decisions; feature screens never query store state directly.
+- `purchases_flutter` is locked in the dependency graph and Android generated manifests include `com.android.vending.BILLING`.
+- Platform public API keys are build-time values; no RevenueCat secret/private key is committed.
+- Signed-in purchase identity reuses the existing non-email Supabase user UUID; signed-out installs can remain anonymous and later log in through RevenueCat identity linking.
+- Offerings/products/prices come from RevenueCat and are not hardcoded. Monthly and lifetime packages receive first-class presentation when configured.
+- The app uses its own Flutter paywall across Android/iOS/Web; it does not require `purchases_ui_flutter`.
+- Native purchase restore is explicit; Web explains the provider-specific restore limitation rather than invoking unsupported native restore operations.
+- RevenueCat receives purchase/entitlement identity only. Diary, agenda, Vault, passwords and menstrual-cycle contents never enter the Premium service.
+- FREE diary, agenda, Vault and v0.88 basic cycle tracking remain usable without an active entitlement.
+- Pre-store builds may keep `ANNA_PREMIUM_PREVIEW=true`; production store promotion requires configured RevenueCat platform keys/products and preview disabled.
+- Analyze, full tests, Web release, Android size audit and AppLab trusted verification must pass before promotion to main.
+- Release metadata is v0.91.0+101.

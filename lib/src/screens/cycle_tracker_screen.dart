@@ -738,6 +738,17 @@ class _PrivateCycleTrackerScreenState extends State<PrivateCycleTrackerScreen> {
               strings.cyclePremiumFeatureDescription(feature),
               textAlign: TextAlign.center,
             ),
+            const SizedBox(height: 16),
+            FilledButton.icon(
+              onPressed: () => Navigator.push(
+                context,
+                MaterialPageRoute<void>(
+                  builder: (_) => const PremiumScreen(),
+                ),
+              ),
+              icon: const Icon(Icons.workspace_premium_outlined),
+              label: Text(strings.premiumTitle),
+            ),
           ],
         ),
       ),
@@ -757,6 +768,13 @@ class _PrivateCycleTrackerScreenState extends State<PrivateCycleTrackerScreen> {
           subtitle: Text(strings.cyclePremiumFeatureDescription(
             strings.cycleAdvancedTracking,
           )),
+          trailing: const Icon(Icons.chevron_right),
+          onTap: () => Navigator.push(
+            context,
+            MaterialPageRoute<void>(
+              builder: (_) => const PremiumScreen(),
+            ),
+          ),
         ),
       );
     }

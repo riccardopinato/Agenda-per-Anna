@@ -1,6 +1,6 @@
 # Agenda per Anna — Architecture
 
-## Current structure — v0.90.0
+## Current structure — v0.91.0
 
 Anna's Diary keeps `lib/main.dart` as the compatibility library boundary, but large responsibilities are now split by runtime domain:
 
@@ -24,6 +24,17 @@ The `AgendaStore` public surface remains compatible. UI screens observe domain-s
 
 The PR production gate is:
 `locked dependencies → analyze/tests → Web release → ARM64 release → AppLab emulator → Maestro → multi-screen screenshots/UI hierarchy → visual QA/regression → Logcat/crash/ANR`.
+
+## v0.91.0 — Premium Store Foundation
+
+- `PremiumEntitlementService` is the single entitlement source and wraps RevenueCat; feature modules depend only on `PremiumCapability`.
+- RevenueCat platform API keys are compile-time defines. No private/secret store credential belongs in the client repository.
+- Supabase `userId` is reused as the identified RevenueCat App User ID after account login; anonymous RevenueCat identity remains valid before login.
+- The service listens for CustomerInfo updates, derives the active `premium` entitlement, fetches the current Offering and exposes normalized package models to UI.
+- `PremiumScreen` is a custom Flutter paywall shared by Android/iOS/Web. It does not depend on `purchases_ui_flutter`.
+- Purchase products and localized prices remain owned by RevenueCat/store configuration, not app constants.
+- The generated Android manifest explicitly preserves Google Play Billing permission.
+- No diary, agenda, Vault, password or cycle payload is passed into the billing layer.
 
 ## v0.90.0 — Vault recovery boundary
 
