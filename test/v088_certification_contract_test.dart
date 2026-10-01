@@ -5,10 +5,10 @@ import 'package:flutter_test/flutter_test.dart';
 void main() {
   test('v0.88 locks the Private Vault local-only recovery contract', () {
     final productBible = File('docs/PRODUCT_BIBLE.md').readAsStringSync();
-    final localization =
-        File('lib/src/localization.dart').readAsStringSync();
-    final screen =
-        File('lib/src/screens/private_vault.dart').readAsStringSync();
+    final localization = File('lib/src/localization.dart').readAsStringSync();
+    final screen = File(
+      'lib/src/screens/private_vault.dart',
+    ).readAsStringSync();
 
     expect(
       productBible,
@@ -22,14 +22,12 @@ void main() {
   });
 
   test('v0.88 replaces the historical fixed-file format gate', () {
-    final workflow =
-        File('.github/workflows/dev-checks.yml').readAsStringSync();
+    final workflow = File(
+      '.github/workflows/dev-checks.yml',
+    ).readAsStringSync();
 
     expect(workflow, contains('Format new Dart sources'));
-    expect(
-      workflow,
-      contains('git diff --name-only --diff-filter=A'),
-    );
+    expect(workflow, contains('git diff --name-only --diff-filter=A'));
     expect(
       workflow,
       contains('dart format --output=none --set-exit-if-changed'),
@@ -38,16 +36,11 @@ void main() {
   });
 
   test('v0.88 CI runs compatibility and persisted browser Vault tests', () {
-    final workflow =
-        File('.github/workflows/dev-checks.yml').readAsStringSync();
+    final workflow = File(
+      '.github/workflows/dev-checks.yml',
+    ).readAsStringSync();
 
-    expect(
-      workflow,
-      contains('test/v087_web_vault_kdf_browser_test.dart'),
-    );
-    expect(
-      workflow,
-      contains('test/v088_web_vault_e2e_browser_test.dart'),
-    );
+    expect(workflow, contains('test/v087_web_vault_kdf_browser_test.dart'));
+    expect(workflow, contains('test/v088_web_vault_e2e_browser_test.dart'));
   });
 }
