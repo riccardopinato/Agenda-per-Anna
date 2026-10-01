@@ -1075,6 +1075,69 @@ class _PrivateVaultScreenState extends State<PrivateVaultScreen>
     );
   }
 
+  Widget _buildCycleTrackerCard(
+    BuildContext context,
+    AnnaStrings strings,
+  ) {
+    final scheme = Theme.of(context).colorScheme;
+    final prediction = CycleTrackerEngine.predict(vault.cycleTrackerState);
+    final subtitle = prediction.currentCycleDay == null
+        ? strings.cycleVaultCardDescription
+        : strings.cycleDayNumber(prediction.currentCycleDay!);
+
+    return Card(
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: () => Navigator.push(
+          context,
+          MaterialPageRoute<void>(
+            builder: (_) => const PrivateCycleTrackerScreen(),
+          ),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Row(
+            children: [
+              Container(
+                width: 50,
+                height: 50,
+                decoration: BoxDecoration(
+                  color: scheme.tertiaryContainer,
+                  borderRadius: BorderRadius.circular(17),
+                ),
+                child: Icon(
+                  Icons.favorite_outline,
+                  color: scheme.onTertiaryContainer,
+                ),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      strings.cycleTitle,
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                    const SizedBox(height: 3),
+                    Text(
+                      subtitle,
+                      style: Theme.of(context).textTheme.bodySmall,
+                    ),
+                  ],
+                ),
+              ),
+              const Icon(Icons.chevron_right),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   Widget _buildUnlocked(BuildContext context) {
     final strings = AnnaStrings.of(context);
     final passwordMode = section == _VaultSection.passwords;
@@ -1142,6 +1205,10 @@ class _PrivateVaultScreenState extends State<PrivateVaultScreen>
               padding: const EdgeInsets.fromLTRB(18, 12, 18, 0),
               child: _vaultWebSecurityWarning(context, strings),
             ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(18, 12, 18, 0),
+            child: _buildCycleTrackerCard(context, strings),
+          ),
           Padding(
             padding: const EdgeInsets.fromLTRB(18, 12, 18, 4),
             child: SizedBox(
