@@ -1,6 +1,6 @@
 # Agenda per Anna — Architecture
 
-## Current structure — v0.91.0
+## Current structure — v0.92.0
 
 Anna's Diary keeps `lib/main.dart` as the compatibility library boundary, but large responsibilities are now split by runtime domain:
 
@@ -24,6 +24,16 @@ The `AgendaStore` public surface remains compatible. UI screens observe domain-s
 
 The PR production gate is:
 `locked dependencies → analyze/tests → Web release → ARM64 release → AppLab emulator → Maestro → multi-screen screenshots/UI hierarchy → visual QA/regression → Logcat/crash/ANR`.
+
+## v0.92.0 — Premium production boundary
+
+- `ANNA_STORE_RELEASE` is the explicit store-production build boundary.
+- `ANNA_PREMIUM_PREVIEW` defaults to false; debug mode may expose preview automatically, while QA release builds opt in explicitly.
+- `PremiumEntitlementService` fails closed when a store release requests preview or lacks the platform RevenueCat API key.
+- `tool/validate_premium_release.py` performs a pre-build release configuration check before signed Android APK/AAB generation.
+- The signed store workflow injects only the public RevenueCat Android SDK key plus the canonical `premium` entitlement identifier.
+- GitHub Pages, sideload ARM64 and AppLab are non-store QA channels and explicitly run with preview enabled and store-release mode disabled.
+- Billing configuration remains independent from diary/Vault/cycle persistence.
 
 ## v0.91.0 — Premium Store Foundation
 
