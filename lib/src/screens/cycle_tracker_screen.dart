@@ -633,8 +633,8 @@ class _PrivateCycleTrackerScreenState extends State<PrivateCycleTrackerScreen> {
     var flow = existing?.flow ?? CycleFlow.none;
     var pain = existing?.painLevel ?? 0;
     var energy = existing?.energyLevel ?? 3;
-    final symptoms = <String>{...?(existing?.symptoms)};
-    final moods = <String>{...?(existing?.moods)};
+    final symptoms = <String>{...?existing?.symptoms};
+    final moods = <String>{...?existing?.moods};
     final notesController = TextEditingController(text: existing?.notes ?? '');
 
     final saved = await showModalBottomSheet<bool>(
