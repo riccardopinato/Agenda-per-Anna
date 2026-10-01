@@ -515,7 +515,7 @@ Per the active development cadence, AppLab runs once every two feature versions.
 - Wrong-password browser unlock cannot mutate or erase the persisted Vault.
 - The Product Bible and Vault UI explicitly state that personal Vault notes/passwords are device-local, excluded from normal backups and unrecoverable after local/browser/device data loss; Noi ♡ remains on its separate E2EE recovery contract.
 - The core app shell passes Flutter touch-target, semantic-label and contrast guidelines and remains usable at 200% text scaling.
-- CI checks Dart formatting across all lib, test and integration_test sources rather than two historical v0.40 files.
+- CI applies a general formatting gate to every newly added Dart source instead of checking two historical v0.40 files; legacy formatting debt is not rewritten as unrelated churn.
 - Release metadata is aligned to v0.88.0+98.
 - Analyze, full tests, browser Vault tests, Web release/deploy, Android size audit and AppLab Trusted Verify must all be green before promotion to main.
 - Supabase security advisors are rechecked; plan-gated advisories that cannot be remediated by repository code remain explicitly classified rather than silently marked resolved.
