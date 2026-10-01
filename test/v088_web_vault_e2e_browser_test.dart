@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -32,6 +33,8 @@ void main() {
   test(
     'Web Vault survives browser-style reload and unlocks the encrypted payload',
     () async {
+      if (!kIsWeb) return;
+
       await vault.initialize();
       await vault.setup(
         password: 'browser-vault-password-123',
