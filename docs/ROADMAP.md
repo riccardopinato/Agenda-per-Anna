@@ -48,6 +48,7 @@ Source of execution truth for Anna's Diary. Product identity and boundaries are 
 | v0.91 | Premium Store Foundation | Completed | RevenueCat entitlement source, custom paywall, Supabase identity binding, restore flow and Android Billing contract |
 | v0.92 | Premium Production Guardrails | Completed | Fail-closed store configuration, explicit QA preview channels and release-time RevenueCat validation |
 | v0.93 | Cycle Tracker Completion & UX Polish | Completed | Vault-only onboarding, fast period logging, prediction v2, complete private reminders, richer calendar, lightweight Premium charts and accessibility polish |
+| v0.94 | Premium Store Activation & Sandbox QA | In progress | Store QA diagnostics, monthly/lifetime Offering validation, signed Internal Testing AAB and real-purchase verification contract |
 
 ## Permanent constraints for this sequence
 
@@ -593,3 +594,17 @@ Per the active development cadence, AppLab runs once every two feature versions.
 - v0.92 and older cycle payloads remain readable; cycle schema advances to v3 without destructive migration.
 - Analyze, full tests, Web release, Android size audit and AppLab trusted verification must pass before promotion to main.
 - Release metadata is v0.93.0+103.
+
+## v0.94 acceptance criteria
+
+- Store QA is an explicit build mode and never contributes to `hasPremiumAccess`; Preview remains disabled in Store QA builds.
+- Production release builds explicitly set `ANNA_STORE_QA=false`; Internal Testing QA builds explicitly set `ANNA_STORE_QA=true`.
+- A Store QA build still requires `ANNA_STORE_RELEASE=true`, the canonical `premium` entitlement and the RevenueCat Android public SDK key.
+- Runtime diagnostics expose configuration/readiness without displaying the RevenueCat API key or the raw RevenueCat/Supabase App User ID.
+- Runtime catalog readiness requires a current RevenueCat Offering containing both monthly and Lifetime packages.
+- The dedicated Premium Store QA workflow creates a signed AAB for Google Play Internal Testing using the stable release signing identity.
+- The generated QA artifact documents the authoritative purchase test: install from Play test track, use an authorized tester, verify monthly entitlement activation, Lifetime entitlement activation on a clean test state, reinstall/restore and FREE-core continuity.
+- CI/AAB success is not treated as proof of a successful purchase. Real purchase verification remains BLOCKED until Play Console/RevenueCat products and an authorized tester are available.
+- Existing FREE diary, agenda, Vault and basic cycle data remain independent of entitlement changes.
+- Analyze, full regression tests, Web release, Android size audit and AppLab trusted verification must pass before promotion to main.
+- Release metadata is v0.94.0+104.
