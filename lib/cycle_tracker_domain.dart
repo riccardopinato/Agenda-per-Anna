@@ -244,7 +244,7 @@ class CycleSettings {
 }
 
 class CycleTrackerState {
-  static const int currentVersion = 1;
+  static const int currentVersion = 2;
 
   final int version;
   final CycleSettings settings;
