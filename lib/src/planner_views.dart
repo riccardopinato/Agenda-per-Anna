@@ -236,6 +236,7 @@ class _PlannerScreenState extends State<PlannerScreen> {
                   child: Text(strings.navToday),
                 ),
               IconButton(
+                tooltip: strings.add,
                 onPressed: () => openUnifiedItemComposer(context, widget.store, day),
                 icon: const Icon(Icons.add_circle_outline),
               ),

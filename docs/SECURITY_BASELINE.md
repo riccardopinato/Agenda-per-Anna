@@ -1,4 +1,4 @@
-# Security Baseline — v0.87
+# Security Baseline — v0.88
 
 Anna's Diary uses a layered security model across Flutter, Supabase Auth, Row Level Security, Edge Functions and Storage.
 
@@ -10,6 +10,8 @@ v0.86 keeps the existing Vault and Noi ♡ storage boundaries and hardens their 
 - The Vault payload remains AES-GCM encrypted under a random 256-bit master key and remains excluded from ordinary cloud sync, global search and standard backup.
 - Android keeps Keystore wrapping and secure-screen protection. Web keeps encrypted-at-rest payloads but cannot provide the same native Keystore/screenshot boundary; this difference is disclosed in-product.
 - v0.87 runs Web Vault PBKDF2-HMAC-SHA256 derivation through asynchronous browser Web Crypto. KDF parameters and the encrypted Vault format remain unchanged, so this is a responsiveness/runtime fix rather than a cryptographic migration or downgrade.
+- v0.88 adds a real Chrome persistence/unlock regression over IndexedDB-backed Vault state, including a browser-style reload and wrong-password preservation check.
+- Personal Vault notes and personal passwords remain intentionally device-local and outside ordinary backups. The UI and Product Bible explicitly disclose that local/browser/device data loss is unrecoverable for personal Vault content. Noi ♡ credentials keep their separate E2EE pairing/recovery rules; no parallel personal-Vault recovery package is introduced that could bypass shared revocation semantics.
 - An unlocked Vault is re-locked after five minutes without pointer interaction, on app background/inactive states and when leaving the Password Noi ♡ surface. Explicit manual lock remains available.
 - Password Noi ♡ credential plaintext is encrypted client-side with AES-256-GCM and AAD bound to shared-space and credential identity.
 - The server stores only ciphertext metadata plus a SHA-256 key fingerprint, never the raw shared password key.
@@ -63,20 +65,21 @@ v0.50 therefore does **not** drop/recreate or forcibly relocate the extension. T
 
 ## Leaked-password advisor warning
 
-Supabase currently reports `auth_leaked_password_protection` disabled.
+Supabase currently reports `auth_leaked_password_protection` disabled. Supabase documents leaked-password protection as a Pro-plan-or-higher feature.
 
 Anna's Diary is Google-first and does not expose new email/password registration in the current account UI; email/password remains a compatibility sign-in path for older accounts.
 
-The platform setting should still be enabled when a supported authenticated project-configuration control is available. It is not simulated client-side because leaked-password screening belongs at the Auth service boundary, not in Flutter.
+The platform setting should still be enabled when the project plan and an authenticated project-configuration control support it. The current ChatGPT Supabase connector exposes advisor inspection but no Auth-config mutation endpoint, so v0.88 does not pretend to remediate this backend setting in Flutter or SQL. Until enabled at the Auth service boundary, Google-first/passwordless paths remain preferred and the legacy password path is treated as a known external hardening item rather than a repository defect.
 
 ## Release gate
 
-Every v0.50 merge requires:
+Every security-sensitive release merge requires:
 
 - locked dependencies;
 - Flutter analyze;
-- full tests;
-- dedicated Chrome Web Vault PBKDF2 compatibility test;
+- full tests, including accessibility/large-text regression coverage;
+- general new-Dart formatting gate;
+- dedicated Chrome Web Vault PBKDF2 compatibility and persisted-unlock tests;
 - Web release build;
 - Android ARM64 release build;
 - Android size audit;

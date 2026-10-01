@@ -42,6 +42,7 @@ Source of execution truth for Anna's Diary. Product identity and boundaries are 
 | v0.85 | Noi ♡ Shared Passwords | Completed | E2EE shared credentials with encrypted local Vault mirrors and one-time pairing |
 | v0.86 | Security & Governance Hardening | Completed | Atomic E2EE key ownership, revision-safe shared credentials, recovery, Vault KDF hardening and SHOS documentation alignment |
 | v0.87 | Private Vault Web Unlock Hotfix | Completed | Async browser-native PBKDF2 unlock with unchanged Vault format, explicit unlock states and Chrome regression coverage |
+| v0.88 | Certification Hardening | In progress | Real browser Vault E2E, explicit local-only recovery contract, accessibility gate, global formatting gate and release-readiness alignment |
 
 ## Permanent constraints for this sequence
 
@@ -507,3 +508,14 @@ Per the active development cadence, AppLab runs once every two feature versions.
 - A Chrome browser regression verifies the WebCrypto PBKDF2-SHA256 output against a known compatibility vector.
 - Analyze, full tests, dedicated browser crypto test, Web release build and the existing Android/AppLab gates must be green before promotion to main.
 - Release metadata is aligned to v0.87.0+97.
+
+## v0.88 acceptance criteria
+
+- Chrome creates a real Private Vault in IndexedDB-backed Web storage, persists private note/password content, simulates a browser/PWA reload and successfully unlocks/decrypts the existing payload through the production WebCrypto path.
+- Wrong-password browser unlock cannot mutate or erase the persisted Vault.
+- The Product Bible and Vault UI explicitly state that personal Vault notes/passwords are device-local, excluded from normal backups and unrecoverable after local/browser/device data loss; Noi ♡ remains on its separate E2EE recovery contract.
+- The core app shell passes Flutter touch-target, semantic-label and contrast guidelines and remains usable at 200% text scaling.
+- CI applies a general formatting gate to every newly added Dart source instead of checking two historical v0.40 files; legacy formatting debt is not rewritten as unrelated churn.
+- Release metadata is aligned to v0.88.0+98.
+- Analyze, full tests, browser Vault tests, Web release/deploy, Android size audit and AppLab Trusted Verify must all be green before promotion to main.
+- Supabase security advisors are rechecked; plan-gated advisories that cannot be remediated by repository code remain explicitly classified rather than silently marked resolved.

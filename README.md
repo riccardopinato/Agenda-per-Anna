@@ -2,7 +2,7 @@
 
 Flutter app for personal planning, private diary and the shared **Noi ♡** space.
 
-Current release line: **v0.87.0**.
+Current release line: **v0.88.0**.
 
 Canonical product scope and security boundaries: `docs/PRODUCT_BIBLE.md`.
 
@@ -483,6 +483,15 @@ See `docs/ARCHITECTURE.md` and `supabase/README.md` for implementation details.
 - Share-target text and images now reuse the same capture persistence helpers instead of maintaining separate diary-save logic.
 - Capturing from `La mia giornata` respects the day currently being viewed, including past/future days, while preserving the current time as the moment ordering time inside that day.
 - No capture database, parallel media store, AI layer or new cloud schema is introduced.
+
+## v0.88.0 — Certification Hardening
+
+- Adds a real Chrome E2E Vault regression that creates encrypted browser state, simulates a browser/PWA reload, unlocks the persisted 600,000-iteration Vault with Web Crypto and verifies personal notes/passwords without plaintext persistence.
+- Makes the Private Vault disaster-recovery boundary explicit in-product and in the Product Bible: personal Vault notes/passwords are device-local, excluded from normal backup and unrecoverable after local/browser/device data loss; Noi ♡ credentials retain their separate E2EE recovery contract.
+- Adds accessibility gates for touch targets, semantic labels, contrast and 200% text scaling on the core shell.
+- Replaces the stale two-file formatting check with a general new-Dart format gate over lib, test and integration_test.
+- Keeps the v0.87 asynchronous WebCrypto path, Android Keystore/FLAG_SECURE behavior and encrypted Vault format unchanged.
+- Aligns production-readiness/security documentation and release metadata to v0.88.0+98.
 
 ## v0.87.0 — Private Vault Web Unlock Hotfix
 

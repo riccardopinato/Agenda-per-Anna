@@ -49,11 +49,29 @@ jobs:
       - name: Generate launcher icons
         run: dart run flutter_launcher_icons -f tool/flutter_launcher_icons_android.yaml
 
-      - name: Format v0.40 modules
+      - name: Format new Dart sources
+        shell: bash
         run: |
-          dart format --output=none --set-exit-if-changed \
-            lib/src/store_signals.dart \
-            test/v040_persistence_torture_test.dart
+          set -euo pipefail
+          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+            git fetch --no-tags --depth=1 origin "${{ github.base_ref }}"
+            BASE_REF="origin/${{ github.base_ref }}"
+          else
+            BASE_REF="${{ github.event.before }}"
+            if [[ -z "$BASE_REF" || "$BASE_REF" =~ ^0+$ ]]; then
+              git fetch --no-tags --depth=2 origin "$GITHUB_SHA"
+              BASE_REF="HEAD^"
+            else
+              git fetch --no-tags --depth=1 origin "$BASE_REF"
+            fi
+          fi
+
+          mapfile -t NEW_DART_FILES < <(
+            git diff --name-only --diff-filter=A "$BASE_REF" HEAD -- '*.dart'
+          )
+          if (( ${#NEW_DART_FILES[@]} > 0 )); then
+            dart format --output=none --set-exit-if-changed "${NEW_DART_FILES[@]}"
+          fi
 
       - name: Analyze
         run: flutter analyze
@@ -61,8 +79,11 @@ jobs:
       - name: Test
         run: flutter test
 
-      - name: Test Web Vault crypto
-        run: flutter test --platform chrome test/v087_web_vault_kdf_browser_test.dart
+      - name: Test Web Vault crypto and persisted unlock
+        run: |
+          flutter test --platform chrome \
+            test/v087_web_vault_kdf_browser_test.dart \
+            test/v088_web_vault_e2e_browser_test.dart
 
       - name: Build web release
         run: |

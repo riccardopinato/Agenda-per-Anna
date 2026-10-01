@@ -95,6 +95,8 @@ The Private Vault is a distinct local security boundary:
 - excluded from ordinary cloud sync;
 - excluded from global search;
 - excluded from ordinary backup;
+- personal Vault notes and personal passwords are intentionally device-local and are not recoverable if the app/browser/device data is lost or cleared;
+- Noi ♡ credentials keep their separate E2EE pairing/recovery contract and must not be treated as a recovery path for personal Vault content;
 - permanent deletion is explicit.
 
 Personal credentials are never automatically promoted to Noi ♡.
@@ -132,7 +134,7 @@ Any future change that weakens these invariants requires an explicit security re
 
 ## 8. AI policy
 
-The v0.86 product does **not** depend on generative AI.
+The v0.88 product does **not** depend on generative AI.
 
 Current intelligent/derived functionality may include deterministic logic and on-device processing such as local photo OCR. Original user content remains authoritative.
 
@@ -145,7 +147,7 @@ Future AI may assist with capture, retrieval or organization only when it provid
 
 ## 9. Free/Premium status
 
-As of v0.86 there is **no production Premium/RevenueCat entitlement system** and no paywall is part of the current product contract.
+As of v0.88 there is **no production Premium/RevenueCat entitlement system** and no paywall is part of the current product contract.
 
 If monetization is introduced later:
 
