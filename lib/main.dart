@@ -27,6 +27,7 @@ import 'cloud_sync_service.dart';
 import 'cycle_tracker_domain.dart';
 import 'notification_service.dart';
 import 'photo_ocr_service.dart';
+import 'premium_entitlement_service.dart';
 import 'local_state_store.dart';
 import 'media_asset_store.dart';
 import 'push_notification_service.dart';
