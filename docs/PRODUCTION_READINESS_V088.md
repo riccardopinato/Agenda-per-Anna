@@ -11,7 +11,7 @@ or generative-AI dependency.
 - explicit personal-Vault local-only/data-loss contract in UI and Product Bible;
 - separation between personal Vault data and the existing Noi ♡ E2EE recovery contract;
 - accessibility gate for touch targets, semantics, contrast and 200% text scaling;
-- repository-wide Dart formatting gate;
+- general new-Dart formatting gate;
 - v0.88 release/security/documentation alignment.
 
 ## Private Vault recovery decision
@@ -94,7 +94,7 @@ This custody boundary is documented rather than falsely marked as automated.
 Before v0.88 is promoted to `main`, all of the following must be green:
 
 1. locked dependency resolution;
-2. repository-wide Dart formatting;
+2. new-Dart formatting;
 3. Flutter analyze;
 4. complete Flutter test suite, including accessibility regressions;
 5. Chrome PBKDF2 compatibility test;
