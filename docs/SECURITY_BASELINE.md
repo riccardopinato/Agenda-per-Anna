@@ -1,4 +1,4 @@
-# Security Baseline — v0.90
+# Security Baseline — v0.91
 
 Anna's Diary uses a layered security model across Flutter, Supabase Auth, Row Level Security, Edge Functions and Storage.
 
@@ -14,6 +14,10 @@ v0.86 keeps the existing Vault and Noi ♡ storage boundaries and hardens their 
 - v0.89 extends the same Vault boundary to basal temperature, cervical mucus, sexual-activity observations, ovulation-test results, custom symptoms and derived insights. The private report is created locally and reaches the clipboard only after an explicit user action; it has no automatic network/export path.
 - v0.90 recovery packages preserve the existing password-wrapped master key and AES-GCM Vault envelope without exporting plaintext. The device-bound biometric wrap is removed. Restore verifies the package, password-derived key and authenticated payload before replacing local state, and invalid attempts are non-destructive.
 - Recovery packages and cycle reports use best-effort clipboard compare-and-clear after 60 seconds. Ordinary cloud sync, global search and standard backup remain excluded.
+- v0.91 RevenueCat integration receives only purchase/entitlement context and, when signed in, the existing Supabase UUID as App User ID. Email, display name, diary, agenda, Vault, passwords and menstrual-cycle content are not forwarded to the Premium service.
+- RevenueCat public platform API keys are supplied through build-time defines. No secret API key is committed to the client. Premium access derives from RevenueCat CustomerInfo entitlement state, never from a locally editable preference.
+- Anonymous purchase identity is permitted before login; subsequent Supabase login is linked through RevenueCat `logIn`, avoiding email-based or guessable identity.
+
 - An unlocked Vault is re-locked after five minutes without pointer interaction, on app background/inactive states and when leaving the Password Noi ♡ surface. Explicit manual lock remains available.
 - Password Noi ♡ credential plaintext is encrypted client-side with AES-256-GCM and AAD bound to shared-space and credential identity.
 - The server stores only ciphertext metadata plus a SHA-256 key fingerprint, never the raw shared password key.
