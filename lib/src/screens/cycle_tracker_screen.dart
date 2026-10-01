@@ -12,6 +12,7 @@ class _PrivateCycleTrackerScreenState extends State<PrivateCycleTrackerScreen> {
   static const _periodReminderId = 'vault-cycle-period-reminder';
 
   final vault = PrivateVaultService.instance;
+  final premium = PremiumEntitlementService.instance;
   DateTime _selectedDay = cycleDateOnly(DateTime.now());
   DateTime _focusedDay = cycleDateOnly(DateTime.now());
 
@@ -27,7 +28,7 @@ class _PrivateCycleTrackerScreenState extends State<PrivateCycleTrackerScreen> {
   @override
   Widget build(BuildContext context) {
     return AnimatedBuilder(
-      animation: vault,
+      animation: Listenable.merge([vault, premium]),
       builder: (context, _) {
         final strings = AnnaStrings.of(context);
         if (!vault.unlocked) {
@@ -68,7 +69,7 @@ class _PrivateCycleTrackerScreenState extends State<PrivateCycleTrackerScreen> {
           behavior: HitTestBehavior.translucent,
           onPointerDown: (_) => vault.noteUserActivity(),
           child: DefaultTabController(
-            length: 4,
+            length: 5,
             child: Scaffold(
               appBar: AppBar(
                 title: Text(strings.cycleTitle),
@@ -88,6 +89,10 @@ class _PrivateCycleTrackerScreenState extends State<PrivateCycleTrackerScreen> {
                       text: strings.cycleHistory,
                     ),
                     Tab(
+                      icon: const Icon(Icons.insights_outlined),
+                      text: strings.cycleInsights,
+                    ),
+                    Tab(
                       icon: const Icon(Icons.tune),
                       text: strings.cycleSettings,
                     ),
@@ -99,6 +104,7 @@ class _PrivateCycleTrackerScreenState extends State<PrivateCycleTrackerScreen> {
                   _buildOverview(context, state, prediction),
                   _buildCalendar(context, state, prediction),
                   _buildHistory(context, state),
+                  _buildInsights(context, state, prediction),
                   _buildSettings(context, state, prediction),
                 ],
               ),
@@ -491,6 +497,414 @@ class _PrivateCycleTrackerScreenState extends State<PrivateCycleTrackerScreen> {
     );
   }
 
+  Widget _buildPremiumPreviewBanner(BuildContext context) {
+    if (!premium.previewMode) return const SizedBox.shrink();
+    final strings = AnnaStrings.of(context);
+    final scheme = Theme.of(context).colorScheme;
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: scheme.primaryContainer.withValues(alpha: 0.72),
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(Icons.workspace_premium_outlined,
+              color: scheme.onPrimaryContainer),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              strings.cyclePremiumPreviewDescription,
+              style: TextStyle(color: scheme.onPrimaryContainer),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildInsights(
+    BuildContext context,
+    CycleTrackerState state,
+    CyclePrediction prediction,
+  ) {
+    final strings = AnnaStrings.of(context);
+    if (!premium.allows(PremiumCapability.cycleInsights)) {
+      return _buildPremiumLocked(context, strings.cycleInsights);
+    }
+
+    final insights = CyclePremiumAnalytics.insights(state);
+    final locale = AnnaStrings.intlLocale(context);
+    final range = insights.estimatedWindowStart == null ||
+            insights.estimatedWindowEnd == null
+        ? strings.cycleNoPrediction
+        : '${DateFormat('d MMM', locale).format(insights.estimatedWindowStart!)}'
+            ' – '
+            '${DateFormat('d MMM', locale).format(insights.estimatedWindowEnd!)}';
+
+    return ListView(
+      padding: const EdgeInsets.fromLTRB(18, 18, 18, 100),
+      children: [
+        _buildPremiumPreviewBanner(context),
+        if (premium.previewMode) const SizedBox(height: 14),
+        Text(
+          strings.cycleInsightsTitle,
+          style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                fontWeight: FontWeight.w900,
+              ),
+        ),
+        const SizedBox(height: 12),
+        Row(
+          children: [
+            Expanded(
+              child: _metricCard(
+                context,
+                strings.cycleLoggedDays,
+                '${insights.loggedDays}',
+                Icons.event_available_outlined,
+              ),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: _metricCard(
+                context,
+                strings.cycleRecordedCycles,
+                '${insights.periodCount}',
+                Icons.loop_outlined,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 10),
+        Row(
+          children: [
+            Expanded(
+              child: _metricCard(
+                context,
+                strings.cycleEstimatedWindow,
+                range,
+                Icons.date_range_outlined,
+              ),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: _metricCard(
+                context,
+                strings.cycleVariability,
+                insights.shortestCycle == null
+                    ? '—'
+                    : strings.cycleRangeDays(
+                        insights.shortestCycle!,
+                        insights.longestCycle!,
+                      ),
+                Icons.multiline_chart_outlined,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 14),
+        Card(
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  strings.cycleSymptomPatterns,
+                  style: const TextStyle(fontWeight: FontWeight.w900),
+                ),
+                const SizedBox(height: 10),
+                if (insights.symptomPatterns.isEmpty)
+                  Text(strings.cycleNotEnoughInsightData)
+                else
+                  for (final item in insights.symptomPatterns) ...[
+                    ListTile(
+                      contentPadding: EdgeInsets.zero,
+                      dense: true,
+                      leading: const Icon(Icons.bubble_chart_outlined),
+                      title: Text(_symptomLabel(strings, item.key)),
+                      subtitle: Text(
+                        strings.cycleSymptomPatternDetail(
+                          item.totalCount,
+                          item.periodCount,
+                        ),
+                      ),
+                    ),
+                  ],
+              ],
+            ),
+          ),
+        ),
+        const SizedBox(height: 12),
+        Card(
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  strings.cycleFertilityObservations,
+                  style: const TextStyle(fontWeight: FontWeight.w900),
+                ),
+                const SizedBox(height: 10),
+                _insightRow(
+                  context,
+                  Icons.device_thermostat_outlined,
+                  strings.cycleBasalTemperature,
+                  '${insights.basalTemperatureEntries}',
+                ),
+                _insightRow(
+                  context,
+                  Icons.science_outlined,
+                  strings.cycleOvulationTests,
+                  '${insights.positiveOvulationTests}',
+                ),
+                _insightRow(
+                  context,
+                  Icons.water_drop_outlined,
+                  strings.cycleCervicalMucus,
+                  '${insights.cervicalMucusEntries}',
+                ),
+                _insightRow(
+                  context,
+                  Icons.favorite_border,
+                  strings.cycleSexualActivity,
+                  '${insights.sexualActivityEntries}',
+                ),
+              ],
+            ),
+          ),
+        ),
+        const SizedBox(height: 12),
+        FilledButton.icon(
+          onPressed: premium.allows(PremiumCapability.cyclePrivateReport)
+              ? () => _copyPrivateReport(state, prediction, insights)
+              : null,
+          icon: const Icon(Icons.copy_all_outlined),
+          label: Text(strings.cycleCopyPrivateReport),
+        ),
+        const SizedBox(height: 10),
+        Text(
+          strings.cycleInsightsDisclaimer,
+          style: Theme.of(context).textTheme.bodySmall,
+        ),
+      ],
+    );
+  }
+
+  Widget _insightRow(
+    BuildContext context,
+    IconData icon,
+    String label,
+    String value,
+  ) =>
+      ListTile(
+        contentPadding: EdgeInsets.zero,
+        dense: true,
+        leading: Icon(icon),
+        title: Text(label),
+        trailing: Text(
+          value,
+          style: const TextStyle(fontWeight: FontWeight.w900),
+        ),
+      );
+
+  Widget _buildPremiumLocked(BuildContext context, String feature) {
+    final strings = AnnaStrings.of(context);
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(28),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(Icons.workspace_premium_outlined, size: 58),
+            const SizedBox(height: 12),
+            Text(
+              strings.cyclePremiumFeature,
+              style: Theme.of(context).textTheme.titleLarge,
+            ),
+            const SizedBox(height: 6),
+            Text(
+              strings.cyclePremiumFeatureDescription(feature),
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildAdvancedTrackingSettings(
+    BuildContext context,
+    CycleSettings settings,
+  ) {
+    final strings = AnnaStrings.of(context);
+    if (!premium.allows(PremiumCapability.cycleAdvancedTracking)) {
+      return Card(
+        child: ListTile(
+          leading: const Icon(Icons.workspace_premium_outlined),
+          title: Text(strings.cycleAdvancedTracking),
+          subtitle: Text(strings.cyclePremiumFeatureDescription(
+            strings.cycleAdvancedTracking,
+          )),
+        ),
+      );
+    }
+
+    return Card(
+      child: Column(
+        children: [
+          ListTile(
+            leading: const Icon(Icons.workspace_premium_outlined),
+            title: Text(strings.cycleAdvancedTracking),
+            subtitle: premium.previewMode
+                ? Text(strings.cyclePremiumPreviewShort)
+                : null,
+          ),
+          SwitchListTile(
+            value: settings.trackBasalTemperature,
+            onChanged: (value) => _saveSettings(
+              settings.copyWith(trackBasalTemperature: value),
+            ),
+            title: Text(strings.cycleBasalTemperature),
+          ),
+          SwitchListTile(
+            value: settings.trackCervicalMucus,
+            onChanged: (value) => _saveSettings(
+              settings.copyWith(trackCervicalMucus: value),
+            ),
+            title: Text(strings.cycleCervicalMucus),
+          ),
+          SwitchListTile(
+            value: settings.trackSexualActivity,
+            onChanged: (value) => _saveSettings(
+              settings.copyWith(trackSexualActivity: value),
+            ),
+            title: Text(strings.cycleSexualActivity),
+          ),
+          if (premium.allows(PremiumCapability.cycleCustomSymptoms)) ...[
+            const Divider(height: 1),
+            ListTile(
+              title: Text(strings.cycleCustomSymptoms),
+              subtitle: Text(strings.cycleCustomSymptomsDescription),
+              trailing: IconButton(
+                tooltip: strings.add,
+                onPressed: () => _addCustomSymptom(settings),
+                icon: const Icon(Icons.add_circle_outline),
+              ),
+            ),
+            if (settings.customSymptoms.isNotEmpty)
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 0, 16, 14),
+                child: Align(
+                  alignment: Alignment.centerLeft,
+                  child: Wrap(
+                    spacing: 8,
+                    runSpacing: 6,
+                    children: [
+                      for (final symptom in settings.customSymptoms)
+                        InputChip(
+                          label: Text(symptom),
+                          onDeleted: () {
+                            final next = settings.customSymptoms
+                                .where((value) => value != symptom)
+                                .toList(growable: false);
+                            unawaited(_saveSettings(
+                              settings.copyWith(customSymptoms: next),
+                            ));
+                          },
+                        ),
+                    ],
+                  ),
+                ),
+              ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Future<void> _addCustomSymptom(CycleSettings settings) async {
+    final strings = AnnaStrings.of(context);
+    final controller = TextEditingController();
+    final value = await showDialog<String>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: Text(strings.cycleAddCustomSymptom),
+        content: TextField(
+          controller: controller,
+          autofocus: true,
+          maxLength: 40,
+          decoration: InputDecoration(
+            labelText: strings.cycleCustomSymptomName,
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext),
+            child: Text(strings.cancel),
+          ),
+          FilledButton(
+            onPressed: () =>
+                Navigator.pop(dialogContext, controller.text.trim()),
+            child: Text(strings.add),
+          ),
+        ],
+      ),
+    );
+    controller.dispose();
+    if (value == null || value.trim().isEmpty) return;
+    await _saveSettings(
+      settings.copyWith(
+        customSymptoms: [...settings.customSymptoms, value],
+      ),
+    );
+  }
+
+  Future<void> _copyPrivateReport(
+    CycleTrackerState state,
+    CyclePrediction prediction,
+    CycleInsightSummary insights,
+  ) async {
+    final strings = AnnaStrings.of(context);
+    final locale = AnnaStrings.intlLocale(context);
+    String date(DateTime? value) =>
+        value == null ? '—' : DateFormat('d MMM yyyy', locale).format(value);
+
+    final lines = <String>[
+      strings.cyclePrivateReportTitle,
+      '',
+      '${strings.cycleRecordedCycles}: ${insights.periodCount}',
+      '${strings.cycleLoggedDays}: ${insights.loggedDays}',
+      '${strings.cycleAverageLength}: ${prediction.averageCycleLength}',
+      '${strings.cycleAveragePeriodLength}: ${prediction.averagePeriodLength}',
+      '${strings.cycleNextPeriod}: ${date(prediction.nextPeriodStart)}',
+      if (insights.estimatedWindowStart != null &&
+          insights.estimatedWindowEnd != null)
+        '${strings.cycleEstimatedWindow}: '
+            '${date(insights.estimatedWindowStart)} – '
+            '${date(insights.estimatedWindowEnd)}',
+      '',
+      strings.cycleSymptomPatterns,
+      if (insights.symptomPatterns.isEmpty)
+        strings.cycleNotEnoughInsightData
+      else
+        for (final item in insights.symptomPatterns)
+          '- ${_symptomLabel(strings, item.key)}: '
+              '${strings.cycleSymptomPatternDetail(item.totalCount, item.periodCount)}',
+      '',
+      strings.cycleInsightsDisclaimer,
+    ];
+
+    await Clipboard.setData(ClipboardData(text: lines.join('\n')));
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(strings.cyclePrivateReportCopied)),
+    );
+  }
+
   Widget _buildSettings(
     BuildContext context,
     CycleTrackerState state,
@@ -550,6 +964,8 @@ class _PrivateCycleTrackerScreenState extends State<PrivateCycleTrackerScreen> {
             ],
           ),
         ),
+        const SizedBox(height: 12),
+        _buildAdvancedTrackingSettings(context, settings),
         const SizedBox(height: 12),
         Card(
           child: Column(
@@ -629,12 +1045,22 @@ class _PrivateCycleTrackerScreenState extends State<PrivateCycleTrackerScreen> {
   Future<void> _showDayEditor(DateTime date) async {
     if (!vault.unlocked) return;
     final strings = AnnaStrings.of(context);
-    final existing = vault.cycleTrackerState.logFor(date);
+    final state = vault.cycleTrackerState;
+    final settings = state.settings;
+    final existing = state.logFor(date);
+    final advancedAccess =
+        premium.allows(PremiumCapability.cycleAdvancedTracking);
     var flow = existing?.flow ?? CycleFlow.none;
     var pain = existing?.painLevel ?? 0;
     var energy = existing?.energyLevel ?? 3;
+    var discharge = existing?.discharge ?? '';
+    var hadSex = existing?.hadSex ?? false;
+    var ovulationTest = existing?.ovulationTest ?? '';
     final symptoms = <String>{...?existing?.symptoms};
     final moods = <String>{...?existing?.moods};
+    final basalTemperatureController = TextEditingController(
+      text: existing?.basalTemperature?.toStringAsFixed(2) ?? '',
+    );
     final notesController = TextEditingController(text: existing?.notes ?? '');
 
     final saved = await showModalBottomSheet<bool>(
@@ -758,6 +1184,117 @@ class _PrivateCycleTrackerScreenState extends State<PrivateCycleTrackerScreen> {
                         ),
                     ],
                   ),
+                  if (premium.allows(PremiumCapability.cycleCustomSymptoms) &&
+                      settings.customSymptoms.isNotEmpty) ...[
+                    const SizedBox(height: 14),
+                    Text(
+                      strings.cycleCustomSymptoms,
+                      style: const TextStyle(fontWeight: FontWeight.w800),
+                    ),
+                    const SizedBox(height: 8),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 4,
+                      children: [
+                        for (final custom in settings.customSymptoms)
+                          FilterChip(
+                            label: Text(custom),
+                            selected: symptoms.contains('custom:$custom'),
+                            onSelected: (selected) => setSheetState(() {
+                              final key = 'custom:$custom';
+                              selected
+                                  ? symptoms.add(key)
+                                  : symptoms.remove(key);
+                            }),
+                          ),
+                      ],
+                    ),
+                  ],
+                  if (advancedAccess &&
+                      (settings.trackBasalTemperature ||
+                          settings.trackCervicalMucus ||
+                          settings.trackSexualActivity ||
+                          settings.trackFertility)) ...[
+                    const SizedBox(height: 18),
+                    Text(
+                      strings.cycleAdvancedDailyTracking,
+                      style: const TextStyle(fontWeight: FontWeight.w900),
+                    ),
+                    const SizedBox(height: 10),
+                    if (settings.trackBasalTemperature)
+                      TextField(
+                        controller: basalTemperatureController,
+                        keyboardType: const TextInputType.numberWithOptions(
+                          decimal: true,
+                        ),
+                        decoration: InputDecoration(
+                          labelText: strings.cycleBasalTemperature,
+                          suffixText: '°C',
+                        ),
+                      ),
+                    if (settings.trackBasalTemperature)
+                      const SizedBox(height: 12),
+                    if (settings.trackCervicalMucus)
+                      DropdownButtonFormField<String>(
+                        initialValue: discharge.isEmpty ? '' : discharge,
+                        decoration: InputDecoration(
+                          labelText: strings.cycleCervicalMucus,
+                        ),
+                        items: [
+                          DropdownMenuItem(
+                            value: '',
+                            child: Text(strings.cycleObservationNone),
+                          ),
+                          for (final value in const [
+                            'dry',
+                            'sticky',
+                            'creamy',
+                            'watery',
+                            'eggWhite',
+                          ])
+                            DropdownMenuItem(
+                              value: value,
+                              child: Text(_dischargeLabel(strings, value)),
+                            ),
+                        ],
+                        onChanged: (value) =>
+                            setSheetState(() => discharge = value ?? ''),
+                      ),
+                    if (settings.trackCervicalMucus)
+                      const SizedBox(height: 12),
+                    if (settings.trackFertility)
+                      DropdownButtonFormField<String>(
+                        initialValue:
+                            ovulationTest.isEmpty ? '' : ovulationTest,
+                        decoration: InputDecoration(
+                          labelText: strings.cycleOvulationTest,
+                        ),
+                        items: [
+                          DropdownMenuItem(
+                            value: '',
+                            child: Text(strings.cycleObservationNone),
+                          ),
+                          DropdownMenuItem(
+                            value: 'negative',
+                            child: Text(strings.cycleTestNegative),
+                          ),
+                          DropdownMenuItem(
+                            value: 'positive',
+                            child: Text(strings.cycleTestPositive),
+                          ),
+                        ],
+                        onChanged: (value) =>
+                            setSheetState(() => ovulationTest = value ?? ''),
+                      ),
+                    if (settings.trackSexualActivity)
+                      SwitchListTile(
+                        contentPadding: EdgeInsets.zero,
+                        value: hadSex,
+                        onChanged: (value) =>
+                            setSheetState(() => hadSex = value),
+                        title: Text(strings.cycleSexualActivity),
+                      ),
+                  ],
                   const SizedBox(height: 14),
                   TextField(
                     controller: notesController,
@@ -794,6 +1331,17 @@ class _PrivateCycleTrackerScreenState extends State<PrivateCycleTrackerScreen> {
                               energyLevel: energy,
                               symptoms: symptoms.toList(growable: false),
                               moods: moods.toList(growable: false),
+                              discharge: discharge,
+                              hadSex: hadSex,
+                              basalTemperature: advancedAccess &&
+                                      settings.trackBasalTemperature
+                                  ? double.tryParse(
+                                      basalTemperatureController.text
+                                          .trim()
+                                          .replaceAll(',', '.'),
+                                    )
+                                  : existing?.basalTemperature,
+                              ovulationTest: ovulationTest,
                               notes: notesController.text,
                               createdAt: existing?.createdAt ?? now,
                               updatedAt: now,
@@ -815,6 +1363,7 @@ class _PrivateCycleTrackerScreenState extends State<PrivateCycleTrackerScreen> {
         },
       ),
     );
+    basalTemperatureController.dispose();
     notesController.dispose();
     if (saved == true && mounted && vault.unlocked) {
       await _syncPeriodReminder();
@@ -848,7 +1397,11 @@ class _PrivateCycleTrackerScreenState extends State<PrivateCycleTrackerScreen> {
         CycleFlow.heavy => strings.cycleFlowHeavy,
       };
 
-  String _symptomLabel(AnnaStrings strings, String value) => switch (value) {
+  String _symptomLabel(AnnaStrings strings, String value) {
+    if (value.startsWith('custom:')) {
+      return value.substring('custom:'.length);
+    }
+    return switch (value) {
         'cramps' => strings.cycleSymptomCramps,
         'bloating' => strings.cycleSymptomBloating,
         'headache' => strings.cycleSymptomHeadache,
@@ -857,6 +1410,16 @@ class _PrivateCycleTrackerScreenState extends State<PrivateCycleTrackerScreen> {
         'acne' => strings.cycleSymptomAcne,
         'nausea' => strings.cycleSymptomNausea,
         'backPain' => strings.cycleSymptomBackPain,
+        _ => value,
+      };
+  }
+
+  String _dischargeLabel(AnnaStrings strings, String value) => switch (value) {
+        'dry' => strings.cycleMucusDry,
+        'sticky' => strings.cycleMucusSticky,
+        'creamy' => strings.cycleMucusCreamy,
+        'watery' => strings.cycleMucusWatery,
+        'eggWhite' => strings.cycleMucusEggWhite,
         _ => value,
       };
 

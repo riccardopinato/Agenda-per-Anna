@@ -13,6 +13,25 @@ enum CyclePredictionConfidence { low, medium, high }
 
 enum CyclePhase { period, follicular, fertile, ovulation, luteal, unknown }
 
+List<String> normalizeCycleCustomSymptoms(Iterable<String> values) {
+  final result = <String>[];
+  final seen = <String>{};
+  for (final raw in values) {
+    final value = raw.trim().replaceAll(RegExp(r'\s+'), ' ');
+    if (value.isEmpty) continue;
+    final normalized = value.toLowerCase();
+    if (!seen.add(normalized)) continue;
+    result.add(value.length > 40 ? value.substring(0, 40) : value);
+    if (result.length >= 12) break;
+  }
+  return List<String>.unmodifiable(result);
+}
+
+List<String> _cycleCustomSymptomsFromJson(Object? raw) {
+  if (raw is! List) return const [];
+  return normalizeCycleCustomSymptoms(raw.map((value) => value.toString()));
+}
+
 DateTime cycleDateOnly(DateTime value) =>
     DateTime(value.year, value.month, value.day);
 
@@ -112,6 +131,7 @@ class CycleSettings {
   final bool trackSexualActivity;
   final bool trackBasalTemperature;
   final bool trackCervicalMucus;
+  final List<String> customSymptoms;
   final bool discreetNotifications;
   final bool periodReminderEnabled;
   final int periodReminderDaysBefore;
@@ -127,6 +147,7 @@ class CycleSettings {
     this.trackSexualActivity = false,
     this.trackBasalTemperature = false,
     this.trackCervicalMucus = false,
+    this.customSymptoms = const [],
     this.discreetNotifications = true,
     this.periodReminderEnabled = false,
     this.periodReminderDaysBefore = 2,
@@ -143,6 +164,7 @@ class CycleSettings {
     bool? trackSexualActivity,
     bool? trackBasalTemperature,
     bool? trackCervicalMucus,
+    List<String>? customSymptoms,
     bool? discreetNotifications,
     bool? periodReminderEnabled,
     int? periodReminderDaysBefore,
@@ -161,6 +183,9 @@ class CycleSettings {
             trackBasalTemperature ?? this.trackBasalTemperature,
         trackCervicalMucus:
             trackCervicalMucus ?? this.trackCervicalMucus,
+        customSymptoms: normalizeCycleCustomSymptoms(
+          customSymptoms ?? this.customSymptoms,
+        ),
         discreetNotifications:
             discreetNotifications ?? this.discreetNotifications,
         periodReminderEnabled:
@@ -183,6 +208,7 @@ class CycleSettings {
         'trackSexualActivity': trackSexualActivity,
         'trackBasalTemperature': trackBasalTemperature,
         'trackCervicalMucus': trackCervicalMucus,
+        'customSymptoms': customSymptoms,
         'discreetNotifications': discreetNotifications,
         'periodReminderEnabled': periodReminderEnabled,
         'periodReminderDaysBefore': periodReminderDaysBefore,
@@ -201,6 +227,7 @@ class CycleSettings {
         trackSexualActivity: json['trackSexualActivity'] == true,
         trackBasalTemperature: json['trackBasalTemperature'] == true,
         trackCervicalMucus: json['trackCervicalMucus'] == true,
+        customSymptoms: _cycleCustomSymptomsFromJson(json['customSymptoms']),
         discreetNotifications: json['discreetNotifications'] != false,
         periodReminderEnabled: json['periodReminderEnabled'] == true,
         periodReminderDaysBefore:
@@ -217,7 +244,7 @@ class CycleSettings {
 }
 
 class CycleTrackerState {
-  static const int currentVersion = 1;
+  static const int currentVersion = 2;
 
   final int version;
   final CycleSettings settings;
@@ -526,5 +553,191 @@ class CycleTrackerEngine {
       return CyclePhase.luteal;
     }
     return CyclePhase.unknown;
+  }
+}
+
+
+class CycleFrequencyItem {
+  final String key;
+  final int count;
+
+  const CycleFrequencyItem(this.key, this.count);
+}
+
+class CycleSymptomPattern {
+  final String key;
+  final int totalCount;
+  final int periodCount;
+  final int outsidePeriodCount;
+
+  const CycleSymptomPattern({
+    required this.key,
+    required this.totalCount,
+    required this.periodCount,
+    required this.outsidePeriodCount,
+  });
+
+  bool get mostlyDuringPeriod => periodCount > outsidePeriodCount;
+}
+
+class CycleInsightSummary {
+  final int loggedDays;
+  final int periodCount;
+  final double averageRecordedPain;
+  final int? shortestCycle;
+  final int? longestCycle;
+  final double cycleVariabilityDays;
+  final DateTime? estimatedWindowStart;
+  final DateTime? estimatedWindowEnd;
+  final List<CycleFrequencyItem> topSymptoms;
+  final List<CycleFrequencyItem> topMoods;
+  final List<CycleSymptomPattern> symptomPatterns;
+  final int basalTemperatureEntries;
+  final int positiveOvulationTests;
+  final int cervicalMucusEntries;
+  final int sexualActivityEntries;
+
+  const CycleInsightSummary({
+    required this.loggedDays,
+    required this.periodCount,
+    required this.averageRecordedPain,
+    required this.shortestCycle,
+    required this.longestCycle,
+    required this.cycleVariabilityDays,
+    required this.estimatedWindowStart,
+    required this.estimatedWindowEnd,
+    required this.topSymptoms,
+    required this.topMoods,
+    required this.symptomPatterns,
+    required this.basalTemperatureEntries,
+    required this.positiveOvulationTests,
+    required this.cervicalMucusEntries,
+    required this.sexualActivityEntries,
+  });
+}
+
+class CyclePremiumAnalytics {
+  static CycleInsightSummary insights(
+    CycleTrackerState state, {
+    DateTime? referenceDate,
+  }) {
+    final logs = state.dayLogs.values.toList()
+      ..sort((a, b) => a.date.compareTo(b.date));
+    final history = CycleTrackerEngine.periods(state);
+    final prediction = CycleTrackerEngine.predict(
+      state,
+      referenceDate: referenceDate,
+    );
+
+    final cycleLengths = history
+        .map((period) => period.cycleLength)
+        .whereType<int>()
+        .where((value) => value >= 15 && value <= 60)
+        .toList();
+
+    double variability = 0;
+    if (cycleLengths.length >= 2) {
+      final mean =
+          cycleLengths.reduce((a, b) => a + b) / cycleLengths.length;
+      final variance = cycleLengths
+              .map((value) => math.pow(value - mean, 2).toDouble())
+              .reduce((a, b) => a + b) /
+          cycleLengths.length;
+      variability = math.sqrt(variance);
+    }
+
+    final spreadDays = cycleLengths.length < 2
+        ? 3
+        : variability.ceil().clamp(1, 7).toInt();
+    final next = prediction.nextPeriodStart;
+
+    final painValues = logs
+        .where((log) => log.painLevel > 0)
+        .map((log) => log.painLevel)
+        .toList();
+    final averagePain = painValues.isEmpty
+        ? 0.0
+        : painValues.reduce((a, b) => a + b) / painValues.length;
+
+    final symptomCounts = <String, int>{};
+    final moodCounts = <String, int>{};
+    final symptomPeriodCounts = <String, int>{};
+    final symptomOutsideCounts = <String, int>{};
+    var basalTemperatureEntries = 0;
+    var positiveOvulationTests = 0;
+    var cervicalMucusEntries = 0;
+    var sexualActivityEntries = 0;
+
+    for (final log in logs) {
+      final duringPeriod =
+          log.flow.isPeriodFlow || log.flow == CycleFlow.spotting;
+      for (final symptom in log.symptoms) {
+        symptomCounts[symptom] = (symptomCounts[symptom] ?? 0) + 1;
+        final bucket =
+            duringPeriod ? symptomPeriodCounts : symptomOutsideCounts;
+        bucket[symptom] = (bucket[symptom] ?? 0) + 1;
+      }
+      for (final mood in log.moods) {
+        moodCounts[mood] = (moodCounts[mood] ?? 0) + 1;
+      }
+      if (log.basalTemperature != null) basalTemperatureEntries++;
+      if (log.ovulationTest.trim().toLowerCase() == 'positive') {
+        positiveOvulationTests++;
+      }
+      if (log.discharge.trim().isNotEmpty) cervicalMucusEntries++;
+      if (log.hadSex) sexualActivityEntries++;
+    }
+
+    List<CycleFrequencyItem> top(Map<String, int> source) {
+      final entries = source.entries.toList()
+        ..sort((a, b) {
+          final byCount = b.value.compareTo(a.value);
+          return byCount != 0 ? byCount : a.key.compareTo(b.key);
+        });
+      return List<CycleFrequencyItem>.unmodifiable(
+        entries.take(5).map((entry) => CycleFrequencyItem(
+              entry.key,
+              entry.value,
+            )),
+      );
+    }
+
+    final symptomPatterns = symptomCounts.entries
+        .map(
+          (entry) => CycleSymptomPattern(
+            key: entry.key,
+            totalCount: entry.value,
+            periodCount: symptomPeriodCounts[entry.key] ?? 0,
+            outsidePeriodCount: symptomOutsideCounts[entry.key] ?? 0,
+          ),
+        )
+        .toList()
+      ..sort((a, b) {
+        final byTotal = b.totalCount.compareTo(a.totalCount);
+        return byTotal != 0 ? byTotal : a.key.compareTo(b.key);
+      });
+
+    return CycleInsightSummary(
+      loggedDays: logs.length,
+      periodCount: history.length,
+      averageRecordedPain: averagePain,
+      shortestCycle:
+          cycleLengths.isEmpty ? null : cycleLengths.reduce(math.min),
+      longestCycle:
+          cycleLengths.isEmpty ? null : cycleLengths.reduce(math.max),
+      cycleVariabilityDays: variability,
+      estimatedWindowStart:
+          next?.subtract(Duration(days: spreadDays)),
+      estimatedWindowEnd: next?.add(Duration(days: spreadDays)),
+      topSymptoms: top(symptomCounts),
+      topMoods: top(moodCounts),
+      symptomPatterns: List<CycleSymptomPattern>.unmodifiable(
+        symptomPatterns.take(5),
+      ),
+      basalTemperatureEntries: basalTemperatureEntries,
+      positiveOvulationTests: positiveOvulationTests,
+      cervicalMucusEntries: cervicalMucusEntries,
+      sexualActivityEntries: sexualActivityEntries,
+    );
   }
 }

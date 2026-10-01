@@ -2,7 +2,7 @@
 
 Flutter app for personal planning, private diary and the shared **Noi ♡** space.
 
-Current release line: **v0.88.0**.
+Current release line: **v0.89.0**.
 
 Canonical product scope and security boundaries: `docs/PRODUCT_BIBLE.md`.
 
@@ -483,6 +483,17 @@ See `docs/ARCHITECTURE.md` and `supabase/README.md` for implementation details.
 - Share-target text and images now reuse the same capture persistence helpers instead of maintaining separate diary-save logic.
 - Capturing from `La mia giornata` respects the day currently being viewed, including past/future days, while preserving the current time as the moment ordering time inside that day.
 - No capture database, parallel media store, AI layer or new cloud schema is introduced.
+
+## v0.89.0 — Cycle Premium Engine
+
+- Adds a centralized Premium entitlement contract for cycle capabilities without coupling the UI to a billing SDK.
+- Premium cycle features are enabled in preview mode until the app-wide purchase provider is configured.
+- Adds deterministic trends: recorded-cycle range, estimated next-period window, recurring symptom patterns and advanced observation counts.
+- Adds optional private tracking for basal temperature, cervical mucus, sexual activity and ovulation-test results.
+- Adds up to 12 custom symptom labels while preserving historical labels already stored in encrypted day logs.
+- Adds an explicit private text report copied only on user request; no automatic export or cloud upload is introduced.
+- Existing v0.88 cycle payloads remain readable and the FREE calendar/log/history/prediction core remains intact.
+- Release metadata is aligned to v0.89.0+99.
 
 ## v0.88.0 — Private Cycle Tracker
 
