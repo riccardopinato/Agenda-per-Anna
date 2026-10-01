@@ -10,18 +10,23 @@ class PrivateCycleTrackerScreen extends StatefulWidget {
 
 class _PrivateCycleTrackerScreenState extends State<PrivateCycleTrackerScreen> {
   static const _periodReminderId = 'vault-cycle-period-reminder';
+  static const _dailyLogReminderId = 'vault-cycle-daily-log-reminder';
+  static const _contraceptiveReminderId = 'vault-cycle-contraceptive-reminder';
 
   final vault = PrivateVaultService.instance;
   final premium = PremiumEntitlementService.instance;
   DateTime _selectedDay = cycleDateOnly(DateTime.now());
   DateTime _focusedDay = cycleDateOnly(DateTime.now());
+  bool _onboardingPrompted = false;
 
   @override
   void initState() {
     super.initState();
     vault.noteUserActivity();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted && vault.unlocked) unawaited(_syncPeriodReminder());
+      if (!mounted || !vault.unlocked) return;
+      unawaited(_syncCycleReminders());
+      unawaited(_maybeShowOnboarding());
     });
   }
 
@@ -113,6 +118,333 @@ class _PrivateCycleTrackerScreenState extends State<PrivateCycleTrackerScreen> {
         );
       },
     );
+  }
+
+  Future<void> _maybeShowOnboarding() async {
+    if (_onboardingPrompted || !mounted || !vault.unlocked) return;
+    _onboardingPrompted = true;
+
+    final state = vault.cycleTrackerState;
+    if (state.settings.onboardingComplete) return;
+    if (CycleTrackerEngine.periods(state).isNotEmpty) {
+      await vault.updateCycleSettings(
+        state.settings.copyWith(onboardingComplete: true),
+      );
+      return;
+    }
+
+    final strings = AnnaStrings.of(context);
+    var lastPeriodStart =
+        cycleDateOnly(DateTime.now().subtract(const Duration(days: 28)));
+    var cycleLength = state.settings.averageCycleLength.clamp(21, 40).toInt();
+    var periodLength = state.settings.averagePeriodLength.clamp(2, 10).toInt();
+    var regularity = state.settings.regularityMode;
+    var trackFertility = state.settings.trackFertility;
+    var periodReminder = state.settings.periodReminderEnabled;
+    var dailyReminder = state.settings.dailyLogReminderEnabled;
+
+    final completed = await showModalBottomSheet<bool>(
+      context: context,
+      isScrollControlled: true,
+      useSafeArea: true,
+      builder: (sheetContext) => StatefulBuilder(
+        builder: (context, setSheetState) => Padding(
+          padding: EdgeInsets.fromLTRB(
+            20,
+            16,
+            20,
+            MediaQuery.viewInsetsOf(context).bottom + 24,
+          ),
+          child: SingleChildScrollView(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  strings.cycleOnboardingTitle,
+                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                        fontWeight: FontWeight.w900,
+                      ),
+                ),
+                const SizedBox(height: 8),
+                Text(strings.cycleOnboardingDescription),
+                const SizedBox(height: 20),
+                ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  leading: const Icon(Icons.water_drop_outlined),
+                  title: Text(strings.cycleLastPeriodStart),
+                  subtitle: Text(
+                    DateFormat(
+                      'd MMMM yyyy',
+                      AnnaStrings.intlLocale(context),
+                    ).format(lastPeriodStart),
+                  ),
+                  trailing: const Icon(Icons.edit_calendar_outlined),
+                  onTap: () async {
+                    final picked = await showDatePicker(
+                      context: context,
+                      initialDate: lastPeriodStart,
+                      firstDate: DateTime.now().subtract(
+                        const Duration(days: 365 * 3),
+                      ),
+                      lastDate: DateTime.now(),
+                    );
+                    if (picked != null) {
+                      setSheetState(
+                        () => lastPeriodStart = cycleDateOnly(picked),
+                      );
+                    }
+                  },
+                ),
+                Text(strings.cycleAverageLength),
+                Slider(
+                  min: 21,
+                  max: 40,
+                  divisions: 19,
+                  value: cycleLength.toDouble(),
+                  label: strings.cycleDays(cycleLength),
+                  onChanged: (value) =>
+                      setSheetState(() => cycleLength = value.round()),
+                ),
+                Text(strings.cycleAveragePeriodLength),
+                Slider(
+                  min: 2,
+                  max: 10,
+                  divisions: 8,
+                  value: periodLength.toDouble(),
+                  label: strings.cycleDays(periodLength),
+                  onChanged: (value) =>
+                      setSheetState(() => periodLength = value.round()),
+                ),
+                const SizedBox(height: 8),
+                DropdownButtonFormField<String>(
+                  initialValue: regularity,
+                  decoration: InputDecoration(
+                    labelText: strings.cycleRegularity,
+                  ),
+                  items: [
+                    DropdownMenuItem(
+                      value: 'unknown',
+                      child: Text(strings.cycleRegularityUnknown),
+                    ),
+                    DropdownMenuItem(
+                      value: 'regular',
+                      child: Text(strings.cycleRegularityRegular),
+                    ),
+                    DropdownMenuItem(
+                      value: 'irregular',
+                      child: Text(strings.cycleRegularityIrregular),
+                    ),
+                  ],
+                  onChanged: (value) {
+                    if (value != null) {
+                      setSheetState(() => regularity = value);
+                    }
+                  },
+                ),
+                const SizedBox(height: 8),
+                SwitchListTile(
+                  contentPadding: EdgeInsets.zero,
+                  value: trackFertility,
+                  onChanged: (value) =>
+                      setSheetState(() => trackFertility = value),
+                  title: Text(strings.cycleTrackFertility),
+                  subtitle: Text(strings.cycleFertilityEstimateOnly),
+                ),
+                SwitchListTile(
+                  contentPadding: EdgeInsets.zero,
+                  value: periodReminder,
+                  onChanged: (value) =>
+                      setSheetState(() => periodReminder = value),
+                  title: Text(strings.cyclePeriodReminder),
+                ),
+                SwitchListTile(
+                  contentPadding: EdgeInsets.zero,
+                  value: dailyReminder,
+                  onChanged: (value) =>
+                      setSheetState(() => dailyReminder = value),
+                  title: Text(strings.cycleDailyLogReminder),
+                ),
+                const SizedBox(height: 14),
+                SizedBox(
+                  width: double.infinity,
+                  child: FilledButton.icon(
+                    onPressed: () => Navigator.pop(sheetContext, true),
+                    icon: const Icon(Icons.check_circle_outline),
+                    label: Text(strings.cycleOnboardingStart),
+                  ),
+                ),
+                const SizedBox(height: 8),
+                SizedBox(
+                  width: double.infinity,
+                  child: TextButton(
+                    onPressed: () => Navigator.pop(sheetContext, false),
+                    child: Text(strings.cycleOnboardingSkip),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+
+    if (!mounted || !vault.unlocked) return;
+    final settings = state.settings.copyWith(
+      onboardingComplete: true,
+      averageCycleLength: cycleLength,
+      averagePeriodLength: periodLength,
+      regularityMode: regularity,
+      trackFertility: trackFertility,
+      periodReminderEnabled: periodReminder,
+      dailyLogReminderEnabled: dailyReminder,
+    );
+    await vault.updateCycleSettings(settings);
+
+    if (completed == true) {
+      await _markPeriodRange(
+        start: lastPeriodStart,
+        end: lastPeriodStart.add(Duration(days: periodLength - 1)),
+      );
+    }
+    if (mounted && vault.unlocked) {
+      await _syncCycleReminders();
+    }
+  }
+
+  Future<void> _markPeriodRange({
+    required DateTime start,
+    required DateTime end,
+  }) async {
+    if (!vault.unlocked) return;
+    var from = cycleDateOnly(start);
+    var to = cycleDateOnly(end);
+    if (to.isBefore(from)) {
+      final swap = from;
+      from = to;
+      to = swap;
+    }
+    if (to.difference(from).inDays > 13) {
+      to = from.add(const Duration(days: 13));
+    }
+
+    final state = vault.cycleTrackerState;
+    final now = DateTime.now();
+    final logs = <CycleDayLog>[];
+    for (var date = from;
+        !date.isAfter(to);
+        date = date.add(const Duration(days: 1))) {
+      final existing = state.logFor(date);
+      logs.add(
+        CycleDayLog(
+          date: date,
+          flow: isSameDay(date, from)
+              ? CycleFlow.medium
+              : CycleFlow.light,
+          painLevel: existing?.painLevel ?? 0,
+          energyLevel: existing?.energyLevel ?? 3,
+          symptoms: existing?.symptoms ?? const [],
+          moods: existing?.moods ?? const [],
+          discharge: existing?.discharge ?? '',
+          hadSex: existing?.hadSex ?? false,
+          basalTemperature: existing?.basalTemperature,
+          ovulationTest: existing?.ovulationTest ?? '',
+          notes: existing?.notes ?? '',
+          createdAt: existing?.createdAt ?? now,
+          updatedAt: now,
+        ),
+      );
+    }
+    await vault.upsertCycleDayLogs(logs);
+  }
+
+  Future<void> _showQuickPeriodRange() async {
+    if (!vault.unlocked) return;
+    final strings = AnnaStrings.of(context);
+    var start = cycleDateOnly(DateTime.now());
+    var end = start;
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => StatefulBuilder(
+        builder: (context, setDialogState) => AlertDialog(
+          title: Text(strings.cycleQuickPeriodTitle),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ListTile(
+                contentPadding: EdgeInsets.zero,
+                title: Text(strings.cyclePeriodStart),
+                subtitle: Text(
+                  DateFormat(
+                    'd MMM yyyy',
+                    AnnaStrings.intlLocale(context),
+                  ).format(start),
+                ),
+                trailing: const Icon(Icons.edit_calendar_outlined),
+                onTap: () async {
+                  final picked = await showDatePicker(
+                    context: context,
+                    initialDate: start,
+                    firstDate: DateTime.now().subtract(
+                      const Duration(days: 365 * 3),
+                    ),
+                    lastDate: DateTime.now().add(
+                      const Duration(days: 30),
+                    ),
+                  );
+                  if (picked != null) {
+                    setDialogState(() {
+                      start = cycleDateOnly(picked);
+                      if (end.isBefore(start)) end = start;
+                    });
+                  }
+                },
+              ),
+              ListTile(
+                contentPadding: EdgeInsets.zero,
+                title: Text(strings.cyclePeriodEnd),
+                subtitle: Text(
+                  DateFormat(
+                    'd MMM yyyy',
+                    AnnaStrings.intlLocale(context),
+                  ).format(end),
+                ),
+                trailing: const Icon(Icons.edit_calendar_outlined),
+                onTap: () async {
+                  final picked = await showDatePicker(
+                    context: context,
+                    initialDate: end,
+                    firstDate: start,
+                    lastDate: start.add(const Duration(days: 13)),
+                  );
+                  if (picked != null) {
+                    setDialogState(() => end = cycleDateOnly(picked));
+                  }
+                },
+              ),
+              const SizedBox(height: 8),
+              Text(
+                strings.cycleQuickPeriodDescription,
+                style: Theme.of(context).textTheme.bodySmall,
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext, false),
+              child: Text(strings.cancel),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.pop(dialogContext, true),
+              child: Text(strings.save),
+            ),
+          ],
+        ),
+      ),
+    );
+    if (confirmed != true || !mounted || !vault.unlocked) return;
+    await _markPeriodRange(start: start, end: end);
+    if (mounted && vault.unlocked) await _syncCycleReminders();
   }
 
   Widget _buildPrivacyBanner(BuildContext context) {
