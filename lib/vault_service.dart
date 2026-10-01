@@ -105,6 +105,8 @@ class PrivateVaultService extends ChangeNotifier {
   static const autoLockTimeout = Duration(minutes: 5);
   static const _keyAad = 'annas-diary-vault-key-v1';
   static const _payloadAad = 'annas-diary-vault-payload-v1';
+  static const _recoveryKind = 'annas_diary_private_vault_recovery';
+  static const _recoveryVersion = 1;
   static const MethodChannel _native =
       MethodChannel('annas_diary/private_vault');
 
@@ -671,6 +673,148 @@ class PrivateVaultService extends ChangeNotifier {
     _entries.removeWhere((entry) => entry.id == id);
     await _persistEntries();
     notifyListeners();
+  }
+
+  Future<String> exportRecoveryPackage() async {
+    await initialize();
+    _requireUnlocked();
+    final meta = _meta;
+    final rawPayload = _store?.getString(_payloadKey);
+    if (meta == null || rawPayload == null) {
+      throw StateError('Cassaforte non disponibile per il recupero.');
+    }
+
+    final portableMeta = Map<String, dynamic>.from(meta)
+      ..['biometricWrap'] = null;
+    final payload =
+        Map<String, dynamic>.from(jsonDecode(rawPayload) as Map);
+    final recovery = <String, dynamic>{
+      'kind': _recoveryKind,
+      'v': _recoveryVersion,
+      'createdAt': DateTime.now().toUtc().toIso8601String(),
+      'meta': portableMeta,
+      'payload': payload,
+    };
+    return base64UrlEncode(
+      Uint8List.fromList(utf8.encode(jsonEncode(recovery))),
+    );
+  }
+
+  Future<bool> restoreRecoveryPackage({
+    required String recoveryPackage,
+    required String password,
+  }) async {
+    await initialize();
+    final encoded = recoveryPackage.trim();
+    if (encoded.isEmpty || password.isEmpty) return false;
+
+    Uint8List? passwordKey;
+    Uint8List? candidateMaster;
+    Uint8List? plaintext;
+    try {
+      final decodedPackage = Map<String, dynamic>.from(
+        jsonDecode(
+          utf8.decode(base64Url.decode(encoded)),
+        ) as Map,
+      );
+      if (decodedPackage['kind'] != _recoveryKind ||
+          (decodedPackage['v'] as num?)?.toInt() != _recoveryVersion) {
+        return false;
+      }
+
+      final meta = Map<String, dynamic>.from(
+        decodedPackage['meta'] as Map,
+      );
+      final payload = Map<String, dynamic>.from(
+        decodedPackage['payload'] as Map,
+      );
+      if ((meta['v'] as num?)?.toInt() != _version) return false;
+
+      final salt = base64Url.decode(meta['salt'] as String);
+      final iterations =
+          (meta['iterations'] as num?)?.toInt() ?? _legacyIterations;
+      if (iterations < 100000 || iterations > 2000000) return false;
+
+      passwordKey = await deriveVaultPasswordKey(
+        password: password,
+        salt: salt,
+        iterations: iterations,
+        length: _masterKeyLength,
+      );
+      candidateMaster = _decrypt(
+        key: passwordKey,
+        envelope: Map<String, dynamic>.from(meta['passwordWrap'] as Map),
+        aad: _keyAad,
+      );
+      if (candidateMaster.length != _masterKeyLength) return false;
+
+      plaintext = _decrypt(
+        key: candidateMaster,
+        envelope: payload,
+        aad: _payloadAad,
+      );
+      final decodedPayload = Map<String, dynamic>.from(
+        jsonDecode(utf8.decode(plaintext)) as Map,
+      );
+      final rawEntries = decodedPayload['entries'];
+      if (rawEntries is! List) return false;
+      for (final rawEntry in rawEntries) {
+        if (rawEntry is! Map) return false;
+        PrivateVaultEntry.fromJson(
+          Map<String, dynamic>.from(rawEntry),
+        );
+      }
+
+      final rawSharedKeys = decodedPayload['sharedPasswordKeys'];
+      if (rawSharedKeys != null && rawSharedKeys is! Map) return false;
+      if (rawSharedKeys is Map) {
+        for (final rawEntry in rawSharedKeys.entries) {
+          final spaceId = rawEntry.key.toString().trim();
+          if (spaceId.isEmpty) return false;
+          final key = base64Url.decode(rawEntry.value.toString());
+          if (key.length != _masterKeyLength) return false;
+          _zero(key);
+        }
+      }
+
+      final rawCycle = decodedPayload['cycleTracker'];
+      if (rawCycle != null && rawCycle is! Map) return false;
+      if (rawCycle is Map) {
+        CycleTrackerState.fromJson(
+          Map<String, dynamic>.from(rawCycle),
+        );
+      }
+
+      final portableMeta = <String, dynamic>{
+        ...meta,
+        'biometricWrap': null,
+        'recoveredAt': DateTime.now().toUtc().toIso8601String(),
+      };
+      await _store!.writeBatch({
+        _metaKey: jsonEncode(portableMeta),
+        _payloadKey: jsonEncode(payload),
+      });
+
+      lock();
+      if (!kIsWeb) {
+        try {
+          await _native.invokeMethod<void>('deleteMasterKey');
+        } catch (_) {}
+      }
+
+      _meta = portableMeta;
+      _masterKey = Uint8List.fromList(candidateMaster);
+      await _loadEntries();
+      _armAutoLock();
+      notifyListeners();
+      return true;
+    } catch (_) {
+      return false;
+    } finally {
+      if (passwordKey != null) _zero(passwordKey);
+      if (candidateMaster != null) _zero(candidateMaster);
+      if (plaintext != null) _zero(plaintext);
+    }
   }
 
   Future<void> destroy() async {

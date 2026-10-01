@@ -1,6 +1,6 @@
 # Agenda per Anna — Architecture
 
-## Current structure — v0.89.0
+## Current structure — v0.90.0
 
 Anna's Diary keeps `lib/main.dart` as the compatibility library boundary, but large responsibilities are now split by runtime domain:
 
@@ -24,6 +24,15 @@ The `AgendaStore` public surface remains compatible. UI screens observe domain-s
 
 The PR production gate is:
 `locked dependencies → analyze/tests → Web release → ARM64 release → AppLab emulator → Maestro → multi-screen screenshots/UI hierarchy → visual QA/regression → Logcat/crash/ANR`.
+
+## v0.90.0 — Vault recovery boundary
+
+- `PrivateVaultService` owns recovery export/restore so no second Vault database, key hierarchy or backup engine is introduced.
+- A recovery package serializes the existing password-wrapped key metadata plus the existing AES-GCM Vault envelope. It intentionally removes the device-bound biometric wrap.
+- Restore decrypts and validates both the password wrap and payload before calling the atomic local-state write path; failed verification does not mutate active Vault state.
+- After successful restore, the destination device receives no biometric credential and must opt in again through the existing native Keystore flow.
+- UI recovery entry points exist in new-Vault setup, locked Vault and unlocked Vault surfaces.
+- Clipboard export is explicit and compare-before-clear cleanup runs after 60 seconds.
 
 ## v0.89.0 — Cycle Premium Engine
 

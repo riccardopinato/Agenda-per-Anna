@@ -1,7 +1,7 @@
 # Anna's Diary — Product Bible
 
 **Status:** canonical product source of truth  
-**Current release line:** v0.89  
+**Current release line:** v0.90  
 **Last aligned:** 1 October 2026
 
 This document defines what Anna's Diary is, what it is not, and the product/security invariants that future work must preserve. Implementation details belong in `docs/ARCHITECTURE.md`; execution sequencing belongs in `docs/ROADMAP.md`.
@@ -97,6 +97,8 @@ The Private Vault is a distinct local security boundary:
 - excluded from global search;
 - excluded from ordinary backup;
 - permanent deletion is explicit;
+- an explicit portable encrypted recovery package may be created and restored by the user; it is not part of ordinary backup or cloud sync;
+- recovery must verify the original Vault password and ciphertext integrity before replacing local Vault state;
 - menstrual-cycle data belongs to this same Vault boundary and must not enter ordinary sync, search or backup;
 - cycle/fertility estimates are deterministic projections over user-entered data and must never be presented as contraception, diagnosis or medical advice.
 

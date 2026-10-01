@@ -803,6 +803,210 @@ class _PrivateVaultScreenState extends State<PrivateVaultScreen>
     }
   }
 
+  Future<void> _copyVaultRecoveryPackage() async {
+    final strings = AnnaStrings.of(context);
+    try {
+      final recoveryPackage = await vault.exportRecoveryPackage();
+      await Clipboard.setData(ClipboardData(text: recoveryPackage));
+      Timer(const Duration(seconds: 60), () async {
+        try {
+          final current = await Clipboard.getData('text/plain');
+          if (current?.text == recoveryPackage) {
+            await Clipboard.setData(const ClipboardData(text: ''));
+          }
+        } catch (_) {}
+      });
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(strings.vaultRecoveryCopied)),
+      );
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(strings.vaultRecoveryExportFailed)),
+      );
+    }
+  }
+
+  Future<void> _showVaultRecoveryOptions() async {
+    final strings = AnnaStrings.of(context);
+    await showModalBottomSheet<void>(
+      context: context,
+      useSafeArea: true,
+      showDragHandle: true,
+      builder: (sheetContext) => Padding(
+        padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              strings.vaultRecoveryTitle,
+              style: Theme.of(sheetContext).textTheme.titleLarge?.copyWith(
+                    fontWeight: FontWeight.w900,
+                  ),
+            ),
+            const SizedBox(height: 8),
+            Text(strings.vaultRecoveryDescription),
+            const SizedBox(height: 18),
+            SizedBox(
+              width: double.infinity,
+              child: FilledButton.icon(
+                onPressed: () {
+                  Navigator.pop(sheetContext);
+                  unawaited(_copyVaultRecoveryPackage());
+                },
+                icon: const Icon(Icons.content_copy_outlined),
+                label: Text(strings.vaultRecoveryCreate),
+              ),
+            ),
+            const SizedBox(height: 8),
+            SizedBox(
+              width: double.infinity,
+              child: OutlinedButton.icon(
+                onPressed: () {
+                  Navigator.pop(sheetContext);
+                  unawaited(_restoreVaultRecoveryPackage());
+                },
+                icon: const Icon(Icons.restore_outlined),
+                label: Text(strings.vaultRecoveryRestore),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _restoreVaultRecoveryPackage() async {
+    if (busy) return;
+    final strings = AnnaStrings.of(context);
+    final packageController = TextEditingController();
+    final recoveryPasswordController = TextEditingController();
+    var obscure = true;
+
+    final input = await showDialog<Map<String, String>>(
+      context: context,
+      builder: (dialogContext) => StatefulBuilder(
+        builder: (context, setDialogState) => AlertDialog(
+          title: Text(strings.vaultRecoveryRestore),
+          content: SizedBox(
+            width: 520,
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(strings.vaultRecoveryRestoreDescription),
+                  const SizedBox(height: 14),
+                  TextField(
+                    controller: packageController,
+                    minLines: 3,
+                    maxLines: 7,
+                    autocorrect: false,
+                    enableSuggestions: false,
+                    decoration: InputDecoration(
+                      labelText: strings.vaultRecoveryPackage,
+                      alignLabelWithHint: true,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: recoveryPasswordController,
+                    obscureText: obscure,
+                    autocorrect: false,
+                    enableSuggestions: false,
+                    decoration: InputDecoration(
+                      labelText: strings.vaultRecoveryPassword,
+                      suffixIcon: IconButton(
+                        onPressed: () =>
+                            setDialogState(() => obscure = !obscure),
+                        icon: Icon(
+                          obscure
+                              ? Icons.visibility_outlined
+                              : Icons.visibility_off_outlined,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext),
+              child: Text(strings.cancel),
+            ),
+            FilledButton(
+              onPressed: () {
+                final package = packageController.text.trim();
+                final password = recoveryPasswordController.text;
+                if (package.isEmpty || password.isEmpty) return;
+                Navigator.pop(dialogContext, {
+                  'package': package,
+                  'password': password,
+                });
+              },
+              child: Text(strings.vaultRecoveryRestore),
+            ),
+          ],
+        ),
+      ),
+    );
+
+    packageController.dispose();
+    recoveryPasswordController.dispose();
+    if (input == null || !mounted) return;
+
+    if (vault.configured) {
+      final confirmed = await showDialog<bool>(
+        context: context,
+        builder: (dialogContext) => AlertDialog(
+          title: Text(strings.vaultRecoveryReplaceTitle),
+          content: Text(strings.vaultRecoveryReplaceDescription),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext, false),
+              child: Text(strings.cancel),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.pop(dialogContext, true),
+              child: Text(strings.vaultRecoveryReplaceConfirm),
+            ),
+          ],
+        ),
+      );
+      if (confirmed != true || !mounted) return;
+    }
+
+    if (!mounted) return;
+    setState(() {
+      busy = true;
+      errorText = null;
+    });
+    try {
+      await Future<void>.delayed(Duration.zero);
+      final ok = await vault.restoreRecoveryPackage(
+        recoveryPackage: input['package']!,
+        password: input['password']!,
+      );
+      if (!mounted) return;
+      if (!ok) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(strings.vaultRecoveryInvalid)),
+        );
+        return;
+      }
+      passwordController.clear();
+      confirmController.clear();
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(strings.vaultRecoveryRestored)),
+      );
+    } finally {
+      if (mounted) setState(() => busy = false);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Listener(
@@ -956,6 +1160,16 @@ class _PrivateVaultScreenState extends State<PrivateVaultScreen>
                           ),
                         ),
                       ),
+                      const SizedBox(height: 8),
+                      SizedBox(
+                        width: double.infinity,
+                        child: OutlinedButton.icon(
+                          onPressed:
+                              busy ? null : _restoreVaultRecoveryPackage,
+                          icon: const Icon(Icons.restore_outlined),
+                          label: Text(strings.vaultRecoveryImportExisting),
+                        ),
+                      ),
                     ],
                   ),
                 ),
@@ -976,9 +1190,17 @@ class _PrivateVaultScreenState extends State<PrivateVaultScreen>
         actions: [
           PopupMenuButton<String>(
             onSelected: (value) {
-              if (value == 'destroy') unawaited(_destroyVault());
+              if (value == 'recovery') {
+                unawaited(_restoreVaultRecoveryPackage());
+              } else if (value == 'destroy') {
+                unawaited(_destroyVault());
+              }
             },
             itemBuilder: (_) => [
+              PopupMenuItem(
+                value: 'recovery',
+                child: Text(strings.vaultRecoveryRestore),
+              ),
               PopupMenuItem(
                 value: 'destroy',
                 child: Text(strings.vaultDeleteVault),
@@ -1066,6 +1288,15 @@ class _PrivateVaultScreenState extends State<PrivateVaultScreen>
                       ),
                     ),
                   ],
+                  const SizedBox(height: 8),
+                  SizedBox(
+                    width: double.infinity,
+                    child: TextButton.icon(
+                      onPressed: busy ? null : _restoreVaultRecoveryPackage,
+                      icon: const Icon(Icons.restore_outlined),
+                      label: Text(strings.vaultRecoveryRestoreLocked),
+                    ),
+                  ),
                 ],
               ),
             ),
@@ -1176,9 +1407,17 @@ class _PrivateVaultScreenState extends State<PrivateVaultScreen>
           ),
           PopupMenuButton<String>(
             onSelected: (value) {
-              if (value == 'destroy') unawaited(_destroyVault());
+              if (value == 'recovery') {
+                unawaited(_showVaultRecoveryOptions());
+              } else if (value == 'destroy') {
+                unawaited(_destroyVault());
+              }
             },
             itemBuilder: (_) => [
+              PopupMenuItem(
+                value: 'recovery',
+                child: Text(strings.vaultRecoveryTitle),
+              ),
               PopupMenuItem(
                 value: 'destroy',
                 child: Text(strings.vaultDeleteVault),
