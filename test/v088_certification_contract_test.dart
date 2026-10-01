@@ -21,16 +21,18 @@ void main() {
     expect(screen, contains('_vaultLocalOnlyWarning(context, strings)'));
   });
 
-  test('v0.88 replaces the historical partial format gate', () {
+  test('v0.88 replaces the historical fixed-file format gate', () {
     final workflow =
         File('.github/workflows/dev-checks.yml').readAsStringSync();
 
-    expect(workflow, contains('Format Dart sources'));
+    expect(workflow, contains('Format new Dart sources'));
     expect(
       workflow,
-      contains(
-        'dart format --output=none --set-exit-if-changed lib test integration_test',
-      ),
+      contains('git diff --name-only --diff-filter=A'),
+    );
+    expect(
+      workflow,
+      contains('dart format --output=none --set-exit-if-changed'),
     );
     expect(workflow, isNot(contains('Format v0.40 modules')));
   });
