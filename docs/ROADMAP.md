@@ -42,7 +42,7 @@ Source of execution truth for Anna's Diary. Product identity and boundaries are 
 | v0.85 | Noi ♡ Shared Passwords | Completed | E2EE shared credentials with encrypted local Vault mirrors and one-time pairing |
 | v0.86 | Security & Governance Hardening | Completed | Atomic E2EE key ownership, revision-safe shared credentials, recovery, Vault KDF hardening and SHOS documentation alignment |
 | v0.87 | Private Vault Web Unlock Hotfix | Completed | Async browser-native PBKDF2 unlock with unchanged Vault format, explicit unlock states and Chrome regression coverage |
-| v0.88 | Private Cycle Tracker MVP | In progress | Vault-only cycle calendar, daily logs, history, deterministic estimates, privacy-safe reminders and five-language UI |
+| v0.88 | Private Cycle Tracker MVP | Completed | Vault-only cycle calendar, daily logs, history, deterministic estimates, privacy-safe reminders and five-language UI |
 
 ## Permanent constraints for this sequence
 
