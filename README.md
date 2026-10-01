@@ -2,7 +2,7 @@
 
 Flutter app for personal planning, private diary and the shared **Noi ♡** space.
 
-Current release line: **v0.89.0**.
+Current release line: **v0.90.0**.
 
 Canonical product scope and security boundaries: `docs/PRODUCT_BIBLE.md`.
 
@@ -483,6 +483,17 @@ See `docs/ARCHITECTURE.md` and `supabase/README.md` for implementation details.
 - Share-target text and images now reuse the same capture persistence helpers instead of maintaining separate diary-save logic.
 - Capturing from `La mia giornata` respects the day currently being viewed, including past/future days, while preserving the current time as the moment ordering time inside that day.
 - No capture database, parallel media store, AI layer or new cloud schema is introduced.
+
+## v0.90.0 — Vault Recovery & Privacy Hardening
+
+- Adds an explicit portable recovery package for the entire Private Vault while preserving the existing encrypted Vault format.
+- Recovery packages contain the password-wrapped Vault key and AES-GCM payload, never exported plaintext. Device-bound biometric wrapping is removed from the portable package.
+- Restore verifies package shape, password-derived key wrapping and AES-GCM payload integrity before any local Vault data can be replaced.
+- Recovery is available when creating a new Vault, from a locked Vault and from the unlocked Vault backup menu.
+- Restoring on a new device requires the original Vault password; biometric unlock must be enabled again locally.
+- Vault recovery packages and private cycle reports use best-effort clipboard auto-clear after 60 seconds.
+- Cycle privacy surfaces gain explicit Semantics labels for sensitive banners and metric cards.
+- Release metadata is aligned to v0.90.0+100.
 
 ## v0.89.0 — Cycle Premium Engine
 
