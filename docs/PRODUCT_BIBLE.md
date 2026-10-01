@@ -1,7 +1,7 @@
 # Anna's Diary — Product Bible
 
 **Status:** canonical product source of truth  
-**Current release line:** v0.93  
+**Current release line:** v0.94  
 **Last aligned:** 1 October 2026
 
 This document defines what Anna's Diary is, what it is not, and the product/security invariants that future work must preserve. Implementation details belong in `docs/ARCHITECTURE.md`; execution sequencing belongs in `docs/ROADMAP.md`.
@@ -152,6 +152,7 @@ Future AI may assist with capture, retrieval or organization only when it provid
 ## 9. Free/Premium status
 
 As of v0.91 Premium capability checks are centralized behind one RevenueCat-backed entitlement service using the entitlement identifier `premium`. Monthly/lifetime pricing is owned by the active RevenueCat Offering and is not duplicated in app code. A custom Flutter paywall is the shared Android/iOS/Web presentation layer. Existing diary, agenda, Private Vault and v0.88 cycle-core capabilities remain FREE; losing Premium must never delete, rewrite or hide user-owned historical data. From v0.92, Premium preview is not implicitly enabled in release builds. Debug builds and explicit QA channels may enable preview, while a store release must set `ANNA_STORE_RELEASE=true`, keep `ANNA_PREMIUM_PREVIEW=false`, and provide the RevenueCat platform key. A store release with preview enabled or a missing RevenueCat key is invalid by product contract.
+From v0.94, Play purchase validation uses a separate `ANNA_STORE_QA=true` Store build that still has Preview disabled and still derives access only from RevenueCat CustomerInfo. Store QA must never act as an entitlement bypass. Runtime QA readiness requires the current Offering to expose both monthly and Lifetime packages; actual purchase proof remains an external Google Play Internal Testing step.
 
 If monetization is introduced later:
 
