@@ -46,7 +46,7 @@ Source of execution truth for Anna's Diary. Product identity and boundaries are 
 | v0.89 | Cycle Premium Engine | Completed | Centralized premium-ready access, advanced trends, fertility observations, custom symptoms and explicit private report |
 | v0.90 | Vault Recovery & Privacy Hardening | Completed | Portable encrypted Vault recovery, non-destructive validation, clipboard hardening and cycle accessibility improvements |
 | v0.91 | Premium Store Foundation | Completed | RevenueCat entitlement source, custom paywall, Supabase identity binding, restore flow and Android Billing contract |
-| v0.92 | Premium Production Guardrails | In progress | Fail-closed store configuration, explicit QA preview channels and release-time RevenueCat validation |
+| v0.92 | Premium Production Guardrails | Completed | Fail-closed store configuration, explicit QA preview channels and release-time RevenueCat validation |
 
 ## Permanent constraints for this sequence
 
