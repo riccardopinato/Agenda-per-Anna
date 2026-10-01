@@ -1,6 +1,6 @@
 # Agenda per Anna — Architecture
 
-## Current structure — v0.88.0
+## Current structure — v0.89.0
 
 Anna's Diary keeps `lib/main.dart` as the compatibility library boundary, but large responsibilities are now split by runtime domain:
 
@@ -24,6 +24,15 @@ The `AgendaStore` public surface remains compatible. UI screens observe domain-s
 
 The PR production gate is:
 `locked dependencies → analyze/tests → Web release → ARM64 release → AppLab emulator → Maestro → multi-screen screenshots/UI hierarchy → visual QA/regression → Logcat/crash/ANR`.
+
+## v0.89.0 — Cycle Premium Engine
+
+- `premium_entitlement_service.dart` centralizes Premium capability decisions and currently exposes preview mode until an app-wide billing provider is configured.
+- Cycle screens query capabilities through this service and contain no direct RevenueCat or purchase-SDK dependency.
+- `CyclePremiumAnalytics` derives descriptive trends from the canonical encrypted cycle state; no secondary analytics database or cloud processing path exists.
+- Advanced fertility observations and custom symptoms extend the existing `CycleDayLog` / `CycleSettings` schema and remain nested inside the Vault payload.
+- Private report generation is local and explicit; export is currently clipboard-only and user initiated.
+- v0.88 payloads remain backward compatible.
 
 ## v0.88.0 — Private cycle domain
 
