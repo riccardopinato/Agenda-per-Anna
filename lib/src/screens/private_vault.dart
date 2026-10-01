@@ -859,6 +859,41 @@ class _PrivateVaultScreenState extends State<PrivateVaultScreen>
     );
   }
 
+  Widget _vaultLocalOnlyWarning(
+    BuildContext context,
+    AnnaStrings strings,
+  ) {
+    final scheme = Theme.of(context).colorScheme;
+    return Semantics(
+      container: true,
+      label: strings.vaultLocalOnlyWarning,
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: scheme.tertiaryContainer.withValues(alpha: 0.78),
+          borderRadius: BorderRadius.circular(14),
+        ),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Icon(
+              Icons.phonelink_erase_outlined,
+              color: scheme.onTertiaryContainer,
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Text(
+                strings.vaultLocalOnlyWarning,
+                style: TextStyle(color: scheme.onTertiaryContainer),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _buildSetup(BuildContext context) {
     final strings = AnnaStrings.of(context);
     final scheme = Theme.of(context).colorScheme;
@@ -892,6 +927,8 @@ class _PrivateVaultScreenState extends State<PrivateVaultScreen>
                       ),
                       const SizedBox(height: 8),
                       Text(strings.vaultSetupDescription),
+                      const SizedBox(height: 12),
+                      _vaultLocalOnlyWarning(context, strings),
                       if (kIsWeb) ...[
                         const SizedBox(height: 12),
                         _vaultWebSecurityWarning(context, strings),
@@ -1137,6 +1174,10 @@ class _PrivateVaultScreenState extends State<PrivateVaultScreen>
       ),
       body: Column(
         children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(18, 12, 18, 0),
+            child: _vaultLocalOnlyWarning(context, strings),
+          ),
           if (kIsWeb)
             Padding(
               padding: const EdgeInsets.fromLTRB(18, 12, 18, 0),
