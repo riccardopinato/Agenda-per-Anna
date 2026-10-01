@@ -640,7 +640,6 @@ extension LifeBridgeAgendaStore on AgendaStore {
   }
 
   LifeBridgePayload exportLifeBridgeDiaryBlock(
-    DateTime day,
     DiaryBlock block, {
     LifeBridgeTransferMode transferMode = LifeBridgeTransferMode.copy,
   }) {
@@ -893,6 +892,14 @@ extension LifeBridgeStrings on AnnaStrings {
         fr: 'Dissocier',
         pt: 'Desligar',
       );
+
+  String get lifeBridgeSourceUnavailable => _pick(
+        en: 'source unavailable',
+        it: 'sorgente non disponibile',
+        es: 'origen no disponible',
+        fr: 'source indisponible',
+        pt: 'origem indisponível',
+      );
 }
 
 class LifeEcosystemScreen extends StatefulWidget {
@@ -1022,8 +1029,8 @@ class _LifeEcosystemScreenState extends State<LifeEcosystemScreen> {
                 const _LifeBridgeAppCard(
                   icon: Icons.travel_explore_outlined,
                   title: 'Wonderlog',
-                  subtitle: 'Life Bridge v1 · first external integration target',
-                  active: true,
+                  subtitle: 'First external integration target · adapter not implemented yet',
+                  active: false,
                 ),
                 const SizedBox(height: 10),
                 const _LifeBridgeAppCard(
@@ -1168,7 +1175,7 @@ class _LifeBridgeLinkTile extends StatelessWidget {
       ),
       subtitle: Text(
         link.status == LifeBridgeLinkStatus.sourceUnavailable
-            ? '${link.source.appId} · source unavailable'
+            ? '${link.source.appId} · ${strings.lifeBridgeSourceUnavailable}'
             : '${link.source.appId} · $objectType',
       ),
       trailing: PopupMenuButton<String>(
