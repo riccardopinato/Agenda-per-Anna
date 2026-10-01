@@ -1190,7 +1190,7 @@ class _PrivateVaultScreenState extends State<PrivateVaultScreen>
           PopupMenuButton<String>(
             onSelected: (value) {
               if (value == 'recovery') {
-                unawaited(_showVaultRecoveryOptions());
+                unawaited(_restoreVaultRecoveryPackage());
               } else if (value == 'destroy') {
                 unawaited(_destroyVault());
               }
@@ -1198,7 +1198,7 @@ class _PrivateVaultScreenState extends State<PrivateVaultScreen>
             itemBuilder: (_) => [
               PopupMenuItem(
                 value: 'recovery',
-                child: Text(strings.vaultRecoveryTitle),
+                child: Text(strings.vaultRecoveryRestore),
               ),
               PopupMenuItem(
                 value: 'destroy',
@@ -1406,9 +1406,17 @@ class _PrivateVaultScreenState extends State<PrivateVaultScreen>
           ),
           PopupMenuButton<String>(
             onSelected: (value) {
-              if (value == 'destroy') unawaited(_destroyVault());
+              if (value == 'recovery') {
+                unawaited(_showVaultRecoveryOptions());
+              } else if (value == 'destroy') {
+                unawaited(_destroyVault());
+              }
             },
             itemBuilder: (_) => [
+              PopupMenuItem(
+                value: 'recovery',
+                child: Text(strings.vaultRecoveryTitle),
+              ),
               PopupMenuItem(
                 value: 'destroy',
                 child: Text(strings.vaultDeleteVault),
