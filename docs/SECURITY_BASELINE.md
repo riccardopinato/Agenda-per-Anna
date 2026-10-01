@@ -1,4 +1,4 @@
-# Security Baseline — v0.93
+# Security Baseline — v0.94
 
 Anna's Diary uses a layered security model across Flutter, Supabase Auth, Row Level Security, Edge Functions and Storage.
 
@@ -20,6 +20,10 @@ v0.86 keeps the existing Vault and Noi ♡ storage boundaries and hardens their 
 - v0.92 makes Premium preview fail-closed for release builds. Store release mode rejects preview and rejects missing RevenueCat platform configuration before entitlement initialization.
 - Signed store builds validate Premium configuration before compilation and receive the public RevenueCat Android SDK key only through GitHub Actions secrets; no private RevenueCat API credential is stored in the repository.
 - QA preview builds (Pages, sideload and AppLab) intentionally omit the store key and are explicitly marked non-store so a test channel cannot be mistaken for production billing.
+- v0.94 Store QA mode never grants Premium and never re-enables Preview. Entitlement remains derived only from RevenueCat CustomerInfo.
+- Store QA diagnostics exclude RevenueCat API keys and raw App User IDs. The copyable QA report contains only release/build metadata, readiness booleans, Offering/product metadata, entitlement state and non-secret error text.
+- The Internal Testing AAB uses the existing stable signing identity and receives the RevenueCat Android public SDK key only through GitHub Actions secrets. No Play service-account credential or RevenueCat private key is introduced.
+- Real purchase testing is intentionally performed only through Google Play Internal Testing/license-tester infrastructure; a sideloaded APK is not accepted as billing proof.
 - v0.93 cycle onboarding, multi-day period entry, daily check-ins, contraceptive reminder preferences and prediction-v2 inputs remain inside the same encrypted Private Vault payload. No cycle/health content is added to ordinary backup, global search, cloud sync, RevenueCat or analytics.
 - Cycle notification content remains discreet by default. The optional explicit contraceptive reminder stores only enabled/time preferences; no medication name is required or persisted by this feature.
 - Recurring cycle reminders reuse the existing local notification channel and do not create a remote notification profile.
