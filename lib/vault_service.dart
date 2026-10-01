@@ -524,6 +524,38 @@ class PrivateVaultService extends ChangeNotifier {
     notifyListeners();
   }
 
+  Future<void> upsertCycleDayLogs(
+    Iterable<CycleDayLog> logs,
+  ) async {
+    _requireUnlocked();
+    final now = DateTime.now();
+    final normalized = <CycleDayLog>[];
+    for (final log in logs) {
+      final existing = _cycleTrackerState.logFor(log.date);
+      normalized.add(
+        CycleDayLog(
+          date: cycleDateOnly(log.date),
+          flow: log.flow,
+          painLevel: log.painLevel.clamp(0, 5),
+          energyLevel: log.energyLevel.clamp(0, 5),
+          symptoms: List<String>.unmodifiable(log.symptoms),
+          moods: List<String>.unmodifiable(log.moods),
+          discharge: log.discharge.trim(),
+          hadSex: log.hadSex,
+          basalTemperature: log.basalTemperature,
+          ovulationTest: log.ovulationTest.trim(),
+          notes: log.notes.trim(),
+          createdAt: existing?.createdAt ?? log.createdAt,
+          updatedAt: now,
+        ),
+      );
+    }
+    if (normalized.isEmpty) return;
+    _cycleTrackerState = _cycleTrackerState.upsertLogs(normalized);
+    await _persistEntries();
+    notifyListeners();
+  }
+
   Future<void> deleteCycleDayLog(DateTime date) async {
     _requireUnlocked();
     if (_cycleTrackerState.logFor(date) == null) return;
