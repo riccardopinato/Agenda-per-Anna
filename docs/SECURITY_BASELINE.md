@@ -1,4 +1,4 @@
-# Security Baseline — v0.89
+# Security Baseline — v0.90
 
 Anna's Diary uses a layered security model across Flutter, Supabase Auth, Row Level Security, Edge Functions and Storage.
 
@@ -12,6 +12,8 @@ v0.86 keeps the existing Vault and Noi ♡ storage boundaries and hardens their 
 - v0.87 runs Web Vault PBKDF2-HMAC-SHA256 derivation through asynchronous browser Web Crypto. KDF parameters and the encrypted Vault format remain unchanged, so this is a responsiveness/runtime fix rather than a cryptographic migration or downgrade.
 - The v0.88 cycle tracker stores intimate-health logs only as a nested object in the same AES-GCM encrypted Vault payload. It has no ordinary sync/search/backup path; lock clears the decrypted in-memory cycle state together with notes, credentials and shared-password mirrors.
 - v0.89 extends the same Vault boundary to basal temperature, cervical mucus, sexual-activity observations, ovulation-test results, custom symptoms and derived insights. The private report is created locally and reaches the clipboard only after an explicit user action; it has no automatic network/export path.
+- v0.90 recovery packages preserve the existing password-wrapped master key and AES-GCM Vault envelope without exporting plaintext. The device-bound biometric wrap is removed. Restore verifies the package, password-derived key and authenticated payload before replacing local state, and invalid attempts are non-destructive.
+- Recovery packages and cycle reports use best-effort clipboard compare-and-clear after 60 seconds. Ordinary cloud sync, global search and standard backup remain excluded.
 - An unlocked Vault is re-locked after five minutes without pointer interaction, on app background/inactive states and when leaving the Password Noi ♡ surface. Explicit manual lock remains available.
 - Password Noi ♡ credential plaintext is encrypted client-side with AES-256-GCM and AAD bound to shared-space and credential identity.
 - The server stores only ciphertext metadata plus a SHA-256 key fingerprint, never the raw shared password key.
