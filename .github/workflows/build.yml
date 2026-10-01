@@ -39,6 +39,15 @@ jobs:
           fi
 
 
+      - name: Require Premium store configuration
+        shell: bash
+        env:
+          ANNA_STORE_RELEASE: "true"
+          ANNA_PREMIUM_PREVIEW: "false"
+          REVENUECAT_ANDROID_API_KEY: ${{ secrets.REVENUECAT_ANDROID_API_KEY }}
+          REVENUECAT_PREMIUM_ENTITLEMENT: premium
+        run: python3 tool/validate_premium_release.py
+
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
@@ -88,6 +97,7 @@ jobs:
           ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
           ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
           ANDROID_KEYSTORE_PATH: ${{ github.workspace }}/.signing/agenda-release.jks
+          REVENUECAT_ANDROID_API_KEY: ${{ secrets.REVENUECAT_ANDROID_API_KEY }}
         run: |
           set -euo pipefail
           FIREBASE_ARG=""
@@ -100,6 +110,10 @@ jobs:
             --obfuscate
             --tree-shake-icons
             --split-debug-info=build/symbols
+            --dart-define=ANNA_STORE_RELEASE=true
+            --dart-define=ANNA_PREMIUM_PREVIEW=false
+            --dart-define=REVENUECAT_PREMIUM_ENTITLEMENT=premium
+            --dart-define=REVENUECAT_ANDROID_API_KEY=$REVENUECAT_ANDROID_API_KEY
           )
 
           flutter build apk "${COMMON_ARGS[@]}" $FIREBASE_ARG
