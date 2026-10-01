@@ -387,7 +387,7 @@ class _PremiumStoreQaScreenState extends State<PremiumStoreQaScreen> {
     final d = premium.diagnostics;
     final report = <String>[
       "Anna's Diary Premium Store QA",
-      'release=${appReleaseVersion}+$appReleaseBuildNumber',
+      'release=$appReleaseVersion+$appReleaseBuildNumber',
       'configured=${d.configured}',
       'storeRelease=${d.storeReleaseMode}',
       'storeQa=${d.storeQaMode}',
