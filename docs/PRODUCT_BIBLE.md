@@ -1,7 +1,7 @@
 # Anna's Diary — Product Bible
 
 **Status:** canonical product source of truth  
-**Current release line:** v0.88  
+**Current release line:** v0.89  
 **Last aligned:** 1 October 2026
 
 This document defines what Anna's Diary is, what it is not, and the product/security invariants that future work must preserve. Implementation details belong in `docs/ARCHITECTURE.md`; execution sequencing belongs in `docs/ROADMAP.md`.
@@ -148,7 +148,7 @@ Future AI may assist with capture, retrieval or organization only when it provid
 
 ## 9. Free/Premium status
 
-As of v0.88 there is **no production Premium/RevenueCat entitlement system** and no paywall is part of the current product contract. The v0.88 cycle tracker core is therefore fully usable without a Premium entitlement.
+As of v0.89 there is **no production billing provider or paywall**. Premium capability checks are centralized behind one entitlement service and run in preview mode so the advanced cycle layer remains testable. The v0.88 cycle tracker core remains the permanent FREE baseline and losing a future entitlement must never delete or hide user-owned historical data.
 
 If monetization is introduced later:
 
