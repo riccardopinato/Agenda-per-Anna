@@ -429,6 +429,18 @@ class HomeScreen extends StatelessWidget {
                   ),
                 ),
               ),
+              const SizedBox(height: 12),
+              NavigationCard(
+                icon: Icons.hub_outlined,
+                title: strings.lifeEcosystemTitle,
+                subtitle: strings.lifeEcosystemSubtitle,
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => LifeEcosystemScreen(store: store),
+                  ),
+                ),
+              ),
             ],
           ),
         );
