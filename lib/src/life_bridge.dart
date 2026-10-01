@@ -900,6 +900,33 @@ extension LifeBridgeStrings on AnnaStrings {
         fr: 'source indisponible',
         pt: 'origem indisponível',
       );
+
+  String get lifeBridgeCopyPayload => _pick(
+        en: 'Copy for Life Bridge',
+        it: 'Copia per Life Bridge',
+        es: 'Copiar para Life Bridge',
+        fr: 'Copier pour Life Bridge',
+        pt: 'Copiar para Life Bridge',
+      );
+
+  String get lifeBridgeCopied => _pick(
+        en: 'Life Bridge payload copied.',
+        it: 'Payload Life Bridge copiato.',
+        es: 'Payload Life Bridge copiado.',
+        fr: 'Payload Life Bridge copié.',
+        pt: 'Payload Life Bridge copiado.',
+      );
+}
+
+Future<void> copyLifeBridgePayload(
+  BuildContext context,
+  LifeBridgePayload payload,
+) async {
+  await Clipboard.setData(ClipboardData(text: payload.encode()));
+  if (!context.mounted) return;
+  ScaffoldMessenger.of(context).showSnackBar(
+    SnackBar(content: Text(AnnaStrings.of(context).lifeBridgeCopied)),
+  );
 }
 
 class LifeEcosystemScreen extends StatefulWidget {
