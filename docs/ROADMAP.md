@@ -44,6 +44,7 @@ Source of execution truth for Anna's Diary. Product identity and boundaries are 
 | v0.87 | Private Vault Web Unlock Hotfix | Completed | Async browser-native PBKDF2 unlock with unchanged Vault format, explicit unlock states and Chrome regression coverage |
 | v0.88 | Private Cycle Tracker MVP | Completed | Vault-only cycle calendar, daily logs, history, deterministic estimates, privacy-safe reminders and five-language UI |
 | v0.89 | Cycle Premium Engine | Completed | Centralized premium-ready access, advanced trends, fertility observations, custom symptoms and explicit private report |
+| v0.90 | Vault Recovery & Privacy Hardening | In progress | Portable encrypted Vault recovery, non-destructive validation, clipboard hardening and cycle accessibility improvements |
 
 ## Permanent constraints for this sequence
 
@@ -534,3 +535,16 @@ Per the active development cadence, AppLab runs once every two feature versions.
 - en/it/es/fr/pt cover all new Premium-cycle UI copy.
 - Analyze, full tests, Web release, Android size audit and AppLab trusted verification must pass before promotion to main.
 - Release metadata is v0.89.0+99.
+
+## v0.90 acceptance criteria
+
+- An unlocked Vault can export a portable recovery package without exposing note, credential or cycle plaintext.
+- The recovery package omits the device-bound biometric wrap and remains protected by the original Vault password wrap plus the existing AES-GCM payload.
+- Restore is available for a new, locked or unlocked Vault and verifies package structure, password and ciphertext integrity before any local replacement occurs.
+- Invalid/corrupt recovery attempts leave the current local Vault unchanged.
+- Successful recovery restores notes, credentials, cycle data and encrypted local mirrors, then requires biometrics to be re-enabled on the destination device.
+- Recovery packages and explicit cycle reports clear the clipboard after 60 seconds on a best-effort compare-before-clear path.
+- Sensitive cycle privacy banners and metric cards expose explicit accessibility semantics.
+- Ordinary backup/cloud sync/global search remain unaware of Vault recovery contents.
+- Analyze, full tests, Web release, Android size audit and AppLab trusted verification must pass before promotion to main.
+- Release metadata is v0.90.0+100.
