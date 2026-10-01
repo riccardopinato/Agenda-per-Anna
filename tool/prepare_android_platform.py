@@ -865,6 +865,7 @@ def configure_manifest() -> None:
         '<uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />',
         '<uses-permission android:name="android.permission.RECORD_AUDIO" />',
         '<uses-permission android:name="android.permission.READ_CALENDAR" />',
+        '<uses-permission android:name="com.android.vending.BILLING" />',
     ]
     manifest_close = re.search(r"<manifest\b[^>]*>", manifest)
     if manifest_close is None:
@@ -1398,6 +1399,8 @@ def verify() -> None:
         failures.append("external calendar native permission handling")
     if 'android.permission.READ_CALENDAR' not in manifest:
         failures.append("external calendar manifest permission")
+    if 'com.android.vending.BILLING' not in manifest:
+        failures.append("RevenueCat billing manifest permission")
     if not ICON_JPG.is_file() or ICON_JPG.stat().st_size == 0:
         failures.append("decoded launcher icon")
     if failures:
