@@ -1,6 +1,6 @@
 # Agenda per Anna — Architecture
 
-## Current structure — v0.93.0
+## Current structure — v0.94.0
 
 Anna's Diary keeps `lib/main.dart` as the compatibility library boundary, but large responsibilities are now split by runtime domain:
 
@@ -24,6 +24,16 @@ The `AgendaStore` public surface remains compatible. UI screens observe domain-s
 
 The PR production gate is:
 `locked dependencies → analyze/tests → Web release → ARM64 release → AppLab emulator → Maestro → multi-screen screenshots/UI hierarchy → visual QA/regression → Logcat/crash/ANR`.
+
+## v0.94.0 — Premium Store QA boundary
+
+- `ANNA_STORE_QA` is a diagnostic/distribution mode layered on top of `ANNA_STORE_RELEASE`; it does not alter entitlement computation.
+- `PremiumStoreDiagnostics` derives catalog/readiness state from the existing RevenueCat service: SDK state, Store/QA flags, current Offering, monthly/Lifetime package presence, entitlement state, restore capability and the last purchase result.
+- `purchaseQaReady` requires a real configured SDK, Store release mode, Store QA mode, Preview disabled, a current Offering and both monthly/Lifetime packages.
+- The QA diagnostics UI intentionally reports only booleans/product metadata and excludes the public SDK key and raw App User ID.
+- Production Android release builds pin `ANNA_STORE_QA=false`; the dedicated Internal Testing workflow pins `ANNA_STORE_QA=true`.
+- `.github/workflows/premium-store-qa.yml` produces a release-signed AAB for Play Internal Testing with the same package/signing contract as production, but does not upload to a Play track automatically.
+- Real billing validation remains external to CI because Play purchase authority requires installation from the configured test track and an authorized tester account.
 
 ## v0.93.0 — Cycle completion boundary
 

@@ -43,6 +43,7 @@ jobs:
         shell: bash
         env:
           ANNA_STORE_RELEASE: "true"
+          ANNA_STORE_QA: "false"
           ANNA_PREMIUM_PREVIEW: "false"
           REVENUECAT_ANDROID_API_KEY: ${{ secrets.REVENUECAT_ANDROID_API_KEY }}
           REVENUECAT_PREMIUM_ENTITLEMENT: premium
@@ -111,6 +112,7 @@ jobs:
             --tree-shake-icons
             --split-debug-info=build/symbols
             --dart-define=ANNA_STORE_RELEASE=true
+            --dart-define=ANNA_STORE_QA=false
             --dart-define=ANNA_PREMIUM_PREVIEW=false
             --dart-define=REVENUECAT_PREMIUM_ENTITLEMENT=premium
             --dart-define=REVENUECAT_ANDROID_API_KEY=$REVENUECAT_ANDROID_API_KEY

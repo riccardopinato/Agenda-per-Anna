@@ -26,6 +26,10 @@ def main() -> int:
     elif api_key.lower() in {"changeme", "todo", "placeholder", "test"}:
         errors.append("REVENUECAT_ANDROID_API_KEY looks like a placeholder.")
 
+    store_qa = _value("ANNA_STORE_QA").lower()
+    if store_qa not in {"", "true", "false"}:
+        errors.append("ANNA_STORE_QA must be true or false when provided.")
+
     entitlement = _value("REVENUECAT_PREMIUM_ENTITLEMENT") or "premium"
     if entitlement != "premium":
         errors.append(
@@ -38,7 +42,8 @@ def main() -> int:
             print(f"::error title=Premium release configuration::{error}")
         return 1
 
-    print("Premium store release configuration validated.")
+    mode = "QA" if store_qa == "true" else "production"
+    print(f"Premium store {mode} configuration validated.")
     return 0
 
 

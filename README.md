@@ -2,7 +2,7 @@
 
 Flutter app for personal planning, private diary and the shared **Noi ♡** space.
 
-Current release line: **v0.93.0**.
+Current release line: **v0.94.0**.
 
 Canonical product scope and security boundaries: `docs/PRODUCT_BIBLE.md`.
 
@@ -483,6 +483,17 @@ See `docs/ARCHITECTURE.md` and `supabase/README.md` for implementation details.
 - Share-target text and images now reuse the same capture persistence helpers instead of maintaining separate diary-save logic.
 - Capturing from `La mia giornata` respects the day currently being viewed, including past/future days, while preserving the current time as the moment ordering time inside that day.
 - No capture database, parallel media store, AI layer or new cloud schema is introduced.
+
+## v0.94.0 — Premium Store Activation & Sandbox QA
+
+- Adds an explicit `ANNA_STORE_QA` build mode for Google Play Internal Testing without granting Premium or re-enabling preview access.
+- Premium Store QA diagnostics now verify SDK configuration, production Store mode, QA build mode, preview-off state, current RevenueCat Offering, monthly package, Lifetime package, entitlement state and restore availability.
+- QA diagnostics can export a non-sensitive report; RevenueCat API keys and raw App User IDs are excluded.
+- The production Android release workflow explicitly builds with `ANNA_STORE_QA=false`.
+- Adds a dedicated signed **Premium Store QA Bundle** workflow that builds an AAB with `ANNA_STORE_RELEASE=true`, `ANNA_STORE_QA=true` and `ANNA_PREMIUM_PREVIEW=false`.
+- The QA artifact includes an operator checklist for Google Play Internal Testing, monthly purchase, Lifetime purchase, entitlement activation and restore verification.
+- Store QA readiness requires both monthly and Lifetime packages in the current RevenueCat Offering. A successful CI build proves bundle/configuration readiness only; it does not claim a successful real Play purchase.
+- Release metadata is aligned to v0.94.0+104.
 
 ## v0.93.0 — Cycle Tracker Completion & UX Polish
 

@@ -30,6 +30,54 @@ enum PremiumPurchaseOutcome {
   failed,
 }
 
+class PremiumStoreDiagnostics {
+  final bool configured;
+  final bool storeReleaseMode;
+  final bool storeQaMode;
+  final bool previewMode;
+  final bool paidEntitlement;
+  final String entitlementId;
+  final String? currentOfferingIdentifier;
+  final int productCount;
+  final bool hasMonthly;
+  final bool hasLifetime;
+  final bool identityLinked;
+  final bool canRestorePurchases;
+  final String? lastError;
+  final PremiumPurchaseOutcome? lastPurchaseOutcome;
+  final String? lastPurchaseProductIdentifier;
+
+  const PremiumStoreDiagnostics({
+    required this.configured,
+    required this.storeReleaseMode,
+    required this.storeQaMode,
+    required this.previewMode,
+    required this.paidEntitlement,
+    required this.entitlementId,
+    required this.currentOfferingIdentifier,
+    required this.productCount,
+    required this.hasMonthly,
+    required this.hasLifetime,
+    required this.identityLinked,
+    required this.canRestorePurchases,
+    this.lastError,
+    this.lastPurchaseOutcome,
+    this.lastPurchaseProductIdentifier,
+  });
+
+  bool get catalogReady =>
+      configured &&
+      currentOfferingIdentifier != null &&
+      hasMonthly &&
+      hasLifetime;
+
+  bool get purchaseQaReady =>
+      catalogReady &&
+      storeReleaseMode &&
+      storeQaMode &&
+      !previewMode;
+}
+
 class PremiumStoreProduct {
   final String packageIdentifier;
   final String productIdentifier;
@@ -77,6 +125,10 @@ class PremiumEntitlementService extends ChangeNotifier {
     'ANNA_STORE_RELEASE',
     defaultValue: false,
   );
+  static const bool _storeQa = bool.fromEnvironment(
+    'ANNA_STORE_QA',
+    defaultValue: false,
+  );
 
   PremiumStoreState _state = PremiumStoreState.unconfigured;
   bool _sdkConfigured = false;
@@ -85,6 +137,9 @@ class PremiumEntitlementService extends ChangeNotifier {
   bool _paidEntitlement = false;
   String? _identifiedAppUserId;
   String? _lastError;
+  String? _currentOfferingIdentifier;
+  PremiumPurchaseOutcome? _lastPurchaseOutcome;
+  String? _lastPurchaseProductIdentifier;
   List<PremiumStoreProduct> _products = const [];
   final Map<String, rc.Package> _packagesByIdentifier = {};
 
@@ -92,6 +147,7 @@ class PremiumEntitlementService extends ChangeNotifier {
   bool get configured => _sdkConfigured;
   bool get paidEntitlement => _paidEntitlement;
   bool get storeReleaseMode => _storeRelease;
+  bool get storeQaMode => _storeQa;
   bool get previewMode =>
       !_paidEntitlement && !_storeRelease && (kDebugMode || _previewOverride);
   bool get hasPremiumAccess => _paidEntitlement || previewMode;
@@ -101,6 +157,27 @@ class PremiumEntitlementService extends ChangeNotifier {
   String? get identifiedAppUserId => _identifiedAppUserId;
   List<PremiumStoreProduct> get products =>
       List<PremiumStoreProduct>.unmodifiable(_products);
+
+  PremiumStoreDiagnostics get diagnostics {
+    final kinds = _products.map((product) => product.kind).toSet();
+    return PremiumStoreDiagnostics(
+      configured: _sdkConfigured,
+      storeReleaseMode: _storeRelease,
+      storeQaMode: _storeQa,
+      previewMode: previewMode,
+      paidEntitlement: _paidEntitlement,
+      entitlementId: entitlementId,
+      currentOfferingIdentifier: _currentOfferingIdentifier,
+      productCount: _products.length,
+      hasMonthly: kinds.contains(PremiumProductKind.monthly),
+      hasLifetime: kinds.contains(PremiumProductKind.lifetime),
+      identityLinked: _identifiedAppUserId != null,
+      canRestorePurchases: canRestorePurchases,
+      lastError: _lastError,
+      lastPurchaseOutcome: _lastPurchaseOutcome,
+      lastPurchaseProductIdentifier: _lastPurchaseProductIdentifier,
+    );
+  }
 
   bool allows(PremiumCapability capability) => hasPremiumAccess;
 
@@ -123,6 +200,13 @@ class PremiumEntitlementService extends ChangeNotifier {
     if (_initializing) return;
 
     final apiKey = _platformApiKey;
+    if (_storeQa && !_storeRelease) {
+      _identifiedAppUserId = normalizedId;
+      _state = PremiumStoreState.error;
+      _lastError = 'premium_store_qa_requires_store_release';
+      notifyListeners();
+      return;
+    }
     if (_storeRelease && _previewOverride) {
       _identifiedAppUserId = normalizedId;
       _state = PremiumStoreState.error;
@@ -248,20 +332,25 @@ class PremiumEntitlementService extends ChangeNotifier {
       );
       _applyCustomerInfo(result.customerInfo);
       _state = PremiumStoreState.ready;
-      return _paidEntitlement
+      final outcome = _paidEntitlement
           ? PremiumPurchaseOutcome.success
           : PremiumPurchaseOutcome.failed;
+      _recordPurchaseOutcome(product, outcome);
+      return outcome;
     } on PlatformException catch (error) {
       final code = rc.PurchasesErrorHelper.getErrorCode(error);
       _state = PremiumStoreState.ready;
       if (code == rc.PurchasesErrorCode.purchaseCancelledError) {
+        _recordPurchaseOutcome(product, PremiumPurchaseOutcome.cancelled);
         return PremiumPurchaseOutcome.cancelled;
       }
       _lastError = error.message ?? error.toString();
+      _recordPurchaseOutcome(product, PremiumPurchaseOutcome.failed);
       return PremiumPurchaseOutcome.failed;
     } catch (error) {
       _state = PremiumStoreState.error;
       _lastError = error.toString();
+      _recordPurchaseOutcome(product, PremiumPurchaseOutcome.failed);
       return PremiumPurchaseOutcome.failed;
     } finally {
       notifyListeners();
@@ -302,9 +391,11 @@ class PremiumEntitlementService extends ChangeNotifier {
     _packagesByIdentifier.clear();
 
     if (offering == null) {
+      _currentOfferingIdentifier = null;
       _products = const [];
       return;
     }
+    _currentOfferingIdentifier = offering.identifier;
 
     final products = <PremiumStoreProduct>[];
     for (final package in offering.availablePackages) {
@@ -336,6 +427,14 @@ class PremiumEntitlementService extends ChangeNotifier {
       return byKind != 0 ? byKind : a.price.compareTo(b.price);
     });
     _products = List<PremiumStoreProduct>.unmodifiable(products);
+  }
+
+  void _recordPurchaseOutcome(
+    PremiumStoreProduct product,
+    PremiumPurchaseOutcome outcome,
+  ) {
+    _lastPurchaseProductIdentifier = product.productIdentifier;
+    _lastPurchaseOutcome = outcome;
   }
 
   void _onCustomerInfoUpdated(rc.CustomerInfo info) {

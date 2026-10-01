@@ -205,6 +205,25 @@ class _PremiumScreenState extends State<PremiumScreen> {
                   textAlign: TextAlign.center,
                 ),
               ],
+              if (premium.storeQaMode || kDebugMode) ...[
+                const SizedBox(height: 12),
+                Card(
+                  child: ListTile(
+                    leading: const CircleAvatar(
+                      child: Icon(Icons.fact_check_outlined),
+                    ),
+                    title: Text(strings.premiumStoreQaTitle),
+                    subtitle: Text(strings.premiumStoreQaEntryDescription),
+                    trailing: const Icon(Icons.chevron_right),
+                    onTap: () => Navigator.push(
+                      context,
+                      MaterialPageRoute<void>(
+                        builder: (_) => const PremiumStoreQaScreen(),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
               const SizedBox(height: 18),
               Text(
                 strings.premiumFreeCorePromise,
@@ -347,6 +366,285 @@ class _PremiumScreenState extends State<PremiumScreen> {
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+
+class PremiumStoreQaScreen extends StatefulWidget {
+  const PremiumStoreQaScreen({super.key});
+
+  @override
+  State<PremiumStoreQaScreen> createState() => _PremiumStoreQaScreenState();
+}
+
+class _PremiumStoreQaScreenState extends State<PremiumStoreQaScreen> {
+  final premium = PremiumEntitlementService.instance;
+
+  Future<void> _copyReport() async {
+    final strings = AnnaStrings.of(context);
+    final d = premium.diagnostics;
+    final report = <String>[
+      "Anna's Diary Premium Store QA",
+      'release=$appReleaseVersion+$appReleaseBuildNumber',
+      'configured=${d.configured}',
+      'storeRelease=${d.storeReleaseMode}',
+      'storeQa=${d.storeQaMode}',
+      'preview=${d.previewMode}',
+      'entitlement=${d.entitlementId}',
+      'entitlementActive=${d.paidEntitlement}',
+      'offering=${d.currentOfferingIdentifier ?? '-'}',
+      'products=${d.productCount}',
+      'monthly=${d.hasMonthly}',
+      'lifetime=${d.hasLifetime}',
+      'identityLinked=${d.identityLinked}',
+      'restoreAvailable=${d.canRestorePurchases}',
+      'purchaseQaReady=${d.purchaseQaReady}',
+      'lastPurchase=${d.lastPurchaseOutcome?.name ?? '-'}',
+      'lastProduct=${d.lastPurchaseProductIdentifier ?? '-'}',
+      'lastError=${d.lastError ?? '-'}',
+    ].join('\n');
+    await Clipboard.setData(ClipboardData(text: report));
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(strings.premiumStoreQaReportCopied)),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: premium,
+      builder: (context, _) {
+        final strings = AnnaStrings.of(context);
+        final d = premium.diagnostics;
+        final ready = d.purchaseQaReady;
+
+        return Scaffold(
+          appBar: AppBar(
+            title: Text(
+              strings.premiumStoreQaTitle,
+              style: const TextStyle(fontWeight: FontWeight.w900),
+            ),
+          ),
+          body: ListView(
+            padding: const EdgeInsets.fromLTRB(18, 14, 18, 40),
+            children: [
+              Card(
+                child: Padding(
+                  padding: const EdgeInsets.all(18),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Icon(
+                        ready
+                            ? Icons.verified_outlined
+                            : Icons.warning_amber_rounded,
+                        size: 34,
+                      ),
+                      const SizedBox(width: 14),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              ready
+                                  ? strings.premiumStoreQaReady
+                                  : strings.premiumStoreQaNotReady,
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .titleMedium
+                                  ?.copyWith(fontWeight: FontWeight.w900),
+                            ),
+                            const SizedBox(height: 6),
+                            Text(
+                              ready
+                                  ? strings.premiumStoreQaReadyDescription
+                                  : strings.premiumStoreQaNotReadyDescription,
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: 12),
+              _qaRow(
+                context,
+                strings.premiumStoreQaSdk,
+                d.configured,
+                d.configured
+                    ? strings.premiumStoreQaOk
+                    : strings.premiumStoreQaMissing,
+              ),
+              _qaRow(
+                context,
+                strings.premiumStoreQaReleaseMode,
+                d.storeReleaseMode,
+                d.storeReleaseMode
+                    ? strings.premiumStoreQaOk
+                    : strings.premiumStoreQaMissing,
+              ),
+              _qaRow(
+                context,
+                strings.premiumStoreQaBuildMode,
+                d.storeQaMode,
+                d.storeQaMode
+                    ? strings.premiumStoreQaOk
+                    : strings.premiumStoreQaMissing,
+              ),
+              _qaRow(
+                context,
+                strings.premiumStoreQaPreviewDisabled,
+                !d.previewMode,
+                !d.previewMode
+                    ? strings.premiumStoreQaOk
+                    : strings.premiumStoreQaMissing,
+              ),
+              _qaRow(
+                context,
+                strings.premiumStoreQaOffering,
+                d.currentOfferingIdentifier != null,
+                d.currentOfferingIdentifier ?? strings.premiumStoreQaMissing,
+              ),
+              _qaRow(
+                context,
+                strings.premiumMonthly,
+                d.hasMonthly,
+                d.hasMonthly
+                    ? strings.premiumStoreQaAvailable
+                    : strings.premiumStoreQaMissing,
+              ),
+              _qaRow(
+                context,
+                strings.premiumLifetime,
+                d.hasLifetime,
+                d.hasLifetime
+                    ? strings.premiumStoreQaAvailable
+                    : strings.premiumStoreQaMissing,
+              ),
+              _qaRow(
+                context,
+                strings.premiumStoreQaIdentity,
+                true,
+                d.identityLinked
+                    ? strings.premiumStoreQaSignedIdentity
+                    : strings.premiumStoreQaAnonymousIdentity,
+              ),
+              _qaRow(
+                context,
+                strings.premiumStoreQaEntitlement,
+                d.paidEntitlement,
+                d.paidEntitlement
+                    ? strings.premiumActive
+                    : strings.premiumFree,
+                neutralWhenFalse: true,
+              ),
+              _qaRow(
+                context,
+                strings.premiumRestorePurchases,
+                d.canRestorePurchases,
+                d.canRestorePurchases
+                    ? strings.premiumStoreQaAvailable
+                    : strings.premiumOperationUnsupported,
+                neutralWhenFalse: kIsWeb,
+              ),
+              if (d.lastPurchaseOutcome != null)
+                _qaRow(
+                  context,
+                  strings.premiumStoreQaLastPurchase,
+                  d.lastPurchaseOutcome == PremiumPurchaseOutcome.success,
+                  d.lastPurchaseOutcome!.name,
+                  neutralWhenFalse:
+                      d.lastPurchaseOutcome == PremiumPurchaseOutcome.cancelled,
+                ),
+              if (d.lastError != null && d.lastError!.trim().isNotEmpty)
+                Card(
+                  child: ListTile(
+                    leading: const Icon(Icons.error_outline),
+                    title: Text(strings.premiumStoreQaLastError),
+                    subtitle: SelectableText(d.lastError!),
+                  ),
+                ),
+              const SizedBox(height: 12),
+              FilledButton.icon(
+                onPressed: premium.busy ? null : () => premium.refresh(),
+                icon: const Icon(Icons.refresh),
+                label: Text(strings.premiumRefreshStore),
+              ),
+              const SizedBox(height: 8),
+              OutlinedButton.icon(
+                onPressed: _copyReport,
+                icon: const Icon(Icons.copy_all_outlined),
+                label: Text(strings.premiumStoreQaCopyReport),
+              ),
+              const SizedBox(height: 18),
+              Card(
+                child: Padding(
+                  padding: const EdgeInsets.all(18),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        strings.premiumStoreQaChecklist,
+                        style: Theme.of(context)
+                            .textTheme
+                            .titleMedium
+                            ?.copyWith(fontWeight: FontWeight.w900),
+                      ),
+                      const SizedBox(height: 10),
+                      Text(strings.premiumStoreQaStepInstall),
+                      const SizedBox(height: 6),
+                      Text(strings.premiumStoreQaStepMonthly),
+                      const SizedBox(height: 6),
+                      Text(strings.premiumStoreQaStepLifetime),
+                      const SizedBox(height: 6),
+                      Text(strings.premiumStoreQaStepRestore),
+                      const SizedBox(height: 6),
+                      Text(strings.premiumStoreQaStepEntitlement),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: 12),
+              Text(
+                strings.premiumStoreQaPlayOnly,
+                style: Theme.of(context).textTheme.bodySmall,
+                textAlign: TextAlign.center,
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _qaRow(
+    BuildContext context,
+    String label,
+    bool ok,
+    String value, {
+    bool neutralWhenFalse = false,
+  }) {
+    final scheme = Theme.of(context).colorScheme;
+    final icon = ok
+        ? Icons.check_circle_outline
+        : neutralWhenFalse
+            ? Icons.info_outline
+            : Icons.cancel_outlined;
+    final color = ok
+        ? scheme.primary
+        : neutralWhenFalse
+            ? scheme.outline
+            : scheme.error;
+
+    return Card(
+      child: ListTile(
+        leading: Icon(icon, color: color),
+        title: Text(label),
+        subtitle: Text(value),
       ),
     );
   }
