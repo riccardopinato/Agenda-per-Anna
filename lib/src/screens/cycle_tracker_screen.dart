@@ -1045,12 +1045,22 @@ class _PrivateCycleTrackerScreenState extends State<PrivateCycleTrackerScreen> {
   Future<void> _showDayEditor(DateTime date) async {
     if (!vault.unlocked) return;
     final strings = AnnaStrings.of(context);
-    final existing = vault.cycleTrackerState.logFor(date);
+    final state = vault.cycleTrackerState;
+    final settings = state.settings;
+    final existing = state.logFor(date);
+    final advancedAccess =
+        premium.allows(PremiumCapability.cycleAdvancedTracking);
     var flow = existing?.flow ?? CycleFlow.none;
     var pain = existing?.painLevel ?? 0;
     var energy = existing?.energyLevel ?? 3;
+    var discharge = existing?.discharge ?? '';
+    var hadSex = existing?.hadSex ?? false;
+    var ovulationTest = existing?.ovulationTest ?? '';
     final symptoms = <String>{...?existing?.symptoms};
     final moods = <String>{...?existing?.moods};
+    final basalTemperatureController = TextEditingController(
+      text: existing?.basalTemperature?.toStringAsFixed(2) ?? '',
+    );
     final notesController = TextEditingController(text: existing?.notes ?? '');
 
     final saved = await showModalBottomSheet<bool>(
@@ -1174,6 +1184,117 @@ class _PrivateCycleTrackerScreenState extends State<PrivateCycleTrackerScreen> {
                         ),
                     ],
                   ),
+                  if (premium.allows(PremiumCapability.cycleCustomSymptoms) &&
+                      settings.customSymptoms.isNotEmpty) ...[
+                    const SizedBox(height: 14),
+                    Text(
+                      strings.cycleCustomSymptoms,
+                      style: const TextStyle(fontWeight: FontWeight.w800),
+                    ),
+                    const SizedBox(height: 8),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 4,
+                      children: [
+                        for (final custom in settings.customSymptoms)
+                          FilterChip(
+                            label: Text(custom),
+                            selected: symptoms.contains('custom:$custom'),
+                            onSelected: (selected) => setSheetState(() {
+                              final key = 'custom:$custom';
+                              selected
+                                  ? symptoms.add(key)
+                                  : symptoms.remove(key);
+                            }),
+                          ),
+                      ],
+                    ),
+                  ],
+                  if (advancedAccess &&
+                      (settings.trackBasalTemperature ||
+                          settings.trackCervicalMucus ||
+                          settings.trackSexualActivity ||
+                          settings.trackFertility)) ...[
+                    const SizedBox(height: 18),
+                    Text(
+                      strings.cycleAdvancedDailyTracking,
+                      style: const TextStyle(fontWeight: FontWeight.w900),
+                    ),
+                    const SizedBox(height: 10),
+                    if (settings.trackBasalTemperature)
+                      TextField(
+                        controller: basalTemperatureController,
+                        keyboardType: const TextInputType.numberWithOptions(
+                          decimal: true,
+                        ),
+                        decoration: InputDecoration(
+                          labelText: strings.cycleBasalTemperature,
+                          suffixText: '°C',
+                        ),
+                      ),
+                    if (settings.trackBasalTemperature)
+                      const SizedBox(height: 12),
+                    if (settings.trackCervicalMucus)
+                      DropdownButtonFormField<String>(
+                        initialValue: discharge.isEmpty ? '' : discharge,
+                        decoration: InputDecoration(
+                          labelText: strings.cycleCervicalMucus,
+                        ),
+                        items: [
+                          DropdownMenuItem(
+                            value: '',
+                            child: Text(strings.cycleObservationNone),
+                          ),
+                          for (final value in const [
+                            'dry',
+                            'sticky',
+                            'creamy',
+                            'watery',
+                            'eggWhite',
+                          ])
+                            DropdownMenuItem(
+                              value: value,
+                              child: Text(_dischargeLabel(strings, value)),
+                            ),
+                        ],
+                        onChanged: (value) =>
+                            setSheetState(() => discharge = value ?? ''),
+                      ),
+                    if (settings.trackCervicalMucus)
+                      const SizedBox(height: 12),
+                    if (settings.trackFertility)
+                      DropdownButtonFormField<String>(
+                        initialValue:
+                            ovulationTest.isEmpty ? '' : ovulationTest,
+                        decoration: InputDecoration(
+                          labelText: strings.cycleOvulationTest,
+                        ),
+                        items: [
+                          DropdownMenuItem(
+                            value: '',
+                            child: Text(strings.cycleObservationNone),
+                          ),
+                          DropdownMenuItem(
+                            value: 'negative',
+                            child: Text(strings.cycleTestNegative),
+                          ),
+                          DropdownMenuItem(
+                            value: 'positive',
+                            child: Text(strings.cycleTestPositive),
+                          ),
+                        ],
+                        onChanged: (value) =>
+                            setSheetState(() => ovulationTest = value ?? ''),
+                      ),
+                    if (settings.trackSexualActivity)
+                      SwitchListTile(
+                        contentPadding: EdgeInsets.zero,
+                        value: hadSex,
+                        onChanged: (value) =>
+                            setSheetState(() => hadSex = value),
+                        title: Text(strings.cycleSexualActivity),
+                      ),
+                  ],
                   const SizedBox(height: 14),
                   TextField(
                     controller: notesController,
@@ -1210,6 +1331,17 @@ class _PrivateCycleTrackerScreenState extends State<PrivateCycleTrackerScreen> {
                               energyLevel: energy,
                               symptoms: symptoms.toList(growable: false),
                               moods: moods.toList(growable: false),
+                              discharge: discharge,
+                              hadSex: hadSex,
+                              basalTemperature: advancedAccess &&
+                                      settings.trackBasalTemperature
+                                  ? double.tryParse(
+                                      basalTemperatureController.text
+                                          .trim()
+                                          .replaceAll(',', '.'),
+                                    )
+                                  : existing?.basalTemperature,
+                              ovulationTest: ovulationTest,
                               notes: notesController.text,
                               createdAt: existing?.createdAt ?? now,
                               updatedAt: now,
@@ -1231,6 +1363,7 @@ class _PrivateCycleTrackerScreenState extends State<PrivateCycleTrackerScreen> {
         },
       ),
     );
+    basalTemperatureController.dispose();
     notesController.dispose();
     if (saved == true && mounted && vault.unlocked) {
       await _syncPeriodReminder();
@@ -1264,7 +1397,11 @@ class _PrivateCycleTrackerScreenState extends State<PrivateCycleTrackerScreen> {
         CycleFlow.heavy => strings.cycleFlowHeavy,
       };
 
-  String _symptomLabel(AnnaStrings strings, String value) => switch (value) {
+  String _symptomLabel(AnnaStrings strings, String value) {
+    if (value.startsWith('custom:')) {
+      return value.substring('custom:'.length);
+    }
+    return switch (value) {
         'cramps' => strings.cycleSymptomCramps,
         'bloating' => strings.cycleSymptomBloating,
         'headache' => strings.cycleSymptomHeadache,
@@ -1273,6 +1410,16 @@ class _PrivateCycleTrackerScreenState extends State<PrivateCycleTrackerScreen> {
         'acne' => strings.cycleSymptomAcne,
         'nausea' => strings.cycleSymptomNausea,
         'backPain' => strings.cycleSymptomBackPain,
+        _ => value,
+      };
+  }
+
+  String _dischargeLabel(AnnaStrings strings, String value) => switch (value) {
+        'dry' => strings.cycleMucusDry,
+        'sticky' => strings.cycleMucusSticky,
+        'creamy' => strings.cycleMucusCreamy,
+        'watery' => strings.cycleMucusWatery,
+        'eggWhite' => strings.cycleMucusEggWhite,
         _ => value,
       };
 
