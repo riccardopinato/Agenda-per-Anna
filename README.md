@@ -2,7 +2,7 @@
 
 Flutter app for personal planning, private diary and the shared **Noi ♡** space.
 
-Current release line: **v0.86.0**.
+Current release line: **v0.87.0**.
 
 Canonical product scope and security boundaries: `docs/PRODUCT_BIBLE.md`.
 
@@ -483,6 +483,15 @@ See `docs/ARCHITECTURE.md` and `supabase/README.md` for implementation details.
 - Share-target text and images now reuse the same capture persistence helpers instead of maintaining separate diary-save logic.
 - Capturing from `La mia giornata` respects the day currently being viewed, including past/future days, while preserving the current time as the moment ordering time inside that day.
 - No capture database, parallel media store, AI layer or new cloud schema is introduced.
+
+## v0.87.0 — Private Vault Web Unlock Hotfix
+
+- Web Vault password derivation now uses browser-native asynchronous Web Crypto PBKDF2-HMAC-SHA256 instead of running the 600,000-iteration derivation synchronously on the Flutter Web UI event loop.
+- The cryptographic contract is unchanged: existing salts, iteration counts, 256-bit derived keys and AES-GCM envelopes remain compatible; no Vault migration or password reset is introduced.
+- Android/native keeps the existing PBKDF2 semantics together with Android Keystore wrapping and FLAG_SECURE protection.
+- The locked Vault UI now paints an explicit unlock-progress state, rejects duplicate unlock submissions and always exits the busy state on success, wrong password or unexpected failure.
+- A dedicated Chrome regression test verifies browser PBKDF2-SHA256 against a known compatibility vector.
+- Release metadata is aligned to v0.87.0+97.
 
 ## v0.86.0 — Security & Governance Hardening
 

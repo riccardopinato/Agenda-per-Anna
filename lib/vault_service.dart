@@ -7,6 +7,7 @@ import 'package:pointycastle/export.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'local_state_store.dart';
+import 'src/security/vault_password_kdf.dart';
 
 enum PrivateVaultEntryKind { note, credential }
 
@@ -180,10 +181,11 @@ class PrivateVaultService extends ChangeNotifier {
 
     final salt = _randomBytes(16);
     final master = _randomBytes(_masterKeyLength);
-    final passwordKey = _derivePasswordKey(
-      password,
-      salt,
-      _currentIterations,
+    final passwordKey = await deriveVaultPasswordKey(
+      password: password,
+      salt: salt,
+      iterations: _currentIterations,
+      length: _masterKeyLength,
     );
     try {
       final wrapped = _encrypt(
@@ -254,7 +256,12 @@ class PrivateVaultService extends ChangeNotifier {
       final iterations =
           (meta['iterations'] as num?)?.toInt() ?? _legacyIterations;
       if (iterations < 100000 || iterations > 2000000) return false;
-      passwordKey = _derivePasswordKey(password, salt, iterations);
+      passwordKey = await deriveVaultPasswordKey(
+        password: password,
+        salt: salt,
+        iterations: iterations,
+        length: _masterKeyLength,
+      );
       final wrapped = Map<String, dynamic>.from(meta['passwordWrap'] as Map);
       master = _decrypt(
         key: passwordKey,
@@ -731,10 +738,11 @@ class PrivateVaultService extends ChangeNotifier {
     if (current == null) return;
 
     final salt = _randomBytes(16);
-    final passwordKey = _derivePasswordKey(
-      password,
-      salt,
-      _currentIterations,
+    final passwordKey = await deriveVaultPasswordKey(
+      password: password,
+      salt: salt,
+      iterations: _currentIterations,
+      length: _masterKeyLength,
     );
     try {
       final wrapped = _encrypt(
@@ -754,18 +762,6 @@ class PrivateVaultService extends ChangeNotifier {
     } finally {
       _zero(passwordKey);
     }
-  }
-
-  Uint8List _derivePasswordKey(
-    String password,
-    Uint8List salt,
-    int iterations,
-  ) {
-    final derivator = PBKDF2KeyDerivator(HMac(SHA256Digest(), 64))
-      ..init(Pbkdf2Parameters(salt, iterations, 32));
-    return derivator.process(
-      Uint8List.fromList(utf8.encode(password)),
-    );
   }
 
   Map<String, dynamic> _encrypt({

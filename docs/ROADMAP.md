@@ -40,7 +40,8 @@ Source of execution truth for Anna's Diary. Product identity and boundaries are 
 | v0.83 | Life & Recovery Localization | Completed | People, birthdays, workout, shopping and Trash localization coverage |
 | v0.84 | Password Vault | Completed | Personal credentials inside the existing encrypted Private Vault |
 | v0.85 | Noi ♡ Shared Passwords | Completed | E2EE shared credentials with encrypted local Vault mirrors and one-time pairing |
-| v0.86 | Security & Governance Hardening | In progress | Atomic E2EE key ownership, revision-safe shared credentials, recovery, Vault KDF hardening and SHOS documentation alignment |
+| v0.86 | Security & Governance Hardening | Completed | Atomic E2EE key ownership, revision-safe shared credentials, recovery, Vault KDF hardening and SHOS documentation alignment |
+| v0.87 | Private Vault Web Unlock Hotfix | Completed | Async browser-native PBKDF2 unlock with unchanged Vault format, explicit unlock states and Chrome regression coverage |
 
 ## Permanent constraints for this sequence
 
@@ -495,3 +496,14 @@ Per the active development cadence, AppLab runs once every two feature versions.
 - Release metadata is aligned to v0.86.0+96.
 - Development, Web, Android size audit and AppLab gates must be green before merge.
 - A public/store release remains blocked unless signing-key custody is explicitly accepted or rotated before distribution.
+
+## v0.87 acceptance criteria
+
+- Web Vault password derivation uses browser Web Crypto PBKDF2-HMAC-SHA256 asynchronously; the 600,000-iteration hardening no longer blocks the Flutter Web UI event loop.
+- Existing 180,000- and 600,000-iteration Vault wraps remain readable with the same salt, 256-bit derived-key and AES-GCM envelope contract; no Vault migration or password reset is introduced.
+- Android/native password derivation remains compatible with the existing Vault and keeps Android Keystore / FLAG_SECURE behavior unchanged.
+- The locked Vault surface shows an in-progress state, rejects duplicate unlock submissions and always exits the busy state on success, wrong password or unexpected failure.
+- Wrong passwords remain explicit; unexpected unlock failures use localized error copy instead of leaving the screen apparently frozen.
+- A Chrome browser regression verifies the WebCrypto PBKDF2-SHA256 output against a known compatibility vector.
+- Analyze, full tests, dedicated browser crypto test, Web release build and the existing Android/AppLab gates must be green before promotion to main.
+- Release metadata is aligned to v0.87.0+97.

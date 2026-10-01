@@ -1,7 +1,7 @@
 name: agenda_per_anna
 description: Anna's Diary, diario e agenda personale multipiattaforma.
 publish_to: "none"
-version: 0.86.0+96
+version: 0.87.0+97
 
 environment:
   sdk: ">=3.10.0 <4.0.0"
@@ -31,6 +31,7 @@ dependencies:
   firebase_messaging: ^16.7.0
   image_picker: ^1.2.0
   flutter_image_compress: ^2.4.0
+  web: 1.1.1
 
 dev_dependencies:
   flutter_test:
