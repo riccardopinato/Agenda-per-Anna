@@ -49,8 +49,29 @@ jobs:
       - name: Generate launcher icons
         run: dart run flutter_launcher_icons -f tool/flutter_launcher_icons_android.yaml
 
-      - name: Format Dart sources
-        run: dart format --output=none --set-exit-if-changed lib test integration_test
+      - name: Format new Dart sources
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+            git fetch --no-tags --depth=1 origin "${{ github.base_ref }}"
+            BASE_REF="origin/${{ github.base_ref }}"
+          else
+            BASE_REF="${{ github.event.before }}"
+            if [[ -z "$BASE_REF" || "$BASE_REF" =~ ^0+$ ]]; then
+              git fetch --no-tags --depth=2 origin "$GITHUB_SHA"
+              BASE_REF="HEAD^"
+            else
+              git fetch --no-tags --depth=1 origin "$BASE_REF"
+            fi
+          fi
+
+          mapfile -t NEW_DART_FILES < <(
+            git diff --name-only --diff-filter=A "$BASE_REF" HEAD -- '*.dart'
+          )
+          if (( ${#NEW_DART_FILES[@]} > 0 )); then
+            dart format --output=none --set-exit-if-changed "${NEW_DART_FILES[@]}"
+          fi
 
       - name: Analyze
         run: flutter analyze
