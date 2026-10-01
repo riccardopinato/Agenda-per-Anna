@@ -78,7 +78,7 @@ Every security-sensitive release merge requires:
 - locked dependencies;
 - Flutter analyze;
 - full tests, including accessibility/large-text regression coverage;
-- repository-wide Dart formatting gate;
+- general new-Dart formatting gate;
 - dedicated Chrome Web Vault PBKDF2 compatibility and persisted-unlock tests;
 - Web release build;
 - Android ARM64 release build;
