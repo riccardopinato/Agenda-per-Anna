@@ -2,7 +2,7 @@
 
 Flutter app for personal planning, private diary and the shared **Noi ♡** space.
 
-Current release line: **v0.92.0**.
+Current release line: **v0.93.0**.
 
 Canonical product scope and security boundaries: `docs/PRODUCT_BIBLE.md`.
 
@@ -483,6 +483,18 @@ See `docs/ARCHITECTURE.md` and `supabase/README.md` for implementation details.
 - Share-target text and images now reuse the same capture persistence helpers instead of maintaining separate diary-save logic.
 - Capturing from `La mia giornata` respects the day currently being viewed, including past/future days, while preserving the current time as the moment ordering time inside that day.
 - No capture database, parallel media store, AI layer or new cloud schema is introduced.
+
+## v0.93.0 — Cycle Tracker Completion & UX Polish
+
+- Adds first-use cycle onboarding inside the unlocked Vault with last-period start, typical cycle/period length, regularity, fertility preference and private reminders.
+- Existing v0.88–v0.92 users with recorded cycle history are upgraded without being forced through onboarding.
+- Adds fast period-range entry while preserving existing symptoms, mood, notes and advanced observations on those dates.
+- Prediction v2 weights more recent cycles more heavily, exposes variability and a date window instead of presenting a single day as certain, and reduces confidence for explicitly irregular cycles.
+- Completes private reminders with daily check-in and optional contraceptive reminders using recurring local scheduling and discreet notification copy by default.
+- Calendar markers now distinguish recorded flow, predicted period, fertile window, estimated ovulation and days containing symptoms/notes.
+- Premium Insights gain lightweight local charts for recent cycle length and most-recorded symptoms without a new chart dependency.
+- Cycle metric/action layouts adapt to narrow screens and large text; new chart and prediction surfaces expose explicit semantics.
+- Release metadata is aligned to v0.93.0+103.
 
 ## v0.92.0 — Premium Production Guardrails
 

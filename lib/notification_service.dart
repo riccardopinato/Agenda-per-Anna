@@ -860,6 +860,61 @@ class NotificationService {
     }
   }
 
+  Future<void> scheduleDaily({
+    required String stableId,
+    required String title,
+    required String body,
+    required int hour,
+    required int minute,
+    bool requestPermission = true,
+  }) async {
+    await initialize();
+    if (!_available) return;
+
+    final enabled = requestPermission
+        ? await requestPermissions()
+        : (await health()).notificationsEnabled;
+    if (!enabled) {
+      _lastError = 'notification_permission_denied';
+      return;
+    }
+
+    final status = await health();
+    if (!status.reminderChannelEnabled) {
+      _lastError = 'reminder_channel_disabled';
+      return;
+    }
+
+    final now = tz.TZDateTime.now(tz.local);
+    var scheduled = tz.TZDateTime(
+      tz.local,
+      now.year,
+      now.month,
+      now.day,
+      hour.clamp(0, 23),
+      minute.clamp(0, 59),
+    );
+    if (!scheduled.isAfter(now)) {
+      scheduled = scheduled.add(const Duration(days: 1));
+    }
+
+    try {
+      await _plugin.zonedSchedule(
+        id: _notificationId(stableId),
+        title: title,
+        body: body,
+        scheduledDate: scheduled,
+        notificationDetails: _standardReminderDetails,
+        androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
+        matchDateTimeComponents: DateTimeComponents.time,
+        payload: stableId,
+      );
+      _lastError = null;
+    } catch (error) {
+      _lastError = 'schedule_daily:$stableId: $error';
+    }
+  }
+
   Future<void> cancel(String stableId) async {
     await initialize();
     if (!_available) return;

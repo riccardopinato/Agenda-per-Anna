@@ -10,18 +10,23 @@ class PrivateCycleTrackerScreen extends StatefulWidget {
 
 class _PrivateCycleTrackerScreenState extends State<PrivateCycleTrackerScreen> {
   static const _periodReminderId = 'vault-cycle-period-reminder';
+  static const _dailyLogReminderId = 'vault-cycle-daily-log-reminder';
+  static const _contraceptiveReminderId = 'vault-cycle-contraceptive-reminder';
 
   final vault = PrivateVaultService.instance;
   final premium = PremiumEntitlementService.instance;
   DateTime _selectedDay = cycleDateOnly(DateTime.now());
   DateTime _focusedDay = cycleDateOnly(DateTime.now());
+  bool _onboardingPrompted = false;
 
   @override
   void initState() {
     super.initState();
     vault.noteUserActivity();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted && vault.unlocked) unawaited(_syncPeriodReminder());
+      if (!mounted || !vault.unlocked) return;
+      unawaited(_syncCycleReminders());
+      unawaited(_maybeShowOnboarding());
     });
   }
 
@@ -115,6 +120,333 @@ class _PrivateCycleTrackerScreenState extends State<PrivateCycleTrackerScreen> {
     );
   }
 
+  Future<void> _maybeShowOnboarding() async {
+    if (_onboardingPrompted || !mounted || !vault.unlocked) return;
+    _onboardingPrompted = true;
+
+    final state = vault.cycleTrackerState;
+    if (state.settings.onboardingComplete) return;
+    if (CycleTrackerEngine.periods(state).isNotEmpty) {
+      await vault.updateCycleSettings(
+        state.settings.copyWith(onboardingComplete: true),
+      );
+      return;
+    }
+
+    final strings = AnnaStrings.of(context);
+    var lastPeriodStart =
+        cycleDateOnly(DateTime.now().subtract(const Duration(days: 28)));
+    var cycleLength = state.settings.averageCycleLength.clamp(21, 40).toInt();
+    var periodLength = state.settings.averagePeriodLength.clamp(2, 10).toInt();
+    var regularity = state.settings.regularityMode;
+    var trackFertility = state.settings.trackFertility;
+    var periodReminder = state.settings.periodReminderEnabled;
+    var dailyReminder = state.settings.dailyLogReminderEnabled;
+
+    final completed = await showModalBottomSheet<bool>(
+      context: context,
+      isScrollControlled: true,
+      useSafeArea: true,
+      builder: (sheetContext) => StatefulBuilder(
+        builder: (context, setSheetState) => Padding(
+          padding: EdgeInsets.fromLTRB(
+            20,
+            16,
+            20,
+            MediaQuery.viewInsetsOf(context).bottom + 24,
+          ),
+          child: SingleChildScrollView(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  strings.cycleOnboardingTitle,
+                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                        fontWeight: FontWeight.w900,
+                      ),
+                ),
+                const SizedBox(height: 8),
+                Text(strings.cycleOnboardingDescription),
+                const SizedBox(height: 20),
+                ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  leading: const Icon(Icons.water_drop_outlined),
+                  title: Text(strings.cycleLastPeriodStart),
+                  subtitle: Text(
+                    DateFormat(
+                      'd MMMM yyyy',
+                      AnnaStrings.intlLocale(context),
+                    ).format(lastPeriodStart),
+                  ),
+                  trailing: const Icon(Icons.edit_calendar_outlined),
+                  onTap: () async {
+                    final picked = await showDatePicker(
+                      context: context,
+                      initialDate: lastPeriodStart,
+                      firstDate: DateTime.now().subtract(
+                        const Duration(days: 365 * 3),
+                      ),
+                      lastDate: DateTime.now(),
+                    );
+                    if (picked != null) {
+                      setSheetState(
+                        () => lastPeriodStart = cycleDateOnly(picked),
+                      );
+                    }
+                  },
+                ),
+                Text(strings.cycleAverageLength),
+                Slider(
+                  min: 21,
+                  max: 40,
+                  divisions: 19,
+                  value: cycleLength.toDouble(),
+                  label: strings.cycleDays(cycleLength),
+                  onChanged: (value) =>
+                      setSheetState(() => cycleLength = value.round()),
+                ),
+                Text(strings.cycleAveragePeriodLength),
+                Slider(
+                  min: 2,
+                  max: 10,
+                  divisions: 8,
+                  value: periodLength.toDouble(),
+                  label: strings.cycleDays(periodLength),
+                  onChanged: (value) =>
+                      setSheetState(() => periodLength = value.round()),
+                ),
+                const SizedBox(height: 8),
+                DropdownButtonFormField<String>(
+                  initialValue: regularity,
+                  decoration: InputDecoration(
+                    labelText: strings.cycleRegularity,
+                  ),
+                  items: [
+                    DropdownMenuItem(
+                      value: 'unknown',
+                      child: Text(strings.cycleRegularityUnknown),
+                    ),
+                    DropdownMenuItem(
+                      value: 'regular',
+                      child: Text(strings.cycleRegularityRegular),
+                    ),
+                    DropdownMenuItem(
+                      value: 'irregular',
+                      child: Text(strings.cycleRegularityIrregular),
+                    ),
+                  ],
+                  onChanged: (value) {
+                    if (value != null) {
+                      setSheetState(() => regularity = value);
+                    }
+                  },
+                ),
+                const SizedBox(height: 8),
+                SwitchListTile(
+                  contentPadding: EdgeInsets.zero,
+                  value: trackFertility,
+                  onChanged: (value) =>
+                      setSheetState(() => trackFertility = value),
+                  title: Text(strings.cycleTrackFertility),
+                  subtitle: Text(strings.cycleFertilityEstimateOnly),
+                ),
+                SwitchListTile(
+                  contentPadding: EdgeInsets.zero,
+                  value: periodReminder,
+                  onChanged: (value) =>
+                      setSheetState(() => periodReminder = value),
+                  title: Text(strings.cyclePeriodReminder),
+                ),
+                SwitchListTile(
+                  contentPadding: EdgeInsets.zero,
+                  value: dailyReminder,
+                  onChanged: (value) =>
+                      setSheetState(() => dailyReminder = value),
+                  title: Text(strings.cycleDailyLogReminder),
+                ),
+                const SizedBox(height: 14),
+                SizedBox(
+                  width: double.infinity,
+                  child: FilledButton.icon(
+                    onPressed: () => Navigator.pop(sheetContext, true),
+                    icon: const Icon(Icons.check_circle_outline),
+                    label: Text(strings.cycleOnboardingStart),
+                  ),
+                ),
+                const SizedBox(height: 8),
+                SizedBox(
+                  width: double.infinity,
+                  child: TextButton(
+                    onPressed: () => Navigator.pop(sheetContext, false),
+                    child: Text(strings.cycleOnboardingSkip),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+
+    if (!mounted || !vault.unlocked) return;
+    final settings = state.settings.copyWith(
+      onboardingComplete: true,
+      averageCycleLength: cycleLength,
+      averagePeriodLength: periodLength,
+      regularityMode: regularity,
+      trackFertility: trackFertility,
+      periodReminderEnabled: periodReminder,
+      dailyLogReminderEnabled: dailyReminder,
+    );
+    await vault.updateCycleSettings(settings);
+
+    if (completed == true) {
+      await _markPeriodRange(
+        start: lastPeriodStart,
+        end: lastPeriodStart.add(Duration(days: periodLength - 1)),
+      );
+    }
+    if (mounted && vault.unlocked) {
+      await _syncCycleReminders();
+    }
+  }
+
+  Future<void> _markPeriodRange({
+    required DateTime start,
+    required DateTime end,
+  }) async {
+    if (!vault.unlocked) return;
+    var from = cycleDateOnly(start);
+    var to = cycleDateOnly(end);
+    if (to.isBefore(from)) {
+      final swap = from;
+      from = to;
+      to = swap;
+    }
+    if (to.difference(from).inDays > 13) {
+      to = from.add(const Duration(days: 13));
+    }
+
+    final state = vault.cycleTrackerState;
+    final now = DateTime.now();
+    final logs = <CycleDayLog>[];
+    for (var date = from;
+        !date.isAfter(to);
+        date = date.add(const Duration(days: 1))) {
+      final existing = state.logFor(date);
+      logs.add(
+        CycleDayLog(
+          date: date,
+          flow: isSameDay(date, from)
+              ? CycleFlow.medium
+              : CycleFlow.light,
+          painLevel: existing?.painLevel ?? 0,
+          energyLevel: existing?.energyLevel ?? 3,
+          symptoms: existing?.symptoms ?? const [],
+          moods: existing?.moods ?? const [],
+          discharge: existing?.discharge ?? '',
+          hadSex: existing?.hadSex ?? false,
+          basalTemperature: existing?.basalTemperature,
+          ovulationTest: existing?.ovulationTest ?? '',
+          notes: existing?.notes ?? '',
+          createdAt: existing?.createdAt ?? now,
+          updatedAt: now,
+        ),
+      );
+    }
+    await vault.upsertCycleDayLogs(logs);
+  }
+
+  Future<void> _showQuickPeriodRange() async {
+    if (!vault.unlocked) return;
+    final strings = AnnaStrings.of(context);
+    var start = cycleDateOnly(DateTime.now());
+    var end = start;
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => StatefulBuilder(
+        builder: (context, setDialogState) => AlertDialog(
+          title: Text(strings.cycleQuickPeriodTitle),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ListTile(
+                contentPadding: EdgeInsets.zero,
+                title: Text(strings.cyclePeriodStart),
+                subtitle: Text(
+                  DateFormat(
+                    'd MMM yyyy',
+                    AnnaStrings.intlLocale(context),
+                  ).format(start),
+                ),
+                trailing: const Icon(Icons.edit_calendar_outlined),
+                onTap: () async {
+                  final picked = await showDatePicker(
+                    context: context,
+                    initialDate: start,
+                    firstDate: DateTime.now().subtract(
+                      const Duration(days: 365 * 3),
+                    ),
+                    lastDate: DateTime.now().add(
+                      const Duration(days: 30),
+                    ),
+                  );
+                  if (picked != null) {
+                    setDialogState(() {
+                      start = cycleDateOnly(picked);
+                      if (end.isBefore(start)) end = start;
+                    });
+                  }
+                },
+              ),
+              ListTile(
+                contentPadding: EdgeInsets.zero,
+                title: Text(strings.cyclePeriodEnd),
+                subtitle: Text(
+                  DateFormat(
+                    'd MMM yyyy',
+                    AnnaStrings.intlLocale(context),
+                  ).format(end),
+                ),
+                trailing: const Icon(Icons.edit_calendar_outlined),
+                onTap: () async {
+                  final picked = await showDatePicker(
+                    context: context,
+                    initialDate: end,
+                    firstDate: start,
+                    lastDate: start.add(const Duration(days: 13)),
+                  );
+                  if (picked != null) {
+                    setDialogState(() => end = cycleDateOnly(picked));
+                  }
+                },
+              ),
+              const SizedBox(height: 8),
+              Text(
+                strings.cycleQuickPeriodDescription,
+                style: Theme.of(context).textTheme.bodySmall,
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext, false),
+              child: Text(strings.cancel),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.pop(dialogContext, true),
+              child: Text(strings.save),
+            ),
+          ],
+        ),
+      ),
+    );
+    if (confirmed != true || !mounted || !vault.unlocked) return;
+    await _markPeriodRange(start: start, end: end);
+    if (mounted && vault.unlocked) await _syncCycleReminders();
+  }
+
   Widget _buildPrivacyBanner(BuildContext context) {
     final strings = AnnaStrings.of(context);
     final scheme = Theme.of(context).colorScheme;
@@ -154,12 +486,15 @@ class _PrivateCycleTrackerScreenState extends State<PrivateCycleTrackerScreen> {
     final scheme = Theme.of(context).colorScheme;
     final todayLog = state.logFor(DateTime.now());
     final next = prediction.nextPeriodStart;
+    final locale = AnnaStrings.intlLocale(context);
     final nextLabel = next == null
         ? strings.cycleNoPrediction
-        : DateFormat(
-            'd MMMM',
-            AnnaStrings.intlLocale(context),
-          ).format(next);
+        : prediction.periodWindowStart != null &&
+                prediction.periodWindowEnd != null
+            ? '${DateFormat('d MMM', locale).format(prediction.periodWindowStart!)}'
+                ' – '
+                '${DateFormat('d MMM', locale).format(prediction.periodWindowEnd!)}'
+            : DateFormat('d MMMM', locale).format(next);
 
     return ListView(
       padding: const EdgeInsets.fromLTRB(18, 18, 18, 100),
@@ -195,39 +530,57 @@ class _PrivateCycleTrackerScreenState extends State<PrivateCycleTrackerScreen> {
                       fontWeight: FontWeight.w800,
                     ),
               ),
+              const SizedBox(height: 8),
+              Semantics(
+                label: strings.cyclePredictionConfidenceLabel(
+                  _confidenceLabel(strings, prediction.confidence),
+                ),
+                child: Chip(
+                  avatar: const Icon(Icons.analytics_outlined, size: 18),
+                  label: Text(
+                    strings.cyclePredictionConfidenceLabel(
+                      _confidenceLabel(strings, prediction.confidence),
+                    ),
+                  ),
+                ),
+              ),
               const SizedBox(height: 18),
-              Row(
-                children: [
-                  Expanded(
-                    child: _metricCard(
-                      context,
-                      strings.cycleNextPeriod,
-                      nextLabel,
-                      Icons.event_outlined,
-                    ),
-                  ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: _metricCard(
-                      context,
-                      strings.cycleAverageLength,
-                      strings.cycleDays(prediction.averageCycleLength),
-                      Icons.autorenew,
-                    ),
-                  ),
-                ],
+              _responsivePair(
+                context,
+                _metricCard(
+                  context,
+                  strings.cycleNextPeriod,
+                  nextLabel,
+                  Icons.event_outlined,
+                ),
+                _metricCard(
+                  context,
+                  strings.cycleAverageLength,
+                  strings.cycleDays(prediction.averageCycleLength),
+                  Icons.autorenew,
+                ),
               ),
             ],
           ),
         ),
         const SizedBox(height: 16),
-        FilledButton.icon(
-          onPressed: () => _showDayEditor(cycleDateOnly(DateTime.now())),
-          icon: const Icon(Icons.add_circle_outline),
-          label: Text(
-            todayLog == null
-                ? strings.cycleLogToday
-                : strings.cycleEditToday,
+        _responsivePair(
+          context,
+          FilledButton.icon(
+            onPressed: () => _showDayEditor(
+              cycleDateOnly(DateTime.now()),
+            ),
+            icon: const Icon(Icons.add_circle_outline),
+            label: Text(
+              todayLog == null
+                  ? strings.cycleLogToday
+                  : strings.cycleEditToday,
+            ),
+          ),
+          OutlinedButton.icon(
+            onPressed: _showQuickPeriodRange,
+            icon: const Icon(Icons.water_drop_outlined),
+            label: Text(strings.cycleQuickPeriodAction),
           ),
         ),
         const SizedBox(height: 12),
@@ -269,6 +622,31 @@ class _PrivateCycleTrackerScreenState extends State<PrivateCycleTrackerScreen> {
           strings.cyclePredictionDisclaimer,
           style: Theme.of(context).textTheme.bodySmall,
         ),
+      ],
+    );
+  }
+
+  Widget _responsivePair(
+    BuildContext context,
+    Widget first,
+    Widget second,
+  ) {
+    final scale = MediaQuery.textScalerOf(context).scale(1);
+    final stack = scale >= 1.3 || MediaQuery.sizeOf(context).width < 380;
+    if (stack) {
+      return Column(
+        children: [
+          SizedBox(width: double.infinity, child: first),
+          const SizedBox(height: 10),
+          SizedBox(width: double.infinity, child: second),
+        ],
+      );
+    }
+    return Row(
+      children: [
+        Expanded(child: first),
+        const SizedBox(width: 10),
+        Expanded(child: second),
       ],
     );
   }
@@ -333,7 +711,7 @@ class _PrivateCycleTrackerScreenState extends State<PrivateCycleTrackerScreen> {
               _calendarMarkers(state, prediction, cycleDateOnly(day)),
           calendarStyle: const CalendarStyle(
             outsideDaysVisible: false,
-            markersMaxCount: 3,
+            markersMaxCount: 5,
           ),
           calendarBuilders: CalendarBuilders<Object>(
             markerBuilder: (context, day, events) {
@@ -403,9 +781,21 @@ class _PrivateCycleTrackerScreenState extends State<PrivateCycleTrackerScreen> {
     if (state.settings.trackFertility && prediction.fertileContains(day)) {
       markers.add('fertile');
     }
+    if (state.settings.trackFertility &&
+        prediction.ovulationDate != null &&
+        isSameDay(day, prediction.ovulationDate)) {
+      markers.add('ovulation');
+    }
     if (prediction.predictedPeriodContains(day) &&
         (log == null || log.flow == CycleFlow.none)) {
       markers.add('predicted');
+    }
+    if (log != null &&
+        (log.symptoms.isNotEmpty ||
+            log.moods.isNotEmpty ||
+            log.painLevel > 0 ||
+            log.notes.trim().isNotEmpty)) {
+      markers.add('symptom');
     }
     return markers;
   }
@@ -415,6 +805,8 @@ class _PrivateCycleTrackerScreenState extends State<PrivateCycleTrackerScreen> {
     return switch (marker) {
       'period' => scheme.primary,
       'fertile' => scheme.tertiary,
+      'ovulation' => scheme.secondary,
+      'symptom' => scheme.error,
       _ => scheme.outline,
     };
   }
@@ -445,6 +837,8 @@ class _PrivateCycleTrackerScreenState extends State<PrivateCycleTrackerScreen> {
         item(scheme.primary, strings.cycleRecordedPeriod),
         item(scheme.outline, strings.cyclePredictedPeriod),
         item(scheme.tertiary, strings.cycleFertileWindow),
+        item(scheme.secondary, strings.cycleEstimatedOvulation),
+        item(scheme.error, strings.cycleSymptomsOrNotes),
       ],
     );
   }
@@ -544,6 +938,15 @@ class _PrivateCycleTrackerScreenState extends State<PrivateCycleTrackerScreen> {
     }
 
     final insights = CyclePremiumAnalytics.insights(state);
+    final periods = CycleTrackerEngine.periods(state);
+    final recentLengths = periods
+        .where((period) => period.cycleLength != null)
+        .toList()
+        .reversed
+        .take(6)
+        .toList()
+        .reversed
+        .toList();
     final locale = AnnaStrings.intlLocale(context);
     final range = insights.estimatedWindowStart == null ||
             insights.estimatedWindowEnd == null
@@ -564,55 +967,76 @@ class _PrivateCycleTrackerScreenState extends State<PrivateCycleTrackerScreen> {
               ),
         ),
         const SizedBox(height: 12),
-        Row(
-          children: [
-            Expanded(
-              child: _metricCard(
-                context,
-                strings.cycleLoggedDays,
-                '${insights.loggedDays}',
-                Icons.event_available_outlined,
-              ),
-            ),
-            const SizedBox(width: 10),
-            Expanded(
-              child: _metricCard(
-                context,
-                strings.cycleRecordedCycles,
-                '${insights.periodCount}',
-                Icons.loop_outlined,
-              ),
-            ),
-          ],
+        _responsivePair(
+          context,
+          _metricCard(
+            context,
+            strings.cycleLoggedDays,
+            '${insights.loggedDays}',
+            Icons.event_available_outlined,
+          ),
+          _metricCard(
+            context,
+            strings.cycleRecordedCycles,
+            '${insights.periodCount}',
+            Icons.loop_outlined,
+          ),
         ),
         const SizedBox(height: 10),
-        Row(
-          children: [
-            Expanded(
-              child: _metricCard(
-                context,
-                strings.cycleEstimatedWindow,
-                range,
-                Icons.date_range_outlined,
-              ),
-            ),
-            const SizedBox(width: 10),
-            Expanded(
-              child: _metricCard(
-                context,
-                strings.cycleVariability,
-                insights.shortestCycle == null
-                    ? '—'
-                    : strings.cycleRangeDays(
-                        insights.shortestCycle!,
-                        insights.longestCycle!,
-                      ),
-                Icons.multiline_chart_outlined,
-              ),
-            ),
-          ],
+        _responsivePair(
+          context,
+          _metricCard(
+            context,
+            strings.cycleEstimatedWindow,
+            range,
+            Icons.date_range_outlined,
+          ),
+          _metricCard(
+            context,
+            strings.cycleVariability,
+            insights.shortestCycle == null
+                ? '—'
+                : strings.cycleRangeDays(
+                    insights.shortestCycle!,
+                    insights.longestCycle!,
+                  ),
+            Icons.multiline_chart_outlined,
+          ),
         ),
         const SizedBox(height: 14),
+        if (recentLengths.isNotEmpty) ...[
+          _buildTrendCard(
+            context,
+            title: strings.cycleLengthTrend,
+            entries: [
+              for (var index = 0; index < recentLengths.length; index++)
+                MapEntry(
+                  DateFormat(
+                    'MMM',
+                    locale,
+                  ).format(recentLengths[index].start),
+                  recentLengths[index].cycleLength!.toDouble(),
+                ),
+            ],
+            valueLabel: (value) => strings.cycleDays(value.round()),
+          ),
+          const SizedBox(height: 12),
+        ],
+        if (insights.topSymptoms.isNotEmpty) ...[
+          _buildTrendCard(
+            context,
+            title: strings.cycleTopSymptomsChart,
+            entries: [
+              for (final item in insights.topSymptoms)
+                MapEntry(
+                  _symptomLabel(strings, item.key),
+                  item.count.toDouble(),
+                ),
+            ],
+            valueLabel: (value) => '${value.round()}',
+          ),
+          const SizedBox(height: 12),
+        ],
         Card(
           child: Padding(
             padding: const EdgeInsets.all(16),
@@ -699,6 +1123,74 @@ class _PrivateCycleTrackerScreenState extends State<PrivateCycleTrackerScreen> {
           style: Theme.of(context).textTheme.bodySmall,
         ),
       ],
+    );
+  }
+
+  Widget _buildTrendCard(
+    BuildContext context, {
+    required String title,
+    required List<MapEntry<String, double>> entries,
+    required String Function(double value) valueLabel,
+  }) {
+    final scheme = Theme.of(context).colorScheme;
+    final maxValue = entries.fold<double>(
+      0,
+      (current, entry) => max(current, entry.value),
+    );
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              title,
+              style: const TextStyle(fontWeight: FontWeight.w900),
+            ),
+            const SizedBox(height: 12),
+            for (final entry in entries) ...[
+              Semantics(
+                label: '${entry.key}: ${valueLabel(entry.value)}',
+                child: Row(
+                  children: [
+                    SizedBox(
+                      width: 88,
+                      child: Text(
+                        entry.key,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(8),
+                        child: LinearProgressIndicator(
+                          minHeight: 12,
+                          value: maxValue <= 0
+                              ? 0
+                              : (entry.value / maxValue).clamp(0, 1),
+                          backgroundColor: scheme.surfaceContainerHighest,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    SizedBox(
+                      width: 56,
+                      child: Text(
+                        valueLabel(entry.value),
+                        textAlign: TextAlign.end,
+                        style: const TextStyle(fontWeight: FontWeight.w800),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 9),
+            ],
+          ],
+        ),
+      ),
     );
   }
 
@@ -988,6 +1480,35 @@ class _PrivateCycleTrackerScreenState extends State<PrivateCycleTrackerScreen> {
                   ),
                 ),
               ),
+              ListTile(
+                title: Text(strings.cycleRegularity),
+                trailing: DropdownButton<String>(
+                  value: settings.regularityMode,
+                  items: [
+                    DropdownMenuItem(
+                      value: 'unknown',
+                      child: Text(strings.cycleRegularityUnknown),
+                    ),
+                    DropdownMenuItem(
+                      value: 'regular',
+                      child: Text(strings.cycleRegularityRegular),
+                    ),
+                    DropdownMenuItem(
+                      value: 'irregular',
+                      child: Text(strings.cycleRegularityIrregular),
+                    ),
+                  ],
+                  onChanged: (value) {
+                    if (value != null) {
+                      unawaited(
+                        _saveSettings(
+                          settings.copyWith(regularityMode: value),
+                        ),
+                      );
+                    }
+                  },
+                ),
+              ),
               SwitchListTile(
                 value: settings.trackFertility,
                 onChanged: (value) => _saveSettings(
@@ -1011,18 +1532,72 @@ class _PrivateCycleTrackerScreenState extends State<PrivateCycleTrackerScreen> {
                   await _saveSettings(
                     settings.copyWith(periodReminderEnabled: value),
                   );
-                  await _syncPeriodReminder();
+                  await _syncCycleReminders();
                 },
                 title: Text(strings.cyclePeriodReminder),
                 subtitle: Text(strings.cyclePeriodReminderDescription),
               ),
+              SwitchListTile(
+                value: settings.dailyLogReminderEnabled,
+                onChanged: (value) async {
+                  await _saveSettings(
+                    settings.copyWith(dailyLogReminderEnabled: value),
+                  );
+                  await _syncCycleReminders();
+                },
+                title: Text(strings.cycleDailyLogReminder),
+                subtitle: Text(strings.cycleDailyLogReminderDescription),
+              ),
+              if (settings.dailyLogReminderEnabled)
+                ListTile(
+                  title: Text(strings.cycleReminderTime),
+                  subtitle: Text(
+                    MaterialLocalizations.of(context).formatTimeOfDay(
+                      TimeOfDay(
+                        hour: settings.dailyLogReminderHour,
+                        minute: settings.dailyLogReminderMinute,
+                      ),
+                    ),
+                  ),
+                  trailing: const Icon(Icons.schedule_outlined),
+                  onTap: () => _pickDailyReminderTime(settings),
+                ),
+              SwitchListTile(
+                value: settings.contraceptiveReminderEnabled,
+                onChanged: (value) async {
+                  await _saveSettings(
+                    settings.copyWith(
+                      contraceptiveReminderEnabled: value,
+                    ),
+                  );
+                  await _syncCycleReminders();
+                },
+                title: Text(strings.cycleContraceptiveReminder),
+                subtitle: Text(
+                  strings.cycleContraceptiveReminderDescription,
+                ),
+              ),
+              if (settings.contraceptiveReminderEnabled)
+                ListTile(
+                  title: Text(strings.cycleReminderTime),
+                  subtitle: Text(
+                    MaterialLocalizations.of(context).formatTimeOfDay(
+                      TimeOfDay(
+                        hour: settings.contraceptiveReminderHour,
+                        minute: settings.contraceptiveReminderMinute,
+                      ),
+                    ),
+                  ),
+                  trailing: const Icon(Icons.schedule_outlined),
+                  onTap: () => _pickContraceptiveReminderTime(settings),
+                ),
               SwitchListTile(
                 value: settings.discreetNotifications,
                 onChanged: (value) async {
                   await _saveSettings(
                     settings.copyWith(discreetNotifications: value),
                   );
-                  await _syncPeriodReminder();
+                  await _syncCycleReminders();
                 },
                 title: Text(strings.cycleDiscreetNotifications),
                 subtitle: Text(strings.cycleDiscreetNotificationsDescription),
@@ -1044,8 +1619,17 @@ class _PrivateCycleTrackerScreenState extends State<PrivateCycleTrackerScreen> {
     await vault.updateCycleSettings(settings);
   }
 
+  Future<void> _syncCycleReminders() async {
+    if (!mounted || !vault.unlocked) return;
+    await _syncPeriodReminder();
+    if (!mounted || !vault.unlocked) return;
+    await _syncDailyLogReminder();
+    if (!mounted || !vault.unlocked) return;
+    await _syncContraceptiveReminder();
+  }
+
   Future<void> _syncPeriodReminder() async {
-    if (!vault.unlocked) return;
+    if (!mounted || !vault.unlocked) return;
     final state = vault.cycleTrackerState;
     final settings = state.settings;
     if (!settings.periodReminderEnabled) {
@@ -1075,6 +1659,86 @@ class _PrivateCycleTrackerScreenState extends State<PrivateCycleTrackerScreen> {
           : strings.cyclePeriodReminderBody,
       when: when,
     );
+  }
+
+  Future<void> _syncDailyLogReminder() async {
+    if (!mounted || !vault.unlocked) return;
+    final settings = vault.cycleTrackerState.settings;
+    if (!settings.dailyLogReminderEnabled) {
+      await NotificationService.instance.cancel(_dailyLogReminderId);
+      return;
+    }
+    final strings = AnnaStrings.of(context);
+    await NotificationService.instance.scheduleDaily(
+      stableId: _dailyLogReminderId,
+      title: settings.discreetNotifications
+          ? 'Anna\'s Diary'
+          : strings.cycleTitle,
+      body: settings.discreetNotifications
+          ? strings.cyclePrivateReminder
+          : strings.cycleDailyLogReminderBody,
+      hour: settings.dailyLogReminderHour,
+      minute: settings.dailyLogReminderMinute,
+    );
+  }
+
+  Future<void> _syncContraceptiveReminder() async {
+    if (!mounted || !vault.unlocked) return;
+    final settings = vault.cycleTrackerState.settings;
+    if (!settings.contraceptiveReminderEnabled) {
+      await NotificationService.instance.cancel(_contraceptiveReminderId);
+      return;
+    }
+    final strings = AnnaStrings.of(context);
+    await NotificationService.instance.scheduleDaily(
+      stableId: _contraceptiveReminderId,
+      title: settings.discreetNotifications
+          ? 'Anna\'s Diary'
+          : strings.cycleTitle,
+      body: settings.discreetNotifications
+          ? strings.cyclePrivateReminder
+          : strings.cycleContraceptiveReminderBody,
+      hour: settings.contraceptiveReminderHour,
+      minute: settings.contraceptiveReminderMinute,
+    );
+  }
+
+  Future<void> _pickDailyReminderTime(CycleSettings settings) async {
+    final picked = await showTimePicker(
+      context: context,
+      initialTime: TimeOfDay(
+        hour: settings.dailyLogReminderHour,
+        minute: settings.dailyLogReminderMinute,
+      ),
+    );
+    if (picked == null || !mounted || !vault.unlocked) return;
+    await _saveSettings(
+      settings.copyWith(
+        dailyLogReminderHour: picked.hour,
+        dailyLogReminderMinute: picked.minute,
+      ),
+    );
+    if (mounted && vault.unlocked) await _syncCycleReminders();
+  }
+
+  Future<void> _pickContraceptiveReminderTime(
+    CycleSettings settings,
+  ) async {
+    final picked = await showTimePicker(
+      context: context,
+      initialTime: TimeOfDay(
+        hour: settings.contraceptiveReminderHour,
+        minute: settings.contraceptiveReminderMinute,
+      ),
+    );
+    if (picked == null || !mounted || !vault.unlocked) return;
+    await _saveSettings(
+      settings.copyWith(
+        contraceptiveReminderHour: picked.hour,
+        contraceptiveReminderMinute: picked.minute,
+      ),
+    );
+    if (mounted && vault.unlocked) await _syncCycleReminders();
   }
 
   Future<void> _showDayEditor(DateTime date) async {
@@ -1401,7 +2065,7 @@ class _PrivateCycleTrackerScreenState extends State<PrivateCycleTrackerScreen> {
     basalTemperatureController.dispose();
     notesController.dispose();
     if (saved == true && mounted && vault.unlocked) {
-      await _syncPeriodReminder();
+      await _syncCycleReminders();
     }
   }
 
@@ -1414,6 +2078,16 @@ class _PrivateCycleTrackerScreenState extends State<PrivateCycleTrackerScreen> {
     ];
     return parts.isEmpty ? strings.cycleDaySaved : parts.join(' · ');
   }
+
+  String _confidenceLabel(
+    AnnaStrings strings,
+    CyclePredictionConfidence confidence,
+  ) =>
+      switch (confidence) {
+        CyclePredictionConfidence.low => strings.cycleConfidenceLow,
+        CyclePredictionConfidence.medium => strings.cycleConfidenceMedium,
+        CyclePredictionConfidence.high => strings.cycleConfidenceHigh,
+      };
 
   String _phaseLabel(AnnaStrings strings, CyclePhase phase) => switch (phase) {
         CyclePhase.period => strings.cyclePhasePeriod,

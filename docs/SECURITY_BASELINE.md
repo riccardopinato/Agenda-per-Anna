@@ -1,4 +1,4 @@
-# Security Baseline — v0.92
+# Security Baseline — v0.93
 
 Anna's Diary uses a layered security model across Flutter, Supabase Auth, Row Level Security, Edge Functions and Storage.
 
@@ -20,6 +20,10 @@ v0.86 keeps the existing Vault and Noi ♡ storage boundaries and hardens their 
 - v0.92 makes Premium preview fail-closed for release builds. Store release mode rejects preview and rejects missing RevenueCat platform configuration before entitlement initialization.
 - Signed store builds validate Premium configuration before compilation and receive the public RevenueCat Android SDK key only through GitHub Actions secrets; no private RevenueCat API credential is stored in the repository.
 - QA preview builds (Pages, sideload and AppLab) intentionally omit the store key and are explicitly marked non-store so a test channel cannot be mistaken for production billing.
+- v0.93 cycle onboarding, multi-day period entry, daily check-ins, contraceptive reminder preferences and prediction-v2 inputs remain inside the same encrypted Private Vault payload. No cycle/health content is added to ordinary backup, global search, cloud sync, RevenueCat or analytics.
+- Cycle notification content remains discreet by default. The optional explicit contraceptive reminder stores only enabled/time preferences; no medication name is required or persisted by this feature.
+- Recurring cycle reminders reuse the existing local notification channel and do not create a remote notification profile.
+
 
 
 - An unlocked Vault is re-locked after five minutes without pointer interaction, on app background/inactive states and when leaving the Password Noi ♡ surface. Explicit manual lock remains available.
