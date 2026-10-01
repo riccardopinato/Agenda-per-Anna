@@ -1,5 +1,4 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:sembast_web/sembast_web.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:agenda_per_anna/local_state_store.dart';
@@ -8,18 +7,27 @@ import 'package:agenda_per_anna/vault_service.dart';
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
-  const databaseName = 'annas_diary_state_v1';
   final vault = PrivateVaultService.instance;
 
-  Future<void> resetBrowserState() async {
+  Future<void> resetTestState() async {
     vault.resetMemoryForTesting();
     await LocalStateStore.instance.resetForTesting();
-    await databaseFactoryWeb.deleteDatabase(databaseName);
+    SharedPreferences.setMockInitialValues({});
+
+    // In Chrome this opens the real IndexedDB-backed store. If a previous test
+    // left a Vault behind, destroy only that isolated test state before the
+    // next scenario. On the VM the same helper uses the in-memory test backend.
+    await vault.initialize();
+    if (vault.configured) {
+      await vault.destroy();
+    }
+    vault.resetMemoryForTesting();
+    await LocalStateStore.instance.resetForTesting();
     SharedPreferences.setMockInitialValues({});
   }
 
-  setUp(resetBrowserState);
-  tearDown(resetBrowserState);
+  setUp(resetTestState);
+  tearDown(resetTestState);
 
   test(
     'Web Vault survives browser-style reload and unlocks the encrypted payload',
