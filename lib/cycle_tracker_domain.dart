@@ -616,7 +616,7 @@ class CycleInsightSummary {
   });
 }
 
-extension CycleTrackerPremiumInsights on CycleTrackerEngine {
+class CyclePremiumAnalytics {
   static CycleInsightSummary insights(
     CycleTrackerState state, {
     DateTime? referenceDate,
