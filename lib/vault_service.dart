@@ -756,11 +756,34 @@ class PrivateVaultService extends ChangeNotifier {
       final decodedPayload = Map<String, dynamic>.from(
         jsonDecode(utf8.decode(plaintext)) as Map,
       );
-      if (decodedPayload['entries'] is! List) return false;
+      final rawEntries = decodedPayload['entries'];
+      if (rawEntries is! List) return false;
+      for (final rawEntry in rawEntries) {
+        if (rawEntry is! Map) return false;
+        PrivateVaultEntry.fromJson(
+          Map<String, dynamic>.from(rawEntry),
+        );
+      }
+
       final rawSharedKeys = decodedPayload['sharedPasswordKeys'];
       if (rawSharedKeys != null && rawSharedKeys is! Map) return false;
+      if (rawSharedKeys is Map) {
+        for (final rawEntry in rawSharedKeys.entries) {
+          final spaceId = rawEntry.key.toString().trim();
+          if (spaceId.isEmpty) return false;
+          final key = base64Url.decode(rawEntry.value.toString());
+          if (key.length != _masterKeyLength) return false;
+          _zero(key);
+        }
+      }
+
       final rawCycle = decodedPayload['cycleTracker'];
       if (rawCycle != null && rawCycle is! Map) return false;
+      if (rawCycle is Map) {
+        CycleTrackerState.fromJson(
+          Map<String, dynamic>.from(rawCycle),
+        );
+      }
 
       final portableMeta = <String, dynamic>{
         ...meta,
