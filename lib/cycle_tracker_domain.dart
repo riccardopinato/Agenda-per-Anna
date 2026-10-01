@@ -79,8 +79,8 @@ class CycleDayLog {
         (value) => value.name == rawFlow,
         orElse: () => CycleFlow.none,
       ),
-      painLevel: ((json['painLevel'] as num?)?.toInt() ?? 0).clamp(0, 5),
-      energyLevel: ((json['energyLevel'] as num?)?.toInt() ?? 3).clamp(0, 5),
+      painLevel: ((json['painLevel'] as num?)?.toInt() ?? 0).clamp(0, 5).toInt(),
+      energyLevel: ((json['energyLevel'] as num?)?.toInt() ?? 3).clamp(0, 5).toInt(),
       symptoms: (json['symptoms'] as List? ?? const [])
           .map((value) => value.toString())
           .where((value) => value.isNotEmpty)
@@ -193,9 +193,9 @@ class CycleSettings {
 
   factory CycleSettings.fromJson(Map<String, dynamic> json) => CycleSettings(
         averageCycleLength:
-            ((json['averageCycleLength'] as num?)?.toInt() ?? 28).clamp(15, 60),
+            ((json['averageCycleLength'] as num?)?.toInt() ?? 28).clamp(15, 60).toInt(),
         averagePeriodLength:
-            ((json['averagePeriodLength'] as num?)?.toInt() ?? 5).clamp(1, 14),
+            ((json['averagePeriodLength'] as num?)?.toInt() ?? 5).clamp(1, 14).toInt(),
         regularityMode: json['regularityMode']?.toString() ?? 'unknown',
         trackFertility: json['trackFertility'] != false,
         trackSexualActivity: json['trackSexualActivity'] == true,
@@ -205,14 +205,14 @@ class CycleSettings {
         periodReminderEnabled: json['periodReminderEnabled'] == true,
         periodReminderDaysBefore:
             ((json['periodReminderDaysBefore'] as num?)?.toInt() ?? 2)
-                .clamp(0, 7),
+                .clamp(0, 7).toInt(),
         dailyLogReminderEnabled: json['dailyLogReminderEnabled'] == true,
         dailyLogReminderHour:
             ((json['dailyLogReminderHour'] as num?)?.toInt() ?? 20)
-                .clamp(0, 23),
+                .clamp(0, 23).toInt(),
         dailyLogReminderMinute:
             ((json['dailyLogReminderMinute'] as num?)?.toInt() ?? 0)
-                .clamp(0, 59),
+                .clamp(0, 59).toInt(),
       );
 }
 
@@ -414,7 +414,8 @@ class CycleTrackerEngine {
         : (recentCycleLengths.reduce((a, b) => a + b) /
                 recentCycleLengths.length)
             .round()
-            .clamp(15, 60);
+            .clamp(15, 60)
+            .toInt();
 
     final periodLengths = history
         .map((period) => period.periodLength)
@@ -428,7 +429,8 @@ class CycleTrackerEngine {
         : (recentPeriodLengths.reduce((a, b) => a + b) /
                 recentPeriodLengths.length)
             .round()
-            .clamp(1, 14);
+            .clamp(1, 14)
+            .toInt();
 
     if (history.isEmpty) {
       return CyclePrediction(
