@@ -545,26 +545,20 @@ class _PrivateCycleTrackerScreenState extends State<PrivateCycleTrackerScreen> {
                 ),
               ),
               const SizedBox(height: 18),
-              Row(
-                children: [
-                  Expanded(
-                    child: _metricCard(
-                      context,
-                      strings.cycleNextPeriod,
-                      nextLabel,
-                      Icons.event_outlined,
-                    ),
-                  ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: _metricCard(
-                      context,
-                      strings.cycleAverageLength,
-                      strings.cycleDays(prediction.averageCycleLength),
-                      Icons.autorenew,
-                    ),
-                  ),
-                ],
+              _responsivePair(
+                context,
+                _metricCard(
+                  context,
+                  strings.cycleNextPeriod,
+                  nextLabel,
+                  Icons.event_outlined,
+                ),
+                _metricCard(
+                  context,
+                  strings.cycleAverageLength,
+                  strings.cycleDays(prediction.averageCycleLength),
+                  Icons.autorenew,
+                ),
               ),
             ],
           ),
@@ -634,6 +628,31 @@ class _PrivateCycleTrackerScreenState extends State<PrivateCycleTrackerScreen> {
           strings.cyclePredictionDisclaimer,
           style: Theme.of(context).textTheme.bodySmall,
         ),
+      ],
+    );
+  }
+
+  Widget _responsivePair(
+    BuildContext context,
+    Widget first,
+    Widget second,
+  ) {
+    final scale = MediaQuery.textScalerOf(context).scale(1);
+    final stack = scale >= 1.3 || MediaQuery.sizeOf(context).width < 380;
+    if (stack) {
+      return Column(
+        children: [
+          SizedBox(width: double.infinity, child: first),
+          const SizedBox(height: 10),
+          SizedBox(width: double.infinity, child: second),
+        ],
+      );
+    }
+    return Row(
+      children: [
+        Expanded(child: first),
+        const SizedBox(width: 10),
+        Expanded(child: second),
       ],
     );
   }
@@ -954,53 +973,41 @@ class _PrivateCycleTrackerScreenState extends State<PrivateCycleTrackerScreen> {
               ),
         ),
         const SizedBox(height: 12),
-        Row(
-          children: [
-            Expanded(
-              child: _metricCard(
-                context,
-                strings.cycleLoggedDays,
-                '${insights.loggedDays}',
-                Icons.event_available_outlined,
-              ),
-            ),
-            const SizedBox(width: 10),
-            Expanded(
-              child: _metricCard(
-                context,
-                strings.cycleRecordedCycles,
-                '${insights.periodCount}',
-                Icons.loop_outlined,
-              ),
-            ),
-          ],
+        _responsivePair(
+          context,
+          _metricCard(
+            context,
+            strings.cycleLoggedDays,
+            '${insights.loggedDays}',
+            Icons.event_available_outlined,
+          ),
+          _metricCard(
+            context,
+            strings.cycleRecordedCycles,
+            '${insights.periodCount}',
+            Icons.loop_outlined,
+          ),
         ),
         const SizedBox(height: 10),
-        Row(
-          children: [
-            Expanded(
-              child: _metricCard(
-                context,
-                strings.cycleEstimatedWindow,
-                range,
-                Icons.date_range_outlined,
-              ),
-            ),
-            const SizedBox(width: 10),
-            Expanded(
-              child: _metricCard(
-                context,
-                strings.cycleVariability,
-                insights.shortestCycle == null
-                    ? '—'
-                    : strings.cycleRangeDays(
-                        insights.shortestCycle!,
-                        insights.longestCycle!,
-                      ),
-                Icons.multiline_chart_outlined,
-              ),
-            ),
-          ],
+        _responsivePair(
+          context,
+          _metricCard(
+            context,
+            strings.cycleEstimatedWindow,
+            range,
+            Icons.date_range_outlined,
+          ),
+          _metricCard(
+            context,
+            strings.cycleVariability,
+            insights.shortestCycle == null
+                ? '—'
+                : strings.cycleRangeDays(
+                    insights.shortestCycle!,
+                    insights.longestCycle!,
+                  ),
+            Icons.multiline_chart_outlined,
+          ),
         ),
         const SizedBox(height: 14),
         if (recentLengths.isNotEmpty) ...[
