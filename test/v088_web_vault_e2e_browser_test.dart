@@ -73,34 +73,30 @@ void main() {
       expect(await unlock, isTrue);
 
       expect(vault.entries, hasLength(2));
-      expect(
-        vault.noteEntries.single.body,
-        'contenuto cifrato persistente',
-      );
-      expect(
-        vault.credentialEntries.single.password,
-        'password-segreta',
-      );
+      expect(vault.noteEntries.single.body, 'contenuto cifrato persistente');
+      expect(vault.credentialEntries.single.password, 'password-segreta');
     },
   );
 
-  test('Web Vault rejects a wrong password without losing persisted data',
-      () async {
-    await vault.initialize();
-    await vault.setup(
-      password: 'browser-vault-password-456',
-      enableBiometric: false,
-    );
-    await vault.upsert(
-      title: 'Persistente',
-      body: 'non deve sparire',
-    );
-    vault.lock();
+  test(
+    'Web Vault rejects a wrong password without losing persisted data',
+    () async {
+      await vault.initialize();
+      await vault.setup(
+        password: 'browser-vault-password-456',
+        enableBiometric: false,
+      );
+      await vault.upsert(title: 'Persistente', body: 'non deve sparire');
+      vault.lock();
 
-    expect(await vault.unlockWithPassword('password-errata-123'), isFalse);
-    expect(vault.unlocked, isFalse);
+      expect(await vault.unlockWithPassword('password-errata-123'), isFalse);
+      expect(vault.unlocked, isFalse);
 
-    expect(await vault.unlockWithPassword('browser-vault-password-456'), isTrue);
-    expect(vault.noteEntries.single.body, 'non deve sparire');
-  });
+      expect(
+        await vault.unlockWithPassword('browser-vault-password-456'),
+        isTrue,
+      );
+      expect(vault.noteEntries.single.body, 'non deve sparire');
+    },
+  );
 }
