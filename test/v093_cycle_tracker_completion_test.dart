@@ -31,8 +31,8 @@ void main() {
   });
 
   test('recent cycles receive more weight in prediction v2', () {
-    var state = CycleTrackerState(
-      settings: const CycleSettings(
+    var state = const CycleTrackerState(
+      settings: CycleSettings(
         onboardingComplete: true,
         averageCycleLength: 28,
         averagePeriodLength: 4,
