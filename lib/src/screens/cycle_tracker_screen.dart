@@ -12,6 +12,7 @@ class _PrivateCycleTrackerScreenState extends State<PrivateCycleTrackerScreen> {
   static const _periodReminderId = 'vault-cycle-period-reminder';
 
   final vault = PrivateVaultService.instance;
+  final premium = PremiumEntitlementService.instance;
   DateTime _selectedDay = cycleDateOnly(DateTime.now());
   DateTime _focusedDay = cycleDateOnly(DateTime.now());
 
@@ -27,7 +28,7 @@ class _PrivateCycleTrackerScreenState extends State<PrivateCycleTrackerScreen> {
   @override
   Widget build(BuildContext context) {
     return AnimatedBuilder(
-      animation: vault,
+      animation: Listenable.merge([vault, premium]),
       builder: (context, _) {
         final strings = AnnaStrings.of(context);
         if (!vault.unlocked) {
@@ -68,7 +69,7 @@ class _PrivateCycleTrackerScreenState extends State<PrivateCycleTrackerScreen> {
           behavior: HitTestBehavior.translucent,
           onPointerDown: (_) => vault.noteUserActivity(),
           child: DefaultTabController(
-            length: 4,
+            length: 5,
             child: Scaffold(
               appBar: AppBar(
                 title: Text(strings.cycleTitle),
@@ -88,6 +89,10 @@ class _PrivateCycleTrackerScreenState extends State<PrivateCycleTrackerScreen> {
                       text: strings.cycleHistory,
                     ),
                     Tab(
+                      icon: const Icon(Icons.insights_outlined),
+                      text: strings.cycleInsights,
+                    ),
+                    Tab(
                       icon: const Icon(Icons.tune),
                       text: strings.cycleSettings,
                     ),
@@ -99,6 +104,7 @@ class _PrivateCycleTrackerScreenState extends State<PrivateCycleTrackerScreen> {
                   _buildOverview(context, state, prediction),
                   _buildCalendar(context, state, prediction),
                   _buildHistory(context, state),
+                  _buildInsights(context, state, prediction),
                   _buildSettings(context, state, prediction),
                 ],
               ),
