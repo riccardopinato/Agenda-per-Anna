@@ -1,5 +1,6 @@
 import 'dart:ui';
 
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -9,12 +10,23 @@ import 'package:agenda_per_anna/main.dart';
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
+  const externalCalendarChannel = MethodChannel(
+    'annas_diary/external_calendar',
+  );
+
   Future<AgendaStore> pumpCoreShell(
     WidgetTester tester, {
     double textScaleFactor = 1.0,
   }) async {
     await initializeDateFormatting('it_IT', null);
     SharedPreferences.setMockInitialValues({});
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(externalCalendarChannel, (call) async {
+      if (call.method == 'status') {
+        return <String, Object?>{'granted': false};
+      }
+      return null;
+    });
 
     tester.view.physicalSize = const Size(1080, 2400);
     tester.view.devicePixelRatio = 3.0;
@@ -36,6 +48,8 @@ void main() {
   tearDown(() {
     final binding = TestWidgetsFlutterBinding.instance;
     binding.platformDispatcher.clearAllTestValues();
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(externalCalendarChannel, null);
   });
 
   testWidgets('core shell meets Flutter accessibility guidelines', (
