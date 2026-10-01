@@ -1,7 +1,7 @@
 # Anna's Diary — Product Bible
 
 **Status:** canonical product source of truth  
-**Current release line:** v0.91  
+**Current release line:** v0.92  
 **Last aligned:** 1 October 2026
 
 This document defines what Anna's Diary is, what it is not, and the product/security invariants that future work must preserve. Implementation details belong in `docs/ARCHITECTURE.md`; execution sequencing belongs in `docs/ROADMAP.md`.
@@ -150,7 +150,7 @@ Future AI may assist with capture, retrieval or organization only when it provid
 
 ## 9. Free/Premium status
 
-As of v0.91 Premium capability checks are centralized behind one RevenueCat-backed entitlement service using the entitlement identifier `premium`. Monthly/lifetime pricing is owned by the active RevenueCat Offering and is not duplicated in app code. A custom Flutter paywall is the shared Android/iOS/Web presentation layer. Existing diary, agenda, Private Vault and v0.88 cycle-core capabilities remain FREE; losing Premium must never delete, rewrite or hide user-owned historical data. During pre-store development, Premium preview remains enabled so advanced flows stay testable; production store builds must disable preview once platform API keys/products are configured.
+As of v0.91 Premium capability checks are centralized behind one RevenueCat-backed entitlement service using the entitlement identifier `premium`. Monthly/lifetime pricing is owned by the active RevenueCat Offering and is not duplicated in app code. A custom Flutter paywall is the shared Android/iOS/Web presentation layer. Existing diary, agenda, Private Vault and v0.88 cycle-core capabilities remain FREE; losing Premium must never delete, rewrite or hide user-owned historical data. From v0.92, Premium preview is not implicitly enabled in release builds. Debug builds and explicit QA channels may enable preview, while a store release must set `ANNA_STORE_RELEASE=true`, keep `ANNA_PREMIUM_PREVIEW=false`, and provide the RevenueCat platform key. A store release with preview enabled or a missing RevenueCat key is invalid by product contract.
 
 If monetization is introduced later:
 

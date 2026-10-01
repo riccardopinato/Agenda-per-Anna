@@ -1,4 +1,4 @@
-# Security Baseline — v0.91
+# Security Baseline — v0.92
 
 Anna's Diary uses a layered security model across Flutter, Supabase Auth, Row Level Security, Edge Functions and Storage.
 
@@ -17,6 +17,10 @@ v0.86 keeps the existing Vault and Noi ♡ storage boundaries and hardens their 
 - v0.91 RevenueCat integration receives only purchase/entitlement context and, when signed in, the existing Supabase UUID as App User ID. Email, display name, diary, agenda, Vault, passwords and menstrual-cycle content are not forwarded to the Premium service.
 - RevenueCat public platform API keys are supplied through build-time defines. No secret API key is committed to the client. Premium access derives from RevenueCat CustomerInfo entitlement state, never from a locally editable preference.
 - Anonymous purchase identity is permitted before login; subsequent Supabase login is linked through RevenueCat `logIn`, avoiding email-based or guessable identity.
+- v0.92 makes Premium preview fail-closed for release builds. Store release mode rejects preview and rejects missing RevenueCat platform configuration before entitlement initialization.
+- Signed store builds validate Premium configuration before compilation and receive the public RevenueCat Android SDK key only through GitHub Actions secrets; no private RevenueCat API credential is stored in the repository.
+- QA preview builds (Pages, sideload and AppLab) intentionally omit the store key and are explicitly marked non-store so a test channel cannot be mistaken for production billing.
+
 
 - An unlocked Vault is re-locked after five minutes without pointer interaction, on app background/inactive states and when leaving the Password Noi ♡ surface. Explicit manual lock remains available.
 - Password Noi ♡ credential plaintext is encrypted client-side with AES-256-GCM and AAD bound to shared-space and credential identity.

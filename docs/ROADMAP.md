@@ -46,6 +46,7 @@ Source of execution truth for Anna's Diary. Product identity and boundaries are 
 | v0.89 | Cycle Premium Engine | Completed | Centralized premium-ready access, advanced trends, fertility observations, custom symptoms and explicit private report |
 | v0.90 | Vault Recovery & Privacy Hardening | Completed | Portable encrypted Vault recovery, non-destructive validation, clipboard hardening and cycle accessibility improvements |
 | v0.91 | Premium Store Foundation | Completed | RevenueCat entitlement source, custom paywall, Supabase identity binding, restore flow and Android Billing contract |
+| v0.92 | Premium Production Guardrails | Completed | Fail-closed store configuration, explicit QA preview channels and release-time RevenueCat validation |
 
 ## Permanent constraints for this sequence
 
@@ -564,3 +565,16 @@ Per the active development cadence, AppLab runs once every two feature versions.
 - Pre-store builds may keep `ANNA_PREMIUM_PREVIEW=true`; production store promotion requires configured RevenueCat platform keys/products and preview disabled.
 - Analyze, full tests, Web release, Android size audit and AppLab trusted verification must pass before promotion to main.
 - Release metadata is v0.91.0+101.
+
+## v0.92 acceptance criteria
+
+- Premium preview defaults to OFF for release builds; debug or QA preview must be explicitly identifiable.
+- `ANNA_STORE_RELEASE=true` forbids Premium preview and requires a non-empty RevenueCat API key for the active platform.
+- The signed Android store workflow fails before build when `REVENUECAT_ANDROID_API_KEY` is missing or Premium preview is not disabled.
+- The Android store workflow passes `ANNA_STORE_RELEASE=true`, `ANNA_PREMIUM_PREVIEW=false`, the canonical `premium` entitlement and the RevenueCat Android public SDK key to every signed APK/AAB build.
+- GitHub Pages, direct ARM64 sideload and AppLab remain explicit non-store QA channels with `ANNA_STORE_RELEASE=false` and `ANNA_PREMIUM_PREVIEW=true`.
+- QA channels never require or embed the Android store key merely to exercise Premium UX.
+- Regression tests lock the production-vs-preview separation and the release validator contract.
+- No diary, agenda, Vault, password or menstrual-cycle payload enters the release validator or billing configuration layer.
+- Analyze, full tests, Web release, Android size audit and AppLab trusted verification must pass before promotion to main.
+- Release metadata is v0.92.0+102.

@@ -2,7 +2,7 @@
 
 Flutter app for personal planning, private diary and the shared **Noi ♡** space.
 
-Current release line: **v0.91.0**.
+Current release line: **v0.92.0**.
 
 Canonical product scope and security boundaries: `docs/PRODUCT_BIBLE.md`.
 
@@ -483,6 +483,16 @@ See `docs/ARCHITECTURE.md` and `supabase/README.md` for implementation details.
 - Share-target text and images now reuse the same capture persistence helpers instead of maintaining separate diary-save logic.
 - Capturing from `La mia giornata` respects the day currently being viewed, including past/future days, while preserving the current time as the moment ordering time inside that day.
 - No capture database, parallel media store, AI layer or new cloud schema is introduced.
+
+## v0.92.0 — Premium Production Guardrails
+
+- Premium preview is now fail-closed for release builds: the default is OFF outside debug unless a QA channel opts in explicitly.
+- Adds `ANNA_STORE_RELEASE` as a production boundary. Store releases reject preview mode and reject missing RevenueCat Android configuration at runtime.
+- Adds `tool/validate_premium_release.py` as a release preflight gate.
+- The signed Android release workflow requires `REVENUECAT_ANDROID_API_KEY`, forces `ANNA_STORE_RELEASE=true`, forces `ANNA_PREMIUM_PREVIEW=false`, and builds APK/AAB with the canonical `premium` entitlement.
+- GitHub Pages, direct sideload APK and AppLab remain explicit QA/preview channels with Premium unlocked for verification and no store key requirement.
+- The production store path and QA preview paths are locked by regression tests so they cannot silently converge.
+- Release metadata is aligned to v0.92.0+102.
 
 ## v0.91.0 — Premium Store Foundation
 

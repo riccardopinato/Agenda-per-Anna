@@ -91,6 +91,8 @@ jobs:
             --release \
             --split-per-abi \
             --tree-shake-icons \
+            --dart-define=ANNA_STORE_RELEASE=false \
+            --dart-define=ANNA_PREMIUM_PREVIEW=true \
             $FIREBASE_ARG
 
       - name: Prepare direct-install APK
