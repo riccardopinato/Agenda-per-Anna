@@ -2,7 +2,7 @@
 
 Flutter app for personal planning, private diary and the shared **Noi ♡** space.
 
-Current release line: **v0.87.0**.
+Current release line: **v0.88.0**.
 
 Canonical product scope and security boundaries: `docs/PRODUCT_BIBLE.md`.
 
@@ -483,6 +483,17 @@ See `docs/ARCHITECTURE.md` and `supabase/README.md` for implementation details.
 - Share-target text and images now reuse the same capture persistence helpers instead of maintaining separate diary-save logic.
 - Capturing from `La mia giornata` respects the day currently being viewed, including past/future days, while preserving the current time as the moment ordering time inside that day.
 - No capture database, parallel media store, AI layer or new cloud schema is introduced.
+
+## v0.88.0 — Private Cycle Tracker
+
+- Adds **Il mio ciclo / My cycle** as a dedicated mini-app inside the unlocked Private Vault.
+- Menstrual day logs, symptoms, mood, pain, energy and notes are serialized only inside the existing AES-GCM encrypted Vault payload.
+- The cycle domain is excluded from ordinary cloud sync, global search and standard backup by construction.
+- Includes private dashboard, monthly calendar, history, deterministic cycle/fertility estimates and discreet period reminders.
+- Predictions are explicitly estimates and are not presented as contraception, diagnosis or medical advice.
+- The cycle UI immediately hides sensitive content if the Vault auto-locks or the app leaves the protected state.
+- Localization covers English, Italian, Spanish, French and Portuguese.
+- Release metadata is aligned to v0.88.0+98.
 
 ## v0.87.0 — Private Vault Web Unlock Hotfix
 
