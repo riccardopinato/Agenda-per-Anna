@@ -1409,7 +1409,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
   @override
   Widget build(BuildContext context) {
     return AnimatedBuilder(
-      animation: widget.store.settingsRevision,
+      animation: Listenable.merge([
+        widget.store.settingsRevision,
+        PremiumEntitlementService.instance,
+      ]),
       builder: (context, _) {
         final prefs = widget.store.preferences;
         final strings = AnnaStrings.of(context);
@@ -1456,6 +1459,31 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       ),
                     ),
                   ],
+                ),
+              ),
+              const SizedBox(height: 12),
+              SimpleCard(
+                child: ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  leading: const CircleAvatar(
+                    child: Icon(Icons.workspace_premium_outlined),
+                  ),
+                  title: Text(
+                    strings.premiumTitle,
+                    style: const TextStyle(fontWeight: FontWeight.w900),
+                  ),
+                  subtitle: Text(
+                    PremiumEntitlementService.instance.paidEntitlement
+                        ? strings.premiumActiveDescription
+                        : strings.premiumSettingsDescription,
+                  ),
+                  trailing: const Icon(Icons.chevron_right),
+                  onTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute<void>(
+                      builder: (_) => const PremiumScreen(),
+                    ),
+                  ),
                 ),
               ),
               const SizedBox(height: 12),
