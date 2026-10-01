@@ -489,7 +489,7 @@ See `docs/ARCHITECTURE.md` and `supabase/README.md` for implementation details.
 - Adds a real Chrome E2E Vault regression that creates encrypted browser state, simulates a browser/PWA reload, unlocks the persisted 600,000-iteration Vault with Web Crypto and verifies personal notes/passwords without plaintext persistence.
 - Makes the Private Vault disaster-recovery boundary explicit in-product and in the Product Bible: personal Vault notes/passwords are device-local, excluded from normal backup and unrecoverable after local/browser/device data loss; Noi ♡ credentials retain their separate E2EE recovery contract.
 - Adds accessibility gates for touch targets, semantic labels, contrast and 200% text scaling on the core shell.
-- Replaces the stale two-file formatting check with a repository-wide Dart format gate over lib, test and integration_test.
+- Replaces the stale two-file formatting check with a general new-Dart format gate over lib, test and integration_test.
 - Keeps the v0.87 asynchronous WebCrypto path, Android Keystore/FLAG_SECURE behavior and encrypted Vault format unchanged.
 - Aligns production-readiness/security documentation and release metadata to v0.88.0+98.
 
