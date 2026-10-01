@@ -1,0 +1,154 @@
+name: Premium Store QA Bundle
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: premium-store-qa
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Require signed Store QA configuration
+        shell: bash
+        env:
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+          REVENUECAT_ANDROID_API_KEY: ${{ secrets.REVENUECAT_ANDROID_API_KEY }}
+        run: |
+          set -euo pipefail
+          missing=()
+          for name in ANDROID_KEYSTORE_BASE64 ANDROID_KEYSTORE_PASSWORD ANDROID_KEY_ALIAS ANDROID_KEY_PASSWORD REVENUECAT_ANDROID_API_KEY; do
+            if [ -z "${!name:-}" ]; then
+              missing+=("$name")
+            fi
+          done
+          if [ "${#missing[@]}" -ne 0 ]; then
+            echo "::error title=Premium Store QA is not configured::Missing: ${missing[*]}"
+            exit 1
+          fi
+
+      - name: Validate Premium Store QA contract
+        env:
+          ANNA_STORE_RELEASE: "true"
+          ANNA_STORE_QA: "true"
+          ANNA_PREMIUM_PREVIEW: "false"
+          REVENUECAT_ANDROID_API_KEY: ${{ secrets.REVENUECAT_ANDROID_API_KEY }}
+          REVENUECAT_PREMIUM_ENTITLEMENT: premium
+        run: python3 tool/validate_premium_release.py
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: "3.47.5"
+          channel: stable
+          cache: true
+
+      - name: Generate pinned Android platform
+        run: |
+          rm -rf android /tmp/agenda_android
+          flutter create             --project-name agenda_per_anna             --org com.riccardopinato             --platforms=android             /tmp/agenda_android
+          cp -R /tmp/agenda_android/android .
+
+      - name: Apply stable release signing
+        env:
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+          ANDROID_KEYSTORE_PATH: ${{ github.workspace }}/.signing/agenda-release.jks
+        run: python3 tool/prepare_android_platform.py --release-signing
+
+      - name: Install locked dependencies
+        run: flutter pub get --enforce-lockfile
+
+      - name: Generate launcher icons
+        run: dart run flutter_launcher_icons -f tool/flutter_launcher_icons_android.yaml
+
+      - name: Analyze
+        run: flutter analyze
+
+      - name: Test Premium store contracts
+        run: |
+          flutter test test/v091_premium_store_foundation_test.dart
+          flutter test test/v092_premium_production_guardrails_test.dart
+          flutter test test/v094_premium_store_qa_test.dart
+
+      - name: Build signed Play Internal Testing AAB
+        shell: bash
+        env:
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+          ANDROID_KEYSTORE_PATH: ${{ github.workspace }}/.signing/agenda-release.jks
+          REVENUECAT_ANDROID_API_KEY: ${{ secrets.REVENUECAT_ANDROID_API_KEY }}
+        run: |
+          set -euo pipefail
+          FIREBASE_ARG=""
+          if [ -f android/app/google-services.json ]; then
+            FIREBASE_ARG="--dart-define=FIREBASE_ENABLED=true"
+          fi
+
+          flutter build appbundle             --release             --obfuscate             --tree-shake-icons             --split-debug-info=build/symbols-premium-qa             --dart-define=ANNA_STORE_RELEASE=true             --dart-define=ANNA_STORE_QA=true             --dart-define=ANNA_PREMIUM_PREVIEW=false             --dart-define=REVENUECAT_PREMIUM_ENTITLEMENT=premium             --dart-define=REVENUECAT_ANDROID_API_KEY="$REVENUECAT_ANDROID_API_KEY"             $FIREBASE_ARG
+
+      - name: Prepare Store QA artifact
+        shell: bash
+        run: |
+          set -euo pipefail
+          VERSION=$(awk '/^version:/ {print $2; exit}' pubspec.yaml)
+          SAFE_VERSION=$(printf '%s' "$VERSION" | tr '+' '-')
+          OUT=build/premium-store-qa
+          mkdir -p "$OUT"
+          cp build/app/outputs/bundle/release/app-release.aab             "$OUT/annas-diary-v${SAFE_VERSION}-premium-store-qa.aab"
+          cat > "$OUT/PREMIUM_STORE_QA.txt" <<'EOF'
+          Anna's Diary — Premium Store QA
+
+          This AAB is intentionally built with:
+          - ANNA_STORE_RELEASE=true
+          - ANNA_STORE_QA=true
+          - ANNA_PREMIUM_PREVIEW=false
+          - RevenueCat Android public SDK key supplied by GitHub Actions secret
+
+          Authoritative purchase testing requires:
+          1. Upload this AAB to a Google Play Internal Testing track.
+          2. Configure monthly and lifetime products in Google Play Console.
+          3. Attach both products to the RevenueCat "premium" entitlement and current Offering.
+          4. Add an authorized Play license tester/internal tester account.
+          5. Install the app from the Play testing link. Do not sideload for billing verification.
+          6. Open Anna Premium > Premium Store QA and refresh.
+          7. Verify SDK, Offering, monthly and lifetime checks are green.
+          8. Complete a monthly test purchase and verify Premium becomes active.
+          9. Verify restore after reinstall/account recovery.
+          10. Test Lifetime with a clean tester/product state and confirm the same entitlement.
+
+          A GitHub-successful AAB build proves build/configuration readiness only.
+          It does not prove a real Play purchase until the runtime checklist above is completed.
+          EOF
+          sha256sum "$OUT"/*.aab > "$OUT/SHA256SUMS.txt"
+
+      - name: Upload Premium Store QA bundle
+        uses: actions/upload-artifact@v4
+        with:
+          name: annas-diary-premium-store-qa
+          path: build/premium-store-qa/**
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Upload QA obfuscation symbols
+        uses: actions/upload-artifact@v4
+        with:
+          name: annas-diary-premium-store-qa-symbols
+          path: build/symbols-premium-qa/**
+          if-no-files-found: error
+          retention-days: 90
