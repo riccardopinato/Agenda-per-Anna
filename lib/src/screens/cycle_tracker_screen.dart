@@ -1954,7 +1954,7 @@ class _PrivateCycleTrackerScreenState extends State<PrivateCycleTrackerScreen> {
     basalTemperatureController.dispose();
     notesController.dispose();
     if (saved == true && mounted && vault.unlocked) {
-      await _syncPeriodReminder();
+      await _syncCycleReminders();
     }
   }
 
