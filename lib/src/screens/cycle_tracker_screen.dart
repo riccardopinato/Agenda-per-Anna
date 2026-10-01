@@ -698,7 +698,7 @@ class _PrivateCycleTrackerScreenState extends State<PrivateCycleTrackerScreen> {
               _calendarMarkers(state, prediction, cycleDateOnly(day)),
           calendarStyle: const CalendarStyle(
             outsideDaysVisible: false,
-            markersMaxCount: 3,
+            markersMaxCount: 5,
           ),
           calendarBuilders: CalendarBuilders<Object>(
             markerBuilder: (context, day, events) {
@@ -768,9 +768,21 @@ class _PrivateCycleTrackerScreenState extends State<PrivateCycleTrackerScreen> {
     if (state.settings.trackFertility && prediction.fertileContains(day)) {
       markers.add('fertile');
     }
+    if (state.settings.trackFertility &&
+        prediction.ovulationDate != null &&
+        isSameDay(day, prediction.ovulationDate)) {
+      markers.add('ovulation');
+    }
     if (prediction.predictedPeriodContains(day) &&
         (log == null || log.flow == CycleFlow.none)) {
       markers.add('predicted');
+    }
+    if (log != null &&
+        (log.symptoms.isNotEmpty ||
+            log.moods.isNotEmpty ||
+            log.painLevel > 0 ||
+            log.notes.trim().isNotEmpty)) {
+      markers.add('symptom');
     }
     return markers;
   }
@@ -780,6 +792,8 @@ class _PrivateCycleTrackerScreenState extends State<PrivateCycleTrackerScreen> {
     return switch (marker) {
       'period' => scheme.primary,
       'fertile' => scheme.tertiary,
+      'ovulation' => scheme.secondary,
+      'symptom' => scheme.error,
       _ => scheme.outline,
     };
   }
@@ -810,6 +824,8 @@ class _PrivateCycleTrackerScreenState extends State<PrivateCycleTrackerScreen> {
         item(scheme.primary, strings.cycleRecordedPeriod),
         item(scheme.outline, strings.cyclePredictedPeriod),
         item(scheme.tertiary, strings.cycleFertileWindow),
+        item(scheme.secondary, strings.cycleEstimatedOvulation),
+        item(scheme.error, strings.cycleSymptomsOrNotes),
       ],
     );
   }
