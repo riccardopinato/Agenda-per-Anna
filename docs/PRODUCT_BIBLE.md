@@ -1,7 +1,7 @@
 # Anna's Diary — Product Bible
 
 **Status:** canonical product source of truth  
-**Current release line:** v0.92  
+**Current release line:** v0.93  
 **Last aligned:** 1 October 2026
 
 This document defines what Anna's Diary is, what it is not, and the product/security invariants that future work must preserve. Implementation details belong in `docs/ARCHITECTURE.md`; execution sequencing belongs in `docs/ROADMAP.md`.
@@ -31,6 +31,7 @@ The product includes a deliberately bounded shared area, **Noi ♡**, for memori
 - Noi ♡ shared agenda, memories, interactions and lightweight shared utilities;
 - encrypted Private Vault and Password Vault;
 - private menstrual-cycle tracking inside the encrypted Vault, with deterministic estimates and no health diagnosis;
+- private cycle onboarding, range logging, local reminders and uncertainty-aware prediction windows remain part of the same encrypted Vault domain;
 - E2EE Noi ♡ shared passwords.
 
 ### Out of scope
