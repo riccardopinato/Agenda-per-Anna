@@ -803,6 +803,9 @@ class AnnaStrings {
   String get cycleContraceptiveReminderBody => _pick(en: 'This is your contraceptive reminder.', it: 'Questo è il tuo promemoria contraccettivo.', es: 'Este es tu recordatorio anticonceptivo.', fr: 'Ceci est ton rappel contraceptif.', pt: 'Este é o teu lembrete contracetivo.');
   String get cycleReminderTime => _pick(en: 'Reminder time', it: 'Ora del promemoria', es: 'Hora del recordatorio', fr: 'Heure du rappel', pt: 'Hora do lembrete');
 
+  String get cycleLengthTrend => _pick(en: 'Recent cycle length', it: 'Durata dei cicli recenti', es: 'Duración de ciclos recientes', fr: 'Durée des cycles récents', pt: 'Duração dos ciclos recentes');
+  String get cycleTopSymptomsChart => _pick(en: 'Most recorded symptoms', it: 'Sintomi più registrati', es: 'Síntomas más registrados', fr: 'Symptômes les plus enregistrés', pt: 'Sintomas mais registados');
+
   String get sharedPasswords => _pick(en: 'Shared passwords', it: 'Password Noi ♡', es: 'Contraseñas compartidas', fr: 'Mots de passe partagés', pt: 'Palavras-passe partilhadas');
   String get sharedPasswordNew => _pick(en: 'New shared password', it: 'Nuova password condivisa', es: 'Nueva contraseña compartida', fr: 'Nouveau mot de passe partagé', pt: 'Nova palavra-passe partilhada');
   String get sharedPasswordEdit => _pick(en: 'Edit shared password', it: 'Modifica password condivisa', es: 'Editar contraseña compartida', fr: 'Modifier le mot de passe partagé', pt: 'Editar palavra-passe partilhada');
