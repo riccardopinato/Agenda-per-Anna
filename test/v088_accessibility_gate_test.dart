@@ -25,10 +25,7 @@ void main() {
     );
 
     await tester.pumpWidget(
-      AgendaApp(
-        store: store,
-        bypassIdentityForTesting: true,
-      ),
+      AgendaApp(store: store, bypassIdentityForTesting: true),
     );
     await tester.pumpAndSettle();
     return store;
@@ -39,8 +36,9 @@ void main() {
     binding.platformDispatcher.clearAllTestValues();
   });
 
-  testWidgets('core shell meets Flutter accessibility guidelines',
-      (tester) async {
+  testWidgets('core shell meets Flutter accessibility guidelines', (
+    tester,
+  ) async {
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
 
@@ -52,15 +50,13 @@ void main() {
     await expectLater(tester, meetsGuideline(textContrastGuideline));
   });
 
-  testWidgets('core shell remains usable with 200 percent text scaling',
-      (tester) async {
+  testWidgets('core shell remains usable with 200 percent text scaling', (
+    tester,
+  ) async {
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
 
-    final store = await pumpCoreShell(
-      tester,
-      textScaleFactor: 2.0,
-    );
+    final store = await pumpCoreShell(tester, textScaleFactor: 2.0);
     addTearDown(store.dispose);
 
     expect(tester.takeException(), isNull);
