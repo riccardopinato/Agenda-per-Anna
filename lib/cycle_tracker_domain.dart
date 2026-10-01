@@ -132,12 +132,16 @@ class CycleSettings {
   final bool trackBasalTemperature;
   final bool trackCervicalMucus;
   final List<String> customSymptoms;
+  final bool onboardingComplete;
   final bool discreetNotifications;
   final bool periodReminderEnabled;
   final int periodReminderDaysBefore;
   final bool dailyLogReminderEnabled;
   final int dailyLogReminderHour;
   final int dailyLogReminderMinute;
+  final bool contraceptiveReminderEnabled;
+  final int contraceptiveReminderHour;
+  final int contraceptiveReminderMinute;
 
   const CycleSettings({
     this.averageCycleLength = 28,
@@ -148,12 +152,16 @@ class CycleSettings {
     this.trackBasalTemperature = false,
     this.trackCervicalMucus = false,
     this.customSymptoms = const [],
+    this.onboardingComplete = false,
     this.discreetNotifications = true,
     this.periodReminderEnabled = false,
     this.periodReminderDaysBefore = 2,
     this.dailyLogReminderEnabled = false,
     this.dailyLogReminderHour = 20,
     this.dailyLogReminderMinute = 0,
+    this.contraceptiveReminderEnabled = false,
+    this.contraceptiveReminderHour = 21,
+    this.contraceptiveReminderMinute = 0,
   });
 
   CycleSettings copyWith({
@@ -165,12 +173,16 @@ class CycleSettings {
     bool? trackBasalTemperature,
     bool? trackCervicalMucus,
     List<String>? customSymptoms,
+    bool? onboardingComplete,
     bool? discreetNotifications,
     bool? periodReminderEnabled,
     int? periodReminderDaysBefore,
     bool? dailyLogReminderEnabled,
     int? dailyLogReminderHour,
     int? dailyLogReminderMinute,
+    bool? contraceptiveReminderEnabled,
+    int? contraceptiveReminderHour,
+    int? contraceptiveReminderMinute,
   }) =>
       CycleSettings(
         averageCycleLength: averageCycleLength ?? this.averageCycleLength,
@@ -186,6 +198,7 @@ class CycleSettings {
         customSymptoms: normalizeCycleCustomSymptoms(
           customSymptoms ?? this.customSymptoms,
         ),
+        onboardingComplete: onboardingComplete ?? this.onboardingComplete,
         discreetNotifications:
             discreetNotifications ?? this.discreetNotifications,
         periodReminderEnabled:
@@ -198,6 +211,12 @@ class CycleSettings {
             dailyLogReminderHour ?? this.dailyLogReminderHour,
         dailyLogReminderMinute:
             dailyLogReminderMinute ?? this.dailyLogReminderMinute,
+        contraceptiveReminderEnabled:
+            contraceptiveReminderEnabled ?? this.contraceptiveReminderEnabled,
+        contraceptiveReminderHour:
+            contraceptiveReminderHour ?? this.contraceptiveReminderHour,
+        contraceptiveReminderMinute:
+            contraceptiveReminderMinute ?? this.contraceptiveReminderMinute,
       );
 
   Map<String, dynamic> toJson() => {
@@ -209,12 +228,16 @@ class CycleSettings {
         'trackBasalTemperature': trackBasalTemperature,
         'trackCervicalMucus': trackCervicalMucus,
         'customSymptoms': customSymptoms,
+        'onboardingComplete': onboardingComplete,
         'discreetNotifications': discreetNotifications,
         'periodReminderEnabled': periodReminderEnabled,
         'periodReminderDaysBefore': periodReminderDaysBefore,
         'dailyLogReminderEnabled': dailyLogReminderEnabled,
         'dailyLogReminderHour': dailyLogReminderHour,
         'dailyLogReminderMinute': dailyLogReminderMinute,
+        'contraceptiveReminderEnabled': contraceptiveReminderEnabled,
+        'contraceptiveReminderHour': contraceptiveReminderHour,
+        'contraceptiveReminderMinute': contraceptiveReminderMinute,
       };
 
   factory CycleSettings.fromJson(Map<String, dynamic> json) => CycleSettings(
@@ -228,6 +251,7 @@ class CycleSettings {
         trackBasalTemperature: json['trackBasalTemperature'] == true,
         trackCervicalMucus: json['trackCervicalMucus'] == true,
         customSymptoms: _cycleCustomSymptomsFromJson(json['customSymptoms']),
+        onboardingComplete: json['onboardingComplete'] == true,
         discreetNotifications: json['discreetNotifications'] != false,
         periodReminderEnabled: json['periodReminderEnabled'] == true,
         periodReminderDaysBefore:
@@ -240,11 +264,19 @@ class CycleSettings {
         dailyLogReminderMinute:
             ((json['dailyLogReminderMinute'] as num?)?.toInt() ?? 0)
                 .clamp(0, 59).toInt(),
+        contraceptiveReminderEnabled:
+            json['contraceptiveReminderEnabled'] == true,
+        contraceptiveReminderHour:
+            ((json['contraceptiveReminderHour'] as num?)?.toInt() ?? 21)
+                .clamp(0, 23).toInt(),
+        contraceptiveReminderMinute:
+            ((json['contraceptiveReminderMinute'] as num?)?.toInt() ?? 0)
+                .clamp(0, 59).toInt(),
       );
 }
 
 class CycleTrackerState {
-  static const int currentVersion = 2;
+  static const int currentVersion = 3;
 
   final int version;
   final CycleSettings settings;
@@ -261,6 +293,18 @@ class CycleTrackerState {
   CycleTrackerState upsertLog(CycleDayLog log) {
     final next = Map<String, CycleDayLog>.from(dayLogs)
       ..[cycleDateKey(log.date)] = log;
+    return CycleTrackerState(
+      version: currentVersion,
+      settings: settings,
+      dayLogs: Map.unmodifiable(next),
+    );
+  }
+
+  CycleTrackerState upsertLogs(Iterable<CycleDayLog> logs) {
+    final next = Map<String, CycleDayLog>.from(dayLogs);
+    for (final log in logs) {
+      next[cycleDateKey(log.date)] = log;
+    }
     return CycleTrackerState(
       version: currentVersion,
       settings: settings,
@@ -339,6 +383,9 @@ class CyclePrediction {
   final int? currentCycleDay;
   final CyclePredictionConfidence confidence;
   final CyclePhase phase;
+  final DateTime? periodWindowStart;
+  final DateTime? periodWindowEnd;
+  final double variabilityDays;
 
   const CyclePrediction({
     required this.lastPeriodStart,
@@ -351,6 +398,9 @@ class CyclePrediction {
     required this.currentCycleDay,
     required this.confidence,
     required this.phase,
+    this.periodWindowStart,
+    this.periodWindowEnd,
+    this.variabilityDays = 0,
   });
 
   bool predictedPeriodContains(DateTime value) {
@@ -436,13 +486,12 @@ class CycleTrackerEngine {
     final recentCycleLengths = validCycleLengths.length <= 6
         ? validCycleLengths
         : validCycleLengths.sublist(validCycleLengths.length - 6);
-    final averageCycleLength = recentCycleLengths.isEmpty
-        ? state.settings.averageCycleLength
-        : (recentCycleLengths.reduce((a, b) => a + b) /
-                recentCycleLengths.length)
-            .round()
-            .clamp(15, 60)
-            .toInt();
+    final averageCycleLength = _weightedAverageRecent(
+      recentCycleLengths,
+      fallback: state.settings.averageCycleLength,
+      min: 15,
+      max: 60,
+    );
 
     final periodLengths = history
         .map((period) => period.periodLength)
@@ -451,13 +500,12 @@ class CycleTrackerEngine {
     final recentPeriodLengths = periodLengths.length <= 6
         ? periodLengths
         : periodLengths.sublist(periodLengths.length - 6);
-    final averagePeriodLength = recentPeriodLengths.isEmpty
-        ? state.settings.averagePeriodLength
-        : (recentPeriodLengths.reduce((a, b) => a + b) /
-                recentPeriodLengths.length)
-            .round()
-            .clamp(1, 14)
-            .toInt();
+    final averagePeriodLength = _weightedAverageRecent(
+      recentPeriodLengths,
+      fallback: state.settings.averagePeriodLength,
+      min: 1,
+      max: 14,
+    );
 
     if (history.isEmpty) {
       return CyclePrediction(
@@ -471,6 +519,9 @@ class CycleTrackerEngine {
         currentCycleDay: null,
         confidence: CyclePredictionConfidence.low,
         phase: CyclePhase.unknown,
+        periodWindowStart: null,
+        periodWindowEnd: null,
+        variabilityDays: 0,
       );
     }
 
@@ -488,7 +539,15 @@ class CycleTrackerEngine {
     final fertileEnd = ovulationDate.add(const Duration(days: 1));
     final currentCycleDay = today.difference(lastPeriod.start).inDays + 1;
 
-    final confidence = _confidence(recentCycleLengths);
+    final variability = _standardDeviation(recentCycleLengths);
+    final spreadDays = recentCycleLengths.length < 2
+        ? 3
+        : variability.ceil().clamp(1, 7).toInt();
+    var confidence = _confidence(recentCycleLengths);
+    if (state.settings.regularityMode == 'irregular' &&
+        confidence == CyclePredictionConfidence.high) {
+      confidence = CyclePredictionConfidence.medium;
+    }
     final phase = _phase(
       today: today,
       history: history,
@@ -509,7 +568,38 @@ class CycleTrackerEngine {
       currentCycleDay: currentCycleDay > 0 ? currentCycleDay : null,
       confidence: confidence,
       phase: phase,
+      periodWindowStart:
+          nextPeriodStart.subtract(Duration(days: spreadDays)),
+      periodWindowEnd: nextPeriodStart.add(Duration(days: spreadDays)),
+      variabilityDays: variability,
     );
+  }
+
+  static int _weightedAverageRecent(
+    List<int> values, {
+    required int fallback,
+    required int min,
+    required int max,
+  }) {
+    if (values.isEmpty) return fallback.clamp(min, max).toInt();
+    var weightedTotal = 0;
+    var totalWeight = 0;
+    for (var index = 0; index < values.length; index++) {
+      final weight = index + 1;
+      weightedTotal += values[index] * weight;
+      totalWeight += weight;
+    }
+    return (weightedTotal / totalWeight).round().clamp(min, max).toInt();
+  }
+
+  static double _standardDeviation(List<int> values) {
+    if (values.length < 2) return 0;
+    final mean = values.reduce((a, b) => a + b) / values.length;
+    final variance = values
+            .map((value) => math.pow(value - mean, 2).toDouble())
+            .reduce((a, b) => a + b) /
+        values.length;
+    return math.sqrt(variance);
   }
 
   static CyclePredictionConfidence _confidence(List<int> cycleLengths) {
