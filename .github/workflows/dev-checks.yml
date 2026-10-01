@@ -49,11 +49,8 @@ jobs:
       - name: Generate launcher icons
         run: dart run flutter_launcher_icons -f tool/flutter_launcher_icons_android.yaml
 
-      - name: Format v0.40 modules
-        run: |
-          dart format --output=none --set-exit-if-changed \
-            lib/src/store_signals.dart \
-            test/v040_persistence_torture_test.dart
+      - name: Format Dart sources
+        run: dart format --output=none --set-exit-if-changed lib test integration_test
 
       - name: Analyze
         run: flutter analyze
@@ -61,8 +58,11 @@ jobs:
       - name: Test
         run: flutter test
 
-      - name: Test Web Vault crypto
-        run: flutter test --platform chrome test/v087_web_vault_kdf_browser_test.dart
+      - name: Test Web Vault crypto and persisted unlock
+        run: |
+          flutter test --platform chrome \
+            test/v087_web_vault_kdf_browser_test.dart \
+            test/v088_web_vault_e2e_browser_test.dart
 
       - name: Build web release
         run: |
