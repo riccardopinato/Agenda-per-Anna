@@ -201,20 +201,34 @@ class _PrivateVaultScreenState extends State<PrivateVaultScreen>
   }
 
   Future<void> _unlockPassword() async {
-    if (passwordController.text.isEmpty) return;
+    final submittedPassword = passwordController.text;
+    if (submittedPassword.isEmpty || busy) return;
     setState(() {
       busy = true;
       errorText = null;
     });
-    final ok = await vault.unlockWithPassword(passwordController.text);
-    passwordController.clear();
-    if (!mounted) return;
-    setState(() {
-      busy = false;
-      if (!ok) errorText = AnnaStrings.of(context).vaultIncorrectPassword;
-    });
-    if (ok) {
+    try {
+      // Give Flutter one event-loop turn to paint the busy state before the
+      // password KDF starts. On Web the KDF itself is asynchronous Web Crypto.
+      await Future<void>.delayed(Duration.zero);
+      final ok = await vault.unlockWithPassword(submittedPassword);
+      if (!mounted) return;
+      if (!ok) {
+        setState(
+          () => errorText = AnnaStrings.of(context).vaultIncorrectPassword,
+        );
+        return;
+      }
+      passwordController.clear();
       unawaited(SharedPasswordService.instance.refreshAllAvailableSpacesSafe());
+    } catch (_) {
+      if (mounted) {
+        setState(
+          () => errorText = AnnaStrings.of(context).vaultUnlockFailed,
+        );
+      }
+    } finally {
+      if (mounted) setState(() => busy = false);
     }
   }
 
@@ -1029,8 +1043,16 @@ class _PrivateVaultScreenState extends State<PrivateVaultScreen>
                     width: double.infinity,
                     child: FilledButton.icon(
                       onPressed: busy ? null : _unlockPassword,
-                      icon: const Icon(Icons.lock_open_outlined),
-                      label: Text(strings.vaultUnlock),
+                      icon: busy
+                          ? const SizedBox(
+                              width: 18,
+                              height: 18,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            )
+                          : const Icon(Icons.lock_open_outlined),
+                      label: Text(
+                        busy ? strings.vaultUnlocking : strings.vaultUnlock,
+                      ),
                     ),
                   ),
                   if (biometricSupported && vault.biometricAvailable) ...[
