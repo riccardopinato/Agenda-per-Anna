@@ -925,6 +925,15 @@ class _PrivateCycleTrackerScreenState extends State<PrivateCycleTrackerScreen> {
     }
 
     final insights = CyclePremiumAnalytics.insights(state);
+    final periods = CycleTrackerEngine.periods(state);
+    final recentLengths = periods
+        .where((period) => period.cycleLength != null)
+        .toList()
+        .reversed
+        .take(6)
+        .toList()
+        .reversed
+        .toList();
     final locale = AnnaStrings.intlLocale(context);
     final range = insights.estimatedWindowStart == null ||
             insights.estimatedWindowEnd == null
@@ -994,6 +1003,39 @@ class _PrivateCycleTrackerScreenState extends State<PrivateCycleTrackerScreen> {
           ],
         ),
         const SizedBox(height: 14),
+        if (recentLengths.isNotEmpty) ...[
+          _buildTrendCard(
+            context,
+            title: strings.cycleLengthTrend,
+            entries: [
+              for (var index = 0; index < recentLengths.length; index++)
+                MapEntry(
+                  DateFormat(
+                    'MMM',
+                    locale,
+                  ).format(recentLengths[index].start),
+                  recentLengths[index].cycleLength!.toDouble(),
+                ),
+            ],
+            valueLabel: (value) => strings.cycleDays(value.round()),
+          ),
+          const SizedBox(height: 12),
+        ],
+        if (insights.topSymptoms.isNotEmpty) ...[
+          _buildTrendCard(
+            context,
+            title: strings.cycleTopSymptomsChart,
+            entries: [
+              for (final item in insights.topSymptoms)
+                MapEntry(
+                  _symptomLabel(strings, item.key),
+                  item.count.toDouble(),
+                ),
+            ],
+            valueLabel: (value) => '${value.round()}',
+          ),
+          const SizedBox(height: 12),
+        ],
         Card(
           child: Padding(
             padding: const EdgeInsets.all(16),
@@ -1080,6 +1122,74 @@ class _PrivateCycleTrackerScreenState extends State<PrivateCycleTrackerScreen> {
           style: Theme.of(context).textTheme.bodySmall,
         ),
       ],
+    );
+  }
+
+  Widget _buildTrendCard(
+    BuildContext context, {
+    required String title,
+    required List<MapEntry<String, double>> entries,
+    required String Function(double value) valueLabel,
+  }) {
+    final scheme = Theme.of(context).colorScheme;
+    final maxValue = entries.fold<double>(
+      0,
+      (current, entry) => math.max(current, entry.value),
+    );
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              title,
+              style: const TextStyle(fontWeight: FontWeight.w900),
+            ),
+            const SizedBox(height: 12),
+            for (final entry in entries) ...[
+              Semantics(
+                label: '${entry.key}: ${valueLabel(entry.value)}',
+                child: Row(
+                  children: [
+                    SizedBox(
+                      width: 88,
+                      child: Text(
+                        entry.key,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(8),
+                        child: LinearProgressIndicator(
+                          minHeight: 12,
+                          value: maxValue <= 0
+                              ? 0
+                              : (entry.value / maxValue).clamp(0, 1),
+                          backgroundColor: scheme.surfaceContainerHighest,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    SizedBox(
+                      width: 56,
+                      child: Text(
+                        valueLabel(entry.value),
+                        textAlign: TextAlign.end,
+                        style: const TextStyle(fontWeight: FontWeight.w800),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 9),
+            ],
+          ],
+        ),
+      ),
     );
   }
 
