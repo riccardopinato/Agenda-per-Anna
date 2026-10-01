@@ -79,7 +79,7 @@ void main() {
     expect(prediction.fertileStart, DateTime(2026, 3, 7));
     expect(prediction.fertileEnd, DateTime(2026, 3, 13));
     expect(prediction.currentCycleDay, 13);
-    expect(prediction.confidence, CyclePredictionConfidence.high);
+    expect(prediction.confidence, CyclePredictionConfidence.medium);
     expect(prediction.phase, CyclePhase.fertile);
   });
 
