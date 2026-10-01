@@ -1,6 +1,6 @@
 # Agenda per Anna — Architecture
 
-## Current structure — v0.92.0
+## Current structure — v0.93.0
 
 Anna's Diary keeps `lib/main.dart` as the compatibility library boundary, but large responsibilities are now split by runtime domain:
 
@@ -24,6 +24,16 @@ The `AgendaStore` public surface remains compatible. UI screens observe domain-s
 
 The PR production gate is:
 `locked dependencies → analyze/tests → Web release → ARM64 release → AppLab emulator → Maestro → multi-screen screenshots/UI hierarchy → visual QA/regression → Logcat/crash/ANR`.
+
+## v0.93.0 — Cycle completion boundary
+
+- Cycle onboarding, reminder preferences, custom tracking and prediction inputs extend the existing encrypted `CycleTrackerState`; no health-specific database, cloud table or sync queue is introduced.
+- `CycleTrackerState` schema v3 adds onboarding/reminder preferences while remaining backward-compatible with v1/v2 payloads.
+- `PrivateVaultService.upsertCycleDayLogs` performs one encrypted-payload persistence step for multi-day period logging.
+- Prediction v2 remains deterministic: recent valid cycles receive higher weights, variability derives an uncertainty window, and explicit irregularity can only reduce confidence.
+- Daily check-in and contraceptive reminders reuse `NotificationService.scheduleDaily` with recurring local-time scheduling; discreet copy remains the default.
+- Premium charts are simple Flutter progress-bar projections over canonical Vault history and add no chart/analytics dependency.
+- Large-text/narrow-width adaptation is handled in presentation only and does not alter canonical cycle data.
 
 ## v0.92.0 — Premium production boundary
 
