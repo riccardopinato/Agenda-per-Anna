@@ -70,7 +70,8 @@ jobs:
             git diff --name-only --diff-filter=A "$BASE_REF" HEAD -- '*.dart'
           )
           if (( ${#NEW_DART_FILES[@]} > 0 )); then
-            dart format --output=none --set-exit-if-changed "${NEW_DART_FILES[@]}"
+            dart format "${NEW_DART_FILES[@]}"
+            git diff --exit-code -- "${NEW_DART_FILES[@]}"
           fi
 
       - name: Analyze
