@@ -69,8 +69,12 @@ jobs:
       - name: Install locked dependencies
         run: flutter pub get --enforce-lockfile
 
-      - name: Build web release
-        run: flutter build web --release --base-href "/Agenda-per-Anna/"
+      - name: Build web preview
+        run: >-
+          flutter build web --release
+          --base-href "/Agenda-per-Anna/"
+          --dart-define=ANNA_STORE_RELEASE=false
+          --dart-define=ANNA_PREMIUM_PREVIEW=true
 
       - name: Finalize Flutter service worker with Web Push
         run: |
