@@ -47,7 +47,7 @@ Source of execution truth for Anna's Diary. Product identity and boundaries are 
 | v0.90 | Vault Recovery & Privacy Hardening | Completed | Portable encrypted Vault recovery, non-destructive validation, clipboard hardening and cycle accessibility improvements |
 | v0.91 | Premium Store Foundation | Completed | RevenueCat entitlement source, custom paywall, Supabase identity binding, restore flow and Android Billing contract |
 | v0.92 | Premium Production Guardrails | Completed | Fail-closed store configuration, explicit QA preview channels and release-time RevenueCat validation |
-| v0.93 | Cycle Tracker Completion & UX Polish | In progress | Vault-only onboarding, fast period logging, prediction v2, complete private reminders, richer calendar, lightweight Premium charts and accessibility polish |
+| v0.93 | Cycle Tracker Completion & UX Polish | Completed | Vault-only onboarding, fast period logging, prediction v2, complete private reminders, richer calendar, lightweight Premium charts and accessibility polish |
 
 ## Permanent constraints for this sequence
 
