@@ -47,6 +47,7 @@ Source of execution truth for Anna's Diary. Product identity and boundaries are 
 | v0.90 | Vault Recovery & Privacy Hardening | Completed | Portable encrypted Vault recovery, non-destructive validation, clipboard hardening and cycle accessibility improvements |
 | v0.91 | Premium Store Foundation | Completed | RevenueCat entitlement source, custom paywall, Supabase identity binding, restore flow and Android Billing contract |
 | v0.92 | Premium Production Guardrails | Completed | Fail-closed store configuration, explicit QA preview channels and release-time RevenueCat validation |
+| v0.93 | Cycle Tracker Completion & UX Polish | In progress | Vault-only onboarding, fast period logging, prediction v2, complete private reminders, richer calendar, lightweight Premium charts and accessibility polish |
 
 ## Permanent constraints for this sequence
 
@@ -578,3 +579,17 @@ Per the active development cadence, AppLab runs once every two feature versions.
 - No diary, agenda, Vault, password or menstrual-cycle payload enters the release validator or billing configuration layer.
 - Analyze, full tests, Web release, Android size audit and AppLab trusted verification must pass before promotion to main.
 - Release metadata is v0.92.0+102.
+
+## v0.93 acceptance criteria
+
+- New users can initialize the cycle tracker entirely inside the unlocked Vault; users with existing period history are not forced through onboarding.
+- Onboarding writes only canonical Vault cycle settings/day logs and can seed the last recorded period without a second health database.
+- A period range of up to 14 days can be recorded atomically while retaining symptoms, mood, notes and advanced observations already stored on those dates.
+- Prediction v2 weights recent valid cycles more strongly, exposes an uncertainty window and variability, and does not present fertility/cycle estimates as contraception or diagnosis.
+- Daily cycle check-in and optional contraceptive reminders use the existing local notification engine, recur by local time and default to discreet lock-screen copy.
+- Calendar markers distinguish recorded flow, predicted period, fertile window, estimated ovulation and symptom/note activity.
+- Premium trend charts remain local, deterministic and dependency-light; they do not add analytics/cloud health processing.
+- Cycle primary actions and metric pairs remain usable on narrow screens and at large text scales, with meaningful accessibility semantics.
+- v0.92 and older cycle payloads remain readable; cycle schema advances to v3 without destructive migration.
+- Analyze, full tests, Web release, Android size audit and AppLab trusted verification must pass before promotion to main.
+- Release metadata is v0.93.0+103.
