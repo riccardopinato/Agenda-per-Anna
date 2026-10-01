@@ -881,8 +881,14 @@ class DateStrip extends StatelessWidget {
       7,
       (i) => addCivilDays(selected, i - 3),
     );
+    final textScale = MediaQuery.textScalerOf(context)
+        .scale(1.0)
+        .clamp(1.0, 2.0)
+        .toDouble();
+    final stripHeight = 80.0 * textScale;
+    final chipWidth = 54.0 + (18.0 * (textScale - 1.0));
     return SizedBox(
-      height: 80,
+      height: stripHeight,
       child: ListView.separated(
         scrollDirection: Axis.horizontal,
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
@@ -895,7 +901,7 @@ class DateStrip extends StatelessWidget {
             onTap: () => onSelected(d),
             borderRadius: BorderRadius.circular(18),
             child: Container(
-              width: 54,
+              width: chipWidth,
               decoration: BoxDecoration(
                 color: active ? Theme.of(context).colorScheme.primary : Theme.of(context).colorScheme.surfaceContainerHighest,
                 borderRadius: BorderRadius.circular(18),
