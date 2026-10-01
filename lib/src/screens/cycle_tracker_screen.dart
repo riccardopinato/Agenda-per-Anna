@@ -1134,7 +1134,7 @@ class _PrivateCycleTrackerScreenState extends State<PrivateCycleTrackerScreen> {
     final scheme = Theme.of(context).colorScheme;
     final maxValue = entries.fold<double>(
       0,
-      (current, entry) => math.max(current, entry.value),
+      (current, entry) => max(current, entry.value),
     );
     return Card(
       child: Padding(
