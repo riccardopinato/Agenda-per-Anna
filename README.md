@@ -2,7 +2,7 @@
 
 Flutter app for personal planning, private diary and the shared **Noi ♡** space.
 
-Current release line: **v0.94.0**.
+Current release line: **v0.95.0**.
 
 Canonical product scope and security boundaries: `docs/PRODUCT_BIBLE.md`.
 
@@ -21,6 +21,7 @@ Canonical product scope and security boundaries: `docs/PRODUCT_BIBLE.md`.
 - Firebase Cloud Messaging for Android Noi ♡ push notifications.
 - Local reminders with notification diagnostics and repair tools.
 - Integrity-checked ZIP backup with separate binary media, legacy JSON import and account-scoped safety snapshots.
+- Life Ecosystem / Life Bridge v1: explicit COPY/LINK interoperability that reuses canonical diary and agenda records instead of creating a shared life database.
 
 ## Quality gates
 
@@ -29,6 +30,19 @@ GitHub Actions runs locked dependency resolution, platform generation/verificati
 Pull requests also run the AppLab Production Gate: release-mode ARM64 build, Android emulator install/launch, Maestro restart smoke, multi-screen visual journey, screenshot/UI hierarchy checks, visual regression, Logcat and crash/ANR scanning. Production distribution remains pinned to Flutter 3.47.5 and the persistent sideload/release signing contracts.
 
 See `docs/ARCHITECTURE.md` and `supabase/README.md` for implementation details.
+
+## v0.95.0 — Life Ecosystem & Life Bridge v1
+
+- Adds a versioned JSON Life Bridge transport contract with explicit source provenance and idempotent `bridgeId` imports.
+- COPY creates an independent canonical Anna record; LINK keeps the canonical local snapshot plus account-scoped source/link metadata.
+- Event imports reuse `AgendaItem` / `AgendaStore.upsert`; memory, travel, photo and place snapshots reuse `DiaryBlock` / `AgendaStore.saveJournal` and inline place metadata.
+- Unknown protocol major versions fail closed; unsupported object types do not mutate Anna data.
+- The new Ecosistema vita / Life Ecosystem screen imports explicit bridge payloads from the clipboard and shows linked items plus import history.
+- Wonderlog is the first external adapter target but is not presented as connected until its adapter is implemented.
+- Private Vault, shared passwords and cycle data remain outside the bridge boundary.
+- v1 transfers text/metadata only for Anna media exports; binary media stays in the existing Media Engine.
+- No LifeItem mega-model, new cloud table, cross-app database, bidirectional sync engine or AI dependency is introduced.
+- Release metadata is v0.95.0+105.
 
 ## v0.33.2 — Reliability & Cleanup
 
