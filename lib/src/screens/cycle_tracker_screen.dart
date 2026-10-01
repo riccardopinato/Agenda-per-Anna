@@ -118,25 +118,29 @@ class _PrivateCycleTrackerScreenState extends State<PrivateCycleTrackerScreen> {
   Widget _buildPrivacyBanner(BuildContext context) {
     final strings = AnnaStrings.of(context);
     final scheme = Theme.of(context).colorScheme;
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: scheme.secondaryContainer.withValues(alpha: 0.68),
-        borderRadius: BorderRadius.circular(20),
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Icon(Icons.shield_outlined, color: scheme.onSecondaryContainer),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Text(
-              strings.cyclePrivacyBanner,
-              style: TextStyle(color: scheme.onSecondaryContainer),
+    return Semantics(
+      container: true,
+      label: strings.cyclePrivacyBanner,
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: scheme.secondaryContainer.withValues(alpha: 0.68),
+          borderRadius: BorderRadius.circular(20),
+        ),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Icon(Icons.shield_outlined, color: scheme.onSecondaryContainer),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Text(
+                strings.cyclePrivacyBanner,
+                style: TextStyle(color: scheme.onSecondaryContainer),
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -276,24 +280,28 @@ class _PrivateCycleTrackerScreenState extends State<PrivateCycleTrackerScreen> {
     IconData icon,
   ) {
     final scheme = Theme.of(context).colorScheme;
-    return Container(
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: scheme.surface.withValues(alpha: 0.68),
-        borderRadius: BorderRadius.circular(20),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Icon(icon, size: 20),
-          const SizedBox(height: 8),
-          Text(title, style: Theme.of(context).textTheme.bodySmall),
-          const SizedBox(height: 2),
-          Text(
-            value,
-            style: const TextStyle(fontWeight: FontWeight.w900),
-          ),
-        ],
+    return Semantics(
+      container: true,
+      label: '$title: $value',
+      child: Container(
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: scheme.surface.withValues(alpha: 0.68),
+          borderRadius: BorderRadius.circular(20),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Icon(icon, size: 20),
+            const SizedBox(height: 8),
+            Text(title, style: Theme.of(context).textTheme.bodySmall),
+            const SizedBox(height: 2),
+            Text(
+              value,
+              style: const TextStyle(fontWeight: FontWeight.w900),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -898,7 +906,16 @@ class _PrivateCycleTrackerScreenState extends State<PrivateCycleTrackerScreen> {
       strings.cycleInsightsDisclaimer,
     ];
 
-    await Clipboard.setData(ClipboardData(text: lines.join('\n')));
+    final report = lines.join('\n');
+    await Clipboard.setData(ClipboardData(text: report));
+    Timer(const Duration(seconds: 60), () async {
+      try {
+        final current = await Clipboard.getData('text/plain');
+        if (current?.text == report) {
+          await Clipboard.setData(const ClipboardData(text: ''));
+        }
+      } catch (_) {}
+    });
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text(strings.cyclePrivateReportCopied)),
