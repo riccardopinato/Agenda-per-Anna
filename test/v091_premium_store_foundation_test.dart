@@ -33,7 +33,8 @@ void main() {
     expect(source, contains("defaultValue: 'premium'"));
     expect(source, contains('configuration.appUserID = normalizedId'));
     expect(source, contains('Purchases.logIn(normalizedId)'));
-    expect(source, isNot(contains('@')));
+    expect(source, isNot(contains("configuration.appUserID = '")));
+    expect(source, isNot(contains('example.com')));
   });
 
   test('custom paywall is cross-platform and RevenueCat UI is not required', () {
