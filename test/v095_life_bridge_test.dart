@@ -119,7 +119,14 @@ void main() {
     expect(bridge, contains('life_bridge_links_v1:'));
     expect(bridge, isNot(contains('Supabase')));
     expect(bridge, isNot(contains('CloudSyncService')));
+    final diary =
+        File('lib/src/diary/diary_components.dart').readAsStringSync();
+    final editors = File('lib/src/widgets_editors.dart').readAsStringSync();
+
     expect(home, contains('LifeEcosystemScreen(store: store)'));
+    expect(diary, contains('onCopyToLifeBridge'));
+    expect(diary, contains('exportLifeBridgeDiaryBlock'));
+    expect(editors, contains('exportLifeBridgeAgendaItem'));
     expect(mainSource, contains("part 'src/life_bridge.dart';"));
   });
 
