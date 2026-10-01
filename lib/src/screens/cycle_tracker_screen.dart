@@ -486,12 +486,15 @@ class _PrivateCycleTrackerScreenState extends State<PrivateCycleTrackerScreen> {
     final scheme = Theme.of(context).colorScheme;
     final todayLog = state.logFor(DateTime.now());
     final next = prediction.nextPeriodStart;
+    final locale = AnnaStrings.intlLocale(context);
     final nextLabel = next == null
         ? strings.cycleNoPrediction
-        : DateFormat(
-            'd MMMM',
-            AnnaStrings.intlLocale(context),
-          ).format(next);
+        : prediction.periodWindowStart != null &&
+                prediction.periodWindowEnd != null
+            ? '${DateFormat('d MMM', locale).format(prediction.periodWindowStart!)}'
+                ' – '
+                '${DateFormat('d MMM', locale).format(prediction.periodWindowEnd!)}'
+            : DateFormat('d MMMM', locale).format(next);
 
     return ListView(
       padding: const EdgeInsets.fromLTRB(18, 18, 18, 100),
@@ -527,6 +530,20 @@ class _PrivateCycleTrackerScreenState extends State<PrivateCycleTrackerScreen> {
                       fontWeight: FontWeight.w800,
                     ),
               ),
+              const SizedBox(height: 8),
+              Semantics(
+                label: strings.cyclePredictionConfidenceLabel(
+                  _confidenceLabel(strings, prediction.confidence),
+                ),
+                child: Chip(
+                  avatar: const Icon(Icons.analytics_outlined, size: 18),
+                  label: Text(
+                    strings.cyclePredictionConfidenceLabel(
+                      _confidenceLabel(strings, prediction.confidence),
+                    ),
+                  ),
+                ),
+              ),
               const SizedBox(height: 18),
               Row(
                 children: [
@@ -553,14 +570,30 @@ class _PrivateCycleTrackerScreenState extends State<PrivateCycleTrackerScreen> {
           ),
         ),
         const SizedBox(height: 16),
-        FilledButton.icon(
-          onPressed: () => _showDayEditor(cycleDateOnly(DateTime.now())),
-          icon: const Icon(Icons.add_circle_outline),
-          label: Text(
-            todayLog == null
-                ? strings.cycleLogToday
-                : strings.cycleEditToday,
-          ),
+        Row(
+          children: [
+            Expanded(
+              child: FilledButton.icon(
+                onPressed: () => _showDayEditor(
+                  cycleDateOnly(DateTime.now()),
+                ),
+                icon: const Icon(Icons.add_circle_outline),
+                label: Text(
+                  todayLog == null
+                      ? strings.cycleLogToday
+                      : strings.cycleEditToday,
+                ),
+              ),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: OutlinedButton.icon(
+                onPressed: _showQuickPeriodRange,
+                icon: const Icon(Icons.water_drop_outlined),
+                label: Text(strings.cycleQuickPeriodAction),
+              ),
+            ),
+          ],
         ),
         const SizedBox(height: 12),
         if (todayLog != null)
@@ -1746,6 +1779,16 @@ class _PrivateCycleTrackerScreenState extends State<PrivateCycleTrackerScreen> {
     ];
     return parts.isEmpty ? strings.cycleDaySaved : parts.join(' · ');
   }
+
+  String _confidenceLabel(
+    AnnaStrings strings,
+    CyclePredictionConfidence confidence,
+  ) =>
+      switch (confidence) {
+        CyclePredictionConfidence.low => strings.cycleConfidenceLow,
+        CyclePredictionConfidence.medium => strings.cycleConfidenceMedium,
+        CyclePredictionConfidence.high => strings.cycleConfidenceHigh,
+      };
 
   String _phaseLabel(AnnaStrings strings, CyclePhase phase) => switch (phase) {
         CyclePhase.period => strings.cyclePhasePeriod,
