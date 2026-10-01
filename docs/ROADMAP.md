@@ -43,7 +43,7 @@ Source of execution truth for Anna's Diary. Product identity and boundaries are 
 | v0.86 | Security & Governance Hardening | Completed | Atomic E2EE key ownership, revision-safe shared credentials, recovery, Vault KDF hardening and SHOS documentation alignment |
 | v0.87 | Private Vault Web Unlock Hotfix | Completed | Async browser-native PBKDF2 unlock with unchanged Vault format, explicit unlock states and Chrome regression coverage |
 | v0.88 | Private Cycle Tracker MVP | Completed | Vault-only cycle calendar, daily logs, history, deterministic estimates, privacy-safe reminders and five-language UI |
-| v0.89 | Cycle Premium Engine | In progress | Centralized premium-ready access, advanced trends, fertility observations, custom symptoms and explicit private report |
+| v0.89 | Cycle Premium Engine | Completed | Centralized premium-ready access, advanced trends, fertility observations, custom symptoms and explicit private report |
 
 ## Permanent constraints for this sequence
 
