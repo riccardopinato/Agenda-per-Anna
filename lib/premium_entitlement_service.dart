@@ -69,12 +69,13 @@ class PremiumEntitlementService extends ChangeNotifier {
     'REVENUECAT_WEB_API_KEY',
   );
 
-  // Kept enabled during the current pre-store development phase so the
-  // advanced cycle layer remains testable. Store release builds must set
-  // ANNA_PREMIUM_PREVIEW=false once RevenueCat keys/products are configured.
-  static const bool _previewEnabled = bool.fromEnvironment(
+  static const bool _previewOverride = bool.fromEnvironment(
     'ANNA_PREMIUM_PREVIEW',
-    defaultValue: true,
+    defaultValue: false,
+  );
+  static const bool _storeRelease = bool.fromEnvironment(
+    'ANNA_STORE_RELEASE',
+    defaultValue: false,
   );
 
   PremiumStoreState _state = PremiumStoreState.unconfigured;
@@ -90,8 +91,10 @@ class PremiumEntitlementService extends ChangeNotifier {
   PremiumStoreState get state => _state;
   bool get configured => _sdkConfigured;
   bool get paidEntitlement => _paidEntitlement;
-  bool get previewMode => _previewEnabled && !_paidEntitlement;
-  bool get hasPremiumAccess => _paidEntitlement || _previewEnabled;
+  bool get storeReleaseMode => _storeRelease;
+  bool get previewMode =>
+      !_paidEntitlement && !_storeRelease && (kDebugMode || _previewOverride);
+  bool get hasPremiumAccess => _paidEntitlement || previewMode;
   bool get busy => _state == PremiumStoreState.initializing;
   bool get canRestorePurchases => _sdkConfigured && !kIsWeb;
   String? get lastError => _lastError;
@@ -120,6 +123,20 @@ class PremiumEntitlementService extends ChangeNotifier {
     if (_initializing) return;
 
     final apiKey = _platformApiKey;
+    if (_storeRelease && _previewOverride) {
+      _identifiedAppUserId = normalizedId;
+      _state = PremiumStoreState.error;
+      _lastError = 'premium_store_release_preview_enabled';
+      notifyListeners();
+      return;
+    }
+    if (_storeRelease && apiKey.isEmpty) {
+      _identifiedAppUserId = normalizedId;
+      _state = PremiumStoreState.error;
+      _lastError = 'premium_store_release_missing_api_key';
+      notifyListeners();
+      return;
+    }
     if (apiKey.isEmpty) {
       _identifiedAppUserId = normalizedId;
       _state = PremiumStoreState.unconfigured;
