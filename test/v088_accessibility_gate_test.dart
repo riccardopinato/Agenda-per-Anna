@@ -10,9 +10,7 @@ import 'package:agenda_per_anna/main.dart';
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
-  const externalCalendarChannel = MethodChannel(
-    'annas_diary/external_calendar',
-  );
+  const externalCalendarChannel = MethodChannel('annas_diary/external_calendar');
 
   Future<AgendaStore> pumpCoreShell(
     WidgetTester tester, {
