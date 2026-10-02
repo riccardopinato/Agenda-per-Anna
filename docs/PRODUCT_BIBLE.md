@@ -1,8 +1,8 @@
 # Anna's Diary — Product Bible
 
 **Status:** canonical product source of truth  
-**Current release line:** v0.94  
-**Last aligned:** 1 October 2026
+**Current release line:** v0.95  
+**Last aligned:** 2 October 2026
 
 This document defines what Anna's Diary is, what it is not, and the product/security invariants that future work must preserve. Implementation details belong in `docs/ARCHITECTURE.md`; execution sequencing belongs in `docs/ROADMAP.md`.
 
@@ -28,6 +28,7 @@ The product includes a deliberately bounded shared area, **Noi ♡**, for memori
 - private shopping and workout history/plans at lightweight personal scope;
 - local-first search and organization;
 - one-way explicit copy toward Notes-compatible text;
+- explicit Life Bridge v1 interoperability for selected personal memories/events while canonical data remains owned by its source/destination domain;
 - Noi ♡ shared agenda, memories, interactions and lightweight shared utilities;
 - encrypted Private Vault and Password Vault;
 - private menstrual-cycle tracking inside the encrypted Vault, with deterministic estimates and no health diagnosis;
@@ -43,6 +44,8 @@ Anna's Diary must not become:
 - a professional task/database platform;
 - a health diagnosis or psychological profiling system;
 - an autonomous life narrator;
+- a single shared database that absorbs specialist-app datasets;
+- a silent bidirectional cross-app synchronization layer;
 - a system that silently exports intimate data to another product.
 
 Work/study knowledge management belongs to **Notes-Ecosistema**. Reusable code may be shared; private datasets, keys and authorization scopes must remain separate.
@@ -57,6 +60,18 @@ The product follows four rules:
 4. **Privacy, sync, backup and search are service layers, not competing content silos.**
 
 New features must extend existing models/services before introducing parallel persistence or duplicate write paths.
+
+### Life Ecosystem contract
+
+Anna's Diary may act as the personal narrative/time hub inside a wider Life Ecosystem, but specialist products remain authoritative for specialist data. Life Bridge is the explicit interoperability boundary.
+
+- Cross-app transfer is user-initiated and versioned.
+- **COPY** creates an independent destination record while retaining provenance.
+- **LINK** keeps a local destination snapshot plus source provenance; it is not background/bidirectional sync.
+- A source becoming unavailable must never silently erase the destination snapshot.
+- Other apps never receive direct access to Anna's local database, sync queue, encryption keys or account secrets merely because they support Life Bridge.
+- Private Vault, Password Vault and menstrual-cycle content are excluded from automatic bridge export.
+- Bridge metadata may describe provenance and linkage, but it must not become a second canonical diary, agenda, memory or life database.
 
 ## 4. Local-first and offline trust
 

@@ -98,10 +98,23 @@ class EventTile extends StatelessWidget {
         ),
         onTap: () =>
             openItemEditor(context, store, item.date, existing: item),
-        trailing: IconButton(
-          tooltip: 'Azioni',
-          onPressed: () => _showAgendaItemActions(context, store, item),
-          icon: const Icon(Icons.more_horiz),
+        trailing: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            IconButton(
+              tooltip: AnnaStrings.of(context).lifeBridgeCopyPayload,
+              onPressed: () => copyLifeBridgePayload(
+                context,
+                store.exportLifeBridgeAgendaItem(item),
+              ),
+              icon: const Icon(Icons.hub_outlined),
+            ),
+            IconButton(
+              tooltip: 'Azioni',
+              onPressed: () => _showAgendaItemActions(context, store, item),
+              icon: const Icon(Icons.more_horiz),
+            ),
+          ],
         ),
       ),
     );

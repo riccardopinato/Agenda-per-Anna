@@ -49,6 +49,7 @@ Source of execution truth for Anna's Diary. Product identity and boundaries are 
 | v0.92 | Premium Production Guardrails | Completed | Fail-closed store configuration, explicit QA preview channels and release-time RevenueCat validation |
 | v0.93 | Cycle Tracker Completion & UX Polish | Completed | Vault-only onboarding, fast period logging, prediction v2, complete private reminders, richer calendar, lightweight Premium charts and accessibility polish |
 | v0.94 | Premium Store Activation & Sandbox QA | Completed | Store QA diagnostics, monthly/lifetime Offering validation, signed Internal Testing AAB and real-purchase verification contract |
+| v0.95 | Life Ecosystem + Life Bridge v1 | Completed | Versioned explicit COPY/LINK interoperability over Anna's existing diary/agenda domains, without a shared life database |
 
 ## Permanent constraints for this sequence
 
@@ -608,3 +609,21 @@ Per the active development cadence, AppLab runs once every two feature versions.
 - Existing FREE diary, agenda, Vault and basic cycle data remain independent of entitlement changes.
 - Analyze, full regression tests, Web release, Android size audit and AppLab trusted verification must pass before promotion to main.
 - Release metadata is v0.94.0+104.
+
+
+## v0.95 acceptance criteria
+
+- Anna's Diary is the first reference implementation of **Life Bridge v1** and remains the personal diary/agenda/memory hub rather than becoming a universal database for specialist apps.
+- Life Bridge protocol version `1.x` supports the initial object types `moment`, `travel_memory`, `journey`, `photo`, `place` and `event`; unknown major versions fail closed and unknown object types are rejected without mutating canonical data.
+- `COPY` and `LINK` are distinct. COPY creates an independent canonical Anna record. LINK creates the same local canonical snapshot plus account-scoped provenance/link metadata; it does not establish silent bidirectional synchronization.
+- Event imports materialize through the existing `AgendaItem` + `AgendaStore.upsert` path. Memory/travel/place/photo snapshots materialize through the existing `DiaryBlock` + `AgendaStore.saveJournal` path and reuse inline `DiaryPlaceReference` metadata.
+- Existing People records may be matched explicitly by name for imported memory references; Life Bridge does not silently create a contacts/CRM database.
+- Every import keeps `bridgeId`, source app/object identity and transfer-mode history in account-scoped local bridge metadata. Re-importing the same `bridgeId` is idempotent.
+- LINK lifecycle distinguishes active, source-unavailable and unlinked states. Unlinking or converting a link to an independent copy never deletes the canonical Anna diary/agenda snapshot.
+- Bridge metadata is an interoperability layer only: no `LifeItem` mega-model, Life Core store, new Memory Engine, Supabase table, cross-app sync queue or shared database is introduced.
+- Private Vault, Password Vault and menstrual-cycle content are never implicit Life Bridge sources. Any future support for sensitive domains requires an explicit product/security review.
+- Life Bridge v1 does not transfer binary photo/audio/sketch media. Exported Anna payloads disclose omitted binary media; original media remains owned by Anna's existing Media Engine.
+- The Life Ecosystem screen exposes only implemented capabilities as active. Wonderlog is identified as the first external integration target but remains unavailable until its own adapter is implemented and verified.
+- Canonical imported diary/agenda records retain their existing backup, cloud-sync, Trash/lifecycle and account-isolation behavior. Life Bridge metadata remains local/account-scoped in v1.
+- Release metadata is aligned to v0.95.0+105.
+- Analyze, full tests, Web release, Android production-equivalent size audit and AppLab Trusted Verify must all pass before promotion to `main`.

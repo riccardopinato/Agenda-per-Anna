@@ -1,6 +1,6 @@
 # Agenda per Anna — Architecture
 
-## Current structure — v0.94.0
+## Current structure — v0.95.0
 
 Anna's Diary keeps `lib/main.dart` as the compatibility library boundary, but large responsibilities are now split by runtime domain:
 
@@ -566,3 +566,42 @@ v0.82 expands coverage without changing the localization architecture establishe
 - Maestro selectors accept all five supported labels for migrated runtime checkpoints.
 - New translations remain part of the existing `AnnaStrings` module; no parallel ARB/service/database layer is introduced.
 
+
+
+## v0.95 — Life Ecosystem + Life Bridge v1
+
+Life Ecosystem adds interoperability without changing data ownership. Anna's Diary remains the canonical owner of its diary, agenda, people references, inline places, lifecycle, backup and sync behavior. Specialist apps remain owners of their own specialist datasets.
+
+### Protocol boundary
+
+- `LifeBridgePayload` is a versioned JSON transport contract with source identity, object type, transfer mode, event time, optional location/people/tags, extension data and export timestamp.
+- Protocol major `1` is accepted. Unknown major versions fail closed before canonical data is changed.
+- Anna v0.95 accepts `moment`, `travel_memory`, `journey`, `photo`, `place` and `event`. The object-type namespace remains extensible without requiring a universal LifeItem model.
+- `bridgeId` is the idempotency key. Import history prevents the same bridge item from being materialized twice.
+
+### Canonical adapters
+
+- `event` imports create an ordinary `AgendaItem` and call the existing `AgendaStore.upsert` path, so reminders, private sync and ordinary agenda lifecycle remain authoritative.
+- Memory/travel/place/photo payloads create an ordinary diary note `DiaryBlock` and call `AgendaStore.saveJournal`. Optional location metadata maps to the existing inline `DiaryPlaceReference`; existing People may be referenced by ID when an explicit incoming name matches.
+- No Life Bridge-owned copy of diary or agenda content is persisted. Bridge persistence stores only provenance/link/history metadata.
+- Photo/audio/sketch binaries are outside the v1 transport. An Anna export may carry textual context and explicit extension metadata saying the binary media stayed in Anna's Media Engine.
+
+### COPY and LINK
+
+- `COPY` materializes canonical Anna data and records provenance/import history. Source and destination are independent after import.
+- `LINK` materializes the same local canonical snapshot and additionally stores the source object/deep-link/revision plus a cached transport snapshot.
+- LINK does not imply background polling, direct database access or bidirectional sync. A source can be marked unavailable; the local snapshot remains.
+- Unlinking or converting to COPY removes only the active link relationship. Canonical content follows the ordinary Anna lifecycle independently.
+
+### Persistence and privacy
+
+- Bridge provenance/history is stored in `LocalStateStore` under account-scoped keys derived from the existing account-scope token. It is deliberately not a second canonical content store.
+- v1 bridge metadata is local-only. The canonical imported diary/agenda records continue through their existing optional private cloud sync, backup and Trash paths.
+- Private Vault, shared passwords and cycle data are outside the bridge boundary. Life Bridge has no automatic access to those stores.
+- No Supabase schema, cross-app account linkage, sync queue, AI model or new dependency is introduced.
+
+### Presentation
+
+- `LifeEcosystemScreen` is the user-facing bridge hub. It imports an explicit JSON payload from the clipboard, shows local LINK state and recent import provenance.
+- Integration availability must remain truthful. Anna is the reference implementation; Wonderlog is the next external adapter target and is not shown as active until that adapter exists.
+- SleepMax and CashMate remain future adapter candidates only.
