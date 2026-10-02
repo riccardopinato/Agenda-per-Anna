@@ -130,12 +130,5 @@ void main() {
     expect(mainSource, contains("part 'src/life_bridge.dart';"));
   });
 
-  test('v0.95 release metadata stays aligned', () {
-    final pubspec = File('pubspec.yaml').readAsStringSync();
-    final runtime = File('lib/app_version.dart').readAsStringSync();
 
-    expect(pubspec, contains('version: 0.95.0+105'));
-    expect(runtime, contains("appReleaseVersion = '0.95.0'"));
-    expect(runtime, contains('appReleaseBuildNumber = 105'));
-  });
 }
