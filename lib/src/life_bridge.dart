@@ -789,6 +789,78 @@ extension LifeBridgeStrings on AnnaStrings {
         pt: 'Liga memórias e eventos sem fundir as bases de dados.',
       );
 
+  String get ecosystemMyApps => _pick(
+        en: 'My apps',
+        it: 'Le mie app',
+        es: 'Mis apps',
+        fr: 'Mes apps',
+        pt: 'As minhas apps',
+      );
+
+  String get ecosystemStatusActive => _pick(
+        en: 'Active',
+        it: 'Attiva',
+        es: 'Activa',
+        fr: 'Active',
+        pt: 'Ativa',
+      );
+
+  String get ecosystemStatusContractReady => _pick(
+        en: 'Contract ready',
+        it: 'Contratto pronto',
+        es: 'Contrato listo',
+        fr: 'Contrat prêt',
+        pt: 'Contrato pronto',
+      );
+
+  String get ecosystemStatusPlanned => _pick(
+        en: 'Planned',
+        it: 'Pianificata',
+        es: 'Planificada',
+        fr: 'Planifiée',
+        pt: 'Planeada',
+      );
+
+  String get ecosystemInstalledDetected => _pick(
+        en: 'Installed on this device',
+        it: 'Installata su questo dispositivo',
+        es: 'Instalada en este dispositivo',
+        fr: 'Installée sur cet appareil',
+        pt: 'Instalada neste dispositivo',
+      );
+
+  String get ecosystemInstalledNotDetected => _pick(
+        en: 'Not detected on this device',
+        it: 'Non rilevata su questo dispositivo',
+        es: 'No detectada en este dispositivo',
+        fr: 'Non détectée sur cet appareil',
+        pt: 'Não detetada neste dispositivo',
+      );
+
+  String get ecosystemInstalledUnknown => _pick(
+        en: 'Installation status not available',
+        it: 'Stato installazione non disponibile',
+        es: 'Estado de instalación no disponible',
+        fr: 'État d’installation indisponible',
+        pt: 'Estado de instalação indisponível',
+      );
+
+  String get ecosystemOpenSource => _pick(
+        en: 'Open source app',
+        it: 'Apri app sorgente',
+        es: 'Abrir app de origen',
+        fr: 'Ouvrir l’app source',
+        pt: 'Abrir app de origem',
+      );
+
+  String get ecosystemOpenSourceFailed => _pick(
+        en: 'The source app could not be opened.',
+        it: 'Impossibile aprire l’app sorgente.',
+        es: 'No se pudo abrir la app de origen.',
+        fr: 'Impossible d’ouvrir l’app source.',
+        pt: 'Não foi possível abrir a app de origem.',
+      );
+
   String get lifeBridgeImportHint => _pick(
         en: 'Paste JSON exported by a compatible app. Anna stores a canonical local copy or a linked snapshot according to the payload.',
         it: 'Incolla il JSON esportato da un’app compatibile. Anna salva una copia locale canonica o una snapshot collegata in base al payload.',
