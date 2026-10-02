@@ -1,4 +1,4 @@
-name: v0.97 Test Distribution
+name: v0.97 Web Preview Distribution
 
 on:
   push:
@@ -13,7 +13,7 @@ permissions:
   id-token: write
 
 concurrency:
-  group: anna-v097-test-distribution
+  group: anna-v097-web-preview
   cancel-in-progress: true
 
 jobs:
@@ -70,9 +70,6 @@ jobs:
   deploy:
     needs: web
     runs-on: ubuntu-latest
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - uses: actions/configure-pages@v5
         with:
@@ -83,72 +80,5 @@ jobs:
         with:
           artifact_name: github-pages-v097-${{ github.run_id }}-${{ github.run_attempt }}
 
-  apk:
-    runs-on: ubuntu-latest
-    timeout-minutes: 30
-    env:
-      ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
-      ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
-      ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
-      ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
-      ANDROID_KEYSTORE_PATH: ${{ github.workspace }}/.signing/agenda-release.jks
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Require stable signing
-        shell: bash
-        run: |
-          set -euo pipefail
-          missing=()
-          for name in ANDROID_KEYSTORE_BASE64 ANDROID_KEYSTORE_PASSWORD ANDROID_KEY_ALIAS ANDROID_KEY_PASSWORD; do
-            if [ -z "${!name:-}" ]; then missing+=("$name"); fi
-          done
-          if [ "${#missing[@]}" -ne 0 ]; then
-            echo "::error title=Stable Android signing is not configured::Missing: ${missing[*]}"
-            exit 1
-          fi
-
-      - uses: subosito/flutter-action@v2
-        with:
-          flutter-version: "3.47.5"
-          channel: stable
-          cache: true
-
-      - name: Generate pinned Android platform
-        run: |
-          rm -rf android /tmp/agenda_android
-          flutter create --project-name agenda_per_anna --org com.riccardopinato --platforms=android /tmp/agenda_android
-          cp -R /tmp/agenda_android/android .
-
-      - name: Apply Android configuration
-        run: python3 tool/prepare_android_platform.py --release-signing
-
-      - name: Install locked dependencies
-        run: flutter pub get --enforce-lockfile
-
-      - name: Generate launcher icons
-        run: dart run flutter_launcher_icons -f tool/flutter_launcher_icons_android.yaml
-
-      - name: Build signed ARM64 test APK
-        shell: bash
-        run: |
-          set -euo pipefail
-          FIREBASE_ARG=""
-          if [ -f android/app/google-services.json ]; then
-            FIREBASE_ARG="--dart-define=FIREBASE_ENABLED=true"
-          fi
-          flutter build apk             --release             --split-per-abi             --tree-shake-icons             --dart-define=ANNA_STORE_RELEASE=false             --dart-define=ANNA_PREMIUM_PREVIEW=true             $FIREBASE_ARG
-          mkdir -p build/direct-apk
-          cp build/app/outputs/flutter-apk/app-arm64-v8a-release.apk              build/direct-apk/Anna-Diary-v0.97-Ecosystem-Hub-test-arm64.apk
-          sha256sum build/direct-apk/*.apk > build/direct-apk/SHA256SUMS.txt
-          ls -lh build/direct-apk
-
-      - name: Upload APK
-        uses: actions/upload-artifact@v4
-        with:
-          name: anna-v097-test-apk
-          path: |
-            build/direct-apk/*.apk
-            build/direct-apk/SHA256SUMS.txt
-          if-no-files-found: error
-          retention-days: 30
+      - name: Show preview URL
+        run: echo "Preview URL=${{ steps.deployment.outputs.page_url }}"
