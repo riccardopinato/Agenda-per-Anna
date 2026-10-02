@@ -25,6 +25,7 @@ import 'external_calendar_service.dart';
 import 'backup_service.dart';
 import 'cloud_sync_service.dart';
 import 'cycle_tracker_domain.dart';
+import 'ecosystem_service.dart';
 import 'notification_service.dart';
 import 'photo_ocr_service.dart';
 import 'premium_entitlement_service.dart';
