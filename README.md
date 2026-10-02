@@ -31,6 +31,15 @@ Pull requests also run the AppLab Production Gate: release-mode ARM64 build, And
 
 See `docs/ARCHITECTURE.md` and `supabase/README.md` for implementation details.
 
+## v0.97 development — Ecosystem Hub v1
+
+- Adds a registry-driven **Le mie app / My apps** layer over Life Bridge without introducing shared storage or background synchronization.
+- Keeps app state truthful: Anna active, Wonderlog contract-ready/runtime-pending, SleepMax and CashMate planned until real adapters exist.
+- Adds best-effort Android install probing for the already-contracted `wonderlog://` scheme; Web and unsupported platforms remain explicitly unknown rather than guessed.
+- LINK records can open their stored source deep link after explicit user action; launch failure is non-destructive.
+- Source-unavailable, keep-as-copy and unlink remain explicit lifecycle actions.
+- This is development work only: release metadata remains v0.95.0+105 while v0.96 still waits for the real Wonderlog Flutter E2E.
+
 ## v0.95.0 — Life Ecosystem & Life Bridge v1
 
 - Adds a versioned JSON Life Bridge transport contract with explicit source provenance and idempotent `bridgeId` imports.
