@@ -1050,28 +1050,28 @@ class _LifeEcosystemScreenState extends State<LifeEcosystemScreen> {
                   icon: Icons.auto_stories_outlined,
                   title: 'Anna\'s Diary',
                   subtitle: 'Life Bridge v1 · reference implementation',
-                  active: true,
+                  status: _LifeBridgeAppStatus.active,
                 ),
                 const SizedBox(height: 10),
                 const _LifeBridgeAppCard(
                   icon: Icons.travel_explore_outlined,
                   title: 'Wonderlog',
-                  subtitle: 'First external integration target · adapter not implemented yet',
-                  active: false,
+                  subtitle: 'Life Bridge v1 contract ready · runtime adapter pending',
+                  status: _LifeBridgeAppStatus.contractReady,
                 ),
                 const SizedBox(height: 10),
                 const _LifeBridgeAppCard(
                   icon: Icons.bedtime_outlined,
                   title: 'SleepMax',
                   subtitle: 'Life Bridge adapter not implemented yet',
-                  active: false,
+                  status: _LifeBridgeAppStatus.planned,
                 ),
                 const SizedBox(height: 10),
                 const _LifeBridgeAppCard(
                   icon: Icons.account_balance_wallet_outlined,
                   title: 'CashMate',
                   subtitle: 'Life Bridge adapter not implemented yet',
-                  active: false,
+                  status: _LifeBridgeAppStatus.planned,
                 ),
                 const SizedBox(height: 24),
                 Text(
@@ -1139,30 +1139,50 @@ class _LifeEcosystemScreenState extends State<LifeEcosystemScreen> {
   }
 }
 
+enum _LifeBridgeAppStatus {
+  active,
+  contractReady,
+  planned,
+}
+
 class _LifeBridgeAppCard extends StatelessWidget {
   final IconData icon;
   final String title;
   final String subtitle;
-  final bool active;
+  final _LifeBridgeAppStatus status;
 
   const _LifeBridgeAppCard({
     required this.icon,
     required this.title,
     required this.subtitle,
-    required this.active,
+    required this.status,
   });
 
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
+    final (statusIcon, statusColor) = switch (status) {
+      _LifeBridgeAppStatus.active => (
+          Icons.check_circle_outline,
+          scheme.primary,
+        ),
+      _LifeBridgeAppStatus.contractReady => (
+          Icons.fact_check_outlined,
+          scheme.secondary,
+        ),
+      _LifeBridgeAppStatus.planned => (
+          Icons.schedule_outlined,
+          scheme.outline,
+        ),
+    };
     return Card(
       child: ListTile(
         leading: CircleAvatar(child: Icon(icon)),
         title: Text(title),
         subtitle: Text(subtitle),
         trailing: Icon(
-          active ? Icons.check_circle_outline : Icons.schedule_outlined,
-          color: active ? scheme.primary : scheme.outline,
+          statusIcon,
+          color: statusColor,
         ),
       ),
     );
