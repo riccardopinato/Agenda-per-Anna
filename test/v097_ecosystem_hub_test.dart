@@ -1,7 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import '../lib/ecosystem_service.dart';
+import 'package:agenda_per_anna/ecosystem_service.dart';
 
 void main() {
   test('ecosystem registry keeps stable unique app identities', () {
