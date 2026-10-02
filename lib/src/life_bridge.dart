@@ -1065,6 +1065,17 @@ class _LifeEcosystemScreenState extends State<LifeEcosystemScreen> {
     }
   }
 
+  Future<void> _openSourceLink(LifeBridgeLinkRecord link) async {
+    final result =
+        await EcosystemLauncher.instance.openDeepLink(link.source.deepLink);
+    if (!mounted || result == EcosystemLaunchOutcome.opened) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(AnnaStrings.of(context).ecosystemOpenSourceFailed),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final strings = AnnaStrings.of(context);
@@ -1073,6 +1084,13 @@ class _LifeEcosystemScreenState extends State<LifeEcosystemScreen> {
     return Scaffold(
       appBar: AppBar(
         title: Text(strings.lifeEcosystemTitle),
+        actions: [
+          IconButton(
+            tooltip: MaterialLocalizations.of(context).refreshIndicatorSemanticLabel,
+            onPressed: () => setState(() {}),
+            icon: const Icon(Icons.refresh_outlined),
+          ),
+        ],
       ),
       body: _loading
           ? const Center(child: CircularProgressIndicator())
@@ -1118,34 +1136,21 @@ class _LifeEcosystemScreenState extends State<LifeEcosystemScreen> {
                   ),
                 ),
                 const SizedBox(height: 18),
-                const _LifeBridgeAppCard(
-                  icon: Icons.auto_stories_outlined,
-                  title: 'Anna\'s Diary',
-                  subtitle: 'Life Bridge v1 · reference implementation',
-                  status: _LifeBridgeAppStatus.active,
+                Text(
+                  strings.ecosystemMyApps,
+                  style: Theme.of(context)
+                      .textTheme
+                      .titleMedium
+                      ?.copyWith(fontWeight: FontWeight.w800),
                 ),
-                const SizedBox(height: 10),
-                const _LifeBridgeAppCard(
-                  icon: Icons.travel_explore_outlined,
-                  title: 'Wonderlog',
-                  subtitle: 'Life Bridge v1 contract ready · runtime adapter pending',
-                  status: _LifeBridgeAppStatus.contractReady,
+                const SizedBox(height: 8),
+                ...EcosystemRegistry.apps.map(
+                  (app) => Padding(
+                    padding: const EdgeInsets.only(bottom: 10),
+                    child: _EcosystemAppCard(app: app),
+                  ),
                 ),
-                const SizedBox(height: 10),
-                const _LifeBridgeAppCard(
-                  icon: Icons.bedtime_outlined,
-                  title: 'SleepMax',
-                  subtitle: 'Life Bridge adapter not implemented yet',
-                  status: _LifeBridgeAppStatus.planned,
-                ),
-                const SizedBox(height: 10),
-                const _LifeBridgeAppCard(
-                  icon: Icons.account_balance_wallet_outlined,
-                  title: 'CashMate',
-                  subtitle: 'Life Bridge adapter not implemented yet',
-                  status: _LifeBridgeAppStatus.planned,
-                ),
-                const SizedBox(height: 24),
+                const SizedBox(height: 14),
                 Text(
                   strings.lifeBridgeLinks,
                   style: Theme.of(context)
@@ -1160,6 +1165,7 @@ class _LifeEcosystemScreenState extends State<LifeEcosystemScreen> {
                   ...state.activeLinks.map(
                     (link) => _LifeBridgeLinkTile(
                       link: link,
+                      onOpenSource: () => _openSourceLink(link),
                       onUnavailable: () async {
                         await widget.store
                             .markLifeBridgeSourceUnavailable(link.id);
@@ -1197,7 +1203,7 @@ class _LifeEcosystemScreenState extends State<LifeEcosystemScreen> {
                                 : Icons.copy_all_outlined,
                           ),
                           title: Text(
-                            '${record.sourceAppId} · ${record.objectType}',
+                            '${EcosystemRegistry.displayNameFor(record.sourceAppId)} · ${record.objectType}',
                           ),
                           subtitle: Text(
                             '${record.destinationType} · '
@@ -1211,51 +1217,92 @@ class _LifeEcosystemScreenState extends State<LifeEcosystemScreen> {
   }
 }
 
-enum _LifeBridgeAppStatus {
-  active,
-  contractReady,
-  planned,
-}
+IconData _ecosystemIconForApp(String appId) => switch (appId) {
+      'annas_diary' => Icons.auto_stories_outlined,
+      'wonderlog' => Icons.travel_explore_outlined,
+      'sleepmax' => Icons.bedtime_outlined,
+      'cashmate' => Icons.account_balance_wallet_outlined,
+      _ => Icons.apps_outlined,
+    };
 
-class _LifeBridgeAppCard extends StatelessWidget {
-  final IconData icon;
-  final String title;
-  final String subtitle;
-  final _LifeBridgeAppStatus status;
+String _ecosystemStatusLabel(
+  AnnaStrings strings,
+  EcosystemIntegrationStatus status,
+) =>
+    switch (status) {
+      EcosystemIntegrationStatus.active => strings.ecosystemStatusActive,
+      EcosystemIntegrationStatus.contractReady =>
+        strings.ecosystemStatusContractReady,
+      EcosystemIntegrationStatus.planned => strings.ecosystemStatusPlanned,
+    };
 
-  const _LifeBridgeAppCard({
-    required this.icon,
-    required this.title,
-    required this.subtitle,
-    required this.status,
+String _ecosystemAvailabilityLabel(
+  AnnaStrings strings,
+  EcosystemAvailability availability,
+) =>
+    switch (availability) {
+      EcosystemAvailability.available => strings.ecosystemInstalledDetected,
+      EcosystemAvailability.unavailable =>
+        strings.ecosystemInstalledNotDetected,
+      EcosystemAvailability.unknown => strings.ecosystemInstalledUnknown,
+    };
+
+class _EcosystemAppCard extends StatelessWidget {
+  final EcosystemAppDefinition app;
+
+  const _EcosystemAppCard({
+    required this.app,
   });
 
   @override
   Widget build(BuildContext context) {
+    final strings = AnnaStrings.of(context);
     final scheme = Theme.of(context).colorScheme;
-    final (statusIcon, statusColor) = switch (status) {
-      _LifeBridgeAppStatus.active => (
+    final (statusIcon, statusColor) = switch (app.integrationStatus) {
+      EcosystemIntegrationStatus.active => (
           Icons.check_circle_outline,
           scheme.primary,
         ),
-      _LifeBridgeAppStatus.contractReady => (
+      EcosystemIntegrationStatus.contractReady => (
           Icons.fact_check_outlined,
           scheme.secondary,
         ),
-      _LifeBridgeAppStatus.planned => (
+      EcosystemIntegrationStatus.planned => (
           Icons.schedule_outlined,
           scheme.outline,
         ),
     };
-    return Card(
-      child: ListTile(
-        leading: CircleAvatar(child: Icon(icon)),
-        title: Text(title),
-        subtitle: Text(subtitle),
-        trailing: Icon(
-          statusIcon,
-          color: statusColor,
+
+    final status = _ecosystemStatusLabel(strings, app.integrationStatus);
+    if (app.probeUri == null) {
+      return Card(
+        margin: EdgeInsets.zero,
+        child: ListTile(
+          leading: CircleAvatar(child: Icon(_ecosystemIconForApp(app.appId))),
+          title: Text(app.displayName),
+          subtitle: Text(status),
+          trailing: Icon(statusIcon, color: statusColor),
         ),
+      );
+    }
+
+    return Card(
+      margin: EdgeInsets.zero,
+      child: FutureBuilder<EcosystemAvailability>(
+        future: EcosystemLauncher.instance.availabilityFor(app),
+        builder: (context, snapshot) {
+          final availability =
+              snapshot.data ?? EcosystemAvailability.unknown;
+          return ListTile(
+            leading: CircleAvatar(child: Icon(_ecosystemIconForApp(app.appId))),
+            title: Text(app.displayName),
+            subtitle: Text(
+              '$status\n${_ecosystemAvailabilityLabel(strings, availability)}',
+            ),
+            isThreeLine: true,
+            trailing: Icon(statusIcon, color: statusColor),
+          );
+        },
       ),
     );
   }
@@ -1263,12 +1310,14 @@ class _LifeBridgeAppCard extends StatelessWidget {
 
 class _LifeBridgeLinkTile extends StatelessWidget {
   final LifeBridgeLinkRecord link;
+  final Future<void> Function() onOpenSource;
   final Future<void> Function() onUnavailable;
   final Future<void> Function() onConvertCopy;
   final Future<void> Function() onUnlink;
 
   const _LifeBridgeLinkTile({
     required this.link,
+    required this.onOpenSource,
     required this.onUnavailable,
     required this.onConvertCopy,
     required this.onUnlink,
@@ -1280,6 +1329,8 @@ class _LifeBridgeLinkTile extends StatelessWidget {
     final payload = link.cachedPayload;
     final title = payload['title']?.toString().trim();
     final objectType = payload['objectType']?.toString() ?? link.localObjectType;
+    final sourceName = EcosystemRegistry.displayNameFor(link.source.appId);
+    final canOpenSource = link.source.deepLink?.trim().isNotEmpty == true;
     return ListTile(
       contentPadding: EdgeInsets.zero,
       leading: Icon(
@@ -1289,17 +1340,19 @@ class _LifeBridgeLinkTile extends StatelessWidget {
       ),
       title: Text(
         title == null || title.isEmpty
-            ? '${link.source.appId} · $objectType'
+            ? '$sourceName · $objectType'
             : title,
       ),
       subtitle: Text(
         link.status == LifeBridgeLinkStatus.sourceUnavailable
-            ? '${link.source.appId} · ${strings.lifeBridgeSourceUnavailable}'
-            : '${link.source.appId} · $objectType',
+            ? '$sourceName · ${strings.lifeBridgeSourceUnavailable}'
+            : '$sourceName · $objectType',
       ),
       trailing: PopupMenuButton<String>(
         onSelected: (value) {
-          if (value == 'unavailable') {
+          if (value == 'open') {
+            unawaited(onOpenSource());
+          } else if (value == 'unavailable') {
             unawaited(onUnavailable());
           } else if (value == 'copy') {
             unawaited(onConvertCopy());
@@ -1308,6 +1361,11 @@ class _LifeBridgeLinkTile extends StatelessWidget {
           }
         },
         itemBuilder: (context) => [
+          if (canOpenSource)
+            PopupMenuItem(
+              value: 'open',
+              child: Text(strings.ecosystemOpenSource),
+            ),
           PopupMenuItem(
             value: 'unavailable',
             child: Text(strings.lifeBridgeMarkUnavailable),
