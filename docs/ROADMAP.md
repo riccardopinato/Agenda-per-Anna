@@ -51,7 +51,7 @@ Source of execution truth for Anna's Diary. Product identity and boundaries are 
 | v0.94 | Premium Store Activation & Sandbox QA | Completed | Store QA diagnostics, monthly/lifetime Offering validation, signed Internal Testing AAB and real-purchase verification contract |
 | v0.95 | Life Ecosystem + Life Bridge v1 | Completed | Versioned explicit COPY/LINK interoperability over Anna's existing diary/agenda domains, without a shared life database |
 | v0.96 | Wonderlog Life Bridge Integration | In progress — contract-ready, runtime gated | Lock Wonderlog → Anna Life Bridge v1 compatibility now; activate the runtime integration only after the Wonderlog Flutter adapter reaches a stable verified baseline |
-| v0.97 | Ecosystem Hub v1 — Le mie app | In development — branch only; release gated by v0.96 | Registry-driven app hub, truthful integration/install states, explicit source deep links and link management without cross-app sync or shared storage |
+| v0.97 | Ecosystem Hub v1 — Le mie app | Implementation complete — validated; merge/release gated by v0.96 | Registry-driven app hub, truthful integration/install states, per-app capability/details, explicit source deep links and filtered link/import history without cross-app sync or shared storage |
 
 ## Permanent constraints for this sequence
 
@@ -627,6 +627,10 @@ Per the active development cadence, AppLab runs once every two feature versions.
 - v0.97 stays on a development branch and does not advance release metadata while v0.96 remains runtime-gated on the real Wonderlog Flutter E2E.
 - Analyze, targeted regression tests, full tests, Web release, Android size audit and AppLab must pass before v0.97 can be considered merge/release-ready after the v0.96 dependency closes.
 
+
+- Each registry entry opens a **per-app detail** surface showing integration status, best-effort availability, supported Life Bridge protocol versions, send/receive capabilities, active LINKs from that source and source-filtered import history.
+- Per-app projections reuse the existing account-scoped Life Bridge state and are case-insensitive on `appId`; no secondary index or app-specific persistence is introduced.
+- The implementation branch has passed Development checks, full tests, Web release, Android size audit and AppLab Trusted Verify; merge/release remains blocked only by the preceding v0.96 real Wonderlog → Anna E2E gate.
 
 ## v0.96 acceptance criteria
 
