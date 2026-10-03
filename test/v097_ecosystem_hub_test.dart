@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:agenda_per_anna/ecosystem_service.dart';
+import 'package:agenda_per_anna/main.dart';
 
 void main() {
   test('ecosystem registry keeps stable unique app identities', () {
@@ -109,4 +110,87 @@ void main() {
       EcosystemAvailability.unknown,
     );
   });
+  test('Life Bridge state projects links and history per source app', () {
+    final now = DateTime(2026, 10, 3, 10);
+    final wonderlogLink = LifeBridgeLinkRecord(
+      id: 'link-wonderlog',
+      source: const LifeBridgeSource(
+        appId: 'wonderlog',
+        objectId: 'journey-42',
+        deepLink: 'wonderlog://journey/journey-42',
+      ),
+      localObjectType: 'diary_block',
+      localObjectId: 'local-1',
+      status: LifeBridgeLinkStatus.active,
+      cachedPayload: const <String, dynamic>{'objectType': 'journey'},
+      createdAt: now,
+      updatedAt: now,
+    );
+    final sleepLink = LifeBridgeLinkRecord(
+      id: 'link-sleepmax',
+      source: const LifeBridgeSource(
+        appId: 'sleepmax',
+        objectId: 'sleep-1',
+      ),
+      localObjectType: 'diary_block',
+      localObjectId: 'local-2',
+      status: LifeBridgeLinkStatus.sourceUnavailable,
+      cachedPayload: const <String, dynamic>{'objectType': 'moment'},
+      createdAt: now,
+      updatedAt: now,
+    );
+    final unlinkedWonderlog = LifeBridgeLinkRecord(
+      id: 'link-old',
+      source: const LifeBridgeSource(
+        appId: 'WONDERLOG',
+        objectId: 'journey-old',
+      ),
+      localObjectType: 'diary_block',
+      localObjectId: 'local-3',
+      status: LifeBridgeLinkStatus.unlinked,
+      cachedPayload: const <String, dynamic>{'objectType': 'journey'},
+      createdAt: now,
+      updatedAt: now,
+    );
+
+    final state = LifeBridgeState(
+      links: <LifeBridgeLinkRecord>[
+        wonderlogLink,
+        sleepLink,
+        unlinkedWonderlog,
+      ],
+      history: <LifeBridgeImportRecord>[
+        LifeBridgeImportRecord(
+          id: 'history-1',
+          bridgeId: 'bridge-1',
+          sourceAppId: 'wonderlog',
+          objectType: 'journey',
+          transferMode: LifeBridgeTransferMode.link,
+          destinationType: 'diary_block',
+          destinationId: 'local-1',
+          importedAt: now,
+        ),
+        LifeBridgeImportRecord(
+          id: 'history-2',
+          bridgeId: 'bridge-2',
+          sourceAppId: 'sleepmax',
+          objectType: 'moment',
+          transferMode: LifeBridgeTransferMode.copy,
+          destinationType: 'diary_block',
+          destinationId: 'local-2',
+          importedAt: now,
+        ),
+      ],
+    );
+
+    expect(state.activeLinksForApp('WONDERLOG'), <LifeBridgeLinkRecord>[
+      wonderlogLink,
+    ]);
+    expect(state.activeLinksForApp('sleepmax'), <LifeBridgeLinkRecord>[
+      sleepLink,
+    ]);
+    expect(state.historyForApp('Wonderlog').length, 1);
+    expect(state.historyForApp('Wonderlog').single.bridgeId, 'bridge-1');
+  });
+
 }
