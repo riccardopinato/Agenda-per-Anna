@@ -13,6 +13,21 @@ class EcosystemDeepLinkService {
 
   Stream<Uri> get stream => _controller.stream;
 
+  Future<bool> tryOpen(Uri uri) async {
+    if (kIsWeb || defaultTargetPlatform != TargetPlatform.android) {
+      return false;
+    }
+    try {
+      return await _channel.invokeMethod<bool>(
+            'openDeepLink',
+            uri.toString(),
+          ) ??
+          false;
+    } catch (_) {
+      return false;
+    }
+  }
+
   Future<Uri?> initialize() async {
     if (kIsWeb || defaultTargetPlatform != TargetPlatform.android) {
       return null;
