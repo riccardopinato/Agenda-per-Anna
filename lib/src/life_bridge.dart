@@ -785,7 +785,7 @@ extension LifeBridgeAgendaStore on AgendaStore {
       );
     }
 
-    final deepLink = 'annasdiary://moment/\${Uri.encodeComponent(block.id)}';
+    final deepLink = 'annasdiary://moment/${Uri.encodeComponent(block.id)}';
     final normalizedText = block.text.trim();
     final envelope = EcosystemEnvelope(
       sourceApp: EcosystemAppId.annasDiary,
