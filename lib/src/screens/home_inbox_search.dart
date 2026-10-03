@@ -713,9 +713,7 @@ class _HomeSyncStatusCard extends StatelessWidget {
                           subtitle,
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
-                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: _homePastelSecondary,
-                          ),
+                          style: Theme.of(context).textTheme.bodySmall,
                         ),
                       ],
                     ),
@@ -1153,7 +1151,9 @@ class _TodayWellbeingCard extends StatelessWidget {
                       journal.blocks.isEmpty
                           ? 'Nessun ricordo'
                           : '${journal.blocks.length} ricordi',
-                      style: Theme.of(context).textTheme.bodySmall,
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                            color: _homePastelSecondary,
+                          ),
                     ),
                   ],
                 ),
