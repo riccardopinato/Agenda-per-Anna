@@ -240,7 +240,7 @@ class HomeScreen extends StatelessWidget {
                       store.preferences.showDailyQuote
                           ? _dailyQuote(now).$1
                           : strings.hello(displayName),
-                      style: const TextStyle(
+                      style: TextStyle(
                         color: accent.foreground,
                         fontSize: 24,
                         fontWeight: FontWeight.w900,
@@ -251,7 +251,7 @@ class HomeScreen extends StatelessWidget {
                       store.preferences.showDailyQuote
                           ? _dailyQuote(now).$2
                           : strings.todayPage,
-                      style: const TextStyle(
+                      style: TextStyle(
                         color: accent.secondaryForeground,
                       ),
                     ),
@@ -1102,7 +1102,7 @@ class _TodayWellbeingCard extends StatelessWidget {
             ),
             child: Text(
               journal.mood?.emoji ?? '♡',
-              style: const TextStyle(
+              style: TextStyle(
                 color: accent.foreground,
                 fontSize: 24,
               ),
@@ -1117,7 +1117,7 @@ class _TodayWellbeingCard extends StatelessWidget {
                   journal.mood == null
                       ? 'Come sta andando la giornata?'
                       : 'Oggi: ${journal.mood!.label}',
-                  style: const TextStyle(
+                  style: TextStyle(
                     color: accent.foreground,
                     fontWeight: FontWeight.w800,
                     fontSize: 16,
@@ -1155,7 +1155,7 @@ class _TodayWellbeingCard extends StatelessWidget {
               ],
             ),
           ),
-          const Icon(
+          Icon(
             Icons.chevron_right,
             color: accent.foreground,
           ),
