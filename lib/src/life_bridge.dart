@@ -1177,6 +1177,71 @@ extension LifeBridgeStrings on AnnaStrings {
         fr: 'Payload Life Bridge copié.',
         pt: 'Payload Life Bridge copiado.',
       );
+
+
+  String get ecosystemImportTitle => _pick(
+        en: 'Import from another app',
+        it: 'Importa da un’altra app',
+        es: 'Importar desde otra app',
+        fr: 'Importer depuis une autre app',
+        pt: 'Importar de outra app',
+      );
+
+  String get ecosystemImportReview => _pick(
+        en: 'Review before importing',
+        it: 'Controlla prima di importare',
+        es: 'Revisa antes de importar',
+        fr: 'Vérifier avant l’import',
+        pt: 'Rever antes de importar',
+      );
+
+  String get ecosystemImportConfirm => _pick(
+        en: 'Import',
+        it: 'Importa',
+        es: 'Importar',
+        fr: 'Importer',
+        pt: 'Importar',
+      );
+
+  String get ecosystemImportCancel => _pick(
+        en: 'Cancel',
+        it: 'Annulla',
+        es: 'Cancelar',
+        fr: 'Annuler',
+        pt: 'Cancelar',
+      );
+
+  String get ecosystemImportInvalid => _pick(
+        en: 'Invalid or untrusted ecosystem transfer.',
+        it: 'Trasferimento ecosistema non valido o non attendibile.',
+        es: 'Transferencia del ecosistema no válida o no fiable.',
+        fr: 'Transfert d’écosystème invalide ou non fiable.',
+        pt: 'Transferência do ecossistema inválida ou não fiável.',
+      );
+
+  String get ecosystemImportUnsupported => _pick(
+        en: 'This transfer is not supported by Anna’s Diary.',
+        it: 'Questo trasferimento non è supportato da Anna’s Diary.',
+        es: 'Anna’s Diary no admite esta transferencia.',
+        fr: 'Ce transfert n’est pas pris en charge par Anna’s Diary.',
+        pt: 'Esta transferência não é suportada pela Anna’s Diary.',
+      );
+
+  String get ecosystemTransferCopy => _pick(
+        en: 'Independent copy',
+        it: 'Copia indipendente',
+        es: 'Copia independiente',
+        fr: 'Copie indépendante',
+        pt: 'Cópia independente',
+      );
+
+  String get ecosystemTransferLink => _pick(
+        en: 'Linked snapshot',
+        it: 'Snapshot collegata',
+        es: 'Instantánea enlazada',
+        fr: 'Instantané lié',
+        pt: 'Snapshot ligado',
+      );
 }
 
 Future<void> copyLifeBridgePayload(
