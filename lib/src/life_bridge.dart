@@ -405,6 +405,149 @@ class LifeBridgeImportResult {
   });
 }
 
+
+enum AnnaEcosystemPackageStatus {
+  ready,
+  wrongTarget,
+  unsupported,
+  invalid,
+}
+
+class AnnaEcosystemPackageInspection {
+  final AnnaEcosystemPackageStatus status;
+  final String? reason;
+
+  const AnnaEcosystemPackageInspection({
+    required this.status,
+    this.reason,
+  });
+
+  bool get ready => status == AnnaEcosystemPackageStatus.ready;
+}
+
+AnnaEcosystemPackageInspection inspectAnnaEcosystemPackage(
+  EcosystemTransferPackage package,
+) {
+  if (package.targetApp != EcosystemAppId.annasDiary) {
+    return const AnnaEcosystemPackageInspection(
+      status: AnnaEcosystemPackageStatus.wrongTarget,
+      reason: 'wrong_target',
+    );
+  }
+
+  final validation = EcosystemContractValidator.validate(package.envelope);
+  if (!validation.valid) {
+    return AnnaEcosystemPackageInspection(
+      status: AnnaEcosystemPackageStatus.invalid,
+      reason: validation.reason,
+    );
+  }
+
+  if (!EcosystemTransferPlanner.canSend(
+    package.envelope,
+    EcosystemAppId.annasDiary,
+  )) {
+    return const AnnaEcosystemPackageInspection(
+      status: AnnaEcosystemPackageStatus.unsupported,
+      reason: 'target_capability_not_supported',
+    );
+  }
+
+  if (package.envelope.media.any(
+    (media) => media.handoff.kind != EcosystemMediaHandoffKind.omitted,
+  )) {
+    return const AnnaEcosystemPackageInspection(
+      status: AnnaEcosystemPackageStatus.unsupported,
+      reason: 'binary_media_handoff_not_certified',
+    );
+  }
+
+  if (package.envelope.sourceEntityType == EcosystemEntityType.route) {
+    return const AnnaEcosystemPackageInspection(
+      status: AnnaEcosystemPackageStatus.unsupported,
+      reason: 'route_not_supported_by_anna_v1',
+    );
+  }
+
+  return const AnnaEcosystemPackageInspection(
+    status: AnnaEcosystemPackageStatus.ready,
+  );
+}
+
+LifeBridgePayload _lifeBridgePayloadFromEcosystemPackage(
+  EcosystemTransferPackage package,
+) {
+  final envelope = package.envelope;
+  final owner = envelope.provenance;
+  final objectType = switch (envelope.sourceEntityType) {
+    EcosystemEntityType.journey => 'journey',
+    EcosystemEntityType.memory => 'travel_memory',
+    EcosystemEntityType.note || EcosystemEntityType.generic => 'moment',
+    EcosystemEntityType.place => 'place',
+    EcosystemEntityType.photo => 'photo',
+    EcosystemEntityType.route => throw const FormatException(
+        'Route is not supported by Anna Life Bridge v1.',
+      ),
+  };
+
+  final place = envelope.places.isEmpty ? null : envelope.places.first;
+  return LifeBridgePayload(
+    bridgeId: envelope.bridgeId,
+    source: LifeBridgeSource(
+      appId: owner.ownerApp.wireValue,
+      objectId: owner.ownerEntityId,
+      deepLink: owner.canonicalDeepLink ?? envelope.sourceDeepLink,
+      revision: owner.ownerRevision.toString(),
+    ),
+    objectType: objectType,
+    transferMode: envelope.transferMode == EcosystemTransferMode.link
+        ? LifeBridgeTransferMode.link
+        : LifeBridgeTransferMode.copy,
+    title: envelope.title?.trim() ?? '',
+    text: envelope.text?.trim() ?? '',
+    occurredAt: envelope.createdAtUtc.toLocal(),
+    location: place == null
+        ? null
+        : LifeBridgeLocation(
+            name: place.name,
+            latitude: place.latitude,
+            longitude: place.longitude,
+          ),
+    media: envelope.media
+        .map(
+          (media) => <String, dynamic>{
+            'id': media.id,
+            'kind': media.kind,
+            if (media.mimeType != null) 'mimeType': media.mimeType,
+            if (media.fileName != null) 'fileName': media.fileName,
+            if (media.byteSize != null) 'byteSize': media.byteSize,
+            'handoff': media.handoff.toJson(),
+          },
+        )
+        .toList(growable: false),
+    people: envelope.people,
+    tags: envelope.tags,
+    extensions: <String, dynamic>{
+      'ecosystem': <String, dynamic>{
+        'schemaVersion': envelope.schemaVersion,
+        'sourceApp': envelope.sourceApp.wireValue,
+        'sourceEntityType': envelope.sourceEntityType.name,
+        'sourceEntityId': envelope.sourceEntityId,
+        'privacyScope': envelope.privacyScope.name,
+        'revision': envelope.revision,
+        'idempotencyKey': envelope.idempotencyKey,
+        'ownerApp': owner.ownerApp.wireValue,
+        'ownerEntityType': owner.ownerEntityType.name,
+        'ownerEntityId': owner.ownerEntityId,
+        'ownerRevision': owner.ownerRevision,
+        if (owner.parentBridgeId != null)
+          'parentBridgeId': owner.parentBridgeId,
+      },
+    },
+    exportedAt: package.createdAtUtc,
+  );
+}
+
 String? _nullableTrimmed(dynamic value) {
   final text = value?.toString().trim() ?? '';
   return text.isEmpty ? null : text;
