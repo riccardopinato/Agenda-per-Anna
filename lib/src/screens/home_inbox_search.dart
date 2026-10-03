@@ -1160,7 +1160,7 @@ class _TodayWellbeingCard extends StatelessWidget {
               ],
             ),
           ),
-          Icon(
+          const Icon(
             Icons.chevron_right,
             color: _homePastelForeground,
           ),
