@@ -880,6 +880,26 @@ def configure_manifest() -> None:
             + manifest[insert_at:]
         )
 
+    ecosystem_queries = """
+    <queries>
+        <intent>
+            <action android:name="android.intent.action.VIEW" />
+            <category android:name="android.intent.category.BROWSABLE" />
+            <data android:scheme="wonderlog" />
+        </intent>
+    </queries>
+"""
+    if 'android:scheme="wonderlog"' not in manifest:
+        application_index = manifest.find("<application")
+        if application_index < 0:
+            raise SystemExit("Flutter template drift: <application> not found")
+        manifest = (
+            manifest[:application_index]
+            + ecosystem_queries
+            + "    "
+            + manifest[application_index:]
+        )
+
     application_match = re.search(r"<application\b[^>]*>", manifest)
     if application_match is None:
         raise SystemExit("Flutter template drift: <application> not found")

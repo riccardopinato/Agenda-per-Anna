@@ -72,6 +72,9 @@ Anna's Diary may act as the personal narrative/time hub inside a wider Life Ecos
 - Other apps never receive direct access to Anna's local database, sync queue, encryption keys or account secrets merely because they support Life Bridge.
 - Private Vault, Password Vault and menstrual-cycle content are excluded from automatic bridge export.
 - Bridge metadata may describe provenance and linkage, but it must not become a second canonical diary, agenda, memory or life database.
+- The **Ecosystem App Registry** is presentation/interoperability metadata only: it may describe known apps, protocol capabilities and launch/probe contracts, but it owns no user content and grants no access to another app's storage.
+- Installation detection is platform-specific and best-effort. Unknown must remain a first-class state; Anna must not infer account linkage, data availability or source health merely from an install probe.
+- Cross-app navigation is explicit. A stored source deep link may be opened after user action, while launch failure leaves the local canonical snapshot untouched.
 
 ## 4. Local-first and offline trust
 
