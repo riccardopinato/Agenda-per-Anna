@@ -142,6 +142,34 @@ void main() {
     store.dispose();
   });
 
+  test('concurrent duplicate delivery materializes only once', () async {
+    final store = AgendaStore();
+    await store.load();
+    final package = wonderlogJourney();
+
+    final results = await Future.wait([
+      store.importEcosystemTransferPackage(package),
+      store.importEcosystemTransferPackage(package),
+    ]);
+
+    expect(
+      results.map((result) => result.outcome).toSet(),
+      containsAll(<LifeBridgeImportOutcome>{
+        LifeBridgeImportOutcome.imported,
+        LifeBridgeImportOutcome.duplicate,
+      }),
+    );
+    final state = await store.loadLifeBridgeState();
+    expect(state.history, hasLength(1));
+    expect(
+      store.journal(DateTime(2026, 8, 10)).blocks
+          .where((block) => block.tags.contains('source:wonderlog')),
+      hasLength(1),
+    );
+
+    store.dispose();
+  });
+
   test('COPY and LINK remain distinct durable deliveries', () async {
     final store = AgendaStore();
     await store.load();
