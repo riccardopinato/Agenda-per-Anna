@@ -101,7 +101,7 @@ abstract final class EcosystemContractValidator {
     final result = validate(envelope);
     if (!result.valid) {
       throw StateError(
-        'Invalid ecosystem contract: \${result.reason ?? 'unknown'}',
+        'Invalid ecosystem contract: ${result.reason ?? 'unknown'}',
       );
     }
   }
