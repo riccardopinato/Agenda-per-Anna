@@ -202,7 +202,7 @@ final class EcosystemMediaReference {
 
     return EcosystemMediaReference(
       id: json['id'] as String? ??
-          'legacy:' + kind + ':' + (fileName ?? 'media'),
+          'legacy:$kind:${fileName ?? 'media'}',
       kind: kind,
       mimeType: json['mimeType'] as String?,
       fileName: fileName,
