@@ -25,6 +25,8 @@ import 'external_calendar_service.dart';
 import 'backup_service.dart';
 import 'cloud_sync_service.dart';
 import 'cycle_tracker_domain.dart';
+import 'ecosystem/ecosystem_bridge.dart';
+import 'ecosystem_deep_link_service.dart';
 import 'notification_service.dart';
 import 'photo_ocr_service.dart';
 import 'premium_entitlement_service.dart';
@@ -40,6 +42,7 @@ import 'web_push_service.dart';
 part 'src/app_shell.dart';
 part 'src/domain_models.dart';
 part 'src/localization.dart';
+part 'src/theme_semantics.dart';
 part 'src/day_hub_domain.dart';
 part 'src/unified_capture.dart';
 part 'src/home_widget_bridge.dart';
@@ -176,6 +179,7 @@ Future<void> _handleLocalReminderAction(
 
 StreamSubscription<String>? _localNotificationTapSubscription;
 StreamSubscription<IncomingShareCapture>? _shareCaptureSubscription;
+StreamSubscription<Uri>? _ecosystemDeepLinkSubscription;
 
 void _syncPremiumIdentityFromCloud() {
   unawaited(
@@ -255,6 +259,40 @@ Future<void> main() async {
       }
     } catch (_) {
       // La condivisione esterna è opzionale e non deve bloccare l'avvio.
+    }
+
+    try {
+      final initialEcosystemUri =
+          await EcosystemDeepLinkService.instance.initialize();
+      await _ecosystemDeepLinkSubscription?.cancel();
+      _ecosystemDeepLinkSubscription =
+          EcosystemDeepLinkService.instance.stream.listen((uri) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          final context = appNavigatorKey.currentContext;
+          if (context != null) {
+            unawaited(
+              _handleIncomingEcosystemUri(context, store, uri),
+            );
+          }
+        });
+      });
+
+      if (initialEcosystemUri != null) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          final context = appNavigatorKey.currentContext;
+          if (context != null) {
+            unawaited(
+              _handleIncomingEcosystemUri(
+                context,
+                store,
+                initialEcosystemUri,
+              ),
+            );
+          }
+        });
+      }
+    } catch (_) {
+      // Il bridge ecosistema è opzionale e non deve bloccare l'avvio.
     }
 
     try {

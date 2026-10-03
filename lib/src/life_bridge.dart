@@ -244,6 +244,7 @@ class LifeBridgePayload {
 class LifeBridgeImportRecord {
   final String id;
   final String bridgeId;
+  final String idempotencyKey;
   final String sourceAppId;
   final String objectType;
   final LifeBridgeTransferMode transferMode;
@@ -254,6 +255,7 @@ class LifeBridgeImportRecord {
   const LifeBridgeImportRecord({
     required this.id,
     required this.bridgeId,
+    required this.idempotencyKey,
     required this.sourceAppId,
     required this.objectType,
     required this.transferMode,
@@ -265,6 +267,7 @@ class LifeBridgeImportRecord {
   Map<String, dynamic> toJson() => {
         'id': id,
         'bridgeId': bridgeId,
+        'idempotencyKey': idempotencyKey,
         'sourceAppId': sourceAppId,
         'objectType': objectType,
         'transferMode': transferMode.name,
@@ -280,6 +283,9 @@ class LifeBridgeImportRecord {
     return LifeBridgeImportRecord(
       id: json['id']?.toString() ?? const Uuid().v4(),
       bridgeId: json['bridgeId']?.toString() ?? '',
+      idempotencyKey: json['idempotencyKey']?.toString() ??
+          json['bridgeId']?.toString() ??
+          '',
       sourceAppId: json['sourceAppId']?.toString() ?? '',
       objectType: json['objectType']?.toString() ?? '',
       transferMode: mode,
@@ -399,6 +405,171 @@ class LifeBridgeImportResult {
   });
 }
 
+
+enum AnnaEcosystemPackageStatus {
+  ready,
+  wrongTarget,
+  unsupported,
+  invalid,
+}
+
+class AnnaEcosystemPackageInspection {
+  final AnnaEcosystemPackageStatus status;
+  final String? reason;
+
+  const AnnaEcosystemPackageInspection({
+    required this.status,
+    this.reason,
+  });
+
+  bool get ready => status == AnnaEcosystemPackageStatus.ready;
+}
+
+AnnaEcosystemPackageInspection inspectAnnaEcosystemPackage(
+  EcosystemTransferPackage package,
+) {
+  if (package.targetApp != EcosystemAppId.annasDiary) {
+    return const AnnaEcosystemPackageInspection(
+      status: AnnaEcosystemPackageStatus.wrongTarget,
+      reason: 'wrong_target',
+    );
+  }
+
+  final validation = EcosystemContractValidator.validate(package.envelope);
+  if (!validation.valid) {
+    return AnnaEcosystemPackageInspection(
+      status: AnnaEcosystemPackageStatus.invalid,
+      reason: validation.reason,
+    );
+  }
+
+  if (!EcosystemTransferPlanner.canSend(
+    package.envelope,
+    EcosystemAppId.annasDiary,
+  )) {
+    return const AnnaEcosystemPackageInspection(
+      status: AnnaEcosystemPackageStatus.unsupported,
+      reason: 'target_capability_not_supported',
+    );
+  }
+
+  if (package.envelope.media.any(
+    (media) => media.handoff.kind != EcosystemMediaHandoffKind.omitted,
+  )) {
+    return const AnnaEcosystemPackageInspection(
+      status: AnnaEcosystemPackageStatus.unsupported,
+      reason: 'binary_media_handoff_not_certified',
+    );
+  }
+
+  if (package.envelope.sourceEntityType == EcosystemEntityType.route) {
+    return const AnnaEcosystemPackageInspection(
+      status: AnnaEcosystemPackageStatus.unsupported,
+      reason: 'route_not_supported_by_anna_v1',
+    );
+  }
+
+  return const AnnaEcosystemPackageInspection(
+    status: AnnaEcosystemPackageStatus.ready,
+  );
+}
+
+LifeBridgePayload _lifeBridgePayloadFromEcosystemPackage(
+  EcosystemTransferPackage package,
+) {
+  final envelope = package.envelope;
+  final owner = envelope.provenance;
+  final objectType = switch (envelope.sourceEntityType) {
+    EcosystemEntityType.journey => 'journey',
+    EcosystemEntityType.memory => 'travel_memory',
+    EcosystemEntityType.note || EcosystemEntityType.generic => 'moment',
+    EcosystemEntityType.place => 'place',
+    EcosystemEntityType.photo => 'photo',
+    EcosystemEntityType.route => throw const FormatException(
+        'Route is not supported by Anna Life Bridge v1.',
+      ),
+  };
+
+  final place = envelope.places.isEmpty ? null : envelope.places.first;
+  return LifeBridgePayload(
+    bridgeId: envelope.bridgeId,
+    source: LifeBridgeSource(
+      appId: owner.ownerApp.wireValue,
+      objectId: owner.ownerEntityId,
+      deepLink: owner.canonicalDeepLink ?? envelope.sourceDeepLink,
+      revision: owner.ownerRevision.toString(),
+    ),
+    objectType: objectType,
+    transferMode: envelope.transferMode == EcosystemTransferMode.link
+        ? LifeBridgeTransferMode.link
+        : LifeBridgeTransferMode.copy,
+    title: envelope.title?.trim() ?? '',
+    text: envelope.text?.trim() ?? '',
+    occurredAt: envelope.createdAtUtc.toLocal(),
+    location: place == null
+        ? null
+        : LifeBridgeLocation(
+            name: place.name,
+            latitude: place.latitude,
+            longitude: place.longitude,
+          ),
+    media: envelope.media
+        .map(
+          (media) => <String, dynamic>{
+            'id': media.id,
+            'kind': media.kind,
+            if (media.mimeType != null) 'mimeType': media.mimeType,
+            if (media.fileName != null) 'fileName': media.fileName,
+            if (media.byteSize != null) 'byteSize': media.byteSize,
+            'handoff': media.handoff.toJson(),
+          },
+        )
+        .toList(growable: false),
+    people: envelope.people,
+    tags: envelope.tags,
+    extensions: <String, dynamic>{
+      'ecosystem': <String, dynamic>{
+        'schemaVersion': envelope.schemaVersion,
+        'sourceApp': envelope.sourceApp.wireValue,
+        'sourceEntityType': envelope.sourceEntityType.name,
+        'sourceEntityId': envelope.sourceEntityId,
+        'privacyScope': envelope.privacyScope.name,
+        'revision': envelope.revision,
+        'idempotencyKey': envelope.idempotencyKey,
+        'ownerApp': owner.ownerApp.wireValue,
+        'ownerEntityType': owner.ownerEntityType.name,
+        'ownerEntityId': owner.ownerEntityId,
+        'ownerRevision': owner.ownerRevision,
+        if (owner.parentBridgeId != null)
+          'parentBridgeId': owner.parentBridgeId,
+      },
+    },
+    exportedAt: package.createdAtUtc,
+  );
+}
+
+final Expando<_LifeBridgeImportMutex> _lifeBridgeImportMutexes =
+    Expando<_LifeBridgeImportMutex>();
+
+class _LifeBridgeImportMutex {
+  Future<void> _tail = Future<void>.value();
+
+  Future<T> run<T>(Future<T> Function() action) {
+    final previous = _tail;
+    final release = Completer<void>();
+    _tail = release.future;
+
+    return () async {
+      await previous;
+      try {
+        return await action();
+      } finally {
+        release.complete();
+      }
+    }();
+  }
+}
+
 String? _nullableTrimmed(dynamic value) {
   final text = value?.toString().trim() ?? '';
   return text.isEmpty ? null : text;
@@ -498,69 +669,186 @@ extension LifeBridgeAgendaStore on AgendaStore {
   }
 
   Future<LifeBridgeImportResult> importLifeBridgePayload(
-    LifeBridgePayload payload,
+    LifeBridgePayload payload, {
+    String? idempotencyKey,
+  }) {
+    final mutex = _lifeBridgeImportMutexes[this] ?? _LifeBridgeImportMutex();
+    _lifeBridgeImportMutexes[this] = mutex;
+    return mutex.run(() async {
+      if (payload.protocolMajor != 1 || !payload.supportedByAnna) {
+        return const LifeBridgeImportResult(
+          outcome: LifeBridgeImportOutcome.unsupported,
+        );
+      }
+  
+      final effectiveIdempotencyKey =
+          idempotencyKey?.trim().isNotEmpty == true
+              ? idempotencyKey!.trim()
+              : payload.bridgeId;
+      final state = await loadLifeBridgeState();
+      for (final existing in state.history) {
+        if (existing.idempotencyKey == effectiveIdempotencyKey) {
+          return LifeBridgeImportResult(
+            outcome: LifeBridgeImportOutcome.duplicate,
+            destinationType: existing.destinationType,
+            destinationId: existing.destinationId,
+            record: existing,
+          );
+        }
+      }
+  
+      final destination = await _materializeLifeBridgePayload(payload);
+      final now = DateTime.now();
+      final record = LifeBridgeImportRecord(
+        id: const Uuid().v4(),
+        bridgeId: payload.bridgeId,
+        idempotencyKey: effectiveIdempotencyKey,
+        sourceAppId: payload.source.appId,
+        objectType: payload.objectType,
+        transferMode: payload.transferMode,
+        destinationType: destination.$1,
+        destinationId: destination.$2,
+        importedAt: now,
+      );
+  
+      final nextLinks = [...state.links];
+      if (payload.transferMode == LifeBridgeTransferMode.link) {
+        nextLinks.insert(
+          0,
+          LifeBridgeLinkRecord(
+            id: const Uuid().v4(),
+            source: payload.source,
+            localObjectType: destination.$1,
+            localObjectId: destination.$2,
+            status: LifeBridgeLinkStatus.active,
+            cachedPayload: payload.toJson(),
+            createdAt: now,
+            updatedAt: now,
+          ),
+        );
+      }
+  
+      final nextHistory = [record, ...state.history];
+      await _persistLifeBridgeState(
+        LifeBridgeState(
+          links: nextLinks,
+          history: nextHistory,
+        ),
+      );
+  
+      return LifeBridgeImportResult(
+        outcome: LifeBridgeImportOutcome.imported,
+        destinationType: destination.$1,
+        destinationId: destination.$2,
+        record: record,
+      );
+  
+    });
+  }
+
+  Future<LifeBridgeImportResult> importEcosystemTransferPackage(
+    EcosystemTransferPackage package,
   ) async {
-    if (payload.protocolMajor != 1 || !payload.supportedByAnna) {
+    final inspection = inspectAnnaEcosystemPackage(package);
+    if (!inspection.ready) {
       return const LifeBridgeImportResult(
         outcome: LifeBridgeImportOutcome.unsupported,
       );
     }
 
-    final state = await loadLifeBridgeState();
-    for (final existing in state.history) {
-      if (existing.bridgeId == payload.bridgeId) {
-        return LifeBridgeImportResult(
-          outcome: LifeBridgeImportOutcome.duplicate,
-          destinationType: existing.destinationType,
-          destinationId: existing.destinationId,
-          record: existing,
-        );
+    final payload = _lifeBridgePayloadFromEcosystemPackage(package);
+    return importLifeBridgePayload(
+      payload,
+      idempotencyKey: package.envelope.idempotencyKey,
+    );
+  }
+
+  EcosystemTransferPackage exportEcosystemDiaryBlock(
+    DiaryBlock block, {
+    EcosystemAppId targetApp = EcosystemAppId.wonderlog,
+    EcosystemTransferMode transferMode = EcosystemTransferMode.copy,
+    int revision = 1,
+    DateTime? packagedAtUtc,
+  }) {
+    if (revision < 1) {
+      throw ArgumentError.value(revision, 'revision', 'must be >= 1');
+    }
+
+    final entityType = block.type == DiaryBlockType.photo
+        ? EcosystemEntityType.photo
+        : EcosystemEntityType.note;
+    final peopleNames = <String>[];
+    for (final personId in block.personIds) {
+      for (final person in people) {
+        if (person.id == personId) {
+          peopleNames.add(person.name);
+          break;
+        }
       }
     }
 
-    final destination = await _materializeLifeBridgePayload(payload);
-    final now = DateTime.now();
-    final record = LifeBridgeImportRecord(
-      id: const Uuid().v4(),
-      bridgeId: payload.bridgeId,
-      sourceAppId: payload.source.appId,
-      objectType: payload.objectType,
-      transferMode: payload.transferMode,
-      destinationType: destination.$1,
-      destinationId: destination.$2,
-      importedAt: now,
-    );
+    final places = block.places
+        .map(
+          (place) => EcosystemPlace(
+            name: place.name,
+            latitude: place.latitude,
+            longitude: place.longitude,
+          ),
+        )
+        .toList(growable: false);
 
-    final nextLinks = [...state.links];
-    if (payload.transferMode == LifeBridgeTransferMode.link) {
-      nextLinks.insert(
-        0,
-        LifeBridgeLinkRecord(
-          id: const Uuid().v4(),
-          source: payload.source,
-          localObjectType: destination.$1,
-          localObjectId: destination.$2,
-          status: LifeBridgeLinkStatus.active,
-          cachedPayload: payload.toJson(),
-          createdAt: now,
-          updatedAt: now,
+    final media = <EcosystemMediaReference>[];
+    if (block.type == DiaryBlockType.photo && block.hasPhotoMedia) {
+      media.add(
+        const EcosystemMediaReference(
+          id: 'photo',
+          kind: 'photo',
+          mimeType: 'image/jpeg',
+          handoff: EcosystemMediaHandoff(
+            kind: EcosystemMediaHandoffKind.omitted,
+            reason: 'explicit_binary_handoff_not_enabled_in_v1',
+          ),
         ),
       );
     }
 
-    final nextHistory = [record, ...state.history];
-    await _persistLifeBridgeState(
-      LifeBridgeState(
-        links: nextLinks,
-        history: nextHistory,
+    final deepLink = 'annasdiary://moment/${Uri.encodeComponent(block.id)}';
+    final normalizedText = block.text.trim();
+    final envelope = EcosystemEnvelope(
+      sourceApp: EcosystemAppId.annasDiary,
+      sourceEntityType: entityType,
+      sourceEntityId: block.id,
+      createdAtUtc: block.createdAt.toUtc(),
+      title: normalizedText.isEmpty ? null : normalizedText.split('\n').first,
+      text: block.text,
+      tags: block.tags,
+      people: peopleNames,
+      places: places,
+      media: media,
+      sourceDeepLink: deepLink,
+      transferMode: transferMode,
+      revision: revision,
+      provenance: EcosystemProvenance(
+        ownerApp: EcosystemAppId.annasDiary,
+        ownerEntityType: entityType,
+        ownerEntityId: block.id,
+        ownerRevision: revision,
+        canonicalDeepLink: deepLink,
+      ),
+      fallback: EcosystemFallback(
+        plainText: normalizedText.isEmpty ? "Anna's Diary" : normalizedText,
+        sourceDeepLink: deepLink,
       ),
     );
 
-    return LifeBridgeImportResult(
-      outcome: LifeBridgeImportOutcome.imported,
-      destinationType: destination.$1,
-      destinationId: destination.$2,
-      record: record,
+    if (!EcosystemTransferPlanner.canSend(envelope, targetApp)) {
+      throw StateError('Target app does not support this ecosystem payload.');
+    }
+
+    return EcosystemTransferPackage(
+      targetApp: targetApp,
+      envelope: envelope,
+      createdAtUtc: (packagedAtUtc ?? DateTime.now()).toUtc(),
     );
   }
 
@@ -916,6 +1204,88 @@ extension LifeBridgeStrings on AnnaStrings {
         fr: 'Payload Life Bridge copié.',
         pt: 'Payload Life Bridge copiado.',
       );
+
+
+  String get ecosystemImportTitle => _pick(
+        en: 'Import from another app',
+        it: 'Importa da un’altra app',
+        es: 'Importar desde otra app',
+        fr: 'Importer depuis une autre app',
+        pt: 'Importar de outra app',
+      );
+
+  String get ecosystemImportReview => _pick(
+        en: 'Review before importing',
+        it: 'Controlla prima di importare',
+        es: 'Revisa antes de importar',
+        fr: 'Vérifier avant l’import',
+        pt: 'Rever antes de importar',
+      );
+
+  String get ecosystemImportConfirm => _pick(
+        en: 'Import',
+        it: 'Importa',
+        es: 'Importar',
+        fr: 'Importer',
+        pt: 'Importar',
+      );
+
+  String get ecosystemImportCancel => _pick(
+        en: 'Cancel',
+        it: 'Annulla',
+        es: 'Cancelar',
+        fr: 'Annuler',
+        pt: 'Cancelar',
+      );
+
+  String get ecosystemImportInvalid => _pick(
+        en: 'Invalid or untrusted ecosystem transfer.',
+        it: 'Trasferimento ecosistema non valido o non attendibile.',
+        es: 'Transferencia del ecosistema no válida o no fiable.',
+        fr: 'Transfert d’écosystème invalide ou non fiable.',
+        pt: 'Transferência do ecossistema inválida ou não fiável.',
+      );
+
+  String get ecosystemImportUnsupported => _pick(
+        en: 'This transfer is not supported by Anna’s Diary.',
+        it: 'Questo trasferimento non è supportato da Anna’s Diary.',
+        es: 'Anna’s Diary no admite esta transferencia.',
+        fr: 'Ce transfert n’est pas pris en charge par Anna’s Diary.',
+        pt: 'Esta transferência não é suportada pela Anna’s Diary.',
+      );
+
+  String get ecosystemTransferCopy => _pick(
+        en: 'Independent copy',
+        it: 'Copia indipendente',
+        es: 'Copia independiente',
+        fr: 'Copie indépendante',
+        pt: 'Cópia independente',
+      );
+
+  String get ecosystemTransferLink => _pick(
+        en: 'Linked snapshot',
+        it: 'Snapshot collegata',
+        es: 'Instantánea enlazada',
+        fr: 'Instantané lié',
+        pt: 'Snapshot ligado',
+      );
+
+
+  String get ecosystemSendWonderlog => _pick(
+        en: 'Send to Wonderlog',
+        it: 'Invia a Wonderlog',
+        es: 'Enviar a Wonderlog',
+        fr: 'Envoyer vers Wonderlog',
+        pt: 'Enviar para Wonderlog',
+      );
+
+  String get ecosystemFallbackCopied => _pick(
+        en: 'Wonderlog could not be opened. The portable transfer was copied to the clipboard.',
+        it: 'Impossibile aprire Wonderlog. Il trasferimento portabile è stato copiato negli appunti.',
+        es: 'No se pudo abrir Wonderlog. La transferencia portátil se copió al portapapeles.',
+        fr: 'Impossible d’ouvrir Wonderlog. Le transfert portable a été copié dans le presse-papiers.',
+        pt: 'Não foi possível abrir o Wonderlog. A transferência portátil foi copiada para a área de transferência.',
+      );
 }
 
 Future<void> copyLifeBridgePayload(
@@ -927,6 +1297,243 @@ Future<void> copyLifeBridgePayload(
   ScaffoldMessenger.of(context).showSnackBar(
     SnackBar(content: Text(AnnaStrings.of(context).lifeBridgeCopied)),
   );
+}
+
+
+Future<void> sendEcosystemTransferPackage(
+  BuildContext context,
+  EcosystemTransferPackage package,
+) async {
+  final targetUri = EcosystemLocalTransportCodec.targetUri(package);
+  final opened = await EcosystemDeepLinkService.instance.tryOpen(targetUri);
+  if (opened) return;
+
+  await Clipboard.setData(
+    ClipboardData(
+      text: EcosystemLocalTransportCodec.clipboardText(package),
+    ),
+  );
+  if (!context.mounted) return;
+  ScaffoldMessenger.of(context).showSnackBar(
+    SnackBar(content: Text(AnnaStrings.of(context).ecosystemFallbackCopied)),
+  );
+}
+
+Future<void> _showEcosystemTransferReview(
+  BuildContext context,
+  AgendaStore store,
+  EcosystemTransferPackage package,
+) async {
+  final inspection = inspectAnnaEcosystemPackage(package);
+  if (!inspection.ready) {
+    if (!context.mounted) return;
+    final strings = AnnaStrings.of(context);
+    final message = inspection.status == AnnaEcosystemPackageStatus.invalid
+        ? strings.ecosystemImportInvalid
+        : strings.ecosystemImportUnsupported;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message)),
+    );
+    return;
+  }
+
+  await Navigator.of(context).push(
+    MaterialPageRoute<void>(
+      builder: (_) => EcosystemInboundReviewScreen(
+        store: store,
+        package: package,
+      ),
+    ),
+  );
+}
+
+Future<void> _handleIncomingEcosystemUri(
+  BuildContext context,
+  AgendaStore store,
+  Uri uri,
+) async {
+  try {
+    final package = EcosystemLocalTransportCodec.decodeTargetUri(uri);
+    if (!context.mounted) return;
+    await _showEcosystemTransferReview(context, store, package);
+  } catch (_) {
+    if (!context.mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(AnnaStrings.of(context).ecosystemImportInvalid)),
+    );
+  }
+}
+
+class EcosystemInboundReviewScreen extends StatefulWidget {
+  final AgendaStore store;
+  final EcosystemTransferPackage package;
+
+  const EcosystemInboundReviewScreen({
+    super.key,
+    required this.store,
+    required this.package,
+  });
+
+  @override
+  State<EcosystemInboundReviewScreen> createState() =>
+      _EcosystemInboundReviewScreenState();
+}
+
+class _EcosystemInboundReviewScreenState
+    extends State<EcosystemInboundReviewScreen> {
+  bool _busy = false;
+
+  Future<void> _import() async {
+    if (_busy) return;
+    setState(() => _busy = true);
+    final strings = AnnaStrings.of(context);
+
+    try {
+      final result =
+          await widget.store.importEcosystemTransferPackage(widget.package);
+      if (!mounted) return;
+
+      final message = switch (result.outcome) {
+        LifeBridgeImportOutcome.imported => strings.lifeBridgeImported,
+        LifeBridgeImportOutcome.duplicate => strings.lifeBridgeDuplicate,
+        LifeBridgeImportOutcome.unsupported =>
+          strings.ecosystemImportUnsupported,
+      };
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(message)),
+      );
+
+      if (result.outcome != LifeBridgeImportOutcome.unsupported) {
+        Navigator.of(context).pop();
+      }
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final strings = AnnaStrings.of(context);
+    final envelope = widget.package.envelope;
+    final sourceName =
+        EcosystemRegistry.definition(envelope.sourceApp).displayName;
+    final ownerName =
+        EcosystemRegistry.definition(envelope.provenance.ownerApp).displayName;
+    final transferLabel =
+        envelope.transferMode == EcosystemTransferMode.link
+            ? strings.ecosystemTransferLink
+            : strings.ecosystemTransferCopy;
+
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(strings.ecosystemImportTitle),
+      ),
+      body: ListView(
+        padding: const EdgeInsets.fromLTRB(18, 16, 18, 32),
+        children: [
+          Text(
+            strings.ecosystemImportReview,
+            style: Theme.of(context)
+                .textTheme
+                .titleLarge
+                ?.copyWith(fontWeight: FontWeight.w900),
+          ),
+          const SizedBox(height: 18),
+          Card(
+            child: Padding(
+              padding: const EdgeInsets.all(18),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    envelope.title?.trim().isNotEmpty == true
+                        ? envelope.title!.trim()
+                        : envelope.fallback.plainText.trim(),
+                    style: Theme.of(context)
+                        .textTheme
+                        .titleMedium
+                        ?.copyWith(fontWeight: FontWeight.w800),
+                  ),
+                  if ((envelope.text ?? '').trim().isNotEmpty) ...[
+                    const SizedBox(height: 10),
+                    Text(envelope.text!.trim()),
+                  ],
+                  const SizedBox(height: 18),
+                  _EcosystemReviewRow(
+                    label: 'Source',
+                    value: sourceName,
+                  ),
+                  _EcosystemReviewRow(
+                    label: 'Owner',
+                    value: ownerName,
+                  ),
+                  _EcosystemReviewRow(
+                    label: 'Type',
+                    value: envelope.sourceEntityType.name,
+                  ),
+                  _EcosystemReviewRow(
+                    label: 'Mode',
+                    value: transferLabel,
+                  ),
+                  _EcosystemReviewRow(
+                    label: 'Revision',
+                    value: envelope.revision.toString(),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(height: 18),
+          FilledButton.icon(
+            onPressed: _busy ? null : _import,
+            icon: _busy
+                ? const SizedBox.square(
+                    dimension: 18,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : const Icon(Icons.download_done_outlined),
+            label: Text(strings.ecosystemImportConfirm),
+          ),
+          const SizedBox(height: 8),
+          OutlinedButton(
+            onPressed: _busy ? null : () => Navigator.of(context).pop(),
+            child: Text(strings.ecosystemImportCancel),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _EcosystemReviewRow extends StatelessWidget {
+  final String label;
+  final String value;
+
+  const _EcosystemReviewRow({
+    required this.label,
+    required this.value,
+  });
+
+  @override
+  Widget build(BuildContext context) => Padding(
+        padding: const EdgeInsets.only(top: 8),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            SizedBox(
+              width: 88,
+              child: Text(
+                label,
+                style: Theme.of(context)
+                    .textTheme
+                    .labelMedium
+                    ?.copyWith(fontWeight: FontWeight.w700),
+              ),
+            ),
+            Expanded(child: Text(value)),
+          ],
+        ),
+      );
 }
 
 class LifeEcosystemScreen extends StatefulWidget {
@@ -973,6 +1580,19 @@ class _LifeEcosystemScreenState extends State<LifeEcosystemScreen> {
     }
 
     try {
+      if (raw.startsWith(ecosystemClipboardPrefix)) {
+        final package =
+            EcosystemLocalTransportCodec.decodeClipboardText(raw);
+        if (!mounted) return;
+        await _showEcosystemTransferReview(
+          context,
+          widget.store,
+          package,
+        );
+        await _reload();
+        return;
+      }
+
       final payload = LifeBridgePayload.decode(raw);
       final result = await widget.store.importLifeBridgePayload(payload);
       if (!mounted) return;

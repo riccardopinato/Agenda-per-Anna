@@ -1065,6 +1065,7 @@ class DiaryContentCard extends StatelessWidget {
   final VoidCallback? onTags;
   final VoidCallback? onCopyToNotes;
   final VoidCallback? onCopyToLifeBridge;
+  final VoidCallback? onSendToWonderlog;
   final VoidCallback? onDelete;
   final Widget? footer;
   final Widget? statusIcon;
@@ -1090,6 +1091,7 @@ class DiaryContentCard extends StatelessWidget {
     this.onTags,
     this.onCopyToNotes,
     this.onCopyToLifeBridge,
+    this.onSendToWonderlog,
     this.footer,
     this.statusIcon,
     this.pinned = false,
@@ -1146,6 +1148,7 @@ class DiaryContentCard extends StatelessWidget {
                     if (value == 'connections') onConnections?.call();
                     if (value == 'notes') onCopyToNotes?.call();
                     if (value == 'life_bridge') onCopyToLifeBridge?.call();
+                    if (value == 'wonderlog') onSendToWonderlog?.call();
                     if (value == 'delete') onDelete?.call();
                   },
                   itemBuilder: (_) => [
@@ -1206,6 +1209,13 @@ class DiaryContentCard extends StatelessWidget {
                         value: 'life_bridge',
                         child: Text(
                           AnnaStrings.of(context).lifeBridgeCopyPayload,
+                        ),
+                      ),
+                    if (onSendToWonderlog != null)
+                      PopupMenuItem(
+                        value: 'wonderlog',
+                        child: Text(
+                          AnnaStrings.of(context).ecosystemSendWonderlog,
                         ),
                       ),
                     if (onDelete != null)
@@ -1765,6 +1775,15 @@ class _DiaryMemoryCardState extends State<DiaryMemoryCard> {
     await copyLifeBridgePayload(context, payload);
   }
 
+
+  Future<void> _sendToWonderlog(DiaryBlock block) async {
+    final package = widget.store.exportEcosystemDiaryBlock(
+      block,
+      targetApp: EcosystemAppId.wonderlog,
+    );
+    await sendEcosystemTransferPackage(context, package);
+  }
+
   Future<void> _delete(DiaryBlock block) async {
     final confirmed = await confirmDiaryContentDelete(
       context,
@@ -1808,6 +1827,10 @@ class _DiaryMemoryCardState extends State<DiaryMemoryCard> {
           onTags: () => _editTags(block),
           onCopyToNotes: () => _copyToNotes(block),
           onCopyToLifeBridge: () => _copyToLifeBridge(block),
+          onSendToWonderlog:
+              block.type == DiaryBlockType.note || block.type == DiaryBlockType.photo
+                  ? () => _sendToWonderlog(block)
+                  : null,
           pinned: block.pinned,
           archived: block.archived,
           footer: _metadataFooter(block),
@@ -1841,6 +1864,10 @@ class _DiaryMemoryCardState extends State<DiaryMemoryCard> {
           onTags: () => _editTags(block),
           onCopyToNotes: () => _copyToNotes(block),
           onCopyToLifeBridge: () => _copyToLifeBridge(block),
+          onSendToWonderlog:
+              block.type == DiaryBlockType.note || block.type == DiaryBlockType.photo
+                  ? () => _sendToWonderlog(block)
+                  : null,
           pinned: block.pinned,
           archived: block.archived,
           footer: _metadataFooter(block),
@@ -1867,6 +1894,10 @@ class _DiaryMemoryCardState extends State<DiaryMemoryCard> {
           onTags: () => _editTags(block),
           onCopyToNotes: () => _copyToNotes(block),
           onCopyToLifeBridge: () => _copyToLifeBridge(block),
+          onSendToWonderlog:
+              block.type == DiaryBlockType.note || block.type == DiaryBlockType.photo
+                  ? () => _sendToWonderlog(block)
+                  : null,
           pinned: block.pinned,
           archived: block.archived,
           footer: _metadataFooter(block),
@@ -1890,6 +1921,10 @@ class _DiaryMemoryCardState extends State<DiaryMemoryCard> {
           onTags: () => _editTags(block),
           onCopyToNotes: () => _copyToNotes(block),
           onCopyToLifeBridge: () => _copyToLifeBridge(block),
+          onSendToWonderlog:
+              block.type == DiaryBlockType.note || block.type == DiaryBlockType.photo
+                  ? () => _sendToWonderlog(block)
+                  : null,
           pinned: block.pinned,
           archived: block.archived,
           footer: _metadataFooter(block),
