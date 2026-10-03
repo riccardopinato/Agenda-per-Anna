@@ -548,6 +548,28 @@ LifeBridgePayload _lifeBridgePayloadFromEcosystemPackage(
   );
 }
 
+final Expando<_LifeBridgeImportMutex> _lifeBridgeImportMutexes =
+    Expando<_LifeBridgeImportMutex>();
+
+class _LifeBridgeImportMutex {
+  Future<void> _tail = Future<void>.value();
+
+  Future<T> run<T>(Future<T> Function() action) {
+    final previous = _tail;
+    final release = Completer<void>();
+    _tail = release.future;
+
+    return () async {
+      await previous;
+      try {
+        return await action();
+      } finally {
+        release.complete();
+      }
+    }();
+  }
+}
+
 String? _nullableTrimmed(dynamic value) {
   final text = value?.toString().trim() ?? '';
   return text.isEmpty ? null : text;
@@ -649,74 +671,79 @@ extension LifeBridgeAgendaStore on AgendaStore {
   Future<LifeBridgeImportResult> importLifeBridgePayload(
     LifeBridgePayload payload, {
     String? idempotencyKey,
-  }) async {
-    if (payload.protocolMajor != 1 || !payload.supportedByAnna) {
-      return const LifeBridgeImportResult(
-        outcome: LifeBridgeImportOutcome.unsupported,
-      );
-    }
-
-    final effectiveIdempotencyKey =
-        idempotencyKey?.trim().isNotEmpty == true
-            ? idempotencyKey!.trim()
-            : payload.bridgeId;
-    final state = await loadLifeBridgeState();
-    for (final existing in state.history) {
-      if (existing.idempotencyKey == effectiveIdempotencyKey) {
-        return LifeBridgeImportResult(
-          outcome: LifeBridgeImportOutcome.duplicate,
-          destinationType: existing.destinationType,
-          destinationId: existing.destinationId,
-          record: existing,
+  }) {
+    final mutex = _lifeBridgeImportMutexes[this] ?? _LifeBridgeImportMutex();
+    _lifeBridgeImportMutexes[this] = mutex;
+    return mutex.run(() async {
+      if (payload.protocolMajor != 1 || !payload.supportedByAnna) {
+        return const LifeBridgeImportResult(
+          outcome: LifeBridgeImportOutcome.unsupported,
         );
       }
-    }
-
-    final destination = await _materializeLifeBridgePayload(payload);
-    final now = DateTime.now();
-    final record = LifeBridgeImportRecord(
-      id: const Uuid().v4(),
-      bridgeId: payload.bridgeId,
-      idempotencyKey: effectiveIdempotencyKey,
-      sourceAppId: payload.source.appId,
-      objectType: payload.objectType,
-      transferMode: payload.transferMode,
-      destinationType: destination.$1,
-      destinationId: destination.$2,
-      importedAt: now,
-    );
-
-    final nextLinks = [...state.links];
-    if (payload.transferMode == LifeBridgeTransferMode.link) {
-      nextLinks.insert(
-        0,
-        LifeBridgeLinkRecord(
-          id: const Uuid().v4(),
-          source: payload.source,
-          localObjectType: destination.$1,
-          localObjectId: destination.$2,
-          status: LifeBridgeLinkStatus.active,
-          cachedPayload: payload.toJson(),
-          createdAt: now,
-          updatedAt: now,
+  
+      final effectiveIdempotencyKey =
+          idempotencyKey?.trim().isNotEmpty == true
+              ? idempotencyKey!.trim()
+              : payload.bridgeId;
+      final state = await loadLifeBridgeState();
+      for (final existing in state.history) {
+        if (existing.idempotencyKey == effectiveIdempotencyKey) {
+          return LifeBridgeImportResult(
+            outcome: LifeBridgeImportOutcome.duplicate,
+            destinationType: existing.destinationType,
+            destinationId: existing.destinationId,
+            record: existing,
+          );
+        }
+      }
+  
+      final destination = await _materializeLifeBridgePayload(payload);
+      final now = DateTime.now();
+      final record = LifeBridgeImportRecord(
+        id: const Uuid().v4(),
+        bridgeId: payload.bridgeId,
+        idempotencyKey: effectiveIdempotencyKey,
+        sourceAppId: payload.source.appId,
+        objectType: payload.objectType,
+        transferMode: payload.transferMode,
+        destinationType: destination.$1,
+        destinationId: destination.$2,
+        importedAt: now,
+      );
+  
+      final nextLinks = [...state.links];
+      if (payload.transferMode == LifeBridgeTransferMode.link) {
+        nextLinks.insert(
+          0,
+          LifeBridgeLinkRecord(
+            id: const Uuid().v4(),
+            source: payload.source,
+            localObjectType: destination.$1,
+            localObjectId: destination.$2,
+            status: LifeBridgeLinkStatus.active,
+            cachedPayload: payload.toJson(),
+            createdAt: now,
+            updatedAt: now,
+          ),
+        );
+      }
+  
+      final nextHistory = [record, ...state.history];
+      await _persistLifeBridgeState(
+        LifeBridgeState(
+          links: nextLinks,
+          history: nextHistory,
         ),
       );
-    }
-
-    final nextHistory = [record, ...state.history];
-    await _persistLifeBridgeState(
-      LifeBridgeState(
-        links: nextLinks,
-        history: nextHistory,
-      ),
-    );
-
-    return LifeBridgeImportResult(
-      outcome: LifeBridgeImportOutcome.imported,
-      destinationType: destination.$1,
-      destinationId: destination.$2,
-      record: record,
-    );
+  
+      return LifeBridgeImportResult(
+        outcome: LifeBridgeImportOutcome.imported,
+        destinationType: destination.$1,
+        destinationId: destination.$2,
+        record: record,
+      );
+  
+    });
   }
 
   Future<LifeBridgeImportResult> importEcosystemTransferPackage(
