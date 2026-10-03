@@ -50,10 +50,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
           appBar: AppBar(
             title: Text(
               strings.calendar,
-              style: TextStyle(
-              color: accent.secondaryForeground,
-              fontWeight: FontWeight.w800,
-            ),
+              style: const TextStyle(fontWeight: FontWeight.w800),
             ),
           ),
           floatingActionButton: FloatingActionButton(
@@ -219,10 +216,7 @@ class _PlannerScreenState extends State<PlannerScreen> {
               children: [
                 Text(
                   strings.myDay,
-                  style: TextStyle(
-                    color: accent.foreground,
-                    fontWeight: FontWeight.w800,
-                  ),
+                  style: const TextStyle(fontWeight: FontWeight.w800),
                 ),
                 Text(
                   _cap(
