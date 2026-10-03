@@ -991,15 +991,20 @@ class SharedMemoryCover extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    if (entry.type == SharedEntryType.photo &&
-        (entry.mediaThumbnailAssetId.isNotEmpty ||
-            entry.mediaThumbnailBase64.isNotEmpty)) {
-      return DiaryMediaImage(
-        assetId: entry.mediaThumbnailAssetId,
-        fallbackBase64: entry.mediaThumbnailBase64,
-        fit: BoxFit.cover,
-        cacheWidth: 720,
-      );
+    if (entry.type == SharedEntryType.photo) {
+      if (entry.mediaThumbnailAssetId.isNotEmpty ||
+          entry.mediaThumbnailBase64.isNotEmpty) {
+        return DiaryMediaImage(
+          assetId: entry.mediaThumbnailAssetId,
+          fallbackBase64: entry.mediaThumbnailBase64,
+          fit: BoxFit.cover,
+          cacheWidth: 720,
+        );
+      }
+
+      if (entry.mediaPath.trim().isNotEmpty) {
+        return _SharedMemoryRemotePhotoCover(entry: entry);
+      }
     }
 
     if (entry.type == SharedEntryType.sketch &&
@@ -1007,6 +1012,102 @@ class SharedMemoryCover extends StatelessWidget {
       return DiarySketchPagePreview(page: entry.sketchPages.first);
     }
 
+    return _SharedMemoryFallbackCover(entry: entry);
+  }
+}
+
+class _SharedMemoryRemotePhotoCover extends StatefulWidget {
+  final SharedEntry entry;
+
+  const _SharedMemoryRemotePhotoCover({
+    required this.entry,
+  });
+
+  @override
+  State<_SharedMemoryRemotePhotoCover> createState() =>
+      _SharedMemoryRemotePhotoCoverState();
+}
+
+class _SharedMemoryRemotePhotoCoverState
+    extends State<_SharedMemoryRemotePhotoCover> {
+  late Future<Uint8List?> _previewFuture = _loadPreview();
+
+  @override
+  void didUpdateWidget(covariant _SharedMemoryRemotePhotoCover oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.entry.mediaPath != widget.entry.mediaPath) {
+      _previewFuture = _loadPreview();
+    }
+  }
+
+  Future<Uint8List?> _loadPreview() async {
+    final path = widget.entry.mediaPath.trim();
+    if (path.isEmpty) return null;
+
+    final thumbnailCacheId =
+        MediaAssetStore.instance.namedAssetId('remote_thumb', path);
+    final cachedThumbnail =
+        await MediaAssetStore.instance.read(thumbnailCacheId);
+    if (cachedThumbnail != null) return cachedThumbnail;
+
+    final fullCacheId = MediaAssetStore.instance.namedAssetId('remote', path);
+    Uint8List? fullBytes = await MediaAssetStore.instance.read(fullCacheId);
+
+    if (fullBytes == null && CloudSyncService.instance.signedIn) {
+      try {
+        fullBytes = await CloudSyncService.instance.downloadSharedMedia(path);
+        await MediaAssetStore.instance.putNamed(fullCacheId, fullBytes);
+      } catch (_) {
+        return null;
+      }
+    }
+
+    if (fullBytes == null || fullBytes.isEmpty) return null;
+
+    final previewBytes = await _diaryThumbnailBytes(fullBytes);
+    try {
+      await MediaAssetStore.instance.putNamed(
+        thumbnailCacheId,
+        previewBytes,
+      );
+    } catch (_) {
+      // Rendering can continue from memory even if local cache persistence
+      // temporarily fails.
+    }
+    return previewBytes;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return FutureBuilder<Uint8List?>(
+      future: _previewFuture,
+      builder: (context, snapshot) {
+        final bytes = snapshot.data;
+        if (bytes != null && bytes.isNotEmpty) {
+          return Image.memory(
+            bytes,
+            fit: BoxFit.cover,
+            cacheWidth: 720,
+            gaplessPlayback: true,
+            errorBuilder: (_, __, ___) =>
+                _SharedMemoryFallbackCover(entry: widget.entry),
+          );
+        }
+        return _SharedMemoryFallbackCover(entry: widget.entry);
+      },
+    );
+  }
+}
+
+class _SharedMemoryFallbackCover extends StatelessWidget {
+  final SharedEntry entry;
+
+  const _SharedMemoryFallbackCover({
+    required this.entry,
+  });
+
+  @override
+  Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     return ColoredBox(
       color: scheme.surfaceContainerHighest,
