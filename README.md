@@ -37,6 +37,8 @@ See `docs/ARCHITECTURE.md` and `supabase/README.md` for implementation details.
 - Keeps app state truthful: Anna active, Wonderlog contract-ready/runtime-pending, SleepMax and CashMate planned until real adapters exist.
 - Adds best-effort Android install probing for the already-contracted `wonderlog://` scheme; Web and unsupported platforms remain explicitly unknown rather than guessed.
 - LINK records can open their stored source deep link after explicit user action; launch failure is non-destructive.
+- Each app opens a dedicated ecosystem detail with protocol/capability metadata plus LINK and import history filtered to that source.
+- Development checks, full tests, Web release, Android size audit and AppLab Trusted Verify are green on the implementation branch; merge/release remains gated by v0.96.
 - Source-unavailable, keep-as-copy and unlink remain explicit lifecycle actions.
 - This is development work only: release metadata remains v0.95.0+105 while v0.96 still waits for the real Wonderlog Flutter E2E.
 
