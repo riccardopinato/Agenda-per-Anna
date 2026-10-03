@@ -100,6 +100,7 @@ class MainActivity : FlutterFragmentActivity() {
         private const val VOICE_CHANNEL = "annas_diary/voice_diary"
         private const val HOME_WIDGET_CHANNEL = "annas_diary/home_widget"
         private const val SHARE_CAPTURE_CHANNEL = "annas_diary/share_capture"
+        private const val ECOSYSTEM_DEEP_LINK_CHANNEL = "annas_diary/ecosystem_deep_link"
         private const val PHOTO_OCR_CHANNEL = "annas_diary/photo_ocr"
         private const val EXTERNAL_CALENDAR_CHANNEL = "annas_diary/external_calendar"
         private const val MICROPHONE_REQUEST_CODE = 4411
@@ -116,6 +117,8 @@ class MainActivity : FlutterFragmentActivity() {
     private var pendingHomeWidgetAction: String? = null
     private var shareCaptureChannel: MethodChannel? = null
     private var pendingSharePayload: Map<String, String>? = null
+    private var ecosystemDeepLinkChannel: MethodChannel? = null
+    private var pendingEcosystemDeepLink: String? = null
     private var textRecognizer: TextRecognizer? = null
     private var pendingCalendarPermissionResult: MethodChannel.Result? = null
 
@@ -123,6 +126,7 @@ class MainActivity : FlutterFragmentActivity() {
         pendingHomeWidgetAction =
             intent?.getStringExtra(HomeWidgetProvider.EXTRA_ACTION)
         pendingSharePayload = decodeShareIntent(intent)
+        pendingEcosystemDeepLink = decodeEcosystemDeepLink(intent)
         super.configureFlutterEngine(flutterEngine)
         MethodChannel(
             flutterEngine.dartExecutor.binaryMessenger,
@@ -386,6 +390,30 @@ class MainActivity : FlutterFragmentActivity() {
                 }
             }
         }
+
+        ecosystemDeepLinkChannel = MethodChannel(
+            flutterEngine.dartExecutor.binaryMessenger,
+            ECOSYSTEM_DEEP_LINK_CHANNEL,
+        ).also { channel ->
+            channel.setMethodCallHandler { call, result ->
+                try {
+                    when (call.method) {
+                        "takeInitialDeepLink" -> {
+                            val payload = pendingEcosystemDeepLink
+                            pendingEcosystemDeepLink = null
+                            result.success(payload)
+                        }
+                        else -> result.notImplemented()
+                    }
+                } catch (error: Throwable) {
+                    result.error(
+                        "ecosystem_deep_link_native_error",
+                        error.message ?: error.javaClass.simpleName,
+                        null,
+                    )
+                }
+            }
+        }
     }
 
 
@@ -577,6 +605,30 @@ class MainActivity : FlutterFragmentActivity() {
                 channel.invokeMethod("sharedContent", share)
             }
         }
+
+        val ecosystemLink = decodeEcosystemDeepLink(intent)
+        if (ecosystemLink != null) {
+            val channel = ecosystemDeepLinkChannel
+            if (channel == null) {
+                pendingEcosystemDeepLink = ecosystemLink
+            } else {
+                channel.invokeMethod("ecosystemDeepLink", ecosystemLink)
+            }
+        }
+    }
+
+    private fun decodeEcosystemDeepLink(incoming: Intent?): String? {
+        if (incoming?.action != Intent.ACTION_VIEW) return null
+        val uri = incoming.data ?: return null
+        if (uri.scheme != "annasdiary" ||
+            uri.host != "ecosystem" ||
+            uri.path != "/import"
+        ) {
+            return null
+        }
+        val payload = uri.getQueryParameter("payload")?.trim().orEmpty()
+        if (payload.isBlank()) return null
+        return uri.toString()
     }
 
     @Suppress("DEPRECATION")
@@ -926,6 +978,37 @@ def configure_manifest() -> None:
             activity_match.group(1)
             + activity_body
             + auth_deep_link
+            + activity_match.group(3)
+        )
+        manifest = (
+            manifest[: activity_match.start()]
+            + activity_replacement
+            + manifest[activity_match.end() :]
+        )
+
+    ecosystem_deep_link = """
+            <intent-filter android:autoVerify="false">
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data
+                    android:scheme="annasdiary"
+                    android:host="ecosystem"
+                    android:path="/import" />
+            </intent-filter>
+"""
+    if 'android:scheme="annasdiary"' not in manifest:
+        activity_pattern = re.compile(
+            r'(<activity\b[^>]*android:name="\.MainActivity"[^>]*>)(.*?)(</activity>)',
+            re.DOTALL,
+        )
+        activity_match = activity_pattern.search(manifest)
+        if activity_match is None:
+            raise SystemExit("Flutter template drift: MainActivity block not found")
+        activity_replacement = (
+            activity_match.group(1)
+            + activity_match.group(2)
+            + ecosystem_deep_link
             + activity_match.group(3)
         )
         manifest = (
