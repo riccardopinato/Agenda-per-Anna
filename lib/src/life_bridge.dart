@@ -381,6 +381,20 @@ class LifeBridgeState {
   List<LifeBridgeLinkRecord> get activeLinks => links
       .where((link) => link.status != LifeBridgeLinkStatus.unlinked)
       .toList(growable: false);
+
+  List<LifeBridgeLinkRecord> activeLinksForApp(String appId) {
+    final normalized = appId.trim().toLowerCase();
+    return activeLinks
+        .where((link) => link.source.appId.trim().toLowerCase() == normalized)
+        .toList(growable: false);
+  }
+
+  List<LifeBridgeImportRecord> historyForApp(String appId) {
+    final normalized = appId.trim().toLowerCase();
+    return history
+        .where((record) => record.sourceAppId.trim().toLowerCase() == normalized)
+        .toList(growable: false);
+  }
 }
 
 enum LifeBridgeImportOutcome { imported, duplicate, unsupported }
@@ -861,6 +875,86 @@ extension LifeBridgeStrings on AnnaStrings {
         pt: 'Não foi possível abrir a app de origem.',
       );
 
+  String get ecosystemAppDetails => _pick(
+        en: 'App details',
+        it: 'Dettaglio app',
+        es: 'Detalles de la app',
+        fr: 'Détails de l’app',
+        pt: 'Detalhes da app',
+      );
+
+  String get ecosystemCapabilities => _pick(
+        en: 'Capabilities',
+        it: 'Capacità',
+        es: 'Capacidades',
+        fr: 'Capacités',
+        pt: 'Capacidades',
+      );
+
+  String get ecosystemProtocols => _pick(
+        en: 'Protocols',
+        it: 'Protocolli',
+        es: 'Protocolos',
+        fr: 'Protocoles',
+        pt: 'Protocolos',
+      );
+
+  String get ecosystemSends => _pick(
+        en: 'Can send',
+        it: 'Può inviare',
+        es: 'Puede enviar',
+        fr: 'Peut envoyer',
+        pt: 'Pode enviar',
+      );
+
+  String get ecosystemReceives => _pick(
+        en: 'Can receive',
+        it: 'Può ricevere',
+        es: 'Puede recibir',
+        fr: 'Peut recevoir',
+        pt: 'Pode receber',
+      );
+
+  String get ecosystemNoneDeclared => _pick(
+        en: 'None declared yet',
+        it: 'Nessuna dichiarata per ora',
+        es: 'Ninguna declarada por ahora',
+        fr: 'Aucune déclarée pour le moment',
+        pt: 'Nenhuma declarada por enquanto',
+      );
+
+  String get ecosystemAppLinks => _pick(
+        en: 'Links from this app',
+        it: 'Collegamenti da questa app',
+        es: 'Enlaces de esta app',
+        fr: 'Liens depuis cette app',
+        pt: 'Ligações desta app',
+      );
+
+  String get ecosystemAppHistory => _pick(
+        en: 'Imports from this app',
+        it: 'Importazioni da questa app',
+        es: 'Importaciones de esta app',
+        fr: 'Imports depuis cette app',
+        pt: 'Importações desta app',
+      );
+
+  String get ecosystemNoAppLinks => _pick(
+        en: 'No active links from this app.',
+        it: 'Nessun collegamento attivo da questa app.',
+        es: 'No hay enlaces activos de esta app.',
+        fr: 'Aucun lien actif depuis cette app.',
+        pt: 'Nenhuma ligação ativa desta app.',
+      );
+
+  String get ecosystemNoAppHistory => _pick(
+        en: 'No imports from this app yet.',
+        it: 'Nessuna importazione da questa app.',
+        es: 'Aún no hay importaciones de esta app.',
+        fr: 'Aucun import depuis cette app pour le moment.',
+        pt: 'Ainda não existem importações desta app.',
+      );
+
   String get lifeBridgeImportHint => _pick(
         en: 'Paste JSON exported by a compatible app. Anna stores a canonical local copy or a linked snapshot according to the payload.',
         it: 'Incolla il JSON esportato da un’app compatibile. Anna salva una copia locale canonica o una snapshot collegata in base al payload.',
@@ -1147,7 +1241,20 @@ class _LifeEcosystemScreenState extends State<LifeEcosystemScreen> {
                 ...EcosystemRegistry.apps.map(
                   (app) => Padding(
                     padding: const EdgeInsets.only(bottom: 10),
-                    child: _EcosystemAppCard(app: app),
+                    child: _EcosystemAppCard(
+                      app: app,
+                      onTap: () async {
+                        await Navigator.of(context).push(
+                          MaterialPageRoute<void>(
+                            builder: (_) => EcosystemAppDetailScreen(
+                              store: widget.store,
+                              app: app,
+                            ),
+                          ),
+                        );
+                        await _reload();
+                      },
+                    ),
                   ),
                 ),
                 const SizedBox(height: 14),
@@ -1249,9 +1356,11 @@ String _ecosystemAvailabilityLabel(
 
 class _EcosystemAppCard extends StatelessWidget {
   final EcosystemAppDefinition app;
+  final VoidCallback onTap;
 
   const _EcosystemAppCard({
     required this.app,
+    required this.onTap,
   });
 
   @override
@@ -1278,10 +1387,18 @@ class _EcosystemAppCard extends StatelessWidget {
       return Card(
         margin: EdgeInsets.zero,
         child: ListTile(
+          onTap: onTap,
           leading: CircleAvatar(child: Icon(_ecosystemIconForApp(app.appId))),
           title: Text(app.displayName),
           subtitle: Text(status),
-          trailing: Icon(statusIcon, color: statusColor),
+          trailing: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(statusIcon, color: statusColor),
+              const SizedBox(width: 6),
+              const Icon(Icons.chevron_right),
+            ],
+          ),
         ),
       );
     }
@@ -1294,16 +1411,272 @@ class _EcosystemAppCard extends StatelessWidget {
           final availability =
               snapshot.data ?? EcosystemAvailability.unknown;
           return ListTile(
+            onTap: onTap,
             leading: CircleAvatar(child: Icon(_ecosystemIconForApp(app.appId))),
             title: Text(app.displayName),
             subtitle: Text(
               '$status\n${_ecosystemAvailabilityLabel(strings, availability)}',
             ),
             isThreeLine: true,
-            trailing: Icon(statusIcon, color: statusColor),
+            trailing: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(statusIcon, color: statusColor),
+                const SizedBox(width: 6),
+                const Icon(Icons.chevron_right),
+              ],
+            ),
           );
         },
       ),
+    );
+  }
+}
+
+class EcosystemAppDetailScreen extends StatefulWidget {
+  final AgendaStore store;
+  final EcosystemAppDefinition app;
+
+  const EcosystemAppDetailScreen({
+    super.key,
+    required this.store,
+    required this.app,
+  });
+
+  @override
+  State<EcosystemAppDetailScreen> createState() =>
+      _EcosystemAppDetailScreenState();
+}
+
+class _EcosystemAppDetailScreenState extends State<EcosystemAppDetailScreen> {
+  LifeBridgeState? _state;
+  EcosystemAvailability _availability = EcosystemAvailability.unknown;
+  bool _loading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    unawaited(_reload());
+  }
+
+  Future<void> _reload() async {
+    final state = await widget.store.loadLifeBridgeState();
+    final availability =
+        await EcosystemLauncher.instance.availabilityFor(widget.app);
+    if (!mounted) return;
+    setState(() {
+      _state = state;
+      _availability = availability;
+      _loading = false;
+    });
+  }
+
+  Future<void> _openSourceLink(LifeBridgeLinkRecord link) async {
+    final result =
+        await EcosystemLauncher.instance.openDeepLink(link.source.deepLink);
+    if (!mounted || result == EcosystemLaunchOutcome.opened) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(AnnaStrings.of(context).ecosystemOpenSourceFailed),
+      ),
+    );
+  }
+
+  Widget _capabilityRow(
+    BuildContext context,
+    String label,
+    Set<String> values,
+  ) {
+    final strings = AnnaStrings.of(context);
+    final body = values.isEmpty
+        ? strings.ecosystemNoneDeclared
+        : values.toList()..sort();
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            label,
+            style: Theme.of(context)
+                .textTheme
+                .labelLarge
+                ?.copyWith(fontWeight: FontWeight.w800),
+          ),
+          const SizedBox(height: 6),
+          if (body is String)
+            Text(body)
+          else
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: (body as List<String>)
+                  .map((item) => Chip(label: Text(item)))
+                  .toList(growable: false),
+            ),
+        ],
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final strings = AnnaStrings.of(context);
+    final state = _state ?? const LifeBridgeState();
+    final links = state.activeLinksForApp(widget.app.appId);
+    final history = state.historyForApp(widget.app.appId);
+    final status =
+        _ecosystemStatusLabel(strings, widget.app.integrationStatus);
+
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(widget.app.displayName),
+        actions: [
+          IconButton(
+            tooltip:
+                MaterialLocalizations.of(context).refreshIndicatorSemanticLabel,
+            onPressed: _reload,
+            icon: const Icon(Icons.refresh_outlined),
+          ),
+        ],
+      ),
+      body: _loading
+          ? const Center(child: CircularProgressIndicator())
+          : ListView(
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 32),
+              children: [
+                Card(
+                  child: Padding(
+                    padding: const EdgeInsets.all(18),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            CircleAvatar(
+                              child:
+                                  Icon(_ecosystemIconForApp(widget.app.appId)),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    widget.app.displayName,
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .titleLarge
+                                        ?.copyWith(
+                                          fontWeight: FontWeight.w900,
+                                        ),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(status),
+                                  const SizedBox(height: 2),
+                                  Text(
+                                    _ecosystemAvailabilityLabel(
+                                      strings,
+                                      _availability,
+                                    ),
+                                    style:
+                                        Theme.of(context).textTheme.bodySmall,
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 20),
+                        Text(
+                          strings.ecosystemCapabilities,
+                          style: Theme.of(context)
+                              .textTheme
+                              .titleMedium
+                              ?.copyWith(fontWeight: FontWeight.w800),
+                        ),
+                        const SizedBox(height: 12),
+                        _capabilityRow(
+                          context,
+                          strings.ecosystemProtocols,
+                          widget.app.protocolVersions,
+                        ),
+                        _capabilityRow(
+                          context,
+                          strings.ecosystemSends,
+                          widget.app.sends,
+                        ),
+                        _capabilityRow(
+                          context,
+                          strings.ecosystemReceives,
+                          widget.app.receives,
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 20),
+                Text(
+                  strings.ecosystemAppLinks,
+                  style: Theme.of(context)
+                      .textTheme
+                      .titleMedium
+                      ?.copyWith(fontWeight: FontWeight.w800),
+                ),
+                const SizedBox(height: 8),
+                if (links.isEmpty)
+                  Text(strings.ecosystemNoAppLinks)
+                else
+                  ...links.map(
+                    (link) => _LifeBridgeLinkTile(
+                      link: link,
+                      onOpenSource: () => _openSourceLink(link),
+                      onUnavailable: () async {
+                        await widget.store
+                            .markLifeBridgeSourceUnavailable(link.id);
+                        await _reload();
+                      },
+                      onConvertCopy: () async {
+                        await widget.store
+                            .convertLifeBridgeLinkToCopy(link.id);
+                        await _reload();
+                      },
+                      onUnlink: () async {
+                        await widget.store.unlinkLifeBridge(link.id);
+                        await _reload();
+                      },
+                    ),
+                  ),
+                const SizedBox(height: 24),
+                Text(
+                  strings.ecosystemAppHistory,
+                  style: Theme.of(context)
+                      .textTheme
+                      .titleMedium
+                      ?.copyWith(fontWeight: FontWeight.w800),
+                ),
+                const SizedBox(height: 8),
+                if (history.isEmpty)
+                  Text(strings.ecosystemNoAppHistory)
+                else
+                  ...history.take(30).map(
+                        (record) => ListTile(
+                          contentPadding: EdgeInsets.zero,
+                          leading: Icon(
+                            record.transferMode == LifeBridgeTransferMode.link
+                                ? Icons.link_outlined
+                                : Icons.copy_all_outlined,
+                          ),
+                          title: Text(record.objectType),
+                          subtitle: Text(
+                            '${record.destinationType} · '
+                            '${DateFormat.yMd(AnnaStrings.intlLocale(context)).add_Hm().format(record.importedAt)}',
+                          ),
+                        ),
+                      ),
+              ],
+            ),
     );
   }
 }
