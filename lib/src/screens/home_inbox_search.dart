@@ -1,8 +1,5 @@
 part of '../../main.dart';
 
-const _homePastelForeground = Color(0xFF35282D);
-const _homePastelSecondary = Color(0xFF67545D);
-
 class MainShell extends StatefulWidget {
   final AgendaStore store;
   const MainShell({super.key, required this.store});
@@ -91,6 +88,7 @@ class HomeScreen extends StatelessWidget {
             birthdayPreview.isEmpty ? null : birthdayPreview.first;
         final pendingTasks = store.pendingUnifiedTaskCount;
         final displayName = store.preferences.displayName.trim();
+        final accent = context.accentSurface;
         final pinnedItems =
             store.agendaContentFilter == AgendaContentFilter.sharedOnly
                 ? <AgendaItem>[]
@@ -220,9 +218,7 @@ class HomeScreen extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(22),
                 decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                    colors: [Color(0xFFFFE4EC), Color(0xFFF0E8FF)],
-                  ),
+                  gradient: accent.gradient,
                   borderRadius: BorderRadius.circular(28),
                 ),
                 child: Column(
@@ -236,7 +232,7 @@ class HomeScreen extends StatelessWidget {
                         ).format(now),
                       ),
                       style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                            color: _homePastelForeground,
+                            color: accent.foreground,
                           ),
                     ),
                     const SizedBox(height: 8),
@@ -245,7 +241,7 @@ class HomeScreen extends StatelessWidget {
                           ? _dailyQuote(now).$1
                           : strings.hello(displayName),
                       style: const TextStyle(
-                        color: _homePastelForeground,
+                        color: accent.foreground,
                         fontSize: 24,
                         fontWeight: FontWeight.w900,
                       ),
@@ -256,7 +252,7 @@ class HomeScreen extends StatelessWidget {
                           ? _dailyQuote(now).$2
                           : strings.todayPage,
                       style: const TextStyle(
-                        color: _homePastelSecondary,
+                        color: accent.secondaryForeground,
                       ),
                     ),
                   ],
@@ -1070,6 +1066,7 @@ class _TodayWellbeingCard extends StatelessWidget {
         .where((id) => store.habits.any((habit) => habit.id == id))
         .length;
     final gratitudeCount = journal.gratitude.length.clamp(0, 3);
+    final accent = context.accentSurface;
 
     return Material(
       color: Colors.transparent,
@@ -1087,9 +1084,7 @@ class _TodayWellbeingCard extends StatelessWidget {
         child: Ink(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            gradient: const LinearGradient(
-              colors: [Color(0xFFFFF0F5), Color(0xFFF4F0FF)],
-            ),
+            gradient: accent.gradient,
             borderRadius: BorderRadius.circular(22),
             border: Border.all(
               color: Theme.of(context).colorScheme.outlineVariant,
@@ -1102,13 +1097,13 @@ class _TodayWellbeingCard extends StatelessWidget {
             height: 48,
             alignment: Alignment.center,
             decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.85),
+              color: accent.chipBackground,
               shape: BoxShape.circle,
             ),
             child: Text(
               journal.mood?.emoji ?? '♡',
               style: const TextStyle(
-                color: _homePastelForeground,
+                color: accent.foreground,
                 fontSize: 24,
               ),
             ),
@@ -1123,7 +1118,7 @@ class _TodayWellbeingCard extends StatelessWidget {
                       ? 'Come sta andando la giornata?'
                       : 'Oggi: ${journal.mood!.label}',
                   style: const TextStyle(
-                    color: _homePastelForeground,
+                    color: accent.foreground,
                     fontWeight: FontWeight.w800,
                     fontSize: 16,
                   ),
@@ -1138,13 +1133,13 @@ class _TodayWellbeingCard extends StatelessWidget {
                           ? 'Nessuna abitudine'
                           : '$doneHabits/$totalHabits abitudini',
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: _homePastelSecondary,
+                            color: accent.secondaryForeground,
                           ),
                     ),
                     Text(
                       '$gratitudeCount/3 cose belle',
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: _homePastelSecondary,
+                            color: accent.secondaryForeground,
                           ),
                     ),
                     Text(
@@ -1152,7 +1147,7 @@ class _TodayWellbeingCard extends StatelessWidget {
                           ? 'Nessun ricordo'
                           : '${journal.blocks.length} ricordi',
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: _homePastelSecondary,
+                            color: accent.secondaryForeground,
                           ),
                     ),
                   ],
@@ -1162,7 +1157,7 @@ class _TodayWellbeingCard extends StatelessWidget {
           ),
           const Icon(
             Icons.chevron_right,
-            color: _homePastelForeground,
+            color: accent.foreground,
           ),
         ],
           ),
