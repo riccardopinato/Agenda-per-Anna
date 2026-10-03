@@ -50,7 +50,7 @@ Source of execution truth for Anna's Diary. Product identity and boundaries are 
 | v0.93 | Cycle Tracker Completion & UX Polish | Completed | Vault-only onboarding, fast period logging, prediction v2, complete private reminders, richer calendar, lightweight Premium charts and accessibility polish |
 | v0.94 | Premium Store Activation & Sandbox QA | Completed | Store QA diagnostics, monthly/lifetime Offering validation, signed Internal Testing AAB and real-purchase verification contract |
 | v0.95 | Life Ecosystem + Life Bridge v1 | Completed | Versioned explicit COPY/LINK interoperability over Anna's existing diary/agenda domains, without a shared life database |
-| v0.96 | Wonderlog Life Bridge Integration | In progress — contract-ready, runtime gated | Lock Wonderlog → Anna Life Bridge v1 compatibility now; activate the runtime integration only after the Wonderlog Flutter adapter reaches a stable verified baseline |
+| v0.96 | Shared Ecosystem Core / Wonderlog Runtime Bridge | Release candidate — physical validation pending | Complete explicit Wonderlog ↔ Anna COPY/LINK runtime interoperability; merge only after exact-artifact physical round-trip validation |
 
 ## Permanent constraints for this sequence
 
@@ -614,16 +614,17 @@ Per the active development cadence, AppLab runs once every two feature versions.
 
 ## v0.96 acceptance criteria
 
-- Anna remains a **consumer/reference implementation of Life Bridge v1**; v0.96 must not introduce a second Wonderlog-specific bridge protocol, shared database or background cross-app sync engine.
-- Anna's regression suite contains a canonical Wonderlog Journey fixture and proves decoding for both explicit `COPY` and `LINK` transfer modes without mutating transport metadata into product-domain data.
-- The contract preserves source app/object identity, deterministic `bridgeId` idempotency, revision and deep-link provenance.
-- Wonderlog implementation code remains owned by the Wonderlog project. Anna must not copy or fork Wonderlog domain/storage logic merely to complete the integration.
-- Runtime activation is **gated** until the Wonderlog Flutter migration exposes a stable Life Bridge v1 adapter and the same canonical payload passes end-to-end verification from a real Wonderlog export into Anna import.
-- Until that gate passes, Anna may describe Wonderlog as the next/contract-ready ecosystem integration but must not present it as connected, installed or synchronizing.
-- Explicit handoff remains the default transport. No silent polling, implicit two-way synchronization, shared cross-app database or mandatory common account identity is introduced by v0.96.
-- Binary/local media URIs from another app are never trusted as portable media. Media transfer remains omitted or requires a future explicit transport contract.
-- Imported canonical Anna records keep the existing diary/agenda lifecycle, backup, sync and account-isolation behavior; link/provenance metadata remains interoperability metadata only.
-- This foundation/contract PR does **not** advance release metadata from v0.95.0+105. v0.96 release metadata is applied only when the runtime Wonderlog → Anna path is implemented and verified.
+- Anna remains a **consumer/reference implementation of Shared Ecosystem Core v1 with Life Bridge v1 compatibility**; v0.96 introduces no Wonderlog-specific database, shared store, mandatory common account or background cross-app sync engine.
+- The canonical Wonderlog Journey fixtures decode through the shared envelope for both explicit `COPY` and `LINK` transfer modes while preserving source app/object identity, deterministic `bridgeId`, revision, provenance and source deep link.
+- Local transport is separate from the protocol: bounded base64url deep links and the `ECOSYSTEM_BRIDGE_V1:` clipboard package carry the same validated transfer package.
+- Android accepts `annasdiary://ecosystem/import?payload=...` for cold/warm start and always presents an explicit review step before materializing canonical Anna data.
+- Import idempotency is keyed by bridge/revision/transfer mode; duplicate and concurrent identical delivery must not create duplicate records, while a newer revision remains distinguishable.
+- Anna can export supported diary Note/Photo context toward Wonderlog using the canonical envelope; binary/private local media remain explicitly omitted rather than leaking app-private URIs.
+- Unsupported target, non-explicit share, invalid provenance/bridge identity, private/local media references and incompatible payloads fail closed before canonical Anna data is mutated.
+- Existing diary/agenda lifecycle, backup, sync and account-isolation paths remain authoritative after import; interoperability metadata remains provenance/link/history only.
+- Wonderlog domain/storage implementation remains owned by Wonderlog. Anna reuses the shared contract and fixtures but does not fork Wonderlog product logic.
+- Release metadata is aligned to **v0.96.0+106** for the release candidate.
+- **Final merge/certification gate:** the exact signed release-candidate APK must pass real-device Wonderlog → Anna COPY, Wonderlog → Anna LINK, duplicate LINK idempotency and Anna → Wonderlog round-trip. Until that evidence exists, v0.96 is **NOT PHYSICAL DEVICE VERIFIED** and the Shared Ecosystem Core Golden remains candidate rather than COPY-READY.
 
 
 ## v0.95 acceptance criteria
