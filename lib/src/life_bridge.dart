@@ -719,6 +719,112 @@ extension LifeBridgeAgendaStore on AgendaStore {
     );
   }
 
+  Future<LifeBridgeImportResult> importEcosystemTransferPackage(
+    EcosystemTransferPackage package,
+  ) async {
+    final inspection = inspectAnnaEcosystemPackage(package);
+    if (!inspection.ready) {
+      return const LifeBridgeImportResult(
+        outcome: LifeBridgeImportOutcome.unsupported,
+      );
+    }
+
+    final payload = _lifeBridgePayloadFromEcosystemPackage(package);
+    return importLifeBridgePayload(
+      payload,
+      idempotencyKey: package.envelope.idempotencyKey,
+    );
+  }
+
+  EcosystemTransferPackage exportEcosystemDiaryBlock(
+    DiaryBlock block, {
+    EcosystemAppId targetApp = EcosystemAppId.wonderlog,
+    EcosystemTransferMode transferMode = EcosystemTransferMode.copy,
+    int revision = 1,
+    DateTime? packagedAtUtc,
+  }) {
+    if (revision < 1) {
+      throw ArgumentError.value(revision, 'revision', 'must be >= 1');
+    }
+
+    final entityType = block.type == DiaryBlockType.photo
+        ? EcosystemEntityType.photo
+        : EcosystemEntityType.note;
+    final peopleNames = <String>[];
+    for (final personId in block.personIds) {
+      for (final person in people) {
+        if (person.id == personId) {
+          peopleNames.add(person.name);
+          break;
+        }
+      }
+    }
+
+    final places = block.places
+        .map(
+          (place) => EcosystemPlace(
+            name: place.name,
+            latitude: place.latitude,
+            longitude: place.longitude,
+          ),
+        )
+        .toList(growable: false);
+
+    final media = <EcosystemMediaReference>[];
+    if (block.type == DiaryBlockType.photo && block.hasPhotoMedia) {
+      media.add(
+        const EcosystemMediaReference(
+          id: 'photo',
+          kind: 'photo',
+          mimeType: 'image/jpeg',
+          handoff: EcosystemMediaHandoff(
+            kind: EcosystemMediaHandoffKind.omitted,
+            reason: 'explicit_binary_handoff_not_enabled_in_v1',
+          ),
+        ),
+      );
+    }
+
+    final deepLink = 'annasdiary://moment/\${Uri.encodeComponent(block.id)}';
+    final normalizedText = block.text.trim();
+    final envelope = EcosystemEnvelope(
+      sourceApp: EcosystemAppId.annasDiary,
+      sourceEntityType: entityType,
+      sourceEntityId: block.id,
+      createdAtUtc: block.createdAt.toUtc(),
+      title: normalizedText.isEmpty ? null : normalizedText.split('\n').first,
+      text: block.text,
+      tags: block.tags,
+      people: peopleNames,
+      places: places,
+      media: media,
+      sourceDeepLink: deepLink,
+      transferMode: transferMode,
+      revision: revision,
+      provenance: EcosystemProvenance(
+        ownerApp: EcosystemAppId.annasDiary,
+        ownerEntityType: entityType,
+        ownerEntityId: block.id,
+        ownerRevision: revision,
+        canonicalDeepLink: deepLink,
+      ),
+      fallback: EcosystemFallback(
+        plainText: normalizedText.isEmpty ? "Anna's Diary" : normalizedText,
+        sourceDeepLink: deepLink,
+      ),
+    );
+
+    if (!EcosystemTransferPlanner.canSend(envelope, targetApp)) {
+      throw StateError('Target app does not support this ecosystem payload.');
+    }
+
+    return EcosystemTransferPackage(
+      targetApp: targetApp,
+      envelope: envelope,
+      createdAtUtc: (packagedAtUtc ?? DateTime.now()).toUtc(),
+    );
+  }
+
   Future<(String, String)> _materializeLifeBridgePayload(
     LifeBridgePayload payload,
   ) async {
