@@ -1488,9 +1488,7 @@ class _EcosystemAppDetailScreenState extends State<EcosystemAppDetailScreen> {
     Set<String> values,
   ) {
     final strings = AnnaStrings.of(context);
-    final body = values.isEmpty
-        ? strings.ecosystemNoneDeclared
-        : values.toList()..sort();
+    final sortedValues = values.toList()..sort();
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
       child: Column(
@@ -1504,13 +1502,13 @@ class _EcosystemAppDetailScreenState extends State<EcosystemAppDetailScreen> {
                 ?.copyWith(fontWeight: FontWeight.w800),
           ),
           const SizedBox(height: 6),
-          if (body is String)
-            Text(body)
+          if (sortedValues.isEmpty)
+            Text(strings.ecosystemNoneDeclared)
           else
             Wrap(
               spacing: 8,
               runSpacing: 8,
-              children: (body as List<String>)
+              children: sortedValues
                   .map((item) => Chip(label: Text(item)))
                   .toList(growable: false),
             ),
