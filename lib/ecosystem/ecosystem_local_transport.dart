@@ -48,7 +48,7 @@ final class EcosystemTransferPackage {
       if (transportVersion != ecosystemLocalTransportVersion) {
         throw FormatException(
           'Unsupported ecosystem local transport version: '
-          '\$transportVersion',
+          '$transportVersion',
         );
       }
 
@@ -86,7 +86,7 @@ final class EcosystemTransferPackage {
       rethrow;
     } catch (error) {
       throw FormatException(
-        'Invalid ecosystem transfer package: \$error',
+        'Invalid ecosystem transfer package: $error',
       );
     }
   }
