@@ -1,0 +1,108 @@
+name: v0.96 Final RC ARM64
+
+on:
+  push:
+    branches:
+      - v096-shared-ecosystem-core-consumer
+    paths:
+      - ".github/workflows/v096-final-rc.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: anna-v096-final-rc
+  cancel-in-progress: false
+
+jobs:
+  apk:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    env:
+      ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+      ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+      ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+      ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+      ANDROID_KEYSTORE_PATH: ${{ github.workspace }}/.signing/agenda-release.jks
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Require stable signing
+        shell: bash
+        run: |
+          set -euo pipefail
+          missing=()
+          for name in ANDROID_KEYSTORE_BASE64 ANDROID_KEYSTORE_PASSWORD ANDROID_KEY_ALIAS ANDROID_KEY_PASSWORD; do
+            if [ -z "${!name:-}" ]; then missing+=("$name"); fi
+          done
+          if [ "${#missing[@]}" -ne 0 ]; then
+            echo "::error title=Stable Android signing is not configured::Missing: ${missing[*]}"
+            exit 1
+          fi
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: "3.47.5"
+          channel: stable
+          cache: true
+
+      - name: Generate pinned Android platform
+        run: |
+          rm -rf android /tmp/agenda_android
+          flutter create --project-name agenda_per_anna --org com.riccardopinato --platforms=android /tmp/agenda_android
+          cp -R /tmp/agenda_android/android .
+
+      - name: Apply Android release configuration
+        run: python3 tool/prepare_android_platform.py --release-signing
+
+      - name: Install locked dependencies
+        run: flutter pub get --enforce-lockfile
+
+      - name: Generate launcher icons
+        run: dart run flutter_launcher_icons -f tool/flutter_launcher_icons_android.yaml
+
+      - name: Analyze
+        run: flutter analyze
+
+      - name: Test
+        run: flutter test
+
+      - name: Build exact signed ARM64 RC
+        shell: bash
+        run: |
+          set -euo pipefail
+          FIREBASE_ARG=""
+          if [ -f android/app/google-services.json ]; then
+            FIREBASE_ARG="--dart-define=FIREBASE_ENABLED=true"
+          fi
+          flutter build apk \
+            --release \
+            --split-per-abi \
+            --tree-shake-icons \
+            --dart-define=ANNA_STORE_RELEASE=false \
+            --dart-define=ANNA_PREMIUM_PREVIEW=true \
+            $FIREBASE_ARG
+
+          mkdir -p build/v096-rc
+          cp build/app/outputs/flutter-apk/app-arm64-v8a-release.apk \
+             build/v096-rc/Anna-Diary-v0.96.0-106-RC-arm64.apk
+
+          sha256sum build/v096-rc/*.apk > build/v096-rc/SHA256SUMS.txt
+          keytool -list -v \
+            -keystore "$ANDROID_KEYSTORE_PATH" \
+            -storepass "$ANDROID_KEYSTORE_PASSWORD" \
+            -alias "$ANDROID_KEY_ALIAS" \
+            | grep -E "SHA256:|Owner:|Issuer:" > build/v096-rc/SIGNING.txt
+
+          printf "source_sha=%s\nworkflow_run=%s\nversion=0.96.0+106\nvariant=release-arm64-sideload\n" \
+            "$GITHUB_SHA" "$GITHUB_RUN_ID" > build/v096-rc/PROVENANCE.txt
+          ls -lh build/v096-rc
+
+      - name: Upload exact RC
+        uses: actions/upload-artifact@v4
+        with:
+          name: anna-v096-final-rc-arm64
+          path: build/v096-rc/*
+          if-no-files-found: error
+          retention-days: 30
