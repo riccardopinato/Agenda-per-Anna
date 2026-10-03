@@ -1517,6 +1517,19 @@ class _LifeEcosystemScreenState extends State<LifeEcosystemScreen> {
     }
 
     try {
+      if (raw.startsWith(ecosystemClipboardPrefix)) {
+        final package =
+            EcosystemLocalTransportCodec.decodeClipboardText(raw);
+        if (!mounted) return;
+        await _showEcosystemTransferReview(
+          context,
+          widget.store,
+          package,
+        );
+        await _reload();
+        return;
+      }
+
       final payload = LifeBridgePayload.decode(raw);
       final result = await widget.store.importLifeBridgePayload(payload);
       if (!mounted) return;
