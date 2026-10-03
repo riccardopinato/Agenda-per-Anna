@@ -42,6 +42,7 @@ import 'web_push_service.dart';
 part 'src/app_shell.dart';
 part 'src/domain_models.dart';
 part 'src/localization.dart';
+part 'src/theme_semantics.dart';
 part 'src/day_hub_domain.dart';
 part 'src/unified_capture.dart';
 part 'src/home_widget_bridge.dart';
