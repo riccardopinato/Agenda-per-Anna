@@ -516,7 +516,10 @@ class _DayOpeningCard extends StatelessWidget {
               children: [
                 Text(
                   quote.$1,
-                  style: const TextStyle(fontWeight: FontWeight.w800),
+                  style: TextStyle(
+                    color: accent.foreground,
+                    fontWeight: FontWeight.w800,
+                  ),
                 ),
                 const SizedBox(height: 3),
                 Text(
@@ -1621,7 +1624,10 @@ class _WeekHero extends StatelessWidget {
         children: [
           Text(
             '${DateFormat('d MMM', 'it_IT').format(start)} – ${DateFormat('d MMM yyyy', 'it_IT').format(end)}',
-            style: const TextStyle(fontWeight: FontWeight.w800),
+            style: TextStyle(
+              color: accent.secondaryForeground,
+              fontWeight: FontWeight.w800,
+            ),
           ),
           const SizedBox(height: 8),
           Text(
@@ -2325,7 +2331,10 @@ class MonthOpeningHero extends StatelessWidget {
               ),
               child: Text(
                 'Parola del mese: ${data.monthWord}',
-                style: const TextStyle(fontWeight: FontWeight.w800),
+                style: TextStyle(
+                  color: accent.chipForeground,
+                  fontWeight: FontWeight.w800,
+                ),
               ),
             ),
           ],
