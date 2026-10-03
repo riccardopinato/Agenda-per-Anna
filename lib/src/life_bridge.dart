@@ -244,6 +244,7 @@ class LifeBridgePayload {
 class LifeBridgeImportRecord {
   final String id;
   final String bridgeId;
+  final String idempotencyKey;
   final String sourceAppId;
   final String objectType;
   final LifeBridgeTransferMode transferMode;
@@ -254,6 +255,7 @@ class LifeBridgeImportRecord {
   const LifeBridgeImportRecord({
     required this.id,
     required this.bridgeId,
+    required this.idempotencyKey,
     required this.sourceAppId,
     required this.objectType,
     required this.transferMode,
@@ -265,6 +267,7 @@ class LifeBridgeImportRecord {
   Map<String, dynamic> toJson() => {
         'id': id,
         'bridgeId': bridgeId,
+        'idempotencyKey': idempotencyKey,
         'sourceAppId': sourceAppId,
         'objectType': objectType,
         'transferMode': transferMode.name,
@@ -280,6 +283,9 @@ class LifeBridgeImportRecord {
     return LifeBridgeImportRecord(
       id: json['id']?.toString() ?? const Uuid().v4(),
       bridgeId: json['bridgeId']?.toString() ?? '',
+      idempotencyKey: json['idempotencyKey']?.toString() ??
+          json['bridgeId']?.toString() ??
+          '',
       sourceAppId: json['sourceAppId']?.toString() ?? '',
       objectType: json['objectType']?.toString() ?? '',
       transferMode: mode,
@@ -498,17 +504,22 @@ extension LifeBridgeAgendaStore on AgendaStore {
   }
 
   Future<LifeBridgeImportResult> importLifeBridgePayload(
-    LifeBridgePayload payload,
-  ) async {
+    LifeBridgePayload payload, {
+    String? idempotencyKey,
+  }) async {
     if (payload.protocolMajor != 1 || !payload.supportedByAnna) {
       return const LifeBridgeImportResult(
         outcome: LifeBridgeImportOutcome.unsupported,
       );
     }
 
+    final effectiveIdempotencyKey =
+        idempotencyKey?.trim().isNotEmpty == true
+            ? idempotencyKey!.trim()
+            : payload.bridgeId;
     final state = await loadLifeBridgeState();
     for (final existing in state.history) {
-      if (existing.bridgeId == payload.bridgeId) {
+      if (existing.idempotencyKey == effectiveIdempotencyKey) {
         return LifeBridgeImportResult(
           outcome: LifeBridgeImportOutcome.duplicate,
           destinationType: existing.destinationType,
@@ -523,6 +534,7 @@ extension LifeBridgeAgendaStore on AgendaStore {
     final record = LifeBridgeImportRecord(
       id: const Uuid().v4(),
       bridgeId: payload.bridgeId,
+      idempotencyKey: effectiveIdempotencyKey,
       sourceAppId: payload.source.appId,
       objectType: payload.objectType,
       transferMode: payload.transferMode,
