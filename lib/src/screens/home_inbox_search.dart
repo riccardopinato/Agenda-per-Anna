@@ -1,5 +1,8 @@
 part of '../../main.dart';
 
+const _homePastelForeground = Color(0xFF35282D);
+const _homePastelSecondary = Color(0xFF67545D);
+
 class MainShell extends StatefulWidget {
   final AgendaStore store;
   const MainShell({super.key, required this.store});
@@ -232,7 +235,9 @@ class HomeScreen extends StatelessWidget {
                           AnnaStrings.intlLocale(context),
                         ).format(now),
                       ),
-                      style: Theme.of(context).textTheme.titleMedium,
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                            color: _homePastelForeground,
+                          ),
                     ),
                     const SizedBox(height: 8),
                     Text(
@@ -240,6 +245,7 @@ class HomeScreen extends StatelessWidget {
                           ? _dailyQuote(now).$1
                           : strings.hello(displayName),
                       style: const TextStyle(
+                        color: _homePastelForeground,
                         fontSize: 24,
                         fontWeight: FontWeight.w900,
                       ),
@@ -249,6 +255,9 @@ class HomeScreen extends StatelessWidget {
                       store.preferences.showDailyQuote
                           ? _dailyQuote(now).$2
                           : strings.todayPage,
+                      style: const TextStyle(
+                        color: _homePastelSecondary,
+                      ),
                     ),
                   ],
                 ),
@@ -704,7 +713,9 @@ class _HomeSyncStatusCard extends StatelessWidget {
                           subtitle,
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
-                          style: Theme.of(context).textTheme.bodySmall,
+                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                            color: _homePastelSecondary,
+                          ),
                         ),
                       ],
                     ),
@@ -1098,7 +1109,10 @@ class _TodayWellbeingCard extends StatelessWidget {
             ),
             child: Text(
               journal.mood?.emoji ?? '♡',
-              style: const TextStyle(fontSize: 24),
+              style: const TextStyle(
+                color: _homePastelForeground,
+                fontSize: 24,
+              ),
             ),
           ),
           const SizedBox(width: 12),
@@ -1111,6 +1125,7 @@ class _TodayWellbeingCard extends StatelessWidget {
                       ? 'Come sta andando la giornata?'
                       : 'Oggi: ${journal.mood!.label}',
                   style: const TextStyle(
+                    color: _homePastelForeground,
                     fontWeight: FontWeight.w800,
                     fontSize: 16,
                   ),
@@ -1124,11 +1139,15 @@ class _TodayWellbeingCard extends StatelessWidget {
                       totalHabits == 0
                           ? 'Nessuna abitudine'
                           : '$doneHabits/$totalHabits abitudini',
-                      style: Theme.of(context).textTheme.bodySmall,
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                            color: _homePastelSecondary,
+                          ),
                     ),
                     Text(
                       '$gratitudeCount/3 cose belle',
-                      style: Theme.of(context).textTheme.bodySmall,
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                            color: _homePastelSecondary,
+                          ),
                     ),
                     Text(
                       journal.blocks.isEmpty
@@ -1143,7 +1162,7 @@ class _TodayWellbeingCard extends StatelessWidget {
           ),
           Icon(
             Icons.chevron_right,
-            color: Theme.of(context).colorScheme.primary,
+            color: _homePastelForeground,
           ),
         ],
           ),
