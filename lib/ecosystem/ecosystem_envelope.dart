@@ -7,8 +7,8 @@ abstract final class EcosystemBridgeIdentity {
     required EcosystemEntityType ownerEntityType,
     required String ownerEntityId,
   }) =>
-      'ecosystem:v1:\${ownerApp.wireValue}:'
-      '\${ownerEntityType.name}:\$ownerEntityId';
+      'ecosystem:v1:${ownerApp.wireValue}:'
+      '${ownerEntityType.name}:$ownerEntityId';
 }
 
 final class EcosystemEnvelope {
@@ -72,7 +72,7 @@ final class EcosystemEnvelope {
   final EcosystemFallback fallback;
 
   String get idempotencyKey =>
-      '\$bridgeId:\$revision:\${transferMode.name}';
+      '$bridgeId:$revision:${transferMode.name}';
 
   Map<String, Object?> toJson() => {
         'schemaVersion': schemaVersion,
@@ -99,7 +99,7 @@ final class EcosystemEnvelope {
     final schemaVersion = (json['schemaVersion'] as num?)?.toInt() ?? 1;
     if (schemaVersion != EcosystemContract.schemaVersion) {
       throw FormatException(
-        'Unsupported EcosystemEnvelope schema version: \$schemaVersion',
+        'Unsupported EcosystemEnvelope schema version: $schemaVersion',
       );
     }
 
