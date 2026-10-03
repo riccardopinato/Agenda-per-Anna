@@ -403,6 +403,22 @@ class MainActivity : FlutterFragmentActivity() {
                             pendingEcosystemDeepLink = null
                             result.success(payload)
                         }
+                        "openDeepLink" -> {
+                            val raw = call.arguments as? String
+                                ?: throw IllegalArgumentException("missing deep link")
+                            val target = Intent(
+                                Intent.ACTION_VIEW,
+                                Uri.parse(raw),
+                            ).apply {
+                                addCategory(Intent.CATEGORY_BROWSABLE)
+                            }
+                            try {
+                                startActivity(target)
+                                result.success(true)
+                            } catch (_: Throwable) {
+                                result.success(false)
+                            }
+                        }
                         else -> result.notImplemented()
                     }
                 } catch (error: Throwable) {
