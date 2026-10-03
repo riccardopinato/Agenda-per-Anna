@@ -1242,6 +1242,23 @@ extension LifeBridgeStrings on AnnaStrings {
         fr: 'Instantané lié',
         pt: 'Snapshot ligado',
       );
+
+
+  String get ecosystemSendWonderlog => _pick(
+        en: 'Send to Wonderlog',
+        it: 'Invia a Wonderlog',
+        es: 'Enviar a Wonderlog',
+        fr: 'Envoyer vers Wonderlog',
+        pt: 'Enviar para Wonderlog',
+      );
+
+  String get ecosystemFallbackCopied => _pick(
+        en: 'Wonderlog could not be opened. The portable transfer was copied to the clipboard.',
+        it: 'Impossibile aprire Wonderlog. Il trasferimento portabile è stato copiato negli appunti.',
+        es: 'No se pudo abrir Wonderlog. La transferencia portátil se copió al portapapeles.',
+        fr: 'Impossible d’ouvrir Wonderlog. Le transfert portable a été copié dans le presse-papiers.',
+        pt: 'Não foi possível abrir o Wonderlog. A transferência portátil foi copiada para a área de transferência.',
+      );
 }
 
 Future<void> copyLifeBridgePayload(
@@ -1255,6 +1272,25 @@ Future<void> copyLifeBridgePayload(
   );
 }
 
+
+Future<void> sendEcosystemTransferPackage(
+  BuildContext context,
+  EcosystemTransferPackage package,
+) async {
+  final targetUri = EcosystemLocalTransportCodec.targetUri(package);
+  final opened = await EcosystemDeepLinkService.instance.tryOpen(targetUri);
+  if (opened) return;
+
+  await Clipboard.setData(
+    ClipboardData(
+      text: EcosystemLocalTransportCodec.clipboardText(package),
+    ),
+  );
+  if (!context.mounted) return;
+  ScaffoldMessenger.of(context).showSnackBar(
+    SnackBar(content: Text(AnnaStrings.of(context).ecosystemFallbackCopied)),
+  );
+}
 
 Future<void> _showEcosystemTransferReview(
   BuildContext context,
