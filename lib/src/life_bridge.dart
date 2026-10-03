@@ -1255,6 +1255,224 @@ Future<void> copyLifeBridgePayload(
   );
 }
 
+
+Future<void> _showEcosystemTransferReview(
+  BuildContext context,
+  AgendaStore store,
+  EcosystemTransferPackage package,
+) async {
+  final inspection = inspectAnnaEcosystemPackage(package);
+  if (!inspection.ready) {
+    if (!context.mounted) return;
+    final strings = AnnaStrings.of(context);
+    final message = inspection.status == AnnaEcosystemPackageStatus.invalid
+        ? strings.ecosystemImportInvalid
+        : strings.ecosystemImportUnsupported;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message)),
+    );
+    return;
+  }
+
+  await Navigator.of(context).push(
+    MaterialPageRoute<void>(
+      builder: (_) => EcosystemInboundReviewScreen(
+        store: store,
+        package: package,
+      ),
+    ),
+  );
+}
+
+Future<void> _handleIncomingEcosystemUri(
+  BuildContext context,
+  AgendaStore store,
+  Uri uri,
+) async {
+  try {
+    final package = EcosystemLocalTransportCodec.decodeTargetUri(uri);
+    if (!context.mounted) return;
+    await _showEcosystemTransferReview(context, store, package);
+  } catch (_) {
+    if (!context.mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(AnnaStrings.of(context).ecosystemImportInvalid)),
+    );
+  }
+}
+
+class EcosystemInboundReviewScreen extends StatefulWidget {
+  final AgendaStore store;
+  final EcosystemTransferPackage package;
+
+  const EcosystemInboundReviewScreen({
+    super.key,
+    required this.store,
+    required this.package,
+  });
+
+  @override
+  State<EcosystemInboundReviewScreen> createState() =>
+      _EcosystemInboundReviewScreenState();
+}
+
+class _EcosystemInboundReviewScreenState
+    extends State<EcosystemInboundReviewScreen> {
+  bool _busy = false;
+
+  Future<void> _import() async {
+    if (_busy) return;
+    setState(() => _busy = true);
+    final strings = AnnaStrings.of(context);
+
+    try {
+      final result =
+          await widget.store.importEcosystemTransferPackage(widget.package);
+      if (!mounted) return;
+
+      final message = switch (result.outcome) {
+        LifeBridgeImportOutcome.imported => strings.lifeBridgeImported,
+        LifeBridgeImportOutcome.duplicate => strings.lifeBridgeDuplicate,
+        LifeBridgeImportOutcome.unsupported =>
+          strings.ecosystemImportUnsupported,
+      };
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(message)),
+      );
+
+      if (result.outcome != LifeBridgeImportOutcome.unsupported) {
+        Navigator.of(context).pop();
+      }
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final strings = AnnaStrings.of(context);
+    final envelope = widget.package.envelope;
+    final sourceName =
+        EcosystemRegistry.definition(envelope.sourceApp).displayName;
+    final ownerName =
+        EcosystemRegistry.definition(envelope.provenance.ownerApp).displayName;
+    final transferLabel =
+        envelope.transferMode == EcosystemTransferMode.link
+            ? strings.ecosystemTransferLink
+            : strings.ecosystemTransferCopy;
+
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(strings.ecosystemImportTitle),
+      ),
+      body: ListView(
+        padding: const EdgeInsets.fromLTRB(18, 16, 18, 32),
+        children: [
+          Text(
+            strings.ecosystemImportReview,
+            style: Theme.of(context)
+                .textTheme
+                .titleLarge
+                ?.copyWith(fontWeight: FontWeight.w900),
+          ),
+          const SizedBox(height: 18),
+          Card(
+            child: Padding(
+              padding: const EdgeInsets.all(18),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    envelope.title?.trim().isNotEmpty == true
+                        ? envelope.title!.trim()
+                        : envelope.fallback.plainText.trim(),
+                    style: Theme.of(context)
+                        .textTheme
+                        .titleMedium
+                        ?.copyWith(fontWeight: FontWeight.w800),
+                  ),
+                  if ((envelope.text ?? '').trim().isNotEmpty) ...[
+                    const SizedBox(height: 10),
+                    Text(envelope.text!.trim()),
+                  ],
+                  const SizedBox(height: 18),
+                  _EcosystemReviewRow(
+                    label: 'Source',
+                    value: sourceName,
+                  ),
+                  _EcosystemReviewRow(
+                    label: 'Owner',
+                    value: ownerName,
+                  ),
+                  _EcosystemReviewRow(
+                    label: 'Type',
+                    value: envelope.sourceEntityType.name,
+                  ),
+                  _EcosystemReviewRow(
+                    label: 'Mode',
+                    value: transferLabel,
+                  ),
+                  _EcosystemReviewRow(
+                    label: 'Revision',
+                    value: envelope.revision.toString(),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(height: 18),
+          FilledButton.icon(
+            onPressed: _busy ? null : _import,
+            icon: _busy
+                ? const SizedBox.square(
+                    dimension: 18,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : const Icon(Icons.download_done_outlined),
+            label: Text(strings.ecosystemImportConfirm),
+          ),
+          const SizedBox(height: 8),
+          OutlinedButton(
+            onPressed: _busy ? null : () => Navigator.of(context).pop(),
+            child: Text(strings.ecosystemImportCancel),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _EcosystemReviewRow extends StatelessWidget {
+  final String label;
+  final String value;
+
+  const _EcosystemReviewRow({
+    required this.label,
+    required this.value,
+  });
+
+  @override
+  Widget build(BuildContext context) => Padding(
+        padding: const EdgeInsets.only(top: 8),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            SizedBox(
+              width: 88,
+              child: Text(
+                label,
+                style: Theme.of(context)
+                    .textTheme
+                    .labelMedium
+                    ?.copyWith(fontWeight: FontWeight.w700),
+              ),
+            ),
+            Expanded(child: Text(value)),
+          ],
+        ),
+      );
+}
+
 class LifeEcosystemScreen extends StatefulWidget {
   final AgendaStore store;
 
