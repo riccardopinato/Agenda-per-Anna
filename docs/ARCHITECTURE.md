@@ -1,6 +1,6 @@
 # Agenda per Anna — Architecture
 
-## Current structure — v0.96.0
+## Current structure — v0.97.0
 
 Anna's Diary keeps `lib/main.dart` as the compatibility library boundary, but large responsibilities are now split by runtime domain:
 
@@ -638,3 +638,28 @@ v0.96 keeps Anna's existing Life Bridge product semantics but aligns the cross-a
 - The exact signed v0.96.0+106 release-candidate APK completed the required physical-device round trip on Xiaomi Redmi Note 10 Pro / Android 13 on 2026-10-05.
 - Observed PASS: Wonderlog → Anna COPY, Wonderlog → Anna LINK, duplicate COPY/LINK suppression, Anna → Wonderlog deep-link handoff and durable Wonderlog inbox receipt.
 - v0.96 is PHYSICAL DEVICE VERIFIED for this bridge scope and Shared Ecosystem Core v1 is CERTIFIED GOLDEN for the tested Android Wonderlog ↔ Anna interoperability path.
+
+
+## v0.97 — Ecosystem Hub v1
+
+v0.97 is a presentation/governance layer over the certified Shared Ecosystem Core v1 implementation shipped in v0.96. It introduces no new canonical cross-app datastore.
+
+### Registry and availability
+
+- `lib/ecosystem_service.dart` owns the lightweight app registry and launcher/availability projection.
+- Registry identity is separate from installation status: an app may be planned/compatible even when it is not installed locally.
+- Wonderlog uses an Android package-visibility probe for `wonderlog://`; platforms without a verified probe return `unknown` instead of guessing.
+- The Hub does not invent a generic Wonderlog destination. Concrete navigation uses canonical deep links preserved in E1 provenance.
+
+### Hub projections
+
+- `LifeBridgeState.activeLinksForApp` and `historyForApp` derive app-specific views from the existing account-scoped E1 state.
+- Import history adds an optional `sourceDeepLink` field. Old records remain valid when that field is absent.
+- “Apri nella sorgente” uses only an existing canonical source deep link.
+- “Trasforma in copia indipendente” reuses the existing LINK-to-COPY detach path and never deletes the destination snapshot.
+
+### Product boundary
+
+- Hub status/capabilities are registry metadata and UI projections, not cross-app authorization.
+- No continuous synchronization, common mandatory identity, shared database, duplicate ownership store or alternate transport semantics are introduced.
+- The v0.96 E1 validators, idempotency, provenance, explicit review and media privacy boundary remain authoritative.
