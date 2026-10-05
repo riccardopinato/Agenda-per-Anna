@@ -52,7 +52,7 @@ Source of execution truth for Anna's Diary. Product identity and boundaries are 
 | v0.95 | Life Ecosystem + Life Bridge v1 | Completed | Versioned explicit COPY/LINK interoperability over Anna's existing diary/agenda domains, without a shared life database |
 | v0.96 | Shared Ecosystem Core / Wonderlog Runtime Bridge | Completed — physical device verified | Explicit Wonderlog ↔ Anna COPY/LINK runtime interoperability physically verified on Xiaomi Redmi Note 10 Pro / Android 13 |
 | v0.97 | Ecosystem Hub v1 | Completed — CI/AppLab green | User-facing app registry, install visibility, app-scoped LINK/history management and source navigation on top of certified E1 |
-| v0.98 | Capture Everywhere | Implementation complete — validation pending | Unified Capture across primary app surfaces plus Android/PWA launch shortcuts, reusing canonical persistence |
+| v0.98 | Capture Everywhere | Completed — trusted runtime verified | Unified Capture across primary app surfaces plus Android/PWA launch shortcuts, reusing canonical persistence |
 
 ## Permanent constraints for this sequence
 
@@ -643,6 +643,8 @@ Per the active development cadence, AppLab runs once every two feature versions.
 - The release adds no AI/transcription dependency, background recorder, alternate media store or capture-specific cloud queue.
 - Release metadata is aligned to **v0.98.0+108**.
 - Development checks, Web release, Android size audit and AppLab Production Gate must pass before promotion/merge.
+- **Final merge gate: PASS.** PR #88 final head `f5cd52902d04b1552394d073e982838d882fa899` passed Development checks, Web deploy, Android size audit and AppLab trusted runtime, then merged to `main` as `74c95b93a2fecd819361ed1ead13af65db72f4ac`.
+- Android launcher-shortcut behavior is implemented and platform-generated/tested, but a real-device long-press shortcut acceptance run remains separate from the **PHYSICAL DEVICE VERIFIED** evidence level.
 
 ## v0.97 acceptance criteria
 
