@@ -277,6 +277,9 @@ class LifeBridgeImportRecord {
         'transferMode': transferMode.name,
         'destinationType': destinationType,
         'destinationId': destinationId,
+        if (title != null && title!.trim().isNotEmpty) 'title': title,
+        if (sourceDeepLink != null && sourceDeepLink!.trim().isNotEmpty)
+          'sourceDeepLink': sourceDeepLink,
         'importedAt': importedAt.toUtc().toIso8601String(),
       };
 
@@ -296,6 +299,8 @@ class LifeBridgeImportRecord {
       transferMode: mode,
       destinationType: json['destinationType']?.toString() ?? '',
       destinationId: json['destinationId']?.toString() ?? '',
+      title: _nullableTrimmed(json['title']),
+      sourceDeepLink: _nullableTrimmed(json['sourceDeepLink']),
       importedAt:
           DateTime.tryParse(json['importedAt']?.toString() ?? '')?.toLocal() ??
               DateTime.now(),
@@ -728,6 +733,8 @@ extension LifeBridgeAgendaStore on AgendaStore {
         transferMode: payload.transferMode,
         destinationType: destination.$1,
         destinationId: destination.$2,
+        title: payload.title.trim().isEmpty ? null : payload.title.trim(),
+        sourceDeepLink: payload.source.deepLink,
         importedAt: now,
       );
   
