@@ -1,6 +1,6 @@
 ANNA'S DIARY — REUSE / PROVENANCE LEDGER
 Aligned with Master Prompt v21 and GOLDEN_PROVENANCE_REUSE_LEDGER_v1_DRAFT
-Last updated: 2026-10-04
+Last updated: 2026-10-05
 
 ======================================================================
 COMPONENT: shared-ecosystem-core-v1 / Wonderlog <-> Anna runtime bridge
@@ -87,10 +87,19 @@ testsExecuted:
 - wrong-target rejection.
 
 evidenceRefs:
-- Anna PR #86
-- final v0.96.0+106 release-candidate CI/AppLab/artifact evidence: pending final RC run
-- physical Wonderlog <-> Anna round trip: NOT VERIFIED
+- Anna PR #86, merged to main as 757e8aaf59f9e8ca7f10f4af379d786981307b49
+- exact Anna v0.96.0+106 RC workflow: 37161149244
+- exact Anna RC APK SHA-256: d627e7d89080bd141e3604754470a3c728413980c50f1f845afe7e207f3de45c
+- Wonderlog physical-test artifact source: ed885534fb24c808eb292e1647408867894feb5b
+- Wonderlog physical-test workflow: 37320090434
+- Wonderlog physical-test APK SHA-256: 2a4cfbf872949305195a318eeb6d73ae3d6cf685285207844fb77204106403e5
+- physical device: Xiaomi Redmi Note 10 Pro
+- Android OS: 13
+- physical Wonderlog <-> Anna round trip: PASS
+- Wonderlog -> Anna COPY/LINK: PASS
+- duplicate COPY/LINK suppression: PASS
+- Anna -> Wonderlog durable inbox receipt: PASS
 
-status: ADAPTED
-verifiedAt: pending final RC CI + physical-device evidence
+status: VERIFIED / CERTIFIED GOLDEN CONSUMER
+verifiedAt: 2026-10-05 physical-device validation
 replacement: none

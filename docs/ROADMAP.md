@@ -50,7 +50,7 @@ Source of execution truth for Anna's Diary. Product identity and boundaries are 
 | v0.93 | Cycle Tracker Completion & UX Polish | Completed | Vault-only onboarding, fast period logging, prediction v2, complete private reminders, richer calendar, lightweight Premium charts and accessibility polish |
 | v0.94 | Premium Store Activation & Sandbox QA | Completed | Store QA diagnostics, monthly/lifetime Offering validation, signed Internal Testing AAB and real-purchase verification contract |
 | v0.95 | Life Ecosystem + Life Bridge v1 | Completed | Versioned explicit COPY/LINK interoperability over Anna's existing diary/agenda domains, without a shared life database |
-| v0.96 | Shared Ecosystem Core / Wonderlog Runtime Bridge | Release candidate — physical validation pending | Complete explicit Wonderlog ↔ Anna COPY/LINK runtime interoperability; merge only after exact-artifact physical round-trip validation |
+| v0.96 | Shared Ecosystem Core / Wonderlog Runtime Bridge | Completed — physical device verified | Explicit Wonderlog ↔ Anna COPY/LINK runtime interoperability physically verified on Xiaomi Redmi Note 10 Pro / Android 13 |
 
 ## Permanent constraints for this sequence
 
@@ -624,7 +624,7 @@ Per the active development cadence, AppLab runs once every two feature versions.
 - Existing diary/agenda lifecycle, backup, sync and account-isolation paths remain authoritative after import; interoperability metadata remains provenance/link/history only.
 - Wonderlog domain/storage implementation remains owned by Wonderlog. Anna reuses the shared contract and fixtures but does not fork Wonderlog product logic.
 - Release metadata is aligned to **v0.96.0+106** for the release candidate.
-- **Final merge/certification gate:** the exact signed release-candidate APK must pass real-device Wonderlog → Anna COPY, Wonderlog → Anna LINK, duplicate LINK idempotency and Anna → Wonderlog round-trip. Until that evidence exists, v0.96 is **NOT PHYSICAL DEVICE VERIFIED** and the Shared Ecosystem Core Golden remains candidate rather than COPY-READY.
+- **Final merge/certification gate: PASS.** Exact signed v0.96.0+106 RC exercised on Xiaomi Redmi Note 10 Pro / Android 13: Wonderlog → Anna COPY PASS, LINK PASS, duplicate COPY/LINK suppression PASS, Anna → Wonderlog round-trip PASS. v0.96 is **PHYSICAL DEVICE VERIFIED** and Shared Ecosystem Core v1 is **CERTIFIED GOLDEN** for the tested Android bridge scope.
 
 
 ## v0.95 acceptance criteria
