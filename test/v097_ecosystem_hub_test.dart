@@ -6,37 +6,37 @@ import 'package:agenda_per_anna/main.dart';
 
 void main() {
   test('ecosystem registry keeps stable unique app identities', () {
-    final ids = EcosystemRegistry.apps.map((app) => app.appId).toList();
+    final ids = EcosystemHubRegistry.apps.map((app) => app.appId).toList();
 
     expect(ids.toSet().length, ids.length);
     expect(
-      EcosystemRegistry.byAppId('annas_diary')?.integrationStatus,
-      EcosystemIntegrationStatus.active,
+      EcosystemHubRegistry.byAppId('annas_diary')?.integrationStatus,
+      EcosystemHubIntegrationStatus.active,
     );
     expect(
-      EcosystemRegistry.byAppId('wonderlog')?.integrationStatus,
-      EcosystemIntegrationStatus.certifiedCompatible,
+      EcosystemHubRegistry.byAppId('wonderlog')?.integrationStatus,
+      EcosystemHubIntegrationStatus.certifiedCompatible,
     );
     expect(
-      EcosystemRegistry.byAppId('notes')?.integrationStatus,
-      EcosystemIntegrationStatus.planned,
+      EcosystemHubRegistry.byAppId('notes')?.integrationStatus,
+      EcosystemHubIntegrationStatus.planned,
     );
     expect(
-      EcosystemRegistry.byAppId('trailpath')?.integrationStatus,
-      EcosystemIntegrationStatus.planned,
+      EcosystemHubRegistry.byAppId('trailpath')?.integrationStatus,
+      EcosystemHubIntegrationStatus.planned,
     );
     expect(
-      EcosystemRegistry.byAppId('sleepmax')?.integrationStatus,
-      EcosystemIntegrationStatus.planned,
+      EcosystemHubRegistry.byAppId('sleepmax')?.integrationStatus,
+      EcosystemHubIntegrationStatus.planned,
     );
     expect(
-      EcosystemRegistry.byAppId('cashmate')?.integrationStatus,
-      EcosystemIntegrationStatus.planned,
+      EcosystemHubRegistry.byAppId('cashmate')?.integrationStatus,
+      EcosystemHubIntegrationStatus.planned,
     );
   });
 
   test('Wonderlog registry reflects certified E1 without inventing root route', () {
-    final wonderlog = EcosystemRegistry.byAppId('WONDERLOG');
+    final wonderlog = EcosystemHubRegistry.byAppId('WONDERLOG');
 
     expect(wonderlog, isNotNull);
     expect(wonderlog!.protocolVersions, contains('1.0'));
@@ -52,7 +52,7 @@ void main() {
   });
 
   test('Anna registry capabilities match certified Shared Core receive contract', () {
-    final anna = EcosystemRegistry.byAppId('annas_diary')!;
+    final anna = EcosystemHubRegistry.byAppId('annas_diary')!;
 
     expect(
       anna.receives,
@@ -113,7 +113,7 @@ void main() {
       },
     );
 
-    final wonderlog = EcosystemRegistry.byAppId('wonderlog')!;
+    final wonderlog = EcosystemHubRegistry.byAppId('wonderlog')!;
     final result = await launcher.availabilityFor(wonderlog);
 
     expect(result, EcosystemAvailability.available);
@@ -126,7 +126,7 @@ void main() {
     );
 
     for (final appId in <String>['notes', 'trailpath', 'sleepmax', 'cashmate']) {
-      final app = EcosystemRegistry.byAppId(appId)!;
+      final app = EcosystemHubRegistry.byAppId(appId)!;
       expect(
         await launcher.availabilityFor(app),
         EcosystemAvailability.unknown,
