@@ -27,6 +27,7 @@ import 'cloud_sync_service.dart';
 import 'cycle_tracker_domain.dart';
 import 'ecosystem/ecosystem_bridge.dart';
 import 'ecosystem_deep_link_service.dart';
+import 'ecosystem_service.dart';
 import 'notification_service.dart';
 import 'photo_ocr_service.dart';
 import 'premium_entitlement_service.dart';
