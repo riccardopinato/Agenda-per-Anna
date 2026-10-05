@@ -1,7 +1,10 @@
 import 'package:flutter/foundation.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-enum EcosystemIntegrationStatus {
+import 'ecosystem/ecosystem_models.dart';
+import 'ecosystem/ecosystem_registry.dart' as core;
+
+enum EcosystemHubIntegrationStatus {
   active,
   certifiedCompatible,
   planned,
@@ -19,10 +22,10 @@ enum EcosystemLaunchOutcome {
   invalidUri,
 }
 
-class EcosystemAppDefinition {
+class EcosystemHubAppDefinition {
   final String appId;
   final String displayName;
-  final EcosystemIntegrationStatus integrationStatus;
+  final EcosystemHubIntegrationStatus integrationStatus;
   final String? contractLabel;
   final Set<String> protocolVersions;
   final Set<String> sends;
@@ -31,7 +34,7 @@ class EcosystemAppDefinition {
   final String? launchUri;
   final String? fallbackUri;
 
-  const EcosystemAppDefinition({
+  const EcosystemHubAppDefinition({
     required this.appId,
     required this.displayName,
     required this.integrationStatus,
@@ -45,18 +48,41 @@ class EcosystemAppDefinition {
   });
 }
 
-class EcosystemRegistry {
-  EcosystemRegistry._();
+class EcosystemHubRegistry {
+  EcosystemHubRegistry._();
 
-  static const List<EcosystemAppDefinition> apps = [
-    EcosystemAppDefinition(
-      appId: 'annas_diary',
-      displayName: "Anna's Diary",
-      integrationStatus: EcosystemIntegrationStatus.active,
+  static EcosystemHubAppDefinition _coreApp(
+    EcosystemAppId id, {
+    required EcosystemHubIntegrationStatus integrationStatus,
+    required String contractLabel,
+    Set<String> protocolVersions = const <String>{},
+    Set<String> sends = const <String>{},
+    Set<String> receives = const <String>{},
+    String? probeRoute,
+  }) {
+    final definition = core.EcosystemRegistry.definition(id);
+    return EcosystemHubAppDefinition(
+      appId: definition.id.wireValue,
+      displayName: definition.displayName,
+      integrationStatus: integrationStatus,
+      contractLabel: contractLabel,
+      protocolVersions: protocolVersions,
+      sends: sends,
+      receives: receives,
+      probeUri: probeRoute == null
+          ? null
+          : '${definition.deepLinkScheme}://$probeRoute',
+    );
+  }
+
+  static final List<EcosystemHubAppDefinition> apps = [
+    _coreApp(
+      EcosystemAppId.annasDiary,
+      integrationStatus: EcosystemHubIntegrationStatus.active,
       contractLabel: 'Shared Ecosystem Core v1',
-      protocolVersions: {'1.0'},
-      sends: {'note', 'photo', 'moment', 'event'},
-      receives: {
+      protocolVersions: const {'1.0'},
+      sends: const {'note', 'photo', 'moment', 'event'},
+      receives: const {
         'moment',
         'travel_memory',
         'journey',
@@ -65,46 +91,42 @@ class EcosystemRegistry {
         'event',
       },
     ),
-    EcosystemAppDefinition(
-      appId: 'wonderlog',
-      displayName: 'Wonderlog',
-      integrationStatus: EcosystemIntegrationStatus.certifiedCompatible,
+    _coreApp(
+      EcosystemAppId.wonderlog,
+      integrationStatus: EcosystemHubIntegrationStatus.certifiedCompatible,
       contractLabel: 'E1 · Shared Ecosystem Core v1',
-      protocolVersions: {'1.0'},
-      sends: {'journey', 'travel_memory', 'photo', 'place'},
-      receives: {'note', 'photo'},
-      // Used only as an Android package-visibility/install probe.
-      // Opening a concrete Wonderlog object uses the canonical source deep link
-      // stored in bridge provenance/history rather than inventing a root route.
-      probeUri: 'wonderlog://journey',
+      protocolVersions: const {'1.0'},
+      sends: const {'journey', 'travel_memory', 'photo', 'place'},
+      receives: const {'note', 'photo'},
+      // Android package-visibility probe only. Concrete opening uses the
+      // canonical source object deep link already preserved by E1 provenance.
+      probeRoute: 'journey',
     ),
-    EcosystemAppDefinition(
-      appId: 'notes',
-      displayName: 'Notes',
-      integrationStatus: EcosystemIntegrationStatus.planned,
+    _coreApp(
+      EcosystemAppId.notes,
+      integrationStatus: EcosystemHubIntegrationStatus.planned,
       contractLabel: 'Shared Ecosystem Core v1 planned',
     ),
-    EcosystemAppDefinition(
-      appId: 'trailpath',
-      displayName: 'TrailPath',
-      integrationStatus: EcosystemIntegrationStatus.planned,
+    _coreApp(
+      EcosystemAppId.trailpath,
+      integrationStatus: EcosystemHubIntegrationStatus.planned,
       contractLabel: 'Shared Ecosystem Core v1 planned',
     ),
-    EcosystemAppDefinition(
+    const EcosystemHubAppDefinition(
       appId: 'sleepmax',
       displayName: 'SleepMax',
-      integrationStatus: EcosystemIntegrationStatus.planned,
+      integrationStatus: EcosystemHubIntegrationStatus.planned,
       contractLabel: 'Shared Ecosystem Core v1 planned',
     ),
-    EcosystemAppDefinition(
+    const EcosystemHubAppDefinition(
       appId: 'cashmate',
       displayName: 'CashMate',
-      integrationStatus: EcosystemIntegrationStatus.planned,
+      integrationStatus: EcosystemHubIntegrationStatus.planned,
       contractLabel: 'Shared Ecosystem Core v1 planned',
     ),
   ];
 
-  static EcosystemAppDefinition? byAppId(String appId) {
+  static EcosystemHubAppDefinition? byAppId(String appId) {
     final normalized = appId.trim().toLowerCase();
     for (final app in apps) {
       if (app.appId == normalized) return app;
@@ -136,14 +158,11 @@ class EcosystemLauncher {
   static final EcosystemLauncher instance = EcosystemLauncher();
 
   Future<EcosystemAvailability> availabilityFor(
-    EcosystemAppDefinition app,
+    EcosystemHubAppDefinition app,
   ) async {
     final raw = app.probeUri?.trim() ?? '';
     if (raw.isEmpty || kIsWeb) return EcosystemAvailability.unknown;
 
-    // Android is the only platform where v0.97 declares an explicit package
-    // visibility query. Other platforms stay honest/unknown until their native
-    // install-detection contract is implemented and verified.
     if (defaultTargetPlatform != TargetPlatform.android) {
       return EcosystemAvailability.unknown;
     }
@@ -161,7 +180,7 @@ class EcosystemLauncher {
   }
 
   Future<EcosystemLaunchOutcome> openApp(
-    EcosystemAppDefinition app,
+    EcosystemHubAppDefinition app,
   ) async {
     final primary = app.launchUri?.trim() ?? '';
     final fallback = app.fallbackUri?.trim() ?? '';
