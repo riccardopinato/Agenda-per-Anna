@@ -53,9 +53,15 @@ class _CalendarScreenState extends State<CalendarScreen> {
               style: const TextStyle(fontWeight: FontWeight.w800),
             ),
           ),
-          floatingActionButton: FloatingActionButton(
-            onPressed: () => openUnifiedItemComposer(context, widget.store, selected),
-            child: const Icon(Icons.add),
+          floatingActionButton: FloatingActionButton.extended(
+            onPressed: () => _showQuickCapture(
+              context,
+              widget.store,
+              captureDate: selected,
+              entryPoint: UnifiedCaptureEntryPoint.month,
+            ),
+            icon: const Icon(Icons.add),
+            label: Text(strings.capture),
           ),
           body: ListView(
             padding: const EdgeInsets.fromLTRB(14, 0, 14, 100),
@@ -1871,7 +1877,13 @@ class _WeekDayCard extends StatelessWidget {
                 ),
               ),
               IconButton(
-                onPressed: () => openUnifiedItemComposer(context, store, day),
+                tooltip: AnnaStrings.of(context).capture,
+                onPressed: () => _showQuickCapture(
+                  context,
+                  store,
+                  captureDate: day,
+                  entryPoint: UnifiedCaptureEntryPoint.week,
+                ),
                 icon: const Icon(Icons.add_circle_outline),
               ),
             ],
