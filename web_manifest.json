@@ -31,5 +31,19 @@
       "type": "image/png",
       "purpose": "maskable"
     }
+  ],
+  "shortcuts": [
+    {
+      "name": "Capture",
+      "short_name": "Capture",
+      "description": "Open Anna's Diary quick capture",
+      "url": "./?capture=1"
+    },
+    {
+      "name": "Today",
+      "short_name": "Today",
+      "description": "Open Anna's Diary today view",
+      "url": "./?today=1"
+    }
   ]
 }
