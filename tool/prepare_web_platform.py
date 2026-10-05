@@ -57,6 +57,20 @@ def main() -> None:
     manifest_data["display"] = "standalone"
     manifest_data["scope"] = "."
     manifest_data["start_url"] = "."
+    manifest_data["shortcuts"] = [
+        {
+            "name": "Capture",
+            "short_name": "Capture",
+            "description": "Open Anna's Diary quick capture",
+            "url": "./?capture=1",
+        },
+        {
+            "name": "Today",
+            "short_name": "Today",
+            "description": "Open Anna's Diary today view",
+            "url": "./?today=1",
+        },
+    ]
     manifest.write_text(
         json.dumps(manifest_data, ensure_ascii=False, indent=2) + "\n",
         encoding="utf-8",

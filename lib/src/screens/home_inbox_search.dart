@@ -15,6 +15,25 @@ class _MainShellState extends State<MainShell> {
   void initState() {
     super.initState();
     index = widget.store.preferences.startTab.index;
+
+    if (kIsWeb) {
+      final query = Uri.base.queryParameters;
+      if (query['today'] == '1') {
+        index = 3;
+      }
+      if (query['capture'] == '1') {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (!mounted) return;
+          unawaited(
+            _showQuickCapture(
+              context,
+              widget.store,
+              entryPoint: UnifiedCaptureEntryPoint.external,
+            ),
+          );
+        });
+      }
+    }
   }
 
   @override
@@ -97,7 +116,7 @@ class HomeScreen extends StatelessWidget {
           floatingActionButton: FloatingActionButton.extended(
             onPressed: () => _showQuickCapture(context, store),
             icon: const Icon(Icons.add),
-            label: Text(strings.add),
+            label: Text(strings.capture),
           ),
           appBar: AppBar(
             title: Text(

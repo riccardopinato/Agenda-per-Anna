@@ -309,7 +309,13 @@ Future<void> main() async {
         final context = appNavigatorKey.currentContext;
         if (context == null) return;
         if (action == 'quick_capture') {
-          unawaited(_showQuickCapture(context, store));
+          unawaited(
+            _showQuickCapture(
+              context,
+              store,
+              entryPoint: UnifiedCaptureEntryPoint.external,
+            ),
+          );
         } else if (action == 'today') {
           unawaited(
             Navigator.of(context).push(

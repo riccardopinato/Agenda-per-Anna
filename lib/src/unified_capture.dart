@@ -1,6 +1,6 @@
 part of '../main.dart';
 
-enum UnifiedCaptureEntryPoint { home, day, inbox }
+enum UnifiedCaptureEntryPoint { home, month, week, day, inbox, external }
 
 enum _UnifiedCaptureAction {
   text,

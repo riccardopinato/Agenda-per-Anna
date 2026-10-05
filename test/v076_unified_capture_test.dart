@@ -57,8 +57,11 @@ void main() {
       UnifiedCaptureEntryPoint.values,
       [
         UnifiedCaptureEntryPoint.home,
+        UnifiedCaptureEntryPoint.month,
+        UnifiedCaptureEntryPoint.week,
         UnifiedCaptureEntryPoint.day,
         UnifiedCaptureEntryPoint.inbox,
+        UnifiedCaptureEntryPoint.external,
       ],
     );
   });

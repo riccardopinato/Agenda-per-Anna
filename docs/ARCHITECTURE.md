@@ -1,6 +1,6 @@
 # Agenda per Anna — Architecture
 
-## Current structure — v0.97.0
+## Current structure — v0.98.0
 
 Anna's Diary keeps `lib/main.dart` as the compatibility library boundary, but large responsibilities are now split by runtime domain:
 
@@ -663,3 +663,27 @@ v0.97 is a presentation/governance layer over the certified Shared Ecosystem Cor
 - Hub status/capabilities are registry metadata and UI projections, not cross-app authorization.
 - No continuous synchronization, common mandatory identity, shared database, duplicate ownership store or alternate transport semantics are introduced.
 - The v0.96 E1 validators, idempotency, provenance, explicit review and media privacy boundary remain authoritative.
+
+## v0.98 — Capture Everywhere
+
+v0.98 is an entry-point consolidation over the existing v0.76 Unified Capture domain. It does not add a new write model.
+
+### Canonical routing
+
+- Home, Month, Week, Today and Inbox invoke the same `showUnifiedCapture` surface.
+- Month and Week pass the selected civil date into Unified Capture; they no longer route their primary plus action directly to an agenda-only composer.
+- Text, voice and photos continue to persist through the existing DayJournal/DiaryBlock and MediaAssetStore paths.
+- Inbox, task, event, birthday and person actions continue to delegate to their existing canonical domains.
+- Android ACTION_SEND remains a low-friction direct ingestion path but delegates persistence to the same Unified Capture helpers.
+
+### External entry points
+
+- The Android home widget keeps using the existing `annas_diary/home_widget` MethodChannel.
+- Android static launcher shortcuts use explicit `annasdiary://capture` and `annasdiary://today` launch URIs. Native `decodeLaunchAction` converts them into the same `quick_capture` / `today` actions already used by the widget.
+- PWA manifest shortcuts use `?capture=1` and `?today=1`. They are interpreted by MainShell only after normal authentication/account/onboarding gates have completed.
+- Platform shortcuts contain no user content and create no persistent state by themselves.
+
+### Boundary
+
+Capture Everywhere is routing, not storage. No second capture database, alternate sync queue, background recorder, transcription/AI layer or duplicate media store is introduced.
+

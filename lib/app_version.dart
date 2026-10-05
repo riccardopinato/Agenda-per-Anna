@@ -1,2 +1,2 @@
-const String appReleaseVersion = '0.97.0';
-const int appReleaseBuildNumber = 107;
+const String appReleaseVersion = '0.98.0';
+const int appReleaseBuildNumber = 108;
