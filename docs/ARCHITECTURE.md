@@ -634,6 +634,7 @@ v0.96 keeps Anna's existing Life Bridge product semantics but aligns the cross-a
 
 ### Release evidence boundary
 
-- Automated analyze/tests/CI/AppLab may establish implementation and trusted-runtime evidence for the candidate SHA.
-- Because v0.96 relies on real inter-app deep-link handoff, final certification requires a physical-device round trip using the exact signed release-candidate APK.
-- Until that physical record exists, v0.96 must remain a release candidate and the Shared Ecosystem Core Golden must remain candidate rather than COPY-READY.
+- Automated analyze/tests/CI/AppLab establish implementation and trusted-runtime evidence for the candidate SHA.
+- The exact signed v0.96.0+106 release-candidate APK completed the required physical-device round trip on Xiaomi Redmi Note 10 Pro / Android 13 on 2026-10-05.
+- Observed PASS: Wonderlog → Anna COPY, Wonderlog → Anna LINK, duplicate COPY/LINK suppression, Anna → Wonderlog deep-link handoff and durable Wonderlog inbox receipt.
+- v0.96 is PHYSICAL DEVICE VERIFIED for this bridge scope and Shared Ecosystem Core v1 is CERTIFIED GOLDEN for the tested Android Wonderlog ↔ Anna interoperability path.
