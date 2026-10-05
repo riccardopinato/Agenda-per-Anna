@@ -1,8 +1,8 @@
 # Anna's Diary — Product Bible
 
 **Status:** canonical product source of truth  
-**Current release line:** v0.97  
-**Last aligned:** 5 October 2026
+**Current release line:** v0.98  
+**Last aligned:** 6 October 2026
 
 This document defines what Anna's Diary is, what it is not, and the product/security invariants that future work must preserve. Implementation details belong in `docs/ARCHITECTURE.md`; execution sequencing belongs in `docs/ROADMAP.md`.
 
@@ -76,6 +76,10 @@ Anna's Diary may act as the personal narrative/time hub inside a wider Life Ecos
 - Private Vault, Password Vault and menstrual-cycle content are excluded from automatic bridge export.
 - Bridge metadata may describe provenance and linkage, but it must not become a second canonical diary, agenda, memory or life database.
 - **Ecosystem Hub is a derived control surface**, not a synchronization engine: it may display registered apps, availability, capabilities, links and history, but ownership and writes remain in the existing app/domain paths.
+
+### Capture invariant
+
+All user-facing capture entry points must converge on the existing canonical domain writes. A launcher shortcut, PWA shortcut, widget, share target or navigation-surface action may select **where capture starts**, but it must not create a parallel capture database, media store, sync engine or ownership model. Private remains the default and external launch metadata must never contain captured private content.
 
 ## 4. Local-first and offline trust
 
