@@ -1869,7 +1869,7 @@ class _LifeEcosystemScreenState extends State<LifeEcosystemScreen> {
                       ?.copyWith(fontWeight: FontWeight.w800),
                 ),
                 const SizedBox(height: 8),
-                ...EcosystemRegistry.apps.map(
+                ...EcosystemHubRegistry.apps.map(
                   (app) => Padding(
                     padding: const EdgeInsets.only(bottom: 10),
                     child: _EcosystemAppCard(
@@ -1960,13 +1960,13 @@ IconData _ecosystemIconForApp(String appId) => switch (appId) {
 
 String _ecosystemStatusLabel(
   AnnaStrings strings,
-  EcosystemIntegrationStatus status,
+  EcosystemHubIntegrationStatus status,
 ) =>
     switch (status) {
-      EcosystemIntegrationStatus.active => strings.ecosystemStatusActive,
-      EcosystemIntegrationStatus.certifiedCompatible =>
+      EcosystemHubIntegrationStatus.active => strings.ecosystemStatusActive,
+      EcosystemHubIntegrationStatus.certifiedCompatible =>
         strings.ecosystemStatusCertifiedCompatible,
-      EcosystemIntegrationStatus.planned => strings.ecosystemStatusPlanned,
+      EcosystemHubIntegrationStatus.planned => strings.ecosystemStatusPlanned,
     };
 
 String _ecosystemAvailabilityLabel(
@@ -1981,7 +1981,7 @@ String _ecosystemAvailabilityLabel(
     };
 
 class _EcosystemAppCard extends StatelessWidget {
-  final EcosystemAppDefinition app;
+  final EcosystemHubAppDefinition app;
   final VoidCallback onTap;
 
   const _EcosystemAppCard({
@@ -1994,15 +1994,15 @@ class _EcosystemAppCard extends StatelessWidget {
     final strings = AnnaStrings.of(context);
     final scheme = Theme.of(context).colorScheme;
     final (statusIcon, statusColor) = switch (app.integrationStatus) {
-      EcosystemIntegrationStatus.active => (
+      EcosystemHubIntegrationStatus.active => (
           Icons.check_circle_outline,
           scheme.primary,
         ),
-      EcosystemIntegrationStatus.certifiedCompatible => (
+      EcosystemHubIntegrationStatus.certifiedCompatible => (
           Icons.verified_outlined,
           scheme.secondary,
         ),
-      EcosystemIntegrationStatus.planned => (
+      EcosystemHubIntegrationStatus.planned => (
           Icons.schedule_outlined,
           scheme.outline,
         ),
@@ -2065,7 +2065,7 @@ class _EcosystemAppCard extends StatelessWidget {
 
 class EcosystemAppDetailScreen extends StatefulWidget {
   final AgendaStore store;
-  final EcosystemAppDefinition app;
+  final EcosystemHubAppDefinition app;
 
   const EcosystemAppDetailScreen({
     super.key,
@@ -2328,7 +2328,7 @@ class _EcosystemHistoryTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final sourceName = EcosystemRegistry.displayNameFor(record.sourceAppId);
+    final sourceName = EcosystemHubRegistry.displayNameFor(record.sourceAppId);
     final title = showSourceName
         ? '$sourceName · ${record.objectType}'
         : record.objectType;
@@ -2378,7 +2378,7 @@ class _LifeBridgeLinkTile extends StatelessWidget {
     final objectType = payload['objectType']?.toString() ??
         payload['sourceEntityType']?.toString() ??
         link.localObjectType;
-    final sourceName = EcosystemRegistry.displayNameFor(link.source.appId);
+    final sourceName = EcosystemHubRegistry.displayNameFor(link.source.appId);
     final canOpenSource = link.source.deepLink?.trim().isNotEmpty == true;
 
     return ListTile(
