@@ -204,6 +204,7 @@ class _SharedSpaceHubScreenState extends State<SharedSpaceHubScreen> {
         widget.store.accountRevision,
       ]),
       builder: (context, _) {
+        final accent = context.accentSurface;
         return Scaffold(
           appBar: AppBar(
             title: const Text(
@@ -259,30 +260,33 @@ class _SharedSpaceHubScreenState extends State<SharedSpaceHubScreen> {
                         Container(
                           padding: const EdgeInsets.all(20),
                           decoration: BoxDecoration(
-                            gradient: const LinearGradient(
-                              colors: [
-                                Color(0xFFFFE4EC),
-                                Color(0xFFF0E8FF),
-                              ],
-                            ),
+                            gradient: accent.gradient,
                             borderRadius: BorderRadius.circular(26),
                           ),
-                          child: const Column(
+                          child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Icon(Icons.favorite_outline, size: 30),
-                              SizedBox(height: 10),
+                              Icon(
+                                Icons.favorite_outline,
+                                size: 30,
+                                color: accent.foreground,
+                              ),
+                              const SizedBox(height: 10),
                               Text(
                                 'Spazio condiviso',
                                 style: TextStyle(
+                                  color: accent.foreground,
                                   fontSize: 23,
                                   fontWeight: FontWeight.w900,
                                 ),
                               ),
-                              SizedBox(height: 6),
+                              const SizedBox(height: 6),
                               Text(
                                 'Gli aggiornamenti arrivano in tempo reale. '
                                 'Se siete offline, le modifiche restano in coda e vengono inviate dopo.',
+                                style: TextStyle(
+                                  color: accent.secondaryForeground,
+                                ),
                               ),
                             ],
                           ),

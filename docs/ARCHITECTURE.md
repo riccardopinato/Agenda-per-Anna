@@ -1,6 +1,6 @@
 # Agenda per Anna — Architecture
 
-## Current structure — v0.95.0
+## Current structure — v0.96.0
 
 Anna's Diary keeps `lib/main.dart` as the compatibility library boundary, but large responsibilities are now split by runtime domain:
 
@@ -605,3 +605,35 @@ Life Ecosystem adds interoperability without changing data ownership. Anna's Dia
 - `LifeEcosystemScreen` is the user-facing bridge hub. It imports an explicit JSON payload from the clipboard, shows local LINK state and recent import provenance.
 - Integration availability must remain truthful. Anna is the reference implementation; Wonderlog is the next external adapter target and is not shown as active until that adapter exists.
 - SleepMax and CashMate remain future adapter candidates only.
+
+
+## v0.96 — Shared Ecosystem Core / Wonderlog Runtime Bridge
+
+v0.96 keeps Anna's existing Life Bridge product semantics but aligns the cross-app transport/runtime with Wonderlog's Shared Ecosystem Core v1 contract.
+
+### Canonical envelope and validation
+
+- `lib/ecosystem/` contains the Shared Ecosystem Core contract, canonical models, validator, registry, transfer planner and local transport codec.
+- Canonical package identity preserves source app/entity, deterministic bridge identity, revision, explicit share scope, transfer mode, provenance, fallback and media handoff policy.
+- Import validation fails closed for incompatible target, malformed identity/provenance, unsupported private media references or non-explicit sharing.
+- `COPY` and `LINK` remain distinct operations; neither creates a shared database or continuous background sync relationship.
+
+### Local transport
+
+- `EcosystemDeepLinkService` owns the Flutter/native boundary for ecosystem deep links.
+- Android platform generation captures `annasdiary://ecosystem/import?payload=...` on cold/warm launch through the versioned platform generator.
+- The local transport codec also supports the bounded `ECOSYSTEM_BRIDGE_V1:` clipboard package.
+- Transport failure is isolated from domain mutation: a package is decoded and reviewed before canonical Anna records are written.
+
+### Import and export
+
+- Wonderlog Journey packages adapt into the existing Life Bridge import path and ultimately materialize ordinary Anna diary/agenda records.
+- The import path serializes mutation per store and records the canonical idempotency key so identical concurrent deliveries cannot create duplicate records.
+- A newer revision remains separately addressable instead of being collapsed into an older import.
+- Anna can export supported diary Note/Photo context toward Wonderlog. Binary/private local media are deliberately omitted until a safe portable media contract is introduced.
+
+### Release evidence boundary
+
+- Automated analyze/tests/CI/AppLab may establish implementation and trusted-runtime evidence for the candidate SHA.
+- Because v0.96 relies on real inter-app deep-link handoff, final certification requires a physical-device round trip using the exact signed release-candidate APK.
+- Until that physical record exists, v0.96 must remain a release candidate and the Shared Ecosystem Core Golden must remain candidate rather than COPY-READY.

@@ -489,18 +489,20 @@ class _DayOpeningCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final quote = _dailyQuote(date);
+    final accent = context.accentSurface;
     return Container(
       padding: const EdgeInsets.all(17),
       decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [Color(0xFFFFEAF0), Color(0xFFF5F0FF)],
-        ),
+        gradient: accent.gradient,
         borderRadius: BorderRadius.circular(22),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Icon(Icons.wb_sunny_outlined),
+          Icon(
+            Icons.wb_sunny_outlined,
+            color: accent.foreground,
+          ),
           const SizedBox(width: 10),
           Expanded(
             child: Column(
@@ -508,10 +510,19 @@ class _DayOpeningCard extends StatelessWidget {
               children: [
                 Text(
                   quote.$1,
-                  style: const TextStyle(fontWeight: FontWeight.w800),
+                  style: TextStyle(
+                    color: accent.foreground,
+                    fontWeight: FontWeight.w800,
+                  ),
                 ),
                 const SizedBox(height: 3),
-                Text(quote.$2, style: const TextStyle(fontSize: 12)),
+                Text(
+                  quote.$2,
+                  style: TextStyle(
+                    color: accent.secondaryForeground,
+                    fontSize: 12,
+                  ),
+                ),
               ],
             ),
           ),
@@ -1595,14 +1606,11 @@ class _WeekHero extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final accent = context.accentSurface;
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [Color(0xFFFFE5ED), Color(0xFFEDE8FF)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
+        gradient: accent.gradient,
         borderRadius: BorderRadius.circular(26),
       ),
       child: Column(
@@ -1610,12 +1618,19 @@ class _WeekHero extends StatelessWidget {
         children: [
           Text(
             '${DateFormat('d MMM', 'it_IT').format(start)} – ${DateFormat('d MMM yyyy', 'it_IT').format(end)}',
-            style: const TextStyle(fontWeight: FontWeight.w800),
+            style: TextStyle(
+              color: accent.secondaryForeground,
+              fontWeight: FontWeight.w800,
+            ),
           ),
           const SizedBox(height: 8),
-          const Text(
+          Text(
             'Una settimana alla volta',
-            style: TextStyle(fontSize: 22, fontWeight: FontWeight.w900),
+            style: TextStyle(
+              color: accent.foreground,
+              fontSize: 22,
+              fontWeight: FontWeight.w900,
+            ),
           ),
           const SizedBox(height: 12),
           Wrap(
@@ -1642,18 +1657,31 @@ class _MiniPill extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final accent = context.accentSurface;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 7),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.76),
+        color: accent.chipBackground,
         borderRadius: BorderRadius.circular(999),
+        border: Border.all(color: accent.chipBorder),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 16),
+          Icon(
+            icon,
+            size: 16,
+            color: accent.chipForeground,
+          ),
           const SizedBox(width: 6),
-          Text(text, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 12)),
+          Text(
+            text,
+            style: TextStyle(
+              color: accent.chipForeground,
+              fontWeight: FontWeight.w700,
+              fontSize: 12,
+            ),
+          ),
         ],
       ),
     );
@@ -2258,14 +2286,11 @@ class MonthOpeningHero extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final spent = data.expenses.fold<int>(0, (sum, item) => sum + item.cents);
+    final accent = context.accentSurface;
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [Color(0xFFFFE2EB), Color(0xFFFFF4E8), Color(0xFFEDE7FF)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
+        gradient: accent.gradient,
         borderRadius: BorderRadius.circular(28),
       ),
       child: Column(
@@ -2273,12 +2298,19 @@ class MonthOpeningHero extends StatelessWidget {
         children: [
           Text(
             _cap(DateFormat('MMMM', 'it_IT').format(month)),
-            style: const TextStyle(fontSize: 28, fontWeight: FontWeight.w900),
+            style: TextStyle(
+              color: accent.foreground,
+              fontSize: 28,
+              fontWeight: FontWeight.w900,
+            ),
           ),
           const SizedBox(height: 4),
           Text(
             _monthPhrase(month.month),
-            style: const TextStyle(fontSize: 14),
+            style: TextStyle(
+              color: accent.secondaryForeground,
+              fontSize: 14,
+            ),
           ),
           if (data.monthWord.trim().isNotEmpty) ...[
             const SizedBox(height: 10),
@@ -2288,12 +2320,15 @@ class MonthOpeningHero extends StatelessWidget {
                 vertical: 7,
               ),
               decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.72),
+                color: accent.chipBackground,
                 borderRadius: BorderRadius.circular(999),
               ),
               child: Text(
                 'Parola del mese: ${data.monthWord}',
-                style: const TextStyle(fontWeight: FontWeight.w800),
+                style: TextStyle(
+                  color: accent.chipForeground,
+                  fontWeight: FontWeight.w800,
+                ),
               ),
             ),
           ],

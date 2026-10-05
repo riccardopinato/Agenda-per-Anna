@@ -2,7 +2,7 @@
 
 Flutter app for personal planning, private diary and the shared **Noi ♡** space.
 
-Current release line: **v0.95.0**.
+Current release line: **v0.96.0**.
 
 Canonical product scope and security boundaries: `docs/PRODUCT_BIBLE.md`.
 
@@ -21,7 +21,7 @@ Canonical product scope and security boundaries: `docs/PRODUCT_BIBLE.md`.
 - Firebase Cloud Messaging for Android Noi ♡ push notifications.
 - Local reminders with notification diagnostics and repair tools.
 - Integrity-checked ZIP backup with separate binary media, legacy JSON import and account-scoped safety snapshots.
-- Life Ecosystem / Life Bridge v1: explicit COPY/LINK interoperability that reuses canonical diary and agenda records instead of creating a shared life database.
+- Life Ecosystem / Shared Ecosystem Core v1: explicit COPY/LINK interoperability with Life Bridge v1 compatibility, preserving canonical ownership instead of creating a shared life database.
 
 ## Quality gates
 
@@ -30,6 +30,19 @@ GitHub Actions runs locked dependency resolution, platform generation/verificati
 Pull requests also run the AppLab Production Gate: release-mode ARM64 build, Android emulator install/launch, Maestro restart smoke, multi-screen visual journey, screenshot/UI hierarchy checks, visual regression, Logcat and crash/ANR scanning. Production distribution remains pinned to Flutter 3.47.5 and the persistent sideload/release signing contracts.
 
 See `docs/ARCHITECTURE.md` and `supabase/README.md` for implementation details.
+
+## v0.96.0 — Shared Ecosystem Core / Wonderlog Runtime Bridge
+
+- Completes the runtime bridge between Wonderlog and Anna using the canonical Shared Ecosystem Core v1 package while preserving Life Bridge v1 compatibility.
+- Android accepts bounded `annasdiary://ecosystem/import?payload=...` deep links for cold/warm start and routes every inbound package through an explicit review-before-import surface.
+- Wonderlog Journey `COPY` and `LINK` packages preserve provenance, source ownership, revision and deterministic bridge identity.
+- Idempotency distinguishes bridge + revision + transfer mode and serializes imports so concurrent duplicate delivery cannot materialize duplicate Anna records.
+- Anna diary Note/Photo context can be sent toward Wonderlog through the same canonical package; unsupported/private binary media are explicitly omitted.
+- Clipboard transport uses the canonical `ECOSYSTEM_BRIDGE_V1:` prefix as a portable fallback when direct app opening is unavailable.
+- Invalid target, non-explicit share, incompatible provenance/bridge identity and private/local media references fail closed before canonical data mutation.
+- Existing diary/agenda lifecycle, backup, sync and account isolation remain authoritative; no shared database, global account or background cross-app synchronization is introduced.
+- Release metadata is **v0.96.0+106**.
+- Release status remains **candidate / physical-device validation pending** until the exact signed APK passes the real Wonderlog ↔ Anna round-trip acceptance matrix.
 
 ## v0.95.0 — Life Ecosystem & Life Bridge v1
 

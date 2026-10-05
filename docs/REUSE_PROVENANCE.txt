@@ -1,0 +1,96 @@
+ANNA'S DIARY — REUSE / PROVENANCE LEDGER
+Aligned with Master Prompt v21 and GOLDEN_PROVENANCE_REUSE_LEDGER_v1_DRAFT
+Last updated: 2026-10-04
+
+======================================================================
+COMPONENT: shared-ecosystem-core-v1 / Wonderlog <-> Anna runtime bridge
+======================================================================
+
+componentId: shared-ecosystem-core-v1
+componentVersion: 1
+originType: INTERNAL_DONOR
+sourceProjectOrRepo: riccardopinato/Wonderlog
+sourceRefOrCommit: 98d00900f2d14b801f380adb168ea8e69a1a0b89
+sourcePath:
+- flutter/lib/core/ecosystem/ecosystem_contract.dart
+- flutter/lib/core/ecosystem/ecosystem_models.dart
+- flutter/lib/core/ecosystem/ecosystem_envelope.dart
+- flutter/lib/core/ecosystem/ecosystem_contract_validator.dart
+- flutter/lib/core/ecosystem/ecosystem_transfer_planner.dart
+- flutter/lib/core/ecosystem/ecosystem_local_transport.dart
+- flutter/lib/core/ecosystem/life_bridge_v1.dart
+- docs/ECOSYSTEM_E1_ANNA_HANDOFF.txt
+- docs/GOLDEN_ECOSYSTEM_BRIDGE_CONTRACT_v1_DRAFT.txt
+- docs/GOLDEN_ECOSYSTEM_BRIDGE_V1_TEST_VECTORS.txt
+sourceLicense: INTERNAL PROJECT / not an external OSS reuse
+retrievedAt: 2026-10-04
+
+reuseScope:
+- canonical Shared Ecosystem Core v1 envelope semantics;
+- Life Bridge v1 compatibility projection;
+- deterministic bridge identity / revision / transfer mode semantics;
+- bounded local deep-link and clipboard transport;
+- Golden A/B/C interoperability vectors;
+- provenance, explicit-share and media-handoff validation rules.
+
+adaptationSummary:
+- Anna keeps its existing DiaryBlock/AgendaItem canonical ownership and does not copy Wonderlog domain/storage logic.
+- Anna implements its own ecosystem models/validator/transport under lib/ecosystem/ using the donor contract as the interoperability source.
+- Wonderlog Journey COPY/LINK packages adapt into Anna's existing Life Bridge import path.
+- Anna adds explicit review-before-import UI instead of silent materialization.
+- Android native deep-link capture is implemented through Anna's generated platform bridge.
+- Import mutation is serialized per AgendaStore and idempotency includes bridgeId + revision + transfer mode.
+- Anna exports supported diary Note/Photo context toward Wonderlog but omits unsupported/private binary media.
+- Clipboard fallback is preserved when direct app opening is unavailable.
+- No shared database, mandatory common account, continuous cross-app sync engine or Wonderlog storage code is introduced.
+
+localFiles:
+- lib/ecosystem/ecosystem_contract.dart
+- lib/ecosystem/ecosystem_models.dart
+- lib/ecosystem/ecosystem_envelope.dart
+- lib/ecosystem/ecosystem_contract_validator.dart
+- lib/ecosystem/ecosystem_registry.dart
+- lib/ecosystem/ecosystem_transfer_planner.dart
+- lib/ecosystem/ecosystem_local_transport.dart
+- lib/ecosystem/ecosystem_bridge.dart
+- lib/ecosystem_deep_link_service.dart
+- lib/src/life_bridge.dart
+- lib/src/diary/diary_components.dart
+- lib/main.dart
+- tool/prepare_android_platform.py
+- test/v096_shared_ecosystem_core_e2e_test.dart
+
+dependenciesAdded:
+- none for the ecosystem contract itself;
+- existing Android MethodChannel / Flutter platform infrastructure reused.
+
+securityNotes:
+- explicitShare required;
+- invalid target/provenance/bridge identity fails closed;
+- file://, content://, media:// and private/local app paths are not accepted as portable cross-app media;
+- unsupported media handoff remains omitted;
+- canonical Anna stores remain authoritative and account-isolated.
+
+licenseNotes:
+- donor is an internal project; no external source code or third-party license was copied for this component.
+
+testsExecuted:
+- canonical Golden A/B identities;
+- canonical local-transport URI round-trip;
+- Wonderlog COPY import;
+- Wonderlog LINK import;
+- duplicate/concurrent import idempotency;
+- COPY vs LINK separation;
+- newer revision handling;
+- explicit-share/private-media rejection;
+- Anna -> Wonderlog Golden C export;
+- wrong-target rejection.
+
+evidenceRefs:
+- Anna PR #86
+- final v0.96.0+106 release-candidate CI/AppLab/artifact evidence: pending final RC run
+- physical Wonderlog <-> Anna round trip: NOT VERIFIED
+
+status: ADAPTED
+verifiedAt: pending final RC CI + physical-device evidence
+replacement: none
