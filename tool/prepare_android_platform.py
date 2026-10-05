@@ -123,8 +123,7 @@ class MainActivity : FlutterFragmentActivity() {
     private var pendingCalendarPermissionResult: MethodChannel.Result? = null
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
-        pendingHomeWidgetAction =
-            intent?.getStringExtra(HomeWidgetProvider.EXTRA_ACTION)
+        pendingHomeWidgetAction = decodeLaunchAction(intent)
         pendingSharePayload = decodeShareIntent(intent)
         pendingEcosystemDeepLink = decodeEcosystemDeepLink(intent)
         super.configureFlutterEngine(flutterEngine)
@@ -606,7 +605,7 @@ class MainActivity : FlutterFragmentActivity() {
         super.onNewIntent(intent)
         setIntent(intent)
 
-        val action = intent.getStringExtra(HomeWidgetProvider.EXTRA_ACTION)
+        val action = decodeLaunchAction(intent)
         if (!action.isNullOrBlank()) {
             pendingHomeWidgetAction = action
             homeWidgetChannel?.invokeMethod("homeWidgetAction", action)
@@ -630,6 +629,26 @@ class MainActivity : FlutterFragmentActivity() {
             } else {
                 channel.invokeMethod("ecosystemDeepLink", ecosystemLink)
             }
+        }
+    }
+
+    private fun decodeLaunchAction(incoming: Intent?): String? {
+        incoming ?: return null
+
+        val explicit =
+            incoming.getStringExtra(HomeWidgetProvider.EXTRA_ACTION)?.trim()
+        if (!explicit.isNullOrEmpty()) {
+            return explicit
+        }
+
+        if (incoming.action != Intent.ACTION_VIEW) return null
+        val uri = incoming.data ?: return null
+        if (uri.scheme != "annasdiary") return null
+
+        return when (uri.host) {
+            "capture" -> "quick_capture"
+            "today" -> "today"
+            else -> null
         }
     }
 
@@ -1144,6 +1163,31 @@ def configure_manifest() -> None:
             1,
         )
 
+    launcher_shortcuts_metadata = """
+            <meta-data
+                android:name="android.app.shortcuts"
+                android:resource="@xml/annas_diary_shortcuts" />
+"""
+    if 'android:name="android.app.shortcuts"' not in manifest:
+        activity_pattern = re.compile(
+            r'(<activity\b[^>]*android:name="\.MainActivity"[^>]*>)(.*?)(</activity>)',
+            re.DOTALL,
+        )
+        activity_match = activity_pattern.search(manifest)
+        if activity_match is None:
+            raise SystemExit("Flutter template drift: MainActivity block not found")
+        activity_replacement = (
+            activity_match.group(1)
+            + activity_match.group(2)
+            + launcher_shortcuts_metadata
+            + activity_match.group(3)
+        )
+        manifest = (
+            manifest[: activity_match.start()]
+            + activity_replacement
+            + manifest[activity_match.end() :]
+        )
+
     write_if_changed(MANIFEST, manifest)
 
     drawable = ANDROID / "app" / "src" / "main" / "res" / "drawable"
@@ -1341,6 +1385,89 @@ class HomeWidgetProvider : AppWidgetProvider() {
     )
 
 
+def configure_launcher_shortcuts() -> None:
+    xml = ANDROID / "app" / "src" / "main" / "res" / "xml"
+    xml.mkdir(parents=True, exist_ok=True)
+    (xml / "annas_diary_shortcuts.xml").write_text(
+        r'''<?xml version="1.0" encoding="utf-8"?>
+<shortcuts xmlns:android="http://schemas.android.com/apk/res/android">
+    <shortcut
+        android:shortcutId="quick_capture"
+        android:enabled="true"
+        android:icon="@mipmap/ic_launcher"
+        android:shortcutShortLabel="@string/shortcut_capture_short"
+        android:shortcutLongLabel="@string/shortcut_capture_long">
+        <intent
+            android:action="android.intent.action.VIEW"
+            android:data="annasdiary://capture"
+            android:targetPackage="com.riccardopinato.agenda_per_anna"
+            android:targetClass="com.riccardopinato.agenda_per_anna.MainActivity" />
+    </shortcut>
+    <shortcut
+        android:shortcutId="today"
+        android:enabled="true"
+        android:icon="@mipmap/ic_launcher"
+        android:shortcutShortLabel="@string/shortcut_today_short"
+        android:shortcutLongLabel="@string/shortcut_today_long">
+        <intent
+            android:action="android.intent.action.VIEW"
+            android:data="annasdiary://today"
+            android:targetPackage="com.riccardopinato.agenda_per_anna"
+            android:targetClass="com.riccardopinato.agenda_per_anna.MainActivity" />
+    </shortcut>
+</shortcuts>
+''',
+        encoding="utf-8",
+    )
+
+    localized = {
+        "values": (
+            "Capture",
+            "Quick capture",
+            "Today",
+            "Open today",
+        ),
+        "values-it": (
+            "Cattura",
+            "Cattura veloce",
+            "Oggi",
+            "Apri oggi",
+        ),
+        "values-es": (
+            "Capturar",
+            "Captura rápida",
+            "Hoy",
+            "Abrir hoy",
+        ),
+        "values-fr": (
+            "Capturer",
+            "Capture rapide",
+            "Aujourd’hui",
+            "Ouvrir aujourd’hui",
+        ),
+        "values-pt": (
+            "Capturar",
+            "Captura rápida",
+            "Hoje",
+            "Abrir hoje",
+        ),
+    }
+    for folder, labels in localized.items():
+        values = ANDROID / "app" / "src" / "main" / "res" / folder
+        values.mkdir(parents=True, exist_ok=True)
+        (values / "annas_diary_shortcuts.xml").write_text(
+            f'''<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="shortcut_capture_short">{labels[0]}</string>
+    <string name="shortcut_capture_long">{labels[1]}</string>
+    <string name="shortcut_today_short">{labels[2]}</string>
+    <string name="shortcut_today_long">{labels[3]}</string>
+</resources>
+''',
+            encoding="utf-8",
+        )
+
+
 def configure_desugaring() -> None:
     gradle = require_file(APP_GRADLE)
     compile_anchor = "compileOptions {"
@@ -1502,6 +1629,23 @@ def verify() -> None:
         failures.append("home widget receiver")
     if "annas_diary/home_widget" not in activity:
         failures.append("home widget channel")
+    if 'android:name="android.app.shortcuts"' not in manifest:
+        failures.append("launcher shortcuts metadata")
+    shortcuts_file = (
+        ANDROID
+        / "app"
+        / "src"
+        / "main"
+        / "res"
+        / "xml"
+        / "annas_diary_shortcuts.xml"
+    )
+    if not shortcuts_file.is_file():
+        failures.append("launcher shortcuts resource")
+    else:
+        shortcuts = shortcuts_file.read_text(encoding="utf-8")
+        if "annasdiary://capture" not in shortcuts or "annasdiary://today" not in shortcuts:
+            failures.append("launcher shortcuts routes")
     if "annas_diary/photo_ocr" not in activity:
         failures.append("photo OCR channel")
     if "TextRecognition.getClient" not in activity:
@@ -1543,6 +1687,7 @@ def main() -> None:
     configure_activity()
     configure_manifest()
     configure_home_widget()
+    configure_launcher_shortcuts()
     configure_desugaring()
     firebase_enabled = configure_firebase()
     if args.release_signing:
