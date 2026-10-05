@@ -2,7 +2,7 @@
 
 Flutter app for personal planning, private diary and the shared **Noi ♡** space.
 
-Current release line: **v0.97.0**.
+Current release line: **v0.98.0**.
 
 Canonical product scope and security boundaries: `docs/PRODUCT_BIBLE.md`.
 
@@ -30,6 +30,17 @@ GitHub Actions runs locked dependency resolution, platform generation/verificati
 Pull requests also run the AppLab Production Gate: release-mode ARM64 build, Android emulator install/launch, Maestro restart smoke, multi-screen visual journey, screenshot/UI hierarchy checks, visual regression, Logcat and crash/ANR scanning. Production distribution remains pinned to Flutter 3.47.5 and the persistent sideload/release signing contracts.
 
 See `docs/ARCHITECTURE.md` and `supabase/README.md` for implementation details.
+
+## v0.98.0 — Capture Everywhere
+
+- Extends the existing **Unified Capture** surface instead of introducing a second capture model or persistence path.
+- Home, Month, Week, Today and Inbox now converge on the same capture actions for text, voice, photo, Inbox, task, event, birthday and person flows.
+- Month capture respects the selected calendar day; Week capture respects the specific day card; Today keeps the current Day Hub date.
+- Android keeps the existing home-widget quick capture and ACTION_SEND share target, and adds static launcher shortcuts for **Capture** and **Today** through the same launch-action bridge.
+- The installed PWA exposes **Capture** and **Today** shortcuts; query launches are resolved only after identity, account scope and onboarding gates reach the normal MainShell.
+- External entry points are launch vectors only: diary text/voice/photo still use DayJournal/DiaryBlock + MediaAssetStore, Inbox uses InboxEntry, and agenda items use the existing agenda models.
+- No capture database, background capture service, second media store, AI/transcription dependency or new cloud sync channel is introduced.
+- Release metadata is **v0.98.0+108**.
 
 ## v0.97.0 — Ecosystem Hub v1
 
