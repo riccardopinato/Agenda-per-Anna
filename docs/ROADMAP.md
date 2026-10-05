@@ -51,7 +51,8 @@ Source of execution truth for Anna's Diary. Product identity and boundaries are 
 | v0.94 | Premium Store Activation & Sandbox QA | Completed | Store QA diagnostics, monthly/lifetime Offering validation, signed Internal Testing AAB and real-purchase verification contract |
 | v0.95 | Life Ecosystem + Life Bridge v1 | Completed | Versioned explicit COPY/LINK interoperability over Anna's existing diary/agenda domains, without a shared life database |
 | v0.96 | Shared Ecosystem Core / Wonderlog Runtime Bridge | Completed — physical device verified | Explicit Wonderlog ↔ Anna COPY/LINK runtime interoperability physically verified on Xiaomi Redmi Note 10 Pro / Android 13 |
-| v0.97 | Ecosystem Hub v1 | Implementation complete — validation pending | User-facing app registry, install visibility, app-scoped LINK/history management and source navigation on top of certified E1 |
+| v0.97 | Ecosystem Hub v1 | Completed — CI/AppLab green | User-facing app registry, install visibility, app-scoped LINK/history management and source navigation on top of certified E1 |
+| v0.98 | Capture Everywhere | Implementation complete — validation pending | Unified Capture across primary app surfaces plus Android/PWA launch shortcuts, reusing canonical persistence |
 
 ## Permanent constraints for this sequence
 
@@ -627,6 +628,21 @@ Per the active development cadence, AppLab runs once every two feature versions.
 - Release metadata is aligned to **v0.96.0+106** for the release candidate.
 - **Final merge/certification gate: PASS.** Exact signed v0.96.0+106 RC exercised on Xiaomi Redmi Note 10 Pro / Android 13: Wonderlog → Anna COPY PASS, LINK PASS, duplicate COPY/LINK suppression PASS, Anna → Wonderlog round-trip PASS. v0.96 is **PHYSICAL DEVICE VERIFIED** and Shared Ecosystem Core v1 is **CERTIFIED GOLDEN** for the tested Android bridge scope.
 
+
+## v0.98 acceptance criteria
+
+- v0.98 extends the existing v0.76 Unified Capture implementation; it must not introduce a parallel capture store or duplicate canonical entities.
+- Home, Month, Week, Today and Inbox expose the same Unified Capture surface.
+- Month and Week pass the user's selected civil day into capture so a quick moment is not silently attached to the wrong date.
+- Text, voice and photo capture keep using DayJournal/DiaryBlock + MediaAssetStore; Inbox and agenda actions keep their existing stores.
+- Existing Android ACTION_SEND text/image ingestion continues to delegate to Unified Capture persistence helpers.
+- Existing Android home-widget `quick_capture` remains supported.
+- Android adds static launcher shortcuts for Capture and Today using the existing launch-action MethodChannel; no second native channel is introduced.
+- PWA manifest adds Capture and Today shortcuts, and MainShell resolves them only after identity/account/onboarding gates.
+- External shortcut payloads carry only navigation intent, never captured private content.
+- The release adds no AI/transcription dependency, background recorder, alternate media store or capture-specific cloud queue.
+- Release metadata is aligned to **v0.98.0+108**.
+- Development checks, Web release, Android size audit and AppLab Production Gate must pass before promotion/merge.
 
 ## v0.97 acceptance criteria
 
