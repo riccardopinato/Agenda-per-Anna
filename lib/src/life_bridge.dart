@@ -277,6 +277,9 @@ class LifeBridgeImportRecord {
         'transferMode': transferMode.name,
         'destinationType': destinationType,
         'destinationId': destinationId,
+        if (title != null && title!.trim().isNotEmpty) 'title': title,
+        if (sourceDeepLink != null && sourceDeepLink!.trim().isNotEmpty)
+          'sourceDeepLink': sourceDeepLink,
         'importedAt': importedAt.toUtc().toIso8601String(),
       };
 
@@ -296,6 +299,8 @@ class LifeBridgeImportRecord {
       transferMode: mode,
       destinationType: json['destinationType']?.toString() ?? '',
       destinationId: json['destinationId']?.toString() ?? '',
+      title: _nullableTrimmed(json['title']),
+      sourceDeepLink: _nullableTrimmed(json['sourceDeepLink']),
       importedAt:
           DateTime.tryParse(json['importedAt']?.toString() ?? '')?.toLocal() ??
               DateTime.now(),
@@ -728,6 +733,8 @@ extension LifeBridgeAgendaStore on AgendaStore {
         transferMode: payload.transferMode,
         destinationType: destination.$1,
         destinationId: destination.$2,
+        title: payload.title.trim().isEmpty ? null : payload.title.trim(),
+        sourceDeepLink: payload.source.deepLink,
         importedAt: now,
       );
   
@@ -1869,7 +1876,7 @@ class _LifeEcosystemScreenState extends State<LifeEcosystemScreen> {
                       ?.copyWith(fontWeight: FontWeight.w800),
                 ),
                 const SizedBox(height: 8),
-                ...EcosystemHubRegistry.apps.map(
+                ...EcosystemRegistry.apps.map(
                   (app) => Padding(
                     padding: const EdgeInsets.only(bottom: 10),
                     child: _EcosystemAppCard(
@@ -1960,13 +1967,13 @@ IconData _ecosystemIconForApp(String appId) => switch (appId) {
 
 String _ecosystemStatusLabel(
   AnnaStrings strings,
-  EcosystemHubIntegrationStatus status,
+  EcosystemIntegrationStatus status,
 ) =>
     switch (status) {
-      EcosystemHubIntegrationStatus.active => strings.ecosystemStatusActive,
-      EcosystemHubIntegrationStatus.certifiedCompatible =>
+      EcosystemIntegrationStatus.active => strings.ecosystemStatusActive,
+      EcosystemIntegrationStatus.certifiedCompatible =>
         strings.ecosystemStatusCertifiedCompatible,
-      EcosystemHubIntegrationStatus.planned => strings.ecosystemStatusPlanned,
+      EcosystemIntegrationStatus.planned => strings.ecosystemStatusPlanned,
     };
 
 String _ecosystemAvailabilityLabel(
@@ -1981,7 +1988,7 @@ String _ecosystemAvailabilityLabel(
     };
 
 class _EcosystemAppCard extends StatelessWidget {
-  final EcosystemHubAppDefinition app;
+  final EcosystemAppDefinition app;
   final VoidCallback onTap;
 
   const _EcosystemAppCard({
@@ -1994,15 +2001,15 @@ class _EcosystemAppCard extends StatelessWidget {
     final strings = AnnaStrings.of(context);
     final scheme = Theme.of(context).colorScheme;
     final (statusIcon, statusColor) = switch (app.integrationStatus) {
-      EcosystemHubIntegrationStatus.active => (
+      EcosystemIntegrationStatus.active => (
           Icons.check_circle_outline,
           scheme.primary,
         ),
-      EcosystemHubIntegrationStatus.certifiedCompatible => (
+      EcosystemIntegrationStatus.certifiedCompatible => (
           Icons.verified_outlined,
           scheme.secondary,
         ),
-      EcosystemHubIntegrationStatus.planned => (
+      EcosystemIntegrationStatus.planned => (
           Icons.schedule_outlined,
           scheme.outline,
         ),
@@ -2065,7 +2072,7 @@ class _EcosystemAppCard extends StatelessWidget {
 
 class EcosystemAppDetailScreen extends StatefulWidget {
   final AgendaStore store;
-  final EcosystemHubAppDefinition app;
+  final EcosystemAppDefinition app;
 
   const EcosystemAppDetailScreen({
     super.key,
@@ -2328,7 +2335,7 @@ class _EcosystemHistoryTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final sourceName = EcosystemHubRegistry.displayNameFor(record.sourceAppId);
+    final sourceName = EcosystemRegistry.displayNameFor(record.sourceAppId);
     final title = showSourceName
         ? '$sourceName · ${record.objectType}'
         : record.objectType;
@@ -2378,7 +2385,7 @@ class _LifeBridgeLinkTile extends StatelessWidget {
     final objectType = payload['objectType']?.toString() ??
         payload['sourceEntityType']?.toString() ??
         link.localObjectType;
-    final sourceName = EcosystemHubRegistry.displayNameFor(link.source.appId);
+    final sourceName = EcosystemRegistry.displayNameFor(link.source.appId);
     final canOpenSource = link.source.deepLink?.trim().isNotEmpty == true;
 
     return ListTile(
