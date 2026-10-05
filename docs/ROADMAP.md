@@ -51,6 +51,7 @@ Source of execution truth for Anna's Diary. Product identity and boundaries are 
 | v0.94 | Premium Store Activation & Sandbox QA | Completed | Store QA diagnostics, monthly/lifetime Offering validation, signed Internal Testing AAB and real-purchase verification contract |
 | v0.95 | Life Ecosystem + Life Bridge v1 | Completed | Versioned explicit COPY/LINK interoperability over Anna's existing diary/agenda domains, without a shared life database |
 | v0.96 | Shared Ecosystem Core / Wonderlog Runtime Bridge | Completed — physical device verified | Explicit Wonderlog ↔ Anna COPY/LINK runtime interoperability physically verified on Xiaomi Redmi Note 10 Pro / Android 13 |
+| v0.97 | Ecosystem Hub v1 | Implementation complete — validation pending | User-facing app registry, install visibility, app-scoped LINK/history management and source navigation on top of certified E1 |
 
 ## Permanent constraints for this sequence
 
@@ -625,6 +626,24 @@ Per the active development cadence, AppLab runs once every two feature versions.
 - Wonderlog domain/storage implementation remains owned by Wonderlog. Anna reuses the shared contract and fixtures but does not fork Wonderlog product logic.
 - Release metadata is aligned to **v0.96.0+106** for the release candidate.
 - **Final merge/certification gate: PASS.** Exact signed v0.96.0+106 RC exercised on Xiaomi Redmi Note 10 Pro / Android 13: Wonderlog → Anna COPY PASS, LINK PASS, duplicate COPY/LINK suppression PASS, Anna → Wonderlog round-trip PASS. v0.96 is **PHYSICAL DEVICE VERIFIED** and Shared Ecosystem Core v1 is **CERTIFIED GOLDEN** for the tested Android bridge scope.
+
+
+## v0.97 acceptance criteria
+
+- v0.97 is built directly on the physically verified v0.96 / certified E1 baseline; it must not fork or replace Shared Ecosystem Core v1.
+- **Le mie app** is the user-facing ecosystem registry and distinguishes product integration status from device installation availability.
+- Wonderlog is shown as **E1 compatible/certified for the tested Android bridge scope**, never as merely “contract ready”.
+- Anna, Wonderlog, Notes, TrailPath, SleepMax and CashMate have stable registry entries; planned apps must not be presented as implemented or installed when that evidence is absent.
+- Android Wonderlog installation detection is best-effort through an explicit package-visibility query; Web and unsupported platforms remain honestly `unknown`.
+- App details show declared protocol/capabilities, active LINK count, latest import when available, app-scoped active links and app-scoped import history.
+- Active LINK items can **Apri nella sorgente** using their preserved canonical source deep link.
+- New import-history records preserve the optional source deep link so supported historical rows can also open the source app; older records without the field remain readable.
+- LINK items can be **Trasforma in copia indipendente** without deleting the canonical Anna snapshot.
+- No root deep link is invented for Wonderlog: object opening always uses certified/provenance deep links already carried by E1.
+- No shared database, common mandatory account, background continuous sync or new cross-app ownership model is introduced.
+- The existing Noi ♡ shared-photo preview repair is preserved during the branch realignment.
+- Release metadata is aligned to **v0.97.0+107**.
+- Development checks, Web release, Android size audit and AppLab Production Gate must pass before promotion/merge.
 
 
 ## v0.95 acceptance criteria

@@ -2,7 +2,7 @@
 
 Flutter app for personal planning, private diary and the shared **Noi ♡** space.
 
-Current release line: **v0.96.0**.
+Current release line: **v0.97.0**.
 
 Canonical product scope and security boundaries: `docs/PRODUCT_BIBLE.md`.
 
@@ -30,6 +30,19 @@ GitHub Actions runs locked dependency resolution, platform generation/verificati
 Pull requests also run the AppLab Production Gate: release-mode ARM64 build, Android emulator install/launch, Maestro restart smoke, multi-screen visual journey, screenshot/UI hierarchy checks, visual regression, Logcat and crash/ANR scanning. Production distribution remains pinned to Flutter 3.47.5 and the persistent sideload/release signing contracts.
 
 See `docs/ARCHITECTURE.md` and `supabase/README.md` for implementation details.
+
+## v0.97.0 — Ecosystem Hub v1
+
+- Rebuilds the existing v0.97 work directly on the certified v0.96 E1 baseline instead of replacing the Shared Ecosystem Core runtime.
+- Adds **Le mie app** with stable entries for Anna's Diary, Wonderlog, Notes, TrailPath, SleepMax and CashMate.
+- Wonderlog is shown as **E1 compatible** and Android can detect its availability best-effort without pretending that unsupported platforms know installation state.
+- App details expose declared protocol/capabilities, active LINK count, latest import, app-scoped links and app-scoped import history.
+- LINK/history rows can **Apri nella sorgente** when a canonical source deep link exists.
+- New history records preserve the optional source deep link while remaining backward compatible with v0.96 history.
+- LINK records expose **Trasforma in copia indipendente** using the existing detach-to-copy behavior; the Anna snapshot remains canonical local content.
+- No Wonderlog root route is invented, and no shared DB/account/background cross-app sync is introduced.
+- Preserves the Noi ♡ remote shared-photo preview fix from the original v0.97 branch.
+- Release metadata is **v0.97.0+107**.
 
 ## v0.96.0 — Shared Ecosystem Core / Wonderlog Runtime Bridge
 
