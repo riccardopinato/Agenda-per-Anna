@@ -42,7 +42,7 @@ See `docs/ARCHITECTURE.md` and `supabase/README.md` for implementation details.
 - Invalid target, non-explicit share, incompatible provenance/bridge identity and private/local media references fail closed before canonical data mutation.
 - Existing diary/agenda lifecycle, backup, sync and account isolation remain authoritative; no shared database, global account or background cross-app synchronization is introduced.
 - Release metadata is **v0.96.0+106**.
-- Release status remains **candidate / physical-device validation pending** until the exact signed APK passes the real Wonderlog ↔ Anna round-trip acceptance matrix.
+- Release status: **PHYSICAL DEVICE VERIFIED** on Xiaomi Redmi Note 10 Pro / Android 13. The tested Wonderlog ↔ Anna E1 round-trip passed and Shared Ecosystem Core v1 is CERTIFIED GOLDEN for this Android bridge scope.
 
 ## v0.95.0 — Life Ecosystem & Life Bridge v1
 
