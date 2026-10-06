@@ -1148,6 +1148,7 @@ class AgendaStore extends ChangeNotifier {
 
   Future<void> load() async {
     final prefs = await _localState();
+    await _recoverInterruptedBackupRestore(prefs);
     _activeAccountId = prefs.getString(_activeAccountKey);
     _accountScopeResolved = _activeAccountId == null;
     _unreadableStorageKeys
