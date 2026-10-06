@@ -53,6 +53,20 @@ Source of execution truth for Anna's Diary. Product identity and boundaries are 
 | v0.96 | Shared Ecosystem Core / Wonderlog Runtime Bridge | Completed — physical device verified | Explicit Wonderlog ↔ Anna COPY/LINK runtime interoperability physically verified on Xiaomi Redmi Note 10 Pro / Android 13 |
 | v0.97 | Ecosystem Hub v1 | Completed — CI/AppLab green | User-facing app registry, install visibility, app-scoped LINK/history management and source navigation on top of certified E1 |
 | v0.98 | Capture Everywhere | Completed — trusted runtime verified | Unified Capture across primary app surfaces plus Android/PWA launch shortcuts, reusing canonical persistence |
+| v0.99 | Open Life Export | In progress — implementation pending gates | Open Markdown + structured JSON + separate media/sketch export over canonical data, with privacy-safe exclusions and no new persistence |
+
+## v0.99 acceptance criteria
+
+- A user can explicitly export ordinary private Anna's Diary content as one portable ZIP that can be inspected without Anna's Diary.
+- The bundle contains a human-readable `README.md`, versioned structured `data.json`, separate media files and open JSON sidecars for vector Sketchbook blocks.
+- Modern diary `DiaryBlock` content is represented: Note text, Photo media links, Voice media links/duration, Sketch vector JSON/text, tags, People, Places and related-memory references.
+- Export derives from current canonical stores and `MediaAssetStore`; it introduces no new database, sync queue, content owner or alternate diary model.
+- Referenced local media must exist. Missing media fails the export closed instead of producing a silently incomplete archive.
+- The open export excludes Trash, technical preferences, Private Vault, Cycle Tracker, Noi ♡ shared passwords and authentication secrets. It is deliberately distinct from the complete restore backup.
+- Existing complete ZIP backup/restore remains unchanged and authoritative for disaster recovery.
+- Export is always an explicit user action; no background or automatic cross-app export is introduced.
+- Release metadata is aligned to `v0.99.0+109`.
+- Analyze, full tests, Web release, Android production-equivalent gate and AppLab trusted runtime must pass before this version is marked completed.
 
 ## Permanent constraints for this sequence
 

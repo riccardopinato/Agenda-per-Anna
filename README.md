@@ -2,7 +2,7 @@
 
 Flutter app for personal planning, private diary and the shared **Noi ♡** space.
 
-Current release line: **v0.98.0**.
+Current release line: **v0.99.0**.
 
 Canonical product scope and security boundaries: `docs/PRODUCT_BIBLE.md`.
 
@@ -30,6 +30,17 @@ GitHub Actions runs locked dependency resolution, platform generation/verificati
 Pull requests also run the AppLab Production Gate: release-mode ARM64 build, Android emulator install/launch, Maestro restart smoke, multi-screen visual journey, screenshot/UI hierarchy checks, visual regression, Logcat and crash/ANR scanning. Production distribution remains pinned to Flutter 3.47.5 and the persistent sideload/release signing contracts.
 
 See `docs/ARCHITECTURE.md` and `supabase/README.md` for implementation details.
+
+## v0.99.0 — Open Life Export
+
+- Adds an explicit **open-data export** alongside the existing disaster-recovery backup.
+- The export is a ZIP containing a human-readable `README.md`, structured `data.json`, separate files under `media/` and vector Sketchbook sidecars under `sketches/`.
+- The Markdown view includes the current DiaryBlock stream: Note, Photo, Voice and Sketch content, plus tags, People, Places and related-memory references.
+- Media stays byte-for-byte separate from structured data and uses safe detected extensions where possible; referenced local media that is missing aborts the export instead of producing a misleading incomplete archive.
+- The export is derived from the existing AgendaStore/DayJournal/DiaryBlock and MediaAssetStore data. No second diary store, sync queue or ownership model is introduced.
+- Privacy-sensitive or recovery-only scopes are excluded from the open export: Trash, technical preferences, Private Vault, Cycle Tracker, Noi ♡ shared passwords and authentication secrets.
+- The existing integrity-checked complete ZIP backup remains the restore/disaster-recovery format; Open Life Export is for long-term readability and portability.
+- Release metadata is **v0.99.0+109**.
 
 ## v0.98.0 — Capture Everywhere
 

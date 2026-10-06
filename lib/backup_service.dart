@@ -149,6 +149,59 @@ class BackupFileService {
     );
   }
 
+  Uint8List buildOpenExportZip({
+    required String manifestJson,
+    required String markdown,
+    required String dataJson,
+    required Map<String, Uint8List> files,
+  }) {
+    if (files.length + 3 > _maxArchiveEntries) {
+      throw const FormatException(
+        'L\'esportazione contiene troppi file.',
+      );
+    }
+
+    var payloadBytes = utf8.encode(manifestJson).length +
+        utf8.encode(markdown).length +
+        utf8.encode(dataJson).length;
+    for (final bytes in files.values) {
+      if (bytes.lengthInBytes > maxSingleEntryBytes) {
+        throw const FormatException(
+          'Un file dell\'esportazione è troppo grande.',
+        );
+      }
+      payloadBytes += bytes.lengthInBytes;
+      if (payloadBytes > maxUncompressedArchiveBytes) {
+        throw const FormatException(
+          'L\'esportazione è troppo grande per essere creata in sicurezza.',
+        );
+      }
+    }
+
+    final archive = Archive()
+      ..addFile(ArchiveFile.string('manifest.json', manifestJson))
+      ..addFile(ArchiveFile.string('README.md', markdown))
+      ..addFile(ArchiveFile.string('data.json', dataJson));
+
+    final paths = files.keys.toList()..sort();
+    for (final rawPath in paths) {
+      final normalized = rawPath.replaceAll('\\', '/');
+      if (!_validArchivePath(normalized)) {
+        throw const FormatException(
+          'Percorso file non valido nell\'esportazione.',
+        );
+      }
+      archive.addFile(
+        ArchiveFile.bytes(normalized, files[rawPath]!),
+      );
+    }
+
+    return ZipEncoder().encodeBytes(
+      archive,
+      level: DeflateLevel.bestSpeed,
+    );
+  }
+
   DecodedZipBackup decodeZipBackup(Uint8List bytes) {
     if (bytes.lengthInBytes > maxCompressedArchiveBytes) {
       throw const FormatException(
@@ -218,6 +271,42 @@ class BackupFileService {
       value.isNotEmpty &&
       value.length <= 160 &&
       RegExp(r'^[a-zA-Z0-9_-]+$').hasMatch(value);
+
+  bool _validArchivePath(String value) {
+    if (value.isEmpty ||
+        value.length > 240 ||
+        value.startsWith('/') ||
+        value.contains('..')) {
+      return false;
+    }
+    final parts = value.split('/');
+    return parts.isNotEmpty &&
+        parts.every(
+          (part) =>
+              part.isNotEmpty &&
+              part.length <= 160 &&
+              RegExp(r'^[a-zA-Z0-9._-]+$').hasMatch(part),
+        );
+  }
+
+  Future<bool> saveOpenExportZip({
+    required Uint8List bytes,
+    required String fileName,
+  }) async {
+    try {
+      final uri = await FilePicker.saveFile(
+        fileName: fileName,
+        bytes: bytes,
+        mimeType: 'application/zip',
+        type: FileType.custom,
+        allowedExtensions: const ['zip'],
+        dialogTitle: 'Esporta archivio aperto Anna\'s Diary',
+      );
+      return uri != null;
+    } catch (_) {
+      return false;
+    }
+  }
 
   Future<bool> saveTextExport({
     required String text,

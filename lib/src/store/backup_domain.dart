@@ -128,6 +128,116 @@ class _AgendaBackupDomain {
     );
   }
 
+  Future<Uint8List> createOpenExportZip(AgendaStore store) async {
+    final exportedAt = DateTime.now();
+    final openData = Map<String, dynamic>.from(localDataPayload(store))
+      ..remove('trash')
+      ..remove('preferences');
+
+    final referencedAssetIds = <String>{};
+    store._collectAssetIdsFromJson(openData, referencedAssetIds);
+
+    final files = <String, Uint8List>{};
+    final mediaPaths = <String, String>{};
+    final manifestFiles = <Map<String, dynamic>>[];
+    var mediaBytesTotal = 0;
+
+    final sortedIds = referencedAssetIds.toList()..sort();
+    for (final assetId in sortedIds) {
+      final bytes = await MediaAssetStore.instance.read(assetId);
+      if (bytes == null || bytes.isEmpty) {
+        throw FormatException(
+          'Media locale mancante nell\'esportazione aperta: $assetId',
+        );
+      }
+      mediaBytesTotal += bytes.lengthInBytes;
+      if (mediaBytesTotal > BackupFileService.maxBackupMediaBytes) {
+        throw const FormatException(
+          'L\'esportazione contiene troppi media per essere creata in sicurezza in memoria.',
+        );
+      }
+      final extension = _openMediaExtension(bytes);
+      final path = 'media/$assetId.$extension';
+      files[path] = bytes;
+      mediaPaths[assetId] = path;
+      manifestFiles.add({
+        'assetId': assetId,
+        'path': path,
+        'size': bytes.lengthInBytes,
+        'sha256': sha256.convert(bytes).toString(),
+      });
+    }
+
+    final sketchPaths = <String, String>{};
+    for (final journalEntry in store.journals.entries) {
+      for (final block in journalEntry.value.blocks) {
+        if (block.type != DiaryBlockType.sketch || block.pages.isEmpty) {
+          continue;
+        }
+        final safeId = _openFileToken(block.id);
+        final path = 'sketches/$safeId.json';
+        final json = const JsonEncoder.withIndent('  ').convert({
+          'blockId': block.id,
+          'createdAt': block.createdAt.toUtc().toIso8601String(),
+          'pages': block.pages.map((page) => page.toJson()).toList(),
+        });
+        final bytes = Uint8List.fromList(utf8.encode(json));
+        files[path] = bytes;
+        sketchPaths[block.id] = path;
+        manifestFiles.add({
+          'blockId': block.id,
+          'path': path,
+          'size': bytes.lengthInBytes,
+          'sha256': sha256.convert(bytes).toString(),
+          'kind': 'sketch_json',
+        });
+      }
+    }
+
+    final dataDocument = {
+      'format': 'annas_diary_open_export',
+      'schemaVersion': 1,
+      'appVersion': AgendaStore._appVersion,
+      'exportedAt': exportedAt.toIso8601String(),
+      'data': openData,
+    };
+    final dataJson =
+        const JsonEncoder.withIndent('  ').convert(dataDocument);
+    final markdown = _createOpenMarkdown(
+      store,
+      exportedAt: exportedAt,
+      mediaPaths: mediaPaths,
+      sketchPaths: sketchPaths,
+    );
+
+    final manifest = {
+      'format': 'annas_diary_open_export_bundle',
+      'bundleVersion': 1,
+      'appVersion': AgendaStore._appVersion,
+      'exportedAt': exportedAt.toIso8601String(),
+      'readmeFile': 'README.md',
+      'dataFile': 'data.json',
+      'readmeSha256': sha256.convert(utf8.encode(markdown)).toString(),
+      'dataSha256': sha256.convert(utf8.encode(dataJson)).toString(),
+      'files': manifestFiles,
+      'excludedScopes': const [
+        'trash',
+        'preferences',
+        'private_vault',
+        'cycle_tracker',
+        'shared_passwords',
+        'authentication_secrets',
+      ],
+    };
+
+    return BackupFileService.instance.buildOpenExportZip(
+      manifestJson: const JsonEncoder.withIndent('  ').convert(manifest),
+      markdown: markdown,
+      dataJson: dataJson,
+      files: files,
+    );
+  }
+
   DecodedZipBackup decodeAndValidateBackupZip(
     AgendaStore store,
     Uint8List bytes,
@@ -231,6 +341,309 @@ class _AgendaBackupDomain {
       personCount: (payload['people'] as List? ?? const []).length,
       trashCount: (payload['trash'] as List? ?? const []).length,
     );
+  }
+
+  String _createOpenMarkdown(
+    AgendaStore store, {
+    required DateTime exportedAt,
+    required Map<String, String> mediaPaths,
+    required Map<String, String> sketchPaths,
+  }) {
+    final buffer = StringBuffer();
+    final peopleById = {
+      for (final person in store.people) person.id: person.name.trim(),
+    };
+
+    buffer.writeln('# Anna\'s Diary — Open Export');
+    buffer.writeln();
+    buffer.writeln(
+      'Esportato il ${DateFormat('d MMMM yyyy, HH:mm', 'it_IT').format(exportedAt)}.',
+    );
+    buffer.writeln();
+    buffer.writeln(
+      'Questo archivio usa formati aperti: Markdown, JSON e file multimediali separati.',
+    );
+    buffer.writeln(
+      'Il Cestino, le preferenze tecniche, il Private Vault, il Cycle Tracker, '
+      'le password condivise e i segreti di autenticazione non sono inclusi.',
+    );
+    buffer.writeln();
+    buffer.writeln('## Contenuto');
+    buffer.writeln();
+    buffer.writeln('- README.md: diario leggibile e indice principale');
+    buffer.writeln('- data.json: dati privati ordinari strutturati');
+    buffer.writeln('- media/: foto, audio e altri asset referenziati');
+    buffer.writeln('- sketches/: rappresentazione JSON aperta dei disegni');
+    buffer.writeln();
+
+    buffer.writeln('## Diario');
+    buffer.writeln();
+    final journalEntries = store.journals.entries.toList()
+      ..sort((a, b) => a.key.compareTo(b.key));
+    if (journalEntries.isEmpty) {
+      buffer.writeln('_Nessuna pagina di diario salvata._');
+      buffer.writeln();
+    } else {
+      for (final entry in journalEntries) {
+        final date = DateTime.tryParse(entry.key);
+        final journal = entry.value;
+        final dayLabel = date == null
+            ? entry.key
+            : DateFormat('d MMMM yyyy', 'it_IT').format(date);
+        buffer.writeln('### $dayLabel');
+        buffer.writeln();
+
+        if (journal.mood != null) {
+          buffer.writeln(
+            '**Mood:** ${journal.mood!.emoji} ${journal.mood!.label}',
+          );
+          buffer.writeln();
+        }
+        if (journal.gratitude.isNotEmpty) {
+          buffer.writeln('**Cose belle**');
+          for (final value in journal.gratitude) {
+            if (value.trim().isNotEmpty) {
+              buffer.writeln('- ${_openMarkdownInline(value)}');
+            }
+          }
+          buffer.writeln();
+        }
+        if (journal.beautiful.trim().isNotEmpty) {
+          buffer.writeln('**Da ricordare**');
+          buffer.writeln();
+          buffer.writeln(journal.beautiful.trim());
+          buffer.writeln();
+        }
+        if (journal.note.trim().isNotEmpty) {
+          buffer.writeln('**Pensieri**');
+          buffer.writeln();
+          buffer.writeln(journal.note.trim());
+          buffer.writeln();
+        }
+
+        final blocks = [...journal.blocks]
+          ..sort((a, b) => a.createdAt.compareTo(b.createdAt));
+        for (final block in blocks) {
+          final time = DateFormat('HH:mm').format(block.createdAt);
+          final archived = block.archived ? ' · archiviato' : '';
+          buffer.writeln(
+            '#### $time · ${_openBlockLabel(block.type)}$archived',
+          );
+          buffer.writeln();
+
+          if (block.text.trim().isNotEmpty) {
+            buffer.writeln(block.text.trim());
+            buffer.writeln();
+          }
+
+          if (block.type == DiaryBlockType.photo) {
+            final mediaPath = mediaPaths[block.mediaAssetId];
+            if (mediaPath != null) {
+              final alt = block.text.trim().isEmpty
+                  ? 'Foto'
+                  : _openMarkdownInline(block.text.trim());
+              buffer.writeln('![$alt]($mediaPath)');
+              buffer.writeln();
+            } else if (block.imageBase64.isNotEmpty) {
+              buffer.writeln(
+                '_Foto legacy incorporata nel record strutturato di data.json._',
+              );
+              buffer.writeln();
+            }
+          }
+
+          if (block.type == DiaryBlockType.voice) {
+            final mediaPath = mediaPaths[block.mediaAssetId];
+            if (mediaPath != null) {
+              buffer.writeln('[Apri registrazione audio]($mediaPath)');
+              if (block.audioDurationMs > 0) {
+                final seconds = (block.audioDurationMs / 1000).round();
+                buffer.writeln('Durata: $seconds s');
+              }
+              buffer.writeln();
+            } else if (block.audioBase64.isNotEmpty) {
+              buffer.writeln(
+                '_Audio legacy incorporato nel record strutturato di data.json._',
+              );
+              buffer.writeln();
+            }
+          }
+
+          if (block.type == DiaryBlockType.sketch) {
+            final sketchPath = sketchPaths[block.id];
+            if (sketchPath != null) {
+              buffer.writeln(
+                '[Dati vettoriali del disegno]($sketchPath)',
+              );
+              buffer.writeln();
+            }
+            final sketchText = block.pages
+                .expand((page) => page.textElements)
+                .map((element) => element.text.trim())
+                .where((value) => value.isNotEmpty)
+                .toList(growable: false);
+            if (sketchText.isNotEmpty) {
+              buffer.writeln('Testo nel disegno:');
+              for (final value in sketchText) {
+                buffer.writeln('- ${_openMarkdownInline(value)}');
+              }
+              buffer.writeln();
+            }
+          }
+
+          if (block.tags.isNotEmpty) {
+            buffer.writeln(
+              '**Tag:** ${block.tags.map((tag) => '#${_openMarkdownInline(tag)}').join(' ')}',
+            );
+          }
+          final people = block.personIds
+              .map((id) => peopleById[id])
+              .whereType<String>()
+              .where((name) => name.isNotEmpty)
+              .toList(growable: false);
+          if (people.isNotEmpty) {
+            buffer.writeln(
+              '**Persone:** ${people.map(_openMarkdownInline).join(', ')}',
+            );
+          }
+          if (block.places.isNotEmpty) {
+            buffer.writeln(
+              '**Luoghi:** ${block.places.map((place) => _openMarkdownInline(place.name)).join(', ')}',
+            );
+          }
+          if (block.relatedBlockIds.isNotEmpty) {
+            buffer.writeln(
+              '**Ricordi collegati:** ${block.relatedBlockIds.map(_openMarkdownInline).join(', ')}',
+            );
+          }
+          if (block.tags.isNotEmpty ||
+              people.isNotEmpty ||
+              block.places.isNotEmpty ||
+              block.relatedBlockIds.isNotEmpty) {
+            buffer.writeln();
+          }
+        }
+      }
+    }
+
+    buffer.writeln('## Agenda');
+    buffer.writeln();
+    final items = [...store.items]
+      ..sort((a, b) {
+        final dateCompare = a.date.compareTo(b.date);
+        if (dateCompare != 0) return dateCompare;
+        final aMinutes =
+            a.start == null ? 9999 : a.start!.hour * 60 + a.start!.minute;
+        final bMinutes =
+            b.start == null ? 9999 : b.start!.hour * 60 + b.start!.minute;
+        return aMinutes.compareTo(bMinutes);
+      });
+    if (items.isEmpty) {
+      buffer.writeln('_Nessun impegno salvato._');
+    } else {
+      for (final item in items) {
+        final date = DateFormat('yyyy-MM-dd', 'it_IT').format(item.date);
+        final time =
+            item.start == null ? '' : ' ${formatTime(item.start!)}';
+        final done = item.done ? ' [completato]' : '';
+        buffer.writeln(
+          '- **$date$time** · ${_openMarkdownInline(item.title)}$done',
+        );
+        if (item.note.trim().isNotEmpty) {
+          buffer.writeln(
+            '  - ${_openMarkdownInline(item.note.trim())}',
+          );
+        }
+      }
+    }
+    buffer.writeln();
+
+    buffer.writeln('## Indice dati strutturati');
+    buffer.writeln();
+    buffer.writeln('- Persone: ${store.people.length}');
+    buffer.writeln('- Compleanni: ${store.birthdays.length}');
+    buffer.writeln('- Inbox: ${store.inbox.length}');
+    buffer.writeln('- Lista della spesa: ${store.shoppingItems.length}');
+    buffer.writeln(
+      '- Sessioni di allenamento: ${store.workoutSessions.length}',
+    );
+    buffer.writeln(
+      '- Schede di allenamento: ${store.workoutPlans.length}',
+    );
+    buffer.writeln('- Pagine settimanali: ${store.weeks.length}');
+    buffer.writeln('- Pagine mensili: ${store.months.length}');
+    buffer.writeln();
+    buffer.writeln(
+      'I record completi di queste sezioni sono disponibili in data.json.',
+    );
+
+    return buffer.toString();
+  }
+
+  String _openBlockLabel(DiaryBlockType type) => switch (type) {
+        DiaryBlockType.note => 'Nota',
+        DiaryBlockType.photo => 'Foto',
+        DiaryBlockType.voice => 'Voce',
+        DiaryBlockType.sketch => 'Disegno',
+      };
+
+  String _openMarkdownInline(String value) => value
+      .replaceAll('\\', '\\\\')
+      .replaceAll('\r', ' ')
+      .replaceAll('\n', ' ')
+      .replaceAll('|', '\\|')
+      .trim();
+
+  String _openMediaExtension(Uint8List bytes) {
+    if (bytes.lengthInBytes >= 3 &&
+        bytes[0] == 0xff &&
+        bytes[1] == 0xd8 &&
+        bytes[2] == 0xff) {
+      return 'jpg';
+    }
+    if (bytes.lengthInBytes >= 8 &&
+        bytes[0] == 0x89 &&
+        bytes[1] == 0x50 &&
+        bytes[2] == 0x4e &&
+        bytes[3] == 0x47) {
+      return 'png';
+    }
+    if (bytes.lengthInBytes >= 12 &&
+        ascii.decode(bytes.sublist(0, 4), allowInvalid: true) == 'RIFF' &&
+        ascii.decode(bytes.sublist(8, 12), allowInvalid: true) == 'WEBP') {
+      return 'webp';
+    }
+    if (bytes.lengthInBytes >= 6) {
+      final signature =
+          ascii.decode(bytes.sublist(0, 6), allowInvalid: true);
+      if (signature == 'GIF87a' || signature == 'GIF89a') {
+        return 'gif';
+      }
+    }
+    if (bytes.lengthInBytes >= 5 &&
+        ascii.decode(bytes.sublist(0, 5), allowInvalid: true) == '%PDF-') {
+      return 'pdf';
+    }
+    if (bytes.lengthInBytes >= 12 &&
+        ascii.decode(bytes.sublist(4, 8), allowInvalid: true) == 'ftyp') {
+      final brand =
+          ascii.decode(bytes.sublist(8, 12), allowInvalid: true).toLowerCase();
+      if (brand.contains('m4a') || brand.contains('m4b')) {
+        return 'm4a';
+      }
+      return 'mp4';
+    }
+    return 'bin';
+  }
+
+  String _openFileToken(String value) {
+    final normalized = value
+        .trim()
+        .replaceAll(RegExp(r'[^a-zA-Z0-9._-]+'), '_');
+    if (normalized.isEmpty) {
+      return sha256.convert(utf8.encode(value)).toString().substring(0, 24);
+    }
+    return normalized.length <= 96 ? normalized : normalized.substring(0, 96);
   }
 
   String createReadableExport(AgendaStore store) {

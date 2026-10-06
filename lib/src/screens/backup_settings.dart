@@ -50,6 +50,33 @@ class _BackupScreenState extends State<BackupScreen> {
     }
   }
 
+  Future<void> _exportOpenArchive() async {
+    setState(() => busy = true);
+    try {
+      final bytes = await widget.store.createOpenExportZip();
+      final ok = await BackupFileService.instance.saveOpenExportZip(
+        bytes: bytes,
+        fileName: _timestampFileName('zip').replaceFirst(
+          'backup_',
+          'open-export_',
+        ),
+      );
+      _message(
+        ok
+            ? 'Archivio aperto esportato.'
+            : 'Esportazione annullata o non riuscita.',
+      );
+    } catch (error) {
+      _message(
+        error is FormatException
+            ? error.message.toString()
+            : 'Non è stato possibile creare l\'archivio aperto.',
+      );
+    } finally {
+      if (mounted) setState(() => busy = false);
+    }
+  }
+
   Future<void> _runSafetyAudit() async {
     setState(() => busy = true);
     try {
@@ -324,6 +351,15 @@ class _BackupScreenState extends State<BackupScreen> {
                         'Importa backup ZIP nuovi o JSON precedenti. Puoi unire i dati oppure sostituire tutto.',
                     buttonLabel: 'Scegli backup',
                     onPressed: busy ? null : _importBackup,
+                  ),
+                  const SizedBox(height: 10),
+                  _BackupActionCard(
+                    icon: Icons.folder_zip_outlined,
+                    title: 'Esporta archivio aperto',
+                    subtitle:
+                        'Crea un file ZIP leggibile senza Anna\'s Diary: README in Markdown, dati JSON strutturati, media separati e disegni in JSON aperto. Cestino, Vault e dati sensibili separati restano esclusi.',
+                    buttonLabel: 'Esporta archivio',
+                    onPressed: busy ? null : _exportOpenArchive,
                   ),
                   const SizedBox(height: 10),
                   _BackupActionCard(

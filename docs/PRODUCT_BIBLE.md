@@ -1,7 +1,7 @@
 # Anna's Diary — Product Bible
 
 **Status:** canonical product source of truth  
-**Current release line:** v0.98  
+**Current release line:** v0.99  
 **Last aligned:** 6 October 2026
 
 This document defines what Anna's Diary is, what it is not, and the product/security invariants that future work must preserve. Implementation details belong in `docs/ARCHITECTURE.md`; execution sequencing belongs in `docs/ROADMAP.md`.
@@ -95,6 +95,18 @@ Cloud services are optional for:
 Login or network loss must not block access to ordinary local content already owned by the user.
 
 Noi ♡ shared passwords are intentionally different: an encrypted local mirror can be read offline after Vault unlock, while authoritative modification/deletion requires an authenticated connection so concurrent secret changes cannot silently diverge.
+
+### Open portability contract
+
+Ordinary private content must remain exportable through an explicit user action in formats that are readable without Anna's Diary. The open export is a portability surface, not a second canonical store and not a cloud-sync channel.
+
+- Human-readable narrative content uses Markdown; structured records use versioned JSON; media is stored as separate files rather than hidden in proprietary blobs.
+- The export is derived from canonical domain data and must not mutate source content.
+- Missing required referenced media fails closed rather than silently producing an apparently complete archive.
+- The open export is intentionally separate from the complete restore backup: disaster recovery may preserve additional internal/lifecycle state that should not be presented as a normal portable archive.
+- Trash, technical preferences, Private Vault, menstrual-cycle data, Noi ♡ shared passwords, authentication secrets and device-bound credentials are excluded from the ordinary open export.
+- Export is always explicit and local/user-directed; no external product receives it automatically.
+- Future format revisions must be versioned and remain inspectable with ordinary tools.
 
 ## 5. Data ownership and lifecycle
 
