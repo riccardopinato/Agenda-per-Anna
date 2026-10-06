@@ -264,6 +264,7 @@ class LocalStateStore {
       'active_account_v1',
       'legacy_claimed_by_v1',
       'privacy_guard_v1',
+      'backup_restore_transaction_v1',
     };
     if (exact.contains(key)) return true;
 
