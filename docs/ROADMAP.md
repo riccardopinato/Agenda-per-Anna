@@ -67,6 +67,7 @@ The full product reality audit is recorded in `docs/V100_FULL_PRODUCT_REALITY_AU
 - Home/share capture, canonical search, Memories/Recall and Backup/Open Export use the shared en/it/es/fr/pt localization path and selected locale for date formatting.
 - A 10,000-memory regression exercises memory references, canonical search and Life Archive with a bounded performance budget without introducing FTS or a parallel index before evidence requires it.
 - AgendaStore / DayJournal / DiaryBlock ownership, lifecycle, sync and backup architecture remain unchanged.
+- Explore summaries remain live after Shopping/Workout edits, and localized Search accepts the same translated memory-type vocabulary it displays.
 - Development checks, Web build/deploy, Android size audit, AppLab Trusted Verify and advisory review must be green on the final PR head before v1.00-B is completed.
 
 ## v0.99 acceptance criteria
