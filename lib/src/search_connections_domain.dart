@@ -855,19 +855,26 @@ Future<List<String>?> showDiaryConnectionsPicker(
           child: Column(
             children: [
               ListTile(
-                title: const Text(
-                  'Collega ricordi',
-                  style: TextStyle(fontWeight: FontWeight.w900, fontSize: 20),
+                title: Text(
+                  AnnaStrings.of(context).v100LinkMemoriesTitle,
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w900,
+                    fontSize: 20,
+                  ),
                 ),
                 subtitle: Text(
                   candidates.isEmpty
-                      ? 'Non ci sono ancora altri ricordi da collegare.'
-                      : 'Seleziona fino a 12 ricordi. I collegamenti inversi vengono mostrati automaticamente.',
+                      ? AnnaStrings.of(context).v100NoOtherMemories
+                      : AnnaStrings.of(context).v100LinkMemoriesDescription,
                 ),
               ),
               Expanded(
                 child: candidates.isEmpty
-                    ? const Center(child: Text('Nessun altro ricordo.'))
+                    ? Center(
+                        child: Text(
+                          AnnaStrings.of(context).v100NoOtherMemories,
+                        ),
+                      )
                     : ListView.builder(
                         padding: const EdgeInsets.symmetric(horizontal: 12),
                         itemCount: candidates.length,
@@ -916,7 +923,7 @@ Future<List<String>?> showDiaryConnectionsPicker(
                     Expanded(
                       child: OutlinedButton(
                         onPressed: () => Navigator.pop(sheetContext),
-                        child: const Text('Annulla'),
+                        child: Text(AnnaStrings.of(context).cancel),
                       ),
                     ),
                     const SizedBox(width: 10),
@@ -926,7 +933,10 @@ Future<List<String>?> showDiaryConnectionsPicker(
                           sheetContext,
                           selected.toList(growable: false),
                         ),
-                        child: Text('Salva (${selected.length})'),
+                        child: Text(
+                          AnnaStrings.of(context)
+                              .v100SaveCount(selected.length),
+                        ),
                       ),
                     ),
                   ],
