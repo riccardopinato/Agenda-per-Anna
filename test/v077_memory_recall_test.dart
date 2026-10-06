@@ -158,7 +158,7 @@ void main() {
 
     expect(search, contains('MemoryRecallSnapshot memoryRecallSnapshot('));
     expect(search, contains('List<DiaryBlockReference> yearHighlights'));
-    expect(memories, contains("label: const Text('Riscopri')"));
+    expect(memories, contains('v100Rediscover'));
     expect(memories, contains('memoryRecallSnapshot('));
     expect(planner, contains('memoryRecallSnapshot(day)'));
     expect(planner, contains('strings.onThisDay'));

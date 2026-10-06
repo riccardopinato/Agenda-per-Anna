@@ -1,5 +1,14 @@
 # Agenda per Anna — Architecture
 
+## v1.00-B — Golden Core presentation boundary
+
+- No new canonical entity/store is introduced.
+- `PersonalSearchConnectionsScreen` is the single personal search UI; the superseded legacy Home-local search implementation is removed.
+- `ExploreScreen` is navigation-only. It exposes Shopping, Workout, Memories, People and Life Ecosystem through their existing screens and stores.
+- `localization_v100.dart` extends the existing `AnnaStrings` contract for the 1.0 cleanup surfaces; it is not a second localization engine.
+- Memories/Search date rendering resolves through the selected app locale rather than hardcoded Italian locale data.
+- The 10k-memory regression is an evidence gate over current in-memory derived projections. An index/FTS database must not be added unless measured evidence shows the canonical approach is insufficient.
+
 ## Current structure — v0.99.0
 
 Anna's Diary keeps `lib/main.dart` as the compatibility library boundary, but large responsibilities are now split by runtime domain:

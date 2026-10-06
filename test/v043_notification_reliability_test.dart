@@ -103,10 +103,15 @@ void main() {
     test('settings run a full local diagnostic and expose blocked channels', () {
       final settings =
           File('lib/src/screens/backup_settings.dart').readAsStringSync();
+      final localization =
+          File('lib/src/localization_v100.dart').readAsStringSync();
       expect(settings, contains('runLocalDiagnostic()'));
-      expect(settings, contains('canale Promemoria: BLOCCATO'));
-      expect(settings, contains('canale Noi ♡: BLOCCATO'));
-      expect(settings, contains('Test locale completo'));
+      expect(settings, contains('v100ReminderChannelBlocked'));
+      expect(settings, contains('v100NoiChannelBlocked'));
+      expect(settings, contains('v100FullLocalTest'));
+      expect(localization, contains('canale Promemoria: BLOCCATO'));
+      expect(localization, contains('canale Noi ♡: BLOCCATO'));
+      expect(localization, contains('Test locale completo'));
     });
 
     test('push backend records real delivery outcomes', () {

@@ -1,12 +1,11 @@
 appId: com.riccardopinato.agenda_per_anna
 ---
+# The previous "memories" checkpoint leaves the journey inside Memories,
+# which was opened from the v1.00-B Explore surface.
 - back
 - extendedWaitUntil:
-    visible: 'Home[\s\S]*'
+    visible: '(Esplora|Explore|Explorar|Explorer)'
     timeout: 10000
-- tapOn:
-    text: 'Home[\s\S]*'
-    retryTapIfNoChange: true
 - scrollUntilVisible:
     element:
       text: '(Persone importanti|Important people|Personas importantes|Personnes importantes|Pessoas importantes)[\s\S]*'

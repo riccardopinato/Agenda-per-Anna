@@ -170,7 +170,7 @@ class HomeScreen extends StatelessWidget {
               ),
               IconButton(
                 tooltip: store.totalSharedUnreadCount > 0
-                    ? 'Noi ♡ · ${store.totalSharedUnreadCount} novità'
+                    ? strings.v100SharedNews(store.totalSharedUnreadCount)
                     : 'Noi ♡',
                 onPressed: () => Navigator.push(
                   context,
@@ -294,12 +294,8 @@ class HomeScreen extends StatelessWidget {
                         color: Theme.of(context).colorScheme.error,
                       ),
                       const SizedBox(width: 10),
-                      const Expanded(
-                        child: Text(
-                          'Una parte dell’archivio locale non è leggibile. '
-                          'Agenda la mantiene intatta invece di sovrascriverla. '
-                          'Puoi usare Backup e ripristino per recuperare una copia valida.',
-                        ),
+                      Expanded(
+                        child: Text(strings.v100StorageWarning),
                       ),
                     ],
                   ),
@@ -344,7 +340,7 @@ class HomeScreen extends StatelessWidget {
               ),
               if (pinnedItems.isNotEmpty) ...[
                 const SizedBox(height: 20),
-                const SectionTitle('Fissati'),
+                SectionTitle(strings.v100Pinned),
                 const SizedBox(height: 10),
                 ...pinnedItems.take(3).map(
                       (e) => EventTile(
@@ -372,15 +368,15 @@ class HomeScreen extends StatelessWidget {
               const SizedBox(height: 14),
               _TodayWellbeingCard(store: store, date: now),
               const SizedBox(height: 24),
-              const SectionTitle('La mia agenda'),
+              SectionTitle(strings.v100MyAgendaSection),
               const SizedBox(height: 10),
               Row(
                 children: [
                   Expanded(
                     child: NavigationCard(
                       icon: Icons.auto_awesome_outlined,
-                      title: 'Il mio mese',
-                      subtitle: 'Obiettivi, idee e budget',
+                      title: strings.v100MyMonth,
+                      subtitle: strings.v100MyMonthSubtitle,
                       onTap: () => Navigator.push(
                         context,
                         MaterialPageRoute(builder: (_) => MonthScreen(store: store)),
@@ -391,8 +387,8 @@ class HomeScreen extends StatelessWidget {
                   Expanded(
                     child: NavigationCard(
                       icon: Icons.insights_outlined,
-                      title: 'Il mio anno',
-                      subtitle: 'Ricordi e progressi',
+                      title: strings.v100MyYear,
+                      subtitle: strings.v100MyYearSubtitle,
                       onTap: () => Navigator.push(
                         context,
                         MaterialPageRoute(builder: (_) => YearScreen(store: store)),
@@ -403,66 +399,12 @@ class HomeScreen extends StatelessWidget {
               ),
               const SizedBox(height: 12),
               NavigationCard(
-                icon: Icons.shopping_cart_outlined,
-                title: 'Lista della spesa',
-                subtitle: store.activeShoppingItems.isEmpty
-                    ? 'Privata o condivisa in Noi ♡'
-                    : '${store.activeShoppingItems.length} da comprare · privata o Noi ♡',
+                icon: Icons.apps_outlined,
+                title: strings.v100Explore,
+                subtitle: strings.v100ExploreSubtitle,
                 onTap: () => Navigator.push(
                   context,
-                  MaterialPageRoute(
-                    builder: (_) => ShoppingListScreen(store: store),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 12),
-              NavigationCard(
-                icon: Icons.sports_outlined,
-                title: 'Allenamento',
-                subtitle: store.workoutSessions.isEmpty
-                    ? 'Sessioni multisport e schede'
-                    : '${store.workoutSessions.length} sessioni · ${store.workoutPlans.length} schede',
-                onTap: () => Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => WorkoutScreen(store: store),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 12),
-              NavigationCard(
-                icon: Icons.photo_library_outlined,
-                title: 'I miei ricordi',
-                subtitle: 'Note, foto e sketch del diario',
-                onTap: () => Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => DiaryMemoriesScreen(store: store),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 12),
-              NavigationCard(
-                icon: Icons.people_outline,
-                title: 'Persone importanti',
-                subtitle: 'Relazioni, compleanni e ricordi collegati',
-                onTap: () => Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => PeopleScreen(store: store),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 12),
-              NavigationCard(
-                icon: Icons.hub_outlined,
-                title: strings.lifeEcosystemTitle,
-                subtitle: strings.lifeEcosystemSubtitle,
-                onTap: () => Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => LifeEcosystemScreen(store: store),
-                  ),
+                  MaterialPageRoute(builder: (_) => ExploreScreen(store: store)),
                 ),
               ),
             ],
@@ -496,11 +438,11 @@ Future<void> _handleIncomingShareCapture(
             ),
             title: Text(
               capture.hasImage
-                  ? 'Foto condivisa con Anna\'s Diary'
-                  : 'Contenuto condiviso con Anna\'s Diary',
+                  ? AnnaStrings.of(context).v100SharedPhotoTitle
+                  : AnnaStrings.of(context).v100SharedContentTitle,
             ),
             subtitle: preview.isEmpty
-                ? const Text('Scegli dove salvarlo.')
+                ? Text(AnnaStrings.of(context).v100ChooseDestination)
                 : Text(
                     preview,
                     maxLines: 3,
@@ -510,23 +452,23 @@ Future<void> _handleIncomingShareCapture(
           if (!capture.hasImage)
             ListTile(
               leading: const Icon(Icons.inbox_outlined),
-              title: const Text('Salva in Inbox'),
-              subtitle: const Text('Da organizzare in un secondo momento.'),
+              title: Text(AnnaStrings.of(context).v100SaveInbox),
+              subtitle: Text(AnnaStrings.of(context).v100OrganizeLater),
               onTap: () => Navigator.pop(sheetContext, 'inbox'),
             ),
           ListTile(
             leading: const Icon(Icons.auto_stories_outlined),
-            title: const Text('Salva nel diario di oggi'),
+            title: Text(AnnaStrings.of(context).v100SaveTodayDiary),
             subtitle: Text(
               capture.hasImage
-                  ? 'Importa la foto come ricordo del giorno.'
-                  : 'Crea una normale nota del diario.',
+                  ? AnnaStrings.of(context).v100SharedPhotoDiaryDescription
+                  : AnnaStrings.of(context).v100SharedTextDiaryDescription,
             ),
             onTap: () => Navigator.pop(sheetContext, 'diary'),
           ),
           ListTile(
             leading: const Icon(Icons.close),
-            title: const Text('Annulla'),
+            title: Text(AnnaStrings.of(context).cancel),
             onTap: () => Navigator.pop(sheetContext, 'cancel'),
           ),
         ],
@@ -560,7 +502,7 @@ Future<void> _handleIncomingShareCapture(
       );
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Contenuto condiviso salvato in Inbox.')),
+          SnackBar(content: Text(AnnaStrings.of(context).v100SharedSavedInbox)),
         );
       }
     }
@@ -576,7 +518,7 @@ Future<void> _handleIncomingShareCapture(
     await _saveUnifiedCaptureText(store, day, text);
     if (context.mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Contenuto aggiunto al diario di oggi.')),
+        SnackBar(content: Text(AnnaStrings.of(context).v100SharedSavedDiary)),
       );
     }
     return;
@@ -588,7 +530,7 @@ Future<void> _handleIncomingShareCapture(
   if (rawBytes == null || rawBytes.isEmpty) {
     if (context.mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Non riesco a leggere la foto condivisa.')),
+        SnackBar(content: Text(AnnaStrings.of(context).v100SharedPhotoReadFailed)),
       );
     }
     return;
@@ -611,7 +553,7 @@ Future<void> _handleIncomingShareCapture(
   );
   if (context.mounted) {
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Foto condivisa salvata nel diario di oggi.')),
+      SnackBar(content: Text(AnnaStrings.of(context).v100SharedPhotoSaved)),
     );
   }
 }
@@ -652,43 +594,45 @@ class _HomeSyncStatusCard extends StatelessWidget {
 
         if (!cloud.configured) {
           icon = Icons.cloud_off_outlined;
-          title = 'Solo sul dispositivo';
-          subtitle = 'Il cloud non è configurato in questa build.';
+          title = AnnaStrings.of(context).v100DeviceOnly;
+          subtitle = AnnaStrings.of(context).v100CloudNotConfigured;
         } else if (!cloud.signedIn) {
           icon = Icons.cloud_outlined;
-          title = 'Cloud non connesso';
-          subtitle = 'L’agenda continua a funzionare offline.';
+          title = AnnaStrings.of(context).v100CloudDisconnected;
+          subtitle = AnnaStrings.of(context).v100OfflineStillWorks;
         } else if (cloud.state == CloudConnectionState.syncing) {
           icon = Icons.sync;
-          title = 'Sincronizzazione in corso';
+          title = AnnaStrings.of(context).v100Syncing;
           subtitle = pending == 0
-              ? 'Controllo le modifiche sui tuoi dispositivi.'
-              : '$pending modifiche locali sono al sicuro in coda.';
+              ? AnnaStrings.of(context).v100CheckingChanges
+              : AnnaStrings.of(context).v100PendingSafeQueue(pending);
         } else if (cloud.state == CloudConnectionState.error) {
           icon = Icons.cloud_off_outlined;
           title = pending == 0
-              ? 'Cloud temporaneamente non disponibile'
-              : 'Offline · dati al sicuro';
+              ? AnnaStrings.of(context).v100CloudTemporarilyUnavailable
+              : AnnaStrings.of(context).v100OfflineDataSafe;
           subtitle = pending == 0
-              ? 'Riproverò alla riapertura o alla prossima sincronizzazione.'
-              : '$pending modifiche verranno inviate quando torna la rete.';
+              ? AnnaStrings.of(context).v100RetrySyncLater
+              : AnnaStrings.of(context).v100PendingWhenOnline(pending);
         } else if (store.hasSharedSyncError) {
           icon = Icons.sync_problem_outlined;
-          title = 'Noi ♡ da risincronizzare';
+          title = AnnaStrings.of(context).v100NoiNeedsResync;
           subtitle = pending == 0
-              ? 'L’ultima sincronizzazione condivisa non è riuscita. Riproverò automaticamente.'
-              : '$pending modifiche restano al sicuro sul dispositivo e verranno ritentate.';
+              ? AnnaStrings.of(context).v100SharedSyncRetry
+              : AnnaStrings.of(context).v100PendingLocalRetry(pending);
         } else if (pending > 0) {
           icon = Icons.cloud_upload_outlined;
-          title = '$pending modifiche in attesa';
-          subtitle =
-              'Restano salvate sul dispositivo finché non vengono sincronizzate.';
+          title = AnnaStrings.of(context).v100PendingChanges(pending);
+          subtitle = AnnaStrings.of(context).v100PendingStayLocal;
         } else {
           icon = Icons.cloud_done_outlined;
-          title = 'Tutto sincronizzato';
+          title = AnnaStrings.of(context).v100AllSynced;
           subtitle = cloud.lastSyncAt == null
-              ? 'Nessuna modifica in attesa.'
-              : 'Ultimo controllo ${DateFormat('HH:mm', 'it_IT').format(cloud.lastSyncAt!)}.';
+              ? AnnaStrings.of(context).v100NothingPending
+              : AnnaStrings.of(context).v100LastCheck(
+                  DateFormat('HH:mm', AnnaStrings.intlLocale(context))
+                      .format(cloud.lastSyncAt!),
+                );
         }
 
         return Material(
@@ -773,21 +717,21 @@ class _HomeFocusCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     final nextText = next == null
-        ? 'Nessun appuntamento in arrivo'
+        ? AnnaStrings.of(context).v100NoUpcoming
         : hideDetails
-            ? 'Prossimo impegno programmato'
-            : '${DateFormat('EEE d MMM', 'it_IT').format(next!.date)} · '
+            ? AnnaStrings.of(context).v100NextScheduled
+            : '${DateFormat('EEE d MMM', AnnaStrings.intlLocale(context)).format(next!.date)} · '
                 '${formatTime(next!.start!)} · ${next!.title}'
                 '${next!.isShared ? ' · Noi ♡' : ''}';
 
     String birthdayText;
     if (nextBirthday == null) {
-      birthdayText = 'Nessun compleanno salvato';
+      birthdayText = AnnaStrings.of(context).v100NoBirthday;
     } else if (AgendaStore.sameDay(nextBirthday!.date, briefing.date)) {
-      birthdayText = 'Oggi · ${nextBirthday!.birthday.name} 🎂';
+      birthdayText = AnnaStrings.of(context).v100TodayBirthday(nextBirthday!.birthday.name);
     } else {
       birthdayText =
-          '${DateFormat('d MMM', 'it_IT').format(nextBirthday!.date)} · '
+          '${DateFormat('d MMM', AnnaStrings.intlLocale(context)).format(nextBirthday!.date)} · '
           '${nextBirthday!.birthday.name}';
     }
 
@@ -803,15 +747,15 @@ class _HomeFocusCard extends StatelessWidget {
         children: [
           Row(
             children: [
-              const Expanded(
+              Expanded(
                 child: Text(
-                  'Oggi in breve',
-                  style: TextStyle(fontWeight: FontWeight.w900, fontSize: 17),
+                  AnnaStrings.of(context).v100TodayBrief,
+                  style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 17),
                 ),
               ),
               TextButton(
                 onPressed: onOpenDay,
-                child: const Text('Apri giornata'),
+                child: Text(AnnaStrings.of(context).openDay),
               ),
             ],
           ),
@@ -867,28 +811,28 @@ class _HomeFocusCard extends StatelessWidget {
             children: [
               _MiniPill(
                 icon: Icons.today_outlined,
-                text: '${briefing.appointmentCount} impegni oggi',
+                text: AnnaStrings.of(context).v100CommitmentsToday(briefing.appointmentCount),
               ),
               _MiniPill(
                 icon: Icons.check_circle_outline,
-                text: '${briefing.pendingTaskCount} da fare oggi',
+                text: AnnaStrings.of(context).v100TasksToday(briefing.pendingTaskCount),
               ),
               _MiniPill(
                 icon: briefing.hasJournalContent
                     ? Icons.auto_stories
                     : Icons.auto_stories_outlined,
                 text: briefing.hasJournalContent
-                    ? 'Diario iniziato'
-                    : 'Diario da iniziare',
+                    ? AnnaStrings.of(context).v100DiaryStarted
+                    : AnnaStrings.of(context).v100DiaryToStart,
               ),
               if (globalPendingTasks > briefing.pendingTaskCount)
                 _MiniPill(
                   icon: Icons.task_alt_outlined,
-                  text: '$globalPendingTasks task aperti',
+                  text: AnnaStrings.of(context).v100OpenTasks(globalPendingTasks),
                 ),
               ActionChip(
                 avatar: const Icon(Icons.inbox_outlined, size: 17),
-                label: Text('$inboxCount in Inbox'),
+                label: Text(AnnaStrings.of(context).v100InboxCount(inboxCount)),
                 onPressed: onOpenInbox,
               ),
             ],
@@ -1134,8 +1078,8 @@ class _TodayWellbeingCard extends StatelessWidget {
               children: [
                 Text(
                   journal.mood == null
-                      ? 'Come sta andando la giornata?'
-                      : 'Oggi: ${journal.mood!.label}',
+                      ? AnnaStrings.of(context).v100HowDayGoing
+                      : AnnaStrings.of(context).v100MoodToday(journal.mood!),
                   style: TextStyle(
                     color: accent.foreground,
                     fontWeight: FontWeight.w800,
@@ -1149,22 +1093,22 @@ class _TodayWellbeingCard extends StatelessWidget {
                   children: [
                     Text(
                       totalHabits == 0
-                          ? 'Nessuna abitudine'
-                          : '$doneHabits/$totalHabits abitudini',
+                          ? AnnaStrings.of(context).v100NoHabits
+                          : AnnaStrings.of(context).v100HabitsProgress(doneHabits, totalHabits),
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
                             color: accent.secondaryForeground,
                           ),
                     ),
                     Text(
-                      '$gratitudeCount/3 cose belle',
+                      AnnaStrings.of(context).v100GratitudeProgress(gratitudeCount),
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
                             color: accent.secondaryForeground,
                           ),
                     ),
                     Text(
                       journal.blocks.isEmpty
-                          ? 'Nessun ricordo'
-                          : '${journal.blocks.length} ricordi',
+                          ? AnnaStrings.of(context).v100NoMemory
+                          : AnnaStrings.of(context).v100MemoryCount(journal.blocks.length),
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
                             color: accent.secondaryForeground,
                           ),
@@ -1181,289 +1125,6 @@ class _TodayWellbeingCard extends StatelessWidget {
         ],
           ),
         ),
-      ),
-    );
-  }
-}
-
-enum _SearchHitType { event, journal, month }
-
-class _SearchHit {
-  final _SearchHitType type;
-  final String title;
-  final String subtitle;
-  final DateTime date;
-  final AgendaItem? item;
-
-  const _SearchHit({
-    required this.type,
-    required this.title,
-    required this.subtitle,
-    required this.date,
-    this.item,
-  });
-}
-
-class SearchScreen extends StatefulWidget {
-  final AgendaStore store;
-
-  const SearchScreen({super.key, required this.store});
-
-  @override
-  State<SearchScreen> createState() => _SearchScreenState();
-}
-
-class _SearchScreenState extends State<SearchScreen> {
-  String query = '';
-  AgendaCategory? category;
-
-  List<_SearchHit> _results() {
-    final q = query.trim().toLowerCase();
-    if (q.isEmpty) return const [];
-
-    final hits = <_SearchHit>[];
-
-    for (final item in widget.store.items) {
-      if (category != null && item.category != category) continue;
-      final haystack = [
-        item.title,
-        item.note,
-        item.category.label,
-        DateFormat('d MMMM yyyy', 'it_IT').format(item.date),
-      ].join(' ').toLowerCase();
-
-      if (haystack.contains(q)) {
-        hits.add(
-          _SearchHit(
-            type: _SearchHitType.event,
-            title: item.title,
-            subtitle:
-                '${DateFormat('d MMMM yyyy', 'it_IT').format(item.date)} · ${item.category.label}',
-            date: item.date,
-            item: item,
-          ),
-        );
-      }
-    }
-
-    if (category == null) {
-      for (final entry in widget.store.journals.entries) {
-        final date = DateTime.tryParse(entry.key);
-        if (date == null) continue;
-        final journal = entry.value;
-        final haystack = [
-          journal.beautiful,
-          journal.note,
-          ...journal.gratitude,
-          journal.mood?.label ?? '',
-        ].join(' ').toLowerCase();
-
-        if (haystack.contains(q)) {
-          hits.add(
-            _SearchHit(
-              type: _SearchHitType.journal,
-              title: journal.beautiful.trim().isNotEmpty
-                  ? journal.beautiful.trim()
-                  : 'Diario del ${DateFormat('d MMMM', 'it_IT').format(date)}',
-              subtitle:
-                  'Diario · ${DateFormat('d MMMM yyyy', 'it_IT').format(date)}',
-              date: date,
-            ),
-          );
-        }
-      }
-
-      for (final entry in widget.store.months.entries) {
-        final parts = entry.key.split('-');
-        if (parts.length != 2) continue;
-        final year = int.tryParse(parts[0]);
-        final month = int.tryParse(parts[1]);
-        if (year == null || month == null) continue;
-        final data = entry.value;
-        final haystack = [
-          data.intention,
-          data.monthWord,
-          data.selfCare,
-          ...data.goals,
-          ...data.books,
-          ...data.films,
-          ...data.hobbies,
-          ...data.wishes,
-          ...data.ideas,
-          data.bestMoment,
-          data.lesson,
-          data.challenge,
-          data.nextMonth,
-          data.reflection,
-        ].join(' ').toLowerCase();
-
-        if (haystack.contains(q)) {
-          final date = DateTime(year, month);
-          hits.add(
-            _SearchHit(
-              type: _SearchHitType.month,
-              title:
-                  _cap(DateFormat('MMMM yyyy', 'it_IT').format(date)),
-              subtitle: data.intention.trim().isEmpty
-                  ? 'Pagina del mese'
-                  : data.intention.trim(),
-              date: date,
-            ),
-          );
-        }
-      }
-    }
-
-    hits.sort((a, b) => b.date.compareTo(a.date));
-    return hits;
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final results = _results();
-
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text(
-          'Cerca nell’agenda',
-          style: TextStyle(fontWeight: FontWeight.w800),
-        ),
-      ),
-      body: Column(
-        children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(14, 4, 14, 8),
-            child: TextField(
-              autofocus: true,
-              onChanged: (value) => setState(() => query = value),
-              decoration: InputDecoration(
-                hintText: 'Cerca appuntamenti, note, ricordi...',
-                prefixIcon: const Icon(Icons.search),
-                filled: true,
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(18),
-                  borderSide: BorderSide.none,
-                ),
-              ),
-            ),
-          ),
-          SizedBox(
-            height: 46,
-            child: ListView(
-              padding: const EdgeInsets.symmetric(horizontal: 14),
-              scrollDirection: Axis.horizontal,
-              children: [
-                Padding(
-                  padding: const EdgeInsets.only(right: 7),
-                  child: ChoiceChip(
-                    selected: category == null,
-                    label: const Text('Tutto'),
-                    onSelected: (_) => setState(() => category = null),
-                  ),
-                ),
-                ...AgendaCategory.values.map(
-                  (value) => Padding(
-                    padding: const EdgeInsets.only(right: 7),
-                    child: ChoiceChip(
-                      selected: category == value,
-                      avatar: Icon(
-                        value.icon,
-                        size: 16,
-                        color: value.color,
-                      ),
-                      label: Text(value.label),
-                      onSelected: (_) => setState(() {
-                        category = category == value ? null : value;
-                      }),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 6),
-          Expanded(
-            child: query.trim().isEmpty
-                ? const Center(
-                    child: Padding(
-                      padding: EdgeInsets.all(32),
-                      child: Text(
-                        'Scrivi qualcosa: i risultati compariranno mentre digiti.',
-                        textAlign: TextAlign.center,
-                      ),
-                    ),
-                  )
-                : results.isEmpty
-                    ? const Center(child: Text('Nessun risultato.'))
-                    : ListView.separated(
-                        padding: const EdgeInsets.fromLTRB(14, 8, 14, 40),
-                        itemCount: results.length,
-                        separatorBuilder: (_, __) =>
-                            const SizedBox(height: 8),
-                        itemBuilder: (context, index) {
-                          final hit = results[index];
-                          final icon = switch (hit.type) {
-                            _SearchHitType.event => Icons.event_outlined,
-                            _SearchHitType.journal => Icons.menu_book_outlined,
-                            _SearchHitType.month =>
-                              Icons.calendar_month_outlined,
-                          };
-
-                          return Card(
-                            child: ListTile(
-                              leading: CircleAvatar(child: Icon(icon)),
-                              title: Text(
-                                hit.title,
-                                maxLines: 2,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                              subtitle: Text(
-                                hit.subtitle,
-                                maxLines: 2,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                              trailing:
-                                  const Icon(Icons.chevron_right),
-                              onTap: () async {
-                                if (hit.type == _SearchHitType.event) {
-                                  await openItemEditor(
-                                    context,
-                                    widget.store,
-                                    hit.date,
-                                    existing: hit.item,
-                                  );
-                                } else if (hit.type ==
-                                    _SearchHitType.journal) {
-                                  if (!context.mounted) return;
-                                  await Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (_) => PlannerScreen(
-                                        store: widget.store,
-                                        initialDate: hit.date,
-                                      ),
-                                    ),
-                                  );
-                                } else {
-                                  if (!context.mounted) return;
-                                  await Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (_) => MonthScreen(
-                                        store: widget.store,
-                                        initialMonth: hit.date,
-                                      ),
-                                    ),
-                                  );
-                                }
-                                if (mounted) setState(() {});
-                              },
-                            ),
-                          );
-                        },
-                      ),
-          ),
-        ],
       ),
     );
   }

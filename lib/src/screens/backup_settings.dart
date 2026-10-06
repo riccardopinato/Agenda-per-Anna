@@ -26,6 +26,7 @@ class _BackupScreenState extends State<BackupScreen> {
   }
 
   Future<void> _exportBackup() async {
+    final strings = AnnaStrings.of(context);
     setState(() => busy = true);
     try {
       final bytes = await widget.store.createBackupZip();
@@ -36,14 +37,14 @@ class _BackupScreenState extends State<BackupScreen> {
       );
       _message(
         ok
-            ? 'Backup completo ZIP salvato.'
-            : 'Salvataggio annullato o non riuscito.',
+            ? strings.v100BackupSaved
+            : strings.v100ExportCancelled,
       );
     } catch (error) {
       _message(
         error is FormatException
             ? error.message.toString()
-            : 'Non è stato possibile creare il backup completo.',
+            : strings.v100BackupCreateFailed,
       );
     } finally {
       if (mounted) setState(() => busy = false);
@@ -51,6 +52,7 @@ class _BackupScreenState extends State<BackupScreen> {
   }
 
   Future<void> _exportOpenArchive() async {
+    final strings = AnnaStrings.of(context);
     setState(() => busy = true);
     try {
       final bytes = await widget.store.createOpenExportZip();
@@ -63,14 +65,14 @@ class _BackupScreenState extends State<BackupScreen> {
       );
       _message(
         ok
-            ? 'Archivio aperto esportato.'
-            : 'Esportazione annullata o non riuscita.',
+            ? strings.v100OpenExportSaved
+            : strings.v100OpenExportCancelled,
       );
     } catch (error) {
       _message(
         error is FormatException
             ? error.message.toString()
-            : 'Non è stato possibile creare l\'archivio aperto.',
+            : strings.v100OpenExportFailed,
       );
     } finally {
       if (mounted) setState(() => busy = false);
@@ -78,6 +80,7 @@ class _BackupScreenState extends State<BackupScreen> {
   }
 
   Future<void> _runSafetyAudit() async {
+    final strings = AnnaStrings.of(context);
     setState(() => busy = true);
     try {
       final report = await widget.store.auditDataSafety();
@@ -86,18 +89,19 @@ class _BackupScreenState extends State<BackupScreen> {
       _message(
         report.integrityHealthy
             ? report.hasCleanupCandidates
-                ? 'Integrità OK · ${report.orphanMediaIds.length} media non più collegati.'
-                : 'Integrità locale verificata: nessun problema rilevato.'
-            : 'Verifica completata: sono presenti elementi da controllare.',
+                ? strings.v100IntegrityOrphans(report.orphanMediaIds.length)
+                : strings.v100IntegrityClean
+            : strings.v100IntegrityNeedsReview,
       );
     } catch (_) {
-      _message('Non è stato possibile completare la verifica integrità.');
+      _message(strings.v100IntegrityFailed);
     } finally {
       if (mounted) setState(() => busy = false);
     }
   }
 
   Future<void> _exportReadable() async {
+    final strings = AnnaStrings.of(context);
     setState(() => busy = true);
     try {
       final ok = await BackupFileService.instance.saveTextExport(
@@ -106,8 +110,8 @@ class _BackupScreenState extends State<BackupScreen> {
       );
       _message(
         ok
-            ? 'Copia leggibile esportata.'
-            : 'Esportazione annullata o non riuscita.',
+            ? strings.v100ReadableExportSaved
+            : strings.v100OpenExportCancelled,
       );
     } finally {
       if (mounted) setState(() => busy = false);
@@ -115,6 +119,7 @@ class _BackupScreenState extends State<BackupScreen> {
   }
 
   Future<void> _importBackup() async {
+    final strings = AnnaStrings.of(context);
     setState(() => busy = true);
     PickedBackupFile? picked;
     try {
@@ -141,7 +146,7 @@ class _BackupScreenState extends State<BackupScreen> {
       _message(
         error is FormatException
             ? error.message.toString()
-            : 'Il file selezionato non è un backup valido.',
+            : strings.v100InvalidBackup,
       );
       return;
     }
@@ -149,50 +154,55 @@ class _BackupScreenState extends State<BackupScreen> {
     final action = await showDialog<String>(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        title: const Text('Ripristinare questo backup?'),
+        title: Text(strings.v100RestoreBackupQuestion),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Creato il ${DateFormat('d MMMM yyyy, HH:mm', 'it_IT').format(summary.exportedAt)}',
+              strings.v100BackupCreatedAt(
+                DateFormat(
+                  'd MMMM yyyy, HH:mm',
+                  AnnaStrings.resolveLocale(Locale(strings.languageCode)).languageCode,
+                ).format(summary.exportedAt),
+              ),
             ),
             const SizedBox(height: 12),
-            Text('• ${summary.itemCount} impegni e attività'),
-            Text('• ${summary.journalCount} giorni di diario'),
-            Text('• ${summary.monthCount} pagine mensili'),
-            Text('• ${summary.weekCount} settimane'),
-            Text('• ${summary.habitCount} abitudini'),
+            Text(strings.v100BackupItems(summary.itemCount)),
+            Text(strings.v100BackupJournals(summary.journalCount)),
+            Text(strings.v100BackupMonths(summary.monthCount)),
+            Text(strings.v100BackupWeeks(summary.weekCount)),
+            Text(strings.v100BackupHabits(summary.habitCount)),
             if (summary.birthdayCount > 0)
-              Text('• ${summary.birthdayCount} compleanni'),
+              Text(strings.v100BackupBirthdays(summary.birthdayCount)),
             if (summary.trashCount > 0)
-              Text('• ${summary.trashCount} elementi nel Cestino'),
+              Text(strings.v100BackupTrash(summary.trashCount)),
             if (selectedBackup.isZip) ...[
               const SizedBox(height: 8),
-              const Text(
-                '• Media inclusi separatamente nel pacchetto ZIP',
-                style: TextStyle(fontWeight: FontWeight.w700),
+              Text(
+                strings.v100BackupMediaIncluded,
+                style: const TextStyle(fontWeight: FontWeight.w700),
               ),
             ],
             const SizedBox(height: 14),
-            const Text(
-              'Prima del ripristino verrà creato automaticamente un backup locale di sicurezza.',
-              style: TextStyle(fontWeight: FontWeight.w700),
+            Text(
+              strings.v100BackupSafetySnapshot,
+              style: const TextStyle(fontWeight: FontWeight.w700),
             ),
           ],
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(dialogContext),
-            child: const Text('Annulla'),
+            child: Text(strings.cancel),
           ),
           OutlinedButton(
             onPressed: () => Navigator.pop(dialogContext, 'merge'),
-            child: const Text('Unisci'),
+            child: Text(strings.v100Merge),
           ),
           FilledButton(
             onPressed: () => Navigator.pop(dialogContext, 'replace'),
-            child: const Text('Sostituisci tutto'),
+            child: Text(strings.v100ReplaceAll),
           ),
         ],
       ),
@@ -204,19 +214,18 @@ class _BackupScreenState extends State<BackupScreen> {
       final confirmed = await showDialog<bool>(
             context: context,
             builder: (dialogContext) => AlertDialog(
-              title: const Text('Conferma sostituzione'),
-              content: const Text(
-                'I dati attuali verranno sostituiti da quelli del backup. '
-                'Potrai tornare indietro usando il backup locale creato prima del ripristino.',
+              title: Text(strings.v100ConfirmReplace),
+              content: Text(
+                strings.v100ConfirmReplaceDescription,
               ),
               actions: [
                 TextButton(
                   onPressed: () => Navigator.pop(dialogContext, false),
-                  child: const Text('Annulla'),
+                  child: Text(strings.cancel),
                 ),
                 FilledButton(
                   onPressed: () => Navigator.pop(dialogContext, true),
-                  child: const Text('Ripristina'),
+                  child: Text(strings.v100Restore),
                 ),
               ],
             ),
@@ -240,35 +249,34 @@ class _BackupScreenState extends State<BackupScreen> {
       }
       _message(
         action == 'merge'
-            ? 'Backup unito ai dati presenti.'
-            : 'Backup ripristinato correttamente.',
+            ? strings.v100BackupMerged
+            : strings.v100BackupRestored,
       );
     } catch (_) {
-      _message(
-        'Ripristino non riuscito. I dati attuali non sono stati eliminati.',
-      );
+      _message(strings.v100RestoreFailedSafe);
     } finally {
       if (mounted) setState(() => busy = false);
     }
   }
 
   Future<void> _restoreSnapshot(LocalBackupSnapshot snapshot) async {
+    final strings = AnnaStrings.of(context);
     final confirmed = await showDialog<bool>(
           context: context,
           builder: (dialogContext) => AlertDialog(
-            title: const Text('Ripristinare questo backup locale?'),
+            title: Text(strings.v100RestoreLocalQuestion),
             content: Text(
               '${snapshot.label}\n'
-              '${DateFormat('d MMMM yyyy, HH:mm', 'it_IT').format(snapshot.createdAt)}',
+              '${DateFormat('d MMMM yyyy, HH:mm', AnnaStrings.resolveLocale(Locale(strings.languageCode)).languageCode).format(snapshot.createdAt)}',
             ),
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(dialogContext, false),
-                child: const Text('Annulla'),
+                child: Text(strings.cancel),
               ),
               FilledButton(
                 onPressed: () => Navigator.pop(dialogContext, true),
-                child: const Text('Ripristina'),
+                child: Text(strings.v100Restore),
               ),
             ],
           ),
@@ -279,7 +287,7 @@ class _BackupScreenState extends State<BackupScreen> {
     setState(() => busy = true);
     try {
       await widget.store.restoreLocalSnapshot(snapshot.id);
-      _message('Backup locale ripristinato.');
+      _message(strings.v100LocalBackupRestored);
     } finally {
       if (mounted) setState(() => busy = false);
     }
@@ -293,9 +301,9 @@ class _BackupScreenState extends State<BackupScreen> {
         final snapshots = widget.store.localSnapshots;
         return Scaffold(
           appBar: AppBar(
-            title: const Text(
-              'Backup e dati',
-              style: TextStyle(fontWeight: FontWeight.w800),
+            title: Text(
+              AnnaStrings.of(context).v100BackupData,
+              style: const TextStyle(fontWeight: FontWeight.w800),
             ),
           ),
           body: Stack(
@@ -314,22 +322,21 @@ class _BackupScreenState extends State<BackupScreen> {
                       ),
                       borderRadius: BorderRadius.circular(26),
                     ),
-                    child: const Column(
+                    child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Icon(Icons.shield_outlined, size: 30),
-                        SizedBox(height: 10),
+                        const Icon(Icons.shield_outlined, size: 30),
+                        const SizedBox(height: 10),
                         Text(
-                          'I ricordi restano tuoi',
-                          style: TextStyle(
+                          AnnaStrings.of(context).v100MemoriesStayYours,
+                          style: const TextStyle(
                             fontSize: 22,
                             fontWeight: FontWeight.w900,
                           ),
                         ),
-                        SizedBox(height: 5),
+                        const SizedBox(height: 5),
                         Text(
-                          'Crea una copia completa dell’agenda e conservala dove preferisci. '
-                          'Il backup ZIP include dati e media separati; i vecchi backup JSON restano importabili.',
+                          AnnaStrings.of(context).v100BackupHeroDescription,
                         ),
                       ],
                     ),
@@ -337,37 +344,33 @@ class _BackupScreenState extends State<BackupScreen> {
                   const SizedBox(height: 14),
                   _BackupActionCard(
                     icon: Icons.save_alt_outlined,
-                    title: 'Crea backup completo',
-                    subtitle:
-                        'Salva dati e media in un unico file .zip verificato, senza incorporare le foto in Base64 nel JSON.',
-                    buttonLabel: 'Salva backup',
+                    title: AnnaStrings.of(context).v100CreateFullBackup,
+                    subtitle: AnnaStrings.of(context).v100FullBackupDescription,
+                    buttonLabel: AnnaStrings.of(context).v100SaveBackup,
                     onPressed: busy ? null : _exportBackup,
                   ),
                   const SizedBox(height: 10),
                   _BackupActionCard(
                     icon: Icons.restore_outlined,
-                    title: 'Ripristina da file',
-                    subtitle:
-                        'Importa backup ZIP nuovi o JSON precedenti. Puoi unire i dati oppure sostituire tutto.',
-                    buttonLabel: 'Scegli backup',
+                    title: AnnaStrings.of(context).v100RestoreFromFile,
+                    subtitle: AnnaStrings.of(context).v100RestoreFromFileDescription,
+                    buttonLabel: AnnaStrings.of(context).v100ChooseBackup,
                     onPressed: busy ? null : _importBackup,
                   ),
                   const SizedBox(height: 10),
                   _BackupActionCard(
                     icon: Icons.folder_zip_outlined,
-                    title: 'Esporta archivio aperto',
-                    subtitle:
-                        'Crea un file ZIP leggibile senza Anna\'s Diary: README in Markdown, dati JSON strutturati, media separati e disegni in JSON aperto. Cestino, Vault e dati sensibili separati restano esclusi.',
-                    buttonLabel: 'Esporta archivio',
+                    title: AnnaStrings.of(context).v100OpenExport,
+                    subtitle: AnnaStrings.of(context).v100OpenExportDescription,
+                    buttonLabel: AnnaStrings.of(context).v100ExportArchive,
                     onPressed: busy ? null : _exportOpenArchive,
                   ),
                   const SizedBox(height: 10),
                   _BackupActionCard(
                     icon: Icons.verified_user_outlined,
-                    title: 'Verifica integrità locale',
-                    subtitle:
-                        'Controlla media mancanti o corrotti, file non più collegati, warning dello storage e modifiche cloud ancora in attesa.',
-                    buttonLabel: 'Avvia verifica',
+                    title: AnnaStrings.of(context).v100VerifyIntegrity,
+                    subtitle: AnnaStrings.of(context).v100VerifyIntegrityDescription,
+                    buttonLabel: AnnaStrings.of(context).v100RunCheck,
                     onPressed: busy ? null : _runSafetyAudit,
                   ),
                   if (safetyReport != null) ...[
@@ -377,26 +380,25 @@ class _BackupScreenState extends State<BackupScreen> {
                   const SizedBox(height: 10),
                   _BackupActionCard(
                     icon: Icons.description_outlined,
-                    title: 'Esporta copia leggibile',
-                    subtitle:
-                        'Crea un file .txt con impegni, diario e pagine mensili da conservare o stampare.',
-                    buttonLabel: 'Esporta TXT',
+                    title: AnnaStrings.of(context).v100ReadableExport,
+                    subtitle: AnnaStrings.of(context).v100ReadableExportDescription,
+                    buttonLabel: AnnaStrings.of(context).v100ExportTxt,
                     onPressed: busy ? null : _exportReadable,
                   ),
                   const SizedBox(height: 20),
                   Row(
                     children: [
-                      const Expanded(
+                      Expanded(
                         child: Text(
-                          'Backup locali di sicurezza',
-                          style: TextStyle(
+                          AnnaStrings.of(context).v100LocalSafetyBackups,
+                          style: const TextStyle(
                             fontWeight: FontWeight.w900,
                             fontSize: 18,
                           ),
                         ),
                       ),
                       IconButton(
-                        tooltip: 'Crea backup locale',
+                        tooltip: AnnaStrings.of(context).v100CreateLocalBackup,
                         onPressed: busy
                             ? null
                             : () => widget.store.createLocalSnapshot(),
@@ -405,15 +407,13 @@ class _BackupScreenState extends State<BackupScreen> {
                     ],
                   ),
                   Text(
-                    'L’app conserva fino a 5 copie locali e ne crea una automaticamente circa ogni 6 ore di utilizzo. '
-                    'Queste copie restano sul dispositivo e vengono perse se l’app viene disinstallata: '
-                    'per una copia davvero sicura usa anche “Crea backup completo”.',
+                    AnnaStrings.of(context).v100LocalBackupsDescription,
                     style: Theme.of(context).textTheme.bodySmall,
                   ),
                   const SizedBox(height: 10),
                   if (snapshots.isEmpty)
-                    const SimpleCard(
-                      child: Text('Nessun backup locale disponibile.'),
+                    SimpleCard(
+                      child: Text(AnnaStrings.of(context).v100NoLocalBackups),
                     )
                   else
                     ...snapshots.map(
@@ -430,14 +430,14 @@ class _BackupScreenState extends State<BackupScreen> {
                           subtitle: Text(
                             DateFormat(
                               'd MMMM yyyy, HH:mm',
-                              'it_IT',
+                              AnnaStrings.intlLocale(context),
                             ).format(snapshot.createdAt),
                           ),
                           onTap: busy
                               ? null
                               : () => _restoreSnapshot(snapshot),
                           trailing: IconButton(
-                            tooltip: 'Elimina backup',
+                            tooltip: AnnaStrings.of(context).v100DeleteBackup,
                             onPressed: busy
                                 ? null
                                 : () => widget.store
@@ -476,19 +476,19 @@ class _DataSafetyCard extends StatelessWidget {
     final scheme = Theme.of(context).colorScheme;
     final healthy = report.integrityHealthy;
     final details = <String>[
-      '${report.referencedMediaCount} media collegati',
-      '${report.storedMediaCount} media locali',
+      AnnaStrings.of(context).v100MediaReferenced(report.referencedMediaCount),
+      AnnaStrings.of(context).v100MediaStored(report.storedMediaCount),
       if (report.missingMediaIds.isNotEmpty)
-        '${report.missingMediaIds.length} mancanti',
+        AnnaStrings.of(context).v100MediaMissing(report.missingMediaIds.length),
       if (report.corruptMediaIds.isNotEmpty)
-        '${report.corruptMediaIds.length} corrotti',
+        AnnaStrings.of(context).v100MediaCorrupt(report.corruptMediaIds.length),
       if (report.orphanMediaIds.isNotEmpty)
-        '${report.orphanMediaIds.length} non più collegati',
+        AnnaStrings.of(context).v100MediaOrphan(report.orphanMediaIds.length),
       if (report.unreadableStorageKeys.isNotEmpty)
-        '${report.unreadableStorageKeys.length} sezioni storage non leggibili',
+        AnnaStrings.of(context).v100UnreadableStorage(report.unreadableStorageKeys.length),
       if (report.pendingCloudChanges > 0)
-        '${report.pendingCloudChanges} modifiche cloud in attesa',
-      '${report.localSnapshotCount} backup locali',
+        AnnaStrings.of(context).v100PendingCloud(report.pendingCloudChanges),
+      AnnaStrings.of(context).v100LocalSnapshotCount(report.localSnapshotCount),
     ];
 
     return Card(
@@ -504,7 +504,7 @@ class _DataSafetyCard extends StatelessWidget {
           ),
         ),
         title: Text(
-          healthy ? 'Integrità dati OK' : 'Controllo dati richiesto',
+          healthy ? AnnaStrings.of(context).v100IntegrityOk : AnnaStrings.of(context).v100IntegrityReview,
           style: const TextStyle(fontWeight: FontWeight.w900),
         ),
         subtitle: Text(details.join(' · ')),
@@ -639,22 +639,21 @@ class _NotificationSettingsCardState
   }
 
   Future<void> _testLocal() async {
+    final strings = AnnaStrings.of(context);
     await _runBusy(() async {
       final result = await NotificationService.instance.runLocalDiagnostic();
       await _refresh();
 
       final message = result.ok
-          ? 'Test locale OK: una notifica è stata inviata subito e un '
-              'promemoria di controllo arriverà tra '
-              '${result.scheduledDelaySeconds} secondi.'
+          ? strings.v100LocalTestOk(result.scheduledDelaySeconds)
           : [
               if (!result.permissionGranted)
-                'Permesso notifiche non concesso.',
+                strings.v100NotificationPermissionDenied,
               if (!result.health.notificationsEnabled)
-                'Notifiche bloccate a livello di sistema.',
+                strings.v100NotificationsSystemBlocked,
               if (!result.health.reminderChannelEnabled)
-                'Canale “Promemoria” disattivato nelle impostazioni Android.',
-              if (result.error != null) 'Errore: ${result.error}',
+                strings.v100ReminderChannelOff,
+              if (result.error != null) strings.v100Error(result.error!),
             ].join(' ');
 
       if (mounted) {
@@ -668,6 +667,7 @@ class _NotificationSettingsCardState
   }
 
   Future<void> _testPush() async {
+    final strings = AnnaStrings.of(context);
     await _runBusy(() async {
       String message;
       bool ok = false;
@@ -681,18 +681,15 @@ class _NotificationSettingsCardState
             (result['removed_invalid_tokens'] as num?)?.toInt() ?? 0;
         ok = delivered > 0 && failed == 0;
         message = delivered > 0
-            ? 'Firebase OK: $delivered consegna/e su $devices dispositivo/i'
-                '${removed > 0 ? ' · $removed token obsoleti rimossi' : ''}.'
+            ? strings.v100FirebaseOk(delivered, devices, removed)
             : failed > 0
-                ? 'Firebase ha raggiunto il backend ma $failed consegna/e '
-                    'sono fallite. Controlla la diagnostica sotto.'
-                : 'Backend raggiunto, ma nessuna consegna: '
-                    '$devices dispositivo/i registrati.';
+                ? strings.v100FirebaseFailed(failed)
+                : strings.v100NoPushDelivery(devices);
       } catch (error) {
         await _refresh();
         final raw = error.toString().replaceAll(RegExp(r'\s+'), ' ').trim();
         final compact = raw.length > 180 ? '${raw.substring(0, 180)}…' : raw;
-        message = 'Test Firebase fallito: $compact';
+        message = strings.v100FirebaseTestFailed(compact);
       }
 
       if (mounted) {
@@ -706,6 +703,7 @@ class _NotificationSettingsCardState
   }
 
   Future<void> _enableWebPush() async {
+    final strings = AnnaStrings.of(context);
     await _runBusy(() async {
       final status = await WebPushService.instance.enable();
       if (status.ready) {
@@ -714,15 +712,14 @@ class _NotificationSettingsCardState
       await _refresh();
 
       final message = status.ready
-          ? 'Push PWA attive: questo dispositivo è registrato.'
+          ? strings.v100WebPushActive
           : status.isIos && !status.installedPwa
-              ? 'Su iPhone apri Anna\'s Diary dalla schermata Home: '
-                  'Safari non consente Web Push alla sola scheda del browser.'
+              ? strings.v100IosPwaRequired
               : status.permissionStatus == 'denied'
-                  ? 'Permesso notifiche negato dal browser. Riattivalo '
-                      'dalle impostazioni del sito/dispositivo.'
-                  : 'Web Push non ancora pronta: '
-                      '${status.lastError ?? 'controlla permesso e installazione PWA'}.';
+                  ? strings.v100BrowserPermissionDenied
+                  : strings.v100WebPushNotReady(
+                      status.lastError ?? strings.v100CheckPwaPermission,
+                    );
 
       if (mounted) {
         setState(() {
@@ -735,6 +732,7 @@ class _NotificationSettingsCardState
   }
 
   Future<void> _testWebPush() async {
+    final strings = AnnaStrings.of(context);
     await _runBusy(() async {
       String message;
       bool ok = false;
@@ -746,14 +744,12 @@ class _NotificationSettingsCardState
         final failed = (result['failed'] as num?)?.toInt() ?? 0;
         ok = webDelivered > 0 && failed == 0;
         message = ok
-            ? 'Web Push OK: notifica inviata a questa PWA '
-                '($webDelivered consegna/e, $delivered totali).'
-            : 'Test Web Push non confermato dal backend '
-                '(web: $webDelivered · fallite: $failed).';
+            ? strings.v100WebPushOk(webDelivered, delivered)
+            : strings.v100WebPushUnconfirmed(webDelivered, failed);
       } catch (error) {
         final raw = error.toString().replaceAll(RegExp(r'\s+'), ' ').trim();
         final compact = raw.length > 180 ? '${raw.substring(0, 180)}…' : raw;
-        message = 'Test Web Push fallito: $compact';
+        message = strings.v100WebPushTestFailed(compact);
       }
       await _refresh();
       if (mounted) {
@@ -776,6 +772,7 @@ class _NotificationSettingsCardState
   }
 
   Future<void> _repairAll() async {
+    final strings = AnnaStrings.of(context);
     await _runBusy(() async {
       if (kIsWeb) {
         final status = await WebPushService.instance.enable();
@@ -785,9 +782,8 @@ class _NotificationSettingsCardState
         await _refresh();
         _snack(
           status.ready
-              ? 'Riparazione completata: Web Push PWA pronta.'
-              : 'Web Push non ancora pronta: verifica installazione PWA '
-                  'e permesso notifiche.',
+              ? strings.v100RepairWebReady
+              : strings.v100RepairWebNotReady,
         );
         return;
       }
@@ -808,9 +804,8 @@ class _NotificationSettingsCardState
               health?.sharedDeliveryReady == true);
       _snack(
         localOk && pushOk
-            ? 'Riparazione completata: notifiche pronte.'
-            : 'Riparazione completata, ma almeno un permesso/canale resta '
-                'bloccato. Apri “Impostazioni sistema” per il dettaglio.',
+            ? strings.v100RepairReady
+            : strings.v100RepairBlocked,
       );
     });
   }
@@ -867,14 +862,14 @@ class _NotificationSettingsCardState
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Row(
+          Row(
             children: [
-              Icon(Icons.notifications_active_outlined),
-              SizedBox(width: 8),
+              const Icon(Icons.notifications_active_outlined),
+              const SizedBox(width: 8),
               Expanded(
                 child: Text(
-                  'Notifiche · diagnostica',
-                  style: TextStyle(
+                  AnnaStrings.of(context).v100NotificationDiagnostics,
+                  style: const TextStyle(
                     fontWeight: FontWeight.w900,
                     fontSize: 18,
                   ),
@@ -885,13 +880,8 @@ class _NotificationSettingsCardState
           const SizedBox(height: 5),
           Text(
             kIsWeb
-                ? 'Su iPhone/PWA verifica installazione nella Home, permesso '
-                    'notifiche, subscription Web Push e registrazione Supabase. '
-                    'Il test invia una push reale dal backend.'
-                : 'Verifica la catena completa: permesso Android, canali, '
-                    'programmazione locale, token FCM, registrazione Supabase e '
-                    'consegna Firebase. “Ripara notifiche” non aggira i canali '
-                    'disattivati manualmente: in quel caso usa Impostazioni sistema.',
+                ? AnnaStrings.of(context).v100NotificationWebDescription
+                : AnnaStrings.of(context).v100NotificationAndroidDescription,
             style: Theme.of(context).textTheme.bodySmall,
           ),
           const SizedBox(height: 12),
@@ -901,25 +891,25 @@ class _NotificationSettingsCardState
                   ? Icons.notifications_active
                   : Icons.install_mobile_outlined,
               title: webReady
-                  ? 'Push PWA e promemoria attivi'
-                  : 'Push PWA da attivare',
+                  ? AnnaStrings.of(context).v100PwaPushActive
+                  : AnnaStrings.of(context).v100PwaPushEnable,
               subtitle: web == null
-                  ? 'Diagnostica Web Push in caricamento...'
+                  ? AnnaStrings.of(context).v100WebDiagnosticsLoading
                   : [
                       web.isIos
                           ? (web.installedPwa
-                              ? 'PWA iPhone: installata'
-                              : 'PWA iPhone: aggiungi alla schermata Home')
-                          : 'Browser Web Push: supportato',
-                      'permesso: ${web.permissionStatus}',
+                              ? AnnaStrings.of(context).v100PwaIosInstalled
+                              : AnnaStrings.of(context).v100PwaIosAddHome)
+                          : AnnaStrings.of(context).v100BrowserWebPushSupported,
+                      AnnaStrings.of(context).v100PermissionStatus(web.permissionStatus),
                       web.subscribed
-                          ? 'subscription browser: presente'
-                          : 'subscription browser: assente',
+                          ? AnnaStrings.of(context).v100BrowserSubscriptionPresent
+                          : AnnaStrings.of(context).v100BrowserSubscriptionAbsent,
                       web.backendRegistered
-                          ? 'Supabase: registrata'
-                          : 'Supabase: non registrata',
+                          ? AnnaStrings.of(context).v100SupabaseRegistered
+                          : AnnaStrings.of(context).v100SupabaseNotRegistered,
                       if (web.lastError != null)
-                        'errore: ${web.lastError}',
+                        AnnaStrings.of(context).v100LastError(web.lastError!),
                     ].join(' · '),
               ok: webReady,
             ),
@@ -929,20 +919,20 @@ class _NotificationSettingsCardState
                 ? Icons.notifications_active
                 : Icons.notifications_off_outlined,
             title: !available
-                ? 'Servizio locale non inizializzato'
+                ? AnnaStrings.of(context).v100LocalServiceNotInitialized
                 : enabled
-                    ? 'Notifiche locali attive'
-                    : 'Notifiche locali bloccate',
+                    ? AnnaStrings.of(context).v100LocalNotificationsActive
+                    : AnnaStrings.of(context).v100LocalNotificationsBlocked,
             subtitle: available
                 ? [
-                    '$pending promemoria programmati',
+                    AnnaStrings.of(context).v100ScheduledReminders(pending),
                     reminderChannel
-                        ? 'canale Promemoria: attivo'
-                        : 'canale Promemoria: BLOCCATO',
+                        ? AnnaStrings.of(context).v100ReminderChannelActive
+                        : AnnaStrings.of(context).v100ReminderChannelBlocked,
                     if (local?.lastError != null)
-                      'ultimo errore: ${local!.lastError}',
+                      AnnaStrings.of(context).v100LastError(local!.lastError!),
                   ].join(' · ')
-                : 'Il plugin locale non è disponibile in questo momento.',
+                : AnnaStrings.of(context).v100LocalPluginUnavailable,
             ok: available && enabled && reminderChannel,
           ),
           if (!kIsWeb) const Divider(),
@@ -952,29 +942,29 @@ class _NotificationSettingsCardState
                 ? Icons.cloud_done_outlined
                 : Icons.cloud_off_outlined,
             title: !pushConfigured
-                ? 'Push Firebase non configurate'
+                ? AnnaStrings.of(context).v100FirebaseNotConfigured
                 : pushReady
-                    ? 'Push Noi ♡ registrate'
-                    : 'Push Noi ♡ da riparare',
+                    ? AnnaStrings.of(context).v100NoiPushRegistered
+                    : AnnaStrings.of(context).v100NoiPushRepair,
             subtitle: !pushConfigured
                 ? (kIsWeb
-                    ? 'Push remote non disponibili nella PWA Web/iPhone in questa versione.'
-                    : 'Questa build non contiene Firebase per la piattaforma corrente.')
+                    ? AnnaStrings.of(context).v100FirebaseUnavailable
+                    : AnnaStrings.of(context).v100FirebaseUnavailable)
                 : [
-                    'permesso: ${push?.permissionStatus ?? '...'}',
+                    AnnaStrings.of(context).v100PermissionStatus(push?.permissionStatus ?? '...'),
                     push?.tokenAvailable == true
-                        ? 'token FCM: presente'
-                        : 'token FCM: assente',
+                        ? AnnaStrings.of(context).v100FcmPresent
+                        : AnnaStrings.of(context).v100FcmAbsent,
                     push?.signedIn == true
                         ? (push?.deviceRegistered == true
-                            ? 'Supabase: registrato'
-                            : 'Supabase: non registrato')
-                        : 'cloud: accesso richiesto',
+                            ? AnnaStrings.of(context).v100SupabaseRegistered
+                            : AnnaStrings.of(context).v100SupabaseNotRegistered)
+                        : AnnaStrings.of(context).v100CloudSignInRequired,
                     sharedChannel
-                        ? 'canale Noi ♡: attivo'
-                        : 'canale Noi ♡: BLOCCATO',
+                        ? AnnaStrings.of(context).v100NoiChannelActive
+                        : AnnaStrings.of(context).v100NoiChannelBlocked,
                     if (push?.lastError != null)
-                      'errore: ${push!.lastError}',
+                      AnnaStrings.of(context).v100LastError(push!.lastError!),
                   ].join(' · '),
             ok: pushReady,
           ),
@@ -986,13 +976,15 @@ class _NotificationSettingsCardState
                 exact ? Icons.alarm_on_outlined : Icons.alarm_add_outlined,
               ),
               title: Text(
-                exact ? 'Promemoria precisi attivi' : 'Promemoria precisi',
+                exact
+                    ? AnnaStrings.of(context).v100PreciseRemindersOn
+                    : AnnaStrings.of(context).v100PreciseReminders,
                 style: const TextStyle(fontWeight: FontWeight.w700),
               ),
               subtitle: Text(
                 exact
-                    ? 'Android può mostrare i promemoria all’orario previsto.'
-                    : 'Consenti “Sveglie e promemoria” per ridurre i ritardi.',
+                    ? AnnaStrings.of(context).v100PreciseRemindersDescription
+                    : AnnaStrings.of(context).v100ExactAlarmDescription,
               ),
               trailing: exact
                   ? const Icon(Icons.check_circle_outline)
@@ -1000,7 +992,7 @@ class _NotificationSettingsCardState
                       onPressed: busy
                           ? null
                           : () => _requestPermissions(exact: true),
-                      child: const Text('Attiva'),
+                      child: Text(AnnaStrings.of(context).v100Activate),
                     ),
             ),
           ],
@@ -1012,38 +1004,38 @@ class _NotificationSettingsCardState
               FilledButton.icon(
                 onPressed: busy ? null : _repairAll,
                 icon: const Icon(Icons.build_circle_outlined),
-                label: const Text('Ripara notifiche'),
+                label: Text(AnnaStrings.of(context).v100RepairNotifications),
               ),
               if (kIsWeb)
                 FilledButton.tonalIcon(
                   onPressed: busy ? null : _enableWebPush,
                   icon: const Icon(Icons.notifications_active_outlined),
-                  label: const Text('Attiva PWA'),
+                  label: Text(AnnaStrings.of(context).v100EnablePwa),
                 ),
               if (kIsWeb)
                 FilledButton.tonalIcon(
                   onPressed: busy || !webReady ? null : _testWebPush,
                   icon: const Icon(Icons.send_outlined),
-                  label: const Text('Test Web Push'),
+                  label: Text(AnnaStrings.of(context).v100TestWebPush),
                 ),
               if (!kIsWeb)
                 FilledButton.tonalIcon(
                   onPressed: busy ? null : _testLocal,
                   icon: const Icon(Icons.notification_add_outlined),
-                  label: const Text('Test locale completo'),
+                  label: Text(AnnaStrings.of(context).v100FullLocalTest),
                 ),
               if (!kIsWeb && pushConfigured)
                 FilledButton.tonalIcon(
                   onPressed:
                       busy || push?.signedIn != true ? null : _testPush,
                   icon: const Icon(Icons.cloud_upload_outlined),
-                  label: const Text('Test Firebase'),
+                  label: Text(AnnaStrings.of(context).v100TestFirebase),
                 ),
               if (!kIsWeb)
                 OutlinedButton.icon(
                   onPressed: busy ? null : _openSettings,
                   icon: const Icon(Icons.settings_outlined),
-                  label: const Text('Impostazioni sistema'),
+                  label: Text(AnnaStrings.of(context).v100SystemSettings),
                 ),
             ],
           ),
@@ -1106,17 +1098,17 @@ class ExternalCalendarSettingsCard extends StatelessWidget {
       animation: service,
       builder: (context, _) {
         if (!service.initialized) {
-          return const SimpleCard(
+          return SimpleCard(
             child: Row(
               children: [
-                SizedBox(
+                const SizedBox(
                   width: 20,
                   height: 20,
                   child: CircularProgressIndicator(strokeWidth: 2),
                 ),
-                SizedBox(width: 12),
+                const SizedBox(width: 12),
                 Expanded(
-                  child: Text('Preparazione calendari esterni…'),
+                  child: Text(AnnaStrings.of(context).v100CalendarPreparing),
                 ),
               ],
             ),
@@ -1124,28 +1116,23 @@ class ExternalCalendarSettingsCard extends StatelessWidget {
         }
 
         if (!service.supported) {
-          return const SimpleCard(
+          return SimpleCard(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Calendari esterni',
-                  style: TextStyle(
+                  AnnaStrings.of(context).v100ExternalCalendars,
+                  style: const TextStyle(
                     fontWeight: FontWeight.w900,
                     fontSize: 18,
                   ),
                 ),
-                SizedBox(height: 6),
+                const SizedBox(height: 6),
+                Text(AnnaStrings.of(context).v100CalendarUnsupported),
+                const SizedBox(height: 8),
                 Text(
-                  'In questa prima release l’overlay legge il calendario '
-                  'di sistema Android. Su Web/PWA il browser non espone '
-                  'direttamente gli eventi del dispositivo.',
-                ),
-                SizedBox(height: 8),
-                Text(
-                  'Gli eventi esterni restano separati: non diventano '
-                  'Diario, Memoria, Noi ♡ o dati cloud di Anna’s Diary.',
-                  style: TextStyle(fontWeight: FontWeight.w700),
+                  AnnaStrings.of(context).v100CalendarSeparation,
+                  style: const TextStyle(fontWeight: FontWeight.w700),
                 ),
               ],
             ),
@@ -1156,17 +1143,16 @@ class ExternalCalendarSettingsCard extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text(
-                'Calendari esterni',
-                style: TextStyle(
+              Text(
+                AnnaStrings.of(context).v100ExternalCalendars,
+                style: const TextStyle(
                   fontWeight: FontWeight.w900,
                   fontSize: 18,
                 ),
               ),
               const SizedBox(height: 5),
               Text(
-                'Mostra in sola lettura gli eventi dei calendari già '
-                'configurati sul dispositivo.',
+                AnnaStrings.of(context).v100ExternalCalendarsDescription,
                 style: Theme.of(context).textTheme.bodySmall,
               ),
               const SizedBox(height: 10),
@@ -1185,26 +1171,24 @@ class ExternalCalendarSettingsCard extends StatelessWidget {
                               if (!context.mounted) return;
                               _message(
                                 context,
-                                'Calendari esterni attivati in sola lettura.',
+                                AnnaStrings.of(context).v100CalendarEnabled,
                               );
                             } else {
                               _message(
                                 context,
-                                'Permesso calendario non concesso.',
+                                AnnaStrings.of(context).v100CalendarPermissionDenied,
                               );
                             }
                           },
                     icon: const Icon(Icons.event_available_outlined),
-                    label: const Text('Consenti accesso al calendario'),
+                    label: Text(AnnaStrings.of(context).v100AllowCalendar),
                   ),
                 )
               else ...[
                 SwitchListTile(
                   contentPadding: EdgeInsets.zero,
-                  title: const Text('Mostra eventi esterni'),
-                  subtitle: const Text(
-                    'Overlay locale nell’Agenda; nessuna copia nel diario.',
-                  ),
+                  title: Text(AnnaStrings.of(context).v100ShowExternalEvents),
+                  subtitle: Text(AnnaStrings.of(context).v100ExternalOverlayDescription),
                   value: service.enabled,
                   onChanged: service.busy
                       ? null
@@ -1214,17 +1198,17 @@ class ExternalCalendarSettingsCard extends StatelessWidget {
                         },
                 ),
                 if (service.calendars.isEmpty)
-                  const Padding(
-                    padding: EdgeInsets.only(top: 6),
+                  Padding(
+                    padding: const EdgeInsets.only(top: 6),
                     child: Text(
-                      'Nessun calendario visibile trovato sul dispositivo.',
+                      AnnaStrings.of(context).v100NoVisibleCalendars,
                     ),
                   )
                 else ...[
                   const Divider(),
-                  const Text(
-                    'Calendari visibili',
-                    style: TextStyle(fontWeight: FontWeight.w800),
+                  Text(
+                    AnnaStrings.of(context).v100VisibleCalendars,
+                    style: const TextStyle(fontWeight: FontWeight.w800),
                   ),
                   const SizedBox(height: 4),
                   ...service.calendars.map(
@@ -1266,7 +1250,7 @@ class ExternalCalendarSettingsCard extends StatelessWidget {
                             if (service.enabled) await _primeVisibleRange();
                           },
                     icon: const Icon(Icons.refresh),
-                    label: const Text('Aggiorna calendari'),
+                    label: Text(AnnaStrings.of(context).v100RefreshCalendars),
                   ),
                 ),
               ],
@@ -1286,10 +1270,7 @@ class ExternalCalendarSettingsCard extends StatelessWidget {
               ],
               const SizedBox(height: 8),
               Text(
-                'Privacy: Anna’s Diary richiede solo lettura. Gli eventi '
-                'rimangono nel calendario originale, non vengono sincronizzati '
-                'dal backend dell’app e non alimentano automaticamente Diario '
-                'o Memoria.',
+                AnnaStrings.of(context).v100CalendarPrivacy,
                 style: Theme.of(context).textTheme.bodySmall,
               ),
             ],
@@ -1328,9 +1309,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Nome aggiornato.'),
-        duration: Duration(seconds: 1),
+      SnackBar(
+        content: Text(AnnaStrings.of(context).v100NameUpdated),
+        duration: const Duration(seconds: 1),
       ),
     );
   }
@@ -1341,7 +1322,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final value = await showDialog<String>(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        title: const Text('Imposta PIN'),
+        title: Text(AnnaStrings.of(context).v100SetPin),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -1351,9 +1332,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
               obscureText: true,
               keyboardType: TextInputType.number,
               maxLength: 8,
-              decoration: const InputDecoration(
-                labelText: 'PIN',
-                hintText: 'Almeno 4 cifre',
+              decoration: InputDecoration(
+                labelText: AnnaStrings.of(context).v100Pin,
+                hintText: AnnaStrings.of(context).v100PinHint,
               ),
             ),
             const SizedBox(height: 8),
@@ -1362,8 +1343,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
               obscureText: true,
               keyboardType: TextInputType.number,
               maxLength: 8,
-              decoration: const InputDecoration(
-                labelText: 'Ripeti PIN',
+              decoration: InputDecoration(
+                labelText: AnnaStrings.of(context).v100RepeatPin,
               ),
             ),
           ],
@@ -1371,7 +1352,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(dialogContext),
-            child: const Text('Annulla'),
+            child: Text(AnnaStrings.of(context).cancel),
           ),
           FilledButton(
             onPressed: () {
@@ -1382,7 +1363,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               if (!validPin || a != b) return;
               Navigator.pop(dialogContext, a);
             },
-            child: const Text('Salva PIN'),
+            child: Text(AnnaStrings.of(context).v100SavePin),
           ),
         ],
       ),
@@ -1395,12 +1376,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
       await widget.store.setPin(value);
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('PIN impostato e blocco attivato.')),
+        SnackBar(content: Text(AnnaStrings.of(context).v100PinSet)),
       );
     } catch (_) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('PIN non valido.')),
+        SnackBar(content: Text(AnnaStrings.of(context).v100InvalidPin)),
       );
     }
   }
@@ -1419,19 +1400,18 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final confirmed = await showDialog<bool>(
           context: context,
           builder: (dialogContext) => AlertDialog(
-            title: const Text('Ripristinare le impostazioni?'),
-            content: const Text(
-              'Verranno ripristinati tema, colore e valori predefiniti. '
-              'Appuntamenti, diario e altri dati non verranno toccati.',
+            title: Text(AnnaStrings.of(context).v100ResetSettingsQuestion),
+            content: Text(
+              AnnaStrings.of(context).v100ResetSettingsDescription,
             ),
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(dialogContext, false),
-                child: const Text('Annulla'),
+                child: Text(AnnaStrings.of(context).cancel),
               ),
               FilledButton(
                 onPressed: () => Navigator.pop(dialogContext, true),
-                child: const Text('Ripristina'),
+                child: Text(AnnaStrings.of(context).v100Restore),
               ),
             ],
           ),
@@ -1688,24 +1668,24 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
-                      'Nuovi impegni',
-                      style: TextStyle(
+                    Text(
+                      strings.v100NewCommitments,
+                      style: const TextStyle(
                         fontWeight: FontWeight.w900,
                         fontSize: 18,
                       ),
                     ),
                     const SizedBox(height: 5),
                     Text(
-                      'Questi valori vengono proposti automaticamente quando crei un nuovo elemento.',
+                      strings.v100NewCommitmentsDescription,
                       style: Theme.of(context).textTheme.bodySmall,
                     ),
                     const SizedBox(height: 12),
                     DropdownButtonFormField<AgendaCategory>(
                       initialValue: prefs.defaultCategory,
-                      decoration: const InputDecoration(
-                        labelText: 'Categoria predefinita',
-                        prefixIcon: Icon(Icons.label_outline),
+                      decoration: InputDecoration(
+                        labelText: strings.v100DefaultCategory,
+                        prefixIcon: const Icon(Icons.label_outline),
                       ),
                       items: AgendaCategory.values
                           .map(
@@ -1739,7 +1719,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         const SizedBox(width: 8),
                         Expanded(
                           child: Text(
-                            'Durata appuntamento: ${prefs.defaultEventMinutes} min',
+                            strings.v100DefaultDuration(prefs.defaultEventMinutes),
                             style: const TextStyle(
                               fontWeight: FontWeight.w700,
                             ),
@@ -1767,10 +1747,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     DropdownButtonFormField<int>(
                       key: ValueKey('primary-$primary'),
                       initialValue: primary,
-                      decoration: const InputDecoration(
-                        labelText: 'Promemoria predefinito 1',
+                      decoration: InputDecoration(
+                        labelText: strings.v100DefaultReminder1,
                         prefixIcon:
-                            Icon(Icons.notifications_none_outlined),
+                            const Icon(Icons.notifications_none_outlined),
                       ),
                       items: _reminderMenuItems,
                       onChanged: (value) {
@@ -1790,9 +1770,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     DropdownButtonFormField<int>(
                       key: ValueKey('secondary-$secondary-$primary'),
                       initialValue: secondary,
-                      decoration: const InputDecoration(
-                        labelText: 'Promemoria predefinito 2',
-                        prefixIcon: Icon(Icons.add_alert_outlined),
+                      decoration: InputDecoration(
+                        labelText: strings.v100DefaultReminder2,
+                        prefixIcon: const Icon(Icons.add_alert_outlined),
                       ),
                       items: _reminderMenuItems,
                       onChanged: (value) {
@@ -1821,14 +1801,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Row(
+                    Row(
                       children: [
-                        Icon(Icons.shield_outlined),
-                        SizedBox(width: 8),
+                        const Icon(Icons.shield_outlined),
+                        const SizedBox(width: 8),
                         Expanded(
                           child: Text(
-                            'Privacy Center',
-                            style: TextStyle(
+                            strings.v100PrivacyCenter,
+                            style: const TextStyle(
                               fontWeight: FontWeight.w900,
                               fontSize: 18,
                             ),
@@ -1838,9 +1818,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     ),
                     const SizedBox(height: 5),
                     Text(
-                      'Un unico punto per protezione dell’app, visibilità, '
-                      'Cassaforte, backup e diritti sui dati. I controlli '
-                      'continuano a usare i sistemi già esistenti.',
+                      strings.v100PrivacyCenterDescription,
                       style: Theme.of(context).textTheme.bodySmall,
                     ),
                     const SizedBox(height: 12),
@@ -1857,22 +1835,22 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           ),
                           label: Text(
                             prefs.privacyLockEnabled
-                                ? 'Blocco app attivo'
-                                : 'Blocco app disattivo',
+                                ? strings.v100AppLockOn
+                                : strings.v100AppLockOff,
                           ),
                         ),
                         Chip(
                           avatar: const Icon(Icons.visibility_off_outlined, size: 18),
                           label: Text(
                             prefs.hideHomeDetails
-                                ? 'Home protetta'
-                                : 'Dettagli Home visibili',
+                                ? strings.v100HomeProtected
+                                : strings.v100HomeDetailsVisible,
                           ),
                         ),
                         if (prefs.biometricUnlock && prefs.privacyLockEnabled)
-                          const Chip(
-                            avatar: Icon(Icons.fingerprint, size: 18),
-                            label: Text('Biometria attiva'),
+                          Chip(
+                            avatar: const Icon(Icons.fingerprint, size: 18),
+                            label: Text(strings.v100BiometricsOn),
                           ),
                       ],
                     ),
@@ -1883,16 +1861,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         child: FilledButton.tonalIcon(
                           onPressed: _configurePin,
                           icon: const Icon(Icons.pin_outlined),
-                          label: const Text('Imposta PIN'),
+                          label: Text(strings.v100SetPin),
                         ),
                       )
                     else ...[
                       SwitchListTile(
                         contentPadding: EdgeInsets.zero,
-                        title: const Text('Blocca Agenda'),
-                        subtitle: const Text(
-                          'Richiede PIN o biometria per riaprire l’app.',
-                        ),
+                        title: Text(strings.v100LockAgenda),
+                        subtitle: Text(strings.v100LockAgendaDescription),
                         value: prefs.privacyLockEnabled,
                         onChanged: (value) =>
                             widget.store.savePreferences(
@@ -1902,7 +1878,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       ListTile(
                         contentPadding: EdgeInsets.zero,
                         leading: const Icon(Icons.pin_outlined),
-                        title: const Text('Cambia PIN'),
+                        title: Text(strings.v100ChangePin),
                         trailing: const Icon(Icons.chevron_right),
                         onTap: _configurePin,
                       ),
@@ -1910,11 +1886,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     if (prefs.pinHash != null) ...[
                       SwitchListTile(
                         contentPadding: EdgeInsets.zero,
-                        title: const Text('Sblocco biometrico'),
-                        subtitle: const Text(
+                        title: Text(strings.v100BiometricUnlock),
+                        subtitle: Text(
                           kIsWeb
-                              ? 'Non disponibile sul web.'
-                              : 'Usa impronta o riconoscimento biometrico del dispositivo.',
+                              ? strings.v100NotWeb
+                              : strings.v100BiometricDescription,
                         ),
                         value: prefs.biometricUnlock,
                         onChanged: prefs.privacyLockEnabled
@@ -1923,10 +1899,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                     !await _deviceSupportsBiometrics()) {
                                   if (!context.mounted) return;
                                   ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(
-                                      content: Text(
-                                        'Biometria non disponibile su questo dispositivo.',
-                                      ),
+                                    SnackBar(
+                                      content: Text(strings.v100BiometricUnavailable),
                                     ),
                                   );
                                   return;
@@ -1941,31 +1915,20 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       ),
                       DropdownButtonFormField<int>(
                         initialValue: prefs.autoLockMinutes,
-                        decoration: const InputDecoration(
-                          labelText: 'Blocco automatico',
-                          prefixIcon: Icon(Icons.timer_outlined),
+                        decoration: InputDecoration(
+                          labelText: strings.v100AutoLock,
+                          prefixIcon: const Icon(Icons.timer_outlined),
                         ),
-                        items: const [
+                        items: [
                           DropdownMenuItem(
                             value: 0,
-                            child: Text('Subito'),
+                            child: Text(strings.v100Immediately),
                           ),
-                          DropdownMenuItem(
-                            value: 1,
-                            child: Text('Dopo 1 minuto'),
-                          ),
-                          DropdownMenuItem(
-                            value: 2,
-                            child: Text('Dopo 2 minuti'),
-                          ),
-                          DropdownMenuItem(
-                            value: 5,
-                            child: Text('Dopo 5 minuti'),
-                          ),
-                          DropdownMenuItem(
-                            value: 15,
-                            child: Text('Dopo 15 minuti'),
-                          ),
+                          for (final minutes in const [1, 2, 5, 15])
+                            DropdownMenuItem(
+                              value: minutes,
+                              child: Text(strings.v100AfterMinutes(minutes)),
+                            ),
                         ],
                         onChanged: (value) {
                           if (value == null) return;
@@ -1978,10 +1941,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     const SizedBox(height: 4),
                     SwitchListTile(
                       contentPadding: EdgeInsets.zero,
-                      title: const Text('Nascondi dettagli in Home'),
-                      subtitle: const Text(
-                        'Mostra indicatori generici invece del titolo del prossimo impegno.',
-                      ),
+                      title: Text(strings.v100HideHomeDetails),
+                      subtitle: Text(strings.v100HideHomeDetailsDescription),
                       value: prefs.hideHomeDetails,
                       onChanged: (value) =>
                           widget.store.savePreferences(
@@ -1992,10 +1953,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     ListTile(
                       contentPadding: EdgeInsets.zero,
                       leading: const Icon(Icons.lock_person_outlined),
-                      title: const Text('Cassaforte privata'),
-                      subtitle: const Text(
-                        'Spazio cifrato locale, separato da cloud, ricerca e backup ordinario. Include note private e credenziali personali protette.',
-                      ),
+                      title: Text(strings.v100PrivateVault),
+                      subtitle: Text(strings.v100PrivateVaultDescription),
                       trailing: const Icon(Icons.chevron_right),
                       onTap: () => Navigator.push(
                         context,
@@ -2007,10 +1966,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     ListTile(
                       contentPadding: EdgeInsets.zero,
                       leading: const Icon(Icons.verified_user_outlined),
-                      title: const Text('Backup e sicurezza dati'),
-                      subtitle: const Text(
-                        'Backup verificato, ripristino e controllo dell’integrità locale.',
-                      ),
+                      title: Text(strings.v100BackupSafetyData),
+                      subtitle: Text(strings.v100BackupSafetyDataDescription),
                       trailing: const Icon(Icons.chevron_right),
                       onTap: () => Navigator.push(
                         context,
@@ -2022,10 +1979,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     ListTile(
                       contentPadding: EdgeInsets.zero,
                       leading: const Icon(Icons.manage_accounts_outlined),
-                      title: const Text('Account e diritti sui dati'),
-                      subtitle: const Text(
-                        'Sincronizzazione, disconnessione ed eliminazione definitiva dell’account cloud.',
-                      ),
+                      title: Text(strings.v100AccountDataRights),
+                      subtitle: Text(strings.v100AccountDataRightsDescription),
                       trailing: const Icon(Icons.chevron_right),
                       onTap: () => Navigator.push(
                         context,
@@ -2037,9 +1992,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     ),
                     const SizedBox(height: 6),
                     Text(
-                      'La Cassaforte resta locale anche se elimini l’account cloud. '
-                      'I dati ordinari dell’agenda restano local-first e vengono '
-                      'sincronizzati solo tramite il sistema account già esistente.',
+                      strings.v100VaultAccountBoundary,
                       style: Theme.of(context).textTheme.bodySmall,
                     ),
                   ],
@@ -2050,9 +2003,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
-                      'Dati',
-                      style: TextStyle(
+                    Text(
+                      strings.v100DataSection,
+                      style: const TextStyle(
                         fontWeight: FontWeight.w900,
                         fontSize: 18,
                       ),
@@ -2061,10 +2014,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     ListTile(
                       contentPadding: EdgeInsets.zero,
                       leading: const Icon(Icons.cloud_outlined),
-                      title: const Text('Account e sincronizzazione'),
-                      subtitle: const Text(
-                        'Sincronizza l’agenda personale fra i tuoi dispositivi.',
-                      ),
+                      title: Text(strings.v100AccountSync),
+                      subtitle: Text(strings.v100AccountSyncDescription),
                       trailing: const Icon(Icons.chevron_right),
                       onTap: () => Navigator.push(
                         context,
@@ -2078,10 +2029,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     ListTile(
                       contentPadding: EdgeInsets.zero,
                       leading: const Icon(Icons.backup_outlined),
-                      title: const Text('Backup e ripristino'),
-                      subtitle: const Text(
-                        'Esporta, importa o recupera una copia locale.',
-                      ),
+                      title: Text(strings.v100BackupRestore),
+                      subtitle: Text(strings.v100BackupRestoreDescription),
                       trailing: const Icon(Icons.chevron_right),
                       onTap: () => Navigator.push(
                         context,
@@ -2098,7 +2047,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               OutlinedButton.icon(
                 onPressed: _reset,
                 icon: const Icon(Icons.restart_alt),
-                label: const Text('Ripristina impostazioni predefinite'),
+                label: Text(strings.v100ResetDefaults),
               ),
               const SizedBox(height: 8),
               Center(

@@ -107,8 +107,8 @@ void main() {
 
   test('v0.95 bridge reuses canonical diary and agenda write paths', () {
     final bridge = File('lib/src/life_bridge.dart').readAsStringSync();
-    final home =
-        File('lib/src/screens/home_inbox_search.dart').readAsStringSync();
+    final explore =
+        File('lib/src/screens/explore_screen.dart').readAsStringSync();
     final mainSource = File('lib/main.dart').readAsStringSync();
 
     expect(bridge, contains('await saveJournal('));
@@ -123,7 +123,7 @@ void main() {
         File('lib/src/diary/diary_components.dart').readAsStringSync();
     final editors = File('lib/src/widgets_editors.dart').readAsStringSync();
 
-    expect(home, contains('LifeEcosystemScreen(store: store)'));
+    expect(explore, contains('LifeEcosystemScreen(store: store)'));
     expect(diary, contains('onCopyToLifeBridge'));
     expect(diary, contains('exportLifeBridgeDiaryBlock'));
     expect(editors, contains('exportLifeBridgeAgendaItem'));

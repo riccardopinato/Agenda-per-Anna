@@ -49,14 +49,14 @@ class _DiaryMemoriesScreenState extends State<DiaryMemoriesScreen> {
       sketchText,
       peopleText,
       ...block.places.map((place) => place.name),
-      DateFormat('d MMMM yyyy', 'it_IT').format(record.date),
-      DateFormat('MMMM yyyy', 'it_IT').format(record.date),
+      DateFormat('d MMMM yyyy', AnnaStrings.intlLocale(context)).format(record.date),
+      DateFormat('MMMM yyyy', AnnaStrings.intlLocale(context)).format(record.date),
       '${record.date.year}',
       switch (block.type) {
-        DiaryBlockType.note => 'nota note',
-        DiaryBlockType.sketch => 'sketch disegno',
-        DiaryBlockType.photo => 'foto immagine',
-        DiaryBlockType.voice => 'voce audio registrazione',
+        DiaryBlockType.note => 'note nota notas journal diario diário',
+        DiaryBlockType.sketch => 'sketch drawing dibujo dessin disegno desenho',
+        DiaryBlockType.photo => 'photo foto image imagen immagine photographie imagem',
+        DiaryBlockType.voice => 'voice voz voix audio recording registrazione grabación gravação',
       },
     ].join(' ').toLowerCase();
     return searchable.contains(query);
@@ -198,7 +198,7 @@ class _DiaryMemoriesScreenState extends State<DiaryMemoriesScreen> {
                 const SizedBox(height: 8),
                 Text(
                   block.audioDurationMs <= 0
-                      ? 'Nota vocale'
+                      ? AnnaStrings.of(context).v100VoiceNote
                       : _formatVoiceDuration(block.audioDurationMs),
                   style: const TextStyle(fontWeight: FontWeight.w800),
                 ),
@@ -234,7 +234,7 @@ class _DiaryMemoriesScreenState extends State<DiaryMemoriesScreen> {
     DiaryBlockReference record,
   ) {
     final block = record.block;
-    final date = DateFormat('d MMMM yyyy', 'it_IT').format(record.date);
+    final date = DateFormat('d MMMM yyyy', AnnaStrings.intlLocale(context)).format(record.date);
 
     switch (block.type) {
       case DiaryBlockType.photo:
@@ -260,7 +260,7 @@ class _DiaryMemoriesScreenState extends State<DiaryMemoriesScreen> {
                       ),
                       IconButton(
                         visualDensity: VisualDensity.compact,
-                        tooltip: 'Apri giornata',
+                        tooltip: AnnaStrings.of(context).v100OpenDay,
                         onPressed: () => _openRecord(record),
                         icon: const Icon(Icons.calendar_today_outlined, size: 19),
                       ),
@@ -287,7 +287,7 @@ class _DiaryMemoriesScreenState extends State<DiaryMemoriesScreen> {
                       const SizedBox(width: 6),
                       Expanded(
                         child: Text(
-                          '$date · ${block.pages.length} pag.',
+                          '$date · ${AnnaStrings.of(context).v100Pages(block.pages.length)}',
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: const TextStyle(fontWeight: FontWeight.w700),
@@ -314,7 +314,7 @@ class _DiaryMemoriesScreenState extends State<DiaryMemoriesScreen> {
                   const SizedBox(height: 10),
                   Expanded(
                     child: Text(
-                      block.text.trim().isEmpty ? 'Nota vocale' : block.text,
+                      block.text.trim().isEmpty ? AnnaStrings.of(context).v100VoiceNote : block.text,
                       maxLines: 6,
                       overflow: TextOverflow.ellipsis,
                     ),
@@ -400,7 +400,7 @@ class _DiaryMemoriesScreenState extends State<DiaryMemoriesScreen> {
                           vertical: 5,
                         ),
                         child: Text(
-                          DateFormat('d MMM', 'it_IT').format(date),
+                          DateFormat('d MMM', AnnaStrings.intlLocale(context)).format(date),
                           style: const TextStyle(
                             color: Colors.white,
                             fontWeight: FontWeight.w900,
@@ -427,7 +427,7 @@ class _DiaryMemoriesScreenState extends State<DiaryMemoriesScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    _cap(DateFormat('EEEE d MMMM', 'it_IT').format(date)),
+                    _cap(DateFormat('EEEE d MMMM', AnnaStrings.intlLocale(context)).format(date)),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: const TextStyle(fontWeight: FontWeight.w900),
@@ -435,9 +435,9 @@ class _DiaryMemoriesScreenState extends State<DiaryMemoriesScreen> {
                   const SizedBox(height: 4),
                   Text(
                     [
-                      if (photoCount > 0) '$photoCount foto',
-                      if (sketchCount > 0) '$sketchCount sketch',
-                      if (noteCount > 0) '$noteCount note',
+                      if (photoCount > 0) AnnaStrings.of(context).v100Photos(photoCount),
+                      if (sketchCount > 0) AnnaStrings.of(context).v100Sketches(sketchCount),
+                      if (noteCount > 0) AnnaStrings.of(context).v100Notes(noteCount),
                     ].join(' · '),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
@@ -510,9 +510,9 @@ class _DiaryMemoriesScreenState extends State<DiaryMemoriesScreen> {
                       const Spacer(),
                       Text(
                         [
-                          if (photos > 0) '$photos foto',
-                          if (sketches > 0) '$sketches sketch',
-                          if (notes > 0) '$notes note',
+                          if (photos > 0) AnnaStrings.of(context).v100Photos(photos),
+                          if (sketches > 0) AnnaStrings.of(context).v100Sketches(sketches),
+                          if (notes > 0) AnnaStrings.of(context).v100Notes(notes),
                         ].join(' · '),
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
@@ -572,7 +572,7 @@ class _DiaryMemoriesScreenState extends State<DiaryMemoriesScreen> {
   ) {
     final block = record.block;
     final title = widget.store.diaryBlockDisplayTitle(block);
-    final date = DateFormat('d MMMM yyyy', 'it_IT').format(record.date);
+    final date = DateFormat('d MMMM yyyy', AnnaStrings.intlLocale(context)).format(record.date);
 
     return Card(
       margin: const EdgeInsets.only(bottom: 8),
@@ -610,9 +610,9 @@ class _DiaryMemoriesScreenState extends State<DiaryMemoriesScreen> {
                         Text(
                           [
                             if (block.personIds.isNotEmpty)
-                              '${block.personIds.length} persone',
+                              AnnaStrings.of(context).v100PeopleCount(block.personIds.length),
                             if (block.places.isNotEmpty)
-                              '${block.places.length} luoghi',
+                              AnnaStrings.of(context).v100PlacesCount(block.places.length),
                           ].join(' · '),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
@@ -648,7 +648,7 @@ class _DiaryMemoriesScreenState extends State<DiaryMemoriesScreen> {
         _recallSectionHeader(
           context,
           title: title,
-          subtitle: 'Collegamenti derivati dai ricordi già salvati.',
+          subtitle: AnnaStrings.of(context).v100DerivedConnections,
           icon: icon,
         ),
         Wrap(
@@ -714,14 +714,14 @@ class _DiaryMemoriesScreenState extends State<DiaryMemoriesScreen> {
         .where((entry) => !alreadyShown.contains(entry.block.id))
         .take(6)
         .toList(growable: false);
-    final monthName = _cap(DateFormat('MMMM', 'it_IT').format(now));
+    final monthName = _cap(DateFormat('MMMM', AnnaStrings.intlLocale(context)).format(now));
 
     return ListView(
       padding: const EdgeInsets.fromLTRB(14, 8, 14, 28),
       children: [
-        const Text(
-          'Riscopri i tuoi ricordi',
-          style: TextStyle(
+        Text(
+          AnnaStrings.of(context).v100RediscoverTitle,
+          style: const TextStyle(
             fontWeight: FontWeight.w900,
             fontSize: 22,
           ),
@@ -729,16 +729,15 @@ class _DiaryMemoriesScreenState extends State<DiaryMemoriesScreen> {
         const SizedBox(height: 4),
         Text(
           snapshot.isEmpty
-              ? 'Quando avrai ricordi di mesi o anni precedenti, qui ritroverai i momenti che tornano nel tempo.'
-              : '${snapshot.historicalYears} anni del diario riletti attraverso date, persone e luoghi.',
+              ? AnnaStrings.of(context).v100RediscoverEmpty
+              : AnnaStrings.of(context).v100RediscoverYears(snapshot.historicalYears),
           style: Theme.of(context).textTheme.bodyMedium,
         ),
         if (snapshot.onThisDay.isNotEmpty) ...[
           _recallSectionHeader(
             context,
-            title: 'In questo giorno',
-            subtitle:
-                '${snapshot.onThisDay.length} ${snapshot.onThisDay.length == 1 ? 'ricordo' : 'ricordi'} della stessa data negli anni passati.',
+            title: AnnaStrings.of(context).v100OnThisDayPast,
+            subtitle: AnnaStrings.of(context).v100SameDatePast(snapshot.onThisDay.length),
             icon: Icons.history_toggle_off,
           ),
           ...snapshot.onThisDay.take(4).map(
@@ -748,8 +747,8 @@ class _DiaryMemoriesScreenState extends State<DiaryMemoriesScreen> {
         if (snapshot.sameMonthPastYears.isNotEmpty) ...[
           _recallSectionHeader(
             context,
-            title: '$monthName negli anni',
-            subtitle: 'Altri momenti dello stesso mese negli anni passati.',
+            title: AnnaStrings.of(context).v100MonthAcrossYears(monthName),
+            subtitle: AnnaStrings.of(context).v100OtherSameMonth,
             icon: Icons.calendar_month_outlined,
           ),
           ...snapshot.sameMonthPastYears.take(4).map(
@@ -759,9 +758,9 @@ class _DiaryMemoriesScreenState extends State<DiaryMemoriesScreen> {
         if (yearHighlights.isNotEmpty) ...[
           _recallSectionHeader(
             context,
-            title: 'Un salto negli anni',
+            title: AnnaStrings.of(context).v100JumpAcrossYears,
             subtitle:
-                'Un momento rappresentativo per anno, preferendo una foto quando disponibile.',
+                AnnaStrings.of(context).v100RepresentativeMoment,
             icon: Icons.auto_awesome_outlined,
           ),
           ...yearHighlights.map(
@@ -771,15 +770,15 @@ class _DiaryMemoriesScreenState extends State<DiaryMemoriesScreen> {
         if (widget.personId == null)
           _recallFacetSection(
             context,
-            title: 'Persone che tornano',
+            title: AnnaStrings.of(context).v100RecurringPeople,
             icon: Icons.people_outline,
             facets: linkedPeople,
           ),
         _recallFacetSection(
           context,
           title: widget.personId == null
-              ? 'Luoghi che tornano'
-              : 'Luoghi nei ricordi insieme',
+              ? AnnaStrings.of(context).v100RecurringPlaces
+              : AnnaStrings.of(context).v100PlacesTogether,
           icon: Icons.place_outlined,
           facets: linkedPlaces,
         ),
@@ -838,9 +837,8 @@ class _DiaryMemoriesScreenState extends State<DiaryMemoriesScreen> {
         return _periodCard(
           context,
           records: bucket,
-          title: _cap(DateFormat('MMMM yyyy', 'it_IT').format(date)),
-          subtitle:
-              '${_distinctDays(bucket)} giornate con ricordi · ${bucket.length} contenuti',
+          title: _cap(DateFormat('MMMM yyyy', AnnaStrings.intlLocale(context)).format(date)),
+          subtitle: AnnaStrings.of(context).v100DaysContents(_distinctDays(bucket), bucket.length),
           icon: Icons.calendar_month_outlined,
           onTap: () => Navigator.push(
             context,
@@ -872,8 +870,7 @@ class _DiaryMemoriesScreenState extends State<DiaryMemoriesScreen> {
           context,
           records: bucket,
           title: '$year',
-          subtitle:
-              '$months mesi · ${_distinctDays(bucket)} giornate con ricordi',
+          subtitle: AnnaStrings.of(context).v100MonthsDays(months, _distinctDays(bucket)),
           icon: Icons.insights_outlined,
           onTap: () => Navigator.push(
             context,
@@ -894,8 +891,8 @@ class _DiaryMemoriesScreenState extends State<DiaryMemoriesScreen> {
           padding: const EdgeInsets.all(28),
           child: Text(
             widget.personName == null
-                ? 'Nessun ricordo corrisponde a questa ricerca. Aggiungi una nota, una foto o uno sketch in una giornata.'
-                : 'Nessun ricordo collegato a ${widget.personName}. Apri un ricordo e usa “Collega persone”.',
+                ? AnnaStrings.of(context).v100MemoryNoMatch
+                : AnnaStrings.of(context).v100NoMemoriesForPerson(widget.personName!),
             textAlign: TextAlign.center,
           ),
         ),
@@ -907,8 +904,8 @@ class _DiaryMemoriesScreenState extends State<DiaryMemoriesScreen> {
       appBar: AppBar(
         title: Text(
           widget.personName == null
-              ? 'I miei ricordi'
-              : 'Ricordi con ${widget.personName}',
+              ? AnnaStrings.of(context).v100MyMemories
+              : AnnaStrings.of(context).v100MemoriesWithPerson(widget.personName!),
           style: const TextStyle(fontWeight: FontWeight.w900),
         ),
       ),
@@ -925,13 +922,13 @@ class _DiaryMemoriesScreenState extends State<DiaryMemoriesScreen> {
                 padding: const EdgeInsets.fromLTRB(12, 2, 12, 4),
                 child: SearchBar(
                   controller: searchController,
-                  hintText: 'Cerca nei ricordi...',
+                  hintText: AnnaStrings.of(context).v100MemorySearchHint,
                   leading: const Icon(Icons.search),
                   trailing: searchController.text.isEmpty
                       ? null
                       : [
                           IconButton(
-                            tooltip: 'Cancella ricerca',
+                            tooltip: AnnaStrings.of(context).v100ClearSearch,
                             onPressed: () {
                               searchController.clear();
                               setState(() {});
@@ -951,7 +948,7 @@ class _DiaryMemoriesScreenState extends State<DiaryMemoriesScreen> {
                     ChoiceChip(
                       selected: view == _DiaryMemoriesView.memories,
                       avatar: const Icon(Icons.auto_awesome_outlined),
-                      label: const Text('Ricordi'),
+                      label: Text(AnnaStrings.of(context).memories),
                       onSelected: (_) =>
                           setState(() => view = _DiaryMemoriesView.memories),
                     ),
@@ -959,7 +956,7 @@ class _DiaryMemoriesScreenState extends State<DiaryMemoriesScreen> {
                     ChoiceChip(
                       selected: view == _DiaryMemoriesView.rediscover,
                       avatar: const Icon(Icons.history_toggle_off),
-                      label: const Text('Riscopri'),
+                      label: Text(AnnaStrings.of(context).v100Rediscover),
                       onSelected: (_) =>
                           setState(() => view = _DiaryMemoriesView.rediscover),
                     ),
@@ -967,7 +964,7 @@ class _DiaryMemoriesScreenState extends State<DiaryMemoriesScreen> {
                     ChoiceChip(
                       selected: view == _DiaryMemoriesView.days,
                       avatar: const Icon(Icons.today_outlined),
-                      label: const Text('Giornate'),
+                      label: Text(AnnaStrings.of(context).v100Days),
                       onSelected: (_) =>
                           setState(() => view = _DiaryMemoriesView.days),
                     ),
@@ -975,7 +972,7 @@ class _DiaryMemoriesScreenState extends State<DiaryMemoriesScreen> {
                     ChoiceChip(
                       selected: view == _DiaryMemoriesView.months,
                       avatar: const Icon(Icons.calendar_month_outlined),
-                      label: const Text('Mesi'),
+                      label: Text(AnnaStrings.of(context).v100Months),
                       onSelected: (_) =>
                           setState(() => view = _DiaryMemoriesView.months),
                     ),
@@ -983,7 +980,7 @@ class _DiaryMemoriesScreenState extends State<DiaryMemoriesScreen> {
                     ChoiceChip(
                       selected: view == _DiaryMemoriesView.years,
                       avatar: const Icon(Icons.insights_outlined),
-                      label: const Text('Anni'),
+                      label: Text(AnnaStrings.of(context).v100Years),
                       onSelected: (_) =>
                           setState(() => view = _DiaryMemoriesView.years),
                     ),
@@ -1000,7 +997,7 @@ class _DiaryMemoriesScreenState extends State<DiaryMemoriesScreen> {
                       padding: const EdgeInsets.only(right: 7),
                       child: FilterChip(
                         selected: filter == null,
-                        label: const Text('Tutti'),
+                        label: Text(AnnaStrings.of(context).all),
                         avatar: const Icon(Icons.layers_outlined),
                         onSelected: (_) => setState(() => filter = null),
                       ),
@@ -1021,10 +1018,10 @@ class _DiaryMemoriesScreenState extends State<DiaryMemoriesScreen> {
                           ),
                           label: Text(
                             switch (type) {
-                              DiaryBlockType.note => 'Note',
-                              DiaryBlockType.sketch => 'Sketch',
-                              DiaryBlockType.photo => 'Foto',
-                              DiaryBlockType.voice => 'Voce',
+                              DiaryBlockType.note => AnnaStrings.of(context).v100MemoryNotesFilter,
+                              DiaryBlockType.sketch => AnnaStrings.of(context).v100Sketch,
+                              DiaryBlockType.photo => AnnaStrings.of(context).v100Photo,
+                              DiaryBlockType.voice => AnnaStrings.of(context).v100MemoryVoiceFilter,
                             },
                           ),
                           onSelected: (_) => setState(() => filter = type),
@@ -1040,8 +1037,8 @@ class _DiaryMemoriesScreenState extends State<DiaryMemoriesScreen> {
                   children: [
                     Text(
                       current.isEmpty
-                          ? 'Nessun risultato'
-                          : '${current.length} ricordi · ${_distinctDays(current)} giornate',
+                          ? AnnaStrings.of(context).v100NoResults
+                          : AnnaStrings.of(context).v100MemorySummary(current.length, _distinctDays(current)),
                       style: Theme.of(context).textTheme.bodySmall,
                     ),
                     const Spacer(),

@@ -5,18 +5,28 @@ appId: com.riccardopinato.agenda_per_anna
     retryTapIfNoChange: true
 - scrollUntilVisible:
     element:
-      text: 'I miei ricordi[\s\S]*'
+      text: '(Esplora|Explore|Explorar|Explorer)[\s\S]*'
     direction: DOWN
     timeout: 10000
 - tapOn:
-    text: 'I miei ricordi[\s\S]*'
+    text: '(Esplora|Explore|Explorar|Explorer)[\s\S]*'
 - extendedWaitUntil:
-    visible: "I miei ricordi"
+    visible: '(Esplora|Explore|Explorar|Explorer)'
+    timeout: 10000
+- scrollUntilVisible:
+    element:
+      text: '(I miei ricordi|My memories|Mis recuerdos|Mes souvenirs|As minhas memórias)[\s\S]*'
+    direction: DOWN
+    timeout: 10000
+- tapOn:
+    text: '(I miei ricordi|My memories|Mis recuerdos|Mes souvenirs|As minhas memórias)[\s\S]*'
+- extendedWaitUntil:
+    visible: '(I miei ricordi|My memories|Mis recuerdos|Mes souvenirs|As minhas memórias)'
     timeout: 10000
 - assertVisible:
-    text: 'Riscopri[\s\S]*'
+    text: '(Riscopri|Rediscover|Redescubrir|Redécouvrir|Redescobrir)[\s\S]*'
 - tapOn:
-    text: 'Riscopri[\s\S]*'
+    text: '(Riscopri|Rediscover|Redescubrir|Redécouvrir|Redescobrir)[\s\S]*'
 - extendedWaitUntil:
-    visible: "Riscopri i tuoi ricordi"
+    visible: '(Riscopri i tuoi ricordi|Rediscover your memories|Redescubre tus recuerdos|Redécouvre tes souvenirs|Redescobre as tuas memórias)'
     timeout: 10000
