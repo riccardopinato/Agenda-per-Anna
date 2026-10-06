@@ -3,16 +3,6 @@ part of '../main.dart';
 enum PersonalSearchKind { agenda, diary, person, place, birthday, inbox, month }
 
 extension PersonalSearchKindUi on PersonalSearchKind {
-  String get label => switch (this) {
-        PersonalSearchKind.agenda => 'Agenda',
-        PersonalSearchKind.diary => 'Diario',
-        PersonalSearchKind.person => 'Persone',
-        PersonalSearchKind.place => 'Luoghi',
-        PersonalSearchKind.birthday => 'Compleanni',
-        PersonalSearchKind.inbox => 'Inbox',
-        PersonalSearchKind.month => 'Mesi',
-      };
-
   IconData get icon => switch (this) {
         PersonalSearchKind.agenda => Icons.event_outlined,
         PersonalSearchKind.diary => Icons.auto_stories_outlined,
@@ -588,7 +578,9 @@ extension SearchConnectionsAgendaStore on AgendaStore {
               kind: PersonalSearchKind.diary,
               id: 'journal:${AgendaStore.dateKey(date)}',
               title: journal.beautiful.trim().isEmpty
-                  ? 'Diario del ${DateFormat('d MMMM', locale).format(date)}'
+                  ? strings.v100DiaryFor(
+                      DateFormat('d MMMM', locale).format(date),
+                    )
                   : journal.beautiful.trim(),
               subtitle:
                   '${strings.v100Day} · ${DateFormat('d MMMM yyyy', locale).format(date)}',
@@ -613,10 +605,14 @@ extension SearchConnectionsAgendaStore on AgendaStore {
             ...sketchText,
             DateFormat('d MMMM yyyy', locale).format(date),
             switch (block.type) {
-              DiaryBlockType.note => 'note nota notas text texto journal diario diário',
-              DiaryBlockType.photo => 'photo foto image imagen immagine photographie imagem memory recuerdo souvenir ricordo memória',
-              DiaryBlockType.sketch => 'sketch drawing dibujo dessin disegno desenho',
-              DiaryBlockType.voice => 'voice voz voix audio recording registrazione grabación gravação',
+              DiaryBlockType.note =>
+                '${strings.v100Note} note nota notas text texto journal diario diário',
+              DiaryBlockType.photo =>
+                '${strings.v100Photo} photo foto image imagen immagine photographie imagem memory recuerdo souvenir ricordo memória',
+              DiaryBlockType.sketch =>
+                '${strings.v100Sketch} sketch drawing dibujo dessin disegno desenho',
+              DiaryBlockType.voice =>
+                '${strings.v100VoiceNote} voice voz voix audio recording registrazione grabación gravação',
             },
           ])) {
             continue;
@@ -674,7 +670,7 @@ extension SearchConnectionsAgendaStore on AgendaStore {
             subtitle: [
               if (person.relationship.trim().isNotEmpty)
                 person.relationship.trim(),
-              '${personMemoryCount(person.id)} ricordi',
+              strings.v100MemoriesForPerson(personMemoryCount(person.id)),
             ].join(' · '),
             date: lastMemory ?? DateTime.fromMillisecondsSinceEpoch(0),
             personId: person.id,
