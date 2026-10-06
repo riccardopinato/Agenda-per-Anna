@@ -56,8 +56,8 @@ void main() {
       expect(strings.v100BackupData, isNotEmpty);
       expect(strings.v100OpenExportDescription, isNotEmpty);
     }
-    expect(AnnaStrings('en').v100Explore, 'Explore');
-    expect(AnnaStrings('it').v100Explore, 'Esplora');
+    expect(const AnnaStrings('en').v100Explore, 'Explore');
+    expect(const AnnaStrings('it').v100Explore, 'Esplora');
   });
 
   test('long-history projections remain interactive at 10000 memories', () {
