@@ -64,6 +64,7 @@ Source of execution truth for Anna's Diary. Product identity and boundaries are 
 - Referenced local media must exist. Missing media fails the export closed instead of producing a silently incomplete archive.
 - The open export excludes Trash, technical preferences, Private Vault, Cycle Tracker, Noi ♡ shared passwords and authentication secrets. It is deliberately distinct from the complete restore backup.
 - Existing complete ZIP backup/restore remains unchanged and authoritative for disaster recovery.
+- Export is always an explicit user action; no background or automatic cross-app export is introduced.
 - Release metadata is aligned to `v0.99.0+109`.
 - Analyze, full tests, Web release, Android production-equivalent gate and AppLab trusted runtime must pass before this version is marked completed.
 
