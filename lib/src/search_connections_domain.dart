@@ -1078,7 +1078,7 @@ class _PersonalSearchConnectionsScreenState
       appBar: AppBar(
         title: Text(
           strings.v100SearchConnectTitle,
-          style: TextStyle(fontWeight: FontWeight.w800),
+          style: const TextStyle(fontWeight: FontWeight.w800),
         ),
         actions: [
           IconButton(
@@ -1163,9 +1163,9 @@ class _PersonalSearchConnectionsScreenState
           const SizedBox(height: 6),
           Expanded(
             child: query.trim().isEmpty
-                ? const Center(
+                ? Center(
                     child: Padding(
-                      padding: EdgeInsets.all(32),
+                      padding: const EdgeInsets.all(32),
                       child: Text(
                         strings.v100SearchPrompt,
                         textAlign: TextAlign.center,
