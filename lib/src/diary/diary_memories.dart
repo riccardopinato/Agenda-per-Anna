@@ -287,7 +287,7 @@ class _DiaryMemoriesScreenState extends State<DiaryMemoriesScreen> {
                       const SizedBox(width: 6),
                       Expanded(
                         child: Text(
-                          '$date · ${block.pages.length} pag.',
+                          '$date · ${AnnaStrings.of(context).v100Pages(block.pages.length)}',
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: const TextStyle(fontWeight: FontWeight.w700),
@@ -435,9 +435,9 @@ class _DiaryMemoriesScreenState extends State<DiaryMemoriesScreen> {
                   const SizedBox(height: 4),
                   Text(
                     [
-                      if (photoCount > 0) '$photoCount foto',
-                      if (sketchCount > 0) '$sketchCount sketch',
-                      if (noteCount > 0) '$noteCount note',
+                      if (photoCount > 0) AnnaStrings.of(context).v100Photos(photoCount),
+                      if (sketchCount > 0) AnnaStrings.of(context).v100Sketches(sketchCount),
+                      if (noteCount > 0) AnnaStrings.of(context).v100Notes(noteCount),
                     ].join(' · '),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
@@ -510,9 +510,9 @@ class _DiaryMemoriesScreenState extends State<DiaryMemoriesScreen> {
                       const Spacer(),
                       Text(
                         [
-                          if (photos > 0) '$photos foto',
-                          if (sketches > 0) '$sketches sketch',
-                          if (notes > 0) '$notes note',
+                          if (photos > 0) AnnaStrings.of(context).v100Photos(photos),
+                          if (sketches > 0) AnnaStrings.of(context).v100Sketches(sketches),
+                          if (notes > 0) AnnaStrings.of(context).v100Notes(notes),
                         ].join(' · '),
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
@@ -610,9 +610,9 @@ class _DiaryMemoriesScreenState extends State<DiaryMemoriesScreen> {
                         Text(
                           [
                             if (block.personIds.isNotEmpty)
-                              '${block.personIds.length} persone',
+                              AnnaStrings.of(context).v100PeopleCount(block.personIds.length),
                             if (block.places.isNotEmpty)
-                              '${block.places.length} luoghi',
+                              AnnaStrings.of(context).v100PlacesCount(block.places.length),
                           ].join(' · '),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
@@ -719,7 +719,7 @@ class _DiaryMemoriesScreenState extends State<DiaryMemoriesScreen> {
     return ListView(
       padding: const EdgeInsets.fromLTRB(14, 8, 14, 28),
       children: [
-        const Text(
+        Text(
           AnnaStrings.of(context).v100RediscoverTitle,
           style: TextStyle(
             fontWeight: FontWeight.w900,
@@ -730,15 +730,14 @@ class _DiaryMemoriesScreenState extends State<DiaryMemoriesScreen> {
         Text(
           snapshot.isEmpty
               ? AnnaStrings.of(context).v100RediscoverEmpty
-              : '${snapshot.historicalYears} anni del diario riletti attraverso date, persone e luoghi.',
+              : AnnaStrings.of(context).v100RediscoverYears(snapshot.historicalYears),
           style: Theme.of(context).textTheme.bodyMedium,
         ),
         if (snapshot.onThisDay.isNotEmpty) ...[
           _recallSectionHeader(
             context,
             title: AnnaStrings.of(context).v100OnThisDayPast,
-            subtitle:
-                '${snapshot.onThisDay.length} ${snapshot.onThisDay.length == 1 ? 'ricordo' : 'ricordi'} della stessa data negli anni passati.',
+            subtitle: AnnaStrings.of(context).v100SameDatePast(snapshot.onThisDay.length),
             icon: Icons.history_toggle_off,
           ),
           ...snapshot.onThisDay.take(4).map(
@@ -748,7 +747,7 @@ class _DiaryMemoriesScreenState extends State<DiaryMemoriesScreen> {
         if (snapshot.sameMonthPastYears.isNotEmpty) ...[
           _recallSectionHeader(
             context,
-            title: '$monthName negli anni',
+            title: AnnaStrings.of(context).v100MonthAcrossYears(monthName),
             subtitle: AnnaStrings.of(context).v100OtherSameMonth,
             icon: Icons.calendar_month_outlined,
           ),
@@ -839,8 +838,7 @@ class _DiaryMemoriesScreenState extends State<DiaryMemoriesScreen> {
           context,
           records: bucket,
           title: _cap(DateFormat('MMMM yyyy', AnnaStrings.intlLocale(context)).format(date)),
-          subtitle:
-              '${_distinctDays(bucket)} giornate con ricordi · ${bucket.length} contenuti',
+          subtitle: AnnaStrings.of(context).v100DaysContents(_distinctDays(bucket), bucket.length),
           icon: Icons.calendar_month_outlined,
           onTap: () => Navigator.push(
             context,
@@ -872,8 +870,7 @@ class _DiaryMemoriesScreenState extends State<DiaryMemoriesScreen> {
           context,
           records: bucket,
           title: '$year',
-          subtitle:
-              '$months mesi · ${_distinctDays(bucket)} giornate con ricordi',
+          subtitle: AnnaStrings.of(context).v100MonthsDays(months, _distinctDays(bucket)),
           icon: Icons.insights_outlined,
           onTap: () => Navigator.push(
             context,
@@ -895,7 +892,7 @@ class _DiaryMemoriesScreenState extends State<DiaryMemoriesScreen> {
           child: Text(
             widget.personName == null
                 ? AnnaStrings.of(context).v100MemoryNoMatch
-                : 'Nessun ricordo collegato a ${widget.personName}. Apri un ricordo e usa “Collega persone”.',
+                : AnnaStrings.of(context).v100NoMemoriesForPerson(widget.personName!),
             textAlign: TextAlign.center,
           ),
         ),
@@ -907,8 +904,8 @@ class _DiaryMemoriesScreenState extends State<DiaryMemoriesScreen> {
       appBar: AppBar(
         title: Text(
           widget.personName == null
-              ? 'I miei ricordi'
-              : 'Ricordi con ${widget.personName}',
+              ? AnnaStrings.of(context).v100MyMemories
+              : AnnaStrings.of(context).v100MemoriesWithPerson(widget.personName!),
           style: const TextStyle(fontWeight: FontWeight.w900),
         ),
       ),
@@ -1021,10 +1018,10 @@ class _DiaryMemoriesScreenState extends State<DiaryMemoriesScreen> {
                           ),
                           label: Text(
                             switch (type) {
-                              DiaryBlockType.note => 'Note',
-                              DiaryBlockType.sketch => 'Sketch',
-                              DiaryBlockType.photo => 'Foto',
-                              DiaryBlockType.voice => 'Voce',
+                              DiaryBlockType.note => AnnaStrings.of(context).v100MemoryNotesFilter,
+                              DiaryBlockType.sketch => AnnaStrings.of(context).v100Sketch,
+                              DiaryBlockType.photo => AnnaStrings.of(context).v100Photo,
+                              DiaryBlockType.voice => AnnaStrings.of(context).v100MemoryVoiceFilter,
                             },
                           ),
                           onSelected: (_) => setState(() => filter = type),
@@ -1040,8 +1037,8 @@ class _DiaryMemoriesScreenState extends State<DiaryMemoriesScreen> {
                   children: [
                     Text(
                       current.isEmpty
-                          ? 'Nessun risultato'
-                          : '${current.length} ricordi · ${_distinctDays(current)} giornate',
+                          ? AnnaStrings.of(context).v100NoResults
+                          : AnnaStrings.of(context).v100MemorySummary(current.length, _distinctDays(current)),
                       style: Theme.of(context).textTheme.bodySmall,
                     ),
                     const Spacer(),
