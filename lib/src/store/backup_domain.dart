@@ -357,9 +357,7 @@ class _AgendaBackupDomain {
     buffer.writeln('# Anna\'s Diary — Open Export');
     buffer.writeln();
     buffer.writeln(
-      'Esportato il ' +
-          DateFormat('d MMMM yyyy, HH:mm', 'it_IT').format(exportedAt) +
-          '.',
+      'Esportato il ${DateFormat('d MMMM yyyy, HH:mm', 'it_IT').format(exportedAt)}.',
     );
     buffer.writeln();
     buffer.writeln(
@@ -397,10 +395,7 @@ class _AgendaBackupDomain {
 
         if (journal.mood != null) {
           buffer.writeln(
-            '**Mood:** ' +
-                journal.mood!.emoji +
-                ' ' +
-                journal.mood!.label,
+            '**Mood:** ${journal.mood!.emoji} ${journal.mood!.label}',
           );
           buffer.writeln();
         }
@@ -408,7 +403,7 @@ class _AgendaBackupDomain {
           buffer.writeln('**Cose belle**');
           for (final value in journal.gratitude) {
             if (value.trim().isNotEmpty) {
-              buffer.writeln('- ' + _openMarkdownInline(value));
+              buffer.writeln('- ${_openMarkdownInline(value)}');
             }
           }
           buffer.writeln();
@@ -432,7 +427,7 @@ class _AgendaBackupDomain {
           final time = DateFormat('HH:mm').format(block.createdAt);
           final archived = block.archived ? ' · archiviato' : '';
           buffer.writeln(
-            '#### $time · ' + _openBlockLabel(block.type) + archived,
+            '#### $time · ${_openBlockLabel(block.type)}$archived',
           );
           buffer.writeln();
 
@@ -447,7 +442,7 @@ class _AgendaBackupDomain {
               final alt = block.text.trim().isEmpty
                   ? 'Foto'
                   : _openMarkdownInline(block.text.trim());
-              buffer.writeln('![' + alt + '](' + mediaPath + ')');
+              buffer.writeln('![$alt]($mediaPath)');
               buffer.writeln();
             } else if (block.imageBase64.isNotEmpty) {
               buffer.writeln(
@@ -460,7 +455,7 @@ class _AgendaBackupDomain {
           if (block.type == DiaryBlockType.voice) {
             final mediaPath = mediaPaths[block.mediaAssetId];
             if (mediaPath != null) {
-              buffer.writeln('[Apri registrazione audio](' + mediaPath + ')');
+              buffer.writeln('[Apri registrazione audio]($mediaPath)');
               if (block.audioDurationMs > 0) {
                 final seconds = (block.audioDurationMs / 1000).round();
                 buffer.writeln('Durata: $seconds s');
@@ -478,7 +473,7 @@ class _AgendaBackupDomain {
             final sketchPath = sketchPaths[block.id];
             if (sketchPath != null) {
               buffer.writeln(
-                '[Dati vettoriali del disegno](' + sketchPath + ')',
+                '[Dati vettoriali del disegno]($sketchPath)',
               );
               buffer.writeln();
             }
@@ -490,7 +485,7 @@ class _AgendaBackupDomain {
             if (sketchText.isNotEmpty) {
               buffer.writeln('Testo nel disegno:');
               for (final value in sketchText) {
-                buffer.writeln('- ' + _openMarkdownInline(value));
+                buffer.writeln('- ${_openMarkdownInline(value)}');
               }
               buffer.writeln();
             }
@@ -498,10 +493,7 @@ class _AgendaBackupDomain {
 
           if (block.tags.isNotEmpty) {
             buffer.writeln(
-              '**Tag:** ' +
-                  block.tags
-                      .map((tag) => '#' + _openMarkdownInline(tag))
-                      .join(' '),
+              '**Tag:** ${block.tags.map((tag) => '#${_openMarkdownInline(tag)}').join(' ')}',
             );
           }
           final people = block.personIds
@@ -511,24 +503,17 @@ class _AgendaBackupDomain {
               .toList(growable: false);
           if (people.isNotEmpty) {
             buffer.writeln(
-              '**Persone:** ' +
-                  people.map(_openMarkdownInline).join(', '),
+              '**Persone:** ${people.map(_openMarkdownInline).join(', ')}',
             );
           }
           if (block.places.isNotEmpty) {
             buffer.writeln(
-              '**Luoghi:** ' +
-                  block.places
-                      .map((place) => _openMarkdownInline(place.name))
-                      .join(', '),
+              '**Luoghi:** ${block.places.map((place) => _openMarkdownInline(place.name)).join(', ')}',
             );
           }
           if (block.relatedBlockIds.isNotEmpty) {
             buffer.writeln(
-              '**Ricordi collegati:** ' +
-                  block.relatedBlockIds
-                      .map(_openMarkdownInline)
-                      .join(', '),
+              '**Ricordi collegati:** ${block.relatedBlockIds.map(_openMarkdownInline).join(', ')}',
             );
           }
           if (block.tags.isNotEmpty ||
@@ -559,16 +544,14 @@ class _AgendaBackupDomain {
       for (final item in items) {
         final date = DateFormat('yyyy-MM-dd', 'it_IT').format(item.date);
         final time =
-            item.start == null ? '' : ' ' + formatTime(item.start!);
+            item.start == null ? '' : ' ${formatTime(item.start!)}';
         final done = item.done ? ' [completato]' : '';
         buffer.writeln(
-          '- **$date$time** · ' +
-              _openMarkdownInline(item.title) +
-              done,
+          '- **$date$time** · ${_openMarkdownInline(item.title)}$done',
         );
         if (item.note.trim().isNotEmpty) {
           buffer.writeln(
-            '  - ' + _openMarkdownInline(item.note.trim()),
+            '  - ${_openMarkdownInline(item.note.trim())}',
           );
         }
       }
