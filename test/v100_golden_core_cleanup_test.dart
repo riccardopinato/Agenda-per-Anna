@@ -26,6 +26,9 @@ void main() {
     expect(explore, contains('DiaryMemoriesScreen(store: store)'));
     expect(explore, contains('PeopleScreen(store: store)'));
     expect(explore, contains('LifeEcosystemScreen(store: store)'));
+    expect(explore, contains('Listenable.merge'));
+    expect(explore, contains('store.shoppingRevision'));
+    expect(explore, contains('store.workoutRevision'));
   });
 
   test('v1.00-B core surfaces use the shared localization path', () {
@@ -110,4 +113,57 @@ void main() {
     );
     store.dispose();
   });
+
+  test('localized search aliases and journal fallback follow selected language',
+      () async {
+    await initializeDateFormatting('en');
+    await initializeDateFormatting('fr');
+
+    final store = AgendaStore();
+    final day = DateTime(2026, 10, 7);
+    store.journals[AgendaStore.dateKey(day)] = DayJournal(
+      note: 'needle journal body',
+      blocks: [
+        DiaryBlock(
+          id: 'photo-localized-search',
+          type: DiaryBlockType.photo,
+          createdAt: day.add(const Duration(hours: 10)),
+        ),
+        DiaryBlock(
+          id: 'voice-localized-search',
+          type: DiaryBlockType.voice,
+          createdAt: day.add(const Duration(hours: 11)),
+        ),
+      ],
+    );
+
+    final englishPhoto = store.personalSearch(
+      'photo',
+      languageCode: 'en',
+    );
+    expect(
+      englishPhoto.any((hit) => hit.diaryBlockId == 'photo-localized-search'),
+      isTrue,
+    );
+
+    final englishVoice = store.personalSearch(
+      'voice note',
+      languageCode: 'en',
+    );
+    expect(
+      englishVoice.any((hit) => hit.diaryBlockId == 'voice-localized-search'),
+      isTrue,
+    );
+
+    final frenchJournal = store.personalSearch(
+      'needle',
+      languageCode: 'fr',
+    );
+    final journalHit =
+        frenchJournal.firstWhere((hit) => hit.id.startsWith('journal:'));
+    expect(journalHit.title, startsWith('Journal du '));
+
+    store.dispose();
+  });
+
 }
