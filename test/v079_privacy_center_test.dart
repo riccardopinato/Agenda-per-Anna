@@ -56,7 +56,7 @@ void main() {
 
     expect(settings, contains('strings.v100VaultAccountBoundary'));
     expect(settings, contains('strings.v100PrivateVaultDescription'));
-    expect(settings, contains('strings.v100CloudAccountDescription'));
+    expect(settings, contains('strings.v100AccountDataRightsDescription'));
     expect(
       localization,
       contains('La Cassaforte resta locale anche se elimini l’account cloud.'),
