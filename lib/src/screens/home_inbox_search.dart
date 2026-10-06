@@ -170,7 +170,7 @@ class HomeScreen extends StatelessWidget {
               ),
               IconButton(
                 tooltip: store.totalSharedUnreadCount > 0
-                    ? 'Noi ♡ · ${store.totalSharedUnreadCount} novità'
+                    ? strings.v100SharedNews(store.totalSharedUnreadCount)
                     : 'Noi ♡',
                 onPressed: () => Navigator.push(
                   context,
@@ -294,12 +294,8 @@ class HomeScreen extends StatelessWidget {
                         color: Theme.of(context).colorScheme.error,
                       ),
                       const SizedBox(width: 10),
-                      const Expanded(
-                        child: Text(
-                          'Una parte dell’archivio locale non è leggibile. '
-                          'Agenda la mantiene intatta invece di sovrascriverla. '
-                          'Puoi usare Backup e ripristino per recuperare una copia valida.',
-                        ),
+                      Expanded(
+                        child: Text(strings.v100StorageWarning),
                       ),
                     ],
                   ),
@@ -598,43 +594,45 @@ class _HomeSyncStatusCard extends StatelessWidget {
 
         if (!cloud.configured) {
           icon = Icons.cloud_off_outlined;
-          title = 'Solo sul dispositivo';
-          subtitle = 'Il cloud non è configurato in questa build.';
+          title = AnnaStrings.of(context).v100DeviceOnly;
+          subtitle = AnnaStrings.of(context).v100CloudNotConfigured;
         } else if (!cloud.signedIn) {
           icon = Icons.cloud_outlined;
-          title = 'Cloud non connesso';
-          subtitle = 'L’agenda continua a funzionare offline.';
+          title = AnnaStrings.of(context).v100CloudDisconnected;
+          subtitle = AnnaStrings.of(context).v100OfflineStillWorks;
         } else if (cloud.state == CloudConnectionState.syncing) {
           icon = Icons.sync;
-          title = 'Sincronizzazione in corso';
+          title = AnnaStrings.of(context).v100Syncing;
           subtitle = pending == 0
-              ? 'Controllo le modifiche sui tuoi dispositivi.'
-              : '$pending modifiche locali sono al sicuro in coda.';
+              ? AnnaStrings.of(context).v100CheckingChanges
+              : AnnaStrings.of(context).v100PendingSafeQueue(pending);
         } else if (cloud.state == CloudConnectionState.error) {
           icon = Icons.cloud_off_outlined;
           title = pending == 0
-              ? 'Cloud temporaneamente non disponibile'
-              : 'Offline · dati al sicuro';
+              ? AnnaStrings.of(context).v100CloudTemporarilyUnavailable
+              : AnnaStrings.of(context).v100OfflineDataSafe;
           subtitle = pending == 0
-              ? 'Riproverò alla riapertura o alla prossima sincronizzazione.'
-              : '$pending modifiche verranno inviate quando torna la rete.';
+              ? AnnaStrings.of(context).v100RetrySyncLater
+              : AnnaStrings.of(context).v100PendingWhenOnline(pending);
         } else if (store.hasSharedSyncError) {
           icon = Icons.sync_problem_outlined;
-          title = 'Noi ♡ da risincronizzare';
+          title = AnnaStrings.of(context).v100NoiNeedsResync;
           subtitle = pending == 0
-              ? 'L’ultima sincronizzazione condivisa non è riuscita. Riproverò automaticamente.'
-              : '$pending modifiche restano al sicuro sul dispositivo e verranno ritentate.';
+              ? AnnaStrings.of(context).v100SharedSyncRetry
+              : AnnaStrings.of(context).v100PendingLocalRetry(pending);
         } else if (pending > 0) {
           icon = Icons.cloud_upload_outlined;
-          title = '$pending modifiche in attesa';
-          subtitle =
-              'Restano salvate sul dispositivo finché non vengono sincronizzate.';
+          title = AnnaStrings.of(context).v100PendingChanges(pending);
+          subtitle = AnnaStrings.of(context).v100PendingStayLocal;
         } else {
           icon = Icons.cloud_done_outlined;
-          title = 'Tutto sincronizzato';
+          title = AnnaStrings.of(context).v100AllSynced;
           subtitle = cloud.lastSyncAt == null
-              ? 'Nessuna modifica in attesa.'
-              : 'Ultimo controllo ${DateFormat('HH:mm', 'it_IT').format(cloud.lastSyncAt!)}.';
+              ? AnnaStrings.of(context).v100NothingPending
+              : AnnaStrings.of(context).v100LastCheck(
+                  DateFormat('HH:mm', AnnaStrings.intlLocale(context))
+                      .format(cloud.lastSyncAt!),
+                );
         }
 
         return Material(
@@ -719,21 +717,21 @@ class _HomeFocusCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     final nextText = next == null
-        ? 'Nessun appuntamento in arrivo'
+        ? AnnaStrings.of(context).v100NoUpcoming
         : hideDetails
-            ? 'Prossimo impegno programmato'
-            : '${DateFormat('EEE d MMM', 'it_IT').format(next!.date)} · '
+            ? AnnaStrings.of(context).v100NextScheduled
+            : '${DateFormat('EEE d MMM', AnnaStrings.intlLocale(context)).format(next!.date)} · '
                 '${formatTime(next!.start!)} · ${next!.title}'
                 '${next!.isShared ? ' · Noi ♡' : ''}';
 
     String birthdayText;
     if (nextBirthday == null) {
-      birthdayText = 'Nessun compleanno salvato';
+      birthdayText = AnnaStrings.of(context).v100NoBirthday;
     } else if (AgendaStore.sameDay(nextBirthday!.date, briefing.date)) {
-      birthdayText = 'Oggi · ${nextBirthday!.birthday.name} 🎂';
+      birthdayText = AnnaStrings.of(context).v100TodayBirthday(nextBirthday!.birthday.name);
     } else {
       birthdayText =
-          '${DateFormat('d MMM', 'it_IT').format(nextBirthday!.date)} · '
+          '${DateFormat('d MMM', AnnaStrings.intlLocale(context)).format(nextBirthday!.date)} · '
           '${nextBirthday!.birthday.name}';
     }
 
@@ -749,15 +747,15 @@ class _HomeFocusCard extends StatelessWidget {
         children: [
           Row(
             children: [
-              const Expanded(
+              Expanded(
                 child: Text(
-                  'Oggi in breve',
+                  AnnaStrings.of(context).v100TodayBrief,
                   style: TextStyle(fontWeight: FontWeight.w900, fontSize: 17),
                 ),
               ),
               TextButton(
                 onPressed: onOpenDay,
-                child: const Text('Apri giornata'),
+                child: Text(AnnaStrings.of(context).openDay),
               ),
             ],
           ),
@@ -813,28 +811,28 @@ class _HomeFocusCard extends StatelessWidget {
             children: [
               _MiniPill(
                 icon: Icons.today_outlined,
-                text: '${briefing.appointmentCount} impegni oggi',
+                text: AnnaStrings.of(context).v100CommitmentsToday(briefing.appointmentCount),
               ),
               _MiniPill(
                 icon: Icons.check_circle_outline,
-                text: '${briefing.pendingTaskCount} da fare oggi',
+                text: AnnaStrings.of(context).v100TasksToday(briefing.pendingTaskCount),
               ),
               _MiniPill(
                 icon: briefing.hasJournalContent
                     ? Icons.auto_stories
                     : Icons.auto_stories_outlined,
                 text: briefing.hasJournalContent
-                    ? 'Diario iniziato'
-                    : 'Diario da iniziare',
+                    ? AnnaStrings.of(context).v100DiaryStarted
+                    : AnnaStrings.of(context).v100DiaryToStart,
               ),
               if (globalPendingTasks > briefing.pendingTaskCount)
                 _MiniPill(
                   icon: Icons.task_alt_outlined,
-                  text: '$globalPendingTasks task aperti',
+                  text: AnnaStrings.of(context).v100OpenTasks(globalPendingTasks),
                 ),
               ActionChip(
                 avatar: const Icon(Icons.inbox_outlined, size: 17),
-                label: Text('$inboxCount in Inbox'),
+                label: Text(AnnaStrings.of(context).v100InboxCount(inboxCount)),
                 onPressed: onOpenInbox,
               ),
             ],
@@ -1080,8 +1078,8 @@ class _TodayWellbeingCard extends StatelessWidget {
               children: [
                 Text(
                   journal.mood == null
-                      ? 'Come sta andando la giornata?'
-                      : 'Oggi: ${journal.mood!.label}',
+                      ? AnnaStrings.of(context).v100HowDayGoing
+                      : AnnaStrings.of(context).v100MoodToday(journal.mood!),
                   style: TextStyle(
                     color: accent.foreground,
                     fontWeight: FontWeight.w800,
@@ -1095,22 +1093,22 @@ class _TodayWellbeingCard extends StatelessWidget {
                   children: [
                     Text(
                       totalHabits == 0
-                          ? 'Nessuna abitudine'
-                          : '$doneHabits/$totalHabits abitudini',
+                          ? AnnaStrings.of(context).v100NoHabits
+                          : AnnaStrings.of(context).v100HabitsProgress(doneHabits, totalHabits),
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
                             color: accent.secondaryForeground,
                           ),
                     ),
                     Text(
-                      '$gratitudeCount/3 cose belle',
+                      AnnaStrings.of(context).v100GratitudeProgress(gratitudeCount),
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
                             color: accent.secondaryForeground,
                           ),
                     ),
                     Text(
                       journal.blocks.isEmpty
-                          ? 'Nessun ricordo'
-                          : '${journal.blocks.length} ricordi',
+                          ? AnnaStrings.of(context).v100NoMemory
+                          : AnnaStrings.of(context).v100MemoryCount(journal.blocks.length),
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
                             color: accent.secondaryForeground,
                           ),
