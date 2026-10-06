@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:intl/date_symbol_data_local.dart';
 import 'package:agenda_per_anna/main.dart';
 
 void main() {
@@ -60,7 +61,8 @@ void main() {
     expect(const AnnaStrings('it').v100Explore, 'Esplora');
   });
 
-  test('long-history projections remain interactive at 10000 memories', () {
+  test('long-history projections remain interactive at 10000 memories', () async {
+    await initializeDateFormatting('en');
     final store = AgendaStore();
     const total = 10000;
     var created = 0;
