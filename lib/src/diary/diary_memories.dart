@@ -53,10 +53,10 @@ class _DiaryMemoriesScreenState extends State<DiaryMemoriesScreen> {
       DateFormat('MMMM yyyy', AnnaStrings.intlLocale(context)).format(record.date),
       '${record.date.year}',
       switch (block.type) {
-        DiaryBlockType.note => 'nota note',
-        DiaryBlockType.sketch => 'sketch disegno',
-        DiaryBlockType.photo => 'foto immagine',
-        DiaryBlockType.voice => 'voce audio registrazione',
+        DiaryBlockType.note => 'note nota notas journal diario diário',
+        DiaryBlockType.sketch => 'sketch drawing dibujo dessin disegno desenho',
+        DiaryBlockType.photo => 'photo foto image imagen immagine photographie imagem',
+        DiaryBlockType.voice => 'voice voz voix audio recording registrazione grabación gravação',
       },
     ].join(' ').toLowerCase();
     return searchable.contains(query);
