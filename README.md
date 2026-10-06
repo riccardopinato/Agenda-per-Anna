@@ -31,13 +31,19 @@ Pull requests also run the AppLab Production Gate: release-mode ARM64 build, And
 
 See `docs/ARCHITECTURE.md` and `supabase/README.md` for implementation details.
 
-## v1.00-B — Golden Core Cleanup & Localization
+## v1.00-B — Golden Core Cleanup & Localization — COMPLETED
 
 - Removes the superseded legacy Search screen and keeps `PersonalSearchConnectionsScreen` as the canonical deterministic local search surface.
 - Simplifies Home around daily use and moves secondary destinations into a lightweight **Explore** screen that reuses the existing Shopping, Workout, Memories, People and Ecosystem modules.
 - Migrates high-frequency Home/share-capture, Search, Memories/Recall and Backup/Open Export copy/date formatting onto the shared en/it/es/fr/pt localization path.
 - Adds a 10,000-memory regression budget over derived Memories/Search/Life Archive projections before considering any new index or persistence subsystem.
 - Preserves the existing AgendaStore / DayJournal / DiaryBlock ownership model: this is product consolidation, not a Life Core rewrite.
+
+## v1.00-C — Data Safety v21 Hardening — NEXT
+
+- Hardens ZIP restore to the Master Prompt v21 contract: **STAGING → reference-safe commit → deterministic rollback/recovery**.
+- Keeps current AgendaStore/MediaAssetStore ownership; no alternate backup database or second media owner is introduced.
+- Adds interrupted-restore cleanup and shared-reference regression coverage before physical file/storage certification in v1.00-D.
 
 ## v0.99.0 — Open Life Export
 
