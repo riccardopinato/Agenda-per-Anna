@@ -902,7 +902,7 @@ Future<List<String>?> showDiaryConnectionsPicker(
                               overflow: TextOverflow.ellipsis,
                             ),
                             subtitle: Text(
-                              DateFormat('d MMMM yyyy', 'it_IT')
+                              DateFormat('d MMMM yyyy', AnnaStrings.intlLocale(context))
                                   .format(reference.date),
                             ),
                           );
