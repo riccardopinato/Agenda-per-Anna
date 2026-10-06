@@ -69,6 +69,11 @@ extension AnnaV100Strings on AnnaStrings {
   String get v100ImportantPeople => _pick(en: 'Important people', it: 'Persone importanti', es: 'Personas importantes', fr: 'Personnes importantes', pt: 'Pessoas importantes');
   String get v100PeopleSubtitle => _pick(en: 'Relationships, birthdays and linked memories', it: 'Relazioni, compleanni e ricordi collegati', es: 'Relaciones, cumpleaños y recuerdos vinculados', fr: 'Relations, anniversaires et souvenirs liés', pt: 'Relações, aniversários e memórias ligadas');
 
+  String get v100LinkMemoriesTitle => _pick(en: 'Link memories', it: 'Collega ricordi', es: 'Vincular recuerdos', fr: 'Relier des souvenirs', pt: 'Ligar memórias');
+  String get v100NoOtherMemories => _pick(en: 'There are no other memories to link yet.', it: 'Non ci sono ancora altri ricordi da collegare.', es: 'Todavía no hay otros recuerdos que vincular.', fr: 'Il n’y a pas encore d’autres souvenirs à relier.', pt: 'Ainda não existem outras memórias para ligar.');
+  String get v100LinkMemoriesDescription => _pick(en: 'Select up to 12 memories. Reverse links are shown automatically.', it: 'Seleziona fino a 12 ricordi. I collegamenti inversi vengono mostrati automaticamente.', es: 'Selecciona hasta 12 recuerdos. Los enlaces inversos se muestran automáticamente.', fr: 'Sélectionne jusqu’à 12 souvenirs. Les liens inverses sont affichés automatiquement.', pt: 'Seleciona até 12 memórias. As ligações inversas são mostradas automaticamente.');
+  String v100SaveCount(int count) => _pick(en: 'Save ($count)', it: 'Salva ($count)', es: 'Guardar ($count)', fr: 'Enregistrer ($count)', pt: 'Guardar ($count)');
+
   String get v100SearchConnectTitle => _pick(en: 'Search and connect', it: 'Cerca e collega', es: 'Buscar y conectar', fr: 'Rechercher et relier', pt: 'Pesquisar e ligar');
   String get v100SearchPhotoIndexing => _pick(en: 'Photo text indexing in progress', it: 'Indicizzazione testo foto in corso', es: 'Indexando texto de fotos', fr: 'Indexation du texte des photos en cours', pt: 'A indexar texto das fotos');
   String get v100SearchRefreshPhotoText => _pick(en: 'Refresh photo text', it: 'Aggiorna testo nelle foto', es: 'Actualizar texto de fotos', fr: 'Actualiser le texte des photos', pt: 'Atualizar texto das fotos');
