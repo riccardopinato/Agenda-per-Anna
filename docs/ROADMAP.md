@@ -53,7 +53,7 @@ Source of execution truth for Anna's Diary. Product identity and boundaries are 
 | v0.96 | Shared Ecosystem Core / Wonderlog Runtime Bridge | Completed — physical device verified | Explicit Wonderlog ↔ Anna COPY/LINK runtime interoperability physically verified on Xiaomi Redmi Note 10 Pro / Android 13 |
 | v0.97 | Ecosystem Hub v1 | Completed — CI/AppLab green | User-facing app registry, install visibility, app-scoped LINK/history management and source navigation on top of certified E1 |
 | v0.98 | Capture Everywhere | Completed — trusted runtime verified | Unified Capture across primary app surfaces plus Android/PWA launch shortcuts, reusing canonical persistence |
-| v0.99 | Open Life Export | In progress — implementation pending gates | Open Markdown + structured JSON + separate media/sketch export over canonical data, with privacy-safe exclusions and no new persistence |
+| v0.99 | Open Life Export | Completed — CI/AppLab trusted runtime green | Open Markdown + structured JSON + separate media/sketch export over canonical data, with privacy-safe exclusions and no new persistence |
 
 ## v0.99 acceptance criteria
 
@@ -67,6 +67,17 @@ Source of execution truth for Anna's Diary. Product identity and boundaries are 
 - Export is always an explicit user action; no background or automatic cross-app export is introduced.
 - Release metadata is aligned to `v0.99.0+109`.
 - Analyze, full tests, Web release, Android production-equivalent gate and AppLab trusted runtime must pass before this version is marked completed.
+
+### v0.99 release evidence
+
+- PR #89 final head: `7db041d990eca0619f5de0ab8229eb814c3b1fdb`.
+- Development checks: analyze, full test suite, browser Vault crypto and Web release build passed.
+- Android size audit: production-equivalent ARM64 APK build and size report passed.
+- AppLab: build/test phase passed and trusted Android runtime verification passed on the same resolved PR head.
+- CodeRabbit advisory status: green.
+- PR #89 squash-merged to `main` as `fd639c37e27cb10356571fbbfa1bf18ec97f3218`.
+- Evidence level: **TRUSTED RUNTIME VERIFIED** for the AppLab Android artifact. Physical-device and store/distribution verification are not claimed for v0.99.
+
 
 ## Permanent constraints for this sequence
 
