@@ -37,6 +37,9 @@ extension AnnaV100Strings on AnnaStrings {
     PersonalSearchKind.month => _pick(en: 'Months', it: 'Mesi', es: 'Meses', fr: 'Mois', pt: 'Meses'),
   };
 
+  String get v100Day => _pick(en: 'Day', it: 'Giornata', es: 'Día', fr: 'Journée', pt: 'Dia');
+  String get v100PhotoText => _pick(en: 'photo text', it: 'testo foto', es: 'texto de foto', fr: 'texte de photo', pt: 'texto da foto');
+  String get v100MonthPage => _pick(en: 'Month page', it: 'Pagina del mese', es: 'Página del mes', fr: 'Page du mois', pt: 'Página do mês');
   String get v100Rediscover => _pick(en: 'Rediscover', it: 'Riscopri', es: 'Redescubrir', fr: 'Redécouvrir', pt: 'Redescobrir');
   String get v100Days => _pick(en: 'Days', it: 'Giorni', es: 'Días', fr: 'Jours', pt: 'Dias');
   String get v100Months => _pick(en: 'Months', it: 'Mesi', es: 'Meses', fr: 'Mois', pt: 'Meses');
