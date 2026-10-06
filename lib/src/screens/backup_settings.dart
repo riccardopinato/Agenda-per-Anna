@@ -26,6 +26,7 @@ class _BackupScreenState extends State<BackupScreen> {
   }
 
   Future<void> _exportBackup() async {
+    final strings = AnnaStrings.of(context);
     setState(() => busy = true);
     try {
       final bytes = await widget.store.createBackupZip();
@@ -36,14 +37,14 @@ class _BackupScreenState extends State<BackupScreen> {
       );
       _message(
         ok
-            ? AnnaStrings.of(context).v100BackupSaved
-            : AnnaStrings.of(context).v100ExportCancelled,
+            ? strings.v100BackupSaved
+            : strings.v100ExportCancelled,
       );
     } catch (error) {
       _message(
         error is FormatException
             ? error.message.toString()
-            : AnnaStrings.of(context).v100BackupCreateFailed,
+            : strings.v100BackupCreateFailed,
       );
     } finally {
       if (mounted) setState(() => busy = false);
@@ -51,6 +52,7 @@ class _BackupScreenState extends State<BackupScreen> {
   }
 
   Future<void> _exportOpenArchive() async {
+    final strings = AnnaStrings.of(context);
     setState(() => busy = true);
     try {
       final bytes = await widget.store.createOpenExportZip();
@@ -63,14 +65,14 @@ class _BackupScreenState extends State<BackupScreen> {
       );
       _message(
         ok
-            ? AnnaStrings.of(context).v100OpenExportSaved
-            : AnnaStrings.of(context).v100OpenExportCancelled,
+            ? strings.v100OpenExportSaved
+            : strings.v100OpenExportCancelled,
       );
     } catch (error) {
       _message(
         error is FormatException
             ? error.message.toString()
-            : AnnaStrings.of(context).v100OpenExportFailed,
+            : strings.v100OpenExportFailed,
       );
     } finally {
       if (mounted) setState(() => busy = false);
@@ -78,6 +80,7 @@ class _BackupScreenState extends State<BackupScreen> {
   }
 
   Future<void> _runSafetyAudit() async {
+    final strings = AnnaStrings.of(context);
     setState(() => busy = true);
     try {
       final report = await widget.store.auditDataSafety();
@@ -86,18 +89,19 @@ class _BackupScreenState extends State<BackupScreen> {
       _message(
         report.integrityHealthy
             ? report.hasCleanupCandidates
-                ? AnnaStrings.of(context).v100IntegrityOrphans(report.orphanMediaIds.length)
-                : AnnaStrings.of(context).v100IntegrityClean
-            : AnnaStrings.of(context).v100IntegrityNeedsReview,
+                ? strings.v100IntegrityOrphans(report.orphanMediaIds.length)
+                : strings.v100IntegrityClean
+            : strings.v100IntegrityNeedsReview,
       );
     } catch (_) {
-      _message(AnnaStrings.of(context).v100IntegrityFailed);
+      _message(strings.v100IntegrityFailed);
     } finally {
       if (mounted) setState(() => busy = false);
     }
   }
 
   Future<void> _exportReadable() async {
+    final strings = AnnaStrings.of(context);
     setState(() => busy = true);
     try {
       final ok = await BackupFileService.instance.saveTextExport(
@@ -106,8 +110,8 @@ class _BackupScreenState extends State<BackupScreen> {
       );
       _message(
         ok
-            ? AnnaStrings.of(context).v100ReadableExportSaved
-            : AnnaStrings.of(context).v100OpenExportCancelled,
+            ? strings.v100ReadableExportSaved
+            : strings.v100OpenExportCancelled,
       );
     } finally {
       if (mounted) setState(() => busy = false);
@@ -115,6 +119,7 @@ class _BackupScreenState extends State<BackupScreen> {
   }
 
   Future<void> _importBackup() async {
+    final strings = AnnaStrings.of(context);
     setState(() => busy = true);
     PickedBackupFile? picked;
     try {
@@ -141,7 +146,7 @@ class _BackupScreenState extends State<BackupScreen> {
       _message(
         error is FormatException
             ? error.message.toString()
-            : AnnaStrings.of(context).v100InvalidBackup,
+            : strings.v100InvalidBackup,
       );
       return;
     }
@@ -149,39 +154,39 @@ class _BackupScreenState extends State<BackupScreen> {
     final action = await showDialog<String>(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        title: Text(AnnaStrings.of(context).v100RestoreBackupQuestion),
+        title: Text(strings.v100RestoreBackupQuestion),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              AnnaStrings.of(context).v100BackupCreatedAt(
+              strings.v100BackupCreatedAt(
                 DateFormat(
                   'd MMMM yyyy, HH:mm',
-                  AnnaStrings.intlLocale(context),
+                  AnnaStrings.resolveLocale(Locale(strings.languageCode)).languageCode,
                 ).format(summary.exportedAt),
               ),
             ),
             const SizedBox(height: 12),
-            Text(AnnaStrings.of(context).v100BackupItems(summary.itemCount)),
-            Text(AnnaStrings.of(context).v100BackupJournals(summary.journalCount)),
-            Text(AnnaStrings.of(context).v100BackupMonths(summary.monthCount)),
-            Text(AnnaStrings.of(context).v100BackupWeeks(summary.weekCount)),
-            Text(AnnaStrings.of(context).v100BackupHabits(summary.habitCount)),
+            Text(strings.v100BackupItems(summary.itemCount)),
+            Text(strings.v100BackupJournals(summary.journalCount)),
+            Text(strings.v100BackupMonths(summary.monthCount)),
+            Text(strings.v100BackupWeeks(summary.weekCount)),
+            Text(strings.v100BackupHabits(summary.habitCount)),
             if (summary.birthdayCount > 0)
-              Text(AnnaStrings.of(context).v100BackupBirthdays(summary.birthdayCount)),
+              Text(strings.v100BackupBirthdays(summary.birthdayCount)),
             if (summary.trashCount > 0)
-              Text(AnnaStrings.of(context).v100BackupTrash(summary.trashCount)),
+              Text(strings.v100BackupTrash(summary.trashCount)),
             if (selectedBackup.isZip) ...[
               const SizedBox(height: 8),
               Text(
-                AnnaStrings.of(context).v100BackupMediaIncluded,
+                strings.v100BackupMediaIncluded,
                 style: const TextStyle(fontWeight: FontWeight.w700),
               ),
             ],
             const SizedBox(height: 14),
             Text(
-              AnnaStrings.of(context).v100BackupSafetySnapshot,
+              strings.v100BackupSafetySnapshot,
               style: const TextStyle(fontWeight: FontWeight.w700),
             ),
           ],
@@ -189,15 +194,15 @@ class _BackupScreenState extends State<BackupScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(dialogContext),
-            child: Text(AnnaStrings.of(context).cancel),
+            child: Text(strings.cancel),
           ),
           OutlinedButton(
             onPressed: () => Navigator.pop(dialogContext, 'merge'),
-            child: Text(AnnaStrings.of(context).v100Merge),
+            child: Text(strings.v100Merge),
           ),
           FilledButton(
             onPressed: () => Navigator.pop(dialogContext, 'replace'),
-            child: Text(AnnaStrings.of(context).v100ReplaceAll),
+            child: Text(strings.v100ReplaceAll),
           ),
         ],
       ),
@@ -209,18 +214,18 @@ class _BackupScreenState extends State<BackupScreen> {
       final confirmed = await showDialog<bool>(
             context: context,
             builder: (dialogContext) => AlertDialog(
-              title: Text(AnnaStrings.of(context).v100ConfirmReplace),
+              title: Text(strings.v100ConfirmReplace),
               content: Text(
-                AnnaStrings.of(context).v100ConfirmReplaceDescription,
+                strings.v100ConfirmReplaceDescription,
               ),
               actions: [
                 TextButton(
                   onPressed: () => Navigator.pop(dialogContext, false),
-                  child: Text(AnnaStrings.of(context).cancel),
+                  child: Text(strings.cancel),
                 ),
                 FilledButton(
                   onPressed: () => Navigator.pop(dialogContext, true),
-                  child: Text(AnnaStrings.of(context).v100Restore),
+                  child: Text(strings.v100Restore),
                 ),
               ],
             ),
@@ -244,33 +249,34 @@ class _BackupScreenState extends State<BackupScreen> {
       }
       _message(
         action == 'merge'
-            ? AnnaStrings.of(context).v100BackupMerged
-            : AnnaStrings.of(context).v100BackupRestored,
+            ? strings.v100BackupMerged
+            : strings.v100BackupRestored,
       );
     } catch (_) {
-      _message(AnnaStrings.of(context).v100RestoreFailedSafe);
+      _message(strings.v100RestoreFailedSafe);
     } finally {
       if (mounted) setState(() => busy = false);
     }
   }
 
   Future<void> _restoreSnapshot(LocalBackupSnapshot snapshot) async {
+    final strings = AnnaStrings.of(context);
     final confirmed = await showDialog<bool>(
           context: context,
           builder: (dialogContext) => AlertDialog(
-            title: Text(AnnaStrings.of(context).v100RestoreLocalQuestion),
+            title: Text(strings.v100RestoreLocalQuestion),
             content: Text(
               '${snapshot.label}\n'
-              '${DateFormat('d MMMM yyyy, HH:mm', AnnaStrings.intlLocale(context)).format(snapshot.createdAt)}',
+              '${DateFormat('d MMMM yyyy, HH:mm', AnnaStrings.resolveLocale(Locale(strings.languageCode)).languageCode).format(snapshot.createdAt)}',
             ),
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(dialogContext, false),
-                child: Text(AnnaStrings.of(context).cancel),
+                child: Text(strings.cancel),
               ),
               FilledButton(
                 onPressed: () => Navigator.pop(dialogContext, true),
-                child: Text(AnnaStrings.of(context).v100Restore),
+                child: Text(strings.v100Restore),
               ),
             ],
           ),
@@ -281,7 +287,7 @@ class _BackupScreenState extends State<BackupScreen> {
     setState(() => busy = true);
     try {
       await widget.store.restoreLocalSnapshot(snapshot.id);
-      _message(AnnaStrings.of(context).v100LocalBackupRestored);
+      _message(strings.v100LocalBackupRestored);
     } finally {
       if (mounted) setState(() => busy = false);
     }
@@ -633,11 +639,11 @@ class _NotificationSettingsCardState
   }
 
   Future<void> _testLocal() async {
+    final strings = AnnaStrings.of(context);
     await _runBusy(() async {
       final result = await NotificationService.instance.runLocalDiagnostic();
       await _refresh();
 
-      final strings = AnnaStrings.of(context);
       final message = result.ok
           ? strings.v100LocalTestOk(result.scheduledDelaySeconds)
           : [
@@ -661,6 +667,7 @@ class _NotificationSettingsCardState
   }
 
   Future<void> _testPush() async {
+    final strings = AnnaStrings.of(context);
     await _runBusy(() async {
       String message;
       bool ok = false;
@@ -673,7 +680,6 @@ class _NotificationSettingsCardState
         final removed =
             (result['removed_invalid_tokens'] as num?)?.toInt() ?? 0;
         ok = delivered > 0 && failed == 0;
-        final strings = AnnaStrings.of(context);
         message = delivered > 0
             ? strings.v100FirebaseOk(delivered, devices, removed)
             : failed > 0
@@ -683,7 +689,7 @@ class _NotificationSettingsCardState
         await _refresh();
         final raw = error.toString().replaceAll(RegExp(r'\s+'), ' ').trim();
         final compact = raw.length > 180 ? '${raw.substring(0, 180)}…' : raw;
-        message = AnnaStrings.of(context).v100FirebaseTestFailed(compact);
+        message = strings.v100FirebaseTestFailed(compact);
       }
 
       if (mounted) {
@@ -697,6 +703,7 @@ class _NotificationSettingsCardState
   }
 
   Future<void> _enableWebPush() async {
+    final strings = AnnaStrings.of(context);
     await _runBusy(() async {
       final status = await WebPushService.instance.enable();
       if (status.ready) {
@@ -704,7 +711,6 @@ class _NotificationSettingsCardState
       }
       await _refresh();
 
-      final strings = AnnaStrings.of(context);
       final message = status.ready
           ? strings.v100WebPushActive
           : status.isIos && !status.installedPwa
@@ -726,6 +732,7 @@ class _NotificationSettingsCardState
   }
 
   Future<void> _testWebPush() async {
+    final strings = AnnaStrings.of(context);
     await _runBusy(() async {
       String message;
       bool ok = false;
@@ -736,14 +743,13 @@ class _NotificationSettingsCardState
             (result['web_delivered'] as num?)?.toInt() ?? 0;
         final failed = (result['failed'] as num?)?.toInt() ?? 0;
         ok = webDelivered > 0 && failed == 0;
-        final strings = AnnaStrings.of(context);
         message = ok
             ? strings.v100WebPushOk(webDelivered, delivered)
             : strings.v100WebPushUnconfirmed(webDelivered, failed);
       } catch (error) {
         final raw = error.toString().replaceAll(RegExp(r'\s+'), ' ').trim();
         final compact = raw.length > 180 ? '${raw.substring(0, 180)}…' : raw;
-        message = AnnaStrings.of(context).v100WebPushTestFailed(compact);
+        message = strings.v100WebPushTestFailed(compact);
       }
       await _refresh();
       if (mounted) {
@@ -766,6 +772,7 @@ class _NotificationSettingsCardState
   }
 
   Future<void> _repairAll() async {
+    final strings = AnnaStrings.of(context);
     await _runBusy(() async {
       if (kIsWeb) {
         final status = await WebPushService.instance.enable();
@@ -775,8 +782,8 @@ class _NotificationSettingsCardState
         await _refresh();
         _snack(
           status.ready
-              ? AnnaStrings.of(context).v100RepairWebReady
-              : AnnaStrings.of(context).v100RepairWebNotReady,
+              ? strings.v100RepairWebReady
+              : strings.v100RepairWebNotReady,
         );
         return;
       }
@@ -797,8 +804,8 @@ class _NotificationSettingsCardState
               health?.sharedDeliveryReady == true);
       _snack(
         localOk && pushOk
-            ? AnnaStrings.of(context).v100RepairReady
-            : AnnaStrings.of(context).v100RepairBlocked,
+            ? strings.v100RepairReady
+            : strings.v100RepairBlocked,
       );
     });
   }
