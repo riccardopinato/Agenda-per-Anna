@@ -18,9 +18,6 @@ class ExploreScreen extends StatelessWidget {
         animation: Listenable.merge([
           store.shoppingRevision,
           store.workoutRevision,
-          store.journalRevision,
-          store.peopleRevision,
-          store.sharedRevision,
         ]),
         builder: (context, _) => ListView(
           padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
