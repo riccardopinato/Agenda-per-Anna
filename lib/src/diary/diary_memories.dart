@@ -721,7 +721,7 @@ class _DiaryMemoriesScreenState extends State<DiaryMemoriesScreen> {
       children: [
         Text(
           AnnaStrings.of(context).v100RediscoverTitle,
-          style: TextStyle(
+          style: const TextStyle(
             fontWeight: FontWeight.w900,
             fontSize: 22,
           ),
