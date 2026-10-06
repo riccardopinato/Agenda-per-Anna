@@ -36,14 +36,14 @@ class _BackupScreenState extends State<BackupScreen> {
       );
       _message(
         ok
-            ? 'Backup completo ZIP salvato.'
-            : 'Salvataggio annullato o non riuscito.',
+            ? AnnaStrings.of(context).v100BackupSaved
+            : AnnaStrings.of(context).v100ExportCancelled,
       );
     } catch (error) {
       _message(
         error is FormatException
             ? error.message.toString()
-            : 'Non è stato possibile creare il backup completo.',
+            : AnnaStrings.of(context).v100BackupCreateFailed,
       );
     } finally {
       if (mounted) setState(() => busy = false);
@@ -63,14 +63,14 @@ class _BackupScreenState extends State<BackupScreen> {
       );
       _message(
         ok
-            ? 'Archivio aperto esportato.'
-            : 'Esportazione annullata o non riuscita.',
+            ? AnnaStrings.of(context).v100OpenExportSaved
+            : AnnaStrings.of(context).v100OpenExportCancelled,
       );
     } catch (error) {
       _message(
         error is FormatException
             ? error.message.toString()
-            : 'Non è stato possibile creare l\'archivio aperto.',
+            : AnnaStrings.of(context).v100OpenExportFailed,
       );
     } finally {
       if (mounted) setState(() => busy = false);
@@ -86,12 +86,12 @@ class _BackupScreenState extends State<BackupScreen> {
       _message(
         report.integrityHealthy
             ? report.hasCleanupCandidates
-                ? 'Integrità OK · ${report.orphanMediaIds.length} media non più collegati.'
-                : 'Integrità locale verificata: nessun problema rilevato.'
-            : 'Verifica completata: sono presenti elementi da controllare.',
+                ? AnnaStrings.of(context).v100IntegrityOrphans(report.orphanMediaIds.length)
+                : AnnaStrings.of(context).v100IntegrityClean
+            : AnnaStrings.of(context).v100IntegrityNeedsReview,
       );
     } catch (_) {
-      _message('Non è stato possibile completare la verifica integrità.');
+      _message(AnnaStrings.of(context).v100IntegrityFailed);
     } finally {
       if (mounted) setState(() => busy = false);
     }
@@ -106,8 +106,8 @@ class _BackupScreenState extends State<BackupScreen> {
       );
       _message(
         ok
-            ? 'Copia leggibile esportata.'
-            : 'Esportazione annullata o non riuscita.',
+            ? AnnaStrings.of(context).v100ReadableExportSaved
+            : AnnaStrings.of(context).v100OpenExportCancelled,
       );
     } finally {
       if (mounted) setState(() => busy = false);
@@ -141,7 +141,7 @@ class _BackupScreenState extends State<BackupScreen> {
       _message(
         error is FormatException
             ? error.message.toString()
-            : 'Il file selezionato non è un backup valido.',
+            : AnnaStrings.of(context).v100InvalidBackup,
       );
       return;
     }
@@ -149,50 +149,55 @@ class _BackupScreenState extends State<BackupScreen> {
     final action = await showDialog<String>(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        title: const Text('Ripristinare questo backup?'),
+        title: Text(AnnaStrings.of(context).v100RestoreBackupQuestion),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Creato il ${DateFormat('d MMMM yyyy, HH:mm', 'it_IT').format(summary.exportedAt)}',
+              AnnaStrings.of(context).v100BackupCreatedAt(
+                DateFormat(
+                  'd MMMM yyyy, HH:mm',
+                  AnnaStrings.intlLocale(context),
+                ).format(summary.exportedAt),
+              ),
             ),
             const SizedBox(height: 12),
-            Text('• ${summary.itemCount} impegni e attività'),
-            Text('• ${summary.journalCount} giorni di diario'),
-            Text('• ${summary.monthCount} pagine mensili'),
-            Text('• ${summary.weekCount} settimane'),
-            Text('• ${summary.habitCount} abitudini'),
+            Text(AnnaStrings.of(context).v100BackupItems(summary.itemCount)),
+            Text(AnnaStrings.of(context).v100BackupJournals(summary.journalCount)),
+            Text(AnnaStrings.of(context).v100BackupMonths(summary.monthCount)),
+            Text(AnnaStrings.of(context).v100BackupWeeks(summary.weekCount)),
+            Text(AnnaStrings.of(context).v100BackupHabits(summary.habitCount)),
             if (summary.birthdayCount > 0)
-              Text('• ${summary.birthdayCount} compleanni'),
+              Text(AnnaStrings.of(context).v100BackupBirthdays(summary.birthdayCount)),
             if (summary.trashCount > 0)
-              Text('• ${summary.trashCount} elementi nel Cestino'),
+              Text(AnnaStrings.of(context).v100BackupTrash(summary.trashCount)),
             if (selectedBackup.isZip) ...[
               const SizedBox(height: 8),
-              const Text(
-                '• Media inclusi separatamente nel pacchetto ZIP',
-                style: TextStyle(fontWeight: FontWeight.w700),
+              Text(
+                AnnaStrings.of(context).v100BackupMediaIncluded,
+                style: const TextStyle(fontWeight: FontWeight.w700),
               ),
             ],
             const SizedBox(height: 14),
-            const Text(
-              'Prima del ripristino verrà creato automaticamente un backup locale di sicurezza.',
-              style: TextStyle(fontWeight: FontWeight.w700),
+            Text(
+              AnnaStrings.of(context).v100BackupSafetySnapshot,
+              style: const TextStyle(fontWeight: FontWeight.w700),
             ),
           ],
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(dialogContext),
-            child: const Text('Annulla'),
+            child: Text(AnnaStrings.of(context).cancel),
           ),
           OutlinedButton(
             onPressed: () => Navigator.pop(dialogContext, 'merge'),
-            child: const Text('Unisci'),
+            child: Text(AnnaStrings.of(context).v100Merge),
           ),
           FilledButton(
             onPressed: () => Navigator.pop(dialogContext, 'replace'),
-            child: const Text('Sostituisci tutto'),
+            child: Text(AnnaStrings.of(context).v100ReplaceAll),
           ),
         ],
       ),
@@ -204,10 +209,9 @@ class _BackupScreenState extends State<BackupScreen> {
       final confirmed = await showDialog<bool>(
             context: context,
             builder: (dialogContext) => AlertDialog(
-              title: const Text('Conferma sostituzione'),
-              content: const Text(
-                'I dati attuali verranno sostituiti da quelli del backup. '
-                'Potrai tornare indietro usando il backup locale creato prima del ripristino.',
+              title: Text(AnnaStrings.of(context).v100ConfirmReplace),
+              content: Text(
+                AnnaStrings.of(context).v100ConfirmReplaceDescription,
               ),
               actions: [
                 TextButton(
@@ -216,7 +220,7 @@ class _BackupScreenState extends State<BackupScreen> {
                 ),
                 FilledButton(
                   onPressed: () => Navigator.pop(dialogContext, true),
-                  child: const Text('Ripristina'),
+                  child: Text(AnnaStrings.of(context).v100Restore),
                 ),
               ],
             ),
@@ -240,13 +244,11 @@ class _BackupScreenState extends State<BackupScreen> {
       }
       _message(
         action == 'merge'
-            ? 'Backup unito ai dati presenti.'
-            : 'Backup ripristinato correttamente.',
+            ? AnnaStrings.of(context).v100BackupMerged
+            : AnnaStrings.of(context).v100BackupRestored,
       );
     } catch (_) {
-      _message(
-        'Ripristino non riuscito. I dati attuali non sono stati eliminati.',
-      );
+      _message(AnnaStrings.of(context).v100RestoreFailedSafe);
     } finally {
       if (mounted) setState(() => busy = false);
     }
@@ -256,10 +258,10 @@ class _BackupScreenState extends State<BackupScreen> {
     final confirmed = await showDialog<bool>(
           context: context,
           builder: (dialogContext) => AlertDialog(
-            title: const Text('Ripristinare questo backup locale?'),
+            title: Text(AnnaStrings.of(context).v100RestoreLocalQuestion),
             content: Text(
               '${snapshot.label}\n'
-              '${DateFormat('d MMMM yyyy, HH:mm', 'it_IT').format(snapshot.createdAt)}',
+              '${DateFormat('d MMMM yyyy, HH:mm', AnnaStrings.intlLocale(context)).format(snapshot.createdAt)}',
             ),
             actions: [
               TextButton(
@@ -279,7 +281,7 @@ class _BackupScreenState extends State<BackupScreen> {
     setState(() => busy = true);
     try {
       await widget.store.restoreLocalSnapshot(snapshot.id);
-      _message('Backup locale ripristinato.');
+      _message(AnnaStrings.of(context).v100LocalBackupRestored);
     } finally {
       if (mounted) setState(() => busy = false);
     }
@@ -293,9 +295,9 @@ class _BackupScreenState extends State<BackupScreen> {
         final snapshots = widget.store.localSnapshots;
         return Scaffold(
           appBar: AppBar(
-            title: const Text(
-              'Backup e dati',
-              style: TextStyle(fontWeight: FontWeight.w800),
+            title: Text(
+              AnnaStrings.of(context).v100BackupData,
+              style: const TextStyle(fontWeight: FontWeight.w800),
             ),
           ),
           body: Stack(
@@ -314,13 +316,13 @@ class _BackupScreenState extends State<BackupScreen> {
                       ),
                       borderRadius: BorderRadius.circular(26),
                     ),
-                    child: const Column(
+                    child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Icon(Icons.shield_outlined, size: 30),
                         SizedBox(height: 10),
                         Text(
-                          'I ricordi restano tuoi',
+                          AnnaStrings.of(context).v100MemoriesStayYours,
                           style: TextStyle(
                             fontSize: 22,
                             fontWeight: FontWeight.w900,
@@ -328,8 +330,7 @@ class _BackupScreenState extends State<BackupScreen> {
                         ),
                         SizedBox(height: 5),
                         Text(
-                          'Crea una copia completa dell’agenda e conservala dove preferisci. '
-                          'Il backup ZIP include dati e media separati; i vecchi backup JSON restano importabili.',
+                          AnnaStrings.of(context).v100BackupHeroDescription,
                         ),
                       ],
                     ),
@@ -337,37 +338,33 @@ class _BackupScreenState extends State<BackupScreen> {
                   const SizedBox(height: 14),
                   _BackupActionCard(
                     icon: Icons.save_alt_outlined,
-                    title: 'Crea backup completo',
-                    subtitle:
-                        'Salva dati e media in un unico file .zip verificato, senza incorporare le foto in Base64 nel JSON.',
-                    buttonLabel: 'Salva backup',
+                    title: AnnaStrings.of(context).v100CreateFullBackup,
+                    subtitle: AnnaStrings.of(context).v100FullBackupDescription,
+                    buttonLabel: AnnaStrings.of(context).v100SaveBackup,
                     onPressed: busy ? null : _exportBackup,
                   ),
                   const SizedBox(height: 10),
                   _BackupActionCard(
                     icon: Icons.restore_outlined,
-                    title: 'Ripristina da file',
-                    subtitle:
-                        'Importa backup ZIP nuovi o JSON precedenti. Puoi unire i dati oppure sostituire tutto.',
-                    buttonLabel: 'Scegli backup',
+                    title: AnnaStrings.of(context).v100RestoreFromFile,
+                    subtitle: AnnaStrings.of(context).v100RestoreFromFileDescription,
+                    buttonLabel: AnnaStrings.of(context).v100ChooseBackup,
                     onPressed: busy ? null : _importBackup,
                   ),
                   const SizedBox(height: 10),
                   _BackupActionCard(
                     icon: Icons.folder_zip_outlined,
-                    title: 'Esporta archivio aperto',
-                    subtitle:
-                        'Crea un file ZIP leggibile senza Anna\'s Diary: README in Markdown, dati JSON strutturati, media separati e disegni in JSON aperto. Cestino, Vault e dati sensibili separati restano esclusi.',
-                    buttonLabel: 'Esporta archivio',
+                    title: AnnaStrings.of(context).v100OpenExport,
+                    subtitle: AnnaStrings.of(context).v100OpenExportDescription,
+                    buttonLabel: AnnaStrings.of(context).v100ExportArchive,
                     onPressed: busy ? null : _exportOpenArchive,
                   ),
                   const SizedBox(height: 10),
                   _BackupActionCard(
                     icon: Icons.verified_user_outlined,
-                    title: 'Verifica integrità locale',
-                    subtitle:
-                        'Controlla media mancanti o corrotti, file non più collegati, warning dello storage e modifiche cloud ancora in attesa.',
-                    buttonLabel: 'Avvia verifica',
+                    title: AnnaStrings.of(context).v100VerifyIntegrity,
+                    subtitle: AnnaStrings.of(context).v100VerifyIntegrityDescription,
+                    buttonLabel: AnnaStrings.of(context).v100RunCheck,
                     onPressed: busy ? null : _runSafetyAudit,
                   ),
                   if (safetyReport != null) ...[
@@ -377,18 +374,17 @@ class _BackupScreenState extends State<BackupScreen> {
                   const SizedBox(height: 10),
                   _BackupActionCard(
                     icon: Icons.description_outlined,
-                    title: 'Esporta copia leggibile',
-                    subtitle:
-                        'Crea un file .txt con impegni, diario e pagine mensili da conservare o stampare.',
-                    buttonLabel: 'Esporta TXT',
+                    title: AnnaStrings.of(context).v100ReadableExport,
+                    subtitle: AnnaStrings.of(context).v100ReadableExportDescription,
+                    buttonLabel: AnnaStrings.of(context).v100ExportTxt,
                     onPressed: busy ? null : _exportReadable,
                   ),
                   const SizedBox(height: 20),
                   Row(
                     children: [
-                      const Expanded(
+                      Expanded(
                         child: Text(
-                          'Backup locali di sicurezza',
+                          AnnaStrings.of(context).v100LocalSafetyBackups,
                           style: TextStyle(
                             fontWeight: FontWeight.w900,
                             fontSize: 18,
@@ -396,7 +392,7 @@ class _BackupScreenState extends State<BackupScreen> {
                         ),
                       ),
                       IconButton(
-                        tooltip: 'Crea backup locale',
+                        tooltip: AnnaStrings.of(context).v100CreateLocalBackup,
                         onPressed: busy
                             ? null
                             : () => widget.store.createLocalSnapshot(),
@@ -405,15 +401,13 @@ class _BackupScreenState extends State<BackupScreen> {
                     ],
                   ),
                   Text(
-                    'L’app conserva fino a 5 copie locali e ne crea una automaticamente circa ogni 6 ore di utilizzo. '
-                    'Queste copie restano sul dispositivo e vengono perse se l’app viene disinstallata: '
-                    'per una copia davvero sicura usa anche “Crea backup completo”.',
+                    AnnaStrings.of(context).v100LocalBackupsDescription,
                     style: Theme.of(context).textTheme.bodySmall,
                   ),
                   const SizedBox(height: 10),
                   if (snapshots.isEmpty)
-                    const SimpleCard(
-                      child: Text('Nessun backup locale disponibile.'),
+                    SimpleCard(
+                      child: Text(AnnaStrings.of(context).v100NoLocalBackups),
                     )
                   else
                     ...snapshots.map(
@@ -430,14 +424,14 @@ class _BackupScreenState extends State<BackupScreen> {
                           subtitle: Text(
                             DateFormat(
                               'd MMMM yyyy, HH:mm',
-                              'it_IT',
+                              AnnaStrings.intlLocale(context),
                             ).format(snapshot.createdAt),
                           ),
                           onTap: busy
                               ? null
                               : () => _restoreSnapshot(snapshot),
                           trailing: IconButton(
-                            tooltip: 'Elimina backup',
+                            tooltip: AnnaStrings.of(context).v100DeleteBackup,
                             onPressed: busy
                                 ? null
                                 : () => widget.store
@@ -476,19 +470,19 @@ class _DataSafetyCard extends StatelessWidget {
     final scheme = Theme.of(context).colorScheme;
     final healthy = report.integrityHealthy;
     final details = <String>[
-      '${report.referencedMediaCount} media collegati',
-      '${report.storedMediaCount} media locali',
+      AnnaStrings.of(context).v100MediaReferenced(report.referencedMediaCount),
+      AnnaStrings.of(context).v100MediaStored(report.storedMediaCount),
       if (report.missingMediaIds.isNotEmpty)
-        '${report.missingMediaIds.length} mancanti',
+        AnnaStrings.of(context).v100MediaMissing(report.missingMediaIds.length),
       if (report.corruptMediaIds.isNotEmpty)
-        '${report.corruptMediaIds.length} corrotti',
+        AnnaStrings.of(context).v100MediaCorrupt(report.corruptMediaIds.length),
       if (report.orphanMediaIds.isNotEmpty)
-        '${report.orphanMediaIds.length} non più collegati',
+        AnnaStrings.of(context).v100MediaOrphan(report.orphanMediaIds.length),
       if (report.unreadableStorageKeys.isNotEmpty)
-        '${report.unreadableStorageKeys.length} sezioni storage non leggibili',
+        AnnaStrings.of(context).v100UnreadableStorage(report.unreadableStorageKeys.length),
       if (report.pendingCloudChanges > 0)
-        '${report.pendingCloudChanges} modifiche cloud in attesa',
-      '${report.localSnapshotCount} backup locali',
+        AnnaStrings.of(context).v100PendingCloud(report.pendingCloudChanges),
+      AnnaStrings.of(context).v100LocalSnapshotCount(report.localSnapshotCount),
     ];
 
     return Card(
@@ -504,7 +498,7 @@ class _DataSafetyCard extends StatelessWidget {
           ),
         ),
         title: Text(
-          healthy ? 'Integrità dati OK' : 'Controllo dati richiesto',
+          healthy ? AnnaStrings.of(context).v100IntegrityOk : AnnaStrings.of(context).v100IntegrityReview,
           style: const TextStyle(fontWeight: FontWeight.w900),
         ),
         subtitle: Text(details.join(' · ')),
