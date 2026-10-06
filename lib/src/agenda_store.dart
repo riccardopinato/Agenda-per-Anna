@@ -2181,6 +2181,7 @@ class AgendaStore extends ChangeNotifier {
     final previousWorkoutPlans = List<WorkoutPlan>.from(workoutPlans);
     final previousTrash = List<TrashEntry>.from(trash);
     final previousPreferences = preferences;
+    var structuredCommitted = false;
 
     try {
       if (merge) {
@@ -2350,6 +2351,7 @@ class AgendaStore extends ChangeNotifier {
             restoreSession.structuredCommittedMarkerJson(),
       };
       await prefs.writeBatch(changes);
+      structuredCommitted = true;
       _unreadableStorageKeys.removeAll(changes.keys);
 
       _injectRestoreFailureForTesting(
@@ -2357,6 +2359,8 @@ class AgendaStore extends ChangeNotifier {
         simulateCrash: true,
       );
     } catch (_) {
+      if (structuredCommitted) rethrow;
+
       items
         ..clear()
         ..addAll(previousItems);
