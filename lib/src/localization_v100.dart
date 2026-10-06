@@ -1,6 +1,54 @@
 part of '../main.dart';
 
 extension AnnaV100Strings on AnnaStrings {
+  String v100SharedNews(int count) => _pick(en: 'Noi ♡ · $count new', it: 'Noi ♡ · $count novità', es: 'Noi ♡ · $count novedades', fr: 'Noi ♡ · $count nouveautés', pt: 'Noi ♡ · $count novidades');
+  String get v100StorageWarning => _pick(en: 'Part of the local archive is unreadable. Anna’s Diary keeps it intact instead of overwriting it. Use Backup and restore to recover a valid copy.', it: 'Una parte dell’archivio locale non è leggibile. Anna’s Diary la mantiene intatta invece di sovrascriverla. Puoi usare Backup e ripristino per recuperare una copia valida.', es: 'Parte del archivo local no se puede leer. Anna’s Diary lo mantiene intacto en lugar de sobrescribirlo. Usa Copia y restauración para recuperar una copia válida.', fr: 'Une partie de l’archive locale est illisible. Anna’s Diary la conserve intacte au lieu de l’écraser. Utilise Sauvegarde et restauration pour récupérer une copie valide.', pt: 'Parte do arquivo local não pode ser lida. Anna’s Diary mantém-na intacta em vez de a substituir. Usa Backup e restauro para recuperar uma cópia válida.');
+  String get v100DeviceOnly => _pick(en: 'Device only', it: 'Solo sul dispositivo', es: 'Solo en el dispositivo', fr: 'Sur cet appareil uniquement', pt: 'Apenas no dispositivo');
+  String get v100CloudNotConfigured => _pick(en: 'Cloud is not configured in this build.', it: 'Il cloud non è configurato in questa build.', es: 'La nube no está configurada en esta build.', fr: 'Le cloud n’est pas configuré dans cette build.', pt: 'A cloud não está configurada nesta build.');
+  String get v100CloudDisconnected => _pick(en: 'Cloud not connected', it: 'Cloud non connesso', es: 'Nube no conectada', fr: 'Cloud non connecté', pt: 'Cloud não ligada');
+  String get v100OfflineStillWorks => _pick(en: 'Your agenda keeps working offline.', it: 'L’agenda continua a funzionare offline.', es: 'Tu agenda sigue funcionando sin conexión.', fr: 'Ton agenda continue de fonctionner hors ligne.', pt: 'A tua agenda continua a funcionar offline.');
+  String get v100Syncing => _pick(en: 'Sync in progress', it: 'Sincronizzazione in corso', es: 'Sincronización en curso', fr: 'Synchronisation en cours', pt: 'Sincronização em curso');
+  String get v100CheckingChanges => _pick(en: 'Checking changes across your devices.', it: 'Controllo le modifiche sui tuoi dispositivi.', es: 'Comprobando cambios en tus dispositivos.', fr: 'Vérification des changements sur tes appareils.', pt: 'A verificar alterações nos teus dispositivos.');
+  String v100PendingSafeQueue(int count) => _pick(en: '$count local changes are safely queued.', it: '$count modifiche locali sono al sicuro in coda.', es: '$count cambios locales están seguros en cola.', fr: '$count changements locaux sont en sécurité dans la file.', pt: '$count alterações locais estão seguras na fila.');
+  String get v100CloudTemporarilyUnavailable => _pick(en: 'Cloud temporarily unavailable', it: 'Cloud temporaneamente non disponibile', es: 'Nube temporalmente no disponible', fr: 'Cloud temporairement indisponible', pt: 'Cloud temporariamente indisponível');
+  String get v100OfflineDataSafe => _pick(en: 'Offline · data safe', it: 'Offline · dati al sicuro', es: 'Sin conexión · datos seguros', fr: 'Hors ligne · données en sécurité', pt: 'Offline · dados seguros');
+  String get v100RetrySyncLater => _pick(en: 'Will retry on reopen or next sync.', it: 'Riproverò alla riapertura o alla prossima sincronizzazione.', es: 'Se volverá a intentar al abrir o en la próxima sincronización.', fr: 'Nouvelle tentative à la réouverture ou à la prochaine synchronisation.', pt: 'Nova tentativa ao reabrir ou na próxima sincronização.');
+  String v100PendingWhenOnline(int count) => _pick(en: '$count changes will be sent when the network returns.', it: '$count modifiche verranno inviate quando torna la rete.', es: '$count cambios se enviarán cuando vuelva la red.', fr: '$count changements seront envoyés au retour du réseau.', pt: '$count alterações serão enviadas quando a rede voltar.');
+  String get v100NoiNeedsResync => _pick(en: 'Noi ♡ needs resync', it: 'Noi ♡ da risincronizzare', es: 'Noi ♡ necesita resincronización', fr: 'Noi ♡ doit être resynchronisé', pt: 'Noi ♡ precisa de nova sincronização');
+  String get v100SharedSyncRetry => _pick(en: 'The last shared sync failed. It will retry automatically.', it: 'L’ultima sincronizzazione condivisa non è riuscita. Riproverò automaticamente.', es: 'La última sincronización compartida falló. Se reintentará automáticamente.', fr: 'La dernière synchronisation partagée a échoué. Nouvelle tentative automatique.', pt: 'A última sincronização partilhada falhou. Nova tentativa automática.');
+  String v100PendingLocalRetry(int count) => _pick(en: '$count changes remain safely on-device and will be retried.', it: '$count modifiche restano al sicuro sul dispositivo e verranno ritentate.', es: '$count cambios siguen seguros en el dispositivo y se reintentarán.', fr: '$count changements restent en sécurité sur l’appareil et seront retentés.', pt: '$count alterações permanecem seguras no dispositivo e serão repetidas.');
+  String v100PendingChanges(int count) => _pick(en: '$count changes pending', it: '$count modifiche in attesa', es: '$count cambios pendientes', fr: '$count changements en attente', pt: '$count alterações pendentes');
+  String get v100PendingStayLocal => _pick(en: 'They stay saved on the device until synced.', it: 'Restano salvate sul dispositivo finché non vengono sincronizzate.', es: 'Se guardan en el dispositivo hasta sincronizarse.', fr: 'Ils restent enregistrés sur l’appareil jusqu’à la synchronisation.', pt: 'Ficam guardadas no dispositivo até serem sincronizadas.');
+  String get v100AllSynced => _pick(en: 'Everything synced', it: 'Tutto sincronizzato', es: 'Todo sincronizado', fr: 'Tout est synchronisé', pt: 'Tudo sincronizado');
+  String get v100NothingPending => _pick(en: 'No changes pending.', it: 'Nessuna modifica in attesa.', es: 'No hay cambios pendientes.', fr: 'Aucun changement en attente.', pt: 'Nenhuma alteração pendente');
+  String v100LastCheck(String time) => _pick(en: 'Last check $time.', it: 'Ultimo controllo $time.', es: 'Última comprobación $time.', fr: 'Dernière vérification $time.', pt: 'Última verificação $time.');
+  String get v100NoUpcoming => _pick(en: 'No upcoming appointments', it: 'Nessun appuntamento in arrivo', es: 'No hay próximas citas', fr: 'Aucun rendez-vous à venir', pt: 'Sem compromissos próximos');
+  String get v100NextScheduled => _pick(en: 'Next scheduled commitment', it: 'Prossimo impegno programmato', es: 'Próximo compromiso programado', fr: 'Prochain engagement programmé', pt: 'Próximo compromisso agendado');
+  String get v100NoBirthday => _pick(en: 'No birthdays saved', it: 'Nessun compleanno salvato', es: 'No hay cumpleaños guardados', fr: 'Aucun anniversaire enregistré', pt: 'Nenhum aniversário guardado');
+  String v100TodayBirthday(String name) => _pick(en: 'Today · $name 🎂', it: 'Oggi · $name 🎂', es: 'Hoy · $name 🎂', fr: 'Aujourd’hui · $name 🎂', pt: 'Hoje · $name 🎂');
+  String get v100TodayBrief => _pick(en: 'Today at a glance', it: 'Oggi in breve', es: 'Hoy en breve', fr: 'Aujourd’hui en bref', pt: 'Hoje em resumo');
+  String v100CommitmentsToday(int count) => _pick(en: '$count commitments today', it: '$count impegni oggi', es: '$count compromisos hoy', fr: '$count engagements aujourd’hui', pt: '$count compromissos hoje');
+  String v100TasksToday(int count) => _pick(en: '$count to do today', it: '$count da fare oggi', es: '$count por hacer hoy', fr: '$count à faire aujourd’hui', pt: '$count para fazer hoje');
+  String get v100DiaryStarted => _pick(en: 'Diary started', it: 'Diario iniziato', es: 'Diario iniciado', fr: 'Journal commencé', pt: 'Diário iniciado');
+  String get v100DiaryToStart => _pick(en: 'Diary to start', it: 'Diario da iniziare', es: 'Diario por empezar', fr: 'Journal à commencer', pt: 'Diário por começar');
+  String v100OpenTasks(int count) => _pick(en: '$count open tasks', it: '$count task aperti', es: '$count tareas abiertas', fr: '$count tâches ouvertes', pt: '$count tarefas abertas');
+  String v100InboxCount(int count) => _pick(en: '$count in Inbox', it: '$count in Inbox', es: '$count en Inbox', fr: '$count dans Inbox', pt: '$count na Inbox');
+  String get v100HowDayGoing => _pick(en: 'How is your day going?', it: 'Come sta andando la giornata?', es: '¿Cómo va tu día?', fr: 'Comment se passe ta journée ?', pt: 'Como está a correr o teu dia?');
+  String v100MoodToday(DayMood mood) {
+    final label = switch (mood) {
+      DayMood.great => _pick(en: 'Great', it: 'Benissimo', es: 'Genial', fr: 'Très bien', pt: 'Muito bem'),
+      DayMood.good => _pick(en: 'Good', it: 'Bene', es: 'Bien', fr: 'Bien', pt: 'Bem'),
+      DayMood.neutral => _pick(en: 'So-so', it: 'Così così', es: 'Regular', fr: 'Comme ci comme ça', pt: 'Assim-assim'),
+      DayMood.low => _pick(en: 'Low', it: 'Giù', es: 'Bajo', fr: 'Bas', pt: 'Em baixo'),
+      DayMood.hard => _pick(en: 'Hard', it: 'Difficile', es: 'Difícil', fr: 'Difficile', pt: 'Difícil'),
+    };
+    return _pick(en: 'Today: $label', it: 'Oggi: $label', es: 'Hoy: $label', fr: 'Aujourd’hui : $label', pt: 'Hoje: $label');
+  }
+  String get v100NoHabits => _pick(en: 'No habits', it: 'Nessuna abitudine', es: 'Sin hábitos', fr: 'Aucune habitude', pt: 'Sem hábitos');
+  String v100HabitsProgress(int done, int total) => _pick(en: '$done/$total habits', it: '$done/$total abitudini', es: '$done/$total hábitos', fr: '$done/$total habitudes', pt: '$done/$total hábitos');
+  String v100GratitudeProgress(int count) => _pick(en: '$count/3 good things', it: '$count/3 cose belle', es: '$count/3 cosas buenas', fr: '$count/3 belles choses', pt: '$count/3 coisas boas');
+  String get v100NoMemory => _pick(en: 'No memories', it: 'Nessun ricordo', es: 'Sin recuerdos', fr: 'Aucun souvenir', pt: 'Sem memórias');
+  String v100MemoryCount(int count) => _pick(en: '$count memories', it: '$count ricordi', es: '$count recuerdos', fr: '$count souvenirs', pt: '$count memórias');
   String get v100Pinned => _pick(en: 'Pinned', it: 'Fissati', es: 'Fijados', fr: 'Épinglés', pt: 'Fixados');
   String get v100MyAgendaSection => _pick(en: 'My agenda', it: 'La mia agenda', es: 'Mi agenda', fr: 'Mon agenda', pt: 'A minha agenda');
   String get v100MyMonth => _pick(en: 'My month', it: 'Il mio mese', es: 'Mi mes', fr: 'Mon mois', pt: 'O meu mês');
