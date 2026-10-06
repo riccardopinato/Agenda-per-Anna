@@ -1972,27 +1972,54 @@ class AgendaStore extends ChangeNotifier {
     required bool merge,
   }) async {
     final decoded = _decodeAndValidateBackupZip(bytes);
+    final dataRoot = Map<String, dynamic>.from(
+      jsonDecode(decoded.dataJson) as Map,
+    );
+    final dataPayload = Map<String, dynamic>.from(
+      dataRoot['data'] as Map<String, dynamic>,
+    );
+    final declaredReferences = <String>{};
+    _collectAssetIdsFromJson(dataPayload, declaredReferences);
+    final missingFromBundle = declaredReferences
+        .difference(decoded.media.keys.toSet());
+    if (missingFromBundle.isNotEmpty) {
+      final first = missingFromBundle.toList()..sort();
+      throw FormatException(
+        'Il backup non contiene tutti i media referenziati: '
+        '${first.first}',
+      );
+    }
 
-    final importedOnlyForRestore = <String>[];
+    final prefs = await _localState();
+    await _recoverInterruptedBackupRestore(prefs);
+    final restoreSession = _RestoreMediaStagingSession(prefs);
+    await restoreSession.begin();
+
     try {
-      for (final entry in decoded.media.entries) {
-        final alreadyPresent =
-            await MediaAssetStore.instance.read(entry.key) != null;
-        await MediaAssetStore.instance.putNamed(
-          entry.key,
-          entry.value,
-        );
-        if (!alreadyPresent) importedOnlyForRestore.add(entry.key);
+      final entries = decoded.media.entries.toList()
+        ..sort((a, b) => a.key.compareTo(b.key));
+      for (final entry in entries) {
+        await restoreSession.stageNamed(entry.key, entry.value);
       }
 
-      await restoreBackup(
+      _injectRestoreFailureForTesting('after_staging');
+      _injectRestoreFailureForTesting(
+        'crash_after_staging',
+        simulateCrash: true,
+      );
+
+      await _restoreBackupWithSession(
         decoded.dataJson,
         merge: merge,
+        restoreSession: restoreSession,
       );
+      await restoreSession.finish();
+    } on _SimulatedRestoreCrash {
+      // Simulates process death: leave marker/staging/canonical intent intact
+      // so the next AgendaStore.load() proves deterministic recovery.
+      rethrow;
     } catch (_) {
-      for (final assetId in importedOnlyForRestore.reversed) {
-        await MediaAssetStore.instance.delete(assetId);
-      }
+      await restoreSession.rollbackIfUncommitted();
       rethrow;
     }
   }
@@ -2003,6 +2030,31 @@ class AgendaStore extends ChangeNotifier {
   Future<void> restoreBackup(
     String raw, {
     required bool merge,
+  }) async {
+    final prefs = await _localState();
+    await _recoverInterruptedBackupRestore(prefs);
+    final restoreSession = _RestoreMediaStagingSession(prefs);
+    await restoreSession.begin();
+
+    try {
+      await _restoreBackupWithSession(
+        raw,
+        merge: merge,
+        restoreSession: restoreSession,
+      );
+      await restoreSession.finish();
+    } on _SimulatedRestoreCrash {
+      rethrow;
+    } catch (_) {
+      await restoreSession.rollbackIfUncommitted();
+      rethrow;
+    }
+  }
+
+  Future<void> _restoreBackupWithSession(
+    String raw, {
+    required bool merge,
+    required _RestoreMediaStagingSession restoreSession,
   }) async {
     final decoded = jsonDecode(raw);
     final root = Map<String, dynamic>.from(decoded as Map);
@@ -2099,6 +2151,7 @@ class AgendaStore extends ChangeNotifier {
       incomingTrash.add(
         await _localizeTrashEntry(
           TrashEntry.fromJson(Map<String, dynamic>.from(rawEntry)),
+          mediaWriter: restoreSession.stageContent,
         ),
       );
     }
@@ -2272,15 +2325,36 @@ class AgendaStore extends ChangeNotifier {
       await _migrateInlinePrivateMedia(
         prefs,
         persist: false,
+        mediaWriter: restoreSession.stageContent,
+      );
+
+      final requiredAssetIds = <String>{};
+      _collectAssetIdsFromJson(
+        _localDataPayload(),
+        requiredAssetIds,
+      );
+      await restoreSession.promoteAndVerify(requiredAssetIds);
+
+      _injectRestoreFailureForTesting('after_media_promotion');
+      _injectRestoreFailureForTesting(
+        'crash_after_media_promotion',
+        simulateCrash: true,
       );
 
       final changes = <String, String?>{
         ..._currentWorkingStateChanges(),
         _forceFullSyncKey: 'true',
         for (final key in _activeEntityDeltaKeys(prefs)) key: null,
+        _backupRestoreTransactionKey:
+            restoreSession.structuredCommittedMarkerJson(),
       };
       await prefs.writeBatch(changes);
       _unreadableStorageKeys.removeAll(changes.keys);
+
+      _injectRestoreFailureForTesting(
+        'crash_after_structured_commit',
+        simulateCrash: true,
+      );
     } catch (_) {
       items
         ..clear()
@@ -2324,15 +2398,22 @@ class AgendaStore extends ChangeNotifier {
     }
 
     // Reminder changes happen only after the data transaction has committed.
-    for (final item in previousItems) {
-      await NotificationService.instance.cancel(item.id);
-      await NotificationService.instance.cancel('${item.id}:primary');
-      await NotificationService.instance.cancel('${item.id}:secondary');
+    // Native notification failures must not turn an already committed restore
+    // into a false rollback request.
+    try {
+      for (final item in previousItems) {
+        await NotificationService.instance.cancel(item.id);
+        await NotificationService.instance.cancel('${item.id}:primary');
+        await NotificationService.instance.cancel('${item.id}:secondary');
+      }
+      for (final item in items) {
+        await _syncReminders(item);
+      }
+      await reconcileBirthdayReminders();
+    } catch (_) {
+      // The restored canonical data is already durable. Reminder reconciliation
+      // is retriable and must not invalidate the restore transaction.
     }
-    for (final item in items) {
-      await _syncReminders(item);
-    }
-    await reconcileBirthdayReminders();
 
     // Force a complete queue rebuild after restore. The marker stays on disk
     // until this succeeds, so a crash will retry on the next cloud sync.
