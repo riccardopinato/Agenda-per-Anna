@@ -637,18 +637,17 @@ class _NotificationSettingsCardState
       final result = await NotificationService.instance.runLocalDiagnostic();
       await _refresh();
 
+      final strings = AnnaStrings.of(context);
       final message = result.ok
-          ? 'Test locale OK: una notifica è stata inviata subito e un '
-              'promemoria di controllo arriverà tra '
-              '${result.scheduledDelaySeconds} secondi.'
+          ? strings.v100LocalTestOk(result.scheduledDelaySeconds)
           : [
               if (!result.permissionGranted)
-                'Permesso notifiche non concesso.',
+                strings.v100NotificationPermissionDenied,
               if (!result.health.notificationsEnabled)
-                'Notifiche bloccate a livello di sistema.',
+                strings.v100NotificationsSystemBlocked,
               if (!result.health.reminderChannelEnabled)
-                'Canale “Promemoria” disattivato nelle impostazioni Android.',
-              if (result.error != null) 'Errore: ${result.error}',
+                strings.v100ReminderChannelOff,
+              if (result.error != null) strings.v100Error(result.error!),
             ].join(' ');
 
       if (mounted) {
@@ -674,19 +673,17 @@ class _NotificationSettingsCardState
         final removed =
             (result['removed_invalid_tokens'] as num?)?.toInt() ?? 0;
         ok = delivered > 0 && failed == 0;
+        final strings = AnnaStrings.of(context);
         message = delivered > 0
-            ? 'Firebase OK: $delivered consegna/e su $devices dispositivo/i'
-                '${removed > 0 ? ' · $removed token obsoleti rimossi' : ''}.'
+            ? strings.v100FirebaseOk(delivered, devices, removed)
             : failed > 0
-                ? 'Firebase ha raggiunto il backend ma $failed consegna/e '
-                    'sono fallite. Controlla la diagnostica sotto.'
-                : 'Backend raggiunto, ma nessuna consegna: '
-                    '$devices dispositivo/i registrati.';
+                ? strings.v100FirebaseFailed(failed)
+                : strings.v100NoPushDelivery(devices);
       } catch (error) {
         await _refresh();
         final raw = error.toString().replaceAll(RegExp(r'\s+'), ' ').trim();
         final compact = raw.length > 180 ? '${raw.substring(0, 180)}…' : raw;
-        message = 'Test Firebase fallito: $compact';
+        message = AnnaStrings.of(context).v100FirebaseTestFailed(compact);
       }
 
       if (mounted) {
@@ -707,16 +704,16 @@ class _NotificationSettingsCardState
       }
       await _refresh();
 
+      final strings = AnnaStrings.of(context);
       final message = status.ready
-          ? 'Push PWA attive: questo dispositivo è registrato.'
+          ? strings.v100WebPushActive
           : status.isIos && !status.installedPwa
-              ? 'Su iPhone apri Anna\'s Diary dalla schermata Home: '
-                  'Safari non consente Web Push alla sola scheda del browser.'
+              ? strings.v100IosPwaRequired
               : status.permissionStatus == 'denied'
-                  ? 'Permesso notifiche negato dal browser. Riattivalo '
-                      'dalle impostazioni del sito/dispositivo.'
-                  : 'Web Push non ancora pronta: '
-                      '${status.lastError ?? 'controlla permesso e installazione PWA'}.';
+                  ? strings.v100BrowserPermissionDenied
+                  : strings.v100WebPushNotReady(
+                      status.lastError ?? strings.v100CheckPwaPermission,
+                    );
 
       if (mounted) {
         setState(() {
@@ -739,15 +736,14 @@ class _NotificationSettingsCardState
             (result['web_delivered'] as num?)?.toInt() ?? 0;
         final failed = (result['failed'] as num?)?.toInt() ?? 0;
         ok = webDelivered > 0 && failed == 0;
+        final strings = AnnaStrings.of(context);
         message = ok
-            ? 'Web Push OK: notifica inviata a questa PWA '
-                '($webDelivered consegna/e, $delivered totali).'
-            : 'Test Web Push non confermato dal backend '
-                '(web: $webDelivered · fallite: $failed).';
+            ? strings.v100WebPushOk(webDelivered, delivered)
+            : strings.v100WebPushUnconfirmed(webDelivered, failed);
       } catch (error) {
         final raw = error.toString().replaceAll(RegExp(r'\s+'), ' ').trim();
         final compact = raw.length > 180 ? '${raw.substring(0, 180)}…' : raw;
-        message = 'Test Web Push fallito: $compact';
+        message = AnnaStrings.of(context).v100WebPushTestFailed(compact);
       }
       await _refresh();
       if (mounted) {
@@ -779,9 +775,8 @@ class _NotificationSettingsCardState
         await _refresh();
         _snack(
           status.ready
-              ? 'Riparazione completata: Web Push PWA pronta.'
-              : 'Web Push non ancora pronta: verifica installazione PWA '
-                  'e permesso notifiche.',
+              ? AnnaStrings.of(context).v100RepairWebReady
+              : AnnaStrings.of(context).v100RepairWebNotReady,
         );
         return;
       }
@@ -802,9 +797,8 @@ class _NotificationSettingsCardState
               health?.sharedDeliveryReady == true);
       _snack(
         localOk && pushOk
-            ? 'Riparazione completata: notifiche pronte.'
-            : 'Riparazione completata, ma almeno un permesso/canale resta '
-                'bloccato. Apri “Impostazioni sistema” per il dettaglio.',
+            ? AnnaStrings.of(context).v100RepairReady
+            : AnnaStrings.of(context).v100RepairBlocked,
       );
     });
   }
@@ -861,13 +855,13 @@ class _NotificationSettingsCardState
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Row(
+          Row(
             children: [
-              Icon(Icons.notifications_active_outlined),
-              SizedBox(width: 8),
+              const Icon(Icons.notifications_active_outlined),
+              const SizedBox(width: 8),
               Expanded(
                 child: Text(
-                  'Notifiche · diagnostica',
+                  AnnaStrings.of(context).v100NotificationDiagnostics,
                   style: TextStyle(
                     fontWeight: FontWeight.w900,
                     fontSize: 18,
@@ -879,13 +873,8 @@ class _NotificationSettingsCardState
           const SizedBox(height: 5),
           Text(
             kIsWeb
-                ? 'Su iPhone/PWA verifica installazione nella Home, permesso '
-                    'notifiche, subscription Web Push e registrazione Supabase. '
-                    'Il test invia una push reale dal backend.'
-                : 'Verifica la catena completa: permesso Android, canali, '
-                    'programmazione locale, token FCM, registrazione Supabase e '
-                    'consegna Firebase. “Ripara notifiche” non aggira i canali '
-                    'disattivati manualmente: in quel caso usa Impostazioni sistema.',
+                ? AnnaStrings.of(context).v100NotificationWebDescription
+                : AnnaStrings.of(context).v100NotificationAndroidDescription,
             style: Theme.of(context).textTheme.bodySmall,
           ),
           const SizedBox(height: 12),
@@ -895,25 +884,25 @@ class _NotificationSettingsCardState
                   ? Icons.notifications_active
                   : Icons.install_mobile_outlined,
               title: webReady
-                  ? 'Push PWA e promemoria attivi'
-                  : 'Push PWA da attivare',
+                  ? AnnaStrings.of(context).v100PwaPushActive
+                  : AnnaStrings.of(context).v100PwaPushEnable,
               subtitle: web == null
-                  ? 'Diagnostica Web Push in caricamento...'
+                  ? AnnaStrings.of(context).v100WebDiagnosticsLoading
                   : [
                       web.isIos
                           ? (web.installedPwa
-                              ? 'PWA iPhone: installata'
-                              : 'PWA iPhone: aggiungi alla schermata Home')
-                          : 'Browser Web Push: supportato',
-                      'permesso: ${web.permissionStatus}',
+                              ? AnnaStrings.of(context).v100PwaIosInstalled
+                              : AnnaStrings.of(context).v100PwaIosAddHome)
+                          : AnnaStrings.of(context).v100BrowserWebPushSupported,
+                      AnnaStrings.of(context).v100PermissionStatus(web.permissionStatus),
                       web.subscribed
-                          ? 'subscription browser: presente'
-                          : 'subscription browser: assente',
+                          ? AnnaStrings.of(context).v100BrowserSubscriptionPresent
+                          : AnnaStrings.of(context).v100BrowserSubscriptionAbsent,
                       web.backendRegistered
-                          ? 'Supabase: registrata'
-                          : 'Supabase: non registrata',
+                          ? AnnaStrings.of(context).v100SupabaseRegistered
+                          : AnnaStrings.of(context).v100SupabaseNotRegistered,
                       if (web.lastError != null)
-                        'errore: ${web.lastError}',
+                        AnnaStrings.of(context).v100LastError(web.lastError!),
                     ].join(' · '),
               ok: webReady,
             ),
@@ -923,20 +912,20 @@ class _NotificationSettingsCardState
                 ? Icons.notifications_active
                 : Icons.notifications_off_outlined,
             title: !available
-                ? 'Servizio locale non inizializzato'
+                ? AnnaStrings.of(context).v100LocalServiceNotInitialized
                 : enabled
-                    ? 'Notifiche locali attive'
-                    : 'Notifiche locali bloccate',
+                    ? AnnaStrings.of(context).v100LocalNotificationsActive
+                    : AnnaStrings.of(context).v100LocalNotificationsBlocked,
             subtitle: available
                 ? [
-                    '$pending promemoria programmati',
+                    AnnaStrings.of(context).v100ScheduledReminders(pending),
                     reminderChannel
-                        ? 'canale Promemoria: attivo'
-                        : 'canale Promemoria: BLOCCATO',
+                        ? AnnaStrings.of(context).v100ReminderChannelActive
+                        : AnnaStrings.of(context).v100ReminderChannelBlocked,
                     if (local?.lastError != null)
-                      'ultimo errore: ${local!.lastError}',
+                      AnnaStrings.of(context).v100LastError(local!.lastError!),
                   ].join(' · ')
-                : 'Il plugin locale non è disponibile in questo momento.',
+                : AnnaStrings.of(context).v100LocalPluginUnavailable,
             ok: available && enabled && reminderChannel,
           ),
           if (!kIsWeb) const Divider(),
@@ -946,29 +935,29 @@ class _NotificationSettingsCardState
                 ? Icons.cloud_done_outlined
                 : Icons.cloud_off_outlined,
             title: !pushConfigured
-                ? 'Push Firebase non configurate'
+                ? AnnaStrings.of(context).v100FirebaseNotConfigured
                 : pushReady
-                    ? 'Push Noi ♡ registrate'
-                    : 'Push Noi ♡ da riparare',
+                    ? AnnaStrings.of(context).v100NoiPushRegistered
+                    : AnnaStrings.of(context).v100NoiPushRepair,
             subtitle: !pushConfigured
                 ? (kIsWeb
-                    ? 'Push remote non disponibili nella PWA Web/iPhone in questa versione.'
-                    : 'Questa build non contiene Firebase per la piattaforma corrente.')
+                    ? AnnaStrings.of(context).v100FirebaseUnavailable
+                    : AnnaStrings.of(context).v100FirebaseUnavailable)
                 : [
-                    'permesso: ${push?.permissionStatus ?? '...'}',
+                    AnnaStrings.of(context).v100PermissionStatus(push?.permissionStatus ?? '...'),
                     push?.tokenAvailable == true
-                        ? 'token FCM: presente'
-                        : 'token FCM: assente',
+                        ? AnnaStrings.of(context).v100FcmPresent
+                        : AnnaStrings.of(context).v100FcmAbsent,
                     push?.signedIn == true
                         ? (push?.deviceRegistered == true
-                            ? 'Supabase: registrato'
-                            : 'Supabase: non registrato')
-                        : 'cloud: accesso richiesto',
+                            ? AnnaStrings.of(context).v100SupabaseRegistered
+                            : AnnaStrings.of(context).v100SupabaseNotRegistered)
+                        : AnnaStrings.of(context).v100CloudSignInRequired,
                     sharedChannel
-                        ? 'canale Noi ♡: attivo'
-                        : 'canale Noi ♡: BLOCCATO',
+                        ? AnnaStrings.of(context).v100NoiChannelActive
+                        : AnnaStrings.of(context).v100NoiChannelBlocked,
                     if (push?.lastError != null)
-                      'errore: ${push!.lastError}',
+                      AnnaStrings.of(context).v100LastError(push!.lastError!),
                   ].join(' · '),
             ok: pushReady,
           ),
@@ -980,13 +969,15 @@ class _NotificationSettingsCardState
                 exact ? Icons.alarm_on_outlined : Icons.alarm_add_outlined,
               ),
               title: Text(
-                exact ? 'Promemoria precisi attivi' : 'Promemoria precisi',
+                exact
+                    ? AnnaStrings.of(context).v100PreciseRemindersOn
+                    : AnnaStrings.of(context).v100PreciseReminders,
                 style: const TextStyle(fontWeight: FontWeight.w700),
               ),
               subtitle: Text(
                 exact
-                    ? 'Android può mostrare i promemoria all’orario previsto.'
-                    : 'Consenti “Sveglie e promemoria” per ridurre i ritardi.',
+                    ? AnnaStrings.of(context).v100PreciseRemindersDescription
+                    : AnnaStrings.of(context).v100ExactAlarmDescription,
               ),
               trailing: exact
                   ? const Icon(Icons.check_circle_outline)
@@ -994,7 +985,7 @@ class _NotificationSettingsCardState
                       onPressed: busy
                           ? null
                           : () => _requestPermissions(exact: true),
-                      child: const Text('Attiva'),
+                      child: Text(AnnaStrings.of(context).v100Activate),
                     ),
             ),
           ],
@@ -1006,38 +997,38 @@ class _NotificationSettingsCardState
               FilledButton.icon(
                 onPressed: busy ? null : _repairAll,
                 icon: const Icon(Icons.build_circle_outlined),
-                label: const Text('Ripara notifiche'),
+                label: Text(AnnaStrings.of(context).v100RepairNotifications),
               ),
               if (kIsWeb)
                 FilledButton.tonalIcon(
                   onPressed: busy ? null : _enableWebPush,
                   icon: const Icon(Icons.notifications_active_outlined),
-                  label: const Text('Attiva PWA'),
+                  label: Text(AnnaStrings.of(context).v100EnablePwa),
                 ),
               if (kIsWeb)
                 FilledButton.tonalIcon(
                   onPressed: busy || !webReady ? null : _testWebPush,
                   icon: const Icon(Icons.send_outlined),
-                  label: const Text('Test Web Push'),
+                  label: Text(AnnaStrings.of(context).v100TestWebPush),
                 ),
               if (!kIsWeb)
                 FilledButton.tonalIcon(
                   onPressed: busy ? null : _testLocal,
                   icon: const Icon(Icons.notification_add_outlined),
-                  label: const Text('Test locale completo'),
+                  label: Text(AnnaStrings.of(context).v100FullLocalTest),
                 ),
               if (!kIsWeb && pushConfigured)
                 FilledButton.tonalIcon(
                   onPressed:
                       busy || push?.signedIn != true ? null : _testPush,
                   icon: const Icon(Icons.cloud_upload_outlined),
-                  label: const Text('Test Firebase'),
+                  label: Text(AnnaStrings.of(context).v100TestFirebase),
                 ),
               if (!kIsWeb)
                 OutlinedButton.icon(
                   onPressed: busy ? null : _openSettings,
                   icon: const Icon(Icons.settings_outlined),
-                  label: const Text('Impostazioni sistema'),
+                  label: Text(AnnaStrings.of(context).v100SystemSettings),
                 ),
             ],
           ),
@@ -1100,17 +1091,17 @@ class ExternalCalendarSettingsCard extends StatelessWidget {
       animation: service,
       builder: (context, _) {
         if (!service.initialized) {
-          return const SimpleCard(
+          return SimpleCard(
             child: Row(
               children: [
-                SizedBox(
+                const SizedBox(
                   width: 20,
                   height: 20,
                   child: CircularProgressIndicator(strokeWidth: 2),
                 ),
-                SizedBox(width: 12),
+                const SizedBox(width: 12),
                 Expanded(
-                  child: Text('Preparazione calendari esterni…'),
+                  child: Text(AnnaStrings.of(context).v100CalendarPreparing),
                 ),
               ],
             ),
@@ -1118,28 +1109,23 @@ class ExternalCalendarSettingsCard extends StatelessWidget {
         }
 
         if (!service.supported) {
-          return const SimpleCard(
+          return SimpleCard(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Calendari esterni',
-                  style: TextStyle(
+                  AnnaStrings.of(context).v100ExternalCalendars,
+                  style: const TextStyle(
                     fontWeight: FontWeight.w900,
                     fontSize: 18,
                   ),
                 ),
-                SizedBox(height: 6),
+                const SizedBox(height: 6),
+                Text(AnnaStrings.of(context).v100CalendarUnsupported),
+                const SizedBox(height: 8),
                 Text(
-                  'In questa prima release l’overlay legge il calendario '
-                  'di sistema Android. Su Web/PWA il browser non espone '
-                  'direttamente gli eventi del dispositivo.',
-                ),
-                SizedBox(height: 8),
-                Text(
-                  'Gli eventi esterni restano separati: non diventano '
-                  'Diario, Memoria, Noi ♡ o dati cloud di Anna’s Diary.',
-                  style: TextStyle(fontWeight: FontWeight.w700),
+                  AnnaStrings.of(context).v100CalendarSeparation,
+                  style: const TextStyle(fontWeight: FontWeight.w700),
                 ),
               ],
             ),
