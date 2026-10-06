@@ -34,6 +34,9 @@ class AgendaStore extends ChangeNotifier {
   static const _appVersion = appReleaseVersion;
   static const _AgendaBackupDomain _backupDomain = _AgendaBackupDomain();
 
+  @visibleForTesting
+  static String? restoreFailurePhaseForTesting;
+
   final List<AgendaItem> items = [];
   final Map<String, DayJournal> journals = {};
   final Map<String, MonthlyData> months = {};
