@@ -1,0 +1,83 @@
+part of '../main.dart';
+
+extension AnnaV100Strings on AnnaStrings {
+  String get v100Pinned => _pick(en: 'Pinned', it: 'Fissati', es: 'Fijados', fr: 'Épinglés', pt: 'Fixados');
+  String get v100MyAgendaSection => _pick(en: 'My agenda', it: 'La mia agenda', es: 'Mi agenda', fr: 'Mon agenda', pt: 'A minha agenda');
+  String get v100MyMonth => _pick(en: 'My month', it: 'Il mio mese', es: 'Mi mes', fr: 'Mon mois', pt: 'O meu mês');
+  String get v100MyMonthSubtitle => _pick(en: 'Goals, ideas and budget', it: 'Obiettivi, idee e budget', es: 'Objetivos, ideas y presupuesto', fr: 'Objectifs, idées et budget', pt: 'Objetivos, ideias e orçamento');
+  String get v100MyYear => _pick(en: 'My year', it: 'Il mio anno', es: 'Mi año', fr: 'Mon année', pt: 'O meu ano');
+  String get v100MyYearSubtitle => _pick(en: 'Memories and progress', it: 'Ricordi e progressi', es: 'Recuerdos y progreso', fr: 'Souvenirs et progrès', pt: 'Memórias e progresso');
+  String get v100Explore => _pick(en: 'Explore', it: 'Esplora', es: 'Explorar', fr: 'Explorer', pt: 'Explorar');
+  String get v100ExploreSubtitle => _pick(en: 'Memories, people, shopping, workouts and ecosystem', it: 'Ricordi, persone, spesa, allenamenti ed ecosistema', es: 'Recuerdos, personas, compras, entrenamientos y ecosistema', fr: 'Souvenirs, personnes, courses, entraînements et écosystème', pt: 'Memórias, pessoas, compras, treinos e ecossistema');
+  String get v100ExploreIntro => _pick(en: 'All secondary areas live here, without crowding the daily Home.', it: 'Tutte le aree secondarie sono qui, senza affollare la Home quotidiana.', es: 'Todas las áreas secundarias están aquí, sin saturar la pantalla de inicio diaria.', fr: 'Toutes les zones secondaires sont ici, sans surcharger l’accueil quotidien.', pt: 'Todas as áreas secundárias ficam aqui, sem sobrecarregar a Home diária.');
+  String get v100Shopping => _pick(en: 'Shopping list', it: 'Lista della spesa', es: 'Lista de la compra', fr: 'Liste de courses', pt: 'Lista de compras');
+  String get v100ShoppingEmpty => _pick(en: 'Private or shared in Noi ♡', it: 'Privata o condivisa in Noi ♡', es: 'Privada o compartida en Noi ♡', fr: 'Privée ou partagée dans Noi ♡', pt: 'Privada ou partilhada no Noi ♡');
+  String v100ShoppingPending(int count) => _pick(en: '$count to buy · private or Noi ♡', it: '$count da comprare · privata o Noi ♡', es: '$count por comprar · privada o Noi ♡', fr: '$count à acheter · privée ou Noi ♡', pt: '$count por comprar · privada ou Noi ♡');
+  String get v100Workout => _pick(en: 'Workout', it: 'Allenamento', es: 'Entrenamiento', fr: 'Entraînement', pt: 'Treino');
+  String get v100WorkoutEmpty => _pick(en: 'Multisport sessions and plans', it: 'Sessioni multisport e schede', es: 'Sesiones multideporte y planes', fr: 'Séances multisports et programmes', pt: 'Sessões multidesporto e planos');
+  String v100WorkoutSummary(int sessions, int plans) => _pick(en: '$sessions sessions · $plans plans', it: '$sessions sessioni · $plans schede', es: '$sessions sesiones · $plans planes', fr: '$sessions séances · $plans programmes', pt: '$sessions sessões · $plans planos');
+  String get v100MyMemories => _pick(en: 'My memories', it: 'I miei ricordi', es: 'Mis recuerdos', fr: 'Mes souvenirs', pt: 'As minhas memórias');
+  String get v100MemoriesSubtitle => _pick(en: 'Diary notes, photos, voice and sketches', it: 'Note, foto, voce e sketch del diario', es: 'Notas, fotos, voz y bocetos del diario', fr: 'Notes, photos, voix et croquis du journal', pt: 'Notas, fotos, voz e esboços do diário');
+  String get v100ImportantPeople => _pick(en: 'Important people', it: 'Persone importanti', es: 'Personas importantes', fr: 'Personnes importantes', pt: 'Pessoas importantes');
+  String get v100PeopleSubtitle => _pick(en: 'Relationships, birthdays and linked memories', it: 'Relazioni, compleanni e ricordi collegati', es: 'Relaciones, cumpleaños y recuerdos vinculados', fr: 'Relations, anniversaires et souvenirs liés', pt: 'Relações, aniversários e memórias ligadas');
+
+  String get v100SearchConnectTitle => _pick(en: 'Search and connect', it: 'Cerca e collega', es: 'Buscar y conectar', fr: 'Rechercher et relier', pt: 'Pesquisar e ligar');
+  String get v100SearchPhotoIndexing => _pick(en: 'Photo text indexing in progress', it: 'Indicizzazione testo foto in corso', es: 'Indexando texto de fotos', fr: 'Indexation du texte des photos en cours', pt: 'A indexar texto das fotos');
+  String get v100SearchRefreshPhotoText => _pick(en: 'Refresh photo text', it: 'Aggiorna testo nelle foto', es: 'Actualizar texto de fotos', fr: 'Actualiser le texte des photos', pt: 'Atualizar texto das fotos');
+  String get v100SearchHint => _pick(en: 'Search words, people, places, tags, dates, memories...', it: 'Cerca parole, persone, luoghi, tag, date, ricordi...', es: 'Busca palabras, personas, lugares, etiquetas, fechas, recuerdos...', fr: 'Recherche des mots, personnes, lieux, tags, dates, souvenirs...', pt: 'Pesquisa palavras, pessoas, locais, etiquetas, datas, memórias...');
+  String get v100SearchPrompt => _pick(en: 'Type something: results narrow in real time as you continue.', it: 'Scrivi qualcosa: i risultati si restringono in tempo reale mentre continui a digitare.', es: 'Escribe algo: los resultados se reducen en tiempo real mientras continúas.', fr: 'Écris quelque chose : les résultats se resserrent en temps réel.', pt: 'Escreve algo: os resultados são refinados em tempo real.');
+  String get v100NoResults => _pick(en: 'No results.', it: 'Nessun risultato.', es: 'Sin resultados.', fr: 'Aucun résultat.', pt: 'Sem resultados.');
+  String v100SearchKind(PersonalSearchKind kind) => switch (kind) {
+    PersonalSearchKind.agenda => myAgenda,
+    PersonalSearchKind.diary => diary,
+    PersonalSearchKind.person => _pick(en: 'People', it: 'Persone', es: 'Personas', fr: 'Personnes', pt: 'Pessoas'),
+    PersonalSearchKind.place => _pick(en: 'Places', it: 'Luoghi', es: 'Lugares', fr: 'Lieux', pt: 'Locais'),
+    PersonalSearchKind.birthday => _pick(en: 'Birthdays', it: 'Compleanni', es: 'Cumpleaños', fr: 'Anniversaires', pt: 'Aniversários'),
+    PersonalSearchKind.inbox => 'Inbox',
+    PersonalSearchKind.month => _pick(en: 'Months', it: 'Mesi', es: 'Meses', fr: 'Mois', pt: 'Meses'),
+  };
+
+  String get v100Rediscover => _pick(en: 'Rediscover', it: 'Riscopri', es: 'Redescubrir', fr: 'Redécouvrir', pt: 'Redescobrir');
+  String get v100Days => _pick(en: 'Days', it: 'Giorni', es: 'Días', fr: 'Jours', pt: 'Dias');
+  String get v100Months => _pick(en: 'Months', it: 'Mesi', es: 'Meses', fr: 'Mois', pt: 'Meses');
+  String get v100Years => _pick(en: 'Years', it: 'Anni', es: 'Años', fr: 'Années', pt: 'Anos');
+  String get v100MemorySearchHint => _pick(en: 'Search memories...', it: 'Cerca nei ricordi...', es: 'Buscar en recuerdos...', fr: 'Rechercher dans les souvenirs...', pt: 'Pesquisar nas memórias...');
+  String v100MemorySummary(int count, int days) => _pick(en: '$count memories · $days days', it: '$count ricordi · $days giornate', es: '$count recuerdos · $days días', fr: '$count souvenirs · $days jours', pt: '$count memórias · $days dias');
+  String get v100NoMemories => _pick(en: 'No memories yet.', it: 'Nessun ricordo.', es: 'Aún no hay recuerdos.', fr: 'Aucun souvenir.', pt: 'Ainda não há memórias.');
+  String get v100VoiceNote => _pick(en: 'Voice note', it: 'Nota vocale', es: 'Nota de voz', fr: 'Note vocale', pt: 'Nota de voz');
+  String get v100OpenDay => openDay;
+  String get v100Photo => _pick(en: 'Photo', it: 'Foto', es: 'Foto', fr: 'Photo', pt: 'Foto');
+  String get v100Note => _pick(en: 'Note', it: 'Nota', es: 'Nota', fr: 'Note', pt: 'Nota');
+  String get v100Sketch => 'Sketch';
+
+  String get v100BackupData => _pick(en: 'Backup and data', it: 'Backup e dati', es: 'Copia y datos', fr: 'Sauvegarde et données', pt: 'Backup e dados');
+  String get v100MemoriesStayYours => _pick(en: 'Your memories stay yours', it: 'I ricordi restano tuoi', es: 'Tus recuerdos siguen siendo tuyos', fr: 'Tes souvenirs restent les tiens', pt: 'As tuas memórias continuam tuas');
+  String get v100BackupHeroDescription => _pick(en: 'Create a complete copy of your agenda and keep it wherever you prefer. ZIP backup keeps data and media separate; older JSON backups remain importable.', it: 'Crea una copia completa dell’agenda e conservala dove preferisci. Il backup ZIP include dati e media separati; i vecchi backup JSON restano importabili.', es: 'Crea una copia completa de tu agenda y guárdala donde prefieras. El ZIP mantiene datos y archivos multimedia separados; los backups JSON anteriores siguen siendo importables.', fr: 'Crée une copie complète de ton agenda et conserve-la où tu veux. Le ZIP sépare données et médias ; les anciens backups JSON restent importables.', pt: 'Cria uma cópia completa da agenda e guarda-a onde preferires. O ZIP mantém dados e media separados; backups JSON antigos continuam importáveis.');
+  String get v100CreateFullBackup => _pick(en: 'Create full backup', it: 'Crea backup completo', es: 'Crear copia completa', fr: 'Créer une sauvegarde complète', pt: 'Criar backup completo');
+  String get v100FullBackupDescription => _pick(en: 'Save data and media in one verified .zip file without embedding photos as Base64 in JSON.', it: 'Salva dati e media in un unico file .zip verificato, senza incorporare le foto in Base64 nel JSON.', es: 'Guarda datos y multimedia en un único .zip verificado, sin incrustar fotos en Base64 dentro del JSON.', fr: 'Enregistre données et médias dans un .zip vérifié, sans intégrer les photos en Base64 au JSON.', pt: 'Guarda dados e media num único .zip verificado, sem incorporar fotos em Base64 no JSON.');
+  String get v100SaveBackup => _pick(en: 'Save backup', it: 'Salva backup', es: 'Guardar copia', fr: 'Enregistrer', pt: 'Guardar backup');
+  String get v100RestoreFromFile => _pick(en: 'Restore from file', it: 'Ripristina da file', es: 'Restaurar desde archivo', fr: 'Restaurer depuis un fichier', pt: 'Restaurar de ficheiro');
+  String get v100RestoreFromFileDescription => _pick(en: 'Import new ZIP backups or previous JSON backups. You can merge data or replace everything.', it: 'Importa backup ZIP nuovi o JSON precedenti. Puoi unire i dati oppure sostituire tutto.', es: 'Importa backups ZIP nuevos o JSON anteriores. Puedes combinar los datos o sustituirlo todo.', fr: 'Importe des sauvegardes ZIP récentes ou JSON anciennes. Tu peux fusionner ou tout remplacer.', pt: 'Importa backups ZIP novos ou JSON anteriores. Podes fundir os dados ou substituir tudo.');
+  String get v100ChooseBackup => _pick(en: 'Choose backup', it: 'Scegli backup', es: 'Elegir copia', fr: 'Choisir une sauvegarde', pt: 'Escolher backup');
+  String get v100OpenExport => _pick(en: 'Export open archive', it: 'Esporta archivio aperto', es: 'Exportar archivo abierto', fr: 'Exporter l’archive ouverte', pt: 'Exportar arquivo aberto');
+  String get v100OpenExportDescription => _pick(en: 'Create a ZIP readable without Anna\'s Diary: Markdown README, structured JSON, separate media and open sketch JSON. Trash, Vault and separate sensitive data stay excluded.', it: 'Crea un file ZIP leggibile senza Anna\'s Diary: README in Markdown, dati JSON strutturati, media separati e disegni in JSON aperto. Cestino, Vault e dati sensibili separati restano esclusi.', es: 'Crea un ZIP legible sin Anna\'s Diary: README Markdown, JSON estructurado, multimedia separada y bocetos en JSON abierto. Papelera, Vault y datos sensibles separados quedan excluidos.', fr: 'Crée un ZIP lisible sans Anna\'s Diary : README Markdown, JSON structuré, médias séparés et croquis en JSON ouvert. Corbeille, Vault et données sensibles séparées restent exclus.', pt: 'Cria um ZIP legível sem Anna\'s Diary: README Markdown, JSON estruturado, media separados e desenhos em JSON aberto. Lixo, Vault e dados sensíveis separados ficam excluídos.');
+  String get v100ExportArchive => _pick(en: 'Export archive', it: 'Esporta archivio', es: 'Exportar archivo', fr: 'Exporter l’archive', pt: 'Exportar arquivo');
+  String get v100VerifyIntegrity => _pick(en: 'Verify local integrity', it: 'Verifica integrità locale', es: 'Verificar integridad local', fr: 'Vérifier l’intégrité locale', pt: 'Verificar integridade local');
+  String get v100VerifyIntegrityDescription => _pick(en: 'Check missing or corrupt media, unlinked files, storage warnings and cloud changes still pending.', it: 'Controlla media mancanti o corrotti, file non più collegati, warning dello storage e modifiche cloud ancora in attesa.', es: 'Comprueba multimedia faltante o dañada, archivos sin vínculo, avisos de almacenamiento y cambios cloud pendientes.', fr: 'Vérifie médias manquants ou corrompus, fichiers non liés, alertes de stockage et changements cloud en attente.', pt: 'Verifica media em falta ou corrompidos, ficheiros sem ligação, avisos de armazenamento e alterações cloud pendentes.');
+  String get v100RunCheck => _pick(en: 'Run check', it: 'Avvia verifica', es: 'Iniciar verificación', fr: 'Lancer la vérification', pt: 'Iniciar verificação');
+  String get v100ReadableExport => _pick(en: 'Export readable copy', it: 'Esporta copia leggibile', es: 'Exportar copia legible', fr: 'Exporter une copie lisible', pt: 'Exportar cópia legível');
+  String get v100ReadableExportDescription => _pick(en: 'Create a .txt file with commitments, diary and monthly pages to keep or print.', it: 'Crea un file .txt con impegni, diario e pagine mensili da conservare o stampare.', es: 'Crea un .txt con compromisos, diario y páginas mensuales para guardar o imprimir.', fr: 'Crée un .txt avec engagements, journal et pages mensuelles à conserver ou imprimer.', pt: 'Cria um .txt com compromissos, diário e páginas mensais para guardar ou imprimir.');
+  String get v100ExportTxt => _pick(en: 'Export TXT', it: 'Esporta TXT', es: 'Exportar TXT', fr: 'Exporter TXT', pt: 'Exportar TXT');
+  String get v100LocalSafetyBackups => _pick(en: 'Local safety backups', it: 'Backup locali di sicurezza', es: 'Copias locales de seguridad', fr: 'Sauvegardes locales de sécurité', pt: 'Backups locais de segurança');
+  String get v100NoLocalBackups => _pick(en: 'No local backup available.', it: 'Nessun backup locale disponibile.', es: 'No hay copias locales disponibles.', fr: 'Aucune sauvegarde locale disponible.', pt: 'Nenhum backup local disponível.');
+  String get v100DeleteBackup => _pick(en: 'Delete backup', it: 'Elimina backup', es: 'Eliminar copia', fr: 'Supprimer la sauvegarde', pt: 'Eliminar backup');
+  String get v100Cancel => cancel;
+  String get v100Merge => _pick(en: 'Merge', it: 'Unisci', es: 'Combinar', fr: 'Fusionner', pt: 'Fundir');
+  String get v100ReplaceAll => _pick(en: 'Replace all', it: 'Sostituisci tutto', es: 'Sustituir todo', fr: 'Tout remplacer', pt: 'Substituir tudo');
+  String get v100Restore => _pick(en: 'Restore', it: 'Ripristina', es: 'Restaurar', fr: 'Restaurer', pt: 'Restaurar');
+  String get v100BackupSaved => _pick(en: 'Full ZIP backup saved.', it: 'Backup completo ZIP salvato.', es: 'Copia ZIP completa guardada.', fr: 'Sauvegarde ZIP complète enregistrée.', pt: 'Backup ZIP completo guardado.');
+  String get v100ExportCancelled => _pick(en: 'Save cancelled or failed.', it: 'Salvataggio annullato o non riuscito.', es: 'Guardado cancelado o fallido.', fr: 'Enregistrement annulé ou échoué.', pt: 'Gravação cancelada ou falhou.');
+  String get v100OpenExportSaved => _pick(en: 'Open archive exported.', it: 'Archivio aperto esportato.', es: 'Archivo abierto exportado.', fr: 'Archive ouverte exportée.', pt: 'Arquivo aberto exportado.');
+  String get v100OpenExportFailed => _pick(en: 'Could not create the open archive.', it: 'Non è stato possibile creare l\'archivio aperto.', es: 'No se pudo crear el archivo abierto.', fr: 'Impossible de créer l’archive ouverte.', pt: 'Não foi possível criar o arquivo aberto.');
+  String get v100ReadableExportSaved => _pick(en: 'Readable copy exported.', it: 'Copia leggibile esportata.', es: 'Copia legible exportada.', fr: 'Copie lisible exportée.', pt: 'Cópia legível exportada.');
+}
