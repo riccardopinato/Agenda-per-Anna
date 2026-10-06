@@ -270,7 +270,26 @@ class BackupFileService {
   bool _validAssetId(String value) =>
       value.isNotEmpty &&
       value.length <= 160 &&
-      RegExp(r'^[a-zA-Z0-9_-]+  Future<bool> saveOpenExportZip({
+      RegExp(r'^[a-zA-Z0-9_-]+\$').hasMatch(value);
+
+  bool _validArchivePath(String value) {
+    if (value.isEmpty ||
+        value.length > 240 ||
+        value.startsWith('/') ||
+        value.contains('..')) {
+      return false;
+    }
+    final parts = value.split('/');
+    return parts.isNotEmpty &&
+        parts.every(
+          (part) =>
+              part.isNotEmpty &&
+              part.length <= 160 &&
+              RegExp(r'^[a-zA-Z0-9._-]+\$').hasMatch(part),
+        );
+  }
+
+  Future<bool> saveOpenExportZip({
     required Uint8List bytes,
     required String fileName,
   }) async {
@@ -287,63 +306,6 @@ class BackupFileService {
     } catch (_) {
       return false;
     }
-  }
-
-  Future<bool> saveTextExport({
-    required String text,
-    required String fileName,
-  }) async {
-    try {
-      final uri = await FilePicker.saveFile(
-        fileName: fileName,
-        bytes: Uint8List.fromList(utf8.encode(text)),
-        mimeType: 'text/plain',
-        type: FileType.custom,
-        allowedExtensions: const ['txt'],
-        dialogTitle: 'Esporta Anna\'s Diary',
-      );
-      return uri != null;
-    } catch (_) {
-      return false;
-    }
-  }
-}
-).hasMatch(value);
-
-  bool _validArchivePath(String value) {
-    if (value.isEmpty ||
-        value.length > 240 ||
-        value.startsWith('/') ||
-        value.contains('..')) {
-      return false;
-    }
-    final parts = value.split('/');
-    return parts.isNotEmpty &&
-        parts.every(
-          (part) =>
-              part.isNotEmpty &&
-              part.length <= 160 &&
-              RegExp(r'^[a-zA-Z0-9._-]+  Future<bool> saveTextExport({
-    required String text,
-    required String fileName,
-  }) async {
-    try {
-      final uri = await FilePicker.saveFile(
-        fileName: fileName,
-        bytes: Uint8List.fromList(utf8.encode(text)),
-        mimeType: 'text/plain',
-        type: FileType.custom,
-        allowedExtensions: const ['txt'],
-        dialogTitle: 'Esporta Anna\'s Diary',
-      );
-      return uri != null;
-    } catch (_) {
-      return false;
-    }
-  }
-}
-).hasMatch(part),
-        );
   }
 
   Future<bool> saveTextExport({
