@@ -54,7 +54,8 @@ Source of execution truth for Anna's Diary. Product identity and boundaries are 
 | v0.97 | Ecosystem Hub v1 | Completed — CI/AppLab green | User-facing app registry, install visibility, app-scoped LINK/history management and source navigation on top of certified E1 |
 | v0.98 | Capture Everywhere | Completed — trusted runtime verified | Unified Capture across primary app surfaces plus Android/PWA launch shortcuts, reusing canonical persistence |
 | v0.99 | Open Life Export | Completed — CI/AppLab trusted runtime green | Open Markdown + structured JSON + separate media/sketch export over canonical data, with privacy-safe exclusions and no new persistence |
-| v1.00-B | Golden Core Cleanup & Localization | In progress — release gates pending | Remove confirmed dead UI, finish high-frequency localization, simplify Home IA and lock 10k-memory projection performance without new persistence |
+| v1.00-B | Golden Core Cleanup & Localization | Completed — CI/AppLab trusted runtime green | Removed confirmed dead UI, localized core surfaces, simplified Home IA and locked 10k-memory projection performance without new persistence |
+| v1.00-C | Data Safety v21 Hardening | NEXT — implementation pending | Add real restore staging, reference-safe media commit, deterministic rollback/recovery markers and harden shared-reference cleanup |
 
 ## v1.00-A audit outcome
 
@@ -69,6 +70,27 @@ The full product reality audit is recorded in `docs/V100_FULL_PRODUCT_REALITY_AU
 - AgendaStore / DayJournal / DiaryBlock ownership, lifecycle, sync and backup architecture remain unchanged.
 - Explore summaries remain live after Shopping/Workout edits, and localized Search accepts the same translated memory-type vocabulary it displays.
 - Development checks, Web build/deploy, Android size audit, AppLab Trusted Verify and advisory review must be green on the final PR head before v1.00-B is completed.
+
+### v1.00-B release evidence
+
+- PR #90 final tested head: `fd3fa86b1b4be03f8c3888e38156a5035c235d13`.
+- Squash merge: `a8852d177031ca11e3ab7de2eb85e623cee6dda1`.
+- Development checks #917: analyze and full tests passed.
+- Web deploy #523: release Web build/deploy passed.
+- Android size audit #463: production-equivalent ARM64 audit passed.
+- AppLab Production Gate #458: build/test phase and trusted Android runtime verification passed; Safe Interaction Crawler passed. Multi-screen visual result remained advisory WARN and did not invalidate the trusted runtime PASS.
+- CodeRabbit advisory status: success.
+- Evidence ceiling for this step: **TRUSTED RUNTIME VERIFIED**. No physical-device or distribution claim is made for native file/security/store flows.
+
+## v1.00-C acceptance direction
+
+- Backup restore imports media into an isolated staging namespace/transaction before any canonical structured state can reference them.
+- Commit verifies every required referenced asset is available and integral before canonical state becomes visible.
+- Failure after staging or during canonical commit removes staging and restores any pre-existing canonical media deterministically.
+- A durable/recoverable restore marker allows cleanup after an interrupted/crashed restore.
+- Shared media references and Trash remain reference-safe under purge/cleanup.
+- Automated tests cover success, corrupt/missing media, interrupted staging, structured-state failure, orphan staging cleanup and shared-reference preservation.
+- Physical file-picker/storage-provider scenarios remain a **v1.00-D physical validation gate** and must not be inferred from CI/AppLab.
 
 ## v0.99 acceptance criteria
 
