@@ -613,10 +613,10 @@ extension SearchConnectionsAgendaStore on AgendaStore {
             ...sketchText,
             DateFormat('d MMMM yyyy', locale).format(date),
             switch (block.type) {
-              DiaryBlockType.note => 'nota testo diario',
-              DiaryBlockType.photo => 'foto immagine ricordo',
-              DiaryBlockType.sketch => 'sketch disegno',
-              DiaryBlockType.voice => 'voce audio registrazione',
+              DiaryBlockType.note => 'note nota notas text texto journal diario diário',
+              DiaryBlockType.photo => 'photo foto image imagen immagine photographie imagem memory recuerdo souvenir ricordo memória',
+              DiaryBlockType.sketch => 'sketch drawing dibujo dessin disegno desenho',
+              DiaryBlockType.voice => 'voice voz voix audio recording registrazione grabación gravação',
             },
           ])) {
             continue;
