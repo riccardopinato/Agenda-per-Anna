@@ -325,16 +325,16 @@ class _BackupScreenState extends State<BackupScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Icon(Icons.shield_outlined, size: 30),
-                        SizedBox(height: 10),
+                        const Icon(Icons.shield_outlined, size: 30),
+                        const SizedBox(height: 10),
                         Text(
                           AnnaStrings.of(context).v100MemoriesStayYours,
-                          style: TextStyle(
+                          style: const TextStyle(
                             fontSize: 22,
                             fontWeight: FontWeight.w900,
                           ),
                         ),
-                        SizedBox(height: 5),
+                        const SizedBox(height: 5),
                         Text(
                           AnnaStrings.of(context).v100BackupHeroDescription,
                         ),
@@ -391,7 +391,7 @@ class _BackupScreenState extends State<BackupScreen> {
                       Expanded(
                         child: Text(
                           AnnaStrings.of(context).v100LocalSafetyBackups,
-                          style: TextStyle(
+                          style: const TextStyle(
                             fontWeight: FontWeight.w900,
                             fontSize: 18,
                           ),
@@ -869,7 +869,7 @@ class _NotificationSettingsCardState
               Expanded(
                 child: Text(
                   AnnaStrings.of(context).v100NotificationDiagnostics,
-                  style: TextStyle(
+                  style: const TextStyle(
                     fontWeight: FontWeight.w900,
                     fontSize: 18,
                   ),
@@ -1145,7 +1145,7 @@ class ExternalCalendarSettingsCard extends StatelessWidget {
             children: [
               Text(
                 AnnaStrings.of(context).v100ExternalCalendars,
-                style: TextStyle(
+                style: const TextStyle(
                   fontWeight: FontWeight.w900,
                   fontSize: 18,
                 ),
@@ -1670,7 +1670,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   children: [
                     Text(
                       strings.v100NewCommitments,
-                      style: TextStyle(
+                      style: const TextStyle(
                         fontWeight: FontWeight.w900,
                         fontSize: 18,
                       ),
@@ -2005,7 +2005,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   children: [
                     Text(
                       strings.v100DataSection,
-                      style: TextStyle(
+                      style: const TextStyle(
                         fontWeight: FontWeight.w900,
                         fontSize: 18,
                       ),
