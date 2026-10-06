@@ -270,7 +270,7 @@ class BackupFileService {
   bool _validAssetId(String value) =>
       value.isNotEmpty &&
       value.length <= 160 &&
-      RegExp(r'^[a-zA-Z0-9_-]+\$').hasMatch(value);
+      RegExp(r'^[a-zA-Z0-9_-]+$').hasMatch(value);
 
   bool _validArchivePath(String value) {
     if (value.isEmpty ||
@@ -285,7 +285,7 @@ class BackupFileService {
           (part) =>
               part.isNotEmpty &&
               part.length <= 160 &&
-              RegExp(r'^[a-zA-Z0-9._-]+\$').hasMatch(part),
+              RegExp(r'^[a-zA-Z0-9._-]+$').hasMatch(part),
         );
   }
 
