@@ -216,7 +216,7 @@ class _BackupScreenState extends State<BackupScreen> {
               actions: [
                 TextButton(
                   onPressed: () => Navigator.pop(dialogContext, false),
-                  child: const Text('Annulla'),
+                  child: Text(AnnaStrings.of(context).cancel),
                 ),
                 FilledButton(
                   onPressed: () => Navigator.pop(dialogContext, true),
@@ -266,11 +266,11 @@ class _BackupScreenState extends State<BackupScreen> {
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(dialogContext, false),
-                child: const Text('Annulla'),
+                child: Text(AnnaStrings.of(context).cancel),
               ),
               FilledButton(
                 onPressed: () => Navigator.pop(dialogContext, true),
-                child: const Text('Ripristina'),
+                child: Text(AnnaStrings.of(context).v100Restore),
               ),
             ],
           ),
@@ -1150,8 +1150,8 @@ class ExternalCalendarSettingsCard extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text(
-                'Calendari esterni',
+              Text(
+                AnnaStrings.of(context).v100ExternalCalendars,
                 style: TextStyle(
                   fontWeight: FontWeight.w900,
                   fontSize: 18,
@@ -1159,8 +1159,7 @@ class ExternalCalendarSettingsCard extends StatelessWidget {
               ),
               const SizedBox(height: 5),
               Text(
-                'Mostra in sola lettura gli eventi dei calendari già '
-                'configurati sul dispositivo.',
+                AnnaStrings.of(context).v100ExternalCalendarsDescription,
                 style: Theme.of(context).textTheme.bodySmall,
               ),
               const SizedBox(height: 10),
@@ -1179,26 +1178,24 @@ class ExternalCalendarSettingsCard extends StatelessWidget {
                               if (!context.mounted) return;
                               _message(
                                 context,
-                                'Calendari esterni attivati in sola lettura.',
+                                AnnaStrings.of(context).v100CalendarEnabled,
                               );
                             } else {
                               _message(
                                 context,
-                                'Permesso calendario non concesso.',
+                                AnnaStrings.of(context).v100CalendarPermissionDenied,
                               );
                             }
                           },
                     icon: const Icon(Icons.event_available_outlined),
-                    label: const Text('Consenti accesso al calendario'),
+                    label: Text(AnnaStrings.of(context).v100AllowCalendar),
                   ),
                 )
               else ...[
                 SwitchListTile(
                   contentPadding: EdgeInsets.zero,
-                  title: const Text('Mostra eventi esterni'),
-                  subtitle: const Text(
-                    'Overlay locale nell’Agenda; nessuna copia nel diario.',
-                  ),
+                  title: Text(AnnaStrings.of(context).v100ShowExternalEvents),
+                  subtitle: Text(AnnaStrings.of(context).v100ExternalOverlayDescription),
                   value: service.enabled,
                   onChanged: service.busy
                       ? null
@@ -1208,17 +1205,17 @@ class ExternalCalendarSettingsCard extends StatelessWidget {
                         },
                 ),
                 if (service.calendars.isEmpty)
-                  const Padding(
-                    padding: EdgeInsets.only(top: 6),
+                  Padding(
+                    padding: const EdgeInsets.only(top: 6),
                     child: Text(
-                      'Nessun calendario visibile trovato sul dispositivo.',
+                      AnnaStrings.of(context).v100NoVisibleCalendars,
                     ),
                   )
                 else ...[
                   const Divider(),
-                  const Text(
-                    'Calendari visibili',
-                    style: TextStyle(fontWeight: FontWeight.w800),
+                  Text(
+                    AnnaStrings.of(context).v100VisibleCalendars,
+                    style: const TextStyle(fontWeight: FontWeight.w800),
                   ),
                   const SizedBox(height: 4),
                   ...service.calendars.map(
@@ -1260,7 +1257,7 @@ class ExternalCalendarSettingsCard extends StatelessWidget {
                             if (service.enabled) await _primeVisibleRange();
                           },
                     icon: const Icon(Icons.refresh),
-                    label: const Text('Aggiorna calendari'),
+                    label: Text(AnnaStrings.of(context).v100RefreshCalendars),
                   ),
                 ),
               ],
@@ -1280,10 +1277,7 @@ class ExternalCalendarSettingsCard extends StatelessWidget {
               ],
               const SizedBox(height: 8),
               Text(
-                'Privacy: Anna’s Diary richiede solo lettura. Gli eventi '
-                'rimangono nel calendario originale, non vengono sincronizzati '
-                'dal backend dell’app e non alimentano automaticamente Diario '
-                'o Memoria.',
+                AnnaStrings.of(context).v100CalendarPrivacy,
                 style: Theme.of(context).textTheme.bodySmall,
               ),
             ],
@@ -1322,9 +1316,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Nome aggiornato.'),
-        duration: Duration(seconds: 1),
+      SnackBar(
+        content: Text(AnnaStrings.of(context).v100NameUpdated),
+        duration: const Duration(seconds: 1),
       ),
     );
   }
@@ -1335,7 +1329,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final value = await showDialog<String>(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        title: const Text('Imposta PIN'),
+        title: Text(AnnaStrings.of(context).v100SetPin),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -1345,9 +1339,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
               obscureText: true,
               keyboardType: TextInputType.number,
               maxLength: 8,
-              decoration: const InputDecoration(
-                labelText: 'PIN',
-                hintText: 'Almeno 4 cifre',
+              decoration: InputDecoration(
+                labelText: AnnaStrings.of(context).v100Pin,
+                hintText: AnnaStrings.of(context).v100PinHint,
               ),
             ),
             const SizedBox(height: 8),
@@ -1356,8 +1350,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
               obscureText: true,
               keyboardType: TextInputType.number,
               maxLength: 8,
-              decoration: const InputDecoration(
-                labelText: 'Ripeti PIN',
+              decoration: InputDecoration(
+                labelText: AnnaStrings.of(context).v100RepeatPin,
               ),
             ),
           ],
@@ -1365,7 +1359,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(dialogContext),
-            child: const Text('Annulla'),
+            child: Text(AnnaStrings.of(context).cancel),
           ),
           FilledButton(
             onPressed: () {
@@ -1376,7 +1370,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               if (!validPin || a != b) return;
               Navigator.pop(dialogContext, a);
             },
-            child: const Text('Salva PIN'),
+            child: Text(AnnaStrings.of(context).v100SavePin),
           ),
         ],
       ),
@@ -1389,12 +1383,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
       await widget.store.setPin(value);
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('PIN impostato e blocco attivato.')),
+        SnackBar(content: Text(AnnaStrings.of(context).v100PinSet)),
       );
     } catch (_) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('PIN non valido.')),
+        SnackBar(content: Text(AnnaStrings.of(context).v100InvalidPin)),
       );
     }
   }
@@ -1413,19 +1407,18 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final confirmed = await showDialog<bool>(
           context: context,
           builder: (dialogContext) => AlertDialog(
-            title: const Text('Ripristinare le impostazioni?'),
-            content: const Text(
-              'Verranno ripristinati tema, colore e valori predefiniti. '
-              'Appuntamenti, diario e altri dati non verranno toccati.',
+            title: Text(AnnaStrings.of(context).v100ResetSettingsQuestion),
+            content: Text(
+              AnnaStrings.of(context).v100ResetSettingsDescription,
             ),
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(dialogContext, false),
-                child: const Text('Annulla'),
+                child: Text(AnnaStrings.of(context).cancel),
               ),
               FilledButton(
                 onPressed: () => Navigator.pop(dialogContext, true),
-                child: const Text('Ripristina'),
+                child: Text(AnnaStrings.of(context).v100Restore),
               ),
             ],
           ),
@@ -1682,8 +1675,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
-                      'Nuovi impegni',
+                    Text(
+                      strings.v100NewCommitments,
                       style: TextStyle(
                         fontWeight: FontWeight.w900,
                         fontSize: 18,
@@ -1691,15 +1684,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     ),
                     const SizedBox(height: 5),
                     Text(
-                      'Questi valori vengono proposti automaticamente quando crei un nuovo elemento.',
+                      strings.v100NewCommitmentsDescription,
                       style: Theme.of(context).textTheme.bodySmall,
                     ),
                     const SizedBox(height: 12),
                     DropdownButtonFormField<AgendaCategory>(
                       initialValue: prefs.defaultCategory,
-                      decoration: const InputDecoration(
-                        labelText: 'Categoria predefinita',
-                        prefixIcon: Icon(Icons.label_outline),
+                      decoration: InputDecoration(
+                        labelText: strings.v100DefaultCategory,
+                        prefixIcon: const Icon(Icons.label_outline),
                       ),
                       items: AgendaCategory.values
                           .map(
@@ -1733,7 +1726,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         const SizedBox(width: 8),
                         Expanded(
                           child: Text(
-                            'Durata appuntamento: ${prefs.defaultEventMinutes} min',
+                            strings.v100DefaultDuration(prefs.defaultEventMinutes),
                             style: const TextStyle(
                               fontWeight: FontWeight.w700,
                             ),
@@ -1761,10 +1754,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     DropdownButtonFormField<int>(
                       key: ValueKey('primary-$primary'),
                       initialValue: primary,
-                      decoration: const InputDecoration(
-                        labelText: 'Promemoria predefinito 1',
+                      decoration: InputDecoration(
+                        labelText: strings.v100DefaultReminder1,
                         prefixIcon:
-                            Icon(Icons.notifications_none_outlined),
+                            const Icon(Icons.notifications_none_outlined),
                       ),
                       items: _reminderMenuItems,
                       onChanged: (value) {
@@ -1784,9 +1777,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     DropdownButtonFormField<int>(
                       key: ValueKey('secondary-$secondary-$primary'),
                       initialValue: secondary,
-                      decoration: const InputDecoration(
-                        labelText: 'Promemoria predefinito 2',
-                        prefixIcon: Icon(Icons.add_alert_outlined),
+                      decoration: InputDecoration(
+                        labelText: strings.v100DefaultReminder2,
+                        prefixIcon: const Icon(Icons.add_alert_outlined),
                       ),
                       items: _reminderMenuItems,
                       onChanged: (value) {
@@ -1815,14 +1808,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Row(
+                    Row(
                       children: [
-                        Icon(Icons.shield_outlined),
-                        SizedBox(width: 8),
+                        const Icon(Icons.shield_outlined),
+                        const SizedBox(width: 8),
                         Expanded(
                           child: Text(
-                            'Privacy Center',
-                            style: TextStyle(
+                            strings.v100PrivacyCenter,
+                            style: const TextStyle(
                               fontWeight: FontWeight.w900,
                               fontSize: 18,
                             ),
@@ -1832,9 +1825,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     ),
                     const SizedBox(height: 5),
                     Text(
-                      'Un unico punto per protezione dell’app, visibilità, '
-                      'Cassaforte, backup e diritti sui dati. I controlli '
-                      'continuano a usare i sistemi già esistenti.',
+                      strings.v100PrivacyCenterDescription,
                       style: Theme.of(context).textTheme.bodySmall,
                     ),
                     const SizedBox(height: 12),
@@ -1851,22 +1842,22 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           ),
                           label: Text(
                             prefs.privacyLockEnabled
-                                ? 'Blocco app attivo'
-                                : 'Blocco app disattivo',
+                                ? strings.v100AppLockOn
+                                : strings.v100AppLockOff,
                           ),
                         ),
                         Chip(
                           avatar: const Icon(Icons.visibility_off_outlined, size: 18),
                           label: Text(
                             prefs.hideHomeDetails
-                                ? 'Home protetta'
-                                : 'Dettagli Home visibili',
+                                ? strings.v100HomeProtected
+                                : strings.v100HomeDetailsVisible,
                           ),
                         ),
                         if (prefs.biometricUnlock && prefs.privacyLockEnabled)
-                          const Chip(
-                            avatar: Icon(Icons.fingerprint, size: 18),
-                            label: Text('Biometria attiva'),
+                          Chip(
+                            avatar: const Icon(Icons.fingerprint, size: 18),
+                            label: Text(strings.v100BiometricsOn),
                           ),
                       ],
                     ),
@@ -1877,16 +1868,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         child: FilledButton.tonalIcon(
                           onPressed: _configurePin,
                           icon: const Icon(Icons.pin_outlined),
-                          label: const Text('Imposta PIN'),
+                          label: Text(strings.v100SetPin),
                         ),
                       )
                     else ...[
                       SwitchListTile(
                         contentPadding: EdgeInsets.zero,
-                        title: const Text('Blocca Agenda'),
-                        subtitle: const Text(
-                          'Richiede PIN o biometria per riaprire l’app.',
-                        ),
+                        title: Text(strings.v100LockAgenda),
+                        subtitle: Text(strings.v100LockAgendaDescription),
                         value: prefs.privacyLockEnabled,
                         onChanged: (value) =>
                             widget.store.savePreferences(
@@ -1896,7 +1885,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       ListTile(
                         contentPadding: EdgeInsets.zero,
                         leading: const Icon(Icons.pin_outlined),
-                        title: const Text('Cambia PIN'),
+                        title: Text(strings.v100ChangePin),
                         trailing: const Icon(Icons.chevron_right),
                         onTap: _configurePin,
                       ),
@@ -1904,11 +1893,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     if (prefs.pinHash != null) ...[
                       SwitchListTile(
                         contentPadding: EdgeInsets.zero,
-                        title: const Text('Sblocco biometrico'),
-                        subtitle: const Text(
+                        title: Text(strings.v100BiometricUnlock),
+                        subtitle: Text(
                           kIsWeb
-                              ? 'Non disponibile sul web.'
-                              : 'Usa impronta o riconoscimento biometrico del dispositivo.',
+                              ? strings.v100NotWeb
+                              : strings.v100BiometricDescription,
                         ),
                         value: prefs.biometricUnlock,
                         onChanged: prefs.privacyLockEnabled
@@ -1917,10 +1906,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                     !await _deviceSupportsBiometrics()) {
                                   if (!context.mounted) return;
                                   ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(
-                                      content: Text(
-                                        'Biometria non disponibile su questo dispositivo.',
-                                      ),
+                                    SnackBar(
+                                      content: Text(strings.v100BiometricUnavailable),
                                     ),
                                   );
                                   return;
@@ -1935,31 +1922,20 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       ),
                       DropdownButtonFormField<int>(
                         initialValue: prefs.autoLockMinutes,
-                        decoration: const InputDecoration(
-                          labelText: 'Blocco automatico',
-                          prefixIcon: Icon(Icons.timer_outlined),
+                        decoration: InputDecoration(
+                          labelText: strings.v100AutoLock,
+                          prefixIcon: const Icon(Icons.timer_outlined),
                         ),
-                        items: const [
+                        items: [
                           DropdownMenuItem(
                             value: 0,
-                            child: Text('Subito'),
+                            child: Text(strings.v100Immediately),
                           ),
-                          DropdownMenuItem(
-                            value: 1,
-                            child: Text('Dopo 1 minuto'),
-                          ),
-                          DropdownMenuItem(
-                            value: 2,
-                            child: Text('Dopo 2 minuti'),
-                          ),
-                          DropdownMenuItem(
-                            value: 5,
-                            child: Text('Dopo 5 minuti'),
-                          ),
-                          DropdownMenuItem(
-                            value: 15,
-                            child: Text('Dopo 15 minuti'),
-                          ),
+                          for (final minutes in const [1, 2, 5, 15])
+                            DropdownMenuItem(
+                              value: minutes,
+                              child: Text(strings.v100AfterMinutes(minutes)),
+                            ),
                         ],
                         onChanged: (value) {
                           if (value == null) return;
@@ -1972,10 +1948,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     const SizedBox(height: 4),
                     SwitchListTile(
                       contentPadding: EdgeInsets.zero,
-                      title: const Text('Nascondi dettagli in Home'),
-                      subtitle: const Text(
-                        'Mostra indicatori generici invece del titolo del prossimo impegno.',
-                      ),
+                      title: Text(strings.v100HideHomeDetails),
+                      subtitle: Text(strings.v100HideHomeDetailsDescription),
                       value: prefs.hideHomeDetails,
                       onChanged: (value) =>
                           widget.store.savePreferences(
@@ -1986,10 +1960,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     ListTile(
                       contentPadding: EdgeInsets.zero,
                       leading: const Icon(Icons.lock_person_outlined),
-                      title: const Text('Cassaforte privata'),
-                      subtitle: const Text(
-                        'Spazio cifrato locale, separato da cloud, ricerca e backup ordinario. Include note private e credenziali personali protette.',
-                      ),
+                      title: Text(strings.v100PrivateVault),
+                      subtitle: Text(strings.v100PrivateVaultDescription),
                       trailing: const Icon(Icons.chevron_right),
                       onTap: () => Navigator.push(
                         context,
@@ -2001,10 +1973,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     ListTile(
                       contentPadding: EdgeInsets.zero,
                       leading: const Icon(Icons.verified_user_outlined),
-                      title: const Text('Backup e sicurezza dati'),
-                      subtitle: const Text(
-                        'Backup verificato, ripristino e controllo dell’integrità locale.',
-                      ),
+                      title: Text(strings.v100BackupSafetyData),
+                      subtitle: Text(strings.v100BackupSafetyDataDescription),
                       trailing: const Icon(Icons.chevron_right),
                       onTap: () => Navigator.push(
                         context,
@@ -2016,10 +1986,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     ListTile(
                       contentPadding: EdgeInsets.zero,
                       leading: const Icon(Icons.manage_accounts_outlined),
-                      title: const Text('Account e diritti sui dati'),
-                      subtitle: const Text(
-                        'Sincronizzazione, disconnessione ed eliminazione definitiva dell’account cloud.',
-                      ),
+                      title: Text(strings.v100AccountDataRights),
+                      subtitle: Text(strings.v100AccountDataRightsDescription),
                       trailing: const Icon(Icons.chevron_right),
                       onTap: () => Navigator.push(
                         context,
@@ -2031,9 +1999,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     ),
                     const SizedBox(height: 6),
                     Text(
-                      'La Cassaforte resta locale anche se elimini l’account cloud. '
-                      'I dati ordinari dell’agenda restano local-first e vengono '
-                      'sincronizzati solo tramite il sistema account già esistente.',
+                      strings.v100VaultAccountBoundary,
                       style: Theme.of(context).textTheme.bodySmall,
                     ),
                   ],
@@ -2044,8 +2010,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
-                      'Dati',
+                    Text(
+                      strings.v100DataSection,
                       style: TextStyle(
                         fontWeight: FontWeight.w900,
                         fontSize: 18,
@@ -2055,10 +2021,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     ListTile(
                       contentPadding: EdgeInsets.zero,
                       leading: const Icon(Icons.cloud_outlined),
-                      title: const Text('Account e sincronizzazione'),
-                      subtitle: const Text(
-                        'Sincronizza l’agenda personale fra i tuoi dispositivi.',
-                      ),
+                      title: Text(strings.v100AccountSync),
+                      subtitle: Text(strings.v100AccountSyncDescription),
                       trailing: const Icon(Icons.chevron_right),
                       onTap: () => Navigator.push(
                         context,
@@ -2072,10 +2036,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     ListTile(
                       contentPadding: EdgeInsets.zero,
                       leading: const Icon(Icons.backup_outlined),
-                      title: const Text('Backup e ripristino'),
-                      subtitle: const Text(
-                        'Esporta, importa o recupera una copia locale.',
-                      ),
+                      title: Text(strings.v100BackupRestore),
+                      subtitle: Text(strings.v100BackupRestoreDescription),
                       trailing: const Icon(Icons.chevron_right),
                       onTap: () => Navigator.push(
                         context,
@@ -2092,7 +2054,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               OutlinedButton.icon(
                 onPressed: _reset,
                 icon: const Icon(Icons.restart_alt),
-                label: const Text('Ripristina impostazioni predefinite'),
+                label: Text(strings.v100ResetDefaults),
               ),
               const SizedBox(height: 8),
               Center(
