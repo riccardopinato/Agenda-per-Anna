@@ -1,5 +1,10 @@
 appId: com.riccardopinato.agenda_per_anna
 ---
+# People is nested under Explore in v1.00-B. Return through Explore to Home.
+- back
+- extendedWaitUntil:
+    visible: '(Esplora|Explore|Explorar|Explorer)'
+    timeout: 10000
 - back
 - extendedWaitUntil:
     visible: "(La mia agenda|My agenda|Mi agenda|Mon agenda|A minha agenda)"
