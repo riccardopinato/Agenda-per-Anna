@@ -14,9 +14,17 @@ class ExploreScreen extends StatelessWidget {
           style: const TextStyle(fontWeight: FontWeight.w800),
         ),
       ),
-      body: ListView(
-        padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
-        children: [
+      body: AnimatedBuilder(
+        animation: Listenable.merge([
+          store.shoppingRevision,
+          store.workoutRevision,
+          store.journalRevision,
+          store.peopleRevision,
+          store.sharedRevision,
+        ]),
+        builder: (context, _) => ListView(
+          padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
+          children: [
           Text(strings.v100ExploreIntro),
           const SizedBox(height: 16),
           NavigationCard(
@@ -75,7 +83,8 @@ class ExploreScreen extends StatelessWidget {
               MaterialPageRoute(builder: (_) => LifeEcosystemScreen(store: store)),
             ),
           ),
-        ],
+          ],
+        ),
       ),
     );
   }
