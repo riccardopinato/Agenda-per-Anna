@@ -767,8 +767,9 @@ class AgendaStore extends ChangeNotifier {
 
   Future<({List<DiarySketchPage> pages, bool changed})>
       _localizeSketchPages(
-    List<DiarySketchPage> pages,
-  ) async {
+    List<DiarySketchPage> pages, {
+    Future<String> Function(Uint8List bytes)? mediaWriter,
+  }) async {
     var changed = false;
     final localizedPages = <DiarySketchPage>[];
 
@@ -781,7 +782,9 @@ class AgendaStore extends ChangeNotifier {
         if (image.imageBase64.isNotEmpty) {
           try {
             final bytes = base64Decode(image.imageBase64);
-            final assetId = await MediaAssetStore.instance.put(bytes);
+            final assetId = mediaWriter == null
+                ? await MediaAssetStore.instance.put(bytes)
+                : await mediaWriter(bytes);
             next = image.copyWith(
               imageBase64: '',
               mediaAssetId: assetId,
@@ -836,6 +839,7 @@ class AgendaStore extends ChangeNotifier {
   Future<bool> _migrateInlinePrivateMedia(
     LocalStateStore prefs, {
     bool persist = true,
+    Future<String> Function(Uint8List bytes)? mediaWriter,
   }) async {
     if (_unreadableStorageKeys.contains(_journalsKey)) return false;
 
@@ -856,15 +860,19 @@ class AgendaStore extends ChangeNotifier {
           if (block.imageBase64.isNotEmpty) {
             try {
               final bytes = base64Decode(block.imageBase64);
-              fullId = await MediaAssetStore.instance.put(bytes);
+              fullId = mediaWriter == null
+                  ? await MediaAssetStore.instance.put(bytes)
+                  : await mediaWriter(bytes);
 
               final existingThumbnail = thumbnailId.isEmpty
                   ? null
                   : await MediaAssetStore.instance.read(thumbnailId);
               if (existingThumbnail == null) {
-                thumbnailId = await MediaAssetStore.instance.put(
-                  await _createMediaThumbnail(bytes),
-                );
+                final thumbnailBytes =
+                    await _createMediaThumbnail(bytes);
+                thumbnailId = mediaWriter == null
+                    ? await MediaAssetStore.instance.put(thumbnailBytes)
+                    : await mediaWriter(thumbnailBytes);
               }
 
               next = next.copyWith(
@@ -899,7 +907,9 @@ class AgendaStore extends ChangeNotifier {
             block.audioBase64.isNotEmpty) {
           try {
             final bytes = base64Decode(block.audioBase64);
-            final assetId = await MediaAssetStore.instance.put(bytes);
+            final assetId = mediaWriter == null
+                ? await MediaAssetStore.instance.put(bytes)
+                : await mediaWriter(bytes);
             next = next.copyWith(
               audioBase64: '',
               mediaAssetId: assetId,
@@ -911,7 +921,10 @@ class AgendaStore extends ChangeNotifier {
         }
 
         if (next.pages.isNotEmpty) {
-          final localized = await _localizeSketchPages(next.pages);
+          final localized = await _localizeSketchPages(
+            next.pages,
+            mediaWriter: mediaWriter,
+          );
           if (localized.changed) {
             next = next.copyWith(pages: localized.pages);
             blockChanged = true;
