@@ -6,15 +6,20 @@ void main() {
   test('v0.79 consolidates existing privacy systems without new persistence', () {
     final settings =
         File('lib/src/screens/backup_settings.dart').readAsStringSync();
+    final localization =
+        File('lib/src/localization_v100.dart').readAsStringSync();
     final shell = File('lib/src/app_shell.dart').readAsStringSync();
     final vault = File('lib/vault_service.dart').readAsStringSync();
     final account =
         File('lib/src/screens/cloud_account.dart').readAsStringSync();
 
-    expect(settings, contains("'Privacy Center'"));
-    expect(settings, contains("'Cassaforte privata'"));
-    expect(settings, contains("'Backup e sicurezza dati'"));
-    expect(settings, contains("'Account e diritti sui dati'"));
+    expect(settings, contains('strings.v100PrivacyCenter'));
+    expect(settings, contains('strings.v100PrivateVault'));
+    expect(settings, contains('strings.v100BackupSafetyData'));
+    expect(settings, contains('strings.v100AccountDataRights'));
+    expect(localization, contains("it: 'Cassaforte privata'"));
+    expect(localization, contains("it: 'Backup e sicurezza dati'"));
+    expect(localization, contains("it: 'Account e diritti sui dati'"));
 
     expect(settings, contains('prefs.privacyLockEnabled'));
     expect(settings, contains('prefs.biometricUnlock'));
@@ -46,17 +51,22 @@ void main() {
   test('Privacy Center explicitly preserves Vault and cloud separation', () {
     final settings =
         File('lib/src/screens/backup_settings.dart').readAsStringSync();
+    final localization =
+        File('lib/src/localization_v100.dart').readAsStringSync();
 
+    expect(settings, contains('strings.v100VaultAccountBoundary'));
+    expect(settings, contains('strings.v100PrivateVaultDescription'));
+    expect(settings, contains('strings.v100CloudAccountDescription'));
     expect(
-      settings,
+      localization,
       contains('La Cassaforte resta locale anche se elimini l’account cloud.'),
     );
     expect(
-      settings,
+      localization,
       contains('Spazio cifrato locale, separato da cloud, ricerca e backup ordinario.'),
     );
     expect(
-      settings,
+      localization,
       contains('Sincronizzazione, disconnessione ed eliminazione definitiva'),
     );
   });
