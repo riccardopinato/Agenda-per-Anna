@@ -9,6 +9,16 @@ appId: com.riccardopinato.agenda_per_anna
     retryTapIfNoChange: true
 - scrollUntilVisible:
     element:
+      text: '(Esplora|Explore|Explorar|Explorer)[\s\S]*'
+    direction: DOWN
+    timeout: 10000
+- tapOn:
+    text: '(Esplora|Explore|Explorar|Explorer)[\s\S]*'
+- extendedWaitUntil:
+    visible: '(Esplora|Explore|Explorar|Explorer)'
+    timeout: 10000
+- scrollUntilVisible:
+    element:
       text: '(Persone importanti|Important people|Personas importantes|Personnes importantes|Pessoas importantes)[\s\S]*'
     direction: DOWN
     timeout: 10000
