@@ -54,6 +54,20 @@ Source of execution truth for Anna's Diary. Product identity and boundaries are 
 | v0.97 | Ecosystem Hub v1 | Completed — CI/AppLab green | User-facing app registry, install visibility, app-scoped LINK/history management and source navigation on top of certified E1 |
 | v0.98 | Capture Everywhere | Completed — trusted runtime verified | Unified Capture across primary app surfaces plus Android/PWA launch shortcuts, reusing canonical persistence |
 | v0.99 | Open Life Export | Completed — CI/AppLab trusted runtime green | Open Markdown + structured JSON + separate media/sketch export over canonical data, with privacy-safe exclusions and no new persistence |
+| v1.00-B | Golden Core Cleanup & Localization | In progress — release gates pending | Remove confirmed dead UI, finish high-frequency localization, simplify Home IA and lock 10k-memory projection performance without new persistence |
+
+## v1.00-A audit outcome
+
+The full product reality audit is recorded in `docs/V100_FULL_PRODUCT_REALITY_AUDIT.md`. It confirms that the 1.0 line is a hardening/certification sequence rather than a new Life Core or Memory Engine rewrite.
+
+## v1.00-B acceptance criteria
+
+- Superseded legacy `SearchScreen` / `_SearchHitType` code is removed; `PersonalSearchConnectionsScreen` remains the canonical local search surface.
+- Home keeps the daily focus and moves secondary destinations into one localized Explore surface; no feature data is copied.
+- Home/share capture, canonical search, Memories/Recall and Backup/Open Export use the shared en/it/es/fr/pt localization path and selected locale for date formatting.
+- A 10,000-memory regression exercises memory references, canonical search and Life Archive with a bounded performance budget without introducing FTS or a parallel index before evidence requires it.
+- AgendaStore / DayJournal / DiaryBlock ownership, lifecycle, sync and backup architecture remain unchanged.
+- Development checks, Web build/deploy, Android size audit, AppLab Trusted Verify and advisory review must be green on the final PR head before v1.00-B is completed.
 
 ## v0.99 acceptance criteria
 
