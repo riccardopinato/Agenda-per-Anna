@@ -1942,6 +1942,9 @@ class AgendaStore extends ChangeNotifier {
   Future<Uint8List> createBackupZip() =>
       _backupDomain.createBackupZip(this);
 
+  Future<Uint8List> createOpenExportZip() =>
+      _backupDomain.createOpenExportZip(this);
+
   DecodedZipBackup _decodeAndValidateBackupZip(Uint8List bytes) =>
       _backupDomain.decodeAndValidateBackupZip(this, bytes);
 
