@@ -188,9 +188,9 @@ class _RestoreMediaStagingSession {
         ..._createdCanonicalIds,
         if (_pendingCanonicalId != null) _pendingCanonicalId!,
         ..._readCreatedCanonicalIds(raw),
-        if (_readPendingCanonicalId(raw) case final pending?)
-          pending,
       };
+      final markerPending = _readPendingCanonicalId(raw);
+      if (markerPending != null) ids.add(markerPending);
       for (final assetId in ids) {
         await MediaAssetStore.instance.delete(assetId);
       }
@@ -268,10 +268,10 @@ Future<void> _recoverInterruptedBackupRestore(
     if (phase != 'structured_committed') {
       final ids = <String>{
         ..._RestoreMediaStagingSession._readCreatedCanonicalIds(raw),
-        if (_RestoreMediaStagingSession._readPendingCanonicalId(raw)
-            case final pending?)
-          pending,
       };
+      final pending =
+          _RestoreMediaStagingSession._readPendingCanonicalId(raw);
+      if (pending != null) ids.add(pending);
       for (final assetId in ids) {
         await MediaAssetStore.instance.delete(assetId);
       }
