@@ -5,6 +5,7 @@ import 'package:archive/archive.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:intl/date_symbol_data_local.dart';
 
 import 'package:agenda_per_anna/local_state_store.dart';
 import 'package:agenda_per_anna/main.dart';
@@ -14,6 +15,7 @@ void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
   setUp(() async {
+    await initializeDateFormatting('it_IT');
     await LocalStateStore.instance.resetForTesting();
     await MediaAssetStore.instance.resetForTesting();
     SharedPreferences.setMockInitialValues({});
