@@ -1,13 +1,13 @@
 # Agenda per Anna — Architecture
 
-## Current structure — v0.98.0
+## Current structure — v0.99.0
 
 Anna's Diary keeps `lib/main.dart` as the compatibility library boundary, but large responsibilities are now split by runtime domain:
 
 - `src/store_signals.dart`: granular UI invalidation channels.
 - `src/day_hub_domain.dart`: birthday model, annual occurrence/reminder logic and derived Day Hub snapshots.
 - `src/people_domain.dart`: lightweight important-person model, birthday linkage, diary-memory references and relationship lifecycle cleanup.
-- `src/store/backup_domain.dart`: ZIP/data serialization, backup validation and readable export.
+- `src/store/backup_domain.dart`: ZIP/data serialization, backup validation, readable export and Open Life Export projection.
 - `src/agenda_store.dart`: persistence/account/cloud orchestration facade and domain mutation API.
 - `src/screens/home_inbox_search.dart`: shell, Home/Daily Briefing, Inbox, Search and Archive.
 - `src/screens/birthdays_screen.dart`: persistent birthday management using the existing planning/sync/lifecycle infrastructure.
@@ -24,6 +24,16 @@ The `AgendaStore` public surface remains compatible. UI screens observe domain-s
 
 The PR production gate is:
 `locked dependencies → analyze/tests → Web release → ARM64 release → AppLab emulator → Maestro → multi-screen screenshots/UI hierarchy → visual QA/regression → Logcat/crash/ANR`.
+
+## v0.99.0 — Open Life Export boundary
+
+- Open Life Export is a **read/export projection** over the existing canonical AgendaStore/DayJournal/DiaryBlock data. It owns no persisted records and introduces no alternate sync path.
+- `_AgendaBackupDomain.createOpenExportZip()` builds one bounded ZIP with `manifest.json`, human-readable `README.md`, versioned `data.json`, separate `media/` assets and `sketches/` JSON sidecars.
+- Modern DiaryBlock semantics are preserved in the readable projection: Note text, Photo references, Voice references/duration, vector Sketchbook data/text, tags, People, Places and related-memory IDs.
+- Existing `MediaAssetStore` remains the only local media owner. The exporter reads referenced bytes, detects a safe conventional extension when possible and fails closed when a referenced asset is unavailable.
+- Archive paths are generated internally and validated against traversal/unsafe path forms; existing ZIP entry/size ceilings remain in force.
+- The open bundle deliberately removes Trash and technical preferences from structured output. Private Vault, Cycle Tracker, shared passwords and authentication secrets remain outside the ordinary AgendaStore backup domain and are explicitly declared excluded in the manifest.
+- The complete integrity-checked backup/restore pipeline is unchanged. Open Life Export is for human-readable portability; full backup remains the disaster-recovery format.
 
 ## v0.94.0 — Premium Store QA boundary
 
