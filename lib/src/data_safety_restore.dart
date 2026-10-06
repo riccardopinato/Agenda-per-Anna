@@ -261,7 +261,9 @@ Future<void> _recoverInterruptedBackupRestore(
   LocalStateStore prefs,
 ) async {
   final raw = prefs.getString(_backupRestoreTransactionKey);
-  if (raw != null) {
+  if (raw == null) return;
+
+  {
     final phase = _RestoreMediaStagingSession._readPhase(raw);
     if (phase != 'structured_committed') {
       final ids = <String>{
@@ -280,9 +282,7 @@ Future<void> _recoverInterruptedBackupRestore(
   // never canonical references. Any promoted orphan that cannot be recovered
   // from a damaged marker is later handled by reference-aware media GC.
   await MediaAssetStore.instance.clearRestoreStaging();
-  if (raw != null) {
-    await prefs.remove(_backupRestoreTransactionKey);
-  }
+  await prefs.remove(_backupRestoreTransactionKey);
 }
 
 void _injectRestoreFailureForTesting(
