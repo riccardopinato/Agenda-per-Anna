@@ -534,7 +534,10 @@ extension SearchConnectionsAgendaStore on AgendaStore {
     String query, {
     Set<PersonalSearchKind>? kinds,
     bool includeArchived = false,
+    String languageCode = 'it',
   }) {
+    final strings = AnnaStrings(languageCode);
+    final locale = AnnaStrings.resolveLocale(Locale(languageCode)).languageCode;
     final enabled = kinds == null || kinds.isEmpty
         ? PersonalSearchKind.values.toSet()
         : kinds;
@@ -549,7 +552,7 @@ extension SearchConnectionsAgendaStore on AgendaStore {
           item.note,
           item.category.label,
           item.type.name,
-          DateFormat('d MMMM yyyy', 'it_IT').format(item.date),
+          DateFormat('d MMMM yyyy', locale).format(item.date),
           if (item.isRecurring) item.recurrenceRule.label,
         ])) {
           continue;
@@ -560,7 +563,7 @@ extension SearchConnectionsAgendaStore on AgendaStore {
             id: item.id,
             title: item.title,
             subtitle:
-                '${DateFormat('d MMMM yyyy', 'it_IT').format(item.date)} · ${item.category.label}',
+                '${DateFormat('d MMMM yyyy', locale).format(item.date)} · ${item.category.label}',
             date: item.date,
             agendaItem: item,
           ),
@@ -578,17 +581,17 @@ extension SearchConnectionsAgendaStore on AgendaStore {
           journal.note,
           ...journal.gratitude,
           journal.mood?.label ?? '',
-          DateFormat('d MMMM yyyy', 'it_IT').format(date),
+          DateFormat('d MMMM yyyy', locale).format(date),
         ])) {
           hits.add(
             PersonalSearchHit(
               kind: PersonalSearchKind.diary,
               id: 'journal:${AgendaStore.dateKey(date)}',
               title: journal.beautiful.trim().isEmpty
-                  ? 'Diario del ${DateFormat('d MMMM', 'it_IT').format(date)}'
+                  ? 'Diario del ${DateFormat('d MMMM', locale).format(date)}'
                   : journal.beautiful.trim(),
               subtitle:
-                  'Giornata · ${DateFormat('d MMMM yyyy', 'it_IT').format(date)}',
+                  '${strings.v100Day} · ${DateFormat('d MMMM yyyy', locale).format(date)}',
               date: date,
             ),
           );
@@ -608,7 +611,7 @@ extension SearchConnectionsAgendaStore on AgendaStore {
             ...linkedPeople.map((person) => person.relationship),
             ...block.places.map((place) => place.name),
             ...sketchText,
-            DateFormat('d MMMM yyyy', 'it_IT').format(date),
+            DateFormat('d MMMM yyyy', locale).format(date),
             switch (block.type) {
               DiaryBlockType.note => 'nota testo diario',
               DiaryBlockType.photo => 'foto immagine ricordo',
@@ -625,15 +628,15 @@ extension SearchConnectionsAgendaStore on AgendaStore {
               title: diaryBlockDisplayTitle(block),
               subtitle: [
                 switch (block.type) {
-                  DiaryBlockType.note => 'Nota',
-                  DiaryBlockType.photo => 'Foto',
-                  DiaryBlockType.sketch => 'Sketch',
-                  DiaryBlockType.voice => 'Voce',
+                  DiaryBlockType.note => strings.v100Note,
+                  DiaryBlockType.photo => strings.v100Photo,
+                  DiaryBlockType.sketch => strings.v100Sketch,
+                  DiaryBlockType.voice => strings.v100VoiceNote,
                 },
-                DateFormat('d MMMM yyyy', 'it_IT').format(date),
+                DateFormat('d MMMM yyyy', locale).format(date),
                 if (block.type == DiaryBlockType.photo &&
                     block.ocrText.trim().isNotEmpty)
-                  'testo foto',
+                  strings.v100PhotoText,
                 if (block.tags.isNotEmpty)
                   block.tags.map((tag) => '#$tag').join(' '),
                 if (block.places.isNotEmpty)
@@ -657,7 +660,7 @@ extension SearchConnectionsAgendaStore on AgendaStore {
           birthday?.name ?? '',
           birthday?.note ?? '',
           if (person.anniversaryDate != null)
-            DateFormat('d MMMM yyyy', 'it_IT')
+            DateFormat('d MMMM yyyy', locale)
                 .format(person.anniversaryDate!),
         ])) {
           continue;
@@ -708,7 +711,7 @@ extension SearchConnectionsAgendaStore on AgendaStore {
             id: 'place:${entry.key}',
             title: labels[entry.key]!,
             subtitle:
-                'Luogo · ${DateFormat('d MMMM yyyy', 'it_IT').format(reference.date)}',
+                '${strings.v100SearchKind(PersonalSearchKind.place)} · ${DateFormat('d MMMM yyyy', locale).format(reference.date)}',
             date: reference.date,
             diaryBlockId: reference.block.id,
             placeName: labels[entry.key],
@@ -723,7 +726,7 @@ extension SearchConnectionsAgendaStore on AgendaStore {
         if (!_matchesPersonalSearch(query, [
           birthday.name,
           birthday.note,
-          DateFormat('d MMMM', 'it_IT')
+          DateFormat('d MMMM', locale)
               .format(DateTime(2000, birthday.month, birthday.day)),
           if (birthday.year != null) birthday.year.toString(),
         ])) {
@@ -739,7 +742,7 @@ extension SearchConnectionsAgendaStore on AgendaStore {
             id: birthday.id,
             title: birthday.name,
             subtitle:
-                'Compleanno · ${DateFormat('d MMMM', 'it_IT').format(occurrence.date)}',
+                '${strings.v100SearchKind(PersonalSearchKind.birthday)} · ${DateFormat('d MMMM', locale).format(occurrence.date)}',
             date: occurrence.date,
             birthdayId: birthday.id,
           ),
@@ -753,7 +756,7 @@ extension SearchConnectionsAgendaStore on AgendaStore {
         if (!_matchesPersonalSearch(query, [
           entry.text,
           ...entry.tags,
-          DateFormat('d MMMM yyyy', 'it_IT').format(entry.createdAt),
+          DateFormat('d MMMM yyyy', locale).format(entry.createdAt),
         ])) {
           continue;
         }
@@ -764,7 +767,7 @@ extension SearchConnectionsAgendaStore on AgendaStore {
             title: entry.text,
             subtitle: [
               'Inbox',
-              DateFormat('d MMM yyyy', 'it_IT').format(entry.createdAt),
+              DateFormat('d MMM yyyy', locale).format(entry.createdAt),
               if (entry.tags.isNotEmpty)
                 entry.tags.map((tag) => '#$tag').join(' '),
             ].join(' · '),
@@ -798,7 +801,7 @@ extension SearchConnectionsAgendaStore on AgendaStore {
           data.challenge,
           data.nextMonth,
           data.reflection,
-          DateFormat('MMMM yyyy', 'it_IT').format(DateTime(year, month)),
+          DateFormat('MMMM yyyy', locale).format(DateTime(year, month)),
         ])) {
           continue;
         }
@@ -807,9 +810,9 @@ extension SearchConnectionsAgendaStore on AgendaStore {
           PersonalSearchHit(
             kind: PersonalSearchKind.month,
             id: entry.key,
-            title: _cap(DateFormat('MMMM yyyy', 'it_IT').format(date)),
+            title: _cap(DateFormat('MMMM yyyy', locale).format(date)),
             subtitle: data.intention.trim().isEmpty
-                ? 'Pagina del mese'
+                ? strings.v100MonthPage
                 : data.intention.trim(),
             date: date,
           ),
@@ -1063,23 +1066,25 @@ class _PersonalSearchConnectionsScreenState
 
   @override
   Widget build(BuildContext context) {
+    final strings = AnnaStrings.of(context);
     final hits = widget.store.personalSearch(
       query,
       kinds: selectedKinds,
       includeArchived: includeArchived,
+      languageCode: strings.languageCode,
     );
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text(
-          'Cerca e collega',
+        title: Text(
+          strings.v100SearchConnectTitle,
           style: TextStyle(fontWeight: FontWeight.w800),
         ),
         actions: [
           IconButton(
             tooltip: ocrIndexing
-                ? 'Indicizzazione testo foto in corso'
-                : 'Aggiorna testo nelle foto',
+                ? strings.v100SearchPhotoIndexing
+                : strings.v100SearchRefreshPhotoText,
             onPressed: ocrIndexing ? null : _indexPhotoText,
             icon: ocrIndexing
                 ? const SizedBox(
@@ -1101,7 +1106,7 @@ class _PersonalSearchConnectionsScreenState
               autofocus: true,
               onChanged: (value) => setState(() => query = value),
               decoration: InputDecoration(
-                hintText: 'Cerca parole, persone, luoghi, tag, date, ricordi...',
+                hintText: strings.v100SearchHint,
                 prefixIcon: const Icon(Icons.search),
                 filled: true,
                 border: OutlineInputBorder(
@@ -1121,7 +1126,7 @@ class _PersonalSearchConnectionsScreenState
                   padding: const EdgeInsets.only(right: 7),
                   child: ChoiceChip(
                     selected: selectedKinds.isEmpty,
-                    label: const Text('Tutto'),
+                    label: Text(strings.all),
                     onSelected: (_) => setState(selectedKinds.clear),
                   ),
                 ),
@@ -1131,7 +1136,7 @@ class _PersonalSearchConnectionsScreenState
                     child: FilterChip(
                       selected: selectedKinds.contains(kind),
                       avatar: Icon(kind.icon, size: 16),
-                      label: Text(kind.label),
+                      label: Text(strings.v100SearchKind(kind)),
                       onSelected: (selected) => setState(() {
                         if (selected) {
                           selectedKinds.add(kind);
@@ -1147,7 +1152,7 @@ class _PersonalSearchConnectionsScreenState
                   child: FilterChip(
                     selected: includeArchived,
                     avatar: const Icon(Icons.inventory_2_outlined, size: 16),
-                    label: const Text('Archivio'),
+                    label: Text(strings.archive),
                     onSelected: (value) =>
                         setState(() => includeArchived = value),
                   ),
@@ -1162,13 +1167,13 @@ class _PersonalSearchConnectionsScreenState
                     child: Padding(
                       padding: EdgeInsets.all(32),
                       child: Text(
-                        'Scrivi qualcosa: i risultati si restringono in tempo reale mentre continui a digitare.',
+                        strings.v100SearchPrompt,
                         textAlign: TextAlign.center,
                       ),
                     ),
                   )
                 : hits.isEmpty
-                    ? const Center(child: Text('Nessun risultato.'))
+                    ? Center(child: Text(strings.v100NoResults))
                     : ListView.separated(
                         padding: const EdgeInsets.fromLTRB(14, 8, 14, 40),
                         itemCount: hits.length,
