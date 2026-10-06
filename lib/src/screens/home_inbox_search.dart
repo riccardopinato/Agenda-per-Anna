@@ -750,7 +750,7 @@ class _HomeFocusCard extends StatelessWidget {
               Expanded(
                 child: Text(
                   AnnaStrings.of(context).v100TodayBrief,
-                  style: TextStyle(fontWeight: FontWeight.w900, fontSize: 17),
+                  style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 17),
                 ),
               ),
               TextButton(
