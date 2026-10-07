@@ -25,6 +25,10 @@
       "flow": ".maestro/journey/home.yaml"
     },
     {
+      "name": "backup",
+      "flow": ".maestro/journey/backup.yaml"
+    },
+    {
       "name": "archive",
       "flow": ".maestro/journey/archive.yaml"
     },
