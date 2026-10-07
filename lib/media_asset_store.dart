@@ -15,6 +15,7 @@ class MediaAssetStore {
   static const int _maxCacheBytes = 8 * 1024 * 1024;
   static const int _maxRemoteDiskEntries = 160;
   static const int _maxRemoteDiskBytes = 200 * 1024 * 1024;
+  static const String restoreStagingPrefix = 'restore_staging_v1_';
 
   final Map<String, Uint8List> _cache = <String, Uint8List>{};
   final Set<String> _corruptAssetIds = <String>{};
@@ -29,6 +30,26 @@ class MediaAssetStore {
   String namedAssetId(String namespace, String key) {
     final digest = sha256.convert(utf8.encode(key));
     return '${namespace}_$digest';
+  }
+
+  String restoreStagingAssetId(
+    String transactionId,
+    String canonicalAssetId,
+  ) {
+    final digest = sha256.convert(
+      utf8.encode('$transactionId:$canonicalAssetId'),
+    );
+    return '$restoreStagingPrefix$digest';
+  }
+
+  Future<int> clearRestoreStaging() async {
+    final existing = await listMediaAssetIds();
+    var removed = 0;
+    for (final assetId in existing) {
+      if (!assetId.startsWith(restoreStagingPrefix)) continue;
+      if (await delete(assetId)) removed++;
+    }
+    return removed;
   }
 
   Future<String> put(Uint8List bytes) async {
@@ -100,6 +121,9 @@ class MediaAssetStore {
     for (final assetId in existing) {
       if (referencedAssetIds.contains(assetId)) continue;
       if (assetId.startsWith('remote_')) continue;
+      // Restore staging is managed by the explicit restore transaction.
+      // Generic media GC must never race an active restore.
+      if (assetId.startsWith(restoreStagingPrefix)) continue;
       if (await delete(assetId)) removed++;
     }
 

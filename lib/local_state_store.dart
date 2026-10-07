@@ -229,6 +229,25 @@ class LocalStateStore {
     return db;
   }
 
+  Future<void> corruptRecordChecksumForTesting(String key) async {
+    if (!localStateBackendIsTest) {
+      throw StateError('Test-only LocalStateStore mutation.');
+    }
+    final db = _requireDatabase();
+    final current = await _state.record(key).get(db);
+    if (current == null) return;
+    final corrupted = Map<String, Object?>.from(current)
+      ..['checksum'] = 'corrupt-for-testing';
+    await _state.record(key).put(db, corrupted);
+  }
+
+  Future<void> reloadValidatedRecordsForTesting() async {
+    if (!localStateBackendIsTest) {
+      throw StateError('Test-only LocalStateStore reload.');
+    }
+    await _loadValidatedRecords(_requireDatabase());
+  }
+
   Future<void> resetForTesting() async {
     final db = _database;
     _database = null;
@@ -264,6 +283,7 @@ class LocalStateStore {
       'active_account_v1',
       'legacy_claimed_by_v1',
       'privacy_guard_v1',
+      'backup_restore_transaction_v1',
     };
     if (exact.contains(key)) return true;
 

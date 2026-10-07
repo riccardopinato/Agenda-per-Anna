@@ -34,6 +34,9 @@ class AgendaStore extends ChangeNotifier {
   static const _appVersion = appReleaseVersion;
   static const _AgendaBackupDomain _backupDomain = _AgendaBackupDomain();
 
+  @visibleForTesting
+  static String? restoreFailurePhaseForTesting;
+
   final List<AgendaItem> items = [];
   final Map<String, DayJournal> journals = {};
   final Map<String, MonthlyData> months = {};
@@ -764,8 +767,9 @@ class AgendaStore extends ChangeNotifier {
 
   Future<({List<DiarySketchPage> pages, bool changed})>
       _localizeSketchPages(
-    List<DiarySketchPage> pages,
-  ) async {
+    List<DiarySketchPage> pages, {
+    Future<String> Function(Uint8List bytes)? mediaWriter,
+  }) async {
     var changed = false;
     final localizedPages = <DiarySketchPage>[];
 
@@ -778,7 +782,9 @@ class AgendaStore extends ChangeNotifier {
         if (image.imageBase64.isNotEmpty) {
           try {
             final bytes = base64Decode(image.imageBase64);
-            final assetId = await MediaAssetStore.instance.put(bytes);
+            final assetId = mediaWriter == null
+                ? await MediaAssetStore.instance.put(bytes)
+                : await mediaWriter(bytes);
             next = image.copyWith(
               imageBase64: '',
               mediaAssetId: assetId,
@@ -833,6 +839,8 @@ class AgendaStore extends ChangeNotifier {
   Future<bool> _migrateInlinePrivateMedia(
     LocalStateStore prefs, {
     bool persist = true,
+    Future<String> Function(Uint8List bytes)? mediaWriter,
+    Future<Uint8List?> Function(String assetId)? mediaReader,
   }) async {
     if (_unreadableStorageKeys.contains(_journalsKey)) return false;
 
@@ -853,15 +861,21 @@ class AgendaStore extends ChangeNotifier {
           if (block.imageBase64.isNotEmpty) {
             try {
               final bytes = base64Decode(block.imageBase64);
-              fullId = await MediaAssetStore.instance.put(bytes);
+              fullId = mediaWriter == null
+                  ? await MediaAssetStore.instance.put(bytes)
+                  : await mediaWriter(bytes);
 
               final existingThumbnail = thumbnailId.isEmpty
                   ? null
-                  : await MediaAssetStore.instance.read(thumbnailId);
+                  : await (mediaReader == null
+                      ? MediaAssetStore.instance.read(thumbnailId)
+                      : mediaReader(thumbnailId));
               if (existingThumbnail == null) {
-                thumbnailId = await MediaAssetStore.instance.put(
-                  await _createMediaThumbnail(bytes),
-                );
+                final thumbnailBytes =
+                    await _createMediaThumbnail(bytes);
+                thumbnailId = mediaWriter == null
+                    ? await MediaAssetStore.instance.put(thumbnailBytes)
+                    : await mediaWriter(thumbnailBytes);
               }
 
               next = next.copyWith(
@@ -874,15 +888,21 @@ class AgendaStore extends ChangeNotifier {
               // Preserve unreadable legacy Base64 instead of destroying it.
             }
           } else if (fullId.isNotEmpty) {
-            final bytes = await MediaAssetStore.instance.read(fullId);
+            final bytes = await (mediaReader == null
+                ? MediaAssetStore.instance.read(fullId)
+                : mediaReader(fullId));
             if (bytes != null) {
               final existingThumbnail = thumbnailId.isEmpty
                   ? null
-                  : await MediaAssetStore.instance.read(thumbnailId);
+                  : await (mediaReader == null
+                      ? MediaAssetStore.instance.read(thumbnailId)
+                      : mediaReader(thumbnailId));
               if (existingThumbnail == null) {
-                thumbnailId = await MediaAssetStore.instance.put(
-                  await _createMediaThumbnail(bytes),
-                );
+                final thumbnailBytes =
+                    await _createMediaThumbnail(bytes);
+                thumbnailId = mediaWriter == null
+                    ? await MediaAssetStore.instance.put(thumbnailBytes)
+                    : await mediaWriter(thumbnailBytes);
                 next = next.copyWith(
                   mediaThumbnailAssetId: thumbnailId,
                 );
@@ -896,7 +916,9 @@ class AgendaStore extends ChangeNotifier {
             block.audioBase64.isNotEmpty) {
           try {
             final bytes = base64Decode(block.audioBase64);
-            final assetId = await MediaAssetStore.instance.put(bytes);
+            final assetId = mediaWriter == null
+                ? await MediaAssetStore.instance.put(bytes)
+                : await mediaWriter(bytes);
             next = next.copyWith(
               audioBase64: '',
               mediaAssetId: assetId,
@@ -908,7 +930,10 @@ class AgendaStore extends ChangeNotifier {
         }
 
         if (next.pages.isNotEmpty) {
-          final localized = await _localizeSketchPages(next.pages);
+          final localized = await _localizeSketchPages(
+            next.pages,
+            mediaWriter: mediaWriter,
+          );
           if (localized.changed) {
             next = next.copyWith(pages: localized.pages);
             blockChanged = true;
@@ -1132,6 +1157,7 @@ class AgendaStore extends ChangeNotifier {
 
   Future<void> load() async {
     final prefs = await _localState();
+    await _recoverInterruptedBackupRestore(prefs);
     _activeAccountId = prefs.getString(_activeAccountKey);
     _accountScopeResolved = _activeAccountId == null;
     _unreadableStorageKeys
@@ -1956,27 +1982,54 @@ class AgendaStore extends ChangeNotifier {
     required bool merge,
   }) async {
     final decoded = _decodeAndValidateBackupZip(bytes);
+    final dataRoot = Map<String, dynamic>.from(
+      jsonDecode(decoded.dataJson) as Map,
+    );
+    final dataPayload = Map<String, dynamic>.from(
+      dataRoot['data'] as Map<String, dynamic>,
+    );
+    final declaredReferences = <String>{};
+    _collectAssetIdsFromJson(dataPayload, declaredReferences);
+    final missingFromBundle = declaredReferences
+        .difference(decoded.media.keys.toSet());
+    if (missingFromBundle.isNotEmpty) {
+      final first = missingFromBundle.toList()..sort();
+      throw FormatException(
+        'Il backup non contiene tutti i media referenziati: '
+        '${first.first}',
+      );
+    }
 
-    final importedOnlyForRestore = <String>[];
+    final prefs = await _localState();
+    await _recoverInterruptedBackupRestore(prefs);
+    final restoreSession = _RestoreMediaStagingSession(prefs);
+    await restoreSession.begin();
+
     try {
-      for (final entry in decoded.media.entries) {
-        final alreadyPresent =
-            await MediaAssetStore.instance.read(entry.key) != null;
-        await MediaAssetStore.instance.putNamed(
-          entry.key,
-          entry.value,
-        );
-        if (!alreadyPresent) importedOnlyForRestore.add(entry.key);
+      final entries = decoded.media.entries.toList()
+        ..sort((a, b) => a.key.compareTo(b.key));
+      for (final entry in entries) {
+        await restoreSession.stageNamed(entry.key, entry.value);
       }
 
-      await restoreBackup(
+      _injectRestoreFailureForTesting('after_staging');
+      _injectRestoreFailureForTesting(
+        'crash_after_staging',
+        simulateCrash: true,
+      );
+
+      await _restoreBackupWithSession(
         decoded.dataJson,
         merge: merge,
+        restoreSession: restoreSession,
       );
+      await restoreSession.finish();
+    } on _SimulatedRestoreCrash {
+      // Simulates process death: leave marker/staging/canonical intent intact
+      // so the next AgendaStore.load() proves deterministic recovery.
+      rethrow;
     } catch (_) {
-      for (final assetId in importedOnlyForRestore.reversed) {
-        await MediaAssetStore.instance.delete(assetId);
-      }
+      await restoreSession.rollbackIfUncommitted();
       rethrow;
     }
   }
@@ -1987,6 +2040,31 @@ class AgendaStore extends ChangeNotifier {
   Future<void> restoreBackup(
     String raw, {
     required bool merge,
+  }) async {
+    final prefs = await _localState();
+    await _recoverInterruptedBackupRestore(prefs);
+    final restoreSession = _RestoreMediaStagingSession(prefs);
+    await restoreSession.begin();
+
+    try {
+      await _restoreBackupWithSession(
+        raw,
+        merge: merge,
+        restoreSession: restoreSession,
+      );
+      await restoreSession.finish();
+    } on _SimulatedRestoreCrash {
+      rethrow;
+    } catch (_) {
+      await restoreSession.rollbackIfUncommitted();
+      rethrow;
+    }
+  }
+
+  Future<void> _restoreBackupWithSession(
+    String raw, {
+    required bool merge,
+    required _RestoreMediaStagingSession restoreSession,
   }) async {
     final decoded = jsonDecode(raw);
     final root = Map<String, dynamic>.from(decoded as Map);
@@ -2083,6 +2161,7 @@ class AgendaStore extends ChangeNotifier {
       incomingTrash.add(
         await _localizeTrashEntry(
           TrashEntry.fromJson(Map<String, dynamic>.from(rawEntry)),
+          mediaWriter: restoreSession.stageContent,
         ),
       );
     }
@@ -2111,6 +2190,7 @@ class AgendaStore extends ChangeNotifier {
     final previousWorkoutPlans = List<WorkoutPlan>.from(workoutPlans);
     final previousTrash = List<TrashEntry>.from(trash);
     final previousPreferences = preferences;
+    var structuredCommitted = false;
 
     try {
       if (merge) {
@@ -2256,16 +2336,41 @@ class AgendaStore extends ChangeNotifier {
       await _migrateInlinePrivateMedia(
         prefs,
         persist: false,
+        mediaWriter: restoreSession.stageContent,
+        mediaReader: restoreSession.readIncoming,
+      );
+
+      final requiredAssetIds = <String>{};
+      _collectAssetIdsFromJson(
+        _localDataPayload(),
+        requiredAssetIds,
+      );
+      await restoreSession.promoteAndVerify(requiredAssetIds);
+
+      _injectRestoreFailureForTesting('after_media_promotion');
+      _injectRestoreFailureForTesting(
+        'crash_after_media_promotion',
+        simulateCrash: true,
       );
 
       final changes = <String, String?>{
         ..._currentWorkingStateChanges(),
         _forceFullSyncKey: 'true',
         for (final key in _activeEntityDeltaKeys(prefs)) key: null,
+        _backupRestoreTransactionKey:
+            restoreSession.structuredCommittedMarkerJson(),
       };
       await prefs.writeBatch(changes);
+      structuredCommitted = true;
       _unreadableStorageKeys.removeAll(changes.keys);
+
+      _injectRestoreFailureForTesting(
+        'crash_after_structured_commit',
+        simulateCrash: true,
+      );
     } catch (_) {
+      if (structuredCommitted) rethrow;
+
       items
         ..clear()
         ..addAll(previousItems);
@@ -2308,18 +2413,25 @@ class AgendaStore extends ChangeNotifier {
     }
 
     // Reminder changes happen only after the data transaction has committed.
-    for (final item in previousItems) {
-      await NotificationService.instance.cancel(item.id);
-      await NotificationService.instance.cancel('${item.id}:primary');
-      await NotificationService.instance.cancel('${item.id}:secondary');
+    // Native notification failures must not turn an already committed restore
+    // into a false rollback request.
+    try {
+      for (final item in previousItems) {
+        await NotificationService.instance.cancel(item.id);
+        await NotificationService.instance.cancel('${item.id}:primary');
+        await NotificationService.instance.cancel('${item.id}:secondary');
+      }
+      for (final item in items) {
+        await _syncReminders(item);
+      }
+      await reconcileBirthdayReminders();
+    } catch (_) {
+      // The restored canonical data is already durable. Reminder reconciliation
+      // is retriable and must not invalidate the restore transaction.
     }
-    for (final item in items) {
-      await _syncReminders(item);
-    }
-    await reconcileBirthdayReminders();
 
-    // Force a complete queue rebuild after restore. The marker stays on disk
-    // until this succeeds, so a crash will retry on the next cloud sync.
+    // Force a complete queue rebuild after restore. If this fails, the
+    // durable force-full-sync flag remains set so a later sync can retry.
     try {
       await _captureSyncChanges(
         prefs,

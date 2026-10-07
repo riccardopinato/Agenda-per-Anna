@@ -135,15 +135,21 @@ extension AgendaStoreLifecycle on AgendaStore {
     trash.insert(0, entry);
   }
 
-  Future<DiaryBlock> _localizeTrashBlock(DiaryBlock block) async {
+  Future<DiaryBlock> _localizeTrashBlock(
+    DiaryBlock block, {
+    Future<String> Function(Uint8List bytes)? mediaWriter,
+  }) async {
     var next = block;
     if (next.type == DiaryBlockType.photo && next.imageBase64.isNotEmpty) {
       try {
         final bytes = base64Decode(next.imageBase64);
-        final mediaAssetId = await MediaAssetStore.instance.put(bytes);
-        final thumbnailAssetId = await MediaAssetStore.instance.put(
-          await _createMediaThumbnail(bytes),
-        );
+        final mediaAssetId = mediaWriter == null
+            ? await MediaAssetStore.instance.put(bytes)
+            : await mediaWriter(bytes);
+        final thumbnailBytes = await _createMediaThumbnail(bytes);
+        final thumbnailAssetId = mediaWriter == null
+            ? await MediaAssetStore.instance.put(thumbnailBytes)
+            : await mediaWriter(thumbnailBytes);
         next = next.copyWith(
           imageBase64: '',
           mediaAssetId: mediaAssetId,
@@ -154,7 +160,9 @@ extension AgendaStoreLifecycle on AgendaStore {
     if (next.type == DiaryBlockType.voice && next.audioBase64.isNotEmpty) {
       try {
         final bytes = base64Decode(next.audioBase64);
-        final mediaAssetId = await MediaAssetStore.instance.put(bytes);
+        final mediaAssetId = mediaWriter == null
+            ? await MediaAssetStore.instance.put(bytes)
+            : await mediaWriter(bytes);
         next = next.copyWith(
           audioBase64: '',
           mediaAssetId: mediaAssetId,
@@ -163,7 +171,10 @@ extension AgendaStoreLifecycle on AgendaStore {
     }
 
     if (next.pages.isNotEmpty) {
-      final localized = await _localizeSketchPages(next.pages);
+      final localized = await _localizeSketchPages(
+        next.pages,
+        mediaWriter: mediaWriter,
+      );
       if (localized.changed) {
         next = next.copyWith(pages: localized.pages);
       }
@@ -171,17 +182,27 @@ extension AgendaStoreLifecycle on AgendaStore {
     return next;
   }
 
-  Future<TrashEntry> _localizeTrashEntry(TrashEntry entry) async {
+  Future<TrashEntry> _localizeTrashEntry(
+    TrashEntry entry, {
+    Future<String> Function(Uint8List bytes)? mediaWriter,
+  }) async {
     switch (entry.kind) {
       case TrashEntityKind.diaryBlock:
-        final block =
-            await _localizeTrashBlock(DiaryBlock.fromJson(entry.payload));
+        final block = await _localizeTrashBlock(
+          DiaryBlock.fromJson(entry.payload),
+          mediaWriter: mediaWriter,
+        );
         return entry.copyWith(payload: block.toLocalJson());
       case TrashEntityKind.journal:
         final journal = DayJournal.fromJson(entry.payload);
         final blocks = <DiaryBlock>[];
         for (final block in journal.blocks) {
-          blocks.add(await _localizeTrashBlock(block));
+          blocks.add(
+            await _localizeTrashBlock(
+              block,
+              mediaWriter: mediaWriter,
+            ),
+          );
         }
         return entry.copyWith(
           payload: journal.copyWith(blocks: blocks).toLocalJson(),
