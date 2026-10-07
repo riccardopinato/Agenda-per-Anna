@@ -35,7 +35,7 @@ void main() {
     expect(workflow, contains('PHYSICAL_CERTIFICATION_MANIFEST.json'));
     expect(workflow, contains('--release-signing'));
     expect(workflow, contains('--signing-sha256'));
-    expect(workflow, contains('mkdir -p "$(dirname "$CERT_DER")"'));
+    expect(workflow, contains(r'mkdir -p "$(dirname "$CERT_DER")"'));
     expect(tool, contains('"artifactSha256"'));
     expect(tool, contains('"signingCertificateSha256"'));
     expect(tool, contains('"physicalVerification"'));
