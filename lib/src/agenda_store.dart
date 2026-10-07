@@ -840,6 +840,7 @@ class AgendaStore extends ChangeNotifier {
     LocalStateStore prefs, {
     bool persist = true,
     Future<String> Function(Uint8List bytes)? mediaWriter,
+    Future<Uint8List?> Function(String assetId)? mediaReader,
   }) async {
     if (_unreadableStorageKeys.contains(_journalsKey)) return false;
 
@@ -866,7 +867,9 @@ class AgendaStore extends ChangeNotifier {
 
               final existingThumbnail = thumbnailId.isEmpty
                   ? null
-                  : await MediaAssetStore.instance.read(thumbnailId);
+                  : await (mediaReader == null
+                      ? MediaAssetStore.instance.read(thumbnailId)
+                      : mediaReader(thumbnailId));
               if (existingThumbnail == null) {
                 final thumbnailBytes =
                     await _createMediaThumbnail(bytes);
@@ -885,15 +888,21 @@ class AgendaStore extends ChangeNotifier {
               // Preserve unreadable legacy Base64 instead of destroying it.
             }
           } else if (fullId.isNotEmpty) {
-            final bytes = await MediaAssetStore.instance.read(fullId);
+            final bytes = await (mediaReader == null
+                ? MediaAssetStore.instance.read(fullId)
+                : mediaReader(fullId));
             if (bytes != null) {
               final existingThumbnail = thumbnailId.isEmpty
                   ? null
-                  : await MediaAssetStore.instance.read(thumbnailId);
+                  : await (mediaReader == null
+                      ? MediaAssetStore.instance.read(thumbnailId)
+                      : mediaReader(thumbnailId));
               if (existingThumbnail == null) {
-                thumbnailId = await MediaAssetStore.instance.put(
-                  await _createMediaThumbnail(bytes),
-                );
+                final thumbnailBytes =
+                    await _createMediaThumbnail(bytes);
+                thumbnailId = mediaWriter == null
+                    ? await MediaAssetStore.instance.put(thumbnailBytes)
+                    : await mediaWriter(thumbnailBytes);
                 next = next.copyWith(
                   mediaThumbnailAssetId: thumbnailId,
                 );
@@ -2328,6 +2337,7 @@ class AgendaStore extends ChangeNotifier {
         prefs,
         persist: false,
         mediaWriter: restoreSession.stageContent,
+        mediaReader: restoreSession.readIncoming,
       );
 
       final requiredAssetIds = <String>{};
@@ -2420,8 +2430,8 @@ class AgendaStore extends ChangeNotifier {
       // is retriable and must not invalidate the restore transaction.
     }
 
-    // Force a complete queue rebuild after restore. The marker stays on disk
-    // until this succeeds, so a crash will retry on the next cloud sync.
+    // Force a complete queue rebuild after restore. If this fails, the
+    // durable force-full-sync flag remains set so a later sync can retry.
     try {
       await _captureSyncChanges(
         prefs,
