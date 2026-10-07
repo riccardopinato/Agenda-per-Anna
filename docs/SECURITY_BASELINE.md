@@ -69,6 +69,17 @@ The internal `private.*_impl` functions use `SECURITY DEFINER`, but authenticati
 
 The public RPC wrappers are `SECURITY INVOKER`. Their current ability to call the private implementations is intentional; revoking the private execution grants without redesigning the wrappers would break the production RPC path.
 
+
+## v1.00-D live backend and native-certification boundary — 7 October 2026
+
+- The live Supabase project `agenda-per-anna` reports migration `20261001075952 shared_password_hardening_v086`, closing the previous uncertainty about production deployment of migration 027.
+- The repository two-user transactional contract in `supabase/tests/027_shared_password_hardening_contract.sql` was executed against the live project and completed without error. It uses existing authenticated identities and rolls back all test rows.
+- This proves the live backend contract for atomic key claim, pairing-envelope ownership/one-shot use, revision conflicts, dedicated RPC enforcement, delete semantics and removed-member rejection. It does **not** prove the two-device Flutter/Keystore client lifecycle.
+- Supabase security advisors still report `auth_leaked_password_protection` disabled. The available connector cannot mutate Auth dashboard configuration, so this remains an explicit external configuration gate before Store Ready.
+- The existing `pg_net` advisor warning remains accepted for the documented non-relocatable Web Push configuration; it must not be force-moved or removed merely to silence the advisor.
+- Unused-index advisor items are informational and are not deleted without workload evidence.
+- Physical Android certification must use a stable-signed artifact with recorded APK SHA-256, signing certificate SHA-256, commit, version/build, workflow run, device and OS evidence.
+
 ## pg_net advisor warning
 
 Supabase currently reports `extension_in_public` for `pg_net`.
