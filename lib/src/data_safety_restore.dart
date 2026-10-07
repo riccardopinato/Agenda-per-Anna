@@ -100,6 +100,23 @@ class _RestoreMediaStagingSession {
     await _persistMarker();
   }
 
+  Future<Uint8List?> readIncoming(String canonicalAssetId) async {
+    final stagedEntry = _entries[canonicalAssetId];
+    if (stagedEntry == null) {
+      return MediaAssetStore.instance.read(canonicalAssetId);
+    }
+
+    final staged =
+        await MediaAssetStore.instance.read(stagedEntry.stagingAssetId);
+    if (staged == null ||
+        sha256.convert(staged).toString() != stagedEntry.sha256Hex) {
+      throw FormatException(
+        'Media in staging non disponibile: $canonicalAssetId',
+      );
+    }
+    return staged;
+  }
+
   Future<void> promoteAndVerify(
     Set<String> requiredCanonicalAssetIds,
   ) async {
@@ -170,13 +187,38 @@ class _RestoreMediaStagingSession {
   }
 
   Future<void> finish() async {
-    for (final entry in _entries.values) {
-      await MediaAssetStore.instance.delete(entry.stagingAssetId);
+    // Structured data is already committed before finish() is called.
+    // Cleanup failure must not be surfaced as a failed restore: keep the
+    // committed marker so startup recovery can retry staging cleanup.
+    if (kDebugMode &&
+        AgendaStore.restoreFailurePhaseForTesting ==
+            'cleanup_after_structured_commit') {
+      return;
     }
-    // Also clears any orphan staging key left by an interrupted stage write
-    // that happened before the marker could be updated.
-    await MediaAssetStore.instance.clearRestoreStaging();
-    await prefs.remove(_backupRestoreTransactionKey);
+
+    var cleanupComplete = true;
+    for (final entry in _entries.values) {
+      try {
+        await MediaAssetStore.instance.delete(entry.stagingAssetId);
+      } catch (_) {
+        cleanupComplete = false;
+      }
+    }
+
+    try {
+      await MediaAssetStore.instance.clearRestoreStaging();
+    } catch (_) {
+      cleanupComplete = false;
+    }
+
+    if (!cleanupComplete) return;
+
+    try {
+      await prefs.remove(_backupRestoreTransactionKey);
+    } catch (_) {
+      // Leaving a structured_committed marker is safe. Startup recovery will
+      // retry marker cleanup without deleting canonical media.
+    }
   }
 
   Future<void> rollbackIfUncommitted() async {
@@ -261,9 +303,24 @@ Future<void> _recoverInterruptedBackupRestore(
   LocalStateStore prefs,
 ) async {
   final raw = prefs.getString(_backupRestoreTransactionKey);
-  if (raw == null) return;
+  final markerRecovered =
+      prefs.recoveredKeys.contains(_backupRestoreTransactionKey);
 
-  {
+  if (raw == null) {
+    // No active transaction can legitimately own staging without a marker.
+    // This also cleans staging left behind by a lost/unreadable marker.
+    await MediaAssetStore.instance.clearRestoreStaging();
+    if (prefs.corruptKeys.contains(_backupRestoreTransactionKey)) {
+      await prefs.remove(_backupRestoreTransactionKey);
+    }
+    return;
+  }
+
+  // If LocalStateStore had to recover the marker from previousValue, its
+  // visible phase may be stale (for example canonical_media_ready after a
+  // structured commit). Preserve canonical files conservatively; reference-
+  // aware GC after normal state load can remove genuine orphans safely.
+  if (!markerRecovered) {
     final phase = _RestoreMediaStagingSession._readPhase(raw);
     if (phase != 'structured_committed') {
       final ids = <String>{
@@ -278,9 +335,7 @@ Future<void> _recoverInterruptedBackupRestore(
     }
   }
 
-  // Safe for both known and malformed/missing markers: staging assets are
-  // never canonical references. Any promoted orphan that cannot be recovered
-  // from a damaged marker is later handled by reference-aware media GC.
+  // Staging is never a canonical reference after startup recovery.
   await MediaAssetStore.instance.clearRestoreStaging();
   await prefs.remove(_backupRestoreTransactionKey);
 }
