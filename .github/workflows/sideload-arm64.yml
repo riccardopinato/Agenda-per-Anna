@@ -115,6 +115,7 @@ jobs:
           set -euo pipefail
           VERSION=$(awk '/^version:/ {print $2; exit}' pubspec.yaml)
           CERT_DER="$RUNNER_TEMP/anna-signing/agenda-release-cert.der"
+          mkdir -p "$(dirname "$CERT_DER")"
           keytool -exportcert \
             -keystore "$ANDROID_KEYSTORE_PATH" \
             -storepass "$ANDROID_KEYSTORE_PASSWORD" \
