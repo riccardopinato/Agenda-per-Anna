@@ -39,11 +39,18 @@ See `docs/ARCHITECTURE.md` and `supabase/README.md` for implementation details.
 - Adds a 10,000-memory regression budget over derived Memories/Search/Life Archive projections before considering any new index or persistence subsystem.
 - Preserves the existing AgendaStore / DayJournal / DiaryBlock ownership model: this is product consolidation, not a Life Core rewrite.
 
-## v1.00-C — Data Safety v21 Hardening — NEXT
+## v1.00-C — Data Safety v21 Hardening — COMPLETED
 
 - Hardens ZIP restore to the Master Prompt v21 contract: **STAGING → reference-safe commit → deterministic rollback/recovery**.
 - Keeps current AgendaStore/MediaAssetStore ownership; no alternate backup database or second media owner is introduced.
 - Adds interrupted-restore cleanup and shared-reference regression coverage before physical file/storage certification in v1.00-D.
+
+## v1.00-D — Security / Native Physical Certification — NEXT
+
+- Verifies/deploys the Noi ♡ shared-password hardening migration and closes the real two-account/two-device E2EE lifecycle gate.
+- Adds physical-device evidence for backup/restore and Open Life Export through Android file picker/storage providers.
+- Verifies biometric/Keystore and other native-only security paths on real hardware where automation cannot substitute physical evidence.
+- Keeps AppLab as trusted runtime evidence, but does not treat emulator/runtime automation as physical-device certification.
 
 ## v0.99.0 — Open Life Export
 
