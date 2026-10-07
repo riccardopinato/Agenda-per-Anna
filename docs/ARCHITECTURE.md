@@ -1,5 +1,16 @@
 # Agenda per Anna — Architecture
 
+## v1.00-C — Restore transaction boundary
+
+- `_RestoreMediaStagingSession` coordinates physical media and LocalStateStore restore state; it is an orchestration layer, not a second media owner.
+- Incoming restore media is written under `restore_staging_v1_`; `MediaAssetStore` remains the sole canonical media store.
+- `backup_restore_transaction_v1` is the durable crash-recovery marker.
+- Canonical media promotion happens only after staged-byte integrity checks; structured records and the `structured_committed` marker commit atomically through LocalStateStore.
+- Pre-commit recovery may delete only media proven to have been created by the interrupted restore. Recovered/ambiguous stale markers preserve canonical media and defer orphan decisions to reference-aware GC.
+- Generic media pruning skips active staging; startup clears markerless/interrupted staging deterministically.
+- Post-commit staging cleanup is best-effort and recoverable: cleanup failure cannot turn a durable restore into a user-visible false failure.
+- Legacy inline/ZIP photo, voice, Sketchbook and Trash media use the same staging writer, and staged full-resolution photos can supply thumbnail generation before promotion.
+
 ## v1.00-B — Golden Core presentation boundary
 
 - No new canonical entity/store is introduced.
