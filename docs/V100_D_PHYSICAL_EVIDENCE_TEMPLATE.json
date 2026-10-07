@@ -1,0 +1,156 @@
+{
+  "schemaVersion": 1,
+  "certification": "Anna's Diary v1.00-D",
+  "repository": "riccardopinato/Agenda-per-Anna",
+  "commit": null,
+  "appVersion": null,
+  "artifactFile": null,
+  "artifactSha256": null,
+  "signingCertificateSha256": null,
+  "workflowRunId": null,
+  "channel": "direct-sideload",
+  "devices": [
+    {
+      "id": "device-a",
+      "model": null,
+      "osVersion": null,
+      "accountRole": "owner"
+    },
+    {
+      "id": "device-b",
+      "model": null,
+      "osVersion": null,
+      "accountRole": "member"
+    }
+  ],
+  "scenarios": [
+    {
+      "id": "DS-01",
+      "status": "PENDING",
+      "deviceIds": [],
+      "expected": null,
+      "observed": null,
+      "evidenceRefs": []
+    },
+    {
+      "id": "DS-02",
+      "status": "PENDING",
+      "deviceIds": [],
+      "expected": null,
+      "observed": null,
+      "evidenceRefs": []
+    },
+    {
+      "id": "DS-03",
+      "status": "PENDING",
+      "deviceIds": [],
+      "expected": null,
+      "observed": null,
+      "evidenceRefs": []
+    },
+    {
+      "id": "DS-04",
+      "status": "PENDING",
+      "deviceIds": [],
+      "expected": null,
+      "observed": null,
+      "evidenceRefs": []
+    },
+    {
+      "id": "DS-05",
+      "status": "PENDING",
+      "deviceIds": [],
+      "expected": null,
+      "observed": null,
+      "evidenceRefs": []
+    },
+    {
+      "id": "DS-06",
+      "status": "PENDING",
+      "deviceIds": [],
+      "expected": null,
+      "observed": null,
+      "evidenceRefs": []
+    },
+    {
+      "id": "VAULT-01",
+      "status": "PENDING",
+      "deviceIds": [],
+      "expected": null,
+      "observed": null,
+      "evidenceRefs": []
+    },
+    {
+      "id": "VAULT-02",
+      "status": "PENDING",
+      "deviceIds": [],
+      "expected": null,
+      "observed": null,
+      "evidenceRefs": []
+    },
+    {
+      "id": "VAULT-03",
+      "status": "PENDING",
+      "deviceIds": [],
+      "expected": null,
+      "observed": null,
+      "evidenceRefs": []
+    },
+    {
+      "id": "VAULT-04",
+      "status": "PENDING",
+      "deviceIds": [],
+      "expected": null,
+      "observed": null,
+      "evidenceRefs": []
+    },
+    {
+      "id": "NOI-01",
+      "status": "PENDING",
+      "deviceIds": [],
+      "expected": null,
+      "observed": null,
+      "evidenceRefs": []
+    },
+    {
+      "id": "NOI-02",
+      "status": "PENDING",
+      "deviceIds": [],
+      "expected": null,
+      "observed": null,
+      "evidenceRefs": []
+    },
+    {
+      "id": "NOI-03",
+      "status": "PENDING",
+      "deviceIds": [],
+      "expected": null,
+      "observed": null,
+      "evidenceRefs": []
+    },
+    {
+      "id": "NATIVE-01",
+      "status": "PENDING",
+      "deviceIds": [],
+      "expected": null,
+      "observed": null,
+      "evidenceRefs": []
+    },
+    {
+      "id": "NATIVE-02",
+      "status": "PENDING",
+      "deviceIds": [],
+      "expected": null,
+      "observed": null,
+      "evidenceRefs": []
+    },
+    {
+      "id": "NATIVE-03",
+      "status": "PENDING",
+      "deviceIds": [],
+      "expected": null,
+      "observed": null,
+      "evidenceRefs": []
+    }
+  ]
+}

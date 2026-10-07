@@ -106,10 +106,39 @@ jobs:
              "build/direct-apk/Anna-Diary-arm64-release.apk"
           ls -lh build/direct-apk/*.apk
 
+      - name: Prepare physical certification identity
+        shell: bash
+        env:
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+        run: |
+          set -euo pipefail
+          VERSION=$(awk '/^version:/ {print $2; exit}' pubspec.yaml)
+          CERT_DER="$RUNNER_TEMP/anna-signing/agenda-release-cert.der"
+          mkdir -p "$(dirname "$CERT_DER")"
+          keytool -exportcert \
+            -keystore "$ANDROID_KEYSTORE_PATH" \
+            -storepass "$ANDROID_KEYSTORE_PASSWORD" \
+            -alias "$ANDROID_KEY_ALIAS" \
+            -file "$CERT_DER"
+          SIGNING_SHA256=$(sha256sum "$CERT_DER" | awk '{print toupper($1)}')
+          python3 tool/create_physical_cert_manifest.py \
+            --artifact build/direct-apk/Anna-Diary-arm64-release.apk \
+            --output build/direct-apk/PHYSICAL_CERTIFICATION_MANIFEST.json \
+            --repository "$GITHUB_REPOSITORY" \
+            --commit "$GITHUB_SHA" \
+            --version "$VERSION" \
+            --variant "arm64-v8a release non-store physical-certification candidate" \
+            --signing-sha256 "$SIGNING_SHA256" \
+            --workflow-run-id "$GITHUB_RUN_ID" \
+            --channel "direct-sideload"
+
       - name: Upload lightweight ARM64 APK
         uses: actions/upload-artifact@v4
         with:
           name: annas-diary-light-arm64
-          path: build/direct-apk/*.apk
+          path: |
+            build/direct-apk/*.apk
+            build/direct-apk/PHYSICAL_CERTIFICATION_MANIFEST.json
           if-no-files-found: error
           retention-days: 30

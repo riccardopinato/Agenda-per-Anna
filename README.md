@@ -45,12 +45,20 @@ See `docs/ARCHITECTURE.md` and `supabase/README.md` for implementation details.
 - Keeps current AgendaStore/MediaAssetStore ownership; no alternate backup database or second media owner is introduced.
 - Adds interrupted-restore cleanup and shared-reference regression coverage before physical file/storage certification in v1.00-D.
 
-## v1.00-D — Security / Native Physical Certification — NEXT
+## v1.00-D — Security / Native Physical Certification — IN PROGRESS
 
 - Verifies/deploys the Noi ♡ shared-password hardening migration and closes the real two-account/two-device E2EE lifecycle gate.
 - Adds physical-device evidence for backup/restore and Open Life Export through Android file picker/storage providers.
 - Verifies biometric/Keystore and other native-only security paths on real hardware where automation cannot substitute physical evidence.
 - Keeps AppLab as trusted runtime evidence, but does not treat emulator/runtime automation as physical-device certification.
+
+### v1.00-D current evidence
+
+- Production Supabase reports migration `shared_password_hardening_v086` deployed; the live two-user transactional backend contract passes with rollback.
+- AppLab now includes Backup/Data as a trusted application-side checkpoint.
+- Direct stable-signed ARM64 artifacts include `PHYSICAL_CERTIFICATION_MANIFEST.json` so device evidence can be bound to exact bytes and signing identity.
+- Real-device Backup/file-provider, Vault biometric/Keystore, two-device Password Noi ♡, share target, launcher shortcut and notification-delivery tests remain required before PHYSICAL DEVICE VERIFIED can be claimed.
+- Supabase leaked-password protection is still an external Auth configuration warning and must be enabled/verified before Store Ready.
 
 ## v0.99.0 — Open Life Export
 
