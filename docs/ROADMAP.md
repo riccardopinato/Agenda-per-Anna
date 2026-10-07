@@ -55,7 +55,7 @@ Source of execution truth for Anna's Diary. Product identity and boundaries are 
 | v0.98 | Capture Everywhere | Completed — trusted runtime verified | Unified Capture across primary app surfaces plus Android/PWA launch shortcuts, reusing canonical persistence |
 | v0.99 | Open Life Export | Completed — CI/AppLab trusted runtime green | Open Markdown + structured JSON + separate media/sketch export over canonical data, with privacy-safe exclusions and no new persistence |
 | v1.00-B | Golden Core Cleanup & Localization | Completed — CI/AppLab trusted runtime green | Removed confirmed dead UI, localized core surfaces, simplified Home IA and locked 10k-memory projection performance without new persistence |
-| v1.00-C | Data Safety v21 Hardening | NEXT — implementation pending | Add real restore staging, reference-safe media commit, deterministic rollback/recovery markers and harden shared-reference cleanup |
+| v1.00-C | Data Safety v21 Hardening | Completed — CI/AppLab trusted runtime green | Restore staging, reference-safe commit, deterministic crash recovery, stale-marker safety and shared-reference preservation |\n| v1.00-D | Security / Native Physical Certification | NEXT — physical/native gates pending | Certify Noi ♡ E2EE deployment/lifecycle, backup/file-picker storage, biometrics/Keystore and native release flows on real devices |
 
 ## v1.00-A audit outcome
 
@@ -81,6 +81,14 @@ The full product reality audit is recorded in `docs/V100_FULL_PRODUCT_REALITY_AU
 - AppLab Production Gate #458: build/test phase and trusted Android runtime verification passed; Safe Interaction Crawler passed. Multi-screen visual result remained advisory WARN and did not invalidate the trusted runtime PASS.
 - CodeRabbit advisory status: success.
 - Evidence ceiling for this step: **TRUSTED RUNTIME VERIFIED**. No physical-device or distribution claim is made for native file/security/store flows.
+
+### v1.00-C release evidence
+
+- PR #91 final head: `10402b72e293958bc9b5b1f3e7f517f92d62f247`.
+- Development checks #925, Web #529, Android size audit #468 and AppLab Production Gate #463 all passed.
+- Squash merge: `201cedd2c63597bcac5e3a56b2e10c658161cd71`.
+- Evidence level: **TRUSTED RUNTIME VERIFIED** for the AppLab Android artifact.
+- Physical file picker/storage-provider validation remains a v1.00-D gate.
 
 ## v1.00-C acceptance direction
 
