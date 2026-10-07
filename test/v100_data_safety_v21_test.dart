@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:typed_data';
 
+import 'package:archive/archive.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -349,4 +350,200 @@ void main() {
 
     store.dispose();
   });
+
+  test('v1.00-C ZIP restore generates a thumbnail from staged full media',
+      () async {
+    final bytes = Uint8List.fromList(
+      <int>[0xff, 0xd8, 0xff, 0xe0, ...List<int>.filled(128, 9)],
+    );
+    final assetId = await MediaAssetStore.instance.put(bytes);
+    final day = DateTime(2026, 10, 11);
+    final source = AgendaStore();
+    source.journals[AgendaStore.dateKey(day)] = DayJournal(
+      blocks: [
+        DiaryBlock(
+          id: 'restore-photo-without-thumbnail',
+          type: DiaryBlockType.photo,
+          createdAt: day,
+          mediaAssetId: assetId,
+        ),
+      ],
+    );
+    final zip = await source.createBackupZip();
+    source.dispose();
+    await MediaAssetStore.instance.delete(assetId);
+
+    final target = AgendaStore();
+    await target.load();
+    await target.restoreBackupZip(zip, merge: false);
+
+    final restored = target.journal(day).blocks.single;
+    expect(restored.mediaAssetId, assetId);
+    expect(restored.mediaThumbnailAssetId, isNotEmpty);
+    expect(
+      await MediaAssetStore.instance.read(restored.mediaThumbnailAssetId),
+      isNotNull,
+    );
+    expect(await stagingIds(), isEmpty);
+
+    target.dispose();
+  });
+
+  test('v1.00-C post-commit cleanup fault does not report restore failure',
+      () async {
+    final fixture = await buildPhotoBackup();
+    final target = AgendaStore();
+    await seedBaseline(target);
+
+    AgendaStore.restoreFailurePhaseForTesting =
+        'cleanup_after_structured_commit';
+    await target.restoreBackupZip(fixture.zip, merge: false);
+    AgendaStore.restoreFailurePhaseForTesting = null;
+
+    expect(target.journal(fixture.day).blocks.single.id, 'restore-photo');
+    expect(
+      await MediaAssetStore.instance.read(fixture.assetId),
+      orderedEquals(fixture.bytes),
+    );
+    expect(await stagingIds(), isNotEmpty);
+    expect(
+      (await localState()).getString('backup_restore_transaction_v1'),
+      isNotNull,
+    );
+
+    final restarted = AgendaStore();
+    await restarted.load();
+
+    expect(restarted.journal(fixture.day).blocks.single.id, 'restore-photo');
+    expect(
+      await MediaAssetStore.instance.read(fixture.assetId),
+      orderedEquals(fixture.bytes),
+    );
+    expect(await stagingIds(), isEmpty);
+    expect(
+      (await localState()).getString('backup_restore_transaction_v1'),
+      isNull,
+    );
+
+    target.dispose();
+    restarted.dispose();
+  });
+
+  test('v1.00-C recovered stale marker never deletes committed media',
+      () async {
+    final fixture = await buildPhotoBackup();
+    final target = AgendaStore();
+    await seedBaseline(target);
+
+    AgendaStore.restoreFailurePhaseForTesting =
+        'crash_after_structured_commit';
+    await expectLater(
+      target.restoreBackupZip(fixture.zip, merge: false),
+      throwsA(anything),
+    );
+    AgendaStore.restoreFailurePhaseForTesting = null;
+
+    final state = await localState();
+    expect(
+      state.getString('backup_restore_transaction_v1'),
+      contains('structured_committed'),
+    );
+    await state.corruptRecordChecksumForTesting(
+      'backup_restore_transaction_v1',
+    );
+    await state.reloadValidatedRecordsForTesting();
+    expect(
+      state.recoveredKeys,
+      contains('backup_restore_transaction_v1'),
+    );
+    expect(
+      state.getString('backup_restore_transaction_v1'),
+      contains('canonical_media_ready'),
+    );
+
+    final restarted = AgendaStore();
+    await restarted.load();
+
+    expect(restarted.journal(fixture.day).blocks.single.id, 'restore-photo');
+    expect(
+      await MediaAssetStore.instance.read(fixture.assetId),
+      orderedEquals(fixture.bytes),
+    );
+    expect(await stagingIds(), isEmpty);
+    expect(
+      state.getString('backup_restore_transaction_v1'),
+      isNull,
+    );
+
+    target.dispose();
+    restarted.dispose();
+  });
+
+  test('v1.00-C startup removes orphan staging when marker is missing',
+      () async {
+    final state = await localState();
+    expect(
+      state.getString('backup_restore_transaction_v1'),
+      isNull,
+    );
+
+    final bytes = Uint8List.fromList(
+      <int>[0xff, 0xd8, 0xff, ...List<int>.filled(48, 17)],
+    );
+    final stagingId = MediaAssetStore.instance.restoreStagingAssetId(
+      'orphan-transaction',
+      'sha256_orphan',
+    );
+    await MediaAssetStore.instance.putNamed(stagingId, bytes);
+    expect(await stagingIds(), contains(stagingId));
+
+    final restarted = AgendaStore();
+    await restarted.load();
+
+    expect(await stagingIds(), isEmpty);
+    expect(await MediaAssetStore.instance.read(stagingId), isNull);
+    restarted.dispose();
+  });
+
+  test('v1.00-C corrupted ZIP media fails closed before staging',
+      () async {
+    final fixture = await buildPhotoBackup();
+    final sourceArchive = ZipDecoder().decodeBytes(
+      fixture.zip,
+      verify: true,
+    );
+    final tampered = Archive();
+    for (final entry in sourceArchive) {
+      if (!entry.isFile) continue;
+      final original = Uint8List.fromList(entry.readBytes()!);
+      final bytes = Uint8List.fromList(original);
+      if (entry.name == 'media/${fixture.assetId}.bin' && bytes.isNotEmpty) {
+        bytes[0] = bytes[0] ^ 0xff;
+      }
+      tampered.addFile(ArchiveFile.bytes(entry.name, bytes));
+    }
+    final corruptedZip = ZipEncoder().encodeBytes(tampered);
+
+    final target = AgendaStore();
+    await seedBaseline(target);
+
+    await expectLater(
+      target.restoreBackupZip(corruptedZip, merge: false),
+      throwsA(isA<FormatException>()),
+    );
+
+    expect(
+      target.journal(DateTime(2026, 1, 1)).beautiful,
+      'Baseline locale',
+    );
+    expect(target.journal(fixture.day).blocks, isEmpty);
+    expect(await stagingIds(), isEmpty);
+    expect(
+      (await localState()).getString('backup_restore_transaction_v1'),
+      isNull,
+    );
+
+    target.dispose();
+  });
+
 }
