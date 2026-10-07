@@ -55,7 +55,7 @@ Source of execution truth for Anna's Diary. Product identity and boundaries are 
 | v0.98 | Capture Everywhere | Completed — trusted runtime verified | Unified Capture across primary app surfaces plus Android/PWA launch shortcuts, reusing canonical persistence |
 | v0.99 | Open Life Export | Completed — CI/AppLab trusted runtime green | Open Markdown + structured JSON + separate media/sketch export over canonical data, with privacy-safe exclusions and no new persistence |
 | v1.00-B | Golden Core Cleanup & Localization | Completed — CI/AppLab trusted runtime green | Removed confirmed dead UI, localized core surfaces, simplified Home IA and locked 10k-memory projection performance without new persistence |
-| v1.00-C | Data Safety v21 Hardening | Completed — CI/AppLab trusted runtime green | Restore staging, reference-safe commit, deterministic crash recovery, stale-marker safety and shared-reference preservation |\n| v1.00-D | Security / Native Physical Certification | NEXT — physical/native gates pending | Certify Noi ♡ E2EE deployment/lifecycle, backup/file-picker storage, biometrics/Keystore and native release flows on real devices |
+| v1.00-C | Data Safety v21 Hardening | Completed — CI/AppLab trusted runtime green | Restore staging, reference-safe commit, deterministic crash recovery, stale-marker safety and shared-reference preservation |\n| v1.00-D | Security / Native Physical Certification | IN PROGRESS — live backend verified, physical gate pending | Live migration 027 + two-user backend contract verified; stable artifact identity/AppLab backup preflight added; real-device file, Keystore, E2EE and native flows still required |
 
 ## v1.00-A audit outcome
 
@@ -99,6 +99,18 @@ The full product reality audit is recorded in `docs/V100_FULL_PRODUCT_REALITY_AU
 - Shared media references and Trash remain reference-safe under purge/cleanup.
 - Automated tests cover success, corrupt/missing media, interrupted staging, structured-state failure, orphan staging cleanup and shared-reference preservation.
 - Physical file-picker/storage-provider scenarios remain a **v1.00-D physical validation gate** and must not be inferred from CI/AppLab.
+
+## v1.00-D acceptance criteria
+
+- Live Supabase migration history proves `shared_password_hardening_v086` is deployed.
+- The live two-user transactional shared-password contract passes without retaining test rows.
+- Supabase advisor findings are triaged: the documented `pg_net` warning remains accepted; leaked-password protection remains an explicit external Auth configuration gate until enabled/verified.
+- AppLab includes a Backup/Data application-side checkpoint, without representing emulator document-provider behavior as physical evidence.
+- The stable-signed ARM64 sideload artifact carries `PHYSICAL_CERTIFICATION_MANIFEST.json` with commit, version, APK SHA-256, signing certificate SHA-256 and workflow run.
+- Physical evidence is recorded against that exact artifact for Backup/Restore, corrupt/missing/interrupted restore paths, Open Life Export, Vault password/biometric/Keystore/FLAG_SECURE, Noi ♡ two-device E2EE lifecycle, Android share target, launcher shortcuts and real notification delivery.
+- `tool/validate_v100d_physical_evidence.py` must reject incomplete/PENDING evidence and accept only a complete two-device PASS matrix.
+- CI, Web, Android size audit and AppLab must be green before the physical candidate is promoted.
+- v1.00-D remains BLOCKED until all physical rows pass; v1.00-E cannot be declared complete from CI/AppLab alone.
 
 ## v0.99 acceptance criteria
 
