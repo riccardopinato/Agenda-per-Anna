@@ -46,7 +46,7 @@ void main() {
       "assertVisible: 'D2 encrypted payload survives relock and restart'"
           .allMatches(vault)
           .length,
-      2,
+      3,
     );
 
     expect(vault, contains('Blocca adesso|Lock now'));
