@@ -282,6 +282,7 @@ class _PrivateVaultScreenState extends State<PrivateVaultScreen>
             mainAxisSize: MainAxisSize.min,
             children: [
               Semantics(
+                identifier: 'vault_note_title_field',
                 label: strings.vaultPrivateTitleField,
                 child: TextField(
                   controller: title,
@@ -296,6 +297,7 @@ class _PrivateVaultScreenState extends State<PrivateVaultScreen>
               ),
               const SizedBox(height: 10),
               Semantics(
+                identifier: 'vault_note_body_field',
                 label: strings.vaultPrivateContentField,
                 child: TextField(
                   controller: body,
@@ -1108,6 +1110,7 @@ class _PrivateVaultScreenState extends State<PrivateVaultScreen>
                       ],
                       const SizedBox(height: 20),
                       Semantics(
+                        identifier: 'vault_password_field',
                         label: strings.vaultPasswordLabel,
                         child: TextField(
                           controller: passwordController,
@@ -1132,6 +1135,7 @@ class _PrivateVaultScreenState extends State<PrivateVaultScreen>
                       ),
                       const SizedBox(height: 12),
                       Semantics(
+                        identifier: 'vault_repeat_password_field',
                         label: strings.vaultRepeatPassword,
                         child: TextField(
                           controller: confirmController,
@@ -1261,6 +1265,7 @@ class _PrivateVaultScreenState extends State<PrivateVaultScreen>
                   ],
                   const SizedBox(height: 22),
                   Semantics(
+                    identifier: 'vault_password_field',
                     label: strings.vaultPasswordLabel,
                     child: TextField(
                       controller: passwordController,

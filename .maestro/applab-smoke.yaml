@@ -72,10 +72,10 @@ appId: com.riccardopinato.agenda_per_anna
 # SETUP: clear AppLab state must expose the first-time Vault setup, never a
 # pre-existing locked Vault.
 - tapOn:
-    text: '(Password cassaforte|Vault password|Contraseña de la Caja fuerte|Mot de passe du Coffre|Palavra-passe do Cofre)'
+    id: 'vault_password_field'
 - inputText: 'D2VaultPassword2026'
 - tapOn:
-    text: '(Ripeti password|Repeat password|Repite la contraseña|Répète le mot de passe|Repete a palavra-passe)'
+    id: 'vault_repeat_password_field'
 - inputText: 'D2VaultPassword2026'
 - hideKeyboard
 - tapOn:
@@ -95,10 +95,10 @@ appId: com.riccardopinato.agenda_per_anna
     visible: '(Nuovo contenuto privato|New private content|Nuevo contenido privado|Nouveau contenu privé|Novo conteúdo privado)'
     timeout: 10000
 - tapOn:
-    text: '(Titolo|Title|Título|Titre)'
+    id: 'vault_note_title_field'
 - inputText: 'D2_APPLAB_PERSISTENCE'
 - tapOn:
-    text: '(Contenuto privato|Private content|Contenido privado|Contenu privé|Conteúdo privado)'
+    id: 'vault_note_body_field'
 - inputText: 'D2 encrypted payload survives relock and restart'
 - hideKeyboard
 - tapOn:
@@ -118,7 +118,7 @@ appId: com.riccardopinato.agenda_per_anna
 # WRONG PASSWORD: a failed unlock must remain locked and expose the explicit
 # localized error. This prevents a false PASS that only checks navigation.
 - tapOn:
-    text: '(Password cassaforte|Vault password|Contraseña de la Caja fuerte|Mot de passe du Coffre|Palavra-passe do Cofre)'
+    id: 'vault_password_field'
 - inputText: 'D2WrongPassword2026'
 - hideKeyboard
 - tapOn:
@@ -132,7 +132,7 @@ appId: com.riccardopinato.agenda_per_anna
 # CORRECT UNLOCK: clear the failed value, unlock with the setup password and
 # require the previously encrypted sentinel payload.
 - tapOn:
-    text: '(Password cassaforte|Vault password|Contraseña de la Caja fuerte|Mot de passe du Coffre|Palavra-passe do Cofre)'
+    id: 'vault_password_field'
 - eraseText: 64
 - inputText: 'D2VaultPassword2026'
 - hideKeyboard
@@ -180,7 +180,7 @@ appId: com.riccardopinato.agenda_per_anna
     visible: '(Cassaforte bloccata|Vault locked|Caja fuerte bloqueada|Coffre verrouillé|Cofre bloqueado)'
     timeout: 15000
 - tapOn:
-    text: '(Password cassaforte|Vault password|Contraseña de la Caja fuerte|Mot de passe du Coffre|Palavra-passe do Cofre)'
+    id: 'vault_password_field'
 - inputText: 'D2VaultPassword2026'
 - hideKeyboard
 - tapOn:

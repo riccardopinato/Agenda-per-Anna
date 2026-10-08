@@ -44,8 +44,9 @@ screenshots.
 D2 therefore uses Maestro UI-hierarchy/state assertions and exact sentinel
 content rather than requiring a screenshot of sensitive content. The Vault
 password/confirmation and private-note editor fields expose explicit localized
-semantics so Android accessibility services and AppLab can address them
-deterministically instead of relying on coordinates.
+semantics plus stable `Semantics.identifier` values. Flutter maps those identifiers
+to Android resource IDs, so AppLab addresses the fields with Maestro `id:`
+selectors instead of localized text or device-dependent coordinates.
 
 ## Evidence ceiling
 

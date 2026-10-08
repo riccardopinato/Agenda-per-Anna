@@ -56,14 +56,19 @@ void main() {
     final screen =
         File('lib/src/screens/private_vault.dart').readAsStringSync();
     expect(
-      'Semantics(\n                        label: strings.vaultPasswordLabel'
-          .allMatches(screen)
-          .length,
-      greaterThanOrEqualTo(1),
+      "identifier: 'vault_password_field'".allMatches(screen).length,
+      2,
     );
-    expect(screen, contains('label: strings.vaultRepeatPassword'));
-    expect(screen, contains('label: strings.vaultPrivateTitleField'));
-    expect(screen, contains('label: strings.vaultPrivateContentField'));
+    expect(screen, contains("identifier: 'vault_repeat_password_field'"));
+    expect(screen, contains("identifier: 'vault_note_title_field'"));
+    expect(screen, contains("identifier: 'vault_note_body_field'"));
+    expect(
+      "id: 'vault_password_field'".allMatches(vault).length,
+      4,
+    );
+    expect(vault, contains("id: 'vault_repeat_password_field'"));
+    expect(vault, contains("id: 'vault_note_title_field'"));
+    expect(vault, contains("id: 'vault_note_body_field'"));
   });
 
   test('v1.00-D2 deep Vault steps stay ordered and cannot collapse to navigation',
