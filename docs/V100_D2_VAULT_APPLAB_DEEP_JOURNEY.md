@@ -42,7 +42,10 @@ visual-regression checkpoints. Android `FLAG_SECURE` is expected to suppress
 screenshots.
 
 D2 therefore uses Maestro UI-hierarchy/state assertions and exact sentinel
-content rather than requiring a screenshot of sensitive content.
+content rather than requiring a screenshot of sensitive content. The Vault
+password/confirmation and private-note editor fields expose explicit localized
+semantics so Android accessibility services and AppLab can address them
+deterministically instead of relying on coordinates.
 
 ## Evidence ceiling
 

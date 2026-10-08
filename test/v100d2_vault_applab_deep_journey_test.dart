@@ -16,7 +16,7 @@ void main() {
     // clearState=true belongs to the parent smoke. The deep flow must therefore
     // require first-time setup instead of accepting setup OR locked state.
     expect(smoke, contains('clearState: true'));
-    expect(vault, contains('Uno spazio solo tuo|A space just for you'));
+    expect(vault, contains('.*(Uno spazio solo tuo|A space just for you'));
     expect(
       vault,
       isNot(
@@ -52,6 +52,18 @@ void main() {
     expect(vault, contains('Password non corretta\\.|Incorrect password\\.'));
     expect(vault, contains('stopApp'));
     expect(vault, contains('launchApp'));
+
+    final screen =
+        File('lib/src/screens/private_vault.dart').readAsStringSync();
+    expect(
+      'Semantics(\n                        label: strings.vaultPasswordLabel'
+          .allMatches(screen)
+          .length,
+      greaterThanOrEqualTo(1),
+    );
+    expect(screen, contains('label: strings.vaultRepeatPassword'));
+    expect(screen, contains('label: strings.vaultPrivateTitleField'));
+    expect(screen, contains('label: strings.vaultPrivateContentField'));
   });
 
   test('v1.00-D2 deep Vault steps stay ordered and cannot collapse to navigation',
