@@ -8,10 +8,9 @@ void main() {
         File('.maestro/applab-smoke.yaml').readAsStringSync();
     final journey =
         File('.maestro/applab-journey.json').readAsStringSync();
-    final vault =
-        File('.maestro/journey/vault.yaml').readAsStringSync();
+    final vault = smoke;
 
-    expect(smoke, contains('runFlow: journey/vault.yaml'));
+    expect(smoke, isNot(contains('runFlow: journey/vault.yaml')));
     expect(journey, isNot(contains('"name": "vault"')));
 
     // clearState=true belongs to the parent smoke. The deep flow must therefore
@@ -58,7 +57,7 @@ void main() {
   test('v1.00-D2 deep Vault steps stay ordered and cannot collapse to navigation',
       () {
     final vault =
-        File('.maestro/journey/vault.yaml').readAsStringSync();
+        File('.maestro/applab-smoke.yaml').readAsStringSync();
 
     int at(String marker) {
       final index = vault.indexOf(marker);

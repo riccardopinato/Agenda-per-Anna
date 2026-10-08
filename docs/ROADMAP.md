@@ -124,7 +124,7 @@ The full product reality audit is recorded in `docs/V100_FULL_PRODUCT_REALITY_AU
 - A deterministic wrong password must expose the localized incorrect-password error and leave the Vault locked.
 - The correct password must unlock and expose the exact sentinel payload created before relock.
 - AppLab must stop and relaunch the package without clearing state, revisit the Vault, unlock it and require the same sentinel title/body again.
-- The deep Vault flow remains outside `applab-journey.json` visual checkpoints because `FLAG_SECURE` is intentional; it is invoked as a mandatory subflow by `applab-smoke.yaml`.
+- The deep Vault flow remains outside `applab-journey.json` visual checkpoints because `FLAG_SECURE` is intentional; the deep sequence is embedded directly in `applab-smoke.yaml` so AppLab's isolated runtime cannot lose relative subflow files.
 - Automated D2 evidence is capped at TRUSTED RUNTIME. Android Keystore, biometrics, OEM ANR behavior and other native physical claims remain in the v1.00-D physical matrix.
 - Development checks, Web, Android size audit and AppLab Trusted Verify must all pass on the same D2 SHA before merge.
 

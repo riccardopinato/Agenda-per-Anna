@@ -9,12 +9,12 @@ first-time setup surface or the locked surface. That proved navigation but did
 not prove password KDF execution, encrypted payload persistence or wrong-password
 behavior.
 
-D2 replaces that shallow condition with a mandatory functional flow called from
-`.maestro/applab-smoke.yaml`.
+D2 replaces that shallow condition with a mandatory functional sequence embedded directly in
+`.maestro/applab-smoke.yaml`. This avoids relative subflow dependencies when AppLab copies the primary flow into its isolated runtime directory.
 
 ## Required trusted-runtime journey
 
-The AppLab build starts with `clearState: true`. The Vault flow therefore
+The AppLab build starts with `clearState: true`. The embedded Vault sequence therefore
 requires this exact sequence:
 
 1. enter Private Vault and require the first-time setup surface;
