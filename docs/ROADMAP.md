@@ -56,6 +56,7 @@ Source of execution truth for Anna's Diary. Product identity and boundaries are 
 | v0.99 | Open Life Export | Completed — CI/AppLab trusted runtime green | Open Markdown + structured JSON + separate media/sketch export over canonical data, with privacy-safe exclusions and no new persistence |
 | v1.00-B | Golden Core Cleanup & Localization | Completed — CI/AppLab trusted runtime green | Removed confirmed dead UI, localized core surfaces, simplified Home IA and locked 10k-memory projection performance without new persistence |
 | v1.00-C | Data Safety v21 Hardening | Completed — CI/AppLab trusted runtime green | Restore staging, reference-safe commit, deterministic crash recovery, stale-marker safety and shared-reference preservation |\n| v1.00-D | Security / Native Physical Certification | IN PROGRESS — live backend verified, physical gate pending | Live migration 027 + two-user backend contract verified; stable artifact identity/AppLab backup preflight added; real-device file, Keystore, E2EE and native flows still required |
+| v1.00-D1 | Crypto Responsiveness | Implemented — must pass release gates | Native PBKDF2 off main isolate for Vault + Noi ♡ pairing/recovery, unchanged crypto format, responsiveness/compatibility regressions |
 
 ## v1.00-A audit outcome
 
@@ -99,6 +100,19 @@ The full product reality audit is recorded in `docs/V100_FULL_PRODUCT_REALITY_AU
 - Shared media references and Trash remain reference-safe under purge/cleanup.
 - Automated tests cover success, corrupt/missing media, interrupted staging, structured-state failure, orphan staging cleanup and shared-reference preservation.
 - Physical file-picker/storage-provider scenarios remain a **v1.00-D physical validation gate** and must not be inferred from CI/AppLab.
+
+## v1.00-D1 acceptance criteria
+
+- Native/mobile PBKDF2-SHA256 derivation executes outside the Flutter main isolate through the shared KDF worker.
+- Vault setup/unlock keeps the existing 600,000-iteration current wrap and 180,000-iteration legacy compatibility; no password reset or Vault migration is introduced.
+- Noi ♡ pairing remains at 180,000 iterations and recovery remains at 600,000; both creation/import paths await the asynchronous worker before AES-GCM processing.
+- Web continues to use asynchronous Web Crypto PBKDF2-SHA256 behind the same conditional worker contract.
+- A known PBKDF2-SHA256 vector must remain byte-for-byte compatible.
+- A 600k derivation must allow a main-event-loop heartbeat before completion and must finish inside the bounded regression timeout.
+- A real service-level Vault lock/unlock regression must preserve encrypted content across the worker boundary.
+- Source guards must reject direct `PBKDF2KeyDerivator` use in Vault/Noi ♡ UI-facing services.
+- Full analyze/tests, browser crypto test, Web release, Android gate and AppLab must remain green before D1 is accepted into the v1.00-D physical candidate.
+- D1 is a responsiveness hardening step only; it does not elevate biometric/Keystore/two-device evidence above its actual verification level.
 
 ## v1.00-D acceptance criteria
 

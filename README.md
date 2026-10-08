@@ -52,6 +52,15 @@ See `docs/ARCHITECTURE.md` and `supabase/README.md` for implementation details.
 - Verifies biometric/Keystore and other native-only security paths on real hardware where automation cannot substitute physical evidence.
 - Keeps AppLab as trusted runtime evidence, but does not treat emulator/runtime automation as physical-device certification.
 
+### v1.00-D1 — Crypto Responsiveness
+
+- Moves native/mobile PBKDF2-SHA256 work onto a helper isolate through one shared KDF worker, so Vault setup/unlock and Noi ♡ password pairing/recovery do not perform expensive derivation on the Flutter main isolate.
+- Keeps cryptographic compatibility unchanged: Vault current wraps remain at 600,000 iterations, legacy Vault wraps remain readable at 180,000, Noi ♡ pairing remains at 180,000 and Noi ♡ recovery remains at 600,000.
+- Web keeps asynchronous browser Web Crypto through the same conditional KDF boundary; no AES-GCM envelope, salt, AAD, master-key, recovery-package or pairing-package format changes.
+- Adds a 600k event-loop heartbeat regression, a bounded completion budget, a known PBKDF2-SHA256 compatibility vector and a real Vault lock/unlock persistence regression.
+- Adds source-level regression gates that forbid direct PBKDF2 derivation from Vault/Noi ♡ UI-facing services and require the native isolate/Web Crypto workers.
+- This closes the identified main-isolate responsiveness defect in code; real-device VAULT/Keystore/biometric certification remains part of the v1.00-D physical matrix.
+
 ### v1.00-D current evidence
 
 - Production Supabase reports migration `shared_password_hardening_v086` deployed; the live two-user transactional backend contract passes with rollback.

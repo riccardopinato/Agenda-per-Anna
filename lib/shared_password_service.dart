@@ -8,6 +8,7 @@ import 'package:uuid/uuid.dart';
 
 import 'cloud_sync_service.dart';
 import 'vault_service.dart';
+import 'src/security/pbkdf2_worker.dart';
 
 class SharedPasswordConflictException implements Exception {
   final String message;
@@ -190,7 +191,7 @@ class SharedPasswordService {
       final normalized = _normalizePairingCode(code);
       final codeHash = sha256.convert(utf8.encode(normalized)).toString();
       final salt = _randomBytes(16);
-      wrappingKey = _derivePairingKey(normalized, salt);
+      wrappingKey = await _derivePairingKey(normalized, salt);
       final wrapped = _encrypt(
         key: wrappingKey,
         plaintext: spaceKey,
@@ -248,7 +249,7 @@ class SharedPasswordService {
       }
       final salt = base64Url.decode(payload['salt']?.toString() ?? '');
       final wrapped = Map<String, dynamic>.from(payload['wrapped'] as Map);
-      final wrappingKey = _derivePairingKey(normalized, salt);
+      final wrappingKey = await _derivePairingKey(normalized, salt);
       Uint8List? spaceKey;
       try {
         spaceKey = _decrypt(
@@ -297,7 +298,7 @@ class SharedPasswordService {
     Uint8List? wrappingKey;
     try {
       await _assertLocalKeyMatchesServer(spaceId, key);
-      wrappingKey = _deriveSecretKey(
+      wrappingKey = await _deriveSecretKey(
         recoveryPassword,
         salt,
         _recoveryIterations,
@@ -350,7 +351,7 @@ class SharedPasswordService {
       final iterations = (decoded['iterations'] as num?)?.toInt() ?? 0;
       if (iterations < 100000 || iterations > 2000000) return false;
       final salt = base64Url.decode(decoded['salt']?.toString() ?? '');
-      wrappingKey = _deriveSecretKey(
+      wrappingKey = await _deriveSecretKey(
         recoveryPassword,
         salt,
         iterations,
@@ -779,20 +780,20 @@ class SharedPasswordService {
 
   String _fingerprint(Uint8List key) => sha256.convert(key).toString();
 
-  Uint8List _derivePairingKey(String code, Uint8List salt) =>
+  Future<Uint8List> _derivePairingKey(String code, Uint8List salt) =>
       _deriveSecretKey(code, salt, _pairingIterations);
 
-  Uint8List _deriveSecretKey(
+  Future<Uint8List> _deriveSecretKey(
     String secret,
     Uint8List salt,
     int iterations,
-  ) {
-    final derivator = PBKDF2KeyDerivator(HMac(SHA256Digest(), 64))
-      ..init(Pbkdf2Parameters(salt, iterations, _keyLength));
-    return derivator.process(
-      Uint8List.fromList(utf8.encode(secret)),
-    );
-  }
+  ) =>
+      derivePbkdf2Sha256Key(
+        secret: secret,
+        salt: salt,
+        iterations: iterations,
+        length: _keyLength,
+      );
 
   Map<String, dynamic> _encrypt({
     required Uint8List key,

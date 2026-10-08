@@ -1,5 +1,16 @@
 # Agenda per Anna — Architecture
 
+## v1.00-D1 — Crypto responsiveness boundary
+
+- `src/security/pbkdf2_worker.dart` is the single conditional PBKDF2-SHA256 execution boundary.
+- Native/mobile builds use `Isolate.run` so CPU-heavy PBKDF2 never executes on the Flutter main isolate. Web builds use browser `crypto.subtle.deriveBits`.
+- `vault_password_kdf_*.dart` are thin compatibility adapters; Vault serialization, password-wrap format and AES-GCM envelopes are unchanged.
+- `SharedPasswordService` awaits the same worker for pairing and recovery derivation before continuing its existing AES-GCM envelope logic.
+- KDF parameters are unchanged: Vault current 600,000; Vault legacy 180,000; Noi ♡ pairing 180,000; Noi ♡ recovery 600,000.
+- Only key derivation moves off-isolate. Vault state mutation, payload decryption/encryption, key zeroing and service lifecycle continue through their existing owners after the awaited derivation completes.
+- Native worker copies the salt into isolate-owned memory and clears temporary secret bytes/salt after derivation. Dart `String` lifetime remains runtime-managed and is not presented as zeroizable memory.
+- The worker changes responsiveness, not cryptographic identity: existing encrypted data and recovery/pairing packages remain compatible.
+
 ## v1.00-C — Restore transaction boundary
 
 - `_RestoreMediaStagingSession` coordinates physical media and LocalStateStore restore state; it is an orchestration layer, not a second media owner.

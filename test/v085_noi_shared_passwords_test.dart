@@ -152,6 +152,9 @@ void main() {
       () {
     final service =
         File('lib/shared_password_service.dart').readAsStringSync();
+    final nativeKdf = File(
+      'lib/src/security/pbkdf2_worker_native.dart',
+    ).readAsStringSync();
     final vault = File('lib/vault_service.dart').readAsStringSync();
     final privateVault =
         File('lib/src/screens/private_vault.dart').readAsStringSync();
@@ -166,7 +169,10 @@ void main() {
     expect(service, contains("'shared_password_key_meta'"));
     expect(service, contains("'AES-256-GCM'"));
     expect(service, contains('GCMBlockCipher(AESEngine())'));
-    expect(service, contains('PBKDF2KeyDerivator'));
+    expect(service, contains('derivePbkdf2Sha256Key'));
+    expect(service, isNot(contains('PBKDF2KeyDerivator')));
+    expect(nativeKdf, contains('PBKDF2KeyDerivator'));
+    expect(nativeKdf, contains('Isolate.run'));
     expect(service, contains('sha256.convert(key).toString()'));
     expect(
       service,
