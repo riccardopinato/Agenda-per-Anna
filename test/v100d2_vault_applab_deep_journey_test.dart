@@ -52,6 +52,11 @@ void main() {
     expect(vault, contains('Password non corretta\\.|Incorrect password\\.'));
     expect(vault, contains('stopApp'));
     expect(vault, contains('launchApp'));
+    expect(vault, contains('timeout: 120000'));
+    expect(
+      'timeout: 120000'.allMatches(vault).length,
+      greaterThanOrEqualTo(3),
+    );
 
     final screen =
         File('lib/src/screens/private_vault.dart').readAsStringSync();
