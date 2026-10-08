@@ -70,7 +70,8 @@ void main() {
     final relock = at('# RELOCK:');
     final wrong = at("inputText: 'D2WrongPassword2026'");
     final correct = at('# CORRECT UNLOCK:');
-    final stop = at('- stopApp');
+    final stop = vault.indexOf('- stopApp', correct);
+    expect(stop, greaterThan(correct), reason: 'Missing D2 process restart');
     final restartUnlock = vault.lastIndexOf("inputText: 'D2VaultPassword2026'");
     final finalPayload =
         vault.lastIndexOf("assertVisible: 'D2 encrypted payload survives relock and restart'");
