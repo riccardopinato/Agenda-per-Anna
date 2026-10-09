@@ -54,10 +54,16 @@ void main() {
     expect(vault, contains('Password non corretta\\.|Incorrect password\\.'));
     expect(vault, contains('stopApp'));
     expect(vault, contains('launchApp'));
-    expect(vault, contains('timeout: 120000'));
+    expect(
+      'timeout: 300000'.allMatches(vault).length,
+      3,
+      reason:
+          'Wrong-password and both correct unlocks must allow real 600k PBKDF2 on slow AppLab emulation.',
+    );
     expect(
       'timeout: 120000'.allMatches(vault).length,
-      greaterThanOrEqualTo(3),
+      greaterThanOrEqualTo(1),
+      reason: 'Initial Vault setup keeps its existing bounded KDF wait.',
     );
 
     final screen =
