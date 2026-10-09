@@ -107,15 +107,16 @@ appId: com.riccardopinato.agenda_per_anna
 - tapOn:
     text: '(Salva|Save|Guardar|Enregistrer)'
 - extendedWaitUntil:
-    visible: 'D2_APPLAB_PERSISTENCE'
-    timeout: 10000
-- assertVisible: 'D2 encrypted payload survives relock and restart'
+    visible: '.*D2_APPLAB_PERSISTENCE[\s\S]*D2 encrypted payload survives relock and restart.*'
+    timeout: 15000
+- assertVisible:
+    text: '.*D2_APPLAB_PERSISTENCE[\s\S]*D2 encrypted payload survives relock and restart.*'
 
 # RELOCK: force the explicit Vault lock and require the locked surface.
 - tapOn:
     text: '(Blocca adesso|Lock now|Bloquear ahora|Verrouiller maintenant|Bloquear agora)'
 - extendedWaitUntil:
-    visible: '(Cassaforte bloccata|Vault locked|Caja fuerte bloqueada|Coffre verrouillé|Cofre bloqueado)'
+    visible: '.*(Cassaforte bloccata|Vault locked|Caja fuerte bloqueada|Coffre verrouillé|Cofre bloqueado).*'
     timeout: 10000
 
 # WRONG PASSWORD: a failed unlock must remain locked and expose the explicit
@@ -127,10 +128,10 @@ appId: com.riccardopinato.agenda_per_anna
 - tapOn:
     text: '(Sblocca|Unlock|Desbloquear|Déverrouiller)'
 - extendedWaitUntil:
-    visible: '(Password non corretta\.|Incorrect password\.|Contraseña incorrecta\.|Mot de passe incorrect\.|Palavra-passe incorreta\.)'
+    visible: '.*(Password non corretta\.|Incorrect password\.|Contraseña incorrecta\.|Mot de passe incorrect\.|Palavra-passe incorreta\.).*'
     timeout: 120000
 - assertVisible:
-    text: '(Cassaforte bloccata|Vault locked|Caja fuerte bloqueada|Coffre verrouillé|Cofre bloqueado)'
+    text: '.*(Cassaforte bloccata|Vault locked|Caja fuerte bloqueada|Coffre verrouillé|Cofre bloqueado).*'
 
 # CORRECT UNLOCK: clear the failed value, unlock with the setup password and
 # require the previously encrypted sentinel payload.
@@ -142,9 +143,10 @@ appId: com.riccardopinato.agenda_per_anna
 - tapOn:
     text: '(Sblocca|Unlock|Desbloquear|Déverrouiller)'
 - extendedWaitUntil:
-    visible: 'D2_APPLAB_PERSISTENCE'
+    visible: '.*D2_APPLAB_PERSISTENCE[\s\S]*D2 encrypted payload survives relock and restart.*'
     timeout: 120000
-- assertVisible: 'D2 encrypted payload survives relock and restart'
+- assertVisible:
+    text: '.*D2_APPLAB_PERSISTENCE[\s\S]*D2 encrypted payload survives relock and restart.*'
 
 # PROCESS PERSISTENCE: terminate the package, start a fresh Flutter process,
 # navigate back to Vault, unlock and require the same encrypted payload.
@@ -180,7 +182,7 @@ appId: com.riccardopinato.agenda_per_anna
 - tapOn:
     text: '.*(Cassaforte privata|Private Vault|Caja fuerte privada|Coffre privé|Cofre privado).*'
 - extendedWaitUntil:
-    visible: '(Cassaforte bloccata|Vault locked|Caja fuerte bloqueada|Coffre verrouillé|Cofre bloqueado)'
+    visible: '.*(Cassaforte bloccata|Vault locked|Caja fuerte bloqueada|Coffre verrouillé|Cofre bloqueado).*'
     timeout: 15000
 - tapOn:
     id: 'vault_password_field'
@@ -189,15 +191,16 @@ appId: com.riccardopinato.agenda_per_anna
 - tapOn:
     text: '(Sblocca|Unlock|Desbloquear|Déverrouiller)'
 - extendedWaitUntil:
-    visible: 'D2_APPLAB_PERSISTENCE'
+    visible: '.*D2_APPLAB_PERSISTENCE[\s\S]*D2 encrypted payload survives relock and restart.*'
     timeout: 120000
-- assertVisible: 'D2 encrypted payload survives relock and restart'
+- assertVisible:
+    text: '.*D2_APPLAB_PERSISTENCE[\s\S]*D2 encrypted payload survives relock and restart.*'
 
 # Restore a deterministic shell state for the visual journey that follows.
 - tapOn:
     text: '(Blocca adesso|Lock now|Bloquear ahora|Verrouiller maintenant|Bloquear agora)'
 - extendedWaitUntil:
-    visible: '(Cassaforte bloccata|Vault locked|Caja fuerte bloqueada|Coffre verrouillé|Cofre bloqueado)'
+    visible: '.*(Cassaforte bloccata|Vault locked|Caja fuerte bloqueada|Coffre verrouillé|Cofre bloqueado).*'
     timeout: 10000
 - back
 - extendedWaitUntil:
