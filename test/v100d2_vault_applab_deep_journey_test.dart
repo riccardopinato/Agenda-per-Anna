@@ -45,7 +45,9 @@ void main() {
       "D2_APPLAB_PERSISTENCE[\\s\\S]*D2 encrypted payload survives relock and restart"
           .allMatches(vault)
           .length,
-      3,
+      6,
+      reason:
+          'Three persistence checkpoints must each have a wait and an explicit assertion.',
     );
 
     expect(vault, contains('Blocca adesso|Lock now'));
