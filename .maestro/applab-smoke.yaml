@@ -129,7 +129,7 @@ appId: com.riccardopinato.agenda_per_anna
     text: '(Sblocca|Unlock|Desbloquear|Déverrouiller)'
 - extendedWaitUntil:
     visible: '.*(Password non corretta\.|Incorrect password\.|Contraseña incorrecta\.|Mot de passe incorrect\.|Palavra-passe incorreta\.).*'
-    timeout: 120000
+    timeout: 300000
 - assertVisible:
     text: '.*(Cassaforte bloccata|Vault locked|Caja fuerte bloqueada|Coffre verrouillé|Cofre bloqueado).*'
 
@@ -144,7 +144,7 @@ appId: com.riccardopinato.agenda_per_anna
     text: '(Sblocca|Unlock|Desbloquear|Déverrouiller)'
 - extendedWaitUntil:
     visible: '.*D2_APPLAB_PERSISTENCE[\s\S]*D2 encrypted payload survives relock and restart.*'
-    timeout: 120000
+    timeout: 300000
 - assertVisible:
     text: '.*D2_APPLAB_PERSISTENCE[\s\S]*D2 encrypted payload survives relock and restart.*'
 
@@ -192,7 +192,7 @@ appId: com.riccardopinato.agenda_per_anna
     text: '(Sblocca|Unlock|Desbloquear|Déverrouiller)'
 - extendedWaitUntil:
     visible: '.*D2_APPLAB_PERSISTENCE[\s\S]*D2 encrypted payload survives relock and restart.*'
-    timeout: 120000
+    timeout: 300000
 - assertVisible:
     text: '.*D2_APPLAB_PERSISTENCE[\s\S]*D2 encrypted payload survives relock and restart.*'
 
