@@ -42,7 +42,7 @@ void main() {
       ),
     );
     expect(
-      "assertVisible: 'D2 encrypted payload survives relock and restart'"
+      "D2_APPLAB_PERSISTENCE[\\s\\S]*D2 encrypted payload survives relock and restart"
           .allMatches(vault)
           .length,
       3,
@@ -96,7 +96,7 @@ void main() {
     expect(stop, greaterThan(correct), reason: 'Missing D2 process restart');
     final restartUnlock = vault.lastIndexOf("inputText: 'D2VaultPassword2026'");
     final finalPayload =
-        vault.lastIndexOf("assertVisible: 'D2 encrypted payload survives relock and restart'");
+        vault.lastIndexOf("D2_APPLAB_PERSISTENCE[\\s\\S]*D2 encrypted payload survives relock and restart");
 
     expect(setup, lessThan(create));
     expect(create, lessThan(relock));
