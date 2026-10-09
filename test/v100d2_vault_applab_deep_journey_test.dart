@@ -55,6 +55,16 @@ void main() {
     expect(vault, contains('stopApp'));
     expect(vault, contains('launchApp'));
     expect(
+      vault,
+      contains(
+        '(La mia giornata|My day|Mi día|Ma journée|O meu dia)[\\s\\S]*',
+      ),
+    );
+    expect(
+      vault,
+      contains('(Home|Inicio|Accueil|Início)[\\s\\S]*'),
+    );
+    expect(
       'timeout: 300000'.allMatches(vault).length,
       3,
       reason:
