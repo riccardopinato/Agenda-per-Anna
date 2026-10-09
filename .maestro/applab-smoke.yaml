@@ -201,16 +201,18 @@ appId: com.riccardopinato.agenda_per_anna
     text: '.*D2_APPLAB_PERSISTENCE[\s\S]*D2 encrypted payload survives relock and restart.*'
 
 # Restore a deterministic shell state for the visual journey that follows.
+# Use Flutter's visible AppBar Back control rather than Maestro's system-back
+# command: FLAG_SECURE/lifecycle locking can consume the system-back event.
 - tapOn:
     text: '(Blocca adesso|Lock now|Bloquear ahora|Verrouiller maintenant|Bloquear agora)'
 - extendedWaitUntil:
     visible: '.*(Cassaforte bloccata|Vault locked|Caja fuerte bloqueada|Coffre verrouillé|Cofre bloqueado).*'
     timeout: 10000
-- back
+- tapOn: 'Back'
 - extendedWaitUntil:
     visible: '(Impostazioni|Settings|Ajustes|Paramètres|Definições)'
     timeout: 10000
-- back
+- tapOn: 'Back'
 - extendedWaitUntil:
     visible: '(La mia agenda|My agenda|Mi agenda|Mon agenda|A minha agenda)'
     timeout: 10000
