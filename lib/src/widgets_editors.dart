@@ -1119,7 +1119,7 @@ Future<void> openItemEditor(
                   children: [
                     Expanded(
                       child: Text(
-                        existing == null ? AnnaStrings.of(context).d3('editor_addToDay') : 'Modifica',
+                        existing == null ? AnnaStrings.of(context).d3('editor_addToDay') : AnnaStrings.of(context).edit,
                         style: Theme.of(context)
                             .textTheme
                             .headlineSmall
