@@ -128,6 +128,18 @@ The full product reality audit is recorded in `docs/V100_FULL_PRODUCT_REALITY_AU
 - Automated D2 evidence is capped at TRUSTED RUNTIME. Android Keystore, biometrics, OEM ANR behavior and other native physical claims remain in the v1.00-D physical matrix.
 - Development checks, Web, Android size audit and AppLab Trusted Verify must all pass on the same D2 SHA before merge.
 
+## v1.00-D3 acceptance criteria
+
+- All migrated user-facing surfaces resolve through the existing `AnnaStrings` en/it/es/fr/pt path; no parallel localization engine or language store is added.
+- Onboarding/privacy, account/cloud, planner/editor, Diary/Sketchbook, Noi ♡/Shared Memories and unified-agenda copy must not expose Italian literals when another supported language is selected.
+- Native/background presentation must follow the canonical `AppLanguage`: notification channels/actions/test copy, Android home widget, external-calendar fallbacks and file-picker dialog titles.
+- Date formatting in migrated surfaces must use the resolved app locale rather than `it_IT`.
+- Backup/Data Safety implementation errors remain locale-neutral technical codes; UI renders localized, non-technical failure messages.
+- Shared-memory/type/category/recurrence/Trash labels are localized at presentation time without changing persisted enum values or canonical storage.
+- Every D3 catalog row must define en/it/es/fr/pt and duplicate keys/helper definitions must fail tests.
+- Development checks, Web release, Android size audit and AppLab must be green on the same final D3 SHA before the step is considered complete.
+- D3 does not claim physical-device verification; native file-provider, Keystore/biometric, two-device Noi ♡ and real notification-delivery evidence remains in the v1.00-D physical matrix.
+
 ## v1.00-D acceptance criteria
 
 - Live Supabase migration history proves `shared_password_hardening_v086` is deployed.
