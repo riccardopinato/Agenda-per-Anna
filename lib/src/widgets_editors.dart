@@ -680,9 +680,18 @@ class BudgetCard extends StatelessWidget {
                                 DropdownButtonFormField<String>(
                                   initialValue: category,
                                   items: const ['Cibo', 'Casa', 'Salute', 'Shopping', 'Trasporti', 'Svago', 'Regali', 'Altro']
-                                      .map((e) => DropdownMenuItem(value: e, child: Text(e)))
+                                      .map(
+                                        (value) => DropdownMenuItem(
+                                          value: value,
+                                          child: Text(
+                                            AnnaStrings.of(context)
+                                                .editorExpenseCategoryLabel(value),
+                                          ),
+                                        ),
+                                      )
                                       .toList(),
-                                  onChanged: (v) => setLocal(() => category = v ?? 'Altro'),
+                                  onChanged: (v) =>
+                                      setLocal(() => category = v ?? 'Altro'),
                                 ),
                                 const SizedBox(height: 8),
                                 TextField(controller: note, decoration: InputDecoration(labelText: AnnaStrings.of(context).v100Note)),
