@@ -636,6 +636,9 @@ const Map<String, Map<String, String>> _d3Catalog = {
 
   "plannerBirthdays": <String, String>{"en": "{count} birthdays", "it": "{count} compleanni", "es": "{count} cumpleaños", "fr": "{count} anniversaires", "pt": "{count} aniversários"},
 
+  "archiveArchived": <String, String>{"en": "Archived", "it": "Archiviato", "es": "Archivado", "fr": "Archivé", "pt": "Arquivado"},
+  "archiveCompleted": <String, String>{"en": "Completed", "it": "Completato", "es": "Completado", "fr": "Terminé", "pt": "Concluído"},
+  "archiveInboxArchived": <String, String>{"en": "Archived Inbox", "it": "Inbox archiviata", "es": "Inbox archivada", "fr": "Inbox archivée", "pt": "Inbox arquivada"},
 };
 
 NotificationLocalization notificationLocalizationForPreference(AppLanguage value) {
@@ -661,6 +664,14 @@ NotificationLocalization notificationLocalizationForPreference(AppLanguage value
 }
 
 extension AnnaD3Strings on AnnaStrings {
+  String lifeArchiveKindLabel(LifeArchiveKind value) => switch (value) {
+        LifeArchiveKind.diary => diary,
+        LifeArchiveKind.agenda => _pick(en: 'Agenda', it: 'Agenda', es: 'Agenda', fr: 'Agenda', pt: 'Agenda'),
+        LifeArchiveKind.workout => _pick(en: 'Workouts', it: 'Allenamenti', es: 'Entrenamientos', fr: 'Entraînements', pt: 'Treinos'),
+        LifeArchiveKind.inbox => 'Inbox',
+      };
+
+
   String agendaPaletteLabel(AgendaPalette value) => switch (value) {
         AgendaPalette.rose => _pick(en: 'Rose', it: 'Rosa', es: 'Rosa', fr: 'Rose', pt: 'Rosa'),
         AgendaPalette.lilac => _pick(en: 'Lilac', it: 'Lilla', es: 'Lila', fr: 'Lilas', pt: 'Lilás'),
