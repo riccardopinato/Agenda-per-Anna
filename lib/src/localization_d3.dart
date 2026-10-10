@@ -732,6 +732,8 @@ const Map<String, Map<String, String>> _d3Catalog = {
   "snapshotBeforeCloudSync": <String, String>{"en": "Before first cloud sync", "it": "Prima sincronizzazione cloud", "es": "Antes de la primera sincronización cloud", "fr": "Avant la première synchronisation cloud", "pt": "Antes da primeira sincronização cloud"},
   "mem_timeline": <String, String>{"en": "Timeline", "it": "Timeline", "es": "Cronología", "fr": "Chronologie", "pt": "Linha temporal"},
   "mem_sketches": <String, String>{"en": "Sketches", "it": "Sketch", "es": "Bocetos", "fr": "Croquis", "pt": "Esboços"},
+  "sharedReactionCloudRequired": <String, String>{"en": "Connect to cloud at least once to use reactions.", "it": "Accedi al cloud almeno una volta per usare le reazioni.", "es": "Conéctate a la nube al menos una vez para usar las reacciones.", "fr": "Connecte-toi au cloud au moins une fois pour utiliser les réactions.", "pt": "Liga-te à cloud pelo menos uma vez para usar as reações."},
+  "sharedCommentCloudRequired": <String, String>{"en": "Connect to cloud at least once to comment.", "it": "Accedi al cloud almeno una volta per commentare.", "es": "Conéctate a la nube al menos una vez para comentar.", "fr": "Connecte-toi au cloud au moins une fois pour commenter.", "pt": "Liga-te à cloud pelo menos uma vez para comentar."},
 };
 
 NotificationLocalization notificationLocalizationForPreference(AppLanguage value) {
