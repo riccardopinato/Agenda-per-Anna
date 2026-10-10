@@ -1505,10 +1505,10 @@ class _SharedSketchViewerScreenState extends State<SharedSketchViewerScreen> {
       ),
       body: SafeArea(
         child: pages.isEmpty
-            ? const Center(
+            ? Center(
                 child: Text(
-                  'Sketch non disponibile.',
-                  style: TextStyle(color: Colors.white70),
+                  AnnaStrings.of(context).d3('memSketchUnavailable'),
+                  style: const TextStyle(color: Colors.white70),
                 ),
               )
             : Column(
@@ -1578,7 +1578,10 @@ class _SharedSketchViewerScreenState extends State<SharedSketchViewerScreen> {
                               ),
                             ),
                             Text(
-                              'Pagina ${pageIndex + 1}/${pages.length}',
+                              AnnaStrings.of(context).d3Format(
+                                'memPage',
+                                {'current': pageIndex + 1, 'total': pages.length},
+                              ),
                               style: const TextStyle(
                                 color: Colors.white70,
                               ),
