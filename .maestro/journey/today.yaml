@@ -27,6 +27,6 @@ appId: com.riccardopinato.agenda_per_anna
 - tapOn: '(Chiudi|Close|Cerrar|Fermer|Fechar)'
 - scrollUntilVisible:
     element:
-      text: "Momenti del giorno[\\s\\S]*"
+      text: '(Momenti del giorno|Moments of the day|Momentos del día|Moments de la journée|Momentos do dia)[\\s\\S]*'
     direction: DOWN
     timeout: 10000
