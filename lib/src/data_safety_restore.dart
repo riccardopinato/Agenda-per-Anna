@@ -88,7 +88,7 @@ class _RestoreMediaStagingSession {
         staged.lengthInBytes != bytes.lengthInBytes ||
         sha256.convert(staged).toString() != expectedHash) {
       throw FormatException(
-        'Staging media non integro: $canonicalAssetId',
+        'restore_staging_media_hash_invalid:$canonicalAssetId',
       );
     }
 
@@ -111,7 +111,7 @@ class _RestoreMediaStagingSession {
     if (staged == null ||
         sha256.convert(staged).toString() != stagedEntry.sha256Hex) {
       throw FormatException(
-        'Media in staging non disponibile: $canonicalAssetId',
+        'restore_staging_media_missing:$canonicalAssetId',
       );
     }
     return staged;
@@ -135,8 +135,7 @@ class _RestoreMediaStagingSession {
       if (staged == null ||
           sha256.convert(staged).toString() != entry.sha256Hex) {
         throw FormatException(
-          'Media in staging non disponibile: '
-          '${entry.canonicalAssetId}',
+          'restore_staging_media_missing:${entry.canonicalAssetId}',
         );
       }
 
@@ -145,8 +144,7 @@ class _RestoreMediaStagingSession {
       if (current != null) {
         if (sha256.convert(current).toString() != entry.sha256Hex) {
           throw FormatException(
-            'Asset locale con stesso ID ma contenuto diverso: '
-            '${entry.canonicalAssetId}',
+            'restore_canonical_media_collision:${entry.canonicalAssetId}',
           );
         }
         continue;
