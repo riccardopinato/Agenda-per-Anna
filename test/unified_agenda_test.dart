@@ -94,7 +94,10 @@ void main() {
     store.setAgendaContentFilter(AgendaContentFilter.sharedOnly);
     expect(store.unifiedAgendaItems, hasLength(1));
     expect(store.unifiedAgendaItems.single.isShared, isTrue);
-    expect(store.unifiedAgendaItems.single.visibilityLabel, 'Noi ♡');
+    expect(
+      store.unifiedAgendaItems.single.visibilityLabel(const AnnaStrings('en')),
+      'Noi ♡',
+    );
 
     store.dispose();
   });
