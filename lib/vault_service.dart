@@ -183,7 +183,7 @@ class PrivateVaultService extends ChangeNotifier {
   }) async {
     await initialize();
     if (configured) {
-      throw StateError('La cassaforte è già configurata.');
+      throw StateError('vault_already_configured');
     }
     _validatePassword(password);
 
@@ -453,7 +453,7 @@ class PrivateVaultService extends ChangeNotifier {
       throw const FormatException('Nome utente o email troppo lunghi.');
     }
     if (cleanPassword.length > 4096) {
-      throw const FormatException('La password è troppo lunga.');
+      throw const FormatException('vault_password_too_long');
     }
     if (cleanNotes.length > 12000) {
       throw const FormatException('Le note sono troppo lunghe.');
@@ -594,7 +594,7 @@ class PrivateVaultService extends ChangeNotifier {
     _requireUnlocked();
     final normalized = spaceId.trim();
     if (normalized.isEmpty || key.length != _masterKeyLength) {
-      throw const FormatException('Chiave Noi ♡ non valida.');
+      throw const FormatException('vault_shared_key_invalid');
     }
     final previous = _sharedPasswordKeys[normalized];
     if (previous != null) _zero(previous);
@@ -713,7 +713,7 @@ class PrivateVaultService extends ChangeNotifier {
     final meta = _meta;
     final rawPayload = _store?.getString(_payloadKey);
     if (meta == null || rawPayload == null) {
-      throw StateError('Cassaforte non disponibile per il recupero.');
+      throw StateError('vault_recovery_unavailable');
     }
 
     final portableMeta = Map<String, dynamic>.from(meta)
@@ -1054,7 +1054,7 @@ class PrivateVaultService extends ChangeNotifier {
   Uint8List _requireUnlocked() {
     final key = _masterKey;
     if (key == null) {
-      throw StateError('La cassaforte è bloccata.');
+      throw StateError('vault_locked');
     }
     return key;
   }
@@ -1062,7 +1062,7 @@ class PrivateVaultService extends ChangeNotifier {
   void _validatePassword(String value) {
     if (value.length < 12) {
       throw const FormatException(
-        'La password della cassaforte deve avere almeno 12 caratteri.',
+        'vault_password_too_short',
       );
     }
   }
