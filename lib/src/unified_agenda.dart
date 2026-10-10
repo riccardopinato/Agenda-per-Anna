@@ -426,7 +426,7 @@ Future<SharedSpace?> _chooseSharedSpace(
   return showDialog<SharedSpace>(
     context: context,
     builder: (dialogContext) => SimpleDialog(
-      title: const Text('Scegli lo spazio condiviso'),
+      title: Text(AnnaStrings.of(dialogContext).d3('unified_chooseSharedSpace')),
       children: spaces
           .map(
             (space) => SimpleDialogOption(
@@ -439,7 +439,9 @@ Future<SharedSpace?> _chooseSharedSpace(
                   style: const TextStyle(fontWeight: FontWeight.w800),
                 ),
                 subtitle: Text(
-                  space.isOwner ? 'Creato da te' : 'Spazio condiviso',
+                  space.isOwner
+                      ? AnnaStrings.of(dialogContext).d3('unified_createdByYou')
+                      : AnnaStrings.of(dialogContext).d3('unified_sharedSpace'),
                 ),
               ),
             ),
@@ -460,19 +462,18 @@ Future<void> _movePrivateAgendaItemToShared(
   final confirmed = await showDialog<bool>(
         context: context,
         builder: (dialogContext) => AlertDialog(
-          title: const Text('Spostare in Noi ♡?'),
-          content: const Text(
-            'L’elemento diventerà condiviso. Categoria, fissaggio e promemoria '
-            'restano impostazioni private e non vengono trasferiti.',
+          title: Text(AnnaStrings.of(dialogContext).d3('unified_moveNoiTitle')),
+          content: Text(
+            AnnaStrings.of(dialogContext).d3('unified_privateSettingsStay'),
           ),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(dialogContext, false),
-              child: const Text('Annulla'),
+              child: Text(AnnaStrings.of(dialogContext).cancel),
             ),
             FilledButton(
               onPressed: () => Navigator.pop(dialogContext, true),
-              child: const Text('Sposta'),
+              child: Text(AnnaStrings.of(dialogContext).d3('unified_move')),
             ),
           ],
         ),
@@ -508,18 +509,18 @@ Future<void> _moveSharedAgendaEntryToPrivate(
   final confirmed = await showDialog<bool>(
         context: context,
         builder: (dialogContext) => AlertDialog(
-          title: const Text('Spostare in Privato?'),
-          content: const Text(
-            'L’elemento verrà rimosso da Noi ♡ e resterà solo nella tua agenda.',
+          title: Text(AnnaStrings.of(dialogContext).d3('unified_movePrivateTitle')),
+          content: Text(
+            AnnaStrings.of(dialogContext).d3('unified_movePrivateBody'),
           ),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(dialogContext, false),
-              child: const Text('Annulla'),
+              child: Text(AnnaStrings.of(dialogContext).cancel),
             ),
             FilledButton(
               onPressed: () => Navigator.pop(dialogContext, true),
-              child: const Text('Sposta'),
+              child: Text(AnnaStrings.of(dialogContext).d3('unified_move')),
             ),
           ],
         ),
@@ -566,18 +567,21 @@ Future<void> _deleteSharedAgendaEntry(
   final confirmed = await showDialog<bool>(
         context: context,
         builder: (dialogContext) => AlertDialog(
-          title: const Text('Eliminare da Noi ♡?'),
+          title: Text(AnnaStrings.of(dialogContext).d3('unified_deleteNoiTitle')),
           content: Text(
-            '“${shared.title}” verrà eliminato per tutte le persone dello spazio condiviso.',
+            AnnaStrings.of(dialogContext).d3Format(
+              'unified_deleteSharedForEveryone',
+              {'title': shared.title},
+            ),
           ),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(dialogContext, false),
-              child: const Text('Annulla'),
+              child: Text(AnnaStrings.of(dialogContext).cancel),
             ),
             FilledButton(
               onPressed: () => Navigator.pop(dialogContext, true),
-              child: const Text('Elimina'),
+              child: Text(AnnaStrings.of(dialogContext).delete),
             ),
           ],
         ),
@@ -627,7 +631,7 @@ Future<void> openUnifiedItemComposer(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Dove vuoi salvarlo?',
+              AnnaStrings.of(sheetContext).d3('unified_whereSave'),
               style: Theme.of(sheetContext)
                   .textTheme
                   .titleLarge
@@ -635,7 +639,7 @@ Future<void> openUnifiedItemComposer(
             ),
             const SizedBox(height: 6),
             Text(
-              'Privato resta la scelta predefinita. Usa Noi ♡ solo per ciò che vuoi condividere.',
+              AnnaStrings.of(sheetContext).d3('unified_privateDefault'),
               style: Theme.of(sheetContext).textTheme.bodySmall,
             ),
             const SizedBox(height: 14),
@@ -646,11 +650,11 @@ Future<void> openUnifiedItemComposer(
               leading: const CircleAvatar(
                 child: Icon(Icons.lock_outline),
               ),
-              title: const Text(
-                'Privato',
-                style: TextStyle(fontWeight: FontWeight.w800),
+              title: Text(
+                AnnaStrings.of(sheetContext).d3('unified_private'),
+                style: const TextStyle(fontWeight: FontWeight.w800),
               ),
-              subtitle: const Text('Visibile solo nel tuo account.'),
+              subtitle: Text(AnnaStrings.of(sheetContext).d3('unified_visibleOnlyAccount')),
               onTap: () => Navigator.pop(
                 sheetContext,
                 AgendaCreationVisibility.privateItem,
@@ -671,8 +675,8 @@ Future<void> openUnifiedItemComposer(
                 'Noi ♡',
                 style: TextStyle(fontWeight: FontWeight.w800),
               ),
-              subtitle: const Text(
-                'Sincronizzato con lo spazio condiviso scelto.',
+              subtitle: Text(
+                AnnaStrings.of(sheetContext).d3('unified_syncedShared'),
               ),
               onTap: () => Navigator.pop(
                 sheetContext,
