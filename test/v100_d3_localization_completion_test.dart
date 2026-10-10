@@ -122,6 +122,13 @@ void main() {
 
       expect(calendar, isNot(contains("'Calendario esterno'")));
       expect(calendar, isNot(contains("'Evento senza titolo'")));
+
+      final voice = _source('lib/voice_diary_service.dart');
+      expect(
+        voice,
+        isNot(contains('La riproduzione diretta non è disponibile sul web.')),
+      );
+      expect(voice, contains("message: 'voice_playback_unsupported'"));
     },
   );
 
@@ -185,6 +192,7 @@ void main() {
     final generatedCode = generator.substring(0, localizationIndex);
 
     for (final forbidden in <String>[
+      "Consenti l'accesso al microfono e riprova.",
       "Consenti l'accesso in lettura al calendario e riprova.",
       'Una richiesta di accesso al calendario è già in corso.',
       'Apri l’app per aggiornare',
