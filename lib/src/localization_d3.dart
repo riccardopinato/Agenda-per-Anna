@@ -745,6 +745,49 @@ const Map<String, Map<String, String>> _d3Catalog = {
   "readableMood": <String, String>{"en": "Mood: {value}", "it": "Umore: {value}", "es": "Estado de ánimo: {value}", "fr": "Humeur : {value}", "pt": "Humor: {value}"},  "sharedRealtimeIntro": <String, String>{"en": "Updates arrive in real time.", "it": "Gli aggiornamenti arrivano in tempo reale.", "es": "Las actualizaciones llegan en tiempo real.", "fr": "Les mises à jour arrivent en temps réel.", "pt": "As atualizações chegam em tempo real."},
   "sharedLatestUpdates": <String, String>{"en": "Latest updates", "it": "Ultimi aggiornamenti", "es": "Últimas actualizaciones", "fr": "Dernières mises à jour", "pt": "Últimas atualizações"},
 
+  "sharedMemory_cloudRequired": <String, String>{"en": "Media maintenance requires a cloud connection.", "it": "La manutenzione media richiede la connessione cloud.", "es": "El mantenimiento multimedia requiere conexión a la nube.", "fr": "La maintenance des médias nécessite une connexion au cloud.", "pt": "A manutenção de media requer ligação à cloud."},
+  "sharedMemory_maintenanceDone": <String, String>{"en": "Maintenance completed", "it": "Manutenzione completata", "es": "Mantenimiento completado", "fr": "Maintenance terminée", "pt": "Manutenção concluída"},
+  "sharedMemory_noOrphans": <String, String>{"en": "There were no orphaned files to delete. Detected storage: {size}.", "it": "Non c’erano file orfani da eliminare. Storage rilevato: {size}.", "es": "No había archivos huérfanos que eliminar. Almacenamiento detectado: {size}.", "fr": "Aucun fichier orphelin à supprimer. Stockage détecté : {size}.", "pt": "Não havia ficheiros órfãos para eliminar. Armazenamento detetado: {size}."},
+  "sharedMemory_orphansRemoved": <String, String>{"en": "Removed {count} orphaned files. Storage detected before cleanup: {size}.", "it": "Eliminati {count} file orfani. Storage rilevato prima della pulizia: {size}.", "es": "Se eliminaron {count} archivos huérfanos. Almacenamiento detectado antes de la limpieza: {size}.", "fr": "{count} fichiers orphelins supprimés. Stockage détecté avant nettoyage : {size}.", "pt": "Foram removidos {count} ficheiros órfãos. Armazenamento detetado antes da limpeza: {size}."},
+  "sharedMemory_mediaTitle": <String, String>{"en": "Noi ♡ media", "it": "Media di Noi ♡", "es": "Multimedia de Noi ♡", "fr": "Médias de Noi ♡", "pt": "Media do Noi ♡"},
+  "sharedMemory_storageFiles": <String, String>{"en": "Storage files: {count}", "it": "File Storage: {count}", "es": "Archivos en almacenamiento: {count}", "fr": "Fichiers de stockage : {count}", "pt": "Ficheiros de armazenamento: {count}"},
+  "sharedMemory_linkedMedia": <String, String>{"en": "Media linked to memories: {count}", "it": "Media collegati ai ricordi: {count}", "es": "Multimedia vinculada a recuerdos: {count}", "fr": "Médias liés aux souvenirs : {count}", "pt": "Media ligados às memórias: {count}"},
+  "sharedMemory_orphanFiles": <String, String>{"en": "Orphaned files: {count}", "it": "File orfani: {count}", "es": "Archivos huérfanos: {count}", "fr": "Fichiers orphelins : {count}", "pt": "Ficheiros órfãos: {count}"},
+  "sharedMemory_detectedSpace": <String, String>{"en": "Detected space: {size}", "it": "Spazio rilevato: {size}", "es": "Espacio detectado: {size}", "fr": "Espace détecté : {size}", "pt": "Espaço detetado: {size}"},
+  "sharedMemory_orphanExplanation": <String, String>{"en": "Orphaned files are no longer linked to any shared photo in the current space.", "it": "I file orfani non risultano più collegati ad alcuna foto condivisa nello spazio corrente.", "es": "Los archivos huérfanos ya no están vinculados a ninguna foto compartida del espacio actual.", "fr": "Les fichiers orphelins ne sont plus liés à aucune photo partagée dans l’espace actuel.", "pt": "Os ficheiros órfãos já não estão ligados a nenhuma foto partilhada no espaço atual."},
+  "sharedMemory_cleanOrphans": <String, String>{"en": "Clean orphaned files", "it": "Pulisci orfani", "es": "Limpiar huérfanos", "fr": "Nettoyer les orphelins", "pt": "Limpar órfãos"},
+  "sharedMemory_storageCheckFailed": <String, String>{"en": "Storage check failed. Try again later.", "it": "Controllo Storage non riuscito. Riprova più tardi.", "es": "La comprobación del almacenamiento falló. Inténtalo más tarde.", "fr": "La vérification du stockage a échoué. Réessaie plus tard.", "pt": "A verificação do armazenamento falhou. Tenta novamente mais tarde."},
+  "sharedMemory_you": <String, String>{"en": "You", "it": "Tu", "es": "Tú", "fr": "Toi", "pt": "Tu"},
+  "sharedMemory_seen": <String, String>{"en": "Seen", "it": "Visto", "es": "Visto", "fr": "Vu", "pt": "Visto"},
+  "sharedMemory_seenBy": <String, String>{"en": "Seen by {count}", "it": "Visto da {count}", "es": "Visto por {count}", "fr": "Vu par {count}", "pt": "Visto por {count}"},
+  "sharedMemory_memories": <String, String>{"en": "Memories", "it": "Ricordi", "es": "Recuerdos", "fr": "Souvenirs", "pt": "Memórias"},
+  "sharedMemory_days": <String, String>{"en": "Days", "it": "Giorni", "es": "Días", "fr": "Jours", "pt": "Dias"},
+  "sharedMemory_months": <String, String>{"en": "Months", "it": "Mesi", "es": "Meses", "fr": "Mois", "pt": "Meses"},
+  "sharedMemory_years": <String, String>{"en": "Years", "it": "Anni", "es": "Años", "fr": "Années", "pt": "Anos"},
+  "sharedMemory_all": <String, String>{"en": "All", "it": "Tutti", "es": "Todos", "fr": "Tous", "pt": "Todos"},
+  "sharedMemory_photos": <String, String>{"en": "Photos", "it": "Foto", "es": "Fotos", "fr": "Photos", "pt": "Fotos"},
+  "sharedMemory_notes": <String, String>{"en": "Notes", "it": "Note", "es": "Notas", "fr": "Notes", "pt": "Notas"},
+  "sharedMemory_moments": <String, String>{"en": "Moments", "it": "Momenti", "es": "Momentos", "fr": "Moments", "pt": "Momentos"},
+  "sharedMemory_noSearchResults": <String, String>{"en": "No memories match your search.", "it": "Nessun ricordo corrisponde alla ricerca.", "es": "Ningún recuerdo coincide con la búsqueda.", "fr": "Aucun souvenir ne correspond à la recherche.", "pt": "Nenhuma memória corresponde à pesquisa."},
+  "sharedMemory_empty": <String, String>{"en": "Your memories will appear here.", "it": "I vostri ricordi compariranno qui.", "es": "Vuestros recuerdos aparecerán aquí.", "fr": "Vos souvenirs apparaîtront ici.", "pt": "As vossas memórias aparecerão aqui."},
+  "sharedMemory_changeSearch": <String, String>{"en": "Try changing the words or filters.", "it": "Prova a cambiare parole o filtri.", "es": "Prueba a cambiar las palabras o los filtros.", "fr": "Essaie de changer les mots ou les filtres.", "pt": "Tenta alterar as palavras ou os filtros."},
+  "sharedMemory_autoMemory": <String, String>{"en": "Photos, sketches and notes are added automatically. Appointments and tasks can be added to memories from the item menu.", "it": "Foto, sketch e note entrano automaticamente. Appuntamenti e attività possono essere aggiunti ai ricordi dal menu dell’elemento.", "es": "Las fotos, bocetos y notas se añaden automáticamente. Las citas y tareas pueden añadirse a recuerdos desde el menú del elemento.", "fr": "Les photos, croquis et notes sont ajoutés automatiquement. Les rendez-vous et tâches peuvent être ajoutés aux souvenirs depuis le menu de l’élément.", "pt": "Fotos, esboços e notas entram automaticamente. Compromissos e tarefas podem ser adicionados às memórias pelo menu do item."},
+  "sharedMemory_memoryCount": <String, String>{"en": "{count} memories", "it": "{count} ricordi", "es": "{count} recuerdos", "fr": "{count} souvenirs", "pt": "{count} memórias"},
+  "sharedMemory_photoCount": <String, String>{"en": "{count} photos", "it": "{count} foto", "es": "{count} fotos", "fr": "{count} photos", "pt": "{count} fotos"},
+  "sharedMemory_sketchCount": <String, String>{"en": "{count} sketches", "it": "{count} sketch", "es": "{count} bocetos", "fr": "{count} croquis", "pt": "{count} esboços"},
+  "sharedMemory_noteCount": <String, String>{"en": "{count} notes", "it": "{count} note", "es": "{count} notas", "fr": "{count} notes", "pt": "{count} notas"},
+  "sharedMemory_momentCount": <String, String>{"en": "{count} moments", "it": "{count} momenti", "es": "{count} momentos", "fr": "{count} moments", "pt": "{count} momentos"},
+  "sharedMemory_dayCount": <String, String>{"en": "{count} days", "it": "{count} giorni", "es": "{count} días", "fr": "{count} jours", "pt": "{count} dias"},
+  "sharedMemory_memoriesYear": <String, String>{"en": "Memories {year}", "it": "Ricordi {year}", "es": "Recuerdos {year}", "fr": "Souvenirs {year}", "pt": "Memórias {year}"},
+  "sharedMemory_ourMemories": <String, String>{"en": "Our memories", "it": "I nostri ricordi", "es": "Nuestros recuerdos", "fr": "Nos souvenirs", "pt": "As nossas memórias"},
+  "sharedMemory_refresh": <String, String>{"en": "Refresh", "it": "Aggiorna", "es": "Actualizar", "fr": "Actualiser", "pt": "Atualizar"},
+  "sharedMemory_moreOptions": <String, String>{"en": "More options", "it": "Altre opzioni", "es": "Más opciones", "fr": "Plus d’options", "pt": "Mais opções"},
+  "sharedMemory_checkMedia": <String, String>{"en": "Check media and storage", "it": "Controlla media e Storage", "es": "Comprobar multimedia y almacenamiento", "fr": "Vérifier les médias et le stockage", "pt": "Verificar media e armazenamento"},
+  "sharedMemory_searchHint": <String, String>{"en": "Search our memories...", "it": "Cerca nei nostri ricordi...", "es": "Buscar en nuestros recuerdos...", "fr": "Rechercher dans nos souvenirs...", "pt": "Pesquisar nas nossas memórias..."},
+  "sharedMemory_clearSearch": <String, String>{"en": "Clear search", "it": "Cancella ricerca", "es": "Borrar búsqueda", "fr": "Effacer la recherche", "pt": "Limpar pesquisa"},
+  "sharedMemory_summary": <String, String>{"en": "{memories} · {days}", "it": "{memories} · {days}", "es": "{memories} · {days}", "fr": "{memories} · {days}", "pt": "{memories} · {days}"},
+  "sharedMemory_removeMemory": <String, String>{"en": "Remove from memories", "it": "Togli dai ricordi", "es": "Quitar de recuerdos", "fr": "Retirer des souvenirs", "pt": "Remover das memórias"},
+  "sharedMemory_addMemory": <String, String>{"en": "Add to memories", "it": "Aggiungi ai ricordi", "es": "Añadir a recuerdos", "fr": "Ajouter aux souvenirs", "pt": "Adicionar às memórias"},
 };
 
 NotificationLocalization notificationLocalizationForPreference(AppLanguage value) {
@@ -770,6 +813,25 @@ NotificationLocalization notificationLocalizationForPreference(AppLanguage value
 }
 
 extension AnnaD3Strings on AnnaStrings {
+  String sharedMemoryEntryType(SharedEntryType value) => switch (value) {
+        SharedEntryType.appointment => appointment,
+        SharedEntryType.task => task,
+        SharedEntryType.note => d3('note'),
+        SharedEntryType.photo => d3('photoLabel'),
+        SharedEntryType.sketch => 'Sketch',
+        SharedEntryType.shopping => shoppingList,
+      };
+
+  String sharedMemorySearchAliases(SharedEntryType value) => switch (value) {
+        SharedEntryType.photo => _pick(en: 'photo image memory', it: 'foto immagine ricordo', es: 'foto imagen recuerdo', fr: 'photo image souvenir', pt: 'foto imagem memória'),
+        SharedEntryType.sketch => _pick(en: 'sketch drawing memory', it: 'sketch disegno ricordo', es: 'boceto dibujo recuerdo', fr: 'croquis dessin souvenir', pt: 'esboço desenho memória'),
+        SharedEntryType.note => _pick(en: 'note thought message memory', it: 'nota pensiero messaggio ricordo', es: 'nota pensamiento mensaje recuerdo', fr: 'note pensée message souvenir', pt: 'nota pensamento mensagem memória'),
+        SharedEntryType.appointment => _pick(en: 'appointment event moment', it: 'appuntamento evento momento', es: 'cita evento momento', fr: 'rendez-vous événement moment', pt: 'compromisso evento momento'),
+        SharedEntryType.task => _pick(en: 'task to do moment', it: 'attività da fare momento', es: 'tarea por hacer momento', fr: 'tâche à faire moment', pt: 'tarefa a fazer momento'),
+        SharedEntryType.shopping => _pick(en: 'shopping purchases list', it: 'spesa acquisti lista', es: 'compra compras lista', fr: 'courses achats liste', pt: 'compras lista'),
+      };
+
+
   String lifeArchiveKindLabel(LifeArchiveKind value) => switch (value) {
         LifeArchiveKind.diary => diary,
         LifeArchiveKind.agenda => _pick(en: 'Agenda', it: 'Agenda', es: 'Agenda', fr: 'Agenda', pt: 'Agenda'),
