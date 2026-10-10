@@ -696,7 +696,7 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
   }
 
   Future<void> _flushPending() async {
-    final strings = strings;
+    final strings = AnnaStrings.of(context);
     final conflictsBefore = widget.store.sharedConflictCount;
     await widget.store.flushSharedMediaUploads(
       spaceId: widget.space.id,
@@ -718,6 +718,7 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
   }
 
   Future<void> _refresh({
+    final strings = AnnaStrings.of(context);
     bool silent = false,
     bool refreshInteractions = true,
   }) async {
@@ -766,7 +767,7 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
     } catch (_) {
       if (!silent) {
         _message(
-          AnnaStrings.of(context).d3('updateFromCache'),
+          strings.d3('updateFromCache'),
         );
       }
     } finally {
@@ -959,7 +960,7 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
   }
 
   Future<void> _openComments(SharedEntry entry) async {
-    final strings = strings;
+    final strings = AnnaStrings.of(context);
     if (widget.store.activeAccountId == null) {
       _message(strings.d3('sharedCommentCloudRequired'));
       return;
@@ -1225,13 +1226,14 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
 
   Future<void> _persistSharedEntry(
     SharedEntry result, {
+    final strings = AnnaStrings.of(context);
     bool permissionChange = false,
   }) async {
     final currentIndex = entries.indexWhere((entry) => entry.id == result.id);
     final current = currentIndex < 0 ? null : entries[currentIndex];
 
     if (current != null && !_canEditSharedEntry(current)) {
-      _message(AnnaStrings.of(context).d3('readOnlyMemory'));
+      _message(strings.d3('readOnlyMemory'));
       return;
     }
 
@@ -1265,7 +1267,7 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
       await _flushPending();
       await _refresh(silent: true);
     } else {
-      _message(AnnaStrings.of(context).d3('savedOffline'));
+      _message(strings.d3('savedOffline'));
     }
   }
 
@@ -1403,7 +1405,7 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
 
 
   Future<void> _addSharedNote([SharedEntry? existing]) async {
-    final strings = strings;
+    final strings = AnnaStrings.of(context);
     final value = await showDiaryNoteEditor(
       context,
       initialText: existing?.note.isNotEmpty == true
@@ -1449,7 +1451,7 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
   }
 
   Future<void> _addSharedPhoto([SharedEntry? existing]) async {
-    final strings = strings;
+    final strings = AnnaStrings.of(context);
     if (existing != null && !_canEditSharedEntry(existing)) {
       await _viewReadOnlySharedEntry(context, existing);
       return;
@@ -1815,8 +1817,9 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
   }
 
   Future<void> _delete(SharedEntry entry) async {
+    final strings = AnnaStrings.of(context);
     if (entry.supportsEditPermissions && !_canEditSharedEntry(entry)) {
-      _message(AnnaStrings.of(context).d3('readOnlyMemory'));
+      _message(strings.d3('readOnlyMemory'));
       return;
     }
     final isDiaryContent =
@@ -1828,16 +1831,16 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
         : await showDialog<bool>(
               context: context,
               builder: (dialogContext) => AlertDialog(
-                title: Text(AnnaStrings.of(context).d3('deleteShared')),
+                title: Text(strings.d3('deleteShared')),
                 content: Text(entry.title),
                 actions: [
                   TextButton(
                     onPressed: () => Navigator.pop(dialogContext, false),
-                    child: Text(AnnaStrings.of(context).cancel),
+                    child: Text(strings.cancel),
                   ),
                   FilledButton(
                     onPressed: () => Navigator.pop(dialogContext, true),
-                    child: Text(AnnaStrings.of(context).delete),
+                    child: Text(strings.delete),
                   ),
                 ],
               ),
@@ -1862,12 +1865,12 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
       await _flushPending();
       await _refresh(silent: true);
     } else {
-      _message(AnnaStrings.of(context).d3('deleteSavedOffline'));
+      _message(strings.d3('deleteSavedOffline'));
     }
   }
 
   Future<void> _invite() async {
-    final strings = strings;
+    final strings = AnnaStrings.of(context);
     final prefs = await widget.store._localState();
     final owner = CloudSyncService.instance.userId ?? 'unknown';
     final cacheKey = 'shared_invite_v2_${owner}_${widget.space.id}';
@@ -1981,7 +1984,7 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
   }
 
   Future<void> _openMembers() async {
-    final strings = strings;
+    final strings = AnnaStrings.of(context);
     List<SharedSpaceMember> members;
     try {
       members = await CloudSyncService.instance
@@ -2122,7 +2125,7 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
   }
 
   Future<void> _leaveOrDelete() async {
-    final strings = strings;
+    final strings = AnnaStrings.of(context);
     final owner = widget.space.isOwner;
     final confirmed = await showDialog<bool>(
           context: context,
