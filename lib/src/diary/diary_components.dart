@@ -777,7 +777,7 @@ Future<List<DiaryPlaceReference>?> showDiaryPlacesEditor(
                     textCapitalization: TextCapitalization.words,
                     decoration: InputDecoration(
                       labelText: AnnaStrings.of(context).d3('placeName'),
-                      hintText: 'es. Lago di Braies',
+                      hintText: AnnaStrings.of(context).d3('placeHint'),
                       prefixIcon: const Icon(Icons.place_outlined),
                       border: const OutlineInputBorder(),
                     ),
@@ -1736,13 +1736,13 @@ class _DiaryMemoryCardState extends State<DiaryMemoryCard> {
             Chip(
               visualDensity: VisualDensity.compact,
               avatar: const Icon(Icons.link_outlined, size: 16),
-              label: Text('${outgoing.length} collegati'),
+              label: Text(AnnaStrings.of(context).d3LinkedCount(outgoing.length)),
             ),
           if (backlinks.isNotEmpty)
             Chip(
               visualDensity: VisualDensity.compact,
               avatar: const Icon(Icons.link, size: 16),
-              label: Text('${backlinks.length} backlink'),
+              label: Text(AnnaStrings.of(context).d3BacklinksCount(backlinks.length)),
             ),
         ],
       ),
@@ -1898,9 +1898,9 @@ class _DiaryMemoryCardState extends State<DiaryMemoryCard> {
         return DiaryContentCard(
           kind: DiaryContentKind.sketch,
           title: block.pages.length <= 1
-              ? 'Sketch'
-              : 'Sketch · ${block.pages.length} pagine',
-          subtitle: 'Sketch · $time',
+              ? AnnaStrings.of(context).v100Sketch
+              : AnnaStrings.of(context).d3SketchPages(block.pages.length),
+          subtitle: AnnaStrings.of(context).d3SketchTimed(time),
           preview: DiarySketchPagePreview(page: page),
           onOpen: () => _openSketch(block),
           onEdit: () => _openSketch(block),
