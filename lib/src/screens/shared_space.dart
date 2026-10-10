@@ -1283,7 +1283,7 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
           onChanged: (value) {
             if (value != null) Navigator.pop(dialogContext, value);
           },
-          child: const Column(
+          child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               RadioListTile<bool>(
@@ -1294,7 +1294,7 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
               RadioListTile<bool>(
                 value: false,
                 title: Text(AnnaStrings.of(context).d3('onlyMe')),
-                subtitle: Text('Gli altri possono vedere, commentare e reagire.'),
+                subtitle: Text(AnnaStrings.of(context).d3('shared_viewCommentReact')),
               ),
             ],
           ),
