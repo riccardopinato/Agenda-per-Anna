@@ -400,11 +400,10 @@ class NotificationService {
           AndroidFlutterLocalNotificationsPlugin>();
 
       await androidPlugin?.createNotificationChannel(
-        const AndroidNotificationChannel(
+        AndroidNotificationChannel(
           reminderChannelId,
-          'Promemoria',
-          description:
-              'Promemoria di Anna\'s Diary per appuntamenti e cose da fare',
+          _localization.reminderChannelName,
+          description: _localization.reminderChannelDescription,
           importance: Importance.high,
           playSound: true,
           enableVibration: true,
@@ -413,11 +412,10 @@ class NotificationService {
       );
 
       await androidPlugin?.createNotificationChannel(
-        const AndroidNotificationChannel(
+        AndroidNotificationChannel(
           sharedChannelId,
           'Noi ♡',
-          description:
-              'Novità e aggiornamenti dello spazio condiviso Noi ♡',
+          description: _localization.sharedChannelDescription,
           importance: Importance.high,
           playSound: true,
           enableVibration: true,
@@ -575,30 +573,8 @@ class NotificationService {
       await _plugin.show(
         id: _notificationId('annas-diary:test'),
         title: 'Anna\'s Diary',
-        body: 'Test immediato: notifiche locali attive ♡',
-        notificationDetails: const NotificationDetails(
-          android: AndroidNotificationDetails(
-            reminderChannelId,
-            'Promemoria',
-            channelDescription:
-                'Promemoria di Anna\'s Diary per appuntamenti e cose da fare',
-            importance: Importance.max,
-            priority: Priority.max,
-            playSound: true,
-            enableVibration: true,
-            category: AndroidNotificationCategory.reminder,
-          ),
-          iOS: DarwinNotificationDetails(
-            presentAlert: true,
-            presentBadge: true,
-            presentSound: true,
-          ),
-          macOS: DarwinNotificationDetails(
-            presentAlert: true,
-            presentBadge: true,
-            presentSound: true,
-          ),
-        ),
+        body: _localization.immediateTestBody,
+        notificationDetails: _standardReminderDetails,
         payload: 'test:local:immediate',
       );
       _lastError = null;
@@ -652,32 +628,10 @@ class NotificationService {
 
         await _plugin.zonedSchedule(
           id: _notificationId('annas-diary:test:scheduled'),
-          title: 'Anna\'s Diary · Test programmato',
-          body: 'Il promemoria programmato è arrivato correttamente ♡',
+          title: _localization.scheduledTestTitle,
+          body: _localization.scheduledTestBody,
           scheduledDate: scheduled,
-          notificationDetails: const NotificationDetails(
-            android: AndroidNotificationDetails(
-              reminderChannelId,
-              'Promemoria',
-              channelDescription:
-                  'Promemoria di Anna\'s Diary per appuntamenti e cose da fare',
-              importance: Importance.max,
-              priority: Priority.max,
-              playSound: true,
-              enableVibration: true,
-              category: AndroidNotificationCategory.reminder,
-            ),
-            iOS: DarwinNotificationDetails(
-              presentAlert: true,
-              presentBadge: true,
-              presentSound: true,
-            ),
-            macOS: DarwinNotificationDetails(
-              presentAlert: true,
-              presentBadge: true,
-              presentSound: true,
-            ),
-          ),
+          notificationDetails: _standardReminderDetails,
           androidScheduleMode: mode,
           payload: 'test:local:scheduled',
         );
@@ -724,32 +678,9 @@ class NotificationService {
         id: _notificationId(
           'annas-diary:fcm-test:${DateTime.now().millisecondsSinceEpoch}',
         ),
-        title: 'Anna\'s Diary · Test push',
-        body: 'Push Firebase ricevuta correttamente ♡',
-        notificationDetails: const NotificationDetails(
-          android: AndroidNotificationDetails(
-            sharedChannelId,
-            'Noi ♡',
-            channelDescription:
-                'Novità e aggiornamenti dello spazio condiviso Noi ♡',
-            importance: Importance.max,
-            priority: Priority.max,
-            playSound: true,
-            enableVibration: true,
-            category: AndroidNotificationCategory.status,
-            color: Color(0xFFE84A7F),
-          ),
-          iOS: DarwinNotificationDetails(
-            presentAlert: true,
-            presentBadge: true,
-            presentSound: true,
-          ),
-          macOS: DarwinNotificationDetails(
-            presentAlert: true,
-            presentBadge: true,
-            presentSound: true,
-          ),
-        ),
+        title: _localization.pushTestTitle,
+        body: _localization.pushTestBody,
+        notificationDetails: _sharedDetails(AndroidNotificationCategory.status),
         payload: 'test:fcm',
       );
       _lastError = null;
@@ -776,32 +707,9 @@ class NotificationService {
         id: _notificationId(
           'shared:$spaceId:${DateTime.now().millisecondsSinceEpoch ~/ 1000}',
         ),
-        title: 'Novità in $label',
-        body: 'C’è un nuovo aggiornamento condiviso da leggere.',
-        notificationDetails: const NotificationDetails(
-          android: AndroidNotificationDetails(
-            sharedChannelId,
-            'Noi ♡',
-            channelDescription:
-                'Novità e aggiornamenti dello spazio condiviso Noi ♡',
-            importance: Importance.max,
-            priority: Priority.max,
-            playSound: true,
-            enableVibration: true,
-            category: AndroidNotificationCategory.message,
-            color: Color(0xFFE84A7F),
-          ),
-          iOS: DarwinNotificationDetails(
-            presentAlert: true,
-            presentBadge: true,
-            presentSound: true,
-          ),
-          macOS: DarwinNotificationDetails(
-            presentAlert: true,
-            presentBadge: true,
-            presentSound: true,
-          ),
-        ),
+        title: _localization.sharedTitle(label),
+        body: _localization.sharedBody,
+        notificationDetails: _sharedDetails(AndroidNotificationCategory.message),
         payload: 'shared:$spaceId',
       );
       _lastError = null;
@@ -860,8 +768,8 @@ class NotificationService {
 
     final minutes = delay.inMinutes;
     final body = minutes >= 60
-        ? 'Promemoria posticipato di 1 ora.'
-        : 'Promemoria posticipato di $minutes minuti.';
+        ? _localization.snoozeHourBody
+        : _localization.snoozeMinutes(minutes);
     final payload = _ReminderActionPayload(
       stableId: reminder.stableId,
       title: reminder.title,
