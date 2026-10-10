@@ -464,6 +464,27 @@ const Map<String, Map<String, String>> _d3Catalog = {
   "editor_dayBefore": <String, String>{"en": "1 day before", "it": "1 giorno prima", "es": "1 día antes", "fr": "1 jour avant", "pt": "1 dia antes"},
   "editor_duplicate": <String, String>{"en": "Duplicate", "it": "Duplica", "es": "Duplicar", "fr": "Dupliquer", "pt": "Duplicar"},
   "editor_monthClosing": <String, String>{"en": "Month closing", "it": "Chiusura del mese", "es": "Cierre del mes", "fr": "Clôture du mois", "pt": "Fecho do mês"},
+  "unified_all": <String, String>{"en": "All", "it": "Tutto", "es": "Todo", "fr": "Tout", "pt": "Tudo"},
+  "unified_private": <String, String>{"en": "Private", "it": "Privato", "es": "Privado", "fr": "Privé", "pt": "Privado"},
+  "unified_externalHidden": <String, String>{"en": "External event hidden", "it": "Evento esterno nascosto", "es": "Evento externo oculto", "fr": "Événement externe masqué", "pt": "Evento externo oculto"},
+  "unified_readOnly": <String, String>{"en": "Read-only", "it": "Sola lettura", "es": "Solo lectura", "fr": "Lecture seule", "pt": "Só de leitura"},
+  "unified_sharedHidden": <String, String>{"en": "Shared content hidden", "it": "Contenuto condiviso nascosto", "es": "Contenido compartido oculto", "fr": "Contenu partagé masqué", "pt": "Conteúdo partilhado oculto"},
+  "unified_movePrivate": <String, String>{"en": "Move to Private", "it": "Sposta in Privato", "es": "Mover a Privado", "fr": "Déplacer vers Privé", "pt": "Mover para Privado"},
+  "unified_externalReadOnly": <String, String>{"en": "System calendar event · read-only. It is not copied to Diary, Memories or Anna's Diary cloud.", "it": "Evento del calendario di sistema · sola lettura. Non viene copiato nel Diario, nei Ricordi o nel cloud di Anna's Diary.", "es": "Evento del calendario del sistema · solo lectura. No se copia al Diario, Recuerdos ni a la nube de Anna's Diary.", "fr": "Événement du calendrier système · lecture seule. Il n’est pas copié dans le Journal, les Souvenirs ni le cloud Anna's Diary.", "pt": "Evento do calendário do sistema · só de leitura. Não é copiado para o Diário, Memórias nem para a cloud Anna's Diary."},
+  "unified_chooseSharedSpace": <String, String>{"en": "Choose shared space", "it": "Scegli lo spazio condiviso", "es": "Elegir espacio compartido", "fr": "Choisir l’espace partagé", "pt": "Escolher espaço partilhado"},
+  "unified_createdByYou": <String, String>{"en": "Created by you", "it": "Creato da te", "es": "Creado por ti", "fr": "Créé par toi", "pt": "Criado por ti"},
+  "unified_sharedSpace": <String, String>{"en": "Shared space", "it": "Spazio condiviso", "es": "Espacio compartido", "fr": "Espace partagé", "pt": "Espaço partilhado"},
+  "unified_moveNoiTitle": <String, String>{"en": "Move to Noi ♡?", "it": "Spostare in Noi ♡?", "es": "¿Mover a Noi ♡?", "fr": "Déplacer vers Noi ♡ ?", "pt": "Mover para Noi ♡?"},
+  "unified_privateSettingsStay": <String, String>{"en": "The item will become shared. Category, pinning and reminders stay private and are not transferred.", "it": "L’elemento diventerà condiviso. Categoria, fissaggio e promemoria restano impostazioni private e non vengono trasferiti.", "es": "El elemento pasará a ser compartido. La categoría, el fijado y los recordatorios siguen siendo privados y no se transfieren.", "fr": "L’élément deviendra partagé. La catégorie, l’épinglage et les rappels restent privés et ne sont pas transférés.", "pt": "O elemento passará a ser partilhado. Categoria, fixação e lembretes continuam privados e não são transferidos."},
+  "unified_move": <String, String>{"en": "Move", "it": "Sposta", "es": "Mover", "fr": "Déplacer", "pt": "Mover"},
+  "unified_movePrivateTitle": <String, String>{"en": "Move to Private?", "it": "Spostare in Privato?", "es": "¿Mover a Privado?", "fr": "Déplacer vers Privé ?", "pt": "Mover para Privado?"},
+  "unified_movePrivateBody": <String, String>{"en": "The item will be removed from Noi ♡ and remain only in your agenda.", "it": "L’elemento verrà rimosso da Noi ♡ e resterà solo nella tua agenda.", "es": "El elemento se eliminará de Noi ♡ y quedará solo en tu agenda.", "fr": "L’élément sera retiré de Noi ♡ et restera uniquement dans ton agenda.", "pt": "O elemento será removido do Noi ♡ e ficará apenas na tua agenda."},
+  "unified_deleteNoiTitle": <String, String>{"en": "Delete from Noi ♡?", "it": "Eliminare da Noi ♡?", "es": "¿Eliminar de Noi ♡?", "fr": "Supprimer de Noi ♡ ?", "pt": "Eliminar do Noi ♡?"},
+  "unified_deleteSharedForEveryone": <String, String>{"en": "“{title}” will be deleted for everyone in the shared space.", "it": "“{title}” verrà eliminato per tutte le persone dello spazio condiviso.", "es": "“{title}” se eliminará para todas las personas del espacio compartido.", "fr": "« {title} » sera supprimé pour toutes les personnes de l’espace partagé.", "pt": "“{title}” será eliminado para todas as pessoas do espaço partilhado."},
+  "unified_whereSave": <String, String>{"en": "Where do you want to save it?", "it": "Dove vuoi salvarlo?", "es": "¿Dónde quieres guardarlo?", "fr": "Où veux-tu l’enregistrer ?", "pt": "Onde queres guardá-lo?"},
+  "unified_privateDefault": <String, String>{"en": "Private remains the default. Use Noi ♡ only for what you want to share.", "it": "Privato resta la scelta predefinita. Usa Noi ♡ solo per ciò che vuoi condividere.", "es": "Privado sigue siendo la opción predeterminada. Usa Noi ♡ solo para lo que quieras compartir.", "fr": "Privé reste le choix par défaut. Utilise Noi ♡ seulement pour ce que tu veux partager.", "pt": "Privado continua a ser a predefinição. Usa Noi ♡ apenas para o que queres partilhar."},
+  "unified_visibleOnlyAccount": <String, String>{"en": "Visible only in your account.", "it": "Visibile solo nel tuo account.", "es": "Visible solo en tu cuenta.", "fr": "Visible uniquement dans ton compte.", "pt": "Visível apenas na tua conta."},
+  "unified_syncedShared": <String, String>{"en": "Synced with the selected shared space.", "it": "Sincronizzato con lo spazio condiviso scelto.", "es": "Sincronizado con el espacio compartido seleccionado.", "fr": "Synchronisé avec l’espace partagé sélectionné.", "pt": "Sincronizado com o espaço partilhado selecionado."},
 };
 
 extension AnnaD3Strings on AnnaStrings {
@@ -480,6 +501,12 @@ extension AnnaD3Strings on AnnaStrings {
     }
     return value;
   }
+  String unifiedFilterLabel(AgendaContentFilter value) => switch (value) {
+        AgendaContentFilter.all => d3('unified_all'),
+        AgendaContentFilter.privateOnly => d3('unified_private'),
+        AgendaContentFilter.sharedOnly => 'Noi ♡',
+      };
+
   String editorMoodLabel(DayMood value) => switch (value) {
         DayMood.awful => _pick(en: 'Awful', it: 'Male', es: 'Fatal', fr: 'Mal', pt: 'Mal'),
         DayMood.bad => _pick(en: 'Low', it: 'Giù', es: 'Bajo', fr: 'Bas', pt: 'Em baixo'),
