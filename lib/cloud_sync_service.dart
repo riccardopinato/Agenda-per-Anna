@@ -570,7 +570,7 @@ class CloudSyncService extends ChangeNotifier {
             : LaunchMode.externalApplication,
       );
       if (!started) {
-        throw const AuthException('Google sign-in could not be started.');
+        throw const AuthException('cloud_google_sign_in_start_failed');
       }
     } catch (error) {
       _state = CloudConnectionState.error;
@@ -1865,8 +1865,8 @@ class CloudSyncService extends ChangeNotifier {
     if (client == null) {
       throw StateError(
         configured
-            ? 'Cloud non ancora inizializzato.'
-            : 'Cloud non configurato in questa build.',
+            ? 'cloud_not_initialized'
+            : 'cloud_not_configured',
       );
     }
     return client;
