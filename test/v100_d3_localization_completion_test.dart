@@ -11,10 +11,10 @@ void main() {
     const languages = <String>['en', 'it', 'es', 'fr', 'pt'];
     const keys = <String>[
       'onboardingTitle',
-      'privacyAppLockTitle',
-      'sharedSpaceTitle',
-      'cloudAccountTitle',
-      'plannerWeekTitle',
+      'optionalPrivacy',
+      'sharedSpace',
+      'accountAndSync',
+      'plannerSevenDays',
       'editor_howFeel',
       'chooseVoiceNote',
       'exportSketch',
