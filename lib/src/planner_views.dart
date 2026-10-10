@@ -454,7 +454,10 @@ class _DayMemoryRecallCard extends StatelessWidget {
                 },
               ),
               title: Text(
-                store.diaryBlockDisplayTitle(memory.block),
+                store.diaryBlockDisplayTitle(
+                  memory.block,
+                  strings: AnnaStrings.of(context),
+                ),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
               ),
