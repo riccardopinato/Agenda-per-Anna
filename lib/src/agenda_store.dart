@@ -1484,9 +1484,7 @@ class AgendaStore extends ChangeNotifier {
       return Map<String, dynamic>.from(jsonDecode(raw) as Map);
     } catch (_) {
       _unreadableStorageKeys.add(_accountProfilesKey);
-      throw const FormatException(
-        'Archivio profili account non leggibile: cambio account annullato.',
-      );
+      throw const FormatException('account_profiles_unreadable');
     }
   }
 
@@ -2448,15 +2446,16 @@ class AgendaStore extends ChangeNotifier {
   }
 
   Future<void> createLocalSnapshot({
-    String label = 'Backup manuale',
+    String? label,
   }) async {
     final prefs = await _localState();
+    final strings = AnnaStrings.forPreference(preferences.appLanguage);
     localSnapshots.insert(
       0,
       LocalBackupSnapshot(
         id: const Uuid().v4(),
         createdAt: DateTime.now(),
-        label: label,
+        label: label ?? strings.d3('snapshotManual'),
         data: jsonDecode(jsonEncode(_localDataPayload()))
             as Map<String, dynamic>,
       ),
@@ -2481,7 +2480,8 @@ class AgendaStore extends ChangeNotifier {
       LocalBackupSnapshot(
         id: const Uuid().v4(),
         createdAt: now,
-        label: 'Backup automatico',
+        label: AnnaStrings.forPreference(preferences.appLanguage)
+            .d3('snapshotAutomatic'),
         data: jsonDecode(jsonEncode(_localDataPayload()))
             as Map<String, dynamic>,
       ),
@@ -2763,10 +2763,20 @@ class AgendaStore extends ChangeNotifier {
   }
 
   String _reminderBody(int minutes, String title) {
-    if (minutes == 1440) return 'Domani: $title';
-    if (minutes == 120) return 'Tra 2 ore: $title';
-    if (minutes == 60) return 'Tra 1 ora: $title';
-    return 'Tra $minutes minuti: $title';
+    final strings = AnnaStrings.forPreference(preferences.appLanguage);
+    if (minutes == 1440) {
+      return strings.d3Format('reminderTomorrow', {'title': title});
+    }
+    if (minutes == 120) {
+      return strings.d3Format('reminderIn2Hours', {'title': title});
+    }
+    if (minutes == 60) {
+      return strings.d3Format('reminderIn1Hour', {'title': title});
+    }
+    return strings.d3Format(
+      'reminderInMinutes',
+      {'minutes': minutes, 'title': title},
+    );
   }
 
   Future<void> toggle(String id) async {
