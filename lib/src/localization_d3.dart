@@ -555,6 +555,15 @@ const Map<String, Map<String, String>> _d3Catalog = {
   "vaultRecoveryUnavailable": <String, String>{"en": "The Vault is unavailable for recovery.", "it": "Cassaforte non disponibile per il recupero.", "es": "La Caja fuerte no está disponible para recuperación.", "fr": "Le Coffre n’est pas disponible pour la récupération.", "pt": "O Cofre não está disponível para recuperação."},
   "vaultLockedService": <String, String>{"en": "The Vault is locked.", "it": "La cassaforte è bloccata.", "es": "La Caja fuerte está bloqueada.", "fr": "Le Coffre est verrouillé.", "pt": "O Cofre está bloqueado."},
   "cloudSignInFirst": <String, String>{"en": "Sign in before syncing.", "it": "Accedi prima di sincronizzare.", "es": "Inicia sesión antes de sincronizar.", "fr": "Connecte-toi avant de synchroniser.", "pt": "Inicia sessão antes de sincronizar."},
+  "vaultNeedContent": <String, String>{"en": "Write at least a title or some content.", "it": "Scrivi almeno un titolo o un contenuto.", "es": "Escribe al menos un título o contenido.", "fr": "Écris au moins un titre ou du contenu.", "pt": "Escreve pelo menos um título ou conteúdo."},
+  "vaultSharedEditSource": <String, String>{"en": "Noi ♡ credentials must be edited through shared sync.", "it": "Le credenziali Noi ♡ si modificano tramite la sincronizzazione condivisa.", "es": "Las credenciales Noi ♡ se editan mediante la sincronización compartida.", "fr": "Les identifiants Noi ♡ se modifient via la synchronisation partagée.", "pt": "As credenciais Noi ♡ são editadas através da sincronização partilhada."},
+  "vaultSharedDeleteSource": <String, String>{"en": "Noi ♡ credentials must be deleted from the shared source.", "it": "Le credenziali Noi ♡ si eliminano dalla sorgente condivisa.", "es": "Las credenciales Noi ♡ se eliminan desde la fuente compartida.", "fr": "Les identifiants Noi ♡ se suppriment depuis la source partagée.", "pt": "As credenciais Noi ♡ são eliminadas a partir da origem partilhada."},
+  "credentialServiceRequired": <String, String>{"en": "Enter the service name.", "it": "Inserisci il nome del servizio.", "es": "Introduce el nombre del servicio.", "fr": "Saisis le nom du service.", "pt": "Introduz o nome do serviço."},
+  "credentialServiceTooLong": <String, String>{"en": "The service name is too long.", "it": "Il nome del servizio è troppo lungo.", "es": "El nombre del servicio es demasiado largo.", "fr": "Le nom du service est trop long.", "pt": "O nome do serviço é demasiado longo."},
+  "credentialIdentityTooLong": <String, String>{"en": "Username or email is too long.", "it": "Nome utente o email troppo lunghi.", "es": "El nombre de usuario o email es demasiado largo.", "fr": "Le nom d’utilisateur ou l’e-mail est trop long.", "pt": "O nome de utilizador ou email é demasiado longo."},
+  "credentialNotesTooLong": <String, String>{"en": "Notes are too long.", "it": "Le note sono troppo lunghe.", "es": "Las notas son demasiado largas.", "fr": "Les notes sont trop longues.", "pt": "As notas são demasiado longas."},
+  "sharedSpaceInvalid": <String, String>{"en": "The shared space is invalid.", "it": "Spazio condiviso non valido.", "es": "El espacio compartido no es válido.", "fr": "L’espace partagé est invalide.", "pt": "O espaço partilhado é inválido."},
+  "sharedCredentialInvalid": <String, String>{"en": "The Noi ♡ credential is invalid.", "it": "Credenziale Noi ♡ non valida.", "es": "La credencial Noi ♡ no es válida.", "fr": "L’identifiant Noi ♡ est invalide.", "pt": "A credencial Noi ♡ é inválida."},
 };
 
 NotificationLocalization notificationLocalizationForPreference(AppLanguage value) {
@@ -593,6 +602,11 @@ extension AnnaD3Strings on AnnaStrings {
     if (raw.contains('shared_password_password_too_long')) return d3('spPasswordTooLong');
     if (raw.contains('shared_password_version_unsupported')) return d3('spVersionUnsupported');
     if (raw.contains('shared_password_revision_invalid')) return d3('spRevisionInvalid');
+    if (raw.contains('credential_service_required')) return d3('credentialServiceRequired');
+    if (raw.contains('credential_service_too_long')) return d3('credentialServiceTooLong');
+    if (raw.contains('credential_identity_too_long')) return d3('credentialIdentityTooLong');
+    if (raw.contains('credential_notes_too_long')) return d3('credentialNotesTooLong');
+    if (raw.contains('shared_password_credential_invalid')) return d3('sharedCredentialInvalid');
     return sharedPasswordsSaveFailed;
   }
 
@@ -604,6 +618,14 @@ extension AnnaD3Strings on AnnaStrings {
     if (raw.contains('vault_shared_key_invalid')) return d3('vaultSharedKeyInvalid');
     if (raw.contains('vault_recovery_unavailable')) return d3('vaultRecoveryUnavailable');
     if (raw.contains('vault_locked')) return d3('vaultLockedService');
+    if (raw.contains('vault_need_content')) return d3('vaultNeedContent');
+    if (raw.contains('vault_shared_edit_source')) return d3('vaultSharedEditSource');
+    if (raw.contains('vault_shared_delete_source')) return d3('vaultSharedDeleteSource');
+    if (raw.contains('credential_service_required')) return d3('credentialServiceRequired');
+    if (raw.contains('credential_service_too_long')) return d3('credentialServiceTooLong');
+    if (raw.contains('credential_identity_too_long')) return d3('credentialIdentityTooLong');
+    if (raw.contains('credential_notes_too_long')) return d3('credentialNotesTooLong');
+    if (raw.contains('vault_shared_space_invalid')) return d3('sharedSpaceInvalid');
     return vaultCreateFailed;
   }
 
