@@ -748,9 +748,9 @@ class _DayLifeStream extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Row(
+          Row(
             children: [
-              Icon(Icons.view_timeline_outlined),
+              const Icon(Icons.view_timeline_outlined),
               SizedBox(width: 8),
               Expanded(
                 child: Text(
@@ -1735,9 +1735,9 @@ class _WeekFocusCardState extends State<WeekFocusCard> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Row(
+          Row(
             children: [
-              Icon(Icons.center_focus_strong_outlined),
+              const Icon(Icons.center_focus_strong_outlined),
               SizedBox(width: 8),
               Text(AnnaStrings.of(context).d3('weekFocus'), style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800)),
             ],
@@ -2230,9 +2230,9 @@ class _MonthWellbeingCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Row(
+          Row(
             children: [
-              Icon(Icons.favorite_outline),
+              const Icon(Icons.favorite_outline),
               SizedBox(width: 8),
               Text(
                 AnnaStrings.of(context).d3('monthFromMe'),
@@ -2417,9 +2417,9 @@ class _MonthOpeningJournalCardState
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Row(
+          Row(
             children: [
-              Icon(Icons.auto_awesome_outlined),
+              const Icon(Icons.auto_awesome_outlined),
               SizedBox(width: 8),
               Text(
                 AnnaStrings.of(context).d3('monthOpening'),
