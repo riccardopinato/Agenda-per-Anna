@@ -625,6 +625,13 @@ const Map<String, Map<String, String>> _d3Catalog = {
   "memSketchUnavailable": <String, String>{"en": "Sketch unavailable.", "it": "Sketch non disponibile.", "es": "Boceto no disponible.", "fr": "Croquis indisponible.", "pt": "Esboço indisponível."},
   "memPage": <String, String>{"en": "Page {current}/{total}", "it": "Pagina {current}/{total}", "es": "Página {current}/{total}", "fr": "Page {current}/{total}", "pt": "Página {current}/{total}"},
   "plannerMoments": <String, String>{"en": "{count} moments", "it": "{count} momenti", "es": "{count} momentos", "fr": "{count} moments", "pt": "{count} momentos"},
+  "trashJournalTitle": <String, String>{"en": "Diary for {date}", "it": "Diario del {date}", "es": "Diario del {date}", "fr": "Journal du {date}", "pt": "Diário de {date}"},
+  "trashWeekTitle": <String, String>{"en": "Week of {date}", "it": "Settimana del {date}", "es": "Semana del {date}", "fr": "Semaine du {date}", "pt": "Semana de {date}"},
+  "trashDiaryNote": <String, String>{"en": "Diary note", "it": "Nota del diario", "es": "Nota del diario", "fr": "Note du journal", "pt": "Nota do diário"},
+  "trashDiaryPhoto": <String, String>{"en": "Diary photo", "it": "Foto del diario", "es": "Foto del diario", "fr": "Photo du journal", "pt": "Foto do diário"},
+  "trashDiarySketch": <String, String>{"en": "Diary sketch", "it": "Sketch del diario", "es": "Boceto del diario", "fr": "Croquis du journal", "pt": "Esboço do diário"},
+  "trashDiaryVoice": <String, String>{"en": "Diary voice note", "it": "Nota vocale del diario", "es": "Nota de voz del diario", "fr": "Note vocale du journal", "pt": "Nota de voz do diário"},
+  "trashDeletedItem": <String, String>{"en": "Deleted item", "it": "Elemento eliminato", "es": "Elemento eliminado", "fr": "Élément supprimé", "pt": "Item eliminado"},
 };
 
 NotificationLocalization notificationLocalizationForPreference(AppLanguage value) {
