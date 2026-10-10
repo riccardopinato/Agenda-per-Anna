@@ -487,6 +487,8 @@ class _JournalEditorState extends State<JournalEditor> {
                           ) ??
                           false;
                       if (!confirmed || !mounted) return;
+                      final movedMessage = AnnaStrings.of(context)
+                          .d3('editor_dayMovedTrash');
                       final moved =
                           await widget.store.moveJournalToTrash(widget.date);
                       if (!moved || !mounted) return;
@@ -498,7 +500,7 @@ class _JournalEditorState extends State<JournalEditor> {
                       setState(() => mood = null);
                       messenger.showSnackBar(
                         SnackBar(
-                          content: Text(AnnaStrings.of(context).d3('editor_dayMovedTrash')),
+                          content: Text(movedMessage),
                         ),
                       );
                     },
