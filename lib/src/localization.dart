@@ -27,6 +27,16 @@ class AnnaStrings {
   static String intlLocale(BuildContext context) =>
       resolveLocale(Localizations.maybeLocaleOf(context)).languageCode;
 
+  static String languageCodeForPreference(AppLanguage value) {
+    if (value != AppLanguage.system) return value.code;
+    return resolveLocale(
+      WidgetsBinding.instance.platformDispatcher.locale,
+    ).languageCode;
+  }
+
+  static AnnaStrings forPreference(AppLanguage value) =>
+      AnnaStrings(languageCodeForPreference(value));
+
   String _pick({
     required String en,
     required String it,
