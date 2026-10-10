@@ -770,8 +770,8 @@ class _DayLifeStream extends StatelessWidget {
           ),
           const SizedBox(height: 10),
           if (entries.isEmpty)
-            const Padding(
-              padding: EdgeInsets.symmetric(vertical: 8),
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 8),
               child: Text(
                 AnnaStrings.of(context).d3('noDayMoments'),
               ),
@@ -779,7 +779,11 @@ class _DayLifeStream extends StatelessWidget {
           else
             ...entries.map(
               (entry) {
-                final data = _dayLifePresentation(entry, snapshot.date);
+                final data = _dayLifePresentation(
+                  entry,
+                  snapshot.date,
+                  AnnaStrings.of(context),
+                );
                 return ListTile(
                   contentPadding: EdgeInsets.zero,
                   leading: CircleAvatar(
@@ -1548,7 +1552,7 @@ class _WeekScreenState extends State<WeekScreen> {
                     await widget.store.moveWeekToTrash(start);
                   }
                 },
-                itemBuilder: (_) => const [
+                itemBuilder: (_) => [
                   PopupMenuItem(
                     value: 'trash',
                     child: Text(AnnaStrings.of(context).d3('movePageTrash')),
@@ -1779,9 +1783,14 @@ class WeekPrioritiesCard extends StatelessWidget {
         children: [
           Row(
             children: [
-              const Expanded(
-                child: Text(AnnaStrings.of(context).d3('weekPriorities'),
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800)),
+              Expanded(
+                child: Text(
+                  AnnaStrings.of(context).d3('weekPriorities'),
+                  style: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
               ),
               IconButton(
                 onPressed: () async {
@@ -1905,8 +1914,8 @@ class _WeekDayCard extends StatelessWidget {
             ],
           ),
           if (items.isEmpty)
-            const Padding(
-              padding: EdgeInsets.only(top: 8),
+            Padding(
+              padding: const EdgeInsets.only(top: 8),
               child: Text(AnnaStrings.of(context).d3('noCommitments')),
             )
           else ...[
@@ -2108,7 +2117,7 @@ class _MonthScreenState extends State<MonthScreen> {
                     );
                   }
                 },
-                itemBuilder: (_) => const [
+                itemBuilder: (_) => [
                   PopupMenuItem(
                     value: 'trash',
                     child: Text(AnnaStrings.of(context).d3('movePageTrash')),
@@ -2495,15 +2504,22 @@ class MonthIdeasBoard extends StatelessWidget {
         children: [
           Row(
             children: [
-              const Expanded(
+              Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(AnnaStrings.of(context).d3('monthIdeas'),
-                        style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800)),
-                    SizedBox(height: 3),
-                    Text(AnnaStrings.of(context).d3('monthIdeasSubtitle'),
-                        style: TextStyle(fontSize: 12)),
+                    Text(
+                      AnnaStrings.of(context).d3('monthIdeas'),
+                      style: const TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                    const SizedBox(height: 3),
+                    Text(
+                      AnnaStrings.of(context).d3('monthIdeasSubtitle'),
+                      style: const TextStyle(fontSize: 12),
+                    ),
                   ],
                 ),
               ),
@@ -2765,7 +2781,9 @@ Future<void> _showAgendaItemActions(
               item.pinned ? Icons.push_pin : Icons.push_pin_outlined,
             ),
             title: Text(
-              item.pinned ? AnnaStrings.of(context).unpin : AnnaStrings.of(context).pinToHome,
+              item.pinned
+                  ? AnnaStrings.of(context).unpin
+                  : AnnaStrings.of(context).pin,
             ),
             onTap: () => Navigator.pop(context, 'pin'),
           ),
