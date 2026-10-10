@@ -500,6 +500,9 @@ const Map<String, Map<String, String>> _d3Catalog = {
   "notification_sharedBody": <String, String>{"en": "There is a new shared update to read.", "it": "C’è un nuovo aggiornamento condiviso da leggere.", "es": "Hay una nueva actualización compartida para leer.", "fr": "Une nouvelle mise à jour partagée est disponible.", "pt": "Há uma nova atualização partilhada para ler."},
   "notification_snoozeHour": <String, String>{"en": "Reminder postponed by 1 hour.", "it": "Promemoria posticipato di 1 ora.", "es": "Recordatorio pospuesto 1 hora.", "fr": "Rappel reporté d’une heure.", "pt": "Lembrete adiado 1 hora."},
   "notification_snoozeMinutes": <String, String>{"en": "Reminder postponed by {minutes} minutes.", "it": "Promemoria posticipato di {minutes} minuti.", "es": "Recordatorio pospuesto {minutes} minutos.", "fr": "Rappel reporté de {minutes} minutes.", "pt": "Lembrete adiado {minutes} minutos."},
+  "widget_noUpcoming": <String, String>{"en": "No upcoming commitments", "it": "Nessun impegno in arrivo", "es": "No hay próximos compromisos", "fr": "Aucun engagement à venir", "pt": "Sem compromissos próximos"},
+  "widget_today": <String, String>{"en": "Today", "it": "Oggi", "es": "Hoy", "fr": "Aujourd’hui", "pt": "Hoje"},
+  "widget_noBirthday": <String, String>{"en": "No birthdays nearby", "it": "Nessun compleanno vicino", "es": "No hay cumpleaños próximos", "fr": "Aucun anniversaire proche", "pt": "Sem aniversários próximos"},
 };
 
 NotificationLocalization notificationLocalizationForPreference(AppLanguage value) {
