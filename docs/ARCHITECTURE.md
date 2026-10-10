@@ -1,5 +1,15 @@
 # Agenda per Anna — Architecture
 
+## v1.00-D3 — Localization presentation boundary
+
+- `AnnaStrings` remains the single localization contract for en/it/es/fr/pt; `localization_d3.dart` extends that contract and does not create a second persistence/localization subsystem.
+- `AgendaPreferences.appLanguage` remains the sole persisted language choice. Native/background surfaces derive their effective locale from the same preference, including system-language fallback.
+- Flutter UI resolves type/category/recurrence/Trash/color labels at presentation time. Persisted enums, IDs, payloads and sync contracts remain language-neutral and unchanged.
+- `NotificationService` accepts a runtime localization bundle for channel names/descriptions, actions, diagnostics, Noi ♡ updates and snooze copy while retaining stable channel IDs and payload routing.
+- `HomeWidgetBridge` uses the effective app locale for empty states and date formatting; external-calendar models store raw platform values and apply localized fallback names only in presentation.
+- Backup/restore and Data Safety services expose stable error codes. File-picker titles and user-facing error explanations are localized in the calling UI, preserving Diagnostic Truth without leaking implementation-language text.
+- D3 regression tests enforce five-language catalog completeness, duplicate-key/helper rejection and anti-hardcoded checks across migrated Flutter/native/background surfaces.
+
 ## v1.00-D1 — Crypto responsiveness boundary
 
 - `src/security/pbkdf2_worker.dart` is the single conditional PBKDF2-SHA256 execution boundary.
