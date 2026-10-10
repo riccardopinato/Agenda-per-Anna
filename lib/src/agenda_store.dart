@@ -1995,8 +1995,7 @@ class AgendaStore extends ChangeNotifier {
     if (missingFromBundle.isNotEmpty) {
       final first = missingFromBundle.toList()..sort();
       throw FormatException(
-        'Il backup non contiene tutti i media referenziati: '
-        '${first.first}',
+        'backup_missing_referenced_media:${first.first}',
       );
     }
 
