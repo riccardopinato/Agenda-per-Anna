@@ -107,7 +107,10 @@ void main() {
     ]));
 
     final readme = utf8.decode(byName['README.md']!.readBytes()!);
-    expect(readme, contains('# Anna\'s Diary — Open Export'));
+    expect(
+      readme,
+      contains(const AnnaStrings('it').d3('exportOpenTitle')),
+    );
     expect(readme, contains('Una giornata da ricordare.'));
     expect(readme, contains('Arrivati in centro.'));
     expect(readme, contains('![Piazza al tramonto](media/$photoId.jpg)'));
