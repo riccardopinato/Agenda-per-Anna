@@ -597,7 +597,7 @@ Future<String?> showDiaryCaptionEditor(
             dialogContext,
             controller.text.trim(),
           ),
-          child: Text(adding ? 'Aggiungi' : AnnaStrings.of(context).save),
+          child: Text(adding ? AnnaStrings.of(context).add : AnnaStrings.of(context).save),
         ),
       ],
     ),
@@ -896,11 +896,11 @@ Future<bool> confirmDiaryContentDelete(
     await showDialog<bool>(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        title: const Text('Eliminare dal diario?'),
+        title: Text(AnnaStrings.of(dialogContext).d3('deleteDiary')),
         content: Text(
           movesToTrash
-              ? 'Questo contenuto verrà spostato nel Cestino e potrai ripristinarlo.'
-              : 'Questo contenuto verrà rimosso dalla giornata.',
+              ? AnnaStrings.of(dialogContext).d3('deleteDiaryTrashBody')
+              : AnnaStrings.of(dialogContext).d3('deleteDiaryDayBody'),
         ),
         actions: [
           TextButton(
@@ -919,11 +919,11 @@ Future<bool> confirmDiaryContentDelete(
 enum DiaryContentKind { note, photo, sketch, voice }
 
 extension DiaryContentKindUi on DiaryContentKind {
-  String get label => switch (this) {
-        DiaryContentKind.note => AnnaStrings.of(context).d3('note'),
-        DiaryContentKind.photo => AnnaStrings.of(context).d3('photoLabel'),
+  String localizedLabel(AnnaStrings strings) => switch (this) {
+        DiaryContentKind.note => strings.d3('note'),
+        DiaryContentKind.photo => strings.d3('photoLabel'),
         DiaryContentKind.sketch => 'Sketch',
-        DiaryContentKind.voice => AnnaStrings.of(context).d3('voice'),
+        DiaryContentKind.voice => strings.d3('voice'),
       };
 
   IconData get icon => switch (this) {
@@ -1141,7 +1141,10 @@ class DiaryContentCard extends StatelessWidget {
                   const SizedBox(width: 2),
                 ],
                 PopupMenuButton<String>(
-                  tooltip: 'Azioni ${kind.label.toLowerCase()}',
+                  tooltip: AnnaStrings.of(context).d3Format(
+                    'actionsFor',
+                    {'kind': kind.localizedLabel(AnnaStrings.of(context)).toLowerCase()},
+                  ),
                   onSelected: (value) {
                     if (value == 'edit') onEdit?.call();
                     if (value == 'caption') onEditCaption?.call();
@@ -1422,7 +1425,12 @@ class _DiaryMemoryCardState extends State<DiaryMemoryCard> {
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text('Modello “${preset.title}” aggiunto al diario.'),
+        content: Text(
+          AnnaStrings.of(context).d3Format(
+            'templateAdded',
+            {'title': preset.title},
+          ),
+        ),
         action: SnackBarAction(
           label: AnnaStrings.of(context).d3('edit'),
           onPressed: () => _addNote(block),
@@ -1815,7 +1823,7 @@ class _DiaryMemoryCardState extends State<DiaryMemoryCard> {
   }
 
   Widget _blockCard(BuildContext context, DiaryBlock block) {
-    final time = DateFormat('HH:mm', 'it_IT').format(block.createdAt);
+    final time = DateFormat('HH:mm', AnnaStrings.intlLocale(context)).format(block.createdAt);
 
     switch (block.type) {
       case DiaryBlockType.note:
@@ -1945,7 +1953,7 @@ class _DiaryMemoryCardState extends State<DiaryMemoryCard> {
     final blocks = _blocks;
 
     return DiaryComposerSection(
-      title: 'Il mio diario',
+      title: AnnaStrings.of(context).d3('myDiary'),
       subtitle:
           AnnaStrings.of(context).d3('diaryPrivateSubtitle'),
       memoriesLabel: AnnaStrings.of(context).memories,
