@@ -15,7 +15,7 @@ class DiaryPhotoViewerScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final dateLabel =
-        _cap(DateFormat('EEEE d MMMM yyyy', 'it_IT').format(date));
+        _cap(DateFormat('EEEE d MMMM yyyy', AnnaStrings.intlLocale(context)).format(date));
     final imageFuture = _readDiaryMediaBytes(
       assetId: block.mediaAssetId,
       fallbackBase64: block.imageBase64,
@@ -38,7 +38,7 @@ class DiaryPhotoViewerScreen extends StatelessWidget {
       caption: block.text,
       appBarActions: [
         IconButton(
-          tooltip: 'Apri giornata',
+          tooltip: AnnaStrings.of(context).d3('openDay'),
           onPressed: () => Navigator.push(
             context,
             MaterialPageRoute(
@@ -64,7 +64,7 @@ class DiaryPhotoViewerScreen extends StatelessWidget {
             ),
           ),
           icon: const Icon(Icons.calendar_month_outlined),
-          label: const Text('Mese'),
+          label: Text(AnnaStrings.of(context).navMonth),
         ),
         OutlinedButton.icon(
           style: actionStyle,
@@ -78,7 +78,7 @@ class DiaryPhotoViewerScreen extends StatelessWidget {
             ),
           ),
           icon: const Icon(Icons.insights_outlined),
-          label: const Text('Anno'),
+          label: Text(AnnaStrings.of(context).d3('year')),
         ),
       ],
     );
@@ -711,7 +711,7 @@ class _DiarySketchbookScreenState extends State<DiarySketchbookScreen> {
           minLines: 2,
           maxLines: 6,
           textCapitalization: TextCapitalization.sentences,
-          decoration: const InputDecoration(
+          decoration: InputDecoration(
             hintText: AnnaStrings.of(context).d3('writePage'),
             border: OutlineInputBorder(),
           ),
