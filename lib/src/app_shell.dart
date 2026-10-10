@@ -516,6 +516,7 @@ class _PrivacyGateState extends State<_PrivacyGate>
     if (!mounted || authenticating || kIsWeb) return;
     final prefs = widget.store.preferences;
     if (!prefs.biometricUnlock || !prefs.privacyLockEnabled) return;
+    final unlockReason = AnnaStrings.of(context).d3('unlockAnna');
 
     setState(() => authenticating = true);
     try {
@@ -524,7 +525,7 @@ class _PrivacyGateState extends State<_PrivacyGate>
       final canCheck = await auth.canCheckBiometrics;
       if (!supported || !canCheck) return;
       final ok = await auth.authenticate(
-        localizedReason: AnnaStrings.of(context).d3('unlockAnna'),
+        localizedReason: unlockReason,
       );
       if (ok && mounted) {
         setState(() {
