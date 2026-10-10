@@ -529,6 +529,43 @@ void main() {
     );
   });
 
+  test('D3 visual AppLab journey accepts every supported locale', () {
+    final week = _source('.maestro/journey/week.yaml');
+    final today = _source('.maestro/journey/today.yaml');
+    final account = _source('.maestro/journey/account.yaml');
+
+    for (final text in const <String>[
+      'La mia settimana',
+      'My week',
+      'Mi semana',
+      'Ma semaine',
+      'A minha semana',
+    ]) {
+      expect(week, contains(text));
+    }
+
+    for (final text in const <String>[
+      'Momenti del giorno',
+      'Moments of the day',
+      'Momentos del día',
+      'Moments de la journée',
+      'Momentos do dia',
+    ]) {
+      expect(today, contains(text));
+    }
+
+    for (final text in const <String>[
+      'Account e sincronizzazione',
+      'Account and sync',
+      'Cuenta y sincronización',
+      'Compte et synchronisation',
+      'Conta e sincronização',
+    ]) {
+      expect(account, contains(text));
+    }
+  });
+
+
   test('D3 AppLab onboarding accepts every supported locale', () {
     final flow = _source('.maestro/applab-smoke.yaml');
     for (final text in const <String>[
