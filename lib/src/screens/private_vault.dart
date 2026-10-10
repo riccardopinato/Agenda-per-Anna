@@ -62,7 +62,7 @@ class _PrivateVaultHomeCardState extends State<PrivateVaultHomeCard> {
                       children: [
                         Text(
                           AnnaStrings.of(context).vaultTitle,
-                          style: TextStyle(
+                          style: const TextStyle(
                             fontSize: 17,
                             fontWeight: FontWeight.w900,
                           ),
