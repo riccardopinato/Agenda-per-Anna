@@ -746,6 +746,9 @@ const Map<String, Map<String, String>> _d3Catalog = {
   "sharedLatestUpdates": <String, String>{"en": "Latest updates", "it": "Ultimi aggiornamenti", "es": "Últimas actualizaciones", "fr": "Dernières mises à jour", "pt": "Últimas atualizações"},
   "sharedInviteExpiryUses": <String, String>{"en": "Expires in {hours}h {minutes}m · {uses} uses", "it": "Scade tra {hours}h {minutes}m · {uses} utilizzi", "es": "Caduca en {hours}h {minutes}m · {uses} usos", "fr": "Expire dans {hours} h {minutes} min · {uses} utilisations", "pt": "Expira em {hours}h {minutes}m · {uses} utilizações"},
 
+  "exportMoodLabel": <String, String>{"en": "Mood", "it": "Umore", "es": "Estado de ánimo", "fr": "Humeur", "pt": "Humor"},
+  "exportTagsLabel": <String, String>{"en": "Tags", "it": "Tag", "es": "Etiquetas", "fr": "Tags", "pt": "Etiquetas"},
+
 };
 
 NotificationLocalization notificationLocalizationForPreference(AppLanguage value) {
