@@ -43,7 +43,7 @@ class BackupFileService {
   Future<bool> saveJsonBackup({
     required String json,
     required String fileName,
-    String dialogTitle = "Save Anna's Diary backup",
+    required String dialogTitle,
   }) async {
     try {
       final uri = await FilePicker.saveFile(
@@ -63,7 +63,7 @@ class BackupFileService {
   Future<bool> saveZipBackup({
     required Uint8List bytes,
     required String fileName,
-    String dialogTitle = "Save Anna's Diary backup",
+    required String dialogTitle,
   }) async {
     try {
       final uri = await FilePicker.saveFile(
@@ -81,7 +81,7 @@ class BackupFileService {
   }
 
   Future<PickedBackupFile?> pickBackup({
-    String dialogTitle = "Choose an Anna's Diary backup",
+    required String dialogTitle,
   }) async {
     try {
       final file = await FilePicker.pickFile(
@@ -99,8 +99,8 @@ class BackupFileService {
     }
   }
 
-  Future<String?> pickJsonBackup() async {
-    final picked = await pickBackup();
+  Future<String?> pickJsonBackup({required String dialogTitle}) async {
+    final picked = await pickBackup(dialogTitle: dialogTitle);
     if (picked == null || !picked.isJson) return null;
     try {
       return utf8.decode(picked.bytes);
@@ -296,7 +296,7 @@ class BackupFileService {
   Future<bool> saveOpenExportZip({
     required Uint8List bytes,
     required String fileName,
-    String dialogTitle = "Export Anna's Diary open archive",
+    required String dialogTitle,
   }) async {
     try {
       final uri = await FilePicker.saveFile(
@@ -316,7 +316,7 @@ class BackupFileService {
   Future<bool> saveTextExport({
     required String text,
     required String fileName,
-    String dialogTitle = "Export Anna's Diary",
+    required String dialogTitle,
   }) async {
     try {
       final uri = await FilePicker.saveFile(
