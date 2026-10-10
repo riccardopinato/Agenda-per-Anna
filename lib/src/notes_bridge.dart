@@ -21,9 +21,9 @@ class NotesBridgePayload {
     this.mediaNotice,
   });
 
-  String toPlainText() {
+  String toPlainText(AnnaStrings strings) {
     final buffer = StringBuffer();
-    buffer.writeln(title.trim().isEmpty ? 'Nota da Anna\'s Diary' : title.trim());
+    buffer.writeln(title.trim().isEmpty ? strings.d3('notesDefaultTitle') : title.trim());
     buffer.writeln();
 
     if (body.trim().isNotEmpty) {
@@ -32,33 +32,44 @@ class NotesBridgePayload {
     }
 
     buffer.writeln('---');
-    buffer.writeln('Fonte: $source');
+    buffer.writeln(strings.d3Format('notesSource', {'value': source}));
     buffer.writeln(
-      'Data: ${DateFormat('d MMMM yyyy, HH:mm', 'it_IT').format(createdAt)}',
+      strings.d3Format(
+        'notesDate',
+        {
+          'value': DateFormat(
+            'd MMMM yyyy, HH:mm',
+            AnnaStrings.resolveLocale(Locale(strings.languageCode)).languageCode,
+          ).format(createdAt),
+        },
+      ),
     );
     if (tags.isNotEmpty) {
       buffer.writeln('Tag: ${tags.map((tag) => '#$tag').join(' ')}');
     }
     if (people.isNotEmpty) {
-      buffer.writeln('Persone: ${people.join(', ')}');
+      buffer.writeln(strings.d3Format('notesPeople', {'value': people.join(', ')}));
     }
     if (places.isNotEmpty) {
-      buffer.writeln('Luoghi: ${places.join(', ')}');
+      buffer.writeln(strings.d3Format('notesPlaces', {'value': places.join(', ')}));
     }
     if (mediaNotice != null && mediaNotice!.trim().isNotEmpty) {
       buffer.writeln(mediaNotice!.trim());
     }
-    buffer.writeln('Importato da Anna\'s Diary · Notes Bridge Lite');
+    buffer.writeln(strings.d3('notesImported'));
     return buffer.toString().trim();
   }
 }
 
 extension AgendaStoreNotesBridge on AgendaStore {
-  NotesBridgePayload notesBridgePayloadForInbox(InboxEntry entry) =>
+  NotesBridgePayload notesBridgePayloadForInbox(
+    InboxEntry entry, {
+    AnnaStrings strings = const AnnaStrings('it'),
+  }) =>
       NotesBridgePayload(
         title: entry.text.trim().isEmpty
-            ? 'Nota Inbox'
-            : _notesBridgeTitleFromText(entry.text, fallback: 'Nota Inbox'),
+            ? strings.d3('notesInbox')
+            : _notesBridgeTitleFromText(entry.text, fallback: strings.d3('notesInbox')),
         body: entry.text.trim(),
         source: 'Anna\'s Diary · Inbox',
         createdAt: entry.createdAt,
@@ -67,8 +78,9 @@ extension AgendaStoreNotesBridge on AgendaStore {
 
   NotesBridgePayload notesBridgePayloadForDiary(
     DateTime date,
-    DiaryBlock block,
-  ) {
+    DiaryBlock block, {
+    AnnaStrings strings = const AnnaStrings('it'),
+  }) {
     final people = peopleForIds(block.personIds)
         .map((person) => person.name.trim())
         .where((name) => name.isNotEmpty)
@@ -85,10 +97,10 @@ extension AgendaStoreNotesBridge on AgendaStore {
         .join('\n');
 
     final kindLabel = switch (block.type) {
-      DiaryBlockType.note => 'Nota diario',
-      DiaryBlockType.photo => 'Foto diario',
-      DiaryBlockType.sketch => 'Sketch diario',
-      DiaryBlockType.voice => 'Nota vocale',
+      DiaryBlockType.note => strings.d3('notesDiaryNote'),
+      DiaryBlockType.photo => strings.d3('notesDiaryPhoto'),
+      DiaryBlockType.sketch => strings.d3('notesDiarySketch'),
+      DiaryBlockType.voice => strings.d3('notesVoice'),
     };
 
     final bodyParts = <String>[];
@@ -106,20 +118,20 @@ extension AgendaStoreNotesBridge on AgendaStore {
         break;
       case DiaryBlockType.photo:
         mediaNotice =
-            'Nota: la foto originale resta in Anna\'s Diary e non viene copiata da Notes Bridge Lite.';
+            strings.d3('notesPhotoNotice');
         break;
       case DiaryBlockType.voice:
         mediaNotice =
-            'Nota: l’audio originale resta in Anna\'s Diary e non viene copiato da Notes Bridge Lite.';
+            strings.d3('notesAudioNotice');
         break;
       case DiaryBlockType.sketch:
         mediaNotice =
-            'Nota: vengono copiati solo i testi dello sketch; tratti e immagini restano in Anna\'s Diary.';
+            strings.d3('notesSketchNotice');
         break;
     }
 
     final fallbackTitle =
-        '$kindLabel · ${DateFormat('d MMMM yyyy', 'it_IT').format(date)}';
+        '$kindLabel · ${DateFormat('d MMMM yyyy', AnnaStrings.resolveLocale(Locale(strings.languageCode)).languageCode).format(date)}';
     final titleSource = block.text.trim().isNotEmpty
         ? block.text
         : sketchText;
@@ -130,7 +142,7 @@ extension AgendaStoreNotesBridge on AgendaStore {
         fallback: fallbackTitle,
       ),
       body: bodyParts.join('\n\n'),
-      source: 'Anna\'s Diary · Diario',
+      source: strings.d3('notesDiarySource'),
       createdAt: block.createdAt,
       tags: List<String>.unmodifiable(block.tags),
       people: people,
@@ -139,14 +151,18 @@ extension AgendaStoreNotesBridge on AgendaStore {
     );
   }
 
-  String notesBridgeTextForInbox(InboxEntry entry) =>
-      notesBridgePayloadForInbox(entry).toPlainText();
+  String notesBridgeTextForInbox(
+    InboxEntry entry, {
+    AnnaStrings strings = const AnnaStrings('it'),
+  }) =>
+      notesBridgePayloadForInbox(entry, strings: strings).toPlainText(strings);
 
   String notesBridgeTextForDiary(
     DateTime date,
-    DiaryBlock block,
-  ) =>
-      notesBridgePayloadForDiary(date, block).toPlainText();
+    DiaryBlock block, {
+    AnnaStrings strings = const AnnaStrings('it'),
+  }) =>
+      notesBridgePayloadForDiary(date, block, strings: strings).toPlainText(strings);
 }
 
 String _notesBridgeTitleFromText(
@@ -168,9 +184,9 @@ Future<void> copyNotesBridgePayload(
   await Clipboard.setData(ClipboardData(text: text));
   if (!context.mounted) return;
   ScaffoldMessenger.of(context).showSnackBar(
-    const SnackBar(
-      content: Text('Copiato per Notes.'),
-      duration: Duration(seconds: 1),
+    SnackBar(
+      content: Text(AnnaStrings.of(context).d3('notesCopied')),
+      duration: const Duration(seconds: 1),
     ),
   );
 }
