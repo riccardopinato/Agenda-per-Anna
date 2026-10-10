@@ -7,6 +7,7 @@ import 'package:agenda_per_anna/main.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
+  const strings = AnnaStrings('en');
 
   setUp(() {
     SharedPreferences.setMockInitialValues({});
@@ -18,6 +19,7 @@ void main() {
 
     await tester.pumpWidget(
       MaterialApp(
+        locale: const Locale('en'),
         home: Scaffold(
           body: DiaryMemoryCard(
             store: store,
@@ -28,9 +30,9 @@ void main() {
     );
 
     expect(find.byType(DiaryComposerSection), findsOneWidget);
-    expect(find.widgetWithText(FilledButton, 'Nota'), findsOneWidget);
+    expect(find.widgetWithText(FilledButton, strings.d3('note')), findsOneWidget);
     expect(find.widgetWithText(FilledButton, 'Sketch'), findsOneWidget);
-    expect(find.widgetWithText(FilledButton, 'Foto'), findsOneWidget);
+    expect(find.widgetWithText(FilledButton, strings.d3('photoLabel')), findsOneWidget);
 
     store.dispose();
   });
@@ -52,6 +54,7 @@ void main() {
 
     await tester.pumpWidget(
       MaterialApp(
+        locale: const Locale('en'),
         home: SharedSpaceScreen(
           store: store,
           space: space,
@@ -61,9 +64,9 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.byType(DiaryComposerSection), findsOneWidget);
-    expect(find.widgetWithText(FilledButton, 'Nota'), findsOneWidget);
+    expect(find.widgetWithText(FilledButton, strings.d3('note')), findsOneWidget);
     expect(find.widgetWithText(FilledButton, 'Sketch'), findsOneWidget);
-    expect(find.widgetWithText(FilledButton, 'Foto'), findsOneWidget);
+    expect(find.widgetWithText(FilledButton, strings.d3('photoLabel')), findsOneWidget);
 
     store.dispose();
   });
@@ -75,6 +78,7 @@ void main() {
 
     await tester.pumpWidget(
       MaterialApp(
+        locale: const Locale('en'),
         home: Scaffold(
           body: DiaryContentCard(
             kind: DiaryContentKind.note,
@@ -90,16 +94,16 @@ void main() {
 
     await tester.tap(find.byType(PopupMenuButton<String>));
     await tester.pumpAndSettle();
-    expect(find.text('Modifica'), findsOneWidget);
-    expect(find.text('Elimina'), findsOneWidget);
+    expect(find.text(strings.d3('edit')), findsOneWidget);
+    expect(find.text(strings.delete), findsOneWidget);
 
-    await tester.tap(find.text('Modifica'));
+    await tester.tap(find.text(strings.d3('edit')));
     await tester.pumpAndSettle();
     expect(edited, isTrue);
 
     await tester.tap(find.byType(PopupMenuButton<String>));
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Elimina'));
+    await tester.tap(find.text(strings.delete));
     await tester.pumpAndSettle();
     expect(deleted, isTrue);
   });
@@ -108,6 +112,7 @@ void main() {
       (tester) async {
     await tester.pumpWidget(
       MaterialApp(
+        locale: const Locale('en'),
         home: Scaffold(
           body: DiaryContentCard(
             kind: DiaryContentKind.photo,
@@ -125,15 +130,16 @@ void main() {
     await tester.tap(find.byType(PopupMenuButton<String>));
     await tester.pumpAndSettle();
 
-    expect(find.text('Modifica didascalia'), findsOneWidget);
-    expect(find.text('Sostituisci foto'), findsOneWidget);
-    expect(find.text('Elimina'), findsOneWidget);
+    expect(find.text(strings.d3('editCaption')), findsOneWidget);
+    expect(find.text(strings.d3('replacePhoto')), findsOneWidget);
+    expect(find.text(strings.delete), findsOneWidget);
   });
 
   testWidgets('sketch card uses the common edit and delete actions',
       (tester) async {
     await tester.pumpWidget(
       MaterialApp(
+        locale: const Locale('en'),
         home: Scaffold(
           body: DiaryContentCard(
             kind: DiaryContentKind.sketch,
@@ -150,7 +156,7 @@ void main() {
     await tester.tap(find.byType(PopupMenuButton<String>));
     await tester.pumpAndSettle();
 
-    expect(find.text('Modifica'), findsOneWidget);
-    expect(find.text('Elimina'), findsOneWidget);
+    expect(find.text(strings.d3('edit')), findsOneWidget);
+    expect(find.text(strings.delete), findsOneWidget);
   });
 }
