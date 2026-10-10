@@ -218,7 +218,7 @@ class MainActivity : FlutterFragmentActivity() {
             } catch (error: SecurityException) {
                 result.error(
                     "microphone_permission_required",
-                    "Consenti l'accesso al microfono e riprova.",
+                    "microphone_permission_required",
                     null,
                 )
             } catch (error: Throwable) {
