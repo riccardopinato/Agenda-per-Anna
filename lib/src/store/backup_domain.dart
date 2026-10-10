@@ -660,16 +660,17 @@ class _AgendaBackupDomain {
   }) {
     final buffer = StringBuffer();
     final now = DateTime.now();
+    final locale = AnnaStrings.resolveLocale(Locale(strings.languageCode)).languageCode;
 
     buffer.writeln('ANNA\'S DIARY');
     buffer.writeln(
-      'Esportazione del ${DateFormat('d MMMM yyyy, HH:mm', 'it_IT').format(now)}',
+      strings.d3Format('readableExported', {'date': DateFormat('d MMMM yyyy, HH:mm', locale).format(now)}),
     );
     buffer.writeln();
     buffer.writeln(
       '============================================================',
     );
-    buffer.writeln('IMPEGNI E ATTIVITÀ');
+    buffer.writeln(strings.d3('readableCommitments'));
     buffer.writeln(
       '============================================================',
     );
@@ -685,17 +686,17 @@ class _AgendaBackupDomain {
       });
 
     if (sortedItems.isEmpty) {
-      buffer.writeln('Nessun impegno salvato.');
+      buffer.writeln(strings.d3('exportNoCommitments'));
     } else {
       for (final item in sortedItems) {
         final date =
-            DateFormat('d MMMM yyyy', 'it_IT').format(item.date);
+            DateFormat('d MMMM yyyy', locale).format(item.date);
         final time =
             item.start == null ? '' : ' · ${formatTime(item.start!)}';
         buffer.writeln('- $date$time · ${item.title}');
-        buffer.writeln('  Categoria: ${item.category.label}');
+        buffer.writeln(strings.d3Format('readableCategory', {'value': strings.editorCategoryLabel(item.category)}));
         if (item.note.trim().isNotEmpty) {
-          buffer.writeln('  Note: ${item.note.trim()}');
+          buffer.writeln(strings.d3Format('readableNotes', {'value': item.note.trim()}));
         }
       }
     }
@@ -704,13 +705,13 @@ class _AgendaBackupDomain {
     buffer.writeln(
       '============================================================',
     );
-    buffer.writeln('PERSONE IMPORTANTI');
+    buffer.writeln(strings.d3('readableImportantPeople'));
     buffer.writeln(
       '============================================================',
     );
 
     if (store.people.isEmpty) {
-      buffer.writeln('Nessuna persona salvata.');
+      buffer.writeln(strings.d3('readableNoPeople'));
     } else {
       final people = [...store.people]
         ..sort((a, b) {
@@ -726,15 +727,15 @@ class _AgendaBackupDomain {
         if (birthday != null) {
           final date = DateTime(2000, birthday.month, birthday.day);
           buffer.writeln(
-            '  Compleanno: ${DateFormat('d MMMM', 'it_IT').format(date)}',
+            strings.d3Format('readableBirthday', {'value': DateFormat('d MMMM', locale).format(date)}),
           );
         }
         final memories = store.personMemoryCount(person.id);
         if (memories > 0) {
-          buffer.writeln('  Ricordi collegati: $memories');
+          buffer.writeln(strings.d3Format('readableLinkedMemories', {'count': memories}));
         }
         if (person.note.trim().isNotEmpty) {
-          buffer.writeln('  Note: ${person.note.trim()}');
+          buffer.writeln(strings.d3Format('readableNotes', {'value': person.note.trim()}));
         }
       }
     }
@@ -743,13 +744,13 @@ class _AgendaBackupDomain {
     buffer.writeln(
       '============================================================',
     );
-    buffer.writeln('COMPLEANNI');
+    buffer.writeln(strings.d3('readableBirthdays'));
     buffer.writeln(
       '============================================================',
     );
 
     if (store.birthdays.isEmpty) {
-      buffer.writeln('Nessun compleanno salvato.');
+      buffer.writeln(strings.d3('readableNoBirthdays'));
     } else {
       final birthdays = [...store.birthdays]
         ..sort((a, b) {
@@ -761,12 +762,12 @@ class _AgendaBackupDomain {
         });
       for (final birthday in birthdays) {
         final date = DateTime(2000, birthday.month, birthday.day);
-        final dateText = DateFormat('d MMMM', 'it_IT').format(date);
+        final dateText = DateFormat('d MMMM', locale).format(date);
         final yearText =
             birthday.year == null ? '' : ' ${birthday.year}';
         buffer.writeln('- $dateText$yearText · ${birthday.name}');
         if (birthday.note.trim().isNotEmpty) {
-          buffer.writeln('  Note: ${birthday.note.trim()}');
+          buffer.writeln(strings.d3Format('readableNotes', {'value': birthday.note.trim()}));
         }
       }
     }
@@ -775,13 +776,13 @@ class _AgendaBackupDomain {
     buffer.writeln(
       '============================================================',
     );
-    buffer.writeln('LISTA DELLA SPESA');
+    buffer.writeln(strings.d3('readableShopping'));
     buffer.writeln(
       '============================================================',
     );
 
     if (store.shoppingItems.isEmpty) {
-      buffer.writeln('Nessun articolo salvato.');
+      buffer.writeln(strings.d3('readableNoShopping'));
     } else {
       final shopping = [...store.shoppingItems]
         ..sort((a, b) {
@@ -795,7 +796,7 @@ class _AgendaBackupDomain {
         final quantity =
             item.quantity.trim().isEmpty ? '' : ' · ${item.quantity.trim()}';
         buffer.writeln(
-          '$mark ${item.name}$quantity · ${item.category.label}',
+          '$mark ${item.name}$quantity · ${strings.shoppingCategoryLabel(item.category)}',
         );
       }
     }
@@ -804,22 +805,22 @@ class _AgendaBackupDomain {
     buffer.writeln(
       '============================================================',
     );
-    buffer.writeln('ALLENAMENTO');
+    buffer.writeln(strings.d3('readableWorkout'));
     buffer.writeln(
       '============================================================',
     );
 
     if (store.workoutSessions.isEmpty && store.workoutPlans.isEmpty) {
-      buffer.writeln('Nessun allenamento o scheda salvata.');
+      buffer.writeln(strings.d3('readableNoWorkout'));
     } else {
       final sessions = [...store.workoutHistory];
       if (sessions.isNotEmpty) {
-        buffer.writeln('Sessioni:');
+        buffer.writeln(strings.d3('readableSessions'));
         for (final session in sessions) {
           final date =
-              DateFormat('d MMMM yyyy', 'it_IT').format(session.date);
+              DateFormat('d MMMM yyyy', locale).format(session.date);
           final parts = <String>[
-            session.sport.label,
+            strings.workoutSportLabel(session.sport),
             if (session.distanceKm != null)
               '${session.distanceKm!.toStringAsFixed(
                     session.distanceKm! % 1 == 0 ? 0 : 2,
@@ -832,18 +833,18 @@ class _AgendaBackupDomain {
           buffer.writeln('- $date · ${session.title}');
           buffer.writeln('  ${parts.join(' · ')}');
           if (session.note.trim().isNotEmpty) {
-            buffer.writeln('  Note: ${session.note.trim()}');
+            buffer.writeln(strings.d3Format('readableNotes', {'value': session.note.trim()}));
           }
         }
       }
 
       if (store.workoutPlans.isNotEmpty) {
         buffer.writeln();
-        buffer.writeln('Schede:');
+        buffer.writeln(strings.d3('readablePlans'));
         for (final plan in store.workoutPlansSorted) {
           buffer.writeln(
-            '- ${plan.name} · ${plan.sport.label} · '
-            '${plan.exercises.length} esercizi',
+            '- ${plan.name} · ${strings.workoutSportLabel(plan.sport)} · '
+            '${strings.d3Format('readableExercises', {'count': plan.exercises.length})}',
           );
         }
       }
@@ -853,7 +854,7 @@ class _AgendaBackupDomain {
     buffer.writeln(
       '============================================================',
     );
-    buffer.writeln('DIARIO');
+    buffer.writeln(strings.d3('readableDiary'));
     buffer.writeln(
       '============================================================',
     );
@@ -862,7 +863,7 @@ class _AgendaBackupDomain {
       ..sort((a, b) => a.key.compareTo(b.key));
 
     if (journalEntries.isEmpty) {
-      buffer.writeln('Nessuna pagina di diario salvata.');
+      buffer.writeln(strings.d3('exportNoDiary'));
     } else {
       for (final entry in journalEntries) {
         final date = DateTime.tryParse(entry.key);
@@ -871,24 +872,24 @@ class _AgendaBackupDomain {
         buffer.writeln(
           date == null
               ? entry.key
-              : DateFormat('d MMMM yyyy', 'it_IT').format(date),
+              : DateFormat('d MMMM yyyy', locale).format(date),
         );
         if (journal.mood != null) {
           buffer.writeln(
-            'Mood: ${journal.mood!.emoji} ${journal.mood!.label}',
+            'Mood: ${journal.mood!.emoji} ${strings.editorMoodLabel(journal.mood!)}',
           );
         }
         if (journal.gratitude.isNotEmpty) {
-          buffer.writeln('Cose belle:');
+          buffer.writeln(strings.d3('readableGoodThings'));
           for (final value in journal.gratitude) {
             buffer.writeln('  • $value');
           }
         }
         if (journal.beautiful.trim().isNotEmpty) {
-          buffer.writeln('Da ricordare: ${journal.beautiful.trim()}');
+          buffer.writeln(strings.d3Format('readableRemember', {'value': journal.beautiful.trim()}));
         }
         if (journal.note.trim().isNotEmpty) {
-          buffer.writeln('Pensieri: ${journal.note.trim()}');
+          buffer.writeln(strings.d3Format('readableThoughts', {'value': journal.note.trim()}));
         }
       }
     }
@@ -897,7 +898,7 @@ class _AgendaBackupDomain {
     buffer.writeln(
       '============================================================',
     );
-    buffer.writeln('PAGINE MENSILI');
+    buffer.writeln(strings.d3('readableMonthlyPages'));
     buffer.writeln(
       '============================================================',
     );
@@ -914,31 +915,31 @@ class _AgendaBackupDomain {
       final data = entry.value;
       buffer.writeln();
       buffer.writeln(
-        _cap(DateFormat('MMMM yyyy', 'it_IT').format(DateTime(y, m))),
+        _cap(DateFormat('MMMM yyyy', locale).format(DateTime(y, m))),
       );
       if (data.monthWord.isNotEmpty) {
-        buffer.writeln('Parola del mese: ${data.monthWord}');
+        buffer.writeln(strings.d3Format('readableMonthWord', {'value': data.monthWord}));
       }
       if (data.intention.isNotEmpty) {
-        buffer.writeln('Intenzione: ${data.intention}');
+        buffer.writeln(strings.d3Format('readableIntention', {'value': data.intention}));
       }
       if (data.goals.isNotEmpty) {
-        buffer.writeln('Obiettivi: ${data.goals.join(' · ')}');
+        buffer.writeln(strings.d3Format('readableGoals', {'value': data.goals.join(' · ')}));
       }
       if (data.books.isNotEmpty) {
-        buffer.writeln('Libri: ${data.books.join(' · ')}');
+        buffer.writeln(strings.d3Format('readableBooks', {'value': data.books.join(' · ')}));
       }
       if (data.films.isNotEmpty) {
-        buffer.writeln('Film e serie: ${data.films.join(' · ')}');
+        buffer.writeln(strings.d3Format('readableFilms', {'value': data.films.join(' · ')}));
       }
       if (data.wishes.isNotEmpty) {
-        buffer.writeln('Desideri: ${data.wishes.join(' · ')}');
+        buffer.writeln(strings.d3Format('readableWishes', {'value': data.wishes.join(' · ')}));
       }
       if (data.bestMoment.isNotEmpty) {
-        buffer.writeln('Momento più bello: ${data.bestMoment}');
+        buffer.writeln(strings.d3Format('readableBestMoment', {'value': data.bestMoment}));
       }
       if (data.reflection.isNotEmpty) {
-        buffer.writeln('Riflessione: ${data.reflection}');
+        buffer.writeln(strings.d3Format('readableReflection', {'value': data.reflection}));
       }
     }
 
