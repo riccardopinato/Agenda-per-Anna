@@ -695,7 +695,7 @@ class _DiarySketchbookScreenState extends State<DiarySketchbookScreen> {
           textCapitalization: TextCapitalization.sentences,
           decoration: InputDecoration(
             hintText: AnnaStrings.of(context).d3('writePage'),
-            border: OutlineInputBorder(),
+            border: const OutlineInputBorder(),
           ),
         ),
         actions: [
