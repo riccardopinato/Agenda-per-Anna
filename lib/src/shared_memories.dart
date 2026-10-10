@@ -105,9 +105,9 @@ class _SharedMemoriesScreenState extends State<SharedMemoriesScreen> {
     if (!CloudSyncService.instance.signedIn) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
+        SnackBar(
           content: Text(
-            'La manutenzione media richiede la connessione cloud.',
+            AnnaStrings.of(context).d3('mem_maintenanceCloud'),
           ),
         ),
       );
@@ -139,14 +139,20 @@ class _SharedMemoriesScreenState extends State<SharedMemoriesScreen> {
         await showDialog<void>(
           context: context,
           builder: (dialogContext) => AlertDialog(
-            title: const Text('Manutenzione completata'),
+            title: Text(AnnaStrings.of(dialogContext).d3('mem_maintenanceDone')),
             content: Text(
               report.removedCount == 0
-                  ? 'Non c’erano file orfani da eliminare. '
-                      'Storage rilevato: ${_formatBytes(report.totalBytes)}.'
-                  : 'Eliminati ${report.removedCount} file orfani. '
-                      'Storage rilevato prima della pulizia: '
-                      '${_formatBytes(report.totalBytes)}.',
+                  ? AnnaStrings.of(dialogContext).d3Format(
+                      'mem_noOrphans',
+                      {'size': _formatBytes(report.totalBytes)},
+                    )
+                  : AnnaStrings.of(dialogContext).d3Format(
+                      'mem_orphansRemoved',
+                      {
+                        'count': report.removedCount,
+                        'size': _formatBytes(report.totalBytes),
+                      },
+                    ),
             ),
             actions: [
               FilledButton(
@@ -162,26 +168,29 @@ class _SharedMemoriesScreenState extends State<SharedMemoriesScreen> {
       final cleanup = await showDialog<bool>(
             context: context,
             builder: (dialogContext) => AlertDialog(
-              title: const Text('Media di Noi ♡'),
+              title: Text(AnnaStrings.of(dialogContext).d3('mem_noiMedia')),
               content: Column(
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('File Storage: ${report.fileCount}'),
+                  Text(AnnaStrings.of(dialogContext).d3Format('mem_storageFiles', {'count': report.fileCount})),
                   Text(
-                    'Media collegati ai ricordi: '
-                    '${report.referencedCount}',
+                    AnnaStrings.of(dialogContext).d3Format(
+                      'mem_linkedMedia',
+                      {'count': report.referencedCount},
+                    ),
                   ),
-                  Text('File orfani: ${report.orphanCount}'),
+                  Text(AnnaStrings.of(dialogContext).d3Format('mem_orphanFiles', {'count': report.orphanCount})),
                   Text(
-                    'Spazio rilevato: '
-                    '${_formatBytes(report.totalBytes)}',
+                    AnnaStrings.of(dialogContext).d3Format(
+                      'mem_detectedSpace',
+                      {'size': _formatBytes(report.totalBytes)},
+                    ),
                   ),
                   if (report.orphanCount > 0) ...[
                     const SizedBox(height: 12),
-                    const Text(
-                      'I file orfani non risultano più collegati ad alcuna '
-                      'foto condivisa nello spazio corrente.',
+                    Text(
+                      AnnaStrings.of(dialogContext).d3('mem_orphansExplanation'),
                     ),
                   ],
                 ],
@@ -189,12 +198,12 @@ class _SharedMemoriesScreenState extends State<SharedMemoriesScreen> {
               actions: [
                 TextButton(
                   onPressed: () => Navigator.pop(dialogContext, false),
-                  child: const Text('Chiudi'),
+                  child: Text(AnnaStrings.of(dialogContext).close),
                 ),
                 if (report.orphanCount > 0)
                   FilledButton(
                     onPressed: () => Navigator.pop(dialogContext, true),
-                    child: const Text('Pulisci orfani'),
+                    child: Text(AnnaStrings.of(dialogContext).d3('mem_cleanOrphans')),
                   ),
               ],
             ),
@@ -207,8 +216,8 @@ class _SharedMemoriesScreenState extends State<SharedMemoriesScreen> {
     } catch (_) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Controllo Storage non riuscito. Riprova più tardi.'),
+        SnackBar(
+          content: Text(AnnaStrings.of(context).d3('mem_storageCheckFailed')),
         ),
       );
     } finally {
