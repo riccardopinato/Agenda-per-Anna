@@ -999,8 +999,7 @@ extension AgendaStoreLifecycle on AgendaStore {
     if (index < 0) return false;
     if (createSafetySnapshot) {
       await createLocalSnapshot(
-        label: AnnaStrings.forPreference(preferences.appLanguage)
-            .d3('snapshotBeforeEmptyTrash'),
+        label: '@snapshot:before_empty_trash',
       );
     }
 
@@ -1042,8 +1041,7 @@ extension AgendaStoreLifecycle on AgendaStore {
   Future<int> emptyTrash() async {
     if (trash.isEmpty) return 0;
     await createLocalSnapshot(
-        label: AnnaStrings.forPreference(preferences.appLanguage)
-            .d3('snapshotBeforeEmptyTrash'),
+        label: '@snapshot:before_empty_trash',
       );
 
     final removed = [...trash];
