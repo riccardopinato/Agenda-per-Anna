@@ -426,9 +426,9 @@ void main() {
     for (final forbidden in const <String>[
       "hintText: 'es. Lago di Braies'",
       "label: const Text('Sketch')",
-      "'${outgoing.length} collegati'",
-      "'${backlinks.length} backlink'",
-      "'Sketch · ${block.pages.length} pagine'",
+      "'\${outgoing.length} collegati'",
+      "'\${backlinks.length} backlink'",
+      "'Sketch · \${block.pages.length} pagine'",
       "subtitle: 'Sketch · \$time'",
     ]) {
       expect(diary, isNot(contains(forbidden)));
