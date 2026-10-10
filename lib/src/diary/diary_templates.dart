@@ -115,7 +115,7 @@ Future<DiaryTemplatePreset?> showDiaryTemplatePicker(
           ListTile(
             title: Text(
               AnnaStrings.of(sheetContext).d3('templatePickerTitle'),
-              style: TextStyle(fontWeight: FontWeight.w900, fontSize: 20),
+              style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 20),
             ),
             subtitle: Text(
               AnnaStrings.of(sheetContext).d3('templatePickerSubtitle'),
