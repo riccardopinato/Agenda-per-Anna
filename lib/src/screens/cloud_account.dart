@@ -132,7 +132,7 @@ class _CloudAccountScreenState extends State<CloudAccountScreen> {
     setState(() => busy = true);
     try {
       await widget.store.createLocalSnapshot(
-        label: AnnaStrings.of(context).d3('snapshotBeforeSignOut'),
+        label: '@snapshot:before_sign_out',
       );
       await PushNotificationService.instance.unregisterCurrentToken();
       if (kIsWeb) {
