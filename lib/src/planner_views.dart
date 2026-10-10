@@ -459,8 +459,8 @@ class _DayMemoryRecallCard extends StatelessWidget {
                 overflow: TextOverflow.ellipsis,
               ),
               subtitle: Text(
-                '${years == 1 ? '1 anno fa' : '$years anni fa'} · '
-                '${DateFormat('d MMMM yyyy', 'it_IT').format(memory.date)}',
+                '${years == 1 ? AnnaStrings.of(context).d3('yearsAgo1') : AnnaStrings.of(context).d3Format('yearsAgoN', {'count': years})} · '
+                '${DateFormat('d MMMM yyyy', AnnaStrings.of(context).intlLocale(context)).format(memory.date)}',
               ),
               trailing: const Icon(Icons.chevron_right),
               onTap: () => Navigator.push(
@@ -478,7 +478,10 @@ class _DayMemoryRecallCard extends StatelessWidget {
             Padding(
               padding: const EdgeInsets.only(top: 2),
               child: Text(
-                '+ ${memories.length - 3} altri ricordi della stessa data',
+                AnnaStrings.of(context).d3Format(
+                  'moreMemories',
+                  {'count': memories.length - 3},
+                ),
                 style: Theme.of(context).textTheme.bodySmall,
               ),
             ),
@@ -597,10 +600,10 @@ class _DayLifeOverviewCard extends StatelessWidget {
             children: [
               Icon(Icons.wb_sunny_outlined, color: scheme.primary),
               const SizedBox(width: 8),
-              const Expanded(
+              Expanded(
                 child: Text(
-                  'La mia giornata',
-                  style: TextStyle(
+                  AnnaStrings.of(context).myDay,
+                  style: const TextStyle(
                     fontWeight: FontWeight.w900,
                     fontSize: 18,
                   ),
@@ -616,7 +619,7 @@ class _DayLifeOverviewCard extends StatelessWidget {
           const SizedBox(height: 5),
           Text(
             snapshot.isEmpty
-                ? 'La giornata è ancora tutta da raccontare.'
+                ? AnnaStrings.of(context).d3('dayEmpty')
                 : snapshot.hasJournalContent
                     ? AnnaStrings.of(context).d3('dayHubEmpty')
                     : AnnaStrings.of(context).d3('dayHubBusy'),
@@ -670,7 +673,10 @@ class _DayLifeOverviewCard extends StatelessWidget {
               Padding(
                 padding: const EdgeInsets.only(top: 4),
                 child: Text(
-                  '+ ${snapshot.lifeEntries.length - 3} altri momenti',
+                  AnnaStrings.of(context).d3Format(
+                    'moreMoments',
+                    {'count': snapshot.lifeEntries.length - 3},
+                  ),
                   style: Theme.of(context).textTheme.bodySmall,
                 ),
               ),
@@ -692,7 +698,11 @@ class _DayLifePreviewRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final data = _dayLifePresentation(entry, date);
+    final data = _dayLifePresentation(
+      entry,
+      date,
+      AnnaStrings.of(context),
+    );
     return Padding(
       padding: const EdgeInsets.only(top: 7),
       child: Row(
@@ -809,11 +819,12 @@ typedef _DayLifePresentation = ({
 _DayLifePresentation _dayLifePresentation(
   DayLifeEntry entry,
   DateTime date,
+  AnnaStrings strings,
 ) {
   switch (entry.kind) {
     case DayLifeEntryKind.agenda:
       final value = entry.agenda!;
-      final when = value.start == null ? 'Giornata' : formatTime(value.start!);
+      final when = value.start == null ? strings.d3('day') : formatTime(value.start!);
       return (
         icon: value.isExternal
             ? Icons.event_available_outlined
@@ -828,19 +839,19 @@ _DayLifePresentation _dayLifePresentation(
       );
     case DayLifeEntryKind.birthday:
       final value = entry.birthday!;
-      final age = value.age == null ? '' : ' · ${value.age} anni';
+      final age = value.age == null ? '' : strings.d3Format('ageYears', {'count': value.age});
       return (
         icon: Icons.cake_outlined,
         title: value.birthday.name,
         subtitle: value.birthday.note.trim().isEmpty
-            ? 'Compleanno$age'
+            ? '${strings.birthdays}$age'
             : '${value.birthday.note}$age',
-        timeLabel: 'Giornata',
+        timeLabel: strings.d3('day'),
       );
     case DayLifeEntryKind.workout:
       final value = entry.workout!;
       final metrics = <String>[
-        value.sport.label,
+        strings.workoutSportLabel(value.sport),
         if (value.distanceKm != null && value.distanceKm! > 0)
           '${value.distanceKm!.toStringAsFixed(value.distanceKm! % 1 == 0 ? 0 : 1)} km',
         if (value.durationSeconds > 0)
@@ -850,15 +861,15 @@ _DayLifePresentation _dayLifePresentation(
         icon: value.sport.icon,
         title: value.title.trim().isEmpty ? value.sport.label : value.title,
         subtitle: metrics.join(' · '),
-        timeLabel: _dayLifeClock(value.createdAt, date),
+        timeLabel: _dayLifeClock(value.createdAt, date, strings),
       );
     case DayLifeEntryKind.diaryBlock:
       final value = entry.diaryBlock!;
       final type = switch (value.type) {
-        DiaryBlockType.note => 'Nota',
-        DiaryBlockType.sketch => 'Sketch',
-        DiaryBlockType.photo => 'Foto',
-        DiaryBlockType.voice => 'Voce',
+        DiaryBlockType.note => strings.v100Note,
+        DiaryBlockType.sketch => strings.v100Sketch,
+        DiaryBlockType.photo => strings.v100Photo,
+        DiaryBlockType.voice => strings.v100VoiceNote,
       };
       final icon = switch (value.type) {
         DiaryBlockType.note => Icons.sticky_note_2_outlined,
@@ -870,14 +881,14 @@ _DayLifePresentation _dayLifePresentation(
       return (
         icon: icon,
         title: title,
-        subtitle: 'Diario · $type',
-        timeLabel: _dayLifeClock(value.createdAt, date),
+        subtitle: strings.d3Format('diaryType', {'type': type}),
+        timeLabel: _dayLifeClock(value.createdAt, date, strings),
       );
   }
 }
 
-String _dayLifeClock(DateTime value, DateTime day) {
-  if (!AgendaStore.sameDay(value, day)) return 'Giornata';
+String _dayLifeClock(DateTime value, DateTime day, AnnaStrings strings) {
+  if (!AgendaStore.sameDay(value, day)) return strings.d3('day');
   return formatTime(TimeOfDay(hour: value.hour, minute: value.minute));
 }
 
@@ -947,7 +958,7 @@ class _TimelineHint extends StatelessWidget {
           Expanded(
             child: Text(
               eventCount == 0
-                  ? 'Tocca un orario libero per aggiungere il primo impegno.'
+                  ? AnnaStrings.of(context).d3('firstCommitment')
                   : AnnaStrings.of(context).d3('tapFreeSlot'),
               style: Theme.of(context).textTheme.bodySmall,
             ),
