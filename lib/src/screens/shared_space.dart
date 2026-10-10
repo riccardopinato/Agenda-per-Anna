@@ -1003,7 +1003,7 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
                   const SizedBox(height: 12),
                   Expanded(
                     child: comments.isEmpty
-                        ? const Center(
+                        ? Center(
                             child: Text(
                               AnnaStrings.of(context).d3('noComments'),
                             ),
