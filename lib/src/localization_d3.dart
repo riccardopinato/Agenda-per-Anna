@@ -736,6 +736,9 @@ const Map<String, Map<String, String>> _d3Catalog = {
   "sharedCommentCloudRequired": <String, String>{"en": "Connect to cloud at least once to comment.", "it": "Accedi al cloud almeno una volta per commentare.", "es": "Conéctate a la nube al menos una vez para comentar.", "fr": "Connecte-toi au cloud au moins une fois pour commenter.", "pt": "Liga-te à cloud pelo menos uma vez para comentar."},
   "sharedInviteCodeHint": <String, String>{"en": "e.g. A1B2C3D4", "it": "Es. A1B2C3D4", "es": "Ej. A1B2C3D4", "fr": "Ex. A1B2C3D4", "pt": "Ex. A1B2C3D4"},
   "sharedLike": <String, String>{"en": "Like", "it": "Mi piace", "es": "Me gusta", "fr": "J’aime", "pt": "Gosto"},
+  "plannerExpensesRecorded": <String, String>{"en": "Recorded expenses", "it": "Spese registrate", "es": "Gastos registrados", "fr": "Dépenses enregistrées", "pt": "Despesas registadas"},
+  "workoutDurationExample": <String, String>{"en": "e.g. 1:05:20", "it": "es. 1:05:20", "es": "p. ej. 1:05:20", "fr": "ex. 1:05:20", "pt": "ex. 1:05:20"},
+  "workoutDistanceExample": <String, String>{"en": "e.g. 15", "it": "es. 15", "es": "p. ej. 15", "fr": "ex. 15", "pt": "ex. 15"},
 };
 
 NotificationLocalization notificationLocalizationForPreference(AppLanguage value) {
