@@ -34,6 +34,9 @@ void main() {
     final photoId = await MediaAssetStore.instance.put(photoBytes);
 
     final store = AgendaStore();
+    store.preferences = const AgendaPreferences(
+      appLanguage: AppLanguage.italian,
+    );
     store.items.add(
       AgendaItem(
         id: 'event-open-export',
