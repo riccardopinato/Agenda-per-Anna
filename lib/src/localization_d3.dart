@@ -721,6 +721,8 @@ const Map<String, Map<String, String>> _d3Catalog = {
   "books": <String, String>{"en": "Books", "it": "Libri", "es": "Libros", "fr": "Livres", "pt": "Livros"},
   "hobbies": <String, String>{"en": "Hobbies", "it": "Hobby", "es": "Aficiones", "fr": "Loisirs", "pt": "Hobbies"},
   "goalsCount": <String, String>{"en": "{count} goals", "it": "{count} obiettivi", "es": "{count} objetivos", "fr": "{count} objectifs", "pt": "{count} objetivos"},
+  "monthPersonalSummary": <String, String>{"en": "A small recap of the days you recorded.", "it": "Un piccolo riepilogo delle giornate che hai raccontato.", "es": "Un pequeño resumen de los días que has contado.", "fr": "Un petit résumé des journées que tu as racontées.", "pt": "Um pequeno resumo dos dias que registaste."},
+
 };
 
 NotificationLocalization notificationLocalizationForPreference(AppLanguage value) {
