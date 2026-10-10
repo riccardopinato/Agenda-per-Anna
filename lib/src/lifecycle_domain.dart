@@ -18,21 +18,6 @@ enum TrashEntityKind {
 }
 
 extension TrashEntityKindUi on TrashEntityKind {
-  String get label => switch (this) {
-        TrashEntityKind.item => 'Agenda',
-        TrashEntityKind.diaryBlock => 'Ricordo',
-        TrashEntityKind.journal => 'Giornata',
-        TrashEntityKind.month => 'Pagina mensile',
-        TrashEntityKind.week => 'Pagina settimanale',
-        TrashEntityKind.habit => 'Abitudine',
-        TrashEntityKind.birthday => 'Compleanno',
-        TrashEntityKind.person => 'Persona',
-        TrashEntityKind.inbox => 'Inbox',
-        TrashEntityKind.shoppingItem => 'Spesa',
-        TrashEntityKind.workoutSession => 'Allenamento',
-        TrashEntityKind.workoutPlan => 'Scheda allenamento',
-      };
-
   IconData get icon => switch (this) {
         TrashEntityKind.item => Icons.event_outlined,
         TrashEntityKind.diaryBlock => Icons.auto_stories_outlined,
