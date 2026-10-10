@@ -45,6 +45,7 @@ part 'src/domain_models.dart';
 part 'src/localization.dart';
 part 'src/localization_v100.dart';
 part 'src/localization_d3.dart';
+part 'src/localization_d3_completion.dart';
 part 'src/theme_semantics.dart';
 part 'src/day_hub_domain.dart';
 part 'src/unified_capture.dart';
