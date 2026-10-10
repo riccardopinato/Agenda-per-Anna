@@ -1966,8 +1966,10 @@ class AgendaStore extends ChangeNotifier {
   Future<Uint8List> createBackupZip() =>
       _backupDomain.createBackupZip(this);
 
-  Future<Uint8List> createOpenExportZip() =>
-      _backupDomain.createOpenExportZip(this);
+  Future<Uint8List> createOpenExportZip({
+    AnnaStrings strings = const AnnaStrings('it'),
+  }) =>
+      _backupDomain.createOpenExportZip(this, strings: strings);
 
   DecodedZipBackup _decodeAndValidateBackupZip(Uint8List bytes) =>
       _backupDomain.decodeAndValidateBackupZip(this, bytes);
@@ -2518,8 +2520,10 @@ class AgendaStore extends ChangeNotifier {
     _notifyBackupChanged();
   }
 
-  String createReadableExport() =>
-      _backupDomain.createReadableExport(this);
+  String createReadableExport({
+    AnnaStrings strings = const AnnaStrings('it'),
+  }) =>
+      _backupDomain.createReadableExport(this, strings: strings);
 
   void _invalidateDayIndex() {
     _dayIndexDirty = true;
