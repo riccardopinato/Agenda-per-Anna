@@ -929,6 +929,190 @@ extension AnnaD3Strings on AnnaStrings {
         (_pick(en: 'Celebrate what works', it: 'Celebra quello che funziona', es: 'Celebra lo que funciona', fr: 'Célèbre ce qui fonctionne', pt: 'Celebra o que funciona'), _pick(en: 'Do not wait only for big milestones to be proud of yourself.', it: 'Non aspettare solo i grandi traguardi per essere fiera di te.', es: 'No esperes solo a los grandes logros para sentirte orgullosa de ti.', fr: 'N’attends pas seulement les grands objectifs pour être fière de toi.', pt: 'Não esperes apenas pelos grandes marcos para te orgulhares de ti.')),
       ];
 
+  String lifeArchiveKindLabel(LifeArchiveKind value) => switch (value) {
+        LifeArchiveKind.diary => diary,
+        LifeArchiveKind.agenda => _pick(en: 'Agenda', it: 'Agenda', es: 'Agenda', fr: 'Agenda', pt: 'Agenda'),
+        LifeArchiveKind.workout => _pick(en: 'Workouts', it: 'Allenamenti', es: 'Entrenamientos', fr: 'Entraînements', pt: 'Treinos'),
+        LifeArchiveKind.inbox => 'Inbox',
+      };
+
+  String agendaPaletteLabel(AgendaPalette value) => switch (value) {
+        AgendaPalette.rose => _pick(en: 'Rose', it: 'Rosa', es: 'Rosa', fr: 'Rose', pt: 'Rosa'),
+        AgendaPalette.lilac => _pick(en: 'Lilac', it: 'Lilla', es: 'Lila', fr: 'Lilas', pt: 'Lilás'),
+        AgendaPalette.sage => _pick(en: 'Sage', it: 'Salvia', es: 'Salvia', fr: 'Sauge', pt: 'Sálvia'),
+        AgendaPalette.peach => _pick(en: 'Peach', it: 'Pesca', es: 'Melocotón', fr: 'Pêche', pt: 'Pêssego'),
+        AgendaPalette.sky => _pick(en: 'Sky', it: 'Cielo', es: 'Cielo', fr: 'Ciel', pt: 'Céu'),
+      };
+
+  String trashKindLabel(TrashEntityKind value) => switch (value) {
+        TrashEntityKind.item => _pick(en: 'Agenda', it: 'Agenda', es: 'Agenda', fr: 'Agenda', pt: 'Agenda'),
+        TrashEntityKind.diaryBlock => _pick(en: 'Memory', it: 'Ricordo', es: 'Recuerdo', fr: 'Souvenir', pt: 'Memória'),
+        TrashEntityKind.journal => _pick(en: 'Day', it: 'Giornata', es: 'Día', fr: 'Journée', pt: 'Dia'),
+        TrashEntityKind.month => _pick(en: 'Monthly page', it: 'Pagina mensile', es: 'Página mensual', fr: 'Page mensuelle', pt: 'Página mensal'),
+        TrashEntityKind.week => _pick(en: 'Weekly page', it: 'Pagina settimanale', es: 'Página semanal', fr: 'Page hebdomadaire', pt: 'Página semanal'),
+        TrashEntityKind.habit => _pick(en: 'Habit', it: 'Abitudine', es: 'Hábito', fr: 'Habitude', pt: 'Hábito'),
+        TrashEntityKind.birthday => birthday,
+        TrashEntityKind.person => _pick(en: 'Person', it: 'Persona', es: 'Persona', fr: 'Personne', pt: 'Pessoa'),
+        TrashEntityKind.inbox => 'Inbox',
+        TrashEntityKind.shoppingItem => shoppingList,
+        TrashEntityKind.workoutSession => _pick(en: 'Workout', it: 'Allenamento', es: 'Entrenamiento', fr: 'Entraînement', pt: 'Treino'),
+        TrashEntityKind.workoutPlan => _pick(en: 'Workout plan', it: 'Scheda allenamento', es: 'Plan de entrenamiento', fr: 'Programme d’entraînement', pt: 'Plano de treino'),
+      };
+
+  String trashConflict(String code) => switch (code) {
+        'item_exists' => _pick(en: 'This item is already in the agenda.', it: 'Questo elemento è già presente nell’agenda.', es: 'Este elemento ya está en la agenda.', fr: 'Cet élément est déjà dans l’agenda.', pt: 'Este item já está na agenda.'),
+        'diary_block_exists' => _pick(en: 'This memory is already in the day.', it: 'Questo ricordo è già presente nella giornata.', es: 'Este recuerdo ya está en el día.', fr: 'Ce souvenir est déjà présent dans la journée.', pt: 'Esta memória já está no dia.'),
+        'journal_exists' => _pick(en: 'An active day already exists for this date. Move it to Trash first to choose which version to restore.', it: 'Per questa data esiste già una giornata attiva. Spostala prima nel Cestino per scegliere quale versione ripristinare.', es: 'Ya existe un día activo para esta fecha. Muévelo primero a la Papelera para elegir qué versión restaurar.', fr: 'Une journée active existe déjà pour cette date. Déplace-la d’abord vers la Corbeille pour choisir la version à restaurer.', pt: 'Já existe um dia ativo para esta data. Move-o primeiro para o Lixo para escolher qual versão restaurar.'),
+        'month_exists' => _pick(en: 'An active monthly page already exists. Move it to Trash first to choose which version to restore.', it: 'Per questo mese esiste già una pagina attiva. Spostala prima nel Cestino per scegliere quale versione ripristinare.', es: 'Ya existe una página mensual activa. Muévela primero a la Papelera para elegir qué versión restaurar.', fr: 'Une page mensuelle active existe déjà. Déplace-la d’abord vers la Corbeille pour choisir la version à restaurer.', pt: 'Já existe uma página mensal ativa. Move-a primeiro para o Lixo para escolher qual versão restaurar.'),
+        'week_exists' => _pick(en: 'An active weekly page already exists. Move it to Trash first to choose which version to restore.', it: 'Per questa settimana esiste già una pagina attiva. Spostala prima nel Cestino per scegliere quale versione ripristinare.', es: 'Ya existe una página semanal activa. Muévela primero a la Papelera para elegir qué versión restaurar.', fr: 'Une page hebdomadaire active existe déjà. Déplace-la d’abord vers la Corbeille pour choisir la version à restaurer.', pt: 'Já existe uma página semanal ativa. Move-a primeiro para o Lixo para escolher qual versão restaurar.'),
+        'habit_exists' => _pick(en: 'This habit is already active.', it: 'Questa abitudine è già attiva.', es: 'Este hábito ya está activo.', fr: 'Cette habitude est déjà active.', pt: 'Este hábito já está ativo.'),
+        'birthday_exists' => _pick(en: 'This birthday is already present.', it: 'Questo compleanno è già presente.', es: 'Este cumpleaños ya existe.', fr: 'Cet anniversaire est déjà présent.', pt: 'Este aniversário já existe.'),
+        'person_exists' => _pick(en: 'This person is already present.', it: 'Questa persona è già presente.', es: 'Esta persona ya existe.', fr: 'Cette personne est déjà présente.', pt: 'Esta pessoa já existe.'),
+        'inbox_exists' => _pick(en: 'This note is already in Inbox.', it: 'Questa nota è già presente nell’Inbox.', es: 'Esta nota ya está en Inbox.', fr: 'Cette note est déjà dans Inbox.', pt: 'Esta nota já está na Inbox.'),
+        'shopping_exists' => _pick(en: 'This item is already in the shopping list.', it: 'Questo articolo è già presente nella lista della spesa.', es: 'Este artículo ya está en la lista de la compra.', fr: 'Cet article est déjà dans la liste de courses.', pt: 'Este item já está na lista de compras.'),
+        'workout_exists' => _pick(en: 'This workout is already present.', it: 'Questo allenamento è già presente.', es: 'Este entrenamiento ya existe.', fr: 'Cet entraînement est déjà présent.', pt: 'Este treino já existe.'),
+        'workout_plan_exists' => _pick(en: 'This workout plan is already present.', it: 'Questa scheda è già presente.', es: 'Este plan ya existe.', fr: 'Ce programme est déjà présent.', pt: 'Este plano já existe.'),
+        _ => _pick(en: 'This content cannot be restored because an active version already exists.', it: 'Questo contenuto non può essere ripristinato perché esiste già una versione attiva.', es: 'Este contenido no puede restaurarse porque ya existe una versión activa.', fr: 'Ce contenu ne peut pas être restauré car une version active existe déjà.', pt: 'Este conteúdo não pode ser restaurado porque já existe uma versão ativa.'),
+      };
+
+  String plannerTasksCount(int count) => _pick(
+        en: '$count ${count == 1 ? 'task' : 'tasks'} to do',
+        it: '$count da fare',
+        es: '$count ${count == 1 ? 'tarea' : 'tareas'} por hacer',
+        fr: '$count ${count == 1 ? 'tâche' : 'tâches'} à faire',
+        pt: '$count ${count == 1 ? 'tarefa' : 'tarefas'} por fazer',
+      );
+
+  String plannerCommitmentsCount(int count) => _pick(
+        en: '$count ${count == 1 ? 'commitment' : 'commitments'}',
+        it: '$count ${count == 1 ? 'impegno' : 'impegni'}',
+        es: '$count ${count == 1 ? 'compromiso' : 'compromisos'}',
+        fr: '$count ${count == 1 ? 'engagement' : 'engagements'}',
+        pt: '$count ${count == 1 ? 'compromisso' : 'compromissos'}',
+      );
+
+  String plannerGoalsCount(int count) => _pick(
+        en: '$count ${count == 1 ? 'goal' : 'goals'}',
+        it: '$count ${count == 1 ? 'obiettivo' : 'obiettivi'}',
+        es: '$count ${count == 1 ? 'objetivo' : 'objetivos'}',
+        fr: '$count ${count == 1 ? 'objectif' : 'objectifs'}',
+        pt: '$count ${count == 1 ? 'objetivo' : 'objetivos'}',
+      );
+
+  String plannerMemoriesCount(int count) => _pick(
+        en: '$count ${count == 1 ? 'memory' : 'memories'}',
+        it: '$count ${count == 1 ? 'ricordo' : 'ricordi'}',
+        es: '$count ${count == 1 ? 'recuerdo' : 'recuerdos'}',
+        fr: '$count ${count == 1 ? 'souvenir' : 'souvenirs'}',
+        pt: '$count ${count == 1 ? 'memória' : 'memórias'}',
+      );
+
+  String sharedPasswordServiceError(Object error) {
+    final raw = error.toString();
+    if (raw.contains('shared_password_unlock_vault')) return d3('spUnlockVault');
+    if (raw.contains('shared_password_sign_in')) return d3('spSignIn');
+    if (raw.contains('shared_password_key_conflict')) return d3('spDifferentKey');
+    if (raw.contains('shared_password_key_exists')) return d3('spKeyExists');
+    if (raw.contains('shared_password_initialize_first')) return d3('spInitialize');
+    if (raw.contains('shared_password_recovery_min_12')) return d3('spRecoveryMin12');
+    if (raw.contains('shared_password_key_unavailable')) return d3('spKeyUnavailable');
+    if (raw.contains('shared_password_key_mismatch')) return d3('spKeyMismatch');
+    if (raw.contains('shared_password_password_too_long')) return d3('spPasswordTooLong');
+    if (raw.contains('shared_password_version_unsupported')) return d3('spVersionUnsupported');
+    if (raw.contains('shared_password_revision_invalid')) return d3('spRevisionInvalid');
+    if (raw.contains('credential_service_required')) return d3('credentialServiceRequired');
+    if (raw.contains('credential_service_too_long')) return d3('credentialServiceTooLong');
+    if (raw.contains('credential_identity_too_long')) return d3('credentialIdentityTooLong');
+    if (raw.contains('credential_notes_too_long')) return d3('credentialNotesTooLong');
+    if (raw.contains('shared_password_credential_invalid')) return d3('sharedCredentialInvalid');
+    return sharedPasswordsSaveFailed;
+  }
+
+  String vaultServiceError(Object error) {
+    final raw = error.toString();
+    if (raw.contains('vault_password_too_short')) return vaultPasswordTooShort;
+    if (raw.contains('vault_password_too_long')) return d3('vaultPasswordTooLong');
+    if (raw.contains('vault_already_configured')) return d3('vaultAlreadyConfigured');
+    if (raw.contains('vault_shared_key_invalid')) return d3('vaultSharedKeyInvalid');
+    if (raw.contains('vault_recovery_unavailable')) return d3('vaultRecoveryUnavailable');
+    if (raw.contains('vault_locked')) return d3('vaultLockedService');
+    if (raw.contains('vault_need_content')) return d3('vaultNeedContent');
+    if (raw.contains('vault_shared_edit_source')) return d3('vaultSharedEditSource');
+    if (raw.contains('vault_shared_delete_source')) return d3('vaultSharedDeleteSource');
+    if (raw.contains('credential_service_required')) return d3('credentialServiceRequired');
+    if (raw.contains('credential_service_too_long')) return d3('credentialServiceTooLong');
+    if (raw.contains('credential_identity_too_long')) return d3('credentialIdentityTooLong');
+    if (raw.contains('credential_notes_too_long')) return d3('credentialNotesTooLong');
+    if (raw.contains('vault_shared_space_invalid')) return d3('sharedSpaceInvalid');
+    return vaultCreateFailed;
+  }
+
+  String cloudServiceError(Object error) {
+    final raw = error.toString();
+    if (raw.contains('cloud_password_min_8')) return d3('passwordMin8');
+    if (raw.contains('cloud_sign_in_first')) return d3('cloudSignInFirst');
+    return d3CloudError(raw);
+  }
+
+  String snapshotLabel(String rawValue) {
+    final raw = rawValue.trim();
+    const manual = <String>{
+      '@snapshot:manual',
+      'Manual backup',
+      'Backup manuale',
+      'Copia manual',
+      'Sauvegarde manuelle',
+      'Backup manual',
+    };
+    const automatic = <String>{
+      '@snapshot:auto',
+      'Automatic backup',
+      'Backup automatico',
+      'Copia automática',
+      'Sauvegarde automatique',
+      'Backup automático',
+    };
+    const beforeRestore = <String>{
+      '@snapshot:before_restore',
+      'Before restore',
+      'Prima del ripristino',
+      'Antes de restaurar',
+      'Avant la restauration',
+      'Antes do restauro',
+    };
+    const beforeCloud = <String>{
+      '@snapshot:before_cloud_sync',
+      'Before first cloud sync',
+      'Prima sincronizzazione cloud',
+      'Antes de la primera sincronización cloud',
+      'Avant la première synchronisation cloud',
+      'Antes da primeira sincronização cloud',
+    };
+    const beforeSignOut = <String>{
+      '@snapshot:before_sign_out',
+      'Before account disconnection',
+      'Prima della disconnessione account',
+      'Antes de desconectar la cuenta',
+      'Avant la déconnexion du compte',
+      'Antes de desligar a conta',
+    };
+    const beforeTrash = <String>{
+      '@snapshot:before_empty_trash',
+      'Before emptying Trash',
+      'Prima di svuotare il Cestino',
+      'Antes de vaciar la Papelera',
+      'Avant de vider la Corbeille',
+      'Antes de esvaziar o Lixo',
+    };
+    if (manual.contains(raw)) return d3('snapshotManual');
+    if (automatic.contains(raw)) return d3('snapshotAutomatic');
+    if (beforeRestore.contains(raw)) return d3('snapshotBeforeRestore');
+    if (beforeCloud.contains(raw)) return d3('snapshotBeforeCloudSync');
+    if (beforeSignOut.contains(raw)) return d3('snapshotBeforeSignOut');
+    if (beforeTrash.contains(raw)) return d3('snapshotBeforeEmptyTrash');
+    return raw;
+  }
+
   String d3CloudError(String rawValue) {
     final raw = rawValue.toLowerCase();
     if (raw.contains('invalid login credentials')) {
