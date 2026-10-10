@@ -230,7 +230,7 @@ class _SharedSpaceHubScreenState extends State<SharedSpaceHubScreen> {
                         const Icon(Icons.person_off_outlined, size: 50),
                         const SizedBox(height: 12),
                         Text(
-                          'Sessione account scaduta',
+                          AnnaStrings.of(context).d3('sharedSessionExpired'),
                           style: TextStyle(
                             fontSize: 21,
                             fontWeight: FontWeight.w900,
@@ -238,7 +238,7 @@ class _SharedSpaceHubScreenState extends State<SharedSpaceHubScreen> {
                         ),
                         const SizedBox(height: 8),
                         Text(
-                          'Noi ♡ usa automaticamente l’account generale di Anna\'s Diary. '
+                          AnnaStrings.of(context).d3('sharedUsesMainAccount')
                           'Non esiste più un login separato qui.',
                           textAlign: TextAlign.center,
                         ),
@@ -895,7 +895,9 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
         )
         .length;
     if (seenCount == 0) return null;
-    return seenCount == 1 ? 'Visto' : 'Visto da $seenCount';
+    return seenCount == 1
+        ? AnnaStrings.of(context).d3('sharedSeen')
+        : AnnaStrings.of(context).d3Format('sharedSeenBy', {'count': seenCount});
   }
 
   Future<void> _toggleHeart(SharedEntry entry) async {
@@ -1115,7 +1117,7 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
                               );
                             }
                           } catch (_) {
-                            _message('Commento non salvato.');
+                            _message(AnnaStrings.of(context).d3('sharedCommentNotSaved'));
                           }
                         },
                         icon: const Icon(Icons.send_outlined),
@@ -1287,7 +1289,7 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
               RadioListTile<bool>(
                 value: true,
                 title: Text(AnnaStrings.of(context).d3('everyoneInSpace')),
-                subtitle: Text('I membri di Noi ♡ possono modificare questo ricordo.'),
+                subtitle: Text(AnnaStrings.of(context).d3('sharedMembersCanEditMemory')),
               ),
               RadioListTile<bool>(
                 value: false,
@@ -1632,7 +1634,7 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
                   child: Icon(Icons.add_photo_alternate_outlined),
                 ),
                 title: Text(AnnaStrings.of(context).d3('photo')),
-                subtitle: Text('Fotocamera o galleria + didascalia'),
+                subtitle: Text(AnnaStrings.of(context).d3('sharedPhotoSource')),
                 onTap: () => Navigator.pop(sheetContext, 'photo'),
               ),
               const Divider(height: 24),
@@ -1768,8 +1770,8 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
     if (!mounted) return;
     _message(
       next.memoryPinned
-          ? 'Aggiunto a I nostri ricordi.'
-          : 'Rimosso da I nostri ricordi.',
+          ? AnnaStrings.of(context).d3('sharedAddedMemories')
+          : AnnaStrings.of(context).d3('sharedRemovedMemories'),
     );
   }
 
@@ -1983,7 +1985,7 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
       context: context,
       builder: (dialogContext) => AlertDialog(
         title: Text(
-          'Persone · ${members.length}',
+          AnnaStrings.of(context).d3Format('sharedPeopleCount', {'count': members.length}),
           style: const TextStyle(fontWeight: FontWeight.w900),
         ),
         content: SizedBox(
@@ -2011,7 +2013,9 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
                         style: const TextStyle(fontWeight: FontWeight.w800),
                       ),
                       subtitle: Text(
-                        member.isOwner ? 'Proprietario' : 'Membro',
+                        member.isOwner
+                      ? AnnaStrings.of(context).d3('sharedOwner')
+                      : AnnaStrings.of(context).d3('sharedMember'),
                       ),
                       trailing: widget.space.isOwner &&
                               !member.isOwner &&
@@ -2254,7 +2258,7 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
                   child: Text(
                     restricted
                         ? (_canEditSharedEntry(entry)
-                            ? 'Solo tu puoi modificare'
+                            ? AnnaStrings.of(context).d3('sharedOnlyYouEdit')
                             : AnnaStrings.of(context).d3('readOnlyAuthor'))
                         : AnnaStrings.of(context).d3('editableEveryone'),
                     style: Theme.of(context).textTheme.bodySmall,
@@ -2298,12 +2302,15 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
     };
 
     final meta = <String>[
-      kind.label,
+      kind.localizedLabel(AnnaStrings.of(context)),
       if (showDate)
-        _cap(DateFormat('EEE d MMM', 'it_IT').format(entry.date)),
+        _cap(DateFormat('EEE d MMM', AnnaStrings.intlLocale(context)).format(entry.date)),
       if (editor.isNotEmpty) editor,
       if (entry.updatedAt != null)
-        'Aggiornato ${DateFormat('HH:mm', 'it_IT').format(entry.updatedAt!.toLocal())}',
+        AnnaStrings.of(context).d3Format(
+                        'sharedUpdatedAt',
+                        {'time': DateFormat('HH:mm', AnnaStrings.intlLocale(context)).format(entry.updatedAt!.toLocal())},
+                      ),
       if (pending) AnnaStrings.of(context).d3('pendingSync'),
     ];
 
@@ -2408,13 +2415,16 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
 
     final details = <String>[
       if (showDate)
-        _cap(DateFormat('EEE d MMM', 'it_IT').format(entry.date)),
+        _cap(DateFormat('EEE d MMM', AnnaStrings.intlLocale(context)).format(entry.date)),
       if (entry.start != null) formatTime(entry.start!),
       if (entry.note.isNotEmpty) entry.note,
       if (editor.isNotEmpty) editor,
       if (entry.memoryPinned) AnnaStrings.of(context).d3('inMemories'),
       if (entry.updatedAt != null)
-        'Aggiornato ${DateFormat('HH:mm', 'it_IT').format(entry.updatedAt!.toLocal())}',
+        AnnaStrings.of(context).d3Format(
+                        'sharedUpdatedAt',
+                        {'time': DateFormat('HH:mm', AnnaStrings.intlLocale(context)).format(entry.updatedAt!.toLocal())},
+                      ),
       if (pending) AnnaStrings.of(context).d3('pendingSync'),
     ];
 
@@ -2527,7 +2537,7 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
     } else {
       icon = Icons.cloud_done_outlined;
       title = 'Sincronizzato';
-      subtitle = 'La connessione realtime si ristabilirà automaticamente.';
+      subtitle = AnnaStrings.of(context).d3('sharedRealtimeReconnect');
     }
 
     return Container(
@@ -2583,7 +2593,7 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
               icon: const Icon(Icons.photo_library_outlined),
             ),
             IconButton(
-              tooltip: 'Password Noi ♡',
+              tooltip: AnnaStrings.of(context).d3('sharedPasswords'),
               onPressed: _openSharedPasswords,
               icon: const Icon(Icons.password_outlined),
             ),
@@ -2645,7 +2655,7 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
                     SizedBox(width: 10),
                     Expanded(
                       child: Text(
-                        'Noi ♡ · tutto ciò che crei qui è condiviso. '
+                        AnnaStrings.of(context).d3('sharedEverythingHere')
                         AnnaStrings.of(context).d3('restPrivate'),
                       ),
                     ),
@@ -2741,7 +2751,7 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
                   ),
               ] else ...[
                 TableCalendar<SharedEntry>(
-                  locale: 'it_IT',
+                  locale: AnnaStrings.intlLocale(context),
                   firstDay: DateTime(2020),
                   lastDay: DateTime(2040),
                   focusedDay: selected,
@@ -2758,7 +2768,7 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
                 ),
                 const SizedBox(height: 16),
                 SectionTitle(
-                  _cap(DateFormat('EEEE d MMMM', 'it_IT').format(selected)),
+                  _cap(DateFormat('EEEE d MMMM', AnnaStrings.intlLocale(context)).format(selected)),
                 ),
                 const SizedBox(height: 10),
                 if (dayEntries.isEmpty)
@@ -2880,7 +2890,7 @@ class _SharedPhotoViewerScreenState extends State<SharedPhotoViewerScreen> {
     final dateLabel = _cap(
       DateFormat(
         'EEEE d MMMM yyyy',
-        'it_IT',
+        AnnaStrings.intlLocale(context),
       ).format(widget.entry.date),
     );
 
@@ -2977,7 +2987,7 @@ Future<SharedEntry?> _openSharedEntryEditor(
                 contentPadding: EdgeInsets.zero,
                 leading: const Icon(Icons.calendar_today_outlined),
                 title: Text(
-                  DateFormat('d MMMM yyyy', 'it_IT').format(date),
+                  DateFormat('d MMMM yyyy', AnnaStrings.intlLocale(context)).format(date),
                 ),
                 onTap: () async {
                   final picked = await showDatePicker(
@@ -2994,7 +3004,7 @@ Future<SharedEntry?> _openSharedEntryEditor(
                   contentPadding: EdgeInsets.zero,
                   leading: const Icon(Icons.schedule_outlined),
                   title: Text(
-                    start == null ? 'Senza orario' : formatTime(start!),
+                    start == null ? AnnaStrings.of(context).d3('editor_noTime') : formatTime(start!),
                   ),
                   trailing: start == null
                       ? null
