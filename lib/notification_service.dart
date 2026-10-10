@@ -57,6 +57,71 @@ class _ReminderActionPayload {
   }
 }
 
+class NotificationLocalization {
+  final String done;
+  final String snooze10;
+  final String snooze60;
+  final String open;
+  final String reminderChannelName;
+  final String reminderChannelDescription;
+  final String sharedChannelDescription;
+  final String immediateTestBody;
+  final String scheduledTestTitle;
+  final String scheduledTestBody;
+  final String pushTestTitle;
+  final String pushTestBody;
+  final String sharedTitleTemplate;
+  final String sharedBody;
+  final String snoozeHourBody;
+  final String snoozeMinutesTemplate;
+
+  const NotificationLocalization({
+    required this.done,
+    required this.snooze10,
+    required this.snooze60,
+    required this.open,
+    required this.reminderChannelName,
+    required this.reminderChannelDescription,
+    required this.sharedChannelDescription,
+    required this.immediateTestBody,
+    required this.scheduledTestTitle,
+    required this.scheduledTestBody,
+    required this.pushTestTitle,
+    required this.pushTestBody,
+    required this.sharedTitleTemplate,
+    required this.sharedBody,
+    required this.snoozeHourBody,
+    required this.snoozeMinutesTemplate,
+  });
+
+  static const english = NotificationLocalization(
+    done: 'Done',
+    snooze10: '10 min',
+    snooze60: '1 hour',
+    open: 'Open',
+    reminderChannelName: 'Reminders',
+    reminderChannelDescription:
+        "Anna's Diary reminders for appointments and tasks",
+    sharedChannelDescription:
+        'News and updates from the shared Noi ♡ space',
+    immediateTestBody: 'Immediate test: local notifications are active ♡',
+    scheduledTestTitle: "Anna's Diary · Scheduled test",
+    scheduledTestBody: 'The scheduled reminder arrived correctly ♡',
+    pushTestTitle: "Anna's Diary · Push test",
+    pushTestBody: 'Firebase push received correctly ♡',
+    sharedTitleTemplate: 'New in {label}',
+    sharedBody: 'There is a new shared update to read.',
+    snoozeHourBody: 'Reminder postponed by 1 hour.',
+    snoozeMinutesTemplate: 'Reminder postponed by {minutes} minutes.',
+  );
+
+  String sharedTitle(String label) =>
+      sharedTitleTemplate.replaceAll('{label}', label);
+
+  String snoozeMinutes(int minutes) =>
+      snoozeMinutesTemplate.replaceAll('{minutes}', '$minutes');
+}
+
 class NotificationHealth {
   final bool available;
   final bool notificationsEnabled;
