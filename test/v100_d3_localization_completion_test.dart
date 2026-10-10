@@ -15,12 +15,16 @@ void main() {
       'sharedSpace',
       'accountAndSync',
       'plannerSevenDays',
+      'plannerExpensesRecorded',
       'editor_howFeel',
       'chooseVoiceNote',
       'exportSketch',
       'mem_ourMemories',
       'unified_whereSave',
       'backup_saveBackupDialog',
+      'exportOpenTitle',
+      'readableMood',
+      'workoutDurationExample',
       'external_untitledEvent',
       'notification_reminders',
       'widget_noUpcoming',
@@ -85,6 +89,7 @@ void main() {
       "Promemoria di Anna's Diary per appuntamenti e cose da fare",
       'Push Firebase ricevuta correttamente',
       'Promemoria posticipato di 1 ora',
+      'Promemoria posticipato di {minutes} minuti',
     ]) {
       expect(notifications, isNot(contains(forbidden)));
     }
@@ -142,6 +147,9 @@ void main() {
     expect(sources['memories'], isNot(contains('entry.type.label')));
     expect(sources['workout'], isNot(contains('sport.label')));
     expect(sources['search'], isNot(contains('journal.mood?.label')));
+    expect(sources['planner'], isNot(contains("'Spese registrate'")));
+    expect(sources['workout'], isNot(contains("'es. 1:05:20'")));
+    expect(sources['workout'], isNot(contains("'es. 15'")));
   });
 
   test('shared space no longer persists or renders Italian generic fallbacks', () {
