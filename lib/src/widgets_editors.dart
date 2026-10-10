@@ -55,7 +55,7 @@ class EventTile extends StatelessWidget {
           children: [
             Text(timeText),
             Text(
-              item.category.label,
+              AnnaStrings.of(context).editorCategoryLabel(item.category),
               style: TextStyle(
                 color: color,
                 fontWeight: FontWeight.w700,
@@ -249,7 +249,7 @@ class _JournalEditorState extends State<JournalEditor> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text(
+              Text(
                 AnnaStrings.of(context).d3('editor_howFeel'),
                 style: TextStyle(fontWeight: FontWeight.w800, fontSize: 17),
               ),
@@ -266,7 +266,7 @@ class _JournalEditorState extends State<JournalEditor> {
                       value.emoji,
                       style: const TextStyle(fontSize: 18),
                     ),
-                    label: Text(value.label),
+                    label: Text(AnnaStrings.of(context).editorMoodLabel(value)),
                     labelStyle: TextStyle(
                       fontWeight: selected ? FontWeight.w800 : FontWeight.w600,
                       color: selected ? value.color : null,
@@ -1146,7 +1146,7 @@ Future<void> openItemEditor(
                 ),
                 const SizedBox(height: 14),
                 SegmentedButton<ItemType>(
-                  segments: const [
+                  segments: [
                     ButtonSegment(
                       value: ItemType.appointment,
                       label: Text(AnnaStrings.of(context).appointment),
@@ -1200,7 +1200,7 @@ Future<void> openItemEditor(
                         size: 17,
                         color: active ? Colors.white : value.color,
                       ),
-                      label: Text(value.label),
+                      label: Text(AnnaStrings.of(context).editorCategoryLabel(value)),
                       selectedColor: value.color,
                       labelStyle: TextStyle(
                         color: active ? Colors.white : null,
@@ -1215,7 +1215,7 @@ Future<void> openItemEditor(
                   contentPadding: EdgeInsets.zero,
                   leading: const Icon(Icons.calendar_today_outlined),
                   title: Text(
-                    DateFormat('d MMMM yyyy', 'it_IT').format(date),
+                    DateFormat('d MMMM yyyy', AnnaStrings.intlLocale(context)).format(date),
                   ),
                   onTap: () async {
                     final picked = await showDatePicker(
@@ -1340,7 +1340,7 @@ Future<void> openItemEditor(
                     return ChoiceChip(
                       selected: recurrence == value,
                       avatar: Icon(value.icon, size: 17),
-                      label: Text(value.label),
+                      label: Text(AnnaStrings.of(context).editorRecurrenceLabel(value)),
                       onSelected: existing?.isRecurring == true
                           ? null
                           : (_) => setLocal(() => recurrence = value),
@@ -1373,7 +1373,7 @@ Future<void> openItemEditor(
                         .map(
                           (scope) => ButtonSegment<RecurringEditScope>(
                             value: scope,
-                            label: Text(scope.shortLabel),
+                            label: Text(AnnaStrings.of(context).editorScopeShort(scope)),
                           ),
                         )
                         .toList(),
