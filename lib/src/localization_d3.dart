@@ -744,6 +744,7 @@ const Map<String, Map<String, String>> _d3Catalog = {
   "exportInboxCount": <String, String>{"en": "Inbox: {count}", "it": "Inbox: {count}", "es": "Bandeja: {count}", "fr": "Boîte de réception : {count}", "pt": "Caixa de entrada: {count}"},
   "readableMood": <String, String>{"en": "Mood: {value}", "it": "Umore: {value}", "es": "Estado de ánimo: {value}", "fr": "Humeur : {value}", "pt": "Humor: {value}"},  "sharedRealtimeIntro": <String, String>{"en": "Updates arrive in real time.", "it": "Gli aggiornamenti arrivano in tempo reale.", "es": "Las actualizaciones llegan en tiempo real.", "fr": "Les mises à jour arrivent en temps réel.", "pt": "As atualizações chegam em tempo real."},
   "sharedLatestUpdates": <String, String>{"en": "Latest updates", "it": "Ultimi aggiornamenti", "es": "Últimas actualizaciones", "fr": "Dernières mises à jour", "pt": "Últimas atualizações"},
+  "sharedInviteExpiryUses": <String, String>{"en": "Expires in {hours}h {minutes}m · {uses} uses", "it": "Scade tra {hours}h {minutes}m · {uses} utilizzi", "es": "Caduca en {hours}h {minutes}m · {uses} usos", "fr": "Expire dans {hours} h {minutes} min · {uses} utilisations", "pt": "Expira em {hours}h {minutes}m · {uses} utilizações"},
 
 };
 
