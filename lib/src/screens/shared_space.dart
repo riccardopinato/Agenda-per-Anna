@@ -1597,7 +1597,7 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const ListTile(
+              ListTile(
                 title: Text(
                   AnnaStrings.of(context).d3('sharedDiary'),
                   style: TextStyle(
@@ -1636,7 +1636,7 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
                 onTap: () => Navigator.pop(sheetContext, 'photo'),
               ),
               const Divider(height: 24),
-              const ListTile(
+              ListTile(
                 dense: true,
                 title: Text(
                   AnnaStrings.of(context).d3('sharedAgenda'),
@@ -2457,7 +2457,7 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
                     if (value == 'delete') _delete(entry);
                   },
                   itemBuilder: (_) => [
-                    const PopupMenuItem(
+                    PopupMenuItem(
                       value: 'edit',
                       child: Text(AnnaStrings.of(context).edit),
                     ),
@@ -2465,11 +2465,11 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
                       value: 'memory',
                       child: Text(
                         entry.memoryPinned
-                            ? 'Togli dai ricordi'
+                            ? AnnaStrings.of(context).d3('mem_removeMemory')
                             : AnnaStrings.of(context).d3('addToMemories'),
                       ),
                     ),
-                    const PopupMenuItem(
+                    PopupMenuItem(
                       value: 'delete',
                       child: Text(AnnaStrings.of(context).delete),
                     ),
@@ -2604,7 +2604,7 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
                 if (value == 'leave') _leaveOrDelete();
               },
               itemBuilder: (_) => [
-                const PopupMenuItem(
+                PopupMenuItem(
                   value: 'refresh',
                   child: Text(AnnaStrings.of(context).d3('refresh')),
                 ),
