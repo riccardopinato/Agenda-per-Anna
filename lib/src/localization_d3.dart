@@ -730,6 +730,8 @@ const Map<String, Map<String, String>> _d3Catalog = {
 
   "snapshotBeforeRestore": <String, String>{"en": "Before restore", "it": "Prima del ripristino", "es": "Antes de restaurar", "fr": "Avant la restauration", "pt": "Antes do restauro"},
   "snapshotBeforeCloudSync": <String, String>{"en": "Before first cloud sync", "it": "Prima sincronizzazione cloud", "es": "Antes de la primera sincronización cloud", "fr": "Avant la première synchronisation cloud", "pt": "Antes da primeira sincronização cloud"},
+  "mem_timeline": <String, String>{"en": "Timeline", "it": "Timeline", "es": "Cronología", "fr": "Chronologie", "pt": "Linha temporal"},
+  "mem_sketches": <String, String>{"en": "Sketches", "it": "Sketch", "es": "Bocetos", "fr": "Croquis", "pt": "Esboços"},
 };
 
 NotificationLocalization notificationLocalizationForPreference(AppLanguage value) {
