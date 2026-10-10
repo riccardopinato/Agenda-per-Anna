@@ -23,11 +23,15 @@ class _ReminderActionPayload {
   final String stableId;
   final String title;
   final String body;
+  final String? snoozeHourBody;
+  final String? snoozeMinutesTemplate;
 
   const _ReminderActionPayload({
     required this.stableId,
     required this.title,
     required this.body,
+    this.snoozeHourBody,
+    this.snoozeMinutesTemplate,
   });
 
   String encode() => jsonEncode({
@@ -35,6 +39,9 @@ class _ReminderActionPayload {
         'stableId': stableId,
         'title': title,
         'body': body,
+        if (snoozeHourBody != null) 'snoozeHourBody': snoozeHourBody,
+        if (snoozeMinutesTemplate != null)
+          'snoozeMinutesTemplate': snoozeMinutesTemplate,
       });
 
   static _ReminderActionPayload? tryParse(String? raw) {
@@ -45,11 +52,16 @@ class _ReminderActionPayload {
       final stableId = decoded['stableId']?.toString().trim() ?? '';
       final title = decoded['title']?.toString().trim() ?? '';
       final body = decoded['body']?.toString().trim() ?? '';
+      final snoozeHourBody = decoded['snoozeHourBody']?.toString();
+      final snoozeMinutesTemplate =
+          decoded['snoozeMinutesTemplate']?.toString();
       if (stableId.isEmpty || title.isEmpty) return null;
       return _ReminderActionPayload(
         stableId: stableId,
         title: title,
         body: body,
+        snoozeHourBody: snoozeHourBody,
+        snoozeMinutesTemplate: snoozeMinutesTemplate,
       );
     } catch (_) {
       return null;
@@ -768,8 +780,10 @@ class NotificationService {
 
     final minutes = delay.inMinutes;
     final body = minutes >= 60
-        ? _localization.snoozeHourBody
-        : _localization.snoozeMinutes(minutes);
+        ? (reminder.snoozeHourBody ?? _localization.snoozeHourBody)
+        : (reminder.snoozeMinutesTemplate ??
+                _localization.snoozeMinutesTemplate)
+            .replaceAll('{minutes}', '$minutes');
     final payload = _ReminderActionPayload(
       stableId: reminder.stableId,
       title: reminder.title,
@@ -839,6 +853,8 @@ class NotificationService {
       stableId: stableId,
       title: title,
       body: body,
+      snoozeHourBody: _localization.snoozeHourBody,
+      snoozeMinutesTemplate: _localization.snoozeMinutesTemplate,
     );
 
     try {
