@@ -134,10 +134,10 @@ class _VoiceRecordingDialogState extends State<_VoiceRecordingDialog> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: const Row(
+      title: Row(
         children: [
-          Icon(Icons.mic, color: Colors.red),
-          SizedBox(width: 10),
+          const Icon(Icons.mic, color: Colors.red),
+          const SizedBox(width: 10),
           Text(AnnaStrings.of(context).d3('recording')),
         ],
       ),
