@@ -2370,7 +2370,7 @@ class MonthOpeningHero extends StatelessWidget {
                 icon: Icons.lightbulb_outline,
                 text: AnnaStrings.of(context).d3Format('ideasCount', {'count': data.ideas.length}),
               ),
-              _MiniPill(icon: Icons.wallet_outlined, text: money(spent)),
+              _MiniPill(icon: Icons.wallet_outlined, text: money(context, spent)),
             ],
           ),
         ],
@@ -2637,7 +2637,7 @@ class _YearScreenState extends State<YearScreen> {
               StatCard(
                 icon: Icons.account_balance_wallet_outlined,
                 title: 'Spese registrate',
-                value: money(expenses),
+                value: money(context, expenses),
               ),
 
               const SizedBox(height: 22),
@@ -2719,7 +2719,7 @@ class YearMonthSnapshot extends StatelessWidget {
                           style: const TextStyle(fontWeight: FontWeight.w700),
                         ),
                       Text(
-                        '${AnnaStrings.of(context).plannerGoalsCount(data.goals.length)} · ${AnnaStrings.of(context).plannerMemoriesCount(memoryCount)} · ${money(spent)}',
+                        '${AnnaStrings.of(context).plannerGoalsCount(data.goals.length)} · ${AnnaStrings.of(context).plannerMemoriesCount(memoryCount)} · ${money(context, spent)}',
                         style: Theme.of(context).textTheme.bodySmall,
                       ),
                     ],
