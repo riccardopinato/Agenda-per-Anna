@@ -142,9 +142,7 @@ class SharedSpaceMember {
       SharedSpaceMember(
         userId: json['user_id']?.toString() ?? '',
         role: json['role']?.toString() ?? 'member',
-        displayName: json['display_name']?.toString().trim().isNotEmpty == true
-            ? json['display_name'].toString().trim()
-            : 'Persona',
+        displayName: json['display_name']?.toString().trim() ?? '',
         avatarUrl: json['avatar_url']?.toString() ?? '',
       );
 }
