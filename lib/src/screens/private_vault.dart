@@ -21,17 +21,6 @@ class _PrivateVaultHomeCardState extends State<PrivateVaultHomeCard> {
     unawaited(vault.initialize());
   }
 
-  Widget? _vaultBackButton(BuildContext context) {
-    if (!Navigator.of(context).canPop()) return null;
-    return Semantics(
-      identifier: 'vault_back_button',
-      button: true,
-      child: BackButton(
-        onPressed: () => Navigator.of(context).pop(),
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     return AnimatedBuilder(
@@ -125,6 +114,17 @@ class _PrivateVaultScreenState extends State<PrivateVaultScreen>
   bool obscurePassword = true;
   _VaultSection section = _VaultSection.notes;
   String? errorText;
+
+  Widget? _vaultBackButton(BuildContext context) {
+    if (!Navigator.of(context).canPop()) return null;
+    return Semantics(
+      identifier: 'vault_back_button',
+      button: true,
+      child: BackButton(
+        onPressed: () => Navigator.of(context).pop(),
+      ),
+    );
+  }
 
   @override
   void initState() {
