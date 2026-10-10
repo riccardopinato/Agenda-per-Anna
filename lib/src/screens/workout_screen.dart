@@ -673,7 +673,7 @@ Future<WorkoutSession?> showWorkoutSessionEditor(
                           keyboardType: TextInputType.datetime,
                           decoration: InputDecoration(
                             labelText: strings.duration,
-                            hintText: 'es. 1:05:20',
+                            hintText: strings.d3('workoutDurationExample'),
                             prefixIcon: const Icon(Icons.timer_outlined),
                           ),
                         ),
@@ -687,7 +687,7 @@ Future<WorkoutSession?> showWorkoutSessionEditor(
                           ),
                           decoration: InputDecoration(
                             labelText: strings.distanceKm,
-                            hintText: 'es. 15',
+                            hintText: strings.d3('workoutDistanceExample'),
                             prefixIcon: const Icon(Icons.route_outlined),
                           ),
                         ),
