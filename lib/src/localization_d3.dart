@@ -749,6 +749,7 @@ const Map<String, Map<String, String>> _d3Catalog = {
   "exportMoodLabel": <String, String>{"en": "Mood", "it": "Umore", "es": "Estado de ánimo", "fr": "Humeur", "pt": "Humor"},
   "exportTagsLabel": <String, String>{"en": "Tags", "it": "Tag", "es": "Etiquetas", "fr": "Tags", "pt": "Etiquetas"},
 
+  "shared_inviteExpires": <String, String>{"en": "Expires in {hours}h {minutes}m · {uses} uses", "it": "Scade tra {hours}h {minutes}m · {uses} utilizzi", "es": "Caduca en {hours}h {minutes}m · {uses} usos", "fr": "Expire dans {hours}h {minutes}m · {uses} utilisations", "pt": "Expira em {hours}h {minutes}m · {uses} utilizações"},
 };
 
 NotificationLocalization notificationLocalizationForPreference(AppLanguage value) {
