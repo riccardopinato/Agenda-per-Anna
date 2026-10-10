@@ -337,11 +337,13 @@ class _JournalEditorState extends State<JournalEditor> {
             children: [
               Row(
                 children: [
-                  const Expanded(
+                  Expanded(
                     child: Text(
                       AnnaStrings.of(context).d3('editor_myHabits'),
-                      style:
-                          TextStyle(fontWeight: FontWeight.w800, fontSize: 17),
+                      style: const TextStyle(
+                        fontWeight: FontWeight.w800,
+                        fontSize: 17,
+                      ),
                     ),
                   ),
                   IconButton(
