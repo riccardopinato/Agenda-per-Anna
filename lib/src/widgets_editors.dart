@@ -462,7 +462,7 @@ class _JournalEditorState extends State<JournalEditor> {
                   child: TextButton.icon(
                     onPressed: () async {
                       final messenger = ScaffoldMessenger.of(context);
-                      final strings = strings;
+                      final strings = AnnaStrings.of(context);
                       final confirmed = await showDialog<bool>(
                             context: context,
                             builder: (dialogContext) => AlertDialog(
