@@ -78,7 +78,10 @@ class UnifiedAgendaEntry {
     if (isShared) {
       return space?.name.trim().isNotEmpty == true ? space!.name : 'Noi ♡';
     }
-    if (isExternal) return externalEvent!.calendarName;
+    if (isExternal) {
+      final name = externalEvent!.calendarName.trim();
+      return name.isEmpty ? strings.d3('external_externalCalendar') : name;
+    }
     return strings.d3('unified_private');
   }
 
@@ -184,7 +187,9 @@ class UnifiedAgendaTile extends StatelessWidget {
               '${external.endTime == null ? '' : ' – ${formatTime(external.endTime!)}'}';
       final details = <String>[
         timeText,
-        external.calendarName,
+        external.calendarName.trim().isEmpty
+            ? AnnaStrings.of(context).d3('external_externalCalendar')
+            : external.calendarName,
         if (!hideDetails && external.location.isNotEmpty) external.location,
       ];
       return Card(
@@ -201,7 +206,11 @@ class UnifiedAgendaTile extends StatelessWidget {
             child: const Icon(Icons.event_available_outlined),
           ),
           title: Text(
-            hideDetails ? AnnaStrings.of(context).d3('unified_externalHidden') : external.title,
+            hideDetails
+                ? AnnaStrings.of(context).d3('unified_externalHidden')
+                : (external.title.trim().isEmpty
+                    ? AnnaStrings.of(context).d3('external_untitledEvent')
+                    : external.title),
             style: const TextStyle(fontWeight: FontWeight.w700),
           ),
           subtitle: Text(details.join(' · ')),
@@ -336,14 +345,22 @@ Future<void> openUnifiedAgendaEntry(
     await showDialog<void>(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        title: Text(event.title),
+        title: Text(
+          event.title.trim().isEmpty
+              ? AnnaStrings.of(dialogContext).d3('external_untitledEvent')
+              : event.title,
+        ),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(when, style: const TextStyle(fontWeight: FontWeight.w800)),
             const SizedBox(height: 6),
-            Text(event.calendarName),
+            Text(
+              event.calendarName.trim().isEmpty
+                  ? AnnaStrings.of(dialogContext).d3('external_externalCalendar')
+                  : event.calendarName,
+            ),
             if (event.location.isNotEmpty) ...[
               const SizedBox(height: 8),
               Text(event.location),
