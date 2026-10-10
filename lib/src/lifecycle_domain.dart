@@ -98,7 +98,7 @@ class TrashEntry {
         ),
         entityId: json['entityId'] as String? ?? '',
         parentId: json['parentId'] as String?,
-        title: json['title'] as String? ?? 'Elemento eliminato',
+        title: json['title'] as String? ?? 'Deleted item',
         deletedAt:
             DateTime.tryParse(json['deletedAt'] as String? ?? '')?.toLocal() ??
                 DateTime.now(),
@@ -115,16 +115,18 @@ extension AgendaStoreLifecycle on AgendaStore {
     required String title,
     required Map<String, dynamic> payload,
     String? parentId,
-  }) =>
-      TrashEntry(
-        id: const Uuid().v4(),
-        kind: kind,
-        entityId: entityId,
-        parentId: parentId,
-        title: title.trim().isEmpty ? kind.label : title.trim(),
-        deletedAt: DateTime.now(),
-        payload: payload,
-      );
+  }) {
+    final strings = AnnaStrings.forPreference(preferences.appLanguage);
+    return TrashEntry(
+      id: const Uuid().v4(),
+      kind: kind,
+      entityId: entityId,
+      parentId: parentId,
+      title: title.trim().isEmpty ? strings.trashKindLabel(kind) : title.trim(),
+      deletedAt: DateTime.now(),
+      payload: payload,
+    );
+  }
 
   void _putTrashInMemory(TrashEntry entry) {
     // Keep historical versions of the same logical entity. A deterministic
@@ -425,13 +427,14 @@ extension AgendaStoreLifecycle on AgendaStore {
     if (index < 0) return false;
 
     final block = current.blocks[index];
+    final strings = AnnaStrings.forPreference(preferences.appLanguage);
     final title = block.text.trim().isNotEmpty
         ? block.text.trim()
         : switch (block.type) {
-            DiaryBlockType.note => 'Nota del diario',
-            DiaryBlockType.photo => 'Foto del diario',
-            DiaryBlockType.sketch => 'Sketch del diario',
-            DiaryBlockType.voice => 'Nota vocale del diario',
+            DiaryBlockType.note => strings.d3('trashDiaryNote'),
+            DiaryBlockType.photo => strings.d3('trashDiaryPhoto'),
+            DiaryBlockType.sketch => strings.d3('trashDiarySketch'),
+            DiaryBlockType.voice => strings.d3('trashDiaryVoice'),
           };
     final entry = _newTrashEntry(
       kind: TrashEntityKind.diaryBlock,
@@ -459,10 +462,15 @@ extension AgendaStoreLifecycle on AgendaStore {
     final key = AgendaStore.dateKey(date);
     final current = journals[key];
     if (current == null) return false;
+    final strings = AnnaStrings.forPreference(preferences.appLanguage);
+    final locale = strings.languageCode;
     final entry = _newTrashEntry(
       kind: TrashEntityKind.journal,
       entityId: key,
-      title: 'Diario del ${DateFormat('d MMMM yyyy', 'it_IT').format(date)}',
+      title: strings.d3Format(
+        'trashJournalTitle',
+        {'date': DateFormat('d MMMM yyyy', locale).format(date)},
+      ),
       payload: current.toLocalJson(),
     );
     journals.remove(key);
@@ -481,10 +489,11 @@ extension AgendaStoreLifecycle on AgendaStore {
     final key = AgendaStore.monthKey(year, month);
     final current = months[key];
     if (current == null) return false;
+    final strings = AnnaStrings.forPreference(preferences.appLanguage);
     final entry = _newTrashEntry(
       kind: TrashEntityKind.month,
       entityId: key,
-      title: _cap(DateFormat('MMMM yyyy', 'it_IT').format(DateTime(year, month))),
+      title: _cap(DateFormat('MMMM yyyy', strings.languageCode).format(DateTime(year, month))),
       payload: current.toJson(),
     );
     months.remove(key);
@@ -503,11 +512,14 @@ extension AgendaStoreLifecycle on AgendaStore {
     final key = AgendaStore.dateKey(monday);
     final current = weeks[key];
     if (current == null) return false;
+    final strings = AnnaStrings.forPreference(preferences.appLanguage);
     final entry = _newTrashEntry(
       kind: TrashEntityKind.week,
       entityId: key,
-      title:
-          'Settimana del ${DateFormat('d MMMM yyyy', 'it_IT').format(monday)}',
+      title: strings.d3Format(
+        'trashWeekTitle',
+        {'date': DateFormat('d MMMM yyyy', strings.languageCode).format(monday)},
+      ),
       payload: current.toJson(),
     );
     weeks.remove(key);
