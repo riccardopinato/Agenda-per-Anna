@@ -209,7 +209,7 @@ class _SharedSpaceHubScreenState extends State<SharedSpaceHubScreen> {
           appBar: AppBar(
             title: const Text(
               'Noi ♡',
-              style: const TextStyle(fontWeight: FontWeight.w900),
+              style: TextStyle(fontWeight: FontWeight.w900),
             ),
             actions: [
               if (cloud.signedIn)
@@ -696,6 +696,7 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
   }
 
   Future<void> _flushPending() async {
+    final strings = strings;
     final conflictsBefore = widget.store.sharedConflictCount;
     await widget.store.flushSharedMediaUploads(
       spaceId: widget.space.id,
@@ -711,7 +712,7 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
         widget.store.sharedConflictCount > _seenConflictCount) {
       _seenConflictCount = widget.store.sharedConflictCount;
       _message(
-        AnnaStrings.of(context).d3('conflictResolved'),
+        strings.d3('conflictResolved'),
       );
     }
   }
@@ -958,8 +959,9 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
   }
 
   Future<void> _openComments(SharedEntry entry) async {
+    final strings = strings;
     if (widget.store.activeAccountId == null) {
-      _message(AnnaStrings.of(context).d3('sharedCommentCloudRequired'));
+      _message(strings.d3('sharedCommentCloudRequired'));
       return;
     }
 
@@ -1004,7 +1006,7 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
                     child: comments.isEmpty
                         ? Center(
                             child: Text(
-                              AnnaStrings.of(context).d3('noComments'),
+                              strings.d3('noComments'),
                             ),
                           )
                         : ListView.builder(
@@ -1013,9 +1015,9 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
                               final comment = comments[index];
                               final mine = comment.userId == uid;
                               final author = mine
-                                  ? AnnaStrings.of(context).d3('mem_you')
+                                  ? strings.d3('mem_you')
                                   : (comment.authorName.trim().isEmpty
-                                      ? AnnaStrings.of(context).d3('otherPerson')
+                                      ? strings.d3('otherPerson')
                                       : comment.authorName.trim());
                               return ListTile(
                                 contentPadding: EdgeInsets.zero,
@@ -1036,7 +1038,7 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
                                 isThreeLine: true,
                                 trailing: mine
                                     ? IconButton(
-                                        tooltip: AnnaStrings.of(context).d3('deleteComment'),
+                                        tooltip: strings.d3('deleteComment'),
                                         onPressed: () async {
                                           await _deleteComment(comment);
                                           if (sheetContext.mounted) {
@@ -1062,7 +1064,7 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
                           maxLength: 500,
                           textCapitalization: TextCapitalization.sentences,
                           decoration: InputDecoration(
-                            hintText: AnnaStrings.of(context).d3('writeComment'),
+                            hintText: strings.d3('writeComment'),
                             border: const OutlineInputBorder(),
                             counterText: '',
                           ),
@@ -1070,7 +1072,7 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
                       ),
                       const SizedBox(width: 8),
                       IconButton.filled(
-                        tooltip: AnnaStrings.of(context).d3('send'),
+                        tooltip: strings.d3('send'),
                         onPressed: () async {
                           final text = controller.text.trim();
                           if (text.isEmpty) return;
@@ -1112,11 +1114,11 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
                             }
                             if (!CloudSyncService.instance.signedIn) {
                               _message(
-                                AnnaStrings.of(context).d3('commentOffline'),
+                                strings.d3('commentOffline'),
                               );
                             }
                           } catch (_) {
-                            _message(AnnaStrings.of(context).d3('sharedCommentNotSaved'));
+                            _message(strings.d3('sharedCommentNotSaved'));
                           }
                         },
                         icon: const Icon(Icons.send_outlined),
@@ -1401,6 +1403,7 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
 
 
   Future<void> _addSharedNote([SharedEntry? existing]) async {
+    final strings = strings;
     final value = await showDiaryNoteEditor(
       context,
       initialText: existing?.note.isNotEmpty == true
@@ -1420,7 +1423,7 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
       SharedEntry(
         id: existing?.id ?? const Uuid().v4(),
         type: SharedEntryType.note,
-        title: compactTitle.isEmpty ? AnnaStrings.of(context).d3('note') : compactTitle,
+        title: compactTitle.isEmpty ? strings.d3('note') : compactTitle,
         note: value,
         date: existing?.date ?? selected,
         createdAt:
@@ -1446,6 +1449,7 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
   }
 
   Future<void> _addSharedPhoto([SharedEntry? existing]) async {
+    final strings = strings;
     if (existing != null && !_canEditSharedEntry(existing)) {
       await _viewReadOnlySharedEntry(context, existing);
       return;
@@ -1453,7 +1457,7 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
     if (sharedPhotoBusy) return;
     if (widget.store.activeAccountId == null) {
       _message(
-        AnnaStrings.of(context).d3('cloudPhotoRequired'),
+        strings.d3('cloudPhotoRequired'),
       );
       return;
     }
@@ -1492,7 +1496,7 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
         type: SharedEntryType.photo,
         title: existing?.title.trim().isNotEmpty == true
             ? existing!.title
-            : AnnaStrings.of(context).d3('photo'),
+            : strings.d3('photo'),
         note: caption ?? '',
         date: existing?.date ?? selected,
         createdAt:
@@ -1539,12 +1543,12 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
         await _refresh(silent: true);
       } else {
         _message(
-          AnnaStrings.of(context).d3('photoSavedLocal'),
+          strings.d3('photoSavedLocal'),
         );
       }
     } catch (_) {
       _message(
-        AnnaStrings.of(context).d3('photoRetryUpload'),
+        strings.d3('photoRetryUpload'),
       );
     } finally {
       if (mounted) setState(() => sharedPhotoBusy = false);
@@ -1863,6 +1867,7 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
   }
 
   Future<void> _invite() async {
+    final strings = strings;
     final prefs = await widget.store._localState();
     final owner = CloudSyncService.instance.userId ?? 'unknown';
     final cacheKey = 'shared_invite_v2_${owner}_${widget.space.id}';
@@ -1884,7 +1889,7 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
       await prefs.setString(cacheKey, jsonEncode(invite.toJson()));
     } catch (_) {
       if (invite == null) {
-        _message(AnnaStrings.of(context).d3('inviteCodeLoadFailed'));
+        _message(strings.d3('inviteCodeLoadFailed'));
         return;
       }
     }
@@ -1901,11 +1906,11 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
           final minutes = (remaining.inMinutes % 60).clamp(0, 59);
 
           return AlertDialog(
-            title: Text(AnnaStrings.of(context).d3('connectionCode')),
+            title: Text(strings.d3('connectionCode')),
             content: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Text(AnnaStrings.of(context).d3('code24h')),
+                Text(strings.d3('code24h')),
                 const SizedBox(height: 18),
                 SelectableText(
                   current.code,
@@ -1917,8 +1922,14 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
                 ),
                 const SizedBox(height: 10),
                 Text(
-                  'Scade tra ${hours}h ${minutes}m · '
-                  '${current.usesCount} utilizzi',
+                  strings.d3Format(
+                  'shared_inviteExpires',
+                  {
+                    'hours': hours,
+                    'minutes': minutes,
+                    'uses': current.usesCount,
+                  },
+                ),
                   style: const TextStyle(fontWeight: FontWeight.w700),
                 ),
                 const SizedBox(height: 12),
@@ -1937,7 +1948,7 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
                         ScaffoldMessenger.of(dialogContext).showSnackBar(
                           SnackBar(
                             content: Text(
-                              AnnaStrings.of(context).d3('generateCodeFailed'),
+                              strings.d3('generateCodeFailed'),
                             ),
                           ),
                         );
@@ -1945,14 +1956,14 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
                     }
                   },
                   icon: const Icon(Icons.refresh),
-                  label: Text(AnnaStrings.of(context).d3('generateNewCode')),
+                  label: Text(strings.d3('generateNewCode')),
                 ),
               ],
             ),
             actions: [
               FilledButton(
                 onPressed: () => Navigator.pop(dialogContext),
-                child: Text(AnnaStrings.of(context).close),
+                child: Text(strings.close),
               ),
             ],
           );
@@ -1970,12 +1981,13 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
   }
 
   Future<void> _openMembers() async {
+    final strings = strings;
     List<SharedSpaceMember> members;
     try {
       members = await CloudSyncService.instance
           .listSharedSpaceMembers(widget.space.id);
     } catch (_) {
-      _message(AnnaStrings.of(context).d3('loadPeopleFailed'));
+      _message(strings.d3('loadPeopleFailed'));
       return;
     }
     if (!mounted) return;
@@ -1984,13 +1996,13 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
       context: context,
       builder: (dialogContext) => AlertDialog(
         title: Text(
-          AnnaStrings.of(context).d3Format('sharedPeopleCount', {'count': members.length}),
+          strings.d3Format('sharedPeopleCount', {'count': members.length}),
           style: const TextStyle(fontWeight: FontWeight.w900),
         ),
         content: SizedBox(
           width: 440,
           child: members.isEmpty
-              ? Text(AnnaStrings.of(context).d3('noPeople'))
+              ? Text(strings.d3('noPeople'))
               : ListView.separated(
                   shrinkWrap: true,
                   itemCount: members.length,
@@ -2007,32 +2019,32 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
                       leading: CircleAvatar(child: Text(initial)),
                       title: Text(
                         isMe
-                            ? '${member.displayName.trim().isEmpty ? AnnaStrings.of(context).person : member.displayName.trim()} · ${AnnaStrings.of(context).d3('mem_you')}'
+                            ? '${member.displayName.trim().isEmpty ? strings.person : member.displayName.trim()} · ${strings.d3('mem_you')}'
                             : (member.displayName.trim().isEmpty
-                                ? AnnaStrings.of(context).person
+                                ? strings.person
                                 : member.displayName.trim()),
                         style: const TextStyle(fontWeight: FontWeight.w800),
                       ),
                       subtitle: Text(
                         member.isOwner
-                      ? AnnaStrings.of(context).d3('sharedOwner')
-                      : AnnaStrings.of(context).d3('sharedMember'),
+                      ? strings.d3('sharedOwner')
+                      : strings.d3('sharedMember'),
                       ),
                       trailing: widget.space.isOwner &&
                               !member.isOwner &&
                               !isMe
                           ? IconButton(
-                              tooltip: AnnaStrings.of(context).d3('removeFromSpace'),
+                              tooltip: strings.d3('removeFromSpace'),
                               icon: const Icon(Icons.person_remove_outlined),
                               onPressed: () async {
                                 final confirmed = await showDialog<bool>(
                                       context: dialogContext,
                                       builder: (confirmContext) => AlertDialog(
                                         title: Text(
-                                          AnnaStrings.of(context).d3('removePersonTitle'),
+                                          strings.d3('removePersonTitle'),
                                         ),
                                         content: Text(
-                                          AnnaStrings.of(context).d3('removePersonBody'),
+                                          strings.d3('removePersonBody'),
                                         ),
                                         actions: [
                                           TextButton(
@@ -2040,14 +2052,14 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
                                               confirmContext,
                                               false,
                                             ),
-                                            child: Text(AnnaStrings.of(context).cancel),
+                                            child: Text(strings.cancel),
                                           ),
                                           FilledButton(
                                             onPressed: () => Navigator.pop(
                                               confirmContext,
                                               true,
                                             ),
-                                            child: Text(AnnaStrings.of(context).d3('remove')),
+                                            child: Text(strings.d3('remove')),
                                           ),
                                         ],
                                       ),
@@ -2065,11 +2077,11 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
                                   }
                                   if (mounted) {
                                     _message(
-                                      AnnaStrings.of(context).d3Format(
+                                      strings.d3Format(
                                         'personRemoved',
                                         {
                                           'name': member.displayName.trim().isEmpty
-                                              ? AnnaStrings.of(context).person
+                                              ? strings.person
                                               : member.displayName.trim(),
                                         },
                                       ),
@@ -2079,7 +2091,7 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
                                 } catch (_) {
                                   if (mounted) {
                                     _message(
-                                      AnnaStrings.of(context).d3('removePersonFailed'),
+                                      strings.d3('removePersonFailed'),
                                     );
                                   }
                                 }
@@ -2098,11 +2110,11 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
                 _invite();
               },
               icon: const Icon(Icons.person_add_alt_1_outlined),
-              label: Text(AnnaStrings.of(context).d3('invite')),
+              label: Text(strings.d3('invite')),
             ),
           FilledButton(
             onPressed: () => Navigator.pop(dialogContext),
-            child: Text(AnnaStrings.of(context).close),
+            child: Text(strings.close),
           ),
         ],
       ),
@@ -2110,25 +2122,26 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
   }
 
   Future<void> _leaveOrDelete() async {
+    final strings = strings;
     final owner = widget.space.isOwner;
     final confirmed = await showDialog<bool>(
           context: context,
           builder: (dialogContext) => AlertDialog(
-            title: Text(owner ? AnnaStrings.of(context).d3('deleteSpaceTitle') : AnnaStrings.of(context).d3('leaveSpaceTitle')),
+            title: Text(owner ? strings.d3('deleteSpaceTitle') : strings.d3('leaveSpaceTitle')),
             content: Text(
               owner
-                  ? AnnaStrings.of(context).d3('deleteSpaceBody')
-                  : AnnaStrings.of(context).d3('leaveSpaceBody'),
+                  ? strings.d3('deleteSpaceBody')
+                  : strings.d3('leaveSpaceBody'),
             ),
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(dialogContext, false),
-                child: Text(AnnaStrings.of(context).cancel),
+                child: Text(strings.cancel),
               ),
               FilledButton(
                 onPressed: () => Navigator.pop(dialogContext, true),
                 child: Text(
-                  owner ? AnnaStrings.of(context).d3('deleteForEveryone') : AnnaStrings.of(context).d3('leaveOnlyMe'),
+                  owner ? strings.d3('deleteForEveryone') : strings.d3('leaveOnlyMe'),
                 ),
               ),
             ],
@@ -2175,7 +2188,7 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
       await widget.store.refreshSharedAgendaCache(pullRemote: true);
       if (mounted) Navigator.pop(context);
     } catch (_) {
-      _message(AnnaStrings.of(context).d3('shared_operationFailed'));
+      _message(strings.d3('shared_operationFailed'));
     }
   }
 
