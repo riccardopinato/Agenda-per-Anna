@@ -172,7 +172,7 @@ class _RestoreMediaStagingSession {
       final bytes = await MediaAssetStore.instance.read(assetId);
       if (bytes == null || bytes.isEmpty) {
         throw FormatException(
-          'Reference media senza file integro: $assetId',
+          'backup_missing_referenced_media:$assetId',
         );
       }
     }
