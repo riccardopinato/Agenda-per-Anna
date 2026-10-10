@@ -135,7 +135,7 @@ class HomeScreen extends StatelessWidget {
                 icon: const Icon(Icons.search),
               ),
               IconButton(
-                tooltip: 'Inbox',
+                tooltip: strings.inbox,
                 onPressed: () => Navigator.push(
                   context,
                   MaterialPageRoute(
