@@ -155,7 +155,7 @@ class _SharedSpaceHubScreenState extends State<SharedSpaceHubScreen> {
           maxLength: 8,
           decoration: InputDecoration(
             labelText: AnnaStrings.of(context).d3('inviteCode'),
-            hintText: 'Es. A1B2C3D4',
+            hintText: AnnaStrings.of(context).d3('sharedInviteCodeHint'),
           ),
         ),
         actions: [
@@ -2208,7 +2208,7 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
                   : null,
               size: 20,
             ),
-            label: Text(hearts.isEmpty ? 'Mi piace' : '${hearts.length}'),
+            label: Text(hearts.isEmpty ? AnnaStrings.of(context).d3('sharedLike') : '${hearts.length}'),
           ),
           TextButton.icon(
             onPressed: () => _openComments(entry),
