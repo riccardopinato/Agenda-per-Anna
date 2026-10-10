@@ -420,7 +420,9 @@ class _WorkoutSessionCard extends StatelessWidget {
           child: Icon(session.sport.icon),
         ),
         title: Text(
-          session.title,
+          session.title.trim().isEmpty
+              ? strings.workoutSportLabel(session.sport)
+              : session.title.trim(),
           style: const TextStyle(fontWeight: FontWeight.w900),
         ),
         subtitle: Column(
@@ -583,9 +585,7 @@ Future<WorkoutSession?> showWorkoutSessionEditor(
             WorkoutSession(
               id: existing?.id ?? const Uuid().v4(),
               sport: sport,
-              title: titleController.text.trim().isEmpty
-                  ? sport.label
-                  : titleController.text.trim(),
+              title: titleController.text.trim(),
               date: date,
               durationSeconds: seconds,
               distanceKm: distance,
