@@ -207,9 +207,9 @@ class _SharedSpaceHubScreenState extends State<SharedSpaceHubScreen> {
         final accent = context.accentSurface;
         return Scaffold(
           appBar: AppBar(
-            title: Text(
+            title: const Text(
               'Noi ♡',
-              style: TextStyle(fontWeight: FontWeight.w900),
+              style: const TextStyle(fontWeight: FontWeight.w900),
             ),
             actions: [
               if (cloud.signedIn)
@@ -231,7 +231,7 @@ class _SharedSpaceHubScreenState extends State<SharedSpaceHubScreen> {
                         const SizedBox(height: 12),
                         Text(
                           AnnaStrings.of(context).d3('sharedSessionExpired'),
-                          style: TextStyle(
+                          style: const TextStyle(
                             fontSize: 21,
                             fontWeight: FontWeight.w900,
                           ),
@@ -1063,7 +1063,7 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
                           textCapitalization: TextCapitalization.sentences,
                           decoration: InputDecoration(
                             hintText: AnnaStrings.of(context).d3('writeComment'),
-                            border: OutlineInputBorder(),
+                            border: const OutlineInputBorder(),
                             counterText: '',
                           ),
                         ),
@@ -1601,7 +1601,7 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
               ListTile(
                 title: Text(
                   AnnaStrings.of(context).d3('sharedDiary'),
-                  style: TextStyle(
+                  style: const TextStyle(
                     fontWeight: FontWeight.w900,
                     fontSize: 19,
                   ),
@@ -1622,7 +1622,7 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
                 leading: const CircleAvatar(
                   child: Icon(Icons.draw_outlined),
                 ),
-                title: Text('Sketch'),
+                title: const Text('Sketch'),
                 subtitle: Text(
                   AnnaStrings.of(context).d3('sameSketchbook'),
                 ),
@@ -1641,7 +1641,7 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
                 dense: true,
                 title: Text(
                   AnnaStrings.of(context).d3('sharedAgenda'),
-                  style: TextStyle(fontWeight: FontWeight.w800),
+                  style: const TextStyle(fontWeight: FontWeight.w800),
                 ),
               ),
               ListTile(
@@ -2680,7 +2680,7 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
                   ),
                   title: Text(
                     AnnaStrings.of(context).d3('shoppingList'),
-                    style: TextStyle(fontWeight: FontWeight.w900),
+                    style: const TextStyle(fontWeight: FontWeight.w900),
                   ),
                   subtitle: Text(
                     AnnaStrings.of(context).d3Format(
@@ -2703,7 +2703,7 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
                   ),
                   title: Text(
                     AnnaStrings.of(context).d3('ourMemories'),
-                    style: TextStyle(fontWeight: FontWeight.w900),
+                    style: const TextStyle(fontWeight: FontWeight.w900),
                   ),
                   subtitle: Text(
                     '${AnnaStrings.of(context).memoriesCount(entries.where((entry) => entry.appearsInSharedMemories).length)} · '
