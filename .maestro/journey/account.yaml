@@ -7,5 +7,5 @@ appId: com.riccardopinato.agenda_per_anna
 - tapOn:
     text: "Cloud"
 - extendedWaitUntil:
-    visible: "Account e sincronizzazione"
+    visible: '(Account e sincronizzazione|Account and sync|Cuenta y sincronización|Compte et synchronisation|Conta e sincronização)'
     timeout: 10000
