@@ -56,7 +56,9 @@ class TrashScreen extends StatelessWidget {
     }
 
     final title = entry.title.trim();
-    if (title.isEmpty || title == 'Elemento eliminato') {
+    if (title.isEmpty ||
+        title == 'Elemento eliminato' ||
+        title == 'Deleted item') {
       return strings.trashKindLabel(entry.kind);
     }
     return title;
