@@ -56,7 +56,8 @@ Source of execution truth for Anna's Diary. Product identity and boundaries are 
 | v0.99 | Open Life Export | Completed — CI/AppLab trusted runtime green | Open Markdown + structured JSON + separate media/sketch export over canonical data, with privacy-safe exclusions and no new persistence |
 | v1.00-B | Golden Core Cleanup & Localization | Completed — CI/AppLab trusted runtime green | Removed confirmed dead UI, localized core surfaces, simplified Home IA and locked 10k-memory projection performance without new persistence |
 | v1.00-C | Data Safety v21 Hardening | Completed — CI/AppLab trusted runtime green | Restore staging, reference-safe commit, deterministic crash recovery, stale-marker safety and shared-reference preservation |\n| v1.00-D | Security / Native Physical Certification | IN PROGRESS — live backend verified, physical gate pending | Live migration 027 + two-user backend contract verified; stable artifact identity/AppLab backup preflight added; real-device file, Keystore, E2EE and native flows still required |
-| v1.00-D1 | Crypto Responsiveness | Implemented — must pass release gates | Native PBKDF2 off main isolate for Vault + Noi ♡ pairing/recovery, unchanged crypto format, responsiveness/compatibility regressions |
+| v1.00-D1 | Crypto Responsiveness | Completed — CI/AppLab green | Native PBKDF2 off main isolate for Vault + Noi ♡ pairing/recovery, unchanged crypto format, responsiveness/compatibility regressions |
+| v1.00-D2 | Vault AppLab Deep Journey | Implemented — must pass release gates | Clean setup, encrypted sentinel, relock, wrong-password rejection, correct unlock and process-restart persistence in trusted runtime |
 
 ## v1.00-A audit outcome
 
@@ -113,6 +114,19 @@ The full product reality audit is recorded in `docs/V100_FULL_PRODUCT_REALITY_AU
 - Source guards must reject direct `PBKDF2KeyDerivator` use in Vault/Noi ♡ UI-facing services.
 - Full analyze/tests, browser crypto test, Web release, Android gate and AppLab must remain green before D1 is accepted into the v1.00-D physical candidate.
 - D1 is a responsiveness hardening step only; it does not elevate biometric/Keystore/two-device evidence above its actual verification level.
+
+## v1.00-D2 acceptance criteria
+
+- AppLab starts from `clearState: true` and requires the Vault setup surface; a preconfigured/locked Vault at first entry must fail the journey instead of being accepted.
+- The journey configures the Vault with a deterministic QA-only password and reaches the unlocked notes surface.
+- AppLab writes a unique encrypted sentinel title/body through the real Vault editor and requires both values in the unlocked UI.
+- Explicit `Lock now` must return to the locked surface.
+- A deterministic wrong password must expose the localized incorrect-password error and leave the Vault locked.
+- The correct password must unlock and expose the exact sentinel payload created before relock.
+- AppLab must stop and relaunch the package without clearing state, revisit the Vault, unlock it and require the same sentinel title/body again.
+- The deep Vault flow remains outside `applab-journey.json` visual checkpoints because `FLAG_SECURE` is intentional; the deep sequence is embedded directly in `applab-smoke.yaml` so AppLab's isolated runtime cannot lose relative subflow files.
+- Automated D2 evidence is capped at TRUSTED RUNTIME. Android Keystore, biometrics, OEM ANR behavior and other native physical claims remain in the v1.00-D physical matrix.
+- Development checks, Web, Android size audit and AppLab Trusted Verify must all pass on the same D2 SHA before merge.
 
 ## v1.00-D acceptance criteria
 

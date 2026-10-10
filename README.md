@@ -61,6 +61,14 @@ See `docs/ARCHITECTURE.md` and `supabase/README.md` for implementation details.
 - Adds source-level regression gates that forbid direct PBKDF2 derivation from Vault/Noi ♡ UI-facing services and require the native isolate/Web Crypto workers.
 - This closes the identified main-isolate responsiveness defect in code; real-device VAULT/Keystore/biometric certification remains part of the v1.00-D physical matrix.
 
+### v1.00-D2 — Vault AppLab Deep Journey
+
+- Replaces the previous shallow Vault smoke checkpoint with a mandatory functional AppLab sequence embedded in the primary smoke flow.
+- AppLab now requires a clean-state Vault setup, creates a unique encrypted sentinel note, explicitly relocks the Vault, verifies a wrong password stays locked, unlocks with the correct password and confirms the sentinel.
+- The same smoke flow then stops/relaunches the app, navigates back to the locked Vault, unlocks again and requires the same title/body, proving encrypted payload persistence across a fresh process.
+- Vault remains intentionally excluded from screenshot/visual-regression checkpoints because Android `FLAG_SECURE` is part of the security boundary; D2 validates it through UI hierarchy/state assertions instead of screenshots.
+- D2 trusted-runtime PASS is not physical evidence for Android Keystore, biometrics or OEM-specific behavior; those stay in the v1.00-D physical matrix.
+
 ### v1.00-D current evidence
 
 - Production Supabase reports migration `shared_password_hardening_v086` deployed; the live two-user transactional backend contract passes with rollback.

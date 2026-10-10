@@ -281,27 +281,35 @@ class _PrivateVaultScreenState extends State<PrivateVaultScreen>
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              TextField(
-                controller: title,
-                autofocus: true,
-                maxLength: 120,
-                textCapitalization: TextCapitalization.sentences,
-                decoration: InputDecoration(
-                  labelText: strings.vaultPrivateTitleField,
-                  prefixIcon: const Icon(Icons.title),
+              Semantics(
+                identifier: 'vault_note_title_field',
+                label: strings.vaultPrivateTitleField,
+                child: TextField(
+                  controller: title,
+                  autofocus: true,
+                  maxLength: 120,
+                  textCapitalization: TextCapitalization.sentences,
+                  decoration: InputDecoration(
+                    labelText: strings.vaultPrivateTitleField,
+                    prefixIcon: const Icon(Icons.title),
+                  ),
                 ),
               ),
               const SizedBox(height: 10),
-              TextField(
-                controller: body,
-                minLines: 5,
-                maxLines: 12,
-                maxLength: 12000,
-                textCapitalization: TextCapitalization.sentences,
-                decoration: InputDecoration(
-                  labelText: strings.vaultPrivateContentField,
-                  alignLabelWithHint: true,
-                  prefixIcon: const Icon(Icons.lock_outline),
+              Semantics(
+                identifier: 'vault_note_body_field',
+                label: strings.vaultPrivateContentField,
+                child: TextField(
+                  controller: body,
+                  minLines: 5,
+                  maxLines: 12,
+                  maxLength: 12000,
+                  textCapitalization: TextCapitalization.sentences,
+                  decoration: InputDecoration(
+                    labelText: strings.vaultPrivateContentField,
+                    alignLabelWithHint: true,
+                    prefixIcon: const Icon(Icons.lock_outline),
+                  ),
                 ),
               ),
             ],
@@ -1101,36 +1109,44 @@ class _PrivateVaultScreenState extends State<PrivateVaultScreen>
                         _vaultWebSecurityWarning(context, strings),
                       ],
                       const SizedBox(height: 20),
-                      TextField(
-                        controller: passwordController,
-                        obscureText: obscurePassword,
-                        enabled: !busy,
-                        autofillHints: const [AutofillHints.newPassword],
-                        decoration: InputDecoration(
-                          labelText: strings.vaultPasswordLabel,
-                          prefixIcon: const Icon(Icons.password_outlined),
-                          suffixIcon: IconButton(
-                            onPressed: () => setState(
-                              () => obscurePassword = !obscurePassword,
-                            ),
-                            icon: Icon(
-                              obscurePassword
-                                  ? Icons.visibility_outlined
-                                  : Icons.visibility_off_outlined,
+                      Semantics(
+                        identifier: 'vault_password_field',
+                        label: strings.vaultPasswordLabel,
+                        child: TextField(
+                          controller: passwordController,
+                          obscureText: obscurePassword,
+                          enabled: !busy,
+                          autofillHints: const [AutofillHints.newPassword],
+                          decoration: InputDecoration(
+                            labelText: strings.vaultPasswordLabel,
+                            prefixIcon: const Icon(Icons.password_outlined),
+                            suffixIcon: IconButton(
+                              onPressed: () => setState(
+                                () => obscurePassword = !obscurePassword,
+                              ),
+                              icon: Icon(
+                                obscurePassword
+                                    ? Icons.visibility_outlined
+                                    : Icons.visibility_off_outlined,
+                              ),
                             ),
                           ),
                         ),
                       ),
                       const SizedBox(height: 12),
-                      TextField(
-                        controller: confirmController,
-                        obscureText: true,
-                        enabled: !busy,
-                        onSubmitted: (_) => busy ? null : _setup(),
-                        decoration: InputDecoration(
-                          labelText: strings.vaultRepeatPassword,
-                          prefixIcon: const Icon(Icons.lock_outline),
-                          errorText: errorText,
+                      Semantics(
+                        identifier: 'vault_repeat_password_field',
+                        label: strings.vaultRepeatPassword,
+                        child: TextField(
+                          controller: confirmController,
+                          obscureText: true,
+                          enabled: !busy,
+                          onSubmitted: (_) => busy ? null : _setup(),
+                          decoration: InputDecoration(
+                            labelText: strings.vaultRepeatPassword,
+                            prefixIcon: const Icon(Icons.lock_outline),
+                            errorText: errorText,
+                          ),
                         ),
                       ),
                       if (biometricSupported) ...[
@@ -1248,16 +1264,20 @@ class _PrivateVaultScreenState extends State<PrivateVaultScreen>
                     _vaultWebSecurityWarning(context, strings),
                   ],
                   const SizedBox(height: 22),
-                  TextField(
-                    controller: passwordController,
-                    obscureText: true,
-                    enabled: !busy,
-                    autofocus: !vault.biometricAvailable,
-                    onSubmitted: (_) => busy ? null : _unlockPassword(),
-                    decoration: InputDecoration(
-                      labelText: strings.vaultPasswordLabel,
-                      prefixIcon: const Icon(Icons.password_outlined),
-                      errorText: errorText,
+                  Semantics(
+                    identifier: 'vault_password_field',
+                    label: strings.vaultPasswordLabel,
+                    child: TextField(
+                      controller: passwordController,
+                      obscureText: true,
+                      enabled: !busy,
+                      autofocus: !vault.biometricAvailable,
+                      onSubmitted: (_) => busy ? null : _unlockPassword(),
+                      decoration: InputDecoration(
+                        labelText: strings.vaultPasswordLabel,
+                        prefixIcon: const Icon(Icons.password_outlined),
+                        errorText: errorText,
+                      ),
                     ),
                   ),
                   const SizedBox(height: 14),

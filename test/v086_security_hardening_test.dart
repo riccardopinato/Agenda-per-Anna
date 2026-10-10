@@ -214,13 +214,16 @@ void main() {
         File('.maestro/applab-journey.json').readAsStringSync();
     final smoke =
         File('.maestro/applab-smoke.yaml').readAsStringSync();
-
     expect(journey, isNot(contains('"name": "vault"')));
+    expect(smoke, isNot(contains('runFlow: journey/vault.yaml')));
+    expect(smoke, contains('FLAG_SECURE'));
     expect(
       smoke,
-      contains('Cassaforte privata|Private Vault|Caja fuerte privada|Coffre privé|Cofre privado'),
+      contains(
+        'Cassaforte privata|Private Vault|Caja fuerte privada|Coffre privé|Cofre privado',
+      ),
     );
-    expect(smoke, contains('FLAG_SECURE'));
+    expect(smoke, contains("inputText: 'D2_APPLAB_PERSISTENCE'"));
   });
 
 }
