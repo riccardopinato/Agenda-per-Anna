@@ -734,6 +734,8 @@ const Map<String, Map<String, String>> _d3Catalog = {
   "mem_sketches": <String, String>{"en": "Sketches", "it": "Sketch", "es": "Bocetos", "fr": "Croquis", "pt": "Esboços"},
   "sharedReactionCloudRequired": <String, String>{"en": "Connect to cloud at least once to use reactions.", "it": "Accedi al cloud almeno una volta per usare le reazioni.", "es": "Conéctate a la nube al menos una vez para usar las reacciones.", "fr": "Connecte-toi au cloud au moins une fois pour utiliser les réactions.", "pt": "Liga-te à cloud pelo menos uma vez para usar as reações."},
   "sharedCommentCloudRequired": <String, String>{"en": "Connect to cloud at least once to comment.", "it": "Accedi al cloud almeno una volta per commentare.", "es": "Conéctate a la nube al menos una vez para comentar.", "fr": "Connecte-toi au cloud au moins une fois pour commenter.", "pt": "Liga-te à cloud pelo menos uma vez para comentar."},
+  "sharedInviteCodeHint": <String, String>{"en": "e.g. A1B2C3D4", "it": "Es. A1B2C3D4", "es": "Ej. A1B2C3D4", "fr": "Ex. A1B2C3D4", "pt": "Ex. A1B2C3D4"},
+  "sharedLike": <String, String>{"en": "Like", "it": "Mi piace", "es": "Me gusta", "fr": "J’aime", "pt": "Gosto"},
 };
 
 NotificationLocalization notificationLocalizationForPreference(AppLanguage value) {
