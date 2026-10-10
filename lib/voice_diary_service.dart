@@ -15,7 +15,7 @@ class VoiceDiaryService {
     if (kIsWeb) {
       throw PlatformException(
         code: 'voice_recording_unsupported',
-        message: 'La registrazione diretta non è disponibile sul web.',
+        message: 'voice_recording_unsupported',
       );
     }
     await _channel.invokeMethod<void>('startRecording');
@@ -25,14 +25,14 @@ class VoiceDiaryService {
     if (kIsWeb) {
       throw PlatformException(
         code: 'voice_recording_unsupported',
-        message: 'La registrazione diretta non è disponibile sul web.',
+        message: 'voice_recording_unsupported',
       );
     }
     final bytes = await _channel.invokeMethod<Uint8List>('stopRecording');
     if (bytes == null || bytes.isEmpty) {
       throw PlatformException(
         code: 'empty_voice_recording',
-        message: 'La registrazione è vuota.',
+        message: 'empty_voice_recording',
       );
     }
     return bytes;
