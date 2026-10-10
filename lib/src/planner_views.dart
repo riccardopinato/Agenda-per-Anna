@@ -2284,7 +2284,7 @@ class _MonthWellbeingCard extends StatelessWidget {
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
-                      AnnaStrings.of(context).d3Format('topMood', {'value': mostCommonMood.label}),
+                      AnnaStrings.of(context).d3Format('topMood', {'value': AnnaStrings.of(context).editorMoodLabel(mostCommonMood)}),
                       style: TextStyle(
                         color: mostCommonMood.color,
                         fontWeight: FontWeight.w800,
