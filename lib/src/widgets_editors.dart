@@ -774,9 +774,9 @@ class _ClosingMonthCardState extends State<ClosingMonthCard> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Row(
+          Row(
             children: [
-              Icon(Icons.nights_stay_outlined),
+              const Icon(Icons.nights_stay_outlined),
               SizedBox(width: 8),
               Text(
                 AnnaStrings.of(context).d3('editor_monthClosing'),
