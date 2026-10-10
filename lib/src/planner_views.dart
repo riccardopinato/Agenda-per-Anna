@@ -561,12 +561,12 @@ class _DayLifeOverviewCard extends StatelessWidget {
       if (snapshot.pendingTaskCount > 0)
         (
           icon: Icons.check_circle_outline,
-          text: '${snapshot.pendingTaskCount} da fare',
+          text: AnnaStrings.of(context).plannerTasksCount(snapshot.pendingTaskCount),
         ),
       if (snapshot.appointmentCount > 0)
         (
           icon: Icons.event_outlined,
-          text: '${snapshot.appointmentCount} impegni',
+          text: AnnaStrings.of(context).plannerCommitmentsCount(snapshot.appointmentCount),
         ),
       if (snapshot.birthdays.isNotEmpty)
         (
@@ -1579,7 +1579,7 @@ class _WeekScreenState extends State<WeekScreen> {
                 onSave: (value) => widget.store.saveWeek(start, value),
               ),
               const SizedBox(height: 18),
-              const SectionTitle('I 7 giorni'),
+              SectionTitle(AnnaStrings.of(context).d3('plannerSevenDays')),
               const SizedBox(height: 10),
               for (int i = 6; i >= 0; i--) ...[
                 _WeekDayCard(
@@ -1631,7 +1631,7 @@ class _WeekHero extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            '${DateFormat('d MMM', 'it_IT').format(start)} – ${DateFormat('d MMM yyyy', 'it_IT').format(end)}',
+            '${DateFormat('d MMM', AnnaStrings.intlLocale(context)).format(start)} – ${DateFormat('d MMM yyyy', AnnaStrings.intlLocale(context)).format(end)}',
             style: TextStyle(
               color: accent.secondaryForeground,
               fontWeight: FontWeight.w800,
@@ -1651,7 +1651,7 @@ class _WeekHero extends StatelessWidget {
             spacing: 8,
             runSpacing: 8,
             children: [
-              _MiniPill(icon: Icons.event_outlined, text: '$eventCount impegni'),
+              _MiniPill(icon: Icons.event_outlined, text: AnnaStrings.of(context).plannerCommitmentsCount(eventCount)),
               _MiniPill(
                 icon: Icons.check_circle_outline,
                 text: totalTasks == 0
@@ -1793,10 +1793,10 @@ class WeekPrioritiesCard extends StatelessWidget {
                         decoration: InputDecoration(hintText: AnnaStrings.of(context).d3('priorityHint')),
                       ),
                       actions: [
-                        TextButton(onPressed: () => Navigator.pop(context), child: Text('Annulla')),
+                        TextButton(onPressed: () => Navigator.pop(context), child: Text(AnnaStrings.of(context).cancel)),
                         FilledButton(
                           onPressed: () => Navigator.pop(context, controller.text.trim()),
-                          child: Text('Aggiungi'),
+                          child: Text(AnnaStrings.of(context).add),
                         ),
                       ],
                     ),
@@ -1885,7 +1885,7 @@ class _WeekDayCard extends StatelessWidget {
               const SizedBox(width: 10),
               Expanded(
                 child: Text(
-                  _cap(DateFormat('EEEE', 'it_IT').format(day)),
+                  _cap(DateFormat('EEEE', AnnaStrings.intlLocale(context)).format(day)),
                   style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 17),
                 ),
               ),
@@ -2067,7 +2067,7 @@ class _MonthScreenState extends State<MonthScreen> {
         final spent = data.expenses.fold<int>(0, (a, b) => a + b.cents);
         return Scaffold(
           appBar: AppBar(
-            title: Text(_cap(DateFormat('MMMM yyyy', 'it_IT').format(selected)),
+            title: Text(_cap(DateFormat('MMMM yyyy', AnnaStrings.intlLocale(context)).format(selected)),
                 style: const TextStyle(fontWeight: FontWeight.w800)),
             actions: [
               IconButton(onPressed: () => setState(() => selected = DateTime(selected.year, selected.month - 1)), icon: const Icon(Icons.chevron_left)),
@@ -2151,7 +2151,7 @@ class _MonthScreenState extends State<MonthScreen> {
               const SizedBox(height: 12),
               MonthlyListCard(title: 'Libri', items: data.books, onChange: (v) => widget.store.saveMonth(selected.year, selected.month, data.copyWith(books: v))),
               const SizedBox(height: 12),
-              MonthlyListCard(title: 'Film e serie', items: data.films, onChange: (v) => widget.store.saveMonth(selected.year, selected.month, data.copyWith(films: v))),
+              MonthlyListCard(title: AnnaStrings.of(context).d3('plannerFilmsSeries'), items: data.films, onChange: (v) => widget.store.saveMonth(selected.year, selected.month, data.copyWith(films: v))),
               const SizedBox(height: 12),
               MonthlyListCard(title: 'Hobby', items: data.hobbies, onChange: (v) => widget.store.saveMonth(selected.year, selected.month, data.copyWith(hobbies: v))),
               const SizedBox(height: 12),
@@ -2364,8 +2364,8 @@ class MonthOpeningHero extends StatelessWidget {
             spacing: 8,
             runSpacing: 8,
             children: [
-              _MiniPill(icon: Icons.event_outlined, text: '$eventCount impegni'),
-              _MiniPill(icon: Icons.flag_outlined, text: '${data.goals.length} obiettivi'),
+              _MiniPill(icon: Icons.event_outlined, text: AnnaStrings.of(context).plannerCommitmentsCount(eventCount)),
+              _MiniPill(icon: Icons.flag_outlined, text: AnnaStrings.of(context).plannerGoalsCount(data.goals.length)),
               _MiniPill(
                 icon: Icons.lightbulb_outline,
                 text: AnnaStrings.of(context).d3Format('ideasCount', {'count': data.ideas.length}),
@@ -2519,10 +2519,10 @@ class MonthIdeasBoard extends StatelessWidget {
                         ),
                       ),
                       actions: [
-                        TextButton(onPressed: () => Navigator.pop(context), child: Text('Annulla')),
+                        TextButton(onPressed: () => Navigator.pop(context), child: Text(AnnaStrings.of(context).cancel)),
                         FilledButton(
                           onPressed: () => Navigator.pop(context, controller.text.trim()),
-                          child: Text('Aggiungi'),
+                          child: Text(AnnaStrings.of(context).add),
                         ),
                       ],
                     ),
@@ -2632,7 +2632,7 @@ class _YearScreenState extends State<YearScreen> {
               const SizedBox(height: 20),
               StatCard(icon: Icons.flag_outlined, title: AnnaStrings.of(context).d3('goalsEntered'), value: '$goals'),
               const SizedBox(height: 10),
-              StatCard(icon: Icons.favorite_outline, title: 'Giorni con un bel ricordo', value: '$memories'),
+              StatCard(icon: Icons.favorite_outline, title: AnnaStrings.of(context).d3('plannerMemoryDays'), value: '$memories'),
               const SizedBox(height: 10),
               StatCard(
                 icon: Icons.account_balance_wallet_outlined,
@@ -2641,7 +2641,7 @@ class _YearScreenState extends State<YearScreen> {
               ),
 
               const SizedBox(height: 22),
-              const SectionTitle('I miei 12 mesi'),
+              SectionTitle(AnnaStrings.of(context).d3('plannerTwelveMonths')),
               const SizedBox(height: 10),
               for (int month = 1; month <= 12; month++) ...[
                 YearMonthSnapshot(
@@ -2702,7 +2702,7 @@ class YearMonthSnapshot extends StatelessWidget {
           SizedBox(
             width: 74,
             child: Text(
-              _cap(DateFormat('MMM', 'it_IT').format(DateTime(year, month))),
+              _cap(DateFormat('MMM', AnnaStrings.intlLocale(context)).format(DateTime(year, month))),
               style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 16),
             ),
           ),
@@ -2719,7 +2719,7 @@ class YearMonthSnapshot extends StatelessWidget {
                           style: const TextStyle(fontWeight: FontWeight.w700),
                         ),
                       Text(
-                        '${data.goals.length} obiettivi · $memoryCount ricordi · ${money(spent)}',
+                        '${AnnaStrings.of(context).plannerGoalsCount(data.goals.length)} · ${AnnaStrings.of(context).plannerMemoriesCount(memoryCount)} · ${money(spent)}',
                         style: Theme.of(context).textTheme.bodySmall,
                       ),
                     ],
