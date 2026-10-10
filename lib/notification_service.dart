@@ -186,84 +186,111 @@ class NotificationService {
   static const String reminderSnooze60ActionId = 'reminder_snooze_60';
   static const String reminderOpenActionId = 'reminder_open';
 
-  static const List<AndroidNotificationAction> _reminderActions =
+  NotificationLocalization _localization = NotificationLocalization.english;
+
+  void configureLocalization(NotificationLocalization localization) {
+    _localization = localization;
+  }
+
+  List<AndroidNotificationAction> get _reminderActions =>
       <AndroidNotificationAction>[
-    AndroidNotificationAction(
-      reminderDoneActionId,
-      'Fatto',
-      showsUserInterface: true,
-      cancelNotification: true,
-    ),
-    AndroidNotificationAction(
-      reminderSnooze10ActionId,
-      '10 min',
-      showsUserInterface: false,
-      cancelNotification: true,
-    ),
-    AndroidNotificationAction(
-      reminderSnooze60ActionId,
-      '1 ora',
-      showsUserInterface: false,
-      cancelNotification: true,
-    ),
-    AndroidNotificationAction(
-      reminderOpenActionId,
-      'Apri',
-      showsUserInterface: true,
-      cancelNotification: true,
-    ),
-  ];
+        AndroidNotificationAction(
+          reminderDoneActionId,
+          _localization.done,
+          showsUserInterface: true,
+          cancelNotification: true,
+        ),
+        AndroidNotificationAction(
+          reminderSnooze10ActionId,
+          _localization.snooze10,
+          showsUserInterface: false,
+          cancelNotification: true,
+        ),
+        AndroidNotificationAction(
+          reminderSnooze60ActionId,
+          _localization.snooze60,
+          showsUserInterface: false,
+          cancelNotification: true,
+        ),
+        AndroidNotificationAction(
+          reminderOpenActionId,
+          _localization.open,
+          showsUserInterface: true,
+          cancelNotification: true,
+        ),
+      ];
 
-  static const NotificationDetails _standardReminderDetails =
-      NotificationDetails(
-    android: AndroidNotificationDetails(
-      reminderChannelId,
-      'Promemoria',
-      channelDescription:
-          'Promemoria di Anna\'s Diary per appuntamenti e cose da fare',
-      importance: Importance.max,
-      priority: Priority.max,
-      playSound: true,
-      enableVibration: true,
-      category: AndroidNotificationCategory.reminder,
-    ),
-    iOS: DarwinNotificationDetails(
-      presentAlert: true,
-      presentBadge: true,
-      presentSound: true,
-    ),
-    macOS: DarwinNotificationDetails(
-      presentAlert: true,
-      presentBadge: true,
-      presentSound: true,
-    ),
-  );
+  NotificationDetails get _standardReminderDetails => NotificationDetails(
+        android: AndroidNotificationDetails(
+          reminderChannelId,
+          _localization.reminderChannelName,
+          channelDescription: _localization.reminderChannelDescription,
+          importance: Importance.max,
+          priority: Priority.max,
+          playSound: true,
+          enableVibration: true,
+          category: AndroidNotificationCategory.reminder,
+        ),
+        iOS: const DarwinNotificationDetails(
+          presentAlert: true,
+          presentBadge: true,
+          presentSound: true,
+        ),
+        macOS: const DarwinNotificationDetails(
+          presentAlert: true,
+          presentBadge: true,
+          presentSound: true,
+        ),
+      );
 
-  static const NotificationDetails _actionableReminderDetails =
+  NotificationDetails get _actionableReminderDetails => NotificationDetails(
+        android: AndroidNotificationDetails(
+          reminderChannelId,
+          _localization.reminderChannelName,
+          channelDescription: _localization.reminderChannelDescription,
+          importance: Importance.max,
+          priority: Priority.max,
+          playSound: true,
+          enableVibration: true,
+          category: AndroidNotificationCategory.reminder,
+          actions: _reminderActions,
+        ),
+        iOS: const DarwinNotificationDetails(
+          presentAlert: true,
+          presentBadge: true,
+          presentSound: true,
+        ),
+        macOS: const DarwinNotificationDetails(
+          presentAlert: true,
+          presentBadge: true,
+          presentSound: true,
+        ),
+      );
+
+  NotificationDetails _sharedDetails(AndroidNotificationCategory category) =>
       NotificationDetails(
-    android: AndroidNotificationDetails(
-      reminderChannelId,
-      'Promemoria',
-      channelDescription:
-          'Promemoria di Anna\'s Diary per appuntamenti e cose da fare',
-      importance: Importance.max,
-      priority: Priority.max,
-      playSound: true,
-      enableVibration: true,
-      category: AndroidNotificationCategory.reminder,
-      actions: _reminderActions,
-    ),
-    iOS: DarwinNotificationDetails(
-      presentAlert: true,
-      presentBadge: true,
-      presentSound: true,
-    ),
-    macOS: DarwinNotificationDetails(
-      presentAlert: true,
-      presentBadge: true,
-      presentSound: true,
-    ),
-  );
+        android: AndroidNotificationDetails(
+          sharedChannelId,
+          'Noi ♡',
+          channelDescription: _localization.sharedChannelDescription,
+          importance: Importance.max,
+          priority: Priority.max,
+          playSound: true,
+          enableVibration: true,
+          category: category,
+          color: const Color(0xFFE84A7F),
+        ),
+        iOS: const DarwinNotificationDetails(
+          presentAlert: true,
+          presentBadge: true,
+          presentSound: true,
+        ),
+        macOS: const DarwinNotificationDetails(
+          presentAlert: true,
+          presentBadge: true,
+          presentSound: true,
+        ),
+      );
 
   final FlutterLocalNotificationsPlugin _plugin =
       FlutterLocalNotificationsPlugin();
