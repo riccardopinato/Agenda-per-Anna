@@ -486,7 +486,8 @@ class _JournalEditorState extends State<JournalEditor> {
                             ),
                           ) ??
                           false;
-                      if (!confirmed || !mounted) return;
+                      if (!confirmed) return;
+                      if (!mounted) return;
                       final movedMessage = AnnaStrings.of(context)
                           .d3('editor_dayMovedTrash');
                       final moved =
