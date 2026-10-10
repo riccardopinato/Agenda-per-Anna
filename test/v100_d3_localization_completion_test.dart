@@ -409,5 +409,19 @@ void main() {
     expect(mediaStore, isNot(contains('Media asset non valido.')));
     expect(mediaStore, contains('media_asset_invalid'));
   });
+  test('D3 AppLab onboarding accepts every supported locale', () {
+    final flow = _source('.maestro/applab-smoke.yaml');
+    for (final text in const <String>[
+      'La tua agenda, davvero tua',
+      'Your agenda, truly yours',
+      'Tu agenda, de verdad tuya',
+      'Ton agenda, vraiment à toi',
+      'A tua agenda, verdadeiramente tua',
+      'Inizia|Start|Empezar|Commencer|Começar',
+    ]) {
+      expect(flow, contains(text));
+    }
+  });
+
 
 }
