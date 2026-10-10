@@ -986,7 +986,10 @@ extension AgendaStoreLifecycle on AgendaStore {
     final index = trash.indexWhere((entry) => entry.id == trashId);
     if (index < 0) return false;
     if (createSafetySnapshot) {
-      await createLocalSnapshot(label: 'Prima di svuotare il Cestino');
+      await createLocalSnapshot(
+        label: AnnaStrings.forPreference(preferences.appLanguage)
+            .d3('snapshotBeforeEmptyTrash'),
+      );
     }
 
     final entry = trash.removeAt(index);
@@ -1026,7 +1029,10 @@ extension AgendaStoreLifecycle on AgendaStore {
 
   Future<int> emptyTrash() async {
     if (trash.isEmpty) return 0;
-    await createLocalSnapshot(label: 'Prima di svuotare il Cestino');
+    await createLocalSnapshot(
+        label: AnnaStrings.forPreference(preferences.appLanguage)
+            .d3('snapshotBeforeEmptyTrash'),
+      );
 
     final removed = [...trash];
     final purgedPeople = removed
