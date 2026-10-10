@@ -639,6 +639,22 @@ const Map<String, Map<String, String>> _d3Catalog = {
   "archiveArchived": <String, String>{"en": "Archived", "it": "Archiviato", "es": "Archivado", "fr": "Archivé", "pt": "Arquivado"},
   "archiveCompleted": <String, String>{"en": "Completed", "it": "Completato", "es": "Completado", "fr": "Terminé", "pt": "Concluído"},
   "archiveInboxArchived": <String, String>{"en": "Archived Inbox", "it": "Inbox archiviata", "es": "Inbox archivada", "fr": "Inbox archivée", "pt": "Inbox arquivada"},
+  "notesDefaultTitle": <String, String>{"en": "Note from Anna's Diary", "it": "Nota da Anna's Diary", "es": "Nota de Anna's Diary", "fr": "Note depuis Anna's Diary", "pt": "Nota do Anna's Diary"},
+  "notesSource": <String, String>{"en": "Source: {value}", "it": "Fonte: {value}", "es": "Fuente: {value}", "fr": "Source : {value}", "pt": "Fonte: {value}"},
+  "notesDate": <String, String>{"en": "Date: {value}", "it": "Data: {value}", "es": "Fecha: {value}", "fr": "Date : {value}", "pt": "Data: {value}"},
+  "notesPeople": <String, String>{"en": "People: {value}", "it": "Persone: {value}", "es": "Personas: {value}", "fr": "Personnes : {value}", "pt": "Pessoas: {value}"},
+  "notesPlaces": <String, String>{"en": "Places: {value}", "it": "Luoghi: {value}", "es": "Lugares: {value}", "fr": "Lieux : {value}", "pt": "Locais: {value}"},
+  "notesImported": <String, String>{"en": "Imported from Anna's Diary · Notes Bridge Lite", "it": "Importato da Anna's Diary · Notes Bridge Lite", "es": "Importado de Anna's Diary · Notes Bridge Lite", "fr": "Importé depuis Anna's Diary · Notes Bridge Lite", "pt": "Importado do Anna's Diary · Notes Bridge Lite"},
+  "notesInbox": <String, String>{"en": "Inbox note", "it": "Nota Inbox", "es": "Nota de Inbox", "fr": "Note Inbox", "pt": "Nota da Inbox"},
+  "notesDiarySource": <String, String>{"en": "Anna's Diary · Diary", "it": "Anna's Diary · Diario", "es": "Anna's Diary · Diario", "fr": "Anna's Diary · Journal", "pt": "Anna's Diary · Diário"},
+  "notesDiaryNote": <String, String>{"en": "Diary note", "it": "Nota diario", "es": "Nota de diario", "fr": "Note de journal", "pt": "Nota de diário"},
+  "notesDiaryPhoto": <String, String>{"en": "Diary photo", "it": "Foto diario", "es": "Foto de diario", "fr": "Photo de journal", "pt": "Foto de diário"},
+  "notesDiarySketch": <String, String>{"en": "Diary sketch", "it": "Sketch diario", "es": "Boceto de diario", "fr": "Croquis de journal", "pt": "Esboço de diário"},
+  "notesVoice": <String, String>{"en": "Voice note", "it": "Nota vocale", "es": "Nota de voz", "fr": "Note vocale", "pt": "Nota de voz"},
+  "notesPhotoNotice": <String, String>{"en": "Note: the original photo stays in Anna's Diary and is not copied by Notes Bridge Lite.", "it": "Nota: la foto originale resta in Anna's Diary e non viene copiata da Notes Bridge Lite.", "es": "Nota: la foto original permanece en Anna's Diary y Notes Bridge Lite no la copia.", "fr": "Note : la photo originale reste dans Anna's Diary et n’est pas copiée par Notes Bridge Lite.", "pt": "Nota: a foto original permanece no Anna's Diary e não é copiada pelo Notes Bridge Lite."},
+  "notesAudioNotice": <String, String>{"en": "Note: the original audio stays in Anna's Diary and is not copied by Notes Bridge Lite.", "it": "Nota: l’audio originale resta in Anna's Diary e non viene copiato da Notes Bridge Lite.", "es": "Nota: el audio original permanece en Anna's Diary y Notes Bridge Lite no lo copia.", "fr": "Note : l’audio original reste dans Anna's Diary et n’est pas copié par Notes Bridge Lite.", "pt": "Nota: o áudio original permanece no Anna's Diary e não é copiado pelo Notes Bridge Lite."},
+  "notesSketchNotice": <String, String>{"en": "Note: only sketch text is copied; strokes and images stay in Anna's Diary.", "it": "Nota: vengono copiati solo i testi dello sketch; tratti e immagini restano in Anna's Diary.", "es": "Nota: solo se copia el texto del boceto; los trazos y las imágenes permanecen en Anna's Diary.", "fr": "Note : seul le texte du croquis est copié ; les traits et images restent dans Anna's Diary.", "pt": "Nota: apenas o texto do esboço é copiado; traços e imagens permanecem no Anna's Diary."},
+  "notesCopied": <String, String>{"en": "Copied for Notes.", "it": "Copiato per Notes.", "es": "Copiado para Notes.", "fr": "Copié pour Notes.", "pt": "Copiado para Notes."},
 };
 
 NotificationLocalization notificationLocalizationForPreference(AppLanguage value) {
