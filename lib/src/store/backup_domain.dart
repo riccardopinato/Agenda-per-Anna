@@ -128,7 +128,10 @@ class _AgendaBackupDomain {
     );
   }
 
-  Future<Uint8List> createOpenExportZip(AgendaStore store) async {
+  Future<Uint8List> createOpenExportZip(
+    AgendaStore store, {
+    AnnaStrings strings = const AnnaStrings('it'),
+  }) async {
     final exportedAt = DateTime.now();
     final openData = Map<String, dynamic>.from(localDataPayload(store))
       ..remove('trash')
@@ -208,6 +211,7 @@ class _AgendaBackupDomain {
       exportedAt: exportedAt,
       mediaPaths: mediaPaths,
       sketchPaths: sketchPaths,
+      strings: strings,
     );
 
     final manifest = {
@@ -348,6 +352,7 @@ class _AgendaBackupDomain {
     required DateTime exportedAt,
     required Map<String, String> mediaPaths,
     required Map<String, String> sketchPaths,
+    required AnnaStrings strings,
   }) {
     final buffer = StringBuffer();
     final peopleById = {
@@ -646,7 +651,10 @@ class _AgendaBackupDomain {
     return normalized.length <= 96 ? normalized : normalized.substring(0, 96);
   }
 
-  String createReadableExport(AgendaStore store) {
+  String createReadableExport(
+    AgendaStore store, {
+    AnnaStrings strings = const AnnaStrings('it'),
+  }) {
     final buffer = StringBuffer();
     final now = DateTime.now();
 
