@@ -294,7 +294,7 @@ class UnifiedAgendaTile extends StatelessWidget {
               value: 'edit',
               child: ListTile(
                 contentPadding: EdgeInsets.zero,
-                leading: Icon(Icons.edit_outlined),
+                leading: const Icon(Icons.edit_outlined),
                 title: Text(AnnaStrings.of(context).edit),
               ),
             ),
@@ -302,7 +302,7 @@ class UnifiedAgendaTile extends StatelessWidget {
               value: 'private',
               child: ListTile(
                 contentPadding: EdgeInsets.zero,
-                leading: Icon(Icons.lock_outline),
+                leading: const Icon(Icons.lock_outline),
                 title: Text(AnnaStrings.of(context).d3('unified_movePrivate')),
               ),
             ),
@@ -310,7 +310,7 @@ class UnifiedAgendaTile extends StatelessWidget {
               value: 'delete',
               child: ListTile(
                 contentPadding: EdgeInsets.zero,
-                leading: Icon(Icons.delete_outline),
+                leading: const Icon(Icons.delete_outline),
                 title: Text(AnnaStrings.of(context).delete),
               ),
             ),
