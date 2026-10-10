@@ -257,6 +257,7 @@ class _CloudAccountScreenState extends State<CloudAccountScreen> {
   @override
   Widget build(BuildContext context) {
     final cloud = CloudSyncService.instance;
+    final strings = AnnaStrings.of(context);
 
     return AnimatedBuilder(
       animation: Listenable.merge([cloud, widget.store.syncRevision]),
@@ -268,9 +269,9 @@ class _CloudAccountScreenState extends State<CloudAccountScreen> {
         builder: (context, _) {
           return Scaffold(
             appBar: AppBar(
-              title: const Text(
-                'Account e sincronizzazione',
-                style: TextStyle(fontWeight: FontWeight.w900),
+              title: Text(
+                strings.d3('accountAndSync'),
+                style: const TextStyle(fontWeight: FontWeight.w900),
               ),
             ),
             body: ListView(
@@ -302,7 +303,7 @@ class _CloudAccountScreenState extends State<CloudAccountScreen> {
                       ),
                       const SizedBox(height: 10),
                       Text(
-                        _stateLabel(cloud.state),
+                        _stateLabel(cloud.state, strings),
                         style: const TextStyle(
                           fontWeight: FontWeight.w900,
                           fontSize: 22,
@@ -311,8 +312,8 @@ class _CloudAccountScreenState extends State<CloudAccountScreen> {
                       const SizedBox(height: 5),
                       Text(
                         cloud.signedIn
-                            ? 'La tua agenda personale può restare allineata su Android, iPhone e Web.'
-                            : 'Accedi con lo stesso account sui tuoi dispositivi per ritrovare la stessa agenda personale.',
+                            ? strings.d3('cloudConnectedDescription')
+                            : strings.d3('cloudSignedOutDescription'),
                       ),
                     ],
                   ),
@@ -323,23 +324,22 @@ class _CloudAccountScreenState extends State<CloudAccountScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text(
-                          'Cloud pronto, ma non ancora collegato',
-                          style: TextStyle(
+                        Text(
+                          strings.d3('cloudReadyNotConnected'),
+                          style: const TextStyle(
                             fontWeight: FontWeight.w900,
                             fontSize: 18,
                           ),
                         ),
                         const SizedBox(height: 6),
                         Text(
-                          'Questa build non contiene ancora le credenziali del progetto Supabase. '
-                          'L’app continua a funzionare completamente offline e nessun dato viene perso.',
+                          strings.d3('cloudBuildNoCredentials'),
                           style: Theme.of(context).textTheme.bodySmall,
                         ),
                         const SizedBox(height: 10),
-                        const Text(
-                          'La struttura di sincronizzazione e il database sono già predisposti anche per il futuro Spazio condiviso.',
-                          style: TextStyle(fontWeight: FontWeight.w700),
+                        Text(
+                          strings.d3('sharedPrepared'),
+                          style: const TextStyle(fontWeight: FontWeight.w700),
                         ),
                       ],
                     ),
@@ -349,33 +349,30 @@ class _CloudAccountScreenState extends State<CloudAccountScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text(
-                          'Accedi al tuo account',
-                          style: TextStyle(
+                        Text(
+                          strings.d3('signInAccount'),
+                          style: const TextStyle(
                             fontWeight: FontWeight.w900,
                             fontSize: 18,
                           ),
                         ),
                         const SizedBox(height: 8),
-                        const Text(
-                          'Google è l’accesso principale di Anna\'s Diary. '
-                          'Il login email/password resta solo per gli account creati nelle versioni precedenti.',
-                        ),
+                        Text(strings.d3('googlePrimary')),
                         const SizedBox(height: 14),
                         SizedBox(
                           width: double.infinity,
                           child: FilledButton.icon(
                             onPressed: busy ? null : _google,
                             icon: const Icon(Icons.login),
-                            label: const Text('Continua con Google'),
+                            label: Text(strings.d3('continueGoogle')),
                           ),
                         ),
                         const SizedBox(height: 18),
                         const Divider(),
                         const SizedBox(height: 8),
-                        const Text(
-                          'Account email esistente',
-                          style: TextStyle(fontWeight: FontWeight.w800),
+                        Text(
+                          strings.d3('existingEmailAccount'),
+                          style: const TextStyle(fontWeight: FontWeight.w800),
                         ),
                         const SizedBox(height: 10),
                         TextField(
@@ -393,9 +390,9 @@ class _CloudAccountScreenState extends State<CloudAccountScreen> {
                           obscureText: true,
                           autofillHints: const [AutofillHints.password],
                           onSubmitted: (_) => busy ? null : _submit(),
-                          decoration: const InputDecoration(
-                            labelText: 'Password',
-                            prefixIcon: Icon(Icons.lock_outline),
+                          decoration: InputDecoration(
+                            labelText: strings.d3('password'),
+                            prefixIcon: const Icon(Icons.lock_outline),
                           ),
                         ),
                         const SizedBox(height: 12),
@@ -404,14 +401,14 @@ class _CloudAccountScreenState extends State<CloudAccountScreen> {
                           child: OutlinedButton.icon(
                             onPressed: busy ? null : _submit,
                             icon: const Icon(Icons.login),
-                            label: const Text('Accedi con account esistente'),
+                            label: Text(strings.d3('existingAccount')),
                           ),
                         ),
                         Center(
                           child: TextButton.icon(
                             onPressed: busy ? null : _forgotPassword,
                             icon: const Icon(Icons.lock_reset_outlined),
-                            label: const Text('Password dimenticata?'),
+                            label: Text(strings.d3('forgotPassword')),
                           ),
                         ),
                       ],
