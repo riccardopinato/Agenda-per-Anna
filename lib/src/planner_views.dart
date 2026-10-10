@@ -609,7 +609,7 @@ class _DayLifeOverviewCard extends StatelessWidget {
               if (onOpenDay != null)
                 TextButton(
                   onPressed: onOpenDay,
-                  child: const Text('Apri'),
+                  child: Text(AnnaStrings.of(context).d3('open')),
                 ),
             ],
           ),
@@ -618,8 +618,8 @@ class _DayLifeOverviewCard extends StatelessWidget {
             snapshot.isEmpty
                 ? 'La giornata è ancora tutta da raccontare.'
                 : snapshot.hasJournalContent
-                    ? 'Impegni, persone, allenamenti e diario nello stesso posto.'
-                    : 'Gli impegni di oggi sono già qui. Puoi aggiungere anche ciò che vuoi ricordare.',
+                    ? AnnaStrings.of(context).d3('dayHubEmpty')
+                    : AnnaStrings.of(context).d3('dayHubBusy'),
             style: Theme.of(context).textTheme.bodySmall,
           ),
           if (metrics.isNotEmpty) ...[
@@ -741,7 +741,7 @@ class _DayLifeStream extends StatelessWidget {
               SizedBox(width: 8),
               Expanded(
                 child: Text(
-                  'Momenti del giorno',
+                  AnnaStrings.of(context).d3('dayMoments'),
                   style: TextStyle(
                     fontWeight: FontWeight.w900,
                     fontSize: 18,
@@ -752,7 +752,7 @@ class _DayLifeStream extends StatelessWidget {
           ),
           const SizedBox(height: 5),
           Text(
-            'Agenda, compleanni, allenamenti e contenuti del diario in un’unica sequenza.',
+            AnnaStrings.of(context).d3('dayMomentsSubtitle'),
             style: Theme.of(context).textTheme.bodySmall,
           ),
           const SizedBox(height: 10),
@@ -760,7 +760,7 @@ class _DayLifeStream extends StatelessWidget {
             const Padding(
               padding: EdgeInsets.symmetric(vertical: 8),
               child: Text(
-                'Nessun momento ancora. Usa Cattura per aggiungere qualcosa.',
+                AnnaStrings.of(context).d3('noDayMoments'),
               ),
             )
           else
@@ -948,7 +948,7 @@ class _TimelineHint extends StatelessWidget {
             child: Text(
               eventCount == 0
                   ? 'Tocca un orario libero per aggiungere il primo impegno.'
-                  : 'Tocca uno spazio libero per aggiungere · tocca un impegno per modificarlo.',
+                  : AnnaStrings.of(context).d3('tapFreeSlot'),
               style: Theme.of(context).textTheme.bodySmall,
             ),
           ),
@@ -1487,34 +1487,34 @@ class _WeekScreenState extends State<WeekScreen> {
 
         return Scaffold(
           appBar: AppBar(
-            title: const Text('La mia settimana', style: TextStyle(fontWeight: FontWeight.w800)),
+            title: Text(AnnaStrings.of(context).d3('myWeek'), style: TextStyle(fontWeight: FontWeight.w800)),
             actions: [
               IconButton(
-                tooltip: 'Settimana precedente',
+                tooltip: AnnaStrings.of(context).d3('previousWeek'),
                 onPressed: () => _moveWeek(-7),
                 icon: const Icon(Icons.chevron_left),
               ),
               IconButton(
-                tooltip: 'Questa settimana',
+                tooltip: AnnaStrings.of(context).d3('thisWeek'),
                 onPressed: _goToCurrentWeek,
                 icon: const Icon(Icons.today_outlined),
               ),
               IconButton(
-                tooltip: 'Settimana successiva',
+                tooltip: AnnaStrings.of(context).d3('nextWeek'),
                 onPressed: () => _moveWeek(7),
                 icon: const Icon(Icons.chevron_right),
               ),
               PopupMenuButton<String>(
-                tooltip: 'Azioni settimana',
+                tooltip: AnnaStrings.of(context).d3('weekActions'),
                 onSelected: (value) async {
                   if (value != 'trash') return;
                   final confirmed = await showDialog<bool>(
                         context: context,
                         builder: (dialogContext) => AlertDialog(
-                          title: const Text(
+                          title: Text(
                             'Spostare la pagina settimanale nel Cestino?',
                           ),
-                          content: const Text(
+                          content: Text(
                             'Focus, priorità e riflessioni della settimana '
                             'potranno essere ripristinati.',
                           ),
@@ -1522,12 +1522,12 @@ class _WeekScreenState extends State<WeekScreen> {
                             TextButton(
                               onPressed: () =>
                                   Navigator.pop(dialogContext, false),
-                              child: const Text('Annulla'),
+                              child: Text('Annulla'),
                             ),
                             FilledButton(
                               onPressed: () =>
                                   Navigator.pop(dialogContext, true),
-                              child: const Text('Sposta nel Cestino'),
+                              child: Text(AnnaStrings.of(context).d3('moveTrash')),
                             ),
                           ],
                         ),
@@ -1540,7 +1540,7 @@ class _WeekScreenState extends State<WeekScreen> {
                 itemBuilder: (_) => const [
                   PopupMenuItem(
                     value: 'trash',
-                    child: Text('Sposta pagina nel Cestino'),
+                    child: Text(AnnaStrings.of(context).d3('movePageTrash')),
                   ),
                 ],
               ),
@@ -1631,7 +1631,7 @@ class _WeekHero extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           Text(
-            'Una settimana alla volta',
+            AnnaStrings.of(context).d3('oneWeek'),
             style: TextStyle(
               color: accent.foreground,
               fontSize: 22,
@@ -1723,7 +1723,7 @@ class _WeekFocusCardState extends State<WeekFocusCard> {
             children: [
               Icon(Icons.center_focus_strong_outlined),
               SizedBox(width: 8),
-              Text('Focus della settimana', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800)),
+              Text(AnnaStrings.of(context).d3('weekFocus'), style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800)),
             ],
           ),
           const SizedBox(height: 12),
@@ -1731,8 +1731,8 @@ class _WeekFocusCardState extends State<WeekFocusCard> {
             controller: controller,
             minLines: 2,
             maxLines: 4,
-            decoration: const InputDecoration(
-              hintText: 'Qual è la cosa più importante di questa settimana?',
+            decoration: InputDecoration(
+              hintText: AnnaStrings.of(context).d3('weekFocusHint'),
               border: OutlineInputBorder(),
             ),
           ),
@@ -1741,7 +1741,7 @@ class _WeekFocusCardState extends State<WeekFocusCard> {
             width: double.infinity,
             child: FilledButton.tonal(
               onPressed: () => widget.onSave(widget.data.copyWith(focus: controller.text.trim())),
-              child: const Text('Salva focus'),
+              child: Text(AnnaStrings.of(context).d3('saveFocus')),
             ),
           ),
         ],
@@ -1764,7 +1764,7 @@ class WeekPrioritiesCard extends StatelessWidget {
           Row(
             children: [
               const Expanded(
-                child: Text('Priorità della settimana',
+                child: Text(AnnaStrings.of(context).d3('weekPriorities'),
                     style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800)),
               ),
               IconButton(
@@ -1773,17 +1773,17 @@ class WeekPrioritiesCard extends StatelessWidget {
                   final value = await showDialog<String>(
                     context: context,
                     builder: (context) => AlertDialog(
-                      title: const Text('Nuova priorità'),
+                      title: Text(AnnaStrings.of(context).d3('newPriority')),
                       content: TextField(
                         controller: controller,
                         autofocus: true,
-                        decoration: const InputDecoration(hintText: 'Es. Finire la tesi'),
+                        decoration: InputDecoration(hintText: AnnaStrings.of(context).d3('priorityHint')),
                       ),
                       actions: [
-                        TextButton(onPressed: () => Navigator.pop(context), child: const Text('Annulla')),
+                        TextButton(onPressed: () => Navigator.pop(context), child: Text('Annulla')),
                         FilledButton(
                           onPressed: () => Navigator.pop(context, controller.text.trim()),
-                          child: const Text('Aggiungi'),
+                          child: Text('Aggiungi'),
                         ),
                       ],
                     ),
@@ -1891,7 +1891,7 @@ class _WeekDayCard extends StatelessWidget {
           if (items.isEmpty)
             const Padding(
               padding: EdgeInsets.only(top: 8),
-              child: Text('Nessun impegno'),
+              child: Text(AnnaStrings.of(context).d3('noCommitments')),
             )
           else ...[
             const SizedBox(height: 8),
@@ -1959,11 +1959,11 @@ class _WeekMemoryCardState extends State<WeekMemoryCard> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text('La mia settimana ♡',
+          Text(AnnaStrings.of(context).d3('myWeekHeart'),
               style: TextStyle(fontWeight: FontWeight.w800, fontSize: 18)),
           if (widget.autoMemories.isNotEmpty) ...[
             const SizedBox(height: 12),
-            const Text('Cose belle annotate nei giorni',
+            Text(AnnaStrings.of(context).d3('niceThings'),
                 style: TextStyle(fontWeight: FontWeight.w700)),
             const SizedBox(height: 6),
             ...widget.autoMemories.map(
@@ -1972,7 +1972,7 @@ class _WeekMemoryCardState extends State<WeekMemoryCard> {
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text('♡  '),
+                    Text('♡  '),
                     Expanded(child: Text(memory)),
                   ],
                 ),
@@ -1982,8 +1982,8 @@ class _WeekMemoryCardState extends State<WeekMemoryCard> {
           const SizedBox(height: 12),
           TextField(
             controller: best,
-            decoration: const InputDecoration(
-              labelText: 'La cosa più bella della settimana',
+            decoration: InputDecoration(
+              labelText: AnnaStrings.of(context).d3('bestWeek'),
               border: OutlineInputBorder(),
             ),
           ),
@@ -1992,8 +1992,8 @@ class _WeekMemoryCardState extends State<WeekMemoryCard> {
             controller: reflection,
             minLines: 3,
             maxLines: 6,
-            decoration: const InputDecoration(
-              labelText: 'Come è andata questa settimana?',
+            decoration: InputDecoration(
+              labelText: AnnaStrings.of(context).d3('howWeek'),
               border: OutlineInputBorder(),
             ),
           ),
@@ -2007,7 +2007,7 @@ class _WeekMemoryCardState extends State<WeekMemoryCard> {
                   reflection: reflection.text.trim(),
                 ),
               ),
-              child: const Text('Salva settimana'),
+              child: Text(AnnaStrings.of(context).d3('saveWeek')),
             ),
           ),
         ],
@@ -2055,16 +2055,16 @@ class _MonthScreenState extends State<MonthScreen> {
               IconButton(onPressed: () => setState(() => selected = DateTime(selected.year, selected.month - 1)), icon: const Icon(Icons.chevron_left)),
               IconButton(onPressed: () => setState(() => selected = DateTime(selected.year, selected.month + 1)), icon: const Icon(Icons.chevron_right)),
               PopupMenuButton<String>(
-                tooltip: 'Azioni mese',
+                tooltip: AnnaStrings.of(context).d3('monthActions'),
                 onSelected: (value) async {
                   if (value != 'trash') return;
                   final confirmed = await showDialog<bool>(
                         context: context,
                         builder: (dialogContext) => AlertDialog(
-                          title: const Text(
+                          title: Text(
                             'Spostare la pagina mensile nel Cestino?',
                           ),
-                          content: const Text(
+                          content: Text(
                             'Obiettivi, budget, idee e riflessioni del mese '
                             'potranno essere ripristinati.',
                           ),
@@ -2072,12 +2072,12 @@ class _MonthScreenState extends State<MonthScreen> {
                             TextButton(
                               onPressed: () =>
                                   Navigator.pop(dialogContext, false),
-                              child: const Text('Annulla'),
+                              child: Text('Annulla'),
                             ),
                             FilledButton(
                               onPressed: () =>
                                   Navigator.pop(dialogContext, true),
-                              child: const Text('Sposta nel Cestino'),
+                              child: Text(AnnaStrings.of(context).d3('moveTrash')),
                             ),
                           ],
                         ),
@@ -2093,7 +2093,7 @@ class _MonthScreenState extends State<MonthScreen> {
                 itemBuilder: (_) => const [
                   PopupMenuItem(
                     value: 'trash',
-                    child: Text('Sposta pagina nel Cestino'),
+                    child: Text(AnnaStrings.of(context).d3('movePageTrash')),
                   ),
                 ],
               ),
@@ -2127,12 +2127,12 @@ class _MonthScreenState extends State<MonthScreen> {
               const SizedBox(height: 12),
               MonthTextCard(
                 key: ValueKey('month-intention-${selected.year}-${selected.month}'),
-                title: 'Questo mese voglio...',
+                title: AnnaStrings.of(context).d3('thisMonthWant'),
                 initial: data.intention,
                 onSave: (v) => widget.store.saveMonth(selected.year, selected.month, data.copyWith(intention: v)),
               ),
               const SizedBox(height: 12),
-              MonthlyListCard(title: 'Obiettivi', items: data.goals, onChange: (v) => widget.store.saveMonth(selected.year, selected.month, data.copyWith(goals: v))),
+              MonthlyListCard(title: AnnaStrings.of(context).d3('goals'), items: data.goals, onChange: (v) => widget.store.saveMonth(selected.year, selected.month, data.copyWith(goals: v))),
               const SizedBox(height: 12),
               MonthlyListCard(title: 'Libri', items: data.books, onChange: (v) => widget.store.saveMonth(selected.year, selected.month, data.copyWith(books: v))),
               const SizedBox(height: 12),
@@ -2140,7 +2140,7 @@ class _MonthScreenState extends State<MonthScreen> {
               const SizedBox(height: 12),
               MonthlyListCard(title: 'Hobby', items: data.hobbies, onChange: (v) => widget.store.saveMonth(selected.year, selected.month, data.copyWith(hobbies: v))),
               const SizedBox(height: 12),
-              MonthlyListCard(title: 'Desideri', items: data.wishes, onChange: (v) => widget.store.saveMonth(selected.year, selected.month, data.copyWith(wishes: v))),
+              MonthlyListCard(title: AnnaStrings.of(context).d3('wishes'), items: data.wishes, onChange: (v) => widget.store.saveMonth(selected.year, selected.month, data.copyWith(wishes: v))),
               const SizedBox(height: 12),
               MonthIdeasBoard(
                 ideas: data.ideas,
@@ -2217,7 +2217,7 @@ class _MonthWellbeingCard extends StatelessWidget {
               Icon(Icons.favorite_outline),
               SizedBox(width: 8),
               Text(
-                'Il mese, visto da me',
+                AnnaStrings.of(context).d3('monthFromMe'),
                 style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800),
               ),
             ],
@@ -2401,7 +2401,7 @@ class _MonthOpeningJournalCardState
               Icon(Icons.auto_awesome_outlined),
               SizedBox(width: 8),
               Text(
-                'Apertura del mese',
+                AnnaStrings.of(context).d3('monthOpening'),
                 style: TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.w800,
@@ -2411,15 +2411,15 @@ class _MonthOpeningJournalCardState
           ),
           const SizedBox(height: 6),
           Text(
-            'Una piccola pagina per dare un tono al mese prima di riempirlo.',
+            AnnaStrings.of(context).d3('monthOpeningSubtitle'),
             style: Theme.of(context).textTheme.bodySmall,
           ),
           const SizedBox(height: 14),
           TextField(
             controller: word,
-            decoration: const InputDecoration(
-              labelText: 'La parola del mese',
-              hintText: 'Es. calma, coraggio, leggerezza...',
+            decoration: InputDecoration(
+              labelText: AnnaStrings.of(context).d3('monthWord'),
+              hintText: AnnaStrings.of(context).d3('monthWordHint'),
               prefixIcon: Icon(Icons.text_fields_outlined),
               border: OutlineInputBorder(),
             ),
@@ -2429,9 +2429,9 @@ class _MonthOpeningJournalCardState
             controller: selfCare,
             minLines: 2,
             maxLines: 4,
-            decoration: const InputDecoration(
-              labelText: 'Come voglio prendermi cura di me',
-              hintText: 'Una piccola attenzione concreta...',
+            decoration: InputDecoration(
+              labelText: AnnaStrings.of(context).d3('selfCare'),
+              hintText: AnnaStrings.of(context).d3('selfCareHint'),
               prefixIcon: Icon(Icons.spa_outlined),
               border: OutlineInputBorder(),
             ),
@@ -2447,7 +2447,7 @@ class _MonthOpeningJournalCardState
                   selfCare: selfCare.text.trim(),
                 ),
               ),
-              label: const Text('Salva apertura del mese'),
+              label: Text(AnnaStrings.of(context).d3('saveMonthOpening')),
             ),
           ),
         ],
@@ -2478,10 +2478,10 @@ class MonthIdeasBoard extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('Idee del mese',
+                    Text(AnnaStrings.of(context).d3('monthIdeas'),
                         style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800)),
                     SizedBox(height: 3),
-                    Text('Posti, ricette, film, cose da provare e piccoli desideri.',
+                    Text(AnnaStrings.of(context).d3('monthIdeasSubtitle'),
                         style: TextStyle(fontSize: 12)),
                   ],
                 ),
@@ -2492,19 +2492,19 @@ class MonthIdeasBoard extends StatelessWidget {
                   final value = await showDialog<String>(
                     context: context,
                     builder: (context) => AlertDialog(
-                      title: const Text('Nuova idea'),
+                      title: Text(AnnaStrings.of(context).d3('newIdea')),
                       content: TextField(
                         controller: controller,
                         autofocus: true,
-                        decoration: const InputDecoration(
-                          hintText: 'Es. Fare una passeggiata al lago',
+                        decoration: InputDecoration(
+                          hintText: AnnaStrings.of(context).d3('ideaHint'),
                         ),
                       ),
                       actions: [
-                        TextButton(onPressed: () => Navigator.pop(context), child: const Text('Annulla')),
+                        TextButton(onPressed: () => Navigator.pop(context), child: Text('Annulla')),
                         FilledButton(
                           onPressed: () => Navigator.pop(context, controller.text.trim()),
-                          child: const Text('Aggiungi'),
+                          child: Text('Aggiungi'),
                         ),
                       ],
                     ),
@@ -2527,7 +2527,7 @@ class MonthIdeasBoard extends StatelessWidget {
                 color: const Color(0xFFFFF5F8),
                 borderRadius: BorderRadius.circular(18),
               ),
-              child: const Text(
+              child: Text(
                 'Qui può diventare la piccola “rivista” del mese: aggiungi qualcosa che ti piacerebbe fare, vedere, leggere o provare.',
               ),
             )
@@ -2601,7 +2601,7 @@ class _YearScreenState extends State<YearScreen> {
         }).length;
 
         return Scaffold(
-          appBar: AppBar(title: const Text('Il mio anno', style: TextStyle(fontWeight: FontWeight.w800))),
+          appBar: AppBar(title: Text(AnnaStrings.of(context).d3('myYear'), style: TextStyle(fontWeight: FontWeight.w800))),
           body: ListView(
             padding: const EdgeInsets.all(18),
             children: [
@@ -2614,7 +2614,7 @@ class _YearScreenState extends State<YearScreen> {
                 ],
               ),
               const SizedBox(height: 20),
-              StatCard(icon: Icons.flag_outlined, title: 'Obiettivi inseriti', value: '$goals'),
+              StatCard(icon: Icons.flag_outlined, title: AnnaStrings.of(context).d3('goalsEntered'), value: '$goals'),
               const SizedBox(height: 10),
               StatCard(icon: Icons.favorite_outline, title: 'Giorni con un bel ricordo', value: '$memories'),
               const SizedBox(height: 10),
@@ -2732,13 +2732,13 @@ Future<void> _showAgendaItemActions(
         children: [
           ListTile(
             leading: const Icon(Icons.edit_outlined),
-            title: const Text('Modifica'),
+            title: Text('Modifica'),
             onTap: () => Navigator.pop(context, 'edit'),
           ),
           ListTile(
             leading: const Icon(Icons.content_copy_outlined),
-            title: const Text('Duplica'),
-            subtitle: const Text('Crea una copia nello stesso giorno'),
+            title: Text(AnnaStrings.of(context).d3('duplicate')),
+            subtitle: Text(AnnaStrings.of(context).d3('duplicateSameDay')),
             onTap: () => Navigator.pop(context, 'duplicate'),
           ),
           ListTile(
@@ -2753,8 +2753,8 @@ Future<void> _showAgendaItemActions(
           if (store.sharedAgendaSpaces.isNotEmpty)
             ListTile(
               leading: const Icon(Icons.favorite_outline),
-              title: const Text('Sposta in Noi ♡'),
-              subtitle: const Text('Rendi questo elemento condiviso.'),
+              title: Text(AnnaStrings.of(context).d3('moveToNoi')),
+              subtitle: Text(AnnaStrings.of(context).d3('makeShared')),
               onTap: () => Navigator.pop(context, 'share'),
             ),
           ListTile(
@@ -2785,16 +2785,16 @@ Future<void> _showAgendaItemActions(
     final confirmed = await showDialog<bool>(
           context: context,
           builder: (dialogContext) => AlertDialog(
-            title: const Text('Eliminare questo elemento?'),
+            title: Text(AnnaStrings.of(context).d3('deleteItem')),
             content: Text(item.title),
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(dialogContext, false),
-                child: const Text('Annulla'),
+                child: Text('Annulla'),
               ),
               FilledButton(
                 onPressed: () => Navigator.pop(dialogContext, true),
-                child: const Text('Elimina'),
+                child: Text('Elimina'),
               ),
             ],
           ),
