@@ -288,7 +288,7 @@ extension AgendaStoreDayHub on AgendaStore {
       note: birthday.note.trim(),
     );
     if (value.name.isEmpty) {
-      throw const FormatException('Il nome del compleanno non può essere vuoto.');
+      throw const FormatException('birthday_name_required');
     }
 
     final index = birthdays.indexWhere((entry) => entry.id == value.id);
