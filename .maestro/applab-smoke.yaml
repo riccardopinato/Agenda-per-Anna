@@ -3,9 +3,10 @@ appId: com.riccardopinato.agenda_per_anna
 - launchApp:
     clearState: true
 - extendedWaitUntil:
-    visible: "La tua agenda, davvero tua."
+    visible: '(La tua agenda, davvero tua\.|Your agenda, truly yours\.|Tu agenda, de verdad tuya\.|Ton agenda, vraiment à toi\.|A tua agenda, verdadeiramente tua\.)'
     timeout: 15000
-- tapOn: "Inizia"
+- tapOn:
+    text: '(Inizia|Start|Empezar|Commencer|Começar)'
 - tapOn:
     text: '(Oggi|Today|Hoy|Aujourd’hui|Hoje)[\s\S]*'
     retryTapIfNoChange: true
