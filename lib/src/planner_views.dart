@@ -2639,7 +2639,7 @@ class _YearScreenState extends State<YearScreen> {
               const SizedBox(height: 10),
               StatCard(
                 icon: Icons.account_balance_wallet_outlined,
-                title: 'Spese registrate',
+                title: AnnaStrings.of(context).d3('plannerExpensesRecorded'),
                 value: money(context, expenses),
               ),
 
