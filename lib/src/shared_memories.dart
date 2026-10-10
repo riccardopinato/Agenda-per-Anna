@@ -1497,7 +1497,7 @@ class _SharedSketchViewerScreenState extends State<SharedSketchViewerScreen> {
         foregroundColor: Colors.white,
         title: Text(
           widget.entry.title.trim().isEmpty
-              ? 'Sketch'
+              ? AnnaStrings.of(context).v100Sketch
               : widget.entry.title,
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
