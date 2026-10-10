@@ -335,7 +335,11 @@ extension SearchConnectionsAgendaStore on AgendaStore {
     return null;
   }
 
-  String diaryBlockDisplayTitle(DiaryBlock block) {
+  String diaryBlockDisplayTitle(
+    DiaryBlock block, {
+    AnnaStrings? strings,
+  }) {
+    final labels = strings ?? const AnnaStrings('en');
     final text = block.text.trim();
     if (text.isNotEmpty) {
       final firstLine = text.split('\n').first.trim();
@@ -343,10 +347,10 @@ extension SearchConnectionsAgendaStore on AgendaStore {
       return '${firstLine.substring(0, 61)}…';
     }
     return switch (block.type) {
-      DiaryBlockType.note => 'Nota del diario',
-      DiaryBlockType.photo => 'Foto del diario',
-      DiaryBlockType.sketch => 'Sketch del diario',
-      DiaryBlockType.voice => 'Nota vocale',
+      DiaryBlockType.note => labels.d3('trashDiaryNote'),
+      DiaryBlockType.photo => labels.d3('trashDiaryPhoto'),
+      DiaryBlockType.sketch => labels.d3('trashDiarySketch'),
+      DiaryBlockType.voice => labels.d3('trashDiaryVoice'),
     };
   }
 
@@ -540,10 +544,10 @@ extension SearchConnectionsAgendaStore on AgendaStore {
         if (!_matchesPersonalSearch(query, [
           item.title,
           item.note,
-          item.category.label,
+          strings.editorCategoryLabel(item.category),
           item.type.name,
           DateFormat('d MMMM yyyy', locale).format(item.date),
-          if (item.isRecurring) item.recurrenceRule.label,
+          if (item.isRecurring) strings.editorRecurrenceLabel(item.recurrenceRule),
         ])) {
           continue;
         }
@@ -553,7 +557,7 @@ extension SearchConnectionsAgendaStore on AgendaStore {
             id: item.id,
             title: item.title,
             subtitle:
-                '${DateFormat('d MMMM yyyy', locale).format(item.date)} · ${item.category.label}',
+                '${DateFormat('d MMMM yyyy', locale).format(item.date)} · ${strings.editorCategoryLabel(item.category)}',
             date: item.date,
             agendaItem: item,
           ),
@@ -621,7 +625,7 @@ extension SearchConnectionsAgendaStore on AgendaStore {
             PersonalSearchHit(
               kind: PersonalSearchKind.diary,
               id: 'block:${block.id}',
-              title: diaryBlockDisplayTitle(block),
+              title: diaryBlockDisplayTitle(block, strings: strings),
               subtitle: [
                 switch (block.type) {
                   DiaryBlockType.note => strings.v100Note,
