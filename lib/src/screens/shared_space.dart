@@ -138,7 +138,7 @@ class _SharedSpaceHubScreenState extends State<SharedSpaceHubScreen> {
     } catch (error) {
       if (!mounted) return;
       setState(() => loading = false);
-      _message('Impossibile creare lo spazio: $error');
+      _message(AnnaStrings.of(context).d3('spaceCreateFailed'));
     }
   }
 
@@ -207,7 +207,7 @@ class _SharedSpaceHubScreenState extends State<SharedSpaceHubScreen> {
         final accent = context.accentSurface;
         return Scaffold(
           appBar: AppBar(
-            title: const Text(
+            title: Text(
               'Noi ♡',
               style: TextStyle(fontWeight: FontWeight.w900),
             ),
@@ -229,7 +229,7 @@ class _SharedSpaceHubScreenState extends State<SharedSpaceHubScreen> {
                       children: [
                         const Icon(Icons.person_off_outlined, size: 50),
                         const SizedBox(height: 12),
-                        const Text(
+                        Text(
                           'Sessione account scaduta',
                           style: TextStyle(
                             fontSize: 21,
@@ -237,7 +237,7 @@ class _SharedSpaceHubScreenState extends State<SharedSpaceHubScreen> {
                           ),
                         ),
                         const SizedBox(height: 8),
-                        const Text(
+                        Text(
                           'Noi ♡ usa automaticamente l’account generale di Anna\'s Diary. '
                           'Non esiste più un login separato qui.',
                           textAlign: TextAlign.center,
@@ -296,7 +296,7 @@ class _SharedSpaceHubScreenState extends State<SharedSpaceHubScreen> {
                           SimpleCard(
                             child: Column(
                               children: [
-                                const Text(
+                                Text(
                                   AnnaStrings.of(context).d3('noSharedSpace'),
                                   textAlign: TextAlign.center,
                                 ),
@@ -1030,7 +1030,7 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
                                   ),
                                 ),
                                 subtitle: Text(
-                                  '${comment.body}\n${DateFormat('d MMM · HH:mm', 'it_IT').format(comment.createdAt.toLocal())}',
+                                  '${comment.body}\n${DateFormat('d MMM · HH:mm', AnnaStrings.of(context).intlLocale(context)).format(comment.createdAt.toLocal())}',
                                 ),
                                 isThreeLine: true,
                                 trailing: mine
@@ -1621,8 +1621,8 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
                 leading: const CircleAvatar(
                   child: Icon(Icons.draw_outlined),
                 ),
-                title: const Text('Sketch'),
-                subtitle: const Text(
+                title: Text('Sketch'),
+                subtitle: Text(
                   AnnaStrings.of(context).d3('sameSketchbook'),
                 ),
                 onTap: () => Navigator.pop(sheetContext, 'sketch'),
@@ -1632,7 +1632,7 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
                   child: Icon(Icons.add_photo_alternate_outlined),
                 ),
                 title: Text(AnnaStrings.of(context).d3('photo')),
-                subtitle: const Text('Fotocamera o galleria + didascalia'),
+                subtitle: Text('Fotocamera o galleria + didascalia'),
                 onTap: () => Navigator.pop(sheetContext, 'photo'),
               ),
               const Divider(height: 24),
@@ -1662,7 +1662,7 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
                   child: Icon(Icons.shopping_cart_outlined),
                 ),
                 title: Text(AnnaStrings.of(context).d3('shoppingList')),
-                subtitle: const Text(
+                subtitle: Text(
                   AnnaStrings.of(context).d3('openShopping'),
                 ),
                 onTap: () => Navigator.pop(sheetContext, 'shopping'),
@@ -1713,13 +1713,9 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
 
     return DiaryComposerSection(
       title: AnnaStrings.of(context).d3('ourDiary'),
-      subtitle:
-          'Stessi strumenti, stesse card e stesse azioni del diario privato. '
-          'Qui i contenuti vengono sincronizzati in Noi ♡ e sono visibili a entrambi.',
-      memoriesLabel: 'Ricordi',
-      emptyText:
-          'Qui potete costruire la giornata come una pagina di diario condivisa, '
-          'un ricordo alla volta.',
+      subtitle: AnnaStrings.of(context).d3('sharedDiarySubtitle'),
+      memoriesLabel: AnnaStrings.of(context).memories,
+      emptyText: AnnaStrings.of(context).d3('sharedDiaryBuild'),
       onMemories: _openSharedMemories,
       onAddNote: () => _addSharedNote(),
       onAddSketch: () => _addSharedSketch(),
@@ -1908,10 +1904,7 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
             content: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const Text(
-                  'Questo codice resta invariato per 24 ore, anche se chiudi '
-                  'l’app, e può essere usato da più persone finché è valido.',
-                ),
+                Text(AnnaStrings.of(context).d3('code24h')),
                 const SizedBox(height: 18),
                 SelectableText(
                   current.code,
@@ -2030,13 +2023,11 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
                                 final confirmed = await showDialog<bool>(
                                       context: dialogContext,
                                       builder: (confirmContext) => AlertDialog(
-                                        title: const Text(
+                                        title: Text(
                                           AnnaStrings.of(context).d3('removePersonTitle'),
                                         ),
                                         content: Text(
-                                          '${member.displayName} non vedrà più '
-                                          'questo spazio. I contenuti condivisi '
-                                          'restano nello spazio.',
+                                          AnnaStrings.of(context).d3('removePersonBody'),
                                         ),
                                         actions: [
                                           TextButton(
@@ -2069,7 +2060,10 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
                                   }
                                   if (mounted) {
                                     _message(
-                                      '${member.displayName} rimossa dallo spazio.',
+                                      AnnaStrings.of(context).d3Format(
+                                        'personRemoved',
+                                        {'name': member.displayName},
+                                      ),
                                     );
                                     await _openMembers();
                                   }
@@ -2669,12 +2663,17 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
                   leading: const CircleAvatar(
                     child: Icon(Icons.shopping_cart_outlined),
                   ),
-                  title: const Text(
+                  title: Text(
                     AnnaStrings.of(context).d3('shoppingList'),
                     style: TextStyle(fontWeight: FontWeight.w900),
                   ),
                   subtitle: Text(
-                    '${widget.store.sharedShoppingItems(widget.space.id).where((entry) => !entry.done).length} da comprare · condivisa e offline-first',
+                    AnnaStrings.of(context).d3Format(
+                      'shoppingSummary',
+                      {
+                        'count': widget.store.sharedShoppingItems(widget.space.id).where((entry) => !entry.done).length,
+                      },
+                    ),
                   ),
                   trailing: const Icon(Icons.chevron_right),
                   onTap: _openSharedShopping,
@@ -2687,13 +2686,13 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
                   leading: const CircleAvatar(
                     child: Icon(Icons.photo_library_outlined),
                   ),
-                  title: const Text(
+                  title: Text(
                     AnnaStrings.of(context).d3('ourMemories'),
                     style: TextStyle(fontWeight: FontWeight.w900),
                   ),
                   subtitle: Text(
-                    '${entries.where((entry) => entry.appearsInSharedMemories).length} ricordi · '
-                    'foto, sketch, note e momenti scelti da voi',
+                    '${AnnaStrings.of(context).memoriesCount(entries.where((entry) => entry.appearsInSharedMemories).length)} · '
+                    '${AnnaStrings.of(context).d3('sharedMediaSummary')}',
                   ),
                   trailing: const Icon(Icons.chevron_right),
                   onTap: _openSharedMemories,
