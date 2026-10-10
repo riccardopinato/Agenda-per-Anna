@@ -798,7 +798,7 @@ class _ClosingMonthCardState extends State<ClosingMonthCard> {
             children: [
               _MiniPill(
                 icon: Icons.flag_outlined,
-                text: '${widget.data.goals.length} obiettivi',
+                text: AnnaStrings.of(context).d3Format('goalsCount', {'count': widget.data.goals.length}),
               ),
               _MiniPill(
                 icon: Icons.receipt_long_outlined,
