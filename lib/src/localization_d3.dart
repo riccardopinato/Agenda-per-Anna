@@ -85,4 +85,23 @@ extension AnnaD3Strings on AnnaStrings {
     }
     return value;
   }
+  String d3CloudError(String rawValue) {
+    final raw = rawValue.toLowerCase();
+    if (raw.contains('invalid login credentials')) {
+      return _pick(en: 'Incorrect email or password.', it: 'Email o password non corretti.', es: 'Correo o contraseña incorrectos.', fr: 'E-mail ou mot de passe incorrect.', pt: 'Email ou palavra-passe incorretos.');
+    }
+    if (raw.contains('email not confirmed')) {
+      return _pick(en: 'Confirm your email first using the link you received.', it: 'Conferma prima l’email usando il link ricevuto.', es: 'Confirma primero tu correo con el enlace recibido.', fr: 'Confirme d’abord ton e-mail avec le lien reçu.', pt: 'Confirma primeiro o email usando a ligação recebida.');
+    }
+    if (raw.contains('rate') || raw.contains('too many')) {
+      return _pick(en: 'Too many attempts. Try again shortly.', it: 'Hai fatto troppi tentativi ravvicinati. Riprova tra poco.', es: 'Demasiados intentos seguidos. Vuelve a intentarlo en breve.', fr: 'Trop de tentatives rapprochées. Réessaie dans un instant.', pt: 'Demasiadas tentativas seguidas. Tenta novamente daqui a pouco.');
+    }
+    if (raw.contains('network') || raw.contains('socket')) {
+      return _pick(en: 'No connection. Local data stays safe.', it: 'Connessione non disponibile. I dati locali restano al sicuro.', es: 'Sin conexión. Los datos locales siguen seguros.', fr: 'Connexion indisponible. Les données locales restent en sécurité.', pt: 'Ligação indisponível. Os dados locais continuam seguros.');
+    }
+    if (raw.contains('delete')) {
+      return _pick(en: 'The account could not be deleted. No local data was removed.', it: 'Non è stato possibile eliminare l’account. Nessun dato locale è stato cancellato.', es: 'No se pudo eliminar la cuenta. No se borró ningún dato local.', fr: 'Impossible de supprimer le compte. Aucune donnée locale n’a été effacée.', pt: 'Não foi possível eliminar a conta. Nenhum dado local foi apagado.');
+    }
+    return _pick(en: 'Cloud operation failed. Try again shortly.', it: 'Operazione cloud non riuscita. Riprova tra poco.', es: 'La operación en la nube falló. Vuelve a intentarlo en breve.', fr: 'L’opération cloud a échoué. Réessaie dans un instant.', pt: 'A operação cloud falhou. Tenta novamente daqui a pouco.');
+  }
 }
