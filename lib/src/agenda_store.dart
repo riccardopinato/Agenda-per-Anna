@@ -2726,7 +2726,7 @@ class AgendaStore extends ChangeNotifier {
               stableId: stableId,
               title: item.title,
               body: minutes == 0
-                  ? 'È il momento di iniziare.'
+                  ? AnnaStrings.forPreference(preferences.appLanguage).d3('reminderNow')
                   : _reminderBody(minutes, item.title),
               when: when,
             );
@@ -2749,7 +2749,7 @@ class AgendaStore extends ChangeNotifier {
         stableId: stableId,
         title: item.title,
         body: minutes == 0
-            ? 'È il momento di iniziare.'
+            ? AnnaStrings.forPreference(preferences.appLanguage).d3('reminderNow')
             : _reminderBody(minutes, item.title),
         when: when,
         requestPermission: requestPermission,
