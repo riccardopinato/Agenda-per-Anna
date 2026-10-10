@@ -885,7 +885,10 @@ class InboxScreen extends StatelessWidget {
     BuildContext context,
     InboxEntry entry,
   ) async {
-    final text = store.notesBridgeTextForInbox(entry);
+    final text = store.notesBridgeTextForInbox(
+      entry,
+      strings: AnnaStrings.of(context),
+    );
     await copyNotesBridgePayload(context, text);
   }
 
