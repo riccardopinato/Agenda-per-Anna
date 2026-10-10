@@ -608,6 +608,8 @@ const Map<String, Map<String, String>> _d3Catalog = {
   "plannerFilmsSeries": <String, String>{"en": "Films and series", "it": "Film e serie", "es": "Películas y series", "fr": "Films et séries", "pt": "Filmes e séries"},
   "plannerMemoryDays": <String, String>{"en": "Days with a good memory", "it": "Giorni con un bel ricordo", "es": "Días con un buen recuerdo", "fr": "Jours avec un beau souvenir", "pt": "Dias com uma boa memória"},
   "plannerTwelveMonths": <String, String>{"en": "My 12 months", "it": "I miei 12 mesi", "es": "Mis 12 meses", "fr": "Mes 12 mois", "pt": "Os meus 12 meses"},
+  "editor_spent": <String, String>{"en": "Spent", "it": "Speso", "es": "Gastado", "fr": "Dépensé", "pt": "Gasto"},
+  "editor_remaining": <String, String>{"en": "Remaining", "it": "Rimane", "es": "Restante", "fr": "Reste", "pt": "Restante"},
 };
 
 NotificationLocalization notificationLocalizationForPreference(AppLanguage value) {
