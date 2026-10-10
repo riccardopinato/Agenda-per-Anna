@@ -56,7 +56,7 @@ class _BackupScreenState extends State<BackupScreen> {
     final strings = AnnaStrings.of(context);
     setState(() => busy = true);
     try {
-      final bytes = await widget.store.createOpenExportZip();
+      final bytes = await widget.store.createOpenExportZip(strings: strings);
       final ok = await BackupFileService.instance.saveOpenExportZip(
         bytes: bytes,
         fileName: _timestampFileName('zip').replaceFirst(
@@ -107,7 +107,7 @@ class _BackupScreenState extends State<BackupScreen> {
     setState(() => busy = true);
     try {
       final ok = await BackupFileService.instance.saveTextExport(
-        text: widget.store.createReadableExport(),
+        text: widget.store.createReadableExport(strings: strings),
         fileName: _timestampFileName('txt'),
         dialogTitle: strings.d3('backup_readableExportDialog'),
       );
