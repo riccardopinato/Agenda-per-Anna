@@ -463,6 +463,7 @@ const Map<String, Map<String, String>> _d3Catalog = {
   "editor_twoHoursBefore": <String, String>{"en": "2 hours before", "it": "2 ore prima", "es": "2 horas antes", "fr": "2 heures avant", "pt": "2 horas antes"},
   "editor_dayBefore": <String, String>{"en": "1 day before", "it": "1 giorno prima", "es": "1 día antes", "fr": "1 jour avant", "pt": "1 dia antes"},
   "editor_duplicate": <String, String>{"en": "Duplicate", "it": "Duplica", "es": "Duplicar", "fr": "Dupliquer", "pt": "Duplicar"},
+  "editor_monthClosing": <String, String>{"en": "Month closing", "it": "Chiusura del mese", "es": "Cierre del mes", "fr": "Clôture du mois", "pt": "Fecho do mês"},
 };
 
 extension AnnaD3Strings on AnnaStrings {
