@@ -742,7 +742,9 @@ const Map<String, Map<String, String>> _d3Catalog = {
   "exportOpenTitle": <String, String>{"en": "Anna's Diary — Open Export", "it": "Anna's Diary — Esportazione aperta", "es": "Anna's Diary — Exportación abierta", "fr": "Anna's Diary — Export ouvert", "pt": "Anna's Diary — Exportação aberta"},
   "exportAgenda": <String, String>{"en": "Agenda", "it": "Agenda", "es": "Agenda", "fr": "Agenda", "pt": "Agenda"},
   "exportInboxCount": <String, String>{"en": "Inbox: {count}", "it": "Inbox: {count}", "es": "Bandeja: {count}", "fr": "Boîte de réception : {count}", "pt": "Caixa de entrada: {count}"},
-  "readableMood": <String, String>{"en": "Mood: {value}", "it": "Umore: {value}", "es": "Estado de ánimo: {value}", "fr": "Humeur : {value}", "pt": "Humor: {value}"},
+  "readableMood": <String, String>{"en": "Mood: {value}", "it": "Umore: {value}", "es": "Estado de ánimo: {value}", "fr": "Humeur : {value}", "pt": "Humor: {value}"},  "sharedRealtimeIntro": <String, String>{"en": "Updates arrive in real time.", "it": "Gli aggiornamenti arrivano in tempo reale.", "es": "Las actualizaciones llegan en tiempo real.", "fr": "Les mises à jour arrivent en temps réel.", "pt": "As atualizações chegam em tempo real."},
+  "sharedLatestUpdates": <String, String>{"en": "Latest updates", "it": "Ultimi aggiornamenti", "es": "Últimas actualizaciones", "fr": "Dernières mises à jour", "pt": "Últimas atualizações"},
+
 };
 
 NotificationLocalization notificationLocalizationForPreference(AppLanguage value) {
@@ -1023,9 +1025,9 @@ extension AnnaD3Strings on AnnaStrings {
       };
 
   String editorMoodLabel(DayMood value) => switch (value) {
-        DayMood.awful => _pick(en: 'Awful', it: 'Male', es: 'Fatal', fr: 'Mal', pt: 'Mal'),
-        DayMood.bad => _pick(en: 'Low', it: 'Giù', es: 'Bajo', fr: 'Bas', pt: 'Em baixo'),
-        DayMood.okay => _pick(en: 'Okay', it: 'Così così', es: 'Regular', fr: 'Comme ci, comme ça', pt: 'Assim-assim'),
+        DayMood.hard => _pick(en: 'Hard', it: 'Difficile', es: 'Difícil', fr: 'Difficile', pt: 'Difícil'),
+        DayMood.low => _pick(en: 'Low', it: 'Giù', es: 'Bajo', fr: 'Bas', pt: 'Em baixo'),
+        DayMood.neutral => _pick(en: 'Okay', it: 'Così così', es: 'Regular', fr: 'Comme ci, comme ça', pt: 'Assim-assim'),
         DayMood.good => _pick(en: 'Good', it: 'Bene', es: 'Bien', fr: 'Bien', pt: 'Bem'),
         DayMood.great => _pick(en: 'Great', it: 'Benissimo', es: 'Genial', fr: 'Très bien', pt: 'Ótimo'),
       };
@@ -1035,7 +1037,8 @@ extension AnnaD3Strings on AnnaStrings {
         AgendaCategory.work => _pick(en: 'Work', it: 'Lavoro', es: 'Trabajo', fr: 'Travail', pt: 'Trabalho'),
         AgendaCategory.study => _pick(en: 'Study', it: 'Studio', es: 'Estudio', fr: 'Études', pt: 'Estudo'),
         AgendaCategory.health => _pick(en: 'Health', it: 'Salute', es: 'Salud', fr: 'Santé', pt: 'Saúde'),
-        AgendaCategory.freeTime => _pick(en: 'Free time', it: 'Tempo libero', es: 'Tiempo libre', fr: 'Temps libre', pt: 'Tempo livre'),
+        AgendaCategory.couple => 'Noi ♡',
+        AgendaCategory.leisure => _pick(en: 'Free time', it: 'Tempo libero', es: 'Tiempo libre', fr: 'Temps libre', pt: 'Tempo livre'),
         AgendaCategory.other => _pick(en: 'Other', it: 'Altro', es: 'Otro', fr: 'Autre', pt: 'Outro'),
       };
 
