@@ -198,7 +198,7 @@ class _JournalEditorState extends State<JournalEditor> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(AnnaStrings.of(context).d3('editor_daySaved')),
-          duration: Duration(seconds: 1),
+          duration: const Duration(seconds: 1),
         ),
       );
     }
@@ -251,7 +251,7 @@ class _JournalEditorState extends State<JournalEditor> {
             children: [
               Text(
                 AnnaStrings.of(context).d3('editor_howFeel'),
-                style: TextStyle(fontWeight: FontWeight.w800, fontSize: 17),
+                style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 17),
               ),
               const SizedBox(height: 10),
               Wrap(
@@ -287,7 +287,7 @@ class _JournalEditorState extends State<JournalEditor> {
             children: [
               Text(
                 AnnaStrings.of(context).d3('editor_threeGoodThings'),
-                style: TextStyle(fontWeight: FontWeight.w800, fontSize: 17),
+                style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 17),
               ),
               const SizedBox(height: 5),
               Text(
@@ -324,7 +324,7 @@ class _JournalEditorState extends State<JournalEditor> {
                 decoration: InputDecoration(
                   labelText: AnnaStrings.of(context).d3('editor_momentRemember'),
                   hintText: AnnaStrings.of(context).d3('editor_momentHint'),
-                  border: OutlineInputBorder(),
+                  border: const OutlineInputBorder(),
                 ),
               ),
             ],
@@ -391,7 +391,7 @@ class _JournalEditorState extends State<JournalEditor> {
                               ListTile(
                                 title: Text(
                                   AnnaStrings.of(context).d3('editor_manageHabits'),
-                                  style: TextStyle(fontWeight: FontWeight.w800),
+                                  style: const TextStyle(fontWeight: FontWeight.w800),
                                 ),
                               ),
                               ...habits.map(
@@ -431,7 +431,7 @@ class _JournalEditorState extends State<JournalEditor> {
             children: [
               Text(
                 AnnaStrings.of(context).d3('editor_thoughtsNotes'),
-                style: TextStyle(fontWeight: FontWeight.w800, fontSize: 17),
+                style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 17),
               ),
               const SizedBox(height: 10),
               TextField(
@@ -441,7 +441,7 @@ class _JournalEditorState extends State<JournalEditor> {
                 textCapitalization: TextCapitalization.sentences,
                 decoration: InputDecoration(
                   hintText: AnnaStrings.of(context).d3('editor_writeRemember'),
-                  border: OutlineInputBorder(),
+                  border: const OutlineInputBorder(),
                 ),
               ),
               const SizedBox(height: 12),
@@ -621,7 +621,7 @@ class BudgetCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(AnnaStrings.of(context).d3('editor_monthBudget'), style: TextStyle(fontWeight: FontWeight.w800, fontSize: 18)),
+          Text(AnnaStrings.of(context).d3('editor_monthBudget'), style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 18)),
           const SizedBox(height: 10),
           Row(
             children: [
@@ -779,10 +779,10 @@ class _ClosingMonthCardState extends State<ClosingMonthCard> {
           Row(
             children: [
               const Icon(Icons.nights_stay_outlined),
-              SizedBox(width: 8),
+              const SizedBox(width: 8),
               Text(
                 AnnaStrings.of(context).d3('editor_monthClosing'),
-                style: TextStyle(
+                style: const TextStyle(
                   fontWeight: FontWeight.w900,
                   fontSize: 19,
                 ),
@@ -818,8 +818,8 @@ class _ClosingMonthCardState extends State<ClosingMonthCard> {
             controller: best,
             decoration: InputDecoration(
               labelText: AnnaStrings.of(context).d3('editor_bestMoment'),
-              prefixIcon: Icon(Icons.favorite_outline),
-              border: OutlineInputBorder(),
+              prefixIcon: const Icon(Icons.favorite_outline),
+              border: const OutlineInputBorder(),
             ),
           ),
           const SizedBox(height: 10),
@@ -827,8 +827,8 @@ class _ClosingMonthCardState extends State<ClosingMonthCard> {
             controller: challenge,
             decoration: InputDecoration(
               labelText: AnnaStrings.of(context).d3('editor_hardestThing'),
-              prefixIcon: Icon(Icons.trending_up_outlined),
-              border: OutlineInputBorder(),
+              prefixIcon: const Icon(Icons.trending_up_outlined),
+              border: const OutlineInputBorder(),
             ),
           ),
           const SizedBox(height: 10),
@@ -836,8 +836,8 @@ class _ClosingMonthCardState extends State<ClosingMonthCard> {
             controller: lesson,
             decoration: InputDecoration(
               labelText: AnnaStrings.of(context).d3('editor_whatLearned'),
-              prefixIcon: Icon(Icons.lightbulb_outline),
-              border: OutlineInputBorder(),
+              prefixIcon: const Icon(Icons.lightbulb_outline),
+              border: const OutlineInputBorder(),
             ),
           ),
           const SizedBox(height: 10),
@@ -847,7 +847,7 @@ class _ClosingMonthCardState extends State<ClosingMonthCard> {
             maxLines: 6,
             decoration: InputDecoration(
               labelText: AnnaStrings.of(context).d3('editor_howMonthWent'),
-              border: OutlineInputBorder(),
+              border: const OutlineInputBorder(),
             ),
           ),
           const SizedBox(height: 10),
@@ -857,8 +857,8 @@ class _ClosingMonthCardState extends State<ClosingMonthCard> {
             maxLines: 4,
             decoration: InputDecoration(
               labelText: AnnaStrings.of(context).d3('editor_carryNext'),
-              prefixIcon: Icon(Icons.arrow_forward_outlined),
-              border: OutlineInputBorder(),
+              prefixIcon: const Icon(Icons.arrow_forward_outlined),
+              border: const OutlineInputBorder(),
             ),
           ),
           const SizedBox(height: 12),
@@ -1152,12 +1152,12 @@ Future<void> openItemEditor(
                     ButtonSegment(
                       value: ItemType.appointment,
                       label: Text(AnnaStrings.of(context).appointment),
-                      icon: Icon(Icons.event_outlined),
+                      icon: const Icon(Icons.event_outlined),
                     ),
                     ButtonSegment(
                       value: ItemType.task,
                       label: Text(AnnaStrings.of(context).d3('editor_toDo')),
-                      icon: Icon(Icons.check_circle_outline),
+                      icon: const Icon(Icons.check_circle_outline),
                     ),
                   ],
                   selected: {type},
@@ -1169,7 +1169,7 @@ Future<void> openItemEditor(
                   autofocus: existing == null,
                   decoration: InputDecoration(
                     labelText: AnnaStrings.of(context).d3('editor_title'),
-                    border: OutlineInputBorder(),
+                    border: const OutlineInputBorder(),
                   ),
                 ),
                 const SizedBox(height: 10),
@@ -1178,7 +1178,7 @@ Future<void> openItemEditor(
                   maxLines: 3,
                   decoration: InputDecoration(
                     labelText: AnnaStrings.of(context).d3('editor_notes'),
-                    border: OutlineInputBorder(),
+                    border: const OutlineInputBorder(),
                   ),
                 ),
                 const SizedBox(height: 16),
@@ -1287,8 +1287,8 @@ Future<void> openItemEditor(
                           decoration: InputDecoration(
                             labelText: AnnaStrings.of(context).d3('editor_reminder1'),
                             prefixIcon:
-                                Icon(Icons.notifications_none_outlined),
-                            border: OutlineInputBorder(),
+                                const Icon(Icons.notifications_none_outlined),
+                            border: const OutlineInputBorder(),
                           ),
                           items: _reminderMenuItems(AnnaStrings.of(context)),
                           onChanged: (value) => setLocal(() {
@@ -1306,8 +1306,8 @@ Future<void> openItemEditor(
                           decoration: InputDecoration(
                             labelText: AnnaStrings.of(context).d3('editor_reminder2'),
                             prefixIcon:
-                                Icon(Icons.add_alert_outlined),
-                            border: OutlineInputBorder(),
+                                const Icon(Icons.add_alert_outlined),
+                            border: const OutlineInputBorder(),
                           ),
                           items: _reminderMenuItems(AnnaStrings.of(context)),
                           onChanged: (value) => setLocal(() {
