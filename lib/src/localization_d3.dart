@@ -503,6 +503,17 @@ const Map<String, Map<String, String>> _d3Catalog = {
   "widget_noUpcoming": <String, String>{"en": "No upcoming commitments", "it": "Nessun impegno in arrivo", "es": "No hay próximos compromisos", "fr": "Aucun engagement à venir", "pt": "Sem compromissos próximos"},
   "widget_today": <String, String>{"en": "Today", "it": "Oggi", "es": "Hoy", "fr": "Aujourd’hui", "pt": "Hoje"},
   "widget_noBirthday": <String, String>{"en": "No birthdays nearby", "it": "Nessun compleanno vicino", "es": "No hay cumpleaños próximos", "fr": "Aucun anniversaire proche", "pt": "Sem aniversários próximos"},
+  "backup_saveBackupDialog": <String, String>{"en": "Save Anna's Diary backup", "it": "Salva backup Anna's Diary", "es": "Guardar copia de Anna's Diary", "fr": "Enregistrer la sauvegarde Anna's Diary", "pt": "Guardar backup Anna's Diary"},
+  "backup_chooseBackupDialog": <String, String>{"en": "Choose an Anna's Diary backup", "it": "Scegli un backup Anna's Diary", "es": "Elegir una copia de Anna's Diary", "fr": "Choisir une sauvegarde Anna's Diary", "pt": "Escolher um backup Anna's Diary"},
+  "backup_openExportDialog": <String, String>{"en": "Export Anna's Diary open archive", "it": "Esporta archivio aperto Anna's Diary", "es": "Exportar archivo abierto de Anna's Diary", "fr": "Exporter l’archive ouverte Anna's Diary", "pt": "Exportar arquivo aberto Anna's Diary"},
+  "backup_readableExportDialog": <String, String>{"en": "Export Anna's Diary", "it": "Esporta Anna's Diary", "es": "Exportar Anna's Diary", "fr": "Exporter Anna's Diary", "pt": "Exportar Anna's Diary"},
+  "backup_tooLarge": <String, String>{"en": "The backup or export is too large to process safely on this device.", "it": "Il backup o l’esportazione è troppo grande per essere elaborato in sicurezza su questo dispositivo.", "es": "La copia o exportación es demasiado grande para procesarse de forma segura en este dispositivo.", "fr": "La sauvegarde ou l’export est trop volumineux pour être traité en toute sécurité sur cet appareil.", "pt": "O backup ou exportação é demasiado grande para ser processado com segurança neste dispositivo."},
+  "backup_entryTooLarge": <String, String>{"en": "One media/file item is too large for the safety limits.", "it": "Un contenuto multimediale/file supera i limiti di sicurezza.", "es": "Un elemento multimedia/archivo supera los límites de seguridad.", "fr": "Un élément média/fichier dépasse les limites de sécurité.", "pt": "Um item de media/ficheiro excede os limites de segurança."},
+  "backup_invalid": <String, String>{"en": "The backup file is invalid or damaged.", "it": "Il file di backup non è valido o è danneggiato.", "es": "El archivo de copia no es válido o está dañado.", "fr": "Le fichier de sauvegarde est invalide ou endommagé.", "pt": "O ficheiro de backup é inválido ou está danificado."},
+  "backup_incomplete": <String, String>{"en": "The backup is incomplete: one or more required media files are missing.", "it": "Il backup è incompleto: mancano uno o più file multimediali necessari.", "es": "La copia está incompleta: falta uno o más archivos multimedia necesarios.", "fr": "La sauvegarde est incomplète : un ou plusieurs fichiers média requis manquent.", "pt": "O backup está incompleto: faltam um ou mais ficheiros de media necessários."},
+  "backup_wrongApp": <String, String>{"en": "This file is not an Anna's Diary backup.", "it": "Questo file non è un backup di Anna's Diary.", "es": "Este archivo no es una copia de Anna's Diary.", "fr": "Ce fichier n’est pas une sauvegarde Anna's Diary.", "pt": "Este ficheiro não é um backup do Anna's Diary."},
+  "backup_unsupported": <String, String>{"en": "This backup version is not supported by this app version.", "it": "Questa versione del backup non è supportata da questa versione dell’app.", "es": "Esta versión de la copia no es compatible con esta versión de la app.", "fr": "Cette version de sauvegarde n’est pas prise en charge par cette version de l’app.", "pt": "Esta versão do backup não é suportada por esta versão da app."},
+  "backup_exportInvalid": <String, String>{"en": "The open export could not be created because its file structure is invalid.", "it": "L’esportazione aperta non può essere creata perché la struttura dei file non è valida.", "es": "La exportación abierta no se pudo crear porque la estructura de archivos no es válida.", "fr": "L’export ouvert n’a pas pu être créé car sa structure de fichiers est invalide.", "pt": "A exportação aberta não pôde ser criada porque a estrutura de ficheiros é inválida."},
 };
 
 NotificationLocalization notificationLocalizationForPreference(AppLanguage value) {
@@ -528,6 +539,29 @@ NotificationLocalization notificationLocalizationForPreference(AppLanguage value
 }
 
 extension AnnaD3Strings on AnnaStrings {
+  String d3BackupError(String rawValue) {
+    final raw = rawValue.toLowerCase();
+    if (raw.startsWith('backup_wrong_app')) return d3('backup_wrongApp');
+    if (raw.startsWith('backup_version_unsupported')) return d3('backup_unsupported');
+    if (raw.startsWith('backup_missing_referenced_media') ||
+        raw.startsWith('backup_local_media_missing') ||
+        raw.startsWith('backup_media_corrupt') ||
+        raw.startsWith('open_export_local_media_missing')) {
+      return d3('backup_incomplete');
+    }
+    if (raw.contains('too_large') || raw.contains('too_many')) {
+      if (raw.contains('entry') || raw.contains('media_entry')) {
+        return d3('backup_entryTooLarge');
+      }
+      return d3('backup_tooLarge');
+    }
+    if (raw.startsWith('open_export_path_invalid')) {
+      return d3('backup_exportInvalid');
+    }
+    return d3('backup_invalid');
+  }
+
+
   String d3(String key) {
     final entry = _d3Catalog[key];
     assert(entry != null, 'Missing D3 localization key: $key');
