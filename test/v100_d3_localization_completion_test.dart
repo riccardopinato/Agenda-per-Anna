@@ -412,6 +412,42 @@ void main() {
     expect(mediaStore, isNot(contains('Media asset non valido.')));
     expect(mediaStore, contains('media_asset_invalid'));
   });
+  test('D3 final visible copy uses localization paths', () {
+    final diary = _source('lib/src/diary/diary_components.dart');
+    final sketchbook = _source('lib/src/diary/diary_sketchbook.dart');
+    final shared = _source('lib/src/screens/shared_space.dart');
+    final home = _source('lib/src/screens/home_inbox_search.dart');
+    final people = _source('lib/src/screens/people_screen.dart');
+    final memories = _source('lib/src/shared_memories.dart');
+    final lifecycle = _source('lib/src/lifecycle_domain.dart');
+    final trash = _source('lib/src/screens/trash_screen.dart');
+    final completion = _source('lib/src/localization_d3_completion.dart');
+
+    for (final forbidden in const <String>[
+      "hintText: 'es. Lago di Braies'",
+      "label: const Text('Sketch')",
+      "'${outgoing.length} collegati'",
+      "'${backlinks.length} backlink'",
+      "'Sketch · ${block.pages.length} pagine'",
+      "subtitle: 'Sketch · \$time'",
+    ]) {
+      expect(diary, isNot(contains(forbidden)));
+    }
+
+    expect(sketchbook, isNot(contains("child: const Text('Reset')")));
+    expect(shared, isNot(contains("title: const Text('Sketch')")));
+    expect(home, isNot(contains("tooltip: 'Inbox'")));
+    expect(people, isNot(contains("child: const Text('OK')")));
+    expect(memories, isNot(contains("child: const Text('OK')")));
+    expect(lifecycle, isNot(contains("?? 'Deleted item'")));
+    expect(trash, contains("title == 'Deleted item'"));
+
+    expect(completion.split('String d3LinkedCount(').length - 1, 1);
+    expect(completion.split('String d3BacklinksCount(').length - 1, 1);
+    expect(completion.split('String d3SketchPages(').length - 1, 1);
+    expect(completion.split('String d3SketchTimed(').length - 1, 1);
+  });
+
   test('D3 AppLab onboarding accepts every supported locale', () {
     final flow = _source('.maestro/applab-smoke.yaml');
     for (final text in const <String>[
