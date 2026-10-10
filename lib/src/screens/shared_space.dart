@@ -1078,7 +1078,7 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
                           try {
                             final author = widget
                                     .store.preferences.displayName.trim().isEmpty
-                                ? 'Utente'
+                                ? ''
                                 : widget.store.preferences.displayName.trim();
                             final comment =
                                 await widget.store.enqueueSharedComment(
@@ -1182,13 +1182,13 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
     final explicit = entry.editorName.trim();
     if (explicit.isNotEmpty) {
       if (explicit == widget.store.preferences.displayName.trim()) {
-        return 'Modificato da te';
+        return AnnaStrings.of(context).d3('shared_editedByYou');
       }
-      return 'Modificato da $explicit';
+      return AnnaStrings.of(context).d3Format('shared_editedByName', {'name': explicit});
     }
     if (entry.updatedBy != null &&
         entry.updatedBy == CloudSyncService.instance.userId) {
-      return 'Modificato da te';
+      return AnnaStrings.of(context).d3('shared_editedByYou');
     }
     if (entry.updatedBy != null) return AnnaStrings.of(context).d3('editedByOther');
     return '';
@@ -1200,7 +1200,7 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
   ) =>
       entry.copyWith(
         editorName: widget.store.preferences.displayName.trim().isEmpty
-            ? 'Utente'
+            ? ''
             : widget.store.preferences.displayName.trim(),
         updatedBy: CloudSyncService.instance.userId,
         updatedAt: revision,
@@ -2008,8 +2008,10 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
                       leading: CircleAvatar(child: Text(initial)),
                       title: Text(
                         isMe
-                            ? '${member.displayName} · ${AnnaStrings.of(context).d3('mem_you')}'
-                            : member.displayName,
+                            ? '${member.displayName.trim().isEmpty ? AnnaStrings.of(context).person : member.displayName.trim()} · ${AnnaStrings.of(context).d3('mem_you')}'
+                            : (member.displayName.trim().isEmpty
+                                ? AnnaStrings.of(context).person
+                                : member.displayName.trim()),
                         style: const TextStyle(fontWeight: FontWeight.w800),
                       ),
                       subtitle: Text(
@@ -2066,7 +2068,11 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
                                     _message(
                                       AnnaStrings.of(context).d3Format(
                                         'personRemoved',
-                                        {'name': member.displayName},
+                                        {
+                                          'name': member.displayName.trim().isEmpty
+                                              ? AnnaStrings.of(context).person
+                                              : member.displayName.trim(),
+                                        },
                                       ),
                                     );
                                     await _openMembers();
@@ -2170,7 +2176,7 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
       await widget.store.refreshSharedAgendaCache(pullRemote: true);
       if (mounted) Navigator.pop(context);
     } catch (_) {
-      _message('Operazione non riuscita.');
+      _message(AnnaStrings.of(context).d3('shared_operationFailed'));
     }
   }
 
