@@ -460,7 +460,7 @@ class _DayMemoryRecallCard extends StatelessWidget {
               ),
               subtitle: Text(
                 '${years == 1 ? AnnaStrings.of(context).d3('yearsAgo1') : AnnaStrings.of(context).d3Format('yearsAgoN', {'count': years})} · '
-                '${DateFormat('d MMMM yyyy', AnnaStrings.of(context).intlLocale(context)).format(memory.date)}',
+                '${DateFormat('d MMMM yyyy', AnnaStrings.intlLocale(context)).format(memory.date)}',
               ),
               trailing: const Icon(Icons.chevron_right),
               onTap: () => Navigator.push(
@@ -497,7 +497,7 @@ class _DayOpeningCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final quote = _dailyQuote(date);
+    final quote = _dailyQuote(date, AnnaStrings.of(context));
     final accent = context.accentSurface;
     return Container(
       padding: const EdgeInsets.all(17),
@@ -2324,7 +2324,7 @@ class MonthOpeningHero extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            _cap(DateFormat('MMMM', AnnaStrings.of(context).intlLocale(context)).format(month)),
+            _cap(DateFormat('MMMM', AnnaStrings.intlLocale(context)).format(month)),
             style: TextStyle(
               color: accent.foreground,
               fontSize: 28,
@@ -2333,7 +2333,7 @@ class MonthOpeningHero extends StatelessWidget {
           ),
           const SizedBox(height: 4),
           Text(
-            _monthPhrase(month.month),
+            _monthPhrase(month.month, AnnaStrings.of(context)),
             style: TextStyle(
               color: accent.secondaryForeground,
               fontSize: 14,
