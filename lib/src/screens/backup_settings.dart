@@ -1761,7 +1761,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         prefixIcon:
                             const Icon(Icons.notifications_none_outlined),
                       ),
-                      items: _reminderMenuItems,
+                      items: _reminderMenuItems(strings),
                       onChanged: (value) {
                         final minutes = value ?? -1;
                         widget.store.savePreferences(
@@ -1783,7 +1783,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         labelText: strings.v100DefaultReminder2,
                         prefixIcon: const Icon(Icons.add_alert_outlined),
                       ),
-                      items: _reminderMenuItems,
+                      items: _reminderMenuItems(strings),
                       onChanged: (value) {
                         final minutes = value ?? -1;
                         widget.store.savePreferences(
