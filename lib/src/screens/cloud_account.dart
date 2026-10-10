@@ -419,9 +419,9 @@ class _CloudAccountScreenState extends State<CloudAccountScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text(
-                          'Il mio account',
-                          style: TextStyle(
+                        Text(
+                          strings.d3('myAccount'),
+                          style: const TextStyle(
                             fontWeight: FontWeight.w900,
                             fontSize: 18,
                           ),
@@ -440,7 +440,7 @@ class _CloudAccountScreenState extends State<CloudAccountScreen> {
                           title: Text(
                             cloud.displayName?.trim().isNotEmpty == true
                                 ? cloud.displayName!
-                                : (cloud.email ?? 'Account'),
+                                : (cloud.email ?? strings.d3('account')),
                           ),
                           subtitle: Text(
                             [
@@ -448,8 +448,16 @@ class _CloudAccountScreenState extends State<CloudAccountScreen> {
                                   cloud.email != null)
                                 cloud.email!,
                               cloud.lastSyncAt == null
-                                  ? 'Nessuna sincronizzazione completata'
-                                  : 'Ultimo sync: ${DateFormat('d MMM, HH:mm', 'it_IT').format(cloud.lastSyncAt!)}',
+                                  ? strings.d3('noCompletedSync')
+                                  : strings.d3Format(
+                                      'lastSync',
+                                      {
+                                        'value': DateFormat(
+                                          'd MMM, HH:mm',
+                                          strings.intlLocale(context),
+                                        ).format(cloud.lastSyncAt!),
+                                      },
+                                    ),
                             ].join('\n'),
                           ),
                         ),
@@ -457,7 +465,7 @@ class _CloudAccountScreenState extends State<CloudAccountScreen> {
                         ListTile(
                           contentPadding: EdgeInsets.zero,
                           leading: const Icon(Icons.sync_outlined),
-                          title: const Text('Modifiche in attesa'),
+                          title: Text(strings.d3('pendingChanges')),
                           trailing: Text(
                             '${widget.store.totalPendingCloudChanges}',
                             style: const TextStyle(
@@ -468,8 +476,8 @@ class _CloudAccountScreenState extends State<CloudAccountScreen> {
                         if (widget.store.totalPendingCloudChanges > 0) ...[
                           const SizedBox(height: 4),
                           Text(
-                            '${widget.store.pendingCloudChanges} private · '
-                            '${widget.store.pendingSharedChangeCount} Noi ♡',
+                            '${widget.store.pendingCloudChanges} ${strings.d3('privateLabel')} · '
+                            '${widget.store.pendingSharedChangeCount} ${strings.d3('sharedLabel')}',
                             style: Theme.of(context).textTheme.bodySmall,
                           ),
                         ],
@@ -483,7 +491,7 @@ class _CloudAccountScreenState extends State<CloudAccountScreen> {
                                 ? null
                                 : _syncNow,
                             icon: const Icon(Icons.sync),
-                            label: const Text('Sincronizza ora'),
+                            label: Text(strings.d3('syncNow')),
                           ),
                         ),
                         const SizedBox(height: 6),
@@ -492,7 +500,7 @@ class _CloudAccountScreenState extends State<CloudAccountScreen> {
                           child: OutlinedButton.icon(
                             onPressed: busy ? null : _signOut,
                             icon: const Icon(Icons.logout),
-                            label: const Text('Disconnetti account'),
+                            label: Text(strings.d3('disconnectAccount')),
                           ),
                         ),
                         const SizedBox(height: 14),
