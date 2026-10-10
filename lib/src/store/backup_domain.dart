@@ -130,7 +130,7 @@ class _AgendaBackupDomain {
 
   Future<Uint8List> createOpenExportZip(
     AgendaStore store, {
-    AnnaStrings strings = const AnnaStrings('it'),
+    required AnnaStrings strings,
   }) async {
     final exportedAt = DateTime.now();
     final openData = Map<String, dynamic>.from(localDataPayload(store))
@@ -403,7 +403,7 @@ class _AgendaBackupDomain {
 
         if (journal.mood != null) {
           buffer.writeln(
-            '**Mood:** ${journal.mood!.emoji} ${strings.editorMoodLabel(journal.mood!)}',
+            '**${strings.d3('exportMoodLabel')}:** ${journal.mood!.emoji} ${strings.editorMoodLabel(journal.mood!)}',
           );
           buffer.writeln();
         }
@@ -501,7 +501,7 @@ class _AgendaBackupDomain {
 
           if (block.tags.isNotEmpty) {
             buffer.writeln(
-              '**Tag:** ${block.tags.map((tag) => '#${_openMarkdownInline(tag)}').join(' ')}',
+              '**${strings.d3('exportTagsLabel')}:** ${block.tags.map((tag) => '#${_openMarkdownInline(tag)}').join(' ')}',
             );
           }
           final people = block.personIds
@@ -656,7 +656,7 @@ class _AgendaBackupDomain {
 
   String createReadableExport(
     AgendaStore store, {
-    AnnaStrings strings = const AnnaStrings('it'),
+    required AnnaStrings strings,
   }) {
     final buffer = StringBuffer();
     final now = DateTime.now();
