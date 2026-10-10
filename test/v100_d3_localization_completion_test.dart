@@ -30,6 +30,7 @@ void main() {
       'workoutDurationExample',
       'external_untitledEvent',
       'notification_reminders',
+      'reminderNow',
       'widget_noUpcoming',
       'shared_editedByYou',
       'snapshotBeforeRestore',
@@ -91,6 +92,7 @@ void main() {
       final widget = _source('lib/src/home_widget_bridge.dart');
       final backup = _source('lib/backup_service.dart');
       final calendar = _source('lib/external_calendar_service.dart');
+      final agendaStore = _source('lib/src/agenda_store.dart');
 
       for (final forbidden in <String>[
         'Test immediato: notifiche locali attive',
@@ -122,6 +124,7 @@ void main() {
 
       expect(calendar, isNot(contains("'Calendario esterno'")));
       expect(calendar, isNot(contains("'Evento senza titolo'")));
+      expect(agendaStore, isNot(contains('È il momento di iniziare.')));
 
       final voice = _source('lib/voice_diary_service.dart');
       expect(
