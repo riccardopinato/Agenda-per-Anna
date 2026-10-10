@@ -751,11 +751,11 @@ class _DayLifeStream extends StatelessWidget {
           Row(
             children: [
               const Icon(Icons.view_timeline_outlined),
-              SizedBox(width: 8),
+              const SizedBox(width: 8),
               Expanded(
                 child: Text(
                   AnnaStrings.of(context).d3('dayMoments'),
-                  style: TextStyle(
+                  style: const TextStyle(
                     fontWeight: FontWeight.w900,
                     fontSize: 18,
                   ),
@@ -1505,7 +1505,7 @@ class _WeekScreenState extends State<WeekScreen> {
 
         return Scaffold(
           appBar: AppBar(
-            title: Text(AnnaStrings.of(context).d3('myWeek'), style: TextStyle(fontWeight: FontWeight.w800)),
+            title: Text(AnnaStrings.of(context).d3('myWeek'), style: const TextStyle(fontWeight: FontWeight.w800)),
             actions: [
               IconButton(
                 tooltip: AnnaStrings.of(context).d3('previousWeek'),
@@ -1742,8 +1742,8 @@ class _WeekFocusCardState extends State<WeekFocusCard> {
           Row(
             children: [
               const Icon(Icons.center_focus_strong_outlined),
-              SizedBox(width: 8),
-              Text(AnnaStrings.of(context).d3('weekFocus'), style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800)),
+              const SizedBox(width: 8),
+              Text(AnnaStrings.of(context).d3('weekFocus'), style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800)),
             ],
           ),
           const SizedBox(height: 12),
@@ -1753,7 +1753,7 @@ class _WeekFocusCardState extends State<WeekFocusCard> {
             maxLines: 4,
             decoration: InputDecoration(
               hintText: AnnaStrings.of(context).d3('weekFocusHint'),
-              border: OutlineInputBorder(),
+              border: const OutlineInputBorder(),
             ),
           ),
           const SizedBox(height: 10),
@@ -1990,11 +1990,11 @@ class _WeekMemoryCardState extends State<WeekMemoryCard> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(AnnaStrings.of(context).d3('myWeekHeart'),
-              style: TextStyle(fontWeight: FontWeight.w800, fontSize: 18)),
+              style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 18)),
           if (widget.autoMemories.isNotEmpty) ...[
             const SizedBox(height: 12),
             Text(AnnaStrings.of(context).d3('niceThings'),
-                style: TextStyle(fontWeight: FontWeight.w700)),
+                style: const TextStyle(fontWeight: FontWeight.w700)),
             const SizedBox(height: 6),
             ...widget.autoMemories.map(
               (memory) => Padding(
@@ -2002,7 +2002,7 @@ class _WeekMemoryCardState extends State<WeekMemoryCard> {
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('♡  '),
+                    const Text('♡  '),
                     Expanded(child: Text(memory)),
                   ],
                 ),
@@ -2014,7 +2014,7 @@ class _WeekMemoryCardState extends State<WeekMemoryCard> {
             controller: best,
             decoration: InputDecoration(
               labelText: AnnaStrings.of(context).d3('bestWeek'),
-              border: OutlineInputBorder(),
+              border: const OutlineInputBorder(),
             ),
           ),
           const SizedBox(height: 10),
@@ -2024,7 +2024,7 @@ class _WeekMemoryCardState extends State<WeekMemoryCard> {
             maxLines: 6,
             decoration: InputDecoration(
               labelText: AnnaStrings.of(context).d3('howWeek'),
-              border: OutlineInputBorder(),
+              border: const OutlineInputBorder(),
             ),
           ),
           const SizedBox(height: 10),
@@ -2242,10 +2242,10 @@ class _MonthWellbeingCard extends StatelessWidget {
           Row(
             children: [
               const Icon(Icons.favorite_outline),
-              SizedBox(width: 8),
+              const SizedBox(width: 8),
               Text(
                 AnnaStrings.of(context).d3('monthFromMe'),
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800),
+                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800),
               ),
             ],
           ),
@@ -2429,10 +2429,10 @@ class _MonthOpeningJournalCardState
           Row(
             children: [
               const Icon(Icons.auto_awesome_outlined),
-              SizedBox(width: 8),
+              const SizedBox(width: 8),
               Text(
                 AnnaStrings.of(context).d3('monthOpening'),
-                style: TextStyle(
+                style: const TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.w800,
                 ),
@@ -2450,8 +2450,8 @@ class _MonthOpeningJournalCardState
             decoration: InputDecoration(
               labelText: AnnaStrings.of(context).d3('monthWord'),
               hintText: AnnaStrings.of(context).d3('monthWordHint'),
-              prefixIcon: Icon(Icons.text_fields_outlined),
-              border: OutlineInputBorder(),
+              prefixIcon: const Icon(Icons.text_fields_outlined),
+              border: const OutlineInputBorder(),
             ),
           ),
           const SizedBox(height: 10),
@@ -2462,8 +2462,8 @@ class _MonthOpeningJournalCardState
             decoration: InputDecoration(
               labelText: AnnaStrings.of(context).d3('selfCare'),
               hintText: AnnaStrings.of(context).d3('selfCareHint'),
-              prefixIcon: Icon(Icons.spa_outlined),
-              border: OutlineInputBorder(),
+              prefixIcon: const Icon(Icons.spa_outlined),
+              border: const OutlineInputBorder(),
             ),
           ),
           const SizedBox(height: 10),
@@ -2636,7 +2636,7 @@ class _YearScreenState extends State<YearScreen> {
         }).length;
 
         return Scaffold(
-          appBar: AppBar(title: Text(AnnaStrings.of(context).d3('myYear'), style: TextStyle(fontWeight: FontWeight.w800))),
+          appBar: AppBar(title: Text(AnnaStrings.of(context).d3('myYear'), style: const TextStyle(fontWeight: FontWeight.w800))),
           body: ListView(
             padding: const EdgeInsets.all(18),
             children: [
