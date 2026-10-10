@@ -507,23 +507,21 @@ class _CloudAccountScreenState extends State<CloudAccountScreen> {
                         const Divider(),
                         const SizedBox(height: 6),
                         Text(
-                          'Zona dati',
+                          strings.d3('dataZone'),
                           style: TextStyle(
                             fontWeight: FontWeight.w900,
                             color: Theme.of(context).colorScheme.error,
                           ),
                         ),
                         const SizedBox(height: 4),
-                        const Text(
-                          'L’eliminazione dell’account è permanente e richiede una conferma esplicita.',
-                        ),
+                        Text(strings.d3('deletePermanentNote')),
                         const SizedBox(height: 8),
                         SizedBox(
                           width: double.infinity,
                           child: OutlinedButton.icon(
                             onPressed: busy ? null : _deleteAccount,
                             icon: const Icon(Icons.delete_forever_outlined),
-                            label: const Text('Elimina account e dati'),
+                            label: Text(strings.d3('deleteAccountData')),
                           ),
                         ),
                       ],
@@ -535,20 +533,15 @@ class _CloudAccountScreenState extends State<CloudAccountScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text(
-                        'Come funziona',
-                        style: TextStyle(
+                      Text(
+                        strings.d3('howItWorks'),
+                        style: const TextStyle(
                           fontWeight: FontWeight.w900,
                           fontSize: 18,
                         ),
                       ),
                       const SizedBox(height: 8),
-                      const Text(
-                        '• L’app continua a salvare prima di tutto sul dispositivo.\n'
-                        '• Le modifiche vengono messe in coda anche senza Internet.\n'
-                        '• Quando il cloud torna disponibile, vengono sincronizzati solo gli elementi cambiati.\n'
-                        '• Agenda privata e Noi ♡ restano archivi separati, ma vengono riconciliati insieme quando torna la rete.',
-                      ),
+                      Text(strings.d3('localFirstHow')),
                       const SizedBox(height: 12),
                       Container(
                         width: double.infinity,
@@ -559,16 +552,12 @@ class _CloudAccountScreenState extends State<CloudAccountScreen> {
                               .surfaceContainerHighest,
                           borderRadius: BorderRadius.circular(16),
                         ),
-                        child: const Row(
+                        child: Row(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Icon(Icons.people_outline),
-                            SizedBox(width: 10),
-                            Expanded(
-                              child: Text(
-                                'Privato resta l’impostazione predefinita. Gli elementi Noi ♡ sono condivisi solo quando lo scegli esplicitamente.',
-                              ),
-                            ),
+                            const Icon(Icons.people_outline),
+                            const SizedBox(width: 10),
+                            Expanded(child: Text(strings.d3('privateDefaultCloud'))),
                           ],
                         ),
                       ),
