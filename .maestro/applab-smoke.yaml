@@ -210,7 +210,7 @@ appId: com.riccardopinato.agenda_per_anna
     visible: '.*(Cassaforte bloccata|Vault locked|Caja fuerte bloqueada|Coffre verrouillé|Cofre bloqueado).*'
     timeout: 10000
 - tapOn:
-    text: '(Indietro|Back|Atrás|Retour|Voltar)'
+    id: 'vault_back_button'
 - extendedWaitUntil:
     visible: '(Impostazioni|Settings|Ajustes|Paramètres|Definições)'
     timeout: 10000
