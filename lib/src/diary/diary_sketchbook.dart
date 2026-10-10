@@ -1033,23 +1033,23 @@ class _DiarySketchbookScreenState extends State<DiarySketchbookScreen> {
         DiarySketchTool.hand => Icons.pan_tool_alt_outlined,
       };
 
-  String _toolLabel(DiarySketchTool value) => switch (value) {
-        DiarySketchTool.pen => 'Penna',
-        DiarySketchTool.highlighter => 'Evidenziatore',
-        DiarySketchTool.eraser => 'Gomma',
-        DiarySketchTool.line => 'Linea',
-        DiarySketchTool.rectangle => 'Rettangolo',
-        DiarySketchTool.ellipse => 'Ellisse',
-        DiarySketchTool.select => 'Seleziona',
-        DiarySketchTool.lasso => 'Lazo',
-        DiarySketchTool.hand => 'Zoom',
+  String _toolLabel(DiarySketchTool value, AnnaStrings strings) => switch (value) {
+        DiarySketchTool.pen => strings.d3('pen'),
+        DiarySketchTool.highlighter => strings.d3('highlighter'),
+        DiarySketchTool.eraser => strings.d3('eraser'),
+        DiarySketchTool.line => strings.d3('line'),
+        DiarySketchTool.rectangle => strings.d3('rectangle'),
+        DiarySketchTool.ellipse => strings.d3('ellipse'),
+        DiarySketchTool.select => strings.d3('select'),
+        DiarySketchTool.lasso => strings.d3('lasso'),
+        DiarySketchTool.hand => strings.d3('zoom'),
       };
 
-  String _paperLabel(DiarySketchPaper value) => switch (value) {
-        DiarySketchPaper.plain => 'Bianco',
-        DiarySketchPaper.ruled => 'Righe',
-        DiarySketchPaper.grid => 'Quadretti',
-        DiarySketchPaper.dots => 'Puntini',
+  String _paperLabel(DiarySketchPaper value, AnnaStrings strings) => switch (value) {
+        DiarySketchPaper.plain => strings.d3('plainPaper'),
+        DiarySketchPaper.ruled => strings.d3('ruledPaper'),
+        DiarySketchPaper.grid => strings.d3('gridPaper'),
+        DiarySketchPaper.dots => strings.d3('dotsPaper'),
       };
 
   Widget _canvas(Size size) {
@@ -1234,7 +1234,7 @@ class _DiarySketchbookScreenState extends State<DiarySketchbookScreen> {
                     child: ChoiceChip(
                       selected: selected,
                       avatar: Icon(_toolIcon(value), size: 18),
-                      label: Text(_toolLabel(value)),
+                      label: Text(_toolLabel(value, AnnaStrings.of(context))),
                       onSelected: (_) => setState(() {
                         tool = value;
                         _resetGesturePreview();
@@ -1290,7 +1290,7 @@ class _DiarySketchbookScreenState extends State<DiarySketchbookScreen> {
                         .map(
                           (paper) => PopupMenuItem(
                             value: paper,
-                            child: Text(_paperLabel(paper)),
+                            child: Text(_paperLabel(paper, AnnaStrings.of(context))),
                           ),
                         )
                         .toList(),
