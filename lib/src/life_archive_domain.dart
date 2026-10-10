@@ -3,13 +3,6 @@ part of '../main.dart';
 enum LifeArchiveKind { diary, agenda, workout, inbox }
 
 extension LifeArchiveKindUi on LifeArchiveKind {
-  String get label => switch (this) {
-        LifeArchiveKind.diary => 'Diario',
-        LifeArchiveKind.agenda => 'Agenda',
-        LifeArchiveKind.workout => 'Allenamenti',
-        LifeArchiveKind.inbox => 'Inbox',
-      };
-
   IconData get icon => switch (this) {
         LifeArchiveKind.diary => Icons.auto_stories_outlined,
         LifeArchiveKind.agenda => Icons.event_outlined,
