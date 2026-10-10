@@ -25,9 +25,7 @@ extension WorkoutAgendaStore on AgendaStore {
       workoutHistory.where((session) => session.sport == sport).toList();
 
   Future<WorkoutSession> saveWorkoutSession(WorkoutSession session) async {
-    final cleanTitle = session.title.trim().isEmpty
-        ? session.sport.label
-        : session.title.trim();
+    final cleanTitle = session.title.trim();
     final normalized = session.copyWith(
       title: cleanTitle,
       durationSeconds: max(0, session.durationSeconds),
