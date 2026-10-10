@@ -82,13 +82,13 @@ class _AgendaBackupDomain {
       final bytes = await MediaAssetStore.instance.read(assetId);
       if (bytes == null || bytes.isEmpty) {
         throw FormatException(
-          'Media locale mancante nel backup: $assetId',
+          'backup_local_media_missing:$assetId',
         );
       }
       mediaBytesTotal += bytes.lengthInBytes;
       if (mediaBytesTotal > BackupFileService.maxBackupMediaBytes) {
         throw const FormatException(
-          'Il backup contiene troppi media per essere creato in sicurezza in memoria.',
+          'backup_too_many_media',
         );
       }
       media[assetId] = bytes;
@@ -147,13 +147,13 @@ class _AgendaBackupDomain {
       final bytes = await MediaAssetStore.instance.read(assetId);
       if (bytes == null || bytes.isEmpty) {
         throw FormatException(
-          'Media locale mancante nell\'esportazione aperta: $assetId',
+          'open_export_local_media_missing:$assetId',
         );
       }
       mediaBytesTotal += bytes.lengthInBytes;
       if (mediaBytesTotal > BackupFileService.maxBackupMediaBytes) {
         throw const FormatException(
-          'L\'esportazione contiene troppi media per essere creata in sicurezza in memoria.',
+          'open_export_too_many_media',
         );
       }
       final extension = _openMediaExtension(bytes);
@@ -246,30 +246,30 @@ class _AgendaBackupDomain {
 
     final manifestValue = jsonDecode(decoded.manifestJson);
     if (manifestValue is! Map) {
-      throw const FormatException('Manifest backup non valido.');
+      throw const FormatException('backup_manifest_invalid');
     }
     final manifest = Map<String, dynamic>.from(manifestValue);
     if (manifest['format'] != AgendaStore._backupBundleFormat ||
         manifest['bundleVersion'] != AgendaStore._backupBundleVersion) {
-      throw const FormatException('Formato ZIP del backup non supportato.');
+      throw const FormatException('backup_format_unsupported');
     }
 
     final expectedDataHash = manifest['dataSha256']?.toString() ?? '';
     final actualDataHash =
         sha256.convert(utf8.encode(decoded.dataJson)).toString();
     if (expectedDataHash.isEmpty || expectedDataHash != actualDataHash) {
-      throw const FormatException('Il file dati del backup non è integro.');
+      throw const FormatException('backup_data_hash_invalid');
     }
 
     final rawMedia = manifest['media'];
     if (rawMedia is! List) {
-      throw const FormatException('Indice media del backup non valido.');
+      throw const FormatException('backup_media_index_invalid');
     }
 
     final declaredIds = <String>{};
     for (final raw in rawMedia) {
       if (raw is! Map) {
-        throw const FormatException('Indice media del backup non valido.');
+        throw const FormatException('backup_media_index_invalid');
       }
       final entry = Map<String, dynamic>.from(raw);
       final assetId = entry['assetId']?.toString() ?? '';
@@ -279,7 +279,7 @@ class _AgendaBackupDomain {
           expectedSize is! int ||
           expectedHash.isEmpty ||
           !declaredIds.add(assetId)) {
-        throw const FormatException('Indice media del backup non valido.');
+        throw const FormatException('backup_media_index_invalid');
       }
 
       final mediaBytes = decoded.media[assetId];
@@ -287,13 +287,13 @@ class _AgendaBackupDomain {
           mediaBytes.lengthInBytes != expectedSize ||
           sha256.convert(mediaBytes).toString() != expectedHash) {
         throw FormatException(
-          'Media del backup danneggiato o mancante: $assetId',
+          'backup_media_corrupt:$assetId',
         );
       }
     }
 
     if (decoded.media.keys.any((assetId) => !declaredIds.contains(assetId))) {
-      throw const FormatException('Il backup contiene media non dichiarati.');
+      throw const FormatException('backup_undeclared_media');
     }
 
     inspectBackup(decoded.dataJson);
@@ -303,13 +303,13 @@ class _AgendaBackupDomain {
   BackupSummary inspectBackup(String raw) {
     final decoded = jsonDecode(raw);
     if (decoded is! Map) {
-      throw const FormatException('Il file non contiene un backup valido.');
+      throw const FormatException('backup_invalid');
     }
 
     final root = Map<String, dynamic>.from(decoded);
     if (root['format'] != AgendaStore._backupFormat) {
       throw const FormatException(
-        'Questo file non appartiene ad Anna\'s Diary.',
+        'backup_wrong_app',
       );
     }
 
@@ -317,12 +317,12 @@ class _AgendaBackupDomain {
     if (schema is! int ||
         schema > AgendaStore._backupSchemaVersion ||
         schema < 1) {
-      throw const FormatException('Versione del backup non supportata.');
+      throw const FormatException('backup_version_unsupported');
     }
 
     final data = root['data'];
     if (data is! Map) {
-      throw const FormatException('Il backup non contiene dati leggibili.');
+      throw const FormatException('backup_data_unreadable');
     }
 
     final payload = Map<String, dynamic>.from(data);
