@@ -380,7 +380,7 @@ class _CloudAccountScreenState extends State<CloudAccountScreen> {
                           keyboardType: TextInputType.emailAddress,
                           autofillHints: const [AutofillHints.email],
                           decoration: const InputDecoration(
-                            labelText: 'Email',
+                            labelText: AnnaStrings.of(context).vaultEmail,
                             prefixIcon: Icon(Icons.email_outlined),
                           ),
                         ),
