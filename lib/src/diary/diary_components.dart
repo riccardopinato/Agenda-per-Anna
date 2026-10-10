@@ -1780,7 +1780,11 @@ class _DiaryMemoryCardState extends State<DiaryMemoryCard> {
       widget.store.toggleDiaryArchived(widget.date, block.id);
 
   Future<void> _copyToNotes(DiaryBlock block) async {
-    final text = widget.store.notesBridgeTextForDiary(widget.date, block);
+    final text = widget.store.notesBridgeTextForDiary(
+      widget.date,
+      block,
+      strings: AnnaStrings.of(context),
+    );
     await copyNotesBridgePayload(context, text);
   }
 
