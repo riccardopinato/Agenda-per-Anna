@@ -1288,7 +1288,7 @@ Future<void> openItemEditor(
                                 Icon(Icons.notifications_none_outlined),
                             border: OutlineInputBorder(),
                           ),
-                          items: _reminderMenuItems,
+                          items: _reminderMenuItems(AnnaStrings.of(context)),
                           onChanged: (value) => setLocal(() {
                             primaryReminder = value ?? -1;
                             if (secondaryReminder == primaryReminder) {
@@ -1307,7 +1307,7 @@ Future<void> openItemEditor(
                                 Icon(Icons.add_alert_outlined),
                             border: OutlineInputBorder(),
                           ),
-                          items: _reminderMenuItems,
+                          items: _reminderMenuItems(AnnaStrings.of(context)),
                           onChanged: (value) => setLocal(() {
                             secondaryReminder = value ?? -1;
                             if (secondaryReminder == primaryReminder) {
@@ -1489,51 +1489,25 @@ Future<void> openItemEditor(
   note.dispose();
 }
 
-const List<DropdownMenuItem<int>> _reminderMenuItems = [
-  DropdownMenuItem(value: -1, child: Text('Nessuno')),
-  DropdownMenuItem(value: 0, child: Text('All’ora')),
-  DropdownMenuItem(value: 10, child: Text('10 min prima')),
-  DropdownMenuItem(value: 30, child: Text('30 min prima')),
-  DropdownMenuItem(value: 60, child: Text('1 ora prima')),
-  DropdownMenuItem(value: 120, child: Text('2 ore prima')),
-  DropdownMenuItem(value: 1440, child: Text('1 giorno prima')),
+List<DropdownMenuItem<int>> _reminderMenuItems(AnnaStrings strings) => [
+  DropdownMenuItem(value: -1, child: Text(strings.d3('editor_noReminderOption'))),
+  DropdownMenuItem(value: 0, child: Text(strings.d3('editor_atTime'))),
+  DropdownMenuItem(value: 10, child: Text(strings.d3('editor_tenBefore'))),
+  DropdownMenuItem(value: 30, child: Text(strings.d3('editor_thirtyBefore'))),
+  DropdownMenuItem(value: 60, child: Text(strings.d3('editor_hourBefore'))),
+  DropdownMenuItem(value: 120, child: Text(strings.d3('editor_twoHoursBefore'))),
+  DropdownMenuItem(value: 1440, child: Text(strings.d3('editor_dayBefore'))),
 ];
 
-const _positiveQuotes = <(String, String)>[
-  ('Una cosa alla volta ♡', 'Non serve fare tutto oggi. Basta iniziare da qualcosa che conta.'),
-  ('Fai spazio alle cose belle', 'Anche una giornata piena può contenere un momento solo tuo.'),
-  ('Non devi correre sempre', 'La costanza vale più della fretta.'),
-  ('Oggi merita una pagina nuova', 'Puoi decidere cosa portare con te e cosa lasciare andare.'),
-  ('Piccoli passi, grandi cambiamenti', 'Le cose importanti crescono un giorno alla volta.'),
-  ('Ricordati anche di te', 'Tra tutte le cose da fare, lascia uno spazio per stare bene.'),
-  ('Va bene cambiare programma', 'Un’agenda serve a sostenerti, non a metterti pressione.'),
-  ('Celebra quello che funziona', 'Non aspettare solo i grandi traguardi per essere fiera di te.'),
-];
-
-(String, String) _dailyQuote(DateTime date) {
+(String, String) _dailyQuote(DateTime date, AnnaStrings strings) {
   final start = DateTime(date.year, 1, 1);
   final dayOfYear = date.difference(start).inDays;
-  return _positiveQuotes[dayOfYear % _positiveQuotes.length];
+  final quotes = strings.editorPositiveQuotes;
+  return quotes[dayOfYear % quotes.length];
 }
 
-String _monthPhrase(int month) {
-  const phrases = [
-    '',
-    'Un inizio leggero, senza pretendere tutto subito.',
-    'Coltiva ciò che vuoi vedere crescere.',
-    'Lascia entrare un po’ di primavera anche nei programmi.',
-    'Fai spazio alle novità.',
-    'Scegli ciò che ti fa stare bene.',
-    'Porta con te solo quello che serve.',
-    'Più luce, più tempo per respirare.',
-    'Rallenta abbastanza da ricordarti le giornate.',
-    'Riparti dalle cose essenziali.',
-    'Raccogli ciò che hai costruito.',
-    'Proteggi il tuo tempo e le tue energie.',
-    'Chiudi l’anno ricordando anche le cose belle.',
-  ];
-  return phrases[month.clamp(1, 12)];
-}
+String _monthPhrase(int month, AnnaStrings strings) =>
+    strings.editorMonthPhrase(month);
 
 DateTime addCivilDays(DateTime date, int days) {
   final noon = DateTime(date.year, date.month, date.day, 12);
