@@ -2962,6 +2962,9 @@ class AgendaStore extends ChangeNotifier {
   }
 
   Future<void> handleAppResumed() async {
+    NotificationService.instance.configureLocalization(
+      notificationLocalizationForPreference(preferences.appLanguage),
+    );
     await NotificationService.instance.initialize();
     await reconcileReminders();
 
@@ -5242,6 +5245,10 @@ class AgendaStore extends ChangeNotifier {
 
   Future<void> savePreferences(AgendaPreferences value) async {
     preferences = value;
+    NotificationService.instance.configureLocalization(
+      notificationLocalizationForPreference(preferences.appLanguage),
+    );
+    unawaited(HomeWidgetBridge.instance.sync(this));
 
     // Preferences drive shell-level navigation (including onboarding and the
     // preferred start surface). Publish the in-memory state immediately so UI
