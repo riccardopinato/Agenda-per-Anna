@@ -574,7 +574,7 @@ extension SearchConnectionsAgendaStore on AgendaStore {
           journal.beautiful,
           journal.note,
           ...journal.gratitude,
-          journal.mood?.label ?? '',
+          journal.mood == null ? '' : strings.editorMoodLabel(journal.mood!),
           DateFormat('d MMMM yyyy', locale).format(date),
         ])) {
           hits.add(
