@@ -1448,10 +1448,11 @@ class _ArchiveScreenState extends State<ArchiveScreen> {
       ]),
       builder: (context, _) {
         final strings = AnnaStrings.of(context);
-        final allEntries = widget.store.lifeArchiveEntries();
+        final allEntries = widget.store.lifeArchiveEntries(strings: strings);
         final entries = widget.store.lifeArchiveEntries(
           query: searchController.text,
           kind: filter,
+          strings: strings,
         );
         final years = _groupByYear(entries);
         final months = _months();
