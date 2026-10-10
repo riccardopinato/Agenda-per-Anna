@@ -257,7 +257,7 @@ class HomeScreen extends StatelessWidget {
                     const SizedBox(height: 8),
                     Text(
                       store.preferences.showDailyQuote
-                          ? _dailyQuote(now).$1
+                          ? _dailyQuote(now, strings).$1
                           : strings.hello(displayName),
                       style: TextStyle(
                         color: accent.foreground,
@@ -268,7 +268,7 @@ class HomeScreen extends StatelessWidget {
                     const SizedBox(height: 6),
                     Text(
                       store.preferences.showDailyQuote
-                          ? _dailyQuote(now).$2
+                          ? _dailyQuote(now, strings).$2
                           : strings.todayPage,
                       style: TextStyle(
                         color: accent.secondaryForeground,
