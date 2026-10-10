@@ -56,7 +56,7 @@ void main() {
 
     expect(screen, contains("d3('deleteForEveryone')"));
     expect(screen, contains("d3('leaveOnlyMe')"));
-    expect(screen, contains("d3('sharedPeopleCount')"));
+    expect(screen, contains("d3Format('sharedPeopleCount'"));
     expect(screen, contains("d3('removeFromSpace')"));
   });
 }
