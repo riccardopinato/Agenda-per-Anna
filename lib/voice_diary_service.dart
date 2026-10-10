@@ -48,7 +48,7 @@ class VoiceDiaryService {
     if (kIsWeb) {
       throw PlatformException(
         code: 'voice_playback_unsupported',
-        message: 'La riproduzione diretta non è disponibile sul web.',
+        message: 'voice_playback_unsupported',
       );
     }
     await _channel.invokeMethod<void>('playRecording', bytes);
