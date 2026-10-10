@@ -463,22 +463,22 @@ class _SharedMemoriesScreenState extends State<SharedMemoriesScreen> {
           _viewChip(
             _SharedMemoriesView.memories,
             Icons.grid_view_rounded,
-            'Ricordi',
+            AnnaStrings.of(context).d3('mem_memories'),
           ),
           _viewChip(
             _SharedMemoriesView.days,
             Icons.today_outlined,
-            'Giorni',
+            AnnaStrings.of(context).d3('mem_days'),
           ),
           _viewChip(
             _SharedMemoriesView.months,
             Icons.calendar_view_month_outlined,
-            'Mesi',
+            AnnaStrings.of(context).d3('mem_months'),
           ),
           _viewChip(
             _SharedMemoriesView.years,
             Icons.calendar_today_outlined,
-            'Anni',
+            AnnaStrings.of(context).d3('mem_years'),
           ),
           _viewChip(
             _SharedMemoriesView.timeline,
@@ -512,11 +512,11 @@ class _SharedMemoriesScreenState extends State<SharedMemoriesScreen> {
       padding: const EdgeInsets.symmetric(horizontal: 14),
       child: Row(
         children: [
-          _filterChip(_SharedMemoriesFilter.all, 'Tutti'),
-          _filterChip(_SharedMemoriesFilter.photo, 'Foto'),
+          _filterChip(_SharedMemoriesFilter.all, AnnaStrings.of(context).d3('mem_all')),
+          _filterChip(_SharedMemoriesFilter.photo, AnnaStrings.of(context).d3('mem_photos')),
           _filterChip(_SharedMemoriesFilter.sketch, 'Sketch'),
-          _filterChip(_SharedMemoriesFilter.note, 'Note'),
-          _filterChip(_SharedMemoriesFilter.events, 'Momenti'),
+          _filterChip(_SharedMemoriesFilter.note, AnnaStrings.of(context).d3('mem_notes')),
+          _filterChip(_SharedMemoriesFilter.events, AnnaStrings.of(context).d3('mem_moments')),
         ],
       ),
     );
@@ -551,8 +551,8 @@ class _SharedMemoriesScreenState extends State<SharedMemoriesScreen> {
             const SizedBox(height: 12),
             Text(
               hasQuery
-                  ? 'Nessun ricordo corrisponde alla ricerca.'
-                  : 'I vostri ricordi compariranno qui.',
+                  ? AnnaStrings.of(context).d3('mem_noSearchMatch')
+                  : AnnaStrings.of(context).d3('mem_memoriesEmpty'),
               textAlign: TextAlign.center,
               style: const TextStyle(
                 fontWeight: FontWeight.w800,
@@ -562,10 +562,8 @@ class _SharedMemoriesScreenState extends State<SharedMemoriesScreen> {
             const SizedBox(height: 6),
             Text(
               hasQuery
-                  ? 'Prova a cambiare parole o filtri.'
-                  : 'Foto, sketch e note entrano automaticamente. '
-                      'Appuntamenti e attività possono essere aggiunti ai '
-                      'ricordi dal menu dell’elemento.',
+                  ? AnnaStrings.of(context).d3('mem_changeSearch')
+                  : AnnaStrings.of(context).d3('mem_memoriesEmptyHint'),
               textAlign: TextAlign.center,
             ),
           ],
@@ -781,21 +779,21 @@ class _SharedMemoriesScreenState extends State<SharedMemoriesScreen> {
         ),
         actions: [
           IconButton(
-            tooltip: 'Aggiorna',
+            tooltip: AnnaStrings.of(context).d3('mem_refresh'),
             onPressed: refreshing ? null : _refresh,
             icon: const Icon(Icons.refresh),
           ),
           PopupMenuButton<String>(
-            tooltip: 'Altre opzioni',
+            tooltip: AnnaStrings.of(context).d3('mem_moreOptions'),
             onSelected: (value) {
               if (value == 'storage') {
                 _runMediaMaintenance();
               }
             },
-            itemBuilder: (_) => const [
+            itemBuilder: (_) => [
               PopupMenuItem(
                 value: 'storage',
-                child: Text('Controlla media e Storage'),
+                child: Text(AnnaStrings.of(context).d3('mem_checkMedia')),
               ),
             ],
           ),
@@ -810,12 +808,12 @@ class _SharedMemoriesScreenState extends State<SharedMemoriesScreen> {
               onChanged: (_) => setState(() {}),
               textInputAction: TextInputAction.search,
               decoration: InputDecoration(
-                hintText: 'Cerca nei nostri ricordi...',
+                hintText: AnnaStrings.of(context).d3('mem_searchMemories'),
                 prefixIcon: const Icon(Icons.search),
                 suffixIcon: searchController.text.isEmpty
                     ? null
                     : IconButton(
-                        tooltip: 'Cancella ricerca',
+                        tooltip: AnnaStrings.of(context).d3('mem_clearSearch'),
                         onPressed: () {
                           searchController.clear();
                           setState(() {});
@@ -837,7 +835,13 @@ class _SharedMemoriesScreenState extends State<SharedMemoriesScreen> {
               children: [
                 Expanded(
                   child: Text(
-                    '${source.length} ricordi · $totalDays giorni',
+                    AnnaStrings.of(context).d3Format(
+                      'mem_summary',
+                      {
+                        'memories': AnnaStrings.of(context).d3Format('mem_memoryCount', {'count': source.length}),
+                        'days': AnnaStrings.of(context).d3Format('mem_daysCount', {'count': totalDays}),
+                      },
+                    ),
                     style: Theme.of(context).textTheme.bodySmall,
                   ),
                 ),
@@ -967,8 +971,8 @@ class SharedMemoryTile extends StatelessWidget {
                     IconButton(
                       visualDensity: VisualDensity.compact,
                       tooltip: entry.memoryPinned
-                          ? 'Togli dai ricordi'
-                          : 'Aggiungi ai ricordi',
+                          ? AnnaStrings.of(context).d3('mem_removeMemory')
+                          : AnnaStrings.of(context).d3('mem_addMemory'),
                       onPressed: onToggleMemory,
                       icon: Icon(
                         entry.memoryPinned
