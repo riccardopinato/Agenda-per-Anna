@@ -704,7 +704,7 @@ class _DiarySketchbookScreenState extends State<DiarySketchbookScreen> {
     final value = await showDialog<String>(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        title: Text(existing == null ? 'Aggiungi testo' : 'Modifica testo'),
+        title: Text(existing == null ? AnnaStrings.of(context).d3('addText') : AnnaStrings.of(context).d3('editText')),
         content: TextField(
           controller: controller,
           autofocus: true,
@@ -712,19 +712,19 @@ class _DiarySketchbookScreenState extends State<DiarySketchbookScreen> {
           maxLines: 6,
           textCapitalization: TextCapitalization.sentences,
           decoration: const InputDecoration(
-            hintText: 'Scrivi sul foglio...',
+            hintText: AnnaStrings.of(context).d3('writePage'),
             border: OutlineInputBorder(),
           ),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(dialogContext),
-            child: const Text('Annulla'),
+            child: Text(AnnaStrings.of(context).cancel),
           ),
           FilledButton(
             onPressed: () =>
                 Navigator.pop(dialogContext, controller.text.trim()),
-            child: const Text('Inserisci'),
+            child: Text(AnnaStrings.of(context).d3('insert')),
           ),
         ],
       ),
@@ -802,7 +802,7 @@ class _DiarySketchbookScreenState extends State<DiarySketchbookScreen> {
     } catch (_) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Immagine non inserita.')),
+        SnackBar(content: Text(AnnaStrings.of(context).d3('imageNotInserted'))),
       );
     }
   }
@@ -983,7 +983,7 @@ class _DiarySketchbookScreenState extends State<DiarySketchbookScreen> {
       final bytes = data.buffer.asUint8List();
 
       final path = await FilePicker.saveFile(
-        dialogTitle: 'Esporta sketch',
+        dialogTitle: AnnaStrings.of(context).d3('exportSketch'),
         fileName:
             'annas-diary-sketch-${DateFormat('yyyyMMdd-HHmm').format(DateTime.now())}.png',
         type: FileType.custom,
@@ -994,14 +994,14 @@ class _DiarySketchbookScreenState extends State<DiarySketchbookScreen> {
       if (!mounted) return;
       if (path != null) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Sketch esportato in PNG.')),
+          SnackBar(content: Text(AnnaStrings.of(context).d3('sketchExported'))),
         );
       }
     } catch (_) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Non è stato possibile esportare lo sketch.'),
+        SnackBar(
+          content: Text(AnnaStrings.of(context).d3('sketchExportFailed')),
         ),
       );
     } finally {
