@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:agenda_per_anna/cloud_sync_service.dart';
+import 'package:agenda_per_anna/main.dart';
 
 void main() {
   test('shared member payload remains deterministic and role-aware', () {
@@ -21,7 +22,8 @@ void main() {
     expect(owner.isOwner, isTrue);
     expect(owner.displayName, 'Anna');
     expect(member.isOwner, isFalse);
-    expect(member.displayName, 'Persona');
+    expect(member.displayName, isEmpty);
+    expect(const AnnaStrings('it').person, 'Persona');
   });
 
   test('v0.60 member RPCs preserve owner and membership boundaries', () {
@@ -52,9 +54,9 @@ void main() {
     final screen =
         File('lib/src/screens/shared_space.dart').readAsStringSync();
 
-    expect(screen, contains('Elimina per tutti'));
-    expect(screen, contains('Lascia solo per me'));
-    expect(screen, contains('Persone nello spazio'));
-    expect(screen, contains('Rimuovi dallo spazio'));
+    expect(screen, contains("d3('deleteForEveryone')"));
+    expect(screen, contains("d3('leaveOnlyMe')"));
+    expect(screen, contains("d3('sharedPeopleCount')"));
+    expect(screen, contains("d3('removeFromSpace')"));
   });
 }
