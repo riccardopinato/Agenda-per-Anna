@@ -37,27 +37,29 @@ class HomeWidgetBridge {
   Future<void> sync(AgendaStore store) async {
     if (!supported) return;
 
+    final strings = AnnaStrings.forPreference(store.preferences.appLanguage);
+    final locale = strings.languageCode;
     final now = DateTime.now();
     final upcoming = store.unifiedUpcoming(now);
     final birthdays = store.upcomingBirthdays(from: now, limit: 1);
     final next = upcoming.isEmpty ? null : upcoming.first;
     final birthday = birthdays.isEmpty ? null : birthdays.first;
 
-    String nextText = 'Nessun impegno in arrivo';
+    String nextText = strings.d3('widget_noUpcoming');
     if (next != null) {
       final date = next.date;
       final day = isSameDay(date, now)
-          ? 'Oggi'
-          : DateFormat('EEE d MMM', 'it_IT').format(date);
+          ? strings.d3('widget_today')
+          : DateFormat('EEE d MMM', locale).format(date);
       final time = next.start == null ? '' : ' · ${formatTime(next.start!)}';
       nextText = '$day$time · ${next.title}';
     }
 
-    String birthdayText = 'Nessun compleanno vicino';
+    String birthdayText = strings.d3('widget_noBirthday');
     if (birthday != null) {
       final date = birthday.date;
       birthdayText =
-          '${birthday.birthday.name} · ${DateFormat('d MMM', 'it_IT').format(date)}';
+          '${birthday.birthday.name} · ${DateFormat('d MMM', locale).format(date)}';
     }
 
     try {
