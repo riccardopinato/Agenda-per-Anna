@@ -8,24 +8,79 @@ class TrashScreen extends StatelessWidget {
     required this.store,
   });
 
+  String _displayTitle(BuildContext context, TrashEntry entry) {
+    final strings = AnnaStrings.of(context);
+    final locale = AnnaStrings.intlLocale(context);
+
+    switch (entry.kind) {
+      case TrashEntityKind.diaryBlock:
+        try {
+          final block = DiaryBlock.fromJson(entry.payload);
+          if (block.text.trim().isNotEmpty) return block.text.trim();
+          return switch (block.type) {
+            DiaryBlockType.note => strings.d3('trashDiaryNote'),
+            DiaryBlockType.photo => strings.d3('trashDiaryPhoto'),
+            DiaryBlockType.sketch => strings.d3('trashDiarySketch'),
+            DiaryBlockType.voice => strings.d3('trashDiaryVoice'),
+          };
+        } catch (_) {
+          break;
+        }
+      case TrashEntityKind.journal:
+        final date = DateTime.tryParse(entry.entityId);
+        if (date != null) {
+          return strings.d3Format(
+            'trashJournalTitle',
+            {'date': DateFormat('d MMMM yyyy', locale).format(date)},
+          );
+        }
+      case TrashEntityKind.month:
+        final parts = entry.entityId.split('-');
+        if (parts.length >= 2) {
+          final year = int.tryParse(parts[0]);
+          final month = int.tryParse(parts[1]);
+          if (year != null && month != null) {
+            return _cap(DateFormat('MMMM yyyy', locale).format(DateTime(year, month)));
+          }
+        }
+      case TrashEntityKind.week:
+        final date = DateTime.tryParse(entry.entityId);
+        if (date != null) {
+          return strings.d3Format(
+            'trashWeekTitle',
+            {'date': DateFormat('d MMMM yyyy', locale).format(date)},
+          );
+        }
+      default:
+        break;
+    }
+
+    final title = entry.title.trim();
+    if (title.isEmpty || title == 'Elemento eliminato') {
+      return strings.trashKindLabel(entry.kind);
+    }
+    return title;
+  }
+
   Future<void> _restore(BuildContext context, TrashEntry entry) async {
     final strings = AnnaStrings.of(context);
     final conflict = store.trashRestoreConflictReason(entry);
     if (conflict != null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(conflict)),
+        SnackBar(content: Text(strings.trashConflict(conflict))),
       );
       return;
     }
 
+    final displayTitle = _displayTitle(context, entry);
     final restored = await store.restoreTrashEntry(entry.id);
     if (!context.mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(
           restored
-              ? strings.restoredFromTrash(entry.title)
-              : strings.restoreFailedTrash(entry.title),
+              ? strings.restoredFromTrash(displayTitle)
+              : strings.restoreFailedTrash(displayTitle),
         ),
       ),
     );
@@ -33,12 +88,13 @@ class TrashScreen extends StatelessWidget {
 
   Future<void> _purge(BuildContext context, TrashEntry entry) async {
     final strings = AnnaStrings.of(context);
+    final displayTitle = _displayTitle(context, entry);
     final confirmed = await showDialog<bool>(
           context: context,
           builder: (dialogContext) => AlertDialog(
             title: Text(strings.deletePermanentlyQuestion),
             content: Text(
-              strings.purgeTrashDescription(entry.title),
+              strings.purgeTrashDescription(displayTitle),
             ),
             actions: [
               TextButton(
@@ -154,14 +210,14 @@ class TrashScreen extends StatelessWidget {
                       child: ListTile(
                         leading: CircleAvatar(child: Icon(entry.kind.icon)),
                         title: Text(
-                          entry.title,
+                          _displayTitle(context, entry),
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
                           style: const TextStyle(fontWeight: FontWeight.w800),
                         ),
                         subtitle: Text(
                           strings.trashEntrySubtitle(
-                            entry.kind.label,
+                            strings.trashKindLabel(entry.kind),
                             DateFormat('d MMM yyyy, HH:mm', AnnaStrings.intlLocale(context)).format(entry.deletedAt),
                           ),
                         ),
