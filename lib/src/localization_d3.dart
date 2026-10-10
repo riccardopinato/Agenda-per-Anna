@@ -728,6 +728,8 @@ const Map<String, Map<String, String>> _d3Catalog = {
   "shared_operationFailed": <String, String>{"en": "Operation failed. Try again.", "it": "Operazione non riuscita. Riprova.", "es": "La operación falló. Inténtalo de nuevo.", "fr": "L’opération a échoué. Réessaie.", "pt": "A operação falhou. Tenta novamente."},
   "shared_viewCommentReact": <String, String>{"en": "Others can view, comment and react.", "it": "Gli altri possono vedere, commentare e reagire.", "es": "Los demás pueden ver, comentar y reaccionar.", "fr": "Les autres peuvent voir, commenter et réagir.", "pt": "Os outros podem ver, comentar e reagir."},
 
+  "snapshotBeforeRestore": <String, String>{"en": "Before restore", "it": "Prima del ripristino", "es": "Antes de restaurar", "fr": "Avant la restauration", "pt": "Antes do restauro"},
+  "snapshotBeforeCloudSync": <String, String>{"en": "Before first cloud sync", "it": "Prima sincronizzazione cloud", "es": "Antes de la primera sincronización cloud", "fr": "Avant la première synchronisation cloud", "pt": "Antes da primeira sincronização cloud"},
 };
 
 NotificationLocalization notificationLocalizationForPreference(AppLanguage value) {
@@ -881,6 +883,65 @@ extension AnnaD3Strings on AnnaStrings {
     return d3CloudError(raw);
   }
 
+
+  String snapshotLabel(String rawValue) {
+    final raw = rawValue.trim();
+    const manual = <String>{
+      '@snapshot:manual',
+      'Manual backup',
+      'Backup manuale',
+      'Copia manual',
+      'Sauvegarde manuelle',
+      'Backup manual',
+    };
+    const automatic = <String>{
+      '@snapshot:auto',
+      'Automatic backup',
+      'Backup automatico',
+      'Copia automática',
+      'Sauvegarde automatique',
+      'Backup automático',
+    };
+    const beforeRestore = <String>{
+      '@snapshot:before_restore',
+      'Before restore',
+      'Prima del ripristino',
+      'Antes de restaurar',
+      'Avant la restauration',
+      'Antes do restauro',
+    };
+    const beforeCloud = <String>{
+      '@snapshot:before_cloud_sync',
+      'Before first cloud sync',
+      'Prima sincronizzazione cloud',
+      'Antes de la primera sincronización cloud',
+      'Avant la première synchronisation cloud',
+      'Antes da primeira sincronização cloud',
+    };
+    const beforeSignOut = <String>{
+      '@snapshot:before_sign_out',
+      'Before account disconnection',
+      'Prima della disconnessione account',
+      'Antes de desconectar la cuenta',
+      'Avant la déconnexion du compte',
+      'Antes de desligar a conta',
+    };
+    const beforeTrash = <String>{
+      '@snapshot:before_empty_trash',
+      'Before emptying Trash',
+      'Prima di svuotare il Cestino',
+      'Antes de vaciar la Papelera',
+      'Avant de vider la Corbeille',
+      'Antes de esvaziar o Lixo',
+    };
+    if (manual.contains(raw)) return d3('snapshotManual');
+    if (automatic.contains(raw)) return d3('snapshotAutomatic');
+    if (beforeRestore.contains(raw)) return d3('snapshotBeforeRestore');
+    if (beforeCloud.contains(raw)) return d3('snapshotBeforeCloudSync');
+    if (beforeSignOut.contains(raw)) return d3('snapshotBeforeSignOut');
+    if (beforeTrash.contains(raw)) return d3('snapshotBeforeEmptyTrash');
+    return raw;
+  }
 
   String d3BackupError(String rawValue) {
     final raw = rawValue.toLowerCase();
