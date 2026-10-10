@@ -2229,7 +2229,7 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
             onPressed: () => _openComments(entry),
             icon: const Icon(Icons.chat_bubble_outline, size: 19),
             label: Text(
-              comments.isEmpty ? 'Commenta' : '${comments.length}',
+              comments.isEmpty ? AnnaStrings.of(context).d3CommentAction : '${comments.length}',
             ),
           ),
           const Spacer(),
