@@ -485,7 +485,44 @@ const Map<String, Map<String, String>> _d3Catalog = {
   "unified_privateDefault": <String, String>{"en": "Private remains the default. Use Noi ♡ only for what you want to share.", "it": "Privato resta la scelta predefinita. Usa Noi ♡ solo per ciò che vuoi condividere.", "es": "Privado sigue siendo la opción predeterminada. Usa Noi ♡ solo para lo que quieras compartir.", "fr": "Privé reste le choix par défaut. Utilise Noi ♡ seulement pour ce que tu veux partager.", "pt": "Privado continua a ser a predefinição. Usa Noi ♡ apenas para o que queres partilhar."},
   "unified_visibleOnlyAccount": <String, String>{"en": "Visible only in your account.", "it": "Visibile solo nel tuo account.", "es": "Visible solo en tu cuenta.", "fr": "Visible uniquement dans ton compte.", "pt": "Visível apenas na tua conta."},
   "unified_syncedShared": <String, String>{"en": "Synced with the selected shared space.", "it": "Sincronizzato con lo spazio condiviso scelto.", "es": "Sincronizado con el espacio compartido seleccionado.", "fr": "Synchronisé avec l’espace partagé sélectionné.", "pt": "Sincronizado com o espaço partilhado selecionado."},
+  "notification_done": <String, String>{"en": "Done", "it": "Fatto", "es": "Hecho", "fr": "Terminé", "pt": "Feito"},
+  "notification_hour": <String, String>{"en": "1 hour", "it": "1 ora", "es": "1 hora", "fr": "1 heure", "pt": "1 hora"},
+  "notification_open": <String, String>{"en": "Open", "it": "Apri", "es": "Abrir", "fr": "Ouvrir", "pt": "Abrir"},
+  "notification_reminders": <String, String>{"en": "Reminders", "it": "Promemoria", "es": "Recordatorios", "fr": "Rappels", "pt": "Lembretes"},
+  "notification_reminderDescription": <String, String>{"en": "Anna's Diary reminders for appointments and tasks", "it": "Promemoria di Anna's Diary per appuntamenti e cose da fare", "es": "Recordatorios de Anna's Diary para citas y tareas", "fr": "Rappels Anna's Diary pour rendez-vous et tâches", "pt": "Lembretes Anna's Diary para compromissos e tarefas"},
+  "notification_sharedDescription": <String, String>{"en": "News and updates from the shared Noi ♡ space", "it": "Novità e aggiornamenti dello spazio condiviso Noi ♡", "es": "Novedades y actualizaciones del espacio compartido Noi ♡", "fr": "Actualités et mises à jour de l’espace partagé Noi ♡", "pt": "Novidades e atualizações do espaço partilhado Noi ♡"},
+  "notification_immediateBody": <String, String>{"en": "Immediate test: local notifications are active ♡", "it": "Test immediato: notifiche locali attive ♡", "es": "Prueba inmediata: notificaciones locales activas ♡", "fr": "Test immédiat : notifications locales actives ♡", "pt": "Teste imediato: notificações locais ativas ♡"},
+  "notification_scheduledTitle": <String, String>{"en": "Anna's Diary · Scheduled test", "it": "Anna's Diary · Test programmato", "es": "Anna's Diary · Prueba programada", "fr": "Anna's Diary · Test programmé", "pt": "Anna's Diary · Teste agendado"},
+  "notification_scheduledBody": <String, String>{"en": "The scheduled reminder arrived correctly ♡", "it": "Il promemoria programmato è arrivato correttamente ♡", "es": "El recordatorio programado llegó correctamente ♡", "fr": "Le rappel programmé est arrivé correctement ♡", "pt": "O lembrete agendado chegou corretamente ♡"},
+  "notification_pushTitle": <String, String>{"en": "Anna's Diary · Push test", "it": "Anna's Diary · Test push", "es": "Anna's Diary · Prueba push", "fr": "Anna's Diary · Test push", "pt": "Anna's Diary · Teste push"},
+  "notification_pushBody": <String, String>{"en": "Firebase push received correctly ♡", "it": "Push Firebase ricevuta correttamente ♡", "es": "Push de Firebase recibido correctamente ♡", "fr": "Push Firebase reçu correctement ♡", "pt": "Push Firebase recebido corretamente ♡"},
+  "notification_sharedTitle": <String, String>{"en": "New in {label}", "it": "Novità in {label}", "es": "Novedades en {label}", "fr": "Nouveau dans {label}", "pt": "Novidades em {label}"},
+  "notification_sharedBody": <String, String>{"en": "There is a new shared update to read.", "it": "C’è un nuovo aggiornamento condiviso da leggere.", "es": "Hay una nueva actualización compartida para leer.", "fr": "Une nouvelle mise à jour partagée est disponible.", "pt": "Há uma nova atualização partilhada para ler."},
+  "notification_snoozeHour": <String, String>{"en": "Reminder postponed by 1 hour.", "it": "Promemoria posticipato di 1 ora.", "es": "Recordatorio pospuesto 1 hora.", "fr": "Rappel reporté d’une heure.", "pt": "Lembrete adiado 1 hora."},
+  "notification_snoozeMinutes": <String, String>{"en": "Reminder postponed by {minutes} minutes.", "it": "Promemoria posticipato di {minutes} minuti.", "es": "Recordatorio pospuesto {minutes} minutos.", "fr": "Rappel reporté de {minutes} minutes.", "pt": "Lembrete adiado {minutes} minutos."},
 };
+
+NotificationLocalization notificationLocalizationForPreference(AppLanguage value) {
+  final strings = AnnaStrings.forPreference(value);
+  return NotificationLocalization(
+    done: strings.d3('notification_done'),
+    snooze10: '10 min',
+    snooze60: strings.d3('notification_hour'),
+    open: strings.d3('notification_open'),
+    reminderChannelName: strings.d3('notification_reminders'),
+    reminderChannelDescription: strings.d3('notification_reminderDescription'),
+    sharedChannelDescription: strings.d3('notification_sharedDescription'),
+    immediateTestBody: strings.d3('notification_immediateBody'),
+    scheduledTestTitle: strings.d3('notification_scheduledTitle'),
+    scheduledTestBody: strings.d3('notification_scheduledBody'),
+    pushTestTitle: strings.d3('notification_pushTitle'),
+    pushTestBody: strings.d3('notification_pushBody'),
+    sharedTitleTemplate: strings.d3('notification_sharedTitle'),
+    sharedBody: strings.d3('notification_sharedBody'),
+    snoozeHourBody: strings.d3('notification_snoozeHour'),
+    snoozeMinutesTemplate: strings.d3('notification_snoozeMinutes'),
+  );
+}
 
 extension AnnaD3Strings on AnnaStrings {
   String d3(String key) {
