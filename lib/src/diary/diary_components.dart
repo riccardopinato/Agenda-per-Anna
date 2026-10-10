@@ -1008,7 +1008,7 @@ class DiaryComposerSection extends StatelessWidget {
               FilledButton.tonalIcon(
                 onPressed: onAddSketch,
                 icon: const Icon(Icons.draw_outlined),
-                label: const Text('Sketch'),
+                label: Text(AnnaStrings.of(context).d3SketchLabel),
               ),
               if (onAddVoice != null)
                 FilledButton.tonalIcon(
