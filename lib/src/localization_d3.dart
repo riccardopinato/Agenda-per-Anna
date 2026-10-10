@@ -726,6 +726,8 @@ const Map<String, Map<String, String>> _d3Catalog = {
   "shared_editedByYou": <String, String>{"en": "Edited by you", "it": "Modificato da te", "es": "Editado por ti", "fr": "Modifié par toi", "pt": "Editado por ti"},
   "shared_editedByName": <String, String>{"en": "Edited by {name}", "it": "Modificato da {name}", "es": "Editado por {name}", "fr": "Modifié par {name}", "pt": "Editado por {name}"},
   "shared_operationFailed": <String, String>{"en": "Operation failed. Try again.", "it": "Operazione non riuscita. Riprova.", "es": "La operación falló. Inténtalo de nuevo.", "fr": "L’opération a échoué. Réessaie.", "pt": "A operação falhou. Tenta novamente."},
+  "shared_viewCommentReact": <String, String>{"en": "Others can view, comment and react.", "it": "Gli altri possono vedere, commentare e reagire.", "es": "Los demás pueden ver, comentar y reaccionar.", "fr": "Les autres peuvent voir, commenter et réagir.", "pt": "Os outros podem ver, comentar e reagir."},
+
 };
 
 NotificationLocalization notificationLocalizationForPreference(AppLanguage value) {
