@@ -509,6 +509,18 @@ void main() {
     );
   });
 
+  test('D3 Vault back navigation is explicit for AppLab', () {
+    final vault = _source('lib/src/screens/private_vault.dart');
+    final flow = _source('.maestro/applab-smoke.yaml');
+
+    expect(vault, contains("identifier: 'vault_back_button'"));
+    expect(vault, contains('Navigator.of(context).pop()'));
+    expect(
+      flow,
+      contains("id: 'vault_back_button'"),
+    );
+  });
+
   test('D3 AppLab onboarding accepts every supported locale', () {
     final flow = _source('.maestro/applab-smoke.yaml');
     for (final text in const <String>[
