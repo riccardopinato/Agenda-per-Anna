@@ -480,19 +480,19 @@ class SharedPasswordService {
     final cleanEmail = email.trim();
     final cleanNotes = notes.trim();
     if (cleanService.isEmpty) {
-      throw const FormatException('Inserisci il nome del servizio.');
+      throw const FormatException('credential_service_required');
     }
     if (cleanService.length > 160) {
-      throw const FormatException('Il nome del servizio è troppo lungo.');
+      throw const FormatException('credential_service_too_long');
     }
     if (cleanUsername.length > 320 || cleanEmail.length > 320) {
-      throw const FormatException('Nome utente o email troppo lunghi.');
+      throw const FormatException('credential_identity_too_long');
     }
     if (password.length > 4096) {
       throw const FormatException('shared_password_password_too_long');
     }
     if (cleanNotes.length > 12000) {
-      throw const FormatException('Le note sono troppo lunghe.');
+      throw const FormatException('credential_notes_too_long');
     }
 
     final id = credentialId?.trim().isNotEmpty == true
@@ -712,7 +712,7 @@ class SharedPasswordService {
       );
       final base = SharedPasswordCredential.fromJson(decoded);
       if (base.id != credentialId || base.spaceId != spaceId) {
-        throw const FormatException('Credenziale Noi ♡ non valida.');
+        throw const FormatException('shared_password_credential_invalid');
       }
       return SharedPasswordCredential(
         id: base.id,
