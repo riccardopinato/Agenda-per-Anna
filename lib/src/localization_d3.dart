@@ -723,6 +723,9 @@ const Map<String, Map<String, String>> _d3Catalog = {
   "goalsCount": <String, String>{"en": "{count} goals", "it": "{count} obiettivi", "es": "{count} objetivos", "fr": "{count} objectifs", "pt": "{count} objetivos"},
   "monthPersonalSummary": <String, String>{"en": "A small recap of the days you recorded.", "it": "Un piccolo riepilogo delle giornate che hai raccontato.", "es": "Un pequeño resumen de los días que has contado.", "fr": "Un petit résumé des journées que tu as racontées.", "pt": "Um pequeno resumo dos dias que registaste."},
 
+  "shared_editedByYou": <String, String>{"en": "Edited by you", "it": "Modificato da te", "es": "Editado por ti", "fr": "Modifié par toi", "pt": "Editado por ti"},
+  "shared_editedByName": <String, String>{"en": "Edited by {name}", "it": "Modificato da {name}", "es": "Editado por {name}", "fr": "Modifié par {name}", "pt": "Editado por {name}"},
+  "shared_operationFailed": <String, String>{"en": "Operation failed. Try again.", "it": "Operazione non riuscita. Riprova.", "es": "La operación falló. Inténtalo de nuevo.", "fr": "L’opération a échoué. Réessaie.", "pt": "A operação falhou. Tenta novamente."},
 };
 
 NotificationLocalization notificationLocalizationForPreference(AppLanguage value) {
