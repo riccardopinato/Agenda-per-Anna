@@ -63,7 +63,7 @@ class _RestoreMediaStagingSession {
     Uint8List bytes,
   ) async {
     if (canonicalAssetId.trim().isEmpty || bytes.isEmpty) {
-      throw const FormatException('Media di ripristino non valido.');
+      throw const FormatException('restore_media_invalid');
     }
 
     final expectedHash = sha256.convert(bytes).toString();
@@ -71,7 +71,7 @@ class _RestoreMediaStagingSession {
     if (existing != null) {
       if (existing.sha256Hex != expectedHash) {
         throw FormatException(
-          'Collisione media nel ripristino: $canonicalAssetId',
+          'restore_media_collision:$canonicalAssetId',
         );
       }
       return;
