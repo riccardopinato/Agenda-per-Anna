@@ -298,6 +298,9 @@ const Map<String, Map<String, String>> _d3Catalog = {
   "niceCount": <String, String>{"en": "{count} good things", "it": "{count} cose belle", "es": "{count} cosas buenas", "fr": "{count} belles choses", "pt": "{count} coisas boas"},
   "monthWordValue": <String, String>{"en": "Word of the month: {value}", "it": "Parola del mese: {value}", "es": "Palabra del mes: {value}", "fr": "Mot du mois : {value}", "pt": "Palavra do mês: {value}"},
   "ideasCount": <String, String>{"en": "{count} ideas", "it": "{count} idee", "es": "{count} ideas", "fr": "{count} idées", "pt": "{count} ideias"},
+  "moodDays": <String, String>{"en": "{count} days with mood", "it": "{count} giorni con mood", "es": "{count} días con ánimo", "fr": "{count} jours avec humeur", "pt": "{count} dias com humor"},
+  "habitsDone": <String, String>{"en": "{count} habits done", "it": "{count} abitudini fatte", "es": "{count} hábitos hechos", "fr": "{count} habitudes faites", "pt": "{count} hábitos feitos"},
+  "topMood": <String, String>{"en": "Most common mood: {value}", "it": "Mood più presente: {value}", "es": "Estado de ánimo más frecuente: {value}", "fr": "Humeur la plus présente : {value}", "pt": "Humor mais frequente: {value}"},
 };
 
 extension AnnaD3Strings on AnnaStrings {
