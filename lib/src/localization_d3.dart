@@ -770,6 +770,97 @@ NotificationLocalization notificationLocalizationForPreference(AppLanguage value
 }
 
 extension AnnaD3Strings on AnnaStrings {
+  String d3(String key) {
+    final entry = _d3Catalog[key];
+    assert(entry != null, 'Missing D3 localization key: $key');
+    final safe = entry ?? const <String, String>{};
+    return safe[languageCode] ?? safe['en'] ?? key;
+  }
+
+  String d3Format(String key, Map<String, Object?> values) {
+    var value = d3(key);
+    for (final entry in values.entries) {
+      value = value.replaceAll('{${entry.key}}', '${entry.value ?? ''}');
+    }
+    return value;
+  }
+
+  String d3BackupError(String rawValue) {
+    final raw = rawValue.toLowerCase();
+    if (raw.startsWith('backup_wrong_app')) return d3('backup_wrongApp');
+    if (raw.startsWith('backup_version_unsupported') ||
+        raw.startsWith('backup_format_unsupported')) {
+      return d3('backup_unsupported');
+    }
+    if (raw.startsWith('backup_missing_referenced_media') ||
+        raw.startsWith('backup_local_media_missing') ||
+        raw.startsWith('backup_media_corrupt') ||
+        raw.startsWith('open_export_local_media_missing')) {
+      return d3('backup_incomplete');
+    }
+    if (raw.contains('too_large') || raw.contains('too_many')) {
+      if (raw.contains('entry') || raw.contains('media_entry')) {
+        return d3('backup_entryTooLarge');
+      }
+      return d3('backup_tooLarge');
+    }
+    if (raw.startsWith('open_export_path_invalid')) {
+      return d3('backup_exportInvalid');
+    }
+    return d3('backup_invalid');
+  }
+
+  String sharedEntryTypeLabel(SharedEntryType value) => switch (value) {
+        SharedEntryType.appointment => appointment,
+        SharedEntryType.task => task,
+        SharedEntryType.note => v100Note,
+        SharedEntryType.photo => v100Photo,
+        SharedEntryType.sketch => v100Sketch,
+        SharedEntryType.shopping => shoppingList,
+      };
+
+  String sharedMemorySearchTokens(SharedEntryType value) => switch (value) {
+        SharedEntryType.photo =>
+          'photo foto image immagine imagen imagem picture photographie recuerdo ricordo souvenir memória memoria',
+        SharedEntryType.sketch =>
+          'sketch drawing disegno dibujo dessin esboço croquis recuerdo ricordo souvenir memória memoria',
+        SharedEntryType.note =>
+          'note nota thought pensiero pensamiento pensée pensamento message messaggio mensaje mensagem recuerdo ricordo souvenir memória memoria',
+        SharedEntryType.appointment =>
+          'appointment appuntamento cita rendez-vous compromisso event evento événement momento moment',
+        SharedEntryType.task =>
+          'task activity attività tarea tâche atividade to do da fare por hacer à faire a fazer moment momento',
+        SharedEntryType.shopping =>
+          'shopping spesa compra courses compras acquisti list lista liste',
+      };
+
+  String sketchColorName(int index) => switch (index) {
+        0 => _pick(en: 'Black', it: 'Nero', es: 'Negro', fr: 'Noir', pt: 'Preto'),
+        1 => _pick(en: 'Graphite', it: 'Grafite', es: 'Grafito', fr: 'Graphite', pt: 'Grafite'),
+        2 => _pick(en: 'Brown', it: 'Marrone', es: 'Marrón', fr: 'Marron', pt: 'Castanho'),
+        3 => _pick(en: 'Red', it: 'Rosso', es: 'Rojo', fr: 'Rouge', pt: 'Vermelho'),
+        4 => _pick(en: 'Coral', it: 'Corallo', es: 'Coral', fr: 'Corail', pt: 'Coral'),
+        5 => _pick(en: 'Pink', it: 'Rosa', es: 'Rosa', fr: 'Rose', pt: 'Rosa'),
+        6 => _pick(en: 'Fuchsia', it: 'Fucsia', es: 'Fucsia', fr: 'Fuchsia', pt: 'Fúcsia'),
+        7 => _pick(en: 'Purple', it: 'Viola', es: 'Morado', fr: 'Violet', pt: 'Roxo'),
+        8 => _pick(en: 'Lavender', it: 'Lavanda', es: 'Lavanda', fr: 'Lavande', pt: 'Lavanda'),
+        9 => _pick(en: 'Indigo', it: 'Indaco', es: 'Índigo', fr: 'Indigo', pt: 'Índigo'),
+        10 => _pick(en: 'Blue', it: 'Blu', es: 'Azul', fr: 'Bleu', pt: 'Azul'),
+        11 => _pick(en: 'Light blue', it: 'Azzurro', es: 'Azul claro', fr: 'Bleu clair', pt: 'Azul-claro'),
+        12 => _pick(en: 'Turquoise', it: 'Turchese', es: 'Turquesa', fr: 'Turquoise', pt: 'Turquesa'),
+        13 => _pick(en: 'Green', it: 'Verde', es: 'Verde', fr: 'Vert', pt: 'Verde'),
+        14 => _pick(en: 'Olive', it: 'Oliva', es: 'Oliva', fr: 'Olive', pt: 'Oliva'),
+        _ => _pick(en: 'Orange', it: 'Arancio', es: 'Naranja', fr: 'Orange', pt: 'Laranja'),
+      };
+
+  String sketchColorSemantic(String color) => _pick(
+        en: 'Color $color',
+        it: 'Colore $color',
+        es: 'Color $color',
+        fr: 'Couleur $color',
+        pt: 'Cor $color',
+      );
+
   String unifiedFilterLabel(AgendaContentFilter value) => switch (value) {
         AgendaContentFilter.all => d3('unified_all'),
         AgendaContentFilter.privateOnly => d3('unified_private'),
