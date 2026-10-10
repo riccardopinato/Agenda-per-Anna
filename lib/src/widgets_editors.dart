@@ -1429,7 +1429,7 @@ Future<void> openItemEditor(
                               Navigator.pop(sheetContext);
                             }
                           },
-                          label: const Text('Elimina'),
+                          label: Text(AnnaStrings.of(context).delete),
                         ),
                       ),
                       const SizedBox(width: 10),
