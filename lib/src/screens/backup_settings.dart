@@ -1221,7 +1221,11 @@ class ExternalCalendarSettingsCard extends StatelessWidget {
                       contentPadding: EdgeInsets.zero,
                       dense: true,
                       value: service.selectedCalendarIds.contains(calendar.id),
-                      title: Text(calendar.name),
+                      title: Text(
+                        calendar.name.trim().isEmpty
+                            ? AnnaStrings.of(context).d3('external_calendar')
+                            : calendar.name,
+                      ),
                       subtitle: calendar.accountName.isEmpty
                           ? null
                           : Text(calendar.accountName),
