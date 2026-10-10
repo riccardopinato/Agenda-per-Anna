@@ -334,7 +334,7 @@ class _AuthRecoveryGateState extends State<_AuthRecoveryGate> {
       if (!mounted) return;
       setState(() {
         errorText = error is FormatException
-            ? error.message.toString()
+            ? AnnaStrings.of(context).cloudServiceError(error)
             : AnnaStrings.of(context).d3('passwordUpdateFailed');
       });
     } finally {
