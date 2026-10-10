@@ -904,7 +904,7 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
     final uid =
         widget.store.activeAccountId ?? CloudSyncService.instance.userId;
     if (uid == null) {
-      _message('Accedi al cloud almeno una volta per usare le reazioni.');
+      _message(AnnaStrings.of(context).d3('sharedReactionCloudRequired'));
       return;
     }
 
@@ -960,7 +960,7 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
 
   Future<void> _openComments(SharedEntry entry) async {
     if (widget.store.activeAccountId == null) {
-      _message('Accedi al cloud almeno una volta per commentare.');
+      _message(AnnaStrings.of(context).d3('sharedCommentCloudRequired'));
       return;
     }
 
