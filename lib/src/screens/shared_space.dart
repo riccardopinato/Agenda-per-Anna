@@ -1030,7 +1030,7 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
                                   ),
                                 ),
                                 subtitle: Text(
-                                  '${comment.body}\n${DateFormat('d MMM · HH:mm', AnnaStrings.of(context).intlLocale(context)).format(comment.createdAt.toLocal())}',
+                                  '${comment.body}\n${DateFormat('d MMM · HH:mm', AnnaStrings.intlLocale(context)).format(comment.createdAt.toLocal())}',
                                 ),
                                 isThreeLine: true,
                                 trailing: mine
