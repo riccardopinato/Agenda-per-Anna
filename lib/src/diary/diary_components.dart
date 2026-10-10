@@ -742,7 +742,7 @@ Future<List<DiaryPlaceReference>?> showDiaryPlacesEditor(
         }
 
         return AlertDialog(
-          title: const Text('Luoghi'),
+          title: Text(AnnaStrings.of(context).d3('places')),
           content: SingleChildScrollView(
             child: SizedBox(
               width: 420,
