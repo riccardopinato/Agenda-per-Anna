@@ -28,83 +28,56 @@ class DiaryTemplatePreset {
       };
 }
 
-const diaryTemplatePresets = <DiaryTemplatePreset>[
-  DiaryTemplatePreset(
-    id: 'morning',
-    title: 'Mattino',
-    description: 'Intenzione, energia e priorità della giornata.',
-    seedText: 'Routine del mattino\n\n'
-        '☐ Come mi sento adesso?\n'
-        '☐ Cosa voglio proteggere oggi?\n'
-        '☐ La cosa più importante da fare\n'
-        '☐ Un gesto gentile verso di me\n\n'
-        'Spazio libero:',
-    tags: ['routine', 'mattino'],
-  ),
-  DiaryTemplatePreset(
-    id: 'evening',
-    title: 'Sera',
-    description: 'Chiudi la giornata e lascia andare ciò che non serve.',
-    seedText: 'Routine della sera\n\n'
-        '☐ La cosa migliore di oggi\n'
-        '☐ Cosa mi ha stancato?\n'
-        '☐ Cosa ho imparato?\n'
-        '☐ Cosa voglio ricordare domani?\n\n'
-        'Pensiero finale:',
-    tags: ['routine', 'sera'],
-  ),
-  DiaryTemplatePreset(
-    id: 'gratitude',
-    title: 'Gratitudine',
-    description: 'Tre cose concrete da conservare della giornata.',
-    seedText: 'Gratitudine\n\n'
-        '♡ 1. \n'
-        '♡ 2. \n'
-        '♡ 3. \n\n'
-        'Perché una di queste cose è stata importante per me:',
-    tags: ['gratitudine'],
-  ),
-  DiaryTemplatePreset(
-    id: 'travel',
-    title: 'Viaggio',
-    description: 'Luoghi, momenti, dettagli e ricordi da non perdere.',
-    seedText: 'Diario di viaggio\n\n'
-        '☐ Dove sono stato/a?\n'
-        '☐ Il momento più bello\n'
-        '☐ Una cosa che mi ha sorpreso\n'
-        '☐ Un posto o sapore da ricordare\n'
-        '☐ Cosa rifarei domani?\n\n'
-        'Appunti:',
-    tags: ['viaggio'],
-    mediaHint: 'Aggiungi foto o una nota vocale per completare il ricordo.',
-  ),
-  DiaryTemplatePreset(
-    id: 'special_day',
-    title: 'Giorno speciale',
-    description: 'Per compleanni, anniversari e giornate importanti.',
-    seedText: 'Giorno speciale\n\n'
-        '☐ Perché oggi è importante?\n'
-        '☐ Con chi ero?\n'
-        '☐ Il momento che voglio ricordare\n'
-        '☐ Una frase o un dettaglio da conservare\n\n'
-        'Come mi sono sentito/a:',
-    tags: ['giorno-speciale'],
-    mediaHint: 'Foto e voce restano disponibili nello stesso diario.',
-  ),
-  DiaryTemplatePreset(
-    id: 'reflection',
-    title: 'Riflessione',
-    description: 'Uno spazio più profondo per mettere ordine nei pensieri.',
-    seedText: 'Riflessione\n\n'
-        'Cosa è successo?\n\n'
-        'Cosa ho provato?\n\n'
-        'Di cosa avevo bisogno?\n\n'
-        'Cosa posso portare con me da questa esperienza?\n\n'
-        'Un piccolo passo concreto:',
-    tags: ['riflessione'],
-  ),
-];
+List<DiaryTemplatePreset> diaryTemplatePresetsFor(AnnaStrings strings) =>
+    <DiaryTemplatePreset>[
+      DiaryTemplatePreset(
+        id: 'morning',
+        title: strings.d3('templateMorningTitle'),
+        description: strings.d3('templateMorningDesc'),
+        seedText: strings.d3('templateMorningSeed'),
+        tags: ['routine', strings.d3('templateMorningTitle').toLowerCase()],
+      ),
+      DiaryTemplatePreset(
+        id: 'evening',
+        title: strings.d3('templateEveningTitle'),
+        description: strings.d3('templateEveningDesc'),
+        seedText: strings.d3('templateEveningSeed'),
+        tags: ['routine', strings.d3('templateEveningTitle').toLowerCase()],
+      ),
+      DiaryTemplatePreset(
+        id: 'gratitude',
+        title: strings.d3('templateGratitudeTitle'),
+        description: strings.d3('templateGratitudeDesc'),
+        seedText: strings.d3('templateGratitudeSeed'),
+        tags: [strings.d3('templateGratitudeTitle').toLowerCase()],
+      ),
+      DiaryTemplatePreset(
+        id: 'travel',
+        title: strings.d3('templateTravelTitle'),
+        description: strings.d3('templateTravelDesc'),
+        seedText: strings.d3('templateTravelSeed'),
+        tags: [strings.d3('templateTravelTitle').toLowerCase()],
+        mediaHint: strings.d3('templateTravelMedia'),
+      ),
+      DiaryTemplatePreset(
+        id: 'special_day',
+        title: strings.d3('templateSpecialTitle'),
+        description: strings.d3('templateSpecialDesc'),
+        seedText: strings.d3('templateSpecialSeed'),
+        tags: [strings.d3('templateSpecialTitle').toLowerCase()],
+        mediaHint: strings.d3('templateSpecialMedia'),
+      ),
+      DiaryTemplatePreset(
+        id: 'reflection',
+        title: strings.d3('templateReflectionTitle'),
+        description: strings.d3('templateReflectionDesc'),
+        seedText: strings.d3('templateReflectionSeed'),
+        tags: [strings.d3('templateReflectionTitle').toLowerCase()],
+      ),
+    ];
 
+List<DiaryTemplatePreset> get diaryTemplatePresets =>
+    diaryTemplatePresetsFor(const AnnaStrings('en'));
 extension DiaryTemplatesAgendaStore on AgendaStore {
   Future<DiaryBlock> applyDiaryTemplate(
     DateTime date,
@@ -139,16 +112,16 @@ Future<DiaryTemplatePreset?> showDiaryTemplatePicker(
         shrinkWrap: true,
         padding: const EdgeInsets.fromLTRB(14, 0, 14, 20),
         children: [
-          const ListTile(
+          ListTile(
             title: Text(
-              'Modelli di diario',
+              AnnaStrings.of(sheetContext).d3('templatePickerTitle'),
               style: TextStyle(fontWeight: FontWeight.w900, fontSize: 20),
             ),
             subtitle: Text(
-              'Inseriscono una traccia modificabile. Foto, voce, sketch, tag e persone restano disponibili normalmente.',
+              AnnaStrings.of(sheetContext).d3('templatePickerSubtitle'),
             ),
           ),
-          ...diaryTemplatePresets.map(
+          ...diaryTemplatePresetsFor(AnnaStrings.of(sheetContext)).map(
             (preset) => Card(
               child: ListTile(
                 leading: CircleAvatar(child: Icon(preset.icon)),
