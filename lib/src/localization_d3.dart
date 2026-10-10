@@ -281,6 +281,23 @@ const Map<String, Map<String, String>> _d3Catalog = {
   "moveToNoi": <String, String>{"en": "Move to Noi ♡", "it": "Sposta in Noi ♡", "es": "Mover a Noi ♡", "fr": "Déplacer vers Noi ♡", "pt": "Mover para Noi ♡"},
   "makeShared": <String, String>{"en": "Make this item shared.", "it": "Rendi questo elemento condiviso.", "es": "Compartir este elemento.", "fr": "Rendre cet élément partagé.", "pt": "Tornar este elemento partilhado."},
   "deleteItem": <String, String>{"en": "Delete this item?", "it": "Eliminare questo elemento?", "es": "¿Eliminar este elemento?", "fr": "Supprimer cet élément ?", "pt": "Eliminar este elemento?"},
+  "yearsAgo1": <String, String>{"en": "1 year ago", "it": "1 anno fa", "es": "hace 1 año", "fr": "il y a 1 an", "pt": "há 1 ano"},
+  "yearsAgoN": <String, String>{"en": "{count} years ago", "it": "{count} anni fa", "es": "hace {count} años", "fr": "il y a {count} ans", "pt": "há {count} anos"},
+  "moreMemories": <String, String>{"en": " + {count} more memories from the same date", "it": "+ {count} altri ricordi della stessa data", "es": "+ {count} recuerdos más de la misma fecha", "fr": "+ {count} autres souvenirs de la même date", "pt": "+ {count} memórias da mesma data"},
+  "dayEmpty": <String, String>{"en": "The day is still waiting to be told.", "it": "La giornata è ancora tutta da raccontare.", "es": "El día aún está por contar.", "fr": "La journée reste encore à raconter.", "pt": "O dia ainda está por contar."},
+  "moreMoments": <String, String>{"en": "+ {count} more moments", "it": "+ {count} altri momenti", "es": "+ {count} momentos más", "fr": "+ {count} autres moments", "pt": "+ {count} momentos"},
+  "day": <String, String>{"en": "Day", "it": "Giornata", "es": "Día", "fr": "Journée", "pt": "Dia"},
+  "ageYears": <String, String>{"en": " · {count} years", "it": " · {count} anni", "es": " · {count} años", "fr": " · {count} ans", "pt": " · {count} anos"},
+  "diaryType": <String, String>{"en": "Diary · {type}", "it": "Diario · {type}", "es": "Diario · {type}", "fr": "Journal · {type}", "pt": "Diário · {type}"},
+  "firstCommitment": <String, String>{"en": "Tap an empty time slot to add the first commitment.", "it": "Tocca un orario libero per aggiungere il primo impegno.", "es": "Toca un horario libre para añadir el primer compromiso.", "fr": "Touche un créneau libre pour ajouter le premier engagement.", "pt": "Toca num horário livre para adicionar o primeiro compromisso."},
+  "moveWeekTitle": <String, String>{"en": "Move the weekly page to Trash?", "it": "Spostare la pagina settimanale nel Cestino?", "es": "¿Mover la página semanal a la Papelera?", "fr": "Déplacer la page hebdomadaire vers la Corbeille ?", "pt": "Mover a página semanal para o Lixo?"},
+  "noTasks": <String, String>{"en": "No tasks", "it": "Nessun task", "es": "Sin tareas", "fr": "Aucune tâche", "pt": "Sem tarefas"},
+  "taskProgress": <String, String>{"en": "{done} / {total} tasks", "it": "{done} / {total} task", "es": "{done} / {total} tareas", "fr": "{done} / {total} tâches", "pt": "{done} / {total} tarefas"},
+  "moreItems": <String, String>{"en": "+ {count} more", "it": "+ {count} altri", "es": "+ {count} más", "fr": "+ {count} autres", "pt": "+ {count} outros"},
+  "moveMonthTitle": <String, String>{"en": "Move the monthly page to Trash?", "it": "Spostare la pagina mensile nel Cestino?", "es": "¿Mover la página mensual a la Papelera?", "fr": "Déplacer la page mensuelle vers la Corbeille ?", "pt": "Mover a página mensal para o Lixo?"},
+  "niceCount": <String, String>{"en": "{count} good things", "it": "{count} cose belle", "es": "{count} cosas buenas", "fr": "{count} belles choses", "pt": "{count} coisas boas"},
+  "monthWordValue": <String, String>{"en": "Word of the month: {value}", "it": "Parola del mese: {value}", "es": "Palabra del mes: {value}", "fr": "Mot du mois : {value}", "pt": "Palavra do mês: {value}"},
+  "ideasCount": <String, String>{"en": "{count} ideas", "it": "{count} idee", "es": "{count} ideas", "fr": "{count} idées", "pt": "{count} ideias"},
 };
 
 extension AnnaD3Strings on AnnaStrings {
