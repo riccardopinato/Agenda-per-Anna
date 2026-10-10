@@ -2649,14 +2649,14 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
                       .withValues(alpha: 0.55),
                   borderRadius: BorderRadius.circular(22),
                 ),
-                child: const Row(
+                child: Row(
                   children: [
-                    Icon(Icons.favorite_outline),
-                    SizedBox(width: 10),
+                    const Icon(Icons.favorite_outline),
+                    const SizedBox(width: 10),
                     Expanded(
                       child: Text(
-                        AnnaStrings.of(context).d3('sharedEverythingHere')
-                        AnnaStrings.of(context).d3('restPrivate'),
+                        '${AnnaStrings.of(context).d3('sharedEverythingHere')} '
+                        '${AnnaStrings.of(context).d3('restPrivate')}',
                       ),
                     ),
                   ],
