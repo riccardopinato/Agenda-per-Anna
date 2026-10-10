@@ -221,7 +221,7 @@ class _JournalEditorState extends State<JournalEditor> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(dialogContext),
-            child: const Text('Annulla'),
+            child: Text(AnnaStrings.of(context).cancel),
           ),
           FilledButton(
             onPressed: () =>
@@ -285,7 +285,7 @@ class _JournalEditorState extends State<JournalEditor> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text(
+              Text(
                 AnnaStrings.of(context).d3('editor_threeGoodThings'),
                 style: TextStyle(fontWeight: FontWeight.w800, fontSize: 17),
               ),
@@ -427,7 +427,7 @@ class _JournalEditorState extends State<JournalEditor> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text(
+              Text(
                 AnnaStrings.of(context).d3('editor_thoughtsNotes'),
                 style: TextStyle(fontWeight: FontWeight.w800, fontSize: 17),
               ),
@@ -463,7 +463,7 @@ class _JournalEditorState extends State<JournalEditor> {
                       final confirmed = await showDialog<bool>(
                             context: context,
                             builder: (dialogContext) => AlertDialog(
-                              title: const Text(
+                              title: Text(
                                 AnnaStrings.of(context).d3('editor_moveDayTrashTitle'),
                               ),
                               content: Text(
@@ -473,7 +473,7 @@ class _JournalEditorState extends State<JournalEditor> {
                                 TextButton(
                                   onPressed: () =>
                                       Navigator.pop(dialogContext, false),
-                                  child: const Text('Annulla'),
+                                  child: Text(AnnaStrings.of(context).cancel),
                                 ),
                                 FilledButton(
                                   onPressed: () =>
@@ -572,7 +572,7 @@ class MonthlyListCard extends StatelessWidget {
                       title: Text(AnnaStrings.of(context).d3Format('editor_addTo', {'title': title})),
                       content: TextField(controller: c, autofocus: true),
                       actions: [
-                        TextButton(onPressed: () => Navigator.pop(context), child: const Text('Annulla')),
+                        TextButton(onPressed: () => Navigator.pop(context), child: Text(AnnaStrings.of(context).cancel)),
                         FilledButton(onPressed: () => Navigator.pop(context, c.text.trim()), child: Text(AnnaStrings.of(context).add)),
                       ],
                     ),
@@ -643,7 +643,7 @@ class BudgetCard extends StatelessWidget {
                         title: Text(AnnaStrings.of(context).d3('editor_setBudget')),
                         content: TextField(controller: c, keyboardType: const TextInputType.numberWithOptions(decimal: true)),
                         actions: [
-                          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Annulla')),
+                          TextButton(onPressed: () => Navigator.pop(context), child: Text(AnnaStrings.of(context).cancel)),
                           FilledButton(onPressed: () => Navigator.pop(context, c.text), child: Text(AnnaStrings.of(context).save)),
                         ],
                       ),
@@ -686,7 +686,7 @@ class BudgetCard extends StatelessWidget {
                             ),
                           ),
                           actions: [
-                            TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Annulla')),
+                            TextButton(onPressed: () => Navigator.pop(context, false), child: Text(AnnaStrings.of(context).cancel)),
                             FilledButton(onPressed: () => Navigator.pop(context, true), child: Text(AnnaStrings.of(context).add)),
                           ],
                         ),
@@ -788,7 +788,7 @@ class _ClosingMonthCardState extends State<ClosingMonthCard> {
             ],
           ),
           const SizedBox(height: 6),
-          const Text(
+          Text(
             AnnaStrings.of(context).d3('editor_pauseBeforeMonth'),
           ),
           const SizedBox(height: 14),
