@@ -21,6 +21,17 @@ class _PrivateVaultHomeCardState extends State<PrivateVaultHomeCard> {
     unawaited(vault.initialize());
   }
 
+  Widget? _vaultBackButton(BuildContext context) {
+    if (!Navigator.of(context).canPop()) return null;
+    return Semantics(
+      identifier: 'vault_back_button',
+      button: true,
+      child: BackButton(
+        onPressed: () => Navigator.of(context).pop(),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return AnimatedBuilder(
@@ -1075,7 +1086,10 @@ class _PrivateVaultScreenState extends State<PrivateVaultScreen>
     final strings = AnnaStrings.of(context);
     final scheme = Theme.of(context).colorScheme;
     return Scaffold(
-      appBar: AppBar(title: Text(strings.vaultTitle)),
+      appBar: AppBar(
+        leading: _vaultBackButton(context),
+        title: Text(strings.vaultTitle),
+      ),
       body: SafeArea(
         child: Center(
           child: SingleChildScrollView(
@@ -1202,6 +1216,7 @@ class _PrivateVaultScreenState extends State<PrivateVaultScreen>
     final scheme = Theme.of(context).colorScheme;
     return Scaffold(
       appBar: AppBar(
+        leading: _vaultBackButton(context),
         title: Text(strings.vaultTitle),
         actions: [
           PopupMenuButton<String>(
@@ -1397,6 +1412,7 @@ class _PrivateVaultScreenState extends State<PrivateVaultScreen>
 
     return Scaffold(
       appBar: AppBar(
+        leading: _vaultBackButton(context),
         title: Text(strings.vaultTitle),
         actions: [
           if (biometricSupported && !vault.biometricAvailable)
