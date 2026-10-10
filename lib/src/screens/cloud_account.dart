@@ -44,10 +44,11 @@ class _CloudAccountScreenState extends State<CloudAccountScreen> {
       };
 
   Future<void> _submit() async {
+    final strings = AnnaStrings.of(context);
     final email = emailController.text.trim();
     final password = passwordController.text;
     if (email.isEmpty || password.length < 6) {
-      _message(AnnaStrings.of(context).d3('emailPasswordRequired'));
+      _message(strings.d3('emailPasswordRequired'));
       return;
     }
 
@@ -62,42 +63,44 @@ class _CloudAccountScreenState extends State<CloudAccountScreen> {
         await WebPushService.instance.initialize(force: true);
         await widget.store.reconcileReminders();
       }
-      _message(AnnaStrings.of(context).d3('connectedSynced'));
+      _message(strings.d3('connectedSynced'));
       if (mounted) {
         Navigator.of(context).popUntil((route) => route.isFirst);
       }
     } catch (_) {
-      _message(AnnaStrings.of(context).d3CloudError(CloudSyncService.instance.lastError ?? ''));
+      _message(strings.d3CloudError(CloudSyncService.instance.lastError ?? ''));
     } finally {
       if (mounted) setState(() => busy = false);
     }
   }
 
   Future<void> _google() async {
+    final strings = AnnaStrings.of(context);
     setState(() => busy = true);
     try {
       await CloudSyncService.instance.signInWithGoogle();
     } catch (_) {
-      _message(AnnaStrings.of(context).d3CloudError(CloudSyncService.instance.lastError ?? ''));
+      _message(strings.d3CloudError(CloudSyncService.instance.lastError ?? ''));
     } finally {
       if (mounted) setState(() => busy = false);
     }
   }
 
   Future<void> _forgotPassword() async {
+    final strings = AnnaStrings.of(context);
     final email = emailController.text.trim();
     if (email.isEmpty || !email.contains('@')) {
-      _message(AnnaStrings.of(context).d3('emailRequired'));
+      _message(strings.d3('emailRequired'));
       return;
     }
 
     setState(() => busy = true);
     try {
       await CloudSyncService.instance.requestPasswordReset(email);
-      _message(AnnaStrings.of(context).d3('resetEmailSent'));
+      _message(strings.d3('resetEmailSent'));
     } catch (_) {
       _message(
-        AnnaStrings.of(context).d3CloudError(
+        strings.d3CloudError(
           CloudSyncService.instance.lastError ?? '',
         ),
       );
@@ -107,21 +110,22 @@ class _CloudAccountScreenState extends State<CloudAccountScreen> {
   }
 
   Future<void> _syncNow() async {
+    final strings = AnnaStrings.of(context);
     setState(() => busy = true);
     try {
       await widget.store.syncAllCloud();
       final cloud = CloudSyncService.instance;
       if (cloud.state == CloudConnectionState.error) {
-        _message(AnnaStrings.of(context).d3CloudError(cloud.lastError ?? ''));
+        _message(strings.d3CloudError(cloud.lastError ?? ''));
       } else if (widget.store.totalPendingCloudChanges > 0) {
         _message(
-          AnnaStrings.of(context).d3Format(
+          strings.d3Format(
             'pendingSafe',
             {'count': widget.store.totalPendingCloudChanges},
           ),
         );
       } else {
-        _message(AnnaStrings.of(context).d3('agendaSynced'));
+        _message(strings.d3('agendaSynced'));
       }
     } finally {
       if (mounted) setState(() => busy = false);
@@ -129,6 +133,7 @@ class _CloudAccountScreenState extends State<CloudAccountScreen> {
   }
 
   Future<void> _signOut() async {
+    final strings = AnnaStrings.of(context);
     setState(() => busy = true);
     try {
       await widget.store.createLocalSnapshot(
@@ -141,7 +146,7 @@ class _CloudAccountScreenState extends State<CloudAccountScreen> {
       }
       await CloudSyncService.instance.signOut();
       await widget.store.activateCloudAccount(null);
-      _message(AnnaStrings.of(context).d3('accountSignedOut'));
+      _message(strings.d3('accountSignedOut'));
     } finally {
       if (mounted) setState(() => busy = false);
     }
@@ -151,6 +156,7 @@ class _CloudAccountScreenState extends State<CloudAccountScreen> {
     final cloud = CloudSyncService.instance;
     final accountId = cloud.userId;
     if (accountId == null) return;
+    final strings = AnnaStrings.of(context);
 
     final controller = TextEditingController();
     var canDelete = false;
@@ -232,15 +238,15 @@ class _CloudAccountScreenState extends State<CloudAccountScreen> {
       }
       await widget.store.eraseLocalCloudAccount(accountId);
 
-      _message(AnnaStrings.of(context).d3('accountDeleted'));
+      _message(strings.d3('accountDeleted'));
       if (mounted) {
         Navigator.of(context).popUntil((route) => route.isFirst);
       }
     } catch (_) {
       _message(
         remoteDeleted
-            ? AnnaStrings.of(context).d3('accountCloudDeletedLocalFailed')
-            : AnnaStrings.of(context).d3CloudError(cloud.lastError ?? ''),
+            ? strings.d3('accountCloudDeletedLocalFailed')
+            : strings.d3CloudError(cloud.lastError ?? ''),
       );
     } finally {
       if (mounted) setState(() => busy = false);
