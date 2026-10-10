@@ -1,6 +1,9 @@
+import 'dart:convert';
 import 'dart:io';
 
+import 'package:archive/archive.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:intl/date_symbol_data_local.dart';
 
 import 'package:agenda_per_anna/main.dart';
 
@@ -280,4 +283,123 @@ void main() {
     ).allMatches(source).map((match) => match.group(1)!).toList();
     expect(keyMatches.toSet().length, keyMatches.length);
   });
+
+  test('D3 notification bundle follows the selected language', () {
+    final es = notificationLocalizationForPreference(AppLanguage.spanish);
+    final fr = notificationLocalizationForPreference(AppLanguage.french);
+    final pt = notificationLocalizationForPreference(AppLanguage.portuguese);
+
+    expect(
+      es.reminderChannelName,
+      const AnnaStrings('es').d3('notification_reminders'),
+    );
+    expect(
+      fr.sharedBody,
+      const AnnaStrings('fr').d3('notification_sharedBody'),
+    );
+    expect(
+      pt.snoozeHourBody,
+      const AnnaStrings('pt').d3('notification_snoozeHour'),
+    );
+    expect(es.reminderChannelName, isNot('Promemoria'));
+  });
+
+  test('D3 readable and open exports follow the selected app language',
+      () async {
+    await initializeDateFormatting('fr');
+
+    final store = AgendaStore();
+    store.preferences = const AgendaPreferences(
+      appLanguage: AppLanguage.french,
+    );
+
+    const fr = AnnaStrings('fr');
+    const it = AnnaStrings('it');
+
+    final readable = store.createReadableExport();
+    expect(readable, contains(fr.d3('readableCommitments')));
+    expect(readable, contains(fr.d3('readableImportantPeople')));
+    expect(readable, isNot(contains(it.d3('readableCommitments'))));
+
+    final bytes = await store.createOpenExportZip();
+    final archive = ZipDecoder().decodeBytes(bytes, verify: true);
+    final readmeEntry = archive.files.firstWhere(
+      (entry) => entry.isFile && entry.name == 'README.md',
+    );
+    final readme = utf8.decode(readmeEntry.readBytes()!);
+
+    expect(readme, contains(fr.d3('exportOpenTitle')));
+    expect(readme, contains(fr.d3('exportContent')));
+    expect(readme, isNot(contains(it.d3('exportOpenTitle'))));
+
+    store.dispose();
+  });
+
+  test('D3 canonical domains no longer own locale-bound presentation labels',
+      () {
+    final domain = _source('lib/src/domain_models.dart');
+    final recurring = _source('lib/src/recurring_life_domain.dart');
+    final lifecycle = _source('lib/src/lifecycle_domain.dart');
+
+    for (final forbidden in const <String>[
+      "AgendaPalette.rose => 'Rosa'",
+      "StartTab.month => 'Mese'",
+      "RecurrenceRule.daily => 'Ogni giorno'",
+      "AgendaCategory.personal => 'Personale'",
+      "ShoppingCategory.produce => 'Frutta e verdura'",
+      "WorkoutSport.gym => 'Palestra'",
+      "DayMood.great => 'Benissimo'",
+      "SharedEntryType.appointment => 'Appuntamento'",
+    ]) {
+      expect(domain, isNot(contains(forbidden)));
+    }
+    expect(
+      recurring,
+      isNot(contains("RecurringEditScope.single => 'Solo questa'")),
+    );
+    expect(
+      lifecycle,
+      isNot(contains("TrashEntityKind.diaryBlock => 'Ricordo'")),
+    );
+  });
+
+  test('D3 legacy expense keys remain stable but display is localized', () {
+    expect(const AnnaStrings('en').editorExpenseCategoryLabel('Cibo'), 'Food');
+    expect(
+      const AnnaStrings('es').editorExpenseCategoryLabel('Trasporti'),
+      'Transporte',
+    );
+    expect(
+      const AnnaStrings('fr').editorExpenseCategoryLabel('Regali'),
+      'Cadeaux',
+    );
+    expect(
+      const AnnaStrings('pt').editorExpenseCategoryLabel('Altro'),
+      'Outro',
+    );
+
+    final editors = _source('lib/src/widgets_editors.dart');
+    expect(editors, contains("const ['Cibo', 'Casa', 'Salute'"));
+    expect(editors, contains('editorExpenseCategoryLabel(value)'));
+  });
+
+  test('D3 restore and media-store errors are locale-neutral codes', () {
+    final restore = _source('lib/src/data_safety_restore.dart');
+    final mediaStore = _source('lib/media_asset_store.dart');
+
+    for (final forbidden in const <String>[
+      'Staging media non integro',
+      'Media in staging non disponibile',
+      'Asset locale con stesso ID ma contenuto diverso',
+    ]) {
+      expect(restore, isNot(contains(forbidden)));
+    }
+    expect(restore, contains('restore_staging_media_hash_invalid:'));
+    expect(restore, contains('restore_staging_media_missing:'));
+    expect(restore, contains('restore_canonical_media_collision:'));
+
+    expect(mediaStore, isNot(contains('Media asset non valido.')));
+    expect(mediaStore, contains('media_asset_invalid'));
+  });
+
 }
