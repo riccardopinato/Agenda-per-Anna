@@ -483,7 +483,7 @@ class _SharedMemoriesScreenState extends State<SharedMemoriesScreen> {
           _viewChip(
             _SharedMemoriesView.timeline,
             Icons.view_timeline_outlined,
-            'Timeline',
+            AnnaStrings.of(context).d3('mem_timeline'),
           ),
         ],
       ),
@@ -514,7 +514,7 @@ class _SharedMemoriesScreenState extends State<SharedMemoriesScreen> {
         children: [
           _filterChip(_SharedMemoriesFilter.all, AnnaStrings.of(context).d3('mem_all')),
           _filterChip(_SharedMemoriesFilter.photo, AnnaStrings.of(context).d3('mem_photos')),
-          _filterChip(_SharedMemoriesFilter.sketch, 'Sketch'),
+          _filterChip(_SharedMemoriesFilter.sketch, AnnaStrings.of(context).d3('mem_sketches')),
           _filterChip(_SharedMemoriesFilter.note, AnnaStrings.of(context).d3('mem_notes')),
           _filterChip(_SharedMemoriesFilter.events, AnnaStrings.of(context).d3('mem_moments')),
         ],
