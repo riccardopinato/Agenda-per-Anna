@@ -632,6 +632,8 @@ const Map<String, Map<String, String>> _d3Catalog = {
   "trashDiarySketch": <String, String>{"en": "Diary sketch", "it": "Sketch del diario", "es": "Boceto del diario", "fr": "Croquis du journal", "pt": "Esboço do diário"},
   "trashDiaryVoice": <String, String>{"en": "Diary voice note", "it": "Nota vocale del diario", "es": "Nota de voz del diario", "fr": "Note vocale du journal", "pt": "Nota de voz do diário"},
   "trashDeletedItem": <String, String>{"en": "Deleted item", "it": "Elemento eliminato", "es": "Elemento eliminado", "fr": "Élément supprimé", "pt": "Item eliminado"},
+  "sharedSyncedShort": <String, String>{"en": "Synced", "it": "Sincronizzato", "es": "Sincronizado", "fr": "Synchronisé", "pt": "Sincronizado"},
+
 };
 
 NotificationLocalization notificationLocalizationForPreference(AppLanguage value) {
