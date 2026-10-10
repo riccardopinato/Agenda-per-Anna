@@ -906,7 +906,7 @@ class _NotificationSettingsCardState
                               ? AnnaStrings.of(context).v100PwaIosInstalled
                               : AnnaStrings.of(context).v100PwaIosAddHome)
                           : AnnaStrings.of(context).v100BrowserWebPushSupported,
-                      AnnaStrings.of(context).v100PermissionStatus(web.permissionStatus),
+                      AnnaStrings.of(context).d3PermissionStatus(web.permissionStatus),
                       web.subscribed
                           ? AnnaStrings.of(context).v100BrowserSubscriptionPresent
                           : AnnaStrings.of(context).v100BrowserSubscriptionAbsent,
@@ -956,7 +956,7 @@ class _NotificationSettingsCardState
                     ? AnnaStrings.of(context).v100FirebaseUnavailable
                     : AnnaStrings.of(context).v100FirebaseUnavailable)
                 : [
-                    AnnaStrings.of(context).v100PermissionStatus(push?.permissionStatus ?? '...'),
+                    AnnaStrings.of(context).d3PermissionStatus(push?.permissionStatus ?? '...'),
                     push?.tokenAvailable == true
                         ? AnnaStrings.of(context).v100FcmPresent
                         : AnnaStrings.of(context).v100FcmAbsent,
