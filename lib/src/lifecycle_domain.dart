@@ -83,7 +83,7 @@ class TrashEntry {
         ),
         entityId: json['entityId'] as String? ?? '',
         parentId: json['parentId'] as String?,
-        title: json['title'] as String? ?? 'Deleted item',
+        title: json['title'] as String? ?? '',
         deletedAt:
             DateTime.tryParse(json['deletedAt'] as String? ?? '')?.toLocal() ??
                 DateTime.now(),
