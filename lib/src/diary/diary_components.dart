@@ -922,7 +922,7 @@ extension DiaryContentKindUi on DiaryContentKind {
   String localizedLabel(AnnaStrings strings) => switch (this) {
         DiaryContentKind.note => strings.d3('note'),
         DiaryContentKind.photo => strings.d3('photoLabel'),
-        DiaryContentKind.sketch => 'Sketch',
+        DiaryContentKind.sketch => strings.v100Sketch,
         DiaryContentKind.voice => strings.d3('voice'),
       };
 
@@ -1008,7 +1008,7 @@ class DiaryComposerSection extends StatelessWidget {
               FilledButton.tonalIcon(
                 onPressed: onAddSketch,
                 icon: const Icon(Icons.draw_outlined),
-                label: Text(AnnaStrings.of(context).d3SketchLabel),
+                label: Text(AnnaStrings.of(context).v100Sketch),
               ),
               if (onAddVoice != null)
                 FilledButton.tonalIcon(
