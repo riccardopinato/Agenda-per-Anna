@@ -28,7 +28,7 @@ void main() {
     expect(entry.done, isFalse);
     expect(entry.start, const TimeOfDay(hour: 9, minute: 30));
     expect(entry.end, const TimeOfDay(hour: 10, minute: 15));
-    expect(entry.visibilityLabel, 'Google');
+    expect(entry.visibilityLabel(const AnnaStrings('en')), 'Google');
   });
 
   test('all-day platform events preserve the civil date', () {
