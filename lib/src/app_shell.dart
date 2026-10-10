@@ -168,6 +168,7 @@ class _OnboardingScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
+    final strings = AnnaStrings.of(context);
     return Scaffold(
       body: SafeArea(
         child: Padding(
@@ -190,9 +191,9 @@ class _OnboardingScreen extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 24),
-              const Text(
-                'La tua agenda, davvero tua.',
-                style: TextStyle(
+              Text(
+                strings.d3('onboardingTitle'),
+                style: const TextStyle(
                   fontSize: 32,
                   fontWeight: FontWeight.w900,
                   height: 1.05,
@@ -200,34 +201,32 @@ class _OnboardingScreen extends StatelessWidget {
               ),
               const SizedBox(height: 12),
               Text(
-                'Appuntamenti, diario, abitudini, idee e ricordi in un unico posto. '
-                'L’app salva prima sul dispositivo e usa il tuo account per sincronizzare automaticamente agenda e Noi ♡.',
+                strings.d3('onboardingDescription'),
                 style: Theme.of(context).textTheme.bodyLarge,
               ),
               const SizedBox(height: 24),
-              const _OnboardingFeature(
+              _OnboardingFeature(
                 icon: Icons.bolt_outlined,
-                title: 'Cattura veloce',
-                subtitle: 'Aggiungi un pensiero o un impegno in pochi secondi.',
+                title: strings.d3('quickCapture'),
+                subtitle: strings.d3('quickCaptureSubtitle'),
               ),
               const SizedBox(height: 10),
-              const _OnboardingFeature(
+              _OnboardingFeature(
                 icon: Icons.favorite_outline,
-                title: 'Diario personale',
-                subtitle: 'Mood, cose belle e abitudini quotidiane.',
+                title: strings.d3('personalDiary'),
+                subtitle: strings.d3('personalDiarySubtitle'),
               ),
               const SizedBox(height: 10),
-              const _OnboardingFeature(
+              _OnboardingFeature(
                 icon: Icons.favorite_outline,
-                title: 'Privato o Noi ♡',
-                subtitle:
-                    'Privato è sempre il default; condividi solo ciò che scegli esplicitamente.',
+                title: strings.d3('privateOrNoi'),
+                subtitle: strings.d3('privateDefault'),
               ),
               const SizedBox(height: 10),
-              const _OnboardingFeature(
+              _OnboardingFeature(
                 icon: Icons.lock_outline,
-                title: 'Privacy opzionale',
-                subtitle: 'PIN e biometria se vuoi proteggere l’agenda.',
+                title: strings.d3('optionalPrivacy'),
+                subtitle: strings.d3('optionalPrivacySubtitle'),
               ),
               const Spacer(),
               SizedBox(
@@ -237,7 +236,7 @@ class _OnboardingScreen extends StatelessWidget {
                     store.preferences.copyWith(onboardingDone: true),
                   ),
                   icon: const Icon(Icons.arrow_forward),
-                  label: const Text('Inizia'),
+                  label: Text(strings.d3('start')),
                 ),
               ),
             ],
@@ -308,11 +307,11 @@ class _AuthRecoveryGateState extends State<_AuthRecoveryGate> {
   Future<void> _savePassword() async {
     final password = passwordController.text;
     if (password.length < 8) {
-      setState(() => errorText = 'Usa almeno 8 caratteri.');
+      setState(() => errorText = AnnaStrings.of(context).d3('passwordMin8'));
       return;
     }
     if (password != confirmController.text) {
-      setState(() => errorText = 'Le due password non coincidono.');
+      setState(() => errorText = AnnaStrings.of(context).d3('passwordMismatch'));
       return;
     }
 
@@ -327,8 +326,8 @@ class _AuthRecoveryGateState extends State<_AuthRecoveryGate> {
       passwordController.clear();
       confirmController.clear();
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Password aggiornata. Il tuo account è pronto.'),
+        SnackBar(
+          content: Text(AnnaStrings.of(context).d3('passwordUpdated')),
         ),
       );
     } catch (error) {
@@ -336,8 +335,7 @@ class _AuthRecoveryGateState extends State<_AuthRecoveryGate> {
       setState(() {
         errorText = error is FormatException
             ? error.message.toString()
-            : (CloudSyncService.instance.lastError ??
-                'Non è stato possibile aggiornare la password.');
+            : AnnaStrings.of(context).d3('passwordUpdateFailed');
       });
     } finally {
       if (mounted) setState(() => busy = false);
@@ -373,16 +371,16 @@ class _AuthRecoveryGateState extends State<_AuthRecoveryGate> {
                             child: const Icon(Icons.password_outlined),
                           ),
                           const SizedBox(height: 16),
-                          const Text(
-                            'Scegli una nuova password',
-                            style: TextStyle(
+                          Text(
+                            AnnaStrings.of(context).d3('chooseNewPassword'),
+                            style: const TextStyle(
                               fontWeight: FontWeight.w900,
                               fontSize: 24,
                             ),
                           ),
                           const SizedBox(height: 6),
-                          const Text(
-                            'Il link di recupero è valido. Imposta la nuova password per completare il recupero dell’account.',
+                          Text(
+                            AnnaStrings.of(context).d3('recoveryLinkValid'),
                           ),
                           const SizedBox(height: 18),
                           TextField(
@@ -390,9 +388,9 @@ class _AuthRecoveryGateState extends State<_AuthRecoveryGate> {
                             obscureText: true,
                             enabled: !busy,
                             autofillHints: const [AutofillHints.newPassword],
-                            decoration: const InputDecoration(
-                              labelText: 'Nuova password',
-                              prefixIcon: Icon(Icons.lock_outline),
+                            decoration: InputDecoration(
+                              labelText: AnnaStrings.of(context).d3('newPassword'),
+                              prefixIcon: const Icon(Icons.lock_outline),
                             ),
                           ),
                           const SizedBox(height: 10),
@@ -402,7 +400,7 @@ class _AuthRecoveryGateState extends State<_AuthRecoveryGate> {
                             enabled: !busy,
                             onSubmitted: (_) => busy ? null : _savePassword(),
                             decoration: InputDecoration(
-                              labelText: 'Ripeti password',
+                              labelText: AnnaStrings.of(context).d3('repeatPassword'),
                               prefixIcon:
                                   const Icon(Icons.lock_reset_outlined),
                               errorText: errorText,
@@ -422,7 +420,7 @@ class _AuthRecoveryGateState extends State<_AuthRecoveryGate> {
                                       ),
                                     )
                                   : const Icon(Icons.check),
-                              label: const Text('Aggiorna password'),
+                              label: Text(AnnaStrings.of(context).d3('updatePassword')),
                             ),
                           ),
                         ],
@@ -526,7 +524,7 @@ class _PrivacyGateState extends State<_PrivacyGate>
       final canCheck = await auth.canCheckBiometrics;
       if (!supported || !canCheck) return;
       final ok = await auth.authenticate(
-        localizedReason: 'Sblocca Anna\'s Diary',
+        localizedReason: AnnaStrings.of(context).d3('unlockAnna'),
       );
       if (ok && mounted) {
         setState(() {
@@ -549,7 +547,7 @@ class _PrivacyGateState extends State<_PrivacyGate>
       });
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('PIN non corretto.')),
+        SnackBar(content: Text(AnnaStrings.of(context).d3('incorrectPin'))),
       );
     }
   }
@@ -576,15 +574,15 @@ class _PrivacyGateState extends State<_PrivacyGate>
                         const Icon(Icons.lock_outline, size: 54),
                         const SizedBox(height: 16),
                         Text(
-                          'Agenda bloccata',
+                          AnnaStrings.of(overlayContext).d3('agendaLocked'),
                           style: Theme.of(overlayContext)
                               .textTheme
                               .headlineSmall
                               ?.copyWith(fontWeight: FontWeight.w900),
                         ),
                         const SizedBox(height: 6),
-                        const Text(
-                          'Inserisci il PIN per continuare.',
+                        Text(
+                          AnnaStrings.of(overlayContext).d3('enterPin'),
                           textAlign: TextAlign.center,
                         ),
                         const SizedBox(height: 20),
@@ -606,7 +604,7 @@ class _PrivacyGateState extends State<_PrivacyGate>
                           width: double.infinity,
                           child: FilledButton(
                             onPressed: _unlockWithPin,
-                            child: const Text('Sblocca'),
+                            child: Text(AnnaStrings.of(overlayContext).d3('unlock')),
                           ),
                         ),
                         if (prefs.biometricUnlock && !kIsWeb) ...[
@@ -617,8 +615,8 @@ class _PrivacyGateState extends State<_PrivacyGate>
                             icon: const Icon(Icons.fingerprint),
                             label: Text(
                               authenticating
-                                  ? 'Verifica in corso...'
-                                  : 'Usa biometria',
+                                  ? AnnaStrings.of(overlayContext).d3('verifying')
+                                  : AnnaStrings.of(overlayContext).d3('useBiometric'),
                             ),
                           ),
                         ],
