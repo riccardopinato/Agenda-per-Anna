@@ -610,6 +610,21 @@ const Map<String, Map<String, String>> _d3Catalog = {
   "plannerTwelveMonths": <String, String>{"en": "My 12 months", "it": "I miei 12 mesi", "es": "Mis 12 meses", "fr": "Mes 12 mois", "pt": "Os meus 12 meses"},
   "editor_spent": <String, String>{"en": "Spent", "it": "Speso", "es": "Gastado", "fr": "Dépensé", "pt": "Gasto"},
   "editor_remaining": <String, String>{"en": "Remaining", "it": "Rimane", "es": "Restante", "fr": "Reste", "pt": "Restante"},
+  "sharedPendingChanges": <String, String>{"en": "{count} changes to sync", "it": "{count} modifiche da sincronizzare", "es": "{count} cambios por sincronizar", "fr": "{count} modifications à synchroniser", "pt": "{count} alterações para sincronizar"},
+  "sharedCreatedSynced": <String, String>{"en": "Created by you · synced", "it": "Creato da te · sincronizzato", "es": "Creado por ti · sincronizado", "fr": "Créé par toi · synchronisé", "pt": "Criado por ti · sincronizado"},
+  "sharedCommentsCount": <String, String>{"en": "{count} comments", "it": "{count} commenti", "es": "{count} comentarios", "fr": "{count} commentaires", "pt": "{count} comentários"},
+  "sharedPendingTitle": <String, String>{"en": "{count} changes pending", "it": "{count} modifiche in attesa", "es": "{count} cambios pendientes", "fr": "{count} modifications en attente", "pt": "{count} alterações pendentes"},
+  "sharedPendingContent": <String, String>{"en": "{count} content items", "it": "{count} contenuti", "es": "{count} contenidos", "fr": "{count} contenus", "pt": "{count} conteúdos"},
+  "sharedPendingInteractions": <String, String>{"en": "{count} interactions", "it": "{count} interazioni", "es": "{count} interacciones", "fr": "{count} interactions", "pt": "{count} interações"},
+  "sharedPendingMedia": <String, String>{"en": "{count} media items", "it": "{count} media", "es": "{count} elementos multimedia", "fr": "{count} médias", "pt": "{count} itens de media"},
+  "sharedRetryActive": <String, String>{"en": "{parts} · automatic retry active.", "it": "{parts} · retry automatico attivo.", "es": "{parts} · reintento automático activo.", "fr": "{parts} · nouvelle tentative automatique active.", "pt": "{parts} · nova tentativa automática ativa."},
+  "sharedSavedUntilOnline": <String, String>{"en": "{parts} · saved on the device until you are back online.", "it": "{parts} · salvati sul dispositivo fino al ritorno online.", "es": "{parts} · guardados en el dispositivo hasta volver a estar online.", "fr": "{parts} · enregistrés sur l’appareil jusqu’au retour en ligne.", "pt": "{parts} · guardados no dispositivo até voltares a estar online."},
+  "sharedRealtimeSynced": <String, String>{"en": "Synced in real time", "it": "Sincronizzato in tempo reale", "es": "Sincronizado en tiempo real", "fr": "Synchronisé en temps réel", "pt": "Sincronizado em tempo real"},
+  "sharedListeningUpdates": <String, String>{"en": "Listening for updates.", "it": "In ascolto degli aggiornamenti.", "es": "Escuchando actualizaciones.", "fr": "À l’écoute des mises à jour.", "pt": "A receber atualizações."},
+  "sharedLastUpdate": <String, String>{"en": "Last update {time}.", "it": "Ultimo aggiornamento {time}.", "es": "Última actualización {time}.", "fr": "Dernière mise à jour {time}.", "pt": "Última atualização {time}."},
+  "memSketchUnavailable": <String, String>{"en": "Sketch unavailable.", "it": "Sketch non disponibile.", "es": "Boceto no disponible.", "fr": "Croquis indisponible.", "pt": "Esboço indisponível."},
+  "memPage": <String, String>{"en": "Page {current}/{total}", "it": "Pagina {current}/{total}", "es": "Página {current}/{total}", "fr": "Page {current}/{total}", "pt": "Página {current}/{total}"},
+  "plannerMoments": <String, String>{"en": "{count} moments", "it": "{count} momenti", "es": "{count} momentos", "fr": "{count} moments", "pt": "{count} momentos"},
 };
 
 NotificationLocalization notificationLocalizationForPreference(AppLanguage value) {
@@ -635,6 +650,46 @@ NotificationLocalization notificationLocalizationForPreference(AppLanguage value
 }
 
 extension AnnaD3Strings on AnnaStrings {
+  String agendaPaletteLabel(AgendaPalette value) => switch (value) {
+        AgendaPalette.rose => _pick(en: 'Rose', it: 'Rosa', es: 'Rosa', fr: 'Rose', pt: 'Rosa'),
+        AgendaPalette.lilac => _pick(en: 'Lilac', it: 'Lilla', es: 'Lila', fr: 'Lilas', pt: 'Lilás'),
+        AgendaPalette.sage => _pick(en: 'Sage', it: 'Salvia', es: 'Salvia', fr: 'Sauge', pt: 'Sálvia'),
+        AgendaPalette.peach => _pick(en: 'Peach', it: 'Pesca', es: 'Melocotón', fr: 'Pêche', pt: 'Pêssego'),
+        AgendaPalette.sky => _pick(en: 'Sky', it: 'Cielo', es: 'Cielo', fr: 'Ciel', pt: 'Céu'),
+      };
+
+  String trashKindLabel(TrashEntityKind value) => switch (value) {
+        TrashEntityKind.item => _pick(en: 'Agenda', it: 'Agenda', es: 'Agenda', fr: 'Agenda', pt: 'Agenda'),
+        TrashEntityKind.diaryBlock => _pick(en: 'Memory', it: 'Ricordo', es: 'Recuerdo', fr: 'Souvenir', pt: 'Memória'),
+        TrashEntityKind.journal => _pick(en: 'Day', it: 'Giornata', es: 'Día', fr: 'Journée', pt: 'Dia'),
+        TrashEntityKind.month => _pick(en: 'Monthly page', it: 'Pagina mensile', es: 'Página mensual', fr: 'Page mensuelle', pt: 'Página mensal'),
+        TrashEntityKind.week => _pick(en: 'Weekly page', it: 'Pagina settimanale', es: 'Página semanal', fr: 'Page hebdomadaire', pt: 'Página semanal'),
+        TrashEntityKind.habit => _pick(en: 'Habit', it: 'Abitudine', es: 'Hábito', fr: 'Habitude', pt: 'Hábito'),
+        TrashEntityKind.birthday => birthday,
+        TrashEntityKind.person => _pick(en: 'Person', it: 'Persona', es: 'Persona', fr: 'Personne', pt: 'Pessoa'),
+        TrashEntityKind.inbox => 'Inbox',
+        TrashEntityKind.shoppingItem => shoppingList,
+        TrashEntityKind.workoutSession => _pick(en: 'Workout', it: 'Allenamento', es: 'Entrenamiento', fr: 'Entraînement', pt: 'Treino'),
+        TrashEntityKind.workoutPlan => _pick(en: 'Workout plan', it: 'Scheda allenamento', es: 'Plan de entrenamiento', fr: 'Programme d’entraînement', pt: 'Plano de treino'),
+      };
+
+  String trashConflict(String code) => switch (code) {
+        'item_exists' => _pick(en: 'This item is already in the agenda.', it: 'Questo elemento è già presente nell’agenda.', es: 'Este elemento ya está en la agenda.', fr: 'Cet élément est déjà dans l’agenda.', pt: 'Este item já está na agenda.'),
+        'diary_block_exists' => _pick(en: 'This memory is already in the day.', it: 'Questo ricordo è già presente nella giornata.', es: 'Este recuerdo ya está en el día.', fr: 'Ce souvenir est déjà présent dans la journée.', pt: 'Esta memória já está no dia.'),
+        'journal_exists' => _pick(en: 'An active day already exists for this date. Move it to Trash first to choose which version to restore.', it: 'Per questa data esiste già una giornata attiva. Spostala prima nel Cestino per scegliere quale versione ripristinare.', es: 'Ya existe un día activo para esta fecha. Muévelo primero a la Papelera para elegir qué versión restaurar.', fr: 'Une journée active existe déjà pour cette date. Déplace-la d’abord vers la Corbeille pour choisir la version à restaurer.', pt: 'Já existe um dia ativo para esta data. Move-o primeiro para o Lixo para escolher qual versão restaurar.'),
+        'month_exists' => _pick(en: 'An active monthly page already exists. Move it to Trash first to choose which version to restore.', it: 'Per questo mese esiste già una pagina attiva. Spostala prima nel Cestino per scegliere quale versione ripristinare.', es: 'Ya existe una página mensual activa. Muévela primero a la Papelera para elegir qué versión restaurar.', fr: 'Une page mensuelle active existe déjà. Déplace-la d’abord vers la Corbeille pour choisir la version à restaurer.', pt: 'Já existe uma página mensal ativa. Move-a primeiro para o Lixo para escolher qual versão restaurar.'),
+        'week_exists' => _pick(en: 'An active weekly page already exists. Move it to Trash first to choose which version to restore.', it: 'Per questa settimana esiste già una pagina attiva. Spostala prima nel Cestino per scegliere quale versione ripristinare.', es: 'Ya existe una página semanal activa. Muévela primero a la Papelera para elegir qué versión restaurar.', fr: 'Une page hebdomadaire active existe déjà. Déplace-la d’abord vers la Corbeille pour choisir la version à restaurer.', pt: 'Já existe uma página semanal ativa. Move-a primeiro para o Lixo para escolher qual versão restaurar.'),
+        'habit_exists' => _pick(en: 'This habit is already active.', it: 'Questa abitudine è già attiva.', es: 'Este hábito ya está activo.', fr: 'Cette habitude est déjà active.', pt: 'Este hábito já está ativo.'),
+        'birthday_exists' => _pick(en: 'This birthday is already present.', it: 'Questo compleanno è già presente.', es: 'Este cumpleaños ya existe.', fr: 'Cet anniversaire est déjà présent.', pt: 'Este aniversário já existe.'),
+        'person_exists' => _pick(en: 'This person is already present.', it: 'Questa persona è già presente.', es: 'Esta persona ya existe.', fr: 'Cette personne est déjà présente.', pt: 'Esta pessoa já existe.'),
+        'inbox_exists' => _pick(en: 'This note is already in Inbox.', it: 'Questa nota è già presente nell’Inbox.', es: 'Esta nota ya está en Inbox.', fr: 'Cette note est déjà dans Inbox.', pt: 'Esta nota já está na Inbox.'),
+        'shopping_exists' => _pick(en: 'This item is already in the shopping list.', it: 'Questo articolo è già presente nella lista della spesa.', es: 'Este artículo ya está en la lista de la compra.', fr: 'Cet article est déjà dans la liste de courses.', pt: 'Este item já está na lista de compras.'),
+        'workout_exists' => _pick(en: 'This workout is already present.', it: 'Questo allenamento è già presente.', es: 'Este entrenamiento ya existe.', fr: 'Cet entraînement est déjà présent.', pt: 'Este treino já existe.'),
+        'workout_plan_exists' => _pick(en: 'This workout plan is already present.', it: 'Questa scheda è già presente.', es: 'Este plan ya existe.', fr: 'Ce programme est déjà présent.', pt: 'Este plano já existe.'),
+        _ => _pick(en: 'This content cannot be restored because an active version already exists.', it: 'Questo contenuto non può essere ripristinato perché esiste già una versione attiva.', es: 'Este contenido no puede restaurarse porque ya existe una versión activa.', fr: 'Ce contenu ne peut pas être restauré car une version active existe déjà.', pt: 'Este conteúdo não pode ser restaurado porque já existe uma versão ativa.'),
+      };
+
+
   String plannerTasksCount(int count) => _pick(
         en: '$count ${count == 1 ? 'task' : 'tasks'} to do',
         it: '$count da fare',
