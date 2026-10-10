@@ -2159,7 +2159,7 @@ class SharedMediaPendingUpload {
         id: json['id'] as String? ?? const Uuid().v4(),
         spaceId: json['spaceId'] as String? ?? '',
         entryId: json['entryId'] as String? ?? '',
-        title: json['title'] as String? ?? 'Foto',
+        title: json['title'] as String? ?? '',
         note: json['note'] as String? ?? '',
         date:
             DateTime.tryParse(json['date'] as String? ?? '') ??
@@ -2226,7 +2226,7 @@ class LocalBackupSnapshot {
         id: json['id'] as String? ?? const Uuid().v4(),
         createdAt: DateTime.tryParse(json['createdAt'] as String? ?? '') ??
             DateTime.now(),
-        label: json['label'] as String? ?? 'Backup automatico',
+        label: json['label'] as String? ?? '@snapshot:auto',
         data: Map<String, dynamic>.from(json['data'] as Map? ?? const {}),
       );
 }
