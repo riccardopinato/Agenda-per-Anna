@@ -514,6 +514,10 @@ const Map<String, Map<String, String>> _d3Catalog = {
   "mem_summary": <String, String>{"en": "{memories} · {days}", "it": "{memories} · {days}", "es": "{memories} · {days}", "fr": "{memories} · {days}", "pt": "{memories} · {days}"},
   "mem_removeMemory": <String, String>{"en": "Remove from memories", "it": "Togli dai ricordi", "es": "Quitar de recuerdos", "fr": "Retirer des souvenirs", "pt": "Remover das memórias"},
   "mem_addMemory": <String, String>{"en": "Add to memories", "it": "Aggiungi ai ricordi", "es": "Añadir a recuerdos", "fr": "Ajouter aux souvenirs", "pt": "Adicionar às memórias"},
+  "deleteDiaryTrashBody": <String, String>{"en": "This content will be moved to Trash and you can restore it.", "it": "Questo contenuto verrà spostato nel Cestino e potrai ripristinarlo.", "es": "Este contenido se moverá a la Papelera y podrás restaurarlo.", "fr": "Ce contenu sera déplacé vers la Corbeille et tu pourras le restaurer.", "pt": "Este conteúdo será movido para o Lixo e poderás restaurá-lo."},
+  "deleteDiaryDayBody": <String, String>{"en": "This content will be removed from the day.", "it": "Questo contenuto verrà rimosso dalla giornata.", "es": "Este contenido se eliminará del día.", "fr": "Ce contenu sera retiré de la journée.", "pt": "Este conteúdo será removido do dia."},
+  "templateAdded": <String, String>{"en": "Template “{title}” added to the diary.", "it": "Modello “{title}” aggiunto al diario.", "es": "Plantilla “{title}” añadida al diario.", "fr": "Modèle « {title} » ajouté au journal.", "pt": "Modelo “{title}” adicionado ao diário."},
+  "actionsFor": <String, String>{"en": "Actions for {kind}", "it": "Azioni {kind}", "es": "Acciones para {kind}", "fr": "Actions pour {kind}", "pt": "Ações para {kind}"},
 };
 
 NotificationLocalization notificationLocalizationForPreference(AppLanguage value) {
