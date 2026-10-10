@@ -2242,7 +2242,7 @@ class _MonthWellbeingCard extends StatelessWidget {
           ),
           const SizedBox(height: 6),
           Text(
-            'Un piccolo riepilogo delle giornate che hai raccontato.',
+            AnnaStrings.of(context).d3('monthPersonalSummary'),
             style: Theme.of(context).textTheme.bodySmall,
           ),
           const SizedBox(height: 14),
