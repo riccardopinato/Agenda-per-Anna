@@ -107,7 +107,7 @@ extension AnnaV100Strings on AnnaStrings {
   String get v100OpenDay => openDay;
   String get v100Photo => _pick(en: 'Photo', it: 'Foto', es: 'Foto', fr: 'Photo', pt: 'Foto');
   String get v100Note => _pick(en: 'Note', it: 'Nota', es: 'Nota', fr: 'Note', pt: 'Nota');
-  String get v100Sketch => 'Sketch';
+  String get v100Sketch => _pick(en: 'Sketch', it: 'Sketch', es: 'Boceto', fr: 'Croquis', pt: 'Esboço');
 
   String get v100SharedPhotoTitle => _pick(en: 'Photo shared with Anna\'s Diary', it: 'Foto condivisa con Anna\'s Diary', es: 'Foto compartida con Anna\'s Diary', fr: 'Photo partagée avec Anna\'s Diary', pt: 'Foto partilhada com Anna\'s Diary');
   String get v100SharedContentTitle => _pick(en: 'Content shared with Anna\'s Diary', it: 'Contenuto condiviso con Anna\'s Diary', es: 'Contenido compartido con Anna\'s Diary', fr: 'Contenu partagé avec Anna\'s Diary', pt: 'Conteúdo partilhado com Anna\'s Diary');
