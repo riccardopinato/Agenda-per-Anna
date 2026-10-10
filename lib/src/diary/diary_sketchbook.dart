@@ -1427,7 +1427,7 @@ class _DiarySketchbookScreenState extends State<DiarySketchbookScreen> {
                       onPressed: () {
                         _transform.value = Matrix4.identity();
                       },
-                      child: const Text('Reset'),
+                      child: Text(AnnaStrings.of(context).d3SketchReset),
                     ),
                   ],
                 ),
