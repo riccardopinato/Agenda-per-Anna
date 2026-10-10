@@ -695,7 +695,7 @@ class CloudSyncService extends ChangeNotifier {
     final value = password.trim();
     if (value.length < 8) {
       throw const FormatException(
-        'La nuova password deve contenere almeno 8 caratteri.',
+        'cloud_password_min_8',
       );
     }
 
@@ -1877,7 +1877,7 @@ class CloudSyncService extends ChangeNotifier {
   SupabaseClient _requireSignedInClient() {
     final client = _requireClient();
     if (client.auth.currentUser == null) {
-      throw StateError('Accedi prima di sincronizzare.');
+      throw StateError('cloud_sign_in_first');
     }
     return client;
   }
