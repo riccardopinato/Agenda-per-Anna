@@ -579,7 +579,7 @@ extension AgendaStoreLifecycle on AgendaStore {
     switch (entry.kind) {
       case TrashEntityKind.item:
         return items.any((item) => item.id == entry.entityId)
-            ? 'Questo elemento è già presente nell’agenda.'
+            ? 'item_exists'
             : null;
       case TrashEntityKind.diaryBlock:
         final parentId = entry.parentId;
@@ -587,47 +587,47 @@ extension AgendaStoreLifecycle on AgendaStore {
         final current = journals[parentId];
         return current != null &&
                 current.blocks.any((block) => block.id == entry.entityId)
-            ? 'Questo ricordo è già presente nella giornata.'
+            ? 'diary_block_exists'
             : null;
       case TrashEntityKind.journal:
         return journals.containsKey(entry.entityId)
-            ? 'Per questa data esiste già una giornata attiva. Spostala prima nel Cestino per scegliere quale versione ripristinare.'
+            ? 'journal_exists'
             : null;
       case TrashEntityKind.month:
         return months.containsKey(entry.entityId)
-            ? 'Per questo mese esiste già una pagina attiva. Spostala prima nel Cestino per scegliere quale versione ripristinare.'
+            ? 'month_exists'
             : null;
       case TrashEntityKind.week:
         return weeks.containsKey(entry.entityId)
-            ? 'Per questa settimana esiste già una pagina attiva. Spostala prima nel Cestino per scegliere quale versione ripristinare.'
+            ? 'week_exists'
             : null;
       case TrashEntityKind.habit:
         return habits.any((habit) => habit.id == entry.entityId)
-            ? 'Questa abitudine è già attiva.'
+            ? 'habit_exists'
             : null;
       case TrashEntityKind.birthday:
         return birthdays.any((birthday) => birthday.id == entry.entityId)
-            ? 'Questo compleanno è già presente.'
+            ? 'birthday_exists'
             : null;
       case TrashEntityKind.person:
         return people.any((person) => person.id == entry.entityId)
-            ? 'Questa persona è già presente.'
+            ? 'person_exists'
             : null;
       case TrashEntityKind.inbox:
         return inbox.any((value) => value.id == entry.entityId)
-            ? 'Questa nota è già presente nell’Inbox.'
+            ? 'inbox_exists'
             : null;
       case TrashEntityKind.shoppingItem:
         return shoppingItems.any((value) => value.id == entry.entityId)
-            ? 'Questo articolo è già presente nella lista della spesa.'
+            ? 'shopping_exists'
             : null;
       case TrashEntityKind.workoutSession:
         return workoutSessions.any((value) => value.id == entry.entityId)
-            ? 'Questo allenamento è già presente.'
+            ? 'workout_exists'
             : null;
       case TrashEntityKind.workoutPlan:
         return workoutPlans.any((value) => value.id == entry.entityId)
-            ? 'Questa scheda è già presente.'
+            ? 'workout_plan_exists'
             : null;
     }
   }
