@@ -989,7 +989,9 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    entry.title,
+                    entry.title.trim().isEmpty
+                        ? AnnaStrings.of(sheetContext).sharedEntryTypeLabel(entry.type)
+                        : entry.title,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: const TextStyle(
@@ -1580,7 +1582,7 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
         type: SharedEntryType.sketch,
         title: existing?.title.trim().isNotEmpty == true
             ? existing!.title
-            : 'Sketch',
+            : '',
         note: existing?.note ?? '',
         date: existing?.date ?? selected,
         createdAt:
@@ -1628,7 +1630,7 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
                 leading: const CircleAvatar(
                   child: Icon(Icons.draw_outlined),
                 ),
-                title: const Text('Sketch'),
+                title: Text(AnnaStrings.of(context).v100Sketch),
                 subtitle: Text(
                   AnnaStrings.of(context).d3('sameSketchbook'),
                 ),
@@ -2374,8 +2376,8 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
       SharedEntryType.photo =>
         entry.note.trim().isEmpty ? AnnaStrings.of(context).d3('photoOfDay') : entry.note.trim(),
       SharedEntryType.sketch => entry.sketchPages.length <= 1
-          ? 'Sketch'
-          : 'Sketch · ${entry.sketchPages.length} pagine',
+          ? AnnaStrings.of(context).v100Sketch
+          : AnnaStrings.of(context).d3SketchPages(entry.sketchPages.length),
       _ => entry.title,
     };
 
