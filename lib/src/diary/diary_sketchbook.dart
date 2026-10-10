@@ -146,24 +146,6 @@ class _DiarySketchbookScreenState extends State<DiarySketchbookScreen> {
     0xFFE19A43,
   ];
 
-  static const _colorNames = <String>[
-    'Nero',
-    'Grafite',
-    'Marrone',
-    'Rosso',
-    'Corallo',
-    'Rosa',
-    'Fucsia',
-    'Viola',
-    'Lavanda',
-    'Indaco',
-    'Blu',
-    'Azzurro',
-    'Turchese',
-    'Verde',
-    'Oliva',
-    'Arancio',
-  ];
 
   @override
   void initState() {
@@ -1371,11 +1353,13 @@ class _DiarySketchbookScreenState extends State<DiarySketchbookScreen> {
                           final value = _colors[index];
                           final selected = colorValue == value;
                           return Tooltip(
-                            message: _colorNames[index],
+                            message: AnnaStrings.of(context).sketchColorName(index),
                             child: Semantics(
                               button: true,
                               selected: selected,
-                              label: 'Colore ${_colorNames[index]}',
+                              label: AnnaStrings.of(context).sketchColorSemantic(
+                                AnnaStrings.of(context).sketchColorName(index),
+                              ),
                               child: InkWell(
                                 borderRadius: BorderRadius.circular(999),
                                 onTap: () =>
