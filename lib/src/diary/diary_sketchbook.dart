@@ -1175,7 +1175,7 @@ class _DiarySketchbookScreenState extends State<DiarySketchbookScreen> {
             size: 18,
           ),
           const SizedBox(width: 8),
-          Text(image != null ? 'Dimensione immagine' : 'Dimensione testo'),
+          Text(image != null ? AnnaStrings.of(context).d3('imageSize') : AnnaStrings.of(context).d3('textSize')),
           Expanded(
             child: Slider(
               min: image != null ? 0.15 : 12,
@@ -1208,12 +1208,12 @@ class _DiarySketchbookScreenState extends State<DiarySketchbookScreen> {
         ),
         actions: [
           IconButton(
-            tooltip: 'Esporta PNG',
+            tooltip: AnnaStrings.of(context).d3('exportPng'),
             onPressed: _exportPng,
             icon: const Icon(Icons.ios_share_outlined),
           ),
           IconButton(
-            tooltip: 'Salva sketch',
+            tooltip: AnnaStrings.of(context).d3('saveSketch'),
             onPressed: () => Navigator.pop(context, pages),
             icon: const Icon(Icons.check),
           ),
@@ -1252,33 +1252,33 @@ class _DiarySketchbookScreenState extends State<DiarySketchbookScreen> {
                 scrollDirection: Axis.horizontal,
                 children: [
                   IconButton(
-                    tooltip: 'Annulla',
+                    tooltip: AnnaStrings.of(context).d3('undo'),
                     onPressed: undoAvailable ? _undoAction : null,
                     icon: const Icon(Icons.undo),
                   ),
                   IconButton(
-                    tooltip: 'Ripeti',
+                    tooltip: AnnaStrings.of(context).d3('redo'),
                     onPressed: redoAvailable ? _redoAction : null,
                     icon: const Icon(Icons.redo),
                   ),
                   IconButton(
-                    tooltip: 'Testo',
+                    tooltip: AnnaStrings.of(context).d3('textTool'),
                     onPressed: _addText,
                     icon: const Icon(Icons.text_fields_outlined),
                   ),
                   IconButton(
-                    tooltip: 'Inserisci immagine',
+                    tooltip: AnnaStrings.of(context).d3('insertImage'),
                     onPressed: _addImage,
                     icon: const Icon(Icons.add_photo_alternate_outlined),
                   ),
                   IconButton(
-                    tooltip: 'Elimina selezione',
+                    tooltip: AnnaStrings.of(context).d3('deleteSelection'),
                     onPressed: hasSelection ? _deleteSelection : null,
                     icon: const Icon(Icons.delete_sweep_outlined),
                   ),
                   const SizedBox(width: 4),
                   PopupMenuButton<DiarySketchPaper>(
-                    tooltip: 'Carta',
+                    tooltip: AnnaStrings.of(context).d3('paper'),
                     initialValue: page.paper,
                     onSelected: (paper) {
                       _replacePage(
@@ -1308,7 +1308,7 @@ class _DiarySketchbookScreenState extends State<DiarySketchbookScreen> {
                     ),
                   ),
                   IconButton(
-                    tooltip: 'Pagina precedente',
+                    tooltip: AnnaStrings.of(context).d3('previousPage'),
                     onPressed: pageIndex == 0
                         ? null
                         : () => setState(() {
@@ -1321,7 +1321,7 @@ class _DiarySketchbookScreenState extends State<DiarySketchbookScreen> {
                     icon: const Icon(Icons.chevron_left),
                   ),
                   IconButton(
-                    tooltip: 'Pagina successiva',
+                    tooltip: AnnaStrings.of(context).d3('nextPage'),
                     onPressed: pageIndex >= pages.length - 1
                         ? null
                         : () => setState(() {
@@ -1334,18 +1334,18 @@ class _DiarySketchbookScreenState extends State<DiarySketchbookScreen> {
                     icon: const Icon(Icons.chevron_right),
                   ),
                   IconButton(
-                    tooltip: 'Nuova pagina',
+                    tooltip: AnnaStrings.of(context).d3('newPage'),
                     onPressed: pages.length >= 64 ? null : _addPage,
                     icon: const Icon(Icons.add_box_outlined),
                   ),
                   IconButton(
-                    tooltip: 'Duplica pagina',
+                    tooltip: AnnaStrings.of(context).d3('duplicatePage'),
                     onPressed:
                         pages.length >= 64 ? null : _duplicatePage,
                     icon: const Icon(Icons.copy_all_outlined),
                   ),
                   IconButton(
-                    tooltip: 'Elimina pagina',
+                    tooltip: AnnaStrings.of(context).d3('deletePage'),
                     onPressed: _deletePage,
                     icon: const Icon(Icons.delete_outline),
                   ),
@@ -1430,9 +1430,9 @@ class _DiarySketchbookScreenState extends State<DiarySketchbookScreen> {
                   children: [
                     const Icon(Icons.pinch_outlined, size: 18),
                     const SizedBox(width: 8),
-                    const Expanded(
+                    Expanded(
                       child: Text(
-                        'Trascina e usa due dita per zoomare. Torna a Penna o Seleziona per modificare.',
+                        AnnaStrings.of(context).d3('sketchHint'),
                       ),
                     ),
                     TextButton(
