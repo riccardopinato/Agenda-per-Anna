@@ -43,6 +43,7 @@ class BackupFileService {
   Future<bool> saveJsonBackup({
     required String json,
     required String fileName,
+    String dialogTitle = "Save Anna's Diary backup",
   }) async {
     try {
       final uri = await FilePicker.saveFile(
@@ -51,7 +52,7 @@ class BackupFileService {
         mimeType: 'application/json',
         type: FileType.custom,
         allowedExtensions: const ['json'],
-        dialogTitle: 'Salva backup Anna\'s Diary',
+        dialogTitle: dialogTitle,
       );
       return uri != null;
     } catch (_) {
@@ -62,6 +63,7 @@ class BackupFileService {
   Future<bool> saveZipBackup({
     required Uint8List bytes,
     required String fileName,
+    String dialogTitle = "Save Anna's Diary backup",
   }) async {
     try {
       final uri = await FilePicker.saveFile(
@@ -70,7 +72,7 @@ class BackupFileService {
         mimeType: 'application/zip',
         type: FileType.custom,
         allowedExtensions: const ['zip'],
-        dialogTitle: 'Salva backup Anna\'s Diary',
+        dialogTitle: dialogTitle,
       );
       return uri != null;
     } catch (_) {
@@ -78,12 +80,14 @@ class BackupFileService {
     }
   }
 
-  Future<PickedBackupFile?> pickBackup() async {
+  Future<PickedBackupFile?> pickBackup({
+    String dialogTitle = "Choose an Anna's Diary backup",
+  }) async {
     try {
       final file = await FilePicker.pickFile(
         type: FileType.custom,
         allowedExtensions: const ['zip', 'json'],
-        dialogTitle: 'Scegli un backup Anna\'s Diary',
+        dialogTitle: dialogTitle,
       );
       if (file == null) return null;
       return PickedBackupFile(
@@ -119,12 +123,12 @@ class BackupFileService {
     if (totalMediaBytes > maxBackupMediaBytes ||
         estimatedUncompressed > maxUncompressedArchiveBytes) {
       throw const FormatException(
-        'Il backup è troppo grande per essere creato in sicurezza su questo dispositivo.',
+        'backup_create_too_large',
       );
     }
     if (media.values.any((value) => value.lengthInBytes > maxSingleEntryBytes)) {
       throw const FormatException(
-        'Un contenuto multimediale del backup è troppo grande.',
+        'backup_media_entry_too_large',
       );
     }
 
@@ -135,7 +139,7 @@ class BackupFileService {
     final ids = media.keys.toList()..sort();
     for (final assetId in ids) {
       if (!_validAssetId(assetId)) {
-        throw const FormatException('Identificatore media non valido.');
+        throw const FormatException('backup_media_id_invalid');
       }
       final bytes = media[assetId]!;
       archive.addFile(
@@ -157,7 +161,7 @@ class BackupFileService {
   }) {
     if (files.length + 3 > _maxArchiveEntries) {
       throw const FormatException(
-        'L\'esportazione contiene troppi file.',
+        'open_export_too_many_files',
       );
     }
 
@@ -167,13 +171,13 @@ class BackupFileService {
     for (final bytes in files.values) {
       if (bytes.lengthInBytes > maxSingleEntryBytes) {
         throw const FormatException(
-          'Un file dell\'esportazione è troppo grande.',
+          'open_export_entry_too_large',
         );
       }
       payloadBytes += bytes.lengthInBytes;
       if (payloadBytes > maxUncompressedArchiveBytes) {
         throw const FormatException(
-          'L\'esportazione è troppo grande per essere creata in sicurezza.',
+          'open_export_too_large',
         );
       }
     }
@@ -188,7 +192,7 @@ class BackupFileService {
       final normalized = rawPath.replaceAll('\\', '/');
       if (!_validArchivePath(normalized)) {
         throw const FormatException(
-          'Percorso file non valido nell\'esportazione.',
+          'open_export_path_invalid',
         );
       }
       archive.addFile(
@@ -205,13 +209,13 @@ class BackupFileService {
   DecodedZipBackup decodeZipBackup(Uint8List bytes) {
     if (bytes.lengthInBytes > maxCompressedArchiveBytes) {
       throw const FormatException(
-        'Il file ZIP è troppo grande per essere aperto in sicurezza.',
+        'backup_zip_compressed_too_large',
       );
     }
 
     final archive = ZipDecoder().decodeBytes(bytes, verify: true);
     if (archive.length > _maxArchiveEntries) {
-      throw const FormatException('Il backup contiene troppi file.');
+      throw const FormatException('backup_zip_too_many_files');
     }
 
     String? manifestJson;
@@ -223,12 +227,12 @@ class BackupFileService {
       if (!entry.isFile) continue;
       if (entry.size > maxSingleEntryBytes) {
         throw const FormatException(
-          'Il backup contiene un file singolo troppo grande.',
+          'backup_zip_entry_too_large',
         );
       }
       totalBytes += entry.size;
       if (totalBytes > maxUncompressedArchiveBytes) {
-        throw const FormatException('Il backup è troppo grande.');
+        throw const FormatException('backup_zip_uncompressed_too_large');
       }
 
       final name = entry.name.replaceAll('\\', '/');
@@ -247,7 +251,7 @@ class BackupFileService {
       final assetId =
           name.substring('media/'.length, name.length - '.bin'.length);
       if (!_validAssetId(assetId) || media.containsKey(assetId)) {
-        throw const FormatException('Contenuto media del backup non valido.');
+        throw const FormatException('backup_media_content_invalid');
       }
       final content = entry.readBytes();
       if (content == null || content.isEmpty) continue;
@@ -256,7 +260,7 @@ class BackupFileService {
 
     if (manifestJson == null || dataJson == null) {
       throw const FormatException(
-        'Il file ZIP non contiene un backup Anna\'s Diary completo.',
+        'backup_zip_incomplete',
       );
     }
 
@@ -292,6 +296,7 @@ class BackupFileService {
   Future<bool> saveOpenExportZip({
     required Uint8List bytes,
     required String fileName,
+    String dialogTitle = "Export Anna's Diary open archive",
   }) async {
     try {
       final uri = await FilePicker.saveFile(
@@ -300,7 +305,7 @@ class BackupFileService {
         mimeType: 'application/zip',
         type: FileType.custom,
         allowedExtensions: const ['zip'],
-        dialogTitle: 'Esporta archivio aperto Anna\'s Diary',
+        dialogTitle: dialogTitle,
       );
       return uri != null;
     } catch (_) {
@@ -311,6 +316,7 @@ class BackupFileService {
   Future<bool> saveTextExport({
     required String text,
     required String fileName,
+    String dialogTitle = "Export Anna's Diary",
   }) async {
     try {
       final uri = await FilePicker.saveFile(
@@ -319,7 +325,7 @@ class BackupFileService {
         mimeType: 'text/plain',
         type: FileType.custom,
         allowedExtensions: const ['txt'],
-        dialogTitle: 'Esporta Anna\'s Diary',
+        dialogTitle: dialogTitle,
       );
       return uri != null;
     } catch (_) {
