@@ -340,7 +340,7 @@ Future<ImageSource?> _chooseDiaryImageSource(BuildContext context) =>
             ListTile(
               title: Text(
                 AnnaStrings.of(context).d3('addPhoto'),
-                style: TextStyle(fontWeight: FontWeight.w900),
+                style: const TextStyle(fontWeight: FontWeight.w900),
               ),
               subtitle: Text(
                 AnnaStrings.of(context).d3('optimizedPhoto'),
@@ -513,7 +513,7 @@ Future<String?> showDiaryNoteEditor(
           decoration: InputDecoration(
             hintText:
                 AnnaStrings.of(context).d3('noteHint'),
-            border: OutlineInputBorder(),
+            border: const OutlineInputBorder(),
           ),
         ),
         actions: [
@@ -626,7 +626,7 @@ Future<List<String>?> showOrganizationTagsEditor(
             decoration: InputDecoration(
               labelText: AnnaStrings.of(context).d3('commaTags'),
               hintText: AnnaStrings.of(context).d3('tagsHint'),
-              border: OutlineInputBorder(),
+              border: const OutlineInputBorder(),
             ),
           ),
           if (suggestions.isNotEmpty) ...[
@@ -778,8 +778,8 @@ Future<List<DiaryPlaceReference>?> showDiaryPlacesEditor(
                     decoration: InputDecoration(
                       labelText: AnnaStrings.of(context).d3('placeName'),
                       hintText: 'es. Lago di Braies',
-                      prefixIcon: Icon(Icons.place_outlined),
-                      border: OutlineInputBorder(),
+                      prefixIcon: const Icon(Icons.place_outlined),
+                      border: const OutlineInputBorder(),
                     ),
                   ),
                   if (suggestions.isNotEmpty) ...[
@@ -823,7 +823,7 @@ Future<List<DiaryPlaceReference>?> showDiaryPlacesEditor(
                           ),
                           decoration: InputDecoration(
                             labelText: AnnaStrings.of(context).d3('latitude'),
-                            border: OutlineInputBorder(),
+                            border: const OutlineInputBorder(),
                           ),
                         ),
                       ),
@@ -837,7 +837,7 @@ Future<List<DiaryPlaceReference>?> showDiaryPlacesEditor(
                           ),
                           decoration: InputDecoration(
                             labelText: AnnaStrings.of(context).d3('longitude'),
-                            border: OutlineInputBorder(),
+                            border: const OutlineInputBorder(),
                           ),
                         ),
                       ),
