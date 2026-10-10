@@ -86,7 +86,7 @@ extension WorkoutAgendaStore on AgendaStore {
         WorkoutSession(
           id: const Uuid().v4(),
           sport: sport,
-          title: title.trim().isEmpty ? sport.label : title.trim(),
+          title: title.trim(),
           date: date,
           durationSeconds: durationSeconds,
           distanceKm: distanceKm,
