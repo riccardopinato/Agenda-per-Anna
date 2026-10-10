@@ -718,6 +718,9 @@ const Map<String, Map<String, String>> _d3Catalog = {
   "readableWishes": <String, String>{"en": "Wishes: {value}", "it": "Desideri: {value}", "es": "Deseos: {value}", "fr": "Souhaits : {value}", "pt": "Desejos: {value}"},
   "readableBestMoment": <String, String>{"en": "Best moment: {value}", "it": "Momento più bello: {value}", "es": "Mejor momento: {value}", "fr": "Meilleur moment : {value}", "pt": "Melhor momento: {value}"},
   "readableReflection": <String, String>{"en": "Reflection: {value}", "it": "Riflessione: {value}", "es": "Reflexión: {value}", "fr": "Réflexion : {value}", "pt": "Reflexão: {value}"},
+  "books": <String, String>{"en": "Books", "it": "Libri", "es": "Libros", "fr": "Livres", "pt": "Livros"},
+  "hobbies": <String, String>{"en": "Hobbies", "it": "Hobby", "es": "Aficiones", "fr": "Loisirs", "pt": "Hobbies"},
+  "goalsCount": <String, String>{"en": "{count} goals", "it": "{count} obiettivi", "es": "{count} objetivos", "fr": "{count} objectifs", "pt": "{count} objetivos"},
 };
 
 NotificationLocalization notificationLocalizationForPreference(AppLanguage value) {
