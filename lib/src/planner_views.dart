@@ -2249,7 +2249,7 @@ class _MonthWellbeingCard extends StatelessWidget {
             children: [
               _MiniPill(
                 icon: Icons.mood_outlined,
-                text: '${moodDays.length} giorni con mood',
+                text: AnnaStrings.of(context).d3Format('moodDays', {'count': moodDays.length}),
               ),
               _MiniPill(
                 icon: Icons.auto_awesome_outlined,
@@ -2257,7 +2257,7 @@ class _MonthWellbeingCard extends StatelessWidget {
               ),
               _MiniPill(
                 icon: Icons.check_circle_outline,
-                text: '$completedHabits abitudini fatte',
+                text: AnnaStrings.of(context).d3Format('habitsDone', {'count': completedHabits}),
               ),
             ],
           ),
@@ -2281,7 +2281,7 @@ class _MonthWellbeingCard extends StatelessWidget {
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
-                      'Mood più presente: ${mostCommonMood.label}',
+                      AnnaStrings.of(context).d3Format('topMood', {'value': mostCommonMood.label}),
                       style: TextStyle(
                         color: mostCommonMood.color,
                         fontWeight: FontWeight.w800,
@@ -2762,7 +2762,7 @@ Future<void> _showAgendaItemActions(
               item.pinned ? Icons.push_pin : Icons.push_pin_outlined,
             ),
             title: Text(
-              item.pinned ? 'Togli dai fissati' : 'Fissa in Home',
+              item.pinned ? AnnaStrings.of(context).unpin : AnnaStrings.of(context).pinToHome,
             ),
             onTap: () => Navigator.pop(context, 'pin'),
           ),
