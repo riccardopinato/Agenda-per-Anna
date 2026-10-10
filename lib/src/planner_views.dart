@@ -571,17 +571,17 @@ class _DayLifeOverviewCard extends StatelessWidget {
       if (snapshot.birthdays.isNotEmpty)
         (
           icon: Icons.cake_outlined,
-          text: '${snapshot.birthdays.length} compleanni',
+          text: AnnaStrings.of(context).d3Format('plannerBirthdays', {'count': snapshot.birthdays.length}),
         ),
       if (snapshot.workouts.isNotEmpty)
         (
           icon: Icons.sports_outlined,
-          text: '${snapshot.workouts.length} allenamenti',
+          text: AnnaStrings.of(context).workoutsCount(snapshot.workouts.length),
         ),
       if (activeDiaryBlocks > 0)
         (
           icon: Icons.auto_stories_outlined,
-          text: '$activeDiaryBlocks momenti',
+          text: AnnaStrings.of(context).d3Format('plannerMoments', {'count': activeDiaryBlocks}),
         ),
     ];
 
@@ -859,7 +859,7 @@ _DayLifePresentation _dayLifePresentation(
       ];
       return (
         icon: value.sport.icon,
-        title: value.title.trim().isEmpty ? value.sport.label : value.title,
+        title: value.title.trim().isEmpty ? strings.workoutSportLabel(value.sport) : value.title,
         subtitle: metrics.join(' · '),
         timeLabel: _dayLifeClock(value.createdAt, date, strings),
       );
