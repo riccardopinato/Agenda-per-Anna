@@ -2172,7 +2172,7 @@ class AgendaStore extends ChangeNotifier {
     final backupContainsHabits = payload.containsKey('habits');
 
     // Parse first and keep a safety snapshot before touching the working set.
-    await createLocalSnapshot(label: 'Prima del ripristino');
+    await createLocalSnapshot(label: '@snapshot:before_restore');
     final prefs = await _localState();
 
     final previousItems = List<AgendaItem>.from(items);
@@ -2448,16 +2448,15 @@ class AgendaStore extends ChangeNotifier {
   }
 
   Future<void> createLocalSnapshot({
-    String? label,
+    String label = '@snapshot:manual',
   }) async {
     final prefs = await _localState();
-    final strings = AnnaStrings.forPreference(preferences.appLanguage);
     localSnapshots.insert(
       0,
       LocalBackupSnapshot(
         id: const Uuid().v4(),
         createdAt: DateTime.now(),
-        label: label ?? strings.d3('snapshotManual'),
+        label: label,
         data: jsonDecode(jsonEncode(_localDataPayload()))
             as Map<String, dynamic>,
       ),
@@ -2482,8 +2481,7 @@ class AgendaStore extends ChangeNotifier {
       LocalBackupSnapshot(
         id: const Uuid().v4(),
         createdAt: now,
-        label: AnnaStrings.forPreference(preferences.appLanguage)
-            .d3('snapshotAutomatic'),
+        label: '@snapshot:auto',
         data: jsonDecode(jsonEncode(_localDataPayload()))
             as Map<String, dynamic>,
       ),
@@ -3105,7 +3103,7 @@ class AgendaStore extends ChangeNotifier {
               workoutPlans.isNotEmpty ||
               trash.isNotEmpty)) {
         await createLocalSnapshot(
-          label: 'Prima sincronizzazione cloud',
+          label: '@snapshot:before_cloud_sync',
         );
         await prefs.setBool(firstSnapshotKey, true);
       }
