@@ -164,38 +164,38 @@ class _CloudAccountScreenState extends State<CloudAccountScreen> {
               Icons.warning_amber_rounded,
               color: Theme.of(dialogContext).colorScheme.error,
             ),
-            title: const Text('Eliminare definitivamente l’account?'),
+            title: Text(AnnaStrings.of(dialogContext).d3('deleteAccountTitle')),
             content: Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
-                  'Questa operazione elimina definitivamente il tuo account cloud e i dati collegati. Non può essere annullata.',
+                Text(
+                  AnnaStrings.of(dialogContext).d3('deleteAccountBody'),
                 ),
                 const SizedBox(height: 10),
-                const Text(
-                  'Se sei proprietario di uno spazio Noi ♡, quello spazio viene eliminato anche per gli altri membri. La Cassaforte privata locale resta separata.',
-                  style: TextStyle(fontWeight: FontWeight.w700),
+                Text(
+                  AnnaStrings.of(dialogContext).d3('deleteOwnerWarning'),
+                  style: const TextStyle(fontWeight: FontWeight.w700),
                 ),
                 const SizedBox(height: 10),
-                const Text(
-                  'Prima di continuare puoi creare un export dalla sezione Backup.',
+                Text(
+                  AnnaStrings.of(dialogContext).d3('exportBeforeDelete'),
                 ),
                 const SizedBox(height: 14),
-                const Text('Scrivi ELIMINA per confermare.'),
+                Text(AnnaStrings.of(dialogContext).d3('typeDelete')),
                 const SizedBox(height: 8),
                 TextField(
                   controller: controller,
                   autofocus: true,
                   textCapitalization: TextCapitalization.characters,
                   onChanged: (value) {
-                    final enabled = value.trim().toUpperCase() == 'ELIMINA';
+                    final enabled = value.trim().toUpperCase() == 'DELETE';
                     if (enabled != canDelete) {
                       setDialogState(() => canDelete = enabled);
                     }
                   },
-                  decoration: const InputDecoration(
-                    labelText: 'Conferma',
+                  decoration: InputDecoration(
+                    labelText: AnnaStrings.of(dialogContext).d3('confirmation'),
                   ),
                 ),
               ],
@@ -203,13 +203,13 @@ class _CloudAccountScreenState extends State<CloudAccountScreen> {
             actions: [
               TextButton(
                 onPressed: () => Navigator.of(dialogContext).pop(false),
-                child: const Text('Annulla'),
+                child: Text(AnnaStrings.of(dialogContext).cancel),
               ),
               FilledButton(
                 onPressed: canDelete
                     ? () => Navigator.of(dialogContext).pop(true)
                     : null,
-                child: const Text('Elimina account e dati'),
+                child: Text(AnnaStrings.of(dialogContext).d3('deleteAccountData')),
               ),
             ],
           );
@@ -232,15 +232,15 @@ class _CloudAccountScreenState extends State<CloudAccountScreen> {
       }
       await widget.store.eraseLocalCloudAccount(accountId);
 
-      _message('Account e dati eliminati definitivamente.');
+      _message(AnnaStrings.of(context).d3('accountDeleted'));
       if (mounted) {
         Navigator.of(context).popUntil((route) => route.isFirst);
       }
     } catch (_) {
       _message(
         remoteDeleted
-            ? 'Account eliminato dal cloud, ma la pulizia locale non è stata completata. Riavvia l’app prima di usarla di nuovo.'
-            : cloud.userFacingError,
+            ? AnnaStrings.of(context).d3('accountCloudDeletedLocalFailed')
+            : AnnaStrings.of(context).d3CloudError(cloud.lastError ?? ''),
       );
     } finally {
       if (mounted) setState(() => busy = false);
