@@ -2744,7 +2744,7 @@ class YearMonthSnapshot extends StatelessWidget {
                     ],
                   )
                 : Text(
-                    'Ancora da scrivere',
+                    AnnaStrings.of(context).d3PlannerNotWrittenYet,
                     style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant),
                   ),
           ),
