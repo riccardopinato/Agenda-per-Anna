@@ -604,6 +604,10 @@ const Map<String, Map<String, String>> _d3Catalog = {
   "templateReflectionTitle": <String, String>{"en": "Reflection", "it": "Riflessione", "es": "Reflexión", "fr": "Réflexion", "pt": "Reflexão"},
   "templateReflectionDesc": <String, String>{"en": "A deeper space to put your thoughts in order.", "it": "Uno spazio più profondo per mettere ordine nei pensieri.", "es": "Un espacio más profundo para ordenar tus pensamientos.", "fr": "Un espace plus profond pour mettre tes pensées en ordre.", "pt": "Um espaço mais profundo para organizar os pensamentos."},
   "templateReflectionSeed": <String, String>{"en": "Reflection\n\nWhat happened?\n\nWhat did I feel?\n\nWhat did I need?\n\nWhat can I carry with me from this experience?\n\nOne small concrete step:", "it": "Riflessione\n\nCosa è successo?\n\nCosa ho provato?\n\nDi cosa avevo bisogno?\n\nCosa posso portare con me da questa esperienza?\n\nUn piccolo passo concreto:", "es": "Reflexión\n\n¿Qué pasó?\n\n¿Qué sentí?\n\n¿Qué necesitaba?\n\n¿Qué puedo llevarme de esta experiencia?\n\nUn pequeño paso concreto:", "fr": "Réflexion\n\nQue s’est-il passé ?\n\nQu’ai-je ressenti ?\n\nDe quoi avais-je besoin ?\n\nQue puis-je garder de cette expérience ?\n\nUn petit pas concret :", "pt": "Reflexão\n\nO que aconteceu?\n\nO que senti?\n\nDo que precisava?\n\nO que posso levar comigo desta experiência?\n\nUm pequeno passo concreto:"},
+  "plannerSevenDays": <String, String>{"en": "The 7 days", "it": "I 7 giorni", "es": "Los 7 días", "fr": "Les 7 jours", "pt": "Os 7 dias"},
+  "plannerFilmsSeries": <String, String>{"en": "Films and series", "it": "Film e serie", "es": "Películas y series", "fr": "Films et séries", "pt": "Filmes e séries"},
+  "plannerMemoryDays": <String, String>{"en": "Days with a good memory", "it": "Giorni con un bel ricordo", "es": "Días con un buen recuerdo", "fr": "Jours avec un beau souvenir", "pt": "Dias com uma boa memória"},
+  "plannerTwelveMonths": <String, String>{"en": "My 12 months", "it": "I miei 12 mesi", "es": "Mis 12 meses", "fr": "Mes 12 mois", "pt": "Os meus 12 meses"},
 };
 
 NotificationLocalization notificationLocalizationForPreference(AppLanguage value) {
@@ -629,6 +633,39 @@ NotificationLocalization notificationLocalizationForPreference(AppLanguage value
 }
 
 extension AnnaD3Strings on AnnaStrings {
+  String plannerTasksCount(int count) => _pick(
+        en: '$count ${count == 1 ? 'task' : 'tasks'} to do',
+        it: '$count da fare',
+        es: '$count ${count == 1 ? 'tarea' : 'tareas'} por hacer',
+        fr: '$count ${count == 1 ? 'tâche' : 'tâches'} à faire',
+        pt: '$count ${count == 1 ? 'tarefa' : 'tarefas'} por fazer',
+      );
+
+  String plannerCommitmentsCount(int count) => _pick(
+        en: '$count ${count == 1 ? 'commitment' : 'commitments'}',
+        it: '$count ${count == 1 ? 'impegno' : 'impegni'}',
+        es: '$count ${count == 1 ? 'compromiso' : 'compromisos'}',
+        fr: '$count ${count == 1 ? 'engagement' : 'engagements'}',
+        pt: '$count ${count == 1 ? 'compromisso' : 'compromissos'}',
+      );
+
+  String plannerGoalsCount(int count) => _pick(
+        en: '$count ${count == 1 ? 'goal' : 'goals'}',
+        it: '$count ${count == 1 ? 'obiettivo' : 'obiettivi'}',
+        es: '$count ${count == 1 ? 'objetivo' : 'objetivos'}',
+        fr: '$count ${count == 1 ? 'objectif' : 'objectifs'}',
+        pt: '$count ${count == 1 ? 'objetivo' : 'objetivos'}',
+      );
+
+  String plannerMemoriesCount(int count) => _pick(
+        en: '$count ${count == 1 ? 'memory' : 'memories'}',
+        it: '$count ${count == 1 ? 'ricordo' : 'ricordi'}',
+        es: '$count ${count == 1 ? 'recuerdo' : 'recuerdos'}',
+        fr: '$count ${count == 1 ? 'souvenir' : 'souvenirs'}',
+        pt: '$count ${count == 1 ? 'memória' : 'memórias'}',
+      );
+
+
   String sharedPasswordServiceError(Object error) {
     final raw = error.toString();
     if (raw.contains('shared_password_unlock_vault')) return d3('spUnlockVault');
