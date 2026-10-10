@@ -400,6 +400,69 @@ const Map<String, Map<String, String>> _d3Catalog = {
   "noteTimed": <String, String>{"en": "Note · {time}", "it": "Nota · {time}", "es": "Nota · {time}", "fr": "Note · {time}", "pt": "Nota · {time}"},
   "photoTimed": <String, String>{"en": "Photo · {time}", "it": "Foto · {time}", "es": "Foto · {time}", "fr": "Photo · {time}", "pt": "Foto · {time}"},
   "voiceTimed": <String, String>{"en": "Voice{duration} · {time}", "it": "Voce{duration} · {time}", "es": "Voz{duration} · {time}", "fr": "Voix{duration} · {time}", "pt": "Voz{duration} · {time}"},
+  "editor_hiddenContent": <String, String>{"en": "Hidden content", "it": "Contenuto nascosto", "es": "Contenido oculto", "fr": "Contenu masqué", "pt": "Conteúdo oculto"},
+  "editor_actions": <String, String>{"en": "Actions", "it": "Azioni", "es": "Acciones", "fr": "Actions", "pt": "Ações"},
+  "editor_toDo": <String, String>{"en": "To do", "it": "Da fare", "es": "Por hacer", "fr": "À faire", "pt": "A fazer"},
+  "editor_allDay": <String, String>{"en": "All day", "it": "Tutto il giorno", "es": "Todo el día", "fr": "Toute la journée", "pt": "Todo o dia"},
+  "editor_daySaved": <String, String>{"en": "Day saved ♡", "it": "Giornata salvata ♡", "es": "Día guardado ♡", "fr": "Journée enregistrée ♡", "pt": "Dia guardado ♡"},
+  "editor_newHabit": <String, String>{"en": "New habit", "it": "Nuova abitudine", "es": "Nuevo hábito", "fr": "Nouvelle habitude", "pt": "Novo hábito"},
+  "editor_habitHint": <String, String>{"en": "e.g. Read 20 minutes", "it": "Es. Leggere 20 minuti", "es": "Ej. Leer 20 minutos", "fr": "Ex. Lire 20 minutes", "pt": "Ex. Ler 20 minutos"},
+  "editor_howFeel": <String, String>{"en": "How do you feel today?", "it": "Come ti senti oggi?", "es": "¿Cómo te sientes hoy?", "fr": "Comment te sens-tu aujourd’hui ?", "pt": "Como te sentes hoje?"},
+  "editor_threeGoodThings": <String, String>{"en": "Three good things today ♡", "it": "Tre cose belle di oggi ♡", "es": "Tres cosas buenas de hoy ♡", "fr": "Trois belles choses aujourd’hui ♡", "pt": "Três coisas boas de hoje ♡"},
+  "editor_gratitudeSubtitle": <String, String>{"en": "Even small things: something that made you smile, feel good or grateful.", "it": "Anche piccole: qualcosa che ti ha fatto sorridere, stare bene o sentire grata.", "es": "Incluso cosas pequeñas: algo que te hizo sonreír, sentirte bien o agradecida.", "fr": "Même de petites choses : quelque chose qui t’a fait sourire, te sentir bien ou reconnaissante.", "pt": "Mesmo coisas pequenas: algo que te fez sorrir, sentir bem ou grata."},
+  "editor_oneGoodThing": <String, String>{"en": "One good thing...", "it": "Una cosa bella...", "es": "Una cosa buena...", "fr": "Une belle chose...", "pt": "Uma coisa boa..."},
+  "editor_anotherMoment": <String, String>{"en": "Another small moment...", "it": "Un altro piccolo momento...", "es": "Otro pequeño momento...", "fr": "Un autre petit moment...", "pt": "Outro pequeno momento..."},
+  "editor_momentRemember": <String, String>{"en": "The moment I want to remember", "it": "Il momento che voglio ricordare", "es": "El momento que quiero recordar", "fr": "Le moment que je veux retenir", "pt": "O momento que quero recordar"},
+  "editor_momentHint": <String, String>{"en": "What you would like to reread in a few months...", "it": "Quello che vorresti rileggere tra qualche mese...", "es": "Lo que te gustaría releer dentro de unos meses...", "fr": "Ce que tu aimerais relire dans quelques mois...", "pt": "O que gostarias de reler daqui a alguns meses..."},
+  "editor_myHabits": <String, String>{"en": "My habits", "it": "Le mie abitudini", "es": "Mis hábitos", "fr": "Mes habitudes", "pt": "Os meus hábitos"},
+  "editor_addHabit": <String, String>{"en": "Add habit", "it": "Aggiungi abitudine", "es": "Añadir hábito", "fr": "Ajouter une habitude", "pt": "Adicionar hábito"},
+  "editor_habitEmpty": <String, String>{"en": "Add a small habit to track.", "it": "Aggiungi una piccola abitudine da seguire.", "es": "Añade un pequeño hábito para seguir.", "fr": "Ajoute une petite habitude à suivre.", "pt": "Adiciona um pequeno hábito para acompanhar."},
+  "editor_manageHabits": <String, String>{"en": "Manage habits", "it": "Gestisci abitudini", "es": "Gestionar hábitos", "fr": "Gérer les habitudes", "pt": "Gerir hábitos"},
+  "editor_manage": <String, String>{"en": "Manage", "it": "Gestisci", "es": "Gestionar", "fr": "Gérer", "pt": "Gerir"},
+  "editor_thoughtsNotes": <String, String>{"en": "Thoughts and notes", "it": "Pensieri e note", "es": "Pensamientos y notas", "fr": "Pensées et notes", "pt": "Pensamentos e notas"},
+  "editor_writeRemember": <String, String>{"en": "Write what you want to remember...", "it": "Scrivi quello che vuoi ricordare...", "es": "Escribe lo que quieres recordar...", "fr": "Écris ce que tu veux retenir...", "pt": "Escreve o que queres recordar..."},
+  "editor_saveMyDay": <String, String>{"en": "Save my day", "it": "Salva la mia giornata", "es": "Guardar mi día", "fr": "Enregistrer ma journée", "pt": "Guardar o meu dia"},
+  "editor_moveDayTrashTitle": <String, String>{"en": "Move the day to Trash?", "it": "Spostare la giornata nel Cestino?", "es": "¿Mover el día a la Papelera?", "fr": "Déplacer la journée vers la Corbeille ?", "pt": "Mover o dia para o Lixo?"},
+  "editor_moveDayTrashBody": <String, String>{"en": "Diary, memories and habit state for this day can be restored from Trash.", "it": "Diario, ricordi e stato delle abitudini di questa giornata potranno essere ripristinati dal Cestino.", "es": "El diario, los recuerdos y el estado de hábitos de este día se podrán restaurar desde la Papelera.", "fr": "Le journal, les souvenirs et l’état des habitudes de cette journée pourront être restaurés depuis la Corbeille.", "pt": "O diário, as memórias e o estado dos hábitos deste dia poderão ser restaurados a partir do Lixo."},
+  "editor_moveDayTrash": <String, String>{"en": "Move day to Trash", "it": "Sposta giornata nel Cestino", "es": "Mover día a la Papelera", "fr": "Déplacer la journée vers la Corbeille", "pt": "Mover dia para o Lixo"},
+  "editor_dayMovedTrash": <String, String>{"en": "Day moved to Trash.", "it": "Giornata spostata nel Cestino.", "es": "Día movido a la Papelera.", "fr": "Journée déplacée vers la Corbeille.", "pt": "Dia movido para o Lixo."},
+  "editor_addTo": <String, String>{"en": "Add to {title}", "it": "Aggiungi a {title}", "es": "Añadir a {title}", "fr": "Ajouter à {title}", "pt": "Adicionar a {title}"},
+  "editor_noItems": <String, String>{"en": "No items yet.", "it": "Nessun elemento ancora.", "es": "Aún no hay elementos.", "fr": "Aucun élément pour l’instant.", "pt": "Ainda não há elementos."},
+  "editor_monthBudget": <String, String>{"en": "Monthly budget", "it": "Budget del mese", "es": "Presupuesto del mes", "fr": "Budget du mois", "pt": "Orçamento do mês"},
+  "editor_budget": <String, String>{"en": "Budget", "it": "Budget", "es": "Presupuesto", "fr": "Budget", "pt": "Orçamento"},
+  "editor_setBudget": <String, String>{"en": "Set budget", "it": "Imposta budget", "es": "Definir presupuesto", "fr": "Définir le budget", "pt": "Definir orçamento"},
+  "editor_newExpense": <String, String>{"en": "New expense", "it": "Nuova spesa", "es": "Nuevo gasto", "fr": "Nouvelle dépense", "pt": "Nova despesa"},
+  "editor_amount": <String, String>{"en": "Amount", "it": "Importo", "es": "Importe", "fr": "Montant", "pt": "Montante"},
+  "editor_expense": <String, String>{"en": "Expense", "it": "Spesa", "es": "Gasto", "fr": "Dépense", "pt": "Despesa"},
+  "editor_pauseBeforeMonth": <String, String>{"en": "Take a moment before turning the page.", "it": "Fermati un momento prima di voltare pagina.", "es": "Detente un momento antes de pasar página.", "fr": "Prends un moment avant de tourner la page.", "pt": "Pára um momento antes de virar a página."},
+  "editor_bestMoment": <String, String>{"en": "The best moment", "it": "Il momento più bello", "es": "El mejor momento", "fr": "Le plus beau moment", "pt": "O melhor momento"},
+  "editor_hardestThing": <String, String>{"en": "The hardest thing", "it": "La cosa più difficile", "es": "Lo más difícil", "fr": "La chose la plus difficile", "pt": "A coisa mais difícil"},
+  "editor_whatLearned": <String, String>{"en": "What I learned", "it": "Cosa ho imparato", "es": "Lo que aprendí", "fr": "Ce que j’ai appris", "pt": "O que aprendi"},
+  "editor_howMonthWent": <String, String>{"en": "How did this month really go?", "it": "Com’è andato davvero questo mese?", "es": "¿Cómo fue realmente este mes?", "fr": "Comment ce mois s’est-il vraiment passé ?", "pt": "Como correu realmente este mês?"},
+  "editor_carryNext": <String, String>{"en": "What I want to carry into next month", "it": "Cosa voglio portare nel prossimo mese", "es": "Lo que quiero llevar al próximo mes", "fr": "Ce que je veux emporter dans le mois prochain", "pt": "O que quero levar para o próximo mês"},
+  "editor_closeSaveMonth": <String, String>{"en": "Close and save month", "it": "Chiudi e salva il mese", "es": "Cerrar y guardar el mes", "fr": "Clôturer et enregistrer le mois", "pt": "Fechar e guardar o mês"},
+  "editor_addToDay": <String, String>{"en": "Add to the day", "it": "Aggiungi alla giornata", "es": "Añadir al día", "fr": "Ajouter à la journée", "pt": "Adicionar ao dia"},
+  "editor_title": <String, String>{"en": "Title", "it": "Titolo", "es": "Título", "fr": "Titre", "pt": "Título"},
+  "editor_notes": <String, String>{"en": "Notes", "it": "Note", "es": "Notas", "fr": "Notes", "pt": "Notas"},
+  "editor_category": <String, String>{"en": "Category", "it": "Categoria", "es": "Categoría", "fr": "Catégorie", "pt": "Categoria"},
+  "editor_noTime": <String, String>{"en": "No time", "it": "Senza orario", "es": "Sin hora", "fr": "Sans horaire", "pt": "Sem hora"},
+  "editor_endTime": <String, String>{"en": "End time", "it": "Ora fine", "es": "Hora de fin", "fr": "Heure de fin", "pt": "Hora de fim"},
+  "editor_reminder1": <String, String>{"en": "Reminder 1", "it": "Promemoria 1", "es": "Recordatorio 1", "fr": "Rappel 1", "pt": "Lembrete 1"},
+  "editor_reminder2": <String, String>{"en": "Reminder 2", "it": "Promemoria 2", "es": "Recordatorio 2", "fr": "Rappel 2", "pt": "Lembrete 2"},
+  "editor_twoRemindersHint": <String, String>{"en": "You can set up to two different reminders for the same commitment.", "it": "Puoi impostare fino a due promemoria diversi per lo stesso impegno.", "es": "Puedes configurar hasta dos recordatorios distintos para el mismo compromiso.", "fr": "Tu peux définir jusqu’à deux rappels différents pour le même engagement.", "pt": "Podes definir até dois lembretes diferentes para o mesmo compromisso."},
+  "editor_repeat": <String, String>{"en": "Repeat", "it": "Ripeti", "es": "Repetir", "fr": "Répéter", "pt": "Repetir"},
+  "editor_seriesSummary": <String, String>{"en": "Series of {count} occurrences · {rule}", "it": "Serie di {count} occorrenze · {rule}", "es": "Serie de {count} repeticiones · {rule}", "fr": "Série de {count} occurrences · {rule}", "pt": "Série de {count} ocorrências · {rule}"},
+  "editor_applyEditTo": <String, String>{"en": "Apply edit to", "it": "Applica modifica a", "es": "Aplicar edición a", "fr": "Appliquer la modification à", "pt": "Aplicar edição a"},
+  "editor_occurrencesTotal": <String, String>{"en": "{count} total occurrences", "it": "{count} occorrenze totali", "es": "{count} repeticiones en total", "fr": "{count} occurrences au total", "pt": "{count} ocorrências no total"},
+  "editor_saveSeries": <String, String>{"en": "Save series", "it": "Salva serie", "es": "Guardar serie", "fr": "Enregistrer la série", "pt": "Guardar série"},
+  "editor_noReminderOption": <String, String>{"en": "None", "it": "Nessuno", "es": "Ninguno", "fr": "Aucun", "pt": "Nenhum"},
+  "editor_atTime": <String, String>{"en": "At the time", "it": "All’ora", "es": "A la hora", "fr": "À l’heure", "pt": "À hora"},
+  "editor_tenBefore": <String, String>{"en": "10 min before", "it": "10 min prima", "es": "10 min antes", "fr": "10 min avant", "pt": "10 min antes"},
+  "editor_thirtyBefore": <String, String>{"en": "30 min before", "it": "30 min prima", "es": "30 min antes", "fr": "30 min avant", "pt": "30 min antes"},
+  "editor_hourBefore": <String, String>{"en": "1 hour before", "it": "1 ora prima", "es": "1 hora antes", "fr": "1 heure avant", "pt": "1 hora antes"},
+  "editor_twoHoursBefore": <String, String>{"en": "2 hours before", "it": "2 ore prima", "es": "2 horas antes", "fr": "2 heures avant", "pt": "2 horas antes"},
+  "editor_dayBefore": <String, String>{"en": "1 day before", "it": "1 giorno prima", "es": "1 día antes", "fr": "1 jour avant", "pt": "1 dia antes"},
+  "editor_duplicate": <String, String>{"en": "Duplicate", "it": "Duplica", "es": "Duplicar", "fr": "Dupliquer", "pt": "Duplicar"},
 };
 
 extension AnnaD3Strings on AnnaStrings {
@@ -416,6 +479,67 @@ extension AnnaD3Strings on AnnaStrings {
     }
     return value;
   }
+  String editorMoodLabel(DayMood value) => switch (value) {
+        DayMood.awful => _pick(en: 'Awful', it: 'Male', es: 'Fatal', fr: 'Mal', pt: 'Mal'),
+        DayMood.bad => _pick(en: 'Low', it: 'Giù', es: 'Bajo', fr: 'Bas', pt: 'Em baixo'),
+        DayMood.okay => _pick(en: 'Okay', it: 'Così così', es: 'Regular', fr: 'Comme ci, comme ça', pt: 'Assim-assim'),
+        DayMood.good => _pick(en: 'Good', it: 'Bene', es: 'Bien', fr: 'Bien', pt: 'Bem'),
+        DayMood.great => _pick(en: 'Great', it: 'Benissimo', es: 'Genial', fr: 'Très bien', pt: 'Ótimo'),
+      };
+
+  String editorCategoryLabel(AgendaCategory value) => switch (value) {
+        AgendaCategory.personal => _pick(en: 'Personal', it: 'Personale', es: 'Personal', fr: 'Personnel', pt: 'Pessoal'),
+        AgendaCategory.work => _pick(en: 'Work', it: 'Lavoro', es: 'Trabajo', fr: 'Travail', pt: 'Trabalho'),
+        AgendaCategory.study => _pick(en: 'Study', it: 'Studio', es: 'Estudio', fr: 'Études', pt: 'Estudo'),
+        AgendaCategory.health => _pick(en: 'Health', it: 'Salute', es: 'Salud', fr: 'Santé', pt: 'Saúde'),
+        AgendaCategory.freeTime => _pick(en: 'Free time', it: 'Tempo libero', es: 'Tiempo libre', fr: 'Temps libre', pt: 'Tempo livre'),
+        AgendaCategory.other => _pick(en: 'Other', it: 'Altro', es: 'Otro', fr: 'Autre', pt: 'Outro'),
+      };
+
+  String editorRecurrenceLabel(RecurrenceRule value) => switch (value) {
+        RecurrenceRule.none => _pick(en: 'Do not repeat', it: 'Non ripetere', es: 'No repetir', fr: 'Ne pas répéter', pt: 'Não repetir'),
+        RecurrenceRule.daily => _pick(en: 'Daily', it: 'Ogni giorno', es: 'Cada día', fr: 'Chaque jour', pt: 'Todos os dias'),
+        RecurrenceRule.weekly => _pick(en: 'Weekly', it: 'Ogni settimana', es: 'Cada semana', fr: 'Chaque semaine', pt: 'Todas as semanas'),
+        RecurrenceRule.monthly => _pick(en: 'Monthly', it: 'Ogni mese', es: 'Cada mes', fr: 'Chaque mois', pt: 'Todos os meses'),
+        RecurrenceRule.yearly => _pick(en: 'Yearly', it: 'Ogni anno', es: 'Cada año', fr: 'Chaque année', pt: 'Todos os anos'),
+      };
+
+  String editorScopeShort(RecurringEditScope value) => switch (value) {
+        RecurringEditScope.single => _pick(en: 'This one', it: 'Questa', es: 'Esta', fr: 'Celle-ci', pt: 'Esta'),
+        RecurringEditScope.thisAndFuture => _pick(en: 'From here', it: 'Da qui', es: 'Desde aquí', fr: 'À partir d’ici', pt: 'Daqui em diante'),
+        RecurringEditScope.wholeSeries => _pick(en: 'All', it: 'Tutte', es: 'Todas', fr: 'Toutes', pt: 'Todas'),
+      };
+
+  String editorMonthPhrase(int month) {
+    final values = <String>[
+      '',
+      _pick(en: 'A light start, without expecting everything at once.', it: 'Un inizio leggero, senza pretendere tutto subito.', es: 'Un comienzo ligero, sin exigirlo todo de golpe.', fr: 'Un début léger, sans tout exiger tout de suite.', pt: 'Um começo leve, sem exigir tudo de imediato.'),
+      _pick(en: 'Nurture what you want to see grow.', it: 'Coltiva ciò che vuoi vedere crescere.', es: 'Cultiva lo que quieres ver crecer.', fr: 'Cultive ce que tu veux voir grandir.', pt: 'Cultiva aquilo que queres ver crescer.'),
+      _pick(en: 'Let a little spring into your plans too.', it: 'Lascia entrare un po’ di primavera anche nei programmi.', es: 'Deja que entre un poco de primavera también en tus planes.', fr: 'Laisse entrer un peu de printemps dans tes projets.', pt: 'Deixa entrar um pouco de primavera nos teus planos.'),
+      _pick(en: 'Make room for what is new.', it: 'Fai spazio alle novità.', es: 'Haz espacio para lo nuevo.', fr: 'Fais de la place à la nouveauté.', pt: 'Abre espaço para novidades.'),
+      _pick(en: 'Choose what makes you feel good.', it: 'Scegli ciò che ti fa stare bene.', es: 'Elige lo que te hace sentir bien.', fr: 'Choisis ce qui te fait du bien.', pt: 'Escolhe o que te faz sentir bem.'),
+      _pick(en: 'Carry only what you need.', it: 'Porta con te solo quello che serve.', es: 'Lleva contigo solo lo necesario.', fr: 'N’emporte que ce dont tu as besoin.', pt: 'Leva contigo apenas o que precisas.'),
+      _pick(en: 'More light, more time to breathe.', it: 'Più luce, più tempo per respirare.', es: 'Más luz, más tiempo para respirar.', fr: 'Plus de lumière, plus de temps pour respirer.', pt: 'Mais luz, mais tempo para respirar.'),
+      _pick(en: 'Slow down enough to remember your days.', it: 'Rallenta abbastanza da ricordarti le giornate.', es: 'Ve lo bastante despacio como para recordar tus días.', fr: 'Ralentis assez pour te souvenir de tes journées.', pt: 'Abranda o suficiente para te lembrares dos dias.'),
+      _pick(en: 'Start again from what is essential.', it: 'Riparti dalle cose essenziali.', es: 'Vuelve a empezar por lo esencial.', fr: 'Repars de l’essentiel.', pt: 'Recomeça pelo essencial.'),
+      _pick(en: 'Gather what you have built.', it: 'Raccogli ciò che hai costruito.', es: 'Recoge lo que has construido.', fr: 'Récolte ce que tu as construit.', pt: 'Recolhe aquilo que construíste.'),
+      _pick(en: 'Protect your time and energy.', it: 'Proteggi il tuo tempo e le tue energie.', es: 'Protege tu tiempo y tu energía.', fr: 'Protège ton temps et ton énergie.', pt: 'Protege o teu tempo e a tua energia.'),
+      _pick(en: 'Close the year by remembering the good things too.', it: 'Chiudi l’anno ricordando anche le cose belle.', es: 'Cierra el año recordando también las cosas buenas.', fr: 'Termine l’année en te rappelant aussi les belles choses.', pt: 'Fecha o ano lembrando também as coisas boas.'),
+    ];
+    return values[month.clamp(1, 12)];
+  }
+
+  List<(String, String)> get editorPositiveQuotes => <(String, String)>[
+        (_pick(en: 'One thing at a time ♡', it: 'Una cosa alla volta ♡', es: 'Una cosa a la vez ♡', fr: 'Une chose à la fois ♡', pt: 'Uma coisa de cada vez ♡'), _pick(en: 'You do not have to do everything today. Just start with something that matters.', it: 'Non serve fare tutto oggi. Basta iniziare da qualcosa che conta.', es: 'No hace falta hacerlo todo hoy. Basta empezar por algo que importa.', fr: 'Tu n’as pas besoin de tout faire aujourd’hui. Commence simplement par quelque chose qui compte.', pt: 'Não precisas de fazer tudo hoje. Basta começar por algo que importa.')),
+        (_pick(en: 'Make room for good things', it: 'Fai spazio alle cose belle', es: 'Haz espacio para las cosas buenas', fr: 'Fais de la place aux belles choses', pt: 'Abre espaço para coisas boas'), _pick(en: 'Even a full day can contain a moment that is only yours.', it: 'Anche una giornata piena può contenere un momento solo tuo.', es: 'Incluso un día lleno puede tener un momento solo para ti.', fr: 'Même une journée chargée peut contenir un moment rien qu’à toi.', pt: 'Mesmo um dia cheio pode ter um momento só teu.')),
+        (_pick(en: 'You do not always have to rush', it: 'Non devi correre sempre', es: 'No siempre tienes que correr', fr: 'Tu n’as pas toujours besoin de courir', pt: 'Não tens de correr sempre'), _pick(en: 'Consistency matters more than haste.', it: 'La costanza vale più della fretta.', es: 'La constancia vale más que la prisa.', fr: 'La constance compte plus que la précipitation.', pt: 'A consistência vale mais do que a pressa.')),
+        (_pick(en: 'Today deserves a new page', it: 'Oggi merita una pagina nuova', es: 'Hoy merece una página nueva', fr: 'Aujourd’hui mérite une nouvelle page', pt: 'Hoje merece uma página nova'), _pick(en: 'You can decide what to carry with you and what to let go.', it: 'Puoi decidere cosa portare con te e cosa lasciare andare.', es: 'Puedes decidir qué llevar contigo y qué dejar ir.', fr: 'Tu peux décider ce que tu gardes avec toi et ce que tu laisses partir.', pt: 'Podes decidir o que levas contigo e o que deixas ir.')),
+        (_pick(en: 'Small steps, big changes', it: 'Piccoli passi, grandi cambiamenti', es: 'Pequeños pasos, grandes cambios', fr: 'Petits pas, grands changements', pt: 'Pequenos passos, grandes mudanças'), _pick(en: 'Important things grow one day at a time.', it: 'Le cose importanti crescono un giorno alla volta.', es: 'Las cosas importantes crecen día a día.', fr: 'Les choses importantes grandissent un jour à la fois.', pt: 'As coisas importantes crescem um dia de cada vez.')),
+        (_pick(en: 'Remember yourself too', it: 'Ricordati anche di te', es: 'Acuérdate también de ti', fr: 'Pense aussi à toi', pt: 'Lembra-te também de ti'), _pick(en: 'Among all the things to do, leave room to feel well.', it: 'Tra tutte le cose da fare, lascia uno spazio per stare bene.', es: 'Entre todas las cosas por hacer, deja espacio para estar bien.', fr: 'Parmi toutes les choses à faire, garde une place pour te sentir bien.', pt: 'Entre todas as coisas a fazer, deixa espaço para te sentires bem.')),
+        (_pick(en: 'It is okay to change the plan', it: 'Va bene cambiare programma', es: 'Está bien cambiar de plan', fr: 'Tu peux changer de programme', pt: 'Não faz mal mudar o plano'), _pick(en: 'An agenda should support you, not put pressure on you.', it: 'Un’agenda serve a sostenerti, non a metterti pressione.', es: 'Una agenda debe apoyarte, no presionarte.', fr: 'Un agenda doit te soutenir, pas te mettre la pression.', pt: 'Uma agenda deve apoiar-te, não pressionar-te.')),
+        (_pick(en: 'Celebrate what works', it: 'Celebra quello che funziona', es: 'Celebra lo que funciona', fr: 'Célèbre ce qui fonctionne', pt: 'Celebra o que funciona'), _pick(en: 'Do not wait only for big milestones to be proud of yourself.', it: 'Non aspettare solo i grandi traguardi per essere fiera di te.', es: 'No esperes solo a los grandes logros para sentirte orgullosa de ti.', fr: 'N’attends pas seulement les grands objectifs pour être fière de toi.', pt: 'Não esperes apenas pelos grandes marcos para te orgulhares de ti.')),
+      ];
+
   String d3CloudError(String rawValue) {
     final raw = rawValue.toLowerCase();
     if (raw.contains('invalid login credentials')) {
