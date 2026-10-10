@@ -1297,7 +1297,7 @@ class _DiarySketchbookScreenState extends State<DiarySketchbookScreen> {
                     child: Chip(
                       avatar:
                           const Icon(Icons.grid_4x4_outlined, size: 17),
-                      label: Text(_paperLabel(page.paper)),
+                      label: Text(_paperLabel(page.paper, AnnaStrings.of(context))),
                     ),
                   ),
                   const SizedBox(width: 10),
