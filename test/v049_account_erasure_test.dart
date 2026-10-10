@@ -97,11 +97,9 @@ void main() {
     expect(cloud, contains("'delete-account'"));
     expect(cloud, contains('SignOutScope.local'));
 
-    expect(screen, contains('Scrivi ELIMINA per confermare.'));
-    expect(screen, contains('Elimina account e dati'));
-    expect(
-      screen,
-      contains('quello spazio viene eliminato anche per gli altri membri'),
-    );
+    expect(screen, contains("d3('typeDelete')"));
+    expect(screen, contains("value.trim().toUpperCase() == 'DELETE'"));
+    expect(screen, contains("d3('deleteAccountData')"));
+    expect(screen, contains("d3('deleteOwnerWarning')"));
   });
 }
