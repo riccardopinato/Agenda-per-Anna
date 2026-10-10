@@ -550,7 +550,7 @@ class _AgendaBackupDomain {
       buffer.writeln('_${strings.d3('exportNoCommitments')}_');
     } else {
       for (final item in items) {
-        final date = DateFormat('yyyy-MM-dd', 'it_IT').format(item.date);
+        final date = DateFormat('yyyy-MM-dd').format(item.date);
         final time =
             item.start == null ? '' : ' ${formatTime(item.start!)}';
         final done = item.done ? ' [${strings.d3('exportCompleted')}]' : '';
@@ -830,7 +830,10 @@ class _AgendaBackupDomain {
             if (store.workoutPerformanceLabel(session) case final value?)
               value,
           ];
-          buffer.writeln('- $date · ${session.title}');
+          final sessionTitle = session.title.trim().isEmpty
+              ? strings.workoutSportLabel(session.sport)
+              : session.title.trim();
+          buffer.writeln('- $date · $sessionTitle');
           buffer.writeln('  ${parts.join(' · ')}');
           if (session.note.trim().isNotEmpty) {
             buffer.writeln(strings.d3Format('readableNotes', {'value': session.note.trim()}));
