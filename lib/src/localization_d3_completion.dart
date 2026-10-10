@@ -32,4 +32,35 @@ extension AnnaD3CompletionStrings on AnnaStrings {
         fr: 'Réinitialiser',
         pt: 'Repor',
       );
+  String get d3PlannerNotWrittenYet => _pick(
+        en: 'Not written yet',
+        it: 'Ancora da scrivere',
+        es: 'Aún por escribir',
+        fr: 'Pas encore écrit',
+        pt: 'Ainda por escrever',
+      );
+
+  String d3LinkedCount(int count) => _pick(
+        en: '$count linked',
+        it: '$count collegati',
+        es: '$count vinculados',
+        fr: '$count liés',
+        pt: '$count ligados',
+      );
+
+  String d3BacklinksCount(int count) => _pick(
+        en: '$count backlinks',
+        it: '$count backlink',
+        es: '$count enlaces entrantes',
+        fr: '$count liens entrants',
+        pt: '$count ligações de retorno',
+      );
+
+  String get d3CommentAction => _pick(
+        en: 'Comment',
+        it: 'Commenta',
+        es: 'Comentar',
+        fr: 'Commenter',
+        pt: 'Comentar',
+      );
 }
