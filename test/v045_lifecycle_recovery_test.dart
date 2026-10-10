@@ -137,7 +137,14 @@ void main() {
     expect(await store.purgeTrashEntry(trashId), isTrue);
     expect(store.trash, isEmpty);
     expect(store.localSnapshots, isNotEmpty);
-    expect(store.localSnapshots.first.label, contains('Cestino'));
+    expect(
+      store.localSnapshots.first.label,
+      '@snapshot:before_empty_trash',
+    );
+    expect(
+      const AnnaStrings('it').snapshotLabel(store.localSnapshots.first.label),
+      contains('Cestino'),
+    );
 
     store.dispose();
   });
