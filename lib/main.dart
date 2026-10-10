@@ -453,7 +453,7 @@ class StartupStorageFailureApp extends StatelessWidget {
                     Text(
                       strings.d3('startupStorageTitle'),
                       textAlign: TextAlign.center,
-                      style: TextStyle(
+                      style: const TextStyle(
                         fontSize: 24,
                         fontWeight: FontWeight.w900,
                       ),
