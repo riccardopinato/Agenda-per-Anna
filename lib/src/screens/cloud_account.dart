@@ -454,7 +454,7 @@ class _CloudAccountScreenState extends State<CloudAccountScreen> {
                                       {
                                         'value': DateFormat(
                                           'd MMM, HH:mm',
-                                          strings.intlLocale(context),
+                                          AnnaStrings.intlLocale(context),
                                         ).format(cloud.lastSyncAt!),
                                       },
                                     ),
