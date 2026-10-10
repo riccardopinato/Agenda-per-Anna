@@ -623,11 +623,11 @@ class BudgetCard extends StatelessWidget {
           const SizedBox(height: 10),
           Row(
             children: [
-              Expanded(child: MoneyBox(label: AnnaStrings.of(context).d3('editor_budget'), value: money(data.budgetCents))),
+              Expanded(child: MoneyBox(label: AnnaStrings.of(context).d3('editor_budget'), value: money(context, data.budgetCents))),
               const SizedBox(width: 8),
-              Expanded(child: MoneyBox(label: 'Speso', value: money(spentCents))),
+              Expanded(child: MoneyBox(label: AnnaStrings.of(context).d3('editor_spent'), value: money(context, spentCents))),
               const SizedBox(width: 8),
-              Expanded(child: MoneyBox(label: 'Rimane', value: money(remaining))),
+              Expanded(child: MoneyBox(label: AnnaStrings.of(context).d3('editor_remaining'), value: money(context, remaining))),
             ],
           ),
           const SizedBox(height: 10),
@@ -802,12 +802,12 @@ class _ClosingMonthCardState extends State<ClosingMonthCard> {
               ),
               _MiniPill(
                 icon: Icons.receipt_long_outlined,
-                text: 'Speso ${money(spent)}',
+                text: '${AnnaStrings.of(context).d3('editor_spent')} ${money(context, spent)}',
               ),
               if (widget.data.budgetCents > 0)
                 _MiniPill(
                   icon: Icons.savings_outlined,
-                  text: 'Rimane ${money(remaining)}',
+                  text: '${AnnaStrings.of(context).d3('editor_remaining')} ${money(context, remaining)}',
                 ),
             ],
           ),
@@ -915,7 +915,7 @@ class DateStrip extends StatelessWidget {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Text(DateFormat('EEE', 'it_IT').format(d).substring(0, 2).toUpperCase(),
+                  Text(DateFormat('EEE', AnnaStrings.intlLocale(context)).format(d).substring(0, 2).toUpperCase(),
                       style: TextStyle(fontSize: 11, color: active ? Theme.of(context).colorScheme.onPrimary : null)),
                   const SizedBox(height: 4),
                   Text('${d.day}',
@@ -1539,6 +1539,9 @@ String _derivePinHash(String pin, String salt) {
 String formatTime(TimeOfDay t) =>
     '${t.hour.toString().padLeft(2, '0')}:${t.minute.toString().padLeft(2, '0')}';
 
-String money(int cents) => NumberFormat.currency(locale: 'it_IT', symbol: '€').format(cents / 100);
+String money(BuildContext context, int cents) => NumberFormat.currency(
+      locale: AnnaStrings.intlLocale(context),
+      symbol: '€',
+    ).format(cents / 100);
 
 String _cap(String value) => value.isEmpty ? value : '${value[0].toUpperCase()}${value.substring(1)}';
