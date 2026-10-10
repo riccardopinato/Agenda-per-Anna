@@ -535,6 +535,26 @@ const Map<String, Map<String, String>> _d3Catalog = {
   "sharedRealtimeReconnect": <String, String>{"en": "The realtime connection will reconnect automatically.", "it": "La connessione realtime si ristabilirà automaticamente.", "es": "La conexión en tiempo real se restablecerá automáticamente.", "fr": "La connexion temps réel se rétablira automatiquement.", "pt": "A ligação em tempo real será restabelecida automaticamente."},
   "sharedPasswords": <String, String>{"en": "Noi ♡ passwords", "it": "Password Noi ♡", "es": "Contraseñas Noi ♡", "fr": "Mots de passe Noi ♡", "pt": "Palavras-passe Noi ♡"},
   "sharedEverythingHere": <String, String>{"en": "Noi ♡ · everything you create here is shared.", "it": "Noi ♡ · tutto ciò che crei qui è condiviso.", "es": "Noi ♡ · todo lo que crees aquí es compartido.", "fr": "Noi ♡ · tout ce que tu crées ici est partagé.", "pt": "Noi ♡ · tudo o que criares aqui é partilhado."},
+  "vaultEncryptedDevice": <String, String>{"en": "Encrypted on device · protected access", "it": "Cifrata sul dispositivo · accesso protetto", "es": "Cifrada en el dispositivo · acceso protegido", "fr": "Chiffré sur l’appareil · accès protégé", "pt": "Cifrado no dispositivo · acesso protegido"},
+  "vaultCreateLocal": <String, String>{"en": "Create a local encrypted space just for you", "it": "Crea uno spazio locale cifrato solo per te", "es": "Crea un espacio local cifrado solo para ti", "fr": "Crée un espace local chiffré rien que pour toi", "pt": "Cria um espaço local cifrado só para ti"},
+  "vaultPrivateContent": <String, String>{"en": "Private content", "it": "Contenuto privato", "es": "Contenido privado", "fr": "Contenu privé", "pt": "Conteúdo privado"},
+  "spUnlockVault": <String, String>{"en": "Unlock the Private Vault first.", "it": "Sblocca prima la Cassaforte privata.", "es": "Desbloquea primero la Caja fuerte privada.", "fr": "Déverrouille d’abord le Coffre privé.", "pt": "Desbloqueia primeiro o Cofre privado."},
+  "spSignIn": <String, String>{"en": "Sign in to Noi ♡ first.", "it": "Accedi prima a Noi ♡.", "es": "Inicia sesión en Noi ♡ primero.", "fr": "Connecte-toi d’abord à Noi ♡.", "pt": "Inicia sessão no Noi ♡ primeiro."},
+  "spDifferentKey": <String, String>{"en": "A different Noi ♡ Password key already exists. Import it from a connected device.", "it": "Esiste già una chiave Password Noi ♡ diversa. Importala da un dispositivo collegato.", "es": "Ya existe una clave de contraseñas Noi ♡ distinta. Impórtala desde un dispositivo conectado.", "fr": "Une autre clé Mots de passe Noi ♡ existe déjà. Importe-la depuis un appareil connecté.", "pt": "Já existe uma chave Palavras-passe Noi ♡ diferente. Importa-a de um dispositivo ligado."},
+  "spKeyExists": <String, String>{"en": "A Noi ♡ Password key already exists. Import it from a connected device.", "it": "Esiste già una chiave Password Noi ♡. Importala da un dispositivo collegato.", "es": "Ya existe una clave de contraseñas Noi ♡. Impórtala desde un dispositivo conectado.", "fr": "Une clé Mots de passe Noi ♡ existe déjà. Importe-la depuis un appareil connecté.", "pt": "Já existe uma chave Palavras-passe Noi ♡. Importa-a de um dispositivo ligado."},
+  "spInitialize": <String, String>{"en": "Set up Noi ♡ Passwords first.", "it": "Inizializza prima Password Noi ♡.", "es": "Configura primero Contraseñas Noi ♡.", "fr": "Configure d’abord Mots de passe Noi ♡.", "pt": "Configura primeiro Palavras-passe Noi ♡."},
+  "spRecoveryMin12": <String, String>{"en": "Use at least 12 characters for the recovery password.", "it": "Usa almeno 12 caratteri per la password di recupero.", "es": "Usa al menos 12 caracteres para la contraseña de recuperación.", "fr": "Utilise au moins 12 caractères pour le mot de passe de récupération.", "pt": "Usa pelo menos 12 caracteres para a palavra-passe de recuperação."},
+  "spKeyUnavailable": <String, String>{"en": "The Noi ♡ Password key is not available.", "it": "Chiave Password Noi ♡ non disponibile.", "es": "La clave de contraseñas Noi ♡ no está disponible.", "fr": "La clé Mots de passe Noi ♡ n’est pas disponible.", "pt": "A chave Palavras-passe Noi ♡ não está disponível."},
+  "spKeyMismatch": <String, String>{"en": "The Noi ♡ Password key does not match this space.", "it": "Chiave Password Noi ♡ non coerente con lo spazio.", "es": "La clave de contraseñas Noi ♡ no coincide con este espacio.", "fr": "La clé Mots de passe Noi ♡ ne correspond pas à cet espace.", "pt": "A chave Palavras-passe Noi ♡ não corresponde a este espaço."},
+  "spPasswordTooLong": <String, String>{"en": "The password is too long.", "it": "La password è troppo lunga.", "es": "La contraseña es demasiado larga.", "fr": "Le mot de passe est trop long.", "pt": "A palavra-passe é demasiado longa."},
+  "spVersionUnsupported": <String, String>{"en": "This Noi ♡ Password version is not supported.", "it": "Versione Password Noi ♡ non supportata.", "es": "Esta versión de Contraseñas Noi ♡ no es compatible.", "fr": "Cette version de Mots de passe Noi ♡ n’est pas prise en charge.", "pt": "Esta versão de Palavras-passe Noi ♡ não é suportada."},
+  "spRevisionInvalid": <String, String>{"en": "The Noi ♡ Password revision is invalid.", "it": "Revisione Password Noi ♡ non valida.", "es": "La revisión de Contraseñas Noi ♡ no es válida.", "fr": "La révision de Mots de passe Noi ♡ est invalide.", "pt": "A revisão de Palavras-passe Noi ♡ é inválida."},
+  "vaultAlreadyConfigured": <String, String>{"en": "The Vault is already configured.", "it": "La cassaforte è già configurata.", "es": "La Caja fuerte ya está configurada.", "fr": "Le Coffre est déjà configuré.", "pt": "O Cofre já está configurado."},
+  "vaultPasswordTooLong": <String, String>{"en": "The password is too long.", "it": "La password è troppo lunga.", "es": "La contraseña es demasiado larga.", "fr": "Le mot de passe est trop long.", "pt": "A palavra-passe é demasiado longa."},
+  "vaultSharedKeyInvalid": <String, String>{"en": "The Noi ♡ key is invalid.", "it": "Chiave Noi ♡ non valida.", "es": "La clave Noi ♡ no es válida.", "fr": "La clé Noi ♡ est invalide.", "pt": "A chave Noi ♡ é inválida."},
+  "vaultRecoveryUnavailable": <String, String>{"en": "The Vault is unavailable for recovery.", "it": "Cassaforte non disponibile per il recupero.", "es": "La Caja fuerte no está disponible para recuperación.", "fr": "Le Coffre n’est pas disponible pour la récupération.", "pt": "O Cofre não está disponível para recuperação."},
+  "vaultLockedService": <String, String>{"en": "The Vault is locked.", "it": "La cassaforte è bloccata.", "es": "La Caja fuerte está bloqueada.", "fr": "Le Coffre est verrouillé.", "pt": "O Cofre está bloqueado."},
+  "cloudSignInFirst": <String, String>{"en": "Sign in before syncing.", "it": "Accedi prima di sincronizzare.", "es": "Inicia sesión antes de sincronizar.", "fr": "Connecte-toi avant de synchroniser.", "pt": "Inicia sessão antes de sincronizar."},
 };
 
 NotificationLocalization notificationLocalizationForPreference(AppLanguage value) {
@@ -560,6 +580,41 @@ NotificationLocalization notificationLocalizationForPreference(AppLanguage value
 }
 
 extension AnnaD3Strings on AnnaStrings {
+  String sharedPasswordServiceError(Object error) {
+    final raw = error.toString();
+    if (raw.contains('shared_password_unlock_vault')) return d3('spUnlockVault');
+    if (raw.contains('shared_password_sign_in')) return d3('spSignIn');
+    if (raw.contains('shared_password_key_conflict')) return d3('spDifferentKey');
+    if (raw.contains('shared_password_key_exists')) return d3('spKeyExists');
+    if (raw.contains('shared_password_initialize_first')) return d3('spInitialize');
+    if (raw.contains('shared_password_recovery_min_12')) return d3('spRecoveryMin12');
+    if (raw.contains('shared_password_key_unavailable')) return d3('spKeyUnavailable');
+    if (raw.contains('shared_password_key_mismatch')) return d3('spKeyMismatch');
+    if (raw.contains('shared_password_password_too_long')) return d3('spPasswordTooLong');
+    if (raw.contains('shared_password_version_unsupported')) return d3('spVersionUnsupported');
+    if (raw.contains('shared_password_revision_invalid')) return d3('spRevisionInvalid');
+    return sharedPasswordsSaveFailed;
+  }
+
+  String vaultServiceError(Object error) {
+    final raw = error.toString();
+    if (raw.contains('vault_password_too_short')) return vaultPasswordTooShort;
+    if (raw.contains('vault_password_too_long')) return d3('vaultPasswordTooLong');
+    if (raw.contains('vault_already_configured')) return d3('vaultAlreadyConfigured');
+    if (raw.contains('vault_shared_key_invalid')) return d3('vaultSharedKeyInvalid');
+    if (raw.contains('vault_recovery_unavailable')) return d3('vaultRecoveryUnavailable');
+    if (raw.contains('vault_locked')) return d3('vaultLockedService');
+    return vaultCreateFailed;
+  }
+
+  String cloudServiceError(Object error) {
+    final raw = error.toString();
+    if (raw.contains('cloud_password_min_8')) return d3('passwordMin8');
+    if (raw.contains('cloud_sign_in_first')) return d3('cloudSignInFirst');
+    return d3CloudError(raw);
+  }
+
+
   String d3BackupError(String rawValue) {
     final raw = rawValue.toLowerCase();
     if (raw.startsWith('backup_wrong_app')) return d3('backup_wrongApp');
