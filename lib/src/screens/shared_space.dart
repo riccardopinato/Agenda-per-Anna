@@ -344,9 +344,9 @@ class _SharedSpaceHubScreenState extends State<SharedSpaceHubScreen> {
                                   ),
                                   subtitle: Text(
                                     pending > 0
-                                        ? '$pending modifiche da sincronizzare'
+                                        ? AnnaStrings.of(context).d3Format('sharedPendingChanges', {'count': pending})
                                         : space.isOwner
-                                            ? 'Creato da te · sincronizzato'
+                                            ? AnnaStrings.of(context).d3('sharedCreatedSynced')
                                             : AnnaStrings.of(context).d3('sharedSynced'),
                                   ),
                                   trailing: Row(
@@ -997,7 +997,7 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    '${comments.length} commenti',
+                    AnnaStrings.of(sheetContext).d3Format('sharedCommentsCount', {'count': comments.length}),
                     style: Theme.of(sheetContext).textTheme.bodySmall,
                   ),
                   const SizedBox(height: 12),
@@ -1014,7 +1014,7 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
                               final comment = comments[index];
                               final mine = comment.userId == uid;
                               final author = mine
-                                  ? 'Tu'
+                                  ? AnnaStrings.of(context).d3('mem_you')
                                   : (comment.authorName.trim().isEmpty
                                       ? AnnaStrings.of(context).d3('otherPerson')
                                       : comment.authorName.trim());
@@ -2008,7 +2008,7 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
                       leading: CircleAvatar(child: Text(initial)),
                       title: Text(
                         isMe
-                            ? '${member.displayName} · Tu'
+                            ? '${member.displayName} · ${AnnaStrings.of(context).d3('mem_you')}'
                             : member.displayName,
                         style: const TextStyle(fontWeight: FontWeight.w800),
                       ),
@@ -2515,28 +2515,28 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
 
     if (pendingTotal > 0) {
       icon = cloud.signedIn ? Icons.sync : Icons.cloud_off_outlined;
-      title = '$pendingTotal modifiche in attesa';
+      title = AnnaStrings.of(context).d3Format('sharedPendingTitle', {'count': pendingTotal});
       final parts = <String>[
-        if (pendingEntries > 0) '$pendingEntries contenuti',
-        if (pendingInteractions > 0) '$pendingInteractions interazioni',
-        if (pendingMedia > 0) '$pendingMedia media',
+        if (pendingEntries > 0) AnnaStrings.of(context).d3Format('sharedPendingContent', {'count': pendingEntries}),
+        if (pendingInteractions > 0) AnnaStrings.of(context).d3Format('sharedPendingInteractions', {'count': pendingInteractions}),
+        if (pendingMedia > 0) AnnaStrings.of(context).d3Format('sharedPendingMedia', {'count': pendingMedia}),
       ];
       subtitle = cloud.signedIn
-          ? '${parts.join(' · ')} · retry automatico attivo.'
-          : '${parts.join(' · ')} · salvati sul dispositivo fino al ritorno online.';
+          ? AnnaStrings.of(context).d3Format('sharedRetryActive', {'parts': parts.join(' · ')})
+          : AnnaStrings.of(context).d3Format('sharedSavedUntilOnline', {'parts': parts.join(' · ')});
     } else if (!cloud.signedIn) {
       icon = Icons.cloud_off_outlined;
       title = AnnaStrings.of(context).d3('offline');
       subtitle = AnnaStrings.of(context).d3('offlineLocalCopy');
     } else if (realtimeConnected) {
       icon = Icons.bolt;
-      title = 'Sincronizzato in tempo reale';
+      title = AnnaStrings.of(context).d3('sharedRealtimeSynced');
       subtitle = lastRefreshAt == null
-          ? 'In ascolto degli aggiornamenti.'
-          : 'Ultimo aggiornamento ${DateFormat('HH:mm').format(lastRefreshAt!)}.';
+          ? AnnaStrings.of(context).d3('sharedListeningUpdates')
+          : AnnaStrings.of(context).d3Format('sharedLastUpdate', {'time': DateFormat('HH:mm').format(lastRefreshAt!)});
     } else {
       icon = Icons.cloud_done_outlined;
-      title = 'Sincronizzato';
+      title = AnnaStrings.of(context).d3('sharedSyncedShort');
       subtitle = AnnaStrings.of(context).d3('sharedRealtimeReconnect');
     }
 
@@ -2943,10 +2943,10 @@ Future<SharedEntry?> _openSharedEntryEditor(
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Align(
+              Align(
                 alignment: Alignment.centerLeft,
                 child: Chip(
-                  avatar: Icon(Icons.favorite_outline, size: 18),
+                  avatar: const Icon(Icons.favorite_outline, size: 18),
                   label: Text(AnnaStrings.of(context).d3('visibilityNoi')),
                 ),
               ),
@@ -2961,7 +2961,7 @@ Future<SharedEntry?> _openSharedEntryEditor(
                       (value) => ButtonSegment(
                         value: value,
                         icon: Icon(value.icon),
-                        label: Text(value.label),
+                        label: Text(AnnaStrings.of(context).sharedEntryTypeLabel(value)),
                       ),
                     )
                     .toList(),
