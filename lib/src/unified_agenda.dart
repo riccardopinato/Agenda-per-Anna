@@ -3,11 +3,7 @@ part of '../main.dart';
 enum AgendaContentFilter { all, privateOnly, sharedOnly }
 
 extension AgendaContentFilterUi on AgendaContentFilter {
-  String get label => switch (this) {
-        AgendaContentFilter.all => 'Tutto',
-        AgendaContentFilter.privateOnly => 'Privato',
-        AgendaContentFilter.sharedOnly => 'Noi ♡',
-      };
+  String localizedLabel(AnnaStrings strings) => strings.unifiedFilterLabel(this);
 
   IconData get icon => switch (this) {
         AgendaContentFilter.all => Icons.layers_outlined,
@@ -78,12 +74,12 @@ class UnifiedAgendaEntry {
     return AgendaCategory.other;
   }
 
-  String get visibilityLabel {
+  String visibilityLabel(AnnaStrings strings) {
     if (isShared) {
       return space?.name.trim().isNotEmpty == true ? space!.name : 'Noi ♡';
     }
     if (isExternal) return externalEvent!.calendarName;
-    return 'Privato';
+    return strings.d3('unified_private');
   }
 
   int get sortMinutes =>
@@ -139,7 +135,7 @@ class AgendaContentFilterBar extends StatelessWidget {
               (value) => ButtonSegment(
                 value: value,
                 icon: Icon(value.icon, size: 17),
-                label: Text(value.label),
+                label: Text(value.localizedLabel(AnnaStrings.of(context))),
               ),
             )
             .toList(),
@@ -183,7 +179,7 @@ class UnifiedAgendaTile extends StatelessWidget {
           ? Theme.of(context).colorScheme.tertiary
           : Color(external.colorValue! & 0xFFFFFFFF);
       final timeText = external.allDay
-          ? 'Tutto il giorno'
+          ? AnnaStrings.of(context).d3('editor_allDay')
           : '${formatTime(external.startTime!)}'
               '${external.endTime == null ? '' : ' – ${formatTime(external.endTime!)}'}';
       final details = <String>[
@@ -205,13 +201,13 @@ class UnifiedAgendaTile extends StatelessWidget {
             child: const Icon(Icons.event_available_outlined),
           ),
           title: Text(
-            hideDetails ? 'Evento esterno nascosto' : external.title,
+            hideDetails ? AnnaStrings.of(context).d3('unified_externalHidden') : external.title,
             style: const TextStyle(fontWeight: FontWeight.w700),
           ),
           subtitle: Text(details.join(' · ')),
-          trailing: const Tooltip(
-            message: 'Sola lettura',
-            child: Icon(Icons.lock_outline, size: 18),
+          trailing: Tooltip(
+            message: AnnaStrings.of(context).d3('unified_readOnly'),
+            child: const Icon(Icons.lock_outline, size: 18),
           ),
           onTap: () => openUnifiedAgendaEntry(context, store, entry),
         ),
@@ -221,7 +217,7 @@ class UnifiedAgendaTile extends StatelessWidget {
     final shared = entry.sharedEntry!;
     final color = AgendaCategory.couple.color;
     final timeText = shared.start == null
-        ? (shared.type == SharedEntryType.task ? 'Da fare' : 'Tutto il giorno')
+        ? (shared.type == SharedEntryType.task ? AnnaStrings.of(context).d3('editor_toDo') : AnnaStrings.of(context).d3('editor_allDay'))
         : '${formatTime(shared.start!)}'
             '${shared.end == null ? '' : ' – ${formatTime(shared.end!)}'}';
 
@@ -245,7 +241,7 @@ class UnifiedAgendaTile extends StatelessWidget {
                 child: const Icon(Icons.favorite_outline),
               ),
         title: Text(
-          hideDetails ? 'Contenuto condiviso nascosto' : shared.title,
+          hideDetails ? AnnaStrings.of(context).d3('unified_sharedHidden') : shared.title,
           style: TextStyle(
             fontWeight: FontWeight.w700,
             decoration: shared.done ? TextDecoration.lineThrough : null,
@@ -274,7 +270,7 @@ class UnifiedAgendaTile extends StatelessWidget {
         ),
         onTap: () => openUnifiedAgendaEntry(context, store, entry),
         trailing: PopupMenuButton<String>(
-          tooltip: 'Azioni',
+          tooltip: AnnaStrings.of(context).d3('editor_actions'),
           onSelected: (value) async {
             if (value == 'edit') {
               await openUnifiedAgendaEntry(context, store, entry);
@@ -284,13 +280,13 @@ class UnifiedAgendaTile extends StatelessWidget {
               await _deleteSharedAgendaEntry(context, store, entry);
             }
           },
-          itemBuilder: (_) => const [
+          itemBuilder: (_) => [
             PopupMenuItem(
               value: 'edit',
               child: ListTile(
                 contentPadding: EdgeInsets.zero,
                 leading: Icon(Icons.edit_outlined),
-                title: Text('Modifica'),
+                title: Text(AnnaStrings.of(context).edit),
               ),
             ),
             PopupMenuItem(
@@ -298,7 +294,7 @@ class UnifiedAgendaTile extends StatelessWidget {
               child: ListTile(
                 contentPadding: EdgeInsets.zero,
                 leading: Icon(Icons.lock_outline),
-                title: Text('Sposta in Privato'),
+                title: Text(AnnaStrings.of(context).d3('unified_movePrivate')),
               ),
             ),
             PopupMenuItem(
@@ -306,7 +302,7 @@ class UnifiedAgendaTile extends StatelessWidget {
               child: ListTile(
                 contentPadding: EdgeInsets.zero,
                 leading: Icon(Icons.delete_outline),
-                title: Text('Elimina'),
+                title: Text(AnnaStrings.of(context).delete),
               ),
             ),
           ],
@@ -334,7 +330,7 @@ Future<void> openUnifiedAgendaEntry(
   if (entry.externalEvent != null) {
     final event = entry.externalEvent!;
     final when = event.allDay
-        ? 'Tutto il giorno'
+        ? AnnaStrings.of(context).d3('editor_allDay')
         : '${formatTime(event.startTime!)}'
             '${event.endTime == null ? '' : ' – ${formatTime(event.endTime!)}'}';
     await showDialog<void>(
@@ -358,8 +354,7 @@ Future<void> openUnifiedAgendaEntry(
             ],
             const SizedBox(height: 12),
             Text(
-              'Evento del calendario di sistema · sola lettura. '
-              'Non viene copiato nel Diario, nella Memoria o nel cloud di Anna\'s Diary.',
+              AnnaStrings.of(dialogContext).d3('unified_externalReadOnly'),
               style: Theme.of(dialogContext).textTheme.bodySmall,
             ),
           ],
@@ -367,7 +362,7 @@ Future<void> openUnifiedAgendaEntry(
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(dialogContext),
-            child: const Text('Chiudi'),
+            child: Text(AnnaStrings.of(dialogContext).close),
           ),
         ],
       ),
