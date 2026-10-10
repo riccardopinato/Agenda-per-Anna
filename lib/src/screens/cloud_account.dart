@@ -379,9 +379,9 @@ class _CloudAccountScreenState extends State<CloudAccountScreen> {
                           controller: emailController,
                           keyboardType: TextInputType.emailAddress,
                           autofillHints: const [AutofillHints.email],
-                          decoration: const InputDecoration(
+                          decoration: InputDecoration(
                             labelText: AnnaStrings.of(context).vaultEmail,
-                            prefixIcon: Icon(Icons.email_outlined),
+                            prefixIcon: const Icon(Icons.email_outlined),
                           ),
                         ),
                         const SizedBox(height: 10),
