@@ -72,6 +72,15 @@ class AgendaStore extends ChangeNotifier {
   final Set<String> _unreadableStorageKeys = {};
   AgendaPreferences preferences = const AgendaPreferences();
 
+  List<HabitDefinition> _starterHabits() {
+    final strings = AnnaStrings.forPreference(preferences.appLanguage);
+    return [
+      HabitDefinition(id: 'water', name: strings.d3StarterHabitWater),
+      HabitDefinition(id: 'move', name: strings.d3StarterHabitMove),
+      HabitDefinition(id: 'me', name: strings.d3StarterHabitMe),
+    ];
+  }
+
   Timer? _cloudSyncTimer;
   Timer? _syncDebounceTimer;
   Timer? _unifiedRealtimeDebounce;
@@ -1443,11 +1452,7 @@ class AgendaStore extends ChangeNotifier {
     if (parsedIndex != null) _syncIndex.addAll(parsedIndex);
 
     if (!hadHabitsKey && !_unreadableStorageKeys.contains(_habitsKey)) {
-      habits.addAll(const [
-        HabitDefinition(id: 'water', name: 'Bere abbastanza'),
-        HabitDefinition(id: 'move', name: 'Muovermi un po’'),
-        HabitDefinition(id: 'me', name: 'Tempo per me'),
-      ]);
+      habits.addAll(_starterHabits());
     }
 
     await _applyEntityDeltas(prefs);
@@ -2324,11 +2329,7 @@ class AgendaStore extends ChangeNotifier {
       }
 
       if (habits.isEmpty && !backupContainsHabits) {
-        habits.addAll(const [
-          HabitDefinition(id: 'water', name: 'Bere abbastanza'),
-          HabitDefinition(id: 'move', name: 'Muovermi un po’'),
-          HabitDefinition(id: 'me', name: 'Tempo per me'),
-        ]);
+        habits.addAll(_starterHabits());
       }
 
       _invalidateDayIndex();
@@ -5234,9 +5235,7 @@ class AgendaStore extends ChangeNotifier {
     final normalized = pin.trim();
     final validPin = RegExp(r'^\d{4,8}$').hasMatch(normalized);
     if (!validPin) {
-      throw const FormatException(
-        'Il PIN deve contenere da 4 a 8 cifre.',
-      );
+      throw const FormatException('pin_invalid_format');
     }
     final saltBytes = List<int>.generate(
       16,
