@@ -355,6 +355,7 @@ class _AgendaBackupDomain {
     required AnnaStrings strings,
   }) {
     final buffer = StringBuffer();
+    final locale = AnnaStrings.resolveLocale(Locale(strings.languageCode)).languageCode;
     final peopleById = {
       for (final person in store.people) person.id: person.name.trim(),
     };
@@ -362,31 +363,33 @@ class _AgendaBackupDomain {
     buffer.writeln('# Anna\'s Diary — Open Export');
     buffer.writeln();
     buffer.writeln(
-      'Esportato il ${DateFormat('d MMMM yyyy, HH:mm', 'it_IT').format(exportedAt)}.',
+      strings.d3Format(
+        'exportedAt',
+        {'date': DateFormat('d MMMM yyyy, HH:mm', locale).format(exportedAt)},
+      ),
     );
     buffer.writeln();
     buffer.writeln(
-      'Questo archivio usa formati aperti: Markdown, JSON e file multimediali separati.',
+      strings.d3('exportOpenFormats'),
     );
     buffer.writeln(
-      'Il Cestino, le preferenze tecniche, il Private Vault, il Cycle Tracker, '
-      'le password condivise e i segreti di autenticazione non sono inclusi.',
+      strings.d3('exportOpenExcluded'),
     );
     buffer.writeln();
-    buffer.writeln('## Contenuto');
+    buffer.writeln('## ${strings.d3('exportContent')}');
     buffer.writeln();
-    buffer.writeln('- README.md: diario leggibile e indice principale');
-    buffer.writeln('- data.json: dati privati ordinari strutturati');
-    buffer.writeln('- media/: foto, audio e altri asset referenziati');
-    buffer.writeln('- sketches/: rappresentazione JSON aperta dei disegni');
+    buffer.writeln('- ${strings.d3('exportReadme')}');
+    buffer.writeln('- ${strings.d3('exportData')}');
+    buffer.writeln('- ${strings.d3('exportMedia')}');
+    buffer.writeln('- ${strings.d3('exportSketches')}');
     buffer.writeln();
 
-    buffer.writeln('## Diario');
+    buffer.writeln('## ${strings.diary}');
     buffer.writeln();
     final journalEntries = store.journals.entries.toList()
       ..sort((a, b) => a.key.compareTo(b.key));
     if (journalEntries.isEmpty) {
-      buffer.writeln('_Nessuna pagina di diario salvata._');
+      buffer.writeln('_${strings.d3('exportNoDiary')}_');
       buffer.writeln();
     } else {
       for (final entry in journalEntries) {
@@ -394,18 +397,18 @@ class _AgendaBackupDomain {
         final journal = entry.value;
         final dayLabel = date == null
             ? entry.key
-            : DateFormat('d MMMM yyyy', 'it_IT').format(date);
+            : DateFormat('d MMMM yyyy', locale).format(date);
         buffer.writeln('### $dayLabel');
         buffer.writeln();
 
         if (journal.mood != null) {
           buffer.writeln(
-            '**Mood:** ${journal.mood!.emoji} ${journal.mood!.label}',
+            '**Mood:** ${journal.mood!.emoji} ${strings.editorMoodLabel(journal.mood!)}',
           );
           buffer.writeln();
         }
         if (journal.gratitude.isNotEmpty) {
-          buffer.writeln('**Cose belle**');
+          buffer.writeln('**${strings.d3('exportGoodThings')}**');
           for (final value in journal.gratitude) {
             if (value.trim().isNotEmpty) {
               buffer.writeln('- ${_openMarkdownInline(value)}');
@@ -414,13 +417,13 @@ class _AgendaBackupDomain {
           buffer.writeln();
         }
         if (journal.beautiful.trim().isNotEmpty) {
-          buffer.writeln('**Da ricordare**');
+          buffer.writeln('**${strings.d3('exportRemember')}**');
           buffer.writeln();
           buffer.writeln(journal.beautiful.trim());
           buffer.writeln();
         }
         if (journal.note.trim().isNotEmpty) {
-          buffer.writeln('**Pensieri**');
+          buffer.writeln('**${strings.d3('exportThoughts')}**');
           buffer.writeln();
           buffer.writeln(journal.note.trim());
           buffer.writeln();
@@ -430,9 +433,9 @@ class _AgendaBackupDomain {
           ..sort((a, b) => a.createdAt.compareTo(b.createdAt));
         for (final block in blocks) {
           final time = DateFormat('HH:mm').format(block.createdAt);
-          final archived = block.archived ? ' · archiviato' : '';
+          final archived = block.archived ? ' · ${strings.d3('exportArchived')}' : '';
           buffer.writeln(
-            '#### $time · ${_openBlockLabel(block.type)}$archived',
+            '#### $time · ${_openBlockLabel(block.type, strings)}$archived',
           );
           buffer.writeln();
 
@@ -445,13 +448,13 @@ class _AgendaBackupDomain {
             final mediaPath = mediaPaths[block.mediaAssetId];
             if (mediaPath != null) {
               final alt = block.text.trim().isEmpty
-                  ? 'Foto'
+                  ? strings.v100Photo
                   : _openMarkdownInline(block.text.trim());
               buffer.writeln('![$alt]($mediaPath)');
               buffer.writeln();
             } else if (block.imageBase64.isNotEmpty) {
               buffer.writeln(
-                '_Foto legacy incorporata nel record strutturato di data.json._',
+                '_${strings.d3('exportLegacyPhoto')}_',
               );
               buffer.writeln();
             }
@@ -460,15 +463,15 @@ class _AgendaBackupDomain {
           if (block.type == DiaryBlockType.voice) {
             final mediaPath = mediaPaths[block.mediaAssetId];
             if (mediaPath != null) {
-              buffer.writeln('[Apri registrazione audio]($mediaPath)');
+              buffer.writeln('[${strings.d3('exportOpenAudio')}]($mediaPath)');
               if (block.audioDurationMs > 0) {
                 final seconds = (block.audioDurationMs / 1000).round();
-                buffer.writeln('Durata: $seconds s');
+                buffer.writeln(strings.d3Format('exportDuration', {'seconds': seconds}));
               }
               buffer.writeln();
             } else if (block.audioBase64.isNotEmpty) {
               buffer.writeln(
-                '_Audio legacy incorporato nel record strutturato di data.json._',
+                '_${strings.d3('exportLegacyAudio')}_',
               );
               buffer.writeln();
             }
@@ -478,7 +481,7 @@ class _AgendaBackupDomain {
             final sketchPath = sketchPaths[block.id];
             if (sketchPath != null) {
               buffer.writeln(
-                '[Dati vettoriali del disegno]($sketchPath)',
+                '[${strings.d3('exportVectorData')}]($sketchPath)',
               );
               buffer.writeln();
             }
@@ -488,7 +491,7 @@ class _AgendaBackupDomain {
                 .where((value) => value.isNotEmpty)
                 .toList(growable: false);
             if (sketchText.isNotEmpty) {
-              buffer.writeln('Testo nel disegno:');
+              buffer.writeln(strings.d3('exportSketchText'));
               for (final value in sketchText) {
                 buffer.writeln('- ${_openMarkdownInline(value)}');
               }
@@ -508,17 +511,17 @@ class _AgendaBackupDomain {
               .toList(growable: false);
           if (people.isNotEmpty) {
             buffer.writeln(
-              '**Persone:** ${people.map(_openMarkdownInline).join(', ')}',
+              '**${strings.d3('exportPeople')}:** ${people.map(_openMarkdownInline).join(', ')}',
             );
           }
           if (block.places.isNotEmpty) {
             buffer.writeln(
-              '**Luoghi:** ${block.places.map((place) => _openMarkdownInline(place.name)).join(', ')}',
+              '**${strings.d3('exportPlaces')}:** ${block.places.map((place) => _openMarkdownInline(place.name)).join(', ')}',
             );
           }
           if (block.relatedBlockIds.isNotEmpty) {
             buffer.writeln(
-              '**Ricordi collegati:** ${block.relatedBlockIds.map(_openMarkdownInline).join(', ')}',
+              '**${strings.d3('exportRelated')}:** ${block.relatedBlockIds.map(_openMarkdownInline).join(', ')}',
             );
           }
           if (block.tags.isNotEmpty ||
@@ -544,13 +547,13 @@ class _AgendaBackupDomain {
         return aMinutes.compareTo(bMinutes);
       });
     if (items.isEmpty) {
-      buffer.writeln('_Nessun impegno salvato._');
+      buffer.writeln('_${strings.d3('exportNoCommitments')}_');
     } else {
       for (final item in items) {
         final date = DateFormat('yyyy-MM-dd', 'it_IT').format(item.date);
         final time =
             item.start == null ? '' : ' ${formatTime(item.start!)}';
-        final done = item.done ? ' [completato]' : '';
+        final done = item.done ? ' [${strings.d3('exportCompleted')}]' : '';
         buffer.writeln(
           '- **$date$time** · ${_openMarkdownInline(item.title)}$done',
         );
@@ -563,33 +566,33 @@ class _AgendaBackupDomain {
     }
     buffer.writeln();
 
-    buffer.writeln('## Indice dati strutturati');
+    buffer.writeln('## ${strings.d3('exportStructuredIndex')}');
     buffer.writeln();
-    buffer.writeln('- Persone: ${store.people.length}');
-    buffer.writeln('- Compleanni: ${store.birthdays.length}');
+    buffer.writeln('- ${strings.d3Format('exportPeopleCount', {'count': store.people.length})}');
+    buffer.writeln('- ${strings.d3Format('exportBirthdaysCount', {'count': store.birthdays.length})}');
     buffer.writeln('- Inbox: ${store.inbox.length}');
-    buffer.writeln('- Lista della spesa: ${store.shoppingItems.length}');
+    buffer.writeln('- ${strings.d3Format('exportShoppingCount', {'count': store.shoppingItems.length})}');
     buffer.writeln(
-      '- Sessioni di allenamento: ${store.workoutSessions.length}',
+      '- ${strings.d3Format('exportWorkoutSessionsCount', {'count': store.workoutSessions.length})}',
     );
     buffer.writeln(
-      '- Schede di allenamento: ${store.workoutPlans.length}',
+      '- ${strings.d3Format('exportWorkoutPlansCount', {'count': store.workoutPlans.length})}',
     );
-    buffer.writeln('- Pagine settimanali: ${store.weeks.length}');
-    buffer.writeln('- Pagine mensili: ${store.months.length}');
+    buffer.writeln('- ${strings.d3Format('exportWeeklyPagesCount', {'count': store.weeks.length})}');
+    buffer.writeln('- ${strings.d3Format('exportMonthlyPagesCount', {'count': store.months.length})}');
     buffer.writeln();
     buffer.writeln(
-      'I record completi di queste sezioni sono disponibili in data.json.',
+      strings.d3('exportRecordsJson'),
     );
 
     return buffer.toString();
   }
 
-  String _openBlockLabel(DiaryBlockType type) => switch (type) {
-        DiaryBlockType.note => 'Nota',
-        DiaryBlockType.photo => 'Foto',
-        DiaryBlockType.voice => 'Voce',
-        DiaryBlockType.sketch => 'Disegno',
+  String _openBlockLabel(DiaryBlockType type, AnnaStrings strings) => switch (type) {
+        DiaryBlockType.note => strings.v100Note,
+        DiaryBlockType.photo => strings.v100Photo,
+        DiaryBlockType.voice => strings.v100VoiceNote,
+        DiaryBlockType.sketch => strings.v100Sketch,
       };
 
   String _openMarkdownInline(String value) => value
