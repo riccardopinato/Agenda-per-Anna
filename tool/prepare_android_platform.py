@@ -14,6 +14,7 @@ import os
 import re
 import shutil
 from pathlib import Path
+from xml.sax.saxutils import escape
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -55,6 +56,12 @@ def replace_required(content: str, old: str, new: str, label: str) -> str:
     if old not in content and new not in content:
         raise SystemExit(f"Flutter template drift: cannot find {label}")
     return content.replace(old, new, 1) if old in content else content
+
+
+def android_xml_string(value: str) -> str:
+    """Escape text for Android string resources and AAPT string parsing."""
+    escaped = value.replace("\\", "\\\\").replace("'", "\\'")
+    return escape(escaped)
 
 
 def configure_activity() -> None:
@@ -1523,12 +1530,12 @@ def configure_launcher_shortcuts() -> None:
         (values / "annas_diary_native.xml").write_text(
             f'''<?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="calendar_permission_required">{labels["calendar_permission_required"]}</string>
-    <string name="calendar_permission_busy">{labels["calendar_permission_busy"]}</string>
-    <string name="widget_update_prompt">{labels["widget_update_prompt"]}</string>
-    <string name="widget_counters">{labels["widget_counters"]}</string>
-    <string name="widget_capture">{labels["widget_capture"]}</string>
-    <string name="widget_today">{labels["widget_today"]}</string>
+    <string name="calendar_permission_required">{android_xml_string(labels["calendar_permission_required"])}</string>
+    <string name="calendar_permission_busy">{android_xml_string(labels["calendar_permission_busy"])}</string>
+    <string name="widget_update_prompt">{android_xml_string(labels["widget_update_prompt"])}</string>
+    <string name="widget_counters">{android_xml_string(labels["widget_counters"])}</string>
+    <string name="widget_capture">{android_xml_string(labels["widget_capture"])}</string>
+    <string name="widget_today">{android_xml_string(labels["widget_today"])}</string>
 </resources>
 ''',
             encoding="utf-8",
