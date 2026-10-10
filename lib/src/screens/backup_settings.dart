@@ -34,6 +34,7 @@ class _BackupScreenState extends State<BackupScreen> {
       final ok = await BackupFileService.instance.saveZipBackup(
         bytes: bytes,
         fileName: _timestampFileName('zip'),
+        dialogTitle: strings.d3('backup_saveBackupDialog'),
       );
       _message(
         ok
@@ -43,7 +44,7 @@ class _BackupScreenState extends State<BackupScreen> {
     } catch (error) {
       _message(
         error is FormatException
-            ? error.message.toString()
+            ? strings.d3BackupError(error.message.toString())
             : strings.v100BackupCreateFailed,
       );
     } finally {
@@ -62,6 +63,7 @@ class _BackupScreenState extends State<BackupScreen> {
           'backup_',
           'open-export_',
         ),
+        dialogTitle: strings.d3('backup_openExportDialog'),
       );
       _message(
         ok
@@ -71,7 +73,7 @@ class _BackupScreenState extends State<BackupScreen> {
     } catch (error) {
       _message(
         error is FormatException
-            ? error.message.toString()
+            ? strings.d3BackupError(error.message.toString())
             : strings.v100OpenExportFailed,
       );
     } finally {
@@ -107,6 +109,7 @@ class _BackupScreenState extends State<BackupScreen> {
       final ok = await BackupFileService.instance.saveTextExport(
         text: widget.store.createReadableExport(),
         fileName: _timestampFileName('txt'),
+        dialogTitle: strings.d3('backup_readableExportDialog'),
       );
       _message(
         ok
@@ -123,7 +126,9 @@ class _BackupScreenState extends State<BackupScreen> {
     setState(() => busy = true);
     PickedBackupFile? picked;
     try {
-      picked = await BackupFileService.instance.pickBackup();
+      picked = await BackupFileService.instance.pickBackup(
+        dialogTitle: strings.d3('backup_chooseBackupDialog'),
+      );
     } finally {
       if (mounted) setState(() => busy = false);
     }
@@ -145,7 +150,7 @@ class _BackupScreenState extends State<BackupScreen> {
     } catch (error) {
       _message(
         error is FormatException
-            ? error.message.toString()
+            ? strings.d3BackupError(error.message.toString())
             : strings.v100InvalidBackup,
       );
       return;
