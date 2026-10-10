@@ -212,6 +212,10 @@ Future<void> main() async {
     startupStorageError = error;
   }
 
+  NotificationService.instance.configureLocalization(
+    notificationLocalizationForPreference(store.preferences.appLanguage),
+  );
+
   if (startupStorageError != null) {
     runApp(
       StartupStorageFailureApp(
