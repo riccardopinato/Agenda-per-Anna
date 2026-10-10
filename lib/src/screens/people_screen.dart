@@ -15,7 +15,7 @@ Future<List<String>?> showPeoplePicker(
         actions: [
           FilledButton(
             onPressed: () => Navigator.pop(dialogContext),
-            child: const Text('OK'),
+            child: Text(MaterialLocalizations.of(dialogContext).okButtonLabel),
           ),
         ],
       ),
