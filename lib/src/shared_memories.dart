@@ -263,28 +263,22 @@ class _SharedMemoriesScreenState extends State<SharedMemoriesScreen> {
   bool _matchesSearch(SharedEntry entry, String query) {
     if (query.isEmpty) return true;
 
+    final locale = AnnaStrings.intlLocale(context);
     final date = DateFormat(
       'EEEE d MMMM yyyy',
-      'it_IT',
+      locale,
     ).format(entry.date);
-    final month = DateFormat('MMMM yyyy', 'it_IT').format(entry.date);
+    final month = DateFormat('MMMM yyyy', locale).format(entry.date);
     final comments = commentsByEntry[entry.id] ?? const [];
     final haystack = <String>[
       entry.title,
       entry.note,
       entry.editorName,
-      entry.type.label,
+      AnnaStrings.of(context).sharedEntryTypeLabel(entry.type),
       date,
       month,
       entry.date.year.toString(),
-      switch (entry.type) {
-        SharedEntryType.photo => 'foto immagine ricordo',
-        SharedEntryType.sketch => 'sketch disegno ricordo',
-        SharedEntryType.note => 'nota pensiero messaggio ricordo',
-        SharedEntryType.appointment => 'appuntamento evento momento',
-        SharedEntryType.task => 'attività da fare momento',
-        SharedEntryType.shopping => 'spesa acquisti lista',
-      },
+      AnnaStrings.of(context).sharedMemorySearchTokens(entry.type),
       for (final comment in comments) comment.body,
       for (final comment in comments) comment.authorName,
     ].join(' ').toLowerCase();
@@ -297,7 +291,7 @@ class _SharedMemoriesScreenState extends State<SharedMemoriesScreen> {
     if (name.isNotEmpty) return name;
     final uid =
         widget.store.activeAccountId ?? CloudSyncService.instance.userId;
-    if (uid != null && entry.updatedBy == uid) return 'Tu';
+    if (uid != null && entry.updatedBy == uid) return AnnaStrings.of(context).d3('mem_you');
     return 'Noi ♡';
   }
 
@@ -316,7 +310,9 @@ class _SharedMemoriesScreenState extends State<SharedMemoriesScreen> {
         )
         .length;
     if (count == 0) return null;
-    return count == 1 ? 'Visto' : 'Visto da $count';
+    return count == 1
+        ? AnnaStrings.of(context).d3('mem_seen')
+        : AnnaStrings.of(context).d3Format('mem_seenBy', {'count': count});
   }
 
   Future<void> _openEntry(SharedEntry entry) async {
@@ -427,12 +423,13 @@ class _SharedMemoriesScreenState extends State<SharedMemoriesScreen> {
         )
         .length;
 
+    final strings = AnnaStrings.of(context);
     return [
-      '${source.length} ricordi',
-      if (photos > 0) '$photos foto',
-      if (sketches > 0) '$sketches sketch',
-      if (notes > 0) '$notes note',
-      if (moments > 0) '$moments momenti',
+      strings.d3Format('mem_memoryCount', {'count': source.length}),
+      if (photos > 0) strings.d3Format('mem_photoCount', {'count': photos}),
+      if (sketches > 0) strings.d3Format('mem_sketchCount', {'count': sketches}),
+      if (notes > 0) strings.d3Format('mem_noteCount', {'count': notes}),
+      if (moments > 0) strings.d3Format('mem_momentCount', {'count': moments}),
     ].join(' · ');
   }
 
@@ -930,7 +927,7 @@ class SharedMemoryTile extends StatelessWidget {
             Padding(
               padding: const EdgeInsets.fromLTRB(10, 9, 10, 4),
               child: Text(
-                entry.title.trim().isEmpty ? entry.type.label : entry.title,
+                entry.title.trim().isEmpty ? AnnaStrings.of(context).sharedEntryTypeLabel(entry.type) : entry.title,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: const TextStyle(fontWeight: FontWeight.w900),
@@ -1132,7 +1129,7 @@ class _SharedMemoryFallbackCover extends StatelessWidget {
                   ? entry.note.trim()
                   : entry.title.trim().isNotEmpty
                       ? entry.title.trim()
-                      : entry.type.label,
+                      : AnnaStrings.of(context).sharedEntryTypeLabel(entry.type),
               maxLines: 4,
               overflow: TextOverflow.ellipsis,
               textAlign: TextAlign.center,
@@ -1294,7 +1291,7 @@ class SharedMemoryTimelineTile extends StatelessWidget {
                   children: [
                     Text(
                       entry.title.trim().isEmpty
-                          ? entry.type.label
+                          ? AnnaStrings.of(context).sharedEntryTypeLabel(entry.type)
                           : entry.title,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
@@ -1626,7 +1623,7 @@ class SharedMemoryDetailScreen extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         title: Text(
-          entry.type.label,
+          AnnaStrings.of(context).sharedEntryTypeLabel(entry.type),
           style: const TextStyle(fontWeight: FontWeight.w900),
         ),
       ),
@@ -1645,7 +1642,7 @@ class SharedMemoryDetailScreen extends StatelessWidget {
                     Expanded(
                       child: Text(
                         entry.title.trim().isEmpty
-                            ? entry.type.label
+                            ? AnnaStrings.of(context).sharedEntryTypeLabel(entry.type)
                             : entry.title,
                         style: const TextStyle(
                           fontWeight: FontWeight.w900,
