@@ -1613,7 +1613,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                             radius: 8,
                             backgroundColor: palette.seed,
                           ),
-                          label: Text(palette.label),
+                          label: Text(strings.agendaPaletteLabel(palette)),
                           onSelected: (_) =>
                               widget.store.savePreferences(
                             prefs.copyWith(palette: palette),
@@ -1708,7 +1708,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                     size: 18,
                                   ),
                                   const SizedBox(width: 8),
-                                  Text(value.label),
+                                  Text(strings.editorCategoryLabel(value)),
                                 ],
                               ),
                             ),
