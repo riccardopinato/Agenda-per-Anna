@@ -360,7 +360,7 @@ class _AgendaBackupDomain {
       for (final person in store.people) person.id: person.name.trim(),
     };
 
-    buffer.writeln('# Anna\'s Diary — Open Export');
+    buffer.writeln('# ${strings.d3('exportOpenTitle')}');
     buffer.writeln();
     buffer.writeln(
       strings.d3Format(
@@ -534,7 +534,7 @@ class _AgendaBackupDomain {
       }
     }
 
-    buffer.writeln('## Agenda');
+    buffer.writeln('## ${strings.d3('exportAgenda')}');
     buffer.writeln();
     final items = [...store.items]
       ..sort((a, b) {
@@ -570,7 +570,7 @@ class _AgendaBackupDomain {
     buffer.writeln();
     buffer.writeln('- ${strings.d3Format('exportPeopleCount', {'count': store.people.length})}');
     buffer.writeln('- ${strings.d3Format('exportBirthdaysCount', {'count': store.birthdays.length})}');
-    buffer.writeln('- Inbox: ${store.inbox.length}');
+    buffer.writeln('- ${strings.d3Format('exportInboxCount', {'count': store.inbox.length})}');
     buffer.writeln('- ${strings.d3Format('exportShoppingCount', {'count': store.shoppingItems.length})}');
     buffer.writeln(
       '- ${strings.d3Format('exportWorkoutSessionsCount', {'count': store.workoutSessions.length})}',
@@ -879,7 +879,10 @@ class _AgendaBackupDomain {
         );
         if (journal.mood != null) {
           buffer.writeln(
-            'Mood: ${journal.mood!.emoji} ${strings.editorMoodLabel(journal.mood!)}',
+            strings.d3Format(
+              'readableMood',
+              {'value': '${journal.mood!.emoji} ${strings.editorMoodLabel(journal.mood!)}'},
+            ),
           );
         }
         if (journal.gratitude.isNotEmpty) {
