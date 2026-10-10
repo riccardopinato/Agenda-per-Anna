@@ -471,7 +471,13 @@ class _FocusWritingScreenState extends State<FocusWritingScreen> {
                         Text(AnnaStrings.of(context).d3('writingMode')),
                         const Spacer(),
                         Text(
-                          '$wordCount parole · ${controller.text.runes.length} caratteri',
+                          AnnaStrings.of(context).d3Format(
+                            'wordCount',
+                            {
+                              'words': wordCount,
+                              'chars': controller.text.runes.length,
+                            },
+                          ),
                           style: theme.textTheme.bodySmall,
                         ),
                       ],
@@ -609,7 +615,7 @@ Future<List<String>?> showOrganizationTagsEditor(
   final value = await showDialog<List<String>>(
     context: context,
     builder: (dialogContext) => AlertDialog(
-      title: const Text('Tag'),
+      title: Text(AnnaStrings.of(context).tags),
       content: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1177,7 +1183,7 @@ class DiaryContentCard extends StatelessWidget {
                     if (onTags != null)
                       const PopupMenuItem(
                         value: 'tags',
-                        child: Text('Tag'),
+                        child: Text(AnnaStrings.of(context).tags),
                       ),
                     if (onArchive != null)
                       PopupMenuItem(
@@ -1816,7 +1822,7 @@ class _DiaryMemoryCardState extends State<DiaryMemoryCard> {
         return DiaryContentCard(
           kind: DiaryContentKind.note,
           title: block.text,
-          subtitle: 'Nota · $time',
+          subtitle: AnnaStrings.of(context).d3Format('noteTimed', {'time': time}),
           onOpen: () => _addNote(block),
           onEdit: () => _addNote(block),
           onPeople: () => _editPeople(block),
@@ -1842,7 +1848,7 @@ class _DiaryMemoryCardState extends State<DiaryMemoryCard> {
           title: block.text.trim().isEmpty
               ? AnnaStrings.of(context).d3('photoOfDay')
               : block.text,
-          subtitle: 'Foto · $time',
+          subtitle: AnnaStrings.of(context).d3Format('photoTimed', {'time': time}),
           preview: !block.hasPhotoMedia
               ? null
               : DiaryMediaImage(
@@ -1910,7 +1916,7 @@ class _DiaryMemoryCardState extends State<DiaryMemoryCard> {
         return DiaryContentCard(
           kind: DiaryContentKind.voice,
           title: block.text.trim().isEmpty ? AnnaStrings.of(context).d3('voiceNote') : block.text,
-          subtitle: 'Voce$duration · $time',
+          subtitle: AnnaStrings.of(context).d3Format('voiceTimed', {'duration': duration, 'time': time}),
           onOpen: () => _playVoice(block),
           onEdit: () => _editVoiceCaption(block),
           onPeople: () => _editPeople(block),
