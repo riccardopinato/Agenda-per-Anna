@@ -226,7 +226,7 @@ class _JournalEditorState extends State<JournalEditor> {
           FilledButton(
             onPressed: () =>
                 Navigator.pop(dialogContext, controller.text.trim()),
-            child: const Text('Aggiungi'),
+            child: Text(AnnaStrings.of(context).add),
           ),
         ],
       ),
@@ -466,9 +466,8 @@ class _JournalEditorState extends State<JournalEditor> {
                               title: const Text(
                                 AnnaStrings.of(context).d3('editor_moveDayTrashTitle'),
                               ),
-                              content: const Text(
-                                'Diario, ricordi e stato delle abitudini di questa giornata '
-                                'potranno essere ripristinati dal Cestino.',
+                              content: Text(
+                                AnnaStrings.of(context).d3('editor_moveDayTrashBody'),
                               ),
                               actions: [
                                 TextButton(
@@ -543,7 +542,7 @@ class _MonthTextCardState extends State<MonthTextCard> {
             const SizedBox(height: 10),
             TextField(controller: c, minLines: 3, maxLines: 5),
             const SizedBox(height: 10),
-            SizedBox(width: double.infinity, child: FilledButton.tonal(onPressed: () => widget.onSave(c.text.trim()), child: const Text('Salva'))),
+            SizedBox(width: double.infinity, child: FilledButton.tonal(onPressed: () => widget.onSave(c.text.trim()), child: Text(AnnaStrings.of(context).save))),
           ],
         ),
       );
@@ -570,11 +569,11 @@ class MonthlyListCard extends StatelessWidget {
                   final value = await showDialog<String>(
                     context: context,
                     builder: (context) => AlertDialog(
-                      title: Text('Aggiungi a $title'),
+                      title: Text(AnnaStrings.of(context).d3Format('editor_addTo', {'title': title})),
                       content: TextField(controller: c, autofocus: true),
                       actions: [
                         TextButton(onPressed: () => Navigator.pop(context), child: const Text('Annulla')),
-                        FilledButton(onPressed: () => Navigator.pop(context, c.text.trim()), child: const Text('Aggiungi')),
+                        FilledButton(onPressed: () => Navigator.pop(context, c.text.trim()), child: Text(AnnaStrings.of(context).add)),
                       ],
                     ),
                   );
@@ -645,7 +644,7 @@ class BudgetCard extends StatelessWidget {
                         content: TextField(controller: c, keyboardType: const TextInputType.numberWithOptions(decimal: true)),
                         actions: [
                           TextButton(onPressed: () => Navigator.pop(context), child: const Text('Annulla')),
-                          FilledButton(onPressed: () => Navigator.pop(context, c.text), child: const Text('Salva')),
+                          FilledButton(onPressed: () => Navigator.pop(context, c.text), child: Text(AnnaStrings.of(context).save)),
                         ],
                       ),
                     );
@@ -682,13 +681,13 @@ class BudgetCard extends StatelessWidget {
                                   onChanged: (v) => setLocal(() => category = v ?? 'Altro'),
                                 ),
                                 const SizedBox(height: 8),
-                                TextField(controller: note, decoration: InputDecoration(labelText: 'Nota')),
+                                TextField(controller: note, decoration: InputDecoration(labelText: AnnaStrings.of(context).v100Note)),
                               ],
                             ),
                           ),
                           actions: [
                             TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Annulla')),
-                            FilledButton(onPressed: () => Navigator.pop(context, true), child: const Text('Aggiungi')),
+                            FilledButton(onPressed: () => Navigator.pop(context, true), child: Text(AnnaStrings.of(context).add)),
                           ],
                         ),
                       ),
@@ -780,7 +779,7 @@ class _ClosingMonthCardState extends State<ClosingMonthCard> {
               Icon(Icons.nights_stay_outlined),
               SizedBox(width: 8),
               Text(
-                'Chiusura del mese',
+                AnnaStrings.of(context).d3('editor_monthClosing'),
                 style: TextStyle(
                   fontWeight: FontWeight.w900,
                   fontSize: 19,
@@ -1150,7 +1149,7 @@ Future<void> openItemEditor(
                   segments: const [
                     ButtonSegment(
                       value: ItemType.appointment,
-                      label: Text('Appuntamento'),
+                      label: Text(AnnaStrings.of(context).appointment),
                       icon: Icon(Icons.event_outlined),
                     ),
                     ButtonSegment(
@@ -1351,8 +1350,13 @@ Future<void> openItemEditor(
                 if (existing?.isRecurring == true) ...[
                   const SizedBox(height: 10),
                   Text(
-                    'Serie di ${existing!.recurrenceCount} occorrenze · '
-                    '${existing.recurrenceRule.label}',
+                    AnnaStrings.of(context).d3Format(
+                      'editor_seriesSummary',
+                      {
+                        'count': existing!.recurrenceCount,
+                        'rule': AnnaStrings.of(context).editorRecurrenceLabel(existing.recurrenceRule),
+                      },
+                    ),
                     style: const TextStyle(fontWeight: FontWeight.w700),
                   ),
                   const SizedBox(height: 10),
@@ -1386,7 +1390,10 @@ Future<void> openItemEditor(
                       const SizedBox(width: 8),
                       Expanded(
                         child: Text(
-                          '$recurrenceCount occorrenze totali',
+                          AnnaStrings.of(context).d3Format(
+                            'editor_occurrencesTotal',
+                            {'count': recurrenceCount},
+                          ),
                           style: const TextStyle(fontWeight: FontWeight.w700),
                         ),
                       ),
@@ -1464,7 +1471,7 @@ Future<void> openItemEditor(
                         },
                         label: Text(
                           recurrence == RecurrenceRule.none
-                              ? 'Salva'
+                              ? AnnaStrings.of(context).save
                               : AnnaStrings.of(context).d3('editor_saveSeries'),
                         ),
                       ),
