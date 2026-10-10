@@ -203,6 +203,84 @@ void main() {
     }
   });
 
+  test('every D3 catalog entry defines all five supported languages', () {
+    final source = _source('lib/src/localization_d3.dart');
+    final catalogEnd = source.indexOf('};\n\nNotificationLocalization');
+    expect(catalogEnd, greaterThan(0));
+    final catalog = source.substring(0, catalogEnd);
+    final rows = RegExp(
+      r'^\s*"([^"]+)":\s*<String, String>\{([^\n]+)\},?
+    final source = _source('lib/src/localization_d3.dart');
+    for (final helper in <String>[
+      'd3',
+      'd3Format',
+      'd3BackupError',
+      'sharedEntryTypeLabel',
+      'sharedMemorySearchTokens',
+      'lifeArchiveKindLabel',
+      'agendaPaletteLabel',
+      'trashKindLabel',
+      'trashConflict',
+      'sharedPasswordServiceError',
+      'vaultServiceError',
+      'cloudServiceError',
+      'snapshotLabel',
+      'sketchColorName',
+      'sketchColorSemantic',
+    ]) {
+      expect(
+        RegExp('String ' + helper + r'\(').allMatches(source).length,
+        1,
+        reason: '$helper must have exactly one definition',
+      );
+    }
+    expect(source, isNot(contains('"sharedMemory_')));
+
+    final keyMatches = RegExp(r'^\s*"([^"]+)":\s*<String, String>', multiLine: true)
+        .allMatches(source)
+        .map((match) => match.group(1)!)
+        .toList();
+    expect(keyMatches.toSet().length, keyMatches.length,
+        reason: 'D3 catalog must not contain duplicate keys');
+  });
+}
+,
+      multiLine: true,
+    ).allMatches(catalog);
+
+    expect(rows, isNotEmpty);
+    for (final row in rows) {
+      final key = row.group(1)!;
+      final values = row.group(2)!;
+      for (final language in const ['en', 'it', 'es', 'fr', 'pt']) {
+        expect(
+          values,
+          contains('"$language":'),
+          reason: '$key is missing $language',
+        );
+      }
+    }
+  });
+
+  test('Sketchbook colors and restore integrity errors are locale-safe', () {
+    final sketchbook = _source('lib/src/diary/diary_sketchbook.dart');
+    final restore = _source('lib/src/data_safety_restore.dart');
+
+    expect(sketchbook, isNot(contains('_colorNames')));
+    expect(sketchbook, contains('sketchColorName(index)'));
+    expect(sketchbook, contains('sketchColorSemantic('));
+    expect(sketchbook, isNot(contains("'Colore ")));
+
+    expect(
+      restore,
+      isNot(contains('Reference media senza file integro')),
+    );
+    expect(
+      restore,
+      contains('backup_missing_referenced_media:'),
+    );
+  });
+
   test('D3 localization source has no duplicate critical helper definitions', () {
     final source = _source('lib/src/localization_d3.dart');
     expect(
