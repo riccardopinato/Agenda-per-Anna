@@ -947,6 +947,10 @@ class _DiarySketchbookScreenState extends State<DiarySketchbookScreen> {
   }
 
   Future<void> _exportPng() async {
+    final strings = AnnaStrings.of(context);
+    final exportTitle = strings.d3('exportSketch');
+    final exportedMessage = strings.d3('sketchExported');
+    final exportFailedMessage = strings.d3('sketchExportFailed');
     final selectedStrokes = {...selectedStrokeIndices};
     final selectedTexts = {...selectedTextIds};
     final selectedImages = {...selectedImageIds};
@@ -965,7 +969,7 @@ class _DiarySketchbookScreenState extends State<DiarySketchbookScreen> {
       final bytes = data.buffer.asUint8List();
 
       final path = await FilePicker.saveFile(
-        dialogTitle: AnnaStrings.of(context).d3('exportSketch'),
+        dialogTitle: exportTitle,
         fileName:
             'annas-diary-sketch-${DateFormat('yyyyMMdd-HHmm').format(DateTime.now())}.png',
         type: FileType.custom,
@@ -976,14 +980,14 @@ class _DiarySketchbookScreenState extends State<DiarySketchbookScreen> {
       if (!mounted) return;
       if (path != null) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(AnnaStrings.of(context).d3('sketchExported'))),
+          SnackBar(content: Text(exportedMessage)),
         );
       }
     } catch (_) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(AnnaStrings.of(context).d3('sketchExportFailed')),
+          content: Text(exportFailedMessage),
         ),
       );
     } finally {
