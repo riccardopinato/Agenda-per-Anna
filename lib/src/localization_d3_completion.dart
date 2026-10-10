@@ -63,20 +63,4 @@ extension AnnaD3CompletionStrings on AnnaStrings {
         fr: 'Commenter',
         pt: 'Comentar',
       );
-  String d3LinkedConnections(int count) => _pick(
-        en: '$count linked',
-        it: '$count collegati',
-        es: '$count vinculados',
-        fr: '$count liés',
-        pt: '$count ligados',
-      );
-
-  String d3BacklinksCount(int count) => _pick(
-        en: '$count ${count == 1 ? 'backlink' : 'backlinks'}',
-        it: '$count backlink',
-        es: '$count ${count == 1 ? 'enlace entrante' : 'enlaces entrantes'}',
-        fr: '$count ${count == 1 ? 'lien entrant' : 'liens entrants'}',
-        pt: '$count ${count == 1 ? 'ligação recebida' : 'ligações recebidas'}',
-      );
-
 }
