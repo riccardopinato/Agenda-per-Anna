@@ -24,13 +24,14 @@ class _CloudAccountScreenState extends State<CloudAccountScreen> {
     super.dispose();
   }
 
-  String _stateLabel(CloudConnectionState state) => switch (state) {
-        CloudConnectionState.disabled => 'Cloud non configurato',
-        CloudConnectionState.initializing => 'Connessione...',
-        CloudConnectionState.signedOut => 'Non connesso',
-        CloudConnectionState.syncing => 'Sincronizzazione...',
-        CloudConnectionState.synced => 'Sincronizzato',
-        CloudConnectionState.error => 'Errore di sincronizzazione',
+  String _stateLabel(CloudConnectionState state, AnnaStrings strings) =>
+      switch (state) {
+        CloudConnectionState.disabled => strings.d3('cloudDisabled'),
+        CloudConnectionState.initializing => strings.d3('cloudConnecting'),
+        CloudConnectionState.signedOut => strings.d3('cloudSignedOut'),
+        CloudConnectionState.syncing => strings.d3('cloudSyncing'),
+        CloudConnectionState.synced => strings.v100AllSynced,
+        CloudConnectionState.error => strings.d3('cloudSyncError'),
       };
 
   IconData _stateIcon(CloudConnectionState state) => switch (state) {
@@ -46,7 +47,7 @@ class _CloudAccountScreenState extends State<CloudAccountScreen> {
     final email = emailController.text.trim();
     final password = passwordController.text;
     if (email.isEmpty || password.length < 6) {
-      _message('Inserisci email e password.');
+      _message(AnnaStrings.of(context).d3('emailPasswordRequired'));
       return;
     }
 
@@ -61,12 +62,12 @@ class _CloudAccountScreenState extends State<CloudAccountScreen> {
         await WebPushService.instance.initialize(force: true);
         await widget.store.reconcileReminders();
       }
-      _message('Account connesso e sincronizzato.');
+      _message(AnnaStrings.of(context).d3('connectedSynced'));
       if (mounted) {
         Navigator.of(context).popUntil((route) => route.isFirst);
       }
     } catch (_) {
-      _message(CloudSyncService.instance.userFacingError);
+      _message(AnnaStrings.of(context).d3CloudError(CloudSyncService.instance.lastError ?? ''));
     } finally {
       if (mounted) setState(() => busy = false);
     }
@@ -77,7 +78,7 @@ class _CloudAccountScreenState extends State<CloudAccountScreen> {
     try {
       await CloudSyncService.instance.signInWithGoogle();
     } catch (_) {
-      _message(CloudSyncService.instance.userFacingError);
+      _message(AnnaStrings.of(context).d3CloudError(CloudSyncService.instance.lastError ?? ''));
     } finally {
       if (mounted) setState(() => busy = false);
     }
@@ -86,19 +87,19 @@ class _CloudAccountScreenState extends State<CloudAccountScreen> {
   Future<void> _forgotPassword() async {
     final email = emailController.text.trim();
     if (email.isEmpty || !email.contains('@')) {
-      _message('Inserisci prima l’email del tuo account.');
+      _message(AnnaStrings.of(context).d3('emailRequired'));
       return;
     }
 
     setState(() => busy = true);
     try {
       await CloudSyncService.instance.requestPasswordReset(email);
-      _message(
-        'Se l’indirizzo è registrato, riceverai una mail per scegliere una nuova password.',
-      );
+      _message(AnnaStrings.of(context).d3('resetEmailSent'));
     } catch (_) {
       _message(
-        CloudSyncService.instance.userFacingError,
+        AnnaStrings.of(context).d3CloudError(
+          CloudSyncService.instance.lastError ?? '',
+        ),
       );
     } finally {
       if (mounted) setState(() => busy = false);
@@ -111,14 +112,16 @@ class _CloudAccountScreenState extends State<CloudAccountScreen> {
       await widget.store.syncAllCloud();
       final cloud = CloudSyncService.instance;
       if (cloud.state == CloudConnectionState.error) {
-        _message(cloud.userFacingError);
+        _message(AnnaStrings.of(context).d3CloudError(cloud.lastError ?? ''));
       } else if (widget.store.totalPendingCloudChanges > 0) {
         _message(
-          'I dati locali sono al sicuro: '
-          '${widget.store.totalPendingCloudChanges} modifiche restano in attesa di rete.',
+          AnnaStrings.of(context).d3Format(
+            'pendingSafe',
+            {'count': widget.store.totalPendingCloudChanges},
+          ),
         );
       } else {
-        _message('Agenda completamente sincronizzata.');
+        _message(AnnaStrings.of(context).d3('agendaSynced'));
       }
     } finally {
       if (mounted) setState(() => busy = false);
@@ -138,9 +141,7 @@ class _CloudAccountScreenState extends State<CloudAccountScreen> {
       }
       await CloudSyncService.instance.signOut();
       await widget.store.activateCloudAccount(null);
-      _message(
-        'Account disconnesso. I dati dell’account restano salvati sul dispositivo ma non sono più mostrati.',
-      );
+      _message(AnnaStrings.of(context).d3('accountSignedOut'));
     } finally {
       if (mounted) setState(() => busy = false);
     }
