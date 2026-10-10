@@ -868,6 +868,17 @@ extension AnnaD3Strings on AnnaStrings {
         AgendaContentFilter.sharedOnly => 'Noi ♡',
       };
 
+  String editorExpenseCategoryLabel(String value) => switch (value) {
+        'Cibo' => _pick(en: 'Food', it: 'Cibo', es: 'Comida', fr: 'Alimentation', pt: 'Comida'),
+        'Casa' => _pick(en: 'Home', it: 'Casa', es: 'Casa', fr: 'Maison', pt: 'Casa'),
+        'Salute' => _pick(en: 'Health', it: 'Salute', es: 'Salud', fr: 'Santé', pt: 'Saúde'),
+        'Shopping' => _pick(en: 'Shopping', it: 'Shopping', es: 'Compras', fr: 'Achats', pt: 'Compras'),
+        'Trasporti' => _pick(en: 'Transport', it: 'Trasporti', es: 'Transporte', fr: 'Transport', pt: 'Transportes'),
+        'Svago' => _pick(en: 'Leisure', it: 'Svago', es: 'Ocio', fr: 'Loisirs', pt: 'Lazer'),
+        'Regali' => _pick(en: 'Gifts', it: 'Regali', es: 'Regalos', fr: 'Cadeaux', pt: 'Presentes'),
+        _ => _pick(en: 'Other', it: 'Altro', es: 'Otro', fr: 'Autre', pt: 'Outro'),
+      };
+
   String editorMoodLabel(DayMood value) => switch (value) {
         DayMood.hard => _pick(en: 'Hard', it: 'Difficile', es: 'Difícil', fr: 'Difficile', pt: 'Difícil'),
         DayMood.low => _pick(en: 'Low', it: 'Giù', es: 'Bajo', fr: 'Bas', pt: 'Em baixo'),
