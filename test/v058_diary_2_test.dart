@@ -53,7 +53,7 @@ void main() {
     );
 
     expect(created.type, DiaryBlockType.note);
-    expect(created.tags, contains('viaggio'));
+    expect(created.tags, contains('travel'));
     expect(store.journal(day).blocks.single.id, created.id);
     store.dispose();
 
@@ -61,8 +61,8 @@ void main() {
     await reloaded.load();
     final restored = reloaded.journal(day).blocks.single;
     expect(restored.id, created.id);
-    expect(restored.text, contains('Diario di viaggio'));
-    expect(restored.tags, contains('viaggio'));
+    expect(restored.text, created.text);
+    expect(restored.tags, contains('travel'));
     reloaded.dispose();
   });
 
