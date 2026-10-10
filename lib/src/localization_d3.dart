@@ -514,6 +514,9 @@ const Map<String, Map<String, String>> _d3Catalog = {
   "backup_wrongApp": <String, String>{"en": "This file is not an Anna's Diary backup.", "it": "Questo file non è un backup di Anna's Diary.", "es": "Este archivo no es una copia de Anna's Diary.", "fr": "Ce fichier n’est pas une sauvegarde Anna's Diary.", "pt": "Este ficheiro não é um backup do Anna's Diary."},
   "backup_unsupported": <String, String>{"en": "This backup version is not supported by this app version.", "it": "Questa versione del backup non è supportata da questa versione dell’app.", "es": "Esta versión de la copia no es compatible con esta versión de la app.", "fr": "Cette version de sauvegarde n’est pas prise en charge par cette version de l’app.", "pt": "Esta versão do backup não é suportada por esta versão da app."},
   "backup_exportInvalid": <String, String>{"en": "The open export could not be created because its file structure is invalid.", "it": "L’esportazione aperta non può essere creata perché la struttura dei file non è valida.", "es": "La exportación abierta no se pudo crear porque la estructura de archivos no es válida.", "fr": "L’export ouvert n’a pas pu être créé car sa structure de fichiers est invalide.", "pt": "A exportação aberta não pôde ser criada porque a estrutura de ficheiros é inválida."},
+  "external_calendar": <String, String>{"en": "Calendar", "it": "Calendario", "es": "Calendario", "fr": "Calendrier", "pt": "Calendário"},
+  "external_externalCalendar": <String, String>{"en": "External calendar", "it": "Calendario esterno", "es": "Calendario externo", "fr": "Calendrier externe", "pt": "Calendário externo"},
+  "external_untitledEvent": <String, String>{"en": "Untitled event", "it": "Evento senza titolo", "es": "Evento sin título", "fr": "Événement sans titre", "pt": "Evento sem título"},
 };
 
 NotificationLocalization notificationLocalizationForPreference(AppLanguage value) {
