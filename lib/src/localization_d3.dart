@@ -78,4 +78,11 @@ extension AnnaD3Strings on AnnaStrings {
     final safe = entry ?? const <String, String>{};
     return safe[languageCode] ?? safe['en'] ?? key;
   }
+  String d3Format(String key, Map<String, Object?> values) {
+    var value = d3(key);
+    for (final entry in values.entries) {
+      value = value.replaceAll('{${entry.key}}', '${entry.value ?? ''}');
+    }
+    return value;
+  }
 }
