@@ -515,6 +515,14 @@ void main() {
 
     expect(vault, contains("identifier: 'vault_back_button'"));
     expect(vault, contains('Navigator.of(context).pop()'));
+
+    final screenState = vault.indexOf(
+      'class _PrivateVaultScreenState extends State<PrivateVaultScreen>',
+    );
+    final helper = vault.indexOf('Widget? _vaultBackButton(BuildContext context)');
+    expect(screenState, greaterThanOrEqualTo(0));
+    expect(helper, greaterThan(screenState));
+
     expect(
       flow,
       contains("id: 'vault_back_button'"),
