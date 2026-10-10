@@ -448,6 +448,67 @@ void main() {
     expect(completion.split('String d3SketchTimed(').length - 1, 1);
   });
 
+  test('D3 domain defaults and diagnostics remain locale-neutral at rest', () {
+    final agenda = _source('lib/src/agenda_store.dart');
+    final cloud = _source('lib/cloud_sync_service.dart');
+    final push = _source('lib/push_notification_service.dart');
+    final pushUi = _source('lib/src/screens/backup_settings.dart');
+    final backup = _source('lib/backup_service.dart');
+    final webPush = _source('web_push/annas-diary-push-sw.js');
+
+    for (final forbidden in const <String>[
+      "name: 'Bere abbastanza'",
+      "name: 'Muovermi un po’'",
+      "name: 'Tempo per me'",
+      'Il PIN deve contenere da 4 a 8 cifre.',
+    ]) {
+      expect(agenda, isNot(contains(forbidden)));
+    }
+    expect(agenda, contains("FormatException('pin_invalid_format')"));
+    expect(agenda, contains('_starterHabits()'));
+
+    for (final forbidden in const <String>[
+      'Google sign-in could not be started.',
+      'Cloud non ancora inizializzato.',
+      'Cloud non configurato in questa build.',
+    ]) {
+      expect(cloud, isNot(contains(forbidden)));
+    }
+    expect(cloud, contains('cloud_google_sign_in_start_failed'));
+    expect(cloud, contains('cloud_not_initialized'));
+    expect(cloud, contains('cloud_not_configured'));
+
+    expect(push, isNot(contains("'non configurato'")));
+    expect(push, isNot(contains("'sconosciuto'")));
+    expect(push, contains("permissionStatus: 'not_configured'"));
+    expect(push, contains("var permissionStatus = 'unknown'"));
+    expect(pushUi, contains('.d3PermissionStatus('));
+
+    expect(backup, isNot(contains('String dialogTitle =')));
+    expect(webPush, isNot(contains('Nuovo aggiornamento')));
+    expect(webPush, isNot(contains('Hai un nuovo aggiornamento.')));
+  });
+
+  test('D3 domain localization helpers cover all supported locales', () {
+    const languages = <String>['en', 'it', 'es', 'fr', 'pt'];
+    for (final language in languages) {
+      final strings = AnnaStrings(language);
+      expect(strings.d3StarterHabitWater.trim(), isNotEmpty);
+      expect(strings.d3StarterHabitMove.trim(), isNotEmpty);
+      expect(strings.d3StarterHabitMe.trim(), isNotEmpty);
+      expect(strings.d3PermissionStatus('not_configured').trim(), isNotEmpty);
+      expect(strings.d3PermissionStatus('denied').trim(), isNotEmpty);
+    }
+
+    expect(const AnnaStrings('es').d3StarterHabitWater, 'Beber suficiente agua');
+    expect(const AnnaStrings('fr').d3StarterHabitMove, 'Bouger un peu');
+    expect(const AnnaStrings('pt').d3StarterHabitMe, 'Tempo para mim');
+    expect(
+      const AnnaStrings('fr').d3PermissionStatus('denied'),
+      'autorisation : refusée',
+    );
+  });
+
   test('D3 AppLab onboarding accepts every supported locale', () {
     final flow = _source('.maestro/applab-smoke.yaml');
     for (final text in const <String>[
