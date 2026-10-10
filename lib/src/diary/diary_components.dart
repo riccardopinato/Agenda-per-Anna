@@ -153,7 +153,7 @@ class _VoiceRecordingDialogState extends State<_VoiceRecordingDialog> {
           const SizedBox(height: 12),
           const LinearProgressIndicator(),
           const SizedBox(height: 12),
-          const Text(
+          Text(
             AnnaStrings.of(context).d3('audioStays'),
             textAlign: TextAlign.center,
           ),
@@ -1159,29 +1159,29 @@ class DiaryContentCard extends StatelessWidget {
                   },
                   itemBuilder: (_) => [
                     if (kind != DiaryContentKind.photo && onEdit != null)
-                      const PopupMenuItem(
+                      PopupMenuItem(
                         value: 'edit',
                         child: Text(AnnaStrings.of(context).d3('edit')),
                       ),
                     if (kind == DiaryContentKind.photo &&
                         onEditCaption != null)
-                      const PopupMenuItem(
+                      PopupMenuItem(
                         value: 'caption',
                         child: Text(AnnaStrings.of(context).d3('editCaption')),
                       ),
                     if (kind == DiaryContentKind.photo &&
                         onReplacePhoto != null)
-                      const PopupMenuItem(
+                      PopupMenuItem(
                         value: 'replace',
                         child: Text(AnnaStrings.of(context).d3('replacePhoto')),
                       ),
                     if (onPin != null)
                       PopupMenuItem(
                         value: 'pin',
-                        child: Text(pinned ? 'Togli dai fissati' : 'Fissa'),
+                        child: Text(pinned ? AnnaStrings.of(context).unpin : AnnaStrings.of(context).pin),
                       ),
                     if (onTags != null)
-                      const PopupMenuItem(
+                      PopupMenuItem(
                         value: 'tags',
                         child: Text(AnnaStrings.of(context).tags),
                       ),
@@ -1191,24 +1191,24 @@ class DiaryContentCard extends StatelessWidget {
                         child: Text(archived ? AnnaStrings.of(context).d3('restoreArchive') : AnnaStrings.of(context).d3('archive')),
                       ),
                     if (onPeople != null)
-                      const PopupMenuItem(
+                      PopupMenuItem(
                         value: 'people',
                         child: Text(AnnaStrings.of(context).d3('linkPeople')),
                       ),
                     if (onPlaces != null)
-                      const PopupMenuItem(
+                      PopupMenuItem(
                         value: 'places',
-                        child: Text('Luoghi'),
+                        child: Text(AnnaStrings.of(context).d3('places')),
                       ),
                     if (onConnections != null)
-                      const PopupMenuItem(
+                      PopupMenuItem(
                         value: 'connections',
                         child: Text(AnnaStrings.of(context).d3('linkMemories')),
                       ),
                     if (onCopyToNotes != null)
-                      const PopupMenuItem(
+                      PopupMenuItem(
                         value: 'notes',
-                        child: Text('Copia per Notes'),
+                        child: Text(AnnaStrings.of(context).copyForNotes),
                       ),
                     if (onCopyToLifeBridge != null)
                       PopupMenuItem(
@@ -1225,7 +1225,7 @@ class DiaryContentCard extends StatelessWidget {
                         ),
                       ),
                     if (onDelete != null)
-                      const PopupMenuItem(
+                      PopupMenuItem(
                         value: 'delete',
                         child: Text(AnnaStrings.of(context).delete),
                       ),
