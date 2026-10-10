@@ -396,6 +396,10 @@ const Map<String, Map<String, String>> _d3Catalog = {
   "ruledPaper": <String, String>{"en": "Ruled", "it": "Righe", "es": "Rayado", "fr": "Ligné", "pt": "Pautado"},
   "gridPaper": <String, String>{"en": "Grid", "it": "Quadretti", "es": "Cuadrícula", "fr": "Quadrillé", "pt": "Quadriculado"},
   "dotsPaper": <String, String>{"en": "Dots", "it": "Puntini", "es": "Puntos", "fr": "Points", "pt": "Pontos"},
+  "wordCount": <String, String>{"en": "{words} words · {chars} characters", "it": "{words} parole · {chars} caratteri", "es": "{words} palabras · {chars} caracteres", "fr": "{words} mots · {chars} caractères", "pt": "{words} palavras · {chars} caracteres"},
+  "noteTimed": <String, String>{"en": "Note · {time}", "it": "Nota · {time}", "es": "Nota · {time}", "fr": "Note · {time}", "pt": "Nota · {time}"},
+  "photoTimed": <String, String>{"en": "Photo · {time}", "it": "Foto · {time}", "es": "Foto · {time}", "fr": "Photo · {time}", "pt": "Foto · {time}"},
+  "voiceTimed": <String, String>{"en": "Voice{duration} · {time}", "it": "Voce{duration} · {time}", "es": "Voz{duration} · {time}", "fr": "Voix{duration} · {time}", "pt": "Voz{duration} · {time}"},
 };
 
 extension AnnaD3Strings on AnnaStrings {
