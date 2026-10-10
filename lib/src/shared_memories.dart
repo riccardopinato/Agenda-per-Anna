@@ -157,7 +157,7 @@ class _SharedMemoriesScreenState extends State<SharedMemoriesScreen> {
             actions: [
               FilledButton(
                 onPressed: () => Navigator.pop(dialogContext),
-                child: const Text('OK'),
+                child: Text(MaterialLocalizations.of(dialogContext).okButtonLabel),
               ),
             ],
           ),
