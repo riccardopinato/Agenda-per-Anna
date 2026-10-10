@@ -271,7 +271,7 @@ class _BackupScreenState extends State<BackupScreen> {
           builder: (dialogContext) => AlertDialog(
             title: Text(strings.v100RestoreLocalQuestion),
             content: Text(
-              '${snapshot.label}\n'
+              '${strings.snapshotLabel(snapshot.label)}\n'
               '${DateFormat('d MMMM yyyy, HH:mm', AnnaStrings.resolveLocale(Locale(strings.languageCode)).languageCode).format(snapshot.createdAt)}',
             ),
             actions: [
@@ -429,7 +429,7 @@ class _BackupScreenState extends State<BackupScreen> {
                             child: Icon(Icons.history),
                           ),
                           title: Text(
-                            snapshot.label,
+                            AnnaStrings.of(context).snapshotLabel(snapshot.label),
                             style: const TextStyle(fontWeight: FontWeight.w800),
                           ),
                           subtitle: Text(
