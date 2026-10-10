@@ -580,6 +580,8 @@ const Map<String, Map<String, String>> _d3Catalog = {
   "birthdayInDays": <String, String>{"en": "In {days} days", "it": "Tra {days} giorni", "es": "En {days} días", "fr": "Dans {days} jours", "pt": "Daqui a {days} dias"},
   "birthdayBody": <String, String>{"en": "{lead} is {name}'s birthday.", "it": "{lead} è il compleanno di {name}.", "es": "{lead} es el cumpleaños de {name}.", "fr": "{lead}, c’est l’anniversaire de {name}.", "pt": "{lead} é o aniversário de {name}."},
   "accountProfilesUnreadable": <String, String>{"en": "The account profile archive is unreadable: account switch cancelled.", "it": "Archivio profili account non leggibile: cambio account annullato.", "es": "El archivo de perfiles de cuenta no se puede leer: cambio de cuenta cancelado.", "fr": "L’archive des profils de compte est illisible : changement de compte annulé.", "pt": "O arquivo de perfis de conta não é legível: mudança de conta cancelada."},
+  "reminderIn1Hour": <String, String>{"en": "In 1 hour: {title}", "it": "Tra 1 ora: {title}", "es": "En 1 hora: {title}", "fr": "Dans 1 heure : {title}", "pt": "Daqui a 1 hora: {title}"},
+  "reminderIn2Hours": <String, String>{"en": "In 2 hours: {title}", "it": "Tra 2 ore: {title}", "es": "En 2 horas: {title}", "fr": "Dans 2 heures : {title}", "pt": "Daqui a 2 horas: {title}"},
 };
 
 NotificationLocalization notificationLocalizationForPreference(AppLanguage value) {
