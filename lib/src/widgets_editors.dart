@@ -462,25 +462,26 @@ class _JournalEditorState extends State<JournalEditor> {
                   child: TextButton.icon(
                     onPressed: () async {
                       final messenger = ScaffoldMessenger.of(context);
+                      final strings = strings;
                       final confirmed = await showDialog<bool>(
                             context: context,
                             builder: (dialogContext) => AlertDialog(
                               title: Text(
-                                AnnaStrings.of(context).d3('editor_moveDayTrashTitle'),
+                                strings.d3('editor_moveDayTrashTitle'),
                               ),
                               content: Text(
-                                AnnaStrings.of(context).d3('editor_moveDayTrashBody'),
+                                strings.d3('editor_moveDayTrashBody'),
                               ),
                               actions: [
                                 TextButton(
                                   onPressed: () =>
                                       Navigator.pop(dialogContext, false),
-                                  child: Text(AnnaStrings.of(context).cancel),
+                                  child: Text(strings.cancel),
                                 ),
                                 FilledButton(
                                   onPressed: () =>
                                       Navigator.pop(dialogContext, true),
-                                  child: Text(AnnaStrings.of(context).d3('editor_moveDayTrash')),
+                                  child: Text(strings.d3('editor_moveDayTrash')),
                                 ),
                               ],
                             ),
@@ -488,7 +489,7 @@ class _JournalEditorState extends State<JournalEditor> {
                           false;
                       if (!confirmed) return;
                       if (!mounted) return;
-                      final movedMessage = AnnaStrings.of(context)
+                      final movedMessage = strings
                           .d3('editor_dayMovedTrash');
                       final moved =
                           await widget.store.moveJournalToTrash(widget.date);
