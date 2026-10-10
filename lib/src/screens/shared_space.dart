@@ -718,10 +718,10 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
   }
 
   Future<void> _refresh({
-    final strings = AnnaStrings.of(context);
     bool silent = false,
     bool refreshInteractions = true,
   }) async {
+    final strings = AnnaStrings.of(context);
     final cloud = CloudSyncService.instance;
     if (!cloud.signedIn) {
       await _updatePendingState();
@@ -1226,9 +1226,9 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
 
   Future<void> _persistSharedEntry(
     SharedEntry result, {
-    final strings = AnnaStrings.of(context);
     bool permissionChange = false,
   }) async {
+    final strings = AnnaStrings.of(context);
     final currentIndex = entries.indexWhere((entry) => entry.id == result.id);
     final current = currentIndex < 0 ? null : entries[currentIndex];
 
