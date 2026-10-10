@@ -739,6 +739,10 @@ const Map<String, Map<String, String>> _d3Catalog = {
   "plannerExpensesRecorded": <String, String>{"en": "Recorded expenses", "it": "Spese registrate", "es": "Gastos registrados", "fr": "Dépenses enregistrées", "pt": "Despesas registadas"},
   "workoutDurationExample": <String, String>{"en": "e.g. 1:05:20", "it": "es. 1:05:20", "es": "p. ej. 1:05:20", "fr": "ex. 1:05:20", "pt": "ex. 1:05:20"},
   "workoutDistanceExample": <String, String>{"en": "e.g. 15", "it": "es. 15", "es": "p. ej. 15", "fr": "ex. 15", "pt": "ex. 15"},
+  "exportOpenTitle": <String, String>{"en": "Anna's Diary — Open Export", "it": "Anna's Diary — Esportazione aperta", "es": "Anna's Diary — Exportación abierta", "fr": "Anna's Diary — Export ouvert", "pt": "Anna's Diary — Exportação aberta"},
+  "exportAgenda": <String, String>{"en": "Agenda", "it": "Agenda", "es": "Agenda", "fr": "Agenda", "pt": "Agenda"},
+  "exportInboxCount": <String, String>{"en": "Inbox: {count}", "it": "Inbox: {count}", "es": "Bandeja: {count}", "fr": "Boîte de réception : {count}", "pt": "Caixa de entrada: {count}"},
+  "readableMood": <String, String>{"en": "Mood: {value}", "it": "Umore: {value}", "es": "Estado de ánimo: {value}", "fr": "Humeur : {value}", "pt": "Humor: {value}"},
 };
 
 NotificationLocalization notificationLocalizationForPreference(AppLanguage value) {
