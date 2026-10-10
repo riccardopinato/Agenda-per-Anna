@@ -238,8 +238,7 @@ class _SharedSpaceHubScreenState extends State<SharedSpaceHubScreen> {
                         ),
                         const SizedBox(height: 8),
                         Text(
-                          AnnaStrings.of(context).d3('sharedUsesMainAccount')
-                          'Non esiste più un login separato qui.',
+                          AnnaStrings.of(context).d3('sharedUsesMainAccount'),
                           textAlign: TextAlign.center,
                         ),
                         const SizedBox(height: 14),
@@ -282,8 +281,8 @@ class _SharedSpaceHubScreenState extends State<SharedSpaceHubScreen> {
                               ),
                               const SizedBox(height: 6),
                               Text(
-                                'Gli aggiornamenti arrivano in tempo reale. '
-                                AnnaStrings.of(context).d3('offlineQueue'),
+                                '${AnnaStrings.of(context).d3('sharedRealtimeIntro')} '
+                                '${AnnaStrings.of(context).d3('offlineQueue')}',
                                 style: TextStyle(
                                   color: accent.secondaryForeground,
                                 ),
@@ -2716,15 +2715,15 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
               ),
               const SizedBox(height: 14),
               SegmentedButton<bool>(
-                segments: const [
+                segments: [
                   ButtonSegment<bool>(
                     value: true,
-                    icon: Icon(Icons.dynamic_feed_outlined),
+                    icon: const Icon(Icons.dynamic_feed_outlined),
                     label: Text(AnnaStrings.of(context).d3('feed')),
                   ),
                   ButtonSegment<bool>(
                     value: false,
-                    icon: Icon(Icons.calendar_month_outlined),
+                    icon: const Icon(Icons.calendar_month_outlined),
                     label: Text(AnnaStrings.of(context).d3('calendar')),
                   ),
                 ],
@@ -2741,10 +2740,12 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
                   ),
                 )
               else if (feedMode) ...[
-                const SectionTitle('Ultimi aggiornamenti'),
+                SectionTitle(
+                  AnnaStrings.of(context).d3('sharedLatestUpdates'),
+                ),
                 const SizedBox(height: 10),
                 if (_feedEntries.isEmpty)
-                  const SimpleCard(
+                  SimpleCard(
                     child: Text(AnnaStrings.of(context).d3('nothingNoi')),
                   )
                 else
@@ -2778,7 +2779,7 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
                 ),
                 const SizedBox(height: 10),
                 if (dayEntries.isEmpty)
-                  const SimpleCard(
+                  SimpleCard(
                     child: Text(AnnaStrings.of(context).d3('nothingSharedDay')),
                   )
                 else
