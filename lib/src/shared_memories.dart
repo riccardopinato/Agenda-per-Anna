@@ -622,12 +622,12 @@ class _SharedMemoriesScreenState extends State<SharedMemoriesScreen> {
         return SharedMemoryPeriodCard(
           cover: _coverEntry(items),
           title: _cap(
-            DateFormat('EEE d MMM', 'it_IT').format(day),
+            DateFormat('EEE d MMM', AnnaStrings.intlLocale(context)).format(day),
           ),
           subtitle: _periodStats(items),
           onTap: () => _openCollection(
             title: _cap(
-              DateFormat('EEEE d MMMM yyyy', 'it_IT').format(day),
+              DateFormat('EEEE d MMMM yyyy', AnnaStrings.intlLocale(context)).format(day),
             ),
             source: items,
           ),
@@ -653,7 +653,7 @@ class _SharedMemoriesScreenState extends State<SharedMemoriesScreen> {
         return SharedMemoryPeriodCard(
           cover: _coverEntry(items),
           title: _cap(
-            DateFormat('MMMM yyyy', 'it_IT').format(
+            DateFormat('MMMM yyyy', AnnaStrings.intlLocale(context)).format(
               DateTime(year, month),
             ),
           ),
@@ -661,7 +661,7 @@ class _SharedMemoriesScreenState extends State<SharedMemoriesScreen> {
           horizontal: true,
           onTap: () => _openCollection(
             title: _cap(
-              DateFormat('MMMM yyyy', 'it_IT').format(
+              DateFormat('MMMM yyyy', AnnaStrings.intlLocale(context)).format(
                 DateTime(year, month),
               ),
             ),
@@ -697,10 +697,10 @@ class _SharedMemoriesScreenState extends State<SharedMemoriesScreen> {
         return SharedMemoryPeriodCard(
           cover: _coverEntry(items),
           title: year.toString(),
-          subtitle: '${_periodStats(items)} · $distinctDays giorni',
+          subtitle: '${_periodStats(items)} · ${AnnaStrings.of(context).d3Format('mem_daysCount', {'count': distinctDays})}',
           horizontal: true,
           onTap: () => _openCollection(
-            title: 'Ricordi $year',
+            title: AnnaStrings.of(context).d3Format('mem_yearMemories', {'year': year}),
             source: items,
           ),
         );
@@ -727,7 +727,7 @@ class _SharedMemoriesScreenState extends State<SharedMemoriesScreen> {
               _cap(
                 DateFormat(
                   'EEEE d MMMM yyyy',
-                  'it_IT',
+                  AnnaStrings.intlLocale(context),
                 ).format(day),
               ),
               style: const TextStyle(
@@ -773,9 +773,9 @@ class _SharedMemoriesScreenState extends State<SharedMemoriesScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text(
-          'I nostri ricordi',
-          style: TextStyle(fontWeight: FontWeight.w900),
+        title: Text(
+          AnnaStrings.of(context).d3('mem_ourMemories'),
+          style: const TextStyle(fontWeight: FontWeight.w900),
         ),
         actions: [
           IconButton(
@@ -940,7 +940,7 @@ class SharedMemoryTile extends StatelessWidget {
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 10),
               child: Text(
-                '${DateFormat('d MMM yyyy', 'it_IT').format(entry.date)} · $author',
+                '${DateFormat('d MMM yyyy', AnnaStrings.intlLocale(context)).format(entry.date)} · $author',
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: Theme.of(context).textTheme.bodySmall,
@@ -1352,15 +1352,15 @@ class SharedMemoryCollectionScreen extends StatelessWidget {
     required this.currentUserId,
   });
 
-  String _author(SharedEntry entry) {
+  String _author(SharedEntry entry, AnnaStrings strings) {
     if (entry.editorName.trim().isNotEmpty) return entry.editorName.trim();
     if (currentUserId != null && entry.updatedBy == currentUserId) {
-      return 'Tu';
+      return strings.d3('mem_you');
     }
     return 'Noi ♡';
   }
 
-  String? _seen(SharedEntry entry) {
+  String? _seen(SharedEntry entry, AnnaStrings strings) {
     if (currentUserId == null ||
         entry.updatedBy != currentUserId ||
         entry.updatedAt == null) {
@@ -1374,7 +1374,9 @@ class SharedMemoryCollectionScreen extends StatelessWidget {
         )
         .length;
     if (count == 0) return null;
-    return count == 1 ? 'Visto' : 'Visto da $count';
+    return count == 1
+        ? strings.d3('mem_seen')
+        : strings.d3Format('mem_seenBy', {'count': count});
   }
 
   Future<void> _open(BuildContext context, SharedEntry entry) async {
@@ -1411,8 +1413,8 @@ class SharedMemoryCollectionScreen extends StatelessWidget {
           entry: entry,
           hearts: heartsByEntry[entry.id]?.length ?? 0,
           comments: commentsByEntry[entry.id]?.length ?? 0,
-          author: _author(entry),
-          seenLabel: _seen(entry),
+          author: _author(entry, AnnaStrings.of(context)),
+          seenLabel: _seen(entry, AnnaStrings.of(context)),
         ),
       ),
     );
@@ -1448,10 +1450,10 @@ class SharedMemoryCollectionScreen extends StatelessWidget {
           final entry = source[index];
           return SharedMemoryTile(
             entry: entry,
-            author: _author(entry),
+            author: _author(entry, AnnaStrings.of(context)),
             hearts: heartsByEntry[entry.id]?.length ?? 0,
             comments: commentsByEntry[entry.id]?.length ?? 0,
-            seenLabel: _seen(entry),
+            seenLabel: _seen(entry, AnnaStrings.of(context)),
             onTap: () => _open(context, entry),
           );
         },
@@ -1567,7 +1569,7 @@ class _SharedSketchViewerScreenState extends State<SharedSketchViewerScreen> {
                                 _cap(
                                   DateFormat(
                                     'EEEE d MMMM yyyy',
-                                    'it_IT',
+                                    AnnaStrings.intlLocale(context),
                                   ).format(widget.entry.date),
                                 ),
                                 style: const TextStyle(
@@ -1672,7 +1674,7 @@ class SharedMemoryDetailScreen extends StatelessWidget {
                     _cap(
                       DateFormat(
                         'EEEE d MMMM yyyy',
-                        'it_IT',
+                        AnnaStrings.intlLocale(context),
                       ).format(entry.date),
                     ),
                   ),
