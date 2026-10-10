@@ -571,6 +571,7 @@ const Map<String, Map<String, String>> _d3Catalog = {
   "snapshotAutomatic": <String, String>{"en": "Automatic backup", "it": "Backup automatico", "es": "Copia automática", "fr": "Sauvegarde automatique", "pt": "Backup automático"},
   "snapshotBeforeSignOut": <String, String>{"en": "Before account disconnection", "it": "Prima della disconnessione account", "es": "Antes de desconectar la cuenta", "fr": "Avant la déconnexion du compte", "pt": "Antes de desligar a conta"},
   "snapshotBeforeEmptyTrash": <String, String>{"en": "Before emptying Trash", "it": "Prima di svuotare il Cestino", "es": "Antes de vaciar la Papelera", "fr": "Avant de vider la Corbeille", "pt": "Antes de esvaziar o Lixo"},
+  "reminderNow": <String, String>{"en": "It’s time to start.", "it": "È il momento di iniziare.", "es": "Es hora de empezar.", "fr": "Il est temps de commencer.", "pt": "Está na hora de começar."},
   "reminderTomorrow": <String, String>{"en": "Tomorrow: {title}", "it": "Domani: {title}", "es": "Mañana: {title}", "fr": "Demain : {title}", "pt": "Amanhã: {title}"},
   "reminderInHours": <String, String>{"en": "In {hours} hour{suffix}: {title}", "it": "Tra {hours} ora{suffix}: {title}", "es": "En {hours} hora{suffix}: {title}", "fr": "Dans {hours} heure{suffix} : {title}", "pt": "Daqui a {hours} hora{suffix}: {title}"},
   "reminderInMinutes": <String, String>{"en": "In {minutes} minutes: {title}", "it": "Tra {minutes} minuti: {title}", "es": "En {minutes} minutos: {title}", "fr": "Dans {minutes} minutes : {title}", "pt": "Daqui a {minutes} minutos: {title}"},
