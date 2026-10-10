@@ -292,7 +292,7 @@ class MainActivity : FlutterFragmentActivity() {
             } catch (error: SecurityException) {
                 result.error(
                     "calendar_permission_required",
-                    "Consenti l'accesso in lettura al calendario e riprova.",
+                    getString(R.string.calendar_permission_required),
                     null,
                 )
             } catch (error: Throwable) {
@@ -451,7 +451,7 @@ class MainActivity : FlutterFragmentActivity() {
         if (pendingCalendarPermissionResult != null) {
             result.error(
                 "calendar_permission_busy",
-                "Una richiesta di accesso al calendario è già in corso.",
+                getString(R.string.calendar_permission_busy),
                 null,
             )
             return
@@ -1248,7 +1248,10 @@ class HomeWidgetProvider : AppWidgetProvider() {
             )
             setTextViewText(
                 R.id.widgetNext,
-                prefs.getString("next", "Apri l’app per aggiornare") ?: "",
+                prefs.getString(
+                    "next",
+                    context.getString(R.string.widget_update_prompt),
+                ) ?: "",
             )
             setTextViewText(
                 R.id.widgetBirthday,
@@ -1256,7 +1259,11 @@ class HomeWidgetProvider : AppWidgetProvider() {
             )
             setTextViewText(
                 R.id.widgetCounters,
-                "Da fare: ${prefs.getInt("tasks", 0)} · Inbox: ${prefs.getInt("inbox", 0)}",
+                context.getString(
+                    R.string.widget_counters,
+                    prefs.getInt("tasks", 0),
+                    prefs.getInt("inbox", 0),
+                ),
             )
             setOnClickPendingIntent(
                 R.id.widgetRoot,
@@ -1352,7 +1359,7 @@ class HomeWidgetProvider : AppWidgetProvider() {
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:text="+ Aggiungi"
+            android:text="@string/widget_capture"
             android:textAllCaps="false" />
 
         <Button
@@ -1361,7 +1368,7 @@ class HomeWidgetProvider : AppWidgetProvider() {
             android:layout_height="wrap_content"
             android:layout_marginStart="8dp"
             android:layout_weight="1"
-            android:text="Oggi"
+            android:text="@string/widget_today"
             android:textAllCaps="false" />
     </LinearLayout>
 </LinearLayout>
@@ -1462,6 +1469,66 @@ def configure_launcher_shortcuts() -> None:
     <string name="shortcut_capture_long">{labels[1]}</string>
     <string name="shortcut_today_short">{labels[2]}</string>
     <string name="shortcut_today_long">{labels[3]}</string>
+</resources>
+''',
+            encoding="utf-8",
+        )
+
+
+    native_localized = {
+        "values": {
+            "calendar_permission_required": "Allow read access to your calendar and try again.",
+            "calendar_permission_busy": "A calendar access request is already in progress.",
+            "widget_update_prompt": "Open the app to update",
+            "widget_counters": "To do: %1$d · Inbox: %2$d",
+            "widget_capture": "+ Add",
+            "widget_today": "Today",
+        },
+        "values-it": {
+            "calendar_permission_required": "Consenti l'accesso in lettura al calendario e riprova.",
+            "calendar_permission_busy": "Una richiesta di accesso al calendario è già in corso.",
+            "widget_update_prompt": "Apri l’app per aggiornare",
+            "widget_counters": "Da fare: %1$d · Inbox: %2$d",
+            "widget_capture": "+ Aggiungi",
+            "widget_today": "Oggi",
+        },
+        "values-es": {
+            "calendar_permission_required": "Permite el acceso de lectura al calendario e inténtalo de nuevo.",
+            "calendar_permission_busy": "Ya hay una solicitud de acceso al calendario en curso.",
+            "widget_update_prompt": "Abre la app para actualizar",
+            "widget_counters": "Por hacer: %1$d · Inbox: %2$d",
+            "widget_capture": "+ Añadir",
+            "widget_today": "Hoy",
+        },
+        "values-fr": {
+            "calendar_permission_required": "Autorise l’accès en lecture au calendrier puis réessaie.",
+            "calendar_permission_busy": "Une demande d’accès au calendrier est déjà en cours.",
+            "widget_update_prompt": "Ouvre l’app pour actualiser",
+            "widget_counters": "À faire : %1$d · Inbox : %2$d",
+            "widget_capture": "+ Ajouter",
+            "widget_today": "Aujourd’hui",
+        },
+        "values-pt": {
+            "calendar_permission_required": "Permite acesso de leitura ao calendário e tenta novamente.",
+            "calendar_permission_busy": "Já existe um pedido de acesso ao calendário em curso.",
+            "widget_update_prompt": "Abre a app para atualizar",
+            "widget_counters": "A fazer: %1$d · Inbox: %2$d",
+            "widget_capture": "+ Adicionar",
+            "widget_today": "Hoje",
+        },
+    }
+    for folder, labels in native_localized.items():
+        values = ANDROID / "app" / "src" / "main" / "res" / folder
+        values.mkdir(parents=True, exist_ok=True)
+        (values / "annas_diary_native.xml").write_text(
+            f'''<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="calendar_permission_required">{labels["calendar_permission_required"]}</string>
+    <string name="calendar_permission_busy">{labels["calendar_permission_busy"]}</string>
+    <string name="widget_update_prompt">{labels["widget_update_prompt"]}</string>
+    <string name="widget_counters">{labels["widget_counters"]}</string>
+    <string name="widget_capture">{labels["widget_capture"]}</string>
+    <string name="widget_today">{labels["widget_today"]}</string>
 </resources>
 ''',
             encoding="utf-8",
