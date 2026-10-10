@@ -3,11 +3,7 @@ part of '../main.dart';
 enum AgendaContentFilter { all, privateOnly, sharedOnly }
 
 extension AgendaContentFilterUi on AgendaContentFilter {
-  String get label => switch (this) {
-        AgendaContentFilter.all => 'Tutto',
-        AgendaContentFilter.privateOnly => 'Privato',
-        AgendaContentFilter.sharedOnly => 'Noi ♡',
-      };
+  String localizedLabel(AnnaStrings strings) => strings.unifiedFilterLabel(this);
 
   IconData get icon => switch (this) {
         AgendaContentFilter.all => Icons.layers_outlined,
@@ -78,12 +74,15 @@ class UnifiedAgendaEntry {
     return AgendaCategory.other;
   }
 
-  String get visibilityLabel {
+  String visibilityLabel(AnnaStrings strings) {
     if (isShared) {
       return space?.name.trim().isNotEmpty == true ? space!.name : 'Noi ♡';
     }
-    if (isExternal) return externalEvent!.calendarName;
-    return 'Privato';
+    if (isExternal) {
+      final name = externalEvent!.calendarName.trim();
+      return name.isEmpty ? strings.d3('external_externalCalendar') : name;
+    }
+    return strings.d3('unified_private');
   }
 
   int get sortMinutes =>
@@ -139,7 +138,7 @@ class AgendaContentFilterBar extends StatelessWidget {
               (value) => ButtonSegment(
                 value: value,
                 icon: Icon(value.icon, size: 17),
-                label: Text(value.label),
+                label: Text(value.localizedLabel(AnnaStrings.of(context))),
               ),
             )
             .toList(),
@@ -183,12 +182,14 @@ class UnifiedAgendaTile extends StatelessWidget {
           ? Theme.of(context).colorScheme.tertiary
           : Color(external.colorValue! & 0xFFFFFFFF);
       final timeText = external.allDay
-          ? 'Tutto il giorno'
+          ? AnnaStrings.of(context).d3('editor_allDay')
           : '${formatTime(external.startTime!)}'
               '${external.endTime == null ? '' : ' – ${formatTime(external.endTime!)}'}';
       final details = <String>[
         timeText,
-        external.calendarName,
+        external.calendarName.trim().isEmpty
+            ? AnnaStrings.of(context).d3('external_externalCalendar')
+            : external.calendarName,
         if (!hideDetails && external.location.isNotEmpty) external.location,
       ];
       return Card(
@@ -205,13 +206,17 @@ class UnifiedAgendaTile extends StatelessWidget {
             child: const Icon(Icons.event_available_outlined),
           ),
           title: Text(
-            hideDetails ? 'Evento esterno nascosto' : external.title,
+            hideDetails
+                ? AnnaStrings.of(context).d3('unified_externalHidden')
+                : (external.title.trim().isEmpty
+                    ? AnnaStrings.of(context).d3('external_untitledEvent')
+                    : external.title),
             style: const TextStyle(fontWeight: FontWeight.w700),
           ),
           subtitle: Text(details.join(' · ')),
-          trailing: const Tooltip(
-            message: 'Sola lettura',
-            child: Icon(Icons.lock_outline, size: 18),
+          trailing: Tooltip(
+            message: AnnaStrings.of(context).d3('unified_readOnly'),
+            child: const Icon(Icons.lock_outline, size: 18),
           ),
           onTap: () => openUnifiedAgendaEntry(context, store, entry),
         ),
@@ -221,7 +226,7 @@ class UnifiedAgendaTile extends StatelessWidget {
     final shared = entry.sharedEntry!;
     final color = AgendaCategory.couple.color;
     final timeText = shared.start == null
-        ? (shared.type == SharedEntryType.task ? 'Da fare' : 'Tutto il giorno')
+        ? (shared.type == SharedEntryType.task ? AnnaStrings.of(context).d3('editor_toDo') : AnnaStrings.of(context).d3('editor_allDay'))
         : '${formatTime(shared.start!)}'
             '${shared.end == null ? '' : ' – ${formatTime(shared.end!)}'}';
 
@@ -245,7 +250,7 @@ class UnifiedAgendaTile extends StatelessWidget {
                 child: const Icon(Icons.favorite_outline),
               ),
         title: Text(
-          hideDetails ? 'Contenuto condiviso nascosto' : shared.title,
+          hideDetails ? AnnaStrings.of(context).d3('unified_sharedHidden') : shared.title,
           style: TextStyle(
             fontWeight: FontWeight.w700,
             decoration: shared.done ? TextDecoration.lineThrough : null,
@@ -274,7 +279,7 @@ class UnifiedAgendaTile extends StatelessWidget {
         ),
         onTap: () => openUnifiedAgendaEntry(context, store, entry),
         trailing: PopupMenuButton<String>(
-          tooltip: 'Azioni',
+          tooltip: AnnaStrings.of(context).d3('editor_actions'),
           onSelected: (value) async {
             if (value == 'edit') {
               await openUnifiedAgendaEntry(context, store, entry);
@@ -284,29 +289,29 @@ class UnifiedAgendaTile extends StatelessWidget {
               await _deleteSharedAgendaEntry(context, store, entry);
             }
           },
-          itemBuilder: (_) => const [
+          itemBuilder: (_) => [
             PopupMenuItem(
               value: 'edit',
               child: ListTile(
                 contentPadding: EdgeInsets.zero,
-                leading: Icon(Icons.edit_outlined),
-                title: Text('Modifica'),
+                leading: const Icon(Icons.edit_outlined),
+                title: Text(AnnaStrings.of(context).edit),
               ),
             ),
             PopupMenuItem(
               value: 'private',
               child: ListTile(
                 contentPadding: EdgeInsets.zero,
-                leading: Icon(Icons.lock_outline),
-                title: Text('Sposta in Privato'),
+                leading: const Icon(Icons.lock_outline),
+                title: Text(AnnaStrings.of(context).d3('unified_movePrivate')),
               ),
             ),
             PopupMenuItem(
               value: 'delete',
               child: ListTile(
                 contentPadding: EdgeInsets.zero,
-                leading: Icon(Icons.delete_outline),
-                title: Text('Elimina'),
+                leading: const Icon(Icons.delete_outline),
+                title: Text(AnnaStrings.of(context).delete),
               ),
             ),
           ],
@@ -334,20 +339,28 @@ Future<void> openUnifiedAgendaEntry(
   if (entry.externalEvent != null) {
     final event = entry.externalEvent!;
     final when = event.allDay
-        ? 'Tutto il giorno'
+        ? AnnaStrings.of(context).d3('editor_allDay')
         : '${formatTime(event.startTime!)}'
             '${event.endTime == null ? '' : ' – ${formatTime(event.endTime!)}'}';
     await showDialog<void>(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        title: Text(event.title),
+        title: Text(
+          event.title.trim().isEmpty
+              ? AnnaStrings.of(dialogContext).d3('external_untitledEvent')
+              : event.title,
+        ),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(when, style: const TextStyle(fontWeight: FontWeight.w800)),
             const SizedBox(height: 6),
-            Text(event.calendarName),
+            Text(
+              event.calendarName.trim().isEmpty
+                  ? AnnaStrings.of(dialogContext).d3('external_externalCalendar')
+                  : event.calendarName,
+            ),
             if (event.location.isNotEmpty) ...[
               const SizedBox(height: 8),
               Text(event.location),
@@ -358,8 +371,7 @@ Future<void> openUnifiedAgendaEntry(
             ],
             const SizedBox(height: 12),
             Text(
-              'Evento del calendario di sistema · sola lettura. '
-              'Non viene copiato nel Diario, nella Memoria o nel cloud di Anna\'s Diary.',
+              AnnaStrings.of(dialogContext).d3('unified_externalReadOnly'),
               style: Theme.of(dialogContext).textTheme.bodySmall,
             ),
           ],
@@ -367,7 +379,7 @@ Future<void> openUnifiedAgendaEntry(
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(dialogContext),
-            child: const Text('Chiudi'),
+            child: Text(AnnaStrings.of(dialogContext).close),
           ),
         ],
       ),
@@ -431,7 +443,7 @@ Future<SharedSpace?> _chooseSharedSpace(
   return showDialog<SharedSpace>(
     context: context,
     builder: (dialogContext) => SimpleDialog(
-      title: const Text('Scegli lo spazio condiviso'),
+      title: Text(AnnaStrings.of(dialogContext).d3('unified_chooseSharedSpace')),
       children: spaces
           .map(
             (space) => SimpleDialogOption(
@@ -444,7 +456,9 @@ Future<SharedSpace?> _chooseSharedSpace(
                   style: const TextStyle(fontWeight: FontWeight.w800),
                 ),
                 subtitle: Text(
-                  space.isOwner ? 'Creato da te' : 'Spazio condiviso',
+                  space.isOwner
+                      ? AnnaStrings.of(dialogContext).d3('unified_createdByYou')
+                      : AnnaStrings.of(dialogContext).d3('unified_sharedSpace'),
                 ),
               ),
             ),
@@ -465,19 +479,18 @@ Future<void> _movePrivateAgendaItemToShared(
   final confirmed = await showDialog<bool>(
         context: context,
         builder: (dialogContext) => AlertDialog(
-          title: const Text('Spostare in Noi ♡?'),
-          content: const Text(
-            'L’elemento diventerà condiviso. Categoria, fissaggio e promemoria '
-            'restano impostazioni private e non vengono trasferiti.',
+          title: Text(AnnaStrings.of(dialogContext).d3('unified_moveNoiTitle')),
+          content: Text(
+            AnnaStrings.of(dialogContext).d3('unified_privateSettingsStay'),
           ),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(dialogContext, false),
-              child: const Text('Annulla'),
+              child: Text(AnnaStrings.of(dialogContext).cancel),
             ),
             FilledButton(
               onPressed: () => Navigator.pop(dialogContext, true),
-              child: const Text('Sposta'),
+              child: Text(AnnaStrings.of(dialogContext).d3('unified_move')),
             ),
           ],
         ),
@@ -513,18 +526,18 @@ Future<void> _moveSharedAgendaEntryToPrivate(
   final confirmed = await showDialog<bool>(
         context: context,
         builder: (dialogContext) => AlertDialog(
-          title: const Text('Spostare in Privato?'),
-          content: const Text(
-            'L’elemento verrà rimosso da Noi ♡ e resterà solo nella tua agenda.',
+          title: Text(AnnaStrings.of(dialogContext).d3('unified_movePrivateTitle')),
+          content: Text(
+            AnnaStrings.of(dialogContext).d3('unified_movePrivateBody'),
           ),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(dialogContext, false),
-              child: const Text('Annulla'),
+              child: Text(AnnaStrings.of(dialogContext).cancel),
             ),
             FilledButton(
               onPressed: () => Navigator.pop(dialogContext, true),
-              child: const Text('Sposta'),
+              child: Text(AnnaStrings.of(dialogContext).d3('unified_move')),
             ),
           ],
         ),
@@ -571,18 +584,21 @@ Future<void> _deleteSharedAgendaEntry(
   final confirmed = await showDialog<bool>(
         context: context,
         builder: (dialogContext) => AlertDialog(
-          title: const Text('Eliminare da Noi ♡?'),
+          title: Text(AnnaStrings.of(dialogContext).d3('unified_deleteNoiTitle')),
           content: Text(
-            '“${shared.title}” verrà eliminato per tutte le persone dello spazio condiviso.',
+            AnnaStrings.of(dialogContext).d3Format(
+              'unified_deleteSharedForEveryone',
+              {'title': shared.title},
+            ),
           ),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(dialogContext, false),
-              child: const Text('Annulla'),
+              child: Text(AnnaStrings.of(dialogContext).cancel),
             ),
             FilledButton(
               onPressed: () => Navigator.pop(dialogContext, true),
-              child: const Text('Elimina'),
+              child: Text(AnnaStrings.of(dialogContext).delete),
             ),
           ],
         ),
@@ -632,7 +648,7 @@ Future<void> openUnifiedItemComposer(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Dove vuoi salvarlo?',
+              AnnaStrings.of(sheetContext).d3('unified_whereSave'),
               style: Theme.of(sheetContext)
                   .textTheme
                   .titleLarge
@@ -640,7 +656,7 @@ Future<void> openUnifiedItemComposer(
             ),
             const SizedBox(height: 6),
             Text(
-              'Privato resta la scelta predefinita. Usa Noi ♡ solo per ciò che vuoi condividere.',
+              AnnaStrings.of(sheetContext).d3('unified_privateDefault'),
               style: Theme.of(sheetContext).textTheme.bodySmall,
             ),
             const SizedBox(height: 14),
@@ -651,11 +667,11 @@ Future<void> openUnifiedItemComposer(
               leading: const CircleAvatar(
                 child: Icon(Icons.lock_outline),
               ),
-              title: const Text(
-                'Privato',
-                style: TextStyle(fontWeight: FontWeight.w800),
+              title: Text(
+                AnnaStrings.of(sheetContext).d3('unified_private'),
+                style: const TextStyle(fontWeight: FontWeight.w800),
               ),
-              subtitle: const Text('Visibile solo nel tuo account.'),
+              subtitle: Text(AnnaStrings.of(sheetContext).d3('unified_visibleOnlyAccount')),
               onTap: () => Navigator.pop(
                 sheetContext,
                 AgendaCreationVisibility.privateItem,
@@ -676,8 +692,8 @@ Future<void> openUnifiedItemComposer(
                 'Noi ♡',
                 style: TextStyle(fontWeight: FontWeight.w800),
               ),
-              subtitle: const Text(
-                'Sincronizzato con lo spazio condiviso scelto.',
+              subtitle: Text(
+                AnnaStrings.of(sheetContext).d3('unified_syncedShared'),
               ),
               onTap: () => Navigator.pop(
                 sheetContext,

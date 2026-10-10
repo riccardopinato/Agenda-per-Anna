@@ -18,7 +18,7 @@ class EventTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final color = item.category.color;
     final timeText = item.start == null
-        ? (item.type == ItemType.task ? 'Da fare' : 'Tutto il giorno')
+        ? (item.type == ItemType.task ? AnnaStrings.of(context).d3('editor_toDo') : AnnaStrings.of(context).d3('editor_allDay'))
         : '${formatTime(item.start!)}'
             '${item.end == null ? '' : ' – ${formatTime(item.end!)}'}';
 
@@ -42,7 +42,7 @@ class EventTile extends StatelessWidget {
                 child: Icon(item.category.icon),
               ),
         title: Text(
-          hideDetails ? 'Contenuto nascosto' : item.title,
+          hideDetails ? AnnaStrings.of(context).d3('editor_hiddenContent') : item.title,
           style: TextStyle(
             fontWeight: FontWeight.w700,
             decoration: item.done ? TextDecoration.lineThrough : null,
@@ -55,7 +55,7 @@ class EventTile extends StatelessWidget {
           children: [
             Text(timeText),
             Text(
-              item.category.label,
+              AnnaStrings.of(context).editorCategoryLabel(item.category),
               style: TextStyle(
                 color: color,
                 fontWeight: FontWeight.w700,
@@ -110,7 +110,7 @@ class EventTile extends StatelessWidget {
               icon: const Icon(Icons.hub_outlined),
             ),
             IconButton(
-              tooltip: 'Azioni',
+              tooltip: AnnaStrings.of(context).d3('editor_actions'),
               onPressed: () => _showAgendaItemActions(context, store, item),
               icon: const Icon(Icons.more_horiz),
             ),
@@ -196,9 +196,9 @@ class _JournalEditorState extends State<JournalEditor> {
 
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Giornata salvata ♡'),
-          duration: Duration(seconds: 1),
+        SnackBar(
+          content: Text(AnnaStrings.of(context).d3('editor_daySaved')),
+          duration: const Duration(seconds: 1),
         ),
       );
     }
@@ -209,24 +209,24 @@ class _JournalEditorState extends State<JournalEditor> {
     final value = await showDialog<String>(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        title: const Text('Nuova abitudine'),
+        title: Text(AnnaStrings.of(context).d3('editor_newHabit')),
         content: TextField(
           controller: controller,
           autofocus: true,
           textCapitalization: TextCapitalization.sentences,
-          decoration: const InputDecoration(
-            hintText: 'Es. Leggere 20 minuti',
+          decoration: InputDecoration(
+            hintText: AnnaStrings.of(context).d3('editor_habitHint'),
           ),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(dialogContext),
-            child: const Text('Annulla'),
+            child: Text(AnnaStrings.of(context).cancel),
           ),
           FilledButton(
             onPressed: () =>
                 Navigator.pop(dialogContext, controller.text.trim()),
-            child: const Text('Aggiungi'),
+            child: Text(AnnaStrings.of(context).add),
           ),
         ],
       ),
@@ -249,9 +249,9 @@ class _JournalEditorState extends State<JournalEditor> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text(
-                'Come ti senti oggi?',
-                style: TextStyle(fontWeight: FontWeight.w800, fontSize: 17),
+              Text(
+                AnnaStrings.of(context).d3('editor_howFeel'),
+                style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 17),
               ),
               const SizedBox(height: 10),
               Wrap(
@@ -266,7 +266,7 @@ class _JournalEditorState extends State<JournalEditor> {
                       value.emoji,
                       style: const TextStyle(fontSize: 18),
                     ),
-                    label: Text(value.label),
+                    label: Text(AnnaStrings.of(context).editorMoodLabel(value)),
                     labelStyle: TextStyle(
                       fontWeight: selected ? FontWeight.w800 : FontWeight.w600,
                       color: selected ? value.color : null,
@@ -285,13 +285,13 @@ class _JournalEditorState extends State<JournalEditor> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text(
-                'Tre cose belle di oggi ♡',
-                style: TextStyle(fontWeight: FontWeight.w800, fontSize: 17),
+              Text(
+                AnnaStrings.of(context).d3('editor_threeGoodThings'),
+                style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 17),
               ),
               const SizedBox(height: 5),
               Text(
-                'Anche piccole: qualcosa che ti ha fatto sorridere, stare bene o sentire grata.',
+                AnnaStrings.of(context).d3('editor_gratitudeSubtitle'),
                 style: Theme.of(context).textTheme.bodySmall,
               ),
               const SizedBox(height: 10),
@@ -310,8 +310,8 @@ class _JournalEditorState extends State<JournalEditor> {
                         ),
                       ),
                       hintText: entry.key == 0
-                          ? 'Una cosa bella...'
-                          : 'Un altro piccolo momento...',
+                          ? AnnaStrings.of(context).d3('editor_oneGoodThing')
+                          : AnnaStrings.of(context).d3('editor_anotherMoment'),
                       border: const OutlineInputBorder(),
                     ),
                   ),
@@ -321,10 +321,10 @@ class _JournalEditorState extends State<JournalEditor> {
                 controller: beautiful,
                 maxLines: 2,
                 textCapitalization: TextCapitalization.sentences,
-                decoration: const InputDecoration(
-                  labelText: 'Il momento che voglio ricordare',
-                  hintText: 'Quello che vorresti rileggere tra qualche mese...',
-                  border: OutlineInputBorder(),
+                decoration: InputDecoration(
+                  labelText: AnnaStrings.of(context).d3('editor_momentRemember'),
+                  hintText: AnnaStrings.of(context).d3('editor_momentHint'),
+                  border: const OutlineInputBorder(),
                 ),
               ),
             ],
@@ -337,22 +337,24 @@ class _JournalEditorState extends State<JournalEditor> {
             children: [
               Row(
                 children: [
-                  const Expanded(
+                  Expanded(
                     child: Text(
-                      'Le mie abitudini',
-                      style:
-                          TextStyle(fontWeight: FontWeight.w800, fontSize: 17),
+                      AnnaStrings.of(context).d3('editor_myHabits'),
+                      style: const TextStyle(
+                        fontWeight: FontWeight.w800,
+                        fontSize: 17,
+                      ),
                     ),
                   ),
                   IconButton(
-                    tooltip: 'Aggiungi abitudine',
+                    tooltip: AnnaStrings.of(context).d3('editor_addHabit'),
                     onPressed: _addHabit,
                     icon: const Icon(Icons.add_circle_outline),
                   ),
                 ],
               ),
               if (habits.isEmpty)
-                const Text('Aggiungi una piccola abitudine da seguire.')
+                Text(AnnaStrings.of(context).d3('editor_habitEmpty'))
               else
                 ...habits.map(
                   (habit) => CheckboxListTile(
@@ -386,10 +388,10 @@ class _JournalEditorState extends State<JournalEditor> {
                           child: ListView(
                             shrinkWrap: true,
                             children: [
-                              const ListTile(
+                              ListTile(
                                 title: Text(
-                                  'Gestisci abitudini',
-                                  style: TextStyle(fontWeight: FontWeight.w800),
+                                  AnnaStrings.of(context).d3('editor_manageHabits'),
+                                  style: const TextStyle(fontWeight: FontWeight.w800),
                                 ),
                               ),
                               ...habits.map(
@@ -410,7 +412,7 @@ class _JournalEditorState extends State<JournalEditor> {
                       }
                     },
                     icon: const Icon(Icons.tune),
-                    label: const Text('Gestisci'),
+                    label: Text(AnnaStrings.of(context).d3('editor_manage')),
                   ),
                 ),
               ],
@@ -427,9 +429,9 @@ class _JournalEditorState extends State<JournalEditor> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text(
-                'Pensieri e note',
-                style: TextStyle(fontWeight: FontWeight.w800, fontSize: 17),
+              Text(
+                AnnaStrings.of(context).d3('editor_thoughtsNotes'),
+                style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 17),
               ),
               const SizedBox(height: 10),
               TextField(
@@ -437,9 +439,9 @@ class _JournalEditorState extends State<JournalEditor> {
                 minLines: 4,
                 maxLines: 8,
                 textCapitalization: TextCapitalization.sentences,
-                decoration: const InputDecoration(
-                  hintText: 'Scrivi quello che vuoi ricordare...',
-                  border: OutlineInputBorder(),
+                decoration: InputDecoration(
+                  hintText: AnnaStrings.of(context).d3('editor_writeRemember'),
+                  border: const OutlineInputBorder(),
                 ),
               ),
               const SizedBox(height: 12),
@@ -448,7 +450,7 @@ class _JournalEditorState extends State<JournalEditor> {
                 child: FilledButton.icon(
                   onPressed: _save,
                   icon: const Icon(Icons.favorite_outline),
-                  label: const Text('Salva la mia giornata'),
+                  label: Text(AnnaStrings.of(context).d3('editor_saveMyDay')),
                 ),
               ),
               if (widget.store.journals.containsKey(
@@ -463,29 +465,30 @@ class _JournalEditorState extends State<JournalEditor> {
                       final confirmed = await showDialog<bool>(
                             context: context,
                             builder: (dialogContext) => AlertDialog(
-                              title: const Text(
-                                'Spostare la giornata nel Cestino?',
+                              title: Text(
+                                AnnaStrings.of(context).d3('editor_moveDayTrashTitle'),
                               ),
-                              content: const Text(
-                                'Diario, ricordi e stato delle abitudini di questa giornata '
-                                'potranno essere ripristinati dal Cestino.',
+                              content: Text(
+                                AnnaStrings.of(context).d3('editor_moveDayTrashBody'),
                               ),
                               actions: [
                                 TextButton(
                                   onPressed: () =>
                                       Navigator.pop(dialogContext, false),
-                                  child: const Text('Annulla'),
+                                  child: Text(AnnaStrings.of(context).cancel),
                                 ),
                                 FilledButton(
                                   onPressed: () =>
                                       Navigator.pop(dialogContext, true),
-                                  child: const Text('Sposta nel Cestino'),
+                                  child: Text(AnnaStrings.of(context).d3('editor_moveDayTrash')),
                                 ),
                               ],
                             ),
                           ) ??
                           false;
                       if (!confirmed || !mounted) return;
+                      final movedMessage = AnnaStrings.of(context)
+                          .d3('editor_dayMovedTrash');
                       final moved =
                           await widget.store.moveJournalToTrash(widget.date);
                       if (!moved || !mounted) return;
@@ -496,13 +499,13 @@ class _JournalEditorState extends State<JournalEditor> {
                       }
                       setState(() => mood = null);
                       messenger.showSnackBar(
-                        const SnackBar(
-                          content: Text('Giornata spostata nel Cestino.'),
+                        SnackBar(
+                          content: Text(movedMessage),
                         ),
                       );
                     },
                     icon: const Icon(Icons.delete_outline),
-                    label: const Text('Sposta giornata nel Cestino'),
+                    label: Text(AnnaStrings.of(context).d3('editor_moveDayTrash')),
                   ),
                 ),
               ],
@@ -543,7 +546,7 @@ class _MonthTextCardState extends State<MonthTextCard> {
             const SizedBox(height: 10),
             TextField(controller: c, minLines: 3, maxLines: 5),
             const SizedBox(height: 10),
-            SizedBox(width: double.infinity, child: FilledButton.tonal(onPressed: () => widget.onSave(c.text.trim()), child: const Text('Salva'))),
+            SizedBox(width: double.infinity, child: FilledButton.tonal(onPressed: () => widget.onSave(c.text.trim()), child: Text(AnnaStrings.of(context).save))),
           ],
         ),
       );
@@ -570,11 +573,11 @@ class MonthlyListCard extends StatelessWidget {
                   final value = await showDialog<String>(
                     context: context,
                     builder: (context) => AlertDialog(
-                      title: Text('Aggiungi a $title'),
+                      title: Text(AnnaStrings.of(context).d3Format('editor_addTo', {'title': title})),
                       content: TextField(controller: c, autofocus: true),
                       actions: [
-                        TextButton(onPressed: () => Navigator.pop(context), child: const Text('Annulla')),
-                        FilledButton(onPressed: () => Navigator.pop(context, c.text.trim()), child: const Text('Aggiungi')),
+                        TextButton(onPressed: () => Navigator.pop(context), child: Text(AnnaStrings.of(context).cancel)),
+                        FilledButton(onPressed: () => Navigator.pop(context, c.text.trim()), child: Text(AnnaStrings.of(context).add)),
                       ],
                     ),
                   );
@@ -588,7 +591,7 @@ class MonthlyListCard extends StatelessWidget {
             ],
           ),
           if (items.isEmpty)
-            const Text('Nessun elemento ancora.')
+            Text(AnnaStrings.of(context).d3('editor_noItems'))
           else
             ...items.asMap().entries.map((entry) => ListTile(
                   contentPadding: EdgeInsets.zero,
@@ -620,15 +623,15 @@ class BudgetCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text('Budget del mese', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 18)),
+          Text(AnnaStrings.of(context).d3('editor_monthBudget'), style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 18)),
           const SizedBox(height: 10),
           Row(
             children: [
-              Expanded(child: MoneyBox(label: 'Budget', value: money(data.budgetCents))),
+              Expanded(child: MoneyBox(label: AnnaStrings.of(context).d3('editor_budget'), value: money(context, data.budgetCents))),
               const SizedBox(width: 8),
-              Expanded(child: MoneyBox(label: 'Speso', value: money(spentCents))),
+              Expanded(child: MoneyBox(label: AnnaStrings.of(context).d3('editor_spent'), value: money(context, spentCents))),
               const SizedBox(width: 8),
-              Expanded(child: MoneyBox(label: 'Rimane', value: money(remaining))),
+              Expanded(child: MoneyBox(label: AnnaStrings.of(context).d3('editor_remaining'), value: money(context, remaining))),
             ],
           ),
           const SizedBox(height: 10),
@@ -641,11 +644,11 @@ class BudgetCard extends StatelessWidget {
                     final v = await showDialog<String>(
                       context: context,
                       builder: (context) => AlertDialog(
-                        title: const Text('Imposta budget'),
+                        title: Text(AnnaStrings.of(context).d3('editor_setBudget')),
                         content: TextField(controller: c, keyboardType: const TextInputType.numberWithOptions(decimal: true)),
                         actions: [
-                          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Annulla')),
-                          FilledButton(onPressed: () => Navigator.pop(context, c.text), child: const Text('Salva')),
+                          TextButton(onPressed: () => Navigator.pop(context), child: Text(AnnaStrings.of(context).cancel)),
+                          FilledButton(onPressed: () => Navigator.pop(context, c.text), child: Text(AnnaStrings.of(context).save)),
                         ],
                       ),
                     );
@@ -653,7 +656,7 @@ class BudgetCard extends StatelessWidget {
                     final d = double.tryParse((v ?? '').replaceAll(',', '.'));
                     if (d != null) onSave(data.copyWith(budgetCents: (d * 100).round()));
                   },
-                  child: const Text('Budget'),
+                  child: Text(AnnaStrings.of(context).d3('editor_budget')),
                 ),
               ),
               const SizedBox(width: 8),
@@ -667,28 +670,37 @@ class BudgetCard extends StatelessWidget {
                       context: context,
                       builder: (context) => StatefulBuilder(
                         builder: (context, setLocal) => AlertDialog(
-                          title: const Text('Nuova spesa'),
+                          title: Text(AnnaStrings.of(context).d3('editor_newExpense')),
                           content: SingleChildScrollView(
                             child: Column(
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                TextField(controller: amount, keyboardType: const TextInputType.numberWithOptions(decimal: true), decoration: const InputDecoration(labelText: 'Importo')),
+                                TextField(controller: amount, keyboardType: const TextInputType.numberWithOptions(decimal: true), decoration: InputDecoration(labelText: AnnaStrings.of(context).d3('editor_amount'))),
                                 const SizedBox(height: 8),
                                 DropdownButtonFormField<String>(
                                   initialValue: category,
                                   items: const ['Cibo', 'Casa', 'Salute', 'Shopping', 'Trasporti', 'Svago', 'Regali', 'Altro']
-                                      .map((e) => DropdownMenuItem(value: e, child: Text(e)))
+                                      .map(
+                                        (value) => DropdownMenuItem(
+                                          value: value,
+                                          child: Text(
+                                            AnnaStrings.of(context)
+                                                .editorExpenseCategoryLabel(value),
+                                          ),
+                                        ),
+                                      )
                                       .toList(),
-                                  onChanged: (v) => setLocal(() => category = v ?? 'Altro'),
+                                  onChanged: (v) =>
+                                      setLocal(() => category = v ?? 'Altro'),
                                 ),
                                 const SizedBox(height: 8),
-                                TextField(controller: note, decoration: const InputDecoration(labelText: 'Nota')),
+                                TextField(controller: note, decoration: InputDecoration(labelText: AnnaStrings.of(context).v100Note)),
                               ],
                             ),
                           ),
                           actions: [
-                            TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Annulla')),
-                            FilledButton(onPressed: () => Navigator.pop(context, true), child: const Text('Aggiungi')),
+                            TextButton(onPressed: () => Navigator.pop(context, false), child: Text(AnnaStrings.of(context).cancel)),
+                            FilledButton(onPressed: () => Navigator.pop(context, true), child: Text(AnnaStrings.of(context).add)),
                           ],
                         ),
                       ),
@@ -709,7 +721,7 @@ class BudgetCard extends StatelessWidget {
                     );
                     onSave(data.copyWith(expenses: [...data.expenses, expense]));
                   },
-                  child: const Text('Spesa'),
+                  child: Text(AnnaStrings.of(context).d3('editor_expense')),
                 ),
               ),
             ],
@@ -775,13 +787,13 @@ class _ClosingMonthCardState extends State<ClosingMonthCard> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Row(
+          Row(
             children: [
-              Icon(Icons.nights_stay_outlined),
-              SizedBox(width: 8),
+              const Icon(Icons.nights_stay_outlined),
+              const SizedBox(width: 8),
               Text(
-                'Chiusura del mese',
-                style: TextStyle(
+                AnnaStrings.of(context).d3('editor_monthClosing'),
+                style: const TextStyle(
                   fontWeight: FontWeight.w900,
                   fontSize: 19,
                 ),
@@ -789,8 +801,8 @@ class _ClosingMonthCardState extends State<ClosingMonthCard> {
             ],
           ),
           const SizedBox(height: 6),
-          const Text(
-            'Fermati un momento prima di voltare pagina.',
+          Text(
+            AnnaStrings.of(context).d3('editor_pauseBeforeMonth'),
           ),
           const SizedBox(height: 14),
           Wrap(
@@ -799,44 +811,44 @@ class _ClosingMonthCardState extends State<ClosingMonthCard> {
             children: [
               _MiniPill(
                 icon: Icons.flag_outlined,
-                text: '${widget.data.goals.length} obiettivi',
+                text: AnnaStrings.of(context).d3Format('goalsCount', {'count': widget.data.goals.length}),
               ),
               _MiniPill(
                 icon: Icons.receipt_long_outlined,
-                text: 'Speso ${money(spent)}',
+                text: '${AnnaStrings.of(context).d3('editor_spent')} ${money(context, spent)}',
               ),
               if (widget.data.budgetCents > 0)
                 _MiniPill(
                   icon: Icons.savings_outlined,
-                  text: 'Rimane ${money(remaining)}',
+                  text: '${AnnaStrings.of(context).d3('editor_remaining')} ${money(context, remaining)}',
                 ),
             ],
           ),
           const SizedBox(height: 14),
           TextField(
             controller: best,
-            decoration: const InputDecoration(
-              labelText: 'Il momento più bello',
-              prefixIcon: Icon(Icons.favorite_outline),
-              border: OutlineInputBorder(),
+            decoration: InputDecoration(
+              labelText: AnnaStrings.of(context).d3('editor_bestMoment'),
+              prefixIcon: const Icon(Icons.favorite_outline),
+              border: const OutlineInputBorder(),
             ),
           ),
           const SizedBox(height: 10),
           TextField(
             controller: challenge,
-            decoration: const InputDecoration(
-              labelText: 'La cosa più difficile',
-              prefixIcon: Icon(Icons.trending_up_outlined),
-              border: OutlineInputBorder(),
+            decoration: InputDecoration(
+              labelText: AnnaStrings.of(context).d3('editor_hardestThing'),
+              prefixIcon: const Icon(Icons.trending_up_outlined),
+              border: const OutlineInputBorder(),
             ),
           ),
           const SizedBox(height: 10),
           TextField(
             controller: lesson,
-            decoration: const InputDecoration(
-              labelText: 'Cosa ho imparato',
-              prefixIcon: Icon(Icons.lightbulb_outline),
-              border: OutlineInputBorder(),
+            decoration: InputDecoration(
+              labelText: AnnaStrings.of(context).d3('editor_whatLearned'),
+              prefixIcon: const Icon(Icons.lightbulb_outline),
+              border: const OutlineInputBorder(),
             ),
           ),
           const SizedBox(height: 10),
@@ -844,9 +856,9 @@ class _ClosingMonthCardState extends State<ClosingMonthCard> {
             controller: reflection,
             minLines: 3,
             maxLines: 6,
-            decoration: const InputDecoration(
-              labelText: 'Com’è andato davvero questo mese?',
-              border: OutlineInputBorder(),
+            decoration: InputDecoration(
+              labelText: AnnaStrings.of(context).d3('editor_howMonthWent'),
+              border: const OutlineInputBorder(),
             ),
           ),
           const SizedBox(height: 10),
@@ -854,10 +866,10 @@ class _ClosingMonthCardState extends State<ClosingMonthCard> {
             controller: nextMonth,
             minLines: 2,
             maxLines: 4,
-            decoration: const InputDecoration(
-              labelText: 'Cosa voglio portare nel prossimo mese',
-              prefixIcon: Icon(Icons.arrow_forward_outlined),
-              border: OutlineInputBorder(),
+            decoration: InputDecoration(
+              labelText: AnnaStrings.of(context).d3('editor_carryNext'),
+              prefixIcon: const Icon(Icons.arrow_forward_outlined),
+              border: const OutlineInputBorder(),
             ),
           ),
           const SizedBox(height: 12),
@@ -874,7 +886,7 @@ class _ClosingMonthCardState extends State<ClosingMonthCard> {
                   reflection: reflection.text.trim(),
                 ),
               ),
-              label: const Text('Chiudi e salva il mese'),
+              label: Text(AnnaStrings.of(context).d3('editor_closeSaveMonth')),
             ),
           ),
         ],
@@ -916,7 +928,7 @@ class DateStrip extends StatelessWidget {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Text(DateFormat('EEE', 'it_IT').format(d).substring(0, 2).toUpperCase(),
+                  Text(DateFormat('EEE', AnnaStrings.intlLocale(context)).format(d).substring(0, 2).toUpperCase(),
                       style: TextStyle(fontSize: 11, color: active ? Theme.of(context).colorScheme.onPrimary : null)),
                   const SizedBox(height: 4),
                   Text('${d.day}',
@@ -1120,7 +1132,7 @@ Future<void> openItemEditor(
                   children: [
                     Expanded(
                       child: Text(
-                        existing == null ? 'Aggiungi alla giornata' : 'Modifica',
+                        existing == null ? AnnaStrings.of(context).d3('editor_addToDay') : AnnaStrings.of(context).edit,
                         style: Theme.of(context)
                             .textTheme
                             .headlineSmall
@@ -1129,7 +1141,7 @@ Future<void> openItemEditor(
                     ),
                     if (existing != null)
                       IconButton.filledTonal(
-                        tooltip: 'Duplica',
+                        tooltip: AnnaStrings.of(context).d3('editor_duplicate'),
                         onPressed: () async {
                           final t = title.text.trim();
                           if (t.isEmpty) return;
@@ -1147,16 +1159,16 @@ Future<void> openItemEditor(
                 ),
                 const SizedBox(height: 14),
                 SegmentedButton<ItemType>(
-                  segments: const [
+                  segments: [
                     ButtonSegment(
                       value: ItemType.appointment,
-                      label: Text('Appuntamento'),
-                      icon: Icon(Icons.event_outlined),
+                      label: Text(AnnaStrings.of(context).appointment),
+                      icon: const Icon(Icons.event_outlined),
                     ),
                     ButtonSegment(
                       value: ItemType.task,
-                      label: Text('Da fare'),
-                      icon: Icon(Icons.check_circle_outline),
+                      label: Text(AnnaStrings.of(context).d3('editor_toDo')),
+                      icon: const Icon(Icons.check_circle_outline),
                     ),
                   ],
                   selected: {type},
@@ -1166,23 +1178,23 @@ Future<void> openItemEditor(
                 TextField(
                   controller: title,
                   autofocus: existing == null,
-                  decoration: const InputDecoration(
-                    labelText: 'Titolo',
-                    border: OutlineInputBorder(),
+                  decoration: InputDecoration(
+                    labelText: AnnaStrings.of(context).d3('editor_title'),
+                    border: const OutlineInputBorder(),
                   ),
                 ),
                 const SizedBox(height: 10),
                 TextField(
                   controller: note,
                   maxLines: 3,
-                  decoration: const InputDecoration(
-                    labelText: 'Note',
-                    border: OutlineInputBorder(),
+                  decoration: InputDecoration(
+                    labelText: AnnaStrings.of(context).d3('editor_notes'),
+                    border: const OutlineInputBorder(),
                   ),
                 ),
                 const SizedBox(height: 16),
                 Text(
-                  'Categoria',
+                  AnnaStrings.of(context).d3('editor_category'),
                   style: Theme.of(context)
                       .textTheme
                       .titleSmall
@@ -1201,7 +1213,7 @@ Future<void> openItemEditor(
                         size: 17,
                         color: active ? Colors.white : value.color,
                       ),
-                      label: Text(value.label),
+                      label: Text(AnnaStrings.of(context).editorCategoryLabel(value)),
                       selectedColor: value.color,
                       labelStyle: TextStyle(
                         color: active ? Colors.white : null,
@@ -1216,7 +1228,7 @@ Future<void> openItemEditor(
                   contentPadding: EdgeInsets.zero,
                   leading: const Icon(Icons.calendar_today_outlined),
                   title: Text(
-                    DateFormat('d MMMM yyyy', 'it_IT').format(date),
+                    DateFormat('d MMMM yyyy', AnnaStrings.intlLocale(context)).format(date),
                   ),
                   onTap: () async {
                     final picked = await showDatePicker(
@@ -1232,7 +1244,7 @@ Future<void> openItemEditor(
                   contentPadding: EdgeInsets.zero,
                   leading: const Icon(Icons.schedule_outlined),
                   title: Text(
-                    start == null ? 'Senza orario' : formatTime(start!),
+                    start == null ? AnnaStrings.of(context).d3('editor_noTime') : formatTime(start!),
                   ),
                   trailing: start == null
                       ? null
@@ -1266,7 +1278,7 @@ Future<void> openItemEditor(
                     contentPadding: EdgeInsets.zero,
                     leading: const Icon(Icons.timelapse_outlined),
                     title: Text(
-                      end == null ? 'Ora fine' : formatTime(end!),
+                      end == null ? AnnaStrings.of(context).d3('editor_endTime') : formatTime(end!),
                     ),
                     onTap: () async {
                       final picked = await showTimePicker(
@@ -1283,13 +1295,13 @@ Future<void> openItemEditor(
                       Expanded(
                         child: DropdownButtonFormField<int>(
                           initialValue: primaryReminder,
-                          decoration: const InputDecoration(
-                            labelText: 'Promemoria 1',
+                          decoration: InputDecoration(
+                            labelText: AnnaStrings.of(context).d3('editor_reminder1'),
                             prefixIcon:
-                                Icon(Icons.notifications_none_outlined),
-                            border: OutlineInputBorder(),
+                                const Icon(Icons.notifications_none_outlined),
+                            border: const OutlineInputBorder(),
                           ),
-                          items: _reminderMenuItems,
+                          items: _reminderMenuItems(AnnaStrings.of(context)),
                           onChanged: (value) => setLocal(() {
                             primaryReminder = value ?? -1;
                             if (secondaryReminder == primaryReminder) {
@@ -1302,13 +1314,13 @@ Future<void> openItemEditor(
                       Expanded(
                         child: DropdownButtonFormField<int>(
                           initialValue: secondaryReminder,
-                          decoration: const InputDecoration(
-                            labelText: 'Promemoria 2',
+                          decoration: InputDecoration(
+                            labelText: AnnaStrings.of(context).d3('editor_reminder2'),
                             prefixIcon:
-                                Icon(Icons.add_alert_outlined),
-                            border: OutlineInputBorder(),
+                                const Icon(Icons.add_alert_outlined),
+                            border: const OutlineInputBorder(),
                           ),
-                          items: _reminderMenuItems,
+                          items: _reminderMenuItems(AnnaStrings.of(context)),
                           onChanged: (value) => setLocal(() {
                             secondaryReminder = value ?? -1;
                             if (secondaryReminder == primaryReminder) {
@@ -1321,13 +1333,13 @@ Future<void> openItemEditor(
                   ),
                   const SizedBox(height: 7),
                   Text(
-                    'Puoi impostare fino a due promemoria diversi per lo stesso impegno.',
+                    AnnaStrings.of(context).d3('editor_twoRemindersHint'),
                     style: Theme.of(context).textTheme.bodySmall,
                   ),
                 ],
                 const SizedBox(height: 18),
                 Text(
-                  'Ripeti',
+                  AnnaStrings.of(context).d3('editor_repeat'),
                   style: Theme.of(context)
                       .textTheme
                       .titleSmall
@@ -1341,7 +1353,7 @@ Future<void> openItemEditor(
                     return ChoiceChip(
                       selected: recurrence == value,
                       avatar: Icon(value.icon, size: 17),
-                      label: Text(value.label),
+                      label: Text(AnnaStrings.of(context).editorRecurrenceLabel(value)),
                       onSelected: existing?.isRecurring == true
                           ? null
                           : (_) => setLocal(() => recurrence = value),
@@ -1351,13 +1363,18 @@ Future<void> openItemEditor(
                 if (existing?.isRecurring == true) ...[
                   const SizedBox(height: 10),
                   Text(
-                    'Serie di ${existing!.recurrenceCount} occorrenze · '
-                    '${existing.recurrenceRule.label}',
+                    AnnaStrings.of(context).d3Format(
+                      'editor_seriesSummary',
+                      {
+                        'count': existing!.recurrenceCount,
+                        'rule': AnnaStrings.of(context).editorRecurrenceLabel(existing.recurrenceRule),
+                      },
+                    ),
                     style: const TextStyle(fontWeight: FontWeight.w700),
                   ),
                   const SizedBox(height: 10),
                   Text(
-                    'Applica modifica a',
+                    AnnaStrings.of(context).d3('editor_applyEditTo'),
                     style: Theme.of(context)
                         .textTheme
                         .titleSmall
@@ -1369,7 +1386,7 @@ Future<void> openItemEditor(
                         .map(
                           (scope) => ButtonSegment<RecurringEditScope>(
                             value: scope,
-                            label: Text(scope.shortLabel),
+                            label: Text(AnnaStrings.of(context).editorScopeShort(scope)),
                           ),
                         )
                         .toList(),
@@ -1386,7 +1403,10 @@ Future<void> openItemEditor(
                       const SizedBox(width: 8),
                       Expanded(
                         child: Text(
-                          '$recurrenceCount occorrenze totali',
+                          AnnaStrings.of(context).d3Format(
+                            'editor_occurrencesTotal',
+                            {'count': recurrenceCount},
+                          ),
                           style: const TextStyle(fontWeight: FontWeight.w700),
                         ),
                       ),
@@ -1422,7 +1442,7 @@ Future<void> openItemEditor(
                               Navigator.pop(sheetContext);
                             }
                           },
-                          label: const Text('Elimina'),
+                          label: Text(AnnaStrings.of(context).delete),
                         ),
                       ),
                       const SizedBox(width: 10),
@@ -1464,8 +1484,8 @@ Future<void> openItemEditor(
                         },
                         label: Text(
                           recurrence == RecurrenceRule.none
-                              ? 'Salva'
-                              : 'Salva serie',
+                              ? AnnaStrings.of(context).save
+                              : AnnaStrings.of(context).d3('editor_saveSeries'),
                         ),
                       ),
                     ),
@@ -1482,51 +1502,25 @@ Future<void> openItemEditor(
   note.dispose();
 }
 
-const List<DropdownMenuItem<int>> _reminderMenuItems = [
-  DropdownMenuItem(value: -1, child: Text('Nessuno')),
-  DropdownMenuItem(value: 0, child: Text('All’ora')),
-  DropdownMenuItem(value: 10, child: Text('10 min prima')),
-  DropdownMenuItem(value: 30, child: Text('30 min prima')),
-  DropdownMenuItem(value: 60, child: Text('1 ora prima')),
-  DropdownMenuItem(value: 120, child: Text('2 ore prima')),
-  DropdownMenuItem(value: 1440, child: Text('1 giorno prima')),
+List<DropdownMenuItem<int>> _reminderMenuItems(AnnaStrings strings) => [
+  DropdownMenuItem(value: -1, child: Text(strings.d3('editor_noReminderOption'))),
+  DropdownMenuItem(value: 0, child: Text(strings.d3('editor_atTime'))),
+  DropdownMenuItem(value: 10, child: Text(strings.d3('editor_tenBefore'))),
+  DropdownMenuItem(value: 30, child: Text(strings.d3('editor_thirtyBefore'))),
+  DropdownMenuItem(value: 60, child: Text(strings.d3('editor_hourBefore'))),
+  DropdownMenuItem(value: 120, child: Text(strings.d3('editor_twoHoursBefore'))),
+  DropdownMenuItem(value: 1440, child: Text(strings.d3('editor_dayBefore'))),
 ];
 
-const _positiveQuotes = <(String, String)>[
-  ('Una cosa alla volta ♡', 'Non serve fare tutto oggi. Basta iniziare da qualcosa che conta.'),
-  ('Fai spazio alle cose belle', 'Anche una giornata piena può contenere un momento solo tuo.'),
-  ('Non devi correre sempre', 'La costanza vale più della fretta.'),
-  ('Oggi merita una pagina nuova', 'Puoi decidere cosa portare con te e cosa lasciare andare.'),
-  ('Piccoli passi, grandi cambiamenti', 'Le cose importanti crescono un giorno alla volta.'),
-  ('Ricordati anche di te', 'Tra tutte le cose da fare, lascia uno spazio per stare bene.'),
-  ('Va bene cambiare programma', 'Un’agenda serve a sostenerti, non a metterti pressione.'),
-  ('Celebra quello che funziona', 'Non aspettare solo i grandi traguardi per essere fiera di te.'),
-];
-
-(String, String) _dailyQuote(DateTime date) {
+(String, String) _dailyQuote(DateTime date, AnnaStrings strings) {
   final start = DateTime(date.year, 1, 1);
   final dayOfYear = date.difference(start).inDays;
-  return _positiveQuotes[dayOfYear % _positiveQuotes.length];
+  final quotes = strings.editorPositiveQuotes;
+  return quotes[dayOfYear % quotes.length];
 }
 
-String _monthPhrase(int month) {
-  const phrases = [
-    '',
-    'Un inizio leggero, senza pretendere tutto subito.',
-    'Coltiva ciò che vuoi vedere crescere.',
-    'Lascia entrare un po’ di primavera anche nei programmi.',
-    'Fai spazio alle novità.',
-    'Scegli ciò che ti fa stare bene.',
-    'Porta con te solo quello che serve.',
-    'Più luce, più tempo per respirare.',
-    'Rallenta abbastanza da ricordarti le giornate.',
-    'Riparti dalle cose essenziali.',
-    'Raccogli ciò che hai costruito.',
-    'Proteggi il tuo tempo e le tue energie.',
-    'Chiudi l’anno ricordando anche le cose belle.',
-  ];
-  return phrases[month.clamp(1, 12)];
-}
+String _monthPhrase(int month, AnnaStrings strings) =>
+    strings.editorMonthPhrase(month);
 
 DateTime addCivilDays(DateTime date, int days) {
   final noon = DateTime(date.year, date.month, date.day, 12);
@@ -1558,6 +1552,9 @@ String _derivePinHash(String pin, String salt) {
 String formatTime(TimeOfDay t) =>
     '${t.hour.toString().padLeft(2, '0')}:${t.minute.toString().padLeft(2, '0')}';
 
-String money(int cents) => NumberFormat.currency(locale: 'it_IT', symbol: '€').format(cents / 100);
+String money(BuildContext context, int cents) => NumberFormat.currency(
+      locale: AnnaStrings.intlLocale(context),
+      symbol: '€',
+    ).format(cents / 100);
 
 String _cap(String value) => value.isEmpty ? value : '${value[0].toUpperCase()}${value.substring(1)}';

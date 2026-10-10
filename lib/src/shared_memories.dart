@@ -105,9 +105,9 @@ class _SharedMemoriesScreenState extends State<SharedMemoriesScreen> {
     if (!CloudSyncService.instance.signedIn) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
+        SnackBar(
           content: Text(
-            'La manutenzione media richiede la connessione cloud.',
+            AnnaStrings.of(context).d3('mem_maintenanceCloud'),
           ),
         ),
       );
@@ -139,14 +139,20 @@ class _SharedMemoriesScreenState extends State<SharedMemoriesScreen> {
         await showDialog<void>(
           context: context,
           builder: (dialogContext) => AlertDialog(
-            title: const Text('Manutenzione completata'),
+            title: Text(AnnaStrings.of(dialogContext).d3('mem_maintenanceDone')),
             content: Text(
               report.removedCount == 0
-                  ? 'Non c’erano file orfani da eliminare. '
-                      'Storage rilevato: ${_formatBytes(report.totalBytes)}.'
-                  : 'Eliminati ${report.removedCount} file orfani. '
-                      'Storage rilevato prima della pulizia: '
-                      '${_formatBytes(report.totalBytes)}.',
+                  ? AnnaStrings.of(dialogContext).d3Format(
+                      'mem_noOrphans',
+                      {'size': _formatBytes(report.totalBytes)},
+                    )
+                  : AnnaStrings.of(dialogContext).d3Format(
+                      'mem_orphansRemoved',
+                      {
+                        'count': report.removedCount,
+                        'size': _formatBytes(report.totalBytes),
+                      },
+                    ),
             ),
             actions: [
               FilledButton(
@@ -162,26 +168,29 @@ class _SharedMemoriesScreenState extends State<SharedMemoriesScreen> {
       final cleanup = await showDialog<bool>(
             context: context,
             builder: (dialogContext) => AlertDialog(
-              title: const Text('Media di Noi ♡'),
+              title: Text(AnnaStrings.of(dialogContext).d3('mem_noiMedia')),
               content: Column(
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('File Storage: ${report.fileCount}'),
+                  Text(AnnaStrings.of(dialogContext).d3Format('mem_storageFiles', {'count': report.fileCount})),
                   Text(
-                    'Media collegati ai ricordi: '
-                    '${report.referencedCount}',
+                    AnnaStrings.of(dialogContext).d3Format(
+                      'mem_linkedMedia',
+                      {'count': report.referencedCount},
+                    ),
                   ),
-                  Text('File orfani: ${report.orphanCount}'),
+                  Text(AnnaStrings.of(dialogContext).d3Format('mem_orphanFiles', {'count': report.orphanCount})),
                   Text(
-                    'Spazio rilevato: '
-                    '${_formatBytes(report.totalBytes)}',
+                    AnnaStrings.of(dialogContext).d3Format(
+                      'mem_detectedSpace',
+                      {'size': _formatBytes(report.totalBytes)},
+                    ),
                   ),
                   if (report.orphanCount > 0) ...[
                     const SizedBox(height: 12),
-                    const Text(
-                      'I file orfani non risultano più collegati ad alcuna '
-                      'foto condivisa nello spazio corrente.',
+                    Text(
+                      AnnaStrings.of(dialogContext).d3('mem_orphansExplanation'),
                     ),
                   ],
                 ],
@@ -189,12 +198,12 @@ class _SharedMemoriesScreenState extends State<SharedMemoriesScreen> {
               actions: [
                 TextButton(
                   onPressed: () => Navigator.pop(dialogContext, false),
-                  child: const Text('Chiudi'),
+                  child: Text(AnnaStrings.of(dialogContext).close),
                 ),
                 if (report.orphanCount > 0)
                   FilledButton(
                     onPressed: () => Navigator.pop(dialogContext, true),
-                    child: const Text('Pulisci orfani'),
+                    child: Text(AnnaStrings.of(dialogContext).d3('mem_cleanOrphans')),
                   ),
               ],
             ),
@@ -207,8 +216,8 @@ class _SharedMemoriesScreenState extends State<SharedMemoriesScreen> {
     } catch (_) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Controllo Storage non riuscito. Riprova più tardi.'),
+        SnackBar(
+          content: Text(AnnaStrings.of(context).d3('mem_storageCheckFailed')),
         ),
       );
     } finally {
@@ -254,28 +263,22 @@ class _SharedMemoriesScreenState extends State<SharedMemoriesScreen> {
   bool _matchesSearch(SharedEntry entry, String query) {
     if (query.isEmpty) return true;
 
+    final locale = AnnaStrings.intlLocale(context);
     final date = DateFormat(
       'EEEE d MMMM yyyy',
-      'it_IT',
+      locale,
     ).format(entry.date);
-    final month = DateFormat('MMMM yyyy', 'it_IT').format(entry.date);
+    final month = DateFormat('MMMM yyyy', locale).format(entry.date);
     final comments = commentsByEntry[entry.id] ?? const [];
     final haystack = <String>[
       entry.title,
       entry.note,
       entry.editorName,
-      entry.type.label,
+      AnnaStrings.of(context).sharedEntryTypeLabel(entry.type),
       date,
       month,
       entry.date.year.toString(),
-      switch (entry.type) {
-        SharedEntryType.photo => 'foto immagine ricordo',
-        SharedEntryType.sketch => 'sketch disegno ricordo',
-        SharedEntryType.note => 'nota pensiero messaggio ricordo',
-        SharedEntryType.appointment => 'appuntamento evento momento',
-        SharedEntryType.task => 'attività da fare momento',
-        SharedEntryType.shopping => 'spesa acquisti lista',
-      },
+      AnnaStrings.of(context).sharedMemorySearchTokens(entry.type),
       for (final comment in comments) comment.body,
       for (final comment in comments) comment.authorName,
     ].join(' ').toLowerCase();
@@ -288,7 +291,7 @@ class _SharedMemoriesScreenState extends State<SharedMemoriesScreen> {
     if (name.isNotEmpty) return name;
     final uid =
         widget.store.activeAccountId ?? CloudSyncService.instance.userId;
-    if (uid != null && entry.updatedBy == uid) return 'Tu';
+    if (uid != null && entry.updatedBy == uid) return AnnaStrings.of(context).d3('mem_you');
     return 'Noi ♡';
   }
 
@@ -307,7 +310,9 @@ class _SharedMemoriesScreenState extends State<SharedMemoriesScreen> {
         )
         .length;
     if (count == 0) return null;
-    return count == 1 ? 'Visto' : 'Visto da $count';
+    return count == 1
+        ? AnnaStrings.of(context).d3('mem_seen')
+        : AnnaStrings.of(context).d3Format('mem_seenBy', {'count': count});
   }
 
   Future<void> _openEntry(SharedEntry entry) async {
@@ -418,12 +423,13 @@ class _SharedMemoriesScreenState extends State<SharedMemoriesScreen> {
         )
         .length;
 
+    final strings = AnnaStrings.of(context);
     return [
-      '${source.length} ricordi',
-      if (photos > 0) '$photos foto',
-      if (sketches > 0) '$sketches sketch',
-      if (notes > 0) '$notes note',
-      if (moments > 0) '$moments momenti',
+      strings.d3Format('mem_memoryCount', {'count': source.length}),
+      if (photos > 0) strings.d3Format('mem_photoCount', {'count': photos}),
+      if (sketches > 0) strings.d3Format('mem_sketchCount', {'count': sketches}),
+      if (notes > 0) strings.d3Format('mem_noteCount', {'count': notes}),
+      if (moments > 0) strings.d3Format('mem_momentCount', {'count': moments}),
     ].join(' · ');
   }
 
@@ -457,27 +463,27 @@ class _SharedMemoriesScreenState extends State<SharedMemoriesScreen> {
           _viewChip(
             _SharedMemoriesView.memories,
             Icons.grid_view_rounded,
-            'Ricordi',
+            AnnaStrings.of(context).d3('mem_memories'),
           ),
           _viewChip(
             _SharedMemoriesView.days,
             Icons.today_outlined,
-            'Giorni',
+            AnnaStrings.of(context).d3('mem_days'),
           ),
           _viewChip(
             _SharedMemoriesView.months,
             Icons.calendar_view_month_outlined,
-            'Mesi',
+            AnnaStrings.of(context).d3('mem_months'),
           ),
           _viewChip(
             _SharedMemoriesView.years,
             Icons.calendar_today_outlined,
-            'Anni',
+            AnnaStrings.of(context).d3('mem_years'),
           ),
           _viewChip(
             _SharedMemoriesView.timeline,
             Icons.view_timeline_outlined,
-            'Timeline',
+            AnnaStrings.of(context).d3('mem_timeline'),
           ),
         ],
       ),
@@ -506,11 +512,11 @@ class _SharedMemoriesScreenState extends State<SharedMemoriesScreen> {
       padding: const EdgeInsets.symmetric(horizontal: 14),
       child: Row(
         children: [
-          _filterChip(_SharedMemoriesFilter.all, 'Tutti'),
-          _filterChip(_SharedMemoriesFilter.photo, 'Foto'),
-          _filterChip(_SharedMemoriesFilter.sketch, 'Sketch'),
-          _filterChip(_SharedMemoriesFilter.note, 'Note'),
-          _filterChip(_SharedMemoriesFilter.events, 'Momenti'),
+          _filterChip(_SharedMemoriesFilter.all, AnnaStrings.of(context).d3('mem_all')),
+          _filterChip(_SharedMemoriesFilter.photo, AnnaStrings.of(context).d3('mem_photos')),
+          _filterChip(_SharedMemoriesFilter.sketch, AnnaStrings.of(context).d3('mem_sketches')),
+          _filterChip(_SharedMemoriesFilter.note, AnnaStrings.of(context).d3('mem_notes')),
+          _filterChip(_SharedMemoriesFilter.events, AnnaStrings.of(context).d3('mem_moments')),
         ],
       ),
     );
@@ -545,8 +551,8 @@ class _SharedMemoriesScreenState extends State<SharedMemoriesScreen> {
             const SizedBox(height: 12),
             Text(
               hasQuery
-                  ? 'Nessun ricordo corrisponde alla ricerca.'
-                  : 'I vostri ricordi compariranno qui.',
+                  ? AnnaStrings.of(context).d3('mem_noSearchMatch')
+                  : AnnaStrings.of(context).d3('mem_memoriesEmpty'),
               textAlign: TextAlign.center,
               style: const TextStyle(
                 fontWeight: FontWeight.w800,
@@ -556,10 +562,8 @@ class _SharedMemoriesScreenState extends State<SharedMemoriesScreen> {
             const SizedBox(height: 6),
             Text(
               hasQuery
-                  ? 'Prova a cambiare parole o filtri.'
-                  : 'Foto, sketch e note entrano automaticamente. '
-                      'Appuntamenti e attività possono essere aggiunti ai '
-                      'ricordi dal menu dell’elemento.',
+                  ? AnnaStrings.of(context).d3('mem_changeSearch')
+                  : AnnaStrings.of(context).d3('mem_memoriesEmptyHint'),
               textAlign: TextAlign.center,
             ),
           ],
@@ -618,12 +622,12 @@ class _SharedMemoriesScreenState extends State<SharedMemoriesScreen> {
         return SharedMemoryPeriodCard(
           cover: _coverEntry(items),
           title: _cap(
-            DateFormat('EEE d MMM', 'it_IT').format(day),
+            DateFormat('EEE d MMM', AnnaStrings.intlLocale(context)).format(day),
           ),
           subtitle: _periodStats(items),
           onTap: () => _openCollection(
             title: _cap(
-              DateFormat('EEEE d MMMM yyyy', 'it_IT').format(day),
+              DateFormat('EEEE d MMMM yyyy', AnnaStrings.intlLocale(context)).format(day),
             ),
             source: items,
           ),
@@ -649,7 +653,7 @@ class _SharedMemoriesScreenState extends State<SharedMemoriesScreen> {
         return SharedMemoryPeriodCard(
           cover: _coverEntry(items),
           title: _cap(
-            DateFormat('MMMM yyyy', 'it_IT').format(
+            DateFormat('MMMM yyyy', AnnaStrings.intlLocale(context)).format(
               DateTime(year, month),
             ),
           ),
@@ -657,7 +661,7 @@ class _SharedMemoriesScreenState extends State<SharedMemoriesScreen> {
           horizontal: true,
           onTap: () => _openCollection(
             title: _cap(
-              DateFormat('MMMM yyyy', 'it_IT').format(
+              DateFormat('MMMM yyyy', AnnaStrings.intlLocale(context)).format(
                 DateTime(year, month),
               ),
             ),
@@ -693,10 +697,10 @@ class _SharedMemoriesScreenState extends State<SharedMemoriesScreen> {
         return SharedMemoryPeriodCard(
           cover: _coverEntry(items),
           title: year.toString(),
-          subtitle: '${_periodStats(items)} · $distinctDays giorni',
+          subtitle: '${_periodStats(items)} · ${AnnaStrings.of(context).d3Format('mem_daysCount', {'count': distinctDays})}',
           horizontal: true,
           onTap: () => _openCollection(
-            title: 'Ricordi $year',
+            title: AnnaStrings.of(context).d3Format('mem_yearMemories', {'year': year}),
             source: items,
           ),
         );
@@ -723,7 +727,7 @@ class _SharedMemoriesScreenState extends State<SharedMemoriesScreen> {
               _cap(
                 DateFormat(
                   'EEEE d MMMM yyyy',
-                  'it_IT',
+                  AnnaStrings.intlLocale(context),
                 ).format(day),
               ),
               style: const TextStyle(
@@ -769,27 +773,27 @@ class _SharedMemoriesScreenState extends State<SharedMemoriesScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text(
-          'I nostri ricordi',
-          style: TextStyle(fontWeight: FontWeight.w900),
+        title: Text(
+          AnnaStrings.of(context).d3('mem_ourMemories'),
+          style: const TextStyle(fontWeight: FontWeight.w900),
         ),
         actions: [
           IconButton(
-            tooltip: 'Aggiorna',
+            tooltip: AnnaStrings.of(context).d3('mem_refresh'),
             onPressed: refreshing ? null : _refresh,
             icon: const Icon(Icons.refresh),
           ),
           PopupMenuButton<String>(
-            tooltip: 'Altre opzioni',
+            tooltip: AnnaStrings.of(context).d3('mem_moreOptions'),
             onSelected: (value) {
               if (value == 'storage') {
                 _runMediaMaintenance();
               }
             },
-            itemBuilder: (_) => const [
+            itemBuilder: (_) => [
               PopupMenuItem(
                 value: 'storage',
-                child: Text('Controlla media e Storage'),
+                child: Text(AnnaStrings.of(context).d3('mem_checkMedia')),
               ),
             ],
           ),
@@ -804,12 +808,12 @@ class _SharedMemoriesScreenState extends State<SharedMemoriesScreen> {
               onChanged: (_) => setState(() {}),
               textInputAction: TextInputAction.search,
               decoration: InputDecoration(
-                hintText: 'Cerca nei nostri ricordi...',
+                hintText: AnnaStrings.of(context).d3('mem_searchMemories'),
                 prefixIcon: const Icon(Icons.search),
                 suffixIcon: searchController.text.isEmpty
                     ? null
                     : IconButton(
-                        tooltip: 'Cancella ricerca',
+                        tooltip: AnnaStrings.of(context).d3('mem_clearSearch'),
                         onPressed: () {
                           searchController.clear();
                           setState(() {});
@@ -831,7 +835,13 @@ class _SharedMemoriesScreenState extends State<SharedMemoriesScreen> {
               children: [
                 Expanded(
                   child: Text(
-                    '${source.length} ricordi · $totalDays giorni',
+                    AnnaStrings.of(context).d3Format(
+                      'mem_summary',
+                      {
+                        'memories': AnnaStrings.of(context).d3Format('mem_memoryCount', {'count': source.length}),
+                        'days': AnnaStrings.of(context).d3Format('mem_daysCount', {'count': totalDays}),
+                      },
+                    ),
                     style: Theme.of(context).textTheme.bodySmall,
                   ),
                 ),
@@ -921,7 +931,7 @@ class SharedMemoryTile extends StatelessWidget {
             Padding(
               padding: const EdgeInsets.fromLTRB(10, 9, 10, 4),
               child: Text(
-                entry.title.trim().isEmpty ? entry.type.label : entry.title,
+                entry.title.trim().isEmpty ? AnnaStrings.of(context).sharedEntryTypeLabel(entry.type) : entry.title,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: const TextStyle(fontWeight: FontWeight.w900),
@@ -930,7 +940,7 @@ class SharedMemoryTile extends StatelessWidget {
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 10),
               child: Text(
-                '${DateFormat('d MMM yyyy', 'it_IT').format(entry.date)} · $author',
+                '${DateFormat('d MMM yyyy', AnnaStrings.intlLocale(context)).format(entry.date)} · $author',
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: Theme.of(context).textTheme.bodySmall,
@@ -961,8 +971,8 @@ class SharedMemoryTile extends StatelessWidget {
                     IconButton(
                       visualDensity: VisualDensity.compact,
                       tooltip: entry.memoryPinned
-                          ? 'Togli dai ricordi'
-                          : 'Aggiungi ai ricordi',
+                          ? AnnaStrings.of(context).d3('mem_removeMemory')
+                          : AnnaStrings.of(context).d3('mem_addMemory'),
                       onPressed: onToggleMemory,
                       icon: Icon(
                         entry.memoryPinned
@@ -1123,7 +1133,7 @@ class _SharedMemoryFallbackCover extends StatelessWidget {
                   ? entry.note.trim()
                   : entry.title.trim().isNotEmpty
                       ? entry.title.trim()
-                      : entry.type.label,
+                      : AnnaStrings.of(context).sharedEntryTypeLabel(entry.type),
               maxLines: 4,
               overflow: TextOverflow.ellipsis,
               textAlign: TextAlign.center,
@@ -1285,7 +1295,7 @@ class SharedMemoryTimelineTile extends StatelessWidget {
                   children: [
                     Text(
                       entry.title.trim().isEmpty
-                          ? entry.type.label
+                          ? AnnaStrings.of(context).sharedEntryTypeLabel(entry.type)
                           : entry.title,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
@@ -1342,15 +1352,15 @@ class SharedMemoryCollectionScreen extends StatelessWidget {
     required this.currentUserId,
   });
 
-  String _author(SharedEntry entry) {
+  String _author(SharedEntry entry, AnnaStrings strings) {
     if (entry.editorName.trim().isNotEmpty) return entry.editorName.trim();
     if (currentUserId != null && entry.updatedBy == currentUserId) {
-      return 'Tu';
+      return strings.d3('mem_you');
     }
     return 'Noi ♡';
   }
 
-  String? _seen(SharedEntry entry) {
+  String? _seen(SharedEntry entry, AnnaStrings strings) {
     if (currentUserId == null ||
         entry.updatedBy != currentUserId ||
         entry.updatedAt == null) {
@@ -1364,7 +1374,9 @@ class SharedMemoryCollectionScreen extends StatelessWidget {
         )
         .length;
     if (count == 0) return null;
-    return count == 1 ? 'Visto' : 'Visto da $count';
+    return count == 1
+        ? strings.d3('mem_seen')
+        : strings.d3Format('mem_seenBy', {'count': count});
   }
 
   Future<void> _open(BuildContext context, SharedEntry entry) async {
@@ -1401,8 +1413,8 @@ class SharedMemoryCollectionScreen extends StatelessWidget {
           entry: entry,
           hearts: heartsByEntry[entry.id]?.length ?? 0,
           comments: commentsByEntry[entry.id]?.length ?? 0,
-          author: _author(entry),
-          seenLabel: _seen(entry),
+          author: _author(entry, AnnaStrings.of(context)),
+          seenLabel: _seen(entry, AnnaStrings.of(context)),
         ),
       ),
     );
@@ -1438,10 +1450,10 @@ class SharedMemoryCollectionScreen extends StatelessWidget {
           final entry = source[index];
           return SharedMemoryTile(
             entry: entry,
-            author: _author(entry),
+            author: _author(entry, AnnaStrings.of(context)),
             hearts: heartsByEntry[entry.id]?.length ?? 0,
             comments: commentsByEntry[entry.id]?.length ?? 0,
-            seenLabel: _seen(entry),
+            seenLabel: _seen(entry, AnnaStrings.of(context)),
             onTap: () => _open(context, entry),
           );
         },
@@ -1493,10 +1505,10 @@ class _SharedSketchViewerScreenState extends State<SharedSketchViewerScreen> {
       ),
       body: SafeArea(
         child: pages.isEmpty
-            ? const Center(
+            ? Center(
                 child: Text(
-                  'Sketch non disponibile.',
-                  style: TextStyle(color: Colors.white70),
+                  AnnaStrings.of(context).d3('memSketchUnavailable'),
+                  style: const TextStyle(color: Colors.white70),
                 ),
               )
             : Column(
@@ -1557,7 +1569,7 @@ class _SharedSketchViewerScreenState extends State<SharedSketchViewerScreen> {
                                 _cap(
                                   DateFormat(
                                     'EEEE d MMMM yyyy',
-                                    'it_IT',
+                                    AnnaStrings.intlLocale(context),
                                   ).format(widget.entry.date),
                                 ),
                                 style: const TextStyle(
@@ -1566,7 +1578,10 @@ class _SharedSketchViewerScreenState extends State<SharedSketchViewerScreen> {
                               ),
                             ),
                             Text(
-                              'Pagina ${pageIndex + 1}/${pages.length}',
+                              AnnaStrings.of(context).d3Format(
+                                'memPage',
+                                {'current': pageIndex + 1, 'total': pages.length},
+                              ),
                               style: const TextStyle(
                                 color: Colors.white70,
                               ),
@@ -1617,7 +1632,7 @@ class SharedMemoryDetailScreen extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         title: Text(
-          entry.type.label,
+          AnnaStrings.of(context).sharedEntryTypeLabel(entry.type),
           style: const TextStyle(fontWeight: FontWeight.w900),
         ),
       ),
@@ -1636,7 +1651,7 @@ class SharedMemoryDetailScreen extends StatelessWidget {
                     Expanded(
                       child: Text(
                         entry.title.trim().isEmpty
-                            ? entry.type.label
+                            ? AnnaStrings.of(context).sharedEntryTypeLabel(entry.type)
                             : entry.title,
                         style: const TextStyle(
                           fontWeight: FontWeight.w900,
@@ -1662,7 +1677,7 @@ class SharedMemoryDetailScreen extends StatelessWidget {
                     _cap(
                       DateFormat(
                         'EEEE d MMMM yyyy',
-                        'it_IT',
+                        AnnaStrings.intlLocale(context),
                       ).format(entry.date),
                     ),
                   ),

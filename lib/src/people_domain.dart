@@ -212,7 +212,7 @@ extension AgendaStorePeople on AgendaStore {
   Future<void> savePerson(PersonEntry person) async {
     final normalizedName = person.name.trim();
     if (normalizedName.isEmpty) {
-      throw ArgumentError.value(person.name, 'name', 'Il nome è obbligatorio');
+      throw ArgumentError.value(person.name, 'name', 'person_name_required');
     }
 
     final linkedBirthday = person.birthdayId;

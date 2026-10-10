@@ -18,21 +18,6 @@ enum TrashEntityKind {
 }
 
 extension TrashEntityKindUi on TrashEntityKind {
-  String get label => switch (this) {
-        TrashEntityKind.item => 'Agenda',
-        TrashEntityKind.diaryBlock => 'Ricordo',
-        TrashEntityKind.journal => 'Giornata',
-        TrashEntityKind.month => 'Pagina mensile',
-        TrashEntityKind.week => 'Pagina settimanale',
-        TrashEntityKind.habit => 'Abitudine',
-        TrashEntityKind.birthday => 'Compleanno',
-        TrashEntityKind.person => 'Persona',
-        TrashEntityKind.inbox => 'Inbox',
-        TrashEntityKind.shoppingItem => 'Spesa',
-        TrashEntityKind.workoutSession => 'Allenamento',
-        TrashEntityKind.workoutPlan => 'Scheda allenamento',
-      };
-
   IconData get icon => switch (this) {
         TrashEntityKind.item => Icons.event_outlined,
         TrashEntityKind.diaryBlock => Icons.auto_stories_outlined,
@@ -98,7 +83,7 @@ class TrashEntry {
         ),
         entityId: json['entityId'] as String? ?? '',
         parentId: json['parentId'] as String?,
-        title: json['title'] as String? ?? 'Elemento eliminato',
+        title: json['title'] as String? ?? 'Deleted item',
         deletedAt:
             DateTime.tryParse(json['deletedAt'] as String? ?? '')?.toLocal() ??
                 DateTime.now(),
@@ -115,16 +100,18 @@ extension AgendaStoreLifecycle on AgendaStore {
     required String title,
     required Map<String, dynamic> payload,
     String? parentId,
-  }) =>
-      TrashEntry(
-        id: const Uuid().v4(),
-        kind: kind,
-        entityId: entityId,
-        parentId: parentId,
-        title: title.trim().isEmpty ? kind.label : title.trim(),
-        deletedAt: DateTime.now(),
-        payload: payload,
-      );
+  }) {
+    final strings = AnnaStrings.forPreference(preferences.appLanguage);
+    return TrashEntry(
+      id: const Uuid().v4(),
+      kind: kind,
+      entityId: entityId,
+      parentId: parentId,
+      title: title.trim().isEmpty ? strings.trashKindLabel(kind) : title.trim(),
+      deletedAt: DateTime.now(),
+      payload: payload,
+    );
+  }
 
   void _putTrashInMemory(TrashEntry entry) {
     // Keep historical versions of the same logical entity. A deterministic
@@ -425,13 +412,14 @@ extension AgendaStoreLifecycle on AgendaStore {
     if (index < 0) return false;
 
     final block = current.blocks[index];
+    final strings = AnnaStrings.forPreference(preferences.appLanguage);
     final title = block.text.trim().isNotEmpty
         ? block.text.trim()
         : switch (block.type) {
-            DiaryBlockType.note => 'Nota del diario',
-            DiaryBlockType.photo => 'Foto del diario',
-            DiaryBlockType.sketch => 'Sketch del diario',
-            DiaryBlockType.voice => 'Nota vocale del diario',
+            DiaryBlockType.note => strings.d3('trashDiaryNote'),
+            DiaryBlockType.photo => strings.d3('trashDiaryPhoto'),
+            DiaryBlockType.sketch => strings.d3('trashDiarySketch'),
+            DiaryBlockType.voice => strings.d3('trashDiaryVoice'),
           };
     final entry = _newTrashEntry(
       kind: TrashEntityKind.diaryBlock,
@@ -459,10 +447,15 @@ extension AgendaStoreLifecycle on AgendaStore {
     final key = AgendaStore.dateKey(date);
     final current = journals[key];
     if (current == null) return false;
+    final strings = AnnaStrings.forPreference(preferences.appLanguage);
+    final locale = strings.languageCode;
     final entry = _newTrashEntry(
       kind: TrashEntityKind.journal,
       entityId: key,
-      title: 'Diario del ${DateFormat('d MMMM yyyy', 'it_IT').format(date)}',
+      title: strings.d3Format(
+        'trashJournalTitle',
+        {'date': DateFormat('d MMMM yyyy', locale).format(date)},
+      ),
       payload: current.toLocalJson(),
     );
     journals.remove(key);
@@ -481,10 +474,11 @@ extension AgendaStoreLifecycle on AgendaStore {
     final key = AgendaStore.monthKey(year, month);
     final current = months[key];
     if (current == null) return false;
+    final strings = AnnaStrings.forPreference(preferences.appLanguage);
     final entry = _newTrashEntry(
       kind: TrashEntityKind.month,
       entityId: key,
-      title: _cap(DateFormat('MMMM yyyy', 'it_IT').format(DateTime(year, month))),
+      title: _cap(DateFormat('MMMM yyyy', strings.languageCode).format(DateTime(year, month))),
       payload: current.toJson(),
     );
     months.remove(key);
@@ -503,11 +497,14 @@ extension AgendaStoreLifecycle on AgendaStore {
     final key = AgendaStore.dateKey(monday);
     final current = weeks[key];
     if (current == null) return false;
+    final strings = AnnaStrings.forPreference(preferences.appLanguage);
     final entry = _newTrashEntry(
       kind: TrashEntityKind.week,
       entityId: key,
-      title:
-          'Settimana del ${DateFormat('d MMMM yyyy', 'it_IT').format(monday)}',
+      title: strings.d3Format(
+        'trashWeekTitle',
+        {'date': DateFormat('d MMMM yyyy', strings.languageCode).format(monday)},
+      ),
       payload: current.toJson(),
     );
     weeks.remove(key);
@@ -579,7 +576,7 @@ extension AgendaStoreLifecycle on AgendaStore {
     switch (entry.kind) {
       case TrashEntityKind.item:
         return items.any((item) => item.id == entry.entityId)
-            ? 'Questo elemento è già presente nell’agenda.'
+            ? 'item_exists'
             : null;
       case TrashEntityKind.diaryBlock:
         final parentId = entry.parentId;
@@ -587,47 +584,47 @@ extension AgendaStoreLifecycle on AgendaStore {
         final current = journals[parentId];
         return current != null &&
                 current.blocks.any((block) => block.id == entry.entityId)
-            ? 'Questo ricordo è già presente nella giornata.'
+            ? 'diary_block_exists'
             : null;
       case TrashEntityKind.journal:
         return journals.containsKey(entry.entityId)
-            ? 'Per questa data esiste già una giornata attiva. Spostala prima nel Cestino per scegliere quale versione ripristinare.'
+            ? 'journal_exists'
             : null;
       case TrashEntityKind.month:
         return months.containsKey(entry.entityId)
-            ? 'Per questo mese esiste già una pagina attiva. Spostala prima nel Cestino per scegliere quale versione ripristinare.'
+            ? 'month_exists'
             : null;
       case TrashEntityKind.week:
         return weeks.containsKey(entry.entityId)
-            ? 'Per questa settimana esiste già una pagina attiva. Spostala prima nel Cestino per scegliere quale versione ripristinare.'
+            ? 'week_exists'
             : null;
       case TrashEntityKind.habit:
         return habits.any((habit) => habit.id == entry.entityId)
-            ? 'Questa abitudine è già attiva.'
+            ? 'habit_exists'
             : null;
       case TrashEntityKind.birthday:
         return birthdays.any((birthday) => birthday.id == entry.entityId)
-            ? 'Questo compleanno è già presente.'
+            ? 'birthday_exists'
             : null;
       case TrashEntityKind.person:
         return people.any((person) => person.id == entry.entityId)
-            ? 'Questa persona è già presente.'
+            ? 'person_exists'
             : null;
       case TrashEntityKind.inbox:
         return inbox.any((value) => value.id == entry.entityId)
-            ? 'Questa nota è già presente nell’Inbox.'
+            ? 'inbox_exists'
             : null;
       case TrashEntityKind.shoppingItem:
         return shoppingItems.any((value) => value.id == entry.entityId)
-            ? 'Questo articolo è già presente nella lista della spesa.'
+            ? 'shopping_exists'
             : null;
       case TrashEntityKind.workoutSession:
         return workoutSessions.any((value) => value.id == entry.entityId)
-            ? 'Questo allenamento è già presente.'
+            ? 'workout_exists'
             : null;
       case TrashEntityKind.workoutPlan:
         return workoutPlans.any((value) => value.id == entry.entityId)
-            ? 'Questa scheda è già presente.'
+            ? 'workout_plan_exists'
             : null;
     }
   }
@@ -986,7 +983,9 @@ extension AgendaStoreLifecycle on AgendaStore {
     final index = trash.indexWhere((entry) => entry.id == trashId);
     if (index < 0) return false;
     if (createSafetySnapshot) {
-      await createLocalSnapshot(label: 'Prima di svuotare il Cestino');
+      await createLocalSnapshot(
+        label: '@snapshot:before_empty_trash',
+      );
     }
 
     final entry = trash.removeAt(index);
@@ -1026,7 +1025,9 @@ extension AgendaStoreLifecycle on AgendaStore {
 
   Future<int> emptyTrash() async {
     if (trash.isEmpty) return 0;
-    await createLocalSnapshot(label: 'Prima di svuotare il Cestino');
+    await createLocalSnapshot(
+        label: '@snapshot:before_empty_trash',
+      );
 
     final removed = [...trash];
     final purgedPeople = removed

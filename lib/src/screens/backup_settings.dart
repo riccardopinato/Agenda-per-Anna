@@ -34,6 +34,7 @@ class _BackupScreenState extends State<BackupScreen> {
       final ok = await BackupFileService.instance.saveZipBackup(
         bytes: bytes,
         fileName: _timestampFileName('zip'),
+        dialogTitle: strings.d3('backup_saveBackupDialog'),
       );
       _message(
         ok
@@ -43,7 +44,7 @@ class _BackupScreenState extends State<BackupScreen> {
     } catch (error) {
       _message(
         error is FormatException
-            ? error.message.toString()
+            ? strings.d3BackupError(error.message.toString())
             : strings.v100BackupCreateFailed,
       );
     } finally {
@@ -55,13 +56,14 @@ class _BackupScreenState extends State<BackupScreen> {
     final strings = AnnaStrings.of(context);
     setState(() => busy = true);
     try {
-      final bytes = await widget.store.createOpenExportZip();
+      final bytes = await widget.store.createOpenExportZip(strings: strings);
       final ok = await BackupFileService.instance.saveOpenExportZip(
         bytes: bytes,
         fileName: _timestampFileName('zip').replaceFirst(
           'backup_',
           'open-export_',
         ),
+        dialogTitle: strings.d3('backup_openExportDialog'),
       );
       _message(
         ok
@@ -71,7 +73,7 @@ class _BackupScreenState extends State<BackupScreen> {
     } catch (error) {
       _message(
         error is FormatException
-            ? error.message.toString()
+            ? strings.d3BackupError(error.message.toString())
             : strings.v100OpenExportFailed,
       );
     } finally {
@@ -105,8 +107,9 @@ class _BackupScreenState extends State<BackupScreen> {
     setState(() => busy = true);
     try {
       final ok = await BackupFileService.instance.saveTextExport(
-        text: widget.store.createReadableExport(),
+        text: widget.store.createReadableExport(strings: strings),
         fileName: _timestampFileName('txt'),
+        dialogTitle: strings.d3('backup_readableExportDialog'),
       );
       _message(
         ok
@@ -123,7 +126,9 @@ class _BackupScreenState extends State<BackupScreen> {
     setState(() => busy = true);
     PickedBackupFile? picked;
     try {
-      picked = await BackupFileService.instance.pickBackup();
+      picked = await BackupFileService.instance.pickBackup(
+        dialogTitle: strings.d3('backup_chooseBackupDialog'),
+      );
     } finally {
       if (mounted) setState(() => busy = false);
     }
@@ -145,7 +150,7 @@ class _BackupScreenState extends State<BackupScreen> {
     } catch (error) {
       _message(
         error is FormatException
-            ? error.message.toString()
+            ? strings.d3BackupError(error.message.toString())
             : strings.v100InvalidBackup,
       );
       return;
@@ -266,7 +271,7 @@ class _BackupScreenState extends State<BackupScreen> {
           builder: (dialogContext) => AlertDialog(
             title: Text(strings.v100RestoreLocalQuestion),
             content: Text(
-              '${snapshot.label}\n'
+              '${strings.snapshotLabel(snapshot.label)}\n'
               '${DateFormat('d MMMM yyyy, HH:mm', AnnaStrings.resolveLocale(Locale(strings.languageCode)).languageCode).format(snapshot.createdAt)}',
             ),
             actions: [
@@ -424,7 +429,7 @@ class _BackupScreenState extends State<BackupScreen> {
                             child: Icon(Icons.history),
                           ),
                           title: Text(
-                            snapshot.label,
+                            AnnaStrings.of(context).snapshotLabel(snapshot.label),
                             style: const TextStyle(fontWeight: FontWeight.w800),
                           ),
                           subtitle: Text(
@@ -1216,7 +1221,11 @@ class ExternalCalendarSettingsCard extends StatelessWidget {
                       contentPadding: EdgeInsets.zero,
                       dense: true,
                       value: service.selectedCalendarIds.contains(calendar.id),
-                      title: Text(calendar.name),
+                      title: Text(
+                        calendar.name.trim().isEmpty
+                            ? AnnaStrings.of(context).d3('external_calendar')
+                            : calendar.name,
+                      ),
                       subtitle: calendar.accountName.isEmpty
                           ? null
                           : Text(calendar.accountName),
@@ -1604,7 +1613,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                             radius: 8,
                             backgroundColor: palette.seed,
                           ),
-                          label: Text(palette.label),
+                          label: Text(strings.agendaPaletteLabel(palette)),
                           onSelected: (_) =>
                               widget.store.savePreferences(
                             prefs.copyWith(palette: palette),
@@ -1699,7 +1708,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                     size: 18,
                                   ),
                                   const SizedBox(width: 8),
-                                  Text(value.label),
+                                  Text(strings.editorCategoryLabel(value)),
                                 ],
                               ),
                             ),
@@ -1752,7 +1761,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         prefixIcon:
                             const Icon(Icons.notifications_none_outlined),
                       ),
-                      items: _reminderMenuItems,
+                      items: _reminderMenuItems(strings),
                       onChanged: (value) {
                         final minutes = value ?? -1;
                         widget.store.savePreferences(
@@ -1774,7 +1783,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         labelText: strings.v100DefaultReminder2,
                         prefixIcon: const Icon(Icons.add_alert_outlined),
                       ),
-                      items: _reminderMenuItems,
+                      items: _reminderMenuItems(strings),
                       onChanged: (value) {
                         final minutes = value ?? -1;
                         widget.store.savePreferences(

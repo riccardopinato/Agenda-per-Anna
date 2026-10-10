@@ -51,7 +51,9 @@ extension AgendaStoreLifeArchive on AgendaStore {
     DateTime? through,
     String query = '',
     LifeArchiveKind? kind,
+    AnnaStrings? strings,
   }) {
+    final labels = strings ?? const AnnaStrings('en');
     final anchor = through ?? DateTime.now();
     final end = DateTime(anchor.year, anchor.month, anchor.day, 23, 59, 59, 999);
     final result = <LifeArchiveEntry>[];
@@ -69,20 +71,20 @@ extension AgendaStoreLifeArchive on AgendaStore {
           .map((element) => element.text)
           .join(' ');
       final typeLabel = switch (block.type) {
-        DiaryBlockType.note => 'Nota',
-        DiaryBlockType.sketch => 'Sketch',
-        DiaryBlockType.photo => 'Foto',
-        DiaryBlockType.voice => 'Nota vocale',
+        DiaryBlockType.note => labels.v100Note,
+        DiaryBlockType.sketch => labels.v100Sketch,
+        DiaryBlockType.photo => labels.v100Photo,
+        DiaryBlockType.voice => labels.v100VoiceNote,
       };
       result.add(
         LifeArchiveEntry(
           id: 'diary:${block.id}',
           kind: LifeArchiveKind.diary,
           date: block.createdAt,
-          title: diaryBlockDisplayTitle(block),
+          title: diaryBlockDisplayTitle(block, strings: labels),
           subtitle: [
             typeLabel,
-            if (block.archived) 'Archiviato',
+            if (block.archived) labels.d3('archiveArchived'),
             if (block.places.isNotEmpty)
               block.places.map((place) => place.name).take(2).join(', '),
           ].join(' · '),
@@ -112,7 +114,7 @@ extension AgendaStoreLifeArchive on AgendaStore {
               item.start!.minute,
             );
       final typeLabel =
-          item.type == ItemType.task ? 'Attività' : 'Appuntamento';
+          item.type == ItemType.task ? labels.task : labels.appointment;
       result.add(
         LifeArchiveEntry(
           id: 'agenda:${item.id}',
@@ -121,14 +123,14 @@ extension AgendaStoreLifeArchive on AgendaStore {
           title: item.title.trim().isEmpty ? typeLabel : item.title.trim(),
           subtitle: [
             typeLabel,
-            item.category.label,
-            if (item.done) 'Completato',
+            labels.editorCategoryLabel(item.category),
+            if (item.done) labels.d3('archiveCompleted'),
           ].join(' · '),
           searchableText: [
             item.title,
             item.note,
             typeLabel,
-            item.category.label,
+            labels.editorCategoryLabel(item.category),
           ].join(' '),
           agendaItem: item,
         ),
@@ -143,10 +145,10 @@ extension AgendaStoreLifeArchive on AgendaStore {
           kind: LifeArchiveKind.workout,
           date: session.date,
           title: session.title.trim().isEmpty
-              ? session.sport.label
+              ? labels.workoutSportLabel(session.sport)
               : session.title.trim(),
           subtitle: [
-            session.sport.label,
+            labels.workoutSportLabel(session.sport),
             if (session.distanceKm != null && session.distanceKm! > 0)
               '${session.distanceKm!.toStringAsFixed(session.distanceKm! % 1 == 0 ? 0 : 1)} km',
             if (session.durationSeconds > 0)
@@ -156,7 +158,7 @@ extension AgendaStoreLifeArchive on AgendaStore {
             session.title,
             session.note,
             session.planName,
-            session.sport.label,
+            labels.workoutSportLabel(session.sport),
             ...session.exercises.map((exercise) => exercise.name),
           ].join(' '),
           workoutSession: session,
@@ -173,7 +175,7 @@ extension AgendaStoreLifeArchive on AgendaStore {
           date: entry.createdAt,
           title: entry.text,
           subtitle: [
-            'Inbox archiviata',
+            labels.d3('archiveInboxArchived'),
             if (entry.tags.isNotEmpty)
               entry.tags.map((tag) => '#$tag').take(3).join(' '),
           ].join(' · '),

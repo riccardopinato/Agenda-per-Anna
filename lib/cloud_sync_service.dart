@@ -142,9 +142,7 @@ class SharedSpaceMember {
       SharedSpaceMember(
         userId: json['user_id']?.toString() ?? '',
         role: json['role']?.toString() ?? 'member',
-        displayName: json['display_name']?.toString().trim().isNotEmpty == true
-            ? json['display_name'].toString().trim()
-            : 'Persona',
+        displayName: json['display_name']?.toString().trim() ?? '',
         avatarUrl: json['avatar_url']?.toString() ?? '',
       );
 }
@@ -487,39 +485,7 @@ class CloudSyncService extends ChangeNotifier {
   CloudConnectionState get state => _state;
   DateTime? get lastSyncAt => _lastSyncAt;
   String? get lastError => _lastError;
-  String get userFacingError {
-    final raw = (_lastError ?? '').toLowerCase();
-    if (raw.contains('invalid login credentials')) {
-      return 'Email o password non corretti.';
-    }
-    if (raw.contains('email not confirmed')) {
-      return 'Conferma prima l’email usando il link ricevuto.';
-    }
-    if (raw.contains('user already registered')) {
-      return 'Esiste già un account con questa email.';
-    }
-    if (raw.contains('weak password') || raw.contains('password should be')) {
-      return 'Scegli una password più lunga e difficile da indovinare.';
-    }
-    if (raw.contains('rate limit') ||
-        raw.contains('too many requests') ||
-        raw.contains('over_email_send_rate_limit')) {
-      return 'Hai fatto troppi tentativi ravvicinati. Riprova tra poco.';
-    }
-    if (raw.contains('account_deletion_failed') ||
-        raw.contains('delete-account') ||
-        raw.contains('explicit_confirmation_required')) {
-      return 'Non è stato possibile eliminare l’account. Nessun dato locale è stato cancellato.';
-    }
-    if (raw.contains('socket') ||
-        raw.contains('network') ||
-        raw.contains('failed host lookup') ||
-        raw.contains('clientexception') ||
-        raw.contains('fetch')) {
-      return 'Connessione non disponibile. I dati locali restano al sicuro.';
-    }
-    return 'Operazione cloud non riuscita. Riprova tra poco.';
-  }
+  String get userFacingError => _lastError ?? 'cloud_operation_failed';
   User? get user => _client?.auth.currentUser;
   String? get userId => user?.id;
   String? get email => user?.email;
@@ -727,7 +693,7 @@ class CloudSyncService extends ChangeNotifier {
     final value = password.trim();
     if (value.length < 8) {
       throw const FormatException(
-        'La nuova password deve contenere almeno 8 caratteri.',
+        'cloud_password_min_8',
       );
     }
 
@@ -1909,7 +1875,7 @@ class CloudSyncService extends ChangeNotifier {
   SupabaseClient _requireSignedInClient() {
     final client = _requireClient();
     if (client.auth.currentUser == null) {
-      throw StateError('Accedi prima di sincronizzare.');
+      throw StateError('cloud_sign_in_first');
     }
     return client;
   }

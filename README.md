@@ -69,6 +69,16 @@ See `docs/ARCHITECTURE.md` and `supabase/README.md` for implementation details.
 - Vault remains intentionally excluded from screenshot/visual-regression checkpoints because Android `FLAG_SECURE` is part of the security boundary; D2 validates it through UI hierarchy/state assertions instead of screenshots.
 - D2 trusted-runtime PASS is not physical evidence for Android Keystore, biometrics or OEM-specific behavior; those stay in the v1.00-D physical matrix.
 
+### v1.00-D3 — Localization Completion
+
+- Extends the existing `AnnaStrings` localization path across onboarding/privacy gates, Cloud/Account, Planner/editor flows, Noi ♡, Diary, Sketchbook, Shared Memories, unified agenda, native notifications, Android home-widget copy, external-calendar fallbacks and backup/export dialogs/errors.
+- Keeps en/it/es/fr/pt on one canonical localization engine; no second translation store, remote localization backend or persistence schema is introduced.
+- Moves locale-sensitive date formatting away from hardcoded `it_IT` in migrated surfaces and keeps native/background copy aligned with the selected `AppLanguage`.
+- Keeps domain models language-neutral at persistence boundaries; user-facing enum/category/type labels are resolved at presentation time.
+- Backup/Data Safety services emit stable technical error codes; the UI maps those codes to localized user-facing messages instead of surfacing Italian implementation text.
+- Adds D3 regression gates for five-language catalog completeness, no duplicate localization keys/helpers, no Italian native/background fallbacks, localized Sketchbook color semantics and locale-safe restore integrity errors.
+- D3 remains part of v1.00-D hardening and does not replace the postponed physical-device certification matrix.
+
 ### v1.00-D current evidence
 
 - Production Supabase reports migration `shared_password_hardening_v086` deployed; the live two-user transactional backend contract passes with rollback.

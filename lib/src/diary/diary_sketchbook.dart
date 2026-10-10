@@ -15,7 +15,7 @@ class DiaryPhotoViewerScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final dateLabel =
-        _cap(DateFormat('EEEE d MMMM yyyy', 'it_IT').format(date));
+        _cap(DateFormat('EEEE d MMMM yyyy', AnnaStrings.intlLocale(context)).format(date));
     final imageFuture = _readDiaryMediaBytes(
       assetId: block.mediaAssetId,
       fallbackBase64: block.imageBase64,
@@ -38,7 +38,7 @@ class DiaryPhotoViewerScreen extends StatelessWidget {
       caption: block.text,
       appBarActions: [
         IconButton(
-          tooltip: 'Apri giornata',
+          tooltip: AnnaStrings.of(context).d3('openDay'),
           onPressed: () => Navigator.push(
             context,
             MaterialPageRoute(
@@ -64,7 +64,7 @@ class DiaryPhotoViewerScreen extends StatelessWidget {
             ),
           ),
           icon: const Icon(Icons.calendar_month_outlined),
-          label: const Text('Mese'),
+          label: Text(AnnaStrings.of(context).navMonth),
         ),
         OutlinedButton.icon(
           style: actionStyle,
@@ -78,7 +78,7 @@ class DiaryPhotoViewerScreen extends StatelessWidget {
             ),
           ),
           icon: const Icon(Icons.insights_outlined),
-          label: const Text('Anno'),
+          label: Text(AnnaStrings.of(context).d3('year')),
         ),
       ],
     );
@@ -146,24 +146,6 @@ class _DiarySketchbookScreenState extends State<DiarySketchbookScreen> {
     0xFFE19A43,
   ];
 
-  static const _colorNames = <String>[
-    'Nero',
-    'Grafite',
-    'Marrone',
-    'Rosso',
-    'Corallo',
-    'Rosa',
-    'Fucsia',
-    'Viola',
-    'Lavanda',
-    'Indaco',
-    'Blu',
-    'Azzurro',
-    'Turchese',
-    'Verde',
-    'Oliva',
-    'Arancio',
-  ];
 
   @override
   void initState() {
@@ -704,27 +686,27 @@ class _DiarySketchbookScreenState extends State<DiarySketchbookScreen> {
     final value = await showDialog<String>(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        title: Text(existing == null ? 'Aggiungi testo' : 'Modifica testo'),
+        title: Text(existing == null ? AnnaStrings.of(context).d3('addText') : AnnaStrings.of(context).d3('editText')),
         content: TextField(
           controller: controller,
           autofocus: true,
           minLines: 2,
           maxLines: 6,
           textCapitalization: TextCapitalization.sentences,
-          decoration: const InputDecoration(
-            hintText: 'Scrivi sul foglio...',
-            border: OutlineInputBorder(),
+          decoration: InputDecoration(
+            hintText: AnnaStrings.of(context).d3('writePage'),
+            border: const OutlineInputBorder(),
           ),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(dialogContext),
-            child: const Text('Annulla'),
+            child: Text(AnnaStrings.of(context).cancel),
           ),
           FilledButton(
             onPressed: () =>
                 Navigator.pop(dialogContext, controller.text.trim()),
-            child: const Text('Inserisci'),
+            child: Text(AnnaStrings.of(context).d3('insert')),
           ),
         ],
       ),
@@ -802,7 +784,7 @@ class _DiarySketchbookScreenState extends State<DiarySketchbookScreen> {
     } catch (_) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Immagine non inserita.')),
+        SnackBar(content: Text(AnnaStrings.of(context).d3('imageNotInserted'))),
       );
     }
   }
@@ -965,6 +947,10 @@ class _DiarySketchbookScreenState extends State<DiarySketchbookScreen> {
   }
 
   Future<void> _exportPng() async {
+    final strings = AnnaStrings.of(context);
+    final exportTitle = strings.d3('exportSketch');
+    final exportedMessage = strings.d3('sketchExported');
+    final exportFailedMessage = strings.d3('sketchExportFailed');
     final selectedStrokes = {...selectedStrokeIndices};
     final selectedTexts = {...selectedTextIds};
     final selectedImages = {...selectedImageIds};
@@ -983,7 +969,7 @@ class _DiarySketchbookScreenState extends State<DiarySketchbookScreen> {
       final bytes = data.buffer.asUint8List();
 
       final path = await FilePicker.saveFile(
-        dialogTitle: 'Esporta sketch',
+        dialogTitle: exportTitle,
         fileName:
             'annas-diary-sketch-${DateFormat('yyyyMMdd-HHmm').format(DateTime.now())}.png',
         type: FileType.custom,
@@ -994,14 +980,14 @@ class _DiarySketchbookScreenState extends State<DiarySketchbookScreen> {
       if (!mounted) return;
       if (path != null) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Sketch esportato in PNG.')),
+          SnackBar(content: Text(exportedMessage)),
         );
       }
     } catch (_) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Non è stato possibile esportare lo sketch.'),
+        SnackBar(
+          content: Text(exportFailedMessage),
         ),
       );
     } finally {
@@ -1033,23 +1019,23 @@ class _DiarySketchbookScreenState extends State<DiarySketchbookScreen> {
         DiarySketchTool.hand => Icons.pan_tool_alt_outlined,
       };
 
-  String _toolLabel(DiarySketchTool value) => switch (value) {
-        DiarySketchTool.pen => 'Penna',
-        DiarySketchTool.highlighter => 'Evidenziatore',
-        DiarySketchTool.eraser => 'Gomma',
-        DiarySketchTool.line => 'Linea',
-        DiarySketchTool.rectangle => 'Rettangolo',
-        DiarySketchTool.ellipse => 'Ellisse',
-        DiarySketchTool.select => 'Seleziona',
-        DiarySketchTool.lasso => 'Lazo',
-        DiarySketchTool.hand => 'Zoom',
+  String _toolLabel(DiarySketchTool value, AnnaStrings strings) => switch (value) {
+        DiarySketchTool.pen => strings.d3('pen'),
+        DiarySketchTool.highlighter => strings.d3('highlighter'),
+        DiarySketchTool.eraser => strings.d3('eraser'),
+        DiarySketchTool.line => strings.d3('line'),
+        DiarySketchTool.rectangle => strings.d3('rectangle'),
+        DiarySketchTool.ellipse => strings.d3('ellipse'),
+        DiarySketchTool.select => strings.d3('select'),
+        DiarySketchTool.lasso => strings.d3('lasso'),
+        DiarySketchTool.hand => strings.d3('zoom'),
       };
 
-  String _paperLabel(DiarySketchPaper value) => switch (value) {
-        DiarySketchPaper.plain => 'Bianco',
-        DiarySketchPaper.ruled => 'Righe',
-        DiarySketchPaper.grid => 'Quadretti',
-        DiarySketchPaper.dots => 'Puntini',
+  String _paperLabel(DiarySketchPaper value, AnnaStrings strings) => switch (value) {
+        DiarySketchPaper.plain => strings.d3('plainPaper'),
+        DiarySketchPaper.ruled => strings.d3('ruledPaper'),
+        DiarySketchPaper.grid => strings.d3('gridPaper'),
+        DiarySketchPaper.dots => strings.d3('dotsPaper'),
       };
 
   Widget _canvas(Size size) {
@@ -1175,7 +1161,7 @@ class _DiarySketchbookScreenState extends State<DiarySketchbookScreen> {
             size: 18,
           ),
           const SizedBox(width: 8),
-          Text(image != null ? 'Dimensione immagine' : 'Dimensione testo'),
+          Text(image != null ? AnnaStrings.of(context).d3('imageSize') : AnnaStrings.of(context).d3('textSize')),
           Expanded(
             child: Slider(
               min: image != null ? 0.15 : 12,
@@ -1208,12 +1194,12 @@ class _DiarySketchbookScreenState extends State<DiarySketchbookScreen> {
         ),
         actions: [
           IconButton(
-            tooltip: 'Esporta PNG',
+            tooltip: AnnaStrings.of(context).d3('exportPng'),
             onPressed: _exportPng,
             icon: const Icon(Icons.ios_share_outlined),
           ),
           IconButton(
-            tooltip: 'Salva sketch',
+            tooltip: AnnaStrings.of(context).d3('saveSketch'),
             onPressed: () => Navigator.pop(context, pages),
             icon: const Icon(Icons.check),
           ),
@@ -1234,7 +1220,7 @@ class _DiarySketchbookScreenState extends State<DiarySketchbookScreen> {
                     child: ChoiceChip(
                       selected: selected,
                       avatar: Icon(_toolIcon(value), size: 18),
-                      label: Text(_toolLabel(value)),
+                      label: Text(_toolLabel(value, AnnaStrings.of(context))),
                       onSelected: (_) => setState(() {
                         tool = value;
                         _resetGesturePreview();
@@ -1252,33 +1238,33 @@ class _DiarySketchbookScreenState extends State<DiarySketchbookScreen> {
                 scrollDirection: Axis.horizontal,
                 children: [
                   IconButton(
-                    tooltip: 'Annulla',
+                    tooltip: AnnaStrings.of(context).d3('undo'),
                     onPressed: undoAvailable ? _undoAction : null,
                     icon: const Icon(Icons.undo),
                   ),
                   IconButton(
-                    tooltip: 'Ripeti',
+                    tooltip: AnnaStrings.of(context).d3('redo'),
                     onPressed: redoAvailable ? _redoAction : null,
                     icon: const Icon(Icons.redo),
                   ),
                   IconButton(
-                    tooltip: 'Testo',
+                    tooltip: AnnaStrings.of(context).d3('textTool'),
                     onPressed: _addText,
                     icon: const Icon(Icons.text_fields_outlined),
                   ),
                   IconButton(
-                    tooltip: 'Inserisci immagine',
+                    tooltip: AnnaStrings.of(context).d3('insertImage'),
                     onPressed: _addImage,
                     icon: const Icon(Icons.add_photo_alternate_outlined),
                   ),
                   IconButton(
-                    tooltip: 'Elimina selezione',
+                    tooltip: AnnaStrings.of(context).d3('deleteSelection'),
                     onPressed: hasSelection ? _deleteSelection : null,
                     icon: const Icon(Icons.delete_sweep_outlined),
                   ),
                   const SizedBox(width: 4),
                   PopupMenuButton<DiarySketchPaper>(
-                    tooltip: 'Carta',
+                    tooltip: AnnaStrings.of(context).d3('paper'),
                     initialValue: page.paper,
                     onSelected: (paper) {
                       _replacePage(
@@ -1290,14 +1276,14 @@ class _DiarySketchbookScreenState extends State<DiarySketchbookScreen> {
                         .map(
                           (paper) => PopupMenuItem(
                             value: paper,
-                            child: Text(_paperLabel(paper)),
+                            child: Text(_paperLabel(paper, AnnaStrings.of(context))),
                           ),
                         )
                         .toList(),
                     child: Chip(
                       avatar:
                           const Icon(Icons.grid_4x4_outlined, size: 17),
-                      label: Text(_paperLabel(page.paper)),
+                      label: Text(_paperLabel(page.paper, AnnaStrings.of(context))),
                     ),
                   ),
                   const SizedBox(width: 10),
@@ -1308,7 +1294,7 @@ class _DiarySketchbookScreenState extends State<DiarySketchbookScreen> {
                     ),
                   ),
                   IconButton(
-                    tooltip: 'Pagina precedente',
+                    tooltip: AnnaStrings.of(context).d3('previousPage'),
                     onPressed: pageIndex == 0
                         ? null
                         : () => setState(() {
@@ -1321,7 +1307,7 @@ class _DiarySketchbookScreenState extends State<DiarySketchbookScreen> {
                     icon: const Icon(Icons.chevron_left),
                   ),
                   IconButton(
-                    tooltip: 'Pagina successiva',
+                    tooltip: AnnaStrings.of(context).d3('nextPage'),
                     onPressed: pageIndex >= pages.length - 1
                         ? null
                         : () => setState(() {
@@ -1334,18 +1320,18 @@ class _DiarySketchbookScreenState extends State<DiarySketchbookScreen> {
                     icon: const Icon(Icons.chevron_right),
                   ),
                   IconButton(
-                    tooltip: 'Nuova pagina',
+                    tooltip: AnnaStrings.of(context).d3('newPage'),
                     onPressed: pages.length >= 64 ? null : _addPage,
                     icon: const Icon(Icons.add_box_outlined),
                   ),
                   IconButton(
-                    tooltip: 'Duplica pagina',
+                    tooltip: AnnaStrings.of(context).d3('duplicatePage'),
                     onPressed:
                         pages.length >= 64 ? null : _duplicatePage,
                     icon: const Icon(Icons.copy_all_outlined),
                   ),
                   IconButton(
-                    tooltip: 'Elimina pagina',
+                    tooltip: AnnaStrings.of(context).d3('deletePage'),
                     onPressed: _deletePage,
                     icon: const Icon(Icons.delete_outline),
                   ),
@@ -1371,11 +1357,13 @@ class _DiarySketchbookScreenState extends State<DiarySketchbookScreen> {
                           final value = _colors[index];
                           final selected = colorValue == value;
                           return Tooltip(
-                            message: _colorNames[index],
+                            message: AnnaStrings.of(context).sketchColorName(index),
                             child: Semantics(
                               button: true,
                               selected: selected,
-                              label: 'Colore ${_colorNames[index]}',
+                              label: AnnaStrings.of(context).sketchColorSemantic(
+                                AnnaStrings.of(context).sketchColorName(index),
+                              ),
                               child: InkWell(
                                 borderRadius: BorderRadius.circular(999),
                                 onTap: () =>
@@ -1430,9 +1418,9 @@ class _DiarySketchbookScreenState extends State<DiarySketchbookScreen> {
                   children: [
                     const Icon(Icons.pinch_outlined, size: 18),
                     const SizedBox(width: 8),
-                    const Expanded(
+                    Expanded(
                       child: Text(
-                        'Trascina e usa due dita per zoomare. Torna a Penna o Seleziona per modificare.',
+                        AnnaStrings.of(context).d3('sketchHint'),
                       ),
                     ),
                     TextButton(

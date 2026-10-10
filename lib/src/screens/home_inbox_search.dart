@@ -257,7 +257,7 @@ class HomeScreen extends StatelessWidget {
                     const SizedBox(height: 8),
                     Text(
                       store.preferences.showDailyQuote
-                          ? _dailyQuote(now).$1
+                          ? _dailyQuote(now, strings).$1
                           : strings.hello(displayName),
                       style: TextStyle(
                         color: accent.foreground,
@@ -268,7 +268,7 @@ class HomeScreen extends StatelessWidget {
                     const SizedBox(height: 6),
                     Text(
                       store.preferences.showDailyQuote
-                          ? _dailyQuote(now).$2
+                          ? _dailyQuote(now, strings).$2
                           : strings.todayPage,
                       style: TextStyle(
                         color: accent.secondaryForeground,
@@ -885,7 +885,10 @@ class InboxScreen extends StatelessWidget {
     BuildContext context,
     InboxEntry entry,
   ) async {
-    final text = store.notesBridgeTextForInbox(entry);
+    final text = store.notesBridgeTextForInbox(
+      entry,
+      strings: AnnaStrings.of(context),
+    );
     await copyNotesBridgePayload(context, text);
   }
 
@@ -1448,10 +1451,11 @@ class _ArchiveScreenState extends State<ArchiveScreen> {
       ]),
       builder: (context, _) {
         final strings = AnnaStrings.of(context);
-        final allEntries = widget.store.lifeArchiveEntries();
+        final allEntries = widget.store.lifeArchiveEntries(strings: strings);
         final entries = widget.store.lifeArchiveEntries(
           query: searchController.text,
           kind: filter,
+          strings: strings,
         );
         final years = _groupByYear(entries);
         final months = _months();

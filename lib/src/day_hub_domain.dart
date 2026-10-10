@@ -288,7 +288,7 @@ extension AgendaStoreDayHub on AgendaStore {
       note: birthday.note.trim(),
     );
     if (value.name.isEmpty) {
-      throw const FormatException('Il nome del compleanno non può essere vuoto.');
+      throw const FormatException('birthday_name_required');
     }
 
     final index = birthdays.indexWhere((entry) => entry.id == value.id);
@@ -357,14 +357,20 @@ extension AgendaStoreDayHub on AgendaStore {
       ).subtract(Duration(days: max(0, daysBefore)));
     }
 
-    final ageText = occurrence.age == null ? '' : ' · ${occurrence.age} anni';
+    final strings = AnnaStrings.forPreference(preferences.appLanguage);
+    final ageText = occurrence.age == null
+        ? ''
+        : strings.d3Format('birthdayAge', {'age': occurrence.age});
     final leadText = daysBefore == 0
-        ? 'Oggi'
+        ? strings.d3('birthdayToday')
         : daysBefore == 1
-            ? 'Domani'
-            : 'Tra $daysBefore giorni';
+            ? strings.d3('birthdayTomorrow')
+            : strings.d3Format('birthdayInDays', {'days': daysBefore});
     final title = '🎂 ${birthday.name}$ageText';
-    final body = '$leadText è il compleanno di ${birthday.name}.';
+    final body = strings.d3Format(
+      'birthdayBody',
+      {'lead': leadText, 'name': birthday.name},
+    );
     final stableId = 'birthday:${birthday.id}';
 
     if (kIsWeb) {

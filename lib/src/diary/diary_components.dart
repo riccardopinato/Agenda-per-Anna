@@ -134,11 +134,11 @@ class _VoiceRecordingDialogState extends State<_VoiceRecordingDialog> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: const Row(
+      title: Row(
         children: [
-          Icon(Icons.mic, color: Colors.red),
-          SizedBox(width: 10),
-          Text('Registrazione in corso'),
+          const Icon(Icons.mic, color: Colors.red),
+          const SizedBox(width: 10),
+          Text(AnnaStrings.of(context).d3('recording')),
         ],
       ),
       content: Column(
@@ -153,8 +153,8 @@ class _VoiceRecordingDialogState extends State<_VoiceRecordingDialog> {
           const SizedBox(height: 12),
           const LinearProgressIndicator(),
           const SizedBox(height: 12),
-          const Text(
-            'L’audio originale resterà nel diario finché non lo elimini.',
+          Text(
+            AnnaStrings.of(context).d3('audioStays'),
             textAlign: TextAlign.center,
           ),
         ],
@@ -163,12 +163,12 @@ class _VoiceRecordingDialogState extends State<_VoiceRecordingDialog> {
         TextButton.icon(
           onPressed: () => Navigator.pop(context, false),
           icon: const Icon(Icons.delete_outline),
-          label: const Text('Annulla'),
+          label: Text(AnnaStrings.of(context).cancel),
         ),
         FilledButton.icon(
           onPressed: () => Navigator.pop(context, true),
           icon: const Icon(Icons.stop_circle_outlined),
-          label: const Text('Termina'),
+          label: Text(AnnaStrings.of(context).d3('stop')),
         ),
       ],
     );
@@ -179,7 +179,7 @@ Future<_VoiceCapture?> _captureVoiceClip(BuildContext context) async {
   if (kIsWeb) {
     final file = await FilePicker.pickFile(
       type: FileType.audio,
-      dialogTitle: 'Scegli una nota vocale',
+      dialogTitle: AnnaStrings.of(context).d3('chooseVoiceNote'),
     );
     if (file == null) return null;
     final bytes = await file.readAsBytes();
@@ -196,9 +196,9 @@ Future<_VoiceCapture?> _captureVoiceClip(BuildContext context) async {
   } catch (_) {
     if (context.mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
+        SnackBar(
           content: Text(
-            'Consenti l’accesso al microfono e tocca di nuovo “Voce”.',
+            AnnaStrings.of(context).d3('microphonePermission'),
           ),
         ),
       );
@@ -235,7 +235,7 @@ Future<_VoiceCapture?> _captureVoiceClip(BuildContext context) async {
     await VoiceDiaryService.instance.cancelRecording();
     if (context.mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Registrazione non salvata. Riprova.')),
+        SnackBar(content: Text(AnnaStrings.of(context).d3('recordingNotSaved'))),
       );
     }
     return null;
@@ -337,20 +337,20 @@ Future<ImageSource?> _chooseDiaryImageSource(BuildContext context) =>
       builder: (sheetContext) => SafeArea(
         child: Wrap(
           children: [
-            const ListTile(
+            ListTile(
               title: Text(
-                'Aggiungi una foto',
-                style: TextStyle(fontWeight: FontWeight.w900),
+                AnnaStrings.of(context).d3('addPhoto'),
+                style: const TextStyle(fontWeight: FontWeight.w900),
               ),
               subtitle: Text(
-                'Nel diario viene salvata una copia ottimizzata ad alta qualità.',
+                AnnaStrings.of(context).d3('optimizedPhoto'),
               ),
             ),
             ListTile(
               leading: const CircleAvatar(
                 child: Icon(Icons.photo_camera_outlined),
               ),
-              title: const Text('Scatta una foto'),
+              title: Text(AnnaStrings.of(context).d3('takePhoto')),
               onTap: () =>
                   Navigator.pop(sheetContext, ImageSource.camera),
             ),
@@ -358,7 +358,7 @@ Future<ImageSource?> _chooseDiaryImageSource(BuildContext context) =>
               leading: const CircleAvatar(
                 child: Icon(Icons.photo_library_outlined),
               ),
-              title: const Text('Scegli dalla galleria'),
+              title: Text(AnnaStrings.of(context).d3('chooseGallery')),
               onTap: () =>
                   Navigator.pop(sheetContext, ImageSource.gallery),
             ),
@@ -419,7 +419,7 @@ class _FocusWritingScreenState extends State<FocusWritingScreen> {
     return Scaffold(
       appBar: AppBar(
         leading: IconButton(
-          tooltip: 'Torna all’editor',
+          tooltip: AnnaStrings.of(context).d3('backToEditor'),
           onPressed: _returnText,
           icon: const Icon(Icons.arrow_back),
         ),
@@ -428,7 +428,7 @@ class _FocusWritingScreenState extends State<FocusWritingScreen> {
           TextButton.icon(
             onPressed: _returnText,
             icon: const Icon(Icons.check),
-            label: const Text('Fatto'),
+            label: Text(AnnaStrings.of(context).d3('done')),
           ),
           const SizedBox(width: 8),
         ],
@@ -454,9 +454,9 @@ class _FocusWritingScreenState extends State<FocusWritingScreen> {
                       style: theme.textTheme.titleMedium?.copyWith(
                         height: 1.55,
                       ),
-                      decoration: const InputDecoration(
+                      decoration: InputDecoration(
                         hintText:
-                            'Scrivi senza distrazioni. Il testo resta modificabile prima del salvataggio.',
+                            AnnaStrings.of(context).d3('focusHint'),
                         border: InputBorder.none,
                       ),
                     ),
@@ -468,10 +468,16 @@ class _FocusWritingScreenState extends State<FocusWritingScreen> {
                       children: [
                         const Icon(Icons.fullscreen, size: 18),
                         const SizedBox(width: 7),
-                        const Text('Modalità scrittura'),
+                        Text(AnnaStrings.of(context).d3('writingMode')),
                         const Spacer(),
                         Text(
-                          '$wordCount parole · ${controller.text.runes.length} caratteri',
+                          AnnaStrings.of(context).d3Format(
+                            'wordCount',
+                            {
+                              'words': wordCount,
+                              'chars': controller.text.runes.length,
+                            },
+                          ),
                           style: theme.textTheme.bodySmall,
                         ),
                       ],
@@ -497,17 +503,17 @@ Future<String?> showDiaryNoteEditor(
     context: context,
     builder: (dialogContext) => StatefulBuilder(
       builder: (dialogContext, setDialogState) => AlertDialog(
-        title: Text(editing ? 'Modifica nota' : 'Nuova nota'),
+        title: Text(editing ? AnnaStrings.of(context).d3('editNote') : AnnaStrings.of(context).d3('newNote')),
         content: TextField(
           controller: controller,
           autofocus: true,
           minLines: 5,
           maxLines: 12,
           textCapitalization: TextCapitalization.sentences,
-          decoration: const InputDecoration(
+          decoration: InputDecoration(
             hintText:
-                'Scrivi un ricordo, un pensiero, qualcosa da non dimenticare...',
-            border: OutlineInputBorder(),
+                AnnaStrings.of(context).d3('noteHint'),
+            border: const OutlineInputBorder(),
           ),
         ),
         actions: [
@@ -518,7 +524,7 @@ Future<String?> showDiaryNoteEditor(
                   fullscreenDialog: true,
                   builder: (_) => FocusWritingScreen(
                     initialText: controller.text,
-                    title: editing ? 'Modifica nota' : 'Nuova nota',
+                    title: editing ? AnnaStrings.of(context).d3('editNote') : AnnaStrings.of(context).d3('newNote'),
                   ),
                 ),
               );
@@ -531,18 +537,18 @@ Future<String?> showDiaryNoteEditor(
               setDialogState(() {});
             },
             icon: const Icon(Icons.fullscreen),
-            label: const Text('Scrivi a schermo intero'),
+            label: Text(AnnaStrings.of(context).d3('writeFullscreen')),
           ),
           TextButton(
             onPressed: () => Navigator.pop(dialogContext),
-            child: const Text('Annulla'),
+            child: Text(AnnaStrings.of(context).cancel),
           ),
           FilledButton(
             onPressed: () => Navigator.pop(
               dialogContext,
               controller.text.trim(),
             ),
-            child: const Text('Salva'),
+            child: Text(AnnaStrings.of(context).save),
           ),
         ],
       ),
@@ -561,7 +567,7 @@ Future<String?> showDiaryCaptionEditor(
   final value = await showDialog<String>(
     context: context,
     builder: (dialogContext) => AlertDialog(
-      title: Text(adding ? 'Aggiungi al diario' : 'Didascalia'),
+      title: Text(adding ? AnnaStrings.of(context).d3('addToDiary') : AnnaStrings.of(context).d3('caption')),
       content: TextField(
         controller: controller,
         autofocus: true,
@@ -570,8 +576,8 @@ Future<String?> showDiaryCaptionEditor(
         textCapitalization: TextCapitalization.sentences,
         decoration: InputDecoration(
           hintText: adding
-              ? 'Una didascalia, se vuoi...'
-              : 'Scrivi qualcosa su questo ricordo...',
+              ? AnnaStrings.of(context).d3('optionalCaption')
+              : AnnaStrings.of(context).d3('captionHint'),
           border: const OutlineInputBorder(),
         ),
       ),
@@ -579,19 +585,19 @@ Future<String?> showDiaryCaptionEditor(
         if (adding)
           TextButton(
             onPressed: () => Navigator.pop(dialogContext, ''),
-            child: const Text('Senza testo'),
+            child: Text(AnnaStrings.of(context).d3('withoutText')),
           )
         else
           TextButton(
             onPressed: () => Navigator.pop(dialogContext),
-            child: const Text('Annulla'),
+            child: Text(AnnaStrings.of(context).cancel),
           ),
         FilledButton(
           onPressed: () => Navigator.pop(
             dialogContext,
             controller.text.trim(),
           ),
-          child: Text(adding ? 'Aggiungi' : 'Salva'),
+          child: Text(adding ? AnnaStrings.of(context).add : AnnaStrings.of(context).save),
         ),
       ],
     ),
@@ -609,7 +615,7 @@ Future<List<String>?> showOrganizationTagsEditor(
   final value = await showDialog<List<String>>(
     context: context,
     builder: (dialogContext) => AlertDialog(
-      title: const Text('Tag'),
+      title: Text(AnnaStrings.of(context).tags),
       content: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -617,16 +623,16 @@ Future<List<String>?> showOrganizationTagsEditor(
           TextField(
             controller: controller,
             autofocus: true,
-            decoration: const InputDecoration(
-              labelText: 'Tag separati da virgola',
-              hintText: 'es. viaggio, famiglia, idee',
-              border: OutlineInputBorder(),
+            decoration: InputDecoration(
+              labelText: AnnaStrings.of(context).d3('commaTags'),
+              hintText: AnnaStrings.of(context).d3('tagsHint'),
+              border: const OutlineInputBorder(),
             ),
           ),
           if (suggestions.isNotEmpty) ...[
             const SizedBox(height: 12),
             Text(
-              'Già usati',
+              AnnaStrings.of(context).d3('alreadyUsed'),
               style: Theme.of(context).textTheme.labelLarge,
             ),
             const SizedBox(height: 6),
@@ -659,14 +665,14 @@ Future<List<String>?> showOrganizationTagsEditor(
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(dialogContext),
-          child: const Text('Annulla'),
+          child: Text(AnnaStrings.of(context).cancel),
         ),
         FilledButton(
           onPressed: () => Navigator.pop(
             dialogContext,
             normalizeOrganizationTags(controller.text.split(',')),
           ),
-          child: const Text('Salva'),
+          child: Text(AnnaStrings.of(context).save),
         ),
       ],
     ),
@@ -694,7 +700,7 @@ Future<List<DiaryPlaceReference>?> showDiaryPlacesEditor(
         void addPlace() {
           final name = nameController.text.trim();
           if (name.isEmpty) {
-            setDialogState(() => validationError = 'Inserisci il nome del luogo.');
+            setDialogState(() => validationError = AnnaStrings.of(context).d3('placeNameRequired'));
             return;
           }
 
@@ -714,7 +720,7 @@ Future<List<DiaryPlaceReference>?> showDiaryPlacesEditor(
                       lon > 180))) {
             setDialogState(
               () => validationError =
-                  'Coordinate non valide. Inserisci latitudine e longitudine insieme.',
+                  AnnaStrings.of(context).d3('invalidCoordinates'),
             );
             return;
           }
@@ -736,7 +742,7 @@ Future<List<DiaryPlaceReference>?> showDiaryPlacesEditor(
         }
 
         return AlertDialog(
-          title: const Text('Luoghi'),
+          title: Text(AnnaStrings.of(context).d3('places')),
           content: SingleChildScrollView(
             child: SizedBox(
               width: 420,
@@ -769,11 +775,11 @@ Future<List<DiaryPlaceReference>?> showDiaryPlacesEditor(
                     controller: nameController,
                     autofocus: places.isEmpty,
                     textCapitalization: TextCapitalization.words,
-                    decoration: const InputDecoration(
-                      labelText: 'Nome luogo',
+                    decoration: InputDecoration(
+                      labelText: AnnaStrings.of(context).d3('placeName'),
                       hintText: 'es. Lago di Braies',
-                      prefixIcon: Icon(Icons.place_outlined),
-                      border: OutlineInputBorder(),
+                      prefixIcon: const Icon(Icons.place_outlined),
+                      border: const OutlineInputBorder(),
                     ),
                   ),
                   if (suggestions.isNotEmpty) ...[
@@ -815,9 +821,9 @@ Future<List<DiaryPlaceReference>?> showDiaryPlacesEditor(
                             decimal: true,
                             signed: true,
                           ),
-                          decoration: const InputDecoration(
-                            labelText: 'Latitudine (opz.)',
-                            border: OutlineInputBorder(),
+                          decoration: InputDecoration(
+                            labelText: AnnaStrings.of(context).d3('latitude'),
+                            border: const OutlineInputBorder(),
                           ),
                         ),
                       ),
@@ -829,9 +835,9 @@ Future<List<DiaryPlaceReference>?> showDiaryPlacesEditor(
                             decimal: true,
                             signed: true,
                           ),
-                          decoration: const InputDecoration(
-                            labelText: 'Longitudine (opz.)',
-                            border: OutlineInputBorder(),
+                          decoration: InputDecoration(
+                            labelText: AnnaStrings.of(context).d3('longitude'),
+                            border: const OutlineInputBorder(),
                           ),
                         ),
                       ),
@@ -843,7 +849,7 @@ Future<List<DiaryPlaceReference>?> showDiaryPlacesEditor(
                     child: OutlinedButton.icon(
                       onPressed: addPlace,
                       icon: const Icon(Icons.add_location_alt_outlined),
-                      label: const Text('Aggiungi luogo'),
+                      label: Text(AnnaStrings.of(context).d3('addPlace')),
                     ),
                   ),
                   if (validationError != null) ...[
@@ -862,14 +868,14 @@ Future<List<DiaryPlaceReference>?> showDiaryPlacesEditor(
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(dialogContext),
-              child: const Text('Annulla'),
+              child: Text(AnnaStrings.of(context).cancel),
             ),
             FilledButton(
               onPressed: () => Navigator.pop(
                 dialogContext,
                 List<DiaryPlaceReference>.unmodifiable(places),
               ),
-              child: const Text('Salva'),
+              child: Text(AnnaStrings.of(context).save),
             ),
           ],
         );
@@ -890,20 +896,20 @@ Future<bool> confirmDiaryContentDelete(
     await showDialog<bool>(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        title: const Text('Eliminare dal diario?'),
+        title: Text(AnnaStrings.of(dialogContext).d3('deleteDiary')),
         content: Text(
           movesToTrash
-              ? 'Questo contenuto verrà spostato nel Cestino e potrai ripristinarlo.'
-              : 'Questo contenuto verrà rimosso dalla giornata.',
+              ? AnnaStrings.of(dialogContext).d3('deleteDiaryTrashBody')
+              : AnnaStrings.of(dialogContext).d3('deleteDiaryDayBody'),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(dialogContext, false),
-            child: const Text('Annulla'),
+            child: Text(AnnaStrings.of(context).cancel),
           ),
           FilledButton(
             onPressed: () => Navigator.pop(dialogContext, true),
-            child: const Text('Elimina'),
+            child: Text(AnnaStrings.of(context).delete),
           ),
         ],
       ),
@@ -913,11 +919,11 @@ Future<bool> confirmDiaryContentDelete(
 enum DiaryContentKind { note, photo, sketch, voice }
 
 extension DiaryContentKindUi on DiaryContentKind {
-  String get label => switch (this) {
-        DiaryContentKind.note => 'Nota',
-        DiaryContentKind.photo => 'Foto',
+  String localizedLabel(AnnaStrings strings) => switch (this) {
+        DiaryContentKind.note => strings.d3('note'),
+        DiaryContentKind.photo => strings.d3('photoLabel'),
         DiaryContentKind.sketch => 'Sketch',
-        DiaryContentKind.voice => 'Voce',
+        DiaryContentKind.voice => strings.d3('voice'),
       };
 
   IconData get icon => switch (this) {
@@ -997,7 +1003,7 @@ class DiaryComposerSection extends StatelessWidget {
               FilledButton.tonalIcon(
                 onPressed: onAddNote,
                 icon: const Icon(Icons.sticky_note_2_outlined),
-                label: const Text('Nota'),
+                label: Text(AnnaStrings.of(context).d3('note')),
               ),
               FilledButton.tonalIcon(
                 onPressed: onAddSketch,
@@ -1014,7 +1020,7 @@ class DiaryComposerSection extends StatelessWidget {
                           child: CircularProgressIndicator(strokeWidth: 2),
                         )
                       : const Icon(Icons.mic_none_outlined),
-                  label: const Text('Voce'),
+                  label: Text(AnnaStrings.of(context).d3('voice')),
                 ),
               FilledButton.tonalIcon(
                 onPressed: photoBusy ? null : onAddPhoto,
@@ -1025,13 +1031,13 @@ class DiaryComposerSection extends StatelessWidget {
                         child: CircularProgressIndicator(strokeWidth: 2),
                       )
                     : const Icon(Icons.add_photo_alternate_outlined),
-                label: const Text('Foto'),
+                label: Text(AnnaStrings.of(context).d3('photoLabel')),
               ),
               if (onTemplates != null)
                 FilledButton.tonalIcon(
                   onPressed: onTemplates,
                   icon: const Icon(Icons.library_books_outlined),
-                  label: const Text('Modelli'),
+                  label: Text(AnnaStrings.of(context).d3('templates')),
                 ),
             ],
           ),
@@ -1135,7 +1141,10 @@ class DiaryContentCard extends StatelessWidget {
                   const SizedBox(width: 2),
                 ],
                 PopupMenuButton<String>(
-                  tooltip: 'Azioni ${kind.label.toLowerCase()}',
+                  tooltip: AnnaStrings.of(context).d3Format(
+                    'actionsFor',
+                    {'kind': kind.localizedLabel(AnnaStrings.of(context)).toLowerCase()},
+                  ),
                   onSelected: (value) {
                     if (value == 'edit') onEdit?.call();
                     if (value == 'caption') onEditCaption?.call();
@@ -1153,56 +1162,56 @@ class DiaryContentCard extends StatelessWidget {
                   },
                   itemBuilder: (_) => [
                     if (kind != DiaryContentKind.photo && onEdit != null)
-                      const PopupMenuItem(
+                      PopupMenuItem(
                         value: 'edit',
-                        child: Text('Modifica'),
+                        child: Text(AnnaStrings.of(context).d3('edit')),
                       ),
                     if (kind == DiaryContentKind.photo &&
                         onEditCaption != null)
-                      const PopupMenuItem(
+                      PopupMenuItem(
                         value: 'caption',
-                        child: Text('Modifica didascalia'),
+                        child: Text(AnnaStrings.of(context).d3('editCaption')),
                       ),
                     if (kind == DiaryContentKind.photo &&
                         onReplacePhoto != null)
-                      const PopupMenuItem(
+                      PopupMenuItem(
                         value: 'replace',
-                        child: Text('Sostituisci foto'),
+                        child: Text(AnnaStrings.of(context).d3('replacePhoto')),
                       ),
                     if (onPin != null)
                       PopupMenuItem(
                         value: 'pin',
-                        child: Text(pinned ? 'Togli dai fissati' : 'Fissa'),
+                        child: Text(pinned ? AnnaStrings.of(context).unpin : AnnaStrings.of(context).pin),
                       ),
                     if (onTags != null)
-                      const PopupMenuItem(
+                      PopupMenuItem(
                         value: 'tags',
-                        child: Text('Tag'),
+                        child: Text(AnnaStrings.of(context).tags),
                       ),
                     if (onArchive != null)
                       PopupMenuItem(
                         value: 'archive',
-                        child: Text(archived ? 'Ripristina da archivio' : 'Archivia'),
+                        child: Text(archived ? AnnaStrings.of(context).d3('restoreArchive') : AnnaStrings.of(context).d3('archive')),
                       ),
                     if (onPeople != null)
-                      const PopupMenuItem(
+                      PopupMenuItem(
                         value: 'people',
-                        child: Text('Collega persone'),
+                        child: Text(AnnaStrings.of(context).d3('linkPeople')),
                       ),
                     if (onPlaces != null)
-                      const PopupMenuItem(
+                      PopupMenuItem(
                         value: 'places',
-                        child: Text('Luoghi'),
+                        child: Text(AnnaStrings.of(context).d3('places')),
                       ),
                     if (onConnections != null)
-                      const PopupMenuItem(
+                      PopupMenuItem(
                         value: 'connections',
-                        child: Text('Collega ricordi'),
+                        child: Text(AnnaStrings.of(context).d3('linkMemories')),
                       ),
                     if (onCopyToNotes != null)
-                      const PopupMenuItem(
+                      PopupMenuItem(
                         value: 'notes',
-                        child: Text('Copia per Notes'),
+                        child: Text(AnnaStrings.of(context).copyForNotes),
                       ),
                     if (onCopyToLifeBridge != null)
                       PopupMenuItem(
@@ -1219,9 +1228,9 @@ class DiaryContentCard extends StatelessWidget {
                         ),
                       ),
                     if (onDelete != null)
-                      const PopupMenuItem(
+                      PopupMenuItem(
                         value: 'delete',
-                        child: Text('Elimina'),
+                        child: Text(AnnaStrings.of(context).delete),
                       ),
                   ],
                 ),
@@ -1416,9 +1425,14 @@ class _DiaryMemoryCardState extends State<DiaryMemoryCard> {
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text('Modello “${preset.title}” aggiunto al diario.'),
+        content: Text(
+          AnnaStrings.of(context).d3Format(
+            'templateAdded',
+            {'title': preset.title},
+          ),
+        ),
         action: SnackBarAction(
-          label: 'Modifica',
+          label: AnnaStrings.of(context).d3('edit'),
           onPressed: () => _addNote(block),
         ),
       ),
@@ -1485,8 +1499,8 @@ class _DiaryMemoryCardState extends State<DiaryMemoryCard> {
     } catch (_) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Non riesco ad aggiungere questa foto.'),
+        SnackBar(
+          content: Text(AnnaStrings.of(context).d3('cannotAddPhoto')),
         ),
       );
     } finally {
@@ -1551,9 +1565,9 @@ class _DiaryMemoryCardState extends State<DiaryMemoryCard> {
 
     if (kIsWeb) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
+        SnackBar(
           content: Text(
-            'Sul web puoi conservare/importare l’audio; il player integrato è disponibile nell’app Android.',
+            AnnaStrings.of(context).d3('webAudioHint'),
           ),
         ),
       );
@@ -1565,7 +1579,7 @@ class _DiaryMemoryCardState extends State<DiaryMemoryCard> {
     } catch (_) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Non riesco a riprodurre questo audio.')),
+          SnackBar(content: Text(AnnaStrings.of(context).d3('cannotPlayAudio'))),
         );
       }
     }
@@ -1766,7 +1780,11 @@ class _DiaryMemoryCardState extends State<DiaryMemoryCard> {
       widget.store.toggleDiaryArchived(widget.date, block.id);
 
   Future<void> _copyToNotes(DiaryBlock block) async {
-    final text = widget.store.notesBridgeTextForDiary(widget.date, block);
+    final text = widget.store.notesBridgeTextForDiary(
+      widget.date,
+      block,
+      strings: AnnaStrings.of(context),
+    );
     await copyNotesBridgePayload(context, text);
   }
 
@@ -1809,14 +1827,14 @@ class _DiaryMemoryCardState extends State<DiaryMemoryCard> {
   }
 
   Widget _blockCard(BuildContext context, DiaryBlock block) {
-    final time = DateFormat('HH:mm', 'it_IT').format(block.createdAt);
+    final time = DateFormat('HH:mm', AnnaStrings.intlLocale(context)).format(block.createdAt);
 
     switch (block.type) {
       case DiaryBlockType.note:
         return DiaryContentCard(
           kind: DiaryContentKind.note,
           title: block.text,
-          subtitle: 'Nota · $time',
+          subtitle: AnnaStrings.of(context).d3Format('noteTimed', {'time': time}),
           onOpen: () => _addNote(block),
           onEdit: () => _addNote(block),
           onPeople: () => _editPeople(block),
@@ -1840,9 +1858,9 @@ class _DiaryMemoryCardState extends State<DiaryMemoryCard> {
         return DiaryContentCard(
           kind: DiaryContentKind.photo,
           title: block.text.trim().isEmpty
-              ? 'Foto del giorno'
+              ? AnnaStrings.of(context).d3('photoOfDay')
               : block.text,
-          subtitle: 'Foto · $time',
+          subtitle: AnnaStrings.of(context).d3Format('photoTimed', {'time': time}),
           preview: !block.hasPhotoMedia
               ? null
               : DiaryMediaImage(
@@ -1909,8 +1927,8 @@ class _DiaryMemoryCardState extends State<DiaryMemoryCard> {
             : ' · ${_formatVoiceDuration(block.audioDurationMs)}';
         return DiaryContentCard(
           kind: DiaryContentKind.voice,
-          title: block.text.trim().isEmpty ? 'Nota vocale' : block.text,
-          subtitle: 'Voce$duration · $time',
+          title: block.text.trim().isEmpty ? AnnaStrings.of(context).d3('voiceNote') : block.text,
+          subtitle: AnnaStrings.of(context).d3Format('voiceTimed', {'duration': duration, 'time': time}),
           onOpen: () => _playVoice(block),
           onEdit: () => _editVoiceCaption(block),
           onPeople: () => _editPeople(block),
@@ -1939,12 +1957,12 @@ class _DiaryMemoryCardState extends State<DiaryMemoryCard> {
     final blocks = _blocks;
 
     return DiaryComposerSection(
-      title: 'Il mio diario',
+      title: AnnaStrings.of(context).d3('myDiary'),
       subtitle:
-          'Note, sketch e foto restano personali. Gli stessi strumenti sono disponibili anche in Noi ♡.',
-      memoriesLabel: 'Ricordi',
+          AnnaStrings.of(context).d3('diaryPrivateSubtitle'),
+      memoriesLabel: AnnaStrings.of(context).memories,
       emptyText:
-          'Qui puoi costruire la giornata come una pagina di diario, un ricordo alla volta.',
+          AnnaStrings.of(context).d3('diaryBuild'),
       onMemories: () => Navigator.push(
         context,
         MaterialPageRoute(

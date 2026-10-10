@@ -44,6 +44,7 @@ part 'src/app_shell.dart';
 part 'src/domain_models.dart';
 part 'src/localization.dart';
 part 'src/localization_v100.dart';
+part 'src/localization_d3.dart';
 part 'src/theme_semantics.dart';
 part 'src/day_hub_domain.dart';
 part 'src/unified_capture.dart';
@@ -210,6 +211,10 @@ Future<void> main() async {
   } catch (error) {
     startupStorageError = error;
   }
+
+  NotificationService.instance.configureLocalization(
+    notificationLocalizationForPreference(store.preferences.appLanguage),
+  );
 
   if (startupStorageError != null) {
     runApp(
@@ -422,6 +427,7 @@ class StartupStorageFailureApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final strings = AnnaStrings.forPreference(AppLanguage.system);
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       title: 'Anna\'s Diary',
@@ -444,22 +450,25 @@ class StartupStorageFailureApp extends StatelessWidget {
                       size: 56,
                     ),
                     const SizedBox(height: 18),
-                    const Text(
-                      'Impossibile aprire i dati locali',
+                    Text(
+                      strings.d3('startupStorageTitle'),
                       textAlign: TextAlign.center,
-                      style: TextStyle(
+                      style: const TextStyle(
                         fontSize: 24,
                         fontWeight: FontWeight.w900,
                       ),
                     ),
                     const SizedBox(height: 10),
-                    const Text(
-                      'Anna\'s Diary non avvia una copia vuota e non salva in una cartella temporanea quando lo storage persistente non è disponibile. Riavvia l’app; se il problema continua, controlla lo spazio libero del dispositivo.',
+                    Text(
+                      strings.d3('startupStorageBody'),
                       textAlign: TextAlign.center,
                     ),
                     const SizedBox(height: 14),
                     Text(
-                      'Dettaglio tecnico: ${error.runtimeType}',
+                      strings.d3Format(
+                        'startupTechnical',
+                        {'type': error.runtimeType},
+                      ),
                       textAlign: TextAlign.center,
                       style: const TextStyle(fontSize: 12),
                     ),
