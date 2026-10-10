@@ -834,7 +834,7 @@ _DayLifePresentation _dayLifePresentation(
                     ? Icons.check_circle_outline
                     : Icons.event_outlined,
         title: value.title,
-        subtitle: value.visibilityLabel,
+        subtitle: value.visibilityLabel(strings),
         timeLabel: when,
       );
     case DayLifeEntryKind.birthday:
