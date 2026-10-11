@@ -19,6 +19,7 @@ class AgendaStore extends ChangeNotifier {
   static const _forceFullSyncKey = 'cloud_force_full_sync_v1';
   static const _accountProfilesKey = 'account_profiles_v1';
   static const _activeAccountKey = 'active_account_v1';
+  static const _localEntrySelectedKey = 'local_entry_selected_v1';
   static const _legacyClaimedByKey = 'legacy_claimed_by_v1';
   static const _privacyGuardKey = 'privacy_guard_v1';
   static const _entityDeltaPrefix = 'entity_delta_v2_';
@@ -100,9 +101,11 @@ class AgendaStore extends ChangeNotifier {
   DateTime? _lastSharedSyncAttemptAt;
   String? _lastSharedSyncError;
   String? _activeAccountId;
+  bool _localEntrySelected = false;
   bool _accountScopeResolved = true;
 
   String? get activeAccountId => _activeAccountId;
+  bool get localEntrySelected => _localEntrySelected;
   bool get accountScopeResolved => _accountScopeResolved;
   bool get hasStorageWarnings => _unreadableStorageKeys.isNotEmpty;
   Set<String> get unreadableStorageKeys =>
@@ -1168,7 +1171,11 @@ class AgendaStore extends ChangeNotifier {
     final prefs = await _localState();
     await _recoverInterruptedBackupRestore(prefs);
     _activeAccountId = prefs.getString(_activeAccountKey);
-    _accountScopeResolved = _activeAccountId == null;
+    _localEntrySelected = prefs.getBool(_localEntrySelectedKey) == true;
+    // The persisted working set is immediately usable. Cloud reconciliation
+    // may later switch to another authenticated account, but startup/network
+    // state must never hide already-local personal content.
+    _accountScopeResolved = true;
     _unreadableStorageKeys
       ..clear()
       ..addAll(prefs.corruptKeys);
@@ -1537,26 +1544,6 @@ class AgendaStore extends ChangeNotifier {
         _privacyGuardKey: jsonEncode(_privacyGuardPayload()),
       };
 
-  bool _workingProfileHasUserData(LocalStateStore prefs) {
-    for (final key in const [
-      _itemsKey,
-      _journalsKey,
-      _monthsKey,
-      _weeksKey,
-      _habitsKey,
-      _birthdaysKey,
-      _peopleKey,
-      _inboxKey,
-      _shoppingKey,
-      _workoutsKey,
-      _trashKey,
-    ]) {
-      final raw = prefs.getString(key);
-      if (raw != null && raw != '[]' && raw != '{}') return true;
-    }
-    return false;
-  }
-
   Future<void> activateCloudAccount(String? accountId) async {
     final prefs = await _localState();
     if (_activeAccountId == accountId) {
@@ -1582,18 +1569,9 @@ class AgendaStore extends ChangeNotifier {
 
     final targetScope =
         accountId == null ? 'guest' : 'user:$accountId';
-    var claimedLegacyGuest = false;
 
-    if (accountId != null &&
-        profiles[targetScope] == null &&
-        prefs.getString(_legacyClaimedByKey) == null &&
-        _activeAccountId == null &&
-        _workingProfileHasUserData(prefs)) {
-      profiles[targetScope] = currentProfile;
-      profiles['guest'] = <String, dynamic>{};
-      claimedLegacyGuest = true;
-    }
-
+    // Guest and authenticated scopes are deliberately isolated. Signing in
+    // must never claim, merge or erase guest content implicitly.
     final rawTarget = profiles[targetScope];
     final target = rawTarget is Map
         ? Map<String, dynamic>.from(rawTarget)
@@ -1603,7 +1581,6 @@ class AgendaStore extends ChangeNotifier {
       _accountProfilesKey: jsonEncode(profiles),
       ..._workingProfileChanges(target),
       _activeAccountKey: accountId,
-      if (claimedLegacyGuest) _legacyClaimedByKey: accountId,
     };
 
     // Archive the previous profile, activate the target profile and move the
@@ -1622,6 +1599,23 @@ class AgendaStore extends ChangeNotifier {
     _accountScopeResolved = true;
     _notifyShellChanged();
     _notifyAllDataChanged();
+  }
+
+  Future<void> continueWithoutAccount() async {
+    if (_activeAccountId != null) {
+      await activateCloudAccount(null);
+    }
+
+    final prefs = await _localState();
+    final changed = !_localEntrySelected || !_accountScopeResolved;
+    _localEntrySelected = true;
+    _accountScopeResolved = true;
+    await prefs.setBool(_localEntrySelectedKey, true);
+
+    if (changed) {
+      _notifyShellChanged();
+      _notifyAllDataChanged();
+    }
   }
 
   Future<void> eraseLocalCloudAccount(String accountId) async {
@@ -1688,6 +1682,8 @@ class AgendaStore extends ChangeNotifier {
     await prefs.writeBatch(changes);
     await load();
 
+    _localEntrySelected = true;
+    await prefs.setBool(_localEntrySelectedKey, true);
     _accountScopeResolved = true;
     if (!kIsWeb) {
       await reconcileReminders();
@@ -2954,14 +2950,17 @@ class AgendaStore extends ChangeNotifier {
     _cloudSyncTimer?.cancel();
 
     final cloud = CloudSyncService.instance;
-    if (cloud.initialized) {
-      await activateCloudAccount(cloud.signedIn ? cloud.userId : null);
-    } else {
+    if (cloud.initialized && cloud.signedIn) {
+      await activateCloudAccount(cloud.userId);
+    } else if (!_accountScopeResolved) {
       _accountScopeResolved = true;
       _notifyShellChanged();
       _notifyAllDataChanged();
     }
 
+    // A missing/expired network session is not an implicit sign-out. The
+    // active account working set remains locally usable until the user
+    // explicitly disconnects it from Account & sync.
     if (cloud.signedIn) {
       await syncCloud(preferRemoteOnFirstSync: true);
       _scheduleDeferredSharedCloudSync();
@@ -2991,8 +2990,8 @@ class AgendaStore extends ChangeNotifier {
       await cloud.initialize();
     }
 
-    if (cloud.initialized) {
-      await activateCloudAccount(cloud.signedIn ? cloud.userId : null);
+    if (cloud.initialized && cloud.signedIn) {
+      await activateCloudAccount(cloud.userId);
     } else if (!_accountScopeResolved) {
       _accountScopeResolved = true;
       _notifyShellChanged();
