@@ -29,7 +29,7 @@ appId: com.riccardopinato.agenda_per_anna
 # Assert a stable localized section that is actually rendered in this surface.
 - scrollUntilVisible:
     element:
-      text: '(Pensieri e note|Thoughts and notes|Pensamientos y notas|Pensées et notes|Pensamentos e notas)[\\s\\S]*'
+      text: '(Pensieri e note|Thoughts and notes|Pensamientos y notas|Pensées et notes|Pensamentos e notas)[\s\S]*'
     direction: DOWN
     timeout: 10000
     visibilityPercentage: 20
