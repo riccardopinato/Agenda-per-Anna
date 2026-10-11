@@ -188,6 +188,42 @@ StreamSubscription<String>? _localNotificationTapSubscription;
 StreamSubscription<IncomingShareCapture>? _shareCaptureSubscription;
 StreamSubscription<Uri>? _ecosystemDeepLinkSubscription;
 
+Future<void> _waitForEntryScope(AgendaStore store) async {
+  if (store.entryScopeReady) return;
+
+  final completer = Completer<void>();
+
+  void listener() {
+    if (store.entryScopeReady && !completer.isCompleted) {
+      completer.complete();
+    }
+  }
+
+  store.shellRevision.addListener(listener);
+  try {
+    listener();
+    await completer.future;
+  } finally {
+    store.shellRevision.removeListener(listener);
+  }
+}
+
+Future<void> _runAfterEntryScope(
+  AgendaStore store,
+  Future<void> Function(BuildContext context) action,
+) async {
+  await _waitForEntryScope(store);
+
+  var context = appNavigatorKey.currentContext;
+  if (context == null) {
+    await Future<void>.delayed(const Duration(milliseconds: 50));
+    context = appNavigatorKey.currentContext;
+  }
+  final resolvedContext = context;
+  if (resolvedContext == null || !resolvedContext.mounted) return;
+  await action(resolvedContext);
+}
+
 void _syncPremiumIdentityFromCloud() {
   unawaited(
     PremiumEntitlementService.instance.syncIdentity(
@@ -246,27 +282,23 @@ Future<void> main() async {
       final initialShare = await ShareCaptureService.instance.initialize();
       await _shareCaptureSubscription?.cancel();
       _shareCaptureSubscription = ShareCaptureService.instance.stream.listen(
-        (capture) {
-          WidgetsBinding.instance.addPostFrameCallback((_) {
-            final context = appNavigatorKey.currentContext;
-            if (context != null) {
-              unawaited(
+        (capture) => unawaited(
+          _runAfterEntryScope(
+            store,
+            (context) =>
                 _handleIncomingShareCapture(context, store, capture),
-              );
-            }
-          });
-        },
+          ),
+        ),
       );
 
       if (initialShare != null) {
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          final context = appNavigatorKey.currentContext;
-          if (context != null) {
-            unawaited(
-              _handleIncomingShareCapture(context, store, initialShare),
-            );
-          }
-        });
+        unawaited(
+          _runAfterEntryScope(
+            store,
+            (context) =>
+                _handleIncomingShareCapture(context, store, initialShare),
+          ),
+        );
       }
     } catch (_) {
       // La condivisione esterna è opzionale e non deve bloccare l'avvio.
@@ -277,30 +309,30 @@ Future<void> main() async {
           await EcosystemDeepLinkService.instance.initialize();
       await _ecosystemDeepLinkSubscription?.cancel();
       _ecosystemDeepLinkSubscription =
-          EcosystemDeepLinkService.instance.stream.listen((uri) {
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          final context = appNavigatorKey.currentContext;
-          if (context != null) {
-            unawaited(
-              _handleIncomingEcosystemUri(context, store, uri),
-            );
-          }
-        });
-      });
+          EcosystemDeepLinkService.instance.stream.listen(
+        (uri) => unawaited(
+          _runAfterEntryScope(
+            store,
+            (context) => _handleIncomingEcosystemUri(
+              context,
+              store,
+              uri,
+            ),
+          ),
+        ),
+      );
 
       if (initialEcosystemUri != null) {
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          final context = appNavigatorKey.currentContext;
-          if (context != null) {
-            unawaited(
-              _handleIncomingEcosystemUri(
-                context,
-                store,
-                initialEcosystemUri,
-              ),
-            );
-          }
-        });
+        unawaited(
+          _runAfterEntryScope(
+            store,
+            (context) => _handleIncomingEcosystemUri(
+              context,
+              store,
+              initialEcosystemUri,
+            ),
+          ),
+        );
       }
     } catch (_) {
       // Il bridge ecosistema è opzionale e non deve bloccare l'avvio.
@@ -316,28 +348,29 @@ Future<void> main() async {
     try {
       await HomeWidgetBridge.instance.initialize();
       HomeWidgetBridge.instance.onAction = (action) {
-        final context = appNavigatorKey.currentContext;
-        if (context == null) return;
-        if (action == 'quick_capture') {
-          unawaited(
-            _showQuickCapture(
-              context,
-              store,
-              entryPoint: UnifiedCaptureEntryPoint.external,
-            ),
-          );
-        } else if (action == 'today') {
-          unawaited(
-            Navigator.of(context).push(
-              MaterialPageRoute(
-                builder: (_) => PlannerScreen(
-                  store: store,
-                  initialDate: DateTime.now(),
-                ),
-              ),
-            ),
-          );
-        }
+        unawaited(
+          _runAfterEntryScope(
+            store,
+            (context) async {
+              if (action == 'quick_capture') {
+                await _showQuickCapture(
+                  context,
+                  store,
+                  entryPoint: UnifiedCaptureEntryPoint.external,
+                );
+              } else if (action == 'today') {
+                await Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (_) => PlannerScreen(
+                      store: store,
+                      initialDate: DateTime.now(),
+                    ),
+                  ),
+                );
+              }
+            },
+          ),
+        );
       };
       await HomeWidgetBridge.instance.sync(store);
       final initialWidgetAction =
@@ -358,7 +391,10 @@ Future<void> main() async {
       _localNotificationTapSubscription =
           NotificationService.instance.notificationTapStream.listen(
         (payload) => unawaited(
-          _handleLocalReminderAction(store, payload),
+          _runAfterEntryScope(
+            store,
+            (_) => _handleLocalReminderAction(store, payload),
+          ),
         ),
       );
 
@@ -368,11 +404,15 @@ Future<void> main() async {
       final initialLocalPayload =
           NotificationService.instance.takeInitialPayload();
       if (initialLocalPayload != null) {
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          unawaited(
-            _handleLocalReminderAction(store, initialLocalPayload),
-          );
-        });
+        unawaited(
+          _runAfterEntryScope(
+            store,
+            (_) => _handleLocalReminderAction(
+              store,
+              initialLocalPayload,
+            ),
+          ),
+        );
       }
     } catch (_) {
       // Le notifiche non devono mai impedire l'avvio dell'agenda.
@@ -385,8 +425,10 @@ Future<void> main() async {
         onSharedPushReceived: (spaceId, eventId) async {
           await store.markSharedSpaceUnread(spaceId);
         },
-        onSharedPushOpened: (spaceId) =>
-            _openSharedSpaceFromNotification(store, spaceId),
+        onSharedPushOpened: (spaceId) async {
+          await _waitForEntryScope(store);
+          await _openSharedSpaceFromNotification(store, spaceId);
+        },
       );
 
       if (kIsWeb) {
@@ -396,6 +438,7 @@ Future<void> main() async {
         final initialWebPushSpace =
             await WebPushService.instance.takeInitialSpaceId();
         if (initialWebPushSpace != null) {
+          await _waitForEntryScope(store);
           await _openSharedSpaceFromNotification(
             store,
             initialWebPushSpace,

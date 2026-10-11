@@ -18,11 +18,12 @@ void main() {
     final store = AgendaStore();
     await store.load();
 
+    await store.continueWithoutAccount();
     await store.addInboxEntry('Dato ospite');
     await store.activateCloudAccount('user-a');
 
     expect(store.activeAccountId, 'user-a');
-    expect(store.inbox.map((e) => e.text), contains('Dato ospite'));
+    expect(store.inbox, isEmpty);
 
     await store.addInboxEntry('Solo A');
     await store.activateCloudAccount('user-b');
@@ -33,13 +34,21 @@ void main() {
     await store.addInboxEntry('Solo B');
     await store.activateCloudAccount('user-a');
 
-    expect(store.inbox.map((e) => e.text), contains('Dato ospite'));
     expect(store.inbox.map((e) => e.text), contains('Solo A'));
+    expect(store.inbox.map((e) => e.text), isNot(contains('Dato ospite')));
     expect(store.inbox.map((e) => e.text), isNot(contains('Solo B')));
 
     await store.activateCloudAccount('user-b');
     expect(store.inbox.map((e) => e.text), contains('Solo B'));
     expect(store.inbox.map((e) => e.text), isNot(contains('Solo A')));
+
+    await store.continueWithoutAccount();
+    expect(store.activeAccountId, isNull);
+    expect(store.inbox.map((e) => e.text), contains('Dato ospite'));
+    expect(store.inbox.map((e) => e.text), isNot(contains('Solo A')));
+    expect(store.inbox.map((e) => e.text), isNot(contains('Solo B')));
+
+    store.dispose();
   });
 
   test('corrupt section does not block healthy sections or get overwritten',

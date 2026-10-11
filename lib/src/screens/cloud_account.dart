@@ -145,7 +145,7 @@ class _CloudAccountScreenState extends State<CloudAccountScreen> {
         await WebPushService.instance.disable();
       }
       await CloudSyncService.instance.signOut();
-      await widget.store.activateCloudAccount(null);
+      await widget.store.continueWithoutAccount();
       _message(strings.d3('accountSignedOut'));
     } finally {
       if (mounted) setState(() => busy = false);

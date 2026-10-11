@@ -79,6 +79,19 @@ See `docs/ARCHITECTURE.md` and `supabase/README.md` for implementation details.
 - Adds D3 regression gates for five-language catalog completeness, no duplicate localization keys/helpers, no Italian native/background fallbacks, localized Sketchbook color semantics and locale-safe restore integrity errors.
 - D3 remains part of v1.00-D hardening and does not replace the postponed physical-device certification matrix.
 
+### v1.00-D5 — Optional Identity & Offline Entry Repair
+
+- Closes the D4 P0 by making cloud identity optional for ordinary local-first use.
+- Fresh installs can choose **Use on this device** and continue through normal onboarding without a Google/email account.
+- Reuses the existing `AgendaStore` guest/account profiles; no second profile database or local account system is introduced.
+- Guest and authenticated working sets stay isolated. Signing in no longer implicitly claims or merges guest data, while explicit sign-out restores the preserved guest scope.
+- A previously selected authenticated working set stays locally usable when cloud/network state is unavailable; only synchronization pauses.
+- Noi ♡ and other remote/account-only capabilities remain explicitly account-gated and can open Account & sync from guest mode.
+- Share/deep-link/widget/launcher/notification/push entry points wait for the selected guest/account scope before navigation or canonical data mutation.
+- AppLab now proves the device-only path from a clean install instead of bypassing identity through the integration-test define.
+- Regression and acceptance details: `docs/V100_D5_OPTIONAL_IDENTITY_OFFLINE_ENTRY.md`.
+- Release identity remains `0.99.0+109`; D5 is a v1.00 hardening repair, not the final 1.0 release.
+
 ### v1.00-D4 — Functional Completion Audit
 
 - Audits the current product from user entry points through canonical stores/services instead of adding another feature family.

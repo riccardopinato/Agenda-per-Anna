@@ -2,6 +2,15 @@ appId: com.riccardopinato.agenda_per_anna
 ---
 - launchApp:
     clearState: true
+
+# v1.00-D5 — prove that a fresh install can enter the existing guest scope
+# without authenticating. The integration-test define is still used only for
+# deterministic persistent storage; it no longer bypasses identity routing.
+- extendedWaitUntil:
+    visible: '(Usa su questo dispositivo|Use on this device|Usar en este dispositivo|Utiliser sur cet appareil|Usar neste dispositivo)'
+    timeout: 15000
+- tapOn:
+    text: '(Usa su questo dispositivo|Use on this device|Usar en este dispositivo|Utiliser sur cet appareil|Usar neste dispositivo)'
 - extendedWaitUntil:
     visible: '(La tua agenda, davvero tua\.|Your agenda, truly yours\.|Tu agenda, de verdad tuya\.|Ton agenda, vraiment à toi\.|A tua agenda, verdadeiramente tua\.)'
     timeout: 15000
