@@ -52,21 +52,25 @@ class _MainShellState extends State<MainShell> {
         onDestinationSelected: (v) => setState(() => index = v),
         destinations: [
           NavigationDestination(
+            key: const ValueKey<String>('main-nav-home'),
             icon: const Icon(Icons.home_outlined),
             selectedIcon: const Icon(Icons.home),
             label: strings.navHome,
           ),
           NavigationDestination(
+            key: const ValueKey<String>('main-nav-month'),
             icon: const Icon(Icons.calendar_month_outlined),
             selectedIcon: const Icon(Icons.calendar_month),
             label: strings.navMonth,
           ),
           NavigationDestination(
+            key: const ValueKey<String>('main-nav-week'),
             icon: const Icon(Icons.view_week_outlined),
             selectedIcon: const Icon(Icons.view_week),
             label: strings.navWeek,
           ),
           NavigationDestination(
+            key: const ValueKey<String>('main-nav-today'),
             icon: const Icon(Icons.today_outlined),
             selectedIcon: const Icon(Icons.today),
             label: strings.navToday,
