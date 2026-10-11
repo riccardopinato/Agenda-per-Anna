@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -100,6 +102,38 @@ void main() {
     );
 
     store.dispose();
+  });
+
+  test('external entry points wait for the selected account scope', () {
+    final mainSource = File('lib/main.dart').readAsStringSync();
+    final shell = File('lib/src/app_shell.dart').readAsStringSync();
+    final flow = File('.maestro/applab-smoke.yaml').readAsStringSync();
+
+    expect(mainSource, contains('Future<void> _waitForEntryScope'));
+    expect(mainSource, contains('Future<void> _runAfterEntryScope'));
+    expect(
+      mainSource,
+      contains('_handleIncomingShareCapture(context, store, capture)'),
+    );
+    expect(
+      mainSource,
+      contains('_handleIncomingEcosystemUri('),
+    );
+    expect(
+      mainSource,
+      contains("if (action == 'quick_capture')"),
+    );
+    expect(
+      mainSource,
+      contains('_handleLocalReminderAction(store, payload)'),
+    );
+    expect(shell, isNot(contains('integrationTest || bypassIdentityForTesting')));
+    expect(
+      flow,
+      contains(
+        '(Usa su questo dispositivo|Use on this device|Usar en este dispositivo|Utiliser sur cet appareil|Usar neste dispositivo)',
+      ),
+    );
   });
 
   test('persisted account working set is immediately available offline',
