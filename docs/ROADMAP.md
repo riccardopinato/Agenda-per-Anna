@@ -57,7 +57,9 @@ Source of execution truth for Anna's Diary. Product identity and boundaries are 
 | v1.00-B | Golden Core Cleanup & Localization | Completed — CI/AppLab trusted runtime green | Removed confirmed dead UI, localized core surfaces, simplified Home IA and locked 10k-memory projection performance without new persistence |
 | v1.00-C | Data Safety v21 Hardening | Completed — CI/AppLab trusted runtime green | Restore staging, reference-safe commit, deterministic crash recovery, stale-marker safety and shared-reference preservation |\n| v1.00-D | Security / Native Physical Certification | IN PROGRESS — live backend verified, physical gate pending | Live migration 027 + two-user backend contract verified; stable artifact identity/AppLab backup preflight added; real-device file, Keystore, E2EE and native flows still required |
 | v1.00-D1 | Crypto Responsiveness | Completed — CI/AppLab green | Native PBKDF2 off main isolate for Vault + Noi ♡ pairing/recovery, unchanged crypto format, responsiveness/compatibility regressions |
-| v1.00-D2 | Vault AppLab Deep Journey | Implemented — must pass release gates | Clean setup, encrypted sentinel, relock, wrong-password rejection, correct unlock and process-restart persistence in trusted runtime |
+| v1.00-D2 | Vault AppLab Deep Journey | Completed — CI/AppLab green | Clean setup, encrypted sentinel, relock, wrong-password rejection, correct unlock and process-restart persistence in trusted runtime |
+| v1.00-D3 | Localization Completion | Completed — CI/AppLab green | en/it/es/fr/pt completion across migrated Flutter/native/background surfaces with locale-neutral persistence boundaries |
+| v1.00-D4 | Functional Completion Audit | Completed — product verdict NOT COMPLETE | Core feature wiring audited; mandatory identity vs local-first contract is the single confirmed P0 functional blocker |
 
 ## v1.00-A audit outcome
 
@@ -139,6 +141,23 @@ The full product reality audit is recorded in `docs/V100_FULL_PRODUCT_REALITY_AU
 - Every D3 catalog row must define en/it/es/fr/pt and duplicate keys/helper definitions must fail tests.
 - Development checks, Web release, Android size audit and AppLab must be green on the same final D3 SHA before the step is considered complete.
 - D3 does not claim physical-device verification; native file-provider, Keystore/biometric, two-device Noi ♡ and real notification-delivery evidence remains in the v1.00-D physical matrix.
+
+## v1.00-D4 functional completion audit
+
+The evidence-backed audit is recorded in `docs/V100_D4_FUNCTIONAL_COMPLETION_AUDIT.md`.
+
+D4 does not introduce a new feature family. It checks reachability and ownership from user entry points through canonical stores/services and classifies surfaces as COMPLETE / PARTIAL / MOCK / BROKEN / DUPLICATE / NOT CONNECTED.
+
+Audit verdict:
+
+- the canonical Home/Planner/Diary/Capture/Memories/Search/Archive/Shopping/Workout/Vault/Noi ♡/Backup/Ecosystem implementations are present and no competing Life Core, Memory DB, Search, Capture DB or Privacy store was confirmed;
+- planned Ecosystem integrations remain explicitly NOT CONNECTED BY DESIGN rather than being presented as live;
+- native/store-only evidence remains capped at its real physical/distribution level;
+- **v1.00 is not functionally complete because normal app routing currently requires cloud sign-in, despite the Product Bible requiring ordinary personal content to work without an account**;
+- the existing `guest` account scope is therefore implemented in storage but not connected to the normal entry flow;
+- release metadata remains `0.99.0+109` until the P0 entry-flow blocker and required certification/distribution gates close.
+
+Next remediation step: **v1.00-D5 — Optional Identity & Offline Entry Repair**. It must reuse the existing guest/account isolation model rather than creating a new local-profile system.
 
 ## v1.00-D acceptance criteria
 
