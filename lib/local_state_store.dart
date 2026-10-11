@@ -281,6 +281,7 @@ class LocalStateStore {
       'cloud_force_full_sync_v1',
       'account_profiles_v1',
       'active_account_v1',
+      'local_entry_selected_v1',
       'legacy_claimed_by_v1',
       'privacy_guard_v1',
       'backup_restore_transaction_v1',
