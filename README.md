@@ -79,6 +79,17 @@ See `docs/ARCHITECTURE.md` and `supabase/README.md` for implementation details.
 - Adds D3 regression gates for five-language catalog completeness, no duplicate localization keys/helpers, no Italian native/background fallbacks, localized Sketchbook color semantics and locale-safe restore integrity errors.
 - D3 remains part of v1.00-D hardening and does not replace the postponed physical-device certification matrix.
 
+### v1.00-D4 — Functional Completion Audit
+
+- Audits the current product from user entry points through canonical stores/services instead of adding another feature family.
+- Confirms the core daily/diary/memory/search/archive/utility/privacy/shared/data-safety architecture remains consolidated; no second Life Core, Memory DB, Search, Capture DB or Privacy store is required.
+- Finds one P0 functional contract violation: normal app routing requires a signed-in cloud session even though the Product Bible requires ordinary personal content to remain usable without an account.
+- Confirms the existing `guest` working set is implemented in `AgendaStore` but is not reachable through the current normal identity flow.
+- Keeps planned Ecosystem integrations explicitly planned rather than presenting them as live.
+- Keeps physical native and Play purchase evidence at its real evidence ceiling.
+- Full matrix and remediation: `docs/V100_D4_FUNCTIONAL_COMPLETION_AUDIT.md`.
+- Release identity remains `0.99.0+109`; D4 does not claim a 1.0 release while the P0 blocker and certification gates remain open.
+
 ### v1.00-D current evidence
 
 - Production Supabase reports migration `shared_password_hardening_v086` deployed; the live two-user transactional backend contract passes with rollback.
