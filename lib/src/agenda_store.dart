@@ -107,6 +107,9 @@ class AgendaStore extends ChangeNotifier {
   String? get activeAccountId => _activeAccountId;
   bool get localEntrySelected => _localEntrySelected;
   bool get accountScopeResolved => _accountScopeResolved;
+  bool get entryScopeReady =>
+      _accountScopeResolved &&
+      (_activeAccountId != null || _localEntrySelected);
   bool get hasStorageWarnings => _unreadableStorageKeys.isNotEmpty;
   Set<String> get unreadableStorageKeys =>
       Set<String>.unmodifiable(_unreadableStorageKeys);
