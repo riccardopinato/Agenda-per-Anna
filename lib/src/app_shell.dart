@@ -110,10 +110,7 @@ class AgendaRoot extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const integrationTest =
-        bool.fromEnvironment('ANNAS_DIARY_INTEGRATION_TEST');
-    final bypassIdentity =
-        integrationTest || bypassIdentityForTesting;
+    final bypassIdentity = bypassIdentityForTesting;
 
     return AnimatedBuilder(
       animation: Listenable.merge([
@@ -124,31 +121,25 @@ class AgendaRoot extends StatelessWidget {
       builder: (context, _) {
         final cloud = CloudSyncService.instance;
 
-        if (!bypassIdentity) {
-          if (!cloud.initialized &&
-              cloud.state != CloudConnectionState.error) {
-            return const Scaffold(
-              body: Center(child: CircularProgressIndicator()),
-            );
-          }
-
-          if (!cloud.signedIn) {
-            return UniversalIdentityScreen(store: store);
-          }
-
-          final userId = cloud.userId;
-          if (userId != null &&
-              (!store.accountScopeResolved ||
-                  store.activeAccountId != userId)) {
-            return _AccountBindingScreen(
-              store: store,
-              userId: userId,
-            );
-          }
-        } else if (!store.accountScopeResolved) {
+        if (!store.accountScopeResolved) {
           return const Scaffold(
             body: Center(child: CircularProgressIndicator()),
           );
+        }
+
+        if (!bypassIdentity) {
+          if (cloud.signedIn) {
+            final userId = cloud.userId;
+            if (userId != null && store.activeAccountId != userId) {
+              return _AccountBindingScreen(
+                store: store,
+                userId: userId,
+              );
+            }
+          } else if (store.activeAccountId == null &&
+              !store.localEntrySelected) {
+            return UniversalIdentityScreen(store: store);
+          }
         }
 
         if (!store.preferences.onboardingDone) {
