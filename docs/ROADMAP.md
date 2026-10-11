@@ -60,6 +60,7 @@ Source of execution truth for Anna's Diary. Product identity and boundaries are 
 | v1.00-D2 | Vault AppLab Deep Journey | Completed — CI/AppLab green | Clean setup, encrypted sentinel, relock, wrong-password rejection, correct unlock and process-restart persistence in trusted runtime |
 | v1.00-D3 | Localization Completion | Completed — CI/AppLab green | en/it/es/fr/pt completion across migrated Flutter/native/background surfaces with locale-neutral persistence boundaries |
 | v1.00-D4 | Functional Completion Audit | Completed — product verdict NOT COMPLETE | Core feature wiring audited; mandatory identity vs local-first contract is the single confirmed P0 functional blocker |
+| v1.00-D5 | Optional Identity & Offline Entry Repair | Completed — merge requires final CI/AppLab green | Device-only entry, strict guest/account isolation, offline authenticated working-set access and deferred external intents close the D4 P0 |
 
 ## v1.00-A audit outcome
 
@@ -157,7 +158,22 @@ Audit verdict:
 - the existing `guest` account scope is therefore implemented in storage but not connected to the normal entry flow;
 - release metadata remains `0.99.0+109` until the P0 entry-flow blocker and required certification/distribution gates close.
 
-Next remediation step: **v1.00-D5 — Optional Identity & Offline Entry Repair**. It must reuse the existing guest/account isolation model rather than creating a new local-profile system.
+D4 remediation is implemented by **v1.00-D5 — Optional Identity & Offline Entry Repair**, documented in `docs/V100_D5_OPTIONAL_IDENTITY_OFFLINE_ENTRY.md`.
+
+## v1.00-D5 optional identity & offline entry
+
+- Fresh installs expose an explicit device-only path; cloud identity is optional for ordinary personal use.
+- The existing guest scope is reused and persists across restart.
+- Guest and authenticated account working sets remain separate; first login no longer claims or merges guest content implicitly.
+- Explicit sign-out restores the guest working set.
+- A persisted authenticated working set remains locally accessible when the network/cloud session is unavailable.
+- Noi ♡ and remote/account-only operations remain explicitly gated behind account access.
+- Share target, Ecosystem links, widget/launcher actions and notification/push opens wait until the selected entry scope is ready.
+- AppLab must prove the device-only choice from clean state; the integration-test define may not bypass identity routing.
+- Release identity remains `0.99.0+109`; D5 closes a functional blocker but does not claim physical-device or Store-ready evidence.
+- D5 is complete only with all applicable final-head CI/AppLab gates green.
+
+Next step after D5: **v1.00-D6 — Functional Regression & Navigation Completion**.
 
 ## v1.00-D acceptance criteria
 
