@@ -25,8 +25,11 @@ appId: com.riccardopinato.agenda_per_anna
     direction: DOWN
     timeout: 10000
 - tapOn: '(Chiudi|Close|Cerrar|Fermer|Fechar)'
+# The current Today composition exposes the diary editor after Capture closes.
+# Assert a stable localized section that is actually rendered in this surface.
 - scrollUntilVisible:
     element:
-      text: '(Momenti del giorno|Moments of the day|Momentos del día|Moments de la journée|Momentos do dia)[\\s\\S]*'
+      text: '(Pensieri e note|Thoughts and notes|Pensamientos y notas|Pensées et notes|Pensamentos e notas)[\\s\\S]*'
     direction: DOWN
     timeout: 10000
+    visibilityPercentage: 20
