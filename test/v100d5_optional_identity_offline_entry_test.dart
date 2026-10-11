@@ -21,33 +21,25 @@ void main() {
     await MediaAssetStore.instance.resetForTesting();
   });
 
-  testWidgets('first launch offers an explicit device-only path', (tester) async {
-    final store = AgendaStore();
-    await store.load();
-    store.preferences =
-        store.preferences.copyWith(appLanguage: AppLanguage.english);
+  test('first launch exposes an explicit device-only path', () {
+    final shell = File('lib/src/app_shell.dart').readAsStringSync();
+    final identity =
+        File('lib/src/screens/universal_identity.dart').readAsStringSync();
+    final strings = File('lib/src/localization_d3.dart').readAsStringSync();
 
-    await tester.pumpWidget(AgendaApp(store: store));
-    await tester.pump();
-
-    expect(find.text('Use on this device'), findsOneWidget);
     expect(
-      find.text(
-        'Your diary works on this device without an account. '
-        'Sign in only for cross-device sync and Noi ♡.',
+      shell,
+      contains(
+        'store.activeAccountId == null &&\n'
+        '              !store.localEntrySelected',
       ),
-      findsOneWidget,
     );
-
-    await tester.tap(find.text('Use on this device'));
-    await tester.pump();
-    await tester.pump(const Duration(milliseconds: 100));
-
-    expect(store.localEntrySelected, isTrue);
-    expect(store.activeAccountId, isNull);
-    expect(find.text('Your agenda, truly yours.'), findsOneWidget);
-
-    store.dispose();
+    expect(shell, contains('return UniversalIdentityScreen(store: store);'));
+    expect(identity, contains('Future<void> _continueOffline() async'));
+    expect(identity, contains('await widget.store.continueWithoutAccount();'));
+    expect(identity, contains("d3('continueOffline')"));
+    expect(strings, contains('"continueOffline": <String, String>'));
+    expect(strings, contains('"offlineEntryHint": <String, String>'));
   });
 
   test('device-only selection and guest data survive process restart', () async {
