@@ -68,13 +68,13 @@ appId: com.riccardopinato.agenda_per_anna
 
 - scrollUntilVisible:
     element:
-      text: "(Life Ecosystem|Ecosistema vita|Ecosistema de vida)[\\s\\S]*"
+      text: "(Life Ecosystem|Ecosistema vita|Ecosistema de vida|Écosystème de vie|Ecossistema de vida)[\\s\\S]*"
     direction: DOWN
     timeout: 10000
 - tapOn:
-    text: "(Life Ecosystem|Ecosistema vita|Ecosistema de vida)[\\s\\S]*"
+    text: "(Life Ecosystem|Ecosistema vita|Ecosistema de vida|Écosystème de vie|Ecossistema de vida)[\\s\\S]*"
 - extendedWaitUntil:
-    visible: "(Life Ecosystem|Ecosistema vita|Ecosistema de vida)"
+    visible: "(Life Ecosystem|Ecosistema vita|Ecosistema de vida|Écosystème de vie|Ecossistema de vida)"
     timeout: 10000
 - back
 - extendedWaitUntil:
