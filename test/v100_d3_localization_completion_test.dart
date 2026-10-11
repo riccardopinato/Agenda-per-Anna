@@ -545,14 +545,15 @@ void main() {
     }
 
     for (final text in const <String>[
-      'Momenti del giorno',
-      'Moments of the day',
-      'Momentos del día',
-      'Moments de la journée',
-      'Momentos do dia',
+      'Pensieri e note',
+      'Thoughts and notes',
+      'Pensamientos y notas',
+      'Pensées et notes',
+      'Pensamentos e notas',
     ]) {
       expect(today, contains(text));
     }
+    expect(today, isNot(contains('Momenti del giorno|Moments of the day')));
 
     for (final text in const <String>[
       'Account e sincronizzazione',
