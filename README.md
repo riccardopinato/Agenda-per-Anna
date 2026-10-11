@@ -79,6 +79,16 @@ See `docs/ARCHITECTURE.md` and `supabase/README.md` for implementation details.
 - Adds D3 regression gates for five-language catalog completeness, no duplicate localization keys/helpers, no Italian native/background fallbacks, localized Sketchbook color semantics and locale-safe restore integrity errors.
 - D3 remains part of v1.00-D hardening and does not replace the postponed physical-device certification matrix.
 
+### v1.00-D6 — Functional Regression & Navigation Completion
+
+- Adds an end-to-end post-D5 regression gate instead of introducing another feature family.
+- Preserves the existing four-tab MainShell and verifies canonical Home destinations, Explore routes and the single Unified Capture path.
+- AppLab now revisits Search, Inbox, Shopping, Workout, Life Ecosystem and Account & sync after entering through the real device-only flow.
+- Keeps guest/account isolation and account-optional semantics as prerequisites to navigation.
+- D6 does not claim physical-native evidence; that remains the explicit D7 gate.
+- Regression and acceptance details: `docs/V100_D6_FUNCTIONAL_REGRESSION_NAVIGATION.md`.
+- Release identity remains `0.99.0+109` until the remaining certification/distribution gates close.
+
 ### v1.00-D5 — Optional Identity & Offline Entry Repair
 
 - Closes the D4 P0 by making cloud identity optional for ordinary local-first use.
