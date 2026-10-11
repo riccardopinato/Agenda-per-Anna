@@ -19,9 +19,10 @@ void main() {
       16,
     );
 
-    expect(source, contains('static const _colorNames = <String>['));
+    expect(source, isNot(contains('_colorNames')));
     expect(source, contains('ListView.separated('));
-    expect(source, contains("label: 'Colore "));
+    expect(source, contains('sketchColorName(index)'));
+    expect(source, contains('sketchColorSemantic('));
     expect(source, contains('DiarySketchStroke('));
     expect(source, contains('colorValue: stroke.colorValue'));
   });

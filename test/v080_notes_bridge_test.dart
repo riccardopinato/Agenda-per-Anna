@@ -134,7 +134,7 @@ void main() {
     expect(domain, contains('notesBridgeTextForInbox'));
     expect(domain, contains('notesBridgeTextForDiary'));
     expect(inbox, contains('strings.copyForNotes'));
-    expect(diary, contains("'Copia per Notes'"));
+    expect(diary, contains('AnnaStrings.of(context).copyForNotes'));
 
     for (final forbidden in [
       'notes_bridge_v1',

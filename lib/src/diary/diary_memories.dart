@@ -571,7 +571,10 @@ class _DiaryMemoriesScreenState extends State<DiaryMemoriesScreen> {
     DiaryBlockReference record,
   ) {
     final block = record.block;
-    final title = widget.store.diaryBlockDisplayTitle(block);
+    final title = widget.store.diaryBlockDisplayTitle(
+      block,
+      strings: AnnaStrings.of(context),
+    );
     final date = DateFormat('d MMMM yyyy', AnnaStrings.intlLocale(context)).format(record.date);
 
     return Card(

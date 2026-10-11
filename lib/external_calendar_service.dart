@@ -33,9 +33,7 @@ class ExternalCalendarInfo {
   factory ExternalCalendarInfo.fromPlatform(Map<Object?, Object?> raw) {
     return ExternalCalendarInfo(
       id: '${raw['id'] ?? ''}',
-      name: ('${raw['name'] ?? ''}').trim().isEmpty
-          ? 'Calendario'
-          : ('${raw['name'] ?? ''}').trim(),
+      name: ('${raw['name'] ?? ''}').trim(),
       accountName: ('${raw['accountName'] ?? ''}').trim(),
       colorValue: (raw['color'] as num?)?.toInt(),
     );
@@ -90,12 +88,8 @@ class ExternalCalendarEvent {
     return ExternalCalendarEvent(
       id: '$calendarId:$eventId:${instanceStart.toIso8601String()}',
       calendarId: calendarId,
-      calendarName: ('${raw['calendarName'] ?? ''}').trim().isEmpty
-          ? 'Calendario esterno'
-          : ('${raw['calendarName'] ?? ''}').trim(),
-      title: ('${raw['title'] ?? ''}').trim().isEmpty
-          ? 'Evento senza titolo'
-          : ('${raw['title'] ?? ''}').trim(),
+      calendarName: ('${raw['calendarName'] ?? ''}').trim(),
+      title: ('${raw['title'] ?? ''}').trim(),
       description: ('${raw['description'] ?? ''}').trim(),
       location: ('${raw['location'] ?? ''}').trim(),
       start: instanceStart,

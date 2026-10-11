@@ -72,6 +72,15 @@ class AgendaStore extends ChangeNotifier {
   final Set<String> _unreadableStorageKeys = {};
   AgendaPreferences preferences = const AgendaPreferences();
 
+  List<HabitDefinition> _starterHabits() {
+    final strings = AnnaStrings.forPreference(preferences.appLanguage);
+    return [
+      HabitDefinition(id: 'water', name: strings.d3StarterHabitWater),
+      HabitDefinition(id: 'move', name: strings.d3StarterHabitMove),
+      HabitDefinition(id: 'me', name: strings.d3StarterHabitMe),
+    ];
+  }
+
   Timer? _cloudSyncTimer;
   Timer? _syncDebounceTimer;
   Timer? _unifiedRealtimeDebounce;
@@ -1443,11 +1452,7 @@ class AgendaStore extends ChangeNotifier {
     if (parsedIndex != null) _syncIndex.addAll(parsedIndex);
 
     if (!hadHabitsKey && !_unreadableStorageKeys.contains(_habitsKey)) {
-      habits.addAll(const [
-        HabitDefinition(id: 'water', name: 'Bere abbastanza'),
-        HabitDefinition(id: 'move', name: 'Muovermi un po’'),
-        HabitDefinition(id: 'me', name: 'Tempo per me'),
-      ]);
+      habits.addAll(_starterHabits());
     }
 
     await _applyEntityDeltas(prefs);
@@ -1484,9 +1489,7 @@ class AgendaStore extends ChangeNotifier {
       return Map<String, dynamic>.from(jsonDecode(raw) as Map);
     } catch (_) {
       _unreadableStorageKeys.add(_accountProfilesKey);
-      throw const FormatException(
-        'Archivio profili account non leggibile: cambio account annullato.',
-      );
+      throw const FormatException('account_profiles_unreadable');
     }
   }
 
@@ -1968,8 +1971,13 @@ class AgendaStore extends ChangeNotifier {
   Future<Uint8List> createBackupZip() =>
       _backupDomain.createBackupZip(this);
 
-  Future<Uint8List> createOpenExportZip() =>
-      _backupDomain.createOpenExportZip(this);
+  Future<Uint8List> createOpenExportZip({
+    AnnaStrings? strings,
+  }) =>
+      _backupDomain.createOpenExportZip(
+        this,
+        strings: strings ?? AnnaStrings.forPreference(preferences.appLanguage),
+      );
 
   DecodedZipBackup _decodeAndValidateBackupZip(Uint8List bytes) =>
       _backupDomain.decodeAndValidateBackupZip(this, bytes);
@@ -1995,8 +2003,7 @@ class AgendaStore extends ChangeNotifier {
     if (missingFromBundle.isNotEmpty) {
       final first = missingFromBundle.toList()..sort();
       throw FormatException(
-        'Il backup non contiene tutti i media referenziati: '
-        '${first.first}',
+        'backup_missing_referenced_media:${first.first}',
       );
     }
 
@@ -2173,7 +2180,7 @@ class AgendaStore extends ChangeNotifier {
     final backupContainsHabits = payload.containsKey('habits');
 
     // Parse first and keep a safety snapshot before touching the working set.
-    await createLocalSnapshot(label: 'Prima del ripristino');
+    await createLocalSnapshot(label: '@snapshot:before_restore');
     final prefs = await _localState();
 
     final previousItems = List<AgendaItem>.from(items);
@@ -2322,11 +2329,7 @@ class AgendaStore extends ChangeNotifier {
       }
 
       if (habits.isEmpty && !backupContainsHabits) {
-        habits.addAll(const [
-          HabitDefinition(id: 'water', name: 'Bere abbastanza'),
-          HabitDefinition(id: 'move', name: 'Muovermi un po’'),
-          HabitDefinition(id: 'me', name: 'Tempo per me'),
-        ]);
+        habits.addAll(_starterHabits());
       }
 
       _invalidateDayIndex();
@@ -2449,7 +2452,7 @@ class AgendaStore extends ChangeNotifier {
   }
 
   Future<void> createLocalSnapshot({
-    String label = 'Backup manuale',
+    String label = '@snapshot:manual',
   }) async {
     final prefs = await _localState();
     localSnapshots.insert(
@@ -2482,7 +2485,7 @@ class AgendaStore extends ChangeNotifier {
       LocalBackupSnapshot(
         id: const Uuid().v4(),
         createdAt: now,
-        label: 'Backup automatico',
+        label: '@snapshot:auto',
         data: jsonDecode(jsonEncode(_localDataPayload()))
             as Map<String, dynamic>,
       ),
@@ -2519,8 +2522,13 @@ class AgendaStore extends ChangeNotifier {
     _notifyBackupChanged();
   }
 
-  String createReadableExport() =>
-      _backupDomain.createReadableExport(this);
+  String createReadableExport({
+    AnnaStrings? strings,
+  }) =>
+      _backupDomain.createReadableExport(
+        this,
+        strings: strings ?? AnnaStrings.forPreference(preferences.appLanguage),
+      );
 
   void _invalidateDayIndex() {
     _dayIndexDirty = true;
@@ -2719,7 +2727,7 @@ class AgendaStore extends ChangeNotifier {
               stableId: stableId,
               title: item.title,
               body: minutes == 0
-                  ? 'È il momento di iniziare.'
+                  ? AnnaStrings.forPreference(preferences.appLanguage).d3('reminderNow')
                   : _reminderBody(minutes, item.title),
               when: when,
             );
@@ -2742,7 +2750,7 @@ class AgendaStore extends ChangeNotifier {
         stableId: stableId,
         title: item.title,
         body: minutes == 0
-            ? 'È il momento di iniziare.'
+            ? AnnaStrings.forPreference(preferences.appLanguage).d3('reminderNow')
             : _reminderBody(minutes, item.title),
         when: when,
         requestPermission: requestPermission,
@@ -2764,10 +2772,20 @@ class AgendaStore extends ChangeNotifier {
   }
 
   String _reminderBody(int minutes, String title) {
-    if (minutes == 1440) return 'Domani: $title';
-    if (minutes == 120) return 'Tra 2 ore: $title';
-    if (minutes == 60) return 'Tra 1 ora: $title';
-    return 'Tra $minutes minuti: $title';
+    final strings = AnnaStrings.forPreference(preferences.appLanguage);
+    if (minutes == 1440) {
+      return strings.d3Format('reminderTomorrow', {'title': title});
+    }
+    if (minutes == 120) {
+      return strings.d3Format('reminderIn2Hours', {'title': title});
+    }
+    if (minutes == 60) {
+      return strings.d3Format('reminderIn1Hour', {'title': title});
+    }
+    return strings.d3Format(
+      'reminderInMinutes',
+      {'minutes': minutes, 'title': title},
+    );
   }
 
   Future<void> toggle(String id) async {
@@ -2962,6 +2980,9 @@ class AgendaStore extends ChangeNotifier {
   }
 
   Future<void> handleAppResumed() async {
+    NotificationService.instance.configureLocalization(
+      notificationLocalizationForPreference(preferences.appLanguage),
+    );
     await NotificationService.instance.initialize();
     await reconcileReminders();
 
@@ -3089,7 +3110,7 @@ class AgendaStore extends ChangeNotifier {
               workoutPlans.isNotEmpty ||
               trash.isNotEmpty)) {
         await createLocalSnapshot(
-          label: 'Prima sincronizzazione cloud',
+          label: '@snapshot:before_cloud_sync',
         );
         await prefs.setBool(firstSnapshotKey, true);
       }
@@ -5214,9 +5235,7 @@ class AgendaStore extends ChangeNotifier {
     final normalized = pin.trim();
     final validPin = RegExp(r'^\d{4,8}$').hasMatch(normalized);
     if (!validPin) {
-      throw const FormatException(
-        'Il PIN deve contenere da 4 a 8 cifre.',
-      );
+      throw const FormatException('pin_invalid_format');
     }
     final saltBytes = List<int>.generate(
       16,
@@ -5242,6 +5261,10 @@ class AgendaStore extends ChangeNotifier {
 
   Future<void> savePreferences(AgendaPreferences value) async {
     preferences = value;
+    NotificationService.instance.configureLocalization(
+      notificationLocalizationForPreference(preferences.appLanguage),
+    );
+    unawaited(HomeWidgetBridge.instance.sync(this));
 
     // Preferences drive shell-level navigation (including onboarding and the
     // preferred start surface). Publish the in-memory state immediately so UI

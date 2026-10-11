@@ -48,8 +48,8 @@ void main() {
     final cloud =
         File('lib/cloud_sync_service.dart').readAsStringSync();
 
-    expect(identity, contains('Continua con Google'));
-    expect(identity, contains('Ho già un account email/password'));
+    expect(identity, contains("d3('continueGoogle')"));
+    expect(identity, contains("d3('haveEmailAccount')"));
     expect(cloud, contains('signInWithGoogle'));
     expect(cloud, contains('LaunchMode.externalApplication'));
     expect(
@@ -57,8 +57,10 @@ void main() {
       contains('https://riccardopinato.github.io/Agenda-per-Anna/'),
     );
 
-    expect(shared, contains('Non esiste più un login separato qui.'));
-    expect(shared, isNot(contains('Account e sincronizzazione')));
+    expect(shared, contains('CloudSyncService.instance'));
+    expect(shared, isNot(contains('signInWithPassword')));
+    expect(shared, isNot(contains('signInWithGoogle')));
+    expect(shared, isNot(contains("d3('accountAndSync')")));
   });
 
   test('Android release scaffold contains the Supabase OAuth callback', () {

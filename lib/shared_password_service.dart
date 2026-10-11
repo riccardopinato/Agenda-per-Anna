@@ -122,10 +122,10 @@ class SharedPasswordService {
     final vault = PrivateVaultService.instance;
     final cloud = CloudSyncService.instance;
     if (!vault.unlocked) {
-      throw StateError('Sblocca prima la Cassaforte privata.');
+      throw StateError('shared_password_unlock_vault');
     }
     if (!cloud.signedIn) {
-      throw StateError('Accedi prima a Noi ♡.');
+      throw StateError('shared_password_sign_in');
     }
 
     final local = vault.sharedPasswordKeyCopy(spaceId);
@@ -139,8 +139,7 @@ class SharedPasswordService {
         if (claim.fingerprint != localFingerprint) {
           await vault.removeSharedPasswordSpace(spaceId);
           throw StateError(
-            'Esiste già una chiave Password Noi ♡ diversa. '
-            'Importala da un dispositivo collegato.',
+            'shared_password_key_conflict',
           );
         }
         return;
@@ -158,8 +157,7 @@ class SharedPasswordService {
       );
       if (!claim.claimed || claim.fingerprint != fingerprint) {
         throw StateError(
-          'Esiste già una chiave Password Noi ♡. '
-          'Importala da un dispositivo collegato.',
+          'shared_password_key_exists',
         );
       }
       await vault.importSharedPasswordKey(spaceId, candidate);
@@ -172,15 +170,15 @@ class SharedPasswordService {
     final vault = PrivateVaultService.instance;
     final cloud = CloudSyncService.instance;
     if (!vault.unlocked) {
-      throw StateError('Sblocca prima la Cassaforte privata.');
+      throw StateError('shared_password_unlock_vault');
     }
     if (!cloud.signedIn) {
-      throw StateError('Accedi prima a Noi ♡.');
+      throw StateError('shared_password_sign_in');
     }
 
     final spaceKey = vault.sharedPasswordKeyCopy(spaceId);
     if (spaceKey == null) {
-      throw StateError('Inizializza prima Password Noi ♡.');
+      throw StateError('shared_password_initialize_first');
     }
 
     Uint8List? wrappingKey;
@@ -224,10 +222,10 @@ class SharedPasswordService {
     final vault = PrivateVaultService.instance;
     final cloud = CloudSyncService.instance;
     if (!vault.unlocked) {
-      throw StateError('Sblocca prima la Cassaforte privata.');
+      throw StateError('shared_password_unlock_vault');
     }
     if (!cloud.signedIn) {
-      throw StateError('Accedi prima a Noi ♡.');
+      throw StateError('shared_password_sign_in');
     }
 
     final normalized = _normalizePairingCode(code);
@@ -279,20 +277,20 @@ class SharedPasswordService {
     final vault = PrivateVaultService.instance;
     final cloud = CloudSyncService.instance;
     if (!vault.unlocked) {
-      throw StateError('Sblocca prima la Cassaforte privata.');
+      throw StateError('shared_password_unlock_vault');
     }
     if (!cloud.signedIn) {
-      throw StateError('Accedi prima a Noi ♡.');
+      throw StateError('shared_password_sign_in');
     }
     if (recoveryPassword.length < 12) {
       throw const FormatException(
-        'Usa almeno 12 caratteri per la password di recupero.',
+        'shared_password_recovery_min_12',
       );
     }
 
     final key = vault.sharedPasswordKeyCopy(spaceId);
     if (key == null) {
-      throw StateError('Chiave Password Noi ♡ non disponibile.');
+      throw StateError('shared_password_key_unavailable');
     }
     final salt = _randomBytes(16);
     Uint8List? wrappingKey;
@@ -394,7 +392,7 @@ class SharedPasswordService {
     if (keyForCheck == null) return const [];
     try {
       if (meta == null || !_fingerprintMatches(keyForCheck, meta)) {
-        throw StateError('Chiave Password Noi ♡ non coerente con lo spazio.');
+        throw StateError('shared_password_key_mismatch');
       }
     } finally {
       _zero(keyForCheck);
@@ -462,14 +460,14 @@ class SharedPasswordService {
     final vault = PrivateVaultService.instance;
     final cloud = CloudSyncService.instance;
     if (!vault.unlocked) {
-      throw StateError('Sblocca prima la Cassaforte privata.');
+      throw StateError('shared_password_unlock_vault');
     }
     if (!cloud.signedIn) {
-      throw StateError('Accedi prima a Noi ♡.');
+      throw StateError('shared_password_sign_in');
     }
     final localKey = vault.sharedPasswordKeyCopy(spaceId);
     if (localKey == null) {
-      throw StateError('Chiave Password Noi ♡ non disponibile.');
+      throw StateError('shared_password_key_unavailable');
     }
     try {
       await _assertLocalKeyMatchesServer(spaceId, localKey);
@@ -482,19 +480,19 @@ class SharedPasswordService {
     final cleanEmail = email.trim();
     final cleanNotes = notes.trim();
     if (cleanService.isEmpty) {
-      throw const FormatException('Inserisci il nome del servizio.');
+      throw const FormatException('credential_service_required');
     }
     if (cleanService.length > 160) {
-      throw const FormatException('Il nome del servizio è troppo lungo.');
+      throw const FormatException('credential_service_too_long');
     }
     if (cleanUsername.length > 320 || cleanEmail.length > 320) {
-      throw const FormatException('Nome utente o email troppo lunghi.');
+      throw const FormatException('credential_identity_too_long');
     }
     if (password.length > 4096) {
-      throw const FormatException('La password è troppo lunga.');
+      throw const FormatException('shared_password_password_too_long');
     }
     if (cleanNotes.length > 12000) {
-      throw const FormatException('Le note sono troppo lunghe.');
+      throw const FormatException('credential_notes_too_long');
     }
 
     final id = credentialId?.trim().isNotEmpty == true
@@ -553,10 +551,10 @@ class SharedPasswordService {
     final vault = PrivateVaultService.instance;
     final cloud = CloudSyncService.instance;
     if (!vault.unlocked) {
-      throw StateError('Sblocca prima la Cassaforte privata.');
+      throw StateError('shared_password_unlock_vault');
     }
     if (!cloud.signedIn) {
-      throw StateError('Accedi prima a Noi ♡.');
+      throw StateError('shared_password_sign_in');
     }
     try {
       await cloud.deleteSharedPasswordCredential(
@@ -660,7 +658,7 @@ class SharedPasswordService {
     final key = PrivateVaultService.instance
         .sharedPasswordKeyCopy(credential.spaceId);
     if (key == null) {
-      throw StateError('Chiave Password Noi ♡ non disponibile.');
+      throw StateError('shared_password_key_unavailable');
     }
     try {
       final plaintext =
@@ -692,15 +690,15 @@ class SharedPasswordService {
     String? authoritativeUpdatedBy,
   }) {
     if ((payload['v'] as num?)?.toInt() != _payloadVersion) {
-      throw const FormatException('Versione Password Noi ♡ non supportata.');
+      throw const FormatException('shared_password_version_unsupported');
     }
     final revision = (payload['revision'] as num?)?.toInt() ?? 0;
     if (revision <= 0) {
-      throw const FormatException('Revisione Password Noi ♡ non valida.');
+      throw const FormatException('shared_password_revision_invalid');
     }
     final key = PrivateVaultService.instance.sharedPasswordKeyCopy(spaceId);
     if (key == null) {
-      throw StateError('Chiave Password Noi ♡ non disponibile.');
+      throw StateError('shared_password_key_unavailable');
     }
     Uint8List? plaintext;
     try {
@@ -714,7 +712,7 @@ class SharedPasswordService {
       );
       final base = SharedPasswordCredential.fromJson(decoded);
       if (base.id != credentialId || base.spaceId != spaceId) {
-        throw const FormatException('Credenziale Noi ♡ non valida.');
+        throw const FormatException('shared_password_credential_invalid');
       }
       return SharedPasswordCredential(
         id: base.id,
@@ -741,7 +739,7 @@ class SharedPasswordService {
     final meta = await _loadKeyMeta(spaceId);
     if (meta != null) {
       if (!_fingerprintMatches(key, meta)) {
-        throw StateError('Chiave Password Noi ♡ non coerente con lo spazio.');
+        throw StateError('shared_password_key_mismatch');
       }
       return;
     }
@@ -752,7 +750,7 @@ class SharedPasswordService {
       fingerprint: fingerprint,
     );
     if (claim.fingerprint != fingerprint) {
-      throw StateError('Chiave Password Noi ♡ non coerente con lo spazio.');
+      throw StateError('shared_password_key_mismatch');
     }
   }
 

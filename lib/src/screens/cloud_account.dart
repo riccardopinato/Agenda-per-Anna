@@ -24,13 +24,14 @@ class _CloudAccountScreenState extends State<CloudAccountScreen> {
     super.dispose();
   }
 
-  String _stateLabel(CloudConnectionState state) => switch (state) {
-        CloudConnectionState.disabled => 'Cloud non configurato',
-        CloudConnectionState.initializing => 'Connessione...',
-        CloudConnectionState.signedOut => 'Non connesso',
-        CloudConnectionState.syncing => 'Sincronizzazione...',
-        CloudConnectionState.synced => 'Sincronizzato',
-        CloudConnectionState.error => 'Errore di sincronizzazione',
+  String _stateLabel(CloudConnectionState state, AnnaStrings strings) =>
+      switch (state) {
+        CloudConnectionState.disabled => strings.d3('cloudDisabled'),
+        CloudConnectionState.initializing => strings.d3('cloudConnecting'),
+        CloudConnectionState.signedOut => strings.d3('cloudSignedOut'),
+        CloudConnectionState.syncing => strings.d3('cloudSyncing'),
+        CloudConnectionState.synced => strings.v100AllSynced,
+        CloudConnectionState.error => strings.d3('cloudSyncError'),
       };
 
   IconData _stateIcon(CloudConnectionState state) => switch (state) {
@@ -43,10 +44,11 @@ class _CloudAccountScreenState extends State<CloudAccountScreen> {
       };
 
   Future<void> _submit() async {
+    final strings = AnnaStrings.of(context);
     final email = emailController.text.trim();
     final password = passwordController.text;
     if (email.isEmpty || password.length < 6) {
-      _message('Inserisci email e password.');
+      _message(strings.d3('emailPasswordRequired'));
       return;
     }
 
@@ -61,44 +63,46 @@ class _CloudAccountScreenState extends State<CloudAccountScreen> {
         await WebPushService.instance.initialize(force: true);
         await widget.store.reconcileReminders();
       }
-      _message('Account connesso e sincronizzato.');
+      _message(strings.d3('connectedSynced'));
       if (mounted) {
         Navigator.of(context).popUntil((route) => route.isFirst);
       }
     } catch (_) {
-      _message(CloudSyncService.instance.userFacingError);
+      _message(strings.d3CloudError(CloudSyncService.instance.lastError ?? ''));
     } finally {
       if (mounted) setState(() => busy = false);
     }
   }
 
   Future<void> _google() async {
+    final strings = AnnaStrings.of(context);
     setState(() => busy = true);
     try {
       await CloudSyncService.instance.signInWithGoogle();
     } catch (_) {
-      _message(CloudSyncService.instance.userFacingError);
+      _message(strings.d3CloudError(CloudSyncService.instance.lastError ?? ''));
     } finally {
       if (mounted) setState(() => busy = false);
     }
   }
 
   Future<void> _forgotPassword() async {
+    final strings = AnnaStrings.of(context);
     final email = emailController.text.trim();
     if (email.isEmpty || !email.contains('@')) {
-      _message('Inserisci prima l’email del tuo account.');
+      _message(strings.d3('emailRequired'));
       return;
     }
 
     setState(() => busy = true);
     try {
       await CloudSyncService.instance.requestPasswordReset(email);
-      _message(
-        'Se l’indirizzo è registrato, riceverai una mail per scegliere una nuova password.',
-      );
+      _message(strings.d3('resetEmailSent'));
     } catch (_) {
       _message(
-        CloudSyncService.instance.userFacingError,
+        strings.d3CloudError(
+          CloudSyncService.instance.lastError ?? '',
+        ),
       );
     } finally {
       if (mounted) setState(() => busy = false);
@@ -106,19 +110,22 @@ class _CloudAccountScreenState extends State<CloudAccountScreen> {
   }
 
   Future<void> _syncNow() async {
+    final strings = AnnaStrings.of(context);
     setState(() => busy = true);
     try {
       await widget.store.syncAllCloud();
       final cloud = CloudSyncService.instance;
       if (cloud.state == CloudConnectionState.error) {
-        _message(cloud.userFacingError);
+        _message(strings.d3CloudError(cloud.lastError ?? ''));
       } else if (widget.store.totalPendingCloudChanges > 0) {
         _message(
-          'I dati locali sono al sicuro: '
-          '${widget.store.totalPendingCloudChanges} modifiche restano in attesa di rete.',
+          strings.d3Format(
+            'pendingSafe',
+            {'count': widget.store.totalPendingCloudChanges},
+          ),
         );
       } else {
-        _message('Agenda completamente sincronizzata.');
+        _message(strings.d3('agendaSynced'));
       }
     } finally {
       if (mounted) setState(() => busy = false);
@@ -126,10 +133,11 @@ class _CloudAccountScreenState extends State<CloudAccountScreen> {
   }
 
   Future<void> _signOut() async {
+    final strings = AnnaStrings.of(context);
     setState(() => busy = true);
     try {
       await widget.store.createLocalSnapshot(
-        label: 'Prima della disconnessione account',
+        label: '@snapshot:before_sign_out',
       );
       await PushNotificationService.instance.unregisterCurrentToken();
       if (kIsWeb) {
@@ -138,9 +146,7 @@ class _CloudAccountScreenState extends State<CloudAccountScreen> {
       }
       await CloudSyncService.instance.signOut();
       await widget.store.activateCloudAccount(null);
-      _message(
-        'Account disconnesso. I dati dell’account restano salvati sul dispositivo ma non sono più mostrati.',
-      );
+      _message(strings.d3('accountSignedOut'));
     } finally {
       if (mounted) setState(() => busy = false);
     }
@@ -150,6 +156,7 @@ class _CloudAccountScreenState extends State<CloudAccountScreen> {
     final cloud = CloudSyncService.instance;
     final accountId = cloud.userId;
     if (accountId == null) return;
+    final strings = AnnaStrings.of(context);
 
     final controller = TextEditingController();
     var canDelete = false;
@@ -163,38 +170,38 @@ class _CloudAccountScreenState extends State<CloudAccountScreen> {
               Icons.warning_amber_rounded,
               color: Theme.of(dialogContext).colorScheme.error,
             ),
-            title: const Text('Eliminare definitivamente l’account?'),
+            title: Text(AnnaStrings.of(dialogContext).d3('deleteAccountTitle')),
             content: Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
-                  'Questa operazione elimina definitivamente il tuo account cloud e i dati collegati. Non può essere annullata.',
+                Text(
+                  AnnaStrings.of(dialogContext).d3('deleteAccountBody'),
                 ),
                 const SizedBox(height: 10),
-                const Text(
-                  'Se sei proprietario di uno spazio Noi ♡, quello spazio viene eliminato anche per gli altri membri. La Cassaforte privata locale resta separata.',
-                  style: TextStyle(fontWeight: FontWeight.w700),
+                Text(
+                  AnnaStrings.of(dialogContext).d3('deleteOwnerWarning'),
+                  style: const TextStyle(fontWeight: FontWeight.w700),
                 ),
                 const SizedBox(height: 10),
-                const Text(
-                  'Prima di continuare puoi creare un export dalla sezione Backup.',
+                Text(
+                  AnnaStrings.of(dialogContext).d3('exportBeforeDelete'),
                 ),
                 const SizedBox(height: 14),
-                const Text('Scrivi ELIMINA per confermare.'),
+                Text(AnnaStrings.of(dialogContext).d3('typeDelete')),
                 const SizedBox(height: 8),
                 TextField(
                   controller: controller,
                   autofocus: true,
                   textCapitalization: TextCapitalization.characters,
                   onChanged: (value) {
-                    final enabled = value.trim().toUpperCase() == 'ELIMINA';
+                    final enabled = value.trim().toUpperCase() == 'DELETE';
                     if (enabled != canDelete) {
                       setDialogState(() => canDelete = enabled);
                     }
                   },
-                  decoration: const InputDecoration(
-                    labelText: 'Conferma',
+                  decoration: InputDecoration(
+                    labelText: AnnaStrings.of(dialogContext).d3('confirmation'),
                   ),
                 ),
               ],
@@ -202,13 +209,13 @@ class _CloudAccountScreenState extends State<CloudAccountScreen> {
             actions: [
               TextButton(
                 onPressed: () => Navigator.of(dialogContext).pop(false),
-                child: const Text('Annulla'),
+                child: Text(AnnaStrings.of(dialogContext).cancel),
               ),
               FilledButton(
                 onPressed: canDelete
                     ? () => Navigator.of(dialogContext).pop(true)
                     : null,
-                child: const Text('Elimina account e dati'),
+                child: Text(AnnaStrings.of(dialogContext).d3('deleteAccountData')),
               ),
             ],
           );
@@ -231,15 +238,15 @@ class _CloudAccountScreenState extends State<CloudAccountScreen> {
       }
       await widget.store.eraseLocalCloudAccount(accountId);
 
-      _message('Account e dati eliminati definitivamente.');
+      _message(strings.d3('accountDeleted'));
       if (mounted) {
         Navigator.of(context).popUntil((route) => route.isFirst);
       }
     } catch (_) {
       _message(
         remoteDeleted
-            ? 'Account eliminato dal cloud, ma la pulizia locale non è stata completata. Riavvia l’app prima di usarla di nuovo.'
-            : cloud.userFacingError,
+            ? strings.d3('accountCloudDeletedLocalFailed')
+            : strings.d3CloudError(cloud.lastError ?? ''),
       );
     } finally {
       if (mounted) setState(() => busy = false);
@@ -256,6 +263,7 @@ class _CloudAccountScreenState extends State<CloudAccountScreen> {
   @override
   Widget build(BuildContext context) {
     final cloud = CloudSyncService.instance;
+    final strings = AnnaStrings.of(context);
 
     return AnimatedBuilder(
       animation: Listenable.merge([cloud, widget.store.syncRevision]),
@@ -267,9 +275,9 @@ class _CloudAccountScreenState extends State<CloudAccountScreen> {
         builder: (context, _) {
           return Scaffold(
             appBar: AppBar(
-              title: const Text(
-                'Account e sincronizzazione',
-                style: TextStyle(fontWeight: FontWeight.w900),
+              title: Text(
+                strings.d3('accountAndSync'),
+                style: const TextStyle(fontWeight: FontWeight.w900),
               ),
             ),
             body: ListView(
@@ -301,7 +309,7 @@ class _CloudAccountScreenState extends State<CloudAccountScreen> {
                       ),
                       const SizedBox(height: 10),
                       Text(
-                        _stateLabel(cloud.state),
+                        _stateLabel(cloud.state, strings),
                         style: const TextStyle(
                           fontWeight: FontWeight.w900,
                           fontSize: 22,
@@ -310,8 +318,8 @@ class _CloudAccountScreenState extends State<CloudAccountScreen> {
                       const SizedBox(height: 5),
                       Text(
                         cloud.signedIn
-                            ? 'La tua agenda personale può restare allineata su Android, iPhone e Web.'
-                            : 'Accedi con lo stesso account sui tuoi dispositivi per ritrovare la stessa agenda personale.',
+                            ? strings.d3('cloudConnectedDescription')
+                            : strings.d3('cloudSignedOutDescription'),
                       ),
                     ],
                   ),
@@ -322,23 +330,22 @@ class _CloudAccountScreenState extends State<CloudAccountScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text(
-                          'Cloud pronto, ma non ancora collegato',
-                          style: TextStyle(
+                        Text(
+                          strings.d3('cloudReadyNotConnected'),
+                          style: const TextStyle(
                             fontWeight: FontWeight.w900,
                             fontSize: 18,
                           ),
                         ),
                         const SizedBox(height: 6),
                         Text(
-                          'Questa build non contiene ancora le credenziali del progetto Supabase. '
-                          'L’app continua a funzionare completamente offline e nessun dato viene perso.',
+                          strings.d3('cloudBuildNoCredentials'),
                           style: Theme.of(context).textTheme.bodySmall,
                         ),
                         const SizedBox(height: 10),
-                        const Text(
-                          'La struttura di sincronizzazione e il database sono già predisposti anche per il futuro Spazio condiviso.',
-                          style: TextStyle(fontWeight: FontWeight.w700),
+                        Text(
+                          strings.d3('sharedPrepared'),
+                          style: const TextStyle(fontWeight: FontWeight.w700),
                         ),
                       ],
                     ),
@@ -348,42 +355,39 @@ class _CloudAccountScreenState extends State<CloudAccountScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text(
-                          'Accedi al tuo account',
-                          style: TextStyle(
+                        Text(
+                          strings.d3('signInAccount'),
+                          style: const TextStyle(
                             fontWeight: FontWeight.w900,
                             fontSize: 18,
                           ),
                         ),
                         const SizedBox(height: 8),
-                        const Text(
-                          'Google è l’accesso principale di Anna\'s Diary. '
-                          'Il login email/password resta solo per gli account creati nelle versioni precedenti.',
-                        ),
+                        Text(strings.d3('googlePrimary')),
                         const SizedBox(height: 14),
                         SizedBox(
                           width: double.infinity,
                           child: FilledButton.icon(
                             onPressed: busy ? null : _google,
                             icon: const Icon(Icons.login),
-                            label: const Text('Continua con Google'),
+                            label: Text(strings.d3('continueGoogle')),
                           ),
                         ),
                         const SizedBox(height: 18),
                         const Divider(),
                         const SizedBox(height: 8),
-                        const Text(
-                          'Account email esistente',
-                          style: TextStyle(fontWeight: FontWeight.w800),
+                        Text(
+                          strings.d3('existingEmailAccount'),
+                          style: const TextStyle(fontWeight: FontWeight.w800),
                         ),
                         const SizedBox(height: 10),
                         TextField(
                           controller: emailController,
                           keyboardType: TextInputType.emailAddress,
                           autofillHints: const [AutofillHints.email],
-                          decoration: const InputDecoration(
-                            labelText: 'Email',
-                            prefixIcon: Icon(Icons.email_outlined),
+                          decoration: InputDecoration(
+                            labelText: AnnaStrings.of(context).vaultEmail,
+                            prefixIcon: const Icon(Icons.email_outlined),
                           ),
                         ),
                         const SizedBox(height: 10),
@@ -392,9 +396,9 @@ class _CloudAccountScreenState extends State<CloudAccountScreen> {
                           obscureText: true,
                           autofillHints: const [AutofillHints.password],
                           onSubmitted: (_) => busy ? null : _submit(),
-                          decoration: const InputDecoration(
-                            labelText: 'Password',
-                            prefixIcon: Icon(Icons.lock_outline),
+                          decoration: InputDecoration(
+                            labelText: strings.d3('password'),
+                            prefixIcon: const Icon(Icons.lock_outline),
                           ),
                         ),
                         const SizedBox(height: 12),
@@ -403,14 +407,14 @@ class _CloudAccountScreenState extends State<CloudAccountScreen> {
                           child: OutlinedButton.icon(
                             onPressed: busy ? null : _submit,
                             icon: const Icon(Icons.login),
-                            label: const Text('Accedi con account esistente'),
+                            label: Text(strings.d3('existingAccount')),
                           ),
                         ),
                         Center(
                           child: TextButton.icon(
                             onPressed: busy ? null : _forgotPassword,
                             icon: const Icon(Icons.lock_reset_outlined),
-                            label: const Text('Password dimenticata?'),
+                            label: Text(strings.d3('forgotPassword')),
                           ),
                         ),
                       ],
@@ -421,9 +425,9 @@ class _CloudAccountScreenState extends State<CloudAccountScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text(
-                          'Il mio account',
-                          style: TextStyle(
+                        Text(
+                          strings.d3('myAccount'),
+                          style: const TextStyle(
                             fontWeight: FontWeight.w900,
                             fontSize: 18,
                           ),
@@ -442,7 +446,7 @@ class _CloudAccountScreenState extends State<CloudAccountScreen> {
                           title: Text(
                             cloud.displayName?.trim().isNotEmpty == true
                                 ? cloud.displayName!
-                                : (cloud.email ?? 'Account'),
+                                : (cloud.email ?? strings.d3('account')),
                           ),
                           subtitle: Text(
                             [
@@ -450,8 +454,16 @@ class _CloudAccountScreenState extends State<CloudAccountScreen> {
                                   cloud.email != null)
                                 cloud.email!,
                               cloud.lastSyncAt == null
-                                  ? 'Nessuna sincronizzazione completata'
-                                  : 'Ultimo sync: ${DateFormat('d MMM, HH:mm', 'it_IT').format(cloud.lastSyncAt!)}',
+                                  ? strings.d3('noCompletedSync')
+                                  : strings.d3Format(
+                                      'lastSync',
+                                      {
+                                        'value': DateFormat(
+                                          'd MMM, HH:mm',
+                                          AnnaStrings.intlLocale(context),
+                                        ).format(cloud.lastSyncAt!),
+                                      },
+                                    ),
                             ].join('\n'),
                           ),
                         ),
@@ -459,7 +471,7 @@ class _CloudAccountScreenState extends State<CloudAccountScreen> {
                         ListTile(
                           contentPadding: EdgeInsets.zero,
                           leading: const Icon(Icons.sync_outlined),
-                          title: const Text('Modifiche in attesa'),
+                          title: Text(strings.d3('pendingChanges')),
                           trailing: Text(
                             '${widget.store.totalPendingCloudChanges}',
                             style: const TextStyle(
@@ -470,8 +482,8 @@ class _CloudAccountScreenState extends State<CloudAccountScreen> {
                         if (widget.store.totalPendingCloudChanges > 0) ...[
                           const SizedBox(height: 4),
                           Text(
-                            '${widget.store.pendingCloudChanges} private · '
-                            '${widget.store.pendingSharedChangeCount} Noi ♡',
+                            '${widget.store.pendingCloudChanges} ${strings.d3('privateLabel')} · '
+                            '${widget.store.pendingSharedChangeCount} ${strings.d3('sharedLabel')}',
                             style: Theme.of(context).textTheme.bodySmall,
                           ),
                         ],
@@ -485,7 +497,7 @@ class _CloudAccountScreenState extends State<CloudAccountScreen> {
                                 ? null
                                 : _syncNow,
                             icon: const Icon(Icons.sync),
-                            label: const Text('Sincronizza ora'),
+                            label: Text(strings.d3('syncNow')),
                           ),
                         ),
                         const SizedBox(height: 6),
@@ -494,30 +506,28 @@ class _CloudAccountScreenState extends State<CloudAccountScreen> {
                           child: OutlinedButton.icon(
                             onPressed: busy ? null : _signOut,
                             icon: const Icon(Icons.logout),
-                            label: const Text('Disconnetti account'),
+                            label: Text(strings.d3('disconnectAccount')),
                           ),
                         ),
                         const SizedBox(height: 14),
                         const Divider(),
                         const SizedBox(height: 6),
                         Text(
-                          'Zona dati',
+                          strings.d3('dataZone'),
                           style: TextStyle(
                             fontWeight: FontWeight.w900,
                             color: Theme.of(context).colorScheme.error,
                           ),
                         ),
                         const SizedBox(height: 4),
-                        const Text(
-                          'L’eliminazione dell’account è permanente e richiede una conferma esplicita.',
-                        ),
+                        Text(strings.d3('deletePermanentNote')),
                         const SizedBox(height: 8),
                         SizedBox(
                           width: double.infinity,
                           child: OutlinedButton.icon(
                             onPressed: busy ? null : _deleteAccount,
                             icon: const Icon(Icons.delete_forever_outlined),
-                            label: const Text('Elimina account e dati'),
+                            label: Text(strings.d3('deleteAccountData')),
                           ),
                         ),
                       ],
@@ -529,20 +539,15 @@ class _CloudAccountScreenState extends State<CloudAccountScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text(
-                        'Come funziona',
-                        style: TextStyle(
+                      Text(
+                        strings.d3('howItWorks'),
+                        style: const TextStyle(
                           fontWeight: FontWeight.w900,
                           fontSize: 18,
                         ),
                       ),
                       const SizedBox(height: 8),
-                      const Text(
-                        '• L’app continua a salvare prima di tutto sul dispositivo.\n'
-                        '• Le modifiche vengono messe in coda anche senza Internet.\n'
-                        '• Quando il cloud torna disponibile, vengono sincronizzati solo gli elementi cambiati.\n'
-                        '• Agenda privata e Noi ♡ restano archivi separati, ma vengono riconciliati insieme quando torna la rete.',
-                      ),
+                      Text(strings.d3('localFirstHow')),
                       const SizedBox(height: 12),
                       Container(
                         width: double.infinity,
@@ -553,16 +558,12 @@ class _CloudAccountScreenState extends State<CloudAccountScreen> {
                               .surfaceContainerHighest,
                           borderRadius: BorderRadius.circular(16),
                         ),
-                        child: const Row(
+                        child: Row(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Icon(Icons.people_outline),
-                            SizedBox(width: 10),
-                            Expanded(
-                              child: Text(
-                                'Privato resta l’impostazione predefinita. Gli elementi Noi ♡ sono condivisi solo quando lo scegli esplicitamente.',
-                              ),
-                            ),
+                            const Icon(Icons.people_outline),
+                            const SizedBox(width: 10),
+                            Expanded(child: Text(strings.d3('privateDefaultCloud'))),
                           ],
                         ),
                       ),

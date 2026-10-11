@@ -15,6 +15,7 @@ void main() {
         'active_account_v1': 'user-a',
       });
 
+      const strings = AnnaStrings('en');
       final store = AgendaStore();
       await tester.runAsync(store.load);
 
@@ -28,6 +29,7 @@ void main() {
 
       await tester.pumpWidget(
         MaterialApp(
+          locale: const Locale('en'),
           home: SharedSpaceScreen(
             store: store,
             space: space,
@@ -36,20 +38,20 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      expect(find.text('Il nostro diario'), findsOneWidget);
-      expect(find.widgetWithText(FilledButton, 'Nota'), findsOneWidget);
+      expect(find.text(strings.d3('ourDiary')), findsOneWidget);
+      expect(find.widgetWithText(FilledButton, strings.d3('note')), findsOneWidget);
       expect(find.widgetWithText(FilledButton, 'Sketch'), findsOneWidget);
-      expect(find.widgetWithText(FilledButton, 'Foto'), findsOneWidget);
+      expect(find.widgetWithText(FilledButton, strings.d3('photoLabel')), findsOneWidget);
 
-      await tester.tap(find.text('Condividi'));
+      await tester.tap(find.text(strings.d3('share')));
       await tester.pumpAndSettle();
 
-      expect(find.text('Diario condiviso · Noi ♡'), findsOneWidget);
-      expect(find.text('Nota'), findsWidgets);
+      expect(find.text(strings.d3('sharedDiary')), findsOneWidget);
+      expect(find.text(strings.d3('note')), findsWidgets);
       expect(find.text('Sketch'), findsWidgets);
-      expect(find.text('Foto'), findsWidgets);
-      expect(find.text('Appuntamento'), findsOneWidget);
-      expect(find.text('Da fare'), findsOneWidget);
+      expect(find.text(strings.d3('photoLabel')), findsWidgets);
+      expect(find.text(strings.appointment), findsOneWidget);
+      expect(find.text(strings.d3('toDo')), findsOneWidget);
 
       store.dispose();
     },

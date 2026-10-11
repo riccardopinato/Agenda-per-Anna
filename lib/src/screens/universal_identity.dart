@@ -26,7 +26,13 @@ class _UniversalIdentityScreenState extends State<UniversalIdentityScreen> {
     } catch (_) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(CloudSyncService.instance.userFacingError)),
+        SnackBar(
+          content: Text(
+            AnnaStrings.of(context).d3CloudError(
+              CloudSyncService.instance.lastError ?? '',
+            ),
+          ),
+        ),
       );
     } finally {
       if (mounted) setState(() => busy = false);
@@ -85,8 +91,8 @@ class _UniversalIdentityScreenState extends State<UniversalIdentityScreen> {
                     ),
                   ),
                   const SizedBox(height: 9),
-                  const Text(
-                    'Un solo account per agenda, backup, sincronizzazione e Noi ♡.',
+                  Text(
+                    AnnaStrings.of(context).d3('identityIntro'),
                     textAlign: TextAlign.center,
                   ),
                   const SizedBox(height: 28),
@@ -97,15 +103,15 @@ class _UniversalIdentityScreenState extends State<UniversalIdentityScreen> {
                         children: [
                           const Icon(Icons.cloud_off_outlined, size: 34),
                           const SizedBox(height: 8),
-                          const Text(
-                            'Non riesco a inizializzare l’account.',
-                            style: TextStyle(fontWeight: FontWeight.w800),
+                          Text(
+                            AnnaStrings.of(context).d3('accountInitFailed'),
+                            style: const TextStyle(fontWeight: FontWeight.w800),
                           ),
                           const SizedBox(height: 10),
                           OutlinedButton.icon(
                             onPressed: busy ? null : _retry,
                             icon: const Icon(Icons.refresh),
-                            label: const Text('Riprova'),
+                            label: Text(AnnaStrings.of(context).d3('retry')),
                           ),
                         ],
                       ),
@@ -124,9 +130,9 @@ class _UniversalIdentityScreenState extends State<UniversalIdentityScreen> {
                               child: CircularProgressIndicator(strokeWidth: 2),
                             )
                           : const Icon(Icons.login),
-                      label: const Text(
-                        'Continua con Google',
-                        style: TextStyle(fontWeight: FontWeight.w800),
+                      label: Text(
+                        AnnaStrings.of(context).d3('continueGoogle'),
+                        style: const TextStyle(fontWeight: FontWeight.w800),
                       ),
                     ),
                   ),
@@ -142,17 +148,17 @@ class _UniversalIdentityScreenState extends State<UniversalIdentityScreen> {
                                 ),
                               ),
                             ),
-                    child: const Text('Ho già un account email/password'),
+                    child: Text(AnnaStrings.of(context).d3('haveEmailAccount')),
                   ),
                   const SizedBox(height: 22),
-                  const Row(
+                  Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Icon(Icons.verified_user_outlined, size: 20),
-                      SizedBox(width: 10),
+                      const Icon(Icons.verified_user_outlined, size: 20),
+                      const SizedBox(width: 10),
                       Expanded(
                         child: Text(
-                          'L’account identifica solo te. I contenuti privati restano separati da Noi ♡ e le modifiche offline vengono sincronizzate automaticamente quando torna la rete.',
+                          AnnaStrings.of(context).d3('identityPrivacy'),
                         ),
                       ),
                     ],
@@ -195,7 +201,7 @@ class _AccountBindingScreenState extends State<_AccountBindingScreen> {
       await widget.store.syncAllCloud(preferRemoteOnFirstSync: true);
       await PushNotificationService.instance.registerCurrentToken();
     } catch (e) {
-      if (mounted) setState(() => error = e.toString());
+      if (mounted) setState(() => error = 'account_binding_failed');
     }
   }
 
@@ -211,10 +217,10 @@ class _AccountBindingScreenState extends State<_AccountBindingScreen> {
               children: [
                 const Icon(Icons.sync_problem_outlined, size: 48),
                 const SizedBox(height: 12),
-                const Text(
-                  'Account connesso, sincronizzazione da completare',
+                Text(
+                  AnnaStrings.of(context).d3('accountConnectedSyncPending'),
                   textAlign: TextAlign.center,
-                  style: TextStyle(fontWeight: FontWeight.w900, fontSize: 20),
+                  style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 20),
                 ),
                 const SizedBox(height: 10),
                 FilledButton.icon(
@@ -223,7 +229,7 @@ class _AccountBindingScreenState extends State<_AccountBindingScreen> {
                     _bind();
                   },
                   icon: const Icon(Icons.refresh),
-                  label: const Text('Riprova'),
+                  label: Text(AnnaStrings.of(context).d3('retry')),
                 ),
               ],
             ),
@@ -232,14 +238,14 @@ class _AccountBindingScreenState extends State<_AccountBindingScreen> {
       );
     }
 
-    return const Scaffold(
+    return Scaffold(
       body: Center(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            CircularProgressIndicator(),
-            SizedBox(height: 14),
-            Text('Preparazione del tuo spazio…'),
+            const CircularProgressIndicator(),
+            const SizedBox(height: 14),
+            Text(AnnaStrings.of(context).d3('preparingSpace')),
           ],
         ),
       ),

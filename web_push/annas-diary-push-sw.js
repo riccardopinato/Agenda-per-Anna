@@ -13,13 +13,13 @@ self.addEventListener("push", (event) => {
   } catch (_) {
     payload = {
       title: "Anna's Diary",
-      body: event.data ? event.data.text() : "Nuovo aggiornamento",
+      body: event.data ? event.data.text() : "",
       data: {},
     };
   }
 
   const title = payload.title || "Anna's Diary";
-  const body = payload.body || "Hai un nuovo aggiornamento.";
+  const body = payload.body || "";
   const data = payload.data || {};
   const url = payload.url ||
     (data.space_id

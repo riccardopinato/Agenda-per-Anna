@@ -183,7 +183,7 @@ class PrivateVaultService extends ChangeNotifier {
   }) async {
     await initialize();
     if (configured) {
-      throw StateError('La cassaforte è già configurata.');
+      throw StateError('vault_already_configured');
     }
     _validatePassword(password);
 
@@ -390,7 +390,7 @@ class PrivateVaultService extends ChangeNotifier {
     final cleanTitle = title.trim();
     final cleanBody = body.trim();
     if (cleanTitle.isEmpty && cleanBody.isEmpty) {
-      throw const FormatException('Scrivi almeno un titolo o un contenuto.');
+      throw const FormatException('vault_need_content');
     }
 
     final now = DateTime.now();
@@ -398,7 +398,7 @@ class PrivateVaultService extends ChangeNotifier {
         id == null ? -1 : _entries.indexWhere((entry) => entry.id == id);
     if (existingIndex >= 0 && _entries[existingIndex].isSharedCredential) {
       throw StateError(
-        'Le credenziali Noi ♡ si modificano tramite la sincronizzazione condivisa.',
+        'vault_shared_edit_source',
       );
     }
     if (existingIndex >= 0) {
@@ -444,19 +444,19 @@ class PrivateVaultService extends ChangeNotifier {
     final cleanNotes = notes.trim();
 
     if (cleanService.isEmpty) {
-      throw const FormatException('Inserisci il nome del servizio.');
+      throw const FormatException('credential_service_required');
     }
     if (cleanService.length > 160) {
-      throw const FormatException('Il nome del servizio è troppo lungo.');
+      throw const FormatException('credential_service_too_long');
     }
     if (cleanUsername.length > 320 || cleanEmail.length > 320) {
-      throw const FormatException('Nome utente o email troppo lunghi.');
+      throw const FormatException('credential_identity_too_long');
     }
     if (cleanPassword.length > 4096) {
-      throw const FormatException('La password è troppo lunga.');
+      throw const FormatException('vault_password_too_long');
     }
     if (cleanNotes.length > 12000) {
-      throw const FormatException('Le note sono troppo lunghe.');
+      throw const FormatException('credential_notes_too_long');
     }
 
     final now = DateTime.now();
@@ -464,7 +464,7 @@ class PrivateVaultService extends ChangeNotifier {
         id == null ? -1 : _entries.indexWhere((entry) => entry.id == id);
     if (existingIndex >= 0 && _entries[existingIndex].isSharedCredential) {
       throw StateError(
-        'Le credenziali Noi ♡ si modificano tramite la sincronizzazione condivisa.',
+        'vault_shared_edit_source',
       );
     }
     if (existingIndex >= 0) {
@@ -575,7 +575,7 @@ class PrivateVaultService extends ChangeNotifier {
     _requireUnlocked();
     final normalized = spaceId.trim();
     if (normalized.isEmpty) {
-      throw const FormatException('Spazio condiviso non valido.');
+      throw const FormatException('vault_shared_space_invalid');
     }
     final existing = _sharedPasswordKeys[normalized];
     if (existing != null) return Uint8List.fromList(existing);
@@ -594,7 +594,7 @@ class PrivateVaultService extends ChangeNotifier {
     _requireUnlocked();
     final normalized = spaceId.trim();
     if (normalized.isEmpty || key.length != _masterKeyLength) {
-      throw const FormatException('Chiave Noi ♡ non valida.');
+      throw const FormatException('vault_shared_key_invalid');
     }
     final previous = _sharedPasswordKeys[normalized];
     if (previous != null) _zero(previous);
@@ -699,7 +699,7 @@ class PrivateVaultService extends ChangeNotifier {
     final targetIndex = _entries.indexWhere((entry) => entry.id == id);
     if (targetIndex >= 0 && _entries[targetIndex].isSharedCredential) {
       throw StateError(
-        'Le credenziali Noi ♡ si eliminano dalla sorgente condivisa.',
+        'vault_shared_delete_source',
       );
     }
     _entries.removeWhere((entry) => entry.id == id);
@@ -713,7 +713,7 @@ class PrivateVaultService extends ChangeNotifier {
     final meta = _meta;
     final rawPayload = _store?.getString(_payloadKey);
     if (meta == null || rawPayload == null) {
-      throw StateError('Cassaforte non disponibile per il recupero.');
+      throw StateError('vault_recovery_unavailable');
     }
 
     final portableMeta = Map<String, dynamic>.from(meta)
@@ -1054,7 +1054,7 @@ class PrivateVaultService extends ChangeNotifier {
   Uint8List _requireUnlocked() {
     final key = _masterKey;
     if (key == null) {
-      throw StateError('La cassaforte è bloccata.');
+      throw StateError('vault_locked');
     }
     return key;
   }
@@ -1062,7 +1062,7 @@ class PrivateVaultService extends ChangeNotifier {
   void _validatePassword(String value) {
     if (value.length < 12) {
       throw const FormatException(
-        'La password della cassaforte deve avere almeno 12 caratteri.',
+        'vault_password_too_short',
       );
     }
   }

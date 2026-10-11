@@ -60,9 +60,9 @@ class _PrivateVaultHomeCardState extends State<PrivateVaultHomeCard> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text(
-                          'Cassaforte privata',
-                          style: TextStyle(
+                        Text(
+                          AnnaStrings.of(context).vaultTitle,
+                          style: const TextStyle(
                             fontSize: 17,
                             fontWeight: FontWeight.w900,
                           ),
@@ -70,8 +70,8 @@ class _PrivateVaultHomeCardState extends State<PrivateVaultHomeCard> {
                         const SizedBox(height: 3),
                         Text(
                           configured
-                              ? 'Cifrata sul dispositivo · accesso protetto'
-                              : 'Crea uno spazio locale cifrato solo per te',
+                              ? AnnaStrings.of(context).d3('vaultEncryptedDevice')
+                              : AnnaStrings.of(context).d3('vaultCreateLocal'),
                           style: Theme.of(context).textTheme.bodySmall,
                         ),
                       ],
@@ -114,6 +114,17 @@ class _PrivateVaultScreenState extends State<PrivateVaultScreen>
   bool obscurePassword = true;
   _VaultSection section = _VaultSection.notes;
   String? errorText;
+
+  Widget? _vaultBackButton(BuildContext context) {
+    if (!Navigator.of(context).canPop()) return null;
+    return Semantics(
+      identifier: 'vault_back_button',
+      button: true,
+      child: BackButton(
+        onPressed: () => Navigator.of(context).pop(),
+      ),
+    );
+  }
 
   @override
   void initState() {
@@ -187,7 +198,7 @@ class _PrivateVaultScreenState extends State<PrivateVaultScreen>
       unawaited(SharedPasswordService.instance.refreshAllAvailableSpacesSafe());
       if (mounted) setState(() {});
     } on FormatException catch (error) {
-      if (mounted) setState(() => errorText = error.message.toString());
+      if (mounted) setState(() => errorText = AnnaStrings.of(context).vaultServiceError(error));
     } catch (_) {
       if (mounted) {
         setState(
@@ -338,7 +349,7 @@ class _PrivateVaultScreenState extends State<PrivateVaultScreen>
       } on FormatException catch (error) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(error.message.toString())),
+            SnackBar(content: Text(AnnaStrings.of(context).vaultServiceError(error))),
           );
         }
       }
@@ -496,7 +507,7 @@ class _PrivateVaultScreenState extends State<PrivateVaultScreen>
       } on FormatException catch (error) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(error.message.toString())),
+            SnackBar(content: Text(AnnaStrings.of(context).vaultServiceError(error))),
           );
         }
       } on SharedPasswordConflictException {
@@ -1075,7 +1086,10 @@ class _PrivateVaultScreenState extends State<PrivateVaultScreen>
     final strings = AnnaStrings.of(context);
     final scheme = Theme.of(context).colorScheme;
     return Scaffold(
-      appBar: AppBar(title: Text(strings.vaultTitle)),
+      appBar: AppBar(
+        leading: _vaultBackButton(context),
+        title: Text(strings.vaultTitle),
+      ),
       body: SafeArea(
         child: Center(
           child: SingleChildScrollView(
@@ -1202,6 +1216,7 @@ class _PrivateVaultScreenState extends State<PrivateVaultScreen>
     final scheme = Theme.of(context).colorScheme;
     return Scaffold(
       appBar: AppBar(
+        leading: _vaultBackButton(context),
         title: Text(strings.vaultTitle),
         actions: [
           PopupMenuButton<String>(
@@ -1397,6 +1412,7 @@ class _PrivateVaultScreenState extends State<PrivateVaultScreen>
 
     return Scaffold(
       appBar: AppBar(
+        leading: _vaultBackButton(context),
         title: Text(strings.vaultTitle),
         actions: [
           if (biometricSupported && !vault.biometricAvailable)
@@ -1610,7 +1626,7 @@ class _PrivateVaultScreenState extends State<PrivateVaultScreen>
                           ),
                           title: Text(
                             entry.title.isEmpty
-                                ? 'Contenuto privato'
+                                ? AnnaStrings.of(context).d3('vaultPrivateContent')
                                 : entry.title,
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,

@@ -60,7 +60,7 @@ class MediaAssetStore {
 
   Future<void> putNamed(String assetId, Uint8List bytes) async {
     if (assetId.trim().isEmpty || bytes.isEmpty) {
-      throw ArgumentError('Media asset non valido.');
+      throw ArgumentError('media_asset_invalid');
     }
     await writeMediaAssetBytes(assetId, bytes);
     _corruptAssetIds.remove(assetId);

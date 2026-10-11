@@ -34,8 +34,8 @@ void main() {
         File('lib/src/diary/diary_components.dart').readAsStringSync();
 
     expect(diary, contains('class FocusWritingScreen'));
-    expect(diary, contains('Scrivi a schermo intero'));
-    expect(diary, contains('Modalità scrittura'));
+    expect(diary, contains("d3('writeFullscreen')"));
+    expect(diary, contains("d3('writingMode')"));
     expect(diary, contains('wordCount'));
     expect(diary, contains('DiaryBlockType.note'));
     expect(diary, isNot(contains('focus_note_database')));

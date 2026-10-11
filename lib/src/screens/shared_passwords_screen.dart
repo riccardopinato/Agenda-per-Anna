@@ -122,7 +122,7 @@ class _SharedPasswordsScreenState extends State<SharedPasswordsScreen>
       if (mounted) {
         setState(() {
           loading = false;
-          errorText = error.toString();
+          errorText = AnnaStrings.of(context).sharedPasswordServiceError(error);
         });
       }
     }
@@ -375,7 +375,7 @@ class _SharedPasswordsScreenState extends State<SharedPasswordsScreen>
         ),
       );
     } on FormatException catch (error) {
-      _message(error.message.toString());
+      _message(strings.sharedPasswordServiceError(error));
     } catch (_) {
       _message(strings.sharedPasswordsKeyUnavailable);
     } finally {
@@ -596,7 +596,7 @@ class _SharedPasswordsScreenState extends State<SharedPasswordsScreen>
         );
         await _refresh(silent: true);
       } on FormatException catch (error) {
-        _message(error.message.toString());
+        _message(strings.sharedPasswordServiceError(error));
       } on SharedPasswordConflictException {
         _message(strings.sharedPasswordsConflict);
         await _refresh(silent: true);

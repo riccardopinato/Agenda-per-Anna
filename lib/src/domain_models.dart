@@ -15,7 +15,7 @@ extension AppLanguageUi on AppLanguage {
       };
 
   String get nativeLabel => switch (this) {
-        AppLanguage.system => 'Sistema',
+        AppLanguage.system => 'System',
         AppLanguage.italian => 'Italiano',
         AppLanguage.english => 'English',
         AppLanguage.spanish => 'Español',
@@ -31,14 +31,6 @@ extension AppLanguageUi on AppLanguage {
 enum AgendaPalette { rose, lilac, sage, peach, sky }
 
 extension AgendaPaletteUi on AgendaPalette {
-  String get label => switch (this) {
-        AgendaPalette.rose => 'Rosa',
-        AgendaPalette.lilac => 'Lilla',
-        AgendaPalette.sage => 'Salvia',
-        AgendaPalette.peach => 'Pesca',
-        AgendaPalette.sky => 'Cielo',
-      };
-
   Color get seed => switch (this) {
         AgendaPalette.rose => const Color(0xFFE98FAA),
         AgendaPalette.lilac => const Color(0xFF9A8ED0),
@@ -49,15 +41,6 @@ extension AgendaPaletteUi on AgendaPalette {
 }
 
 enum StartTab { home, month, week, today }
-
-extension StartTabUi on StartTab {
-  String get label => switch (this) {
-        StartTab.home => 'Home',
-        StartTab.month => 'Mese',
-        StartTab.week => 'Settimana',
-        StartTab.today => 'Oggi',
-      };
-}
 
 class AgendaPreferences {
   final String displayName;
@@ -214,14 +197,6 @@ enum ItemType { appointment, task }
 enum RecurrenceRule { none, daily, weekly, monthly, yearly }
 
 extension RecurrenceRuleUi on RecurrenceRule {
-  String get label => switch (this) {
-        RecurrenceRule.none => 'Non ripetere',
-        RecurrenceRule.daily => 'Ogni giorno',
-        RecurrenceRule.weekly => 'Ogni settimana',
-        RecurrenceRule.monthly => 'Ogni mese',
-        RecurrenceRule.yearly => 'Ogni anno',
-      };
-
   IconData get icon => switch (this) {
         RecurrenceRule.none => Icons.repeat_outlined,
         RecurrenceRule.daily => Icons.today_outlined,
@@ -242,16 +217,6 @@ enum AgendaCategory {
 }
 
 extension AgendaCategoryUi on AgendaCategory {
-  String get label => switch (this) {
-        AgendaCategory.personal => 'Personale',
-        AgendaCategory.study => 'Studio',
-        AgendaCategory.work => 'Lavoro',
-        AgendaCategory.health => 'Salute',
-        AgendaCategory.couple => 'Noi ♡',
-        AgendaCategory.leisure => 'Tempo libero',
-        AgendaCategory.other => 'Altro',
-      };
-
   IconData get icon => switch (this) {
         AgendaCategory.personal => Icons.favorite_outline,
         AgendaCategory.study => Icons.menu_book_outlined,
@@ -433,18 +398,6 @@ enum ShoppingCategory {
 }
 
 extension ShoppingCategoryUi on ShoppingCategory {
-  String get label => switch (this) {
-        ShoppingCategory.produce => 'Frutta e verdura',
-        ShoppingCategory.dairy => 'Latticini',
-        ShoppingCategory.bakery => 'Pane e forno',
-        ShoppingCategory.pantry => 'Dispensa',
-        ShoppingCategory.drinks => 'Bevande',
-        ShoppingCategory.frozen => 'Surgelati',
-        ShoppingCategory.household => 'Casa',
-        ShoppingCategory.personalCare => 'Cura personale',
-        ShoppingCategory.other => 'Altro',
-      };
-
   IconData get icon => switch (this) {
         ShoppingCategory.produce => Icons.eco_outlined,
         ShoppingCategory.dairy => Icons.breakfast_dining_outlined,
@@ -552,18 +505,6 @@ enum WorkoutSport {
 }
 
 extension WorkoutSportUi on WorkoutSport {
-  String get label => switch (this) {
-        WorkoutSport.gym => 'Palestra',
-        WorkoutSport.running => 'Corsa',
-        WorkoutSport.cycling => 'Bici',
-        WorkoutSport.swimming => 'Nuoto',
-        WorkoutSport.walking => 'Camminata',
-        WorkoutSport.hiking => 'Trekking',
-        WorkoutSport.yogaMobility => 'Yoga / Mobilità',
-        WorkoutSport.teamSport => 'Sport di squadra',
-        WorkoutSport.other => 'Altro',
-      };
-
   IconData get icon => switch (this) {
         WorkoutSport.gym => Icons.fitness_center,
         WorkoutSport.running => Icons.directions_run,
@@ -905,14 +846,6 @@ class InboxEntry {
 enum DayMood { great, good, neutral, low, hard }
 
 extension DayMoodUi on DayMood {
-  String get label => switch (this) {
-        DayMood.great => 'Benissimo',
-        DayMood.good => 'Bene',
-        DayMood.neutral => 'Così così',
-        DayMood.low => 'Giù',
-        DayMood.hard => 'Difficile',
-      };
-
   String get emoji => switch (this) {
         DayMood.great => '😍',
         DayMood.good => '😊',
@@ -1730,15 +1663,6 @@ class _LocalSyncEntity {
 enum SharedEntryType { appointment, task, note, photo, sketch, shopping }
 
 extension SharedEntryTypeUi on SharedEntryType {
-  String get label => switch (this) {
-        SharedEntryType.appointment => 'Appuntamento',
-        SharedEntryType.task => 'Da fare',
-        SharedEntryType.note => 'Nota',
-        SharedEntryType.photo => 'Foto',
-        SharedEntryType.sketch => 'Sketch',
-        SharedEntryType.shopping => 'Spesa',
-      };
-
   IconData get icon => switch (this) {
         SharedEntryType.appointment => Icons.event_outlined,
         SharedEntryType.task => Icons.check_circle_outline,
@@ -2159,7 +2083,7 @@ class SharedMediaPendingUpload {
         id: json['id'] as String? ?? const Uuid().v4(),
         spaceId: json['spaceId'] as String? ?? '',
         entryId: json['entryId'] as String? ?? '',
-        title: json['title'] as String? ?? 'Foto',
+        title: json['title'] as String? ?? '',
         note: json['note'] as String? ?? '',
         date:
             DateTime.tryParse(json['date'] as String? ?? '') ??
@@ -2226,7 +2150,7 @@ class LocalBackupSnapshot {
         id: json['id'] as String? ?? const Uuid().v4(),
         createdAt: DateTime.tryParse(json['createdAt'] as String? ?? '') ??
             DateTime.now(),
-        label: json['label'] as String? ?? 'Backup automatico',
+        label: json['label'] as String? ?? '@snapshot:auto',
         data: Map<String, dynamic>.from(json['data'] as Map? ?? const {}),
       );
 }

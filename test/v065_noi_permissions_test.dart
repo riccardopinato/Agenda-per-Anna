@@ -61,8 +61,9 @@ void main() {
 
     expect(shared, contains('_canEditSharedEntry'));
     expect(shared, contains('_setSharedEditPermission'));
-    expect(shared, contains('Solo tu puoi modificare'));
-    expect(shared, contains('Sola lettura'));
+    expect(shared, contains("d3('permissionsOnlyCreator')"));
+    expect(shared, contains("d3('readOnlyMemory')"));
+    expect(shared, contains("d3('readOnlyPhoto')"));
     expect(migration, contains('shared_entry_read_only'));
     expect(migration, contains('agenda_records_shared_entry_permissions'));
     expect(mediaMigration, contains('can_edit_shared_media_object'));

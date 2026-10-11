@@ -2,20 +2,6 @@ part of '../main.dart';
 
 enum RecurringEditScope { single, thisAndFuture, wholeSeries }
 
-extension RecurringEditScopeUi on RecurringEditScope {
-  String get label => switch (this) {
-        RecurringEditScope.single => 'Solo questa',
-        RecurringEditScope.thisAndFuture => 'Questa e successive',
-        RecurringEditScope.wholeSeries => 'Tutta la serie',
-      };
-
-  String get shortLabel => switch (this) {
-        RecurringEditScope.single => 'Questa',
-        RecurringEditScope.thisAndFuture => 'Da qui',
-        RecurringEditScope.wholeSeries => 'Tutte',
-      };
-}
-
 DateTime recurrenceDateForRule(
   DateTime start,
   RecurrenceRule rule,

@@ -269,7 +269,7 @@ class PushNotificationService {
         configured: false,
         initialized: _initialized,
         permissionGranted: false,
-        permissionStatus: 'non configurato',
+        permissionStatus: 'not_configured',
         tokenAvailable: false,
         deviceRegistered: false,
         remotePushActive: false,
@@ -282,7 +282,7 @@ class PushNotificationService {
       await initialize();
     }
 
-    var permissionStatus = 'sconosciuto';
+    var permissionStatus = 'unknown';
     var permissionGranted = false;
     String? token;
     var registered = false;
