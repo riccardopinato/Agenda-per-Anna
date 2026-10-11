@@ -48,6 +48,15 @@ class _UniversalIdentityScreenState extends State<UniversalIdentityScreen> {
     }
   }
 
+  Future<void> _continueOffline() async {
+    setState(() => busy = true);
+    try {
+      await widget.store.continueWithoutAccount();
+    } finally {
+      if (mounted) setState(() => busy = false);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final cloud = CloudSyncService.instance;
@@ -137,6 +146,25 @@ class _UniversalIdentityScreenState extends State<UniversalIdentityScreen> {
                     ),
                   ),
                   const SizedBox(height: 10),
+                  SizedBox(
+                    width: double.infinity,
+                    height: 52,
+                    child: OutlinedButton.icon(
+                      onPressed: busy ? null : _continueOffline,
+                      icon: const Icon(Icons.phone_android_outlined),
+                      label: Text(
+                        AnnaStrings.of(context).d3('continueOffline'),
+                        style: const TextStyle(fontWeight: FontWeight.w800),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    AnnaStrings.of(context).d3('offlineEntryHint'),
+                    textAlign: TextAlign.center,
+                    style: Theme.of(context).textTheme.bodySmall,
+                  ),
+                  const SizedBox(height: 8),
                   TextButton(
                     onPressed: busy
                         ? null
