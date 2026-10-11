@@ -11,6 +11,10 @@ void main() {
     expect(home, contains('CalendarScreen(store: widget.store)'));
     expect(home, contains('WeekScreen(store: widget.store)'));
     expect(home, contains('PlannerScreen(store: widget.store)'));
+    expect(home, contains("ValueKey<String>('main-nav-home')"));
+    expect(home, contains("ValueKey<String>('main-nav-month')"));
+    expect(home, contains("ValueKey<String>('main-nav-week')"));
+    expect(home, contains("ValueKey<String>('main-nav-today')"));
 
     expect(home, contains('PersonalSearchConnectionsScreen(store: store)'));
     expect(home, contains('InboxScreen(store: store)'));
