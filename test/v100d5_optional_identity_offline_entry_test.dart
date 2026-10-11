@@ -24,12 +24,11 @@ void main() {
   testWidgets('first launch offers an explicit device-only path', (tester) async {
     final store = AgendaStore();
     await store.load();
-    await store.savePreferences(
-      store.preferences.copyWith(appLanguage: AppLanguage.english),
-    );
+    store.preferences =
+        store.preferences.copyWith(appLanguage: AppLanguage.english);
 
     await tester.pumpWidget(AgendaApp(store: store));
-    await tester.pumpAndSettle();
+    await tester.pump();
 
     expect(find.text('Use on this device'), findsOneWidget);
     expect(
@@ -41,7 +40,8 @@ void main() {
     );
 
     await tester.tap(find.text('Use on this device'));
-    await tester.pumpAndSettle();
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 100));
 
     expect(store.localEntrySelected, isTrue);
     expect(store.activeAccountId, isNull);
