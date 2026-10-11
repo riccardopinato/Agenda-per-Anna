@@ -242,10 +242,18 @@ class _SharedSpaceHubScreenState extends State<SharedSpaceHubScreen> {
                           textAlign: TextAlign.center,
                         ),
                         const SizedBox(height: 14),
-                        FilledButton(
-                          onPressed: () => Navigator.of(context)
-                              .popUntil((route) => route.isFirst),
-                          child: Text(AnnaStrings.of(context).d3('backToAccess')),
+                        FilledButton.icon(
+                          onPressed: () => Navigator.of(context).push(
+                            MaterialPageRoute<void>(
+                              builder: (_) => CloudAccountScreen(
+                                store: widget.store,
+                              ),
+                            ),
+                          ),
+                          icon: const Icon(Icons.login),
+                          label: Text(
+                            AnnaStrings.of(context).d3('signInAccount'),
+                          ),
                         ),
                       ],
                     ),
