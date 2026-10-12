@@ -25,9 +25,9 @@ appId: com.riccardopinato.agenda_per_anna
 
 # Inbox remains a direct Home destination.
 - tapOn:
-    text: "Inbox"
+    text: ".*Inbox.*"
 - extendedWaitUntil:
-    visible: "Inbox"
+    visible: ".*Inbox.*"
     timeout: 10000
 - back
 - extendedWaitUntil:
