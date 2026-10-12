@@ -1086,6 +1086,13 @@ class _PersonalSearchConnectionsScreenState
 
     return Scaffold(
       appBar: AppBar(
+        leading: Semantics(
+          identifier: 'search_back_button',
+          button: true,
+          child: BackButton(
+            onPressed: () => Navigator.of(context).pop(),
+          ),
+        ),
         title: Text(
           strings.v100SearchConnectTitle,
           style: const TextStyle(fontWeight: FontWeight.w800),
