@@ -19,7 +19,7 @@ appId: com.riccardopinato.agenda_per_anna
     visible: "(Cerca e collega|Search and connect|Buscar y conectar|Rechercher et relier|Pesquisar e ligar)"
     timeout: 10000
 - tapOn:
-    text: "(Indietro|Back|Atrás|Retour|Voltar)"
+    id: "search_back_button"
 - extendedWaitUntil:
     visible: ".*(La mia agenda|My agenda|Mi agenda|Mon agenda|A minha agenda).*"
     timeout: 10000
@@ -30,8 +30,7 @@ appId: com.riccardopinato.agenda_per_anna
 - extendedWaitUntil:
     visible: ".*Inbox.*"
     timeout: 10000
-- tapOn:
-    text: "(Indietro|Back|Atrás|Retour|Voltar)"
+- back
 - extendedWaitUntil:
     visible: ".*(La mia agenda|My agenda|Mi agenda|Mon agenda|A minha agenda).*"
     timeout: 10000
@@ -53,8 +52,7 @@ appId: com.riccardopinato.agenda_per_anna
 - extendedWaitUntil:
     visible: "(Lista della spesa|Shopping list|Lista de la compra|Liste de courses|Lista de compras)"
     timeout: 10000
-- tapOn:
-    text: "(Indietro|Back|Atrás|Retour|Voltar)"
+- back
 - extendedWaitUntil:
     visible: "(Esplora|Explore|Explorar|Explorer)"
     timeout: 10000
@@ -64,8 +62,7 @@ appId: com.riccardopinato.agenda_per_anna
 - extendedWaitUntil:
     visible: "(Allenamento|Workout|Entrenamiento|Entraînement|Treino)"
     timeout: 10000
-- tapOn:
-    text: "(Indietro|Back|Atrás|Retour|Voltar)"
+- back
 - extendedWaitUntil:
     visible: "(Esplora|Explore|Explorar|Explorer)"
     timeout: 10000
@@ -80,13 +77,11 @@ appId: com.riccardopinato.agenda_per_anna
 - extendedWaitUntil:
     visible: "(Life Ecosystem|Ecosistema vita|Ecosistema de vida|Écosystème de vie|Ecossistema de vida)"
     timeout: 10000
-- tapOn:
-    text: "(Indietro|Back|Atrás|Retour|Voltar)"
+- back
 - extendedWaitUntil:
     visible: "(Esplora|Explore|Explorar|Explorer)"
     timeout: 10000
-- tapOn:
-    text: "(Indietro|Back|Atrás|Retour|Voltar)"
+- back
 - extendedWaitUntil:
     visible: ".*(La mia agenda|My agenda|Mi agenda|Mon agenda|A minha agenda).*"
     timeout: 10000
@@ -98,8 +93,7 @@ appId: com.riccardopinato.agenda_per_anna
 - extendedWaitUntil:
     visible: "(Account e sincronizzazione|Account and sync|Cuenta y sincronización|Compte et synchronisation|Conta e sincronização)"
     timeout: 10000
-- tapOn:
-    text: "(Indietro|Back|Atrás|Retour|Voltar)"
+- back
 - extendedWaitUntil:
     visible: ".*(La mia agenda|My agenda|Mi agenda|Mon agenda|A minha agenda).*"
     timeout: 10000
