@@ -17,6 +17,9 @@ void main() {
     expect(home, contains("ValueKey<String>('main-nav-today')"));
 
     expect(home, contains('PersonalSearchConnectionsScreen(store: store)'));
+    final search =
+        File('lib/src/search_connections_domain.dart').readAsStringSync();
+    expect(search, contains("identifier: 'search_back_button'"));
     expect(home, contains('InboxScreen(store: store)'));
     expect(home, contains('ArchiveScreen(store: store)'));
     expect(home, contains('BackupScreen(store: store)'));
@@ -75,6 +78,7 @@ void main() {
       contains('.maestro/journey/d6-functional-navigation.yaml'),
     );
     expect(flow, contains('Search and connect'));
+    expect(flow, contains('search_back_button'));
     expect(flow, contains('Shopping list'));
     expect(flow, contains('Workout'));
     expect(flow, contains('Life Ecosystem'));
