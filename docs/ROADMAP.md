@@ -60,7 +60,8 @@ Source of execution truth for Anna's Diary. Product identity and boundaries are 
 | v1.00-D2 | Vault AppLab Deep Journey | Completed — CI/AppLab green | Clean setup, encrypted sentinel, relock, wrong-password rejection, correct unlock and process-restart persistence in trusted runtime |
 | v1.00-D3 | Localization Completion | Completed — CI/AppLab green | en/it/es/fr/pt completion across migrated Flutter/native/background surfaces with locale-neutral persistence boundaries |
 | v1.00-D4 | Functional Completion Audit | Completed — product verdict NOT COMPLETE | Core feature wiring audited; mandatory identity vs local-first contract is the single confirmed P0 functional blocker |
-| v1.00-D5 | Optional Identity & Offline Entry Repair | Completed — merge requires final CI/AppLab green | Device-only entry, strict guest/account isolation, offline authenticated working-set access and deferred external intents close the D4 P0 |
+| v1.00-D5 | Optional Identity & Offline Entry Repair | Completed — CI/AppLab green | Device-only entry, strict guest/account isolation, offline authenticated working-set access and deferred external intents close the D4 P0 |
+| v1.00-D6 | Functional Regression & Navigation Completion | Implemented — final PR gates pending | End-to-end post-D5 reachability over guest entry, shell, Unified Capture, Search/Inbox/Archive/Backup, Explore and Account & sync |
 
 ## v1.00-A audit outcome
 
@@ -173,7 +174,17 @@ D4 remediation is implemented by **v1.00-D5 — Optional Identity & Offline Entr
 - Release identity remains `0.99.0+109`; D5 closes a functional blocker but does not claim physical-device or Store-ready evidence.
 - D5 is complete only with all applicable final-head CI/AppLab gates green.
 
-Next step after D5: **v1.00-D6 — Functional Regression & Navigation Completion**.
+## v1.00-D6 functional regression & navigation
+
+- Reuses the existing MainShell, Explore and Unified Capture implementations; no new router, store, database or persistence layer is introduced.
+- Adds a source-level regression contract for the four primary shell destinations, canonical Home destinations, Explore targets and the single Unified Capture path.
+- Extends the AppLab journey with a post-D5 runtime pass through Search, Inbox, Explore, Shopping, Workout, Life Ecosystem and Account & sync.
+- Keeps the D5 clean-install device-only path and restart behavior as a prerequisite to the D6 journey.
+- D6 remains bounded at TRUSTED RUNTIME evidence; native/file-provider/Keystore/two-device/real-notification claims remain D7 physical gates.
+- Implementation and acceptance details: `docs/V100_D6_FUNCTIONAL_REGRESSION_NAVIGATION.md`.
+- D6 closes only when the final PR head has Development, Web, Android size audit and AppLab Trusted Verify green.
+
+Next step after D6: **v1.00-D7 — Native Physical Evidence Closure**.
 
 ## v1.00-D acceptance criteria
 

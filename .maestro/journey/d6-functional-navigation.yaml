@@ -1,0 +1,107 @@
+appId: com.riccardopinato.agenda_per_anna
+---
+# v1.00-D6 — Functional Regression & Navigation Completion.
+# The previous visual checkpoint leaves the app inside Trash.
+# Return through Life Archive to Home before exercising secondary routes.
+- back
+- extendedWaitUntil:
+    visible: ".*(Archivio della vita|Life archive|Archivo de vida|Archives de vie|Arquivo da vida).*"
+    timeout: 10000
+- back
+- extendedWaitUntil:
+    visible: ".*(La mia agenda|My agenda|Mi agenda|Mon agenda|A minha agenda).*"
+    timeout: 10000
+
+# Canonical Search remains reachable from Home.
+- tapOn:
+    text: "(Cerca|Search|Buscar|Rechercher|Pesquisar)"
+- extendedWaitUntil:
+    visible: "(Cerca e collega|Search and connect|Buscar y conectar|Rechercher et relier|Pesquisar e ligar)"
+    timeout: 10000
+- tapOn:
+    id: "search_back_button"
+- extendedWaitUntil:
+    visible: ".*(La mia agenda|My agenda|Mi agenda|Mon agenda|A minha agenda).*"
+    timeout: 10000
+
+# Inbox remains a direct Home destination.
+- tapOn:
+    text: ".*Inbox.*"
+- extendedWaitUntil:
+    visible: ".*Inbox.*"
+    timeout: 10000
+- back
+- extendedWaitUntil:
+    visible: ".*(La mia agenda|My agenda|Mi agenda|Mon agenda|A minha agenda).*"
+    timeout: 10000
+
+# Explore remains navigation-only and reaches the canonical secondary domains.
+- scrollUntilVisible:
+    element:
+      text: "(Esplora|Explore|Explorar|Explorer)[\\s\\S]*"
+    direction: DOWN
+    timeout: 10000
+- tapOn:
+    text: "(Esplora|Explore|Explorar|Explorer)[\\s\\S]*"
+- extendedWaitUntil:
+    visible: "(Esplora|Explore|Explorar|Explorer)"
+    timeout: 10000
+
+- tapOn:
+    text: "(Lista della spesa|Shopping list|Lista de la compra|Liste de courses|Lista de compras)[\\s\\S]*"
+- extendedWaitUntil:
+    visible: "(Lista della spesa|Shopping list|Lista de la compra|Liste de courses|Lista de compras)"
+    timeout: 10000
+- back
+- extendedWaitUntil:
+    visible: "(Esplora|Explore|Explorar|Explorer)"
+    timeout: 10000
+
+- tapOn:
+    text: "(Allenamento|Workout|Entrenamiento|Entraînement|Treino)[\\s\\S]*"
+- extendedWaitUntil:
+    visible: "(Allenamento|Workout|Entrenamiento|Entraînement|Treino)"
+    timeout: 10000
+- back
+- extendedWaitUntil:
+    visible: "(Esplora|Explore|Explorar|Explorer)"
+    timeout: 10000
+
+- scrollUntilVisible:
+    element:
+      text: "(Life Ecosystem|Ecosistema vita|Ecosistema de vida|Écosystème de vie|Ecossistema de vida)[\\s\\S]*"
+    direction: DOWN
+    timeout: 10000
+- tapOn:
+    text: "(Life Ecosystem|Ecosistema vita|Ecosistema de vida|Écosystème de vie|Ecossistema de vida)[\\s\\S]*"
+- extendedWaitUntil:
+    visible: "(Life Ecosystem|Ecosistema vita|Ecosistema de vida|Écosystème de vie|Ecossistema de vida)"
+    timeout: 10000
+- back
+- extendedWaitUntil:
+    visible: "(Esplora|Explore|Explorar|Explorer)"
+    timeout: 10000
+- back
+- extendedWaitUntil:
+    visible: ".*(La mia agenda|My agenda|Mi agenda|Mon agenda|A minha agenda).*"
+    timeout: 10000
+
+# Account remains optional: guest users can inspect Account & sync without
+# replacing the active device-only working set.
+- tapOn:
+    text: "Cloud"
+- extendedWaitUntil:
+    visible: "(Account e sincronizzazione|Account and sync|Cuenta y sincronización|Compte et synchronisation|Conta e sincronização)"
+    timeout: 10000
+- back
+- extendedWaitUntil:
+    visible: ".*(La mia agenda|My agenda|Mi agenda|Mon agenda|A minha agenda).*"
+    timeout: 10000
+
+# Finish on Home so subsequent journeys/audits start from a deterministic shell.
+- tapOn:
+    text: "Home[\\s\\S]*"
+    retryTapIfNoChange: true
+- extendedWaitUntil:
+    visible: ".*(La mia agenda|My agenda|Mi agenda|Mon agenda|A minha agenda).*"
+    timeout: 10000

@@ -43,6 +43,10 @@
     {
       "name": "trash",
       "flow": ".maestro/journey/trash.yaml"
+    },
+    {
+      "name": "functional-navigation",
+      "flow": ".maestro/journey/d6-functional-navigation.yaml"
     }
   ]
 }
