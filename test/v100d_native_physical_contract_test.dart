@@ -128,7 +128,7 @@ void main() {
         scenario['deviceIds'] = id.startsWith('NOI-')
             ? ['device-a', 'device-b']
             : ['device-a'];
-        scenario['evidenceRefs'] = <String>[];
+        scenario['evidenceRefs'] = <String>['evidence/$id.txt'];
       }
       return complete;
     }
@@ -174,6 +174,14 @@ void main() {
     final devices = wrongRoles['devices'] as List<dynamic>;
     (devices[1] as Map<String, dynamic>)['accountRole'] = 'owner';
     expect((await validate(wrongRoles, 'wrong-roles')).exitCode, isNot(0));
+
+    final missingEvidenceRef = candidateEvidence();
+    (missingEvidenceRef['scenarios'] as List<dynamic>).first['evidenceRefs'] =
+        <String>[];
+    expect(
+      (await validate(missingEvidenceRef, 'missing-evidence-ref')).exitCode,
+      isNot(0),
+    );
 
     final passed = await validate(candidateEvidence(), 'pass');
     expect(

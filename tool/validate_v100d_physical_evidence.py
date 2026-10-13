@@ -184,8 +184,8 @@ def main() -> None:
             fail(f"{scenario_id} references unknown devices: {sorted(unknown)}")
 
         evidence_refs = scenario.get("evidenceRefs")
-        if not isinstance(evidence_refs, list):
-            fail(f"{scenario_id} evidenceRefs must be a list")
+        if not isinstance(evidence_refs, list) or not evidence_refs:
+            fail(f"{scenario_id} requires at least one evidence reference")
         if any(not nonempty(ref) for ref in evidence_refs):
             fail(f"{scenario_id} contains an invalid evidence reference")
 
