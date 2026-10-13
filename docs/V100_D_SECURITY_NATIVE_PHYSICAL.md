@@ -16,8 +16,10 @@ Functional Regression & Navigation Completion is closed and merged:
 - squash merge to `main`: `17b374089d84539073c830c4bd6940a75f18ed4f`.
 
 D7 therefore has no remaining functional-navigation prerequisite. Its only
-release blocker is the explicit real-device evidence matrix below plus the
-external Auth leaked-password-protection setting already documented here.
+D7 certification blocker is the explicit real-device evidence matrix below.
+The Auth leaked-password-protection setting is a separate v1.00-E / Store Ready
+external blocker and does not substitute for, or block preparation of, the D7
+physical candidate.
 
 ## Live backend evidence — 2026-10-07
 
@@ -56,9 +58,13 @@ Security advisor results after the live contract check:
   in `docs/SECURITY_BASELINE.md`. Anna's Web Push scheduler uses
   `net.http_post`; the installed extension is non-relocatable and must not be
   force-moved/dropped just to clear the advisor.
-- `auth_leaked_password_protection`: **OPEN EXTERNAL CONFIGURATION WARNING**.
-  The current connector cannot change the Auth dashboard setting. It must be
-  enabled/verified before Store Ready is claimed.
+- `auth_leaked_password_protection`: **OPEN v1.00-E / STORE READY WARNING**.
+  Live verification on 2026-10-13 shows the project organization is on the
+  Supabase Free plan. Supabase exposes leaked-password protection on Pro and
+  above, so this setting cannot be enabled on the current plan. D7 remains
+  scoped to native physical evidence; Store Ready must either upgrade the
+  project and enable/verify this control or explicitly revise the store
+  security requirement.
 
 Performance advisor results contained only `unused_index` INFO findings.
 No index is removed from a release candidate merely because production usage
