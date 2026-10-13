@@ -62,7 +62,7 @@ Source of execution truth for Anna's Diary. Product identity and boundaries are 
 | v1.00-D4 | Functional Completion Audit | Completed — product verdict NOT COMPLETE | Core feature wiring audited; mandatory identity vs local-first contract is the single confirmed P0 functional blocker |
 | v1.00-D5 | Optional Identity & Offline Entry Repair | Completed — CI/AppLab green | Device-only entry, strict guest/account isolation, offline authenticated working-set access and deferred external intents close the D4 P0 |
 | v1.00-D6 | Functional Regression & Navigation Completion | Completed — CI/AppLab green | End-to-end post-D5 reachability over guest entry, shell, Unified Capture, Search/Inbox/Archive/Backup, Explore and Account & sync |
-| v1.00-D7 | Native Physical Evidence Closure | BLOCKED ON PHYSICAL EVIDENCE | Signed candidate + manifest are automation-ready; closure requires all mandatory real-device matrix rows PASS on the exact artifact |
+| v1.00-D7 | Native Physical Evidence Closure | BLOCKED ON PHYSICAL EVIDENCE | Signed candidate + manifest are automation-ready; closure requires all mandatory real-device matrix rows PASS on the exact artifact; leaked-password protection remains a separate v1.00-E Store Ready requirement on the current Supabase Free plan |
 
 ## v1.00-D6 release evidence
 
