@@ -1017,6 +1017,23 @@ def configure_manifest() -> None:
         'android:label="Anna\'s Diary"',
     )
 
+    activity_tag = re.search(
+        r'<activity\b[^>]*android:name="\.MainActivity"[^>]*>',
+        manifest,
+    )
+    if activity_tag is None:
+        raise SystemExit("Flutter template drift: MainActivity tag not found")
+    tag = activity_tag.group(0)
+    if 'android:launchMode=' in tag:
+        tag = re.sub(
+            r'android:launchMode="[^"]*"',
+            'android:launchMode="singleTop"',
+            tag,
+        )
+    else:
+        tag = tag[:-1] + ' android:launchMode="singleTop">'
+    manifest = manifest[:activity_tag.start()] + tag + manifest[activity_tag.end():]
+
     auth_deep_link = """
             <intent-filter android:autoVerify="false">
                 <action android:name="android.intent.action.VIEW" />
@@ -1542,6 +1559,24 @@ def configure_launcher_shortcuts() -> None:
         )
 
 
+def configure_store_sdk() -> None:
+    """Pin the generated Android platform to the current Play submission target."""
+    gradle = require_file(APP_GRADLE)
+    gradle = replace_required(
+        gradle,
+        "compileSdk = flutter.compileSdkVersion",
+        "compileSdk = 36",
+        "compileSdk 36",
+    )
+    gradle = replace_required(
+        gradle,
+        "targetSdk = flutter.targetSdkVersion",
+        "targetSdk = 36",
+        "targetSdk 36",
+    )
+    write_if_changed(APP_GRADLE, gradle)
+
+
 def configure_desugaring() -> None:
     gradle = require_file(APP_GRADLE)
     compile_anchor = "compileOptions {"
@@ -1686,7 +1721,25 @@ def verify() -> None:
     activity = require_file(MAIN_ACTIVITY)
     manifest = require_file(MANIFEST)
     gradle = require_file(APP_GRADLE)
+    settings = require_file(SETTINGS_GRADLE)
     failures = []
+
+    agp_match = re.search(
+        r'id\("com\.android\.application"\) version "(\d+)\.(\d+)\.(\d+)"',
+        settings,
+    )
+    if agp_match is None:
+        failures.append("Android Gradle Plugin version")
+    else:
+        agp_version = tuple(int(value) for value in agp_match.groups())
+        if agp_version < (8, 5, 1):
+            failures.append("Android Gradle Plugin >= 8.5.1")
+    if "compileSdk = 36" not in gradle:
+        failures.append("compileSdk 36")
+    if "targetSdk = 36" not in gradle:
+        failures.append("targetSdk 36")
+    if 'android:launchMode="singleTop"' not in manifest:
+        failures.append("MainActivity launchMode singleTop")
     if "FlutterFragmentActivity" not in activity:
         failures.append("FlutterFragmentActivity")
     if "annas_diary/private_vault" not in activity:
@@ -1759,6 +1812,7 @@ def main() -> None:
         )
 
     configure_activity()
+    configure_store_sdk()
     configure_manifest()
     configure_home_widget()
     configure_launcher_shortcuts()

@@ -78,7 +78,10 @@ class _CloudAccountScreenState extends State<CloudAccountScreen> {
     final strings = AnnaStrings.of(context);
     setState(() => busy = true);
     try {
-      await CloudSyncService.instance.signInWithGoogle();
+      await CloudSyncService.instance.signInWithGoogle(
+        returnToAccountDeletion: kIsWeb &&
+            Uri.base.queryParameters['account'] == 'delete',
+      );
     } catch (_) {
       _message(strings.d3CloudError(CloudSyncService.instance.lastError ?? ''));
     } finally {

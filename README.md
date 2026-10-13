@@ -2,7 +2,7 @@
 
 Flutter app for personal planning, private diary and the shared **Noi ♡** space.
 
-Current release line: **v0.99.0**.
+Current release line: **v1.0 release candidate — 1.0.0-rc.1+110**.
 
 Canonical product scope and security boundaries: `docs/PRODUCT_BIBLE.md`.
 
@@ -119,7 +119,17 @@ See `docs/ARCHITECTURE.md` and `supabase/README.md` for implementation details.
 - AppLab now includes Backup/Data as a trusted application-side checkpoint.
 - Direct stable-signed ARM64 artifacts include `PHYSICAL_CERTIFICATION_MANIFEST.json` so device evidence can be bound to exact bytes and signing identity.
 - Real-device Backup/file-provider, Vault biometric/Keystore, two-device Password Noi ♡, share target, launcher shortcut and notification-delivery tests remain required before PHYSICAL DEVICE VERIFIED can be claimed.
-- Supabase leaked-password protection is still an external Auth configuration warning and must be enabled/verified before Store Ready.
+- Supabase leaked-password protection remains a v1.00-E Store Ready control; the live project is currently on the Free plan, where Supabase does not expose that feature.
+
+## v1.00-E — Distribution & Store Readiness — IN PROGRESS
+
+- Starts the public 1.0 release candidate at **1.0.0-rc.1+110** without claiming stable 1.0 while physical/store proof is incomplete.
+- Pins generated Android builds to API 36 and a billing-safe `singleTop` MainActivity.
+- Adds production artifact verification for Android 16 target and 16 KB ZIP alignment.
+- Publishes a public account-deletion Web resource in addition to the existing in-app deletion flow.
+- Updates Privacy/Terms and adds Play Data Safety + store-listing operator documents.
+- Keeps RevenueCat real-purchase/restore proof on Google Play Internal Testing as an external distribution gate.
+- Details: `docs/V100_E_DISTRIBUTION_STORE_READINESS.md`.
 
 ## v0.99.0 — Open Life Export
 

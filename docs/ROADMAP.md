@@ -63,6 +63,7 @@ Source of execution truth for Anna's Diary. Product identity and boundaries are 
 | v1.00-D5 | Optional Identity & Offline Entry Repair | Completed — CI/AppLab green | Device-only entry, strict guest/account isolation, offline authenticated working-set access and deferred external intents close the D4 P0 |
 | v1.00-D6 | Functional Regression & Navigation Completion | Completed — CI/AppLab green | End-to-end post-D5 reachability over guest entry, shell, Unified Capture, Search/Inbox/Archive/Backup, Explore and Account & sync |
 | v1.00-D7 | Native Physical Evidence Closure | BLOCKED ON PHYSICAL EVIDENCE | Signed candidate + manifest are automation-ready; closure requires all mandatory real-device matrix rows PASS on the exact artifact; leaked-password protection remains a separate v1.00-E Store Ready requirement on the current Supabase Free plan |
+| v1.00-E | Distribution & Store Readiness | IN PROGRESS — RC hardening | 1.0.0-rc.1+110, Play API 36, 16 KB release verification, public privacy/deletion resources, Data Safety/store operator package and real Play purchase/restore gate |
 
 ## v1.00-D6 release evidence
 
@@ -204,6 +205,19 @@ D4 remediation is implemented by **v1.00-D5 — Optional Identity & Offline Entr
 - D6 closes only when the final PR head has Development, Web, Android size audit and AppLab Trusted Verify green.
 
 Next step after D6: **v1.00-D7 — Native Physical Evidence Closure**.
+
+## v1.00-E distribution & Store readiness
+
+- Release identity advances from the frozen v0.99 metadata to **1.0.0-rc.1+110**. This is a release candidate, not a stable 1.0 claim.
+- Generated Android builds pin compile/target API 36 for the current Google Play submission requirement.
+- MainActivity is pinned to `singleTop` so external Google Play payment verification flows do not cancel purchases because of an incompatible launch mode.
+- The production Android workflow verifies an ARM64 release APK with `zipalign -P 16` and checks the built target SDK before packaging artifacts.
+- Store builds remain fail-closed without stable signing and RevenueCat Android configuration; Preview stays OFF for Store/Store-QA.
+- Public Web distribution ships Privacy Policy, Terms and an account-deletion resource that opens the canonical Web Account & sync deletion path.
+- `docs/PLAY_STORE_DATA_SAFETY.md` and `docs/PLAY_STORE_LISTING.md` are the operator sources for Play Console completion.
+- Supabase leaked-password protection is a Store Ready external requirement, but the live project is currently on the Free plan where that control is unavailable; the release decision must upgrade or explicitly revise the requirement.
+- Real Play Internal Testing purchase/restore and D7 physical evidence remain external proof. E cannot convert them into CI claims.
+- Full implementation details: `docs/V100_E_DISTRIBUTION_STORE_READINESS.md`.
 
 ## v1.00-D acceptance criteria
 

@@ -75,7 +75,7 @@ The public RPC wrappers are `SECURITY INVOKER`. Their current ability to call th
 - The live Supabase project `agenda-per-anna` reports migration `20261001075952 shared_password_hardening_v086`, closing the previous uncertainty about production deployment of migration 027.
 - The repository two-user transactional contract in `supabase/tests/027_shared_password_hardening_contract.sql` was executed against the live project and completed without error. It uses existing authenticated identities and rolls back all test rows.
 - This proves the live backend contract for atomic key claim, pairing-envelope ownership/one-shot use, revision conflicts, dedicated RPC enforcement, delete semantics and removed-member rejection. It does **not** prove the two-device Flutter/Keystore client lifecycle.
-- Supabase security advisors still report `auth_leaked_password_protection` disabled. The available connector cannot mutate Auth dashboard configuration, so this remains an explicit external configuration gate before Store Ready.
+- Supabase security advisors still report `auth_leaked_password_protection` disabled. Live organization verification on 13 October 2026 shows the project is on the Supabase Free plan; leaked-password protection is available on Pro and above. This remains a v1.00-E external Store Ready decision rather than a client-side control.
 - The existing `pg_net` advisor warning remains accepted for the documented non-relocatable Web Push configuration; it must not be force-moved or removed merely to silence the advisor.
 - Unused-index advisor items are informational and are not deleted without workload evidence.
 - Physical Android certification must use a stable-signed artifact with recorded APK SHA-256, signing certificate SHA-256, commit, version/build, workflow run, device and OS evidence.
@@ -98,7 +98,7 @@ Supabase currently reports `auth_leaked_password_protection` disabled.
 
 Anna's Diary is Google-first and does not expose new email/password registration in the current account UI; email/password remains a compatibility sign-in path for older accounts.
 
-The platform setting should still be enabled when a supported authenticated project-configuration control is available. It is not simulated client-side because leaked-password screening belongs at the Auth service boundary, not in Flutter.
+The live Supabase organization is currently on the Free plan, while leaked-password protection is a Pro-or-higher Auth feature. Store Ready therefore requires either upgrading and enabling/verifying the service-side control or explicitly revising the release requirement with a documented risk decision. It is not simulated client-side because leaked-password screening belongs at the Auth service boundary, not in Flutter.
 
 ## Release gate
 

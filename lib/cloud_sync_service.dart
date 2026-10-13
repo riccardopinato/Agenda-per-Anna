@@ -554,7 +554,9 @@ class CloudSyncService extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> signInWithGoogle() async {
+  Future<void> signInWithGoogle({
+    bool returnToAccountDeletion = false,
+  }) async {
     final client = _requireClient();
     _state = CloudConnectionState.initializing;
     _lastError = null;
@@ -563,7 +565,13 @@ class CloudSyncService extends ChangeNotifier {
     try {
       final started = await client.auth.signInWithOAuth(
         OAuthProvider.google,
-        redirectTo: kIsWeb ? _productionWebUrl : _mobileAuthRedirectUrl,
+        redirectTo: kIsWeb
+            ? (returnToAccountDeletion
+                ? Uri.parse(_productionWebUrl)
+                    .replace(queryParameters: const {'account': 'delete'})
+                    .toString()
+                : _productionWebUrl)
+            : _mobileAuthRedirectUrl,
         scopes: 'openid email profile',
         authScreenLaunchMode: kIsWeb
             ? LaunchMode.platformDefault
