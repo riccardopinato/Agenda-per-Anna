@@ -1,32 +1,53 @@
 appId: com.riccardopinato.agenda_per_anna
 ---
+# The previous checkpoint leaves the shell on Today. Move to Home and wait for
+# the Home surface to settle before scrolling: after the deep Vault journey the
+# emulator can still be completing a frame/navigation transition.
 - tapOn:
-    text: 'Home[\s\S]*'
+    text: 'Home[\\s\\S]*'
     retryTapIfNoChange: true
+- extendedWaitUntil:
+    visible: '(La mia agenda|My agenda|Mi agenda|Mon agenda|A minha agenda)'
+    timeout: 15000
+
 - scrollUntilVisible:
     element:
-      text: '(Esplora|Explore|Explorar|Explorer)[\s\S]*'
+      text: '(Esplora|Explore|Explorar|Explorer)[\\s\\S]*'
     direction: DOWN
-    timeout: 10000
+    timeout: 30000
+    speed: 35
+    visibilityPercentage: 20
+    centerElement: false
 - tapOn:
-    text: '(Esplora|Explore|Explorar|Explorer)[\s\S]*'
+    text: '(Esplora|Explore|Explorar|Explorer)[\\s\\S]*'
 - extendedWaitUntil:
     visible: '(Esplora|Explore|Explorar|Explorer)'
-    timeout: 10000
+    timeout: 15000
+
 - scrollUntilVisible:
     element:
-      text: '(I miei ricordi|My memories|Mis recuerdos|Mes souvenirs|As minhas memórias)[\s\S]*'
+      text: '(I miei ricordi|My memories|Mis recuerdos|Mes souvenirs|As minhas memórias)[\\s\\S]*'
     direction: DOWN
-    timeout: 10000
+    timeout: 30000
+    speed: 35
+    visibilityPercentage: 20
+    centerElement: false
 - tapOn:
-    text: '(I miei ricordi|My memories|Mis recuerdos|Mes souvenirs|As minhas memórias)[\s\S]*'
+    text: '(I miei ricordi|My memories|Mis recuerdos|Mes souvenirs|As minhas memórias)[\\s\\S]*'
 - extendedWaitUntil:
     visible: '(I miei ricordi|My memories|Mis recuerdos|Mes souvenirs|As minhas memórias)'
-    timeout: 10000
-- assertVisible:
-    text: '(Riscopri|Rediscover|Redescubrir|Redécouvrir|Redescobrir)[\s\S]*'
+    timeout: 15000
+
+- scrollUntilVisible:
+    element:
+      text: '(Riscopri|Rediscover|Redescubrir|Redécouvrir|Redescobrir)[\\s\\S]*'
+    direction: DOWN
+    timeout: 30000
+    speed: 35
+    visibilityPercentage: 20
+    centerElement: false
 - tapOn:
-    text: '(Riscopri|Rediscover|Redescubrir|Redécouvrir|Redescobrir)[\s\S]*'
+    text: '(Riscopri|Rediscover|Redescubrir|Redécouvrir|Redescobrir)[\\s\\S]*'
 - extendedWaitUntil:
     visible: '(Riscopri i tuoi ricordi|Rediscover your memories|Redescubre tus recuerdos|Redécouvre tes souvenirs|Redescobre as tuas memórias)'
-    timeout: 10000
+    timeout: 15000
