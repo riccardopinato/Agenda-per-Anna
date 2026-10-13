@@ -61,7 +61,26 @@ Source of execution truth for Anna's Diary. Product identity and boundaries are 
 | v1.00-D3 | Localization Completion | Completed — CI/AppLab green | en/it/es/fr/pt completion across migrated Flutter/native/background surfaces with locale-neutral persistence boundaries |
 | v1.00-D4 | Functional Completion Audit | Completed — product verdict NOT COMPLETE | Core feature wiring audited; mandatory identity vs local-first contract is the single confirmed P0 functional blocker |
 | v1.00-D5 | Optional Identity & Offline Entry Repair | Completed — CI/AppLab green | Device-only entry, strict guest/account isolation, offline authenticated working-set access and deferred external intents close the D4 P0 |
-| v1.00-D6 | Functional Regression & Navigation Completion | Implemented — final PR gates pending | End-to-end post-D5 reachability over guest entry, shell, Unified Capture, Search/Inbox/Archive/Backup, Explore and Account & sync |
+| v1.00-D6 | Functional Regression & Navigation Completion | Completed — CI/AppLab green | End-to-end post-D5 reachability over guest entry, shell, Unified Capture, Search/Inbox/Archive/Backup, Explore and Account & sync |
+| v1.00-D7 | Native Physical Evidence Closure | BLOCKED ON PHYSICAL EVIDENCE | Signed candidate + manifest are automation-ready; closure requires all mandatory real-device matrix rows PASS on the exact artifact |
+
+## v1.00-D6 release evidence
+
+- PR #98 final tested head: `bfa4a1fde6b53f2d72b5a944309c56025d61a9c5`.
+- Development checks #1098: PASS.
+- Web deploy #686: PASS.
+- Android size audit #624: PASS.
+- AppLab Production Gate #625: PASS.
+- Squash merge to `main`: `17b374089d84539073c830c4bd6940a75f18ed4f`.
+- Evidence level: **TRUSTED RUNTIME VERIFIED**. Native physical claims remain deferred to D7.
+
+## v1.00-D7 physical closure
+
+- The physical evidence contract remains fail-closed: no scenario may be inferred from CI/AppLab or backend verification.
+- The stable-signing sideload workflow must produce the exact APK plus `PHYSICAL_CERTIFICATION_MANIFEST.json`.
+- Evidence must cover DS-01..DS-06, VAULT-01..VAULT-04, NOI-01..NOI-03 and NATIVE-01..NATIVE-03 on real Android devices.
+- The final evidence file must validate against the exact candidate artifact and manifest with `tool/validate_v100d_physical_evidence.py`.
+- Until all rows are PASS, v1.00-D7 remains **BLOCKED ON PHYSICAL EVIDENCE** and v1.00-E cannot be claimed complete.
 
 ## v1.00-A audit outcome
 

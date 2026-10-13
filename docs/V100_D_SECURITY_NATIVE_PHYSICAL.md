@@ -1,11 +1,23 @@
 # Anna's Diary — v1.00-D Security / Native Physical Certification
 
-Status: **IN PROGRESS — physical evidence required**
+Status: **BLOCKED ON PHYSICAL EVIDENCE — automation/preflight complete**
 
 This step follows the Master Prompt v21 evidence ladder. AppLab, CI and backend
 verification are preflight evidence; they do not substitute a real device for
 file providers, Android Keystore/biometrics, notification delivery or the
 two-device shared-password lifecycle.
+
+## D6 prerequisite closure — 2026-10-12
+
+Functional Regression & Navigation Completion is closed and merged:
+
+- PR #98 final tested head: `bfa4a1fde6b53f2d72b5a944309c56025d61a9c5`;
+- Development checks #1098, Web #686, Android size audit #624 and AppLab Production Gate #625: PASS;
+- squash merge to `main`: `17b374089d84539073c830c4bd6940a75f18ed4f`.
+
+D7 therefore has no remaining functional-navigation prerequisite. Its only
+release blocker is the explicit real-device evidence matrix below plus the
+external Auth leaked-password-protection setting already documented here.
 
 ## Live backend evidence — 2026-10-07
 
