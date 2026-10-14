@@ -89,6 +89,8 @@ appId: com.riccardopinato.agenda_per_anna
 # Account remains optional: guest users can inspect Account & sync without
 # replacing the active device-only working set.
 - tapOn:
+    id: "home_more_menu"
+- tapOn:
     text: "Cloud"
 - extendedWaitUntil:
     visible: "(Account e sincronizzazione|Account and sync|Cuenta y sincronización|Compte et synchronisation|Conta e sincronização)"
