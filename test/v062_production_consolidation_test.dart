@@ -78,9 +78,10 @@ void main() {
     expect(appLab, contains('uses: riccardopinato/AppLab/.github/workflows/'));
     expect(
       appLab,
-      contains('@a871a1c1e0ab8339c48bc8ee53ee4cc34d634d34'),
+      contains('@f3f04deccd22e7e48c303712bb5ad6a86c4e7959'),
     );
-    expect(appLab, contains('run_flutter_tests: true'));
+    expect(appLab, contains('analysis_mode: certification'));
+    expect(appLab, contains('actions: read'));
     expect(appLab, contains('run_maestro: true'));
     expect(appLab, contains('app-arm64-v8a-release.apk'));
   });
