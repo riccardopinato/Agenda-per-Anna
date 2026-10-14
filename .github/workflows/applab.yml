@@ -1,7 +1,5 @@
 name: AppLab Production Gate
-# Golden AppLab QA pilot.
-# Verifier is pinned to the hardened AppLab exact commit.
-# This first pilot commit intentionally uses an invalid package_id to prove fail-closed semantics.
+# Golden AppLab QA pilot — hardened verifier pinned at an immutable commit.
 
 on:
   pull_request:
@@ -37,7 +35,7 @@ jobs:
       api_level: "35"
       emulator_profile: pixel_7_pro
       apk_path: build/app/outputs/flutter-apk/app-arm64-v8a-release.apk
-      package_id: com.riccardopinato.agenda_per_anna.__applab_fail_closed_canary__
+      package_id: com.riccardopinato.agenda_per_anna
       build_command: >-
         if [ -f android/app/google-services.json ]; then
         flutter build apk --release --split-per-abi --tree-shake-icons --dart-define=ANNAS_DIARY_INTEGRATION_TEST=true --dart-define=ANNA_STORE_RELEASE=false --dart-define=ANNA_PREMIUM_PREVIEW=true --dart-define=FIREBASE_ENABLED=true;
