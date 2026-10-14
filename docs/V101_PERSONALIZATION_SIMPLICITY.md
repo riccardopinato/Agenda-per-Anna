@@ -91,6 +91,28 @@ The remaining optional modules (Habits, Noi ♡, Cycle Tracker and Private Vault
 are controlled centrally here; their Home/chrome visibility is applied in
 v1.01-D.
 
+## v1.01-D — Adaptive Home & Quiet UX
+
+Home becomes calmer without hiding actionable state:
+
+- Search and Inbox remain direct high-frequency actions.
+- Archive, Backup, Cloud, Settings, Explore and Personalize move under a stable
+  **More** menu.
+- Noi ♡ appears directly only when the module is enabled and unread shared
+  activity needs attention; it otherwise remains available from More.
+- The Private Vault Home card and wellbeing/habits card follow their module
+  visibility preferences.
+- A healthy signed-in sync and intentional device-only use are silent.
+- Sync errors, pending changes, shared-sync errors and lost account sessions
+  remain visible and actionable.
+- If no secondary Explore module is enabled, Home points to Personalize instead
+  of showing an empty feature hub.
+
+Module hiding affects **primary navigation and discovery**, never canonical data.
+Contextual references to existing content may remain reachable (for example an
+old workout from Life Archive or a linked person from Search) so hiding a
+module cannot orphan user data or make historical records inaccessible.
+
 ## Planned sequence
 
 - **v1.01-A** Module Preferences — persistence contract and compatibility.
