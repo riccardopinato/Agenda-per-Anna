@@ -1488,6 +1488,35 @@ class _SettingsScreenState extends State<SettingsScreen> {
               ),
               const SizedBox(height: 12),
               SimpleCard(
+                child: Semantics(
+                  identifier: 'settings_personalize',
+                  button: true,
+                  child: ListTile(
+                    contentPadding: EdgeInsets.zero,
+                    leading: const CircleAvatar(
+                      child: Icon(Icons.tune_outlined),
+                    ),
+                    title: Text(
+                      strings.v101PersonalizeTitle,
+                      style: const TextStyle(fontWeight: FontWeight.w900),
+                    ),
+                    subtitle: Text(
+                      '${strings.v101PresetTitle(prefs.personalizationPreset)} · '
+                      '${prefs.enabledModules.length}/${AppModule.values.length}',
+                    ),
+                    trailing: const Icon(Icons.chevron_right),
+                    onTap: () => Navigator.push(
+                      context,
+                      MaterialPageRoute<void>(
+                        builder: (_) =>
+                            PersonalizationScreen(store: widget.store),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 12),
+              SimpleCard(
                 child: ListTile(
                   contentPadding: EdgeInsets.zero,
                   leading: const CircleAvatar(
