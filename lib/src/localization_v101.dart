@@ -104,4 +104,107 @@ extension AnnaV101Strings on AnnaStrings {
         fr: 'Commencer',
         pt: 'Começar',
       );
+
+  String get v101PersonalizeTitle => _pick(
+        en: 'Personalize',
+        it: 'Personalizza',
+        es: 'Personalizar',
+        fr: 'Personnaliser',
+        pt: 'Personalizar',
+      );
+
+  String get v101PersonalizeSubtitle => _pick(
+        en: 'Choose what Anna’s Diary shows you. Your data are never deleted when a module is hidden.',
+        it: 'Scegli cosa mostrarti in Anna’s Diary. Nascondere un modulo non elimina mai i tuoi dati.',
+        es: 'Elige qué quieres ver en Anna’s Diary. Ocultar un módulo nunca elimina tus datos.',
+        fr: 'Choisis ce qu’Anna’s Diary t’affiche. Masquer un module ne supprime jamais tes données.',
+        pt: 'Escolhe o que o Anna’s Diary te mostra. Ocultar um módulo nunca elimina os teus dados.',
+      );
+
+  String get v101PresetSection => _pick(
+        en: 'Starting mode',
+        it: 'Modalità di partenza',
+        es: 'Modo inicial',
+        fr: 'Mode de départ',
+        pt: 'Modo inicial',
+      );
+
+  String get v101ModulesSection => _pick(
+        en: 'Modules',
+        it: 'Moduli',
+        es: 'Módulos',
+        fr: 'Modules',
+        pt: 'Módulos',
+      );
+
+  String get v101ModulesDescription => _pick(
+        en: 'Turn areas on or off. Hidden areas keep all existing content.',
+        it: 'Attiva o nascondi le aree. I contenuti esistenti restano sempre conservati.',
+        es: 'Activa u oculta áreas. El contenido existente siempre se conserva.',
+        fr: 'Active ou masque des zones. Le contenu existant reste toujours conservé.',
+        pt: 'Ativa ou oculta áreas. O conteúdo existente permanece sempre guardado.',
+      );
+
+  String get v101CustomTitle => _pick(
+        en: 'Custom',
+        it: 'Personalizzato',
+        es: 'Personalizado',
+        fr: 'Personnalisé',
+        pt: 'Personalizado',
+      );
+
+  String get v101NothingEnabledTitle => _pick(
+        en: 'Your Explore space is minimal',
+        it: 'Il tuo spazio Esplora è minimale',
+        es: 'Tu espacio Explorar es minimalista',
+        fr: 'Ton espace Explorer est minimal',
+        pt: 'O teu espaço Explorar é minimalista',
+      );
+
+  String get v101NothingEnabledSubtitle => _pick(
+        en: 'Enable a module whenever you want. Your hidden content stays safe.',
+        it: 'Attiva un modulo quando vuoi. I contenuti nascosti restano al sicuro.',
+        es: 'Activa un módulo cuando quieras. El contenido oculto permanece seguro.',
+        fr: 'Active un module quand tu veux. Le contenu masqué reste en sécurité.',
+        pt: 'Ativa um módulo quando quiseres. O conteúdo oculto permanece seguro.',
+      );
+
+  String get v101ExplorePersonalizedIntro => _pick(
+        en: 'Only the areas you chose appear here.',
+        it: 'Qui compaiono solo le aree che hai scelto.',
+        es: 'Aquí aparecen solo las áreas que has elegido.',
+        fr: 'Seules les zones que tu as choisies apparaissent ici.',
+        pt: 'Aqui aparecem apenas as áreas que escolheste.',
+      );
+
+  String v101PresetTitle(PersonalizationPreset preset) => switch (preset) {
+        PersonalizationPreset.essential => v101EssentialTitle,
+        PersonalizationPreset.life => v101LifeTitle,
+        PersonalizationPreset.complete => v101CompleteTitle,
+        PersonalizationPreset.custom => v101CustomTitle,
+      };
+
+  String v101ModuleTitle(AppModule module) => switch (module) {
+        AppModule.memories => v100MyMemories,
+        AppModule.people => v100ImportantPeople,
+        AppModule.habits => _pick(en: 'Habits', it: 'Abitudini', es: 'Hábitos', fr: 'Habitudes', pt: 'Hábitos'),
+        AppModule.sharedSpace => 'Noi ♡',
+        AppModule.shopping => v100Shopping,
+        AppModule.workout => v100Workout,
+        AppModule.cycleTracker => _pick(en: 'Cycle Tracker', it: 'Cycle Tracker', es: 'Cycle Tracker', fr: 'Cycle Tracker', pt: 'Cycle Tracker'),
+        AppModule.privateVault => v100PrivateVault,
+        AppModule.ecosystem => lifeEcosystemTitle,
+      };
+
+  String v101ModuleSubtitle(AppModule module) => switch (module) {
+        AppModule.memories => v100MemoriesSubtitle,
+        AppModule.people => v100PeopleSubtitle,
+        AppModule.habits => _pick(en: 'Daily routines and wellbeing progress', it: 'Routine quotidiane e progressi nel benessere', es: 'Rutinas diarias y progreso de bienestar', fr: 'Routines quotidiennes et progression du bien-être', pt: 'Rotinas diárias e progresso de bem-estar'),
+        AppModule.sharedSpace => _pick(en: 'Shared memories, agenda and private collaboration', it: 'Ricordi, agenda e collaborazione condivisa', es: 'Recuerdos, agenda y colaboración compartida', fr: 'Souvenirs, agenda et collaboration partagés', pt: 'Memórias, agenda e colaboração partilhadas'),
+        AppModule.shopping => v100ShoppingEmpty,
+        AppModule.workout => v100WorkoutEmpty,
+        AppModule.cycleTracker => _pick(en: 'Private cycle calendar and estimates inside Vault', it: 'Calendario ciclo privato e stime dentro Vault', es: 'Calendario del ciclo privado y estimaciones dentro de Vault', fr: 'Calendrier de cycle privé et estimations dans Vault', pt: 'Calendário de ciclo privado e estimativas no Vault'),
+        AppModule.privateVault => v100PrivateVaultDescription,
+        AppModule.ecosystem => lifeEcosystemSubtitle,
+      };
 }
