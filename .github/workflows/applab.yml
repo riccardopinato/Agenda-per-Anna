@@ -10,6 +10,7 @@ on:
 
 permissions:
   contents: read
+  actions: read
 
 concurrency:
   group: applab-production-${{ github.event.pull_request.number || github.ref }}
