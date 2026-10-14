@@ -66,6 +66,16 @@ void main() {
     expect(withoutVault.isModuleEnabled(AppModule.cycleTracker), isFalse);
   });
 
+  test('restore normalization keeps Cycle Tracker reachable', () {
+    final restored = AgendaPreferences.fromJson(const {
+      'personalizationPreset': 'custom',
+      'enabledModules': ['cycleTracker'],
+    });
+
+    expect(restored.isModuleEnabled(AppModule.cycleTracker), isTrue);
+    expect(restored.isModuleEnabled(AppModule.privateVault), isTrue);
+  });
+
   test('custom module preferences round-trip through JSON', () {
     final prefs = const AgendaPreferences()
         .withModuleEnabled(AppModule.shopping, false)
