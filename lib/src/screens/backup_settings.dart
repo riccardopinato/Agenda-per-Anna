@@ -1999,6 +1999,30 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         ),
                       ),
                     ),
+                    ListTile(
+                      contentPadding: EdgeInsets.zero,
+                      leading: const Icon(Icons.privacy_tip_outlined),
+                      title: Text(strings.v100PrivacyPolicy),
+                      subtitle: Text(strings.v100PrivacyPolicyDescription),
+                      trailing: const Icon(Icons.open_in_new),
+                      onTap: () async {
+                        final uri = Uri.parse(
+                          'https://riccardopinato.github.io/Agenda-per-Anna/privacy.html',
+                        );
+                        final opened = await launchUrl(
+                          uri,
+                          mode: LaunchMode.externalApplication,
+                        );
+                        if (!opened && context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content:
+                                  Text(strings.v100PrivacyPolicyOpenFailed),
+                            ),
+                          );
+                        }
+                      },
+                    ),
                     const SizedBox(height: 6),
                     Text(
                       strings.v100VaultAccountBoundary,

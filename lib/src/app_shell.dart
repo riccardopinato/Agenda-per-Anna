@@ -127,6 +127,9 @@ class AgendaRoot extends StatelessWidget {
           );
         }
 
+        final webAccountDeletionFlow = kIsWeb &&
+            Uri.base.queryParameters['account'] == 'delete';
+
         if (!bypassIdentity) {
           if (cloud.signedIn) {
             final userId = cloud.userId;
@@ -136,10 +139,15 @@ class AgendaRoot extends StatelessWidget {
                 userId: userId,
               );
             }
-          } else if (store.activeAccountId == null &&
+          } else if (!webAccountDeletionFlow &&
+              store.activeAccountId == null &&
               !store.localEntrySelected) {
             return UniversalIdentityScreen(store: store);
           }
+        }
+
+        if (webAccountDeletionFlow) {
+          return CloudAccountScreen(store: store);
         }
 
         if (!store.preferences.onboardingDone) {

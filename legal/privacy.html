@@ -9,8 +9,7 @@
     :root{color-scheme:light dark;font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
     body{margin:0;background:#fff8fb;color:#241d21}
     main{max-width:820px;margin:auto;padding:40px 22px 64px}
-    h1{font-size:2rem;margin-bottom:6px} h2{margin-top:30px}
-    p,li{line-height:1.65} .muted{opacity:.7}
+    h1{font-size:2rem;margin-bottom:6px}h2{margin-top:30px}p,li{line-height:1.65}.muted{opacity:.7}
     .card{background:#fff;border:1px solid #eadde3;border-radius:18px;padding:22px;box-shadow:0 8px 28px #0000000d}
     a{color:#a52662}
     @media(prefers-color-scheme:dark){body{background:#171216;color:#f5edf1}.card{background:#21191e;border-color:#40323a}a{color:#ff9fc6}}
@@ -20,39 +19,56 @@
 <main>
   <div class="card">
     <h1>Privacy Policy</h1>
-    <p class="muted">Anna's Diary · Ultimo aggiornamento: 25 settembre 2026</p>
+    <p class="muted">Anna's Diary · Ultimo aggiornamento: 13 ottobre 2026</p>
 
-    <p>Anna's Diary è un'app personale per agenda, diario, promemoria e condivisione facoltativa tra persone collegate.</p>
+    <p>Anna's Diary è un'app personale per agenda, diario, ricordi, promemoria e funzioni di condivisione facoltativa. Il funzionamento principale è local-first e può essere usato senza creare un account.</p>
 
-    <h2>Dati trattati</h2>
-    <p>Quando usi l'accesso con Google, l'app può ricevere le informazioni di base necessarie all'autenticazione, come identificativo account, nome, indirizzo email e immagine profilo, se fornita da Google.</p>
-    <p>I contenuti che inserisci nell'app, come note, eventi, promemoria e contenuti condivisi, vengono trattati solo per fornire le funzioni richieste. Quando la sincronizzazione cloud è attiva, tali dati possono essere memorizzati sui servizi backend dell'app.</p>
+    <h2>Dati locali</h2>
+    <p>Agenda, diario, fotografie, note vocali, disegni, persone, abitudini, allenamenti, lista della spesa e altre informazioni personali vengono memorizzati sul dispositivo. Se scegli di attivare un account e la sincronizzazione, le categorie supportate possono essere sincronizzate sul backend dell'app.</p>
 
-    <h2>Cassaforte privata</h2>
-    <p>I contenuti salvati nella Cassaforte privata sono progettati per restare sul dispositivo e vengono cifrati prima della memorizzazione locale. Non vengono inclusi nella normale sincronizzazione cloud, nella ricerca globale o nei backup ordinari dell'app.</p>
+    <h2>Account e sincronizzazione facoltativa</h2>
+    <p>Con l'accesso Google o con un account compatibile, l'app può trattare identificativo account, nome, indirizzo email e immagine profilo forniti dal provider per autenticazione, isolamento dei dati, sincronizzazione e funzioni condivise. Supabase è utilizzato per autenticazione, database, sincronizzazione e storage cloud.</p>
+
+    <h2>Diario, foto, fotocamera e microfono</h2>
+    <p>Fotocamera, selezione immagini e microfono vengono usati solo quando scegli funzioni che richiedono foto o note vocali. I contenuti restano locali salvo una tua azione o l'uso di una funzione di sincronizzazione/condivisione che li includa. Il riconoscimento del testo nelle foto usa elaborazione OCR sul dispositivo e non invia automaticamente le immagini a un servizio di AI remoto.</p>
+
+    <h2>Calendario del dispositivo</h2>
+    <p>Se concedi il permesso, Anna's Diary può leggere eventi del calendario Android per mostrarli come overlay. Il calendario esterno resta una sorgente in sola lettura e non diventa un archivio canonico di Anna's Diary.</p>
+
+    <h2>Cassaforte privata e dati sensibili</h2>
+    <p>I contenuti della Cassaforte privata, incluse credenziali personali e dati del Cycle Tracker, sono cifrati localmente. Non entrano nella normale sincronizzazione cloud, nella ricerca globale o nei backup ordinari. Le funzioni biometriche Android usano il sistema operativo e Android Keystore quando disponibili.</p>
+    <p>Il Cycle Tracker fornisce registrazione privata e stime indicative basate sui dati inseriti dall'utente. Anna's Diary non è un dispositivo medico e non fornisce diagnosi, trattamenti, cure o prevenzione di condizioni mediche; le stime non costituiscono contraccezione o consiglio medico. Per esigenze mediche è necessario rivolgersi a un professionista sanitario qualificato.</p>
+
+    <h2>Noi ♡ e password condivise</h2>
+    <p>I contenuti Noi ♡ scelti per la condivisione vengono sincronizzati tra i membri autorizzati. Le password condivise Noi ♡ sono cifrate sul client prima dell'invio; il backend conserva il contenuto cifrato e i metadati necessari al protocollo, non la password in chiaro.</p>
 
     <h2>Notifiche</h2>
-    <p>L'app può utilizzare notifiche locali e notifiche push per promemoria e funzioni condivise. Per le notifiche push Android può essere utilizzato Firebase Cloud Messaging di Google. Nella PWA Web/iPhone vengono utilizzate le API Web Push del browser; il backend conserva l’endpoint tecnico e le chiavi pubbliche della subscription necessarie a recapitare le notifiche. Per i promemoria PWA può inoltre conservare titolo, testo e orario del promemoria fino alla consegna o cancellazione.</p>
+    <p>L'app può utilizzare notifiche locali e notifiche push per promemoria e funzioni condivise. Su Android può essere utilizzato Firebase Cloud Messaging; sul Web vengono usate le API Web Push. Possono essere trattati token/endpoint tecnici e metadati necessari alla consegna. I promemoria PWA/Web possono conservare temporaneamente testo, titolo e orario necessari alla consegna.</p>
 
-    <h2>Servizi esterni</h2>
-    <p>Anna's Diary può utilizzare servizi forniti da Google, Firebase e Supabase per autenticazione, notifiche, infrastruttura e sincronizzazione. Tali fornitori trattano i dati secondo le proprie informative e condizioni applicabili.</p>
+    <h2>Premium e acquisti</h2>
+    <p>RevenueCat viene utilizzato per gestire stato degli acquisti e diritto Premium nelle build in cui il servizio Store è configurato. All'inizializzazione può essere creato e trasmesso a RevenueCat un identificatore tecnico anonimo dell'installazione/utente dell'app anche senza account cloud; se successivamente colleghi un account Anna's Diary, il servizio può associare l'entitlement all'identificatore dell'account. Vengono inoltre trattate le informazioni tecniche necessarie su acquisti, prodotti ed entitlement. Anna's Diary non invia a RevenueCat il contenuto del diario, della Cassaforte, delle password o del Cycle Tracker.</p>
 
-    <h2>Condivisione dei dati</h2>
-    <p>Non vendiamo i dati personali. I dati vengono condivisi con fornitori tecnici solo nella misura necessaria a erogare le funzionalità dell'app o quando richiesto dalla legge.</p>
+    <h2>Fornitori tecnici</h2>
+    <p>I principali fornitori tecnici possono includere Google/Google Play, Firebase, Supabase e RevenueCat. Alcuni SDK tecnici configurati nella build, come il gestore degli entitlement Premium, possono inizializzarsi per verificare lo stato del servizio anche prima di una specifica azione di acquisto. Non vendiamo i dati personali.</p>
+
+    <h2>Backup ed esportazione</h2>
+    <p>Backup completi e Open Life Export vengono creati solo su richiesta dell'utente. L'Open Life Export è progettato per rendere leggibili i normali contenuti privati in formati aperti; Cassaforte, Cycle Tracker, password condivise e segreti di autenticazione restano esclusi.</p>
 
     <h2>Conservazione e cancellazione</h2>
-    <p>I dati locali possono essere rimossi cancellando i contenuti nell'app o disinstallando l'app. I dati cloud possono essere eliminati dalle funzioni disponibili nell'app oppure su richiesta allo sviluppatore, quando applicabile.</p>
+    <p>I dati locali restano sul dispositivo finché non vengono eliminati dall'utente, cancellati tramite le funzioni dell'app o rimossi cancellando i dati/disinstallando l'app. Per gli account cloud è disponibile una cancellazione in-app e una risorsa Web dedicata. Quando l'account viene cancellato, l'app richiede la cancellazione dell'account remoto e dei dati cloud associati secondo le regole del servizio.</p>
+    <p><a href="delete-account.html">Cancellazione account e dati</a></p>
 
     <h2>Sicurezza</h2>
-    <p>Vengono adottate misure tecniche ragionevoli per proteggere i dati, incluse connessioni cifrate e controlli di accesso. Nessun sistema può tuttavia garantire sicurezza assoluta.</p>
+    <p>Utilizziamo connessioni cifrate, controlli di accesso, Row Level Security, storage isolato per account e cifratura locale per le aree sensibili. Nessun sistema può garantire sicurezza assoluta.</p>
+
+    <h2>Contatti e richieste</h2>
+    <p>Per richieste relative alla privacy o al servizio è disponibile il repository ufficiale del progetto:
+      <a href="https://github.com/riccardopinato/Agenda-per-Anna">Agenda-per-Anna su GitHub</a>.
+      Non pubblicare dati personali o contenuti sensibili in issue pubbliche.
+    </p>
 
     <h2>Modifiche</h2>
     <p>Questa informativa può essere aggiornata per riflettere modifiche tecniche, normative o funzionali. La data in alto indica l'ultima revisione.</p>
-
-    <h2>Contatti</h2>
-    <p>Per richieste relative alla privacy puoi contattare lo sviluppatore tramite il repository pubblico del progetto:
-      <a href="https://github.com/riccardopinato/Agenda-per-Anna">Agenda-per-Anna su GitHub</a>.
-    </p>
   </div>
 </main>
 </body>

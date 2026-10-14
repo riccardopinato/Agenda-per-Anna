@@ -125,6 +125,33 @@ jobs:
 
           flutter build appbundle             "${COMMON_ARGS[@]}"             $FIREBASE_ARG
 
+      - name: Verify Google Play 2026 Android compatibility
+        shell: bash
+        run: |
+          set -euo pipefail
+          APK=build/app/outputs/flutter-apk/app-arm64-v8a-release.apk
+          test -f "$APK"
+
+          ZIPALIGN=$(find "$ANDROID_HOME/build-tools" -type f -name zipalign -print | sort -V | tail -1)
+          if [ -z "$ZIPALIGN" ]; then
+            echo "::error::zipalign was not found in the Android SDK"
+            exit 1
+          fi
+          "$ZIPALIGN" -c -P 16 -v 4 "$APK"
+
+          APKANALYZER=$(find "$ANDROID_HOME/cmdline-tools" -type f -name apkanalyzer -print | sort | tail -1)
+          if [ -n "$APKANALYZER" ]; then
+            TARGET=$("$APKANALYZER" manifest target-sdk "$APK" | tr -d '[:space:]')
+            if [ "$TARGET" != "36" ]; then
+              echo "::error::Expected targetSdk 36, got $TARGET"
+              exit 1
+            fi
+          else
+            AAPT=$(find "$ANDROID_HOME/build-tools" -type f -name aapt -print | sort -V | tail -1)
+            test -n "$AAPT"
+            "$AAPT" dump badging "$APK" | grep -q "targetSdkVersion:'36'"
+          fi
+
       - name: Name release outputs and create size reports
         shell: bash
         run: |
