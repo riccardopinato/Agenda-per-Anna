@@ -104,18 +104,44 @@ class HomeScreen extends StatelessWidget {
       ]),
       builder: (context, _) {
         unawaited(HomeWidgetBridge.instance.sync(store));
+        final prefs = store.preferences;
         final upcoming = store.unifiedUpcoming(now);
         final briefing = store.dayHubSnapshot(now);
         final birthdayPreview = store.upcomingBirthdays(from: now, limit: 1);
         final nextBirthday =
             birthdayPreview.isEmpty ? null : birthdayPreview.first;
         final pendingTasks = store.pendingUnifiedTaskCount;
-        final displayName = store.preferences.displayName.trim();
+        final displayName = prefs.displayName.trim();
         final accent = context.accentSurface;
         final pinnedItems =
             store.agendaContentFilter == AgendaContentFilter.sharedOnly
                 ? <AgendaItem>[]
                 : store.items.where((e) => e.pinned).toList();
+        final exploreEnabledCount = const <AppModule>[
+          AppModule.shopping,
+          AppModule.workout,
+          AppModule.memories,
+          AppModule.people,
+          AppModule.ecosystem,
+        ].where(prefs.isModuleEnabled).length;
+
+        void openMoreDestination(String value) {
+          final Widget destination = switch (value) {
+            'explore' => ExploreScreen(store: store),
+            'personalize' => PersonalizationScreen(store: store),
+            'shared' => SharedSpaceHubScreen(store: store),
+            'archive' => ArchiveScreen(store: store),
+            'backup' => BackupScreen(store: store),
+            'cloud' => CloudAccountScreen(store: store),
+            'settings' => SettingsScreen(store: store),
+            _ => SettingsScreen(store: store),
+          };
+          Navigator.push(
+            context,
+            MaterialPageRoute<void>(builder: (_) => destination),
+          );
+        }
+
         return Scaffold(
           floatingActionButton: FloatingActionButton.extended(
             onPressed: () => _showQuickCapture(context, store),
@@ -124,7 +150,9 @@ class HomeScreen extends StatelessWidget {
           ),
           appBar: AppBar(
             title: Text(
-              displayName.isEmpty ? strings.myAgenda : strings.agendaFor(displayName),
+              displayName.isEmpty
+                  ? strings.myAgenda
+                  : strings.agendaFor(displayName),
               style: const TextStyle(fontWeight: FontWeight.w800),
             ),
             actions: [
@@ -132,8 +160,9 @@ class HomeScreen extends StatelessWidget {
                 tooltip: strings.search,
                 onPressed: () => Navigator.push(
                   context,
-                  MaterialPageRoute(
-                    builder: (_) => PersonalSearchConnectionsScreen(store: store),
+                  MaterialPageRoute<void>(
+                    builder: (_) =>
+                        PersonalSearchConnectionsScreen(store: store),
                   ),
                 ),
                 icon: const Icon(Icons.search),
@@ -142,7 +171,7 @@ class HomeScreen extends StatelessWidget {
                 tooltip: strings.inbox,
                 onPressed: () => Navigator.push(
                   context,
-                  MaterialPageRoute(
+                  MaterialPageRoute<void>(
                     builder: (_) => InboxScreen(store: store),
                   ),
                 ),
@@ -152,86 +181,115 @@ class HomeScreen extends StatelessWidget {
                   child: const Icon(Icons.inbox_outlined),
                 ),
               ),
-              IconButton(
-                tooltip: strings.archive,
-                onPressed: () => Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => ArchiveScreen(store: store),
+              if (prefs.isModuleEnabled(AppModule.sharedSpace) &&
+                  store.totalSharedUnreadCount > 0)
+                IconButton(
+                  tooltip:
+                      strings.v100SharedNews(store.totalSharedUnreadCount),
+                  onPressed: () => Navigator.push(
+                    context,
+                    MaterialPageRoute<void>(
+                      builder: (_) => SharedSpaceHubScreen(store: store),
+                    ),
+                  ),
+                  icon: Badge(
+                    backgroundColor: Theme.of(context).colorScheme.error,
+                    label: Text(
+                      store.totalSharedUnreadCount > 99
+                          ? '99+'
+                          : '${store.totalSharedUnreadCount}',
+                    ),
+                    child: Icon(
+                      Icons.favorite,
+                      color: Theme.of(context).colorScheme.error,
+                    ),
                   ),
                 ),
-                icon: const Icon(Icons.inventory_2_outlined),
-              ),
-              IconButton(
-                tooltip: strings.backup,
-                onPressed: () => Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => BackupScreen(store: store),
-                  ),
+              Semantics(
+                identifier: 'home_more_menu',
+                button: true,
+                child: PopupMenuButton<String>(
+                  tooltip: strings.v101More,
+                  icon: const Icon(Icons.more_horiz),
+                  onSelected: openMoreDestination,
+                  itemBuilder: (context) => [
+                    if (exploreEnabledCount > 0)
+                      PopupMenuItem(
+                        value: 'explore',
+                        child: Row(
+                          children: [
+                            const Icon(Icons.apps_outlined, size: 20),
+                            const SizedBox(width: 10),
+                            Text(strings.v100Explore),
+                          ],
+                        ),
+                      ),
+                    PopupMenuItem(
+                      value: 'personalize',
+                      child: Row(
+                        children: [
+                          const Icon(Icons.tune_outlined, size: 20),
+                          const SizedBox(width: 10),
+                          Text(strings.v101PersonalizeTitle),
+                        ],
+                      ),
+                    ),
+                    if (prefs.isModuleEnabled(AppModule.sharedSpace))
+                      const PopupMenuDivider(),
+                    if (prefs.isModuleEnabled(AppModule.sharedSpace))
+                      PopupMenuItem(
+                        value: 'shared',
+                        child: const Row(
+                          children: [
+                            Icon(Icons.favorite_outline, size: 20),
+                            SizedBox(width: 10),
+                            Text('Noi ♡'),
+                          ],
+                        ),
+                      ),
+                    const PopupMenuDivider(),
+                    PopupMenuItem(
+                      value: 'archive',
+                      child: Row(
+                        children: [
+                          const Icon(Icons.inventory_2_outlined, size: 20),
+                          const SizedBox(width: 10),
+                          Text(strings.archive),
+                        ],
+                      ),
+                    ),
+                    PopupMenuItem(
+                      value: 'backup',
+                      child: Row(
+                        children: [
+                          const Icon(Icons.backup_outlined, size: 20),
+                          const SizedBox(width: 10),
+                          Text(strings.backup),
+                        ],
+                      ),
+                    ),
+                    PopupMenuItem(
+                      value: 'cloud',
+                      child: Row(
+                        children: [
+                          const Icon(Icons.cloud_outlined, size: 20),
+                          const SizedBox(width: 10),
+                          Text(strings.cloud),
+                        ],
+                      ),
+                    ),
+                    PopupMenuItem(
+                      value: 'settings',
+                      child: Row(
+                        children: [
+                          const Icon(Icons.settings_outlined, size: 20),
+                          const SizedBox(width: 10),
+                          Text(strings.settings),
+                        ],
+                      ),
+                    ),
+                  ],
                 ),
-                icon: const Icon(Icons.backup_outlined),
-              ),
-              IconButton(
-                tooltip: store.totalSharedUnreadCount > 0
-                    ? strings.v100SharedNews(store.totalSharedUnreadCount)
-                    : 'Noi ♡',
-                onPressed: () => Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => SharedSpaceHubScreen(store: store),
-                  ),
-                ),
-                icon: Badge(
-                  isLabelVisible: store.totalSharedUnreadCount > 0,
-                  backgroundColor: Theme.of(context).colorScheme.error,
-                  label: Text(
-                    store.totalSharedUnreadCount > 99
-                        ? '99+'
-                        : '${store.totalSharedUnreadCount}',
-                  ),
-                  child: Icon(
-                    store.totalSharedUnreadCount > 0
-                        ? Icons.favorite
-                        : Icons.favorite_outline,
-                    color: store.totalSharedUnreadCount > 0
-                        ? Theme.of(context).colorScheme.error
-                        : null,
-                  ),
-                ),
-              ),
-              IconButton(
-                tooltip: strings.cloud,
-                onPressed: () => Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => CloudAccountScreen(store: store),
-                  ),
-                ),
-                icon: AnimatedBuilder(
-                  animation: CloudSyncService.instance,
-                  builder: (context, _) {
-                    final cloud = CloudSyncService.instance;
-                    final icon = !cloud.configured
-                        ? Icons.cloud_off_outlined
-                        : cloud.state == CloudConnectionState.syncing
-                            ? Icons.sync
-                            : cloud.signedIn
-                                ? Icons.cloud_done_outlined
-                                : Icons.cloud_outlined;
-                    return Icon(icon);
-                  },
-                ),
-              ),
-              IconButton(
-                tooltip: strings.settings,
-                onPressed: () => Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => SettingsScreen(store: store),
-                  ),
-                ),
-                icon: const Icon(Icons.settings_outlined),
               ),
             ],
           ),
@@ -260,7 +318,7 @@ class HomeScreen extends StatelessWidget {
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      store.preferences.showDailyQuote
+                      prefs.showDailyQuote
                           ? _dailyQuote(now, strings).$1
                           : strings.hello(displayName),
                       style: TextStyle(
@@ -271,7 +329,7 @@ class HomeScreen extends StatelessWidget {
                     ),
                     const SizedBox(height: 6),
                     Text(
-                      store.preferences.showDailyQuote
+                      prefs.showDailyQuote
                           ? _dailyQuote(now, strings).$2
                           : strings.todayPage,
                       style: TextStyle(
@@ -281,11 +339,12 @@ class HomeScreen extends StatelessWidget {
                   ],
                 ),
               ),
-              const SizedBox(height: 14),
-              PrivateVaultHomeCard(store: store),
+              if (prefs.isModuleEnabled(AppModule.privateVault)) ...[
+                const SizedBox(height: 14),
+                PrivateVaultHomeCard(store: store),
+              ],
               const SizedBox(height: 12),
               AgendaContentFilterBar(store: store),
-              const SizedBox(height: 10),
               _HomeSyncStatusCard(store: store),
               if (store.hasStorageWarnings) ...[
                 const SizedBox(height: 12),
@@ -312,7 +371,7 @@ class HomeScreen extends StatelessWidget {
                 nextBirthday: nextBirthday,
                 globalPendingTasks: pendingTasks,
                 inboxCount: store.inbox.length,
-                hideDetails: store.preferences.hideHomeDetails,
+                hideDetails: prefs.hideHomeDetails,
                 onOpenNext: upcoming.isEmpty
                     ? null
                     : () => openUnifiedAgendaEntry(
@@ -322,7 +381,7 @@ class HomeScreen extends StatelessWidget {
                         ),
                 onOpenDay: () => Navigator.push(
                   context,
-                  MaterialPageRoute(
+                  MaterialPageRoute<void>(
                     builder: (_) => PlannerScreen(
                       store: store,
                       initialDate: now,
@@ -331,13 +390,13 @@ class HomeScreen extends StatelessWidget {
                 ),
                 onOpenBirthdays: () => Navigator.push(
                   context,
-                  MaterialPageRoute(
+                  MaterialPageRoute<void>(
                     builder: (_) => BirthdaysScreen(store: store),
                   ),
                 ),
                 onOpenInbox: () => Navigator.push(
                   context,
-                  MaterialPageRoute(
+                  MaterialPageRoute<void>(
                     builder: (_) => InboxScreen(store: store),
                   ),
                 ),
@@ -351,17 +410,17 @@ class HomeScreen extends StatelessWidget {
                         store: store,
                         item: e,
                         compact: true,
-                        hideDetails: store.preferences.hideHomeDetails,
+                        hideDetails: prefs.hideHomeDetails,
                       ),
                     ),
               ],
               const SizedBox(height: 24),
               _DayLifeOverviewCard(
                 snapshot: briefing,
-                hideDetails: store.preferences.hideHomeDetails,
+                hideDetails: prefs.hideHomeDetails,
                 onOpenDay: () => Navigator.push(
                   context,
-                  MaterialPageRoute(
+                  MaterialPageRoute<void>(
                     builder: (_) => PlannerScreen(
                       store: store,
                       initialDate: now,
@@ -369,8 +428,10 @@ class HomeScreen extends StatelessWidget {
                   ),
                 ),
               ),
-              const SizedBox(height: 14),
-              _TodayWellbeingCard(store: store, date: now),
+              if (prefs.isModuleEnabled(AppModule.habits)) ...[
+                const SizedBox(height: 14),
+                _TodayWellbeingCard(store: store, date: now),
+              ],
               const SizedBox(height: 24),
               SectionTitle(strings.v100MyAgendaSection),
               const SizedBox(height: 10),
@@ -383,7 +444,9 @@ class HomeScreen extends StatelessWidget {
                       subtitle: strings.v100MyMonthSubtitle,
                       onTap: () => Navigator.push(
                         context,
-                        MaterialPageRoute(builder: (_) => MonthScreen(store: store)),
+                        MaterialPageRoute<void>(
+                          builder: (_) => MonthScreen(store: store),
+                        ),
                       ),
                     ),
                   ),
@@ -395,22 +458,40 @@ class HomeScreen extends StatelessWidget {
                       subtitle: strings.v100MyYearSubtitle,
                       onTap: () => Navigator.push(
                         context,
-                        MaterialPageRoute(builder: (_) => YearScreen(store: store)),
+                        MaterialPageRoute<void>(
+                          builder: (_) => YearScreen(store: store),
+                        ),
                       ),
                     ),
                   ),
                 ],
               ),
               const SizedBox(height: 12),
-              NavigationCard(
-                icon: Icons.apps_outlined,
-                title: strings.v100Explore,
-                subtitle: strings.v100ExploreSubtitle,
-                onTap: () => Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (_) => ExploreScreen(store: store)),
+              if (exploreEnabledCount > 0)
+                NavigationCard(
+                  icon: Icons.apps_outlined,
+                  title: strings.v100Explore,
+                  subtitle:
+                      strings.v101ExploreEnabledCount(exploreEnabledCount),
+                  onTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute<void>(
+                      builder: (_) => ExploreScreen(store: store),
+                    ),
+                  ),
+                )
+              else
+                NavigationCard(
+                  icon: Icons.tune_outlined,
+                  title: strings.v101PersonalizeTitle,
+                  subtitle: strings.v101PersonalizeSubtitle,
+                  onTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute<void>(
+                      builder: (_) => PersonalizationScreen(store: store),
+                    ),
+                  ),
                 ),
-              ),
             ],
           ),
         );
