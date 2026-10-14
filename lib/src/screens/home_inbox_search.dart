@@ -209,6 +209,7 @@ class HomeScreen extends StatelessWidget {
                 identifier: 'home_more_menu',
                 button: true,
                 child: PopupMenuButton<String>(
+                  key: const ValueKey<String>('home-more-menu'),
                   tooltip: strings.v101More,
                   icon: const Icon(Icons.more_horiz),
                   onSelected: openMoreDestination,
@@ -341,7 +342,10 @@ class HomeScreen extends StatelessWidget {
               ),
               if (prefs.isModuleEnabled(AppModule.privateVault)) ...[
                 const SizedBox(height: 14),
-                PrivateVaultHomeCard(store: store),
+                PrivateVaultHomeCard(
+                  key: const ValueKey<String>('home-vault-card'),
+                  store: store,
+                ),
               ],
               const SizedBox(height: 12),
               AgendaContentFilterBar(store: store),
@@ -430,7 +434,11 @@ class HomeScreen extends StatelessWidget {
               ),
               if (prefs.isModuleEnabled(AppModule.habits)) ...[
                 const SizedBox(height: 14),
-                _TodayWellbeingCard(store: store, date: now),
+                _TodayWellbeingCard(
+                  key: const ValueKey<String>('home-wellbeing-card'),
+                  store: store,
+                  date: now,
+                ),
               ],
               const SizedBox(height: 24),
               SectionTitle(strings.v100MyAgendaSection),
@@ -733,6 +741,7 @@ class _HomeSyncStatusCard extends StatelessWidget {
         return Padding(
           padding: const EdgeInsets.only(top: 10),
           child: Material(
+            key: const ValueKey<String>('home-sync-attention'),
             color: Theme.of(context)
                 .colorScheme
                 .surfaceContainerHighest
@@ -1118,6 +1127,7 @@ class _TodayWellbeingCard extends StatelessWidget {
   final DateTime date;
 
   const _TodayWellbeingCard({
+    super.key,
     required this.store,
     required this.date,
   });
