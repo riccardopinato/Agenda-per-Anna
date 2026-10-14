@@ -105,6 +105,22 @@ extension AnnaV101Strings on AnnaStrings {
         pt: 'Começar',
       );
 
+  String get v101More => _pick(
+        en: 'More',
+        it: 'Altro',
+        es: 'Más',
+        fr: 'Plus',
+        pt: 'Mais',
+      );
+
+  String v101ExploreEnabledCount(int count) => _pick(
+        en: '$count areas active',
+        it: '$count aree attive',
+        es: '$count áreas activas',
+        fr: '$count zones actives',
+        pt: '$count áreas ativas',
+      );
+
   String get v101PersonalizeTitle => _pick(
         en: 'Personalize',
         it: 'Personalizza',
