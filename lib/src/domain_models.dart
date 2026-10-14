@@ -90,10 +90,14 @@ Set<AppModule> modulesForPreset(
 Set<AppModule> _appModulesFromJson(Object? raw) {
   if (raw is! List) return {...completeAppModules};
   final names = raw.whereType<String>().toSet();
-  return {
+  final modules = <AppModule>{
     for (final module in AppModule.values)
       if (names.contains(module.name)) module,
   };
+  if (modules.contains(AppModule.cycleTracker)) {
+    modules.add(AppModule.privateVault);
+  }
+  return modules;
 }
 
 class AgendaPreferences {
