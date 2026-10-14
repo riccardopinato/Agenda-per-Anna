@@ -219,7 +219,7 @@ extension AnnaV101Strings on AnnaStrings {
         AppModule.sharedSpace => _pick(en: 'Shared memories, agenda and private collaboration', it: 'Ricordi, agenda e collaborazione condivisa', es: 'Recuerdos, agenda y colaboración compartida', fr: 'Souvenirs, agenda et collaboration partagés', pt: 'Memórias, agenda e colaboração partilhadas'),
         AppModule.shopping => v100ShoppingEmpty,
         AppModule.workout => v100WorkoutEmpty,
-        AppModule.cycleTracker => _pick(en: 'Private cycle calendar and estimates inside Vault', it: 'Calendario ciclo privato e stime dentro Vault', es: 'Calendario del ciclo privado y estimaciones dentro de Vault', fr: 'Calendrier de cycle privé et estimations dans Vault', pt: 'Calendário de ciclo privado e estimativas no Vault'),
+        AppModule.cycleTracker => _pick(en: 'Private cycle calendar inside Vault. Enabling it also shows Vault.', it: 'Calendario ciclo privato dentro Vault. Attivarlo mostra anche il Vault.', es: 'Calendario del ciclo privado dentro de Vault. Activarlo también muestra Vault.', fr: 'Calendrier de cycle privé dans Vault. L’activer affiche aussi Vault.', pt: 'Calendário de ciclo privado no Vault. Ativá-lo também mostra o Vault.'),
         AppModule.privateVault => v100PrivateVaultDescription,
         AppModule.ecosystem => lifeEcosystemSubtitle,
       };
