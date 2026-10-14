@@ -39,9 +39,11 @@ jobs:
       apk_path: build/app/outputs/flutter-apk/app-arm64-v8a-release.apk
       package_id: com.riccardopinato.agenda_per_anna.__applab_fail_closed_canary__
       build_command: >-
-        FIREBASE_ARG="";
-        if [ -f android/app/google-services.json ]; then FIREBASE_ARG="--dart-define=FIREBASE_ENABLED=true"; fi;
-        flutter build apk --release --split-per-abi --tree-shake-icons --dart-define=ANNAS_DIARY_INTEGRATION_TEST=true --dart-define=ANNA_STORE_RELEASE=false --dart-define=ANNA_PREMIUM_PREVIEW=true $FIREBASE_ARG
+        if [ -f android/app/google-services.json ]; then
+        flutter build apk --release --split-per-abi --tree-shake-icons --dart-define=ANNAS_DIARY_INTEGRATION_TEST=true --dart-define=ANNA_STORE_RELEASE=false --dart-define=ANNA_PREMIUM_PREVIEW=true --dart-define=FIREBASE_ENABLED=true;
+        else
+        flutter build apk --release --split-per-abi --tree-shake-icons --dart-define=ANNAS_DIARY_INTEGRATION_TEST=true --dart-define=ANNA_STORE_RELEASE=false --dart-define=ANNA_PREMIUM_PREVIEW=true;
+        fi
       run_maestro: true
       maestro_flow: .maestro/applab-smoke.yaml
       history_key: annas-diary
