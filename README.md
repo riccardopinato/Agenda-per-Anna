@@ -2,7 +2,7 @@
 
 Flutter app for personal planning, private diary and the shared **Noi ♡** space.
 
-Current release line: **v1.0 release candidate — 1.0.0-rc.1+110**.
+Current release line: **v1.0 release candidate — 1.0.0-rc.2+111**.
 
 Canonical product scope and security boundaries: `docs/PRODUCT_BIBLE.md`.
 
