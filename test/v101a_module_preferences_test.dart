@@ -51,6 +51,21 @@ void main() {
     expect(restored.enabledModules, completeAppModules);
   });
 
+  test('Cycle Tracker visibility keeps its Vault dependency reachable', () {
+    final cycleOnly = const AgendaPreferences(
+      personalizationPreset: PersonalizationPreset.essential,
+      enabledModules: {},
+    ).withModuleEnabled(AppModule.cycleTracker, true);
+
+    expect(cycleOnly.isModuleEnabled(AppModule.cycleTracker), isTrue);
+    expect(cycleOnly.isModuleEnabled(AppModule.privateVault), isTrue);
+
+    final withoutVault =
+        cycleOnly.withModuleEnabled(AppModule.privateVault, false);
+    expect(withoutVault.isModuleEnabled(AppModule.privateVault), isFalse);
+    expect(withoutVault.isModuleEnabled(AppModule.cycleTracker), isFalse);
+  });
+
   test('custom module preferences round-trip through JSON', () {
     final prefs = const AgendaPreferences()
         .withModuleEnabled(AppModule.shopping, false)
