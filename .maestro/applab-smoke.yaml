@@ -15,7 +15,14 @@ appId: com.riccardopinato.agenda_per_anna
     visible: '(La tua agenda, davvero tua\.|Your agenda, truly yours\.|Tu agenda, de verdad tuya\.|Ton agenda, vraiment à toi\.|A tua agenda, verdadeiramente tua\.)'
     timeout: 15000
 - tapOn:
-    text: '(Inizia|Start|Empezar|Commencer|Começar)'
+    id: 'onboarding_continue'
+- extendedWaitUntil:
+    visible: '(Come vuoi usare Anna’s Diary\?|How do you want to use Anna’s Diary\?|¿Cómo quieres usar Anna’s Diary\?|Comment veux-tu utiliser Anna’s Diary \?|Como queres usar Anna’s Diary\?)'
+    timeout: 10000
+- tapOn:
+    id: 'onboarding_preset_complete'
+- tapOn:
+    id: 'onboarding_finish'
 - tapOn:
     text: '(Oggi|Today|Hoy|Aujourd’hui|Hoje)[\s\S]*'
     retryTapIfNoChange: true
