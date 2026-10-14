@@ -2,16 +2,6 @@ name: Premium Store QA Bundle
 
 on:
   workflow_dispatch:
-  push:
-    branches: [main]
-    paths:
-      - "lib/premium_entitlement_service.dart"
-      - "lib/src/screens/premium_screen.dart"
-      - "pubspec.yaml"
-      - "pubspec.lock"
-      - "tool/prepare_android_platform.py"
-      - "tool/validate_premium_release.py"
-      - ".github/workflows/premium-store-qa.yml"
 
 permissions:
   contents: read
