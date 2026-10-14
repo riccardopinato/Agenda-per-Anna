@@ -672,6 +672,20 @@ class _HomeSyncStatusCard extends StatelessWidget {
       builder: (context, _) {
         final cloud = CloudSyncService.instance;
         final pending = store.totalPendingCloudChanges;
+        final sharedError = store.hasSharedSyncError;
+
+        final intentionalLocalOnly = store.activeAccountId == null &&
+            !cloud.signedIn &&
+            pending == 0 &&
+            !sharedError;
+        final healthyCloud = cloud.signedIn &&
+            cloud.state == CloudConnectionState.synced &&
+            pending == 0 &&
+            !sharedError;
+
+        if (intentionalLocalOnly || healthyCloud) {
+          return const SizedBox.shrink();
+        }
 
         IconData icon;
         String title;
@@ -685,7 +699,8 @@ class _HomeSyncStatusCard extends StatelessWidget {
           icon = Icons.cloud_outlined;
           title = AnnaStrings.of(context).v100CloudDisconnected;
           subtitle = AnnaStrings.of(context).v100OfflineStillWorks;
-        } else if (cloud.state == CloudConnectionState.syncing) {
+        } else if (cloud.state == CloudConnectionState.syncing ||
+            cloud.state == CloudConnectionState.initializing) {
           icon = Icons.sync;
           title = AnnaStrings.of(context).v100Syncing;
           subtitle = pending == 0
@@ -699,7 +714,7 @@ class _HomeSyncStatusCard extends StatelessWidget {
           subtitle = pending == 0
               ? AnnaStrings.of(context).v100RetrySyncLater
               : AnnaStrings.of(context).v100PendingWhenOnline(pending);
-        } else if (store.hasSharedSyncError) {
+        } else if (sharedError) {
           icon = Icons.sync_problem_outlined;
           title = AnnaStrings.of(context).v100NoiNeedsResync;
           subtitle = pending == 0
@@ -710,60 +725,58 @@ class _HomeSyncStatusCard extends StatelessWidget {
           title = AnnaStrings.of(context).v100PendingChanges(pending);
           subtitle = AnnaStrings.of(context).v100PendingStayLocal;
         } else {
-          icon = Icons.cloud_done_outlined;
-          title = AnnaStrings.of(context).v100AllSynced;
-          subtitle = cloud.lastSyncAt == null
-              ? AnnaStrings.of(context).v100NothingPending
-              : AnnaStrings.of(context).v100LastCheck(
-                  DateFormat('HH:mm', AnnaStrings.intlLocale(context))
-                      .format(cloud.lastSyncAt!),
-                );
+          icon = Icons.cloud_outlined;
+          title = AnnaStrings.of(context).v100CloudDisconnected;
+          subtitle = AnnaStrings.of(context).v100OfflineStillWorks;
         }
 
-        return Material(
-          color: Theme.of(context)
-              .colorScheme
-              .surfaceContainerHighest
-              .withValues(alpha: 0.42),
-          borderRadius: BorderRadius.circular(18),
-          child: InkWell(
+        return Padding(
+          padding: const EdgeInsets.only(top: 10),
+          child: Material(
+            color: Theme.of(context)
+                .colorScheme
+                .surfaceContainerHighest
+                .withValues(alpha: 0.42),
             borderRadius: BorderRadius.circular(18),
-            onTap: () => Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (_) => CloudAccountScreen(store: store),
+            child: InkWell(
+              borderRadius: BorderRadius.circular(18),
+              onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute<void>(
+                  builder: (_) => CloudAccountScreen(store: store),
+                ),
               ),
-            ),
-            child: Padding(
-              padding: const EdgeInsets.symmetric(
-                horizontal: 14,
-                vertical: 11,
-              ),
-              child: Row(
-                children: [
-                  Icon(icon, size: 21),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          title,
-                          style: const TextStyle(
-                            fontWeight: FontWeight.w800,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 11,
+                ),
+                child: Row(
+                  children: [
+                    Icon(icon, size: 21),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            title,
+                            style: const TextStyle(
+                              fontWeight: FontWeight.w800,
+                            ),
                           ),
-                        ),
-                        Text(
-                          subtitle,
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                          style: Theme.of(context).textTheme.bodySmall,
-                        ),
-                      ],
+                          Text(
+                            subtitle,
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            style: Theme.of(context).textTheme.bodySmall,
+                          ),
+                        ],
+                      ),
                     ),
-                  ),
-                  const Icon(Icons.chevron_right, size: 20),
-                ],
+                    const Icon(Icons.chevron_right, size: 20),
+                  ],
+                ),
               ),
             ),
           ),
