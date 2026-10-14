@@ -1998,7 +1998,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         onTap: () => Navigator.push(
                           context,
                           MaterialPageRoute<void>(
-                            builder: (_) => const PrivateVaultScreen(),
+                            builder: (_) => PrivateVaultScreen(
+                              showCycleTracker: prefs
+                                  .isModuleEnabled(AppModule.cycleTracker),
+                            ),
                           ),
                         ),
                       ),
