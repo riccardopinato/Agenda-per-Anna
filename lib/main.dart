@@ -79,6 +79,7 @@ part 'src/screens/people_screen.dart';
 part 'src/screens/shopping_list_screen.dart';
 part 'src/screens/workout_screen.dart';
 part 'src/screens/explore_screen.dart';
+part 'src/screens/personalization_screen.dart';
 part 'src/screens/home_inbox_search.dart';
 part 'src/screens/trash_screen.dart';
 part 'src/screens/backup_settings.dart';
