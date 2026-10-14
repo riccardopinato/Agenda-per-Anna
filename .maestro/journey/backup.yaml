@@ -4,6 +4,8 @@ appId: com.riccardopinato.agenda_per_anna
     text: 'Home[\s\S]*'
     retryTapIfNoChange: true
 - tapOn:
+    id: 'home_more_menu'
+- tapOn:
     text: '(Backup)'
 - extendedWaitUntil:
     visible: '(Backup e dati|Backup and data|Copia y datos|Sauvegarde et données|Backup e dados)'
