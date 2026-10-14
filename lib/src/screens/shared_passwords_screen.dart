@@ -131,7 +131,9 @@ class _SharedPasswordsScreenState extends State<SharedPasswordsScreen>
   Future<void> _openVault() async {
     await Navigator.of(context).push(
       MaterialPageRoute<void>(
-        builder: (_) => const PrivateVaultScreen(),
+        builder: (_) => const PrivateVaultScreen(
+          showCycleTracker: false,
+        ),
       ),
     );
     if (!mounted) return;
