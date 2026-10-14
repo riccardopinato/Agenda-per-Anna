@@ -47,5 +47,5 @@ jobs:
       history_key: annas-diary
       cache_verification: false
       config_fingerprint: annas-diary-golden-pilot-v1
-      analysis_mode: certification
+      analysis_mode: full
       publish_release_artifact: false
