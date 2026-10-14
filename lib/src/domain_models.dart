@@ -42,6 +42,60 @@ extension AgendaPaletteUi on AgendaPalette {
 
 enum StartTab { home, month, week, today }
 
+enum AppModule {
+  memories,
+  people,
+  habits,
+  sharedSpace,
+  shopping,
+  workout,
+  cycleTracker,
+  privateVault,
+  ecosystem,
+}
+
+enum PersonalizationPreset { essential, life, complete, custom }
+
+const Set<AppModule> essentialAppModules = <AppModule>{};
+
+const Set<AppModule> lifeAppModules = <AppModule>{
+  AppModule.memories,
+  AppModule.people,
+  AppModule.habits,
+};
+
+const Set<AppModule> completeAppModules = <AppModule>{
+  AppModule.memories,
+  AppModule.people,
+  AppModule.habits,
+  AppModule.sharedSpace,
+  AppModule.shopping,
+  AppModule.workout,
+  AppModule.cycleTracker,
+  AppModule.privateVault,
+  AppModule.ecosystem,
+};
+
+Set<AppModule> modulesForPreset(
+  PersonalizationPreset preset, {
+  Set<AppModule>? current,
+}) =>
+    switch (preset) {
+      PersonalizationPreset.essential => {...essentialAppModules},
+      PersonalizationPreset.life => {...lifeAppModules},
+      PersonalizationPreset.complete => {...completeAppModules},
+      PersonalizationPreset.custom => {...?current},
+    };
+
+Set<AppModule> _appModulesFromJson(Object? raw) {
+  if (raw is! List) return {...completeAppModules};
+  final names = raw.whereType<String>().toSet();
+  return {
+    for (final module in AppModule.values)
+      if (names.contains(module.name)) module,
+  };
+}
+
 class AgendaPreferences {
   final String displayName;
   final AgendaThemeMode themeMode;
@@ -60,6 +114,8 @@ class AgendaPreferences {
   final String? pinSalt;
   final String? pinHash;
   final bool onboardingDone;
+  final PersonalizationPreset personalizationPreset;
+  final Set<AppModule> enabledModules;
 
   const AgendaPreferences({
     this.displayName = '',
@@ -79,6 +135,8 @@ class AgendaPreferences {
     this.pinSalt,
     this.pinHash,
     this.onboardingDone = true,
+    this.personalizationPreset = PersonalizationPreset.complete,
+    this.enabledModules = completeAppModules,
   });
 
   AgendaPreferences copyWith({
@@ -99,6 +157,8 @@ class AgendaPreferences {
     String? pinSalt,
     String? pinHash,
     bool? onboardingDone,
+    PersonalizationPreset? personalizationPreset,
+    Set<AppModule>? enabledModules,
     bool clearPrimaryReminder = false,
     bool clearSecondaryReminder = false,
     bool clearPin = false,
@@ -126,6 +186,38 @@ class AgendaPreferences {
       pinSalt: clearPin ? null : (pinSalt ?? this.pinSalt),
       pinHash: clearPin ? null : (pinHash ?? this.pinHash),
       onboardingDone: onboardingDone ?? this.onboardingDone,
+      personalizationPreset:
+          personalizationPreset ?? this.personalizationPreset,
+      enabledModules: enabledModules ?? this.enabledModules,
+    );
+  }
+
+  bool isModuleEnabled(AppModule module) => enabledModules.contains(module);
+
+  AgendaPreferences applyPersonalizationPreset(
+    PersonalizationPreset preset,
+  ) =>
+      copyWith(
+        personalizationPreset: preset,
+        enabledModules: modulesForPreset(
+          preset,
+          current: enabledModules,
+        ),
+      );
+
+  AgendaPreferences withModuleEnabled(
+    AppModule module,
+    bool enabled,
+  ) {
+    final modules = {...enabledModules};
+    if (enabled) {
+      modules.add(module);
+    } else {
+      modules.remove(module);
+    }
+    return copyWith(
+      personalizationPreset: PersonalizationPreset.custom,
+      enabledModules: modules,
     );
   }
 
@@ -147,6 +239,11 @@ class AgendaPreferences {
         'pinSalt': pinSalt,
         'pinHash': pinHash,
         'onboardingDone': onboardingDone,
+        'personalizationPreset': personalizationPreset.name,
+        'enabledModules': [
+          for (final module in AppModule.values)
+            if (enabledModules.contains(module)) module.name,
+        ],
       };
 
   factory AgendaPreferences.fromJson(Map<String, dynamic> json) =>
@@ -189,6 +286,11 @@ class AgendaPreferences {
         pinSalt: json['pinSalt'] as String?,
         pinHash: json['pinHash'] as String?,
         onboardingDone: json['onboardingDone'] as bool? ?? true,
+        personalizationPreset: PersonalizationPreset.values.firstWhere(
+          (e) => e.name == json['personalizationPreset'],
+          orElse: () => PersonalizationPreset.complete,
+        ),
+        enabledModules: _appModulesFromJson(json['enabledModules']),
       );
 }
 
