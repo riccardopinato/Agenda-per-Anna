@@ -10,9 +10,8 @@
   "release_artifact_pattern": "build/app/outputs/flutter-apk/app-arm64-v8a-release.apk",
   "journeys": {
     "primary": ".maestro/applab-smoke.yaml",
-    "settings": ".maestro/settings.yaml",
     "critical": [
-      ".maestro/d6-functional-navigation.yaml"
+      ".maestro/journey/d6-functional-navigation.yaml"
     ]
   },
   "physical_validation": {
