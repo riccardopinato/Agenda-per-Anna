@@ -1988,19 +1988,20 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       ),
                     ),
                     const Divider(height: 24),
-                    ListTile(
-                      contentPadding: EdgeInsets.zero,
-                      leading: const Icon(Icons.lock_person_outlined),
-                      title: Text(strings.v100PrivateVault),
-                      subtitle: Text(strings.v100PrivateVaultDescription),
-                      trailing: const Icon(Icons.chevron_right),
-                      onTap: () => Navigator.push(
-                        context,
-                        MaterialPageRoute<void>(
-                          builder: (_) => const PrivateVaultScreen(),
+                    if (prefs.isModuleEnabled(AppModule.privateVault))
+                      ListTile(
+                        contentPadding: EdgeInsets.zero,
+                        leading: const Icon(Icons.lock_person_outlined),
+                        title: Text(strings.v100PrivateVault),
+                        subtitle: Text(strings.v100PrivateVaultDescription),
+                        trailing: const Icon(Icons.chevron_right),
+                        onTap: () => Navigator.push(
+                          context,
+                          MaterialPageRoute<void>(
+                            builder: (_) => const PrivateVaultScreen(),
+                          ),
                         ),
                       ),
-                    ),
                     ListTile(
                       contentPadding: EdgeInsets.zero,
                       leading: const Icon(Icons.verified_user_outlined),
