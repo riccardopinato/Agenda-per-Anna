@@ -108,7 +108,17 @@ class PersonalizationScreen extends StatelessWidget {
                 style: Theme.of(context).textTheme.bodySmall,
               ),
               const SizedBox(height: 8),
-              for (final module in AppModule.values)
+              for (final module in const <AppModule>[
+                AppModule.memories,
+                AppModule.people,
+                AppModule.habits,
+                AppModule.sharedSpace,
+                AppModule.shopping,
+                AppModule.workout,
+                AppModule.privateVault,
+                AppModule.cycleTracker,
+                AppModule.ecosystem,
+              ])
                 Semantics(
                   identifier: 'module_toggle_${module.name}',
                   child: SwitchListTile(
