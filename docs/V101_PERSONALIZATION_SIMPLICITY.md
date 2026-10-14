@@ -73,6 +73,24 @@ is already complete and their missing v1.01 fields resolve to Complete.
 The onboarding explicitly tells users that the choice is reversible and never
 deletes content.
 
+## v1.01-C — Dynamic Explore & Personalization
+
+The module preference becomes visible to the user without changing ownership:
+
+- Explore renders only enabled optional destinations;
+- an empty/minimal Explore state always offers a path back to Personalize;
+- Settings exposes the same Personalize screen;
+- preset chips restore Essential, My Life or Complete in one action;
+- individual module switches move the preference state to Custom;
+- hiding Shopping, Workout, Memories, People or Ecosystem removes only their
+  navigation card from Explore;
+- data remain in their canonical stores and reappear immediately when the
+  module is enabled again.
+
+The remaining optional modules (Habits, Noi ♡, Cycle Tracker and Private Vault)
+are controlled centrally here; their Home/chrome visibility is applied in
+v1.01-D.
+
 ## Planned sequence
 
 - **v1.01-A** Module Preferences — persistence contract and compatibility.
