@@ -212,8 +212,14 @@ class AgendaPreferences {
     final modules = {...enabledModules};
     if (enabled) {
       modules.add(module);
+      if (module == AppModule.cycleTracker) {
+        modules.add(AppModule.privateVault);
+      }
     } else {
       modules.remove(module);
+      if (module == AppModule.privateVault) {
+        modules.remove(AppModule.cycleTracker);
+      }
     }
     return copyWith(
       personalizationPreset: PersonalizationPreset.custom,
