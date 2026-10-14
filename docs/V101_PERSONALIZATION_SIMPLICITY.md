@@ -57,10 +57,26 @@ updating the app does not suddenly hide existing destinations.
 
 Manual module toggles switch the preference state to **Custom**.
 
+## v1.01-B — Personalized Onboarding
+
+Fresh profiles keep the existing welcome explanation, then choose one of three
+clear starting presets before entering the app:
+
+- **Essential** — core Today/Calendar/Diary/Capture surfaces only;
+- **My Life** — Essential plus Memories, People and Habits; recommended default;
+- **Complete** — every optional module visible.
+
+The choice is persisted through the v1.01-A preference contract. Existing
+profiles never see this migration screen again because their onboarding state
+is already complete and their missing v1.01 fields resolve to Complete.
+
+The onboarding explicitly tells users that the choice is reversible and never
+deletes content.
+
 ## Planned sequence
 
 - **v1.01-A** Module Preferences — persistence contract and compatibility.
-- **v1.01-B** Personalized Onboarding — presets and first useful action.
+- **v1.01-B** Personalized Onboarding — preset choice for fresh profiles.
 - **v1.01-C** Dynamic Explore & Personalization — module visibility and user controls.
 - **v1.01-D** Adaptive Home & Quiet UX — quiet sync, reduced chrome, contextual cards.
 - **v1.01-E** Polish, Accessibility & Regression — five-language QA and trusted runtime.
