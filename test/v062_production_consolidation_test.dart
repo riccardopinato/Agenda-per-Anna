@@ -65,6 +65,7 @@ void main() {
     final size =
         File('.github/workflows/android-size-audit.yml').readAsStringSync();
     final appLab = File('.github/workflows/applab.yml').readAsStringSync();
+    final appLabProject = File('applab.project.json').readAsStringSync();
 
     expect(development, contains('flutter analyze'));
     expect(development, contains('flutter test'));
@@ -78,9 +79,19 @@ void main() {
     expect(appLab, contains('uses: riccardopinato/AppLab/.github/workflows/'));
     expect(
       appLab,
-      contains('@a871a1c1e0ab8339c48bc8ee53ee4cc34d634d34'),
+      contains('@931c124dbb1a36d43842db5b60bd5f04843e5330'),
     );
-    expect(appLab, contains('run_flutter_tests: true'));
+    expect(appLab, contains('analysis_mode: full'));
+    expect(appLabProject, contains('"physical_validation"'));
+    expect(appLabProject, contains('"required": true'));
+    expect(appLabProject, contains('"biometrics"'));
+    expect(appLabProject, contains('"keystore"'));
+    expect(appLabProject, contains('"notifications"'));
+    expect(appLabProject, contains('"file_picker"'));
+    expect(appLabProject, contains('"billing"'));
+    expect(appLabProject, contains('"play_delivery"'));
+    expect(appLabProject, contains('"cross_app"'));
+    expect(appLab, contains('actions: read'));
     expect(appLab, contains('run_maestro: true'));
     expect(appLab, contains('app-arm64-v8a-release.apk'));
   });
