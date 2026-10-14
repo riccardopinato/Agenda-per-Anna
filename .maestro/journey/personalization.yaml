@@ -1,0 +1,31 @@
+appId: com.riccardopinato.agenda_per_anna
+---
+# v1.01-E — Personalization regression.
+# Functional-navigation leaves the app on Home with Complete restored by the
+# clean-install AppLab onboarding.
+- extendedWaitUntil:
+    visible: '(La mia agenda|My agenda|Mi agenda|Mon agenda|A minha agenda)'
+    timeout: 10000
+
+- tapOn:
+    id: 'home_more_menu'
+- tapOn:
+    text: '(Personalizza|Personalize|Personalizar|Personnaliser)'
+- extendedWaitUntil:
+    visible: '(Personalizza|Personalize|Personalizar|Personnaliser)'
+    timeout: 10000
+
+# Exercise reversible presets, ending on Complete so later/manual inspection
+# still exposes the whole product.
+- tapOn:
+    id: 'personalization_preset_essential'
+- extendedWaitUntil:
+    visible:
+      id: 'module_toggle_memories'
+    timeout: 10000
+- tapOn:
+    id: 'personalization_preset_complete'
+- extendedWaitUntil:
+    visible:
+      id: 'module_toggle_ecosystem'
+    timeout: 10000
