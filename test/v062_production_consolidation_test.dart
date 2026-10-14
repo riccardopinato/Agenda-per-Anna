@@ -78,7 +78,7 @@ void main() {
     expect(appLab, contains('uses: riccardopinato/AppLab/.github/workflows/'));
     expect(
       appLab,
-      contains('@f3f04deccd22e7e48c303712bb5ad6a86c4e7959'),
+      contains('@5fce85ec7c4f41dd8a9ad54c1e7ced410e766b89'),
     );
     expect(appLab, contains('analysis_mode: certification'));
     expect(appLab, contains('actions: read'));
