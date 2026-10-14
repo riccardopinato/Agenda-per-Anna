@@ -1,5 +1,5 @@
 name: AppLab Production Gate
-# AppLab pinned verifier: a871a1c1 (v0.6.6)
+# Golden AppLab QA pilot — hardened verifier pinned at an immutable commit.
 
 on:
   pull_request:
@@ -8,6 +8,7 @@ on:
 
 permissions:
   contents: read
+  actions: read
 
 concurrency:
   group: applab-production-${{ github.event.pull_request.number || github.ref }}
@@ -15,10 +16,11 @@ concurrency:
 
 jobs:
   applab:
-    uses: riccardopinato/AppLab/.github/workflows/external-project-runner.yml@a871a1c1e0ab8339c48bc8ee53ee4cc34d634d34
+    uses: riccardopinato/AppLab/.github/workflows/external-project-runner.yml@931c124dbb1a36d43842db5b60bd5f04843e5330
     with:
       repository: riccardopinato/Agenda-per-Anna
       ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      source_ref: ${{ github.head_ref || github.ref_name }}
       working_directory: "."
       flutter_version: "3.47.5"
       java_version: "17"
@@ -35,12 +37,15 @@ jobs:
       apk_path: build/app/outputs/flutter-apk/app-arm64-v8a-release.apk
       package_id: com.riccardopinato.agenda_per_anna
       build_command: >-
-        FIREBASE_ARG="";
-        if [ -f android/app/google-services.json ]; then FIREBASE_ARG="--dart-define=FIREBASE_ENABLED=true"; fi;
-        flutter build apk --release --split-per-abi --tree-shake-icons --dart-define=ANNAS_DIARY_INTEGRATION_TEST=true --dart-define=ANNA_STORE_RELEASE=false --dart-define=ANNA_PREMIUM_PREVIEW=true $FIREBASE_ARG
-      run_flutter_tests: true
+        if [ -f android/app/google-services.json ]; then
+        flutter build apk --release --split-per-abi --tree-shake-icons --dart-define=ANNAS_DIARY_INTEGRATION_TEST=true --dart-define=ANNA_STORE_RELEASE=false --dart-define=ANNA_PREMIUM_PREVIEW=true --dart-define=FIREBASE_ENABLED=true;
+        else
+        flutter build apk --release --split-per-abi --tree-shake-icons --dart-define=ANNAS_DIARY_INTEGRATION_TEST=true --dart-define=ANNA_STORE_RELEASE=false --dart-define=ANNA_PREMIUM_PREVIEW=true;
+        fi
       run_maestro: true
       maestro_flow: .maestro/applab-smoke.yaml
       history_key: annas-diary
       cache_verification: false
-      cache_epoch: "1"
+      config_fingerprint: annas-diary-golden-pilot-v1
+      analysis_mode: full
+      publish_release_artifact: false
