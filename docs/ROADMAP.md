@@ -63,7 +63,7 @@ Source of execution truth for Anna's Diary. Product identity and boundaries are 
 | v1.00-D5 | Optional Identity & Offline Entry Repair | Completed — CI/AppLab green | Device-only entry, strict guest/account isolation, offline authenticated working-set access and deferred external intents close the D4 P0 |
 | v1.00-D6 | Functional Regression & Navigation Completion | Completed — CI/AppLab green | End-to-end post-D5 reachability over guest entry, shell, Unified Capture, Search/Inbox/Archive/Backup, Explore and Account & sync |
 | v1.00-D7 | Native Physical Evidence Closure | BLOCKED ON PHYSICAL EVIDENCE | Signed candidate + manifest are automation-ready; closure requires all mandatory real-device matrix rows PASS on the exact artifact; leaked-password protection remains a separate v1.00-E Store Ready requirement on the current Supabase Free plan |
-| v1.00-E | Distribution & Store Readiness | IN PROGRESS — RC hardening | 1.0.0-rc.1+110, Play API 36, 16 KB release verification, public privacy/deletion resources, Data Safety/store operator package and real Play purchase/restore gate |
+| v1.00-E | Distribution & Store Readiness | Completed — RC preparation; external Store proof pending | 1.0.0-rc.1+110, Play API 36, 16 KB release verification, public privacy/deletion resources, Data Safety/store operator package; real Play purchase/restore remains external |
 
 ## v1.00-D6 release evidence
 
@@ -81,7 +81,7 @@ Source of execution truth for Anna's Diary. Product identity and boundaries are 
 - The stable-signing sideload workflow must produce the exact APK plus `PHYSICAL_CERTIFICATION_MANIFEST.json`.
 - Evidence must cover DS-01..DS-06, VAULT-01..VAULT-04, NOI-01..NOI-03 and NATIVE-01..NATIVE-03 on real Android devices.
 - The final evidence file must validate against the exact candidate artifact and manifest with `tool/validate_v100d_physical_evidence.py`.
-- Until all rows are PASS, v1.00-D7 remains **BLOCKED ON PHYSICAL EVIDENCE** and v1.00-E cannot be claimed complete.
+- Until all rows are PASS, v1.00-D7 remains **BLOCKED ON PHYSICAL EVIDENCE** and stable 1.0 / **STORE READY** cannot be claimed. v1.00-E release-candidate preparation may remain complete because it does not fabricate physical certification.
 
 ## v1.00-A audit outcome
 

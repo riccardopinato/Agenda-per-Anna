@@ -1,6 +1,6 @@
 # Anna's Diary — v1.00-E Distribution & Store Readiness
 
-Status: **IN PROGRESS — automated release hardening active; external Play/physical gates pending**
+Status: **COMPLETED — RELEASE-CANDIDATE PREPARATION; external Play/physical gates pending**
 
 Baseline:
 - app main before E: `05835127393240292effb1bfe45938c2f4295a61`;
@@ -48,6 +48,13 @@ External distribution proof still requires:
 7. Lifetime verification with a clean tester/product state.
 
 CI can prove build/configuration readiness, not a real Play transaction.
+
+The Premium Store QA workflow is intentionally **manual and fail-closed** while
+`REVENUECAT_ANDROID_API_KEY` is not configured in GitHub Actions. A normal
+`main` push must not become red merely because the external Store environment
+has not been provisioned yet. When Store QA is requested, the workflow refuses
+to build unless stable signing and the RevenueCat Android public SDK key are
+all present.
 
 ## Privacy / Data Safety
 
