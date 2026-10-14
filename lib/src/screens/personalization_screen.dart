@@ -65,6 +65,9 @@ class PersonalizationScreen extends StatelessWidget {
                       button: true,
                       selected: prefs.personalizationPreset == preset,
                       child: ChoiceChip(
+                        key: ValueKey<String>(
+                          'personalization-preset-${preset.name}',
+                        ),
                         label: Text(strings.v101PresetTitle(preset)),
                         selected: prefs.personalizationPreset == preset,
                         avatar: Icon(
@@ -109,6 +112,7 @@ class PersonalizationScreen extends StatelessWidget {
                 Semantics(
                   identifier: 'module_toggle_${module.name}',
                   child: SwitchListTile(
+                    key: ValueKey<String>('module-toggle-${module.name}'),
                     contentPadding: EdgeInsets.zero,
                     secondary: CircleAvatar(
                       child: Icon(module.icon),
