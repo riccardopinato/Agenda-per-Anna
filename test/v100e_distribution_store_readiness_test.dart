@@ -37,6 +37,10 @@ void main() {
     expect(storeQa, contains('targetSdk = 36'));
     expect(storeQa, contains('ANNA_STORE_QA=true'));
     expect(storeQa, contains('ANNA_PREMIUM_PREVIEW=false'));
+    expect(storeQa, contains('workflow_dispatch:'));
+    expect(storeQa, isNot(contains('\n  push:')));
+    expect(storeQa, contains('REVENUECAT_ANDROID_API_KEY'));
+    expect(storeQa, contains('Premium Store QA is not configured'));
   });
 
   test('v1.00-E publishes policy and account-deletion surfaces', () {
@@ -95,5 +99,6 @@ void main() {
     expect(doc, contains('Supabase Free plan'));
     expect(doc, contains('Google Play Health apps policy'));
     expect(doc, contains('Supabase OAuth redirect for Web account deletion'));
+    expect(doc, contains('manual and fail-closed'));
   });
 }
