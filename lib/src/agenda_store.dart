@@ -5292,6 +5292,23 @@ class AgendaStore extends ChangeNotifier {
     await savePreferences(const AgendaPreferences());
   }
 
+  Future<void> applyPersonalizationPreset(
+    PersonalizationPreset preset,
+  ) async {
+    await savePreferences(
+      preferences.applyPersonalizationPreset(preset),
+    );
+  }
+
+  Future<void> setModuleEnabled(
+    AppModule module,
+    bool enabled,
+  ) async {
+    await savePreferences(
+      preferences.withModuleEnabled(module, enabled),
+    );
+  }
+
   Future<void> addHabit(String name) async {
     final value = name.trim();
     if (value.isEmpty) return;
