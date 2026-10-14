@@ -46,6 +46,7 @@ part 'src/app_shell.dart';
 part 'src/domain_models.dart';
 part 'src/localization.dart';
 part 'src/localization_v100.dart';
+part 'src/localization_v101.dart';
 part 'src/localization_d3.dart';
 part 'src/localization_d3_completion.dart';
 part 'src/localization_d3_domain.dart';
