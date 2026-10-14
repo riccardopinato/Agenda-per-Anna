@@ -3,8 +3,11 @@ appId: com.riccardopinato.agenda_per_anna
 # The previous checkpoint leaves the shell on Today. Move to Home and wait for
 # the Home surface to settle before scrolling: after the deep Vault journey the
 # emulator can still be completing a frame/navigation transition.
+- extendedWaitUntil:
+    visible: '(La mia giornata|My day|Mi día|Ma journée|O meu dia)[\s\S]*'
+    timeout: 30000
 - tapOn:
-    text: 'Home[\s\S]*'
+    text: '(Home|Inicio|Accueil|Início)[\s\S]*'
     retryTapIfNoChange: true
 - extendedWaitUntil:
     visible: '(La mia agenda|My agenda|Mi agenda|Mon agenda|A minha agenda)'
