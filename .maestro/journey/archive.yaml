@@ -4,6 +4,8 @@ appId: com.riccardopinato.agenda_per_anna
     text: 'Home[\s\S]*'
     retryTapIfNoChange: true
 - tapOn:
+    id: 'home_more_menu'
+- tapOn:
     text: '(Archivio|Archive|Archivo|Archives|Arquivo)'
 - extendedWaitUntil:
     visible: '(Archivio della vita|Life archive|Archivo de vida|Archives de vie|Arquivo da vida)'
