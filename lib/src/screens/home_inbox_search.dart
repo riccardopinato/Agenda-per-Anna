@@ -110,7 +110,7 @@ class HomeScreen extends StatelessWidget {
             store.preferences.isModuleEnabled(AppModule.people);
         final birthdayPreview = peopleEnabled
             ? store.upcomingBirthdays(from: now, limit: 1)
-            : const <Birthday>[];
+            : const <BirthdayOccurrence>[];
         final nextBirthday =
             birthdayPreview.isEmpty ? null : birthdayPreview.first;
         final pendingTasks = store.pendingUnifiedTaskCount;
