@@ -104,6 +104,7 @@ class HomeScreen extends StatelessWidget {
       ]),
       builder: (context, _) {
         unawaited(HomeWidgetBridge.instance.sync(store));
+        final prefs = store.preferences;
         final upcoming = store.unifiedUpcoming(now);
         final briefing = store.dayHubSnapshot(now);
         final peopleEnabled =
@@ -114,12 +115,41 @@ class HomeScreen extends StatelessWidget {
         final nextBirthday =
             birthdayPreview.isEmpty ? null : birthdayPreview.first;
         final pendingTasks = store.pendingUnifiedTaskCount;
-        final displayName = store.preferences.displayName.trim();
+        final displayName = prefs.displayName.trim();
         final accent = context.accentSurface;
         final pinnedItems =
             store.agendaContentFilter == AgendaContentFilter.sharedOnly
                 ? <AgendaItem>[]
                 : store.items.where((e) => e.pinned).toList();
+        final exploreEnabledCount = const <AppModule>[
+          AppModule.shopping,
+          AppModule.workout,
+          AppModule.memories,
+          AppModule.people,
+          AppModule.habits,
+          AppModule.sharedSpace,
+          AppModule.privateVault,
+          AppModule.ecosystem,
+        ].where(prefs.isModuleEnabled).length;
+
+        void openMoreDestination(String value) {
+          final Widget destination = switch (value) {
+            'inbox' => InboxScreen(store: store),
+            'explore' => ExploreScreen(store: store),
+            'personalize' => PersonalizationScreen(store: store),
+            'shared' => SharedSpaceHubScreen(store: store),
+            'archive' => ArchiveScreen(store: store),
+            'backup' => BackupScreen(store: store),
+            'cloud' => CloudAccountScreen(store: store),
+            'settings' => SettingsScreen(store: store),
+            _ => SettingsScreen(store: store),
+          };
+          Navigator.push(
+            context,
+            MaterialPageRoute<void>(builder: (_) => destination),
+          );
+        }
+
         return Scaffold(
           floatingActionButton: FloatingActionButton.extended(
             onPressed: () => _showQuickCapture(context, store),
@@ -136,59 +166,39 @@ class HomeScreen extends StatelessWidget {
                 tooltip: strings.search,
                 onPressed: () => Navigator.push(
                   context,
-                  MaterialPageRoute(
-                    builder: (_) => PersonalSearchConnectionsScreen(store: store),
+                  MaterialPageRoute<void>(
+                    builder: (_) =>
+                        PersonalSearchConnectionsScreen(store: store),
                   ),
                 ),
                 icon: const Icon(Icons.search),
               ),
-              IconButton(
-                tooltip: strings.inbox,
-                onPressed: () => Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => InboxScreen(store: store),
-                  ),
-                ),
-                icon: Badge(
-                  isLabelVisible: store.inbox.isNotEmpty,
-                  label: Text('${store.inbox.length}'),
-                  child: const Icon(Icons.inbox_outlined),
-                ),
-              ),
-              IconButton(
-                tooltip: strings.archive,
-                onPressed: () => Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => ArchiveScreen(store: store),
-                  ),
-                ),
-                icon: const Icon(Icons.inventory_2_outlined),
-              ),
-              IconButton(
-                tooltip: strings.backup,
-                onPressed: () => Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => BackupScreen(store: store),
-                  ),
-                ),
-                icon: const Icon(Icons.backup_outlined),
-              ),
-              if (store.preferences.isModuleEnabled(AppModule.sharedSpace))
+              if (store.activeInboxEntries.isNotEmpty)
                 IconButton(
-                  tooltip: store.totalSharedUnreadCount > 0
-                      ? strings.v100SharedNews(store.totalSharedUnreadCount)
-                      : 'Noi ♡',
+                  tooltip: strings.inbox,
                   onPressed: () => Navigator.push(
                     context,
-                    MaterialPageRoute(
+                    MaterialPageRoute<void>(
+                      builder: (_) => InboxScreen(store: store),
+                    ),
+                  ),
+                  icon: Badge(
+                    label: Text('${store.activeInboxEntries.length}'),
+                    child: const Icon(Icons.inbox_outlined),
+                  ),
+                ),
+              if (prefs.isModuleEnabled(AppModule.sharedSpace) &&
+                  store.totalSharedUnreadCount > 0)
+                IconButton(
+                  tooltip:
+                      strings.v100SharedNews(store.totalSharedUnreadCount),
+                  onPressed: () => Navigator.push(
+                    context,
+                    MaterialPageRoute<void>(
                       builder: (_) => SharedSpaceHubScreen(store: store),
                     ),
                   ),
                   icon: Badge(
-                    isLabelVisible: store.totalSharedUnreadCount > 0,
                     backgroundColor: Theme.of(context).colorScheme.error,
                     label: Text(
                       store.totalSharedUnreadCount > 99
@@ -196,47 +206,107 @@ class HomeScreen extends StatelessWidget {
                           : '${store.totalSharedUnreadCount}',
                     ),
                     child: Icon(
-                      store.totalSharedUnreadCount > 0
-                          ? Icons.favorite
-                          : Icons.favorite_outline,
-                      color: store.totalSharedUnreadCount > 0
-                          ? Theme.of(context).colorScheme.error
-                          : null,
+                      Icons.favorite,
+                      color: Theme.of(context).colorScheme.error,
                     ),
                   ),
                 ),
-              IconButton(
-                tooltip: strings.cloud,
-                onPressed: () => Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => CloudAccountScreen(store: store),
-                  ),
+              Semantics(
+                identifier: 'home_more_menu',
+                button: true,
+                child: PopupMenuButton<String>(
+                  key: const ValueKey<String>('home-more-menu'),
+                  tooltip: strings.d3('homeMore'),
+                  icon: const Icon(Icons.more_horiz),
+                  onSelected: openMoreDestination,
+                  itemBuilder: (context) => [
+                    PopupMenuItem(
+                      value: 'inbox',
+                      child: Row(
+                        children: [
+                          const Icon(Icons.inbox_outlined, size: 20),
+                          const SizedBox(width: 10),
+                          Text(strings.inbox),
+                        ],
+                      ),
+                    ),
+                    if (exploreEnabledCount > 0)
+                      PopupMenuItem(
+                        value: 'explore',
+                        child: Row(
+                          children: [
+                            const Icon(Icons.apps_outlined, size: 20),
+                            const SizedBox(width: 10),
+                            Text(strings.v100Explore),
+                          ],
+                        ),
+                      ),
+                    PopupMenuItem(
+                      value: 'personalize',
+                      child: Row(
+                        children: [
+                          const Icon(Icons.tune_outlined, size: 20),
+                          const SizedBox(width: 10),
+                          Text(strings.d3('personalizationTitle')),
+                        ],
+                      ),
+                    ),
+                    if (prefs.isModuleEnabled(AppModule.sharedSpace)) ...[
+                      const PopupMenuDivider(),
+                      const PopupMenuItem(
+                        value: 'shared',
+                        child: Row(
+                          children: [
+                            Icon(Icons.favorite_outline, size: 20),
+                            SizedBox(width: 10),
+                            Text('Noi ♡'),
+                          ],
+                        ),
+                      ),
+                    ],
+                    const PopupMenuDivider(),
+                    PopupMenuItem(
+                      value: 'archive',
+                      child: Row(
+                        children: [
+                          const Icon(Icons.inventory_2_outlined, size: 20),
+                          const SizedBox(width: 10),
+                          Text(strings.archive),
+                        ],
+                      ),
+                    ),
+                    PopupMenuItem(
+                      value: 'backup',
+                      child: Row(
+                        children: [
+                          const Icon(Icons.backup_outlined, size: 20),
+                          const SizedBox(width: 10),
+                          Text(strings.backup),
+                        ],
+                      ),
+                    ),
+                    PopupMenuItem(
+                      value: 'cloud',
+                      child: Row(
+                        children: [
+                          const Icon(Icons.cloud_outlined, size: 20),
+                          const SizedBox(width: 10),
+                          Text(strings.cloud),
+                        ],
+                      ),
+                    ),
+                    PopupMenuItem(
+                      value: 'settings',
+                      child: Row(
+                        children: [
+                          const Icon(Icons.settings_outlined, size: 20),
+                          const SizedBox(width: 10),
+                          Text(strings.settings),
+                        ],
+                      ),
+                    ),
+                  ],
                 ),
-                icon: AnimatedBuilder(
-                  animation: CloudSyncService.instance,
-                  builder: (context, _) {
-                    final cloud = CloudSyncService.instance;
-                    final icon = !cloud.configured
-                        ? Icons.cloud_off_outlined
-                        : cloud.state == CloudConnectionState.syncing
-                            ? Icons.sync
-                            : cloud.signedIn
-                                ? Icons.cloud_done_outlined
-                                : Icons.cloud_outlined;
-                    return Icon(icon);
-                  },
-                ),
-              ),
-              IconButton(
-                tooltip: strings.settings,
-                onPressed: () => Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => SettingsScreen(store: store),
-                  ),
-                ),
-                icon: const Icon(Icons.settings_outlined),
               ),
             ],
           ),
@@ -265,7 +335,7 @@ class HomeScreen extends StatelessWidget {
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      store.preferences.showDailyQuote
+                      prefs.showDailyQuote
                           ? _dailyQuote(now, strings).$1
                           : strings.hello(displayName),
                       style: TextStyle(
@@ -276,7 +346,7 @@ class HomeScreen extends StatelessWidget {
                     ),
                     const SizedBox(height: 6),
                     Text(
-                      store.preferences.showDailyQuote
+                      prefs.showDailyQuote
                           ? _dailyQuote(now, strings).$2
                           : strings.todayPage,
                       style: TextStyle(
@@ -286,13 +356,15 @@ class HomeScreen extends StatelessWidget {
                   ],
                 ),
               ),
-              if (store.preferences.isModuleEnabled(AppModule.privateVault)) ...[
+              if (prefs.isModuleEnabled(AppModule.privateVault)) ...[
                 const SizedBox(height: 14),
-                PrivateVaultHomeCard(store: store),
+                PrivateVaultHomeCard(
+                  key: const ValueKey<String>('home-vault-card'),
+                  store: store,
+                ),
               ],
               const SizedBox(height: 12),
               AgendaContentFilterBar(store: store),
-              const SizedBox(height: 10),
               _HomeSyncStatusCard(store: store),
               if (store.hasStorageWarnings) ...[
                 const SizedBox(height: 12),
@@ -319,7 +391,8 @@ class HomeScreen extends StatelessWidget {
                 nextBirthday: nextBirthday,
                 globalPendingTasks: pendingTasks,
                 inboxCount: store.inbox.length,
-                hideDetails: store.preferences.hideHomeDetails,
+                hideDetails: prefs.hideHomeDetails,
+                showBirthdays: peopleEnabled,
                 onOpenNext: upcoming.isEmpty
                     ? null
                     : () => openUnifiedAgendaEntry(
@@ -358,14 +431,14 @@ class HomeScreen extends StatelessWidget {
                         store: store,
                         item: e,
                         compact: true,
-                        hideDetails: store.preferences.hideHomeDetails,
+                        hideDetails: prefs.hideHomeDetails,
                       ),
                     ),
               ],
               const SizedBox(height: 24),
               _DayLifeOverviewCard(
                 snapshot: briefing,
-                hideDetails: store.preferences.hideHomeDetails,
+                hideDetails: prefs.hideHomeDetails,
                 onOpenDay: () => Navigator.push(
                   context,
                   MaterialPageRoute(
@@ -377,7 +450,11 @@ class HomeScreen extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 14),
-              _TodayWellbeingCard(store: store, date: now),
+              _TodayWellbeingCard(
+                key: const ValueKey<String>('home-wellbeing-card'),
+                store: store,
+                date: now,
+              ),
               const SizedBox(height: 24),
               SectionTitle(strings.v100MyAgendaSection),
               const SizedBox(height: 10),
@@ -409,15 +486,33 @@ class HomeScreen extends StatelessWidget {
                 ],
               ),
               const SizedBox(height: 12),
-              NavigationCard(
-                icon: Icons.apps_outlined,
-                title: strings.v100Explore,
-                subtitle: strings.v100ExploreSubtitle,
-                onTap: () => Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (_) => ExploreScreen(store: store)),
+              if (exploreEnabledCount > 0)
+                NavigationCard(
+                  icon: Icons.apps_outlined,
+                  title: strings.v100Explore,
+                  subtitle: strings.d3Format(
+                    'homeExploreAreasCount',
+                    {'count': exploreEnabledCount},
+                  ),
+                  onTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute<void>(
+                      builder: (_) => ExploreScreen(store: store),
+                    ),
+                  ),
+                )
+              else
+                NavigationCard(
+                  icon: Icons.tune_outlined,
+                  title: strings.d3('personalizationTitle'),
+                  subtitle: strings.d3('personalizationSettingsSubtitle'),
+                  onTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute<void>(
+                      builder: (_) => PersonalizationScreen(store: store),
+                    ),
+                  ),
                 ),
-              ),
             ],
           ),
         );
@@ -598,6 +693,20 @@ class _HomeSyncStatusCard extends StatelessWidget {
       builder: (context, _) {
         final cloud = CloudSyncService.instance;
         final pending = store.totalPendingCloudChanges;
+        final sharedError = store.hasSharedSyncError;
+
+        final intentionalLocalOnly = store.activeAccountId == null &&
+            !cloud.signedIn &&
+            pending == 0 &&
+            !sharedError;
+        final healthyCloud = cloud.signedIn &&
+            cloud.state == CloudConnectionState.synced &&
+            pending == 0 &&
+            !sharedError;
+
+        if (intentionalLocalOnly || healthyCloud) {
+          return const SizedBox.shrink();
+        }
 
         IconData icon;
         String title;
@@ -611,7 +720,8 @@ class _HomeSyncStatusCard extends StatelessWidget {
           icon = Icons.cloud_outlined;
           title = AnnaStrings.of(context).v100CloudDisconnected;
           subtitle = AnnaStrings.of(context).v100OfflineStillWorks;
-        } else if (cloud.state == CloudConnectionState.syncing) {
+        } else if (cloud.state == CloudConnectionState.syncing ||
+            cloud.state == CloudConnectionState.initializing) {
           icon = Icons.sync;
           title = AnnaStrings.of(context).v100Syncing;
           subtitle = pending == 0
@@ -625,7 +735,7 @@ class _HomeSyncStatusCard extends StatelessWidget {
           subtitle = pending == 0
               ? AnnaStrings.of(context).v100RetrySyncLater
               : AnnaStrings.of(context).v100PendingWhenOnline(pending);
-        } else if (store.hasSharedSyncError) {
+        } else if (sharedError) {
           icon = Icons.sync_problem_outlined;
           title = AnnaStrings.of(context).v100NoiNeedsResync;
           subtitle = pending == 0
@@ -636,60 +746,59 @@ class _HomeSyncStatusCard extends StatelessWidget {
           title = AnnaStrings.of(context).v100PendingChanges(pending);
           subtitle = AnnaStrings.of(context).v100PendingStayLocal;
         } else {
-          icon = Icons.cloud_done_outlined;
-          title = AnnaStrings.of(context).v100AllSynced;
-          subtitle = cloud.lastSyncAt == null
-              ? AnnaStrings.of(context).v100NothingPending
-              : AnnaStrings.of(context).v100LastCheck(
-                  DateFormat('HH:mm', AnnaStrings.intlLocale(context))
-                      .format(cloud.lastSyncAt!),
-                );
+          icon = Icons.cloud_outlined;
+          title = AnnaStrings.of(context).v100CloudDisconnected;
+          subtitle = AnnaStrings.of(context).v100OfflineStillWorks;
         }
 
-        return Material(
-          color: Theme.of(context)
-              .colorScheme
-              .surfaceContainerHighest
-              .withValues(alpha: 0.42),
-          borderRadius: BorderRadius.circular(18),
-          child: InkWell(
+        return Padding(
+          padding: const EdgeInsets.only(top: 10),
+          child: Material(
+            key: const ValueKey<String>('home-sync-attention'),
+            color: Theme.of(context)
+                .colorScheme
+                .surfaceContainerHighest
+                .withValues(alpha: 0.42),
             borderRadius: BorderRadius.circular(18),
-            onTap: () => Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (_) => CloudAccountScreen(store: store),
+            child: InkWell(
+              borderRadius: BorderRadius.circular(18),
+              onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute<void>(
+                  builder: (_) => CloudAccountScreen(store: store),
+                ),
               ),
-            ),
-            child: Padding(
-              padding: const EdgeInsets.symmetric(
-                horizontal: 14,
-                vertical: 11,
-              ),
-              child: Row(
-                children: [
-                  Icon(icon, size: 21),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          title,
-                          style: const TextStyle(
-                            fontWeight: FontWeight.w800,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 11,
+                ),
+                child: Row(
+                  children: [
+                    Icon(icon, size: 21),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            title,
+                            style: const TextStyle(
+                              fontWeight: FontWeight.w800,
+                            ),
                           ),
-                        ),
-                        Text(
-                          subtitle,
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                          style: Theme.of(context).textTheme.bodySmall,
-                        ),
-                      ],
+                          Text(
+                            subtitle,
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            style: Theme.of(context).textTheme.bodySmall,
+                          ),
+                        ],
+                      ),
                     ),
-                  ),
-                  const Icon(Icons.chevron_right, size: 20),
-                ],
+                    const Icon(Icons.chevron_right, size: 20),
+                  ],
+                ),
               ),
             ),
           ),
@@ -706,6 +815,7 @@ class _HomeFocusCard extends StatelessWidget {
   final int globalPendingTasks;
   final int inboxCount;
   final bool hideDetails;
+  final bool showBirthdays;
   final VoidCallback? onOpenNext;
   final VoidCallback onOpenDay;
   final VoidCallback onOpenBirthdays;
@@ -718,6 +828,7 @@ class _HomeFocusCard extends StatelessWidget {
     required this.globalPendingTasks,
     required this.inboxCount,
     required this.hideDetails,
+    required this.showBirthdays,
     required this.onOpenNext,
     required this.onOpenDay,
     required this.onOpenBirthdays,
@@ -793,28 +904,30 @@ class _HomeFocusCard extends StatelessWidget {
               ),
             ),
           ),
-          const SizedBox(height: 8),
-          InkWell(
-            borderRadius: BorderRadius.circular(14),
-            onTap: onOpenBirthdays,
-            child: Padding(
-              padding: const EdgeInsets.symmetric(vertical: 4),
-              child: Row(
-                children: [
-                  Icon(Icons.cake_outlined, color: scheme.tertiary),
-                  const SizedBox(width: 9),
-                  Expanded(
-                    child: Text(
-                      birthdayText,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
+          if (showBirthdays) ...[
+            const SizedBox(height: 8),
+            InkWell(
+              borderRadius: BorderRadius.circular(14),
+              onTap: onOpenBirthdays,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 4),
+                child: Row(
+                  children: [
+                    Icon(Icons.cake_outlined, color: scheme.tertiary),
+                    const SizedBox(width: 9),
+                    Expanded(
+                      child: Text(
+                        birthdayText,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
                     ),
-                  ),
-                  const Icon(Icons.chevron_right),
-                ],
+                    const Icon(Icons.chevron_right),
+                  ],
+                ),
               ),
             ),
-          ),
+          ],
           const SizedBox(height: 10),
           Wrap(
             spacing: 8,
@@ -841,11 +954,14 @@ class _HomeFocusCard extends StatelessWidget {
                   icon: Icons.task_alt_outlined,
                   text: AnnaStrings.of(context).v100OpenTasks(globalPendingTasks),
                 ),
-              ActionChip(
-                avatar: const Icon(Icons.inbox_outlined, size: 17),
-                label: Text(AnnaStrings.of(context).v100InboxCount(inboxCount)),
-                onPressed: onOpenInbox,
-              ),
+              if (inboxCount > 0)
+                ActionChip(
+                  avatar: const Icon(Icons.inbox_outlined, size: 17),
+                  label: Text(
+                    AnnaStrings.of(context).v100InboxCount(inboxCount),
+                  ),
+                  onPressed: onOpenInbox,
+                ),
             ],
           ),
         ],
@@ -1031,6 +1147,7 @@ class _TodayWellbeingCard extends StatelessWidget {
   final DateTime date;
 
   const _TodayWellbeingCard({
+    super.key,
     required this.store,
     required this.date,
   });
@@ -1121,14 +1238,16 @@ class _TodayWellbeingCard extends StatelessWidget {
                             color: accent.secondaryForeground,
                           ),
                     ),
-                    Text(
-                      journal.blocks.isEmpty
-                          ? AnnaStrings.of(context).v100NoMemory
-                          : AnnaStrings.of(context).v100MemoryCount(journal.blocks.length),
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: accent.secondaryForeground,
-                          ),
-                    ),
+                    if (store.preferences.isModuleEnabled(AppModule.memories))
+                      Text(
+                        journal.blocks.isEmpty
+                            ? AnnaStrings.of(context).v100NoMemory
+                            : AnnaStrings.of(context)
+                                .v100MemoryCount(journal.blocks.length),
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                              color: accent.secondaryForeground,
+                            ),
+                      ),
                   ],
                 ),
               ],

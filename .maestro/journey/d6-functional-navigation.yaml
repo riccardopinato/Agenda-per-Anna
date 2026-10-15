@@ -24,7 +24,9 @@ appId: com.riccardopinato.agenda_per_anna
     visible: ".*(La mia agenda|My agenda|Mi agenda|Mon agenda|A minha agenda).*"
     timeout: 10000
 
-# Inbox remains a direct Home destination.
+# Inbox remains reachable from Home through the stable More menu.
+- tapOn:
+    id: "home_more_menu"
 - tapOn:
     text: ".*Inbox.*"
 - extendedWaitUntil:
@@ -88,6 +90,8 @@ appId: com.riccardopinato.agenda_per_anna
 
 # Account remains optional: guest users can inspect Account & sync without
 # replacing the active device-only working set.
+- tapOn:
+    id: "home_more_menu"
 - tapOn:
     text: "Cloud"
 - extendedWaitUntil:
