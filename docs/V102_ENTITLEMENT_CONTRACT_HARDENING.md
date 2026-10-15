@@ -1,6 +1,6 @@
 # Anna's Diary — v1.02-B Entitlement Contract Hardening
 
-Status: **IMPLEMENTED CANDIDATE — exact-head gates required**
+Status: **COMPLETED — merged after 4/4 exact-head gates**
 
 Factory baseline:
 - App-Factory-Core `47c47f49a7b46812e3bd6f1231c3524f2b52b826`
