@@ -394,6 +394,8 @@ class _PremiumStoreQaScreenState extends State<PremiumStoreQaScreen> {
       'preview=${d.previewMode}',
       'entitlement=${d.entitlementId}',
       'entitlementActive=${d.paidEntitlement}',
+      'entitlementSource=${d.entitlementSource.name}',
+      'entitlementObservedAt=${d.entitlementObservedAt?.toIso8601String() ?? '-'}',
       'offering=${d.currentOfferingIdentifier ?? '-'}',
       'products=${d.productCount}',
       'monthly=${d.hasMonthly}',
