@@ -78,7 +78,7 @@ void main() {
     expect(
       roadmap,
       contains(
-        '| v1.02-C | Google Play / RevenueCat Real QA | BLOCKED ON EXTERNAL DISTRIBUTION |',
+        '| v1.02-C | Google Play / RevenueCat Real QA | SOFTWARE PREPARED — BLOCKED ON EXTERNAL DISTRIBUTION |',
       ),
     );
   });

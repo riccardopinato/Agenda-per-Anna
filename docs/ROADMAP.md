@@ -71,10 +71,10 @@ Source of execution truth for Anna's Diary. Product identity and boundaries are 
 | v1.01-D | Adaptive Home & Quiet UX | Completed — 4/4 gates green | Home chrome is reduced, optional signals follow module preferences, and healthy sync/local-only states stay silent while actionable problems remain visible |
 | v1.01-E | Polish, Accessibility & Regression | Completed — 4/4 exact-head gates green | Explicit semantics, narrow-screen resilience, five-language v1.01 QA and trusted runtime personalization regression |
 | v1.01-F | Release Truth & Factory Alignment | Completed — documentation/evidence closure | Align Product Bible/Roadmap/evidence to App Factory v26.6; bounded v1.01 cleanup only |
-| v1.02-A | Native Physical Certification | BLOCKED ON PHYSICAL EVIDENCE | Close D7 on one exact stable-signed artifact: file providers, Keystore/biometric, notifications, shortcuts/share, Noi ♡ two-device matrix |
-| v1.02-B | Entitlement Contract Hardening | Completed candidate — exact-head gates required | Align the existing RevenueCat-backed service to the provider-agnostic entitlement snapshot/provenance contract without provider migration |
-| v1.02-C | Google Play / RevenueCat Real QA | BLOCKED ON EXTERNAL DISTRIBUTION | Internal Testing purchase/restore/reinstall evidence on exact signed AAB with real Offering products |
-| v1.02-D | Stable Release Candidate | BLOCKED BY v1.02-A/C | Build once, bind exact source/artifact/signing identity, verify exact bytes, then distribute |
+| v1.02-A | Native Physical Certification | SOFTWARE PREPARED — BLOCKED ON PHYSICAL EVIDENCE | Close D7 on one exact stable-signed artifact: file providers, Keystore/biometric, notifications, shortcuts/share, Noi ♡ two-device matrix |
+| v1.02-B | Entitlement Contract Hardening | Completed — 4/4 exact-head gates green | Align the existing RevenueCat-backed service to the provider-agnostic entitlement snapshot/provenance contract without provider migration |
+| v1.02-C | Google Play / RevenueCat Real QA | SOFTWARE PREPARED — BLOCKED ON EXTERNAL DISTRIBUTION | Internal Testing purchase/restore/reinstall evidence on exact signed AAB with real Offering products |
+| v1.02-D | Stable Release Candidate | RELEASE REALITY PREPARED — BLOCKED BY v1.02-A/C | Build once, bind exact source/artifact/signing identity, verify exact bytes, then distribute |
 | v1.03 | Cross-App Certification Refresh | BLOCKED ON PAIRED PHYSICAL EVIDENCE | Re-certify Anna ↔ Wonderlog under Cross-App Verification v1 with exact paired artifact identity and COPY/LINK/idempotency/provenance matrix |
 | v1.04 | Daily Rituals & Life Flow | PLANNED | Optional morning/evening ritual projections reusing AgendaPreferences, Diary, Today, Unified Capture and existing reminder engine |
 | v1.05 | Memories & Recall 3.0 | PLANNED | Richer deterministic resurfacing over existing diary/person/place/archive primitives; no Memory DB or generative narrator |

@@ -1,0 +1,82 @@
+{
+  "schemaVersion": 1,
+  "status": "PENDING",
+  "repository": "riccardopinato/Agenda-per-Anna",
+  "sourceSha": "",
+  "version": "",
+  "buildNumber": 0,
+  "packageId": "com.riccardopinato.agenda_per_anna",
+  "artifactName": "",
+  "artifactSha256": "",
+  "signingFingerprint": "",
+  "workflowRun": "",
+  "distributionChannel": "google-play-internal-testing-candidate",
+  "playTrack": "internal-testing",
+  "installSource": "google-play",
+  "testerRef": "",
+  "scenarios": [
+    {
+      "id": "STORE-01",
+      "status": "PENDING",
+      "expected": "",
+      "observed": "",
+      "evidenceRefs": []
+    },
+    {
+      "id": "STORE-02",
+      "status": "PENDING",
+      "expected": "",
+      "observed": "",
+      "evidenceRefs": []
+    },
+    {
+      "id": "STORE-03",
+      "status": "PENDING",
+      "expected": "",
+      "observed": "",
+      "evidenceRefs": []
+    },
+    {
+      "id": "STORE-04",
+      "status": "PENDING",
+      "expected": "",
+      "observed": "",
+      "evidenceRefs": []
+    },
+    {
+      "id": "STORE-05",
+      "status": "PENDING",
+      "expected": "",
+      "observed": "",
+      "evidenceRefs": []
+    },
+    {
+      "id": "STORE-06",
+      "status": "PENDING",
+      "expected": "",
+      "observed": "",
+      "evidenceRefs": []
+    },
+    {
+      "id": "STORE-07",
+      "status": "PENDING",
+      "expected": "",
+      "observed": "",
+      "evidenceRefs": []
+    },
+    {
+      "id": "STORE-08",
+      "status": "PENDING",
+      "expected": "",
+      "observed": "",
+      "evidenceRefs": []
+    },
+    {
+      "id": "STORE-09",
+      "status": "PENDING",
+      "expected": "",
+      "observed": "",
+      "evidenceRefs": []
+    }
+  ]
+}
