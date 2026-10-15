@@ -74,7 +74,7 @@ void main() {
 
     expect(doc, contains('No direct Play Billing migration is introduced'));
     expect(doc, contains('RevenueCat CustomerInfo'));
-    expect(doc, contains('does not prove a real Google Play purchase or restore'));
+    expect(doc, contains('They do not prove a real Google Play purchase or restore'));
     expect(
       roadmap,
       contains(
