@@ -253,9 +253,9 @@ class HomeScreen extends StatelessWidget {
                     ),
                     if (prefs.isModuleEnabled(AppModule.sharedSpace)) ...[
                       const PopupMenuDivider(),
-                      PopupMenuItem(
+                      const PopupMenuItem(
                         value: 'shared',
-                        child: const Row(
+                        child: Row(
                           children: [
                             Icon(Icons.favorite_outline, size: 20),
                             SizedBox(width: 10),
@@ -1147,6 +1147,7 @@ class _TodayWellbeingCard extends StatelessWidget {
   final DateTime date;
 
   const _TodayWellbeingCard({
+    super.key,
     required this.store,
     required this.date,
   });
