@@ -106,7 +106,11 @@ class HomeScreen extends StatelessWidget {
         unawaited(HomeWidgetBridge.instance.sync(store));
         final upcoming = store.unifiedUpcoming(now);
         final briefing = store.dayHubSnapshot(now);
-        final birthdayPreview = store.upcomingBirthdays(from: now, limit: 1);
+        final peopleEnabled =
+            store.preferences.isModuleEnabled(AppModule.people);
+        final birthdayPreview = peopleEnabled
+            ? store.upcomingBirthdays(from: now, limit: 1)
+            : const <Birthday>[];
         final nextBirthday =
             birthdayPreview.isEmpty ? null : birthdayPreview.first;
         final pendingTasks = store.pendingUnifiedTaskCount;
@@ -172,34 +176,35 @@ class HomeScreen extends StatelessWidget {
                 ),
                 icon: const Icon(Icons.backup_outlined),
               ),
-              IconButton(
-                tooltip: store.totalSharedUnreadCount > 0
-                    ? strings.v100SharedNews(store.totalSharedUnreadCount)
-                    : 'Noi ♡',
-                onPressed: () => Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => SharedSpaceHubScreen(store: store),
+              if (store.preferences.isModuleEnabled(AppModule.sharedSpace))
+                IconButton(
+                  tooltip: store.totalSharedUnreadCount > 0
+                      ? strings.v100SharedNews(store.totalSharedUnreadCount)
+                      : 'Noi ♡',
+                  onPressed: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => SharedSpaceHubScreen(store: store),
+                    ),
+                  ),
+                  icon: Badge(
+                    isLabelVisible: store.totalSharedUnreadCount > 0,
+                    backgroundColor: Theme.of(context).colorScheme.error,
+                    label: Text(
+                      store.totalSharedUnreadCount > 99
+                          ? '99+'
+                          : '${store.totalSharedUnreadCount}',
+                    ),
+                    child: Icon(
+                      store.totalSharedUnreadCount > 0
+                          ? Icons.favorite
+                          : Icons.favorite_outline,
+                      color: store.totalSharedUnreadCount > 0
+                          ? Theme.of(context).colorScheme.error
+                          : null,
+                    ),
                   ),
                 ),
-                icon: Badge(
-                  isLabelVisible: store.totalSharedUnreadCount > 0,
-                  backgroundColor: Theme.of(context).colorScheme.error,
-                  label: Text(
-                    store.totalSharedUnreadCount > 99
-                        ? '99+'
-                        : '${store.totalSharedUnreadCount}',
-                  ),
-                  child: Icon(
-                    store.totalSharedUnreadCount > 0
-                        ? Icons.favorite
-                        : Icons.favorite_outline,
-                    color: store.totalSharedUnreadCount > 0
-                        ? Theme.of(context).colorScheme.error
-                        : null,
-                  ),
-                ),
-              ),
               IconButton(
                 tooltip: strings.cloud,
                 onPressed: () => Navigator.push(
@@ -281,8 +286,10 @@ class HomeScreen extends StatelessWidget {
                   ],
                 ),
               ),
-              const SizedBox(height: 14),
-              PrivateVaultHomeCard(store: store),
+              if (store.preferences.isModuleEnabled(AppModule.privateVault)) ...[
+                const SizedBox(height: 14),
+                PrivateVaultHomeCard(store: store),
+              ],
               const SizedBox(height: 12),
               AgendaContentFilterBar(store: store),
               const SizedBox(height: 10),
@@ -1098,14 +1105,16 @@ class _TodayWellbeingCard extends StatelessWidget {
                   spacing: 10,
                   runSpacing: 4,
                   children: [
-                    Text(
-                      totalHabits == 0
-                          ? AnnaStrings.of(context).v100NoHabits
-                          : AnnaStrings.of(context).v100HabitsProgress(doneHabits, totalHabits),
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: accent.secondaryForeground,
-                          ),
-                    ),
+                    if (store.preferences.isModuleEnabled(AppModule.habits))
+                      Text(
+                        totalHabits == 0
+                            ? AnnaStrings.of(context).v100NoHabits
+                            : AnnaStrings.of(context)
+                                .v100HabitsProgress(doneHabits, totalHabits),
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                              color: accent.secondaryForeground,
+                            ),
+                      ),
                     Text(
                       AnnaStrings.of(context).v100GratitudeProgress(gratitudeCount),
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
