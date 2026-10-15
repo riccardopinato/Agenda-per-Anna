@@ -1489,6 +1489,32 @@ class _SettingsScreenState extends State<SettingsScreen> {
               const SizedBox(height: 12),
               SimpleCard(
                 child: ListTile(
+                  key: const ValueKey('settings-personalization'),
+                  contentPadding: EdgeInsets.zero,
+                  leading: const CircleAvatar(
+                    child: Icon(Icons.tune),
+                  ),
+                  title: Text(
+                    strings.d3('personalizationTitle'),
+                    style: const TextStyle(fontWeight: FontWeight.w900),
+                  ),
+                  subtitle: Text(
+                    strings.d3('personalizationSettingsSubtitle'),
+                  ),
+                  trailing: const Icon(Icons.chevron_right),
+                  onTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute<void>(
+                      builder: (_) => PersonalizationScreen(
+                        store: widget.store,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 12),
+              SimpleCard(
+                child: ListTile(
                   contentPadding: EdgeInsets.zero,
                   leading: const CircleAvatar(
                     child: Icon(Icons.workspace_premium_outlined),
@@ -1959,19 +1985,22 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       ),
                     ),
                     const Divider(height: 24),
-                    ListTile(
-                      contentPadding: EdgeInsets.zero,
-                      leading: const Icon(Icons.lock_person_outlined),
-                      title: Text(strings.v100PrivateVault),
-                      subtitle: Text(strings.v100PrivateVaultDescription),
-                      trailing: const Icon(Icons.chevron_right),
-                      onTap: () => Navigator.push(
-                        context,
-                        MaterialPageRoute<void>(
-                          builder: (_) => const PrivateVaultScreen(),
+                    if (prefs.isModuleEnabled(AppModule.privateVault))
+                      ListTile(
+                        contentPadding: EdgeInsets.zero,
+                        leading: const Icon(Icons.lock_person_outlined),
+                        title: Text(strings.v100PrivateVault),
+                        subtitle: Text(strings.v100PrivateVaultDescription),
+                        trailing: const Icon(Icons.chevron_right),
+                        onTap: () => Navigator.push(
+                          context,
+                          MaterialPageRoute<void>(
+                            builder: (_) => PrivateVaultScreen(
+                              store: widget.store,
+                            ),
+                          ),
                         ),
                       ),
-                    ),
                     ListTile(
                       contentPadding: EdgeInsets.zero,
                       leading: const Icon(Icons.verified_user_outlined),
