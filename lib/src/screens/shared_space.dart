@@ -1988,7 +1988,10 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
   Future<void> _openSharedPasswords() async {
     await Navigator.of(context).push(
       MaterialPageRoute<void>(
-        builder: (_) => SharedPasswordsScreen(space: widget.space),
+        builder: (_) => SharedPasswordsScreen(
+          store: widget.store,
+          space: widget.space,
+        ),
       ),
     );
   }
