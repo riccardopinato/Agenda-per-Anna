@@ -71,11 +71,14 @@ class PersonalizationScreen extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      strings.d3('personalizationPresetTitle'),
-                      style: const TextStyle(
-                        fontWeight: FontWeight.w900,
-                        fontSize: 18,
+                    Semantics(
+                      header: true,
+                      child: Text(
+                        strings.d3('personalizationPresetTitle'),
+                        style: const TextStyle(
+                          fontWeight: FontWeight.w900,
+                          fontSize: 18,
+                        ),
                       ),
                     ),
                     const SizedBox(height: 5),
@@ -99,8 +102,13 @@ class PersonalizationScreen extends StatelessWidget {
                           Semantics(
                             identifier:
                                 'personalization_preset_${preset.name}',
+                            container: true,
                             button: true,
                             selected: prefs.personalizationPreset == preset,
+                            label: _presetLabel(strings, preset),
+                            onTap: () =>
+                                store.applyPersonalizationPreset(preset),
+                            excludeSemantics: true,
                             child: ChoiceChip(
                               key: ValueKey(
                                 'personalization-preset-${preset.name}',
@@ -134,11 +142,14 @@ class PersonalizationScreen extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      strings.d3('personalizationModulesTitle'),
-                      style: const TextStyle(
-                        fontWeight: FontWeight.w900,
-                        fontSize: 18,
+                    Semantics(
+                      header: true,
+                      child: Text(
+                        strings.d3('personalizationModulesTitle'),
+                        style: const TextStyle(
+                          fontWeight: FontWeight.w900,
+                          fontSize: 18,
+                        ),
                       ),
                     ),
                     const SizedBox(height: 5),
@@ -148,36 +159,46 @@ class PersonalizationScreen extends StatelessWidget {
                     ),
                     const SizedBox(height: 6),
                     for (final module in AppModule.values) ...[
-                      Semantics(
-                        identifier:
-                            'personalization_module_${module.name}',
-                        child: SwitchListTile.adaptive(
-                          key: ValueKey(
-                            'personalization-module-${module.name}',
-                          ),
-                          contentPadding: EdgeInsets.zero,
-                          secondary: Icon(_moduleIcon(module)),
-                          title: Text(_moduleTitle(strings, module)),
-                          subtitle: module == AppModule.cycleTracker
-                              ? Text(
-                                  strings.d3(
-                                    'personalizationCycleDependency',
-                                  ),
+                      Builder(
+                        builder: (context) {
+                          final enabled = prefs.isModuleEnabled(module);
+                          final hint = module == AppModule.cycleTracker
+                              ? strings.d3(
+                                  'personalizationCycleDependency',
                                 )
                               : module == AppModule.privateVault &&
                                       prefs.isModuleEnabled(
                                         AppModule.cycleTracker,
                                       )
-                                  ? Text(
-                                      strings.d3(
-                                        'personalizationVaultDependency',
-                                      ),
+                                  ? strings.d3(
+                                      'personalizationVaultDependency',
                                     )
-                                  : null,
-                          value: prefs.isModuleEnabled(module),
-                          onChanged: (value) =>
-                              store.setModuleEnabled(module, value),
-                        ),
+                                  : null;
+                          return Semantics(
+                            identifier:
+                                'personalization_module_${module.name}',
+                            container: true,
+                            label: _moduleTitle(strings, module),
+                            hint: hint,
+                            toggled: enabled,
+                            enabled: true,
+                            onTap: () =>
+                                store.setModuleEnabled(module, !enabled),
+                            excludeSemantics: true,
+                            child: SwitchListTile.adaptive(
+                              key: ValueKey(
+                                'personalization-module-${module.name}',
+                              ),
+                              contentPadding: EdgeInsets.zero,
+                              secondary: Icon(_moduleIcon(module)),
+                              title: Text(_moduleTitle(strings, module)),
+                              subtitle: hint == null ? null : Text(hint),
+                              value: enabled,
+                              onChanged: (value) =>
+                                  store.setModuleEnabled(module, value),
+                            ),
+                          );
+                        },
                       ),
                       if (module != AppModule.values.last)
                         const Divider(height: 1),
@@ -186,14 +207,19 @@ class PersonalizationScreen extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 12),
-              OutlinedButton.icon(
-                key: const ValueKey('personalization-restore-complete'),
-                onPressed: () => store.applyPersonalizationPreset(
-                  PersonalizationPreset.complete,
-                ),
-                icon: const Icon(Icons.restore_outlined),
-                label: Text(
-                  strings.d3('personalizationRestoreComplete'),
+              Semantics(
+                identifier: 'personalization_restore_complete',
+                button: true,
+                label: strings.d3('personalizationRestoreComplete'),
+                child: OutlinedButton.icon(
+                  key: const ValueKey('personalization-restore-complete'),
+                  onPressed: () => store.applyPersonalizationPreset(
+                    PersonalizationPreset.complete,
+                  ),
+                  icon: const Icon(Icons.restore_outlined),
+                  label: Text(
+                    strings.d3('personalizationRestoreComplete'),
+                  ),
                 ),
               ),
             ],
