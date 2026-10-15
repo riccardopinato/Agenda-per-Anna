@@ -16,6 +16,32 @@ enum PremiumStoreState {
   error,
 }
 
+enum PremiumEntitlementSource {
+  localDefault,
+  providerVerified,
+  qaOverride,
+  unknown,
+}
+
+class PremiumEntitlementSnapshot {
+  final bool hasAccess;
+  final bool paidEntitlement;
+  final PremiumEntitlementSource source;
+  final DateTime? observedAt;
+  final PremiumStoreState storeState;
+
+  const PremiumEntitlementSnapshot({
+    required this.hasAccess,
+    required this.paidEntitlement,
+    required this.source,
+    required this.observedAt,
+    required this.storeState,
+  });
+
+  bool get isProviderBacked =>
+      source == PremiumEntitlementSource.providerVerified;
+}
+
 enum PremiumProductKind {
   monthly,
   lifetime,
@@ -36,6 +62,8 @@ class PremiumStoreDiagnostics {
   final bool storeQaMode;
   final bool previewMode;
   final bool paidEntitlement;
+  final PremiumEntitlementSource entitlementSource;
+  final DateTime? entitlementObservedAt;
   final String entitlementId;
   final String? currentOfferingIdentifier;
   final int productCount;
@@ -53,6 +81,8 @@ class PremiumStoreDiagnostics {
     required this.storeQaMode,
     required this.previewMode,
     required this.paidEntitlement,
+    this.entitlementSource = PremiumEntitlementSource.localDefault,
+    this.entitlementObservedAt,
     required this.entitlementId,
     required this.currentOfferingIdentifier,
     required this.productCount,
@@ -135,6 +165,9 @@ class PremiumEntitlementService extends ChangeNotifier {
   bool _initializing = false;
   bool _listenerRegistered = false;
   bool _paidEntitlement = false;
+  PremiumEntitlementSource _entitlementSource =
+      PremiumEntitlementSource.localDefault;
+  DateTime? _entitlementObservedAt;
   String? _identifiedAppUserId;
   String? _lastError;
   String? _currentOfferingIdentifier;
@@ -151,6 +184,16 @@ class PremiumEntitlementService extends ChangeNotifier {
   bool get previewMode =>
       !_paidEntitlement && !_storeRelease && (kDebugMode || _previewOverride);
   bool get hasPremiumAccess => _paidEntitlement || previewMode;
+  PremiumEntitlementSnapshot get entitlementSnapshot =>
+      PremiumEntitlementSnapshot(
+        hasAccess: hasPremiumAccess,
+        paidEntitlement: _paidEntitlement,
+        source: previewMode
+            ? PremiumEntitlementSource.qaOverride
+            : _entitlementSource,
+        observedAt: _entitlementObservedAt,
+        storeState: _state,
+      );
   bool get busy => _state == PremiumStoreState.initializing;
   bool get canRestorePurchases => _sdkConfigured && !kIsWeb;
   String? get lastError => _lastError;
@@ -166,6 +209,8 @@ class PremiumEntitlementService extends ChangeNotifier {
       storeQaMode: _storeQa,
       previewMode: previewMode,
       paidEntitlement: _paidEntitlement,
+      entitlementSource: entitlementSnapshot.source,
+      entitlementObservedAt: entitlementSnapshot.observedAt,
       entitlementId: entitlementId,
       currentOfferingIdentifier: _currentOfferingIdentifier,
       productCount: _products.length,
@@ -179,7 +224,8 @@ class PremiumEntitlementService extends ChangeNotifier {
     );
   }
 
-  bool allows(PremiumCapability capability) => hasPremiumAccess;
+  bool allows(PremiumCapability capability) =>
+      entitlementSnapshot.hasAccess;
 
   String get _platformApiKey {
     if (kIsWeb) return _webApiKey.trim();
@@ -204,6 +250,7 @@ class PremiumEntitlementService extends ChangeNotifier {
       _identifiedAppUserId = normalizedId;
       _state = PremiumStoreState.error;
       _lastError = 'premium_store_qa_requires_store_release';
+      _markEntitlementUnknownIfUnverified();
       notifyListeners();
       return;
     }
@@ -211,6 +258,7 @@ class PremiumEntitlementService extends ChangeNotifier {
       _identifiedAppUserId = normalizedId;
       _state = PremiumStoreState.error;
       _lastError = 'premium_store_release_preview_enabled';
+      _markEntitlementUnknownIfUnverified();
       notifyListeners();
       return;
     }
@@ -218,6 +266,7 @@ class PremiumEntitlementService extends ChangeNotifier {
       _identifiedAppUserId = normalizedId;
       _state = PremiumStoreState.error;
       _lastError = 'premium_store_release_missing_api_key';
+      _markEntitlementUnknownIfUnverified();
       notifyListeners();
       return;
     }
@@ -225,6 +274,9 @@ class PremiumEntitlementService extends ChangeNotifier {
       _identifiedAppUserId = normalizedId;
       _state = PremiumStoreState.unconfigured;
       _lastError = null;
+      _paidEntitlement = false;
+      _entitlementSource = PremiumEntitlementSource.localDefault;
+      _entitlementObservedAt = null;
       notifyListeners();
       return;
     }
@@ -256,6 +308,7 @@ class PremiumEntitlementService extends ChangeNotifier {
     } catch (error) {
       _state = PremiumStoreState.error;
       _lastError = error.toString();
+      _markEntitlementUnknownIfUnverified();
     } finally {
       _initializing = false;
       notifyListeners();
@@ -290,6 +343,7 @@ class PremiumEntitlementService extends ChangeNotifier {
     } catch (error) {
       _state = PremiumStoreState.error;
       _lastError = error.toString();
+      _markEntitlementUnknownIfUnverified();
     } finally {
       notifyListeners();
     }
@@ -310,6 +364,7 @@ class PremiumEntitlementService extends ChangeNotifier {
     } catch (error) {
       _state = PremiumStoreState.error;
       _lastError = error.toString();
+      _markEntitlementUnknownIfUnverified();
     } finally {
       notifyListeners();
     }
@@ -445,6 +500,16 @@ class PremiumEntitlementService extends ChangeNotifier {
   void _applyCustomerInfo(rc.CustomerInfo info) {
     _paidEntitlement =
         info.entitlements.all[entitlementId]?.isActive == true;
+    _entitlementSource = PremiumEntitlementSource.providerVerified;
+    _entitlementObservedAt = DateTime.now().toUtc();
+  }
+
+  void _markEntitlementUnknownIfUnverified() {
+    if (_entitlementSource == PremiumEntitlementSource.providerVerified) {
+      return;
+    }
+    _entitlementSource = PremiumEntitlementSource.unknown;
+    _entitlementObservedAt = null;
   }
 
   String? _normalizeUserId(String? value) {
@@ -455,8 +520,18 @@ class PremiumEntitlementService extends ChangeNotifier {
 
   @visibleForTesting
   void setPaidEntitlementForTesting(bool value) {
-    if (_paidEntitlement == value) return;
+    if (_paidEntitlement == value &&
+        _entitlementSource ==
+            (value
+                ? PremiumEntitlementSource.providerVerified
+                : PremiumEntitlementSource.localDefault)) {
+      return;
+    }
     _paidEntitlement = value;
+    _entitlementSource = value
+        ? PremiumEntitlementSource.providerVerified
+        : PremiumEntitlementSource.localDefault;
+    _entitlementObservedAt = value ? DateTime.now().toUtc() : null;
     notifyListeners();
   }
 }
