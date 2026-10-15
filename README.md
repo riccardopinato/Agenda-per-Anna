@@ -37,7 +37,8 @@ See `docs/ARCHITECTURE.md` and `supabase/README.md` for implementation details.
 - **v1.01-B** is merged: the old first-run screen is replaced by a fresh-profile-only preset choice and a first useful action that reuses the canonical Unified Capture flow.
 - **v1.01-C** is merged: Explore and optional entry points follow enabled modules, while Settings exposes presets and reversible per-module controls.
 - **v1.01-D** is merged: Home reduces secondary chrome, surfaces Inbox/Noi ♡ only when useful, keeps core mood/gratitude independent from optional modules, and hides healthy sync/local-only status while preserving actionable errors and pending work.
-- **v1.01-E** is in progress: explicit accessibility semantics, narrow-screen/large-text resilience, five-language regression coverage and a trusted AppLab personalization journey close the v1.01 line.
+- **v1.01-E** is merged: explicit accessibility semantics, narrow-screen/large-text resilience, five-language regression coverage and a trusted AppLab personalization journey close the functional v1.01 line.
+- **v1.01-F** aligns Product Bible, Roadmap and release evidence with App Factory v26.6 without changing runtime product behavior.
 - Existing users keep the Complete experience by default and never re-run onboarding because of the v1.01 migration.
 - Personalization is presentation-only: hiding a module never deletes its canonical data and no new store, router, database or sync queue is introduced.
 
