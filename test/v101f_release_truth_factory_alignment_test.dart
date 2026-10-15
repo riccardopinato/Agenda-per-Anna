@@ -20,7 +20,7 @@ void main() {
     );
     expect(
       roadmap,
-      contains('| v1.01-F | Release Truth & Factory Alignment | IN PROGRESS |'),
+      contains('| v1.01-F | Release Truth & Factory Alignment | Completed — documentation/evidence closure |'),
     );
     expect(
       roadmap,
