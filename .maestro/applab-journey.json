@@ -47,6 +47,10 @@
     {
       "name": "functional-navigation",
       "flow": ".maestro/journey/d6-functional-navigation.yaml"
+    },
+    {
+      "name": "personalization",
+      "flow": ".maestro/journey/personalization.yaml"
     }
   ]
 }

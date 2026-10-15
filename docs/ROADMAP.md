@@ -67,7 +67,8 @@ Source of execution truth for Anna's Diary. Product identity and boundaries are 
 | v1.01-A | Personalization & Simplicity — Module Preferences | Completed — 4/4 gates green | Reversible module/preset preferences inside AgendaPreferences; legacy profiles retain Complete; hiding never deletes domain data |
 | v1.01-B | Personalized Onboarding | Completed — 4/4 gates green | Fresh-only preset choice plus canonical Unified Capture first action; existing profiles remain untouched |
 | v1.01-C | Dynamic Explore & Personalization | Completed — 4/4 gates green | Enabled modules drive Explore and optional entry-point visibility; Settings exposes presets and reversible per-module controls |
-| v1.01-D | Adaptive Home & Quiet UX | IN PROGRESS | Home chrome is reduced, optional signals follow module preferences, and healthy sync/local-only states stay silent while actionable problems remain visible |
+| v1.01-D | Adaptive Home & Quiet UX | Completed — 4/4 gates green | Home chrome is reduced, optional signals follow module preferences, and healthy sync/local-only states stay silent while actionable problems remain visible |
+| v1.01-E | Polish, Accessibility & Regression | IN PROGRESS | Explicit semantics, narrow-screen resilience, five-language v1.01 QA and trusted runtime personalization regression |
 
 ## v1.01 Personalization & Simplicity
 
@@ -76,7 +77,7 @@ Source of execution truth for Anna's Diary. Product identity and boundaries are 
 - Personalization persists through the existing `AgendaPreferences` payload.
 - Legacy preferences without v1.01 fields resolve to **Complete**, preserving the pre-v1.01 UI contract.
 - Presets are **Essential**, **My Life**, **Complete** and **Custom**.
-- v1.01-A established the preference contract. v1.01-B added fresh-only preset onboarding and a canonical first-action handoff to Unified Capture. v1.01-C applies those preferences to Explore and optional entry points while exposing reversible controls in Settings. v1.01-D makes Home quieter: Search remains direct, attention-worthy Inbox/Noi ♡ can surface directly, secondary destinations live under More, and healthy sync/local-only states do not consume Home space.
+- v1.01-A established the preference contract. v1.01-B added fresh-only preset onboarding and a canonical first-action handoff to Unified Capture. v1.01-C applies those preferences to Explore and optional entry points while exposing reversible controls in Settings. v1.01-D makes Home quieter: Search remains direct, attention-worthy Inbox/Noi ♡ can surface directly, secondary destinations live under More, and healthy sync/local-only states do not consume Home space. v1.01-E closes the release with explicit accessibility semantics, narrow-viewport rendering QA, five-language regression coverage and a trusted runtime personalization checkpoint.
 - Full contract: `docs/V101_PERSONALIZATION_SIMPLICITY.md`.
 
 ## v1.00-D6 release evidence

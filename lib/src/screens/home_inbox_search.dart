@@ -213,7 +213,9 @@ class HomeScreen extends StatelessWidget {
                 ),
               Semantics(
                 identifier: 'home_more_menu',
+                container: true,
                 button: true,
+                label: strings.d3('homeMore'),
                 child: PopupMenuButton<String>(
                   key: const ValueKey<String>('home-more-menu'),
                   tooltip: strings.d3('homeMore'),

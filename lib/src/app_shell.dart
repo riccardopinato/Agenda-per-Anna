@@ -275,12 +275,15 @@ class _OnboardingScreenState extends State<_OnboardingScreen> {
       key: const ValueKey('onboarding-preset-step'),
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          strings.d3('onboardingTitle'),
-          style: const TextStyle(
-            fontSize: 32,
-            fontWeight: FontWeight.w900,
-            height: 1.05,
+        Semantics(
+          header: true,
+          child: Text(
+            strings.d3('onboardingTitle'),
+            style: const TextStyle(
+              fontSize: 32,
+              fontWeight: FontWeight.w900,
+              height: 1.05,
+            ),
           ),
         ),
         const SizedBox(height: 12),
@@ -375,12 +378,15 @@ class _OnboardingScreenState extends State<_OnboardingScreen> {
       key: const ValueKey('onboarding-first-action-step'),
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          strings.d3('onboardingFirstActionTitle'),
-          style: const TextStyle(
-            fontSize: 30,
-            fontWeight: FontWeight.w900,
-            height: 1.08,
+        Semantics(
+          header: true,
+          child: Text(
+            strings.d3('onboardingFirstActionTitle'),
+            style: const TextStyle(
+              fontSize: 30,
+              fontWeight: FontWeight.w900,
+              height: 1.08,
+            ),
           ),
         ),
         const SizedBox(height: 10),
@@ -479,10 +485,19 @@ class _OnboardingPresetCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
 
+    final semanticLabel = badge == null
+        ? '$title. $subtitle'
+        : '$title. $badge. $subtitle';
+
     return Semantics(
       identifier: semanticsId,
+      container: true,
       button: true,
       selected: selected,
+      enabled: onTap != null,
+      label: semanticLabel,
+      onTap: onTap,
+      excludeSemantics: true,
       child: Card(
         margin: EdgeInsets.zero,
         color: selected ? scheme.primaryContainer : null,
@@ -509,15 +524,16 @@ class _OnboardingPresetCard extends StatelessWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Row(
+                        Wrap(
+                          spacing: 8,
+                          runSpacing: 6,
+                          crossAxisAlignment: WrapCrossAlignment.center,
                           children: [
-                            Expanded(
-                              child: Text(
-                                title,
-                                style: const TextStyle(
-                                  fontWeight: FontWeight.w900,
-                                  fontSize: 17,
-                                ),
+                            Text(
+                              title,
+                              style: const TextStyle(
+                                fontWeight: FontWeight.w900,
+                                fontSize: 17,
                               ),
                             ),
                             if (badge != null)
