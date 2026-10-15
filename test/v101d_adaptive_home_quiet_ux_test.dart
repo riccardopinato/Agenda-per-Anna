@@ -20,15 +20,18 @@ void main() {
     );
 
     final appBarStart = home.indexOf('appBar: AppBar(');
-    final bodyStart = home.indexOf('body: ListView(', appBarStart);
+    final moreMenuStart = home.indexOf(
+      "identifier: 'home_more_menu'",
+      appBarStart,
+    );
     expect(appBarStart, greaterThanOrEqualTo(0));
-    expect(bodyStart, greaterThan(appBarStart));
-    final appBar = home.substring(appBarStart, bodyStart);
+    expect(moreMenuStart, greaterThan(appBarStart));
+    final directActions = home.substring(appBarStart, moreMenuStart);
 
-    expect(appBar, isNot(contains('Icons.inventory_2_outlined')));
-    expect(appBar, isNot(contains('Icons.backup_outlined')));
-    expect(appBar, isNot(contains('Icons.cloud_done_outlined')));
-    expect(appBar, isNot(contains('Icons.settings_outlined')));
+    expect(directActions, isNot(contains('Icons.inventory_2_outlined')));
+    expect(directActions, isNot(contains('Icons.backup_outlined')));
+    expect(directActions, isNot(contains('Icons.cloud_done_outlined')));
+    expect(directActions, isNot(contains('Icons.settings_outlined')));
   });
 
   test('healthy sync and intentional device-only use stay quiet', () {
