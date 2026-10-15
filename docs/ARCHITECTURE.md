@@ -738,3 +738,21 @@ v0.98 is an entry-point consolidation over the existing v0.76 Unified Capture do
 
 Capture Everywhere is routing, not storage. No second capture database, alternate sync queue, background recorder, transcription/AI layer or duplicate media store is introduced.
 
+## v1.02-B — Provider-agnostic entitlement evidence
+
+- `PremiumEntitlementService` remains the single access owner and RevenueCat
+  remains its billing/provider adapter.
+- `PremiumEntitlementSnapshot` exposes access, paid state, provenance,
+  observation time and current store-service state without leaking provider SDK
+  types into feature modules.
+- Provider-backed state is marked `providerVerified` only after CustomerInfo is
+  applied; preview/debug access is separately marked `qaOverride`.
+- A provider/configuration failure before any provider-backed state is observed
+  becomes `unknown`. A transient failure after an observed provider state does
+  not fabricate a new Free state or delete user-owned data.
+- Anna does not add an app-owned subscription grace timer. RevenueCat remains
+  authoritative for CustomerInfo cache/expiry behavior.
+- Premium Store QA reports provenance/time as non-secret diagnostics.
+- Real purchase/restore remains external Google Play Internal Testing evidence;
+  automated AppLab/CI cannot promote that claim.
+
