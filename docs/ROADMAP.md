@@ -70,7 +70,7 @@ Source of execution truth for Anna's Diary. Product identity and boundaries are 
 | v1.01-C | Dynamic Explore & Personalization | Completed — 4/4 gates green | Enabled modules drive Explore and optional entry-point visibility; Settings exposes presets and reversible per-module controls |
 | v1.01-D | Adaptive Home & Quiet UX | Completed — 4/4 gates green | Home chrome is reduced, optional signals follow module preferences, and healthy sync/local-only states stay silent while actionable problems remain visible |
 | v1.01-E | Polish, Accessibility & Regression | Completed — 4/4 exact-head gates green | Explicit semantics, narrow-screen resilience, five-language v1.01 QA and trusted runtime personalization regression |
-| v1.01-F | Release Truth & Factory Alignment | IN PROGRESS | Align Product Bible/Roadmap/evidence to App Factory v26.6; bounded v1.01 cleanup only |
+| v1.01-F | Release Truth & Factory Alignment | Completed — documentation/evidence closure | Align Product Bible/Roadmap/evidence to App Factory v26.6; bounded v1.01 cleanup only |
 | v1.02-A | Native Physical Certification | BLOCKED ON PHYSICAL EVIDENCE | Close D7 on one exact stable-signed artifact: file providers, Keystore/biometric, notifications, shortcuts/share, Noi ♡ two-device matrix |
 | v1.02-B | Entitlement Contract Hardening | PLANNED | Align the existing RevenueCat-backed service to the provider-agnostic entitlement snapshot/provenance contract without provider migration |
 | v1.02-C | Google Play / RevenueCat Real QA | BLOCKED ON EXTERNAL DISTRIBUTION | Internal Testing purchase/restore/reinstall evidence on exact signed AAB with real Offering products |
