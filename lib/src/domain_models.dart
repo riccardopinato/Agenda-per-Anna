@@ -218,13 +218,13 @@ class AgendaPreferences {
       ritualRemindersEnabled:
           ritualRemindersEnabled ?? this.ritualRemindersEnabled,
       morningRitualHour:
-          (morningRitualHour ?? this.morningRitualHour).clamp(0, 23),
+          (morningRitualHour ?? this.morningRitualHour).clamp(0, 23).toInt(),
       morningRitualMinute:
-          (morningRitualMinute ?? this.morningRitualMinute).clamp(0, 59),
+          (morningRitualMinute ?? this.morningRitualMinute).clamp(0, 59).toInt(),
       eveningRitualHour:
-          (eveningRitualHour ?? this.eveningRitualHour).clamp(0, 23),
+          (eveningRitualHour ?? this.eveningRitualHour).clamp(0, 23).toInt(),
       eveningRitualMinute:
-          (eveningRitualMinute ?? this.eveningRitualMinute).clamp(0, 59),
+          (eveningRitualMinute ?? this.eveningRitualMinute).clamp(0, 59).toInt(),
       personalizationPreset:
           personalizationPreset ?? this.personalizationPreset,
       enabledModules: enabledModules ?? this.enabledModules,
@@ -345,13 +345,13 @@ class AgendaPreferences {
         ritualRemindersEnabled:
             json['ritualRemindersEnabled'] as bool? ?? false,
         morningRitualHour:
-            (json['morningRitualHour'] as num? ?? 8).toInt().clamp(0, 23),
+            (json['morningRitualHour'] as num? ?? 8).toInt().clamp(0, 23).toInt(),
         morningRitualMinute:
-            (json['morningRitualMinute'] as num? ?? 0).toInt().clamp(0, 59),
+            (json['morningRitualMinute'] as num? ?? 0).toInt().clamp(0, 59).toInt(),
         eveningRitualHour:
-            (json['eveningRitualHour'] as num? ?? 20).toInt().clamp(0, 23),
+            (json['eveningRitualHour'] as num? ?? 20).toInt().clamp(0, 23).toInt(),
         eveningRitualMinute:
-            (json['eveningRitualMinute'] as num? ?? 30).toInt().clamp(0, 59),
+            (json['eveningRitualMinute'] as num? ?? 30).toInt().clamp(0, 59).toInt(),
         personalizationPreset: PersonalizationPreset.values.firstWhere(
           (e) => e.name == json['personalizationPreset'],
           orElse: () => PersonalizationPreset.complete,
