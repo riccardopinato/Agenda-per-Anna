@@ -84,6 +84,7 @@ void main() {
       '.maestro/journey/archive.yaml',
       '.maestro/journey/backup.yaml',
       '.maestro/journey/shared.yaml',
+      '.maestro/journey/trash.yaml',
       '.maestro/journey/d6-functional-navigation.yaml',
     ];
 
