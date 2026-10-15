@@ -103,4 +103,123 @@ void main() {
     expect(storeQa, isNot(contains('--validation-level "DISTRIBUTION_VERIFIED"')));
     expect(storeQa, isNot(contains('--validation-level "STORE_READY"')));
   });
+
+  test('Store QA validator requires exact AAB and real scenario evidence',
+      () async {
+    final temp = Directory.systemTemp.createTempSync('anna-store-qa-');
+    addTearDown(() {
+      try {
+        temp.deleteSync(recursive: true);
+      } catch (_) {}
+    });
+
+    final artifact = File('${temp.path}/candidate.aab')
+      ..writeAsBytesSync(utf8.encode('store-qa-exact-bytes'));
+    final realityFile = File('${temp.path}/STORE_QA_RELEASE_REALITY.json');
+
+    final created = await Process.run('python3', [
+      'tool/create_release_reality.py',
+      '--artifact',
+      artifact.path,
+      '--output',
+      realityFile.path,
+      '--project',
+      "Anna's Diary",
+      '--repository',
+      'riccardopinato/Agenda-per-Anna',
+      '--source-ref',
+      'main',
+      '--source-sha',
+      '0123456789abcdef0123456789abcdef01234567',
+      '--version',
+      '1.0.0-rc.1',
+      '--build-number',
+      '110',
+      '--variant',
+      'release obfuscated Premium Store QA AAB',
+      '--package-id',
+      'com.riccardopinato.agenda_per_anna',
+      '--signing-sha256',
+      'b' * 64,
+      '--workflow-run-id',
+      '654321',
+      '--distribution-channel',
+      'google-play-internal-testing-candidate',
+      '--validation-level',
+      'ARTIFACT_BUILT',
+    ]);
+    expect(created.exitCode, 0, reason: '${created.stdout}\n${created.stderr}');
+
+    final reality =
+        jsonDecode(realityFile.readAsStringSync()) as Map<String, dynamic>;
+    final template = jsonDecode(
+      File('docs/V102_STORE_QA_EVIDENCE_TEMPLATE.json').readAsStringSync(),
+    ) as Map<String, dynamic>;
+
+    Map<String, dynamic> completeEvidence() {
+      final evidence =
+          jsonDecode(jsonEncode(template)) as Map<String, dynamic>;
+      for (final key in const <String>[
+        'repository',
+        'sourceSha',
+        'version',
+        'buildNumber',
+        'packageId',
+        'artifactName',
+        'artifactSha256',
+        'signingFingerprint',
+        'workflowRun',
+        'distributionChannel',
+      ]) {
+        evidence[key] = reality[key];
+      }
+      evidence['status'] = 'PASS';
+      evidence['testerRef'] = 'license-tester-a';
+      final scenarios = evidence['scenarios'] as List<dynamic>;
+      for (final raw in scenarios) {
+        final scenario = raw as Map<String, dynamic>;
+        final id = scenario['id'] as String;
+        scenario['status'] = 'PASS';
+        scenario['expected'] = 'Expected Store behavior for $id';
+        scenario['observed'] = 'Observed Store behavior for $id';
+        scenario['evidenceRefs'] = <String>['evidence/$id.txt'];
+      }
+      return evidence;
+    }
+
+    Future<ProcessResult> validate(
+      Map<String, dynamic> evidence,
+      String name,
+    ) async {
+      final file = File('${temp.path}/$name.json')
+        ..writeAsStringSync(jsonEncode(evidence));
+      return Process.run('python3', [
+        'tool/validate_v102_store_qa_evidence.py',
+        file.path,
+        '--release-reality',
+        realityFile.path,
+        '--artifact',
+        artifact.path,
+      ]);
+    }
+
+    final pending = completeEvidence()..['status'] = 'PENDING';
+    expect((await validate(pending, 'pending')).exitCode, isNot(0));
+
+    final wrongArtifact = completeEvidence()
+      ..['artifactSha256'] = 'c' * 64;
+    expect((await validate(wrongArtifact, 'wrong-artifact')).exitCode, isNot(0));
+
+    final passed = await validate(completeEvidence(), 'pass');
+    expect(
+      passed.exitCode,
+      0,
+      reason: '${passed.stdout}\n${passed.stderr}',
+    );
+    expect(
+      passed.stdout.toString(),
+      contains('Store QA evidence: PASS'),
+    );
+  });
+
 }
