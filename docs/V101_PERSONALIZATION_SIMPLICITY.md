@@ -129,13 +129,43 @@ never deletes, migrates or orphans data.
 No new router, persistence store, database, sync queue or recommendation engine
 is introduced.
 
+## v1.01-E — Polish, Accessibility & Regression
+
+The final v1.01 step hardens the presentation layer without changing product
+ownership or adding feature scope:
+
+- onboarding titles and Personalize section titles expose explicit heading
+  semantics;
+- onboarding preset cards expose one stable, non-duplicated semantic node with
+  selection state, action and localized descriptive label;
+- the recommended badge can wrap below the preset title instead of forcing a
+  rigid row, reducing overflow risk on narrow screens and with larger text;
+- preset chips and module switches in Personalize expose stable semantic IDs,
+  explicit state and accessibility actions without duplicating descendant
+  semantics;
+- the Home More control exposes an explicit localized accessibility label;
+- the v1.01 regression suite renders fresh onboarding at a narrow viewport in
+  English, Italian, Spanish, French and Portuguese and rejects any rendering
+  exception;
+- every v1.01 presentation localization row is required to contain non-empty
+  en/it/es/fr/pt values;
+- AppLab adds a trusted personalization checkpoint that enters through More,
+  applies Essential, performs one manual Custom change, restores Complete and
+  returns to Home;
+- all E changes remain presentation-only and continue to reuse
+  `AgendaPreferences`, existing stores, existing navigation and the canonical
+  Unified Capture path.
+
+The final merge remains fail-closed on Development checks, Web deploy, Android
+size audit and AppLab Production Gate passing on the same exact PR head.
+
 ## Planned sequence
 
 - **v1.01-A** Module Preferences — completed and merged after 4/4 gates.
 - **v1.01-B** Personalized Onboarding — completed and merged after 4/4 gates.
 - **v1.01-C** Dynamic Explore & Personalization — completed and merged after 4/4 gates.
-- **v1.01-D** Adaptive Home & Quiet UX — implemented; merge remains gate-controlled.
-- **v1.01-E** Polish, Accessibility & Regression — five-language QA and trusted runtime.
+- **v1.01-D** Adaptive Home & Quiet UX — completed and merged after 4/4 gates.
+- **v1.01-E** Polish, Accessibility & Regression — implemented candidate; final merge remains exact-head gate-controlled.
 
 ## Rollback strategy
 
