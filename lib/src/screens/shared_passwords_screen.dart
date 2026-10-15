@@ -1,10 +1,12 @@
 part of '../../main.dart';
 
 class SharedPasswordsScreen extends StatefulWidget {
+  final AgendaStore store;
   final SharedSpace space;
 
   const SharedPasswordsScreen({
     super.key,
+    required this.store,
     required this.space,
   });
 
@@ -131,7 +133,7 @@ class _SharedPasswordsScreenState extends State<SharedPasswordsScreen>
   Future<void> _openVault() async {
     await Navigator.of(context).push(
       MaterialPageRoute<void>(
-        builder: (_) => const PrivateVaultScreen(),
+        builder: (_) => PrivateVaultScreen(store: widget.store),
       ),
     );
     if (!mounted) return;

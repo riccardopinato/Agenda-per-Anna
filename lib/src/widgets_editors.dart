@@ -330,95 +330,97 @@ class _JournalEditorState extends State<JournalEditor> {
             ],
           ),
         ),
-        const SizedBox(height: 12),
-        SimpleCard(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  Expanded(
-                    child: Text(
-                      AnnaStrings.of(context).d3('editor_myHabits'),
-                      style: const TextStyle(
-                        fontWeight: FontWeight.w800,
-                        fontSize: 17,
+        if (widget.store.preferences.isModuleEnabled(AppModule.habits)) ...[
+          const SizedBox(height: 12),
+          SimpleCard(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        AnnaStrings.of(context).d3('editor_myHabits'),
+                        style: const TextStyle(
+                          fontWeight: FontWeight.w800,
+                          fontSize: 17,
+                        ),
                       ),
                     ),
+                    IconButton(
+                      tooltip: AnnaStrings.of(context).d3('editor_addHabit'),
+                      onPressed: _addHabit,
+                      icon: const Icon(Icons.add_circle_outline),
+                    ),
+                  ],
+                ),
+                if (habits.isEmpty)
+                  Text(AnnaStrings.of(context).d3('editor_habitEmpty'))
+                else
+                  ...habits.map(
+                    (habit) => CheckboxListTile(
+                      contentPadding: EdgeInsets.zero,
+                      dense: true,
+                      value: completed.contains(habit.id),
+                      title: Text(habit.name),
+                      secondary: Icon(
+                        completed.contains(habit.id)
+                            ? Icons.auto_awesome
+                            : Icons.radio_button_unchecked,
+                        color: completed.contains(habit.id)
+                            ? Theme.of(context).colorScheme.primary
+                            : Theme.of(context).colorScheme.outline,
+                      ),
+                      onChanged: (_) =>
+                          widget.store.toggleHabit(widget.date, habit.id),
+                      controlAffinity: ListTileControlAffinity.trailing,
+                    ),
                   ),
-                  IconButton(
-                    tooltip: AnnaStrings.of(context).d3('editor_addHabit'),
-                    onPressed: _addHabit,
-                    icon: const Icon(Icons.add_circle_outline),
+                if (habits.isNotEmpty) ...[
+                  const Divider(),
+                  Align(
+                    alignment: Alignment.centerRight,
+                    child: TextButton.icon(
+                      onPressed: () async {
+                        final selected = await showModalBottomSheet<String>(
+                          context: context,
+                          showDragHandle: true,
+                          builder: (sheetContext) => SafeArea(
+                            child: ListView(
+                              shrinkWrap: true,
+                              children: [
+                                ListTile(
+                                  title: Text(
+                                    AnnaStrings.of(context).d3('editor_manageHabits'),
+                                    style: const TextStyle(fontWeight: FontWeight.w800),
+                                  ),
+                                ),
+                                ...habits.map(
+                                  (habit) => ListTile(
+                                    title: Text(habit.name),
+                                    trailing:
+                                        const Icon(Icons.delete_outline),
+                                    onTap: () =>
+                                        Navigator.pop(sheetContext, habit.id),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        );
+                        if (selected != null) {
+                          await widget.store.removeHabit(selected);
+                        }
+                      },
+                      icon: const Icon(Icons.tune),
+                      label: Text(AnnaStrings.of(context).d3('editor_manage')),
+                    ),
                   ),
                 ],
-              ),
-              if (habits.isEmpty)
-                Text(AnnaStrings.of(context).d3('editor_habitEmpty'))
-              else
-                ...habits.map(
-                  (habit) => CheckboxListTile(
-                    contentPadding: EdgeInsets.zero,
-                    dense: true,
-                    value: completed.contains(habit.id),
-                    title: Text(habit.name),
-                    secondary: Icon(
-                      completed.contains(habit.id)
-                          ? Icons.auto_awesome
-                          : Icons.radio_button_unchecked,
-                      color: completed.contains(habit.id)
-                          ? Theme.of(context).colorScheme.primary
-                          : Theme.of(context).colorScheme.outline,
-                    ),
-                    onChanged: (_) =>
-                        widget.store.toggleHabit(widget.date, habit.id),
-                    controlAffinity: ListTileControlAffinity.trailing,
-                  ),
-                ),
-              if (habits.isNotEmpty) ...[
-                const Divider(),
-                Align(
-                  alignment: Alignment.centerRight,
-                  child: TextButton.icon(
-                    onPressed: () async {
-                      final selected = await showModalBottomSheet<String>(
-                        context: context,
-                        showDragHandle: true,
-                        builder: (sheetContext) => SafeArea(
-                          child: ListView(
-                            shrinkWrap: true,
-                            children: [
-                              ListTile(
-                                title: Text(
-                                  AnnaStrings.of(context).d3('editor_manageHabits'),
-                                  style: const TextStyle(fontWeight: FontWeight.w800),
-                                ),
-                              ),
-                              ...habits.map(
-                                (habit) => ListTile(
-                                  title: Text(habit.name),
-                                  trailing:
-                                      const Icon(Icons.delete_outline),
-                                  onTap: () =>
-                                      Navigator.pop(sheetContext, habit.id),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      );
-                      if (selected != null) {
-                        await widget.store.removeHabit(selected);
-                      }
-                    },
-                    icon: const Icon(Icons.tune),
-                    label: Text(AnnaStrings.of(context).d3('editor_manage')),
-                  ),
-                ),
               ],
-            ],
+            ),
           ),
-        ),
+          ],
         const SizedBox(height: 12),
         DiaryMemoryCard(
           store: widget.store,

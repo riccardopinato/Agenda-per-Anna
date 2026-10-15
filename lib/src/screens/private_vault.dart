@@ -36,7 +36,7 @@ class _PrivateVaultHomeCardState extends State<PrivateVaultHomeCard> {
             onTap: () => Navigator.push(
               context,
               MaterialPageRoute<void>(
-                builder: (_) => const PrivateVaultScreen(),
+                builder: (_) => PrivateVaultScreen(store: widget.store),
               ),
             ),
             child: Padding(
@@ -95,7 +95,12 @@ class _PrivateVaultHomeCardState extends State<PrivateVaultHomeCard> {
 enum _VaultSection { notes, passwords }
 
 class PrivateVaultScreen extends StatefulWidget {
-  const PrivateVaultScreen({super.key});
+  final AgendaStore store;
+
+  const PrivateVaultScreen({
+    super.key,
+    required this.store,
+  });
 
   @override
   State<PrivateVaultScreen> createState() => _PrivateVaultScreenState();
@@ -1480,10 +1485,11 @@ class _PrivateVaultScreenState extends State<PrivateVaultScreen>
               padding: const EdgeInsets.fromLTRB(18, 12, 18, 0),
               child: _vaultWebSecurityWarning(context, strings),
             ),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(18, 12, 18, 0),
-            child: _buildCycleTrackerCard(context, strings),
-          ),
+          if (widget.store.preferences.isModuleEnabled(AppModule.cycleTracker))
+            Padding(
+              padding: const EdgeInsets.fromLTRB(18, 12, 18, 0),
+              child: _buildCycleTrackerCard(context, strings),
+            ),
           Padding(
             padding: const EdgeInsets.fromLTRB(18, 12, 18, 4),
             child: SizedBox(

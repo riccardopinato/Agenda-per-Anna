@@ -79,11 +79,33 @@ The flow is local-first, does not require account creation, uses the existing
 five-language catalog, and exposes stable semantics for AppLab/Maestro. Hiding a
 module remains presentation-only and never deletes domain data.
 
+## v1.01-C — Dynamic Explore & Personalization
+
+The v1.01-A preference contract now drives presentation:
+
+- Explore renders only enabled optional destinations and always exposes a
+  Personalize entry point;
+- Settings exposes one Personalize surface for Essential / My Life / Complete
+  presets and manual per-module switches;
+- manual switches resolve to Custom through the existing
+  `AgendaPreferences.withModuleEnabled` path;
+- Home hides optional Noi ♡ and Private Vault entry points when disabled,
+  suppresses People birthday preview when People is disabled, and removes the
+  habits summary when Habits is disabled;
+- the day editor hides habit controls when Habits is disabled;
+- Cycle Tracker is hidden inside Private Vault when its module is disabled;
+- Cycle Tracker → Private Vault dependency and Vault-off → Cycle-off behavior
+  remain owned by the v1.01-A preference contract;
+- Search, Archive, data safety and canonical storage remain intact, so hidden
+  data is recoverable and never deleted.
+
+No second preferences store, router, database or sync queue is introduced.
+
 ## Planned sequence
 
 - **v1.01-A** Module Preferences — completed and merged after 4/4 gates.
-- **v1.01-B** Personalized Onboarding — implemented; merge remains gate-controlled.
-- **v1.01-C** Dynamic Explore & Personalization — module visibility and user controls.
+- **v1.01-B** Personalized Onboarding — completed and merged after 4/4 gates.
+- **v1.01-C** Dynamic Explore & Personalization — implemented; merge remains gate-controlled.
 - **v1.01-D** Adaptive Home & Quiet UX — quiet sync, reduced chrome, contextual cards.
 - **v1.01-E** Polish, Accessibility & Regression — five-language QA and trusted runtime.
 
