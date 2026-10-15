@@ -44,7 +44,11 @@ void main() {
         find.byKey(const ValueKey('onboarding-preset-essential')),
       );
       await tester.pump();
-      await tester.tap(find.byKey(const ValueKey('onboarding-continue')));
+      final continueButton =
+          find.byKey(const ValueKey('onboarding-continue'));
+      await tester.ensureVisible(continueButton);
+      await tester.pumpAndSettle();
+      await tester.tap(continueButton);
       await tester.pumpAndSettle();
 
       expect(
@@ -54,7 +58,11 @@ void main() {
       expect(store.preferences.onboardingDone, isFalse);
       expect(store.preferences.personalizationPreset, PersonalizationPreset.complete);
 
-      await tester.tap(find.byKey(const ValueKey('onboarding-open-agenda')));
+      final openAgendaButton =
+          find.byKey(const ValueKey('onboarding-open-agenda'));
+      await tester.ensureVisible(openAgendaButton);
+      await tester.pumpAndSettle();
+      await tester.tap(openAgendaButton);
       await tester.pumpAndSettle();
 
       expect(store.preferences.onboardingDone, isTrue);
