@@ -1,6 +1,6 @@
 # Anna's Diary — v1.01 Personalization & Simplicity
 
-Status: **IN PROGRESS**
+Status: **COMPLETED — A→E merged with exact-head 4/4 gates**
 
 ## Product goal
 
@@ -165,7 +165,8 @@ size audit and AppLab Production Gate passing on the same exact PR head.
 - **v1.01-B** Personalized Onboarding — completed and merged after 4/4 gates.
 - **v1.01-C** Dynamic Explore & Personalization — completed and merged after 4/4 gates.
 - **v1.01-D** Adaptive Home & Quiet UX — completed and merged after 4/4 gates.
-- **v1.01-E** Polish, Accessibility & Regression — implemented candidate; final merge remains exact-head gate-controlled.
+- **v1.01-E** Polish, Accessibility & Regression — completed and merged after 4/4 exact-head gates.
+- **v1.01-F** Release Truth & Factory Alignment — completed documentation/evidence closure under App Factory v26.6.
 
 ## Rollback strategy
 

@@ -55,7 +55,8 @@ Source of execution truth for Anna's Diary. Product identity and boundaries are 
 | v0.98 | Capture Everywhere | Completed — trusted runtime verified | Unified Capture across primary app surfaces plus Android/PWA launch shortcuts, reusing canonical persistence |
 | v0.99 | Open Life Export | Completed — CI/AppLab trusted runtime green | Open Markdown + structured JSON + separate media/sketch export over canonical data, with privacy-safe exclusions and no new persistence |
 | v1.00-B | Golden Core Cleanup & Localization | Completed — CI/AppLab trusted runtime green | Removed confirmed dead UI, localized core surfaces, simplified Home IA and locked 10k-memory projection performance without new persistence |
-| v1.00-C | Data Safety v21 Hardening | Completed — CI/AppLab trusted runtime green | Restore staging, reference-safe commit, deterministic crash recovery, stale-marker safety and shared-reference preservation |\n| v1.00-D | Security / Native Physical Certification | IN PROGRESS — live backend verified, physical gate pending | Live migration 027 + two-user backend contract verified; stable artifact identity/AppLab backup preflight added; real-device file, Keystore, E2EE and native flows still required |
+| v1.00-C | Data Safety v21 Hardening | Completed — CI/AppLab trusted runtime green | Restore staging, reference-safe commit, deterministic crash recovery, stale-marker safety and shared-reference preservation |
+| v1.00-D | Security / Native Physical Certification | IN PROGRESS — live backend verified, physical gate pending | Live migration 027 + two-user backend contract verified; stable artifact identity/AppLab backup preflight added; real-device file, Keystore, E2EE and native flows still required |
 | v1.00-D1 | Crypto Responsiveness | Completed — CI/AppLab green | Native PBKDF2 off main isolate for Vault + Noi ♡ pairing/recovery, unchanged crypto format, responsiveness/compatibility regressions |
 | v1.00-D2 | Vault AppLab Deep Journey | Completed — CI/AppLab green | Clean setup, encrypted sentinel, relock, wrong-password rejection, correct unlock and process-restart persistence in trusted runtime |
 | v1.00-D3 | Localization Completion | Completed — CI/AppLab green | en/it/es/fr/pt completion across migrated Flutter/native/background surfaces with locale-neutral persistence boundaries |
@@ -68,7 +69,35 @@ Source of execution truth for Anna's Diary. Product identity and boundaries are 
 | v1.01-B | Personalized Onboarding | Completed — 4/4 gates green | Fresh-only preset choice plus canonical Unified Capture first action; existing profiles remain untouched |
 | v1.01-C | Dynamic Explore & Personalization | Completed — 4/4 gates green | Enabled modules drive Explore and optional entry-point visibility; Settings exposes presets and reversible per-module controls |
 | v1.01-D | Adaptive Home & Quiet UX | Completed — 4/4 gates green | Home chrome is reduced, optional signals follow module preferences, and healthy sync/local-only states stay silent while actionable problems remain visible |
-| v1.01-E | Polish, Accessibility & Regression | IN PROGRESS | Explicit semantics, narrow-screen resilience, five-language v1.01 QA and trusted runtime personalization regression |
+| v1.01-E | Polish, Accessibility & Regression | Completed — 4/4 exact-head gates green | Explicit semantics, narrow-screen resilience, five-language v1.01 QA and trusted runtime personalization regression |
+| v1.01-F | Release Truth & Factory Alignment | Completed — documentation/evidence closure | Align Product Bible/Roadmap/evidence to App Factory v26.6; bounded v1.01 cleanup only |
+| v1.02-A | Native Physical Certification | BLOCKED ON PHYSICAL EVIDENCE | Close D7 on one exact stable-signed artifact: file providers, Keystore/biometric, notifications, shortcuts/share, Noi ♡ two-device matrix |
+| v1.02-B | Entitlement Contract Hardening | PLANNED | Align the existing RevenueCat-backed service to the provider-agnostic entitlement snapshot/provenance contract without provider migration |
+| v1.02-C | Google Play / RevenueCat Real QA | BLOCKED ON EXTERNAL DISTRIBUTION | Internal Testing purchase/restore/reinstall evidence on exact signed AAB with real Offering products |
+| v1.02-D | Stable Release Candidate | BLOCKED BY v1.02-A/C | Build once, bind exact source/artifact/signing identity, verify exact bytes, then distribute |
+| v1.03 | Cross-App Certification Refresh | BLOCKED ON PAIRED PHYSICAL EVIDENCE | Re-certify Anna ↔ Wonderlog under Cross-App Verification v1 with exact paired artifact identity and COPY/LINK/idempotency/provenance matrix |
+| v1.04 | Daily Rituals & Life Flow | PLANNED | Optional morning/evening ritual projections reusing AgendaPreferences, Diary, Today, Unified Capture and existing reminder engine |
+| v1.05 | Memories & Recall 3.0 | PLANNED | Richer deterministic resurfacing over existing diary/person/place/archive primitives; no Memory DB or generative narrator |
+| v1.06 | Ecosystem Expansion | PLANNED | Add specialist integrations one at a time under Shared Ecosystem Core + paired verification; preferred order TrailPath → Notes → SleepMax → CashMate |
+
+## Post-v1.01 execution order — App Factory v26.6
+
+Factory baseline for this roadmap refresh:
+`riccardopinato/App-Factory-Core@47c47f49a7b46812e3bd6f1231c3524f2b52b826`
+(Master v26.6, Golden Index v18).
+
+Execution remains evidence-driven:
+
+1. close v1.01-F documentation/evidence truth;
+2. implement v1.02-B entitlement hardening because it is software-verifiable;
+3. prepare but do not fabricate v1.02-A/C physical/store evidence;
+4. produce v1.02-D only after the exact-artifact physical + distribution gates pass;
+5. refresh Anna ↔ Wonderlog pair certification under Cross-App Verification v1;
+6. then resume product growth with Daily Rituals, Memories 3.0 and bounded ecosystem expansion.
+
+Provider rule: Anna keeps RevenueCat as the billing adapter. The v26.6
+provider-agnostic Entitlement Golden does not justify migrating to direct Play
+Billing. Visibility preferences remain separate from entitlement state.
 
 ## v1.01 Personalization & Simplicity
 
