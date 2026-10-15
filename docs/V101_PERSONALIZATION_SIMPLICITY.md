@@ -57,10 +57,32 @@ updating the app does not suddenly hide existing destinations.
 
 Manual module toggles switch the preference state to **Custom**.
 
+## v1.01-B — Personalized Onboarding
+
+Fresh profiles now receive a concise two-step first-run flow:
+
+- choose **Essential**, **My Life** or **Complete**; **My Life** is the recommended
+  starting point, while **Custom** stays out of first-run and belongs to the later
+  personalization controls;
+- optionally open the existing **Unified Capture** for the first useful action,
+  or enter the agenda without creating anything.
+
+The preset and `onboardingDone` flag are persisted together through the existing
+`AgendaPreferences` path only when onboarding completes. A partially completed
+first run therefore cannot leave half-applied personalization behind.
+
+Existing profiles do not re-enter onboarding because their existing
+`onboardingDone` state remains authoritative and legacy v1.01 fields still
+resolve to **Complete**.
+
+The flow is local-first, does not require account creation, uses the existing
+five-language catalog, and exposes stable semantics for AppLab/Maestro. Hiding a
+module remains presentation-only and never deletes domain data.
+
 ## Planned sequence
 
-- **v1.01-A** Module Preferences — persistence contract and compatibility.
-- **v1.01-B** Personalized Onboarding — presets and first useful action.
+- **v1.01-A** Module Preferences — completed and merged after 4/4 gates.
+- **v1.01-B** Personalized Onboarding — implemented; merge remains gate-controlled.
 - **v1.01-C** Dynamic Explore & Personalization — module visibility and user controls.
 - **v1.01-D** Adaptive Home & Quiet UX — quiet sync, reduced chrome, contextual cards.
 - **v1.01-E** Polish, Accessibility & Regression — five-language QA and trusted runtime.

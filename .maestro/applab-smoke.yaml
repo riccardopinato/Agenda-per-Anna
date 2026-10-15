@@ -15,7 +15,14 @@ appId: com.riccardopinato.agenda_per_anna
     visible: '(La tua agenda, davvero tua\.|Your agenda, truly yours\.|Tu agenda, de verdad tuya\.|Ton agenda, vraiment à toi\.|A tua agenda, verdadeiramente tua\.)'
     timeout: 15000
 - tapOn:
-    text: '(Inizia|Start|Empezar|Commencer|Começar)'
+    id: 'onboarding_preset_complete'
+- tapOn:
+    id: 'onboarding_continue'
+- extendedWaitUntil:
+    visible: '(Inizia con qualcosa di utile\.|Start with something useful\.|Empieza con algo útil\.|Commence par quelque chose d’utile\.|Começa com algo útil\.)'
+    timeout: 10000
+- tapOn:
+    id: 'onboarding_open_agenda'
 - tapOn:
     text: '(Oggi|Today|Hoy|Aujourd’hui|Hoje)[\s\S]*'
     retryTapIfNoChange: true

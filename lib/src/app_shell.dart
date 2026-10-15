@@ -159,120 +159,409 @@ class AgendaRoot extends StatelessWidget {
   }
 }
 
-class _OnboardingScreen extends StatelessWidget {
+class _OnboardingScreen extends StatefulWidget {
   final AgendaStore store;
 
   const _OnboardingScreen({required this.store});
 
   @override
+  State<_OnboardingScreen> createState() => _OnboardingScreenState();
+}
+
+class _OnboardingScreenState extends State<_OnboardingScreen> {
+  int step = 0;
+  PersonalizationPreset selectedPreset = PersonalizationPreset.life;
+  bool busy = false;
+
+  Future<void> _persistCompletion() async {
+    var next = widget.store.preferences.copyWith(onboardingDone: true);
+    next = next.applyPersonalizationPreset(selectedPreset);
+    await widget.store.savePreferences(next);
+  }
+
+  Future<void> _finish() async {
+    if (busy) return;
+    setState(() => busy = true);
+    try {
+      await _persistCompletion();
+    } finally {
+      if (mounted && !widget.store.preferences.onboardingDone) {
+        setState(() => busy = false);
+      }
+    }
+  }
+
+  Future<void> _captureFirstMoment() async {
+    if (busy) return;
+    setState(() => busy = true);
+    try {
+      await showUnifiedCapture(
+        context,
+        widget.store,
+        entryPoint: UnifiedCaptureEntryPoint.home,
+      );
+      if (!mounted) return;
+      await _persistCompletion();
+    } finally {
+      if (mounted && !widget.store.preferences.onboardingDone) {
+        setState(() => busy = false);
+      }
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
     final strings = AnnaStrings.of(context);
+    final scheme = Theme.of(context).colorScheme;
+
     return Scaffold(
       body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Spacer(),
-              Container(
-                width: 72,
-                height: 72,
-                decoration: BoxDecoration(
-                  color: scheme.primaryContainer,
-                  borderRadius: BorderRadius.circular(24),
-                ),
-                child: Icon(
-                  Icons.auto_stories_outlined,
-                  size: 36,
-                  color: scheme.onPrimaryContainer,
-                ),
-              ),
-              const SizedBox(height: 24),
-              Text(
-                strings.d3('onboardingTitle'),
-                style: const TextStyle(
-                  fontSize: 32,
-                  fontWeight: FontWeight.w900,
-                  height: 1.05,
-                ),
-              ),
-              const SizedBox(height: 12),
-              Text(
-                strings.d3('onboardingDescription'),
-                style: Theme.of(context).textTheme.bodyLarge,
-              ),
-              const SizedBox(height: 24),
-              _OnboardingFeature(
-                icon: Icons.bolt_outlined,
-                title: strings.d3('quickCapture'),
-                subtitle: strings.d3('quickCaptureSubtitle'),
-              ),
-              const SizedBox(height: 10),
-              _OnboardingFeature(
-                icon: Icons.favorite_outline,
-                title: strings.d3('personalDiary'),
-                subtitle: strings.d3('personalDiarySubtitle'),
-              ),
-              const SizedBox(height: 10),
-              _OnboardingFeature(
-                icon: Icons.favorite_outline,
-                title: strings.d3('privateOrNoi'),
-                subtitle: strings.d3('privateDefault'),
-              ),
-              const SizedBox(height: 10),
-              _OnboardingFeature(
-                icon: Icons.lock_outline,
-                title: strings.d3('optionalPrivacy'),
-                subtitle: strings.d3('optionalPrivacySubtitle'),
-              ),
-              const Spacer(),
-              SizedBox(
-                width: double.infinity,
-                child: FilledButton.icon(
-                  onPressed: () => store.savePreferences(
-                    store.preferences.copyWith(onboardingDone: true),
+        child: Center(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(24),
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 560),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  if (step == 1)
+                    Align(
+                      alignment: Alignment.centerLeft,
+                      child: IconButton(
+                        key: const ValueKey('onboarding-back'),
+                        onPressed: busy ? null : () => setState(() => step = 0),
+                        tooltip: MaterialLocalizations.of(context)
+                            .backButtonTooltip,
+                        icon: const Icon(Icons.arrow_back),
+                      ),
+                    )
+                  else
+                    Container(
+                      width: 72,
+                      height: 72,
+                      decoration: BoxDecoration(
+                        color: scheme.primaryContainer,
+                        borderRadius: BorderRadius.circular(24),
+                      ),
+                      child: Icon(
+                        Icons.auto_stories_outlined,
+                        size: 36,
+                        color: scheme.onPrimaryContainer,
+                      ),
+                    ),
+                  const SizedBox(height: 20),
+                  LinearProgressIndicator(value: step == 0 ? 0.5 : 1),
+                  const SizedBox(height: 24),
+                  AnimatedSwitcher(
+                    duration: const Duration(milliseconds: 180),
+                    child: step == 0
+                        ? _buildPresetStep(context, strings)
+                        : _buildFirstActionStep(context, strings),
                   ),
-                  icon: const Icon(Icons.arrow_forward),
-                  label: Text(strings.d3('start')),
-                ),
+                ],
               ),
-            ],
+            ),
           ),
         ),
       ),
     );
   }
+
+  Widget _buildPresetStep(
+    BuildContext context,
+    AnnaStrings strings,
+  ) {
+    return Column(
+      key: const ValueKey('onboarding-preset-step'),
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          strings.d3('onboardingTitle'),
+          style: const TextStyle(
+            fontSize: 32,
+            fontWeight: FontWeight.w900,
+            height: 1.05,
+          ),
+        ),
+        const SizedBox(height: 12),
+        Text(
+          strings.d3('onboardingPresetIntro'),
+          style: Theme.of(context).textTheme.bodyLarge,
+        ),
+        const SizedBox(height: 24),
+        _OnboardingPresetCard(
+          key: const ValueKey('onboarding-preset-essential'),
+          semanticsId: 'onboarding_preset_essential',
+          selected: selectedPreset == PersonalizationPreset.essential,
+          icon: Icons.filter_alt_outlined,
+          title: strings.d3('onboardingPresetEssentialTitle'),
+          subtitle: strings.d3('onboardingPresetEssentialSubtitle'),
+          onTap: busy
+              ? null
+              : () => setState(
+                    () => selectedPreset = PersonalizationPreset.essential,
+                  ),
+        ),
+        const SizedBox(height: 12),
+        _OnboardingPresetCard(
+          key: const ValueKey('onboarding-preset-life'),
+          semanticsId: 'onboarding_preset_life',
+          selected: selectedPreset == PersonalizationPreset.life,
+          icon: Icons.auto_awesome_outlined,
+          title: strings.d3('onboardingPresetLifeTitle'),
+          subtitle: strings.d3('onboardingPresetLifeSubtitle'),
+          badge: strings.d3('onboardingRecommended'),
+          onTap: busy
+              ? null
+              : () => setState(
+                    () => selectedPreset = PersonalizationPreset.life,
+                  ),
+        ),
+        const SizedBox(height: 12),
+        _OnboardingPresetCard(
+          key: const ValueKey('onboarding-preset-complete'),
+          semanticsId: 'onboarding_preset_complete',
+          selected: selectedPreset == PersonalizationPreset.complete,
+          icon: Icons.dashboard_customize_outlined,
+          title: strings.d3('onboardingPresetCompleteTitle'),
+          subtitle: strings.d3('onboardingPresetCompleteSubtitle'),
+          onTap: busy
+              ? null
+              : () => setState(
+                    () => selectedPreset = PersonalizationPreset.complete,
+                  ),
+        ),
+        const SizedBox(height: 18),
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Icon(
+              Icons.info_outline,
+              size: 18,
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                strings.d3('onboardingChangeLater'),
+                style: Theme.of(context).textTheme.bodySmall,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 24),
+        Semantics(
+          identifier: 'onboarding_continue',
+          button: true,
+          child: SizedBox(
+            width: double.infinity,
+            child: FilledButton.icon(
+              key: const ValueKey('onboarding-continue'),
+              onPressed: busy ? null : () => setState(() => step = 1),
+              icon: const Icon(Icons.arrow_forward),
+              label: Text(strings.d3('onboardingContinue')),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildFirstActionStep(
+    BuildContext context,
+    AnnaStrings strings,
+  ) {
+    return Column(
+      key: const ValueKey('onboarding-first-action-step'),
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          strings.d3('onboardingFirstActionTitle'),
+          style: const TextStyle(
+            fontSize: 30,
+            fontWeight: FontWeight.w900,
+            height: 1.08,
+          ),
+        ),
+        const SizedBox(height: 10),
+        Text(
+          strings.d3('onboardingFirstActionSubtitle'),
+          style: Theme.of(context).textTheme.bodyLarge,
+        ),
+        const SizedBox(height: 26),
+        Semantics(
+          identifier: 'onboarding_first_capture',
+          button: true,
+          child: SizedBox(
+            width: double.infinity,
+            child: FilledButton.icon(
+              key: const ValueKey('onboarding-first-capture'),
+              onPressed: busy ? null : _captureFirstMoment,
+              icon: const Icon(Icons.add_circle_outline),
+              label: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 10),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(strings.d3('onboardingCaptureFirst')),
+                    const SizedBox(height: 2),
+                    Text(
+                      strings.d3('onboardingCaptureFirstSubtitle'),
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                            color: Theme.of(context).colorScheme.onPrimary,
+                          ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(height: 12),
+        Semantics(
+          identifier: 'onboarding_open_agenda',
+          button: true,
+          child: SizedBox(
+            width: double.infinity,
+            child: OutlinedButton.icon(
+              key: const ValueKey('onboarding-open-agenda'),
+              onPressed: busy ? null : _finish,
+              icon: busy
+                  ? const SizedBox(
+                      width: 18,
+                      height: 18,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : const Icon(Icons.today_outlined),
+              label: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 10),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(strings.d3('onboardingOpenAgenda')),
+                    const SizedBox(height: 2),
+                    Text(
+                      strings.d3('onboardingOpenAgendaSubtitle'),
+                      style: Theme.of(context).textTheme.bodySmall,
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
 }
 
-class _OnboardingFeature extends StatelessWidget {
+class _OnboardingPresetCard extends StatelessWidget {
+  final String semanticsId;
+  final bool selected;
   final IconData icon;
   final String title;
   final String subtitle;
+  final String? badge;
+  final VoidCallback? onTap;
 
-  const _OnboardingFeature({
+  const _OnboardingPresetCard({
+    super.key,
+    required this.semanticsId,
+    required this.selected,
     required this.icon,
     required this.title,
     required this.subtitle,
+    required this.onTap,
+    this.badge,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      children: [
-        CircleAvatar(child: Icon(icon)),
-        const SizedBox(width: 12),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(title, style: const TextStyle(fontWeight: FontWeight.w800)),
-              Text(subtitle, style: Theme.of(context).textTheme.bodySmall),
-            ],
+    final scheme = Theme.of(context).colorScheme;
+
+    return Semantics(
+      identifier: semanticsId,
+      button: true,
+      selected: selected,
+      child: Card(
+        margin: EdgeInsets.zero,
+        color: selected ? scheme.primaryContainer : null,
+        clipBehavior: Clip.antiAlias,
+        child: InkWell(
+          onTap: onTap,
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(minHeight: 96),
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  CircleAvatar(
+                    backgroundColor: selected
+                        ? scheme.primary
+                        : scheme.surfaceContainerHighest,
+                    foregroundColor:
+                        selected ? scheme.onPrimary : scheme.onSurfaceVariant,
+                    child: Icon(icon),
+                  ),
+                  const SizedBox(width: 14),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Expanded(
+                              child: Text(
+                                title,
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.w900,
+                                  fontSize: 17,
+                                ),
+                              ),
+                            ),
+                            if (badge != null)
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 9,
+                                  vertical: 4,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: scheme.secondaryContainer,
+                                  borderRadius: BorderRadius.circular(999),
+                                ),
+                                child: Text(
+                                  badge!,
+                                  style: TextStyle(
+                                    color: scheme.onSecondaryContainer,
+                                    fontWeight: FontWeight.w800,
+                                    fontSize: 11,
+                                  ),
+                                ),
+                              ),
+                          ],
+                        ),
+                        const SizedBox(height: 5),
+                        Text(
+                          subtitle,
+                          style: Theme.of(context).textTheme.bodyMedium,
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Icon(
+                    selected
+                        ? Icons.check_circle
+                        : Icons.radio_button_unchecked,
+                    color: selected ? scheme.primary : scheme.onSurfaceVariant,
+                  ),
+                ],
+              ),
+            ),
           ),
         ),
-      ],
+      ),
     );
   }
 }

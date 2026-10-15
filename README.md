@@ -31,6 +31,13 @@ Pull requests also run the AppLab Production Gate: release-mode ARM64 build, And
 
 See `docs/ARCHITECTURE.md` and `supabase/README.md` for implementation details.
 
+## v1.01 — Personalization & Simplicity — IN PROGRESS
+
+- **v1.01-A** is merged: reversible Essential / My Life / Complete / Custom module preferences live inside the existing `AgendaPreferences` contract.
+- **v1.01-B** replaces the old first-run screen with a fresh-profile-only preset choice and a first useful action that reuses the canonical Unified Capture flow.
+- Existing users keep the Complete experience by default and never re-run onboarding because of the v1.01 migration.
+- Personalization is presentation-only: hiding a module never deletes its canonical data and no new store, router, database or sync queue is introduced.
+
 ## v1.00-B — Golden Core Cleanup & Localization — COMPLETED
 
 - Removes the superseded legacy Search screen and keeps `PersonalSearchConnectionsScreen` as the canonical deterministic local search surface.

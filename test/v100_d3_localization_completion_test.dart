@@ -575,9 +575,20 @@ void main() {
       'Tu agenda, de verdad tuya',
       'Ton agenda, vraiment à toi',
       'A tua agenda, verdadeiramente tua',
-      'Inizia|Start|Empezar|Commencer|Começar',
+      'Inizia con qualcosa di utile',
+      'Start with something useful',
+      'Empieza con algo útil',
+      'Commence par quelque chose d’utile',
+      'Começa com algo útil',
     ]) {
       expect(flow, contains(text));
+    }
+    for (final id in const <String>[
+      "id: 'onboarding_preset_complete'",
+      "id: 'onboarding_continue'",
+      "id: 'onboarding_open_agenda'",
+    ]) {
+      expect(flow, contains(id));
     }
   });
 
