@@ -25,17 +25,19 @@ appId: com.riccardopinato.agenda_per_anna
 # One manual change exercises Custom without depending on translated copy.
 - tapOn:
     id: "personalization_module_shopping"
-- extendedWaitUntil:
-    visible:
+- scrollUntilVisible:
+    element:
       id: "personalization_restore_complete"
+    direction: DOWN
     timeout: 10000
 
 # End in Complete so the product remains fully exposed for later/manual QA.
 - tapOn:
     id: "personalization_restore_complete"
-- extendedWaitUntil:
-    visible:
+- scrollUntilVisible:
+    element:
       id: "personalization_module_ecosystem"
+    direction: UP
     timeout: 10000
 
 - back
