@@ -1,6 +1,6 @@
 # Anna's Diary — v1.01 Personalization & Simplicity
 
-Status: **IN PROGRESS**
+Status: **COMPLETED — A→E merged with exact-head 4/4 gates**
 
 ## Product goal
 
