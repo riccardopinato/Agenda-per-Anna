@@ -76,7 +76,7 @@ void main() {
     expect(physical, contains('build_release_reality_record'));
     expect(physical, contains('"releaseReality": release_reality'));
     expect(physical, contains('"validationLevel"'));
-    expect(sideload, contains('--source-ref "$GITHUB_REF_NAME"'));
+    expect(sideload, contains('--source-ref "\$GITHUB_REF_NAME"'));
     expect(sideload, contains('--validation-level "ARTIFACT_BUILT"'));
 
     expect(storeQa, contains('tool/create_release_reality.py'));
