@@ -101,12 +101,40 @@ The v1.01-A preference contract now drives presentation:
 
 No second preferences store, router, database or sync queue is introduced.
 
+## v1.01-D — Adaptive Home & Quiet UX
+
+Home now adapts presentation without changing any canonical owner:
+
+- Search remains a direct high-frequency action;
+- Inbox is direct only when there is active content requiring attention and is
+  always reachable through the stable **More** menu;
+- Noi ♡ becomes a direct Home action only when the module is enabled and unread
+  shared activity exists; otherwise it remains available from More when enabled;
+- Archive, Backup, Account & sync, Settings, Explore and Personalize are grouped
+  under the stable `home_more_menu` secondary-navigation control;
+- the Private Vault card follows its module preference;
+- birthday preview is omitted when People is hidden;
+- Habits and Memories metrics disappear independently from the wellbeing card
+  while core mood/gratitude presentation remains available;
+- Home shows Explore only when at least one Explore destination is enabled;
+  otherwise it points directly to Personalize;
+- intentional device-only use and a healthy fully-synced cloud state are silent;
+- sync errors, pending changes, shared-sync failures and lost authenticated
+  sessions remain visible and actionable.
+
+Contextual references from Search, Archive or historical records may still open
+hidden-module content. Module hiding remains a discovery/presentation choice and
+never deletes, migrates or orphans data.
+
+No new router, persistence store, database, sync queue or recommendation engine
+is introduced.
+
 ## Planned sequence
 
 - **v1.01-A** Module Preferences — completed and merged after 4/4 gates.
 - **v1.01-B** Personalized Onboarding — completed and merged after 4/4 gates.
-- **v1.01-C** Dynamic Explore & Personalization — implemented; merge remains gate-controlled.
-- **v1.01-D** Adaptive Home & Quiet UX — quiet sync, reduced chrome, contextual cards.
+- **v1.01-C** Dynamic Explore & Personalization — completed and merged after 4/4 gates.
+- **v1.01-D** Adaptive Home & Quiet UX — implemented; merge remains gate-controlled.
 - **v1.01-E** Polish, Accessibility & Regression — five-language QA and trusted runtime.
 
 ## Rollback strategy
