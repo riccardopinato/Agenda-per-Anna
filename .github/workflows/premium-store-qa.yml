@@ -172,9 +172,12 @@ jobs:
           8. Complete a monthly test purchase and verify Premium becomes active.
           9. Verify restore after reinstall/account recovery.
           10. Test Lifetime with a clean tester/product state and confirm the same entitlement.
+          11. Preserve STORE_QA_RELEASE_REALITY.json with the exact AAB.
+          12. Fill docs/V102_STORE_QA_EVIDENCE_TEMPLATE.json with observed results/evidence refs.
+          13. Validate the completed record with tool/validate_v102_store_qa_evidence.py against the exact AAB and Release Reality file.
 
           A GitHub-successful AAB build proves build/configuration readiness only.
-          It does not prove a real Play purchase until the runtime checklist above is completed.
+          It does not prove a real Play purchase until the runtime checklist above is completed and the fail-closed evidence validator passes.
           EOF
           sha256sum "$OUT"/*.aab > "$OUT/SHA256SUMS.txt"
 
