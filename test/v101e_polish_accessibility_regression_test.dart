@@ -131,12 +131,13 @@ void main() {
       'homeExploreAreasCount',
     ];
 
+    final rows = localization.split('\n');
     for (final key in keys) {
-      final match = RegExp(
-        '"$key": <String, String>\\{([^}]*)\\}',
-      ).firstMatch(localization);
-      expect(match, isNotNull, reason: 'missing v1.01 localization row $key');
-      final row = match!.group(1)!;
+      final row = rows.firstWhere(
+        (line) => line.contains('"$key": <String, String>'),
+        orElse: () => '',
+      );
+      expect(row, isNotEmpty, reason: 'missing v1.01 localization row $key');
       for (final locale in const <String>['en', 'it', 'es', 'fr', 'pt']) {
         expect(
           RegExp('"$locale":\\s*"[^"]+"').hasMatch(row),
