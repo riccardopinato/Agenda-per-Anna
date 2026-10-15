@@ -62,6 +62,8 @@ class PremiumStoreDiagnostics {
   final bool storeQaMode;
   final bool previewMode;
   final bool paidEntitlement;
+  final PremiumEntitlementSource entitlementSource;
+  final DateTime? entitlementObservedAt;
   final String entitlementId;
   final String? currentOfferingIdentifier;
   final int productCount;
@@ -79,6 +81,8 @@ class PremiumStoreDiagnostics {
     required this.storeQaMode,
     required this.previewMode,
     required this.paidEntitlement,
+    required this.entitlementSource,
+    required this.entitlementObservedAt,
     required this.entitlementId,
     required this.currentOfferingIdentifier,
     required this.productCount,
@@ -205,6 +209,8 @@ class PremiumEntitlementService extends ChangeNotifier {
       storeQaMode: _storeQa,
       previewMode: previewMode,
       paidEntitlement: _paidEntitlement,
+      entitlementSource: entitlementSnapshot.source,
+      entitlementObservedAt: entitlementSnapshot.observedAt,
       entitlementId: entitlementId,
       currentOfferingIdentifier: _currentOfferingIdentifier,
       productCount: _products.length,
@@ -268,6 +274,9 @@ class PremiumEntitlementService extends ChangeNotifier {
       _identifiedAppUserId = normalizedId;
       _state = PremiumStoreState.unconfigured;
       _lastError = null;
+      _paidEntitlement = false;
+      _entitlementSource = PremiumEntitlementSource.localDefault;
+      _entitlementObservedAt = null;
       notifyListeners();
       return;
     }
@@ -511,8 +520,18 @@ class PremiumEntitlementService extends ChangeNotifier {
 
   @visibleForTesting
   void setPaidEntitlementForTesting(bool value) {
-    if (_paidEntitlement == value) return;
+    if (_paidEntitlement == value &&
+        _entitlementSource ==
+            (value
+                ? PremiumEntitlementSource.providerVerified
+                : PremiumEntitlementSource.localDefault)) {
+      return;
+    }
     _paidEntitlement = value;
+    _entitlementSource = value
+        ? PremiumEntitlementSource.providerVerified
+        : PremiumEntitlementSource.localDefault;
+    _entitlementObservedAt = value ? DateTime.now().toUtc() : null;
     notifyListeners();
   }
 }
