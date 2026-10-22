@@ -69,7 +69,8 @@ void main() {
     final doc =
         File('docs/V103_CROSS_APP_CERTIFICATION_REFRESH.md').readAsStringSync();
 
-    expect(contract, contains('Shared Ecosystem Core'));
+    expect(contract, contains("protocolName = 'OpenAI App Ecosystem Bridge'"));
+    expect(doc, contains('Shared Ecosystem Core v1 remains the protocol source of truth'));
     expect(bridge, contains('lifeBridgeProtocolVersion'));
     expect(doc, contains('does not:'));
     expect(doc, contains('create another bridge protocol'));
