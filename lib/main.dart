@@ -51,6 +51,7 @@ part 'src/localization_d3_completion.dart';
 part 'src/localization_d3_domain.dart';
 part 'src/theme_semantics.dart';
 part 'src/day_hub_domain.dart';
+part 'src/daily_rituals.dart';
 part 'src/unified_capture.dart';
 part 'src/home_widget_bridge.dart';
 part 'src/recurring_life_domain.dart';
@@ -152,6 +153,26 @@ Future<void> _handleLocalReminderAction(
   const donePrefix = 'reminder_done:';
   final markDone = payload.startsWith(donePrefix);
   final stableId = markDone ? payload.substring(donePrefix.length) : payload;
+
+  if (stableId == dailyRitualMorningReminderId ||
+      stableId == dailyRitualEveningReminderId) {
+    var navigator = appNavigatorKey.currentState;
+    if (navigator == null) {
+      await Future<void>.delayed(const Duration(milliseconds: 150));
+      navigator = appNavigatorKey.currentState;
+    }
+    if (navigator == null) return;
+    await navigator.push(
+      MaterialPageRoute<void>(
+        builder: (_) => PlannerScreen(
+          store: store,
+          initialDate: DateTime.now(),
+        ),
+      ),
+    );
+    return;
+  }
+
   final itemId = _agendaItemIdFromReminderStableId(stableId);
 
   AgendaItem? item;
@@ -403,6 +424,7 @@ Future<void> main() async {
 
       await store.reconcileReminders();
       await store.reconcileBirthdayReminders();
+      await store.reconcileDailyRitualReminders();
 
       final initialLocalPayload =
           NotificationService.instance.takeInitialPayload();
