@@ -99,6 +99,28 @@ void main() {
     store.dispose();
   });
 
+  test('v1.04 release truth is aligned without changing distribution identity', () {
+    final roadmap = File('docs/ROADMAP.md').readAsStringSync();
+    final bible = File('docs/PRODUCT_BIBLE.md').readAsStringSync();
+    final readme = File('README.md').readAsStringSync();
+
+    expect(
+      roadmap,
+      contains(
+        '| v1.04 | Daily Rituals & Life Flow | IMPLEMENTED CANDIDATE — 4/4 EXACT-HEAD MERGE GATE |',
+      ),
+    );
+    expect(
+      bible,
+      contains(
+        'Current product line:** v1.04 — Daily Rituals & Life Flow implementation',
+      ),
+    );
+    expect(bible, contains('Distribution identity:** 1.0.0-rc.1+110'));
+    expect(bible, contains('Last aligned:** 23 October 2026'));
+    expect(readme, contains('## v1.04 — Daily Rituals & Life Flow'));
+  });
+
   test('Daily Ritual UI reuses Today, Diary and NotificationService only', () {
     final ritual = File('lib/src/daily_rituals.dart').readAsStringSync();
     final planner = File('lib/src/planner_views.dart').readAsStringSync();
