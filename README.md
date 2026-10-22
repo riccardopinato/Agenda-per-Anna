@@ -31,7 +31,15 @@ Pull requests also run the AppLab Production Gate: release-mode ARM64 build, And
 
 See `docs/ARCHITECTURE.md` and `supabase/README.md` for implementation details.
 
-## v1.01 — Personalization & Simplicity — IN PROGRESS
+## v1.04 — Daily Rituals & Life Flow
+
+- Optional morning and evening rituals live in Planner Today and are disabled by default.
+- Starting a ritual reuses the existing editable diary-template path and is idempotent per day; there is no separate ritual database.
+- Settings controls each ritual, its local time and optional reminders through the existing NotificationService.
+- The UI reports a ritual as **started**, not completed, and adds no streaks, scores or AI.
+- New copy is localized in en/it/es/fr/pt and ritual preferences remain inside the existing backup/restore contract.
+
+## v1.01 — Personalization & Simplicity — COMPLETED
 
 - **v1.01-A** is merged: reversible Essential / My Life / Complete / Custom module preferences live inside the existing `AgendaPreferences` contract.
 - **v1.01-B** is merged: the old first-run screen is replaced by a fresh-profile-only preset choice and a first useful action that reuses the canonical Unified Capture flow.
