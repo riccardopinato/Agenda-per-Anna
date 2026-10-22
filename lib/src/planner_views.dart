@@ -39,7 +39,6 @@ class _CalendarScreenState extends State<CalendarScreen> {
         widget.store.journalRevision,
         widget.store.planningRevision,
         widget.store.workoutRevision,
-        widget.store.settingsRevision,
         ExternalCalendarService.instance,
       ]),
       builder: (context, _) {
@@ -192,6 +191,7 @@ class _PlannerScreenState extends State<PlannerScreen> {
         widget.store.journalRevision,
         widget.store.planningRevision,
         widget.store.workoutRevision,
+        widget.store.settingsRevision,
         ExternalCalendarService.instance,
       ]),
       builder: (context, _) {
