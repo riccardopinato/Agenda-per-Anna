@@ -1,5 +1,17 @@
 # Agenda per Anna — Architecture
 
+## v1.04 — Daily Rituals boundary
+
+- `AgendaPreferences` owns ritual visibility, reminder opt-in and local morning/evening times; no ritual database or repository is introduced.
+- `AgendaStoreDailyRituals` is a projection/orchestration extension over the existing diary-template path. A ritual start creates one ordinary editable `DiaryBlock` tagged `ritual:morning` or `ritual:evening`.
+- Same-day ritual starts are idempotent: an existing non-archived tagged block is returned instead of creating a duplicate.
+- `DailyRitualCard` is rendered only on Planner Today. Historical/future days keep the ordinary diary surface without ritual chrome.
+- `NotificationService.scheduleDaily` remains the single local recurring-reminder owner. Stable ritual reminder IDs route back to Planner Today and are cancelled when the corresponding setting is disabled.
+- Reminder permission is requested only from the explicit Settings opt-in; startup reconciliation never prompts.
+- Ritual copy stays in the existing five-language `AnnaStrings` / D3 catalog.
+- Ritual content inherits ordinary diary lifecycle, privacy, account isolation and backup/restore behavior; no streak, score, completion metric, AI narrator or psychological inference is added.
+
+
 ## v1.00-D3 — Localization presentation boundary
 
 - `AnnaStrings` remains the single localization contract for en/it/es/fr/pt; `localization_d3.dart` extends that contract and does not create a second persistence/localization subsystem.
