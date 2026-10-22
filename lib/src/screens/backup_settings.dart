@@ -298,78 +298,6 @@ class _BackupScreenState extends State<BackupScreen> {
     }
   }
 
-  Future<void> _setRitualEnabled(
-    DailyRitualKind kind,
-    bool enabled,
-  ) async {
-    final current = widget.store.preferences;
-    final morning = kind == DailyRitualKind.morning
-        ? enabled
-        : current.morningRitualEnabled;
-    final evening = kind == DailyRitualKind.evening
-        ? enabled
-        : current.eveningRitualEnabled;
-    final next = current.copyWith(
-      morningRitualEnabled: morning,
-      eveningRitualEnabled: evening,
-      ritualRemindersEnabled:
-          (morning || evening) && current.ritualRemindersEnabled,
-    );
-    await widget.store.savePreferences(next);
-    await widget.store.reconcileDailyRitualReminders();
-  }
-
-  Future<void> _setRitualReminders(bool enabled) async {
-    if (enabled) {
-      final granted = await NotificationService.instance.requestPermissions();
-      if (!granted) {
-        if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              AnnaStrings.of(context).d3('ritualNotificationsUnavailable'),
-            ),
-          ),
-        );
-        return;
-      }
-    }
-
-    final current = widget.store.preferences;
-    await widget.store.savePreferences(
-      current.copyWith(ritualRemindersEnabled: enabled),
-    );
-    await widget.store.reconcileDailyRitualReminders();
-  }
-
-  Future<void> _pickRitualTime(DailyRitualKind kind) async {
-    final current = widget.store.preferences;
-    final isMorning = kind == DailyRitualKind.morning;
-    final picked = await showTimePicker(
-      context: context,
-      initialTime: TimeOfDay(
-        hour:
-            isMorning ? current.morningRitualHour : current.eveningRitualHour,
-        minute: isMorning
-            ? current.morningRitualMinute
-            : current.eveningRitualMinute,
-      ),
-    );
-    if (picked == null) return;
-
-    final next = isMorning
-        ? current.copyWith(
-            morningRitualHour: picked.hour,
-            morningRitualMinute: picked.minute,
-          )
-        : current.copyWith(
-            eveningRitualHour: picked.hour,
-            eveningRitualMinute: picked.minute,
-          );
-    await widget.store.savePreferences(next);
-    await widget.store.reconcileDailyRitualReminders();
-  }
-
   @override
   Widget build(BuildContext context) {
     return AnimatedBuilder(
@@ -1501,6 +1429,78 @@ class _SettingsScreenState extends State<SettingsScreen> {
     if (!confirmed) return;
     await widget.store.resetPreferences();
     nameController.text = widget.store.preferences.displayName;
+  }
+
+  Future<void> _setRitualEnabled(
+    DailyRitualKind kind,
+    bool enabled,
+  ) async {
+    final current = widget.store.preferences;
+    final morning = kind == DailyRitualKind.morning
+        ? enabled
+        : current.morningRitualEnabled;
+    final evening = kind == DailyRitualKind.evening
+        ? enabled
+        : current.eveningRitualEnabled;
+    final next = current.copyWith(
+      morningRitualEnabled: morning,
+      eveningRitualEnabled: evening,
+      ritualRemindersEnabled:
+          (morning || evening) && current.ritualRemindersEnabled,
+    );
+    await widget.store.savePreferences(next);
+    await widget.store.reconcileDailyRitualReminders();
+  }
+
+  Future<void> _setRitualReminders(bool enabled) async {
+    if (enabled) {
+      final granted = await NotificationService.instance.requestPermissions();
+      if (!granted) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              AnnaStrings.of(context).d3('ritualNotificationsUnavailable'),
+            ),
+          ),
+        );
+        return;
+      }
+    }
+
+    final current = widget.store.preferences;
+    await widget.store.savePreferences(
+      current.copyWith(ritualRemindersEnabled: enabled),
+    );
+    await widget.store.reconcileDailyRitualReminders();
+  }
+
+  Future<void> _pickRitualTime(DailyRitualKind kind) async {
+    final current = widget.store.preferences;
+    final isMorning = kind == DailyRitualKind.morning;
+    final picked = await showTimePicker(
+      context: context,
+      initialTime: TimeOfDay(
+        hour:
+            isMorning ? current.morningRitualHour : current.eveningRitualHour,
+        minute: isMorning
+            ? current.morningRitualMinute
+            : current.eveningRitualMinute,
+      ),
+    );
+    if (picked == null) return;
+
+    final next = isMorning
+        ? current.copyWith(
+            morningRitualHour: picked.hour,
+            morningRitualMinute: picked.minute,
+          )
+        : current.copyWith(
+            eveningRitualHour: picked.hour,
+            eveningRitualMinute: picked.minute,
+          );
+    await widget.store.savePreferences(next);
+    await widget.store.reconcileDailyRitualReminders();
   }
 
   @override
