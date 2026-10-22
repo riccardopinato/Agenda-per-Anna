@@ -191,6 +191,7 @@ class _PlannerScreenState extends State<PlannerScreen> {
         widget.store.journalRevision,
         widget.store.planningRevision,
         widget.store.workoutRevision,
+        widget.store.settingsRevision,
         ExternalCalendarService.instance,
       ]),
       builder: (context, _) {
@@ -258,6 +259,13 @@ class _PlannerScreenState extends State<PlannerScreen> {
                   padding: const EdgeInsets.fromLTRB(14, 8, 14, 110),
                   children: [
                     _DayOpeningCard(date: day),
+                    if (AgendaStore.sameDay(day, DateTime.now())) ...[
+                      const SizedBox(height: 12),
+                      DailyRitualCard(
+                        store: widget.store,
+                        date: day,
+                      ),
+                    ],
                     const SizedBox(height: 12),
                     AgendaContentFilterBar(store: widget.store),
                     const SizedBox(height: 12),

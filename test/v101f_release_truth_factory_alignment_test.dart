@@ -30,12 +30,9 @@ void main() {
     );
     expect(roadmap, isNot(contains('|\\n| v1.00-D |')));
 
-    expect(
-      productBible,
-      contains('Current product line:** v1.01 — Personalization & Simplicity completed'),
-    );
+    // v1.01 closure evidence is historical; later product lines may advance
+    // Product Bible.current without invalidating the v1.01 certification.
     expect(productBible, contains('Distribution identity:** 1.0.0-rc.1+110'));
-    expect(productBible, contains('Last aligned:** 15 October 2026'));
 
     expect(readme, contains('**v1.01-E** is merged'));
     expect(readme, contains('**v1.01-F** aligns Product Bible'));
