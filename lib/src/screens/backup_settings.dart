@@ -252,6 +252,7 @@ class _BackupScreenState extends State<BackupScreen> {
           merge: action == 'merge',
         );
       }
+      await widget.store.reconcileDailyRitualReminders();
       _message(
         action == 'merge'
             ? strings.v100BackupMerged
@@ -292,6 +293,7 @@ class _BackupScreenState extends State<BackupScreen> {
     setState(() => busy = true);
     try {
       await widget.store.restoreLocalSnapshot(snapshot.id);
+      await widget.store.reconcileDailyRitualReminders();
       _message(strings.v100LocalBackupRestored);
     } finally {
       if (mounted) setState(() => busy = false);
@@ -1428,6 +1430,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         false;
     if (!confirmed) return;
     await widget.store.resetPreferences();
+    await widget.store.reconcileDailyRitualReminders();
     nameController.text = widget.store.preferences.displayName;
   }
 
@@ -1645,11 +1648,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
                             ),
                           )
                           .toList(growable: false),
-                      onChanged: (value) {
+                      onChanged: (value) async {
                         if (value == null) return;
-                        widget.store.savePreferences(
+                        await widget.store.savePreferences(
                           prefs.copyWith(appLanguage: value),
                         );
+                        await widget.store.reconcileDailyRitualReminders();
                       },
                     ),
                   ],
