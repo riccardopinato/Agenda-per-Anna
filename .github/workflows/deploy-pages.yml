@@ -1,4 +1,5 @@
 name: Deploy Anna's Diary Web
+# v1.02 Release Reality: keep Web certification on the same exact PR head.
 
 on:
   push:
