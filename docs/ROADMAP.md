@@ -76,7 +76,7 @@ Source of execution truth for Anna's Diary. Product identity and boundaries are 
 | v1.02-C | Google Play / RevenueCat Real QA | SOFTWARE PREPARED — BLOCKED ON EXTERNAL DISTRIBUTION | Internal Testing purchase/restore/reinstall evidence on exact signed AAB with real Offering products |
 | v1.02-D | Stable Release Candidate | RELEASE REALITY PREPARED — BLOCKED BY v1.02-A/C | Build once, bind exact source/artifact/signing identity, verify exact bytes, then distribute |
 | v1.03 | Cross-App Certification Refresh | SOFTWARE PREPARED — BLOCKED ON PAIRED PHYSICAL EVIDENCE | Re-certify Anna ↔ Wonderlog under Cross-App Verification v1 with exact paired artifact identity and COPY/LINK/idempotency/provenance matrix |
-| v1.04 | Daily Rituals & Life Flow | PLANNED | Optional morning/evening ritual projections reusing AgendaPreferences, Diary, Today, Unified Capture and existing reminder engine |
+| v1.04 | Daily Rituals & Life Flow | IMPLEMENTED CANDIDATE — 4/4 EXACT-HEAD MERGE GATE | Optional morning/evening ritual projections reusing AgendaPreferences, Diary, Today, Unified Capture and existing reminder engine |
 | v1.05 | Memories & Recall 3.0 | PLANNED | Richer deterministic resurfacing over existing diary/person/place/archive primitives; no Memory DB or generative narrator |
 | v1.06 | Ecosystem Expansion | PLANNED | Add specialist integrations one at a time under Shared Ecosystem Core + paired verification; preferred order TrailPath → Notes → SleepMax → CashMate |
 
