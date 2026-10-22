@@ -1,9 +1,9 @@
 # Anna's Diary — Product Bible
 
 **Status:** canonical product source of truth  
-**Current product line:** v1.01 — Personalization & Simplicity completed  
+**Current product line:** v1.04 — Daily Rituals & Life Flow implementation  
 **Distribution identity:** 1.0.0-rc.1+110 — Store/physical certification still open  
-**Last aligned:** 15 October 2026
+**Last aligned:** 23 October 2026
 
 This document defines what Anna's Diary is, what it is not, and the product/security invariants that future work must preserve. Implementation details belong in `docs/ARCHITECTURE.md`; execution sequencing belongs in `docs/ROADMAP.md`.
 
@@ -23,6 +23,7 @@ The product includes a deliberately bounded shared area, **Noi ♡**, for memori
 
 - personal agenda, reminders and recurring life events;
 - daily timeline / "My day";
+- optional morning/evening daily rituals that materialize through the existing private diary and reminder paths;
 - private diary: text, photo, voice and sketch;
 - people, birthdays and lightweight place references;
 - deterministic memories / resurfacing / life archive;
