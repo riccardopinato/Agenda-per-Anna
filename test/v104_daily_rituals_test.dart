@@ -48,7 +48,6 @@ void main() {
 
   test('Daily Ritual preferences survive backup restore', () async {
     final source = AgendaStore();
-    await source.load();
     await source.savePreferences(
       const AgendaPreferences(
         morningRitualEnabled: true,
@@ -63,7 +62,6 @@ void main() {
 
     final backup = await source.createBackupJson();
     final restored = AgendaStore();
-    await restored.load();
     await restored.restoreBackup(backup, merge: false);
 
     expect(restored.preferences.morningRitualEnabled, isTrue);
