@@ -298,6 +298,78 @@ class _BackupScreenState extends State<BackupScreen> {
     }
   }
 
+  Future<void> _setRitualEnabled(
+    DailyRitualKind kind,
+    bool enabled,
+  ) async {
+    final current = widget.store.preferences;
+    final morning = kind == DailyRitualKind.morning
+        ? enabled
+        : current.morningRitualEnabled;
+    final evening = kind == DailyRitualKind.evening
+        ? enabled
+        : current.eveningRitualEnabled;
+    final next = current.copyWith(
+      morningRitualEnabled: morning,
+      eveningRitualEnabled: evening,
+      ritualRemindersEnabled:
+          (morning || evening) && current.ritualRemindersEnabled,
+    );
+    await widget.store.savePreferences(next);
+    await widget.store.reconcileDailyRitualReminders();
+  }
+
+  Future<void> _setRitualReminders(bool enabled) async {
+    if (enabled) {
+      final granted = await NotificationService.instance.requestPermissions();
+      if (!granted) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              AnnaStrings.of(context).d3('ritualNotificationsUnavailable'),
+            ),
+          ),
+        );
+        return;
+      }
+    }
+
+    final current = widget.store.preferences;
+    await widget.store.savePreferences(
+      current.copyWith(ritualRemindersEnabled: enabled),
+    );
+    await widget.store.reconcileDailyRitualReminders();
+  }
+
+  Future<void> _pickRitualTime(DailyRitualKind kind) async {
+    final current = widget.store.preferences;
+    final isMorning = kind == DailyRitualKind.morning;
+    final picked = await showTimePicker(
+      context: context,
+      initialTime: TimeOfDay(
+        hour:
+            isMorning ? current.morningRitualHour : current.eveningRitualHour,
+        minute: isMorning
+            ? current.morningRitualMinute
+            : current.eveningRitualMinute,
+      ),
+    );
+    if (picked == null) return;
+
+    final next = isMorning
+        ? current.copyWith(
+            morningRitualHour: picked.hour,
+            morningRitualMinute: picked.minute,
+          )
+        : current.copyWith(
+            eveningRitualHour: picked.hour,
+            eveningRitualMinute: picked.minute,
+          );
+    await widget.store.savePreferences(next);
+    await widget.store.reconcileDailyRitualReminders();
+  }
+
   @override
   Widget build(BuildContext context) {
     return AnimatedBuilder(
@@ -1694,6 +1766,120 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           widget.store.savePreferences(
                         prefs.copyWith(showDailyQuote: value),
                       ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 12),
+              SimpleCard(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      strings.d3('ritualSettingsTitle'),
+                      style: const TextStyle(
+                        fontWeight: FontWeight.w900,
+                        fontSize: 18,
+                      ),
+                    ),
+                    const SizedBox(height: 5),
+                    Text(
+                      strings.d3('ritualSettingsDescription'),
+                      style: Theme.of(context).textTheme.bodySmall,
+                    ),
+                    const SizedBox(height: 6),
+                    SwitchListTile(
+                      key: const ValueKey<String>(
+                        'settings-morning-ritual',
+                      ),
+                      contentPadding: EdgeInsets.zero,
+                      secondary: const Icon(Icons.wb_sunny_outlined),
+                      title: Text(strings.d3('ritualMorningEnabled')),
+                      value: prefs.morningRitualEnabled,
+                      onChanged: (value) async {
+                        await _setRitualEnabled(
+                          DailyRitualKind.morning,
+                          value,
+                        );
+                      },
+                    ),
+                    if (prefs.morningRitualEnabled)
+                      ListTile(
+                        key: const ValueKey<String>(
+                          'settings-morning-ritual-time',
+                        ),
+                        contentPadding: EdgeInsets.zero,
+                        leading: const Icon(Icons.schedule_outlined),
+                        title: Text(strings.d3('ritualMorningTime')),
+                        subtitle: Text(
+                          MaterialLocalizations.of(context).formatTimeOfDay(
+                            TimeOfDay(
+                              hour: prefs.morningRitualHour,
+                              minute: prefs.morningRitualMinute,
+                            ),
+                          ),
+                        ),
+                        trailing: const Icon(Icons.chevron_right),
+                        onTap: () => _pickRitualTime(
+                          DailyRitualKind.morning,
+                        ),
+                      ),
+                    SwitchListTile(
+                      key: const ValueKey<String>(
+                        'settings-evening-ritual',
+                      ),
+                      contentPadding: EdgeInsets.zero,
+                      secondary: const Icon(Icons.nightlight_outlined),
+                      title: Text(strings.d3('ritualEveningEnabled')),
+                      value: prefs.eveningRitualEnabled,
+                      onChanged: (value) async {
+                        await _setRitualEnabled(
+                          DailyRitualKind.evening,
+                          value,
+                        );
+                      },
+                    ),
+                    if (prefs.eveningRitualEnabled)
+                      ListTile(
+                        key: const ValueKey<String>(
+                          'settings-evening-ritual-time',
+                        ),
+                        contentPadding: EdgeInsets.zero,
+                        leading: const Icon(Icons.schedule_outlined),
+                        title: Text(strings.d3('ritualEveningTime')),
+                        subtitle: Text(
+                          MaterialLocalizations.of(context).formatTimeOfDay(
+                            TimeOfDay(
+                              hour: prefs.eveningRitualHour,
+                              minute: prefs.eveningRitualMinute,
+                            ),
+                          ),
+                        ),
+                        trailing: const Icon(Icons.chevron_right),
+                        onTap: () => _pickRitualTime(
+                          DailyRitualKind.evening,
+                        ),
+                      ),
+                    const Divider(),
+                    SwitchListTile(
+                      key: const ValueKey<String>(
+                        'settings-ritual-reminders',
+                      ),
+                      contentPadding: EdgeInsets.zero,
+                      secondary: const Icon(Icons.notifications_none_outlined),
+                      title: Text(strings.d3('ritualRemindersEnabled')),
+                      subtitle: Text(
+                        strings.d3('ritualRemindersDescription'),
+                      ),
+                      value: prefs.ritualRemindersEnabled &&
+                          (prefs.morningRitualEnabled ||
+                              prefs.eveningRitualEnabled),
+                      onChanged: prefs.morningRitualEnabled ||
+                              prefs.eveningRitualEnabled
+                          ? (value) async {
+                              await _setRitualReminders(value);
+                            }
+                          : null,
                     ),
                   ],
                 ),
