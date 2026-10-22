@@ -1,0 +1,144 @@
+{
+  "schema_version": 1,
+  "protocol": {
+    "name": "Shared Ecosystem Core",
+    "version": 1,
+    "contract_ref": "App-Factory-Core@golden/ecosystem/GOLDEN_ECOSYSTEM_BRIDGE_FLUTTER_v1_DRAFT.txt"
+  },
+  "producer": {
+    "repository": "riccardopinato/Wonderlog",
+    "resolved_sha": "",
+    "artifact_sha256": "",
+    "package_id": "",
+    "version_name": "",
+    "version_code": "",
+    "app_id": "wonderlog"
+  },
+  "consumer": {
+    "repository": "riccardopinato/Agenda-per-Anna",
+    "resolved_sha": "",
+    "artifact_sha256": "",
+    "package_id": "com.riccardopinato.agenda_per_anna",
+    "version_name": "",
+    "version_code": "",
+    "app_id": "annas_diary"
+  },
+  "transport": {
+    "kind": "deep_link",
+    "requires_installed_apps": true,
+    "protocol_transport_separated": true
+  },
+  "scenarios": [
+    {
+      "id": "copy",
+      "kind": "COPY",
+      "direction": "producer_to_consumer",
+      "transport": "deep_link",
+      "result": "NOT_VERIFIED",
+      "assertions": {
+        "explicit_review": false,
+        "materialized_once": false,
+        "provenance_preserved": false,
+        "source_ownership_preserved": false
+      },
+      "observed_contract": null,
+      "evidence_refs": []
+    },
+    {
+      "id": "link",
+      "kind": "LINK",
+      "direction": "producer_to_consumer",
+      "transport": "deep_link",
+      "result": "NOT_VERIFIED",
+      "assertions": {
+        "explicit_review": false,
+        "canonical_deep_link_present": false,
+        "source_ownership_preserved": false,
+        "no_background_sync": false
+      },
+      "observed_contract": null,
+      "evidence_refs": []
+    },
+    {
+      "id": "idempotency",
+      "kind": "IDEMPOTENCY",
+      "direction": "producer_to_consumer",
+      "transport": "deep_link",
+      "result": "NOT_VERIFIED",
+      "assertions": {
+        "duplicate_noop": false,
+        "stable_bridge_id": false,
+        "mode_specific_key": false
+      },
+      "observed_contract": null,
+      "evidence_refs": []
+    },
+    {
+      "id": "provenance",
+      "kind": "PROVENANCE",
+      "direction": "producer_to_consumer",
+      "transport": "deep_link",
+      "result": "NOT_VERIFIED",
+      "assertions": {
+        "owner_app_preserved": false,
+        "owner_entity_preserved": false,
+        "owner_revision_preserved": false
+      },
+      "observed_contract": null,
+      "evidence_refs": []
+    },
+    {
+      "id": "ownership",
+      "kind": "OWNERSHIP",
+      "direction": "producer_to_consumer",
+      "transport": "deep_link",
+      "result": "NOT_VERIFIED",
+      "assertions": {
+        "no_shared_db": false,
+        "no_cross_app_mutation": false,
+        "destination_materialization_owned": false
+      },
+      "observed_contract": null,
+      "evidence_refs": []
+    },
+    {
+      "id": "fail-closed",
+      "kind": "FAIL_CLOSED",
+      "direction": "producer_to_consumer",
+      "transport": "deep_link",
+      "result": "NOT_VERIFIED",
+      "assertions": {
+        "incompatible_version_rejected": false,
+        "no_domain_mutation": false,
+        "private_media_rejected": false
+      },
+      "evidence_refs": []
+    },
+    {
+      "id": "deep-link-handoff",
+      "kind": "DEEP_LINK_HANDOFF",
+      "direction": "consumer_to_producer",
+      "transport": "deep_link",
+      "result": "NOT_VERIFIED",
+      "assertions": {
+        "target_scheme_matches": false,
+        "target_app_matches": false,
+        "payload_validated": false
+      },
+      "evidence_refs": []
+    }
+  ],
+  "physical_evidence": {
+    "physical": true,
+    "result": "BLOCKED",
+    "producer_artifact_sha256": "",
+    "consumer_artifact_sha256": "",
+    "device_manufacturer": "",
+    "device_model": "",
+    "os_version": "",
+    "os_build": "",
+    "scenario_ids": [],
+    "observed_result": "Paired physical session not executed yet.",
+    "evidence_refs": []
+  }
+}

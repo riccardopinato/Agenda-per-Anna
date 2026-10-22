@@ -1,3 +1,5 @@
+// v1.03 certification note: runtime semantics stay on Shared Ecosystem Core v1;
+// AppLab pair verification records exact producer/consumer artifacts separately.
 part of '../main.dart';
 
 const String lifeBridgeProtocolVersion = '1.0';
