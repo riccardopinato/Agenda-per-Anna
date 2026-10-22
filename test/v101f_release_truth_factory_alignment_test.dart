@@ -83,7 +83,7 @@ void main() {
     expect(
       roadmap,
       contains(
-        '| v1.03 | Cross-App Certification Refresh | BLOCKED ON PAIRED PHYSICAL EVIDENCE |',
+        '| v1.03 | Cross-App Certification Refresh | SOFTWARE PREPARED — BLOCKED ON PAIRED PHYSICAL EVIDENCE |',
       ),
     );
 
