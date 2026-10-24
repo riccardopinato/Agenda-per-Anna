@@ -118,6 +118,13 @@ class AgendaPreferences {
   final String? pinSalt;
   final String? pinHash;
   final bool onboardingDone;
+  final bool morningRitualEnabled;
+  final bool eveningRitualEnabled;
+  final bool ritualRemindersEnabled;
+  final int morningRitualHour;
+  final int morningRitualMinute;
+  final int eveningRitualHour;
+  final int eveningRitualMinute;
   final PersonalizationPreset personalizationPreset;
   final Set<AppModule> enabledModules;
 
@@ -139,6 +146,13 @@ class AgendaPreferences {
     this.pinSalt,
     this.pinHash,
     this.onboardingDone = true,
+    this.morningRitualEnabled = false,
+    this.eveningRitualEnabled = false,
+    this.ritualRemindersEnabled = false,
+    this.morningRitualHour = 8,
+    this.morningRitualMinute = 0,
+    this.eveningRitualHour = 20,
+    this.eveningRitualMinute = 30,
     this.personalizationPreset = PersonalizationPreset.complete,
     this.enabledModules = completeAppModules,
   });
@@ -161,6 +175,13 @@ class AgendaPreferences {
     String? pinSalt,
     String? pinHash,
     bool? onboardingDone,
+    bool? morningRitualEnabled,
+    bool? eveningRitualEnabled,
+    bool? ritualRemindersEnabled,
+    int? morningRitualHour,
+    int? morningRitualMinute,
+    int? eveningRitualHour,
+    int? eveningRitualMinute,
     PersonalizationPreset? personalizationPreset,
     Set<AppModule>? enabledModules,
     bool clearPrimaryReminder = false,
@@ -190,6 +211,20 @@ class AgendaPreferences {
       pinSalt: clearPin ? null : (pinSalt ?? this.pinSalt),
       pinHash: clearPin ? null : (pinHash ?? this.pinHash),
       onboardingDone: onboardingDone ?? this.onboardingDone,
+      morningRitualEnabled:
+          morningRitualEnabled ?? this.morningRitualEnabled,
+      eveningRitualEnabled:
+          eveningRitualEnabled ?? this.eveningRitualEnabled,
+      ritualRemindersEnabled:
+          ritualRemindersEnabled ?? this.ritualRemindersEnabled,
+      morningRitualHour:
+          (morningRitualHour ?? this.morningRitualHour).clamp(0, 23).toInt(),
+      morningRitualMinute:
+          (morningRitualMinute ?? this.morningRitualMinute).clamp(0, 59).toInt(),
+      eveningRitualHour:
+          (eveningRitualHour ?? this.eveningRitualHour).clamp(0, 23).toInt(),
+      eveningRitualMinute:
+          (eveningRitualMinute ?? this.eveningRitualMinute).clamp(0, 59).toInt(),
       personalizationPreset:
           personalizationPreset ?? this.personalizationPreset,
       enabledModules: enabledModules ?? this.enabledModules,
@@ -249,6 +284,13 @@ class AgendaPreferences {
         'pinSalt': pinSalt,
         'pinHash': pinHash,
         'onboardingDone': onboardingDone,
+        'morningRitualEnabled': morningRitualEnabled,
+        'eveningRitualEnabled': eveningRitualEnabled,
+        'ritualRemindersEnabled': ritualRemindersEnabled,
+        'morningRitualHour': morningRitualHour,
+        'morningRitualMinute': morningRitualMinute,
+        'eveningRitualHour': eveningRitualHour,
+        'eveningRitualMinute': eveningRitualMinute,
         'personalizationPreset': personalizationPreset.name,
         'enabledModules': [
           for (final module in AppModule.values)
@@ -296,6 +338,20 @@ class AgendaPreferences {
         pinSalt: json['pinSalt'] as String?,
         pinHash: json['pinHash'] as String?,
         onboardingDone: json['onboardingDone'] as bool? ?? true,
+        morningRitualEnabled:
+            json['morningRitualEnabled'] as bool? ?? false,
+        eveningRitualEnabled:
+            json['eveningRitualEnabled'] as bool? ?? false,
+        ritualRemindersEnabled:
+            json['ritualRemindersEnabled'] as bool? ?? false,
+        morningRitualHour:
+            (json['morningRitualHour'] as num? ?? 8).toInt().clamp(0, 23).toInt(),
+        morningRitualMinute:
+            (json['morningRitualMinute'] as num? ?? 0).toInt().clamp(0, 59).toInt(),
+        eveningRitualHour:
+            (json['eveningRitualHour'] as num? ?? 20).toInt().clamp(0, 23).toInt(),
+        eveningRitualMinute:
+            (json['eveningRitualMinute'] as num? ?? 30).toInt().clamp(0, 59).toInt(),
         personalizationPreset: PersonalizationPreset.values.firstWhere(
           (e) => e.name == json['personalizationPreset'],
           orElse: () => PersonalizationPreset.complete,

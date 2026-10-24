@@ -83,6 +83,7 @@ extension DiaryTemplatesAgendaStore on AgendaStore {
     DateTime date,
     DiaryTemplatePreset preset, {
     DateTime? createdAt,
+    Iterable<String> extraTags = const <String>[],
   }) async {
     final now = createdAt ?? DateTime.now();
     final block = DiaryBlock(
@@ -90,7 +91,10 @@ extension DiaryTemplatesAgendaStore on AgendaStore {
       type: DiaryBlockType.note,
       createdAt: now,
       text: preset.seedText,
-      tags: normalizeOrganizationTags(preset.tags),
+      tags: normalizeOrganizationTags([
+        ...preset.tags,
+        ...extraTags,
+      ]),
     );
     final current = journal(date);
     await saveJournal(
