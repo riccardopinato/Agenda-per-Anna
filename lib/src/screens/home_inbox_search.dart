@@ -120,7 +120,7 @@ class _MainShellState extends State<MainShell> {
     return LayoutBuilder(
       builder: (context, constraints) {
         final useRail =
-            constraints.maxWidth >= AnnaDesignTokens.wideBreakpoint;
+            AnnaResponsiveShellPolicy.useRail(constraints.maxWidth);
         if (!useRail) {
           return Scaffold(
             body: IndexedStack(index: index, children: pages),
@@ -133,7 +133,7 @@ class _MainShellState extends State<MainShell> {
         }
 
         final extended =
-            constraints.maxWidth >= AnnaDesignTokens.railExtendedBreakpoint;
+            AnnaResponsiveShellPolicy.extendRail(constraints.maxWidth);
         final scheme = Theme.of(context).colorScheme;
         return Scaffold(
           body: SafeArea(
