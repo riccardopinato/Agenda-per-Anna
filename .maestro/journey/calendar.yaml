@@ -10,3 +10,8 @@ appId: com.riccardopinato.agenda_per_anna
     text: '(Mese|Month|Mes|Mois|Mês)[\s\S]*'
 - assertVisible:
     text: '(Settimana|Week|Semana|Semaine)[\s\S]*'
+
+- assertVisible:
+    id: 'calendar-open-month-notebook'
+- assertVisible:
+    id: 'calendar-open-year-overview'
