@@ -20,7 +20,7 @@ void main() {
         'today',
         'memories',
         'people',
-        'home',
+        'more',
         'shared',
         'account',
         'trash',
@@ -29,12 +29,12 @@ void main() {
   });
 
   test('critical AppLab flows assert stable user-visible destinations', () {
-    final home = File('.maestro/journey/home.yaml').readAsStringSync();
+    final more = File('.maestro/journey/more.yaml').readAsStringSync();
     final shared = File('.maestro/journey/shared.yaml').readAsStringSync();
     final account = File('.maestro/journey/account.yaml').readAsStringSync();
     final trash = File('.maestro/journey/trash.yaml').readAsStringSync();
 
-    expect(home, contains('La mia agenda'));
+    expect(more, contains('Altro|More|Más|Plus|Mais'));
     expect(shared, contains('Noi ♡'));
     expect(account, contains('Account e sincronizzazione'));
     expect(trash, contains('Archivio'));
