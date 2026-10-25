@@ -1,9 +1,7 @@
 appId: com.riccardopinato.agenda_per_anna
 ---
 - tapOn:
-    id: "home_more_menu"
-- tapOn:
-    text: "Noi ♡"
+    id: 'more-shared'
 - extendedWaitUntil:
-    visible: "Noi ♡"
+    visible: 'Noi ♡'
     timeout: 10000
