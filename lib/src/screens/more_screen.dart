@@ -20,6 +20,7 @@ class MoreScreen extends StatelessWidget {
       identifier: id,
       button: true,
       label: title,
+      onTap: onTap,
       excludeSemantics: true,
       child: ListTile(
         key: ValueKey<String>(id),
