@@ -121,48 +121,52 @@ class _MainShellState extends State<MainShell> {
       builder: (context, constraints) {
         final useRail =
             AnnaResponsiveShellPolicy.useRail(constraints.maxWidth);
-        if (!useRail) {
-          return Scaffold(
-            body: IndexedStack(index: index, children: pages),
-            bottomNavigationBar: NavigationBar(
-              selectedIndex: index,
-              onDestinationSelected: _selectDestination,
-              destinations: _bottomDestinations(strings),
-            ),
-          );
-        }
-
         final extended =
             AnnaResponsiveShellPolicy.extendRail(constraints.maxWidth);
         final scheme = Theme.of(context).colorScheme;
+
         return Scaffold(
-          body: SafeArea(
-            child: Row(
-              children: [
-                NavigationRail(
-                  key: const ValueKey<String>('main-navigation-rail'),
-                  selectedIndex: index,
-                  onDestinationSelected: _selectDestination,
-                  extended: extended,
-                  labelType:
-                      extended ? null : NavigationRailLabelType.all,
-                  minWidth: 76,
-                  minExtendedWidth: 220,
-                  backgroundColor: scheme.surface,
-                  indicatorColor: scheme.primaryContainer,
-                  destinations: _railDestinations(strings),
+          body: Row(
+            children: [
+              Offstage(
+                offstage: !useRail,
+                child: SafeArea(
+                  child: NavigationRail(
+                    key: const ValueKey<String>('main-navigation-rail'),
+                    selectedIndex: index,
+                    onDestinationSelected: _selectDestination,
+                    extended: extended,
+                    labelType:
+                        extended ? null : NavigationRailLabelType.all,
+                    minWidth: 76,
+                    minExtendedWidth: 220,
+                    backgroundColor: scheme.surface,
+                    indicatorColor: scheme.primaryContainer,
+                    destinations: _railDestinations(strings),
+                  ),
                 ),
-                VerticalDivider(
+              ),
+              SizedBox(
+                width: useRail ? 1 : 0,
+                child: VerticalDivider(
                   width: 1,
                   thickness: 1,
                   color: scheme.outlineVariant.withValues(alpha: 0.55),
                 ),
-                Expanded(
-                  child: IndexedStack(index: index, children: pages),
-                ),
-              ],
-            ),
+              ),
+              Expanded(
+                key: const ValueKey<String>('main-shell-content'),
+                child: IndexedStack(index: index, children: pages),
+              ),
+            ],
           ),
+          bottomNavigationBar: useRail
+              ? null
+              : NavigationBar(
+                  selectedIndex: index,
+                  onDestinationSelected: _selectDestination,
+                  destinations: _bottomDestinations(strings),
+                ),
         );
       },
     );
