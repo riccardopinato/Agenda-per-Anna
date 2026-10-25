@@ -30,21 +30,78 @@ class AgendaApp extends StatelessWidget {
       // Keep interactive Material controls at accessible touch-target size.
       materialTapTargetSize: MaterialTapTargetSize.padded,
       visualDensity: VisualDensity.standard,
-      scaffoldBackgroundColor:
-          dark ? const Color(0xFF151316) : const Color(0xFFFFFAFC),
-      cardTheme: const CardThemeData(
+      scaffoldBackgroundColor: scheme.surface,
+      cardTheme: CardThemeData(
         elevation: 0,
         margin: EdgeInsets.zero,
+        color: dark ? scheme.surfaceContainerLow : scheme.surfaceContainerLowest,
+        surfaceTintColor: Colors.transparent,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AnnaDesignTokens.radiusLg),
+          side: BorderSide(
+            color: scheme.outlineVariant.withValues(alpha: dark ? 0.42 : 0.55),
+          ),
+        ),
       ),
       inputDecorationTheme: InputDecorationTheme(
-        filled: false,
+        filled: true,
+        fillColor: scheme.surfaceContainerLow,
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(AnnaDesignTokens.radiusMd),
+          borderSide: BorderSide.none,
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(AnnaDesignTokens.radiusMd),
+          borderSide: BorderSide(
+            color: scheme.outlineVariant.withValues(alpha: 0.55),
+          ),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(AnnaDesignTokens.radiusMd),
+          borderSide: BorderSide(color: scheme.primary, width: 1.5),
         ),
       ),
       navigationBarTheme: NavigationBarThemeData(
-        height: 72,
+        height: 68,
+        elevation: 0,
+        backgroundColor: scheme.surface,
+        surfaceTintColor: Colors.transparent,
         indicatorColor: scheme.primaryContainer,
+        labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
+      ),
+      bottomSheetTheme: BottomSheetThemeData(
+        showDragHandle: true,
+        backgroundColor: scheme.surfaceContainerLow,
+        surfaceTintColor: Colors.transparent,
+        shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(
+            top: Radius.circular(AnnaDesignTokens.radiusHero),
+          ),
+        ),
+      ),
+      filledButtonTheme: FilledButtonThemeData(
+        style: FilledButton.styleFrom(
+          minimumSize: const Size(48, 48),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(AnnaDesignTokens.radiusMd),
+          ),
+        ),
+      ),
+      outlinedButtonTheme: OutlinedButtonThemeData(
+        style: OutlinedButton.styleFrom(
+          minimumSize: const Size(48, 48),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(AnnaDesignTokens.radiusMd),
+          ),
+        ),
+      ),
+      chipTheme: ChipThemeData(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AnnaDesignTokens.radiusSm),
+        ),
+        side: BorderSide(
+          color: scheme.outlineVariant.withValues(alpha: 0.55),
+        ),
       ),
     );
     _themeCache[cacheKey] = theme;
@@ -253,7 +310,7 @@ class _OnboardingScreenState extends State<_OnboardingScreen> {
                   LinearProgressIndicator(value: step == 0 ? 0.5 : 1),
                   const SizedBox(height: 24),
                   AnimatedSwitcher(
-                    duration: const Duration(milliseconds: 180),
+                    duration: AnnaDesignTokens.animationsEnabled(context)\n                        ? AnnaDesignTokens.motionStandard\n                        : Duration.zero,
                     child: step == 0
                         ? _buildPresetStep(context, strings)
                         : _buildFirstActionStep(context, strings),
