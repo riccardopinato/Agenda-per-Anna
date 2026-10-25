@@ -93,7 +93,7 @@ Execution remains evidence-driven:
 3. prepare but do not fabricate v1.02-A/C physical/store evidence;
 4. produce v1.02-D only after the exact-artifact physical + distribution gates pass;
 5. refresh Anna ↔ Wonderlog pair certification under Cross-App Verification v1;
-6. then resume product growth with Daily Rituals, Memories 3.0 and bounded ecosystem expansion.
+6. keep v1.04 closed after its 4/4 exact-head merge;\n7. execute the UX / Design Foundation before the Memories 3.0 IA expansion;\n8. then continue with Memories 3.0 and bounded ecosystem expansion.
 
 Provider rule: Anna keeps RevenueCat as the billing adapter. The v26.6
 provider-agnostic Entitlement Golden does not justify migrating to direct Play
