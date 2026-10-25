@@ -310,7 +310,9 @@ class _OnboardingScreenState extends State<_OnboardingScreen> {
                   LinearProgressIndicator(value: step == 0 ? 0.5 : 1),
                   const SizedBox(height: 24),
                   AnimatedSwitcher(
-                    duration: AnnaDesignTokens.animationsEnabled(context)\n                        ? AnnaDesignTokens.motionStandard\n                        : Duration.zero,
+                    duration: AnnaDesignTokens.animationsEnabled(context)
+                        ? AnnaDesignTokens.motionStandard
+                        : Duration.zero,
                     child: step == 0
                         ? _buildPresetStep(context, strings)
                         : _buildFirstActionStep(context, strings),
