@@ -2,12 +2,10 @@ appId: com.riccardopinato.agenda_per_anna
 ---
 - back
 - extendedWaitUntil:
-    visible: "(La mia agenda|My agenda|Mi agenda|Mon agenda|A minha agenda)"
+    visible: '(Altro|More|Más|Plus|Mais)'
     timeout: 10000
 - tapOn:
-    id: "home_more_menu"
-- tapOn:
-    text: "Cloud"
+    id: 'more-cloud'
 - extendedWaitUntil:
     visible: '(Account e sincronizzazione|Account and sync|Cuenta y sincronización|Compte et synchronisation|Conta e sincronização)'
     timeout: 10000
