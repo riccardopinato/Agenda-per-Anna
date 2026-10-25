@@ -140,6 +140,8 @@ void main() {
     expect(smoke, isNot(contains("id: 'home_more_menu'")));
 
     final people = File('.maestro/journey/people.yaml').readAsStringSync();
+    expect(people, contains("id: 'main-nav-more'"));
+    expect(people, contains("id: 'more-search'"));
     expect(people, contains("id: 'more-explore'"));
     expect(people, contains('direction: UP'));
     expect(
