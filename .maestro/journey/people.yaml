@@ -1,11 +1,5 @@
 appId: com.riccardopinato.agenda_per_anna
 ---
-- tapOn:
-    text: '(Altro|More|Más|Plus|Mais)[\s\S]*'
-    retryTapIfNoChange: true
-- extendedWaitUntil:
-    visible: '(Altro|More|Más|Plus|Mais)'
-    timeout: 10000
 - scrollUntilVisible:
     element:
       id: 'more-explore'
