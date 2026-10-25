@@ -535,14 +535,14 @@ void main() {
     final account = _source('.maestro/journey/account.yaml');
 
     for (final text in const <String>[
-      'La mia settimana',
-      'My week',
-      'Mi semana',
-      'Ma semaine',
-      'A minha semana',
+      'Settimana',
+      'Week',
+      'Semana',
+      'Semaine',
     ]) {
       expect(week, contains(text));
     }
+    expect(week, contains("id: 'calendar-week-view'"));
 
     for (final text in const <String>[
       'Pensieri e note',
