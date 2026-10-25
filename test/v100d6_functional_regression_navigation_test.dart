@@ -3,30 +3,32 @@ import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
-  test('v1.00-D6 preserves the four canonical shell destinations', () {
-    final home =
+  test('v1.05-A2 preserves canonical navigation through the new shell', () {
+    final shell =
         File('lib/src/screens/home_inbox_search.dart').readAsStringSync();
+    final more =
+        File('lib/src/screens/more_screen.dart').readAsStringSync();
 
-    expect(home, contains('HomeScreen(store: widget.store)'));
-    expect(home, contains('CalendarScreen(store: widget.store)'));
-    expect(home, contains('WeekScreen(store: widget.store)'));
-    expect(home, contains('PlannerScreen(store: widget.store)'));
-    expect(home, contains("ValueKey<String>('main-nav-home')"));
-    expect(home, contains("ValueKey<String>('main-nav-month')"));
-    expect(home, contains("ValueKey<String>('main-nav-week')"));
-    expect(home, contains("ValueKey<String>('main-nav-today')"));
+    expect(shell, contains('PlannerScreen(store: widget.store)'));
+    expect(shell, contains('CalendarHubScreen(store: widget.store)'));
+    expect(shell, contains('DiaryMemoriesScreen(store: widget.store)'));
+    expect(shell, contains('MoreScreen(store: widget.store)'));
+    expect(shell, contains("ValueKey<String>('main-nav-today')"));
+    expect(shell, contains("ValueKey<String>('main-nav-calendar')"));
+    expect(shell, contains("ValueKey<String>('main-nav-memories')"));
+    expect(shell, contains("ValueKey<String>('main-nav-more')"));
 
-    expect(home, contains('PersonalSearchConnectionsScreen(store: store)'));
+    expect(more, contains('PersonalSearchConnectionsScreen(store: store)'));
     final search =
         File('lib/src/search_connections_domain.dart').readAsStringSync();
     expect(search, contains("identifier: 'search_back_button'"));
-    expect(home, contains('InboxScreen(store: store)'));
-    expect(home, contains('ArchiveScreen(store: store)'));
-    expect(home, contains('BackupScreen(store: store)'));
-    expect(home, contains('SharedSpaceHubScreen(store: store)'));
-    expect(home, contains('CloudAccountScreen(store: store)'));
-    expect(home, contains('SettingsScreen(store: store)'));
-    expect(home, contains('ExploreScreen(store: store)'));
+    expect(more, contains('InboxScreen(store: store)'));
+    expect(more, contains('ArchiveScreen(store: store)'));
+    expect(more, contains('BackupScreen(store: store)'));
+    expect(more, contains('SharedSpaceHubScreen(store: store)'));
+    expect(more, contains('CloudAccountScreen(store: store)'));
+    expect(more, contains('SettingsScreen(store: store)'));
+    expect(more, contains('ExploreScreen(store: store)'));
   });
 
   test('v1.00-D6 keeps Explore as navigation-only over canonical domains', () {
