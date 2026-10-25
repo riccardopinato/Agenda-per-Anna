@@ -70,7 +70,7 @@ void main() {
         displayName: 'Anna',
         palette: AgendaPalette.sage,
         themeMode: AgendaThemeMode.light,
-        startTab: StartTab.week,
+        startTab: StartTab.calendar,
         defaultCategory: AgendaCategory.study,
         defaultEventMinutes: 45,
         defaultPrimaryReminder: 30,
@@ -83,10 +83,37 @@ void main() {
     await restored.restoreBackup(backup, merge: false);
 
     expect(restored.preferences.palette, AgendaPalette.sage);
-    expect(restored.preferences.startTab, StartTab.week);
+    expect(restored.preferences.startTab, StartTab.calendar);
     expect(restored.preferences.defaultCategory, AgendaCategory.study);
     expect(restored.preferences.defaultEventMinutes, 45);
     expect(restored.preferences.defaultPrimaryReminder, 30);
+  });
+
+  test('legacy navigation preferences migrate into the new shell', () {
+    expect(
+      AgendaPreferences.fromJson(const {'startTab': 'home'}).startTab,
+      StartTab.today,
+    );
+    expect(
+      AgendaPreferences.fromJson(const {'startTab': 'month'}).startTab,
+      StartTab.calendar,
+    );
+    expect(
+      AgendaPreferences.fromJson(const {'startTab': 'week'}).startTab,
+      StartTab.calendar,
+    );
+    expect(
+      AgendaPreferences.fromJson(const {'startTab': 'today'}).startTab,
+      StartTab.today,
+    );
+    expect(
+      AgendaPreferences.fromJson(const {'startTab': 'memories'}).startTab,
+      StartTab.memories,
+    );
+    expect(
+      AgendaPreferences.fromJson(const {'startTab': 'more'}).startTab,
+      StartTab.more,
+    );
   });
 
   test('merge backup keeps current device preferences', () async {
