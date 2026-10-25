@@ -3555,9 +3555,9 @@ class AgendaStore extends ChangeNotifier {
           showDailyQuote:
               payload['showDailyQuote'] as bool? ??
                   preferences.showDailyQuote,
-          startTab: StartTab.values.firstWhere(
-            (e) => e.name == payload['startTab'],
-            orElse: () => preferences.startTab,
+          startTab: startTabFromStoredValue(
+            payload['startTab'],
+            fallback: preferences.startTab,
           ),
           defaultCategory: AgendaCategory.values.firstWhere(
             (e) => e.name == payload['defaultCategory'],
