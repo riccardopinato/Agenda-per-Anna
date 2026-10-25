@@ -1,5 +1,10 @@
 appId: com.riccardopinato.agenda_per_anna
 ---
+- scrollUntilVisible:
+    element:
+      id: 'more-shared'
+    direction: UP
+    timeout: 10000
 - tapOn:
     id: 'more-shared'
 - extendedWaitUntil:
