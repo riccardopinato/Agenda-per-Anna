@@ -1,46 +1,38 @@
 appId: com.riccardopinato.agenda_per_anna
 ---
-# v1.01-E — Personalization accessibility/regression checkpoint.
-# D6 ends on Home with the Complete preset from clean-install onboarding.
 - extendedWaitUntil:
-    visible: ".*(La mia agenda|My agenda|Mi agenda|Mon agenda|A minha agenda).*"
+    visible: '(Altro|More|Más|Plus|Mais)'
+    timeout: 10000
+- tapOn:
+    id: 'more-personalize'
+- extendedWaitUntil:
+    visible: '(Personalizza|Personalize|Personalizar|Personnaliser)'
     timeout: 10000
 
 - tapOn:
-    id: "home_more_menu"
-- tapOn:
-    text: "(Personalizza|Personalize|Personalizar|Personnaliser)"
-- extendedWaitUntil:
-    visible: "(Personalizza|Personalize|Personalizar|Personnaliser)"
-    timeout: 10000
-
-# Preset changes remain reversible and module controls stay reachable.
-- tapOn:
-    id: "personalization_preset_essential"
+    id: 'personalization_preset_essential'
 - extendedWaitUntil:
     visible:
-      id: "personalization_module_memories"
+      id: 'personalization_module_people'
     timeout: 10000
 
-# One manual change exercises Custom without depending on translated copy.
 - tapOn:
-    id: "personalization_module_shopping"
+    id: 'personalization_module_shopping'
 - scrollUntilVisible:
     element:
-      id: "personalization_restore_complete"
+      id: 'personalization_restore_complete'
     direction: DOWN
     timeout: 10000
 
-# End in Complete so the product remains fully exposed for later/manual QA.
 - tapOn:
-    id: "personalization_restore_complete"
+    id: 'personalization_restore_complete'
 - scrollUntilVisible:
     element:
-      id: "personalization_module_ecosystem"
+      id: 'personalization_module_ecosystem'
     direction: UP
     timeout: 10000
 
 - back
 - extendedWaitUntil:
-    visible: ".*(La mia agenda|My agenda|Mi agenda|Mon agenda|A minha agenda).*"
+    visible: '(Altro|More|Más|Plus|Mais)'
     timeout: 10000
