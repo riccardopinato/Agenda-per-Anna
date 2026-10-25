@@ -16,17 +16,23 @@ class MoreScreen extends StatelessWidget {
     Widget? trailing,
     required VoidCallback onTap,
   }) {
-    return ListTile(
-      key: ValueKey<String>(id),
-      contentPadding: EdgeInsets.zero,
-      leading: CircleAvatar(child: Icon(icon)),
-      title: Text(
-        title,
-        style: const TextStyle(fontWeight: FontWeight.w700),
+    return Semantics(
+      identifier: id,
+      button: true,
+      label: title,
+      excludeSemantics: true,
+      child: ListTile(
+        key: ValueKey<String>(id),
+        contentPadding: EdgeInsets.zero,
+        leading: CircleAvatar(child: Icon(icon)),
+        title: Text(
+          title,
+          style: const TextStyle(fontWeight: FontWeight.w700),
+        ),
+        subtitle: subtitle == null ? null : Text(subtitle),
+        trailing: trailing ?? const Icon(Icons.chevron_right),
+        onTap: onTap,
       ),
-      subtitle: subtitle == null ? null : Text(subtitle),
-      trailing: trailing ?? const Icon(Icons.chevron_right),
-      onTap: onTap,
     );
   }
 
