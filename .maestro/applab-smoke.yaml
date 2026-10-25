@@ -54,15 +54,13 @@ appId: com.riccardopinato.agenda_per_anna
 # Deterministic QA-only fixtures. The AppLab build starts with clearState=true,
 # so the Vault MUST begin unconfigured.
 - tapOn:
-    text: '(Home|Inicio|Accueil|Início)[\s\S]*'
+    text: '(Altro|More|Más|Plus|Mais)[\s\S]*'
     retryTapIfNoChange: true
 - extendedWaitUntil:
-    visible: '(La mia agenda|My agenda|Mi agenda|Mon agenda|A minha agenda)'
+    visible: '(Altro|More|Más|Plus|Mais)'
     timeout: 10000
 - tapOn:
-    id: 'home_more_menu'
-- tapOn:
-    text: '(Impostazioni|Settings|Ajustes|Paramètres|Definições)'
+    id: 'more-settings'
 - extendedWaitUntil:
     visible: '(Impostazioni|Settings|Ajustes|Paramètres|Definições)'
     timeout: 10000
@@ -176,15 +174,13 @@ appId: com.riccardopinato.agenda_per_anna
     visible: '(La mia giornata|My day|Mi día|Ma journée|O meu dia)[\s\S]*'
     timeout: 15000
 - tapOn:
-    text: '(Home|Inicio|Accueil|Início)[\s\S]*'
+    text: '(Altro|More|Más|Plus|Mais)[\s\S]*'
     retryTapIfNoChange: true
 - extendedWaitUntil:
-    visible: '(La mia agenda|My agenda|Mi agenda|Mon agenda|A minha agenda)'
+    visible: '(Altro|More|Más|Plus|Mais)'
     timeout: 10000
 - tapOn:
-    id: 'home_more_menu'
-- tapOn:
-    text: '(Impostazioni|Settings|Ajustes|Paramètres|Definições)'
+    id: 'more-settings'
 - extendedWaitUntil:
     visible: '(Impostazioni|Settings|Ajustes|Paramètres|Definições)'
     timeout: 10000
@@ -237,5 +233,5 @@ appId: com.riccardopinato.agenda_per_anna
 - tapOn:
     text: '(Indietro|Back|Atrás|Retour|Voltar)'
 - extendedWaitUntil:
-    visible: '(La mia agenda|My agenda|Mi agenda|Mon agenda|A minha agenda)'
+    visible: '(Altro|More|Más|Plus|Mais)'
     timeout: 10000
