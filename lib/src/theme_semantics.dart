@@ -29,6 +29,14 @@ abstract final class AnnaDesignTokens {
   }
 }
 
+abstract final class AnnaResponsiveShellPolicy {
+  static bool useRail(double width) =>
+      width >= AnnaDesignTokens.wideBreakpoint;
+
+  static bool extendRail(double width) =>
+      width >= AnnaDesignTokens.railExtendedBreakpoint;
+}
+
 enum AnnaVisualDomain {
   today,
   calendar,
