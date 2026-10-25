@@ -36,47 +36,139 @@ class _MainShellState extends State<MainShell> {
     }
   }
 
+  void _selectDestination(int value) {
+    if (value == index) return;
+    setState(() => index = value);
+  }
+
+  List<Widget> _pages() => <Widget>[
+        HomeScreen(store: widget.store),
+        CalendarScreen(store: widget.store),
+        WeekScreen(store: widget.store),
+        PlannerScreen(store: widget.store),
+      ];
+
+  List<NavigationDestination> _bottomDestinations(AnnaStrings strings) =>
+      <NavigationDestination>[
+        NavigationDestination(
+          key: const ValueKey<String>('main-nav-home'),
+          icon: const Icon(Icons.home_outlined),
+          selectedIcon: const Icon(Icons.home),
+          label: strings.navHome,
+        ),
+        NavigationDestination(
+          key: const ValueKey<String>('main-nav-month'),
+          icon: const Icon(Icons.calendar_month_outlined),
+          selectedIcon: const Icon(Icons.calendar_month),
+          label: strings.navMonth,
+        ),
+        NavigationDestination(
+          key: const ValueKey<String>('main-nav-week'),
+          icon: const Icon(Icons.view_week_outlined),
+          selectedIcon: const Icon(Icons.view_week),
+          label: strings.navWeek,
+        ),
+        NavigationDestination(
+          key: const ValueKey<String>('main-nav-today'),
+          icon: const Icon(Icons.today_outlined),
+          selectedIcon: const Icon(Icons.today),
+          label: strings.navToday,
+        ),
+      ];
+
+  List<NavigationRailDestination> _railDestinations(AnnaStrings strings) =>
+      <NavigationRailDestination>[
+        NavigationRailDestination(
+          icon: const Icon(
+            Icons.home_outlined,
+            key: ValueKey<String>('main-rail-home'),
+          ),
+          selectedIcon: const Icon(Icons.home),
+          label: Text(strings.navHome),
+        ),
+        NavigationRailDestination(
+          icon: const Icon(
+            Icons.calendar_month_outlined,
+            key: ValueKey<String>('main-rail-month'),
+          ),
+          selectedIcon: const Icon(Icons.calendar_month),
+          label: Text(strings.navMonth),
+        ),
+        NavigationRailDestination(
+          icon: const Icon(
+            Icons.view_week_outlined,
+            key: ValueKey<String>('main-rail-week'),
+          ),
+          selectedIcon: const Icon(Icons.view_week),
+          label: Text(strings.navWeek),
+        ),
+        NavigationRailDestination(
+          icon: const Icon(
+            Icons.today_outlined,
+            key: ValueKey<String>('main-rail-today'),
+          ),
+          selectedIcon: const Icon(Icons.today),
+          label: Text(strings.navToday),
+        ),
+      ];
+
   @override
   Widget build(BuildContext context) {
     final strings = AnnaStrings.of(context);
-    final pages = [
-      HomeScreen(store: widget.store),
-      CalendarScreen(store: widget.store),
-      WeekScreen(store: widget.store),
-      PlannerScreen(store: widget.store),
-    ];
-    return Scaffold(
-      body: IndexedStack(index: index, children: pages),
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: index,
-        onDestinationSelected: (v) => setState(() => index = v),
-        destinations: [
-          NavigationDestination(
-            key: const ValueKey<String>('main-nav-home'),
-            icon: const Icon(Icons.home_outlined),
-            selectedIcon: const Icon(Icons.home),
-            label: strings.navHome,
+    final pages = _pages();
+
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final useRail =
+            AnnaResponsiveShellPolicy.useRail(constraints.maxWidth);
+        final extended =
+            AnnaResponsiveShellPolicy.extendRail(constraints.maxWidth);
+        final scheme = Theme.of(context).colorScheme;
+
+        return Scaffold(
+          body: Row(
+            children: [
+              Offstage(
+                offstage: !useRail,
+                child: SafeArea(
+                  child: NavigationRail(
+                    key: const ValueKey<String>('main-navigation-rail'),
+                    selectedIndex: index,
+                    onDestinationSelected: _selectDestination,
+                    extended: extended,
+                    labelType:
+                        extended ? null : NavigationRailLabelType.all,
+                    minWidth: 76,
+                    minExtendedWidth: 220,
+                    backgroundColor: scheme.surface,
+                    indicatorColor: scheme.primaryContainer,
+                    destinations: _railDestinations(strings),
+                  ),
+                ),
+              ),
+              SizedBox(
+                width: useRail ? 1 : 0,
+                child: VerticalDivider(
+                  width: 1,
+                  thickness: 1,
+                  color: scheme.outlineVariant.withValues(alpha: 0.55),
+                ),
+              ),
+              Expanded(
+                key: const ValueKey<String>('main-shell-content'),
+                child: IndexedStack(index: index, children: pages),
+              ),
+            ],
           ),
-          NavigationDestination(
-            key: const ValueKey<String>('main-nav-month'),
-            icon: const Icon(Icons.calendar_month_outlined),
-            selectedIcon: const Icon(Icons.calendar_month),
-            label: strings.navMonth,
-          ),
-          NavigationDestination(
-            key: const ValueKey<String>('main-nav-week'),
-            icon: const Icon(Icons.view_week_outlined),
-            selectedIcon: const Icon(Icons.view_week),
-            label: strings.navWeek,
-          ),
-          NavigationDestination(
-            key: const ValueKey<String>('main-nav-today'),
-            icon: const Icon(Icons.today_outlined),
-            selectedIcon: const Icon(Icons.today),
-            label: strings.navToday,
-          ),
-        ],
-      ),
+          bottomNavigationBar: useRail
+              ? null
+              : NavigationBar(
+                  selectedIndex: index,
+                  onDestinationSelected: _selectDestination,
+                  destinations: _bottomDestinations(strings),
+                ),
+        );
+      },
     );
   }
 }

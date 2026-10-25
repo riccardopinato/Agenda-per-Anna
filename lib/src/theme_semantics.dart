@@ -20,12 +20,21 @@ abstract final class AnnaDesignTokens {
   static const double compactContentWidth = 640;
   static const double readingContentWidth = 760;
   static const double wideBreakpoint = 840;
+  static const double railExtendedBreakpoint = 1180;
 
   static bool animationsEnabled(BuildContext context) {
     final media = MediaQuery.maybeOf(context);
     return !(media?.disableAnimations ?? false) &&
         !(media?.accessibleNavigation ?? false);
   }
+}
+
+abstract final class AnnaResponsiveShellPolicy {
+  static bool useRail(double width) =>
+      width >= AnnaDesignTokens.wideBreakpoint;
+
+  static bool extendRail(double width) =>
+      width >= AnnaDesignTokens.railExtendedBreakpoint;
 }
 
 enum AnnaVisualDomain {
