@@ -6,6 +6,11 @@ appId: com.riccardopinato.agenda_per_anna
 - extendedWaitUntil:
     visible: '(Altro|More|Más|Plus|Mais)'
     timeout: 10000
+- scrollUntilVisible:
+    element:
+      id: 'more-explore'
+    direction: UP
+    timeout: 10000
 - tapOn:
     id: 'more-explore'
 - extendedWaitUntil:
