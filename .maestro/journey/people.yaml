@@ -1,8 +1,13 @@
 appId: com.riccardopinato.agenda_per_anna
 ---
-# The previous "memories" checkpoint leaves the journey inside Memories,
-# which was opened from the v1.00-B Explore surface.
-- back
+- tapOn:
+    text: '(Altro|More|Más|Plus|Mais)[\s\S]*'
+    retryTapIfNoChange: true
+- extendedWaitUntil:
+    visible: '(Altro|More|Más|Plus|Mais)'
+    timeout: 10000
+- tapOn:
+    id: 'more-explore'
 - extendedWaitUntil:
     visible: '(Esplora|Explore|Explorar|Explorer)'
     timeout: 10000
