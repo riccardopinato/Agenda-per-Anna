@@ -952,36 +952,76 @@ class NavigationCard extends StatelessWidget {
   final String title;
   final String subtitle;
   final VoidCallback onTap;
-  const NavigationCard({super.key, required this.icon, required this.title, required this.subtitle, required this.onTap});
+  final AnnaVisualDomain? domain;
+
+  const NavigationCard({
+    super.key,
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+    required this.onTap,
+    this.domain,
+  });
 
   @override
-  Widget build(BuildContext context) => Card(
-        child: InkWell(
-          onTap: onTap,
-          borderRadius: BorderRadius.circular(20),
-          child: Padding(
-            padding: const EdgeInsets.all(18),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Icon(icon),
-                const SizedBox(height: 18),
-                Text(title, style: const TextStyle(fontWeight: FontWeight.w800)),
-                const SizedBox(height: 3),
-                Text(subtitle, style: Theme.of(context).textTheme.bodySmall),
-              ],
-            ),
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final accent = domain?.accent(scheme) ?? scheme.primary;
+    final surface = domain?.softSurface(scheme) ?? scheme.surfaceContainerLowest;
+
+    return Card(
+      color: surface,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(AnnaDesignTokens.radiusLg),
+        child: Padding(
+          padding: const EdgeInsets.all(AnnaDesignTokens.spaceMd),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                width: 42,
+                height: 42,
+                decoration: BoxDecoration(
+                  color: accent.withValues(alpha: 0.13),
+                  borderRadius: BorderRadius.circular(AnnaDesignTokens.radiusSm),
+                ),
+                alignment: Alignment.center,
+                child: Icon(icon, color: accent),
+              ),
+              const SizedBox(height: AnnaDesignTokens.spaceMd),
+              Text(
+                title,
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.w700,
+                    ),
+              ),
+              const SizedBox(height: AnnaDesignTokens.space2xs),
+              Text(
+                subtitle,
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: scheme.onSurfaceVariant,
+                    ),
+              ),
+            ],
           ),
         ),
-      );
+      ),
+    );
+  }
 }
 
 class SectionTitle extends StatelessWidget {
   final String text;
   const SectionTitle(this.text, {super.key});
   @override
-  Widget build(BuildContext context) =>
-      Text(text, style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800));
+  Widget build(BuildContext context) => Text(
+        text,
+        style: Theme.of(context).textTheme.titleLarge?.copyWith(
+              fontWeight: FontWeight.w700,
+              letterSpacing: -0.2,
+            ),
+      );
 }
 
 class SimpleCard extends StatelessWidget {
@@ -990,7 +1030,7 @@ class SimpleCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Card(
         child: Padding(
-          padding: const EdgeInsets.all(18),
+          padding: const EdgeInsets.all(AnnaDesignTokens.spaceMd),
           child: child,
         ),
       );
