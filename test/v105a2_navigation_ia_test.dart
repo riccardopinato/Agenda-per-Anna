@@ -140,6 +140,12 @@ void main() {
     expect(smoke, isNot(contains("id: 'home_more_menu'")));
 
     final people = File('.maestro/journey/people.yaml').readAsStringSync();
+    expect(people, startsWith('appId: com.riccardopinato.agenda_per_anna'));
+    expect(people, contains('- back'));
+    expect(
+      people,
+      contains("visible: '(La mia giornata|My day|Mi día|Ma journée|O meu dia)[\\s\\S]*'"),
+    );
     expect(
       people,
       contains("text: '(Altro|More|Más|Plus|Mais)[\\s\\S]*'"),
