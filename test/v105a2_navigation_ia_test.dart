@@ -70,6 +70,10 @@ void main() {
     expect(planner, contains('CalendarScreen('));
     expect(planner, contains('WeekScreen('));
     expect(planner, contains('embedded: true'));
+    expect(planner, contains("ValueKey<String>('calendar-open-month-notebook')"));
+    expect(planner, contains("ValueKey<String>('calendar-open-year-overview')"));
+    expect(planner, contains('MonthScreen(store: widget.store)'));
+    expect(planner, contains('YearScreen(store: widget.store)'));
   });
 
   test('v1.05-A2 More owns all former Home secondary routes', () {
@@ -89,6 +93,9 @@ void main() {
       expect(more, contains("identifier: id"));
       expect(more, contains("id: '$id'"));
     }
+
+    expect(more, contains('store.hasStorageWarnings'));
+    expect(more, contains('strings.v100StorageWarning'));
 
     for (final route in const <String>[
       'PersonalSearchConnectionsScreen(store: store)',
@@ -128,5 +135,9 @@ void main() {
     expect(journey, isNot(contains('"name": "home"')));
     expect(smoke, contains("id: 'more-settings'"));
     expect(smoke, isNot(contains("id: 'home_more_menu'")));
+
+    final people = File('.maestro/journey/people.yaml').readAsStringSync();
+    expect(people, contains("id: 'more-explore'"));
+    expect(people, contains('direction: UP'));
   });
 }
