@@ -37,7 +37,7 @@ void main() {
 
     expect(explore, contains('ShoppingListScreen(store: store)'));
     expect(explore, contains('WorkoutScreen(store: store)'));
-    expect(explore, contains('DiaryMemoriesScreen(store: store)'));
+    expect(explore, isNot(contains('DiaryMemoriesScreen(store: store)')));
     expect(explore, contains('PeopleScreen(store: store)'));
     expect(explore, contains('LifeEcosystemScreen(store: store)'));
 
