@@ -166,17 +166,21 @@ void main() {
     );
   });
 
-  test('day-first navigation keeps Home and all primary destinations reachable',
+  test('day-first navigation promotes Today while preserving legacy Home code',
       () {
     final shell =
         File('lib/src/screens/home_inbox_search.dart').readAsStringSync();
 
-    expect(shell, contains('HomeScreen(store: widget.store)'));
     expect(shell, contains('PlannerScreen(store: widget.store)'));
-    expect(shell, contains('label: strings.navHome'));
+    expect(shell, contains('CalendarHubScreen(store: widget.store)'));
+    expect(shell, contains('DiaryMemoriesScreen(store: widget.store)'));
+    expect(shell, contains('MoreScreen(store: widget.store)'));
     expect(shell, contains('label: strings.navToday'));
-    expect(StartTab.home.index, 0);
-    expect(StartTab.today.index, 3);
+    expect(shell, contains('label: strings.navCalendar'));
+    expect(shell, contains('label: strings.navMemories'));
+    expect(shell, contains('label: strings.navMore'));
+    expect(StartTab.today.index, 0);
+    expect(StartTab.more.index, 3);
   });
 
   test('Home and Planner share the same day overview projection', () {
