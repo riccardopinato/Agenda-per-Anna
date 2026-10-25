@@ -62,8 +62,9 @@ void main() {
     );
     expect(
       vault,
-      contains('(Home|Inicio|Accueil|Início)[\\s\\S]*'),
+      contains('(Altro|More|Más|Plus|Mais)[\\s\\S]*'),
     );
+    expect(vault, contains("id: 'more-settings'"));
     expect(
       'timeout: 300000'.allMatches(vault).length,
       3,
