@@ -43,6 +43,28 @@ void main() {
     expect(source, contains('LayoutBuilder('));
     expect(source, contains('AnnaResponsiveShellPolicy.useRail'));
     expect(source, contains('AnnaResponsiveShellPolicy.extendRail'));
+    expect(source, contains('Offstage('));
+    expect(source, contains("ValueKey<String>('main-shell-content')"));
+  });
+
+  test('v1.05-A1 keeps the page subtree mounted across breakpoint changes', () {
+    final source =
+        File('lib/src/screens/home_inbox_search.dart').readAsStringSync();
+
+    expect(
+      RegExp(r'body:\s*Row\([\s\S]*main-shell-content').hasMatch(source),
+      isTrue,
+    );
+    expect(
+      RegExp(r'bottomNavigationBar:\s*useRail\s*\?\s*null').hasMatch(source),
+      isTrue,
+    );
+    expect(
+      source,
+      isNot(contains(
+        "if (!useRail) {\n          return Scaffold(",
+      )),
+    );
   });
 
   test('v1.05-A1 changes presentation only', () {
