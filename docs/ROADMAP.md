@@ -76,15 +76,16 @@ Source of execution truth for Anna's Diary. Product identity and boundaries are 
 | v1.02-C | Google Play / RevenueCat Real QA | SOFTWARE PREPARED — BLOCKED ON EXTERNAL DISTRIBUTION | Internal Testing purchase/restore/reinstall evidence on exact signed AAB with real Offering products |
 | v1.02-D | Stable Release Candidate | RELEASE REALITY PREPARED — BLOCKED BY v1.02-A/C | Build once, bind exact source/artifact/signing identity, verify exact bytes, then distribute |
 | v1.03 | Cross-App Certification Refresh | SOFTWARE PREPARED — BLOCKED ON PAIRED PHYSICAL EVIDENCE | Re-certify Anna ↔ Wonderlog under Cross-App Verification v1 with exact paired artifact identity and COPY/LINK/idempotency/provenance matrix |
-| v1.04 | Daily Rituals & Life Flow | IMPLEMENTED CANDIDATE — 4/4 EXACT-HEAD MERGE GATE | Optional morning/evening ritual projections reusing AgendaPreferences, Diary, Today, Unified Capture and existing reminder engine |
+| v1.04 | Daily Rituals & Life Flow | Completed — PR #113 merged after 4/4 exact-head gates | Optional morning/evening ritual projections reusing AgendaPreferences, Diary, Today, Unified Capture and existing reminder engine |
+| v1.05-A0 | UX / Design Foundation | IMPLEMENTED CANDIDATE — exact-head gates required | Canonical visual tokens, brightness-aware surfaces, semantic domain accents and shared component polish before IA changes |
 | v1.05 | Memories & Recall 3.0 | PLANNED | Richer deterministic resurfacing over existing diary/person/place/archive primitives; no Memory DB or generative narrator |
 | v1.06 | Ecosystem Expansion | PLANNED | Add specialist integrations one at a time under Shared Ecosystem Core + paired verification; preferred order TrailPath → Notes → SleepMax → CashMate |
 
 ## Post-v1.01 execution order — App Factory v26.6
 
 Factory baseline for this roadmap refresh:
-`riccardopinato/App-Factory-Core@47c47f49a7b46812e3bd6f1231c3524f2b52b826`
-(Master v26.6, Golden Index v18).
+`riccardopinato/App-Factory-Core@4cc0b94467b94ab6fabe2c927fcc58afff49e39a`
+(Master v26.6, Golden Index v19).
 
 Execution remains evidence-driven:
 
@@ -93,7 +94,9 @@ Execution remains evidence-driven:
 3. prepare but do not fabricate v1.02-A/C physical/store evidence;
 4. produce v1.02-D only after the exact-artifact physical + distribution gates pass;
 5. refresh Anna ↔ Wonderlog pair certification under Cross-App Verification v1;
-6. then resume product growth with Daily Rituals, Memories 3.0 and bounded ecosystem expansion.
+6. keep v1.04 closed after its 4/4 exact-head merge;
+7. execute the UX / Design Foundation before the Memories 3.0 IA expansion;
+8. then continue with Memories 3.0 and bounded ecosystem expansion.
 
 Provider rule: Anna keeps RevenueCat as the billing adapter. The v26.6
 provider-agnostic Entitlement Golden does not justify migrating to direct Play

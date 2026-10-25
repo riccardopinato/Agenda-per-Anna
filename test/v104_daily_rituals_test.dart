@@ -107,7 +107,7 @@ void main() {
     expect(
       roadmap,
       contains(
-        '| v1.04 | Daily Rituals & Life Flow | IMPLEMENTED CANDIDATE — 4/4 EXACT-HEAD MERGE GATE |',
+        '| v1.04 | Daily Rituals & Life Flow | Completed — PR #113 merged after 4/4 exact-head gates |',
       ),
     );
     expect(
