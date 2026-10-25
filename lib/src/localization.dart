@@ -52,8 +52,34 @@ class AnnaStrings {
         _ => en,
       };
 
-  String get navHome => 'Home';
+  String get navToday => _pick(
+        en: 'Today',
+        it: 'Oggi',
+        es: 'Hoy',
+        fr: "Aujourd’hui",
+        pt: 'Hoje',
+      );
 
+  String get navCalendar => _pick(
+        en: 'Calendar',
+        it: 'Calendario',
+        es: 'Calendario',
+        fr: 'Calendrier',
+        pt: 'Calendário',
+      );
+
+  String get navMemories => memories;
+
+  String get navMore => _pick(
+        en: 'More',
+        it: 'Altro',
+        es: 'Más',
+        fr: 'Plus',
+        pt: 'Mais',
+      );
+
+  // Legacy labels remain available for historical screens and old copy only.
+  String get navHome => 'Home';
   String get navMonth => _pick(
         en: 'Month',
         it: 'Mese',
@@ -61,21 +87,12 @@ class AnnaStrings {
         fr: 'Mois',
         pt: 'Mês',
       );
-
   String get navWeek => _pick(
         en: 'Week',
         it: 'Settimana',
         es: 'Semana',
         fr: 'Semaine',
         pt: 'Semana',
-      );
-
-  String get navToday => _pick(
-        en: 'Today',
-        it: 'Oggi',
-        es: 'Hoy',
-        fr: "Aujourd’hui",
-        pt: 'Hoje',
       );
 
   String get add => _pick(
@@ -883,9 +900,9 @@ class AnnaStrings {
 
 
   String startTab(StartTab tab) => switch (tab) {
-        StartTab.home => navHome,
-        StartTab.month => navMonth,
-        StartTab.week => navWeek,
         StartTab.today => navToday,
+        StartTab.calendar => navCalendar,
+        StartTab.memories => navMemories,
+        StartTab.more => navMore,
       };
 }
