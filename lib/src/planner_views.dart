@@ -66,30 +66,44 @@ class _CalendarHubScreenState extends State<CalendarHubScreen> {
             child: Row(
               children: [
                 Expanded(
-                  child: OutlinedButton.icon(
-                    key: const ValueKey<String>('calendar-open-month-notebook'),
-                    onPressed: () => Navigator.push(
-                      context,
-                      MaterialPageRoute<void>(
-                        builder: (_) => MonthScreen(store: widget.store),
+                  child: Semantics(
+                    identifier: 'calendar-open-month-notebook',
+                    button: true,
+                    label: strings.v100MyMonth,
+                    child: OutlinedButton.icon(
+                      key: const ValueKey<String>(
+                        'calendar-open-month-notebook',
                       ),
+                      onPressed: () => Navigator.push(
+                        context,
+                        MaterialPageRoute<void>(
+                          builder: (_) => MonthScreen(store: widget.store),
+                        ),
+                      ),
+                      icon: const Icon(Icons.auto_awesome_outlined),
+                      label: Text(strings.v100MyMonth),
                     ),
-                    icon: const Icon(Icons.auto_awesome_outlined),
-                    label: Text(strings.v100MyMonth),
                   ),
                 ),
                 const SizedBox(width: AnnaDesignTokens.spaceSm),
                 Expanded(
-                  child: OutlinedButton.icon(
-                    key: const ValueKey<String>('calendar-open-year-overview'),
-                    onPressed: () => Navigator.push(
-                      context,
-                      MaterialPageRoute<void>(
-                        builder: (_) => YearScreen(store: widget.store),
+                  child: Semantics(
+                    identifier: 'calendar-open-year-overview',
+                    button: true,
+                    label: strings.v100MyYear,
+                    child: OutlinedButton.icon(
+                      key: const ValueKey<String>(
+                        'calendar-open-year-overview',
                       ),
+                      onPressed: () => Navigator.push(
+                        context,
+                        MaterialPageRoute<void>(
+                          builder: (_) => YearScreen(store: widget.store),
+                        ),
+                      ),
+                      icon: const Icon(Icons.insights_outlined),
+                      label: Text(strings.v100MyYear),
                     ),
-                    icon: const Icon(Icons.insights_outlined),
-                    label: Text(strings.v100MyYear),
                   ),
                 ),
               ],
