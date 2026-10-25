@@ -4,6 +4,11 @@ appId: com.riccardopinato.agenda_per_anna
 - extendedWaitUntil:
     visible: '(Altro|More|Más|Plus|Mais)'
     timeout: 10000
+- scrollUntilVisible:
+    element:
+      id: 'more-cloud'
+    direction: DOWN
+    timeout: 10000
 - tapOn:
     id: 'more-cloud'
 - extendedWaitUntil:
