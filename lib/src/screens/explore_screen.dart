@@ -80,20 +80,6 @@ class ExploreScreen extends StatelessWidget {
             ),
           );
           addModule(
-            AppModule.memories,
-            NavigationCard(
-              icon: Icons.photo_library_outlined,
-              title: strings.v100MyMemories,
-              subtitle: strings.v100MemoriesSubtitle,
-              onTap: () => Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => DiaryMemoriesScreen(store: store),
-                ),
-              ),
-            ),
-          );
-          addModule(
             AppModule.people,
             NavigationCard(
               icon: Icons.people_outline,
