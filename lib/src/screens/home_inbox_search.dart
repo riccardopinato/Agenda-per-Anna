@@ -19,7 +19,7 @@ class _MainShellState extends State<MainShell> {
     if (kIsWeb) {
       final query = Uri.base.queryParameters;
       if (query['today'] == '1') {
-        index = 3;
+        index = StartTab.today.index;
       }
       if (query['capture'] == '1') {
         WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -42,37 +42,37 @@ class _MainShellState extends State<MainShell> {
   }
 
   List<Widget> _pages() => <Widget>[
-        HomeScreen(store: widget.store),
-        CalendarScreen(store: widget.store),
-        WeekScreen(store: widget.store),
         PlannerScreen(store: widget.store),
+        CalendarHubScreen(store: widget.store),
+        DiaryMemoriesScreen(store: widget.store),
+        MoreScreen(store: widget.store),
       ];
 
   List<NavigationDestination> _bottomDestinations(AnnaStrings strings) =>
       <NavigationDestination>[
         NavigationDestination(
-          key: const ValueKey<String>('main-nav-home'),
-          icon: const Icon(Icons.home_outlined),
-          selectedIcon: const Icon(Icons.home),
-          label: strings.navHome,
-        ),
-        NavigationDestination(
-          key: const ValueKey<String>('main-nav-month'),
-          icon: const Icon(Icons.calendar_month_outlined),
-          selectedIcon: const Icon(Icons.calendar_month),
-          label: strings.navMonth,
-        ),
-        NavigationDestination(
-          key: const ValueKey<String>('main-nav-week'),
-          icon: const Icon(Icons.view_week_outlined),
-          selectedIcon: const Icon(Icons.view_week),
-          label: strings.navWeek,
-        ),
-        NavigationDestination(
           key: const ValueKey<String>('main-nav-today'),
           icon: const Icon(Icons.today_outlined),
           selectedIcon: const Icon(Icons.today),
           label: strings.navToday,
+        ),
+        NavigationDestination(
+          key: const ValueKey<String>('main-nav-calendar'),
+          icon: const Icon(Icons.calendar_month_outlined),
+          selectedIcon: const Icon(Icons.calendar_month),
+          label: strings.navCalendar,
+        ),
+        NavigationDestination(
+          key: const ValueKey<String>('main-nav-memories'),
+          icon: const Icon(Icons.photo_library_outlined),
+          selectedIcon: const Icon(Icons.photo_library),
+          label: strings.navMemories,
+        ),
+        NavigationDestination(
+          key: const ValueKey<String>('main-nav-more'),
+          icon: const Icon(Icons.grid_view_outlined),
+          selectedIcon: const Icon(Icons.grid_view_rounded),
+          label: strings.navMore,
         ),
       ];
 
@@ -80,35 +80,35 @@ class _MainShellState extends State<MainShell> {
       <NavigationRailDestination>[
         NavigationRailDestination(
           icon: const Icon(
-            Icons.home_outlined,
-            key: ValueKey<String>('main-rail-home'),
-          ),
-          selectedIcon: const Icon(Icons.home),
-          label: Text(strings.navHome),
-        ),
-        NavigationRailDestination(
-          icon: const Icon(
-            Icons.calendar_month_outlined,
-            key: ValueKey<String>('main-rail-month'),
-          ),
-          selectedIcon: const Icon(Icons.calendar_month),
-          label: Text(strings.navMonth),
-        ),
-        NavigationRailDestination(
-          icon: const Icon(
-            Icons.view_week_outlined,
-            key: ValueKey<String>('main-rail-week'),
-          ),
-          selectedIcon: const Icon(Icons.view_week),
-          label: Text(strings.navWeek),
-        ),
-        NavigationRailDestination(
-          icon: const Icon(
             Icons.today_outlined,
             key: ValueKey<String>('main-rail-today'),
           ),
           selectedIcon: const Icon(Icons.today),
           label: Text(strings.navToday),
+        ),
+        NavigationRailDestination(
+          icon: const Icon(
+            Icons.calendar_month_outlined,
+            key: ValueKey<String>('main-rail-calendar'),
+          ),
+          selectedIcon: const Icon(Icons.calendar_month),
+          label: Text(strings.navCalendar),
+        ),
+        NavigationRailDestination(
+          icon: const Icon(
+            Icons.photo_library_outlined,
+            key: ValueKey<String>('main-rail-memories'),
+          ),
+          selectedIcon: const Icon(Icons.photo_library),
+          label: Text(strings.navMemories),
+        ),
+        NavigationRailDestination(
+          icon: const Icon(
+            Icons.grid_view_outlined,
+            key: ValueKey<String>('main-rail-more'),
+          ),
+          selectedIcon: const Icon(Icons.grid_view_rounded),
+          label: Text(strings.navMore),
         ),
       ];
 
