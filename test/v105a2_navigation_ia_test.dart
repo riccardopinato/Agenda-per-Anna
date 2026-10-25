@@ -142,6 +142,10 @@ void main() {
     final people = File('.maestro/journey/people.yaml').readAsStringSync();
     expect(people, contains("id: 'more-explore'"));
     expect(people, contains('direction: UP'));
+    expect(
+      people,
+      isNot(contains("text: '(Altro|More|Más|Plus|Mais)[\\s\\S]*'")),
+    );
 
     final routeJourneys = <String, String>{
       '.maestro/journey/backup.yaml': 'more-backup',
