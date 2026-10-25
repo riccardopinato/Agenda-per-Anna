@@ -54,16 +54,62 @@ class _CalendarHubScreenState extends State<CalendarHubScreen> {
           ),
         ),
       ),
-      body: IndexedStack(
-        index: view.index,
+      body: Column(
         children: [
-          CalendarScreen(
-            store: widget.store,
-            embedded: true,
+          Padding(
+            padding: const EdgeInsets.fromLTRB(
+              AnnaDesignTokens.spaceMd,
+              AnnaDesignTokens.spaceXs,
+              AnnaDesignTokens.spaceMd,
+              0,
+            ),
+            child: Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton.icon(
+                    key: const ValueKey<String>('calendar-open-month-notebook'),
+                    onPressed: () => Navigator.push(
+                      context,
+                      MaterialPageRoute<void>(
+                        builder: (_) => MonthScreen(store: widget.store),
+                      ),
+                    ),
+                    icon: const Icon(Icons.auto_awesome_outlined),
+                    label: Text(strings.v100MyMonth),
+                  ),
+                ),
+                const SizedBox(width: AnnaDesignTokens.spaceSm),
+                Expanded(
+                  child: OutlinedButton.icon(
+                    key: const ValueKey<String>('calendar-open-year-overview'),
+                    onPressed: () => Navigator.push(
+                      context,
+                      MaterialPageRoute<void>(
+                        builder: (_) => YearScreen(store: widget.store),
+                      ),
+                    ),
+                    icon: const Icon(Icons.insights_outlined),
+                    label: Text(strings.v100MyYear),
+                  ),
+                ),
+              ],
+            ),
           ),
-          WeekScreen(
-            store: widget.store,
-            embedded: true,
+          const SizedBox(height: AnnaDesignTokens.spaceXs),
+          Expanded(
+            child: IndexedStack(
+              index: view.index,
+              children: [
+                CalendarScreen(
+                  store: widget.store,
+                  embedded: true,
+                ),
+                WeekScreen(
+                  store: widget.store,
+                  embedded: true,
+                ),
+              ],
+            ),
           ),
         ],
       ),
