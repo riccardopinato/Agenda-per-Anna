@@ -1,8 +1,85 @@
 part of '../main.dart';
 
+enum _CalendarHubView { month, week }
+
+class CalendarHubScreen extends StatefulWidget {
+  final AgendaStore store;
+
+  const CalendarHubScreen({
+    super.key,
+    required this.store,
+  });
+
+  @override
+  State<CalendarHubScreen> createState() => _CalendarHubScreenState();
+}
+
+class _CalendarHubScreenState extends State<CalendarHubScreen> {
+  _CalendarHubView view = _CalendarHubView.month;
+
+  @override
+  Widget build(BuildContext context) {
+    final strings = AnnaStrings.of(context);
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(
+          strings.calendar,
+          style: const TextStyle(fontWeight: FontWeight.w800),
+        ),
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(58),
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 10),
+            child: SizedBox(
+              width: double.infinity,
+              child: SegmentedButton<_CalendarHubView>(
+                segments: [
+                  ButtonSegment<_CalendarHubView>(
+                    value: _CalendarHubView.month,
+                    icon: const Icon(Icons.calendar_month_outlined),
+                    label: Text(strings.navMonth),
+                  ),
+                  ButtonSegment<_CalendarHubView>(
+                    value: _CalendarHubView.week,
+                    icon: const Icon(Icons.view_week_outlined),
+                    label: Text(strings.navWeek),
+                  ),
+                ],
+                selected: {view},
+                onSelectionChanged: (value) {
+                  setState(() => view = value.first);
+                },
+              ),
+            ),
+          ),
+        ),
+      ),
+      body: IndexedStack(
+        index: view.index,
+        children: [
+          CalendarScreen(
+            store: widget.store,
+            embedded: true,
+          ),
+          WeekScreen(
+            store: widget.store,
+            embedded: true,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class CalendarScreen extends StatefulWidget {
   final AgendaStore store;
-  const CalendarScreen({super.key, required this.store});
+  final bool embedded;
+
+  const CalendarScreen({
+    super.key,
+    required this.store,
+    this.embedded = false,
+  });
 
   @override
   State<CalendarScreen> createState() => _CalendarScreenState();
@@ -47,12 +124,14 @@ class _CalendarScreenState extends State<CalendarScreen> {
             agendaEntriesForDayWithExternal(widget.store, selected);
         final dayHub = widget.store.dayHubSnapshot(selected);
         return Scaffold(
-          appBar: AppBar(
-            title: Text(
-              strings.calendar,
-              style: const TextStyle(fontWeight: FontWeight.w800),
-            ),
-          ),
+          appBar: widget.embedded
+              ? null
+              : AppBar(
+                  title: Text(
+                    strings.calendar,
+                    style: const TextStyle(fontWeight: FontWeight.w800),
+                  ),
+                ),
           floatingActionButton: FloatingActionButton.extended(
             onPressed: () => _showQuickCapture(
               context,
@@ -1447,7 +1526,13 @@ class _TimelinePainter extends CustomPainter {
 
 class WeekScreen extends StatefulWidget {
   final AgendaStore store;
-  const WeekScreen({super.key, required this.store});
+  final bool embedded;
+
+  const WeekScreen({
+    super.key,
+    required this.store,
+    this.embedded = false,
+  });
 
   @override
   State<WeekScreen> createState() => _WeekScreenState();
@@ -1455,6 +1540,65 @@ class WeekScreen extends StatefulWidget {
 
 class _WeekScreenState extends State<WeekScreen> {
   late DateTime start = mondayOf(DateTime.now());
+
+  List<Widget> _weekActions(BuildContext context) => [
+        IconButton(
+          tooltip: AnnaStrings.of(context).d3('previousWeek'),
+          onPressed: () => _moveWeek(-7),
+          icon: const Icon(Icons.chevron_left),
+        ),
+        IconButton(
+          tooltip: AnnaStrings.of(context).d3('thisWeek'),
+          onPressed: _goToCurrentWeek,
+          icon: const Icon(Icons.today_outlined),
+        ),
+        IconButton(
+          tooltip: AnnaStrings.of(context).d3('nextWeek'),
+          onPressed: () => _moveWeek(7),
+          icon: const Icon(Icons.chevron_right),
+        ),
+        PopupMenuButton<String>(
+          tooltip: AnnaStrings.of(context).d3('weekActions'),
+          onSelected: (value) async {
+            if (value != 'trash') return;
+            final confirmed = await showDialog<bool>(
+                  context: context,
+                  builder: (dialogContext) => AlertDialog(
+                    title: Text(
+                      AnnaStrings.of(context).d3('moveWeekTitle'),
+                    ),
+                    content: Text(AnnaStrings.of(context).d3('weekTrash')),
+                    actions: [
+                      TextButton(
+                        onPressed: () =>
+                            Navigator.pop(dialogContext, false),
+                        child: Text(AnnaStrings.of(context).cancel),
+                      ),
+                      FilledButton(
+                        onPressed: () =>
+                            Navigator.pop(dialogContext, true),
+                        child: Text(
+                          AnnaStrings.of(context).d3('moveTrash'),
+                        ),
+                      ),
+                    ],
+                  ),
+                ) ??
+                false;
+            if (confirmed) {
+              await widget.store.moveWeekToTrash(start);
+            }
+          },
+          itemBuilder: (_) => [
+            PopupMenuItem(
+              value: 'trash',
+              child: Text(
+                AnnaStrings.of(context).d3('movePageTrash'),
+              ),
+            ),
+          ],
+        ),
+      ];
 
   @override
   void initState() {
@@ -1512,67 +1656,30 @@ class _WeekScreenState extends State<WeekScreen> {
         ];
 
         return Scaffold(
-          appBar: AppBar(
-            title: Text(AnnaStrings.of(context).d3('myWeek'), style: const TextStyle(fontWeight: FontWeight.w800)),
-            actions: [
-              IconButton(
-                tooltip: AnnaStrings.of(context).d3('previousWeek'),
-                onPressed: () => _moveWeek(-7),
-                icon: const Icon(Icons.chevron_left),
-              ),
-              IconButton(
-                tooltip: AnnaStrings.of(context).d3('thisWeek'),
-                onPressed: _goToCurrentWeek,
-                icon: const Icon(Icons.today_outlined),
-              ),
-              IconButton(
-                tooltip: AnnaStrings.of(context).d3('nextWeek'),
-                onPressed: () => _moveWeek(7),
-                icon: const Icon(Icons.chevron_right),
-              ),
-              PopupMenuButton<String>(
-                tooltip: AnnaStrings.of(context).d3('weekActions'),
-                onSelected: (value) async {
-                  if (value != 'trash') return;
-                  final confirmed = await showDialog<bool>(
-                        context: context,
-                        builder: (dialogContext) => AlertDialog(
-                          title: Text(
-                            AnnaStrings.of(context).d3('moveWeekTitle'),
-                          ),
-                          content: Text(AnnaStrings.of(context).d3('weekTrash')),
-                          actions: [
-                            TextButton(
-                              onPressed: () =>
-                                  Navigator.pop(dialogContext, false),
-                              child: Text(AnnaStrings.of(context).cancel),
-                            ),
-                            FilledButton(
-                              onPressed: () =>
-                                  Navigator.pop(dialogContext, true),
-                              child: Text(AnnaStrings.of(context).d3('moveTrash')),
-                            ),
-                          ],
-                        ),
-                      ) ??
-                      false;
-                  if (confirmed) {
-                    await widget.store.moveWeekToTrash(start);
-                  }
-                },
-                itemBuilder: (_) => [
-                  PopupMenuItem(
-                    value: 'trash',
-                    child: Text(AnnaStrings.of(context).d3('movePageTrash')),
+          appBar: widget.embedded
+              ? null
+              : AppBar(
+                  title: Text(
+                    AnnaStrings.of(context).d3('myWeek'),
+                    style: const TextStyle(fontWeight: FontWeight.w800),
                   ),
-                ],
-              ),
-            ],
-          ),
-          body: ListView(
-            padding: const EdgeInsets.fromLTRB(14, 8, 14, 110),
+                  actions: _weekActions(context),
+                ),
+          body: Column(
             children: [
-              _WeekHero(
+              if (widget.embedded)
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(12, 6, 12, 0),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: _weekActions(context),
+                  ),
+                ),
+              Expanded(
+                child: ListView(
+                  padding: const EdgeInsets.fromLTRB(14, 8, 14, 110),
+                  children: [
+                    _WeekHero(
                 start: start,
                 end: end,
                 eventCount: events.length,
@@ -1604,11 +1711,17 @@ class _WeekScreenState extends State<WeekScreen> {
                 const SizedBox(height: 10),
               ],
               const SizedBox(height: 8),
-              WeekMemoryCard(
-                key: ValueKey('week-memory-${AgendaStore.dateKey(start)}'),
-                data: data,
-                autoMemories: beautifulThings,
-                onSave: (value) => widget.store.saveWeek(start, value),
+                    WeekMemoryCard(
+                      key: ValueKey(
+                        'week-memory-${AgendaStore.dateKey(start)}',
+                      ),
+                      data: data,
+                      autoMemories: beautifulThings,
+                      onSave: (value) =>
+                          widget.store.saveWeek(start, value),
+                    ),
+                  ],
+                ),
               ),
             ],
           ),
