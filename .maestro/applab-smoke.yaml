@@ -59,6 +59,14 @@ appId: com.riccardopinato.agenda_per_anna
 - extendedWaitUntil:
     visible: '(Altro|More|Más|Plus|Mais)'
     timeout: 10000
+- scrollUntilVisible:
+    element:
+      id: 'more-settings'
+    direction: DOWN
+    timeout: 30000
+    speed: 45
+    visibilityPercentage: 20
+    centerElement: false
 - tapOn:
     id: 'more-settings'
 - extendedWaitUntil:
@@ -179,6 +187,14 @@ appId: com.riccardopinato.agenda_per_anna
 - extendedWaitUntil:
     visible: '(Altro|More|Más|Plus|Mais)'
     timeout: 10000
+- scrollUntilVisible:
+    element:
+      id: 'more-settings'
+    direction: DOWN
+    timeout: 30000
+    speed: 45
+    visibilityPercentage: 20
+    centerElement: false
 - tapOn:
     id: 'more-settings'
 - extendedWaitUntil:
