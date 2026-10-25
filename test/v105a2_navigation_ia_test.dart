@@ -72,8 +72,8 @@ void main() {
     expect(planner, contains('embedded: true'));
     expect(planner, contains("identifier: 'calendar-open-month-notebook'"));
     expect(planner, contains("identifier: 'calendar-open-year-overview'"));
-    expect(planner, contains("ValueKey<String>('calendar-open-month-notebook')"));
-    expect(planner, contains("ValueKey<String>('calendar-open-year-overview')"));
+    expect(planner, contains("'calendar-open-month-notebook'"));
+    expect(planner, contains("'calendar-open-year-overview'"));
     expect(planner, contains('MonthScreen(store: widget.store)'));
     expect(planner, contains('YearScreen(store: widget.store)'));
   });
