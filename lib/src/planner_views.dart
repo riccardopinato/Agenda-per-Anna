@@ -267,6 +267,7 @@ class _PlannerScreenState extends State<PlannerScreen> {
     return AnimatedBuilder(
       animation: Listenable.merge([
         widget.store.agendaRevision,
+        widget.store.inboxRevision,
         widget.store.sharedRevision,
         widget.store.journalRevision,
         widget.store.planningRevision,
