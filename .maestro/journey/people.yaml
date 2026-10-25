@@ -1,5 +1,9 @@
 appId: com.riccardopinato.agenda_per_anna
 ---
+- back
+- extendedWaitUntil:
+    visible: '(La mia giornata|My day|Mi día|Ma journée|O meu dia)[\s\S]*'
+    timeout: 15000
 - tapOn:
     text: '(Altro|More|Más|Plus|Mais)[\s\S]*'
     retryTapIfNoChange: true
