@@ -83,6 +83,24 @@ class MoreScreen extends StatelessWidget {
               AnnaDesignTokens.spaceXl,
             ),
             children: [
+              if (store.hasStorageWarnings) ...[
+                SimpleCard(
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Icon(
+                        Icons.warning_amber_rounded,
+                        color: Theme.of(context).colorScheme.error,
+                      ),
+                      const SizedBox(width: AnnaDesignTokens.spaceSm),
+                      Expanded(
+                        child: Text(strings.v100StorageWarning),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: AnnaDesignTokens.spaceLg),
+              ],
               SectionTitle(strings.v100Explore),
               const SizedBox(height: AnnaDesignTokens.spaceSm),
               SimpleCard(
