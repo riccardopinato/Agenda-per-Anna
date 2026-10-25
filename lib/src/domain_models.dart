@@ -40,7 +40,23 @@ extension AgendaPaletteUi on AgendaPalette {
       };
 }
 
-enum StartTab { home, month, week, today }
+enum StartTab { today, calendar, memories, more }
+
+StartTab startTabFromStoredValue(
+  Object? raw, {
+  StartTab fallback = StartTab.today,
+}) {
+  final value = raw?.toString().trim().toLowerCase();
+  return switch (value) {
+    'today' => StartTab.today,
+    'calendar' || 'month' || 'week' => StartTab.calendar,
+    'memories' => StartTab.memories,
+    'more' => StartTab.more,
+    // Home was the pre-v1.05 dashboard. Its primary day content moves to Today.
+    'home' => StartTab.today,
+    _ => fallback,
+  };
+}
 
 enum AppModule {
   memories,
@@ -314,10 +330,7 @@ class AgendaPreferences {
           orElse: () => AgendaPalette.rose,
         ),
         showDailyQuote: json['showDailyQuote'] as bool? ?? true,
-        startTab: StartTab.values.firstWhere(
-          (e) => e.name == json['startTab'],
-          orElse: () => StartTab.today,
-        ),
+        startTab: startTabFromStoredValue(json['startTab']),
         defaultCategory: AgendaCategory.values.firstWhere(
           (e) => e.name == json['defaultCategory'],
           orElse: () => AgendaCategory.personal,
