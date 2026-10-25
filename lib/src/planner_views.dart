@@ -274,6 +274,7 @@ class _PlannerScreenState extends State<PlannerScreen> {
         ExternalCalendarService.instance,
       ]),
       builder: (context, _) {
+        unawaited(HomeWidgetBridge.instance.sync(widget.store));
         final strings = AnnaStrings.of(context);
         final snapshot = widget.store.dayHubSnapshot(day);
         final memoryRecall = widget.store.memoryRecallSnapshot(day);
