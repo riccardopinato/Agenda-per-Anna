@@ -1669,11 +1669,15 @@ class _WeekScreenState extends State<WeekScreen> {
           body: Column(
             children: [
               if (widget.embedded)
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(12, 6, 12, 0),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.end,
-                    children: _weekActions(context),
+                Semantics(
+                  identifier: 'calendar-week-view',
+                  container: true,
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(12, 6, 12, 0),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      children: _weekActions(context),
+                    ),
                   ),
                 ),
               Expanded(
