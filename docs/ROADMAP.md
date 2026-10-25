@@ -77,7 +77,7 @@ Source of execution truth for Anna's Diary. Product identity and boundaries are 
 | v1.02-D | Stable Release Candidate | RELEASE REALITY PREPARED — BLOCKED BY v1.02-A/C | Build once, bind exact source/artifact/signing identity, verify exact bytes, then distribute |
 | v1.03 | Cross-App Certification Refresh | SOFTWARE PREPARED — BLOCKED ON PAIRED PHYSICAL EVIDENCE | Re-certify Anna ↔ Wonderlog under Cross-App Verification v1 with exact paired artifact identity and COPY/LINK/idempotency/provenance matrix |
 | v1.04 | Daily Rituals & Life Flow | Completed — PR #113 merged after 4/4 exact-head gates | Optional morning/evening ritual projections reusing AgendaPreferences, Diary, Today, Unified Capture and existing reminder engine |
-| v1.05-A0 | UX / Design Foundation | IMPLEMENTED CANDIDATE — exact-head gates required | Canonical visual tokens, brightness-aware surfaces, semantic domain accents and shared component polish before IA changes |
+| v1.05-A0 | UX / Design Foundation | Completed — PR #114 merged after 4/4 exact-head gates | Canonical visual tokens, brightness-aware surfaces, semantic domain accents and shared component polish before IA changes |\n| v1.05-A1 | Responsive Shell Foundation | IMPLEMENTED CANDIDATE — exact-head gates required | Adaptive NavigationBar/NavigationRail shell for mobile, Web and desktop while preserving the existing four destinations |
 | v1.05 | Memories & Recall 3.0 | PLANNED | Richer deterministic resurfacing over existing diary/person/place/archive primitives; no Memory DB or generative narrator |
 | v1.06 | Ecosystem Expansion | PLANNED | Add specialist integrations one at a time under Shared Ecosystem Core + paired verification; preferred order TrailPath → Notes → SleepMax → CashMate |
 
