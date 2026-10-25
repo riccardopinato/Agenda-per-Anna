@@ -25,9 +25,10 @@ void main() {
     expect(
       roadmap,
       contains(
-        'App-Factory-Core@47c47f49a7b46812e3bd6f1231c3524f2b52b826',
+        'App-Factory-Core@4cc0b94467b94ab6fabe2c927fcc58afff49e39a',
       ),
     );
+    expect(roadmap, contains('(Master v26.6, Golden Index v19).'));
     expect(roadmap, isNot(contains('|\\n| v1.00-D |')));
 
     // v1.01 closure evidence is historical; later product lines may advance
