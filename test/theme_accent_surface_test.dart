@@ -58,17 +58,33 @@ void main() {
     }
   });
 
-  test('accent surfaces stay pastel rather than becoming dark-mode panels', () {
+  test('accent surfaces respect brightness instead of washing out dark mode', () {
     for (final palette in AgendaPalette.values) {
-      final scheme = ColorScheme.fromSeed(
+      final darkScheme = ColorScheme.fromSeed(
         seedColor: palette.seed,
         brightness: Brightness.dark,
       );
-      final tokens = AccentSurfaceTokens.fromScheme(scheme);
+      final lightScheme = ColorScheme.fromSeed(
+        seedColor: palette.seed,
+        brightness: Brightness.light,
+      );
+      final darkTokens = AccentSurfaceTokens.fromScheme(darkScheme);
+      final lightTokens = AccentSurfaceTokens.fromScheme(lightScheme);
 
-      expect(tokens.start.computeLuminance(), greaterThan(0.55));
-      expect(tokens.end.computeLuminance(), greaterThan(0.65));
-      expect(tokens.chipBackground.computeLuminance(), greaterThan(0.65));
+      expect(
+        darkTokens.start.computeLuminance(),
+        lessThan(lightTokens.start.computeLuminance()),
+      );
+      expect(
+        darkTokens.end.computeLuminance(),
+        lessThan(lightTokens.end.computeLuminance()),
+      );
+      expect(
+        darkTokens.chipBackground.computeLuminance(),
+        lessThan(lightTokens.chipBackground.computeLuminance()),
+      );
+      expect(darkTokens.start.computeLuminance(), lessThan(0.35));
+      expect(darkTokens.end.computeLuminance(), lessThan(0.35));
     }
   });
 }
