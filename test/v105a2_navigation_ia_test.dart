@@ -70,6 +70,8 @@ void main() {
     expect(planner, contains('CalendarScreen('));
     expect(planner, contains('WeekScreen('));
     expect(planner, contains('embedded: true'));
+    expect(planner, contains("identifier: 'calendar-open-month-notebook'"));
+    expect(planner, contains("identifier: 'calendar-open-year-overview'"));
     expect(planner, contains("ValueKey<String>('calendar-open-month-notebook')"));
     expect(planner, contains("ValueKey<String>('calendar-open-year-overview')"));
     expect(planner, contains('MonthScreen(store: widget.store)'));
@@ -94,6 +96,7 @@ void main() {
       expect(more, contains("id: '$id'"));
     }
 
+    expect(more, contains('_HomeSyncStatusCard(store: store)'));
     expect(more, contains('store.hasStorageWarnings'));
     expect(more, contains('strings.v100StorageWarning'));
 
@@ -139,5 +142,19 @@ void main() {
     final people = File('.maestro/journey/people.yaml').readAsStringSync();
     expect(people, contains("id: 'more-explore'"));
     expect(people, contains('direction: UP'));
+
+    final routeJourneys = <String, String>{
+      '.maestro/journey/backup.yaml': 'more-backup',
+      '.maestro/journey/archive.yaml': 'more-archive',
+      '.maestro/journey/shared.yaml': 'more-shared',
+      '.maestro/journey/account.yaml': 'more-cloud',
+      '.maestro/journey/trash.yaml': 'more-archive',
+      '.maestro/journey/personalization.yaml': 'more-personalize',
+    };
+    for (final entry in routeJourneys.entries) {
+      final source = File(entry.key).readAsStringSync();
+      expect(source, contains('scrollUntilVisible:'));
+      expect(source, contains("id: '${entry.value}'"));
+    }
   });
 }
