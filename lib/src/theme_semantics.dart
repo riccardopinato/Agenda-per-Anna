@@ -20,6 +20,7 @@ abstract final class AnnaDesignTokens {
   static const double compactContentWidth = 640;
   static const double readingContentWidth = 760;
   static const double wideBreakpoint = 840;
+  static const double railExtendedBreakpoint = 1180;
 
   static bool animationsEnabled(BuildContext context) {
     final media = MediaQuery.maybeOf(context);
