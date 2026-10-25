@@ -17,23 +17,23 @@ void main() {
         File('lib/src/screens/home_inbox_search.dart').readAsStringSync();
 
     for (final page in const <String>[
-      'HomeScreen(store: widget.store)',
-      'CalendarScreen(store: widget.store)',
-      'WeekScreen(store: widget.store)',
       'PlannerScreen(store: widget.store)',
+      'CalendarHubScreen(store: widget.store)',
+      'DiaryMemoriesScreen(store: widget.store)',
+      'MoreScreen(store: widget.store)',
     ]) {
       expect(source, contains(page));
     }
 
     for (final id in const <String>[
-      'main-nav-home',
-      'main-nav-month',
-      'main-nav-week',
       'main-nav-today',
-      'main-rail-home',
-      'main-rail-month',
-      'main-rail-week',
+      'main-nav-calendar',
+      'main-nav-memories',
+      'main-nav-more',
       'main-rail-today',
+      'main-rail-calendar',
+      'main-rail-memories',
+      'main-rail-more',
     ]) {
       expect(source, contains(id));
     }
