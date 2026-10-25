@@ -142,7 +142,7 @@ void main() {
     final people = File('.maestro/journey/people.yaml').readAsStringSync();
     expect(
       people,
-      contains("text: '(Altro|More|Más|Plus|Mais)[\\\\s\\\\S]*'"),
+      contains("text: '(Altro|More|Más|Plus|Mais)[\\s\\S]*'"),
     );
     expect(people, isNot(contains("id: 'main-nav-more'")));
     expect(people, isNot(contains("id: 'more-search'")));
