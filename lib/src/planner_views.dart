@@ -971,12 +971,10 @@ class _DayOpeningCard extends StatelessWidget {
 
 class _DayLifeOverviewCard extends StatelessWidget {
   final DayHubSnapshot snapshot;
-  final VoidCallback? onOpenDay;
   final bool hideDetails;
 
   const _DayLifeOverviewCard({
     required this.snapshot,
-    this.onOpenDay,
     this.hideDetails = false,
   });
 
@@ -1037,11 +1035,6 @@ class _DayLifeOverviewCard extends StatelessWidget {
                   ),
                 ),
               ),
-              if (onOpenDay != null)
-                TextButton(
-                  onPressed: onOpenDay,
-                  child: Text(AnnaStrings.of(context).d3('open')),
-                ),
             ],
           ),
           const SizedBox(height: 5),
