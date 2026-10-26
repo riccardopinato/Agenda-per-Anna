@@ -23,7 +23,8 @@ appId: com.riccardopinato.agenda_per_anna
     id: 'main-nav-calendar'
     retryTapIfNoChange: true
 - extendedWaitUntil:
-    visible: '(Calendario|Calendar|Calendrier|Calendário)'
+    visible:
+      id: 'calendar-open-month-notebook'
     timeout: 10000
 - tapOn:
     id: 'main-nav-memories'
@@ -35,7 +36,8 @@ appId: com.riccardopinato.agenda_per_anna
     id: 'main-nav-more'
     retryTapIfNoChange: true
 - extendedWaitUntil:
-    visible: '(Altro|More|Más|Plus|Mais)'
+    visible:
+      id: 'more-search'
     timeout: 10000
 - tapOn:
     id: 'main-nav-today'
