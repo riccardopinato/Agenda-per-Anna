@@ -922,3 +922,13 @@ See `docs/ARCHITECTURE.md` and `supabase/README.md` for implementation details.
 - Starting a session from a plan copies the plan/exercise snapshot into the historical session so later plan edits cannot rewrite past training history.
 - Sessions and plans reuse existing account profiles, granular private sync, backup/restore and Trash lifecycle through `workout_session` and `workout_plan` entities.
 - No workout-specific backend table or parallel cloud engine is introduced.
+
+
+## AppLab v5.9 journey-aware runtime
+
+Anna's Diary exposes an atomic AppLab journey catalog for shell, onboarding,
+navigation, Memories, Settings and four high-cost Vault behaviors. The legacy
+monolithic primary flow remains the fail-safe fallback. FAST can reduce runtime
+only when AppLab proves complete path coverage; FULL/CERTIFIED select the
+complete catalog. AppLab remains the trusted authority for atomic execution,
+sharding and exact-artifact verdicts.
