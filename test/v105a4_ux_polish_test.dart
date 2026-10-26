@@ -3,6 +3,26 @@ import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
+  test('v1.05-A4 current docs advertise the v1.05 UX foundation', () {
+    final bible = File('docs/PRODUCT_BIBLE.md').readAsStringSync();
+    final roadmap = File('docs/ROADMAP.md').readAsStringSync();
+
+    expect(bible, contains('Current product line:** v1.05 UX foundation'));
+    expect(
+      roadmap,
+      contains(
+        '| v1.05-A4 | Capture / More / Settings / Motion Polish | IN PROGRESS — PR #119 |',
+      ),
+    );
+    expect(
+      roadmap,
+      contains(
+        'App-Factory-Core@ed6466e774a28e95f9f371cd56bbf7278428776a',
+      ),
+    );
+    expect(roadmap, contains('(Master v26.6, Golden Index v22).'));
+  });
+
   test('v1.05-A4 keeps one canonical capture path behind progressive disclosure', () {
     final capture = File('lib/src/unified_capture.dart').readAsStringSync();
 
