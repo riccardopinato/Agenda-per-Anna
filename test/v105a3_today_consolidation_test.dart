@@ -9,7 +9,7 @@ void main() {
         File('lib/src/screens/home_inbox_search.dart').readAsStringSync();
 
     expect(planner, contains("identifier: 'today-focus-card'"));
-    expect(planner, contains("ValueKey<String>('today-pinned-section')"));
+    expect(planner, contains("today-pinned-section"));
     expect(planner, contains("identifier: 'today-wellbeing-card'"));
     expect(planner, contains('widget.store.unifiedUpcoming(DateTime.now())'));
     expect(planner, contains('widget.store.pendingUnifiedTaskCount'));
