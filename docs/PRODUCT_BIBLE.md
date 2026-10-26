@@ -1,9 +1,9 @@
 # Anna's Diary — Product Bible
 
 **Status:** canonical product source of truth  
-**Current product line:** v1.04 — Daily Rituals & Life Flow implementation  
+**Current product line:** v1.05 UX foundation — A4 in progress  
 **Distribution identity:** 1.0.0-rc.1+110 — Store/physical certification still open  
-**Last aligned:** 23 October 2026
+**Last aligned:** 26 October 2026
 
 This document defines what Anna's Diary is, what it is not, and the product/security invariants that future work must preserve. Implementation details belong in `docs/ARCHITECTURE.md`; execution sequencing belongs in `docs/ROADMAP.md`.
 
