@@ -79,7 +79,7 @@ void main() {
     expect(appLab, contains('uses: riccardopinato/AppLab/.github/workflows/'));
     expect(
       appLab,
-      contains('@931c124dbb1a36d43842db5b60bd5f04843e5330'),
+      contains('@6f8809c4612d63546976405846026dff78cc922b'),
     );
     expect(appLab, contains('analysis_mode: fast'));
     expect(
@@ -87,6 +87,10 @@ void main() {
       contains(r"baseline_sha: ${{ github.event.pull_request.base.sha || '' }}"),
     );
     expect(appLab, contains('cache_verification: true'));
+    expect(appLabProject, contains('"catalog"'));
+    expect(appLabProject, contains('"shell-smoke"'));
+    expect(appLabProject, contains('"vault-deep"'));
+    expect(appLabProject, contains('"risk_class": "deep"'));
     expect(appLabProject, contains('"physical_validation"'));
     expect(appLabProject, contains('"required": true'));
     expect(appLabProject, contains('"biometrics"'));
