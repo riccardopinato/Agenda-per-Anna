@@ -83,7 +83,7 @@ class MoreScreen extends StatelessWidget {
               AnnaDesignTokens.spaceXl,
             ),
             children: [
-              _HomeSyncStatusCard(store: store),
+              _SyncAttentionCard(store: store),
               if (store.hasStorageWarnings) ...[
                 const SizedBox(height: AnnaDesignTokens.spaceSm),
                 SimpleCard(
