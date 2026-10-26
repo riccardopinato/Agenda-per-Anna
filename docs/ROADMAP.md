@@ -81,14 +81,16 @@ Source of execution truth for Anna's Diary. Product identity and boundaries are 
 | v1.05-A1 | Responsive Shell Foundation | Completed — PR #115 merged after 4/4 exact-head gates | Adaptive NavigationBar/NavigationRail shell for mobile, Web and desktop while preserving destination state across breakpoints |
 | v1.05-A2 | Navigation IA | Completed — PR #116 merged after 4/4 exact-head gates | Promote Today / Calendar / Memories / More, consolidate Month+Week, migrate legacy StartTab values and move secondary routes to More |
 | v1.05-A3 | Today Consolidation | Completed — PR #117 merged after 4/4 exact-head gates | Make Today the sole daily hub, preserve only unique focus/pinned/wellbeing value and remove superseded Home-only code |
+| v1.05-A4 | Capture / More / Settings / Motion Polish | IN PROGRESS — PR #119 | Progressive Capture, clearer More hierarchy, category-first Settings entry and reduced-motion-aware feedback without new state ownership |
+| v1.05-A5 | Visual / Performance Baselines | PLANNED | Establish canonical visual-regression surfaces and physical performance baseline after the UX shell is stable |
 | v1.05 | Memories & Recall 3.0 | PLANNED | Richer deterministic resurfacing over existing diary/person/place/archive primitives; no Memory DB or generative narrator |
 | v1.06 | Ecosystem Expansion | PLANNED | Add specialist integrations one at a time under Shared Ecosystem Core + paired verification; preferred order TrailPath → Notes → SleepMax → CashMate |
 
-## Current execution order — App Factory v26.6 / Factory Mode v21
+## Current execution order — App Factory v26.6 / Factory Mode v22
 
 Factory baseline for this roadmap:
-`riccardopinato/App-Factory-Core@a923e0e766d83e8dfb92356c05752bd566eaed9e`
-(Master v26.6, Golden Index v21).
+`riccardopinato/App-Factory-Core@ed6466e774a28e95f9f371cd56bbf7278428776a`
+(Master v26.6, Golden Index v22).
 
 Execution uses canonical
 `ROADMAP_FAST_PLUS_CONTINUOUS_MAINTENANCE`:
