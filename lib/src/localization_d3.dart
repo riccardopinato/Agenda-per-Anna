@@ -46,6 +46,9 @@ const Map<String, Map<String, String>> _d3Catalog = {
   "personalizationExploreEmpty": <String, String>{"en": "Explore is quiet for now", "it": "Explore per ora è essenziale", "es": "Explorar está tranquilo por ahora", "fr": "Explorer reste calme pour l’instant", "pt": "Explorar está simples por agora"},
   "personalizationExploreEmptySubtitle": <String, String>{"en": "Your core diary is still available. Turn on optional areas whenever you want.", "it": "Il diario essenziale resta disponibile. Attiva le aree opzionali quando vuoi.", "es": "Tu diario esencial sigue disponible. Activa las áreas opcionales cuando quieras.", "fr": "Ton journal essentiel reste disponible. Active les zones facultatives quand tu veux.", "pt": "O teu diário essencial continua disponível. Ativa as áreas opcionais quando quiseres."},
   "homeMore": <String, String>{"en": "More", "it": "Altro", "es": "Más", "fr": "Plus", "pt": "Mais"},
+  "captureMoreActions": <String, String>{"en": "More options", "it": "Altre opzioni", "es": "Más opciones", "fr": "Plus d’options", "pt": "Mais opções"},
+  "captureFewerActions": <String, String>{"en": "Fewer options", "it": "Meno opzioni", "es": "Menos opciones", "fr": "Moins d’options", "pt": "Menos opções"},
+
   "homeExploreAreasCount": <String, String>{"en": "{count} active areas", "it": "{count} aree attive", "es": "{count} áreas activas", "fr": "{count} zones actives", "pt": "{count} áreas ativas"},
   "passwordUpdated": <String, String>{"en": "Password updated. Your account is ready.", "it": "Password aggiornata. Il tuo account è pronto.", "es": "Contraseña actualizada. Tu cuenta está lista.", "fr": "Mot de passe mis à jour. Ton compte est prêt.", "pt": "Palavra-passe atualizada. A tua conta está pronta."},
   "chooseNewPassword": <String, String>{"en": "Choose a new password", "it": "Scegli una nuova password", "es": "Elige una nueva contraseña", "fr": "Choisis un nouveau mot de passe", "pt": "Escolhe uma nova palavra-passe"},
