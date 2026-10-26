@@ -940,3 +940,15 @@ Per the active development cadence, AppLab runs once every two feature versions.
 - Canonical imported diary/agenda records retain their existing backup, cloud-sync, Trash/lifecycle and account-isolation behavior. Life Bridge metadata remains local/account-scoped in v1.
 - Release metadata is aligned to v0.95.0+105.
 - Analyze, full tests, Web release, Android production-equivalent size audit and AppLab Trusted Verify must all pass before promotion to `main`.
+
+
+### AppLab v5.9 — Atomic Journey Adoption
+
+- [x] Declare a bounded `journeys.catalog` using only supported v5.9 fields.
+- [x] Split Vault into create, wrong-password, correct-unlock and restart-unlock.
+- [x] Add core/onboarding/navigation/Memories/Settings atomic journeys.
+- [x] Preserve the legacy primary flow as fail-safe fallback.
+- [x] Pin AppLab to `730dfafecc59871365812f4d7d138b43151fdcc5`.
+- [ ] Record exact-head FAST selected-journey evidence from a localized PR.
+- [ ] Record FULL regression evidence over the complete catalog.
+- [ ] Accrue three real merged downstream PRs before central sharding promotion.
