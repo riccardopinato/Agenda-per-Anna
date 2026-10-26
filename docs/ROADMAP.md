@@ -82,8 +82,13 @@ Source of execution truth for Anna's Diary. Product identity and boundaries are 
 | v1.05-A2 | Navigation IA | Completed — PR #116 merged after 4/4 exact-head gates | Promote Today / Calendar / Memories / More, consolidate Month+Week, migrate legacy StartTab values and move secondary routes to More |
 | v1.05-A3 | Today Consolidation | Completed — PR #117 merged after 4/4 exact-head gates | Make Today the sole daily hub, preserve only unique focus/pinned/wellbeing value and remove superseded Home-only code |
 | v1.05-A4 | Capture / More / Settings / Motion Polish | Completed — PR #119 merged after 4/4 exact-head gates | Progressive Capture, clearer More hierarchy, category-first Settings entry and reduced-motion-aware feedback without new state ownership |
-| v1.05-A5 | Visual / Performance Baselines | IN PROGRESS — PR #123 | Establish canonical visual-regression surfaces and trusted-runtime performance baselines after the UX shell is stable; physical performance remains separate NOT VERIFIED evidence |
-| v1.05 | Memories & Recall 3.0 | PLANNED | Richer deterministic resurfacing over existing diary/person/place/archive primitives; no Memory DB or generative narrator |
+| v1.05-A5 | Visual / Performance Baselines | Completed — PR #123 merged; Development/AppLab exact-head PASS, visual + performance baselines saved | Canonical visual-regression and trusted-runtime performance baselines established; physical performance remains separate NOT VERIFIED evidence |
+| v1.05 | Memories & Recall 3.0 | IN PROGRESS | Richer deterministic resurfacing over existing diary/person/place/archive primitives; no Memory DB or generative narrator |
+| v1.05-B0 | Memories 3.0 Core | IN PROGRESS | New For You + Timeline memory IA, stronger deterministic Recall and progressive browsing without new persistence |
+| v1.05-B1 | Memory Map + Then & Now | PLANNED | Derived map over existing DiaryPlaceReference plus deterministic temporal comparisons |
+| v1.05-B2 | Year in Review 2.0 | PLANNED | Rebuild the existing YearScreen over modern DiaryBlock/life projections; no duplicate Year product |
+| v1.05-B3 | Collections / Life Threads | PLANNED | Saved views and derived life stories over people/place/tag/time/type without copying canonical data |
+| v1.05-B4 | Polish & QA | PLANNED | Bounded UX/performance/accessibility/localization and trusted-runtime closure for v1.05 |
 | v1.06 | Ecosystem Expansion | PLANNED | Add specialist integrations one at a time under Shared Ecosystem Core + paired verification; preferred order TrailPath → Notes → SleepMax → CashMate |
 
 ## Current execution order — App Factory v26.6 / Factory Mode v22
@@ -100,15 +105,14 @@ BLOCKING_NOW, FIX_CURRENT_STEP, BACKGROUND_MAINTENANCE or FUTURE.
 Current sequence:
 
 1. keep v1.00-D7 / v1.02-A physical evidence and v1.02-C Store QA fail-closed;
-2. keep v1.04 and v1.05-A0/A1/A2/A3/A4 closed;
-3. execute v1.05-A5 visual/performance baselines as the active bounded UX-foundation step;
+2. keep v1.04 and v1.05-A0/A1/A2/A3/A4/A5 closed;
+3. execute v1.05-B0 Memories 3.0 Core over existing diary/person/place/archive primitives;
 4. keep physical-device performance evidence fail-closed until measured on an exact artifact;
-5. implement Memories & Recall 3.0 Core over existing diary/person/place/archive primitives;
-6. continue Memory Map + Then & Now;
-7. continue Year in Review 2.0;
-8. continue Collections / Life Threads;
-9. close v1.05 with bounded Polish & QA;
-10. expand the ecosystem one specialist at a time: TrailPath → Notes → SleepMax → CashMate.
+5. continue v1.05-B1 Memory Map + Then & Now;
+6. continue v1.05-B2 Year in Review 2.0;
+7. continue v1.05-B3 Collections / Life Threads;
+8. close v1.05 with v1.05-B4 bounded Polish & QA;
+9. expand the ecosystem one specialist at a time: TrailPath → Notes → SleepMax → CashMate.
 
 Provider rule: Anna keeps RevenueCat as the billing adapter. The provider-agnostic
 Entitlement Golden does not justify migrating to direct Play Billing.
