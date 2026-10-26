@@ -81,7 +81,12 @@ void main() {
       appLab,
       contains('@931c124dbb1a36d43842db5b60bd5f04843e5330'),
     );
-    expect(appLab, contains('analysis_mode: full'));
+    expect(appLab, contains('analysis_mode: fast'));
+    expect(
+      appLab,
+      contains(r"baseline_sha: ${{ github.event.pull_request.base.sha || '' }}"),
+    );
+    expect(appLab, contains('cache_verification: true'));
     expect(appLabProject, contains('"physical_validation"'));
     expect(appLabProject, contains('"required": true'));
     expect(appLabProject, contains('"biometrics"'));

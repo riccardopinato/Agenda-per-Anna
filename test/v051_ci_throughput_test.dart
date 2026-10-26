@@ -35,6 +35,19 @@ void main() {
     );
   });
 
+  test('AppLab PR runtime uses adaptive FAST with exact baseline/cache', () {
+    final appLab =
+        File('.github/workflows/applab.yml').readAsStringSync();
+
+    expect(appLab, contains('analysis_mode: fast'));
+    expect(
+      appLab,
+      contains(r"baseline_sha: ${{ github.event.pull_request.base.sha || '' }}"),
+    );
+    expect(appLab, contains('cache_verification: true'));
+    expect(appLab, contains('annas-diary-factory-fast-v2'));
+  });
+
   test('main still keeps the Development Android release gate', () {
     final workflow =
         File('.github/workflows/dev-checks.yml').readAsStringSync();

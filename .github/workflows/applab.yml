@@ -45,7 +45,8 @@ jobs:
       run_maestro: true
       maestro_flow: .maestro/applab-smoke.yaml
       history_key: annas-diary
-      cache_verification: false
-      config_fingerprint: annas-diary-golden-pilot-v1
-      analysis_mode: full
+      cache_verification: true
+      config_fingerprint: annas-diary-factory-fast-v2
+      analysis_mode: fast
+      baseline_sha: ${{ github.event.pull_request.base.sha || '' }}
       publish_release_artifact: false
