@@ -45,7 +45,7 @@ void main() {
       contains(r"baseline_sha: ${{ github.event.pull_request.base.sha || '' }}"),
     );
     expect(appLab, contains('cache_verification: true'));
-    expect(appLab, contains('annas-diary-factory-fast-v2'));
+    expect(appLab, contains('annas-diary-factory-fast-v3-journey-aware'));
   });
 
   test('main still keeps the Development Android release gate', () {
