@@ -84,27 +84,33 @@ Source of execution truth for Anna's Diary. Product identity and boundaries are 
 | v1.05 | Memories & Recall 3.0 | PLANNED | Richer deterministic resurfacing over existing diary/person/place/archive primitives; no Memory DB or generative narrator |
 | v1.06 | Ecosystem Expansion | PLANNED | Add specialist integrations one at a time under Shared Ecosystem Core + paired verification; preferred order TrailPath → Notes → SleepMax → CashMate |
 
-## Post-v1.01 execution order — App Factory v26.6
+## Current execution order — App Factory v26.6 / Factory Mode v21
 
-Factory baseline for this roadmap refresh:
-`riccardopinato/App-Factory-Core@4cc0b94467b94ab6fabe2c927fcc58afff49e39a`
-(Master v26.6, Golden Index v19).
+Factory baseline for this roadmap:
+`riccardopinato/App-Factory-Core@a923e0e766d83e8dfb92356c05752bd566eaed9e`
+(Master v26.6, Golden Index v21).
 
-Execution remains evidence-driven:
+Execution uses canonical
+`ROADMAP_FAST_PLUS_CONTINUOUS_MAINTENANCE`:
+roadmap delivery stays bounded while unrelated findings are classified into
+BLOCKING_NOW, FIX_CURRENT_STEP, BACKGROUND_MAINTENANCE or FUTURE.
 
-1. close v1.01-F documentation/evidence truth;
-2. implement v1.02-B entitlement hardening because it is software-verifiable;
-3. prepare but do not fabricate v1.02-A/C physical/store evidence;
-4. produce v1.02-D only after the exact-artifact physical + distribution gates pass;
-5. refresh Anna ↔ Wonderlog pair certification under Cross-App Verification v1;
-6. keep v1.04 closed after its 4/4 exact-head merge;
-7. execute the UX / Design Foundation before the Memories 3.0 IA expansion;
-8. keep A0/A1 closed and complete A2 Navigation IA on exact-head gates;
-9. then continue with Memories 3.0 and bounded ecosystem expansion.
+Current sequence:
 
-Provider rule: Anna keeps RevenueCat as the billing adapter. The v26.6
-provider-agnostic Entitlement Golden does not justify migrating to direct Play
-Billing. Visibility preferences remain separate from entitlement state.
+1. keep v1.00-D7 / v1.02-A physical evidence and v1.02-C Store QA fail-closed;
+2. keep v1.04 and v1.05-A0/A1/A2/A3 closed;
+3. execute v1.05-A4 Capture / More / Settings / motion polish as one bounded UX step;
+4. establish v1.05-A5 visual/performance baselines after the UX shell is stable;
+5. implement Memories & Recall 3.0 Core over existing diary/person/place/archive primitives;
+6. continue Memory Map + Then & Now;
+7. continue Year in Review 2.0;
+8. continue Collections / Life Threads;
+9. close v1.05 with bounded Polish & QA;
+10. expand the ecosystem one specialist at a time: TrailPath → Notes → SleepMax → CashMate.
+
+Provider rule: Anna keeps RevenueCat as the billing adapter. The provider-agnostic
+Entitlement Golden does not justify migrating to direct Play Billing.
+Visibility preferences remain separate from entitlement state.
 
 ## v1.01 Personalization & Simplicity
 
