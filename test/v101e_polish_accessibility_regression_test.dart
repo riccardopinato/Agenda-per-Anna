@@ -63,8 +63,9 @@ void main() {
     final shell = File('lib/src/app_shell.dart').readAsStringSync();
     final personalization =
         File('lib/src/screens/personalization_screen.dart').readAsStringSync();
-    final home =
+    final navigation =
         File('lib/src/screens/home_inbox_search.dart').readAsStringSync();
+    final more = File('lib/src/screens/more_screen.dart').readAsStringSync();
 
     expect(shell, contains('materialTapTargetSize: MaterialTapTargetSize.padded'));
     expect(shell, contains('SingleChildScrollView('));
@@ -86,8 +87,11 @@ void main() {
     expect(personalization, contains('excludeSemantics: true'));
     expect(personalization, contains('header: true'));
 
-    expect(home, contains("identifier: 'home_more_menu'"));
-    expect(home, contains("label: strings.d3('homeMore')"));
+    expect(navigation, contains('identifier: semanticsId'));
+    expect(navigation, contains("semanticsId: 'main-nav-today'"));
+    expect(navigation, contains("semanticsId: 'main-nav-more'"));
+    expect(more, contains('identifier: id'));
+    expect(more, contains('excludeSemantics: true'));
   });
 
   test('all v1.01 presentation copy has non-empty en/it/es/fr/pt rows', () {

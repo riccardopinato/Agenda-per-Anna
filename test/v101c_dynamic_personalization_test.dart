@@ -31,8 +31,10 @@ void main() {
   test('Explore and optional shell entry points honor module visibility', () {
     final explore =
         File('lib/src/screens/explore_screen.dart').readAsStringSync();
-    final home =
+    final shell =
         File('lib/src/screens/home_inbox_search.dart').readAsStringSync();
+    final more = File('lib/src/screens/more_screen.dart').readAsStringSync();
+    final planner = File('lib/src/planner_views.dart').readAsStringSync();
     final editors = File('lib/src/widgets_editors.dart').readAsStringSync();
     final vault =
         File('lib/src/screens/private_vault.dart').readAsStringSync();
@@ -55,14 +57,12 @@ void main() {
 
     expect(explore, isNot(contains('AppModule.memories')));
     expect(
-      home,
+      shell,
       contains('DiaryMemoriesScreen(store: widget.store)'),
       reason: 'Memories is now a core shell destination',
     );
-    expect(home, contains('AppModule.sharedSpace'));
-    expect(home, contains('AppModule.privateVault'));
-    expect(home, contains('AppModule.people'));
-    expect(home, contains('AppModule.habits'));
+    expect(more, contains('AppModule.sharedSpace'));
+    expect(planner, contains('AppModule.habits'));
     expect(editors, contains('AppModule.habits'));
     expect(vault, contains('AppModule.cycleTracker'));
   });

@@ -348,6 +348,16 @@ class _PlannerScreenState extends State<PlannerScreen> {
             .map((entry) => entry.privateItem!)
             .toList();
 
+        final isToday = AgendaStore.sameDay(day, DateTime.now());
+        final upcoming = isToday
+            ? widget.store.unifiedUpcoming(DateTime.now())
+            : const <UnifiedAgendaEntry>[];
+        final pinnedItems = isToday &&
+                widget.store.agendaContentFilter !=
+                    AgendaContentFilter.sharedOnly
+            ? widget.store.items.where((item) => item.pinned).toList()
+            : const <AgendaItem>[];
+
         return Scaffold(
           floatingActionButton: FloatingActionButton.extended(
             onPressed: () => _showQuickCapture(
@@ -401,7 +411,7 @@ class _PlannerScreenState extends State<PlannerScreen> {
                   padding: const EdgeInsets.fromLTRB(14, 8, 14, 110),
                   children: [
                     _DayOpeningCard(date: day),
-                    if (AgendaStore.sameDay(day, DateTime.now())) ...[
+                    if (isToday) ...[
                       const SizedBox(height: 12),
                       DailyRitualCard(
                         store: widget.store,
@@ -410,11 +420,64 @@ class _PlannerScreenState extends State<PlannerScreen> {
                     ],
                     const SizedBox(height: 12),
                     AgendaContentFilterBar(store: widget.store),
+                    if (isToday) ...[
+                      const SizedBox(height: 12),
+                      _TodayFocusCard(
+                        next: upcoming.isEmpty ? null : upcoming.first,
+                        globalPendingTasks:
+                            widget.store.pendingUnifiedTaskCount,
+                        inboxCount: widget.store.activeInboxEntries.length,
+                        hideDetails: widget.store.preferences.hideHomeDetails,
+                        onOpenNext: upcoming.isEmpty
+                            ? null
+                            : () => openUnifiedAgendaEntry(
+                                  context,
+                                  widget.store,
+                                  upcoming.first,
+                                ),
+                        onOpenInbox: () => Navigator.push(
+                          context,
+                          MaterialPageRoute<void>(
+                            builder: (_) => InboxScreen(store: widget.store),
+                          ),
+                        ),
+                      ),
+                      if (pinnedItems.isNotEmpty) ...[
+                        const SizedBox(height: 16),
+                        Column(
+                          key: const ValueKey<String>(
+                            'today-pinned-section',
+                          ),
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            SectionTitle(strings.v100Pinned),
+                            const SizedBox(height: 8),
+                            ...pinnedItems.take(3).map(
+                                  (item) => EventTile(
+                                    store: widget.store,
+                                    item: item,
+                                    compact: true,
+                                    hideDetails: widget
+                                        .store.preferences.hideHomeDetails,
+                                  ),
+                                ),
+                          ],
+                        ),
+                      ],
+                    ],
                     const SizedBox(height: 12),
                     _DayLifeOverviewCard(
                       snapshot: snapshot,
                       hideDetails: false,
                     ),
+                    if (isToday) ...[
+                      const SizedBox(height: 14),
+                      _TodayWellbeingCard(
+                        key: const ValueKey<String>('today-wellbeing-card'),
+                        store: widget.store,
+                        date: day,
+                      ),
+                    ],
                     const SizedBox(height: 14),
                     if (memoryRecall.onThisDay.isNotEmpty) ...[
                       _DayMemoryRecallCard(
@@ -644,6 +707,218 @@ class _DayMemoryRecallCard extends StatelessWidget {
   }
 }
 
+class _TodayFocusCard extends StatelessWidget {
+  final UnifiedAgendaEntry? next;
+  final int globalPendingTasks;
+  final int inboxCount;
+  final bool hideDetails;
+  final VoidCallback? onOpenNext;
+  final VoidCallback onOpenInbox;
+
+  const _TodayFocusCard({
+    required this.next,
+    required this.globalPendingTasks,
+    required this.inboxCount,
+    required this.hideDetails,
+    required this.onOpenNext,
+    required this.onOpenInbox,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final strings = AnnaStrings.of(context);
+    final scheme = Theme.of(context).colorScheme;
+    final nextText = next == null
+        ? strings.v100NoUpcoming
+        : hideDetails
+            ? strings.v100NextScheduled
+            : '${DateFormat('EEE d MMM', AnnaStrings.intlLocale(context)).format(next!.date)} · '
+                '${formatTime(next!.start!)} · ${next!.title}'
+                '${next!.isShared ? ' · Noi ♡' : ''}';
+
+    return Semantics(
+      identifier: 'today-focus-card',
+      container: true,
+      child: Container(
+        key: const ValueKey<String>('today-focus-card'),
+        padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: scheme.surfaceContainerHighest.withValues(alpha: 0.45),
+        borderRadius: BorderRadius.circular(22),
+        border: Border.all(color: scheme.outlineVariant),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            strings.v100TodayBrief,
+            style: const TextStyle(
+              fontWeight: FontWeight.w900,
+              fontSize: 17,
+            ),
+          ),
+          const SizedBox(height: 8),
+          InkWell(
+            borderRadius: BorderRadius.circular(14),
+            onTap: onOpenNext,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 4),
+              child: Row(
+                children: [
+                  Icon(Icons.schedule_outlined, color: scheme.primary),
+                  const SizedBox(width: 9),
+                  Expanded(
+                    child: Text(
+                      nextText,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(fontWeight: FontWeight.w700),
+                    ),
+                  ),
+                  if (onOpenNext != null) const Icon(Icons.chevron_right),
+                ],
+              ),
+            ),
+          ),
+          if (globalPendingTasks > 0 || inboxCount > 0) ...[
+            const SizedBox(height: 10),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: [
+                if (globalPendingTasks > 0)
+                  _MiniPill(
+                    icon: Icons.task_alt_outlined,
+                    text: strings.v100OpenTasks(globalPendingTasks),
+                  ),
+                if (inboxCount > 0)
+                  ActionChip(
+                    avatar: const Icon(Icons.inbox_outlined, size: 17),
+                    label: Text(strings.v100InboxCount(inboxCount)),
+                    onPressed: onOpenInbox,
+                  ),
+              ],
+            ),
+          ],
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _TodayWellbeingCard extends StatelessWidget {
+  final AgendaStore store;
+  final DateTime date;
+
+  const _TodayWellbeingCard({
+    super.key,
+    required this.store,
+    required this.date,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final journal = store.journal(date);
+    final totalHabits = store.habits.length;
+    final doneHabits = journal.completedHabitIds
+        .where((id) => store.habits.any((habit) => habit.id == id))
+        .length;
+    final gratitudeCount = journal.gratitude.length.clamp(0, 3);
+    final accent = context.accentSurface;
+
+    return Semantics(
+      identifier: 'today-wellbeing-card',
+      container: true,
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          gradient: accent.gradient,
+          borderRadius: BorderRadius.circular(22),
+          border: Border.all(
+            color: Theme.of(context).colorScheme.outlineVariant,
+          ),
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 48,
+              height: 48,
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                color: accent.chipBackground,
+                shape: BoxShape.circle,
+              ),
+              child: Text(
+                journal.mood?.emoji ?? '♡',
+                style: TextStyle(
+                  color: accent.foreground,
+                  fontSize: 24,
+                ),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    journal.mood == null
+                        ? AnnaStrings.of(context).v100HowDayGoing
+                        : AnnaStrings.of(context).v100MoodToday(journal.mood!),
+                    style: TextStyle(
+                      color: accent.foreground,
+                      fontWeight: FontWeight.w800,
+                      fontSize: 16,
+                    ),
+                  ),
+                  const SizedBox(height: 5),
+                  Wrap(
+                    spacing: 10,
+                    runSpacing: 4,
+                    children: [
+                      if (store.preferences.isModuleEnabled(AppModule.habits))
+                        Text(
+                          totalHabits == 0
+                              ? AnnaStrings.of(context).v100NoHabits
+                              : AnnaStrings.of(context)
+                                  .v100HabitsProgress(
+                                    doneHabits,
+                                    totalHabits,
+                                  ),
+                          style:
+                              Theme.of(context).textTheme.bodySmall?.copyWith(
+                                    color: accent.secondaryForeground,
+                                  ),
+                        ),
+                      Text(
+                        AnnaStrings.of(context)
+                            .v100GratitudeProgress(gratitudeCount),
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                              color: accent.secondaryForeground,
+                            ),
+                      ),
+                      Text(
+                        journal.blocks.isEmpty
+                            ? AnnaStrings.of(context).v100NoMemory
+                            : AnnaStrings.of(context)
+                                .v100MemoryCount(journal.blocks.length),
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                              color: accent.secondaryForeground,
+                            ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 class _DayOpeningCard extends StatelessWidget {
   final DateTime date;
   const _DayOpeningCard({required this.date});
@@ -696,12 +971,10 @@ class _DayOpeningCard extends StatelessWidget {
 
 class _DayLifeOverviewCard extends StatelessWidget {
   final DayHubSnapshot snapshot;
-  final VoidCallback? onOpenDay;
   final bool hideDetails;
 
   const _DayLifeOverviewCard({
     required this.snapshot,
-    this.onOpenDay,
     this.hideDetails = false,
   });
 
@@ -762,11 +1035,6 @@ class _DayLifeOverviewCard extends StatelessWidget {
                   ),
                 ),
               ),
-              if (onOpenDay != null)
-                TextButton(
-                  onPressed: onOpenDay,
-                  child: Text(AnnaStrings.of(context).d3('open')),
-                ),
             ],
           ),
           const SizedBox(height: 5),

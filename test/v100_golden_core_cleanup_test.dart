@@ -6,11 +6,12 @@ import 'package:agenda_per_anna/main.dart';
 
 void main() {
   test('v1.00-B removes the superseded legacy SearchScreen', () {
-    final home =
+    final legacy =
         File('lib/src/screens/home_inbox_search.dart').readAsStringSync();
-    expect(home, isNot(contains('class SearchScreen')));
-    expect(home, isNot(contains('enum _SearchHitType')));
-    expect(home, contains('PersonalSearchConnectionsScreen(store: store)'));
+    final more = File('lib/src/screens/more_screen.dart').readAsStringSync();
+    expect(legacy, isNot(contains('class SearchScreen')));
+    expect(legacy, isNot(contains('enum _SearchHitType')));
+    expect(more, contains('PersonalSearchConnectionsScreen(store: store)'));
   });
 
   test('v1.05-A2 keeps Explore secondary while Memories becomes core', () {
@@ -36,8 +37,9 @@ void main() {
   });
 
   test('v1.00-B core surfaces use the shared localization path', () {
-    final home =
+    final legacy =
         File('lib/src/screens/home_inbox_search.dart').readAsStringSync();
+    final planner = File('lib/src/planner_views.dart').readAsStringSync();
     final memories =
         File('lib/src/diary/diary_memories.dart').readAsStringSync();
     final search =
@@ -45,8 +47,9 @@ void main() {
     final backup =
         File('lib/src/screens/backup_settings.dart').readAsStringSync();
 
-    expect(home, contains('v100MyAgendaSection'));
-    expect(home, contains('v100SharedPhotoTitle'));
+    expect(planner, contains('v100TodayBrief'));
+    expect(planner, contains('v100Pinned'));
+    expect(legacy, contains('v100SharedPhotoTitle'));
     expect(memories, contains('AnnaStrings.intlLocale(context)'));
     expect(memories, isNot(contains("'it_IT'")));
     expect(search, contains('languageCode: strings.languageCode'));

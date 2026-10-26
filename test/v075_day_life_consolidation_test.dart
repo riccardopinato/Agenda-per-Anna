@@ -183,12 +183,12 @@ void main() {
     expect(StartTab.more.index, 3);
   });
 
-  test('Home and Planner share the same day overview projection', () {
-    final home =
+  test('Today remains the canonical day overview after Home retirement', () {
+    final legacy =
         File('lib/src/screens/home_inbox_search.dart').readAsStringSync();
     final planner = File('lib/src/planner_views.dart').readAsStringSync();
 
-    expect(home, contains('_DayLifeOverviewCard('));
+    expect(legacy, isNot(contains('class HomeScreen')));
     expect(planner, contains('_DayLifeOverviewCard('));
     expect(planner, contains('_DayLifeStream('));
     expect(planner, contains('SectionTitle(strings.diary)'));

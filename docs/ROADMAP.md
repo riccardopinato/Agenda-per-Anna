@@ -79,7 +79,7 @@ Source of execution truth for Anna's Diary. Product identity and boundaries are 
 | v1.04 | Daily Rituals & Life Flow | Completed — PR #113 merged after 4/4 exact-head gates | Optional morning/evening ritual projections reusing AgendaPreferences, Diary, Today, Unified Capture and existing reminder engine |
 | v1.05-A0 | UX / Design Foundation | Completed — PR #114 merged after 4/4 exact-head gates | Canonical visual tokens, brightness-aware surfaces, semantic domain accents and shared component polish before IA changes |
 | v1.05-A1 | Responsive Shell Foundation | Completed — PR #115 merged after 4/4 exact-head gates | Adaptive NavigationBar/NavigationRail shell for mobile, Web and desktop while preserving destination state across breakpoints |
-| v1.05-A2 | Navigation IA | IMPLEMENTED CANDIDATE — exact-head gates required | Promote Today / Calendar / Memories / More, consolidate Month+Week, migrate legacy StartTab values and move secondary routes to More |
+| v1.05-A2 | Navigation IA | Completed — PR #116 merged after 4/4 exact-head gates | Promote Today / Calendar / Memories / More, consolidate Month+Week, migrate legacy StartTab values and move secondary routes to More |\n| v1.05-A3 | Today Consolidation | IMPLEMENTED CANDIDATE — exact-head gates required | Make Today the sole daily hub, preserve only unique focus/pinned/wellbeing value and remove superseded Home-only code |
 | v1.05 | Memories & Recall 3.0 | PLANNED | Richer deterministic resurfacing over existing diary/person/place/archive primitives; no Memory DB or generative narrator |
 | v1.06 | Ecosystem Expansion | PLANNED | Add specialist integrations one at a time under Shared Ecosystem Core + paired verification; preferred order TrailPath → Notes → SleepMax → CashMate |
 
