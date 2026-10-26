@@ -13,17 +13,21 @@ void main() {
     expect(home, contains('PersonalSearchConnectionsScreen(store: store)'));
   });
 
-  test('v1.00-B keeps Home focused and moves secondary areas to Explore', () {
+  test('v1.05-A2 keeps Explore secondary while Memories becomes core', () {
     final home =
         File('lib/src/screens/home_inbox_search.dart').readAsStringSync();
     final explore =
         File('lib/src/screens/explore_screen.dart').readAsStringSync();
 
-    expect(home, contains('ExploreScreen(store: store)'));
-    expect(home, contains('strings.v100Explore'));
+    final more =
+        File('lib/src/screens/more_screen.dart').readAsStringSync();
+
+    expect(more, contains('ExploreScreen(store: store)'));
+    expect(more, contains('strings.v100Explore'));
     expect(explore, contains('ShoppingListScreen(store: store)'));
     expect(explore, contains('WorkoutScreen(store: store)'));
-    expect(explore, contains('DiaryMemoriesScreen(store: store)'));
+    expect(explore, isNot(contains('DiaryMemoriesScreen(store: store)')));
+    expect(home, contains('DiaryMemoriesScreen(store: widget.store)'));
     expect(explore, contains('PeopleScreen(store: store)'));
     expect(explore, contains('LifeEcosystemScreen(store: store)'));
     expect(explore, contains('Listenable.merge'));

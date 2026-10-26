@@ -21,8 +21,8 @@
       "flow": ".maestro/journey/people.yaml"
     },
     {
-      "name": "home",
-      "flow": ".maestro/journey/home.yaml"
+      "name": "more",
+      "flow": ".maestro/journey/more.yaml"
     },
     {
       "name": "backup",

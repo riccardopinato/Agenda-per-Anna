@@ -40,7 +40,6 @@ void main() {
     for (final module in const [
       'shopping',
       'workout',
-      'memories',
       'people',
       'habits',
       'sharedSpace',
@@ -54,6 +53,12 @@ void main() {
       );
     }
 
+    expect(explore, isNot(contains('AppModule.memories')));
+    expect(
+      home,
+      contains('DiaryMemoriesScreen(store: widget.store)'),
+      reason: 'Memories is now a core shell destination',
+    );
     expect(home, contains('AppModule.sharedSpace'));
     expect(home, contains('AppModule.privateVault'));
     expect(home, contains('AppModule.people'));

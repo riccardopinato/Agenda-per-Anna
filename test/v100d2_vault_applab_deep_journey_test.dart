@@ -62,13 +62,14 @@ void main() {
     );
     expect(
       vault,
-      contains('(Home|Inicio|Accueil|Início)[\\s\\S]*'),
+      contains('(Altro|More|Más|Plus|Mais)[\\s\\S]*'),
     );
+    expect(vault, contains("id: 'more-settings'"));
     expect(
-      'timeout: 300000'.allMatches(vault).length,
+      'timeout: 420000'.allMatches(vault).length,
       3,
       reason:
-          'Wrong-password and both correct unlocks must allow real 600k PBKDF2 on slow AppLab emulation.',
+          'Wrong-password and both correct unlocks must cover observed >5 minute 600k PBKDF2 on slow AppLab emulation.',
     );
     expect(
       'timeout: 120000'.allMatches(vault).length,

@@ -77,25 +77,27 @@ void main() {
     expect(home, isNot(contains('deleteModule')));
   });
 
-  test('secondary operational journeys use the stable Home More control', () {
-    final files = <String>[
-      '.maestro/applab-smoke.yaml',
-      '.maestro/journey/account.yaml',
-      '.maestro/journey/archive.yaml',
-      '.maestro/journey/backup.yaml',
-      '.maestro/journey/shared.yaml',
-      '.maestro/journey/trash.yaml',
-      '.maestro/journey/d6-functional-navigation.yaml',
-    ];
+  test('secondary operational journeys use the stable More destination', () {
+    final smoke = File('.maestro/applab-smoke.yaml').readAsStringSync();
+    final account = File('.maestro/journey/account.yaml').readAsStringSync();
+    final archive = File('.maestro/journey/archive.yaml').readAsStringSync();
+    final backup = File('.maestro/journey/backup.yaml').readAsStringSync();
+    final shared = File('.maestro/journey/shared.yaml').readAsStringSync();
+    final trash = File('.maestro/journey/trash.yaml').readAsStringSync();
+    final regression =
+        File('.maestro/journey/d6-functional-navigation.yaml')
+            .readAsStringSync();
 
-    for (final path in files) {
-      final flow = File(path).readAsStringSync();
-      expect(
-        flow,
-        contains('home_more_menu'),
-        reason: '$path must route secondary Home actions through More',
-      );
-    }
+    expect(smoke, contains("id: 'more-settings'"));
+    expect(account, contains("id: 'more-cloud'"));
+    expect(archive, contains("id: 'more-archive'"));
+    expect(backup, contains("id: 'more-backup'"));
+    expect(shared, contains("id: 'more-shared'"));
+    expect(trash, contains("id: 'more-archive'"));
+    expect(regression, contains("id: 'more-search'"));
+    expect(regression, contains("id: 'more-inbox'"));
+    expect(regression, contains("id: 'more-explore'"));
+    expect(regression, contains("id: 'more-cloud'"));
   });
 
   test('new D navigation copy stays in the canonical five-language catalog', () {

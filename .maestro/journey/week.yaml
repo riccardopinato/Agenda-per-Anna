@@ -4,5 +4,6 @@ appId: com.riccardopinato.agenda_per_anna
     text: '(Settimana|Week|Semana|Semaine)[\s\S]*'
     retryTapIfNoChange: true
 - extendedWaitUntil:
-    visible: '(La mia settimana|My week|Mi semana|Ma semaine|A minha semana)'
+    visible:
+      id: 'calendar-week-view'
     timeout: 10000

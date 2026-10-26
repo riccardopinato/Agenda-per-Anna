@@ -223,6 +223,6 @@ void main() {
     expect(appLabJourney, contains('"trash"'));
     expect(appLabJourney, contains('"account"'));
     expect(appLabJourney, contains('"shared"'));
-    expect(appLabJourney, contains('"home"'));
+    expect(appLabJourney, contains('"more"'));
   });
 }

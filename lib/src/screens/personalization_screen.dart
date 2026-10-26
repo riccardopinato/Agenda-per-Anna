@@ -158,7 +158,9 @@ class PersonalizationScreen extends StatelessWidget {
                       style: Theme.of(context).textTheme.bodySmall,
                     ),
                     const SizedBox(height: 6),
-                    for (final module in AppModule.values) ...[
+                    for (final module in AppModule.values.where(
+                      (module) => module != AppModule.memories,
+                    )) ...[
                       Builder(
                         builder: (context) {
                           final enabled = prefs.isModuleEnabled(module);
