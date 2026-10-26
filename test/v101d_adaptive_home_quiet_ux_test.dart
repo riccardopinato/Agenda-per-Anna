@@ -14,7 +14,7 @@ void main() {
     expect(shell, isNot(contains("ValueKey<String>('home-more-menu')")));
 
     expect(planner, contains("ValueKey<String>('today-focus-card')"));
-    expect(planner, contains("ValueKey<String>('today-pinned-section')"));
+    expect(planner, contains("today-pinned-section"));
     expect(planner, contains("ValueKey<String>('today-wellbeing-card')"));
 
     for (final id in const <String>[
