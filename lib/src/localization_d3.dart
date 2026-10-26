@@ -48,6 +48,13 @@ const Map<String, Map<String, String>> _d3Catalog = {
   "homeMore": <String, String>{"en": "More", "it": "Altro", "es": "Más", "fr": "Plus", "pt": "Mais"},
   "captureMoreActions": <String, String>{"en": "More options", "it": "Altre opzioni", "es": "Más opciones", "fr": "Plus d’options", "pt": "Mais opções"},
   "captureFewerActions": <String, String>{"en": "Fewer options", "it": "Meno opzioni", "es": "Menos opciones", "fr": "Moins d’options", "pt": "Menos opções"},
+  "moreQuickAccess": <String, String>{"en": "Quick access", "it": "Accesso rapido", "es": "Acceso rápido", "fr": "Accès rapide", "pt": "Acesso rápido"},
+  "moreYourSpace": <String, String>{"en": "Your space", "it": "Il tuo spazio", "es": "Tu espacio", "fr": "Ton espace", "pt": "O teu espaço"},
+  "moreDataAndApp": <String, String>{"en": "Data and app", "it": "Dati e app", "es": "Datos y app", "fr": "Données et app", "pt": "Dados e app"},
+  "settingsHubIntro": <String, String>{"en": "Open only the area you need. Advanced controls remain available without crowding the main experience.", "it": "Apri solo l’area che ti serve. I controlli avanzati restano disponibili senza affollare l’esperienza principale.", "es": "Abre solo el área que necesitas. Los controles avanzados siguen disponibles sin saturar la experiencia principal.", "fr": "Ouvre seulement la zone dont tu as besoin. Les réglages avancés restent disponibles sans encombrer l’expérience principale.", "pt": "Abre apenas a área de que precisas. Os controlos avançados continuam disponíveis sem sobrecarregar a experiência principal."},
+  "settingsPreferencesPrivacy": <String, String>{"en": "Preferences and privacy", "it": "Preferenze e privacy", "es": "Preferencias y privacidad", "fr": "Préférences et confidentialité", "pt": "Preferências e privacidade"},
+  "settingsPreferencesPrivacySubtitle": <String, String>{"en": "Appearance, startup, rituals, reminders, calendars and security.", "it": "Aspetto, avvio, rituali, promemoria, calendari e sicurezza.", "es": "Apariencia, inicio, rituales, recordatorios, calendarios y seguridad.", "fr": "Apparence, démarrage, rituels, rappels, calendriers et sécurité.", "pt": "Aspeto, arranque, rituais, lembretes, calendários e segurança."},
+
 
   "homeExploreAreasCount": <String, String>{"en": "{count} active areas", "it": "{count} aree attive", "es": "{count} áreas activas", "fr": "{count} zones actives", "pt": "{count} áreas ativas"},
   "passwordUpdated": <String, String>{"en": "Password updated. Your account is ready.", "it": "Password aggiornata. Il tuo account è pronto.", "es": "Contraseña actualizada. Tu cuenta está lista.", "fr": "Mot de passe mis à jour. Ton compte est prêt.", "pt": "Palavra-passe atualizada. A tua conta está pronta."},
