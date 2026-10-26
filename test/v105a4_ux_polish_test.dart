@@ -11,7 +11,7 @@ void main() {
     expect(
       roadmap,
       contains(
-        '| v1.05-A4 | Capture / More / Settings / Motion Polish | IN PROGRESS — PR #119 |',
+        '| v1.05-A4 | Capture / More / Settings / Motion Polish | Completed — PR #119 merged after 4/4 exact-head gates |',
       ),
     );
     expect(
