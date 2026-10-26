@@ -48,14 +48,16 @@ class SettingsHubScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final strings = AnnaStrings.of(context);
 
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(
-          strings.settings,
-          style: const TextStyle(fontWeight: FontWeight.w800),
+    return AnimatedBuilder(
+      animation: PremiumEntitlementService.instance,
+      builder: (context, _) => Scaffold(
+        appBar: AppBar(
+          title: Text(
+            strings.settings,
+            style: const TextStyle(fontWeight: FontWeight.w800),
+          ),
         ),
-      ),
-      body: ListView(
+        body: ListView(
         padding: const EdgeInsets.fromLTRB(
           AnnaDesignTokens.spaceMd,
           AnnaDesignTokens.spaceXs,
@@ -143,6 +145,7 @@ class SettingsHubScreen extends StatelessWidget {
             ),
           ),
         ],
+        ),
       ),
     );
   }
