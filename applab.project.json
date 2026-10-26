@@ -7,7 +7,7 @@
     "flutter_version": "3.47.5",
     "java_version": "17"
   },
-  "release_artifact_pattern": "build/app/outputs/flutter-apk/app-arm64-v8a-release.apk",
+  "release_artifact_pattern": "build/app/outputs/flutter-apk/app-release.apk",
   "journeys": {
     "primary": ".maestro/applab-smoke.yaml",
     "critical": [
