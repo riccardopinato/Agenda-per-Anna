@@ -79,7 +79,7 @@ void main() {
     expect(appLab, contains('uses: riccardopinato/AppLab/.github/workflows/'));
     expect(
       appLab,
-      contains('@931c124dbb1a36d43842db5b60bd5f04843e5330'),
+      contains('@05814036f3bbce1640cb1881215e2689d7110b76'),
     );
     expect(appLab, contains('analysis_mode: fast'));
     expect(
@@ -98,6 +98,8 @@ void main() {
     expect(appLabProject, contains('"cross_app"'));
     expect(appLab, contains('actions: read'));
     expect(appLab, contains('run_maestro: true'));
-    expect(appLab, contains('app-arm64-v8a-release.apk'));
+    expect(appLab, contains('build/app/outputs/flutter-apk/app-release.apk'));
+    expect(appLab, contains('--target-platform android-x64'));
+    expect(appLab, isNot(contains('--split-per-abi')));
   });
 }
