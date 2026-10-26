@@ -70,6 +70,12 @@ appId: com.riccardopinato.agenda_per_anna
 - tapOn:
     id: 'more-settings'
 - extendedWaitUntil:
+    visible:
+      id: 'settings-hub-preferences-privacy'
+    timeout: 10000
+- tapOn:
+    id: 'settings-hub-preferences-privacy'
+- extendedWaitUntil:
     visible: '(Impostazioni|Settings|Ajustes|Paramètres|Definições)'
     timeout: 10000
 - scrollUntilVisible:
@@ -200,6 +206,12 @@ appId: com.riccardopinato.agenda_per_anna
 - tapOn:
     id: 'more-settings'
 - extendedWaitUntil:
+    visible:
+      id: 'settings-hub-preferences-privacy'
+    timeout: 10000
+- tapOn:
+    id: 'settings-hub-preferences-privacy'
+- extendedWaitUntil:
     visible: '(Impostazioni|Settings|Ajustes|Paramètres|Definições)'
     timeout: 10000
 - scrollUntilVisible:
@@ -247,6 +259,12 @@ appId: com.riccardopinato.agenda_per_anna
     id: 'vault_back_button'
 - extendedWaitUntil:
     visible: '(Impostazioni|Settings|Ajustes|Paramètres|Definições)'
+    timeout: 10000
+- tapOn:
+    text: '(Indietro|Back|Atrás|Retour|Voltar)'
+- extendedWaitUntil:
+    visible:
+      id: 'settings-hub-preferences-privacy'
     timeout: 10000
 - tapOn:
     text: '(Indietro|Back|Atrás|Retour|Voltar)'
