@@ -402,7 +402,7 @@ Day Hub 2.0 deliberately extends existing domains instead of creating a parallel
 - Birthday deletion is delegated to the shared v0.45 lifecycle domain and therefore inherits Trash, restore, permanent purge and safety snapshots.
 - Annual birthday reminders schedule only the next relevant occurrence and are reconciled whenever the app starts/resumes; Android uses `NotificationService`, while Web/PWA uses the existing `web_push_reminders` backend.
 - `DayHubSnapshot` is a derived projection over UnifiedAgenda + birthday occurrences + DayJournal. It owns no duplicate persistence.
-- Home reuses the existing `_HomeFocusCard` as the Daily Briefing. Calendar and Planner consume the same projection/context rather than maintaining independent daily data.
+- Since v1.05-A3, Today/`PlannerScreen` is the single daily hub. It consumes `DayHubSnapshot` directly, adds only derived focus/pinned/wellbeing presentation, and the superseded Home dashboard no longer exists. Calendar continues to consume the same derived day context without duplicate persistence.
 
 
 ## v0.47.0 — People & Relationships
