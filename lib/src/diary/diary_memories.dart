@@ -1496,9 +1496,12 @@ class _DiaryMemoriesScreenState extends State<DiaryMemoriesScreen> {
                 child: switch (view) {
                   _DiaryMemoriesView.forYou =>
                     _forYouView(context, current),
-                  _DiaryMemoriesView.timeline => current.isEmpty
-                      ? _emptyState()
-                      : _timelineView(context, current),
+                  _DiaryMemoriesView.timeline => Semantics(
+                      identifier: 'memories-timeline-surface',
+                      child: current.isEmpty
+                          ? _emptyState()
+                          : _timelineView(context, current),
+                    ),
                   _DiaryMemoriesView.days => current.isEmpty
                       ? _emptyState()
                       : _daysView(context, current),
