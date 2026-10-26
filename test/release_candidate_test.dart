@@ -212,7 +212,12 @@ void main() {
 
     expect(appLabWorkflow, contains('AppLab Production Gate'));
     expect(appLabWorkflow, contains('flutter_version: "3.47.5"'));
-    expect(appLabWorkflow, contains('app-arm64-v8a-release.apk'));
+    expect(
+      appLabWorkflow,
+      contains('build/app/outputs/flutter-apk/app-release.apk'),
+    );
+    expect(appLabWorkflow, contains('--target-platform android-x64'));
+    expect(appLabWorkflow, isNot(contains('--split-per-abi')));
     expect(appLabWorkflow, contains('.maestro/applab-smoke.yaml'));
     expect(appLabWorkflow, contains('ANNAS_DIARY_INTEGRATION_TEST=true'));
     expect(appLabJourney, contains('"calendar"'));
