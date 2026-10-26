@@ -6,6 +6,14 @@ appId: com.riccardopinato.agenda_per_anna
 - extendedWaitUntil:
     visible: '(La mia giornata|My day|Mi día|Ma journée|O meu dia)[\s\S]*'
     timeout: 10000
+- scrollUntilVisible:
+    element:
+      id: 'today-focus-card'
+    direction: DOWN
+    timeout: 10000
+    visibilityPercentage: 20
+- assertVisible:
+    id: 'today-focus-card'
 - extendedWaitUntil:
     visible: '(Cattura|Capture|Capturar|Capturer)'
     timeout: 10000
