@@ -29,7 +29,7 @@ void main() {
     expect(more, contains('BackupScreen(store: store)'));
     expect(more, contains('SharedSpaceHubScreen(store: store)'));
     expect(more, contains('CloudAccountScreen(store: store)'));
-    expect(more, contains('SettingsScreen(store: store)'));
+    expect(more, contains('SettingsHubScreen(store: store)'));
     expect(more, contains('ExploreScreen(store: store)'));
   });
 
