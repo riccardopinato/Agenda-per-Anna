@@ -736,9 +736,12 @@ class _TodayFocusCard extends StatelessWidget {
                 '${formatTime(next!.start!)} · ${next!.title}'
                 '${next!.isShared ? ' · Noi ♡' : ''}';
 
-    return Container(
-      key: const ValueKey<String>('today-focus-card'),
-      padding: const EdgeInsets.all(16),
+    return Semantics(
+      identifier: 'today-focus-card',
+      container: true,
+      child: Container(
+        key: const ValueKey<String>('today-focus-card'),
+        padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: scheme.surfaceContainerHighest.withValues(alpha: 0.45),
         borderRadius: BorderRadius.circular(22),
@@ -797,7 +800,8 @@ class _TodayFocusCard extends StatelessWidget {
               ],
             ),
           ],
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -824,6 +828,7 @@ class _TodayWellbeingCard extends StatelessWidget {
     final accent = context.accentSurface;
 
     return Semantics(
+      identifier: 'today-wellbeing-card',
       container: true,
       child: Container(
         padding: const EdgeInsets.all(16),
