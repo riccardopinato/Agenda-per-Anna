@@ -4,7 +4,7 @@ appId: com.riccardopinato.agenda_per_anna
     visible: '(La mia giornata|My day|Mi día|Ma journée|O meu dia)[\s\S]*'
     timeout: 30000
 - tapOn:
-    text: '(Ricordi|Memories|Recuerdos|Souvenirs|Memórias)[\s\S]*'
+    id: 'main-nav-memories'
     retryTapIfNoChange: true
 - extendedWaitUntil:
     visible: '(I miei ricordi|My memories|Mis recuerdos|Mes souvenirs|As minhas memórias)'
