@@ -78,7 +78,9 @@ Software baseline preparation is complete when:
 - the visual policy validates;
 - Settings Hub is part of the canonical visual journey;
 - the 10,000-memory performance guard remains enforced;
-- Development, Web, Android size audit and AppLab pass on the same final SHA;
+- Development and AppLab pass on the same final SHA;
+- Web and Android size audit are N/A for this step unless runtime/build inputs change,
+  because A5 modifies only test, Maestro and documentation contracts;
 - the first eligible AppLab run promotes valid visual/performance baselines.
 
 Physical performance remains a separate evidence lane and is never fabricated.
