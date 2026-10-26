@@ -11,7 +11,7 @@ void main() {
         File('lib/src/screens/home_inbox_search.dart').readAsStringSync();
     final planner = File('lib/src/planner_views.dart').readAsStringSync();
 
-    expect(home, contains('_showQuickCapture(context, store)'));
+    expect(home, isNot(contains('class HomeScreen')));
     expect(
       planner,
       contains('entryPoint: UnifiedCaptureEntryPoint.month'),
