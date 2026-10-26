@@ -48,6 +48,9 @@ void main() {
       expect(shell, contains(id));
     }
 
+    expect(shell, contains('identifier: semanticsId'));
+    expect(shell, contains('List<Widget> _bottomDestinations'));
+
     for (final legacy in const <String>[
       'main-nav-home',
       'main-nav-month',
@@ -139,17 +142,23 @@ void main() {
     expect(smoke, contains("id: 'more-settings'"));
     expect(smoke, isNot(contains("id: 'home_more_menu'")));
 
+    final memories =
+        File('.maestro/journey/memories.yaml').readAsStringSync();
     final people = File('.maestro/journey/people.yaml').readAsStringSync();
+    expect(memories, contains("id: 'main-nav-memories'"));
+    expect(
+      memories,
+      isNot(contains("text: '(Ricordi|Memories|Recuerdos|Souvenirs|Memórias)")),
+    );
     expect(people, startsWith('appId: com.riccardopinato.agenda_per_anna'));
+    expect(people, contains("id: 'main-nav-more'"));
     expect(
       people,
-      contains("text: '(Altro|More|Más|Plus|Mais)[\\s\\S]*'"),
+      isNot(contains("text: '(Altro|More|Más|Plus|Mais)")),
     );
-    expect(people, isNot(contains("id: 'main-nav-more'")));
     expect(people, isNot(contains("id: 'more-search'")));
     expect(people, contains("id: 'more-explore'"));
     expect(people, contains('direction: UP'));
-
 
     final routeJourneys = <String, String>{
       '.maestro/journey/backup.yaml': 'more-backup',
