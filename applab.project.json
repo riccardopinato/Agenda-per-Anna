@@ -12,7 +12,51 @@
     "primary": ".maestro/applab-smoke.yaml",
     "critical": [
       ".maestro/journey/d6-functional-navigation.yaml"
-    ]
+    ],
+    "catalog": {
+      "shell-smoke": {
+        "flow": ".maestro/journey/shell-smoke.yaml",
+        "paths": [
+          "lib/**"
+        ],
+        "labs": [],
+        "surfaces": [
+          "home",
+          "today",
+          "capture",
+          "navigation"
+        ],
+        "capabilities": [
+          "navigation",
+          "guest_onboarding",
+          "shell_persistence"
+        ],
+        "risk_class": "core",
+        "always_fast": true
+      },
+      "vault-deep": {
+        "flow": ".maestro/journey/vault-deep.yaml",
+        "paths": [
+          "lib/src/security/**",
+          "lib/vault_service.dart",
+          "lib/shared_password_service.dart",
+          "lib/src/screens/private_vault.dart"
+        ],
+        "labs": [],
+        "surfaces": [
+          "vault",
+          "settings",
+          "privacy"
+        ],
+        "capabilities": [
+          "crypto",
+          "secure_storage",
+          "encrypted_persistence"
+        ],
+        "risk_class": "deep",
+        "always_fast": false
+      }
+    }
   },
   "physical_validation": {
     "required": true,
