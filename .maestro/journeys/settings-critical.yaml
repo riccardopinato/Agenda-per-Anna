@@ -1,0 +1,51 @@
+appId: com.riccardopinato.agenda_per_anna
+---
+- launchApp
+- runFlow:
+    when:
+      visible: '(Usa su questo dispositivo|Use on this device|Usar en este dispositivo|Utiliser sur cet appareil|Usar neste dispositivo)'
+    commands:
+      - tapOn:
+          text: '(Usa su questo dispositivo|Use on this device|Usar en este dispositivo|Utiliser sur cet appareil|Usar neste dispositivo)'
+      - extendedWaitUntil:
+          visible: '(La tua agenda, davvero tua\.|Your agenda, truly yours\.|Tu agenda, de verdad tuya\.|Ton agenda, vraiment à toi\.|A tua agenda, verdadeiramente tua\.)'
+          timeout: 15000
+      - tapOn:
+          id: 'onboarding_preset_complete'
+      - tapOn:
+          id: 'onboarding_continue'
+      - extendedWaitUntil:
+          visible: '(Inizia con qualcosa di utile\.|Start with something useful\.|Empieza con algo útil\.|Commence par quelque chose d’utile\.|Começa com algo útil\.)'
+          timeout: 10000
+      - tapOn:
+          id: 'onboarding_open_agenda'
+- tapOn:
+    id: 'main-nav-more'
+    retryTapIfNoChange: true
+- extendedWaitUntil:
+    visible: '(Altro|More|Más|Plus|Mais)'
+    timeout: 10000
+- scrollUntilVisible:
+    element:
+      id: 'more-settings'
+    direction: DOWN
+    timeout: 10000
+- tapOn:
+    id: 'more-settings'
+- extendedWaitUntil:
+    visible:
+      id: 'settings-hub-personalization'
+    timeout: 10000
+- assertVisible:
+    id: 'settings-hub-preferences-privacy'
+- assertVisible:
+    id: 'settings-hub-premium'
+- scrollUntilVisible:
+    element:
+      id: 'settings-hub-backup'
+    direction: DOWN
+    timeout: 10000
+- assertVisible:
+    id: 'settings-hub-account'
+- assertVisible:
+    id: 'settings-hub-backup'
