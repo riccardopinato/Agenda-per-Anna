@@ -1,0 +1,54 @@
+{
+  "schema_version": 1,
+  "defaults": {
+    "profile": "standard",
+    "auto_mask_dynamic_views": true,
+    "ignore_text_regex": [
+      "^\\d{1,2}:\\d{2}$"
+    ]
+  },
+  "checkpoints": {
+    "calendar": {
+      "profile": "dynamic"
+    },
+    "week": {
+      "profile": "dynamic"
+    },
+    "today": {
+      "profile": "standard"
+    },
+    "memories": {
+      "profile": "dynamic"
+    },
+    "people": {
+      "profile": "standard"
+    },
+    "more": {
+      "profile": "strict"
+    },
+    "backup": {
+      "profile": "strict"
+    },
+    "archive": {
+      "profile": "dynamic"
+    },
+    "shared": {
+      "profile": "standard"
+    },
+    "account": {
+      "profile": "strict"
+    },
+    "trash": {
+      "profile": "standard"
+    },
+    "functional-navigation": {
+      "profile": "standard"
+    },
+    "personalization": {
+      "profile": "strict"
+    },
+    "settings-hub": {
+      "profile": "strict"
+    }
+  }
+}

@@ -1,7 +1,7 @@
 # Anna's Diary — Product Bible
 
 **Status:** canonical product source of truth  
-**Current product line:** v1.05 UX foundation — A4 in progress  
+**Current product line:** v1.05 UX foundation — A5 visual/performance baselines in progress  
 **Distribution identity:** 1.0.0-rc.1+110 — Store/physical certification still open  
 **Last aligned:** 26 October 2026
 
