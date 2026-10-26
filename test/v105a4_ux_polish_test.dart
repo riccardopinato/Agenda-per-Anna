@@ -104,6 +104,8 @@ void main() {
       expect(hub, contains("id: '$id'"));
     }
 
+    expect(hub, contains('PremiumEntitlementService.instance'));
+    expect(hub, contains('AnimatedBuilder('));
     expect(hub, contains('SettingsScreen(store: store)'));
     expect(hub, contains('PersonalizationScreen(store: store)'));
     expect(hub, contains('CloudAccountScreen(store: store)'));
