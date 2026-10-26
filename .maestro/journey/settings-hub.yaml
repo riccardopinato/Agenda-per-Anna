@@ -1,0 +1,29 @@
+appId: com.riccardopinato.agenda_per_anna
+---
+- extendedWaitUntil:
+    visible: '(Altro|More|Más|Plus|Mais)'
+    timeout: 10000
+- scrollUntilVisible:
+    element:
+      id: 'more-settings'
+    direction: DOWN
+    timeout: 10000
+- tapOn:
+    id: 'more-settings'
+- extendedWaitUntil:
+    visible:
+      id: 'settings-hub-personalization'
+    timeout: 10000
+- assertVisible:
+    id: 'settings-hub-preferences-privacy'
+- assertVisible:
+    id: 'settings-hub-premium'
+- scrollUntilVisible:
+    element:
+      id: 'settings-hub-backup'
+    direction: DOWN
+    timeout: 10000
+- assertVisible:
+    id: 'settings-hub-account'
+- assertVisible:
+    id: 'settings-hub-backup'
