@@ -99,7 +99,7 @@ void main() {
       expect(more, contains("id: '$id'"));
     }
 
-    expect(more, contains('_HomeSyncStatusCard(store: store)'));
+    expect(more, contains('_SyncAttentionCard(store: store)'));
     expect(more, contains('store.hasStorageWarnings'));
     expect(more, contains('strings.v100StorageWarning'));
 
