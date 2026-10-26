@@ -48,31 +48,47 @@ class _MainShellState extends State<MainShell> {
         MoreScreen(store: widget.store),
       ];
 
-  List<NavigationDestination> _bottomDestinations(AnnaStrings strings) =>
-      <NavigationDestination>[
-        NavigationDestination(
-          key: const ValueKey<String>('main-nav-today'),
-          icon: const Icon(Icons.today_outlined),
-          selectedIcon: const Icon(Icons.today),
+  Widget _bottomDestination({
+    required String semanticsId,
+    required String label,
+    required IconData icon,
+    required IconData selectedIcon,
+  }) =>
+      Semantics(
+        identifier: semanticsId,
+        container: true,
+        child: NavigationDestination(
+          key: ValueKey<String>(semanticsId),
+          icon: Icon(icon),
+          selectedIcon: Icon(selectedIcon),
+          label: label,
+        ),
+      );
+
+  List<Widget> _bottomDestinations(AnnaStrings strings) => <Widget>[
+        _bottomDestination(
+          semanticsId: 'main-nav-today',
           label: strings.navToday,
+          icon: Icons.today_outlined,
+          selectedIcon: Icons.today,
         ),
-        NavigationDestination(
-          key: const ValueKey<String>('main-nav-calendar'),
-          icon: const Icon(Icons.calendar_month_outlined),
-          selectedIcon: const Icon(Icons.calendar_month),
+        _bottomDestination(
+          semanticsId: 'main-nav-calendar',
           label: strings.navCalendar,
+          icon: Icons.calendar_month_outlined,
+          selectedIcon: Icons.calendar_month,
         ),
-        NavigationDestination(
-          key: const ValueKey<String>('main-nav-memories'),
-          icon: const Icon(Icons.photo_library_outlined),
-          selectedIcon: const Icon(Icons.photo_library),
+        _bottomDestination(
+          semanticsId: 'main-nav-memories',
           label: strings.navMemories,
+          icon: Icons.photo_library_outlined,
+          selectedIcon: Icons.photo_library,
         ),
-        NavigationDestination(
-          key: const ValueKey<String>('main-nav-more'),
-          icon: const Icon(Icons.grid_view_outlined),
-          selectedIcon: const Icon(Icons.grid_view_rounded),
+        _bottomDestination(
+          semanticsId: 'main-nav-more',
           label: strings.navMore,
+          icon: Icons.grid_view_outlined,
+          selectedIcon: Icons.grid_view_rounded,
         ),
       ];
 
