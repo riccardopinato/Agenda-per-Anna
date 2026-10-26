@@ -1118,8 +1118,9 @@ class _DiaryMemoriesScreenState extends State<DiaryMemoriesScreen> {
       context: context,
       showDragHandle: true,
       builder: (sheetContext) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
+        child: ListView(
+          shrinkWrap: true,
+          padding: const EdgeInsets.only(bottom: AnnaDesignTokens.spaceSm),
           children: [
             ListTile(
               title: Text(
@@ -1166,8 +1167,9 @@ class _DiaryMemoriesScreenState extends State<DiaryMemoriesScreen> {
       context: context,
       showDragHandle: true,
       builder: (sheetContext) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
+        child: ListView(
+          shrinkWrap: true,
+          padding: const EdgeInsets.only(bottom: AnnaDesignTokens.spaceSm),
           children: [
             ListTile(
               title: Text(
