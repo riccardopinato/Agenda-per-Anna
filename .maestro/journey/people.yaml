@@ -1,7 +1,7 @@
 appId: com.riccardopinato.agenda_per_anna
 ---
 - tapOn:
-    text: '(Altro|More|Más|Plus|Mais)[\s\S]*'
+    id: 'main-nav-more'
     retryTapIfNoChange: true
 - scrollUntilVisible:
     element:
