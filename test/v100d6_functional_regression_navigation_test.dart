@@ -13,10 +13,12 @@ void main() {
     expect(shell, contains('CalendarHubScreen(store: widget.store)'));
     expect(shell, contains('DiaryMemoriesScreen(store: widget.store)'));
     expect(shell, contains('MoreScreen(store: widget.store)'));
-    expect(shell, contains("ValueKey<String>('main-nav-today')"));
-    expect(shell, contains("ValueKey<String>('main-nav-calendar')"));
-    expect(shell, contains("ValueKey<String>('main-nav-memories')"));
-    expect(shell, contains("ValueKey<String>('main-nav-more')"));
+    expect(shell, contains("semanticsId: 'main-nav-today'"));
+    expect(shell, contains("semanticsId: 'main-nav-calendar'"));
+    expect(shell, contains("semanticsId: 'main-nav-memories'"));
+    expect(shell, contains("semanticsId: 'main-nav-more'"));
+    expect(shell, contains('identifier: semanticsId'));
+    expect(shell, contains('key: ValueKey<String>(semanticsId)'));
 
     expect(more, contains('PersonalSearchConnectionsScreen(store: store)'));
     final search =
