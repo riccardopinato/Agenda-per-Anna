@@ -1,0 +1,18 @@
+schema_version: 1
+repository: riccardopinato/Agenda-per-Anna
+
+factory:
+  source_repository: riccardopinato/App-Factory-Core
+  resolver: CURRENT.yaml
+  profile_path: adoption/FACTORY_MODE_PROFILE_v1.yaml
+  profile_version: 1
+
+workflow_integration:
+  strategy: INTEGRATE_PRESERVE_EXISTING
+  overwrite_existing: false
+
+applab:
+  enabled: true
+  mode: CENTRAL
+
+app_overrides: {}
