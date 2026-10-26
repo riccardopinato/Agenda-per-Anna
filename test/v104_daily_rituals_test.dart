@@ -99,7 +99,7 @@ void main() {
     store.dispose();
   });
 
-  test('v1.04 release truth is aligned without changing distribution identity', () {
+  test('v1.04 release evidence remains historical after later product lines', () {
     final roadmap = File('docs/ROADMAP.md').readAsStringSync();
     final bible = File('docs/PRODUCT_BIBLE.md').readAsStringSync();
     final readme = File('README.md').readAsStringSync();
@@ -110,14 +110,11 @@ void main() {
         '| v1.04 | Daily Rituals & Life Flow | Completed — PR #113 merged after 4/4 exact-head gates |',
       ),
     );
-    expect(
-      bible,
-      contains(
-        'Current product line:** v1.04 — Daily Rituals & Life Flow implementation',
-      ),
-    );
+
+    // Product Bible.current is intentionally mutable. The v1.04 regression
+    // protects the completed roadmap evidence and unchanged distribution
+    // identity, not a header that later approved product lines must advance.
     expect(bible, contains('Distribution identity:** 1.0.0-rc.1+110'));
-    expect(bible, contains('Last aligned:** 23 October 2026'));
     expect(readme, contains('## v1.04 — Daily Rituals & Life Flow'));
   });
 

@@ -28,10 +28,10 @@ void main() {
     expect(
       roadmap,
       contains(
-        'App-Factory-Core@a923e0e766d83e8dfb92356c05752bd566eaed9e',
+        'App-Factory-Core@ed6466e774a28e95f9f371cd56bbf7278428776a',
       ),
     );
-    expect(roadmap, contains('(Master v26.6, Golden Index v21).'));
+    expect(roadmap, contains('(Master v26.6, Golden Index v22).'));
     expect(
       evidence,
       contains(

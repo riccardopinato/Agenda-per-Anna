@@ -63,17 +63,6 @@ class MoreScreen extends StatelessWidget {
               strings.navMore,
               style: const TextStyle(fontWeight: FontWeight.w800),
             ),
-            actions: [
-              IconButton(
-                key: const ValueKey<String>('more-search-action'),
-                tooltip: strings.search,
-                onPressed: () => _open(
-                  context,
-                  PersonalSearchConnectionsScreen(store: store),
-                ),
-                icon: const Icon(Icons.search),
-              ),
-            ],
           ),
           body: ListView(
             padding: const EdgeInsets.fromLTRB(
@@ -103,7 +92,7 @@ class MoreScreen extends StatelessWidget {
                 ),
                 const SizedBox(height: AnnaDesignTokens.spaceLg),
               ],
-              SectionTitle(strings.v100Explore),
+              SectionTitle(strings.d3('moreQuickAccess')),
               const SizedBox(height: AnnaDesignTokens.spaceSm),
               SimpleCard(
                 child: Column(
@@ -133,7 +122,15 @@ class MoreScreen extends StatelessWidget {
                       onTap: () =>
                           _open(context, InboxScreen(store: store)),
                     ),
-                    const Divider(height: 1),
+                  ],
+                ),
+              ),
+              const SizedBox(height: AnnaDesignTokens.spaceLg),
+              SectionTitle(strings.d3('moreYourSpace')),
+              const SizedBox(height: AnnaDesignTokens.spaceSm),
+              SimpleCard(
+                child: Column(
+                  children: [
                     _tile(
                       id: 'more-explore',
                       icon: Icons.apps_outlined,
@@ -182,7 +179,7 @@ class MoreScreen extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: AnnaDesignTokens.spaceLg),
-              SectionTitle(strings.settings),
+              SectionTitle(strings.d3('moreDataAndApp')),
               const SizedBox(height: AnnaDesignTokens.spaceSm),
               SimpleCard(
                 child: Column(
@@ -216,7 +213,7 @@ class MoreScreen extends StatelessWidget {
                       icon: Icons.settings_outlined,
                       title: strings.settings,
                       onTap: () =>
-                          _open(context, SettingsScreen(store: store)),
+                          _open(context, SettingsHubScreen(store: store)),
                     ),
                   ],
                 ),

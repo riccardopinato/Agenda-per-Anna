@@ -29,6 +29,18 @@ abstract final class AnnaDesignTokens {
   }
 }
 
+abstract final class AnnaFeedback {
+  static Future<void> selection() async {
+    if (kIsWeb) return;
+    await HapticFeedback.selectionClick();
+  }
+
+  static Future<void> success() async {
+    if (kIsWeb) return;
+    await HapticFeedback.lightImpact();
+  }
+}
+
 abstract final class AnnaResponsiveShellPolicy {
   static bool useRail(double width) =>
       width >= AnnaDesignTokens.wideBreakpoint;

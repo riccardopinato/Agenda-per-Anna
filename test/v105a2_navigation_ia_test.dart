@@ -112,7 +112,7 @@ void main() {
       'ArchiveScreen(store: store)',
       'BackupScreen(store: store)',
       'CloudAccountScreen(store: store)',
-      'SettingsScreen(store: store)',
+      'SettingsHubScreen(store: store)',
     ]) {
       expect(more, contains(route));
     }

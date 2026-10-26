@@ -211,92 +211,165 @@ Future<void> showUnifiedCapture(
     context: context,
     showDragHandle: true,
     isScrollControlled: true,
-    builder: (sheetContext) => SafeArea(
-      child: SingleChildScrollView(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            ListTile(
-              title: Text(
-                strings.capture,
-                style: const TextStyle(fontWeight: FontWeight.w900),
+    builder: (sheetContext) {
+      var showAllActions = false;
+
+      Widget actionTile({
+        required IconData icon,
+        required String title,
+        String? subtitle,
+        required _UnifiedCaptureAction action,
+        bool primary = false,
+      }) {
+        return ListTile(
+          leading: primary
+              ? CircleAvatar(child: Icon(icon))
+              : Icon(icon),
+          title: Text(
+            title,
+            style: TextStyle(
+              fontWeight: primary ? FontWeight.w700 : FontWeight.w600,
+            ),
+          ),
+          subtitle: subtitle == null ? null : Text(subtitle),
+          onTap: () {
+            unawaited(AnnaFeedback.selection());
+            Navigator.pop(sheetContext, action);
+          },
+        );
+      }
+
+      return StatefulBuilder(
+        builder: (context, setSheetState) {
+          final animate = AnnaDesignTokens.animationsEnabled(context);
+          return SafeArea(
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  ListTile(
+                    title: Text(
+                      strings.capture,
+                      style: const TextStyle(fontWeight: FontWeight.w800),
+                    ),
+                    subtitle: Text(
+                      entryPoint == UnifiedCaptureEntryPoint.inbox
+                          ? strings.captureInboxDescription
+                          : strings.captureDayDescription,
+                    ),
+                  ),
+                  actionTile(
+                    icon: Icons.edit_note_outlined,
+                    title: strings.writeMoment,
+                    subtitle: strings.addDiaryNote(dayLabel),
+                    action: _UnifiedCaptureAction.text,
+                    primary: true,
+                  ),
+                  actionTile(
+                    icon: Icons.photo_camera_back_outlined,
+                    title: strings.photo,
+                    subtitle: strings.savePhotoMoment(dayLabel),
+                    action: _UnifiedCaptureAction.photo,
+                    primary: true,
+                  ),
+                  actionTile(
+                    icon: Icons.check_circle_outline,
+                    title: strings.task,
+                    action: _UnifiedCaptureAction.task,
+                    primary: true,
+                  ),
+                  actionTile(
+                    icon: Icons.mic_none_outlined,
+                    title: strings.voiceNote,
+                    subtitle: strings.recordDiaryAudio(dayLabel),
+                    action: _UnifiedCaptureAction.voice,
+                    primary: true,
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: AnnaDesignTokens.spaceSm,
+                    ),
+                    child: Align(
+                      alignment: Alignment.centerLeft,
+                      child: TextButton.icon(
+                        onPressed: () {
+                          unawaited(AnnaFeedback.selection());
+                          setSheetState(() => showAllActions = !showAllActions);
+                        },
+                        icon: AnimatedRotation(
+                          turns: showAllActions ? 0.5 : 0,
+                          duration: animate
+                              ? AnnaDesignTokens.motionStandard
+                              : Duration.zero,
+                          child: const Icon(Icons.expand_more),
+                        ),
+                        label: Text(
+                          strings.d3(
+                            showAllActions
+                                ? 'captureFewerActions'
+                                : 'captureMoreActions',
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                  AnimatedSize(
+                    duration: animate
+                        ? AnnaDesignTokens.motionStandard
+                        : Duration.zero,
+                    alignment: Alignment.topCenter,
+                    child: showAllActions
+                        ? Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const Divider(height: 1),
+                              actionTile(
+                                icon: Icons.inbox_outlined,
+                                title: strings.quickInboxNote,
+                                subtitle: strings.organizeLater,
+                                action: _UnifiedCaptureAction.inbox,
+                              ),
+                              actionTile(
+                                icon: Icons.event_outlined,
+                                title: strings.appointment,
+                                action: _UnifiedCaptureAction.event,
+                              ),
+                              actionTile(
+                                icon: Icons.cake_outlined,
+                                title: strings.birthday,
+                                action: _UnifiedCaptureAction.birthday,
+                              ),
+                              actionTile(
+                                icon: Icons.person_add_alt_1_outlined,
+                                title: strings.importantPerson,
+                                action: _UnifiedCaptureAction.person,
+                              ),
+                            ],
+                          )
+                        : const SizedBox.shrink(),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(
+                      AnnaDesignTokens.spaceSm,
+                      0,
+                      AnnaDesignTokens.spaceSm,
+                      AnnaDesignTokens.spaceXs,
+                    ),
+                    child: Align(
+                      alignment: Alignment.centerRight,
+                      child: TextButton(
+                        onPressed: () => Navigator.pop(sheetContext),
+                        child: Text(strings.close),
+                      ),
+                    ),
+                  ),
+                ],
               ),
-              subtitle: Text(
-                entryPoint == UnifiedCaptureEntryPoint.inbox
-                    ? strings.captureInboxDescription
-                    : strings.captureDayDescription,
-              ),
             ),
-            ListTile(
-              leading: const CircleAvatar(
-                child: Icon(Icons.edit_note_outlined),
-              ),
-              title: Text(strings.writeMoment),
-              subtitle: Text(strings.addDiaryNote(dayLabel)),
-              onTap: () =>
-                  Navigator.pop(sheetContext, _UnifiedCaptureAction.text),
-            ),
-            ListTile(
-              leading: const CircleAvatar(
-                child: Icon(Icons.mic_none_outlined),
-              ),
-              title: Text(strings.voiceNote),
-              subtitle: Text(strings.recordDiaryAudio(dayLabel)),
-              onTap: () =>
-                  Navigator.pop(sheetContext, _UnifiedCaptureAction.voice),
-            ),
-            ListTile(
-              leading: const CircleAvatar(
-                child: Icon(Icons.photo_camera_back_outlined),
-              ),
-              title: Text(strings.photo),
-              subtitle: Text(strings.savePhotoMoment(dayLabel)),
-              onTap: () =>
-                  Navigator.pop(sheetContext, _UnifiedCaptureAction.photo),
-            ),
-            ListTile(
-              leading: const CircleAvatar(
-                child: Icon(Icons.inbox_outlined),
-              ),
-              title: Text(strings.quickInboxNote),
-              subtitle: Text(strings.organizeLater),
-              onTap: () =>
-                  Navigator.pop(sheetContext, _UnifiedCaptureAction.inbox),
-            ),
-            const Divider(height: 1),
-            ListTile(
-              leading: const Icon(Icons.check_circle_outline),
-              title: Text(strings.task),
-              onTap: () =>
-                  Navigator.pop(sheetContext, _UnifiedCaptureAction.task),
-            ),
-            ListTile(
-              leading: const Icon(Icons.event_outlined),
-              title: Text(strings.appointment),
-              onTap: () =>
-                  Navigator.pop(sheetContext, _UnifiedCaptureAction.event),
-            ),
-            ListTile(
-              leading: const Icon(Icons.cake_outlined),
-              title: Text(strings.birthday),
-              onTap: () =>
-                  Navigator.pop(sheetContext, _UnifiedCaptureAction.birthday),
-            ),
-            ListTile(
-              leading: const Icon(Icons.person_add_alt_1_outlined),
-              title: Text(strings.importantPerson),
-              onTap: () =>
-                  Navigator.pop(sheetContext, _UnifiedCaptureAction.person),
-            ),
-            ListTile(
-              leading: const Icon(Icons.close),
-              title: Text(strings.close),
-              onTap: () => Navigator.pop(sheetContext),
-            ),
-          ],
-        ),
-      ),
-    ),
+          );
+        },
+      );
+    },
   );
 
   if (!context.mounted || action == null) return;
@@ -306,6 +379,7 @@ Future<void> showUnifiedCapture(
       final text = await showDiaryNoteEditor(context);
       if (text == null || text.trim().isEmpty) return;
       await _saveUnifiedCaptureText(store, targetDay, text);
+      unawaited(AnnaFeedback.success());
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(strings.momentSaved(dayLabel))),
@@ -324,6 +398,7 @@ Future<void> showUnifiedCapture(
         capture,
         caption: caption,
       );
+      unawaited(AnnaFeedback.success());
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(strings.voiceSaved(dayLabel))),
@@ -344,6 +419,7 @@ Future<void> showUnifiedCapture(
         imageBytes,
         caption: caption,
       );
+      unawaited(AnnaFeedback.success());
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(strings.photoSaved(dayLabel))),
@@ -360,6 +436,7 @@ Future<void> showUnifiedCapture(
         value,
         toInbox: true,
       );
+      unawaited(AnnaFeedback.success());
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(strings.inboxSaved)),
