@@ -22,13 +22,23 @@ void main() {
       roadmap,
       contains('| v1.01-F | Release Truth & Factory Alignment | Completed — documentation/evidence closure |'),
     );
+    // The roadmap tracks the current Factory baseline, while the dedicated
+    // v1.01 evidence file remains historical evidence for the baseline that
+    // actually certified that release line.
     expect(
       roadmap,
       contains(
-        'App-Factory-Core@4cc0b94467b94ab6fabe2c927fcc58afff49e39a',
+        'App-Factory-Core@a923e0e766d83e8dfb92356c05752bd566eaed9e',
       ),
     );
-    expect(roadmap, contains('(Master v26.6, Golden Index v19).'));
+    expect(roadmap, contains('(Master v26.6, Golden Index v21).'));
+    expect(
+      evidence,
+      contains(
+        'App-Factory-Core: `47c47f49a7b46812e3bd6f1231c3524f2b52b826`',
+      ),
+    );
+    expect(evidence, contains('Golden Index: v18'));
     expect(roadmap, isNot(contains('|\\n| v1.00-D |')));
 
     // v1.01 closure evidence is historical; later product lines may advance
