@@ -3,78 +3,60 @@ import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
-  test('Home keeps only high-frequency or attention-worthy direct actions', () {
-    final home =
+  test('v1.05-A3 retires Home and preserves quiet secondary navigation', () {
+    final shell =
         File('lib/src/screens/home_inbox_search.dart').readAsStringSync();
+    final planner = File('lib/src/planner_views.dart').readAsStringSync();
+    final more = File('lib/src/screens/more_screen.dart').readAsStringSync();
 
-    expect(home, contains("identifier: 'home_more_menu'"));
-    expect(home, contains("ValueKey<String>('home-more-menu')"));
-    expect(home, contains('PersonalSearchConnectionsScreen(store: store)'));
-    expect(home, contains('if (store.activeInboxEntries.isNotEmpty)'));
-    expect(
-      home,
-      contains(
-        'prefs.isModuleEnabled(AppModule.sharedSpace) &&\n'
-        '                  store.totalSharedUnreadCount > 0',
-      ),
-    );
+    expect(shell, isNot(contains('class HomeScreen')));
+    expect(shell, isNot(contains("identifier: 'home_more_menu'")));
+    expect(shell, isNot(contains("ValueKey<String>('home-more-menu')")));
 
-    final appBarStart = home.indexOf('appBar: AppBar(');
-    final moreMenuStart = home.indexOf(
-      "identifier: 'home_more_menu'",
-      appBarStart,
-    );
-    expect(appBarStart, greaterThanOrEqualTo(0));
-    expect(moreMenuStart, greaterThan(appBarStart));
-    final directActions = home.substring(appBarStart, moreMenuStart);
+    expect(planner, contains("ValueKey<String>('today-focus-card')"));
+    expect(planner, contains("ValueKey<String>('today-pinned-section')"));
+    expect(planner, contains("ValueKey<String>('today-wellbeing-card')"));
 
-    expect(directActions, isNot(contains('Icons.inventory_2_outlined')));
-    expect(directActions, isNot(contains('Icons.backup_outlined')));
-    expect(directActions, isNot(contains('Icons.cloud_done_outlined')));
-    expect(directActions, isNot(contains('Icons.settings_outlined')));
+    for (final id in const <String>[
+      'more-search',
+      'more-inbox',
+      'more-explore',
+      'more-personalize',
+      'more-archive',
+      'more-backup',
+      'more-cloud',
+      'more-settings',
+    ]) {
+      expect(more, contains("id: '$id'"));
+    }
   });
 
-  test('healthy sync and intentional device-only use stay quiet', () {
-    final home =
+  test('healthy sync and intentional device-only use stay quiet in More', () {
+    final shared =
         File('lib/src/screens/home_inbox_search.dart').readAsStringSync();
+    final more = File('lib/src/screens/more_screen.dart').readAsStringSync();
 
-    expect(home, contains('final intentionalLocalOnly'));
-    expect(home, contains('final healthyCloud'));
+    expect(shared, contains('final intentionalLocalOnly'));
+    expect(shared, contains('final healthyCloud'));
     expect(
-      home,
+      shared,
       contains('if (intentionalLocalOnly || healthyCloud)'),
     );
-    expect(home, contains("ValueKey<String>('home-sync-attention')"));
-    expect(home, contains('CloudConnectionState.error'));
-    expect(home, contains('store.hasSharedSyncError'));
-    expect(home, contains('pending > 0'));
+    expect(shared, contains("ValueKey<String>('sync-attention')"));
+    expect(shared, contains('CloudConnectionState.error'));
+    expect(shared, contains('store.hasSharedSyncError'));
+    expect(shared, contains('pending > 0'));
+    expect(more, contains('_SyncAttentionCard(store: store)'));
   });
 
-  test('Home presentation follows module preferences without deleting data', () {
-    final home =
-        File('lib/src/screens/home_inbox_search.dart').readAsStringSync();
+  test('Today presentation remains preference-aware without deleting data', () {
+    final planner = File('lib/src/planner_views.dart').readAsStringSync();
 
-    expect(home, contains('AppModule.privateVault'));
-    expect(home, contains('AppModule.people'));
-    expect(home, contains('AppModule.habits'));
-    expect(home, contains('AppModule.memories'));
-    expect(home, contains('showBirthdays: peopleEnabled'));
-    expect(home, contains('if (showBirthdays) ...['));
-    expect(
-      home,
-      contains(
-        'if (store.preferences.isModuleEnabled(AppModule.memories))',
-      ),
-    );
-    expect(
-      home,
-      contains(
-        'if (store.preferences.isModuleEnabled(AppModule.habits))',
-      ),
-    );
-
-    expect(home, isNot(contains('removeWhere((module)')));
-    expect(home, isNot(contains('deleteModule')));
+    expect(planner, contains('AppModule.habits'));
+    expect(planner, contains('store.preferences.hideHomeDetails'));
+    expect(planner, contains('AgendaContentFilter.sharedOnly'));
+    expect(planner, isNot(contains('removeWhere((module)')));
+    expect(planner, isNot(contains('deleteModule')));
   });
 
   test('secondary operational journeys use the stable More destination', () {
@@ -100,7 +82,7 @@ void main() {
     expect(regression, contains("id: 'more-cloud'"));
   });
 
-  test('new D navigation copy stays in the canonical five-language catalog', () {
+  test('v1.01 navigation copy stays in the canonical five-language catalog', () {
     final localization =
         File('lib/src/localization_d3.dart').readAsStringSync();
 
