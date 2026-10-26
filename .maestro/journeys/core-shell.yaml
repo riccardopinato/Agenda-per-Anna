@@ -1,0 +1,35 @@
+appId: com.riccardopinato.agenda_per_anna
+---
+- launchApp:
+    clearState: true
+- extendedWaitUntil:
+    visible: '(Usa su questo dispositivo|Use on this device|Usar en este dispositivo|Utiliser sur cet appareil|Usar neste dispositivo)'
+    timeout: 15000
+- tapOn:
+    text: '(Usa su questo dispositivo|Use on this device|Usar en este dispositivo|Utiliser sur cet appareil|Usar neste dispositivo)'
+- extendedWaitUntil:
+    visible: '(La tua agenda, davvero tua\.|Your agenda, truly yours\.|Tu agenda, de verdad tuya\.|Ton agenda, vraiment à toi\.|A tua agenda, verdadeiramente tua\.)'
+    timeout: 15000
+- tapOn:
+    id: 'onboarding_preset_complete'
+- tapOn:
+    id: 'onboarding_continue'
+- extendedWaitUntil:
+    visible: '(Inizia con qualcosa di utile\.|Start with something useful\.|Empieza con algo útil\.|Commence par quelque chose d’utile\.|Começa com algo útil\.)'
+    timeout: 10000
+- tapOn:
+    id: 'onboarding_open_agenda'
+- extendedWaitUntil:
+    visible: '(La mia giornata|My day|Mi día|Ma journée|O meu dia)[\s\S]*'
+    timeout: 15000
+- assertVisible:
+    id: 'main-nav-today'
+- assertVisible:
+    id: 'main-nav-calendar'
+- assertVisible:
+    id: 'main-nav-memories'
+- assertVisible:
+    id: 'main-nav-more'
+- extendedWaitUntil:
+    visible: '(Cattura|Capture|Capturar|Capturer)'
+    timeout: 10000
