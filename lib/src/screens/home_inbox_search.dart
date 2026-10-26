@@ -346,10 +346,10 @@ Future<void> _showQuickCapture(
   );
 }
 
-class _HomeSyncStatusCard extends StatelessWidget {
+class _SyncAttentionCard extends StatelessWidget {
   final AgendaStore store;
 
-  const _HomeSyncStatusCard({required this.store});
+  const _SyncAttentionCard({required this.store});
 
   @override
   Widget build(BuildContext context) {
@@ -422,7 +422,7 @@ class _HomeSyncStatusCard extends StatelessWidget {
         return Padding(
           padding: const EdgeInsets.only(top: 10),
           child: Material(
-            key: const ValueKey<String>('home-sync-attention'),
+            key: const ValueKey<String>('sync-attention'),
             color: Theme.of(context)
                 .colorScheme
                 .surfaceContainerHighest
