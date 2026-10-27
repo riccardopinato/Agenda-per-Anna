@@ -177,6 +177,7 @@ void main() {
         File('lib/src/screens/memory_collections_screen.dart').readAsStringSync();
     final memories =
         File('lib/src/diary/diary_memories.dart').readAsStringSync();
+    final agendaStore = File('lib/src/agenda_store.dart').readAsStringSync();
     final flow = File('.maestro/journey/memories.yaml').readAsStringSync();
 
     expect(domain, contains('memoryReferences()'));
@@ -184,6 +185,13 @@ void main() {
     expect(domain, contains('savePreferences('));
     expect(memories, contains("identifier: 'memories-collections-entry'"));
     expect(screen, contains("identifier: 'memory-collections-surface'"));
+    expect(screen, contains('recordsBuilder: ()'));
+    expect(screen, contains('animation: store.journalRevision'));
+    expect(screen, contains('invalidYear'));
+    expect(
+      agendaStore,
+      contains("payload.containsKey('memoryCollections')"),
+    );
     expect(flow, contains("id: 'memories-collections-entry'"));
     expect(flow, contains("id: 'memory-collections-surface'"));
 
@@ -208,6 +216,7 @@ void main() {
       expect(strings.v105LifeThreadsIntro, isNotEmpty);
       expect(strings.v105NewCollection, isNotEmpty);
       expect(strings.v105ChooseFilter, isNotEmpty);
+      expect(strings.v105InvalidYear, isNotEmpty);
       expect(strings.v105MemoryCount(2), isNotEmpty);
     }
   });
