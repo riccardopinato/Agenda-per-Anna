@@ -80,6 +80,7 @@ class _MemoryCollectionsScreenState extends State<MemoryCollectionsScreen> {
                     TextField(
                       controller: name,
                       autofocus: true,
+                      onChanged: (_) => setDialogState(() {}),
                       decoration: InputDecoration(
                         labelText: strings.v105CollectionName,
                       ),
