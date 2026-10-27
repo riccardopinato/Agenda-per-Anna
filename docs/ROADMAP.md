@@ -83,12 +83,12 @@ Source of execution truth for Anna's Diary. Product identity and boundaries are 
 | v1.05-A3 | Today Consolidation | Completed — PR #117 merged after 4/4 exact-head gates | Make Today the sole daily hub, preserve only unique focus/pinned/wellbeing value and remove superseded Home-only code |
 | v1.05-A4 | Capture / More / Settings / Motion Polish | Completed — PR #119 merged after 4/4 exact-head gates | Progressive Capture, clearer More hierarchy, category-first Settings entry and reduced-motion-aware feedback without new state ownership |
 | v1.05-A5 | Visual / Performance Baselines | Completed — PR #123 merged; Development/AppLab exact-head PASS, visual + performance baselines saved | Canonical visual-regression and trusted-runtime performance baselines established; physical performance remains separate NOT VERIFIED evidence |
-| v1.05 | Memories & Recall 3.0 | IN PROGRESS | Richer deterministic resurfacing over existing diary/person/place/archive primitives; no Memory DB or generative narrator |
+| v1.05 | Memories & Recall 3.0 | **Completed — v1.05-B4 PR #132 merged, 4/4 exact-head gates PASS** | Richer deterministic resurfacing over existing diary/person/place/archive primitives; no Memory DB or generative narrator |
 | v1.05-B0 | Memories 3.0 Core | Completed — PR #125 merged after 4/4 exact-head gates | New For You + Timeline memory IA, stronger deterministic Recall and progressive browsing without new persistence |
 | v1.05-B1 | Memory Map + Then & Now | Completed — PR #128 merged after 4/4 exact-head gates | Derived map over existing DiaryPlaceReference plus deterministic temporal comparisons |
 | v1.05-B2 | Year in Review 2.0 | Completed — PR #129 merged after 4/4 exact-head gates | Rebuild the existing YearScreen over modern DiaryBlock/life projections; no duplicate Year product |
 | v1.05-B3 | Collections / Life Threads | Completed — PR #130 merged after 4/4 exact-head gates | Saved views and derived life stories over people/place/tag/time/type without copying canonical data |
-| v1.05-B4 | Polish & QA | IN PROGRESS — integration PR #132 | Bounded UX/performance/accessibility/localization and trusted-runtime closure for v1.05 |
+| v1.05-B4 | Polish & QA | **Completed — integration PR #132 merged; 4/4 exact-head gates and Codex PASS** | Bounded UX/performance/accessibility/localization and trusted-runtime closure for v1.05 |
 | v1.06 | Ecosystem Expansion | PLANNED | Add specialist integrations one at a time under Shared Ecosystem Core + paired verification; preferred order TrailPath → Notes → SleepMax → CashMate |
 
 ## Current execution order — App Factory v26.6 / Factory Mode v22
@@ -105,18 +105,29 @@ BLOCKING_NOW, FIX_CURRENT_STEP, BACKGROUND_MAINTENANCE or FUTURE.
 Current sequence:
 
 1. keep v1.00-D7 / v1.02-A physical evidence and v1.02-C Store QA fail-closed;
-2. keep v1.04 and v1.05-A0/A1/A2/A3/A4/A5/B0/B1 closed;
-3. keep v1.05-B2 Year in Review 2.0 and v1.05-B3 Collections / Life Threads closed after their exact-head merges;
+2. keep v1.04 and v1.05-A0/A1/A2/A3/A4/A5/B0/B1/B2/B3/B4 closed;
+3. keep the full v1.05 Memories & Recall 3.0 line closed after all certified exact-head merges;
 4. keep physical-device performance evidence fail-closed until measured on an exact artifact;
-5. close v1.05 only through v1.05-B4 integration PR #132 after fresh exact-head review and all required gates;
-6. do not begin v1.06 until v1.05-B4 is merged and v1.05 closure evidence is recorded;
-7. after that boundary, the planned ecosystem order remains TrailPath → Notes → SleepMax → CashMate.
+5. keep v1.05-B4 and v1.05 as Completed after certified integration PR #132 and the evidence recorded below;
+6. stop the current execution line at v1.05; do not start v1.06 under this authorization;
+7. retain v1.06 as PLANNED only, with future sequencing subject to separate authorization.
 
 Provider rule: Anna keeps RevenueCat as the billing adapter. The provider-agnostic
 Entitlement Golden does not justify migrating to direct Play Billing.
 Visibility preferences remain separate from entitlement state.
 
 
+
+### v1.05-B4 and v1.05 final closure evidence
+
+- Final integrated base before B4: `7becabbe1c2450622464b4c2eb35dd2bf9d9b9b7` (B1+B2+B3 already merged).
+- Final integration PR: **#132**, exact tested head `96b012db318bc2f5a835fb7d397e4b222b5da032`.
+- Development checks **#1354: PASS**; Web deploy **#884: PASS**; Android size audit **#833: PASS**; AppLab Production Gate **#847: PASS**; all bound to that exact head.
+- Codex exact-head code review: **Completed/PASS**, no findings or unresolved findings.
+- Squash merge to `main`: `5179b103c2ee159fc58e90f4d041aafbb31f3eea`.
+- v1.05-A0–A5 and v1.05-B0–B4: **Completed**; v1.05 Memories & Recall 3.0: **Completed**.
+- Evidence ceiling: **TRUSTED RUNTIME VERIFIED**. Physical-device, performance on physical hardware, Google Play purchase/restore and Store/distribution certification remain **NOT VERIFIED / fail-closed** where not independently evidenced.
+- **Stop boundary:** v1.06 remains PLANNED and is not authorized/started by this closure.
 
 ### v1.05-B2 release evidence
 

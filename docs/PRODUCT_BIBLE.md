@@ -1,7 +1,7 @@
 # Anna's Diary — Product Bible
 
 **Status:** canonical product source of truth  
-**Current product line:** v1.05 Memories & Recall 3.0 — B4 final integration QA in progress  
+**Current product line:** v1.05 Memories & Recall 3.0 — Completed (B4 PR #132 merged; trusted-runtime verified; v1.06 not started)  
 **Distribution identity:** 1.0.0-rc.1+110 — Store/physical certification still open  
 **Last aligned:** 27 October 2026
 
