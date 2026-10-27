@@ -63,8 +63,8 @@ void main() {
     const baseline = DayJournal(
       beautiful: 'Before',
       note: 'Original',
-      gratitude: const ['old'],
-      completedHabitIds: const ['h1'],
+      gratitude: ['old'],
+      completedHabitIds: ['h1'],
     );
     final current = baseline.copyWith(
       note: 'Remote text',
