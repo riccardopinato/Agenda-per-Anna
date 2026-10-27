@@ -85,8 +85,8 @@ Source of execution truth for Anna's Diary. Product identity and boundaries are 
 | v1.05-A5 | Visual / Performance Baselines | Completed — PR #123 merged; Development/AppLab exact-head PASS, visual + performance baselines saved | Canonical visual-regression and trusted-runtime performance baselines established; physical performance remains separate NOT VERIFIED evidence |
 | v1.05 | Memories & Recall 3.0 | IN PROGRESS | Richer deterministic resurfacing over existing diary/person/place/archive primitives; no Memory DB or generative narrator |
 | v1.05-B0 | Memories 3.0 Core | Completed — PR #125 merged after 4/4 exact-head gates | New For You + Timeline memory IA, stronger deterministic Recall and progressive browsing without new persistence |
-| v1.05-B1 | Memory Map + Then & Now | IN PROGRESS | Derived map over existing DiaryPlaceReference plus deterministic temporal comparisons |
-| v1.05-B2 | Year in Review 2.0 | PLANNED | Rebuild the existing YearScreen over modern DiaryBlock/life projections; no duplicate Year product |
+| v1.05-B1 | Memory Map + Then & Now | Completed — PR #128 merged after 4/4 exact-head gates | Derived map over existing DiaryPlaceReference plus deterministic temporal comparisons |
+| v1.05-B2 | Year in Review 2.0 | IN PROGRESS — PR #129 | Rebuild the existing YearScreen over modern DiaryBlock/life projections; no duplicate Year product |
 | v1.05-B3 | Collections / Life Threads | PLANNED | Saved views and derived life stories over people/place/tag/time/type without copying canonical data |
 | v1.05-B4 | Polish & QA | PLANNED | Bounded UX/performance/accessibility/localization and trusted-runtime closure for v1.05 |
 | v1.06 | Ecosystem Expansion | PLANNED | Add specialist integrations one at a time under Shared Ecosystem Core + paired verification; preferred order TrailPath → Notes → SleepMax → CashMate |
@@ -105,18 +105,30 @@ BLOCKING_NOW, FIX_CURRENT_STEP, BACKGROUND_MAINTENANCE or FUTURE.
 Current sequence:
 
 1. keep v1.00-D7 / v1.02-A physical evidence and v1.02-C Store QA fail-closed;
-2. keep v1.04 and v1.05-A0/A1/A2/A3/A4/A5/B0 closed;
-3. execute v1.05-B1 Memory Map + Then & Now over existing DiaryPlaceReference and deterministic recall projections;
+2. keep v1.04 and v1.05-A0/A1/A2/A3/A4/A5/B0/B1 closed;
+3. execute v1.05-B2 Year in Review 2.0 over the existing YearScreen and canonical diary/life projections;
 4. keep physical-device performance evidence fail-closed until measured on an exact artifact;
-5. continue v1.05-B2 Year in Review 2.0;
-6. continue v1.05-B3 Collections / Life Threads;
-7. close v1.05 with v1.05-B4 bounded Polish & QA;
-8. expand the ecosystem one specialist at a time: TrailPath → Notes → SleepMax → CashMate.
+5. continue v1.05-B3 Collections / Life Threads;
+6. close v1.05 with v1.05-B4 bounded Polish & QA;
+7. expand the ecosystem one specialist at a time: TrailPath → Notes → SleepMax → CashMate.
 
 Provider rule: Anna keeps RevenueCat as the billing adapter. The provider-agnostic
 Entitlement Golden does not justify migrating to direct Play Billing.
 Visibility preferences remain separate from entitlement state.
 
+
+### v1.05-B1 release evidence
+
+- PR #128 final tested head: `69574452b41def8f5792e54cd0de931f1ed29a17`.
+- Development checks #1305: PASS.
+- Web deploy #835: PASS.
+- Android size audit #787: PASS.
+- AppLab Production Gate #801: PASS on the exact tested head.
+- External Codex review was still reported as running when the required exact-head gates closed; no finding had been published, so it was not recorded as either PASS or FAIL.
+- CodeRabbit automatic review was unavailable for the repository under its current configuration and was not treated as a PASS.
+- Squash merge to `main`: `eb1e7fa272fbc9ba1dd6f7c1313a66dbb4be641d`.
+- Evidence ceiling for v1.05-B1: **TRUSTED RUNTIME VERIFIED**. Physical-device and Store/distribution claims remain separate.
+- Next roadmap step: **v1.05-B2 Year in Review 2.0**.
 
 ### v1.05-B0 release evidence
 
