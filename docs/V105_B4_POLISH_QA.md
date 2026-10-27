@@ -67,8 +67,8 @@ The consolidated regression suite covers:
 
 ## Closure contract
 
-v1.05 remains **IN PROGRESS** until the final B4 head, rebuilt on the merged
-B1+B2+B3 `main`, has:
+v1.05 was **IN PROGRESS** until the final B4 head, rebuilt on the merged
+B1+B2+B3 `main`, achieved:
 
 1. Development checks PASS;
 2. Web deploy PASS;
@@ -78,3 +78,13 @@ B1+B2+B3 `main`, has:
 
 Physical-device, Play/Store and other distribution evidence remain separate and
 must not be inferred from CI/AppLab.
+
+## Final certification (27 October 2026)
+
+- Correct canonical head (GitHub): `96b012db318bc2f5a835fb7d397e4b222b5da032`.
+- Development #1354, Web #884, Android size #833 and AppLab #847: all PASS.
+- Codex reviewed that exact head and completed with no unresolved findings.
+- PR #132 squash-merged to `main` at `5179b103c2ee159fc58e90f4d041aafbb31f3eea`.
+- B4 and v1.05 Memories & Recall 3.0 are **Completed**.
+- Evidence ceiling: **TRUSTED RUNTIME VERIFIED**. Physical-device and Play/Store certification are not implied.
+- v1.06 remains PLANNED and is not started.
