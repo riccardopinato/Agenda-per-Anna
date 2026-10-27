@@ -340,6 +340,14 @@ extension AnnaStringsV105B3 on AnnaStrings {
         pt: 'Escolhe pelo menos um filtro.',
       );
 
+  String get v105InvalidYear => _pick(
+        en: 'Enter a valid whole year.',
+        it: 'Inserisci un anno intero valido.',
+        es: 'Introduce un año entero válido.',
+        fr: 'Saisis une année entière valide.',
+        pt: 'Introduz um ano inteiro válido.',
+      );
+
   String get v105NoCollections => _pick(
         en: 'No saved collections yet.',
         it: 'Nessuna collezione salvata.',
