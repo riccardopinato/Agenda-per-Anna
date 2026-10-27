@@ -25,16 +25,25 @@ appId: com.riccardopinato.agenda_per_anna
 - extendedWaitUntil:
     visible: '(I miei ricordi|My memories|Mis recuerdos|Mes souvenirs|As minhas memórias)'
     timeout: 15000
-- scrollUntilVisible:
-    element:
-      text: '(Riscopri|Rediscover|Redescubrir|Redécouvrir|Redescobrir)[\s\S]*'
-    direction: DOWN
-    timeout: 30000
-    speed: 35
-    visibilityPercentage: 20
-    centerElement: false
-- tapOn:
-    text: '(Riscopri|Rediscover|Redescubrir|Redécouvrir|Redescobrir)[\s\S]*'
 - extendedWaitUntil:
-    visible: '(Riscopri i tuoi ricordi|Rediscover your memories|Redescubre tus recuerdos|Redécouvre tes souvenirs|Redescobre as tuas memórias)'
+    visible:
+      id: 'memories-for-you'
+    timeout: 15000
+- assertVisible:
+    id: 'memories-timeline'
+- assertVisible:
+    id: 'memories-browse'
+- assertVisible:
+    id: 'memories-for-you-surface'
+- tapOn:
+    id: 'memories-timeline'
+- extendedWaitUntil:
+    visible:
+      id: 'memories-timeline-surface'
+    timeout: 15000
+- tapOn:
+    id: 'memories-for-you'
+- extendedWaitUntil:
+    visible:
+      id: 'memories-for-you-surface'
     timeout: 15000
