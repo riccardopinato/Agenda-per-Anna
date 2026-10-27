@@ -784,3 +784,8 @@ Memory store.
 - Search, type filters and Day / Month / Year browsing remain derived views.
 - Memory Map, Then & Now, Year in Review 2.0, Collections and Life Threads are
   explicitly deferred to later v1.05 steps.
+
+
+### v1.05 Memories & Recall 3.0
+
+The recall surfaces are projections over existing canonical diary, person, place, archive and preference ownership. Memory Map and Then & Now derive from diary/place metadata; Year in Review 2.0 derives from diary/Life Archive; Collections persist only bounded filter definitions in AgendaPreferences; Life Threads remain ephemeral. **No Memory DB, Year DB, Collections DB or LifeThread DB** is introduced.
