@@ -147,6 +147,44 @@ void main() {
     store.dispose();
   });
 
+  test('v1.05-B3 thread detail lookup is independent of overview top-24',
+      () async {
+    final store = AgendaStore();
+    await store.load();
+
+    for (var i = 0; i < 25; i++) {
+      final tag = 'thread-${i.toString().padLeft(2, '0')}';
+      for (var j = 0; j < 2; j++) {
+        final day = DateTime(2026, 1, 1).add(Duration(days: i * 2 + j));
+        await store.saveJournal(
+          day,
+          DayJournal(
+            blocks: [
+              DiaryBlock(
+                id: 'memory-$i-$j',
+                type: DiaryBlockType.note,
+                createdAt: day.add(const Duration(hours: 12)),
+                tags: [tag],
+              ),
+            ],
+          ),
+        );
+      }
+    }
+
+    final overview = store.memoryLifeThreads();
+    expect(overview, hasLength(24));
+
+    const hiddenId = 'tag:thread-24';
+    expect(overview.any((thread) => thread.id == hiddenId), isFalse);
+
+    final hidden = store.memoryLifeThreadById(hiddenId);
+    expect(hidden, isNotNull);
+    expect(hidden!.memories, hasLength(2));
+
+    store.dispose();
+  });
+
   test('v1.05-B3 preference roundtrip is backward-compatible and bounded', () {
     const definition = MemoryCollectionDefinition(
       id: 'c1',
