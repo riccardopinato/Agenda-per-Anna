@@ -242,7 +242,9 @@ void main() {
     expect(memories, contains("identifier: 'memories-collections-entry'"));
     expect(screen, contains("identifier: 'memory-collections-surface'"));
     expect(screen, contains('recordsBuilder: ()'));
-    expect(screen, contains('animation: store.journalRevision'));
+    expect(screen, contains('store.journalRevision'));
+    expect(screen, contains('store.settingsRevision'));
+    expect(screen, contains('memoryCollectionReferencesById(definition.id)'));
     expect(
       'if (mounted) setState(() {});'.allMatches(screen).length,
       greaterThanOrEqualTo(2),
