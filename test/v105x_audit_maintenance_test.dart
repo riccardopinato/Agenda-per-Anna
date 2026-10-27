@@ -59,6 +59,30 @@ void main() {
     store.dispose();
   });
 
+  test('failed local journal batch rolls back RAM and the next save succeeds',
+      () async {
+    final store = AgendaStore();
+    await store.load();
+    final day = DateTime(2026, 10, 27);
+    await store.saveJournal(day, const DayJournal(note: 'Previously saved'));
+
+    LocalStateStore.instance.failNextBatchForTesting();
+    await expectLater(
+      store.saveJournal(day, const DayJournal(note: 'Failed edit')),
+      throwsStateError,
+    );
+    expect(store.journal(day).note, 'Previously saved');
+
+    await store.saveJournal(day, const DayJournal(note: 'Recovered edit'));
+    expect(store.journal(day).note, 'Recovered edit');
+    store.dispose();
+
+    final reloaded = AgendaStore();
+    await reloaded.load();
+    expect(reloaded.journal(day).note, 'Recovered edit');
+    reloaded.dispose();
+  });
+
   test('nonconflicting journal fields are merged with fresh remote data', () {
     const baseline = DayJournal(
       beautiful: 'Before',
