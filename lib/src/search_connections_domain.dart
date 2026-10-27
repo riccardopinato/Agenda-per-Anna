@@ -63,6 +63,63 @@ class MemoryRecallSnapshot {
   int get historicalYears => yearHighlights.length;
 }
 
+class MemoryPlaceCluster {
+  final String key;
+  final String label;
+  final double? latitude;
+  final double? longitude;
+  final List<DiaryBlockReference> memories;
+
+  const MemoryPlaceCluster({
+    required this.key,
+    required this.label,
+    required this.latitude,
+    required this.longitude,
+    required this.memories,
+  });
+
+  bool get hasCoordinates => latitude != null && longitude != null;
+  int get count => memories.length;
+  DiaryBlockReference get firstMemory => memories.first;
+  DiaryBlockReference get latestMemory => memories.last;
+}
+
+class MemoryThenNowPair {
+  final MemoryPlaceCluster place;
+  final DiaryBlockReference thenMemory;
+  final DiaryBlockReference nowMemory;
+
+  const MemoryThenNowPair({
+    required this.place,
+    required this.thenMemory,
+    required this.nowMemory,
+  });
+
+  int get daysApart => nowMemory.date.difference(thenMemory.date).inDays.abs();
+  int get yearsApart {
+    final years = nowMemory.date.year - thenMemory.date.year;
+    return years < 0 ? -years : years;
+  }
+}
+
+class MemoryMapSnapshot {
+  final List<MemoryPlaceCluster> places;
+  final List<MemoryThenNowPair> thenNow;
+
+  const MemoryMapSnapshot({
+    required this.places,
+    required this.thenNow,
+  });
+
+  List<MemoryPlaceCluster> get locatedPlaces =>
+      places.where((place) => place.hasCoordinates).toList(growable: false);
+
+  List<MemoryPlaceCluster> get unlocatedPlaces =>
+      places.where((place) => !place.hasCoordinates).toList(growable: false);
+
+  bool get isEmpty => places.isEmpty;
+}
+
 class PersonalSearchHit {
   final PersonalSearchKind kind;
   final String id;
@@ -271,6 +328,104 @@ extension SearchConnectionsAgendaStore on AgendaStore {
       yearHighlights: yearHighlights,
       people: recurringPeople,
       places: recurringPlaces,
+    );
+  }
+
+  MemoryMapSnapshot memoryMapSnapshot({
+    String? personId,
+    Iterable<DiaryBlockReference>? references,
+  }) {
+    final source = (references ?? memoryReferences(personId: personId))
+        .where(
+          (reference) =>
+              !reference.block.archived &&
+              (personId == null ||
+                  reference.block.personIds.contains(personId)),
+        )
+        .toList(growable: false);
+
+    final buckets = <String, List<DiaryBlockReference>>{};
+    final labels = <String, String>{};
+    final coordinates = <String, DiaryPlaceReference>{};
+
+    for (final reference in source) {
+      final seen = <String>{};
+      for (final place in reference.block.places) {
+        final key = place.normalizedName;
+        final label = place.name.trim();
+        if (key.isEmpty || label.isEmpty || !seen.add(key)) continue;
+
+        labels.putIfAbsent(key, () => label);
+        buckets.putIfAbsent(key, () => <DiaryBlockReference>[]).add(reference);
+
+        final lat = place.latitude;
+        final lon = place.longitude;
+        final validCoordinates = lat != null &&
+            lon != null &&
+            lat >= -90 &&
+            lat <= 90 &&
+            lon >= -180 &&
+            lon <= 180;
+        if (validCoordinates) {
+          coordinates.putIfAbsent(key, () => place);
+        }
+      }
+    }
+
+    final places = buckets.entries.map((entry) {
+      final memories = [...entry.value]
+        ..sort((a, b) {
+          final dateOrder = a.date.compareTo(b.date);
+          if (dateOrder != 0) return dateOrder;
+          return a.block.createdAt.compareTo(b.block.createdAt);
+        });
+      final coordinate = coordinates[entry.key];
+      return MemoryPlaceCluster(
+        key: entry.key,
+        label: labels[entry.key] ?? entry.key,
+        latitude: coordinate?.latitude,
+        longitude: coordinate?.longitude,
+        memories: List.unmodifiable(memories),
+      );
+    }).toList(growable: false)
+      ..sort((a, b) {
+        final countOrder = b.count.compareTo(a.count);
+        if (countOrder != 0) return countOrder;
+        final recentOrder = b.latestMemory.date.compareTo(a.latestMemory.date);
+        if (recentOrder != 0) return recentOrder;
+        return a.label.toLowerCase().compareTo(b.label.toLowerCase());
+      });
+
+    final thenNow = places
+        .where(
+          (place) =>
+              place.memories.length >= 2 &&
+              !AgendaStore.sameDay(
+                place.firstMemory.date,
+                place.latestMemory.date,
+              ),
+        )
+        .map(
+          (place) => MemoryThenNowPair(
+            place: place,
+            thenMemory: place.firstMemory,
+            nowMemory: place.latestMemory,
+          ),
+        )
+        .toList(growable: false)
+      ..sort((a, b) {
+        final spanOrder = b.daysApart.compareTo(a.daysApart);
+        if (spanOrder != 0) return spanOrder;
+        final countOrder = b.place.count.compareTo(a.place.count);
+        if (countOrder != 0) return countOrder;
+        return a.place.label
+            .toLowerCase()
+            .compareTo(b.place.label.toLowerCase());
+      });
+
+    return MemoryMapSnapshot(
+      places: List.unmodifiable(places),
+      thenNow: List.unmodifiable(thenNow),
     );
   }
 
