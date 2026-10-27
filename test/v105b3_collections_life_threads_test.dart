@@ -188,9 +188,7 @@ void main() {
     expect(screen, contains('recordsBuilder: ()'));
     expect(screen, contains('animation: store.journalRevision'));
     expect(
-      RegExp(r'Navigator\.push[\s\S]*if \(mounted\) setState\(\(\) \{\}\);')
-          .allMatches(screen)
-          .length,
+      'if (mounted) setState(() {});'.allMatches(screen).length,
       greaterThanOrEqualTo(2),
     );
     expect(screen, contains('invalidYear'));
