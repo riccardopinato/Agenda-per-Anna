@@ -26,6 +26,7 @@ class LocalStateStore {
 
   Database? _database;
   Future<LocalStateStore>? _opening;
+  bool _failNextBatchForTesting = false;
 
   Set<String> get corruptKeys => Set<String>.unmodifiable(_corruptKeys);
   Set<String> get recoveredKeys => Set<String>.unmodifiable(_recoveredKeys);
@@ -172,7 +173,18 @@ class LocalStateStore {
     return true;
   }
 
+  void failNextBatchForTesting() {
+    if (!localStateBackendIsTest) {
+      throw StateError('Test-only LocalStateStore failure injection.');
+    }
+    _failNextBatchForTesting = true;
+  }
+
   Future<void> writeBatch(Map<String, String?> changes) async {
+    if (_failNextBatchForTesting) {
+      _failNextBatchForTesting = false;
+      throw StateError('injected_local_batch_failure');
+    }
     final db = _requireDatabase();
     await db.transaction((txn) async {
       for (final entry in changes.entries) {
@@ -255,6 +267,7 @@ class LocalStateStore {
     _cache.clear();
     _corruptKeys.clear();
     _recoveredKeys.clear();
+    _failNextBatchForTesting = false;
     if (db != null) {
       try {
         await db.close();
