@@ -1452,28 +1452,45 @@ class _DiaryMemoryCardState extends State<DiaryMemoryCard> {
 
       // A template is a draft until the user explicitly saves the editor.
       // Static prompt bullets must not be presented as tappable checkboxes.
-      final editedText = await showDiaryNoteEditor(
+      var editedText = await showDiaryNoteEditor(
         context,
         initialText: preset.seedText.replaceAll('☐', '•'),
       );
-      if (editedText == null || editedText.trim().isEmpty || !mounted) return;
-
-      await widget.store.applyDiaryTemplate(
-        widget.date,
-        preset,
-        textOverride: editedText.trim(),
-      );
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            AnnaStrings.of(context).d3Format(
-              'templateAdded',
-              {'title': preset.title},
+      // Keep the submitted draft available after a failed local write.
+      // Reopen the editor with the user's exact text so they can retry or
+      // explicitly cancel; never silently discard a failed template save.
+      while (editedText != null && editedText.trim().isNotEmpty && mounted) {
+        try {
+          await widget.store.applyDiaryTemplate(
+            widget.date,
+            preset,
+            textOverride: editedText.trim(),
+          );
+          if (!mounted) return;
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                AnnaStrings.of(context).d3Format(
+                  'templateAdded',
+                  {'title': preset.title},
+                ),
+              ),
             ),
-          ),
-        ),
-      );
+          );
+          return;
+        } catch (_) {
+          if (!mounted) return;
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(AnnaStrings.of(context).d3('templateSaveFailed')),
+            ),
+          );
+          editedText = await showDiaryNoteEditor(
+            context,
+            initialText: editedText,
+          );
+        }
+      }
     } catch (_) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
