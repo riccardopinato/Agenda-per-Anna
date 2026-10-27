@@ -263,8 +263,7 @@ class _MemoryCollectionsScreenState extends State<MemoryCollectionsScreen> {
           store: widget.store,
           title: thread.label,
           recordsBuilder: () =>
-              widget.store.memoryLifeThreadById(thread.id)?.memories ??
-              const <DiaryBlockReference>[],
+              widget.store.memoryLifeThreadReferences(thread.id),
         ),
       ),
     );
