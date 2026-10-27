@@ -64,6 +64,7 @@ part 'src/workout_domain.dart';
 part 'src/people_domain.dart';
 part 'src/search_connections_domain.dart';
 part 'src/memory_collections_domain.dart';
+part 'src/year_review_domain.dart';
 part 'src/data_safety_domain.dart';
 part 'src/data_safety_restore.dart';
 part 'src/store_signals.dart';
