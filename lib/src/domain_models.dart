@@ -143,6 +143,7 @@ class AgendaPreferences {
   final int eveningRitualMinute;
   final PersonalizationPreset personalizationPreset;
   final Set<AppModule> enabledModules;
+  final List<MemoryCollectionDefinition> memoryCollections;
 
   const AgendaPreferences({
     this.displayName = '',
@@ -171,6 +172,7 @@ class AgendaPreferences {
     this.eveningRitualMinute = 30,
     this.personalizationPreset = PersonalizationPreset.complete,
     this.enabledModules = completeAppModules,
+    this.memoryCollections = const [],
   });
 
   AgendaPreferences copyWith({
@@ -200,6 +202,7 @@ class AgendaPreferences {
     int? eveningRitualMinute,
     PersonalizationPreset? personalizationPreset,
     Set<AppModule>? enabledModules,
+    List<MemoryCollectionDefinition>? memoryCollections,
     bool clearPrimaryReminder = false,
     bool clearSecondaryReminder = false,
     bool clearPin = false,
@@ -244,6 +247,7 @@ class AgendaPreferences {
       personalizationPreset:
           personalizationPreset ?? this.personalizationPreset,
       enabledModules: enabledModules ?? this.enabledModules,
+      memoryCollections: memoryCollections ?? this.memoryCollections,
     );
   }
 
@@ -312,6 +316,9 @@ class AgendaPreferences {
           for (final module in AppModule.values)
             if (enabledModules.contains(module)) module.name,
         ],
+        'memoryCollections': memoryCollections
+            .map((collection) => collection.toJson())
+            .toList(growable: false),
       };
 
   factory AgendaPreferences.fromJson(Map<String, dynamic> json) =>
@@ -370,6 +377,21 @@ class AgendaPreferences {
           orElse: () => PersonalizationPreset.complete,
         ),
         enabledModules: _appModulesFromJson(json['enabledModules']),
+        memoryCollections: (json['memoryCollections'] as List? ?? const [])
+            .whereType<Map>()
+            .map(
+              (value) => MemoryCollectionDefinition.fromJson(
+                Map<String, dynamic>.from(value),
+              ),
+            )
+            .where(
+              (collection) =>
+                  collection.id.isNotEmpty &&
+                  collection.name.isNotEmpty &&
+                  collection.hasFilter,
+            )
+            .take(24)
+            .toList(growable: false),
       );
 }
 

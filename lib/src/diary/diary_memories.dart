@@ -1094,6 +1094,30 @@ class _DiaryMemoriesScreenState extends State<DiaryMemoriesScreen> {
                             onTap: _showThenNow,
                           ),
                         ),
+                        const Divider(height: 1),
+                        Semantics(
+                          identifier: 'memories-collections-entry',
+                          button: true,
+                          child: ListTile(
+                            leading:
+                                const Icon(Icons.collections_bookmark_outlined),
+                            title: Text(
+                              '${strings.v105Collections} · ${strings.v105LifeThreads}',
+                              style:
+                                  const TextStyle(fontWeight: FontWeight.w800),
+                            ),
+                            subtitle: Text(strings.v105CollectionsIntro),
+                            trailing: const Icon(Icons.chevron_right),
+                            onTap: () => Navigator.push(
+                              context,
+                              MaterialPageRoute<void>(
+                                builder: (_) => MemoryCollectionsScreen(
+                                  store: widget.store,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
                       ],
                     ),
                   ),

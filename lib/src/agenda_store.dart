@@ -3574,6 +3574,9 @@ class AgendaStore extends ChangeNotifier {
               payload['defaultPrimaryReminder'] == null,
           clearSecondaryReminder:
               payload['defaultSecondaryReminder'] == null,
+          memoryCollections: payload.containsKey('memoryCollections')
+              ? AgendaPreferences.fromJson(payload).memoryCollections
+              : preferences.memoryCollections,
         );
         _notifyShellChanged();
         return true;

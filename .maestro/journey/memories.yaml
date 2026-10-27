@@ -66,3 +66,20 @@ appId: com.riccardopinato.agenda_per_anna
       id: 'memories-then-now-surface'
     timeout: 15000
 - back
+- extendedWaitUntil:
+    visible:
+      id: 'memories-for-you-surface'
+    timeout: 15000
+- scrollUntilVisible:
+    element:
+      id: 'memories-collections-entry'
+    direction: DOWN
+    timeout: 15000
+    visibilityPercentage: 20
+- tapOn:
+    id: 'memories-collections-entry'
+- extendedWaitUntil:
+    visible:
+      id: 'memory-collections-surface'
+    timeout: 15000
+- back
