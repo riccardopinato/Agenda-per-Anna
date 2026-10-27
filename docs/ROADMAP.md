@@ -88,7 +88,7 @@ Source of execution truth for Anna's Diary. Product identity and boundaries are 
 | v1.05-B1 | Memory Map + Then & Now | Completed — PR #128 merged after 4/4 exact-head gates | Derived map over existing DiaryPlaceReference plus deterministic temporal comparisons |
 | v1.05-B2 | Year in Review 2.0 | Completed — PR #129 merged after 4/4 exact-head gates | Rebuild the existing YearScreen over modern DiaryBlock/life projections; no duplicate Year product |
 | v1.05-B3 | Collections / Life Threads | Completed — PR #130 merged after 4/4 exact-head gates | Saved views and derived life stories over people/place/tag/time/type without copying canonical data |
-| v1.05-B4 | Polish & QA | IN PROGRESS — integration PR #131 | Bounded UX/performance/accessibility/localization and trusted-runtime closure for v1.05 |
+| v1.05-B4 | Polish & QA | IN PROGRESS — integration PR #132 | Bounded UX/performance/accessibility/localization and trusted-runtime closure for v1.05 |
 | v1.06 | Ecosystem Expansion | PLANNED | Add specialist integrations one at a time under Shared Ecosystem Core + paired verification; preferred order TrailPath → Notes → SleepMax → CashMate |
 
 ## Current execution order — App Factory v26.6 / Factory Mode v22
@@ -108,7 +108,7 @@ Current sequence:
 2. keep v1.04 and v1.05-A0/A1/A2/A3/A4/A5/B0/B1 closed;
 3. keep v1.05-B2 Year in Review 2.0 and v1.05-B3 Collections / Life Threads closed after their exact-head merges;
 4. keep physical-device performance evidence fail-closed until measured on an exact artifact;
-5. close v1.05 only through v1.05-B4 integration PR #131 after fresh exact-head review and all required gates;
+5. close v1.05 only through v1.05-B4 integration PR #132 after fresh exact-head review and all required gates;
 6. do not begin v1.06 until v1.05-B4 is merged and v1.05 closure evidence is recorded;
 7. after that boundary, the planned ecosystem order remains TrailPath → Notes → SleepMax → CashMate.
 
