@@ -89,6 +89,7 @@ Source of execution truth for Anna's Diary. Product identity and boundaries are 
 | v1.05-B2 | Year in Review 2.0 | Completed — PR #129 merged after 4/4 exact-head gates | Rebuild the existing YearScreen over modern DiaryBlock/life projections; no duplicate Year product |
 | v1.05-B3 | Collections / Life Threads | Completed — PR #130 merged after 4/4 exact-head gates | Saved views and derived life stories over people/place/tag/time/type without copying canonical data |
 | v1.05-B4 | Polish & QA | **Completed — integration PR #132 merged; 4/4 exact-head gates and Codex PASS** | Bounded UX/performance/accessibility/localization and trusted-runtime closure for v1.05 |
+| v1.05.x | Post-release audit remediation | IN PROGRESS — PR #134; exact-head certification pending | Fix P1/P2 template editing, journal conflict/persistence safety, canonical tags, live collections, Life Threads performance; keep physical/store verification fail-closed |
 | v1.06 | Ecosystem Expansion | PLANNED | Add specialist integrations one at a time under Shared Ecosystem Core + paired verification; preferred order TrailPath → Notes → SleepMax → CashMate |
 
 ## Current execution order — App Factory v26.6 / Factory Mode v22
