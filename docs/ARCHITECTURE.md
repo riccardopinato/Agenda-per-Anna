@@ -782,8 +782,7 @@ Memory store.
 - Archived blocks remain excluded by the existing recall boundary.
 - For You and Timeline are presentation modes over canonical diary data.
 - Search, type filters and Day / Month / Year browsing remain derived views.
-- Memory Map, Then & Now, Year in Review 2.0, Collections and Life Threads are
-  explicitly deferred to later v1.05 steps.
+- Memory Map, Then & Now, Year in Review 2.0, Collections and Life Threads now extend these canonical projections in v1.05-B1/B2/B3; no parallel persistence or alternate sync owner is introduced.
 
 
 ### v1.05 Memories & Recall 3.0
