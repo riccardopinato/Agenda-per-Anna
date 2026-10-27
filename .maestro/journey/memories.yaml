@@ -36,3 +36,33 @@ appId: com.riccardopinato.agenda_per_anna
     visible:
       id: 'memories-for-you-surface'
     timeout: 15000
+- scrollUntilVisible:
+    element:
+      id: 'memories-memory-map-entry'
+    direction: DOWN
+    timeout: 15000
+    visibilityPercentage: 20
+- tapOn:
+    id: 'memories-memory-map-entry'
+- extendedWaitUntil:
+    visible:
+      id: 'memory-map-surface'
+    timeout: 15000
+- back
+- extendedWaitUntil:
+    visible:
+      id: 'memories-for-you-surface'
+    timeout: 15000
+- scrollUntilVisible:
+    element:
+      id: 'memories-then-now-entry'
+    direction: DOWN
+    timeout: 15000
+    visibilityPercentage: 20
+- tapOn:
+    id: 'memories-then-now-entry'
+- extendedWaitUntil:
+    visible:
+      id: 'memories-then-now-surface'
+    timeout: 15000
+- back
