@@ -48,6 +48,12 @@ class _MemoryCollectionsScreenState extends State<MemoryCollectionsScreen> {
 
   Future<void> _createCollection() async {
     final strings = AnnaStrings.of(context);
+    if (widget.store.preferences.memoryCollections.length >= 24) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('${strings.v105Collections}: 24/24')),
+      );
+      return;
+    }
     final name = TextEditingController();
     final tag = TextEditingController();
     final year = TextEditingController();
