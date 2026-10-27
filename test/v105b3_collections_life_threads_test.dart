@@ -178,9 +178,27 @@ void main() {
     const hiddenId = 'tag:thread-00';
     expect(overview.any((thread) => thread.id == hiddenId), isFalse);
 
-    final hidden = store.memoryLifeThreadById(hiddenId);
-    expect(hidden, isNotNull);
-    expect(hidden!.memories, hasLength(2));
+    final hidden = store.memoryLifeThreadReferences(hiddenId);
+    expect(hidden, hasLength(2));
+
+    final firstDay = DateTime(2026, 1, 1);
+    await store.saveJournal(
+      firstDay,
+      DayJournal(
+        blocks: [
+          DiaryBlock(
+            id: 'memory-0-0',
+            type: DiaryBlockType.note,
+            createdAt: firstDay.add(const Duration(hours: 12)),
+            tags: const [],
+          ),
+        ],
+      ),
+    );
+
+    final singleton = store.memoryLifeThreadReferences(hiddenId);
+    expect(singleton, hasLength(1));
+    expect(singleton.single.block.id, 'memory-0-1');
 
     store.dispose();
   });
