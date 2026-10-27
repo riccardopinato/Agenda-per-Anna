@@ -5459,6 +5459,7 @@ class AgendaStore extends ChangeNotifier {
 
   @override
   void dispose() {
+    _mediaMaintenanceTimer?.cancel();
     _cloudSyncTimer?.cancel();
     _syncDebounceTimer?.cancel();
     _unifiedRealtimeDebounce?.cancel();
