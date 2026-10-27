@@ -32,8 +32,8 @@ void main() {
           DiaryBlock(
             id: 'jan-note',
             type: DiaryBlockType.note,
-            createdAt: DateTime(2026, 1, 10, 12),
-            text: 'January memory',
+            createdAt: DateTime(2027, 1, 5, 12),
+            text: 'January memory entered later',
             places: const [DiaryPlaceReference(name: 'Padova')],
           ),
         ],
@@ -72,6 +72,7 @@ void main() {
     final review = store.yearReviewSnapshot(2026);
 
     expect(review.memoryCount, 2);
+    expect(review.lifeCount, 2);
     expect(review.activeMonths, 2);
     expect(review.months, hasLength(12));
     expect(review.months[0].memoryCount, 1);
