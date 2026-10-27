@@ -83,6 +83,36 @@ void main() {
     reloaded.dispose();
   });
 
+  test('concurrent writes do not lose the successful sync operation',
+      () async {
+    final store = AgendaStore();
+    await store.load();
+    final firstDay = DateTime(2026, 10, 25);
+    final secondDay = DateTime(2026, 10, 26);
+
+    LocalStateStore.instance.failNextBatchForTesting();
+    final failed = store.saveJournal(
+      firstDay,
+      const DayJournal(note: 'Must roll back'),
+    );
+    final successful = store.saveJournal(
+      secondDay,
+      const DayJournal(note: 'Must persist'),
+    );
+
+    await expectLater(failed, throwsStateError);
+    await successful;
+    expect(store.journal(firstDay).note, isEmpty);
+    expect(store.journal(secondDay).note, 'Must persist');
+    store.dispose();
+
+    final reloaded = AgendaStore();
+    await reloaded.load();
+    expect(reloaded.journal(firstDay).note, isEmpty);
+    expect(reloaded.journal(secondDay).note, 'Must persist');
+    reloaded.dispose();
+  });
+
   test('nonconflicting journal fields are merged with fresh remote data', () {
     const baseline = DayJournal(
       beautiful: 'Before',
