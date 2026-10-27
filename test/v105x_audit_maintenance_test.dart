@@ -62,6 +62,46 @@ void main() {
     store.dispose();
   });
 
+  testWidgets('failed template save reopens the editor with the edited draft',
+      (tester) async {
+    final store = AgendaStore();
+    await tester.runAsync(() => initializeDateFormatting('en'));
+    await tester.runAsync(store.load);
+    final day = DateTime(2026, 10, 27);
+    await tester.pumpWidget(
+      MaterialApp(
+        locale: const Locale('en'),
+        home: Scaffold(
+          body: SingleChildScrollView(
+            child: DiaryMemoryCard(store: store, date: day),
+          ),
+        ),
+      ),
+    );
+
+    await tester.tap(find.text('Templates'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Morning').last);
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byType(TextField), 'My irreplaceable draft');
+
+    LocalStateStore.instance.failNextBatchForTesting();
+    await tester.tap(find.text('Save').last);
+    await tester.pumpAndSettle();
+
+    expect(store.journal(day).blocks, isEmpty);
+    expect(find.byType(TextField), findsOneWidget);
+    expect(find.text('My irreplaceable draft'), findsOneWidget);
+
+    await tester.tap(find.text('Save').last);
+    await tester.pumpAndSettle();
+    expect(store.journal(day).blocks, hasLength(1));
+    expect(store.journal(day).blocks.single.text, 'My irreplaceable draft');
+
+    await tester.pumpWidget(const SizedBox.shrink());
+    store.dispose();
+  });
+
   test('failed local journal batch rolls back RAM and the next save succeeds',
       () async {
     final store = AgendaStore();
