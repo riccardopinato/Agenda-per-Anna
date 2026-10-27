@@ -14,7 +14,8 @@ void main() {
 
     expect(search, contains('if (forYou.length >= 8'));
     expect(search, contains('MemoryMapSnapshot memoryMapSnapshot('));
-    expect(collections, contains('return List.unmodifiable(threads.take(24))'));
+    expect(collections, contains('_memoryLifeThreads(limit: 24)'));
+    expect(collections, contains('memoryLifeThreadReferences(String id)'));
     expect(collections, contains('memoryReferences()'));
     expect(year, contains('memoryReferences()'));
     expect(year, contains('lifeArchiveEntries('));
