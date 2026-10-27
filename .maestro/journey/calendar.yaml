@@ -23,3 +23,11 @@ appId: com.riccardopinato.agenda_per_anna
     id: 'calendar-open-month-notebook'
 - assertVisible:
     id: 'calendar-open-year-overview'
+
+- tapOn:
+    id: 'calendar-open-year-overview'
+- extendedWaitUntil:
+    visible:
+      id: 'year-review-surface'
+    timeout: 15000
+- back
