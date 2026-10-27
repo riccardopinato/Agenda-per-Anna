@@ -12,7 +12,189 @@
     "primary": ".maestro/applab-smoke.yaml",
     "critical": [
       ".maestro/journey/d6-functional-navigation.yaml"
-    ]
+    ],
+    "catalog": {
+      "core-shell": {
+        "flow": ".maestro/journeys/core-shell.yaml",
+        "paths": [
+          "lib/main.dart",
+          "lib/src/app_shell.dart",
+          "lib/src/screens/home_inbox_search.dart"
+        ],
+        "labs": [
+          "configuration"
+        ],
+        "surfaces": [
+          "shell",
+          "today",
+          "navigation"
+        ],
+        "capabilities": [
+          "startup",
+          "navigation"
+        ],
+        "risk_class": "core",
+        "always_fast": true
+      },
+      "onboarding": {
+        "flow": ".maestro/journeys/onboarding.yaml",
+        "paths": [
+          "lib/src/app_shell.dart"
+        ],
+        "labs": [
+          "configuration"
+        ],
+        "surfaces": [
+          "onboarding"
+        ],
+        "capabilities": [
+          "first_run",
+          "preferences"
+        ],
+        "risk_class": "normal",
+        "always_fast": false
+      },
+      "navigation-critical": {
+        "flow": ".maestro/journeys/navigation-critical.yaml",
+        "paths": [
+          "lib/src/screens/home_inbox_search.dart",
+          "lib/src/planner_views.dart",
+          "lib/src/screens/more_screen.dart",
+          "lib/src/screens/explore_screen.dart"
+        ],
+        "labs": [],
+        "surfaces": [
+          "navigation",
+          "calendar",
+          "memories",
+          "more"
+        ],
+        "capabilities": [
+          "navigation"
+        ],
+        "risk_class": "normal",
+        "always_fast": false
+      },
+      "memories-critical": {
+        "flow": ".maestro/journeys/memories-critical.yaml",
+        "paths": [
+          "lib/src/diary/**",
+          "lib/src/life_archive_domain.dart",
+          "lib/src/screens/people_screen.dart"
+        ],
+        "labs": [],
+        "surfaces": [
+          "memories"
+        ],
+        "capabilities": [
+          "memory_recall",
+          "diary"
+        ],
+        "risk_class": "normal",
+        "always_fast": false
+      },
+      "settings-critical": {
+        "flow": ".maestro/journeys/settings-critical.yaml",
+        "paths": [
+          "lib/src/screens/more_screen.dart",
+          "lib/src/screens/settings_hub.dart",
+          "lib/src/screens/privacy_center.dart"
+        ],
+        "labs": [
+          "configuration"
+        ],
+        "surfaces": [
+          "settings",
+          "privacy"
+        ],
+        "capabilities": [
+          "settings",
+          "configuration"
+        ],
+        "risk_class": "normal",
+        "always_fast": false
+      },
+      "vault-create": {
+        "flow": ".maestro/journeys/vault-create.yaml",
+        "paths": [
+          "lib/vault_service.dart",
+          "lib/src/security/**",
+          "lib/src/screens/private_vault.dart"
+        ],
+        "labs": [
+          "storage"
+        ],
+        "surfaces": [
+          "vault"
+        ],
+        "capabilities": [
+          "crypto",
+          "secure_storage",
+          "vault_setup"
+        ],
+        "risk_class": "deep",
+        "always_fast": false
+      },
+      "vault-wrong-password": {
+        "flow": ".maestro/journeys/vault-wrong-password.yaml",
+        "paths": [
+          "lib/vault_service.dart",
+          "lib/src/security/**",
+          "lib/src/screens/private_vault.dart"
+        ],
+        "labs": [],
+        "surfaces": [
+          "vault"
+        ],
+        "capabilities": [
+          "crypto",
+          "vault_unlock"
+        ],
+        "risk_class": "deep",
+        "always_fast": false
+      },
+      "vault-correct-unlock": {
+        "flow": ".maestro/journeys/vault-correct-unlock.yaml",
+        "paths": [
+          "lib/vault_service.dart",
+          "lib/src/security/**",
+          "lib/src/screens/private_vault.dart"
+        ],
+        "labs": [],
+        "surfaces": [
+          "vault"
+        ],
+        "capabilities": [
+          "crypto",
+          "vault_unlock"
+        ],
+        "risk_class": "deep",
+        "always_fast": false
+      },
+      "vault-restart-unlock": {
+        "flow": ".maestro/journeys/vault-restart-unlock.yaml",
+        "paths": [
+          "lib/vault_service.dart",
+          "lib/src/security/**",
+          "lib/src/screens/private_vault.dart",
+          "lib/src/storage/**"
+        ],
+        "labs": [
+          "persistence",
+          "storage"
+        ],
+        "surfaces": [
+          "vault"
+        ],
+        "capabilities": [
+          "crypto",
+          "secure_storage",
+          "persistence"
+        ],
+        "risk_class": "deep",
+        "always_fast": false
+      }
+    }
   },
   "physical_validation": {
     "required": true,
