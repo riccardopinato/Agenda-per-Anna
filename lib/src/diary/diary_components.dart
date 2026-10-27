@@ -1393,6 +1393,7 @@ class DiaryMemoryCard extends StatefulWidget {
 class _DiaryMemoryCardState extends State<DiaryMemoryCard> {
   bool photoBusy = false;
   bool voiceBusy = false;
+  bool templateBusy = false;
 
   List<DiaryBlock> get _blocks {
     final result = widget.store
@@ -1416,27 +1417,46 @@ class _DiaryMemoryCardState extends State<DiaryMemoryCard> {
   }
 
   Future<void> _applyTemplate() async {
-    final preset = await showDiaryTemplatePicker(context);
-    if (preset == null || !mounted) return;
-    final block = await widget.store.applyDiaryTemplate(
-      widget.date,
-      preset,
-    );
-    if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          AnnaStrings.of(context).d3Format(
-            'templateAdded',
-            {'title': preset.title},
+    if (templateBusy) return;
+    setState(() => templateBusy = true);
+    try {
+      final preset = await showDiaryTemplatePicker(context);
+      if (preset == null || !mounted) return;
+
+      // A template is a draft until the user explicitly saves the editor.
+      // Static prompt bullets must not be presented as tappable checkboxes.
+      final editedText = await showDiaryNoteEditor(
+        context,
+        initialText: preset.seedText.replaceAll('☐', '•'),
+      );
+      if (editedText == null || editedText.trim().isEmpty || !mounted) return;
+
+      await widget.store.applyDiaryTemplate(
+        widget.date,
+        preset,
+        textOverride: editedText.trim(),
+      );
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            AnnaStrings.of(context).d3Format(
+              'templateAdded',
+              {'title': preset.title},
+            ),
           ),
         ),
-        action: SnackBarAction(
-          label: AnnaStrings.of(context).d3('edit'),
-          onPressed: () => _addNote(block),
+      );
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(AnnaStrings.of(context).d3('templateSaveFailed')),
         ),
-      ),
-    );
+      );
+    } finally {
+      if (mounted) setState(() => templateBusy = false);
+    }
   }
 
   Future<void> _addNote([DiaryBlock? existing]) async {
