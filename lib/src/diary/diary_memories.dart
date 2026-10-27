@@ -950,7 +950,7 @@ class _DiaryMemoriesScreenState extends State<DiaryMemoriesScreen> {
                                   title:
                                       Text(strings.d3('thenNowThen')),
                                   subtitle: Text(
-                                    '${DateFormat('d MMM yyyy', AnnaStrings.intlLocale(sheetContext)).format(pair.thenMemory.date)} · ${widget.store.diaryBlockDisplayTitle(pair.thenMemory.block, strings: strings)}',
+                                    "${DateFormat('d MMM yyyy', AnnaStrings.intlLocale(sheetContext)).format(pair.thenMemory.date)} · ${widget.store.diaryBlockDisplayTitle(pair.thenMemory.block, strings: strings)}",
                                     maxLines: 2,
                                     overflow: TextOverflow.ellipsis,
                                   ),
@@ -970,7 +970,7 @@ class _DiaryMemoriesScreenState extends State<DiaryMemoriesScreen> {
                                       const Icon(Icons.today_outlined),
                                   title: Text(strings.d3('thenNowNow')),
                                   subtitle: Text(
-                                    '${DateFormat('d MMM yyyy', AnnaStrings.intlLocale(sheetContext)).format(pair.nowMemory.date)} · ${widget.store.diaryBlockDisplayTitle(pair.nowMemory.block, strings: strings)}',
+                                    "${DateFormat('d MMM yyyy', AnnaStrings.intlLocale(sheetContext)).format(pair.nowMemory.date)} · ${widget.store.diaryBlockDisplayTitle(pair.nowMemory.block, strings: strings)}",
                                     maxLines: 2,
                                     overflow: TextOverflow.ellipsis,
                                   ),
