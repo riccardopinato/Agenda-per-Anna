@@ -3073,66 +3073,218 @@ class _YearScreenState extends State<YearScreen> {
     year = widget.initialYear ?? DateTime.now().year;
   }
 
+  Future<void> _openMemory(DiaryBlockReference reference) async {
+    await Navigator.push(
+      context,
+      MaterialPageRoute<void>(
+        builder: (_) => PlannerScreen(
+          store: widget.store,
+          initialDate: reference.date,
+        ),
+      ),
+    );
+  }
+
+  Future<void> _openMonth(int month) async {
+    await Navigator.push(
+      context,
+      MaterialPageRoute<void>(
+        builder: (_) => MonthScreen(
+          store: widget.store,
+          initialMonth: DateTime(year, month),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return AnimatedBuilder(
-      animation: Listenable.merge([widget.store.journalRevision, widget.store.planningRevision]),
+      animation: Listenable.merge([
+        widget.store.journalRevision,
+        widget.store.planningRevision,
+        widget.store.agendaRevision,
+        widget.store.workoutRevision,
+      ]),
       builder: (context, _) {
-        int expenses = 0;
-        int goals = 0;
-        int memories = 0;
-        for (int m = 1; m <= 12; m++) {
-          final data = widget.store.month(year, m);
-          expenses += data.expenses.fold<int>(0, (a, b) => a + b.cents);
-          goals += data.goals.length;
-        }
-        memories = widget.store.journals.entries.where((e) {
-          final d = DateTime.tryParse(e.key);
-          return d?.year == year && e.value.beautiful.trim().isNotEmpty;
-        }).length;
+        final strings = AnnaStrings.of(context);
+        final review = widget.store.yearReviewSnapshot(
+          year,
+          strings: strings,
+        );
 
         return Scaffold(
-          appBar: AppBar(title: Text(AnnaStrings.of(context).d3('myYear'), style: const TextStyle(fontWeight: FontWeight.w800))),
-          body: ListView(
-            padding: const EdgeInsets.all(18),
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  IconButton(onPressed: () => setState(() => year--), icon: const Icon(Icons.chevron_left)),
-                  Text('$year', style: Theme.of(context).textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.w900)),
-                  IconButton(onPressed: () => setState(() => year++), icon: const Icon(Icons.chevron_right)),
-                ],
+          appBar: AppBar(
+            title: Text(
+              strings.v105YearReview,
+              style: const TextStyle(fontWeight: FontWeight.w800),
+            ),
+          ),
+          body: Semantics(
+            identifier: 'year-review-surface',
+            container: true,
+            child: ListView(
+              key: const ValueKey<String>('year-review-surface'),
+              padding: const EdgeInsets.fromLTRB(18, 8, 18, 28),
+              children: [
+              Semantics(
+                identifier: 'year-review-year-selector',
+                container: true,
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    IconButton(
+                      key: const ValueKey<String>('year-review-prev'),
+                      onPressed: () => setState(() => year--),
+                      icon: const Icon(Icons.chevron_left),
+                    ),
+                    Text(
+                      '$year',
+                      style: Theme.of(context)
+                          .textTheme
+                          .headlineMedium
+                          ?.copyWith(fontWeight: FontWeight.w900),
+                    ),
+                    IconButton(
+                      key: const ValueKey<String>('year-review-next'),
+                      onPressed: () => setState(() => year++),
+                      icon: const Icon(Icons.chevron_right),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                strings.v105YearReviewSubtitle,
+                textAlign: TextAlign.center,
+                style: Theme.of(context).textTheme.bodyMedium,
               ),
               const SizedBox(height: 20),
-              StatCard(icon: Icons.flag_outlined, title: AnnaStrings.of(context).d3('goalsEntered'), value: '$goals'),
-              const SizedBox(height: 10),
-              StatCard(icon: Icons.favorite_outline, title: AnnaStrings.of(context).d3('plannerMemoryDays'), value: '$memories'),
-              const SizedBox(height: 10),
-              StatCard(
-                icon: Icons.account_balance_wallet_outlined,
-                title: AnnaStrings.of(context).d3('plannerExpensesRecorded'),
-                value: money(context, expenses),
+              Wrap(
+                spacing: 10,
+                runSpacing: 10,
+                children: [
+                  SizedBox(
+                    width: 170,
+                    child: StatCard(
+                      icon: Icons.favorite_outline,
+                      title: strings.memories,
+                      value: review.memoryCount.toString(),
+                    ),
+                  ),
+                  SizedBox(
+                    width: 170,
+                    child: StatCard(
+                      icon: Icons.auto_awesome_outlined,
+                      title: strings.v105LifeMoments,
+                      value: review.lifeCount.toString(),
+                    ),
+                  ),
+                  SizedBox(
+                    width: 170,
+                    child: StatCard(
+                      icon: Icons.sports_outlined,
+                      title: strings.workout,
+                      value: review.workoutCount.toString(),
+                    ),
+                  ),
+                  SizedBox(
+                    width: 170,
+                    child: StatCard(
+                      icon: Icons.calendar_view_month_outlined,
+                      title: strings.v105ActiveMonths,
+                      value: '${review.activeMonths}/12',
+                    ),
+                  ),
+                ],
               ),
-
-              const SizedBox(height: 22),
-              SectionTitle(AnnaStrings.of(context).d3('plannerTwelveMonths')),
+              if (review.highlights.isNotEmpty) ...[
+                const SizedBox(height: 26),
+                SectionTitle(strings.v105Highlights),
+                const SizedBox(height: 10),
+                Card(
+                  clipBehavior: Clip.antiAlias,
+                  child: Column(
+                    children: [
+                      for (var i = 0; i < review.highlights.length; i++) ...[
+                        ListTile(
+                          key: ValueKey<String>(
+                            'year-review-highlight-${review.highlights[i].block.id}',
+                          ),
+                          leading: const Icon(Icons.auto_awesome_outlined),
+                          title: Text(
+                            widget.store.diaryBlockDisplayTitle(
+                              review.highlights[i].block,
+                              strings: strings,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          subtitle: Text(
+                            DateFormat(
+                              'd MMMM yyyy',
+                              AnnaStrings.intlLocale(context),
+                            ).format(review.highlights[i].date),
+                          ),
+                          trailing: const Icon(Icons.chevron_right),
+                          onTap: () => _openMemory(review.highlights[i]),
+                        ),
+                        if (i != review.highlights.length - 1)
+                          const Divider(height: 1),
+                      ],
+                    ],
+                  ),
+                ),
+              ],
+              if (review.people.isNotEmpty) ...[
+                const SizedBox(height: 24),
+                SectionTitle(strings.v105RecurringPeople),
+                const SizedBox(height: 10),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: [
+                    for (final person in review.people)
+                      Chip(
+                        avatar: const Icon(Icons.person_outline, size: 18),
+                        label: Text(
+                          '${person.label} · ${person.count}',
+                        ),
+                      ),
+                  ],
+                ),
+              ],
+              if (review.places.isNotEmpty) ...[
+                const SizedBox(height: 24),
+                SectionTitle(strings.v105RecurringPlaces),
+                const SizedBox(height: 10),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: [
+                    for (final place in review.places)
+                      Chip(
+                        avatar: const Icon(Icons.place_outlined, size: 18),
+                        label: Text(
+                          '${place.label} · ${place.count}',
+                        ),
+                      ),
+                  ],
+                ),
+              ],
+              const SizedBox(height: 26),
+              SectionTitle(strings.d3('plannerTwelveMonths')),
               const SizedBox(height: 10),
-              for (int month = 1; month <= 12; month++) ...[
-                YearMonthSnapshot(
+              for (final month in review.months) ...[
+                _YearReviewMonthCard(
                   year: year,
-                  month: month,
-                  data: widget.store.month(year, month),
-                  memoryCount: widget.store.journals.entries.where((entry) {
-                    final date = DateTime.tryParse(entry.key);
-                    return date?.year == year &&
-                        date?.month == month &&
-                        entry.value.beautiful.trim().isNotEmpty;
-                  }).length,
+                  snapshot: month,
+                  onOpen: () => _openMonth(month.month),
                 ),
                 const SizedBox(height: 9),
               ],
-            ],
+              ],
+            ),
           ),
         );
       },
@@ -3140,71 +3292,81 @@ class _YearScreenState extends State<YearScreen> {
   }
 }
 
-class YearMonthSnapshot extends StatelessWidget {
+class _YearReviewMonthCard extends StatelessWidget {
   final int year;
-  final int month;
-  final MonthlyData data;
-  final int memoryCount;
+  final YearReviewMonthSnapshot snapshot;
+  final VoidCallback onOpen;
 
-  const YearMonthSnapshot({
-    super.key,
+  const _YearReviewMonthCard({
     required this.year,
-    required this.month,
-    required this.data,
-    required this.memoryCount,
+    required this.snapshot,
+    required this.onOpen,
   });
 
   @override
   Widget build(BuildContext context) {
-    final spent = data.expenses.fold<int>(0, (sum, item) => sum + item.cents);
-    final hasStory = data.bestMoment.trim().isNotEmpty ||
-        data.reflection.trim().isNotEmpty ||
-        memoryCount > 0 ||
-        data.goals.isNotEmpty ||
-        spent > 0;
+    final strings = AnnaStrings.of(context);
+    final scheme = Theme.of(context).colorScheme;
+    final monthLabel = _cap(
+      DateFormat(
+        'MMMM',
+        AnnaStrings.intlLocale(context),
+      ).format(DateTime(year, snapshot.month)),
+    );
 
-    return Container(
-      padding: const EdgeInsets.all(15),
-      decoration: BoxDecoration(
-        color: hasStory
-            ? Theme.of(context).colorScheme.primaryContainer.withValues(alpha: 0.28)
-            : Theme.of(context).colorScheme.surface,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: Theme.of(context).colorScheme.outlineVariant),
-      ),
-      child: Row(
-        children: [
-          SizedBox(
-            width: 74,
-            child: Text(
-              _cap(DateFormat('MMM', AnnaStrings.intlLocale(context)).format(DateTime(year, month))),
-              style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 16),
+    return Semantics(
+      identifier: 'year-review-month-${snapshot.month}',
+      button: true,
+      label:
+          '$monthLabel, ${strings.v105MemoriesCount(snapshot.memoryCount)}, '
+          '${strings.v105LifeCount(snapshot.lifeCount)}',
+      child: Card(
+        color: snapshot.hasStory
+            ? scheme.primaryContainer.withValues(alpha: 0.24)
+            : scheme.surface,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(20),
+          onTap: onOpen,
+          child: Padding(
+            padding: const EdgeInsets.all(15),
+            child: Row(
+              children: [
+                SizedBox(
+                  width: 94,
+                  child: Text(
+                    monthLabel,
+                    style: const TextStyle(
+                      fontWeight: FontWeight.w900,
+                      fontSize: 16,
+                    ),
+                  ),
+                ),
+                Expanded(
+                  child: snapshot.hasStory
+                      ? Text(
+                          [
+                            strings.v105MemoriesCount(snapshot.memoryCount),
+                            strings.v105LifeCount(snapshot.lifeCount),
+                            if (snapshot.workoutCount > 0)
+                              '${snapshot.workoutCount} · ${strings.workout}',
+                          ].join('  •  '),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: Theme.of(context).textTheme.bodySmall,
+                        )
+                      : Text(
+                          strings.d3PlannerNotWrittenYet,
+                          style: TextStyle(color: scheme.onSurfaceVariant),
+                        ),
+                ),
+                Tooltip(
+                  message: strings.v105OpenMonth,
+                  child: const Icon(Icons.chevron_right),
+                ),
+              ],
             ),
           ),
-          Expanded(
-            child: hasStory
-                ? Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      if (data.bestMoment.trim().isNotEmpty)
-                        Text(
-                          '♡ ${data.bestMoment}',
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(fontWeight: FontWeight.w700),
-                        ),
-                      Text(
-                        '${AnnaStrings.of(context).plannerGoalsCount(data.goals.length)} · ${AnnaStrings.of(context).plannerMemoriesCount(memoryCount)} · ${money(context, spent)}',
-                        style: Theme.of(context).textTheme.bodySmall,
-                      ),
-                    ],
-                  )
-                : Text(
-                    AnnaStrings.of(context).d3PlannerNotWrittenYet,
-                    style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant),
-                  ),
-          ),
-        ],
+        ),
       ),
     );
   }
