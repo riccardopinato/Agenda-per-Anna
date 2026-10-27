@@ -1,0 +1,47 @@
+appId: com.riccardopinato.agenda_per_anna
+---
+- launchApp
+- runFlow:
+    when:
+      visible: '(Usa su questo dispositivo|Use on this device|Usar en este dispositivo|Utiliser sur cet appareil|Usar neste dispositivo)'
+    commands:
+      - tapOn:
+          text: '(Usa su questo dispositivo|Use on this device|Usar en este dispositivo|Utiliser sur cet appareil|Usar neste dispositivo)'
+      - extendedWaitUntil:
+          visible: '(La tua agenda, davvero tua\.|Your agenda, truly yours\.|Tu agenda, de verdad tuya\.|Ton agenda, vraiment à toi\.|A tua agenda, verdadeiramente tua\.)'
+          timeout: 15000
+      - tapOn:
+          id: 'onboarding_preset_complete'
+      - tapOn:
+          id: 'onboarding_continue'
+      - extendedWaitUntil:
+          visible: '(Inizia con qualcosa di utile\.|Start with something useful\.|Empieza con algo útil\.|Commence par quelque chose d’utile\.|Começa com algo útil\.)'
+          timeout: 10000
+      - tapOn:
+          id: 'onboarding_open_agenda'
+- tapOn:
+    id: 'main-nav-calendar'
+    retryTapIfNoChange: true
+- extendedWaitUntil:
+    visible:
+      id: 'calendar-open-month-notebook'
+    timeout: 10000
+- tapOn:
+    id: 'main-nav-memories'
+    retryTapIfNoChange: true
+- extendedWaitUntil:
+    visible: '(I miei ricordi|My memories|Mis recuerdos|Mes souvenirs|As minhas memórias)'
+    timeout: 15000
+- tapOn:
+    id: 'main-nav-more'
+    retryTapIfNoChange: true
+- extendedWaitUntil:
+    visible:
+      id: 'more-search'
+    timeout: 10000
+- tapOn:
+    id: 'main-nav-today'
+    retryTapIfNoChange: true
+- extendedWaitUntil:
+    visible: '(La mia giornata|My day|Mi día|Ma journée|O meu dia)[\s\S]*'
+    timeout: 15000
