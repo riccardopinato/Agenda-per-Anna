@@ -54,11 +54,21 @@ extension AgendaStoreYearReview on AgendaStore {
         .where((reference) => reference.date.year == year)
         .toList(growable: false);
 
+    DateTime effectiveLifeDate(LifeArchiveEntry entry) {
+      if (entry.kind == LifeArchiveKind.diary && entry.diaryReference != null) {
+        return entry.diaryReference!.date;
+      }
+      return entry.date;
+    }
+
     final life = lifeArchiveEntries(
       through: DateTime(year, 12, 31, 23, 59, 59, 999),
       strings: labels,
     )
-        .where((entry) => entry.date.year == year && !entry.archived)
+        .where(
+          (entry) =>
+              effectiveLifeDate(entry).year == year && !entry.archived,
+        )
         .toList(growable: false);
 
     final months = <YearReviewMonthSnapshot>[
@@ -69,7 +79,7 @@ extension AgendaStoreYearReview on AgendaStore {
             memories.where((reference) => reference.date.month == month),
           ),
           lifeEntries: List.unmodifiable(
-            life.where((entry) => entry.date.month == month),
+            life.where((entry) => effectiveLifeDate(entry).month == month),
           ),
         ),
     ];
