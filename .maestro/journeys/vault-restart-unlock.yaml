@@ -175,3 +175,28 @@ appId: com.riccardopinato.agenda_per_anna
     timeout: 420000
 - assertVisible:
     text: '.*D2_APPLAB_PERSISTENCE[\s\S]*D2 encrypted payload survives relock and restart.*'
+
+# Restore the shell after the deep Vault lifecycle so the existing visual
+# checkpoint journey starts from a deterministic bottom-navigation surface.
+- tapOn:
+    text: '(Blocca adesso|Lock now|Bloquear ahora|Verrouiller maintenant|Bloquear agora)'
+- extendedWaitUntil:
+    visible: '.*(Cassaforte bloccata|Vault locked|Caja fuerte bloqueada|Coffre verrouillé|Cofre bloqueado).*'
+    timeout: 10000
+- tapOn:
+    id: 'vault_back_button'
+- extendedWaitUntil:
+    visible: '(Impostazioni|Settings|Ajustes|Paramètres|Definições)'
+    timeout: 10000
+- tapOn:
+    text: '(Indietro|Back|Atrás|Retour|Voltar)'
+- extendedWaitUntil:
+    visible:
+      id: 'settings-hub-preferences-privacy'
+    timeout: 10000
+- tapOn:
+    text: '(Indietro|Back|Atrás|Retour|Voltar)'
+- extendedWaitUntil:
+    visible:
+      id: 'more-search'
+    timeout: 10000
