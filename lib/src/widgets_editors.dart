@@ -358,7 +358,9 @@ class _JournalEditorState extends State<JournalEditor> {
     final completed = journal.completedHabitIds;
     final habits = widget.store.habits;
 
-    return Column(
+    return AbsorbPointer(
+      absorbing: _saving,
+      child: Column(
       children: [
         SimpleCard(
           child: Column(
@@ -632,6 +634,7 @@ class _JournalEditorState extends State<JournalEditor> {
           ),
         ),
       ],
+      ),
     );
   }
 }
