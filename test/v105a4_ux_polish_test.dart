@@ -3,11 +3,11 @@ import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
-  test('v1.05-A4 remains closed while the v1.05 line advances', () {
+  test('v1.05-A4 current docs advertise the v1.05 UX foundation', () {
     final bible = File('docs/PRODUCT_BIBLE.md').readAsStringSync();
     final roadmap = File('docs/ROADMAP.md').readAsStringSync();
 
-    expect(bible, contains('Current product line:** v1.05'));
+    expect(bible, contains('Current product line:** v1.05 UX foundation'));
     expect(
       roadmap,
       contains(

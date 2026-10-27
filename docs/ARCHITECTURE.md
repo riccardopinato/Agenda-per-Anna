@@ -768,19 +768,3 @@ Capture Everywhere is routing, not storage. No second capture database, alternat
 - Real purchase/restore remains external Google Play Internal Testing evidence;
   automated AppLab/CI cannot promote that claim.
 
-
-
-## v1.05-B0 — Memories 3.0 Core
-
-Memories 3.0 continues the v0.77 projection architecture rather than adding a
-Memory store.
-
-- `MemoryRecallSnapshot.forYou` is a bounded, deterministic projection over
-  existing `DiaryBlockReference` records.
-- It prioritizes On This Day, same-month history and representative annual
-  highlights, deduplicates by DiaryBlock ID and caps the result at eight.
-- Archived blocks remain excluded by the existing recall boundary.
-- For You and Timeline are presentation modes over canonical diary data.
-- Search, type filters and Day / Month / Year browsing remain derived views.
-- Memory Map, Then & Now, Year in Review 2.0, Collections and Life Threads are
-  explicitly deferred to later v1.05 steps.

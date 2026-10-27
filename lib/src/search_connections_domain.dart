@@ -42,7 +42,6 @@ class MemoryRecallFacet {
 
 class MemoryRecallSnapshot {
   final DateTime anchor;
-  final List<DiaryBlockReference> forYou;
   final List<DiaryBlockReference> onThisDay;
   final List<DiaryBlockReference> sameMonthPastYears;
   final List<DiaryBlockReference> yearHighlights;
@@ -51,7 +50,6 @@ class MemoryRecallSnapshot {
 
   const MemoryRecallSnapshot({
     required this.anchor,
-    required this.forYou,
     required this.onThisDay,
     required this.sameMonthPastYears,
     required this.yearHighlights,
@@ -59,7 +57,7 @@ class MemoryRecallSnapshot {
     required this.places,
   });
 
-  bool get isEmpty => forYou.isEmpty;
+  bool get isEmpty => yearHighlights.isEmpty;
   int get historicalYears => yearHighlights.length;
 }
 
@@ -193,23 +191,6 @@ extension SearchConnectionsAgendaStore on AgendaStore {
         .map((year) => highlightByYear[year]!)
         .toList(growable: false);
 
-    final forYou = <DiaryBlockReference>[];
-    final forYouIds = <String>{};
-
-    void addForYou(Iterable<DiaryBlockReference> candidates, int limit) {
-      var added = 0;
-      for (final candidate in candidates) {
-        if (forYou.length >= 8 || added >= limit) break;
-        if (!forYouIds.add(candidate.block.id)) continue;
-        forYou.add(candidate);
-        added++;
-      }
-    }
-
-    addForYou(onThisDay, 3);
-    addForYou(sameMonthPastYears, 3);
-    addForYou(yearHighlights, 6);
-
     final personCounts = <String, int>{};
     final placeCounts = <String, int>{};
     final placeLabels = <String, String>{};
@@ -265,7 +246,6 @@ extension SearchConnectionsAgendaStore on AgendaStore {
 
     return MemoryRecallSnapshot(
       anchor: anchorDay,
-      forYou: forYou,
       onThisDay: onThisDay,
       sameMonthPastYears: sameMonthPastYears,
       yearHighlights: yearHighlights,

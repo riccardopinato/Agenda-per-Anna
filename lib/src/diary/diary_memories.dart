@@ -19,8 +19,7 @@ class DiaryMemoriesScreen extends StatefulWidget {
 class _DiaryMemoriesScreenState extends State<DiaryMemoriesScreen> {
   final TextEditingController searchController = TextEditingController();
   DiaryBlockType? filter;
-  bool searchExpanded = false;
-  _DiaryMemoriesView view = _DiaryMemoriesView.forYou;
+  _DiaryMemoriesView view = _DiaryMemoriesView.memories;
 
   @override
   void dispose() {
@@ -223,6 +222,140 @@ class _DiaryMemoriesScreenState extends State<DiaryMemoriesScreen> {
                   fontWeight: FontWeight.w700,
                   height: 1.25,
                 ),
+              ),
+            ),
+          ),
+        );
+    }
+  }
+
+  Widget _memoryTile(
+    BuildContext context,
+    DiaryBlockReference record,
+  ) {
+    final block = record.block;
+    final date = DateFormat('d MMMM yyyy', AnnaStrings.intlLocale(context)).format(record.date);
+
+    switch (block.type) {
+      case DiaryBlockType.photo:
+        return Card(
+          clipBehavior: Clip.antiAlias,
+          child: InkWell(
+            onTap: () => _openPhoto(record),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(child: _coverPreview(context, record)),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(10, 8, 4, 8),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          block.text.trim().isEmpty ? date : block.text,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(fontWeight: FontWeight.w700),
+                        ),
+                      ),
+                      IconButton(
+                        visualDensity: VisualDensity.compact,
+                        tooltip: AnnaStrings.of(context).v100OpenDay,
+                        onPressed: () => _openRecord(record),
+                        icon: const Icon(Icons.calendar_today_outlined, size: 19),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      case DiaryBlockType.sketch:
+        return Card(
+          clipBehavior: Clip.antiAlias,
+          child: InkWell(
+            onTap: () => _openRecord(record),
+            child: Column(
+              children: [
+                Expanded(child: _coverPreview(context, record)),
+                Padding(
+                  padding: const EdgeInsets.all(10),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.draw_outlined, size: 18),
+                      const SizedBox(width: 6),
+                      Expanded(
+                        child: Text(
+                          '$date · ${AnnaStrings.of(context).v100Pages(block.pages.length)}',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(fontWeight: FontWeight.w700),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      case DiaryBlockType.voice:
+        return Card(
+          child: InkWell(
+            borderRadius: BorderRadius.circular(12),
+            onTap: () => _openRecord(record),
+            child: Padding(
+              padding: const EdgeInsets.all(14),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Icon(Icons.mic_none_outlined),
+                  const SizedBox(height: 10),
+                  Expanded(
+                    child: Text(
+                      block.text.trim().isEmpty ? AnnaStrings.of(context).v100VoiceNote : block.text,
+                      maxLines: 6,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    block.audioDurationMs <= 0
+                        ? date
+                        : '${_formatVoiceDuration(block.audioDurationMs)} · $date',
+                    style: Theme.of(context).textTheme.bodySmall,
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      case DiaryBlockType.note:
+        return Card(
+          child: InkWell(
+            borderRadius: BorderRadius.circular(12),
+            onTap: () => _openRecord(record),
+            child: Padding(
+              padding: const EdgeInsets.all(14),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Icon(Icons.sticky_note_2_outlined),
+                  const SizedBox(height: 10),
+                  Expanded(
+                    child: Text(
+                      block.text,
+                      maxLines: 8,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    date,
+                    style: Theme.of(context).textTheme.bodySmall,
+                  ),
+                ],
               ),
             ),
           ),
@@ -551,8 +684,7 @@ class _DiaryMemoriesScreenState extends State<DiaryMemoriesScreen> {
                 searchController.text = facet.label;
                 setState(() {
                   filter = null;
-                  searchExpanded = true;
-                  view = _DiaryMemoriesView.timeline;
+                  view = _DiaryMemoriesView.memories;
                 });
               },
             );
@@ -562,530 +694,115 @@ class _DiaryMemoriesScreenState extends State<DiaryMemoriesScreen> {
     );
   }
 
-  Widget _forYouHero(
-    BuildContext context,
-    DiaryBlockReference record,
-  ) {
-    final strings = AnnaStrings.of(context);
-    final title = widget.store.diaryBlockDisplayTitle(
-      record.block,
-      strings: strings,
-    );
-    final date = DateFormat(
-      'd MMMM yyyy',
-      AnnaStrings.intlLocale(context),
-    ).format(record.date);
-
-    return Semantics(
-      identifier: 'memories-for-you-hero',
-      button: true,
-      label: '$title · $date',
-      child: Card(
-        clipBehavior: Clip.antiAlias,
-        margin: const EdgeInsets.only(top: AnnaDesignTokens.spaceMd),
-        child: InkWell(
-          onTap: () => _openRecord(record),
-          child: SizedBox(
-            height: 286,
-            child: Stack(
-              fit: StackFit.expand,
-              children: [
-                _coverPreview(context, record),
-                DecoratedBox(
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: [
-                        Colors.transparent,
-                        Colors.black.withValues(alpha: 0.72),
-                      ],
-                      begin: Alignment.topCenter,
-                      end: Alignment.bottomCenter,
-                    ),
-                  ),
-                ),
-                Positioned(
-                  left: AnnaDesignTokens.spaceMd,
-                  right: AnnaDesignTokens.spaceMd,
-                  bottom: AnnaDesignTokens.spaceMd,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      DecoratedBox(
-                        decoration: BoxDecoration(
-                          color: Colors.black.withValues(alpha: 0.46),
-                          borderRadius: BorderRadius.circular(
-                            AnnaDesignTokens.radiusLg,
-                          ),
-                        ),
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: AnnaDesignTokens.spaceSm,
-                            vertical: AnnaDesignTokens.space2xs,
-                          ),
-                          child: Text(
-                            strings.d3('memoriesFeatured'),
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontWeight: FontWeight.w700,
-                            ),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: AnnaDesignTokens.spaceSm),
-                      Text(
-                        title,
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 23,
-                          height: 1.1,
-                          fontWeight: FontWeight.w800,
-                        ),
-                      ),
-                      const SizedBox(height: AnnaDesignTokens.spaceXs),
-                      Text(
-                        date,
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _forYouView(
+  Widget _rediscoverView(
     BuildContext context,
     List<DiaryBlockReference> records,
   ) {
-    final strings = AnnaStrings.of(context);
     final now = DateTime.now();
     final snapshot = widget.store.memoryRecallSnapshot(
       now,
       personId: widget.personId,
       references: records,
     );
-    final hero = snapshot.forYou.isEmpty ? null : snapshot.forYou.first;
     final linkedPeople = snapshot.people
         .where((facet) => facet.id != widget.personId)
         .take(8)
         .toList(growable: false);
     final linkedPlaces = snapshot.places.take(8).toList(growable: false);
-    final shownIds = <String>{
-      if (hero != null) hero.block.id,
+    final alreadyShown = <String>{
+      ...snapshot.onThisDay.take(4).map((entry) => entry.block.id),
+      ...snapshot.sameMonthPastYears.take(4).map((entry) => entry.block.id),
     };
-    final onThisDay = snapshot.onThisDay
-        .where((entry) => shownIds.add(entry.block.id))
-        .take(3)
-        .toList(growable: false);
-    final sameMonth = snapshot.sameMonthPastYears
-        .where((entry) => shownIds.add(entry.block.id))
-        .take(3)
-        .toList(growable: false);
     final yearHighlights = snapshot.yearHighlights
-        .where((entry) => shownIds.add(entry.block.id))
-        .take(5)
+        .where((entry) => !alreadyShown.contains(entry.block.id))
+        .take(6)
         .toList(growable: false);
-    final monthName = _cap(
-      DateFormat('MMMM', AnnaStrings.intlLocale(context)).format(now),
-    );
+    final monthName = _cap(DateFormat('MMMM', AnnaStrings.intlLocale(context)).format(now));
 
-    return Semantics(
-      identifier: 'memories-for-you-surface',
-      child: ListView(
-        padding: const EdgeInsets.fromLTRB(
-          AnnaDesignTokens.spaceMd,
-          AnnaDesignTokens.spaceXs,
-          AnnaDesignTokens.spaceMd,
-          AnnaDesignTokens.spaceXl,
+    return ListView(
+      padding: const EdgeInsets.fromLTRB(14, 8, 14, 28),
+      children: [
+        Text(
+          AnnaStrings.of(context).v100RediscoverTitle,
+          style: const TextStyle(
+            fontWeight: FontWeight.w900,
+            fontSize: 22,
+          ),
         ),
-        children: [
-          Center(
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(
-                maxWidth: AnnaDesignTokens.readingContentWidth,
+        const SizedBox(height: 4),
+        Text(
+          snapshot.isEmpty
+              ? AnnaStrings.of(context).v100RediscoverEmpty
+              : AnnaStrings.of(context).v100RediscoverYears(snapshot.historicalYears),
+          style: Theme.of(context).textTheme.bodyMedium,
+        ),
+        if (snapshot.onThisDay.isNotEmpty) ...[
+          _recallSectionHeader(
+            context,
+            title: AnnaStrings.of(context).v100OnThisDayPast,
+            subtitle: AnnaStrings.of(context).v100SameDatePast(snapshot.onThisDay.length),
+            icon: Icons.history_toggle_off,
+          ),
+          ...snapshot.onThisDay.take(4).map(
+                (record) => _recallMemoryRow(context, record),
               ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Text(
-                    strings.d3('memoriesForYou'),
-                    style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                          fontWeight: FontWeight.w800,
-                        ),
-                  ),
-                  const SizedBox(height: AnnaDesignTokens.space2xs),
-                  Text(
-                    strings.d3('memoriesForYouIntro'),
-                    style: Theme.of(context).textTheme.bodyMedium,
-                  ),
-                  if (hero != null) _forYouHero(context, hero),
-                  if (snapshot.isEmpty) ...[
-                    const SizedBox(height: AnnaDesignTokens.spaceLg),
-                    SimpleCard(
-                      child: Text(strings.v100RediscoverEmpty),
-                    ),
-                  ],
-                  if (onThisDay.isNotEmpty) ...[
-                    _recallSectionHeader(
-                      context,
-                      title: strings.v100OnThisDayPast,
-                      subtitle: strings.v100SameDatePast(
-                        snapshot.onThisDay.length,
-                      ),
-                      icon: Icons.history_toggle_off,
-                    ),
-                    ...onThisDay.map(
-                      (record) => _recallMemoryRow(context, record),
-                    ),
-                  ],
-                  if (sameMonth.isNotEmpty) ...[
-                    _recallSectionHeader(
-                      context,
-                      title: strings.v100MonthAcrossYears(monthName),
-                      subtitle: strings.v100OtherSameMonth,
-                      icon: Icons.calendar_month_outlined,
-                    ),
-                    ...sameMonth.map(
-                      (record) => _recallMemoryRow(context, record),
-                    ),
-                  ],
-                  if (yearHighlights.isNotEmpty) ...[
-                    _recallSectionHeader(
-                      context,
-                      title: strings.v100JumpAcrossYears,
-                      subtitle: strings.v100RepresentativeMoment,
-                      icon: Icons.auto_awesome_outlined,
-                    ),
-                    ...yearHighlights.map(
-                      (record) => _recallMemoryRow(context, record),
-                    ),
-                  ],
-                  if (widget.personId == null)
-                    _recallFacetSection(
-                      context,
-                      title: strings.v100RecurringPeople,
-                      icon: Icons.people_outline,
-                      facets: linkedPeople,
-                    ),
-                  _recallFacetSection(
-                    context,
-                    title: widget.personId == null
-                        ? strings.v100RecurringPlaces
-                        : strings.v100PlacesTogether,
-                    icon: Icons.place_outlined,
-                    facets: linkedPlaces,
-                  ),
-                ],
+        ],
+        if (snapshot.sameMonthPastYears.isNotEmpty) ...[
+          _recallSectionHeader(
+            context,
+            title: AnnaStrings.of(context).v100MonthAcrossYears(monthName),
+            subtitle: AnnaStrings.of(context).v100OtherSameMonth,
+            icon: Icons.calendar_month_outlined,
+          ),
+          ...snapshot.sameMonthPastYears.take(4).map(
+                (record) => _recallMemoryRow(context, record),
               ),
-            ),
+        ],
+        if (yearHighlights.isNotEmpty) ...[
+          _recallSectionHeader(
+            context,
+            title: AnnaStrings.of(context).v100JumpAcrossYears,
+            subtitle:
+                AnnaStrings.of(context).v100RepresentativeMoment,
+            icon: Icons.auto_awesome_outlined,
+          ),
+          ...yearHighlights.map(
+            (record) => _recallMemoryRow(context, record),
           ),
         ],
-      ),
+        if (widget.personId == null)
+          _recallFacetSection(
+            context,
+            title: AnnaStrings.of(context).v100RecurringPeople,
+            icon: Icons.people_outline,
+            facets: linkedPeople,
+          ),
+        _recallFacetSection(
+          context,
+          title: widget.personId == null
+              ? AnnaStrings.of(context).v100RecurringPlaces
+              : AnnaStrings.of(context).v100PlacesTogether,
+          icon: Icons.place_outlined,
+          facets: linkedPlaces,
+        ),
+      ],
     );
   }
 
-  Widget _timelineMemoryCard(
-    BuildContext context,
-    DiaryBlockReference record,
-  ) {
-    final strings = AnnaStrings.of(context);
-    final block = record.block;
-    final title = widget.store.diaryBlockDisplayTitle(
-      block,
-      strings: strings,
-    );
-    final date = DateFormat(
-      'EEEE d MMMM yyyy',
-      AnnaStrings.intlLocale(context),
-    ).format(record.date);
-    final visual = block.type == DiaryBlockType.photo ||
-        block.type == DiaryBlockType.sketch;
-
-    return Card(
-      margin: const EdgeInsets.only(bottom: AnnaDesignTokens.spaceSm),
-      clipBehavior: Clip.antiAlias,
-      child: InkWell(
-        onTap: () => block.type == DiaryBlockType.photo
-            ? _openPhoto(record)
-            : _openRecord(record),
-        child: visual
-            ? Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  SizedBox(
-                    height: 190,
-                    width: double.infinity,
-                    child: _coverPreview(context, record),
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.all(AnnaDesignTokens.spaceMd),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          title,
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
-                            fontWeight: FontWeight.w800,
-                            fontSize: 17,
-                          ),
-                        ),
-                        const SizedBox(height: AnnaDesignTokens.spaceXs),
-                        Text(
-                          _cap(date),
-                          style: Theme.of(context).textTheme.bodySmall,
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              )
-            : Padding(
-                padding: const EdgeInsets.all(AnnaDesignTokens.spaceMd),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    CircleAvatar(
-                      backgroundColor: context.annaDomainSurface(
-                        AnnaVisualDomain.memories,
-                      ),
-                      foregroundColor: context.annaDomainAccent(
-                        AnnaVisualDomain.memories,
-                      ),
-                      child: Icon(
-                        block.type == DiaryBlockType.voice
-                            ? Icons.mic_none_outlined
-                            : Icons.sticky_note_2_outlined,
-                      ),
-                    ),
-                    const SizedBox(width: AnnaDesignTokens.spaceSm),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            title,
-                            maxLines: 4,
-                            overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
-                              fontWeight: FontWeight.w700,
-                              height: 1.25,
-                            ),
-                          ),
-                          const SizedBox(height: AnnaDesignTokens.spaceXs),
-                          Text(
-                            _cap(date),
-                            style: Theme.of(context).textTheme.bodySmall,
-                          ),
-                        ],
-                      ),
-                    ),
-                    const Icon(Icons.chevron_right),
-                  ],
-                ),
-              ),
-      ),
-    );
-  }
-
-  Widget _timelineView(
+  Widget _memoriesView(
     BuildContext context,
     List<DiaryBlockReference> records,
   ) {
-    if (records.isEmpty) return _emptyState();
-    final strings = AnnaStrings.of(context);
-
-    return Semantics(
-      identifier: 'memories-timeline-list',
-      child: ListView.builder(
-        padding: const EdgeInsets.fromLTRB(
-          AnnaDesignTokens.spaceMd,
-          AnnaDesignTokens.spaceXs,
-          AnnaDesignTokens.spaceMd,
-          AnnaDesignTokens.spaceXl,
-        ),
-        itemCount: records.length + 1,
-        itemBuilder: (context, index) {
-          if (index == 0) {
-            return Center(
-              child: ConstrainedBox(
-                constraints: const BoxConstraints(
-                  maxWidth: AnnaDesignTokens.readingContentWidth,
-                ),
-                child: Padding(
-                  padding: const EdgeInsets.only(
-                    bottom: AnnaDesignTokens.spaceMd,
-                  ),
-                  child: Text(
-                    strings.d3('memoriesTimelineIntro'),
-                    style: Theme.of(context).textTheme.bodyMedium,
-                  ),
-                ),
-              ),
-            );
-          }
-
-          final record = records[index - 1];
-          final previous = index > 1 ? records[index - 2] : null;
-          final startsMonth = previous == null ||
-              previous.date.year != record.date.year ||
-              previous.date.month != record.date.month;
-          final monthLabel = _cap(
-            DateFormat(
-              'MMMM yyyy',
-              AnnaStrings.intlLocale(context),
-            ).format(record.date),
-          );
-
-          return Center(
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(
-                maxWidth: AnnaDesignTokens.readingContentWidth,
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  if (startsMonth)
-                    Padding(
-                      padding: const EdgeInsets.only(
-                        top: AnnaDesignTokens.spaceSm,
-                        bottom: AnnaDesignTokens.spaceXs,
-                      ),
-                      child: Text(
-                        monthLabel,
-                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                              fontWeight: FontWeight.w800,
-                            ),
-                      ),
-                    ),
-                  _timelineMemoryCard(context, record),
-                ],
-              ),
-            ),
-          );
-        },
+    return GridView.builder(
+      padding: const EdgeInsets.fromLTRB(12, 4, 12, 24),
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 2,
+        crossAxisSpacing: 10,
+        mainAxisSpacing: 10,
+        childAspectRatio: 0.82,
       ),
-    );
-  }
-
-  Future<void> _showBrowseSheet() async {
-    final strings = AnnaStrings.of(context);
-    final selected = await showModalBottomSheet<_DiaryMemoriesView>(
-      context: context,
-      showDragHandle: true,
-      builder: (sheetContext) => SafeArea(
-        child: ListView(
-          shrinkWrap: true,
-          padding: const EdgeInsets.only(bottom: AnnaDesignTokens.spaceSm),
-          children: [
-            ListTile(
-              title: Text(
-                strings.d3('memoriesBrowseBy'),
-                style: const TextStyle(fontWeight: FontWeight.w800),
-              ),
-            ),
-            ListTile(
-              leading: const Icon(Icons.today_outlined),
-              title: Text(strings.v100Days),
-              onTap: () => Navigator.pop(
-                sheetContext,
-                _DiaryMemoriesView.days,
-              ),
-            ),
-            ListTile(
-              leading: const Icon(Icons.calendar_month_outlined),
-              title: Text(strings.v100Months),
-              onTap: () => Navigator.pop(
-                sheetContext,
-                _DiaryMemoriesView.months,
-              ),
-            ),
-            ListTile(
-              leading: const Icon(Icons.insights_outlined),
-              title: Text(strings.v100Years),
-              onTap: () => Navigator.pop(
-                sheetContext,
-                _DiaryMemoriesView.years,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-    if (!mounted || selected == null) return;
-    unawaited(AnnaFeedback.selection());
-    setState(() => view = selected);
-  }
-
-  Future<void> _showFilterSheet() async {
-    final strings = AnnaStrings.of(context);
-    await showModalBottomSheet<void>(
-      context: context,
-      showDragHandle: true,
-      builder: (sheetContext) => SafeArea(
-        child: ListView(
-          shrinkWrap: true,
-          padding: const EdgeInsets.only(bottom: AnnaDesignTokens.spaceSm),
-          children: [
-            ListTile(
-              title: Text(
-                strings.d3('memoriesFilters'),
-                style: const TextStyle(fontWeight: FontWeight.w800),
-              ),
-            ),
-            ListTile(
-              leading: const Icon(Icons.layers_outlined),
-              title: Text(strings.all),
-              selected: filter == null,
-              onTap: () {
-                setState(() {
-                  filter = null;
-                  view = _DiaryMemoriesView.timeline;
-                });
-                Navigator.pop(sheetContext);
-              },
-            ),
-            ...DiaryBlockType.values.map(
-              (type) => ListTile(
-                leading: Icon(
-                  switch (type) {
-                    DiaryBlockType.note => Icons.sticky_note_2_outlined,
-                    DiaryBlockType.sketch => Icons.draw_outlined,
-                    DiaryBlockType.photo => Icons.photo_outlined,
-                    DiaryBlockType.voice => Icons.mic_none_outlined,
-                  },
-                ),
-                title: Text(
-                  switch (type) {
-                    DiaryBlockType.note => strings.v100MemoryNotesFilter,
-                    DiaryBlockType.sketch => strings.v100Sketch,
-                    DiaryBlockType.photo => strings.v100Photo,
-                    DiaryBlockType.voice => strings.v100MemoryVoiceFilter,
-                  },
-                ),
-                selected: filter == type,
-                onTap: () {
-                  setState(() {
-                    filter = type;
-                    view = _DiaryMemoriesView.timeline;
-                  });
-                  Navigator.pop(sheetContext);
-                },
-              ),
-            ),
-          ],
-        ),
-      ),
+      itemCount: records.length,
+      itemBuilder: (context, index) => _memoryTile(context, records[index]),
     );
   }
 
@@ -1186,48 +903,14 @@ class _DiaryMemoriesScreenState extends State<DiaryMemoriesScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final strings = AnnaStrings.of(context);
-    final secondaryView = switch (view) {
-      _DiaryMemoriesView.days => strings.v100Days,
-      _DiaryMemoriesView.months => strings.v100Months,
-      _DiaryMemoriesView.years => strings.v100Years,
-      _ => strings.d3('memoriesBrowse'),
-    };
-
     return Scaffold(
       appBar: AppBar(
         title: Text(
           widget.personName == null
-              ? strings.v100MyMemories
-              : strings.v100MemoriesWithPerson(widget.personName!),
-          style: const TextStyle(fontWeight: FontWeight.w800),
+              ? AnnaStrings.of(context).v100MyMemories
+              : AnnaStrings.of(context).v100MemoriesWithPerson(widget.personName!),
+          style: const TextStyle(fontWeight: FontWeight.w900),
         ),
-        actions: [
-          IconButton(
-            tooltip: strings.d3('memoriesSearchAction'),
-            onPressed: () {
-              unawaited(AnnaFeedback.selection());
-              setState(() {
-                if (searchExpanded) {
-                  searchController.clear();
-                  searchExpanded = false;
-                } else {
-                  searchExpanded = true;
-                  view = _DiaryMemoriesView.timeline;
-                }
-              });
-            },
-            icon: Icon(searchExpanded ? Icons.search_off : Icons.search),
-          ),
-          IconButton(
-            tooltip: strings.d3('memoriesFilters'),
-            onPressed: _showFilterSheet,
-            icon: Badge(
-              isLabelVisible: filter != null,
-              child: const Icon(Icons.tune_outlined),
-            ),
-          ),
-        ],
       ),
       body: AnimatedBuilder(
         animation: Listenable.merge([
@@ -1238,138 +921,142 @@ class _DiaryMemoriesScreenState extends State<DiaryMemoriesScreen> {
           final current = _records();
           return Column(
             children: [
-              if (searchExpanded)
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(
-                    AnnaDesignTokens.spaceMd,
-                    AnnaDesignTokens.space2xs,
-                    AnnaDesignTokens.spaceMd,
-                    AnnaDesignTokens.spaceXs,
-                  ),
-                  child: SearchBar(
-                    controller: searchController,
-                    hintText: strings.v100MemorySearchHint,
-                    leading: const Icon(Icons.search),
-                    trailing: searchController.text.isEmpty
-                        ? null
-                        : [
-                            IconButton(
-                              tooltip: strings.v100ClearSearch,
-                              onPressed: () {
-                                searchController.clear();
-                                setState(() {});
-                              },
-                              icon: const Icon(Icons.close),
-                            ),
-                          ],
-                    onChanged: (_) => setState(() {}),
-                  ),
-                ),
               Padding(
-                padding: const EdgeInsets.fromLTRB(
-                  AnnaDesignTokens.spaceMd,
-                  AnnaDesignTokens.spaceXs,
-                  AnnaDesignTokens.spaceMd,
-                  AnnaDesignTokens.spaceXs,
+                padding: const EdgeInsets.fromLTRB(12, 2, 12, 4),
+                child: SearchBar(
+                  controller: searchController,
+                  hintText: AnnaStrings.of(context).v100MemorySearchHint,
+                  leading: const Icon(Icons.search),
+                  trailing: searchController.text.isEmpty
+                      ? null
+                      : [
+                          IconButton(
+                            tooltip: AnnaStrings.of(context).v100ClearSearch,
+                            onPressed: () {
+                              searchController.clear();
+                              setState(() {});
+                            },
+                            icon: const Icon(Icons.close),
+                          ),
+                        ],
+                  onChanged: (_) => setState(() {}),
                 ),
-                child: Row(
+              ),
+              SizedBox(
+                height: 52,
+                child: ListView(
+                  padding: const EdgeInsets.symmetric(horizontal: 12),
+                  scrollDirection: Axis.horizontal,
                   children: [
-                    Expanded(
-                      child: Semantics(
-                        identifier: 'memories-for-you',
-                        button: true,
-                        selected: view == _DiaryMemoriesView.forYou,
-                        child: ChoiceChip(
-                          showCheckmark: false,
-                          selected: view == _DiaryMemoriesView.forYou,
-                          avatar: const Icon(Icons.auto_awesome_outlined),
-                          label: Text(strings.d3('memoriesForYou')),
-                          onSelected: (_) {
-                            unawaited(AnnaFeedback.selection());
-                            setState(
-                              () => view = _DiaryMemoriesView.forYou,
-                            );
-                          },
-                        ),
+                    ChoiceChip(
+                      selected: view == _DiaryMemoriesView.memories,
+                      avatar: const Icon(Icons.auto_awesome_outlined),
+                      label: Text(AnnaStrings.of(context).memories),
+                      onSelected: (_) =>
+                          setState(() => view = _DiaryMemoriesView.memories),
+                    ),
+                    const SizedBox(width: 7),
+                    ChoiceChip(
+                      selected: view == _DiaryMemoriesView.rediscover,
+                      avatar: const Icon(Icons.history_toggle_off),
+                      label: Text(AnnaStrings.of(context).v100Rediscover),
+                      onSelected: (_) =>
+                          setState(() => view = _DiaryMemoriesView.rediscover),
+                    ),
+                    const SizedBox(width: 7),
+                    ChoiceChip(
+                      selected: view == _DiaryMemoriesView.days,
+                      avatar: const Icon(Icons.today_outlined),
+                      label: Text(AnnaStrings.of(context).v100Days),
+                      onSelected: (_) =>
+                          setState(() => view = _DiaryMemoriesView.days),
+                    ),
+                    const SizedBox(width: 7),
+                    ChoiceChip(
+                      selected: view == _DiaryMemoriesView.months,
+                      avatar: const Icon(Icons.calendar_month_outlined),
+                      label: Text(AnnaStrings.of(context).v100Months),
+                      onSelected: (_) =>
+                          setState(() => view = _DiaryMemoriesView.months),
+                    ),
+                    const SizedBox(width: 7),
+                    ChoiceChip(
+                      selected: view == _DiaryMemoriesView.years,
+                      avatar: const Icon(Icons.insights_outlined),
+                      label: Text(AnnaStrings.of(context).v100Years),
+                      onSelected: (_) =>
+                          setState(() => view = _DiaryMemoriesView.years),
+                    ),
+                  ],
+                ),
+              ),
+              SizedBox(
+                height: 50,
+                child: ListView(
+                  padding: const EdgeInsets.symmetric(horizontal: 12),
+                  scrollDirection: Axis.horizontal,
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.only(right: 7),
+                      child: FilterChip(
+                        selected: filter == null,
+                        label: Text(AnnaStrings.of(context).all),
+                        avatar: const Icon(Icons.layers_outlined),
+                        onSelected: (_) => setState(() => filter = null),
                       ),
                     ),
-                    const SizedBox(width: AnnaDesignTokens.spaceXs),
-                    Expanded(
-                      child: Semantics(
-                        identifier: 'memories-timeline',
-                        button: true,
-                        selected: view == _DiaryMemoriesView.timeline,
-                        child: ChoiceChip(
-                          showCheckmark: false,
-                          selected: view == _DiaryMemoriesView.timeline,
-                          avatar: const Icon(Icons.view_stream_outlined),
-                          label: Text(strings.d3('memoriesTimeline')),
-                          onSelected: (_) {
-                            unawaited(AnnaFeedback.selection());
-                            setState(
-                              () => view = _DiaryMemoriesView.timeline,
-                            );
-                          },
+                    ...DiaryBlockType.values.map(
+                      (type) => Padding(
+                        padding: const EdgeInsets.only(right: 7),
+                        child: FilterChip(
+                          selected: filter == type,
+                          avatar: Icon(
+                            switch (type) {
+                              DiaryBlockType.note =>
+                                Icons.sticky_note_2_outlined,
+                              DiaryBlockType.sketch => Icons.draw_outlined,
+                              DiaryBlockType.photo => Icons.photo_outlined,
+                              DiaryBlockType.voice => Icons.mic_none_outlined,
+                            },
+                          ),
+                          label: Text(
+                            switch (type) {
+                              DiaryBlockType.note => AnnaStrings.of(context).v100MemoryNotesFilter,
+                              DiaryBlockType.sketch => AnnaStrings.of(context).v100Sketch,
+                              DiaryBlockType.photo => AnnaStrings.of(context).v100Photo,
+                              DiaryBlockType.voice => AnnaStrings.of(context).v100MemoryVoiceFilter,
+                            },
+                          ),
+                          onSelected: (_) => setState(() => filter = type),
                         ),
-                      ),
-                    ),
-                    const SizedBox(width: AnnaDesignTokens.spaceXs),
-                    Semantics(
-                      identifier: 'memories-browse',
-                      button: true,
-                      child: OutlinedButton.icon(
-                        onPressed: _showBrowseSheet,
-                        icon: const Icon(Icons.grid_view_outlined, size: 18),
-                        label: Text(secondaryView),
                       ),
                     ),
                   ],
                 ),
               ),
-              if (filter != null)
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(
-                    AnnaDesignTokens.spaceMd,
-                    0,
-                    AnnaDesignTokens.spaceMd,
-                    AnnaDesignTokens.spaceXs,
-                  ),
-                  child: Row(
-                    children: [
-                      Icon(
-                        Icons.filter_alt_outlined,
-                        size: 18,
-                        color: context.annaDomainAccent(
-                          AnnaVisualDomain.memories,
-                        ),
-                      ),
-                      const SizedBox(width: AnnaDesignTokens.spaceXs),
-                      Expanded(
-                        child: Text(
-                          strings.v100MemorySummary(
-                            current.length,
-                            _distinctDays(current),
-                          ),
-                          style: Theme.of(context).textTheme.bodySmall,
-                        ),
-                      ),
-                      TextButton(
-                        onPressed: () => setState(() => filter = null),
-                        child: Text(strings.d3('memoriesClearFilters')),
-                      ),
-                    ],
-                  ),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(14, 0, 14, 7),
+                child: Row(
+                  children: [
+                    Text(
+                      current.isEmpty
+                          ? AnnaStrings.of(context).v100NoResults
+                          : AnnaStrings.of(context).v100MemorySummary(current.length, _distinctDays(current)),
+                      style: Theme.of(context).textTheme.bodySmall,
+                    ),
+                    const Spacer(),
+                    if (searchController.text.isNotEmpty)
+                      const Icon(Icons.manage_search, size: 18),
+                  ],
                 ),
+              ),
               Expanded(
                 child: switch (view) {
-                  _DiaryMemoriesView.forYou =>
-                    _forYouView(context, current),
-                  _DiaryMemoriesView.timeline => Semantics(
-                      identifier: 'memories-timeline-surface',
-                      child: current.isEmpty
-                          ? _emptyState()
-                          : _timelineView(context, current),
-                    ),
+                  _DiaryMemoriesView.rediscover =>
+                    _rediscoverView(context, current),
+                  _DiaryMemoriesView.memories => current.isEmpty
+                      ? _emptyState()
+                      : _memoriesView(context, current),
                   _DiaryMemoriesView.days => current.isEmpty
                       ? _emptyState()
                       : _daysView(context, current),
