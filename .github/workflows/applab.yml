@@ -16,7 +16,7 @@ concurrency:
 
 jobs:
   applab:
-    uses: riccardopinato/AppLab/.github/workflows/external-project-runner.yml@05814036f3bbce1640cb1881215e2689d7110b76
+    uses: riccardopinato/AppLab/.github/workflows/external-project-runner.yml@730dfafecc59871365812f4d7d138b43151fdcc5
     with:
       repository: riccardopinato/Agenda-per-Anna
       ref: ${{ github.event.pull_request.head.sha || github.sha }}
@@ -40,7 +40,7 @@ jobs:
       maestro_flow: .maestro/applab-smoke.yaml
       history_key: annas-diary
       cache_verification: true
-      config_fingerprint: annas-diary-factory-fast-v3-build-once
+      config_fingerprint: annas-diary-factory-fast-v4-journey-aware
       analysis_mode: fast
       baseline_sha: ${{ github.event.pull_request.base.sha || '' }}
       publish_release_artifact: false

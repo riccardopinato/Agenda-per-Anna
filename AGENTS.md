@@ -17,8 +17,8 @@ Before Factory-dependent development, audit, roadmap work or substantial modific
 Do not replace repository truth with chat memory or historical attachments.
 
 Factory baseline adopted for this contract:
-`a923e0e766d83e8dfb92356c05752bd566eaed9e`
-(Master v26.6, Golden Index v21).
+`ed6466e774a28e95f9f371cd56bbf7278428776a`
+(Master v26.6, Golden Index v22).
 
 ## 2. Factory Mode
 

@@ -1,0 +1,185 @@
+appId: com.riccardopinato.agenda_per_anna
+---
+- launchApp
+- runFlow:
+    when:
+      visible: '(Usa su questo dispositivo|Use on this device|Usar en este dispositivo|Utiliser sur cet appareil|Usar neste dispositivo)'
+    commands:
+      - tapOn:
+          text: '(Usa su questo dispositivo|Use on this device|Usar en este dispositivo|Utiliser sur cet appareil|Usar neste dispositivo)'
+      - extendedWaitUntil:
+          visible: '(La tua agenda, davvero tua\.|Your agenda, truly yours\.|Tu agenda, de verdad tuya\.|Ton agenda, vraiment à toi\.|A tua agenda, verdadeiramente tua\.)'
+          timeout: 15000
+      - tapOn:
+          id: 'onboarding_preset_complete'
+      - tapOn:
+          id: 'onboarding_continue'
+      - extendedWaitUntil:
+          visible: '(Inizia con qualcosa di utile\.|Start with something useful\.|Empieza con algo útil\.|Commence par quelque chose d’utile\.|Começa com algo útil\.)'
+          timeout: 10000
+      - tapOn:
+          id: 'onboarding_open_agenda'
+- tapOn:
+    id: 'main-nav-more'
+    retryTapIfNoChange: true
+- extendedWaitUntil:
+    visible: '(Altro|More|Más|Plus|Mais)'
+    timeout: 10000
+- scrollUntilVisible:
+    element:
+      id: 'more-settings'
+    direction: DOWN
+    timeout: 30000
+    speed: 45
+    visibilityPercentage: 20
+    centerElement: false
+- tapOn:
+    id: 'more-settings'
+- extendedWaitUntil:
+    visible:
+      id: 'settings-hub-preferences-privacy'
+    timeout: 10000
+- tapOn:
+    id: 'settings-hub-preferences-privacy'
+- extendedWaitUntil:
+    visible: '(Impostazioni|Settings|Ajustes|Paramètres|Definições)'
+    timeout: 10000
+- scrollUntilVisible:
+    element:
+      text: '.*(Privacy Center).*'
+    direction: DOWN
+    timeout: 30000
+    speed: 45
+    visibilityPercentage: 20
+    centerElement: false
+- scrollUntilVisible:
+    element:
+      text: '.*(Cassaforte privata|Private Vault|Caja fuerte privada|Coffre privé|Cofre privado).*'
+    direction: DOWN
+    timeout: 30000
+    speed: 35
+    visibilityPercentage: 15
+    centerElement: false
+- tapOn:
+    text: '.*(Cassaforte privata|Private Vault|Caja fuerte privada|Coffre privé|Cofre privado).*'
+- runFlow:
+    when:
+      visible: '.*(Uno spazio solo tuo|A space just for you|Un espacio solo para ti|Un espace rien qu’à toi|Um espaço só teu).*'
+    commands:
+      - tapOn:
+          id: 'vault_password_field'
+      - inputText: 'D2VaultPassword2026'
+      - tapOn:
+          id: 'vault_repeat_password_field'
+      - inputText: 'D2VaultPassword2026'
+      - hideKeyboard
+      - tapOn:
+          text: '(Crea cassaforte|Create Vault|Crear Caja fuerte|Créer le Coffre|Criar Cofre)'
+      - extendedWaitUntil:
+          visible: '(Nuova nota|New note|Nueva nota|Nouvelle note|Nova nota)'
+          timeout: 180000
+- runFlow:
+    when:
+      visible: '.*(Cassaforte bloccata|Vault locked|Caja fuerte bloqueada|Coffre verrouillé|Cofre bloqueado).*'
+    commands:
+      - tapOn:
+          id: 'vault_password_field'
+      - eraseText: 64
+      - inputText: 'D2VaultPassword2026'
+      - hideKeyboard
+      - tapOn:
+          text: '(Sblocca|Unlock|Desbloquear|Déverrouiller)'
+      - extendedWaitUntil:
+          visible: '(Nuova nota|New note|Nueva nota|Nouvelle note|Nova nota)'
+          timeout: 420000
+- runFlow:
+    when:
+      visible: '.*(La cassaforte è vuota|The Vault is empty|La Caja fuerte está vacía|Le Coffre est vide|O Cofre está vazio).*'
+    commands:
+      - tapOn:
+          text: '(Nuova nota|New note|Nueva nota|Nouvelle note|Nova nota)'
+      - extendedWaitUntil:
+          visible: '(Nuovo contenuto privato|New private content|Nuevo contenido privado|Nouveau contenu privé|Novo conteúdo privado)'
+          timeout: 10000
+      - tapOn:
+          id: 'vault_note_title_field'
+      - inputText: 'D2_APPLAB_PERSISTENCE'
+      - tapOn:
+          id: 'vault_note_body_field'
+      - inputText: 'D2 encrypted payload survives relock and restart'
+      - hideKeyboard
+      - tapOn:
+          text: '(Salva|Save|Guardar|Enregistrer)'
+      - extendedWaitUntil:
+          visible: '.*D2_APPLAB_PERSISTENCE[\s\S]*D2 encrypted payload survives relock and restart.*'
+          timeout: 15000
+- stopApp
+- launchApp
+- extendedWaitUntil:
+    visible: '(La mia giornata|My day|Mi día|Ma journée|O meu dia)[\s\S]*'
+    timeout: 15000
+- tapOn:
+    id: 'main-nav-more'
+    retryTapIfNoChange: true
+- extendedWaitUntil:
+    visible: '(Altro|More|Más|Plus|Mais)'
+    timeout: 10000
+- scrollUntilVisible:
+    element:
+      id: 'more-settings'
+    direction: DOWN
+    timeout: 30000
+    speed: 45
+    visibilityPercentage: 20
+    centerElement: false
+- tapOn:
+    id: 'more-settings'
+- extendedWaitUntil:
+    visible:
+      id: 'settings-hub-preferences-privacy'
+    timeout: 10000
+- tapOn:
+    id: 'settings-hub-preferences-privacy'
+- extendedWaitUntil:
+    visible: '(Impostazioni|Settings|Ajustes|Paramètres|Definições)'
+    timeout: 10000
+- scrollUntilVisible:
+    element:
+      text: '.*(Privacy Center).*'
+    direction: DOWN
+    timeout: 30000
+    speed: 45
+    visibilityPercentage: 20
+    centerElement: false
+- scrollUntilVisible:
+    element:
+      text: '.*(Cassaforte privata|Private Vault|Caja fuerte privada|Coffre privé|Cofre privado).*'
+    direction: DOWN
+    timeout: 30000
+    speed: 35
+    visibilityPercentage: 15
+    centerElement: false
+- tapOn:
+    text: '.*(Cassaforte privata|Private Vault|Caja fuerte privada|Coffre privé|Cofre privado).*'
+- extendedWaitUntil:
+    visible: '.*(Cassaforte bloccata|Vault locked|Caja fuerte bloqueada|Coffre verrouillé|Cofre bloqueado).*'
+    timeout: 15000
+- tapOn:
+    id: 'vault_password_field'
+- inputText: 'D2VaultPassword2026'
+- hideKeyboard
+- tapOn:
+    text: '(Sblocca|Unlock|Desbloquear|Déverrouiller)'
+- extendedWaitUntil:
+    visible: '.*D2_APPLAB_PERSISTENCE[\s\S]*D2 encrypted payload survives relock and restart.*'
+    timeout: 420000
+- assertVisible:
+    text: '.*D2_APPLAB_PERSISTENCE[\s\S]*D2 encrypted payload survives relock and restart.*'
+
+# Leave the FLAG_SECURE Vault after persistence verification so AppLab's global final visual checkpoint
+# evaluates a capturable non-sensitive surface without weakening Vault screenshot protection.
+- tapOn:
+    id: 'vault_back_button'
+- extendedWaitUntil:
+    visible: '(Impostazioni|Settings|Ajustes|Paramètres|Definições)'
+    timeout: 10000
