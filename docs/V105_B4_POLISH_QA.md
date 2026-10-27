@@ -6,7 +6,7 @@ Close the v1.05 Memories & Recall 3.0 line only after B1, B2 and B3 are present
 on the final integrated base and the same exact B4 head passes every required
 FULL/CERTIFIED gate.
 
-B2 PR #129 and B3 PR #130 are now merged. PR #131 has been rebuilt from the
+B2 PR #129 and B3 PR #130 are now merged. The earlier PR #131 was closed without merge; final PR #132 was rebuilt from the
 integrated `main` and contains only the bounded B4 Polish & QA delta. Earlier
 pre-integration green evidence is historical only; final closure requires a
 fresh review and certification on the current exact B4 head.
