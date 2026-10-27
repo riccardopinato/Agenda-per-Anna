@@ -203,13 +203,37 @@ extension AgendaStoreMemoryCollections on AgendaStore {
   List<MemoryLifeThread> memoryLifeThreads() =>
       _memoryLifeThreads(limit: 24);
 
-  MemoryLifeThread? memoryLifeThreadById(String id) {
-    final wanted = id.trim();
-    if (wanted.isEmpty) return null;
-    for (final thread in _memoryLifeThreads()) {
-      if (thread.id == wanted) return thread;
+  List<DiaryBlockReference> memoryLifeThreadReferences(String id) {
+    final wanted = id.trim().toLowerCase();
+    final separator = wanted.indexOf(':');
+    if (separator <= 0 || separator >= wanted.length - 1) {
+      return const <DiaryBlockReference>[];
     }
-    return null;
+
+    final kindName = wanted.substring(0, separator);
+    final identifier = wanted.substring(separator + 1);
+    final matches = memoryReferences().where((reference) {
+      final block = reference.block;
+      return switch (kindName) {
+        'person' => block.personIds.any(
+            (personId) => personId.trim().toLowerCase() == identifier,
+          ),
+        'place' => block.places.any(
+            (place) => place.normalizedName == identifier,
+          ),
+        'tag' => block.tags.any(
+            (tag) => tag.trim().toLowerCase() == identifier,
+          ),
+        _ => false,
+      };
+    }).toList(growable: false)
+      ..sort((a, b) {
+        final date = b.date.compareTo(a.date);
+        if (date != 0) return date;
+        return b.block.createdAt.compareTo(a.block.createdAt);
+      });
+
+    return List.unmodifiable(matches);
   }
 
   Future<void> saveMemoryCollection(
