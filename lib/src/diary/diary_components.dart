@@ -497,65 +497,92 @@ Future<String?> showDiaryNoteEditor(
   BuildContext context, {
   String initialText = '',
   bool editing = false,
-}) async {
-  final controller = TextEditingController(text: initialText);
-  final value = await showDialog<String>(
-    context: context,
-    builder: (dialogContext) => StatefulBuilder(
-      builder: (dialogContext, setDialogState) => AlertDialog(
-        title: Text(editing ? AnnaStrings.of(context).d3('editNote') : AnnaStrings.of(context).d3('newNote')),
-        content: TextField(
-          controller: controller,
-          autofocus: true,
-          minLines: 5,
-          maxLines: 12,
-          textCapitalization: TextCapitalization.sentences,
-          decoration: InputDecoration(
-            hintText:
-                AnnaStrings.of(context).d3('noteHint'),
-            border: const OutlineInputBorder(),
-          ),
-        ),
-        actions: [
-          TextButton.icon(
-            onPressed: () async {
-              final focused = await Navigator.of(dialogContext).push<String>(
-                MaterialPageRoute(
-                  fullscreenDialog: true,
-                  builder: (_) => FocusWritingScreen(
-                    initialText: controller.text,
-                    title: editing ? AnnaStrings.of(context).d3('editNote') : AnnaStrings.of(context).d3('newNote'),
-                  ),
-                ),
-              );
-              if (focused == null) return;
-              controller
-                ..text = focused
-                ..selection = TextSelection.collapsed(
-                  offset: focused.length,
-                );
-              setDialogState(() {});
-            },
-            icon: const Icon(Icons.fullscreen),
-            label: Text(AnnaStrings.of(context).d3('writeFullscreen')),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(dialogContext),
-            child: Text(AnnaStrings.of(context).cancel),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.pop(
-              dialogContext,
-              controller.text.trim(),
-            ),
-            child: Text(AnnaStrings.of(context).save),
-          ),
-        ],
+}) => showDialog<String>(
+      context: context,
+      builder: (_) => _DiaryNoteEditorDialog(
+        initialText: initialText,
+        editing: editing,
       ),
-    ),
-  );
-  controller.dispose();
-  return value;
+    );
+
+/// Own the controller for the *route's* lifetime. Future returned by
+/// showDialog completes before the reverse transition removes its TextField.
+class _DiaryNoteEditorDialog extends StatefulWidget {
+  final String initialText;
+  final bool editing;
+
+  const _DiaryNoteEditorDialog({
+    required this.initialText,
+    required this.editing,
+  });
+
+  @override
+  State<_DiaryNoteEditorDialog> createState() => _DiaryNoteEditorDialogState();
+}
+
+class _DiaryNoteEditorDialogState extends State<_DiaryNoteEditorDialog> {
+  late final TextEditingController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = TextEditingController(text: widget.initialText);
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final strings = AnnaStrings.of(context);
+    final title = widget.editing ? strings.d3('editNote') : strings.d3('newNote');
+    return AlertDialog(
+      title: Text(title),
+      content: TextField(
+        controller: _controller,
+        autofocus: true,
+        minLines: 5,
+        maxLines: 12,
+        textCapitalization: TextCapitalization.sentences,
+        decoration: InputDecoration(
+          hintText: strings.d3('noteHint'),
+          border: const OutlineInputBorder(),
+        ),
+      ),
+      actions: [
+        TextButton.icon(
+          onPressed: () async {
+            final focused = await Navigator.of(context).push<String>(
+              MaterialPageRoute(
+                fullscreenDialog: true,
+                builder: (_) => FocusWritingScreen(
+                  initialText: _controller.text,
+                  title: title,
+                ),
+              ),
+            );
+            if (!mounted || focused == null) return;
+            _controller
+              ..text = focused
+              ..selection = TextSelection.collapsed(offset: focused.length);
+          },
+          icon: const Icon(Icons.fullscreen),
+          label: Text(strings.d3('writeFullscreen')),
+        ),
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: Text(strings.cancel),
+        ),
+        FilledButton(
+          onPressed: () => Navigator.pop(context, _controller.text.trim()),
+          child: Text(strings.save),
+        ),
+      ],
+    );
+  }
 }
 
 Future<String?> showDiaryCaptionEditor(
