@@ -234,12 +234,12 @@ extension AgendaStoreMemoryCollections on AgendaStore {
     final next = [...preferences.memoryCollections];
     final index = next.indexWhere((entry) => entry.id == normalized.id);
     if (index < 0) {
+      if (next.length >= 24) {
+        throw const FormatException('memory_collection_limit_reached');
+      }
       next.add(normalized);
     } else {
       next[index] = normalized;
-    }
-    if (next.length > 24) {
-      next.removeRange(0, next.length - 24);
     }
     await savePreferences(
       preferences.copyWith(memoryCollections: List.unmodifiable(next)),
