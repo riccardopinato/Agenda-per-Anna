@@ -256,12 +256,9 @@ class _MemoryCollectionsScreenState extends State<MemoryCollectionsScreen> {
         builder: (_) => _MemoryDerivedResultsScreen(
           store: widget.store,
           title: thread.label,
-          recordsBuilder: () {
-            for (final current in widget.store.memoryLifeThreads()) {
-              if (current.id == thread.id) return current.memories;
-            }
-            return const <DiaryBlockReference>[];
-          },
+          recordsBuilder: () =>
+              widget.store.memoryLifeThreadById(thread.id)?.memories ??
+              const <DiaryBlockReference>[],
         ),
       ),
     );
