@@ -3,13 +3,13 @@ import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
-  test('v1.00-E uses canonical 1.0 release-candidate metadata', () {
+  test('v1.00-E keeps release-candidate identity aligned after updates', () {
     final pubspec = File('pubspec.yaml').readAsStringSync();
     final version = File('lib/app_version.dart').readAsStringSync();
 
-    expect(pubspec, contains('version: 1.0.0-rc.1+110'));
-    expect(version, contains("appReleaseVersion = '1.0.0-rc.1'"));
-    expect(version, contains('appReleaseBuildNumber = 110'));
+    expect(pubspec, contains('version: 1.0.0-rc.2+111'));
+    expect(version, contains("appReleaseVersion = '1.0.0-rc.2'"));
+    expect(version, contains('appReleaseBuildNumber = 111'));
   });
 
   test('v1.00-E pins current Play Android submission requirements', () {
