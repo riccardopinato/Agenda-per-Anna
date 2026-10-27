@@ -63,11 +63,15 @@ class _MemoryCollectionsScreenState extends State<MemoryCollectionsScreen> {
       context: context,
       builder: (dialogContext) => StatefulBuilder(
         builder: (dialogContext, setDialogState) {
+          final rawYear = year.text.trim();
+          final parsedYear = int.tryParse(rawYear);
+          final invalidYear = rawYear.isNotEmpty &&
+              (parsedYear == null || parsedYear < 1 || parsedYear > 9999);
           final hasFilter = personId.isNotEmpty ||
               place.isNotEmpty ||
               tag.text.trim().isNotEmpty ||
               type.isNotEmpty ||
-              year.text.trim().isNotEmpty;
+              (parsedYear != null && !invalidYear);
 
           return AlertDialog(
             title: Text(strings.v105NewCollection),
@@ -163,6 +167,8 @@ class _MemoryCollectionsScreenState extends State<MemoryCollectionsScreen> {
                       keyboardType: TextInputType.number,
                       decoration: InputDecoration(
                         labelText: strings.v105OptionalYear,
+                        errorText:
+                            invalidYear ? strings.v105InvalidYear : null,
                       ),
                     ),
                     if (!hasFilter) ...[
@@ -188,10 +194,10 @@ class _MemoryCollectionsScreenState extends State<MemoryCollectionsScreen> {
                 child: Text(strings.cancel),
               ),
               FilledButton(
-                onPressed: name.text.trim().isEmpty || !hasFilter
-                    ? null
-                    : () {
-                        final parsedYear = int.tryParse(year.text.trim());
+                onPressed:
+                    name.text.trim().isEmpty || !hasFilter || invalidYear
+                        ? null
+                        : () {
                         final parsedType =
                             _memoryCollectionTypeFromName(type);
                         Navigator.pop(
@@ -229,14 +235,14 @@ class _MemoryCollectionsScreenState extends State<MemoryCollectionsScreen> {
   Future<void> _openCollection(
     MemoryCollectionDefinition definition,
   ) async {
-    final records = widget.store.memoryCollectionReferences(definition);
     await Navigator.push(
       context,
       MaterialPageRoute<void>(
         builder: (_) => _MemoryDerivedResultsScreen(
           store: widget.store,
           title: definition.name,
-          records: records,
+          recordsBuilder: () =>
+              widget.store.memoryCollectionReferences(definition),
         ),
       ),
     );
@@ -249,7 +255,12 @@ class _MemoryCollectionsScreenState extends State<MemoryCollectionsScreen> {
         builder: (_) => _MemoryDerivedResultsScreen(
           store: widget.store,
           title: thread.label,
-          records: thread.memories,
+          recordsBuilder: () {
+            for (final current in widget.store.memoryLifeThreads()) {
+              if (current.id == thread.id) return current.memories;
+            }
+            return const <DiaryBlockReference>[];
+          },
         ),
       ),
     );
@@ -388,12 +399,12 @@ class _MemoryCollectionsScreenState extends State<MemoryCollectionsScreen> {
 class _MemoryDerivedResultsScreen extends StatelessWidget {
   final AgendaStore store;
   final String title;
-  final List<DiaryBlockReference> records;
+  final List<DiaryBlockReference> Function() recordsBuilder;
 
   const _MemoryDerivedResultsScreen({
     required this.store,
     required this.title,
-    required this.records,
+    required this.recordsBuilder,
   });
 
   @override
@@ -406,50 +417,57 @@ class _MemoryDerivedResultsScreen extends StatelessWidget {
           style: const TextStyle(fontWeight: FontWeight.w800),
         ),
       ),
-      body: records.isEmpty
-          ? Center(child: Text(strings.v100RediscoverEmpty))
-          : ListView.separated(
-              padding: const EdgeInsets.all(AnnaDesignTokens.spaceMd),
-              itemCount: records.length,
-              separatorBuilder: (_, __) => const Divider(height: 1),
-              itemBuilder: (context, index) {
-                final reference = records[index];
-                return ListTile(
-                  leading: Icon(
-                    switch (reference.block.type) {
-                      DiaryBlockType.note => Icons.sticky_note_2_outlined,
-                      DiaryBlockType.sketch => Icons.draw_outlined,
-                      DiaryBlockType.photo => Icons.photo_outlined,
-                      DiaryBlockType.voice => Icons.mic_none_outlined,
-                    },
+      body: AnimatedBuilder(
+        animation: store.journalRevision,
+        builder: (context, _) {
+          final records = recordsBuilder();
+          if (records.isEmpty) {
+            return Center(child: Text(strings.v100RediscoverEmpty));
+          }
+          return ListView.separated(
+            padding: const EdgeInsets.all(AnnaDesignTokens.spaceMd),
+            itemCount: records.length,
+            separatorBuilder: (_, __) => const Divider(height: 1),
+            itemBuilder: (context, index) {
+              final reference = records[index];
+              return ListTile(
+                leading: Icon(
+                  switch (reference.block.type) {
+                    DiaryBlockType.note => Icons.sticky_note_2_outlined,
+                    DiaryBlockType.sketch => Icons.draw_outlined,
+                    DiaryBlockType.photo => Icons.photo_outlined,
+                    DiaryBlockType.voice => Icons.mic_none_outlined,
+                  },
+                ),
+                title: Text(
+                  store.diaryBlockDisplayTitle(
+                    reference.block,
+                    strings: strings,
                   ),
-                  title: Text(
-                    store.diaryBlockDisplayTitle(
-                      reference.block,
-                      strings: strings,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                subtitle: Text(
+                  DateFormat(
+                    'd MMMM yyyy',
+                    AnnaStrings.intlLocale(context),
+                  ).format(reference.date),
+                ),
+                trailing: const Icon(Icons.chevron_right),
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute<void>(
+                    builder: (_) => PlannerScreen(
+                      store: store,
+                      initialDate: reference.date,
                     ),
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
                   ),
-                  subtitle: Text(
-                    DateFormat(
-                      'd MMMM yyyy',
-                      AnnaStrings.intlLocale(context),
-                    ).format(reference.date),
-                  ),
-                  trailing: const Icon(Icons.chevron_right),
-                  onTap: () => Navigator.push(
-                    context,
-                    MaterialPageRoute<void>(
-                      builder: (_) => PlannerScreen(
-                        store: store,
-                        initialDate: reference.date,
-                      ),
-                    ),
-                  ),
-                );
-              },
-            ),
+                ),
+              );
+            },
+          );
+        },
+      ),
     );
   }
 }
