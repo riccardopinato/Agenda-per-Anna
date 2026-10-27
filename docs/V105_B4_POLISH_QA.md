@@ -6,10 +6,10 @@ Close the v1.05 Memories & Recall 3.0 line only after B1, B2 and B3 are present
 on the final integrated base and the same exact B4 head passes every required
 FULL/CERTIFIED gate.
 
-This PR is intentionally used early as an integration branch. Early green
-evidence can expose regressions sooner, but it is not final release evidence:
-after B2 and B3 squash-merge, B4 must be realigned to the resulting `main` and
-certified again on that exact head.
+B2 PR #129 and B3 PR #130 are now merged. PR #131 has been rebuilt from the
+integrated `main` and contains only the bounded B4 Polish & QA delta. Earlier
+pre-integration green evidence is historical only; final closure requires a
+fresh review and certification on the current exact B4 head.
 
 ## Factory baseline
 
@@ -49,7 +49,7 @@ past diary day therefore remains in the correct diary month/year.
 
 - invalid non-integer years fail inline before save;
 - collection result lists re-derive on journal changes;
-- overview counts/threads refresh when returning from result navigation;
+- overview collections, counts, saved views and Life Threads subscribe to existing settings/journal revisions so cloud-sync changes rebuild the open screen;
 - remote preferences apply `memoryCollections`, including an empty list for
   deletion propagation, while older payloads that omit the field remain
   compatible.
