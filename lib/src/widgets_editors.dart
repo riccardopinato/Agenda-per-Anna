@@ -277,7 +277,9 @@ class _JournalEditorState extends State<JournalEditor> {
         );
         if (!mounted || saveStore != widget.store ||
             !AgendaStore.sameDay(saveDate, widget.date) ||
-            saveStore.activeAccountId != _loadedAccountId) return;
+            saveStore.activeAccountId != _loadedAccountId) {
+          return;
+        }
         if (replaceRemote != true) {
           if (replaceRemote == false) {
             _disposeControllers();
@@ -291,7 +293,9 @@ class _JournalEditorState extends State<JournalEditor> {
       // fields so unrelated remote changes, blocks and metadata are preserved.
       draft = merge();
       if (saveStore.activeAccountId != _loadedAccountId ||
-          !AgendaStore.sameDay(saveDate, widget.date)) return;
+          !AgendaStore.sameDay(saveDate, widget.date)) {
+        return;
+      }
       await saveStore.saveJournal(saveDate, draft.merged);
       if (!mounted) return;
       _disposeControllers();
