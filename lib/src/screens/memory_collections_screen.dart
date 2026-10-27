@@ -246,6 +246,7 @@ class _MemoryCollectionsScreenState extends State<MemoryCollectionsScreen> {
         ),
       ),
     );
+    if (mounted) setState(() {});
   }
 
   Future<void> _openThread(MemoryLifeThread thread) async {
@@ -264,6 +265,7 @@ class _MemoryCollectionsScreenState extends State<MemoryCollectionsScreen> {
         ),
       ),
     );
+    if (mounted) setState(() {});
   }
 
   @override
