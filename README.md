@@ -932,3 +932,8 @@ monolithic primary flow remains the fail-safe fallback. FAST can reduce runtime
 only when AppLab proves complete path coverage; FULL/CERTIFIED select the
 complete catalog. AppLab remains the trusted authority for atomic execution,
 sharding and exact-artifact verdicts.
+
+
+## v1.05 — Memories & Recall 3.0
+
+v1.05 consolidates deterministic recall over the existing diary/person/place/archive primitives: For You, Timeline, Memory Map, Then & Now, Year in Review 2.0, Collections and Life Threads. Collections persist only bounded filter definitions; all results and Life Threads are derived from canonical records. No parallel memory persistence or generative narrator is introduced. Physical-device and Store evidence remain separate from CI/AppLab.

@@ -273,10 +273,17 @@ class _MemoryCollectionsScreenState extends State<MemoryCollectionsScreen> {
   @override
   Widget build(BuildContext context) {
     final strings = AnnaStrings.of(context);
-    final collections = widget.store.preferences.memoryCollections;
-    final threads = widget.store.memoryLifeThreads();
 
-    return Scaffold(
+    return AnimatedBuilder(
+      animation: Listenable.merge([
+        widget.store.settingsRevision,
+        widget.store.journalRevision,
+      ]),
+      builder: (context, _) {
+        final collections = widget.store.preferences.memoryCollections;
+        final threads = widget.store.memoryLifeThreads();
+
+        return Scaffold(
       appBar: AppBar(
         title: Text(
           '${strings.v105Collections} · ${strings.v105LifeThreads}',
@@ -396,6 +403,8 @@ class _MemoryCollectionsScreenState extends State<MemoryCollectionsScreen> {
           ],
         ),
       ),
+        );
+      },
     );
   }
 }
