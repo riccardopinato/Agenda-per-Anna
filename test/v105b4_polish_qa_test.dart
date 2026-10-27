@@ -127,7 +127,9 @@ void main() {
     final preferences = File('lib/src/domain_models.dart').readAsStringSync();
 
     expect(screen, contains('recordsBuilder: ()'));
-    expect(screen, contains('animation: store.journalRevision'));
+    expect(screen, contains('animation: Listenable.merge(['));
+    expect(screen, contains('widget.store.settingsRevision'));
+    expect(screen, contains('widget.store.journalRevision'));
     expect(screen, contains('if (mounted) setState(() {})'));
     expect(screen, contains('invalidYear'));
     expect(store, contains("payload.containsKey('memoryCollections')"));
