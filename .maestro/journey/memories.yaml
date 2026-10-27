@@ -1,8 +1,13 @@
 appId: com.riccardopinato.agenda_per_anna
 ---
+# Visual Journey runs after atomic runtime and must not inherit the scroll/state
+# left by the preceding Today checkpoint. Re-launch and wait for the stable
+# primary-navigation semantic before opening Memories.
+- launchApp
 - extendedWaitUntil:
-    visible: '(La mia giornata|My day|Mi día|Ma journée|O meu dia)[\\s\\S]*'
-    timeout: 30000
+    visible:
+      id: 'main-nav-memories'
+    timeout: 15000
 - tapOn:
     id: 'main-nav-memories'
     retryTapIfNoChange: true
