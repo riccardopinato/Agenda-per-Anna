@@ -39,6 +39,33 @@ void main() {
     );
   });
 
+  test('template preset tags remain stable across language changes', () {
+    for (final id in ['morning', 'evening', 'gratitude', 'travel', 'special_day', 'reflection']) {
+      final en = diaryTemplatePresetsFor(const AnnaStrings('en'))
+          .firstWhere((preset) => preset.id == id);
+      final it = diaryTemplatePresetsFor(const AnnaStrings('it'))
+          .firstWhere((preset) => preset.id == id);
+      expect(it.tags, en.tags);
+    }
+  });
+
+  test('template draft is not persisted until confirmed', () async {
+    final store = AgendaStore();
+    await store.load();
+    final day = DateTime(2026, 10, 27);
+    final preset = diaryTemplatePresets.first;
+    expect(store.journal(day).blocks, isEmpty);
+
+    final created = await store.applyDiaryTemplate(
+      day,
+      preset,
+      textOverride: 'Edited before save',
+    );
+    expect(store.journal(day).blocks, hasLength(1));
+    expect(created.text, 'Edited before save');
+    store.dispose();
+  });
+
   test('applying a template reuses ordinary journal persistence', () async {
     final store = AgendaStore();
     await store.load();
