@@ -662,6 +662,340 @@ class _DiaryMemoriesScreenState extends State<DiaryMemoriesScreen> {
     );
   }
 
+
+  Future<void> _showMemoryMap() async {
+    final strings = AnnaStrings.of(context);
+    final snapshot = widget.store.memoryMapSnapshot(
+      personId: widget.personId,
+      references: _records(),
+    );
+    final located = snapshot.locatedPlaces.take(24).toList(growable: false);
+    final unlocated = snapshot.unlocatedPlaces.take(12).toList(growable: false);
+
+    await showModalBottomSheet<void>(
+      context: context,
+      showDragHandle: true,
+      isScrollControlled: true,
+      builder: (sheetContext) => SafeArea(
+        child: Semantics(
+          identifier: 'memory-map-surface',
+          child: FractionallySizedBox(
+            heightFactor: 0.86,
+            child: ListView(
+              padding: const EdgeInsets.fromLTRB(
+                AnnaDesignTokens.spaceMd,
+                0,
+                AnnaDesignTokens.spaceMd,
+                AnnaDesignTokens.spaceLg,
+              ),
+              children: [
+                Text(
+                  strings.d3('memoryMapTitle'),
+                  style: Theme.of(sheetContext)
+                      .textTheme
+                      .headlineSmall
+                      ?.copyWith(fontWeight: FontWeight.w800),
+                ),
+                const SizedBox(height: AnnaDesignTokens.space2xs),
+                Text(strings.d3('memoryMapIntro')),
+                const SizedBox(height: AnnaDesignTokens.spaceMd),
+                Text(
+                  strings.d3Format(
+                    'memoryMapSummary',
+                    {
+                      'located': snapshot.locatedPlaces.length,
+                      'total': snapshot.places.length,
+                    },
+                  ),
+                  style: Theme.of(sheetContext)
+                      .textTheme
+                      .titleMedium
+                      ?.copyWith(fontWeight: FontWeight.w800),
+                ),
+                const SizedBox(height: AnnaDesignTokens.spaceSm),
+                if (snapshot.isEmpty)
+                  SimpleCard(
+                    child: Text(strings.d3('memoryMapNoPlaces')),
+                  )
+                else if (located.isNotEmpty)
+                  LayoutBuilder(
+                    builder: (context, constraints) {
+                      const mapHeight = 250.0;
+                      final mapWidth = constraints.maxWidth;
+                      return Semantics(
+                        identifier: 'memory-map-canvas',
+                        child: SizedBox(
+                          height: mapHeight,
+                          child: Stack(
+                            children: [
+                              Positioned.fill(
+                                child: DecoratedBox(
+                                  decoration: BoxDecoration(
+                                    borderRadius: BorderRadius.circular(
+                                      AnnaDesignTokens.radiusLg,
+                                    ),
+                                    gradient: LinearGradient(
+                                      colors: [
+                                        Theme.of(context)
+                                            .colorScheme
+                                            .primaryContainer,
+                                        Theme.of(context)
+                                            .colorScheme
+                                            .surfaceContainerHighest,
+                                      ],
+                                      begin: Alignment.topLeft,
+                                      end: Alignment.bottomRight,
+                                    ),
+                                  ),
+                                  child: CustomPaint(
+                                    painter: _MemoryMapGridPainter(
+                                      lineColor: Theme.of(context)
+                                          .colorScheme
+                                          .onSurface
+                                          .withValues(alpha: 0.10),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              ...located.map((place) {
+                                final x =
+                                    (((place.longitude ?? 0) + 180) / 360)
+                                        .clamp(0.0, 1.0)
+                                        .toDouble();
+                                final y =
+                                    ((90 - (place.latitude ?? 0)) / 180)
+                                        .clamp(0.0, 1.0)
+                                        .toDouble();
+                                return Positioned(
+                                  left: 6 + x * (mapWidth - 44),
+                                  top: 6 + y * (mapHeight - 44),
+                                  child: Tooltip(
+                                    message:
+                                        '${place.label} · ${place.count}',
+                                    child: Semantics(
+                                      button: true,
+                                      label:
+                                          '${place.label}, ${place.count}',
+                                      child: IconButton.filled(
+                                        iconSize: 18,
+                                        onPressed: () {
+                                          Navigator.pop(sheetContext);
+                                          searchController.text = place.label;
+                                          setState(() {
+                                            filter = null;
+                                            searchExpanded = true;
+                                            view =
+                                                _DiaryMemoriesView.timeline;
+                                          });
+                                        },
+                                        icon: Text(
+                                          '${place.count}',
+                                          style: const TextStyle(
+                                            fontWeight: FontWeight.w900,
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                );
+                              }),
+                            ],
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                if (unlocated.isNotEmpty) ...[
+                  const SizedBox(height: AnnaDesignTokens.spaceLg),
+                  Text(
+                    strings.d3('memoryMapNoCoordinates'),
+                    style: Theme.of(sheetContext)
+                        .textTheme
+                        .titleMedium
+                        ?.copyWith(fontWeight: FontWeight.w800),
+                  ),
+                  const SizedBox(height: AnnaDesignTokens.spaceXs),
+                  Wrap(
+                    spacing: AnnaDesignTokens.spaceXs,
+                    runSpacing: AnnaDesignTokens.spaceXs,
+                    children: unlocated
+                        .map(
+                          (place) => ActionChip(
+                            avatar:
+                                const Icon(Icons.place_outlined, size: 18),
+                            label:
+                                Text('${place.label} · ${place.count}'),
+                            onPressed: () {
+                              Navigator.pop(sheetContext);
+                              searchController.text = place.label;
+                              setState(() {
+                                filter = null;
+                                searchExpanded = true;
+                                view = _DiaryMemoriesView.timeline;
+                              });
+                            },
+                          ),
+                        )
+                        .toList(growable: false),
+                  ),
+                ],
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _showThenNow() async {
+    final strings = AnnaStrings.of(context);
+    final pairs = widget.store
+        .memoryMapSnapshot(
+          personId: widget.personId,
+          references: _records(),
+        )
+        .thenNow
+        .take(20)
+        .toList(growable: false);
+
+    await showModalBottomSheet<void>(
+      context: context,
+      showDragHandle: true,
+      isScrollControlled: true,
+      builder: (sheetContext) => SafeArea(
+        child: Semantics(
+          identifier: 'memories-then-now-surface',
+          child: FractionallySizedBox(
+            heightFactor: 0.86,
+            child: pairs.isEmpty
+                ? Center(
+                    child: Padding(
+                      padding:
+                          const EdgeInsets.all(AnnaDesignTokens.spaceLg),
+                      child: Text(
+                        strings.d3('thenNowEmpty'),
+                        textAlign: TextAlign.center,
+                      ),
+                    ),
+                  )
+                : ListView(
+                    padding: const EdgeInsets.fromLTRB(
+                      AnnaDesignTokens.spaceMd,
+                      0,
+                      AnnaDesignTokens.spaceMd,
+                      AnnaDesignTokens.spaceLg,
+                    ),
+                    children: [
+                      Text(
+                        strings.d3('thenNowTitle'),
+                        style: Theme.of(sheetContext)
+                            .textTheme
+                            .headlineSmall
+                            ?.copyWith(fontWeight: FontWeight.w800),
+                      ),
+                      const SizedBox(
+                        height: AnnaDesignTokens.space2xs,
+                      ),
+                      Text(strings.d3('thenNowIntro')),
+                      const SizedBox(height: AnnaDesignTokens.spaceMd),
+                      ...pairs.map(
+                        (pair) => Card(
+                          margin: const EdgeInsets.only(
+                            bottom: AnnaDesignTokens.spaceMd,
+                          ),
+                          child: Padding(
+                            padding: const EdgeInsets.all(
+                              AnnaDesignTokens.spaceMd,
+                            ),
+                            child: Column(
+                              crossAxisAlignment:
+                                  CrossAxisAlignment.stretch,
+                              children: [
+                                Row(
+                                  children: [
+                                    const Icon(Icons.place_outlined),
+                                    const SizedBox(
+                                      width: AnnaDesignTokens.spaceXs,
+                                    ),
+                                    Expanded(
+                                      child: Text(
+                                        pair.place.label,
+                                        style: const TextStyle(
+                                          fontWeight: FontWeight.w900,
+                                        ),
+                                      ),
+                                    ),
+                                    if (pair.yearsApart > 0)
+                                      Text(
+                                        strings.d3Format(
+                                          'thenNowYears',
+                                          {
+                                            'years': pair.yearsApart,
+                                          },
+                                        ),
+                                        style: Theme.of(sheetContext)
+                                            .textTheme
+                                            .bodySmall,
+                                      ),
+                                  ],
+                                ),
+                                const SizedBox(
+                                  height: AnnaDesignTokens.spaceXs,
+                                ),
+                                ListTile(
+                                  contentPadding: EdgeInsets.zero,
+                                  leading: const Icon(
+                                    Icons.history_outlined,
+                                  ),
+                                  title:
+                                      Text(strings.d3('thenNowThen')),
+                                  subtitle: Text(
+                                    '${DateFormat('d MMM yyyy', AnnaStrings.intlLocale(sheetContext)).format(pair.thenMemory.date)} · ${widget.store.diaryBlockDisplayTitle(pair.thenMemory.block, strings: strings)}',
+                                    maxLines: 2,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                  trailing:
+                                      const Icon(Icons.chevron_right),
+                                  onTap: () {
+                                    Navigator.pop(sheetContext);
+                                    unawaited(
+                                      _openRecord(pair.thenMemory),
+                                    );
+                                  },
+                                ),
+                                const Divider(height: 1),
+                                ListTile(
+                                  contentPadding: EdgeInsets.zero,
+                                  leading:
+                                      const Icon(Icons.today_outlined),
+                                  title: Text(strings.d3('thenNowNow')),
+                                  subtitle: Text(
+                                    '${DateFormat('d MMM yyyy', AnnaStrings.intlLocale(sheetContext)).format(pair.nowMemory.date)} · ${widget.store.diaryBlockDisplayTitle(pair.nowMemory.block, strings: strings)}',
+                                    maxLines: 2,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                  trailing:
+                                      const Icon(Icons.chevron_right),
+                                  onTap: () {
+                                    Navigator.pop(sheetContext);
+                                    unawaited(
+                                      _openRecord(pair.nowMemory),
+                                    );
+                                  },
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+          ),
+        ),
+      ),
+    );
+  }
+
   Widget _forYouView(
     BuildContext context,
     List<DiaryBlockReference> records,
@@ -726,6 +1060,42 @@ class _DiaryMemoriesScreenState extends State<DiaryMemoriesScreen> {
                   Text(
                     strings.d3('memoriesForYouIntro'),
                     style: Theme.of(context).textTheme.bodyMedium,
+                  ),
+                  const SizedBox(height: AnnaDesignTokens.spaceMd),
+                  Card(
+                    child: Column(
+                      children: [
+                        Semantics(
+                          identifier: 'memories-memory-map-entry',
+                          button: true,
+                          child: ListTile(
+                            leading: const Icon(Icons.public_outlined),
+                            title: Text(
+                              strings.d3('memoryMapTitle'),
+                              style: const TextStyle(fontWeight: FontWeight.w800),
+                            ),
+                            subtitle: Text(strings.d3('memoryMapIntro')),
+                            trailing: const Icon(Icons.chevron_right),
+                            onTap: _showMemoryMap,
+                          ),
+                        ),
+                        const Divider(height: 1),
+                        Semantics(
+                          identifier: 'memories-then-now-entry',
+                          button: true,
+                          child: ListTile(
+                            leading: const Icon(Icons.compare_arrows_outlined),
+                            title: Text(
+                              strings.d3('thenNowTitle'),
+                              style: const TextStyle(fontWeight: FontWeight.w800),
+                            ),
+                            subtitle: Text(strings.d3('thenNowIntro')),
+                            trailing: const Icon(Icons.chevron_right),
+                            onTap: _showThenNow,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                   if (hero != null) _forYouHero(context, hero),
                   if (snapshot.isEmpty) ...[
@@ -1387,4 +1757,55 @@ class _DiaryMemoriesScreenState extends State<DiaryMemoriesScreen> {
       ),
     );
   }
+}
+
+class _MemoryMapGridPainter extends CustomPainter {
+  final Color lineColor;
+
+  const _MemoryMapGridPainter({
+    required this.lineColor,
+  });
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = lineColor
+      ..strokeWidth = 1;
+
+    for (var i = 1; i < 6; i++) {
+      final x = size.width * i / 6;
+      canvas.drawLine(Offset(x, 0), Offset(x, size.height), paint);
+    }
+    for (var i = 1; i < 4; i++) {
+      final y = size.height * i / 4;
+      canvas.drawLine(Offset(0, y), Offset(size.width, y), paint);
+    }
+
+    final outline = Paint()
+      ..color = lineColor
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.4;
+    canvas.drawOval(
+      Rect.fromLTWH(
+        size.width * 0.08,
+        size.height * 0.18,
+        size.width * 0.34,
+        size.height * 0.42,
+      ),
+      outline,
+    );
+    canvas.drawOval(
+      Rect.fromLTWH(
+        size.width * 0.47,
+        size.height * 0.13,
+        size.width * 0.43,
+        size.height * 0.50,
+      ),
+      outline,
+    );
+  }
+
+  @override
+  bool shouldRepaint(covariant _MemoryMapGridPainter oldDelegate) =>
+      oldDelegate.lineColor != lineColor;
 }
