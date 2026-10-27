@@ -73,6 +73,8 @@ void main() {
     expect(correct, contains("inputText: 'D2VaultPassword2026'"));
     expect(restart, contains('- stopApp'));
     expect(restart, contains('D2_APPLAB_PERSISTENCE'));
+    expect(restart, contains("id: 'vault_back_button'"));
+    expect(restart, contains("id: 'more-search'"));
 
     for (final flow in <String>[wrong, correct, restart]) {
       expect(flow, contains("visible: '(Usa su questo dispositivo"));
