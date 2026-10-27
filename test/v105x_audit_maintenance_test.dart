@@ -60,7 +60,7 @@ void main() {
   });
 
   test('nonconflicting journal fields are merged with fresh remote data', () {
-    final baseline = DayJournal(
+    const baseline = DayJournal(
       beautiful: 'Before',
       note: 'Original',
       gratitude: const ['old'],
