@@ -22,7 +22,7 @@ void main() {
   testWidgets('Modelli opens a draft; cancel does not create an entry',
       (tester) async {
     final store = AgendaStore();
-    await store.load();
+    await tester.runAsync(store.load);
     final day = DateTime(2026, 10, 27);
     await tester.pumpWidget(
       MaterialApp(
