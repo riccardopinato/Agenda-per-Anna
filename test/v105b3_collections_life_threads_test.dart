@@ -175,7 +175,7 @@ void main() {
     final overview = store.memoryLifeThreads();
     expect(overview, hasLength(24));
 
-    const hiddenId = 'tag:thread-24';
+    const hiddenId = 'tag:thread-00';
     expect(overview.any((thread) => thread.id == hiddenId), isFalse);
 
     final hidden = store.memoryLifeThreadById(hiddenId);
