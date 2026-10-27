@@ -53,6 +53,9 @@ class AgendaStore extends ChangeNotifier {
   final List<TrashEntry> trash = [];
   final Map<String, CloudSyncOperation> _syncQueue = {};
   final Map<String, String> _syncIndex = {};
+  // One canonical local write queue prevents concurrent sync-index rollbacks
+  // from discarding operations committed by another mutation.
+  Future<void> _localMutationTail = Future<void>.value();
   final Set<String> _explicitRestoreKeys = <String>{};
   final Map<String, List<AgendaItem>> _dayIndex = {};
   final Map<String, SharedSpace> _sharedAgendaSpaces = {};
@@ -551,6 +554,31 @@ class AgendaStore extends ChangeNotifier {
   }
 
   Future<void> _persistEntityMutations(
+    List<
+        ({
+          String type,
+          String id,
+          Map<String, dynamic>? payload,
+          bool deleted,
+        })> mutations, {
+    bool createAutoSnapshot = true,
+  }) async {
+    final preceding = _localMutationTail;
+    final completed = Completer<void>();
+    _localMutationTail = completed.future;
+    try {
+      await preceding;
+      await _persistEntityMutationsSerial(
+        mutations,
+        createAutoSnapshot: createAutoSnapshot,
+      );
+    } finally {
+      // Even a failed operation must release the next queued writer.
+      completed.complete();
+    }
+  }
+
+  Future<void> _persistEntityMutationsSerial(
     List<
         ({
           String type,
