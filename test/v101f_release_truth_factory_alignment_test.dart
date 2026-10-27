@@ -43,7 +43,7 @@ void main() {
 
     // v1.01 closure evidence is historical; later product lines may advance
     // Product Bible.current without invalidating the v1.01 certification.
-    expect(productBible, contains('Distribution identity:** 1.0.0-rc.1+110'));
+    expect(productBible, contains('Distribution identity:** 1.0.0-rc.2+111'));
 
     expect(readme, contains('**v1.01-E** is merged'));
     expect(readme, contains('**v1.01-F** aligns Product Bible'));
