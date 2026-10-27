@@ -805,6 +805,43 @@ class _DiaryMemoriesScreenState extends State<DiaryMemoriesScreen> {
                       );
                     },
                   ),
+                if (located.isNotEmpty) ...[
+                  const SizedBox(height: AnnaDesignTokens.spaceMd),
+                  Text(
+                    strings.d3('memoryMapSelectablePlaces'),
+                    style: Theme.of(sheetContext)
+                        .textTheme
+                        .titleMedium
+                        ?.copyWith(fontWeight: FontWeight.w800),
+                  ),
+                  const SizedBox(height: AnnaDesignTokens.spaceXs),
+                  Semantics(
+                    identifier: 'memory-map-located-list',
+                    container: true,
+                    child: Wrap(
+                      spacing: AnnaDesignTokens.spaceXs,
+                      runSpacing: AnnaDesignTokens.spaceXs,
+                      children: located
+                          .map(
+                            (place) => ActionChip(
+                              avatar:
+                                  const Icon(Icons.place_outlined, size: 18),
+                              label: Text('${place.label} · ${place.count}'),
+                              onPressed: () {
+                                Navigator.pop(sheetContext);
+                                searchController.text = place.label;
+                                setState(() {
+                                  filter = null;
+                                  searchExpanded = true;
+                                  view = _DiaryMemoriesView.timeline;
+                                });
+                              },
+                            ),
+                          )
+                          .toList(growable: false),
+                    ),
+                  ),
+                ],
                 if (unlocated.isNotEmpty) ...[
                   const SizedBox(height: AnnaDesignTokens.spaceLg),
                   Text(
