@@ -83,6 +83,15 @@ void main() {
     }
   });
 
+  test('visual calendar checkpoint owns its starting state', () {
+    final calendar =
+        File('.maestro/journey/calendar.yaml').readAsStringSync();
+
+    expect(calendar, contains('- launchApp'));
+    expect(calendar, contains("id: 'main-nav-calendar'"));
+    expect(calendar, contains("id: 'calendar-open-month-notebook'"));
+  });
+
   test('legacy primary remains fail-safe while catalog is atomic', () {
     final project = jsonDecode(File('applab.project.json').readAsStringSync())
         as Map<String, dynamic>;
