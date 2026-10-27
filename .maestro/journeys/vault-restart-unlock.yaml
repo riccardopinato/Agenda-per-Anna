@@ -175,3 +175,11 @@ appId: com.riccardopinato.agenda_per_anna
     timeout: 420000
 - assertVisible:
     text: '.*D2_APPLAB_PERSISTENCE[\s\S]*D2 encrypted payload survives relock and restart.*'
+
+# Leave the FLAG_SECURE Vault after persistence verification so AppLab's global final visual checkpoint
+# evaluates a capturable non-sensitive surface without weakening Vault screenshot protection.
+- tapOn:
+    id: 'vault_back_button'
+- extendedWaitUntil:
+    visible: '(Impostazioni|Settings|Ajustes|Paramètres|Definições)'
+    timeout: 10000
