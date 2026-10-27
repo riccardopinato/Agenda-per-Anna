@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:intl/date_symbol_data_local.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:agenda_per_anna/local_state_store.dart';
@@ -22,10 +23,12 @@ void main() {
   testWidgets('Modelli opens a draft; cancel does not create an entry',
       (tester) async {
     final store = AgendaStore();
+    await tester.runAsync(() => initializeDateFormatting('en'));
     await tester.runAsync(store.load);
     final day = DateTime(2026, 10, 27);
     await tester.pumpWidget(
       MaterialApp(
+        locale: const Locale('en'),
         home: Scaffold(
           body: SingleChildScrollView(
             child: DiaryMemoryCard(store: store, date: day),
