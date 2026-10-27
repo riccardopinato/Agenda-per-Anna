@@ -565,6 +565,9 @@ class AgendaStore extends ChangeNotifier {
     final prefs = await _localState();
     final changes = <String, String?>{};
     final now = DateTime.now();
+    // Roll back in-memory sync projections if the atomic local write fails.
+    final queueBefore = Map<String, CloudSyncOperation>.from(_syncQueue);
+    final indexBefore = Map<String, String>.from(_syncIndex);
 
     for (final mutation in mutations) {
       final storageKey = _storageKeyForEntityType(mutation.type);
@@ -616,10 +619,30 @@ class AgendaStore extends ChangeNotifier {
       _syncQueue.map((key, value) => MapEntry(key, value.toJson())),
     );
     changes[_syncIndexKey] = jsonEncode(_syncIndex);
-    await prefs.writeBatch(changes);
+    try {
+      await prefs.writeBatch(changes);
+    } catch (_) {
+      _syncQueue
+        ..clear()
+        ..addAll(queueBefore);
+      _syncIndex
+        ..clear()
+        ..addAll(indexBefore);
+      rethrow;
+    }
 
+    // The canonical mutation is durable at this point. A best-effort
+    // automatic snapshot must not turn a successful save into a false FAIL.
     if (createAutoSnapshot) {
-      await _maybeCreateAutomaticSnapshot(prefs);
+      final snapshotsBefore = List<LocalBackupSnapshot>.from(localSnapshots);
+      try {
+        await _maybeCreateAutomaticSnapshot(prefs);
+      } catch (error) {
+        localSnapshots
+          ..clear()
+          ..addAll(snapshotsBefore);
+        debugPrint('Automatic local snapshot unavailable: ${error.runtimeType}');
+      }
     }
     _scheduleCloudSync();
   }
@@ -2805,12 +2828,29 @@ class AgendaStore extends ChangeNotifier {
 
   Future<void> saveJournal(DateTime date, DayJournal journal) async {
     final key = dateKey(date);
+    if (_unreadableStorageKeys.contains(_journalsKey)) {
+      throw StateError('journal_storage_unavailable');
+    }
+    final previous = journals[key];
     journals[key] = journal;
-    await _persistEntityMutation(
-      type: 'journal',
-      id: key,
-      payload: journal.toLocalJson(),
-    );
+    try {
+      await _persistEntityMutation(
+        type: 'journal',
+        id: key,
+        payload: journal.toLocalJson(),
+      );
+    } catch (_) {
+      // Do not leave an unsaved note visible as durable user data.
+      if (identical(journals[key], journal)) {
+        if (previous == null) {
+          journals.remove(key);
+        } else {
+          journals[key] = previous;
+        }
+        _notifyJournalChanged();
+      }
+      rethrow;
+    }
     _scheduleMediaMaintenance(
       delay: const Duration(seconds: 5),
     );
