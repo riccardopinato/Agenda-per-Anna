@@ -115,7 +115,7 @@ extension AgendaStoreMemoryCollections on AgendaStore {
           .where(definition.matches)
           .toList(growable: false);
 
-  List<MemoryLifeThread> memoryLifeThreads() {
+  List<MemoryLifeThread> _memoryLifeThreads({int? limit}) {
     final references = memoryReferences();
     final buckets = <String, List<DiaryBlockReference>>{};
     final metadata = <String, ({MemoryLifeThreadKind kind, String label})>{};
@@ -196,7 +196,20 @@ extension AgendaStoreMemoryCollections on AgendaStore {
       if (recent != 0) return recent;
       return a.label.toLowerCase().compareTo(b.label.toLowerCase());
     });
-    return List.unmodifiable(threads.take(24));
+    final visible = limit == null ? threads : threads.take(limit);
+    return List.unmodifiable(visible);
+  }
+
+  List<MemoryLifeThread> memoryLifeThreads() =>
+      _memoryLifeThreads(limit: 24);
+
+  MemoryLifeThread? memoryLifeThreadById(String id) {
+    final wanted = id.trim();
+    if (wanted.isEmpty) return null;
+    for (final thread in _memoryLifeThreads()) {
+      if (thread.id == wanted) return thread;
+    }
+    return null;
   }
 
   Future<void> saveMemoryCollection(
