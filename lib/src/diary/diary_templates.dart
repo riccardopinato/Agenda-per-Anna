@@ -35,28 +35,28 @@ List<DiaryTemplatePreset> diaryTemplatePresetsFor(AnnaStrings strings) =>
         title: strings.d3('templateMorningTitle'),
         description: strings.d3('templateMorningDesc'),
         seedText: strings.d3('templateMorningSeed'),
-        tags: ['routine', strings.d3('templateMorningTitle').toLowerCase()],
+        tags: const ['routine', 'morning'],
       ),
       DiaryTemplatePreset(
         id: 'evening',
         title: strings.d3('templateEveningTitle'),
         description: strings.d3('templateEveningDesc'),
         seedText: strings.d3('templateEveningSeed'),
-        tags: ['routine', strings.d3('templateEveningTitle').toLowerCase()],
+        tags: const ['routine', 'evening'],
       ),
       DiaryTemplatePreset(
         id: 'gratitude',
         title: strings.d3('templateGratitudeTitle'),
         description: strings.d3('templateGratitudeDesc'),
         seedText: strings.d3('templateGratitudeSeed'),
-        tags: [strings.d3('templateGratitudeTitle').toLowerCase()],
+        tags: const ['gratitude'],
       ),
       DiaryTemplatePreset(
         id: 'travel',
         title: strings.d3('templateTravelTitle'),
         description: strings.d3('templateTravelDesc'),
         seedText: strings.d3('templateTravelSeed'),
-        tags: [strings.d3('templateTravelTitle').toLowerCase()],
+        tags: const ['travel'],
         mediaHint: strings.d3('templateTravelMedia'),
       ),
       DiaryTemplatePreset(
@@ -64,7 +64,7 @@ List<DiaryTemplatePreset> diaryTemplatePresetsFor(AnnaStrings strings) =>
         title: strings.d3('templateSpecialTitle'),
         description: strings.d3('templateSpecialDesc'),
         seedText: strings.d3('templateSpecialSeed'),
-        tags: [strings.d3('templateSpecialTitle').toLowerCase()],
+        tags: const ['special_day'],
         mediaHint: strings.d3('templateSpecialMedia'),
       ),
       DiaryTemplatePreset(
@@ -72,7 +72,7 @@ List<DiaryTemplatePreset> diaryTemplatePresetsFor(AnnaStrings strings) =>
         title: strings.d3('templateReflectionTitle'),
         description: strings.d3('templateReflectionDesc'),
         seedText: strings.d3('templateReflectionSeed'),
-        tags: [strings.d3('templateReflectionTitle').toLowerCase()],
+        tags: const ['reflection'],
       ),
     ];
 
@@ -84,13 +84,14 @@ extension DiaryTemplatesAgendaStore on AgendaStore {
     DiaryTemplatePreset preset, {
     DateTime? createdAt,
     Iterable<String> extraTags = const <String>[],
+    String? textOverride,
   }) async {
     final now = createdAt ?? DateTime.now();
     final block = DiaryBlock(
       id: const Uuid().v4(),
       type: DiaryBlockType.note,
       createdAt: now,
-      text: preset.seedText,
+      text: textOverride ?? preset.seedText,
       tags: normalizeOrganizationTags([
         ...preset.tags,
         ...extraTags,
