@@ -1,16 +1,24 @@
 appId: com.riccardopinato.agenda_per_anna
 ---
+# Visual Journey starts after the atomic runtime, which may finish in a nested
+# surface such as Private Vault. Re-launch first so this checkpoint owns its
+# starting state instead of depending on the previous journey.
+- launchApp
+- extendedWaitUntil:
+    visible:
+      id: 'main-nav-calendar'
+    timeout: 15000
 - tapOn:
-    text: '(Calendario|Calendar|Calendrier|Calendário)[\s\S]*'
+    id: 'main-nav-calendar'
     retryTapIfNoChange: true
 - extendedWaitUntil:
-    visible: '(Calendario|Calendar|Calendrier|Calendário)'
+    visible:
+      id: 'calendar-open-month-notebook'
     timeout: 10000
 - assertVisible:
     text: '(Mese|Month|Mes|Mois|Mês)[\s\S]*'
 - assertVisible:
     text: '(Settimana|Week|Semana|Semaine)[\s\S]*'
-
 - assertVisible:
     id: 'calendar-open-month-notebook'
 - assertVisible:
