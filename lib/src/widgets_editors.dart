@@ -121,6 +121,56 @@ class EventTile extends StatelessWidget {
   }
 }
 
+/// Three-way merge for the editable daily journal fields.
+class JournalDraftMerge {
+  final DayJournal merged;
+  final bool hasConflicts;
+
+  const JournalDraftMerge({required this.merged, required this.hasConflicts});
+}
+
+JournalDraftMerge reconcileDailyJournalDraft({
+  required DayJournal baseline,
+  required DayJournal current,
+  required String beautiful,
+  required String note,
+  required DayMood? mood,
+  required List<String> gratitude,
+}) {
+  final nextBeautiful = beautiful.trim();
+  final nextNote = note.trim();
+  final nextGratitude = gratitude
+      .map((entry) => entry.trim())
+      .where((entry) => entry.isNotEmpty)
+      .toList(growable: false);
+
+  bool conflicts<T>(T before, T remote, T draft) =>
+      before != remote && before != draft && remote != draft;
+
+  final editBeautiful = nextBeautiful != baseline.beautiful;
+  final editNote = nextNote != baseline.note;
+  final editMood = mood != baseline.mood;
+  final editGratitude = !listEquals(nextGratitude, baseline.gratitude);
+  final hasConflicts =
+      (editBeautiful && conflicts(baseline.beautiful, current.beautiful, nextBeautiful)) ||
+      (editNote && conflicts(baseline.note, current.note, nextNote)) ||
+      (editMood && conflicts(baseline.mood, current.mood, mood)) ||
+      (editGratitude &&
+          !listEquals(baseline.gratitude, current.gratitude) &&
+          !listEquals(current.gratitude, nextGratitude));
+
+  return JournalDraftMerge(
+    hasConflicts: hasConflicts,
+    merged: current.copyWith(
+      beautiful: editBeautiful ? nextBeautiful : current.beautiful,
+      note: editNote ? nextNote : current.note,
+      mood: editMood ? mood : current.mood,
+      clearMood: editMood ? mood == null : current.mood == null,
+      gratitude: editGratitude ? nextGratitude : current.gratitude,
+    ),
+  );
+}
+
 class JournalEditor extends StatefulWidget {
   final AgendaStore store;
   final DateTime date;
@@ -135,6 +185,9 @@ class _JournalEditorState extends State<JournalEditor> {
   late TextEditingController note;
   late List<TextEditingController> gratitude;
   DayMood? mood;
+  late DayJournal _loadedBaseline;
+  String? _loadedAccountId;
+  bool _saving = false;
 
   @override
   void initState() {
@@ -145,7 +198,8 @@ class _JournalEditorState extends State<JournalEditor> {
   @override
   void didUpdateWidget(covariant JournalEditor oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (!AgendaStore.sameDay(oldWidget.date, widget.date)) {
+    if (oldWidget.store != widget.store ||
+        !AgendaStore.sameDay(oldWidget.date, widget.date)) {
       _disposeControllers();
       _load();
     }
@@ -153,6 +207,8 @@ class _JournalEditorState extends State<JournalEditor> {
 
   void _load() {
     final j = widget.store.journal(widget.date);
+    _loadedBaseline = j;
+    _loadedAccountId = widget.store.activeAccountId;
     beautiful = TextEditingController(text: j.beautiful);
     note = TextEditingController(text: j.note);
     mood = j.mood;
@@ -179,28 +235,83 @@ class _JournalEditorState extends State<JournalEditor> {
   }
 
   Future<void> _save() async {
-    final current = widget.store.journal(widget.date);
-    await widget.store.saveJournal(
-      widget.date,
-      current.copyWith(
-        beautiful: beautiful.text.trim(),
-        note: note.text.trim(),
-        mood: mood,
-        clearMood: mood == null,
-        gratitude: gratitude
-            .map((controller) => controller.text.trim())
-            .where((value) => value.isNotEmpty)
-            .toList(),
-      ),
-    );
+    if (_saving) return;
+    setState(() => _saving = true);
+    final saveDate = widget.date;
+    final saveStore = widget.store;
+    try {
+      if (saveStore.activeAccountId != _loadedAccountId) {
+        _disposeControllers();
+        _load();
+        if (mounted) setState(() {});
+        return;
+      }
 
-    if (mounted) {
+      JournalDraftMerge merge() => reconcileDailyJournalDraft(
+            baseline: _loadedBaseline,
+            current: saveStore.journal(saveDate),
+            beautiful: beautiful.text,
+            note: note.text,
+            mood: mood,
+            gratitude: gratitude.map((controller) => controller.text).toList(),
+          );
+
+      var draft = merge();
+      if (draft.hasConflicts) {
+        final replaceRemote = await showDialog<bool>(
+          context: context,
+          builder: (dialogContext) => AlertDialog(
+            title: Text(AnnaStrings.of(dialogContext).d3('journalConflictTitle')),
+            content: Text(AnnaStrings.of(dialogContext).d3('journalConflictBody')),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(dialogContext, false),
+                child: Text(AnnaStrings.of(dialogContext).d3('journalConflictReload')),
+              ),
+              FilledButton(
+                onPressed: () => Navigator.pop(dialogContext, true),
+                child: Text(AnnaStrings.of(dialogContext).d3('journalConflictKeep')),
+              ),
+            ],
+          ),
+        );
+        if (!mounted || saveStore != widget.store ||
+            !AgendaStore.sameDay(saveDate, widget.date) ||
+            saveStore.activeAccountId != _loadedAccountId) return;
+        if (replaceRemote != true) {
+          if (replaceRemote == false) {
+            _disposeControllers();
+            _load();
+            setState(() {});
+          }
+          return;
+        }
+      }
+      // Re-read the latest canonical day after the dialog; merge only edited
+      // fields so unrelated remote changes, blocks and metadata are preserved.
+      draft = merge();
+      if (saveStore.activeAccountId != _loadedAccountId ||
+          !AgendaStore.sameDay(saveDate, widget.date)) return;
+      await saveStore.saveJournal(saveDate, draft.merged);
+      if (!mounted) return;
+      _disposeControllers();
+      _load();
+      setState(() {});
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(AnnaStrings.of(context).d3('editor_daySaved')),
           duration: const Duration(seconds: 1),
         ),
       );
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(AnnaStrings.of(context).d3('journalSaveFailed')),
+        ),
+      );
+    } finally {
+      if (mounted) setState(() => _saving = false);
     }
   }
 
