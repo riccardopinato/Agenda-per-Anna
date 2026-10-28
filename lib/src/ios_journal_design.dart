@@ -92,7 +92,8 @@ abstract final class AnnaJournalTheme {
             dark ? scheme.surfaceContainerLow : scheme.surfaceContainerLowest,
         surfaceTintColor: Colors.transparent,
         elevation: 0,
-        indicatorColor: scheme.primaryContainer,
+        indicatorColor:
+            base.navigationBarTheme.indicatorColor ?? scheme.primaryContainer,
         labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
       ),
       navigationRailTheme: NavigationRailThemeData(
