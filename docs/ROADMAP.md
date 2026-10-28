@@ -90,7 +90,7 @@ Source of execution truth for Anna's Diary. Product identity and boundaries are 
 | v1.05-B3 | Collections / Life Threads | Completed — PR #130 merged after 4/4 exact-head gates | Saved views and derived life stories over people/place/tag/time/type without copying canonical data |
 | v1.05-B4 | Polish & QA | **Completed — integration PR #132 merged; 4/4 exact-head gates and Codex PASS** | Bounded UX/performance/accessibility/localization and trusted-runtime closure for v1.05 |
 | v1.05.x | Post-release audit remediation | **Completed — PR #134 merged; 4/4 exact-head gates and Codex PASS** | P1/P2 template editor, journal conflict/persistence/concurrency safety, canonical tags, live collections and Life Threads performance corrected; physical/store verification remains fail-closed |
-| v1.05.x-UI1 | Pastel visual polish: Today / More / Settings | **IN PROGRESS — PR #136, exact-head review/gates pending** | Presentation-only first slice: one Capture action, diary earlier, accessible pastel sections and responsive content width; v1.06 untouched |
+| v1.05.x-UI1 | Pastel visual polish: Today / More / Settings | **Completed — PR #136 merged, 4/4 exact-head gates and Codex PASS** | Presentation-only first slice: one Capture action, diary earlier, accessible pastel sections and responsive content width; physical/Store NOT VERIFIED; v1.06 untouched |
 | v1.06 | Ecosystem Expansion | PLANNED | Add specialist integrations one at a time under Shared Ecosystem Core + paired verification; preferred order TrailPath → Notes → SleepMax → CashMate |
 
 ## Current execution order — App Factory v26.6 / Factory Mode v22
