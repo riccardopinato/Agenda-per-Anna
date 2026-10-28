@@ -191,7 +191,7 @@ void main() {
     expect(legacy, isNot(contains('class HomeScreen')));
     expect(planner, contains('_DayLifeOverviewCard('));
     expect(planner, contains('_DayLifeStream('));
-    expect(planner, contains('SectionTitle(strings.diary)'));
+    expect(planner, contains('AnnaJournalSectionHeading(title: strings.diary)'));
     expect(planner, contains('label: Text(strings.capture)'));
   });
 }
