@@ -62,9 +62,10 @@ class MoreScreen extends StatelessWidget {
         final prefs = store.preferences;
         return Scaffold(
           appBar: AppBar(
+            toolbarHeight: 78,
             title: Text(
               strings.navMore,
-              style: const TextStyle(fontWeight: FontWeight.w800),
+              style: Theme.of(context).textTheme.headlineMedium,
             ),
           ),
           body: Center(
@@ -74,9 +75,9 @@ class MoreScreen extends StatelessWidget {
               ),
               child: ListView(
                 padding: const EdgeInsets.fromLTRB(
-                  AnnaDesignTokens.spaceMd,
+                  AnnaDesignTokens.journalPageGutter,
                   AnnaDesignTokens.spaceXs,
-                  AnnaDesignTokens.spaceMd,
+                  AnnaDesignTokens.journalPageGutter,
                   AnnaDesignTokens.spaceXl,
                 ),
                 children: [
@@ -100,13 +101,12 @@ class MoreScreen extends StatelessWidget {
                     ),
                     const SizedBox(height: AnnaDesignTokens.spaceLg),
                   ],
-                  AnnaPastelSectionHeader(
+                  AnnaJournalSectionHeading(
                     title: strings.d3('moreQuickAccess'),
-                    icon: Icons.bolt_outlined,
-                    domain: AnnaVisualDomain.today,
                   ),
                   const SizedBox(height: AnnaDesignTokens.spaceSm),
-                  SimpleCard(
+                  AnnaJournalCard(
+                    domain: AnnaVisualDomain.today,
                     child: Column(
                       children: [
                         _tile(
@@ -140,13 +140,12 @@ class MoreScreen extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: AnnaDesignTokens.spaceLg),
-                  AnnaPastelSectionHeader(
+                  AnnaJournalSectionHeading(
                     title: strings.d3('moreYourSpace'),
-                    icon: Icons.favorite_border_rounded,
-                    domain: AnnaVisualDomain.shared,
                   ),
                   const SizedBox(height: AnnaDesignTokens.spaceSm),
-                  SimpleCard(
+                  AnnaJournalCard(
+                    domain: AnnaVisualDomain.shared,
                     child: Column(
                       children: [
                         _tile(
@@ -200,13 +199,12 @@ class MoreScreen extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: AnnaDesignTokens.spaceLg),
-                  AnnaPastelSectionHeader(
+                  AnnaJournalSectionHeading(
                     title: strings.d3('moreDataAndApp'),
-                    icon: Icons.shield_outlined,
-                    domain: AnnaVisualDomain.ecosystem,
                   ),
                   const SizedBox(height: AnnaDesignTokens.spaceSm),
-                  SimpleCard(
+                  AnnaJournalCard(
+                    domain: AnnaVisualDomain.ecosystem,
                     child: Column(
                       children: [
                         _tile(

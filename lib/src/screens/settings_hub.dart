@@ -55,9 +55,10 @@ class SettingsHubScreen extends StatelessWidget {
       animation: PremiumEntitlementService.instance,
       builder: (context, _) => Scaffold(
         appBar: AppBar(
+          toolbarHeight: 78,
           title: Text(
             strings.settings,
-            style: const TextStyle(fontWeight: FontWeight.w800),
+            style: Theme.of(context).textTheme.headlineMedium,
           ),
         ),
         body: Center(
@@ -73,29 +74,33 @@ class SettingsHubScreen extends StatelessWidget {
                 AnnaDesignTokens.spaceXl,
               ),
               children: [
-                Container(
-                  padding: const EdgeInsets.all(AnnaDesignTokens.spaceMd),
-                  decoration: BoxDecoration(
-                    color: AnnaVisualDomain.people.softSurface(
-                      Theme.of(context).colorScheme,
-                    ),
-                    borderRadius: BorderRadius.circular(AnnaDesignTokens.radiusLg),
-                  ),
+                AnnaJournalCard(
+                  domain: AnnaVisualDomain.people,
                   child: Text(
                     strings.d3('settingsHubIntro'),
                     style: Theme.of(context).textTheme.bodyMedium,
                   ),
                 ),
                 const SizedBox(height: AnnaDesignTokens.spaceLg),
-                AnnaPastelSectionHeader(
+                AnnaJournalSectionHeading(
                   title: strings.d3('personalizationTitle'),
-                  icon: Icons.palette_outlined,
-                  domain: AnnaVisualDomain.people,
                 ),
                 const SizedBox(height: AnnaDesignTokens.spaceSm),
                 SimpleCard(
                   child: Column(
                     children: [
+                      _tile(
+                        id: 'settings-hub-appearance',
+                        domain: AnnaVisualDomain.people,
+                        icon: Icons.palette_outlined,
+                        title: strings.d3('appearanceColorsTitle'),
+                        subtitle: strings.d3('appearanceColorsIntro'),
+                        onTap: () => _open(
+                          context,
+                          AppearanceColorsScreen(store: store),
+                        ),
+                      ),
+                      const Divider(height: 1),
                       _tile(
                         id: 'settings-hub-personalization',
                         domain: AnnaVisualDomain.people,
@@ -137,10 +142,8 @@ class SettingsHubScreen extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: AnnaDesignTokens.spaceLg),
-                AnnaPastelSectionHeader(
+                AnnaJournalSectionHeading(
                   title: strings.v100DataSection,
-                  icon: Icons.shield_outlined,
-                  domain: AnnaVisualDomain.vault,
                 ),
                 const SizedBox(height: AnnaDesignTokens.spaceSm),
                 SimpleCard(
