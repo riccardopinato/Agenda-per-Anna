@@ -106,6 +106,40 @@ void main() {
     expect(source.split('widget.store.savePreferences(').length, 2);
   });
 
+  test('HSV channel adjustment supports keyboard and screen readers', () {
+    final editor =
+        File('lib/src/screens/appearance_colors.dart').readAsStringSync();
+    final catalog = File('lib/src/localization_d3.dart').readAsStringSync();
+    for (final channel in ['hue', 'saturation', 'brightness']) {
+      expect(editor, contains("'appearance-$channel-slider'"));
+    }
+    expect(editor, contains('semanticFormatterCallback:'));
+    expect(editor, contains('hsv.withSaturation(value)'));
+    expect(editor, contains('hsv.withValue(value)'));
+    expect(editor, contains('hsv.withHue(value)'));
+    for (final key in [
+      'appearanceHueSlider',
+      'appearanceSaturationSlider',
+      'appearanceBrightnessSlider',
+    ]) {
+      final line = catalog.split('\\n').firstWhere(
+            (line) => line.contains('"$key":'),
+          );
+      for (final language in ['en', 'it', 'es', 'fr', 'pt']) {
+        expect(line, contains('"$language":'));
+      }
+    }
+  });
+
+  test('legacy cloud appearance keys are optional, not reset commands', () {
+    final store = File('lib/src/agenda_store.dart').readAsStringSync();
+    for (final field in ['useCustomPalette', 'colorIntensity']) {
+      expect(store, contains("payload.containsKey('$field')"));
+    }
+    expect(store, contains(': preferences.useCustomPalette'));
+    expect(store, contains(': preferences.colorIntensity'));
+  });
+
   test('settings and personalization link to the same editor', () {
     final settings =
         File('lib/src/screens/backup_settings.dart').readAsStringSync();
