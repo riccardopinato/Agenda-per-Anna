@@ -590,10 +590,12 @@ class _DiaryMemoriesScreenState extends State<DiaryMemoriesScreen> {
           child: AnnaJournalCard(
             domain: AnnaVisualDomain.memories,
             hero: true,
-            child: InkWell(
-              key: const ValueKey<String>('memories-editorial-hero'),
-              onTap: () => _openRecord(record),
-              child: Column(
+            child: Material(
+              type: MaterialType.transparency,
+              child: InkWell(
+                key: const ValueKey<String>('memories-editorial-hero'),
+                onTap: () => _openRecord(record),
+                child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Icon(
@@ -616,6 +618,7 @@ class _DiaryMemoriesScreenState extends State<DiaryMemoriesScreen> {
                     style: Theme.of(context).textTheme.bodySmall,
                   ),
                 ],
+                ),
               ),
             ),
           ),
