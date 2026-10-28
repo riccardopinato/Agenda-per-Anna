@@ -412,123 +412,123 @@ class _PlannerScreenState extends State<PlannerScreen> {
                     child: ListView(
                       padding: const EdgeInsets.fromLTRB(14, 8, 14, 110),
                       children: [
-                    _DayOpeningCard(date: day),
-                    if (isToday) ...[
-                      const SizedBox(height: 12),
-                      DailyRitualCard(
-                        store: widget.store,
-                        date: day,
-                      ),
-                    ],
-                    const SizedBox(height: 12),
-                    AgendaContentFilterBar(store: widget.store),
-                    if (isToday) ...[
-                      const SizedBox(height: 12),
-                      _TodayFocusCard(
-                        next: upcoming.isEmpty ? null : upcoming.first,
-                        globalPendingTasks:
-                            widget.store.pendingUnifiedTaskCount,
-                        inboxCount: widget.store.activeInboxEntries.length,
-                        hideDetails: widget.store.preferences.hideHomeDetails,
-                        onOpenNext: upcoming.isEmpty
-                            ? null
-                            : () => openUnifiedAgendaEntry(
-                                  context,
-                                  widget.store,
-                                  upcoming.first,
-                                ),
-                        onOpenInbox: () => Navigator.push(
-                          context,
-                          MaterialPageRoute<void>(
-                            builder: (_) => InboxScreen(store: widget.store),
+                        _DayOpeningCard(date: day),
+                        if (isToday) ...[
+                          const SizedBox(height: 12),
+                          DailyRitualCard(
+                            store: widget.store,
+                            date: day,
                           ),
+                        ],
+                        const SizedBox(height: 12),
+                        AgendaContentFilterBar(store: widget.store),
+                        if (isToday) ...[
+                          const SizedBox(height: 12),
+                          _TodayFocusCard(
+                            next: upcoming.isEmpty ? null : upcoming.first,
+                            globalPendingTasks:
+                                widget.store.pendingUnifiedTaskCount,
+                            inboxCount: widget.store.activeInboxEntries.length,
+                            hideDetails: widget.store.preferences.hideHomeDetails,
+                            onOpenNext: upcoming.isEmpty
+                                ? null
+                                : () => openUnifiedAgendaEntry(
+                                      context,
+                                      widget.store,
+                                      upcoming.first,
+                                    ),
+                            onOpenInbox: () => Navigator.push(
+                              context,
+                              MaterialPageRoute<void>(
+                                builder: (_) => InboxScreen(store: widget.store),
+                              ),
+                            ),
+                          ),
+                          if (pinnedItems.isNotEmpty) ...[
+                            const SizedBox(height: 16),
+                            Column(
+                              key: const ValueKey<String>(
+                                'today-pinned-section',
+                              ),
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                SectionTitle(strings.v100Pinned),
+                                const SizedBox(height: 8),
+                                ...pinnedItems.take(3).map(
+                                      (item) => EventTile(
+                                        store: widget.store,
+                                        item: item,
+                                        compact: true,
+                                        hideDetails: widget
+                                            .store.preferences.hideHomeDetails,
+                                      ),
+                                    ),
+                              ],
+                            ),
+                          ],
+                        ],
+                        const SizedBox(height: 12),
+                        _DayLifeOverviewCard(
+                          snapshot: snapshot,
+                          hideDetails: false,
                         ),
-                      ),
-                      if (pinnedItems.isNotEmpty) ...[
-                        const SizedBox(height: 16),
-                        Column(
-                          key: const ValueKey<String>(
-                            'today-pinned-section',
+                        if (isToday) ...[
+                          const SizedBox(height: 14),
+                          _TodayWellbeingCard(
+                            key: const ValueKey<String>('today-wellbeing-card'),
+                            store: widget.store,
+                            date: day,
                           ),
-                          crossAxisAlignment: CrossAxisAlignment.start,
+                        ],
+                        const SizedBox(height: 14),
+                        if (memoryRecall.onThisDay.isNotEmpty) ...[
+                          _DayMemoryRecallCard(
+                            store: widget.store,
+                            anchor: day,
+                            memories: memoryRecall.onThisDay,
+                          ),
+                          const SizedBox(height: 14),
+                        ],
+                        Row(
                           children: [
-                            SectionTitle(strings.v100Pinned),
-                            const SizedBox(height: 8),
-                            ...pinnedItems.take(3).map(
-                                  (item) => EventTile(
-                                    store: widget.store,
-                                    item: item,
-                                    compact: true,
-                                    hideDetails: widget
-                                        .store.preferences.hideHomeDetails,
-                                  ),
-                                ),
+                            const AnnaPastelIcon(
+                              icon: Icons.auto_stories_outlined,
+                              domain: AnnaVisualDomain.memories,
+                            ),
+                            const SizedBox(width: AnnaDesignTokens.spaceSm),
+                            Expanded(child: SectionTitle(strings.diary)),
                           ],
                         ),
-                      ],
-                    ],
-                    const SizedBox(height: 12),
-                    _DayLifeOverviewCard(
-                      snapshot: snapshot,
-                      hideDetails: false,
-                    ),
-                    if (isToday) ...[
-                      const SizedBox(height: 14),
-                      _TodayWellbeingCard(
-                        key: const ValueKey<String>('today-wellbeing-card'),
-                        store: widget.store,
-                        date: day,
-                      ),
-                    ],
-                    const SizedBox(height: 14),
-                    if (memoryRecall.onThisDay.isNotEmpty) ...[
-                      _DayMemoryRecallCard(
-                        store: widget.store,
-                        anchor: day,
-                        memories: memoryRecall.onThisDay,
-                      ),
-                      const SizedBox(height: 14),
-                    ],
-                    Row(
-                      children: [
-                        const AnnaPastelIcon(
-                          icon: Icons.auto_stories_outlined,
-                          domain: AnnaVisualDomain.memories,
-                        ),
-                        const SizedBox(width: AnnaDesignTokens.spaceSm),
-                        Expanded(child: SectionTitle(strings.diary)),
-                      ],
-                    ),
-                    const SizedBox(height: AnnaDesignTokens.spaceSm),
-                    JournalEditor(store: widget.store, date: day),
-                    const SizedBox(height: AnnaDesignTokens.spaceLg),
-                    _DayLifeStream(
-                      snapshot: snapshot,
-                      store: widget.store,
-                    ),
-                    const SizedBox(height: 14),
-                    ExpansionTile(
-                      tilePadding: const EdgeInsets.symmetric(horizontal: 8),
-                      childrenPadding: const EdgeInsets.only(bottom: 8),
-                      leading: const Icon(Icons.schedule_outlined),
-                      title: Text(
-                        strings.hourlyTimeline,
-                        style: const TextStyle(fontWeight: FontWeight.w800),
-                      ),
-                      subtitle: Text(
-                        strings.noPrivateTimedAppointments(timedPrivate.length),
-                      ),
-                      children: [
-                        _TimelineHint(eventCount: timedPrivate.length),
-                        const SizedBox(height: 10),
-                        DayTimeline(
-                          date: day,
-                          events: timedPrivate,
+                        const SizedBox(height: AnnaDesignTokens.spaceSm),
+                        JournalEditor(store: widget.store, date: day),
+                        const SizedBox(height: AnnaDesignTokens.spaceLg),
+                        _DayLifeStream(
+                          snapshot: snapshot,
                           store: widget.store,
-                          onChanged: () => setState(() {}),
                         ),
-                      ],
-                    ),
+                        const SizedBox(height: 14),
+                        ExpansionTile(
+                          tilePadding: const EdgeInsets.symmetric(horizontal: 8),
+                          childrenPadding: const EdgeInsets.only(bottom: 8),
+                          leading: const Icon(Icons.schedule_outlined),
+                          title: Text(
+                            strings.hourlyTimeline,
+                            style: const TextStyle(fontWeight: FontWeight.w800),
+                          ),
+                          subtitle: Text(
+                            strings.noPrivateTimedAppointments(timedPrivate.length),
+                          ),
+                          children: [
+                            _TimelineHint(eventCount: timedPrivate.length),
+                            const SizedBox(height: 10),
+                            DayTimeline(
+                              date: day,
+                              events: timedPrivate,
+                              store: widget.store,
+                              onChanged: () => setState(() {}),
+                            ),
+                          ],
+                        ),
                   ],
                     ),
                   ),
