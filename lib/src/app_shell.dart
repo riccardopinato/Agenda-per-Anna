@@ -13,13 +13,15 @@ class AgendaApp extends StatelessWidget {
   static final Map<String, ThemeData> _themeCache = {};
 
   ThemeData _theme(Brightness brightness) {
-    final palette = store.preferences.palette;
-    final cacheKey = '${palette.name}:${brightness.name}';
+    final prefs = store.preferences;
+    final seed = prefs.effectiveSeedColor;
+    final expressive = prefs.colorIntensity == AgendaColorIntensity.expressive;
+    final cacheKey = '${seed.toARGB32()}:${prefs.colorIntensity.name}:${brightness.name}';
     final cached = _themeCache[cacheKey];
     if (cached != null) return cached;
 
     final scheme = ColorScheme.fromSeed(
-      seedColor: palette.seed,
+      seedColor: seed,
       brightness: brightness,
     );
     final dark = brightness == Brightness.dark;
@@ -34,7 +36,9 @@ class AgendaApp extends StatelessWidget {
       cardTheme: CardThemeData(
         elevation: 0,
         margin: EdgeInsets.zero,
-        color: dark ? scheme.surfaceContainerLow : scheme.surfaceContainerLowest,
+        color: expressive
+            ? Color.lerp(scheme.surfaceContainerLow, scheme.primaryContainer, dark ? 0.22 : 0.30)!
+            : dark ? scheme.surfaceContainerLow : scheme.surfaceContainerLowest,
         surfaceTintColor: Colors.transparent,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(AnnaDesignTokens.radiusLg),
@@ -66,7 +70,9 @@ class AgendaApp extends StatelessWidget {
         elevation: 0,
         backgroundColor: scheme.surface,
         surfaceTintColor: Colors.transparent,
-        indicatorColor: scheme.primaryContainer,
+        indicatorColor: expressive
+            ? scheme.secondaryContainer
+            : scheme.primaryContainer,
         labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
       ),
       bottomSheetTheme: BottomSheetThemeData(
