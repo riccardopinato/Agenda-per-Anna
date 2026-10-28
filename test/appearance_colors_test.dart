@@ -162,6 +162,16 @@ void main() {
     expect(tester.widget<TextField>(hex).controller!.text, '#12345678');
     await tester.scrollUntilVisible(apply, 180, scrollable: list);
     expect(tester.widget<FilledButton>(apply).onPressed, isNull);
+
+    // Selecting a suggested palette restores a valid draft and must not
+    // remain trapped by a now-unused malformed custom HEX input.
+    final preset = find.byKey(const ValueKey<String>('appearance-preset-sage'));
+    await tester.scrollUntilVisible(preset, -180, scrollable: list);
+    await tester.tap(preset);
+    await tester.pumpAndSettle();
+    await tester.scrollUntilVisible(apply, 180, scrollable: list);
+    expect(tester.widget<FilledButton>(apply).onPressed, isNotNull);
+
     expect(store.preferences.useCustomPalette, isFalse);
     store.dispose();
   });
