@@ -75,7 +75,7 @@ abstract final class AnnaJournalTheme {
     final type = AnnaJournalTypography.fromBase(base.textTheme, scheme);
     return base.copyWith(
       textTheme: type,
-      appBarTheme: AppBarTheme(
+      appBarTheme: AppBarThemeData(
         centerTitle: false,
         backgroundColor: scheme.surface,
         foregroundColor: scheme.onSurface,
