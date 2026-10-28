@@ -8,6 +8,12 @@ abstract final class AnnaDesignTokens {
   static const double spaceLg = 24;
   static const double spaceXl = 32;
 
+  // iOS Journal presentation tokens. Existing token meanings stay stable.
+  static const double journalPageGutter = 20;
+  static const double journalDockHeight = 76;
+  static const double journalMinTapTarget = 48;
+  static const double journalSectionGap = 24;
+
   static const double radiusSm = 12;
   static const double radiusMd = 18;
   static const double radiusLg = 24;

@@ -92,6 +92,13 @@ Source of execution truth for Anna's Diary. Product identity and boundaries are 
 | v1.05.x | Post-release audit remediation | **Completed — PR #134 merged; 4/4 exact-head gates and Codex PASS** | P1/P2 template editor, journal conflict/persistence/concurrency safety, canonical tags, live collections and Life Threads performance corrected; physical/store verification remains fail-closed |
 | v1.05.x-UI1 | Pastel visual polish: Today / More / Settings | **Completed — PR #136 merged, 4/4 exact-head gates and Codex PASS** | Presentation-only first slice: one Capture action, diary earlier, accessible pastel sections and responsive content width; physical/Store NOT VERIFIED; v1.06 untouched |
 | v1.05.x-UI2 | Custom HSV colors + intensity | **IN PROGRESS — protected PR; exact-head gates pending** | Five existing suggested palettes retained; custom HSV/HEX preview, Delicate/Expressive, confirm/cancel, canonical preferences/backup/cloud, five-language regression; no v1.06 |
+| v1.05.x-UI3-D0 | iOS Journal shared design system | **IN PROGRESS — stacked on HSV PR #138** | C/C/B/C/A blueprint locked; theme, responsive headers/cards and attached nav foundation; Manrope/Lora locally bundled; exact-head offline, QA + parent review required |
+| v1.05.x-UI3-D0b | Offline Manrope + Lora asset closure | **IN PROGRESS — fonts and OFL bundled; exact-head Android/Web verification pending** | Official Manrope/Lora variable TTF sources bundled locally, font weights registered; offline runtime and multilingual QA pending |
+| v1.05.x-UI3-D1 | Today C — Armonia iOS Journal | PLANNED | Real daily data, hero, compact wellbeing/activities, diary editor, memories, timeline; preserve Unified Capture and privacy |
+| v1.05.x-UI3-D2 | Calendar C — Armonia iOS Journal | PLANNED | Month/Week, day focus, event and memory markers; Web/tablet adaptive detail pane; unchanged calendar ownership |
+| v1.05.x-UI3-D3 | Memories B — Diario contemporaneo | PLANNED | Editorial real-photo hero with text/audio/sketch fallbacks, Timeline, For You, collections and map; no memory copy |
+| v1.05.x-UI3-D4 | More C / Settings A | PLANNED | Grouped iOS-inspired sections and HSV appearance entry; preserve all canonical routes, semantic IDs and account/backup/privacy |
+| v1.05.x-UI3-D5 | Visual QA and design closure | PLANNED | 5 locales, 5 presets and custom HSV light/dark, accessibility, large text, tablet/Web, 4/4 CI/AppLab + Codex on exact head; physical/Play separate |
 | v1.06 | Ecosystem Expansion | PLANNED | Add specialist integrations one at a time under Shared Ecosystem Core + paired verification; preferred order TrailPath → Notes → SleepMax → CashMate |
 
 ## Current execution order — App Factory v26.6 / Factory Mode v22
