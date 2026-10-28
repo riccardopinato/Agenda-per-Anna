@@ -1,7 +1,7 @@
 # Anna's Diary — Product Bible
 
 **Status:** canonical product source of truth  
-**Current product line:** v1.05 Memories & Recall 3.0 — Completed; v1.05.x corrective maintenance Completed (PR #134, 4/4 exact-head gates and Codex; v1.06 not started)  
+**Current product line:** v1.05 Memories & Recall 3.0 — Completed; v1.05.x corrective maintenance Completed (PR #134); v1.05.x Pastello moderno UI1 (Today / More / Settings) Completed — PR #136, 4/4 exact-head gates and Codex; v1.06 not started  
 **Distribution identity:** 1.0.0-rc.2+111 — maintenance software integrated; signed sideload candidate, physical and Store certification remain separate  
 **Last aligned:** 28 October 2026
 
