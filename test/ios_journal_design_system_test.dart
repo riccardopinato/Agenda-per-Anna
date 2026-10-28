@@ -57,6 +57,7 @@ void main() {
     expect(shell, contains('bottomNavigationBar: useRail'));
     expect(shell, contains(': NavigationBar('));
     expect(shell, contains('IndexedStack(index: index, children: pages)'));
+    expect(shell, contains('Theme.of(context).navigationBarTheme.indicatorColor'));
     for (final key in [
       'main-nav-today',
       'main-nav-calendar',
