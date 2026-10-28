@@ -302,6 +302,26 @@ class _AppearanceColorsScreenState extends State<AppearanceColorsScreen> {
                 strings.d3('appearanceDraftHint'),
                 style: Theme.of(context).textTheme.bodySmall,
               ),
+              Align(
+                alignment: Alignment.centerLeft,
+                child: TextButton.icon(
+                  key: const ValueKey<String>('appearance-reset'),
+                  icon: const Icon(Icons.restart_alt_outlined),
+                  label: Text(strings.d3('appearanceReset')),
+                  onPressed: saving ? null : () {
+                    setState(() {
+                      selectedPalette = AgendaPalette.rose;
+                      custom = false;
+                      intensity = AgendaColorIntensity.delicate;
+                      hsv = HSVColor.fromColor(AgendaPalette.rose.seed);
+                    });
+                    hexController.value = const TextEditingValue(
+                      text: '#E98FAA',
+                      selection: TextSelection.collapsed(offset: 7),
+                    );
+                  },
+                ),
+              ),
               const SizedBox(height: AnnaDesignTokens.spaceLg),
               Row(
                 children: [
