@@ -22,9 +22,10 @@ class _CalendarHubScreenState extends State<CalendarHubScreen> {
     final strings = AnnaStrings.of(context);
     return Scaffold(
       appBar: AppBar(
+        toolbarHeight: 78,
         title: Text(
           strings.calendar,
-          style: const TextStyle(fontWeight: FontWeight.w800),
+          style: Theme.of(context).textTheme.headlineMedium,
         ),
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(58),
@@ -33,6 +34,16 @@ class _CalendarHubScreenState extends State<CalendarHubScreen> {
             child: SizedBox(
               width: double.infinity,
               child: SegmentedButton<_CalendarHubView>(
+                style: ButtonStyle(
+                  minimumSize: const WidgetStatePropertyAll(Size(0, 44)),
+                  shape: WidgetStatePropertyAll(
+                    RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(
+                        AnnaDesignTokens.radiusMd,
+                      ),
+                    ),
+                  ),
+                ),
                 segments: [
                   ButtonSegment<_CalendarHubView>(
                     value: _CalendarHubView.month,
@@ -63,11 +74,14 @@ class _CalendarHubScreenState extends State<CalendarHubScreen> {
               AnnaDesignTokens.spaceMd,
               0,
             ),
-            child: Row(
-              children: [
-                Expanded(
-                  child: Semantics(
-                    identifier: 'calendar-open-month-notebook',
+            child: AnnaJournalCard(
+              domain: AnnaVisualDomain.calendar,
+              padding: const EdgeInsets.all(AnnaDesignTokens.spaceXs),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Semantics(
+                      identifier: 'calendar-open-month-notebook',
                     button: true,
                     label: strings.v100MyMonth,
                     child: OutlinedButton.icon(
@@ -106,7 +120,8 @@ class _CalendarHubScreenState extends State<CalendarHubScreen> {
                     ),
                   ),
                 ),
-              ],
+                ],
+              ),
             ),
           ),
           const SizedBox(height: AnnaDesignTokens.spaceXs),
