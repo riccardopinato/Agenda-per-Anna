@@ -179,6 +179,57 @@ class _AppearanceColorsScreenState extends State<AppearanceColorsScreen> {
                 ),
               ),
               const SizedBox(height: AnnaDesignTokens.spaceMd),
+              // Sliders provide native keyboard focus and VoiceOver/TalkBack
+              // increase/decrease actions. The two pointer canvases above
+              // remain available for direct manipulation.
+              Semantics(
+                label: strings.d3('appearanceHueSlider'),
+                child: Slider(
+                  key: const ValueKey<String>('appearance-hue-slider'),
+                  value: hsv.hue.clamp(0.0, 360.0),
+                  min: 0,
+                  max: 360,
+                  divisions: 360,
+                  label: '${hsv.hue.round()}°',
+                  semanticFormatterCallback: (value) => '${value.round()}°',
+                  onChanged: saving
+                      ? null
+                      : (value) => _updateColor(hsv.withHue(value)),
+                ),
+              ),
+              Semantics(
+                label: strings.d3('appearanceSaturationSlider'),
+                child: Slider(
+                  key: const ValueKey<String>('appearance-saturation-slider'),
+                  value: hsv.saturation.clamp(0.0, 1.0),
+                  min: 0,
+                  max: 1,
+                  divisions: 100,
+                  label: '${(hsv.saturation * 100).round()}%',
+                  semanticFormatterCallback: (value) =>
+                      '${(value * 100).round()}%',
+                  onChanged: saving
+                      ? null
+                      : (value) => _updateColor(hsv.withSaturation(value)),
+                ),
+              ),
+              Semantics(
+                label: strings.d3('appearanceBrightnessSlider'),
+                child: Slider(
+                  key: const ValueKey<String>('appearance-brightness-slider'),
+                  value: hsv.value.clamp(0.0, 1.0),
+                  min: 0,
+                  max: 1,
+                  divisions: 100,
+                  label: '${(hsv.value * 100).round()}%',
+                  semanticFormatterCallback: (value) =>
+                      '${(value * 100).round()}%',
+                  onChanged: saving
+                      ? null
+                      : (value) => _updateColor(hsv.withValue(value)),
+                ),
+              ),
+              const SizedBox(height: AnnaDesignTokens.spaceMd),
               Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
