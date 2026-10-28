@@ -12,7 +12,7 @@
 
 **PR #138 (custom HSV appearance) must be verified and integrated first.** At the time this plan was prepared, its head is `7d39ab26184382fc1f31e37c13f9234850a880ff`; Development/Web/Android audits PASS but **AppLab trusted runtime FAIL** at the **people** Maestro checkpoint (and Codex review pending). Do not treat a Flutter build PASS as the failed AppLab gate passing. Investigate/retest the underlying visual failure independently; do not weaken or bypass the checkpoint.
 
-The first redesign PR is **stacked on #138** (branch `ux/v105x-ios-journal-ds1`; base `ux/v105x-custom-hsv-appearance`) to preserve its pending color model and avoid concurrent changes to `app_shell.dart`. It must never merge into main while #138 has blocking gates. After #138 passes and is merged, retarget to main and re-check its exact head. If #138 changes, synchronize, resolve and rerun all checks.
+The first redesign PR is **logically dependent on #138** (branch `ux/v105x-ios-journal-ds1`). CI workflows trigger only for PRs targeting `main`; for exact-head validation, PR #139 may temporarily use `main` as its GitHub base, while its content still includes #138. **This is not merge permission**, and the #138 review/merge prerequisite remains in force. Return to the stacked parent or reconcile after the parent is merged, then rerun exact-head checks as required. It must never merge into main while #138 has blocking gates. After #138 passes and is merged, retarget to main and re-check its exact head. If #138 changes, synchronize, resolve and rerun all checks.
 
 ## Execution order
 
