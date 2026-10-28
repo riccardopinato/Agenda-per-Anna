@@ -155,6 +155,13 @@ void main() {
     final apply = find.byKey(const ValueKey<String>('appearance-apply'));
     await tester.scrollUntilVisible(apply, 180, scrollable: list);
     expect(tester.widget<FilledButton>(apply).onPressed, isNull);
+    // An overlong paste must be rejected, not silently truncated to six digits.
+    await tester.scrollUntilVisible(hex, -180, scrollable: list);
+    await tester.enterText(hex, '#12345678');
+    await tester.pumpAndSettle();
+    expect(tester.widget<TextField>(hex).controller!.text, '#12345678');
+    await tester.scrollUntilVisible(apply, 180, scrollable: list);
+    expect(tester.widget<FilledButton>(apply).onPressed, isNull);
     expect(store.preferences.useCustomPalette, isFalse);
     store.dispose();
   });
