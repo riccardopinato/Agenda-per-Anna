@@ -73,7 +73,7 @@ void main() {
 
   testWidgets('Large page title supports dark mode and large text scale',
       (tester) async {
-    await tester.view.physicalSize = const Size(360, 780);
+    tester.view.physicalSize = const Size(360, 780);
     tester.view.devicePixelRatio = 1;
     addTearDown(() {
       tester.view.resetPhysicalSize();
