@@ -71,7 +71,7 @@ class PersonalizationScreen extends StatelessWidget {
                 child: ListTile(
                   key: const ValueKey<String>('personalization-appearance'),
                   contentPadding: EdgeInsets.zero,
-                  leading: AnnaPastelIcon(
+                  leading: const AnnaPastelIcon(
                     icon: Icons.palette_outlined,
                     domain: AnnaVisualDomain.people,
                   ),
