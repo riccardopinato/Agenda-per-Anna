@@ -139,10 +139,20 @@ class _AppearanceColorsScreenState extends State<AppearanceColorsScreen> {
                         backgroundColor: palette.seed,
                       ),
                       label: Text(strings.agendaPaletteLabel(palette)),
-                      onSelected: (_) => setState(() {
-                        selectedPalette = palette;
-                        custom = false;
-                      }),
+                      onSelected: (_) {
+                        setState(() {
+                          selectedPalette = palette;
+                          custom = false;
+                          // Restore the valid custom draft before leaving its
+                          // editor, so a malformed HEX never traps preset use.
+                          hexValid = true;
+                        });
+                        final value = _hex(hsv.toColor());
+                        hexController.value = TextEditingValue(
+                          text: value,
+                          selection: TextSelection.collapsed(offset: value.length),
+                        );
+                      },
                     ),
                   ChoiceChip(
                     key: const ValueKey<String>('appearance-custom'),
