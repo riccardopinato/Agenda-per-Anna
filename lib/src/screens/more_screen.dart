@@ -73,181 +73,181 @@ class MoreScreen extends StatelessWidget {
                 maxWidth: AnnaDesignTokens.compactContentWidth,
               ),
               child: ListView(
-            padding: const EdgeInsets.fromLTRB(
-              AnnaDesignTokens.spaceMd,
-              AnnaDesignTokens.spaceXs,
-              AnnaDesignTokens.spaceMd,
-              AnnaDesignTokens.spaceXl,
-            ),
-            children: [
-              _SyncAttentionCard(store: store),
-              if (store.hasStorageWarnings) ...[
-                const SizedBox(height: AnnaDesignTokens.spaceSm),
-                SimpleCard(
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Icon(
-                        Icons.warning_amber_rounded,
-                        color: Theme.of(context).colorScheme.error,
+                padding: const EdgeInsets.fromLTRB(
+                  AnnaDesignTokens.spaceMd,
+                  AnnaDesignTokens.spaceXs,
+                  AnnaDesignTokens.spaceMd,
+                  AnnaDesignTokens.spaceXl,
+                ),
+                children: [
+                  _SyncAttentionCard(store: store),
+                  if (store.hasStorageWarnings) ...[
+                    const SizedBox(height: AnnaDesignTokens.spaceSm),
+                    SimpleCard(
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Icon(
+                            Icons.warning_amber_rounded,
+                            color: Theme.of(context).colorScheme.error,
+                          ),
+                          const SizedBox(width: AnnaDesignTokens.spaceSm),
+                          Expanded(
+                            child: Text(strings.v100StorageWarning),
+                          ),
+                        ],
                       ),
-                      const SizedBox(width: AnnaDesignTokens.spaceSm),
-                      Expanded(
-                        child: Text(strings.v100StorageWarning),
-                      ),
-                    ],
+                    ),
+                    const SizedBox(height: AnnaDesignTokens.spaceLg),
+                  ],
+                  AnnaPastelSectionHeader(
+                    title: strings.d3('moreQuickAccess'),
+                    icon: Icons.bolt_outlined,
+                    domain: AnnaVisualDomain.today,
                   ),
-                ),
-                const SizedBox(height: AnnaDesignTokens.spaceLg),
-              ],
-              AnnaPastelSectionHeader(
-                title: strings.d3('moreQuickAccess'),
-                icon: Icons.bolt_outlined,
-                domain: AnnaVisualDomain.today,
-              ),
-              const SizedBox(height: AnnaDesignTokens.spaceSm),
-              SimpleCard(
-                child: Column(
-                  children: [
-                    _tile(
-                      id: 'more-search',
-                      domain: AnnaVisualDomain.today,
-                      icon: Icons.search,
-                      title: strings.search,
-                      onTap: () => _open(
-                        context,
-                        PersonalSearchConnectionsScreen(store: store),
-                      ),
-                    ),
-                    const Divider(height: 1),
-                    _tile(
-                      id: 'more-inbox',
-                      domain: AnnaVisualDomain.today,
-                      icon: Icons.inbox_outlined,
-                      title: strings.inbox,
-                      trailing: store.activeInboxEntries.isEmpty
-                          ? const Icon(Icons.chevron_right)
-                          : Badge(
-                              label: Text(
-                                '${store.activeInboxEntries.length}',
-                              ),
-                              child: const Icon(Icons.chevron_right),
-                            ),
-                      onTap: () =>
-                          _open(context, InboxScreen(store: store)),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: AnnaDesignTokens.spaceLg),
-              AnnaPastelSectionHeader(
-                title: strings.d3('moreYourSpace'),
-                icon: Icons.favorite_border_rounded,
-                domain: AnnaVisualDomain.shared,
-              ),
-              const SizedBox(height: AnnaDesignTokens.spaceSm),
-              SimpleCard(
-                child: Column(
-                  children: [
-                    _tile(
-                      id: 'more-explore',
-                      domain: AnnaVisualDomain.people,
-                      icon: Icons.apps_outlined,
-                      title: strings.v100Explore,
-                      subtitle: strings.v100ExploreIntro,
-                      onTap: () =>
-                          _open(context, ExploreScreen(store: store)),
-                    ),
-                    const Divider(height: 1),
-                    _tile(
-                      id: 'more-personalize',
-                      domain: AnnaVisualDomain.people,
-                      icon: Icons.tune_outlined,
-                      title: strings.d3('personalizationTitle'),
-                      subtitle:
-                          strings.d3('personalizationSettingsSubtitle'),
-                      onTap: () => _open(
-                        context,
-                        PersonalizationScreen(store: store),
-                      ),
-                    ),
-                    if (prefs.isModuleEnabled(AppModule.sharedSpace)) ...[
-                      const Divider(height: 1),
-                      _tile(
-                        id: 'more-shared',
-                      domain: AnnaVisualDomain.shared,
-                        icon: Icons.favorite_outline,
-                        title: 'Noi ♡',
-                        subtitle:
-                            strings.d3('personalizationSharedSpaceSubtitle'),
-                        trailing: store.totalSharedUnreadCount <= 0
-                            ? const Icon(Icons.chevron_right)
-                            : Badge(
-                                label: Text(
-                                  store.totalSharedUnreadCount > 99
-                                      ? '99+'
-                                      : '${store.totalSharedUnreadCount}',
-                                ),
-                                child: const Icon(Icons.chevron_right),
-                              ),
-                        onTap: () => _open(
-                          context,
-                          SharedSpaceHubScreen(store: store),
+                  const SizedBox(height: AnnaDesignTokens.spaceSm),
+                  SimpleCard(
+                    child: Column(
+                      children: [
+                        _tile(
+                          id: 'more-search',
+                          domain: AnnaVisualDomain.today,
+                          icon: Icons.search,
+                          title: strings.search,
+                          onTap: () => _open(
+                            context,
+                            PersonalSearchConnectionsScreen(store: store),
+                          ),
                         ),
-                      ),
-                    ],
-                  ],
-                ),
-              ),
-              const SizedBox(height: AnnaDesignTokens.spaceLg),
-              AnnaPastelSectionHeader(
-                title: strings.d3('moreDataAndApp'),
-                icon: Icons.shield_outlined,
-                domain: AnnaVisualDomain.ecosystem,
-              ),
-              const SizedBox(height: AnnaDesignTokens.spaceSm),
-              SimpleCard(
-                child: Column(
-                  children: [
-                    _tile(
-                      id: 'more-archive',
-                      domain: AnnaVisualDomain.memories,
-                      icon: Icons.inventory_2_outlined,
-                      title: strings.archive,
-                      onTap: () =>
-                          _open(context, ArchiveScreen(store: store)),
+                        const Divider(height: 1),
+                        _tile(
+                          id: 'more-inbox',
+                          domain: AnnaVisualDomain.today,
+                          icon: Icons.inbox_outlined,
+                          title: strings.inbox,
+                          trailing: store.activeInboxEntries.isEmpty
+                              ? const Icon(Icons.chevron_right)
+                              : Badge(
+                                  label: Text(
+                                    '${store.activeInboxEntries.length}',
+                                  ),
+                                  child: const Icon(Icons.chevron_right),
+                                ),
+                          onTap: () =>
+                              _open(context, InboxScreen(store: store)),
+                        ),
+                      ],
                     ),
-                    const Divider(height: 1),
-                    _tile(
-                      id: 'more-backup',
-                      domain: AnnaVisualDomain.vault,
-                      icon: Icons.backup_outlined,
-                      title: strings.backup,
-                      onTap: () =>
-                          _open(context, BackupScreen(store: store)),
+                  ),
+                  const SizedBox(height: AnnaDesignTokens.spaceLg),
+                  AnnaPastelSectionHeader(
+                    title: strings.d3('moreYourSpace'),
+                    icon: Icons.favorite_border_rounded,
+                    domain: AnnaVisualDomain.shared,
+                  ),
+                  const SizedBox(height: AnnaDesignTokens.spaceSm),
+                  SimpleCard(
+                    child: Column(
+                      children: [
+                        _tile(
+                          id: 'more-explore',
+                          domain: AnnaVisualDomain.people,
+                          icon: Icons.apps_outlined,
+                          title: strings.v100Explore,
+                          subtitle: strings.v100ExploreIntro,
+                          onTap: () =>
+                              _open(context, ExploreScreen(store: store)),
+                        ),
+                        const Divider(height: 1),
+                        _tile(
+                          id: 'more-personalize',
+                          domain: AnnaVisualDomain.people,
+                          icon: Icons.tune_outlined,
+                          title: strings.d3('personalizationTitle'),
+                          subtitle:
+                              strings.d3('personalizationSettingsSubtitle'),
+                          onTap: () => _open(
+                            context,
+                            PersonalizationScreen(store: store),
+                          ),
+                        ),
+                        if (prefs.isModuleEnabled(AppModule.sharedSpace)) ...[
+                          const Divider(height: 1),
+                          _tile(
+                            id: 'more-shared',
+                          domain: AnnaVisualDomain.shared,
+                            icon: Icons.favorite_outline,
+                            title: 'Noi ♡',
+                            subtitle:
+                                strings.d3('personalizationSharedSpaceSubtitle'),
+                            trailing: store.totalSharedUnreadCount <= 0
+                                ? const Icon(Icons.chevron_right)
+                                : Badge(
+                                    label: Text(
+                                      store.totalSharedUnreadCount > 99
+                                          ? '99+'
+                                          : '${store.totalSharedUnreadCount}',
+                                    ),
+                                    child: const Icon(Icons.chevron_right),
+                                  ),
+                            onTap: () => _open(
+                              context,
+                              SharedSpaceHubScreen(store: store),
+                            ),
+                          ),
+                        ],
+                      ],
                     ),
-                    const Divider(height: 1),
-                    _tile(
-                      id: 'more-cloud',
-                      domain: AnnaVisualDomain.ecosystem,
-                      icon: Icons.cloud_outlined,
-                      title: strings.cloud,
-                      onTap: () =>
-                          _open(context, CloudAccountScreen(store: store)),
+                  ),
+                  const SizedBox(height: AnnaDesignTokens.spaceLg),
+                  AnnaPastelSectionHeader(
+                    title: strings.d3('moreDataAndApp'),
+                    icon: Icons.shield_outlined,
+                    domain: AnnaVisualDomain.ecosystem,
+                  ),
+                  const SizedBox(height: AnnaDesignTokens.spaceSm),
+                  SimpleCard(
+                    child: Column(
+                      children: [
+                        _tile(
+                          id: 'more-archive',
+                          domain: AnnaVisualDomain.memories,
+                          icon: Icons.inventory_2_outlined,
+                          title: strings.archive,
+                          onTap: () =>
+                              _open(context, ArchiveScreen(store: store)),
+                        ),
+                        const Divider(height: 1),
+                        _tile(
+                          id: 'more-backup',
+                          domain: AnnaVisualDomain.vault,
+                          icon: Icons.backup_outlined,
+                          title: strings.backup,
+                          onTap: () =>
+                              _open(context, BackupScreen(store: store)),
+                        ),
+                        const Divider(height: 1),
+                        _tile(
+                          id: 'more-cloud',
+                          domain: AnnaVisualDomain.ecosystem,
+                          icon: Icons.cloud_outlined,
+                          title: strings.cloud,
+                          onTap: () =>
+                              _open(context, CloudAccountScreen(store: store)),
+                        ),
+                        const Divider(height: 1),
+                        _tile(
+                          id: 'more-settings',
+                          domain: AnnaVisualDomain.ecosystem,
+                          icon: Icons.settings_outlined,
+                          title: strings.settings,
+                          onTap: () =>
+                              _open(context, SettingsHubScreen(store: store)),
+                        ),
+                      ],
                     ),
-                    const Divider(height: 1),
-                    _tile(
-                      id: 'more-settings',
-                      domain: AnnaVisualDomain.ecosystem,
-                      icon: Icons.settings_outlined,
-                      title: strings.settings,
-                      onTap: () =>
-                          _open(context, SettingsHubScreen(store: store)),
-                    ),
-                  ],
-                ),
-              ),
-            ],
+                  ),
+                ],
               ),
             ),
           ),
