@@ -115,9 +115,20 @@ extension AgendaStoreMemoryCollections on AgendaStore {
           .where(definition.matches)
           .toList(growable: false);
 
+  List<DiaryBlockReference> memoryCollectionReferencesById(String id) {
+    for (final definition in preferences.memoryCollections) {
+      if (definition.id == id) {
+        return memoryCollectionReferences(definition);
+      }
+    }
+    return const <DiaryBlockReference>[];
+  }
+
   List<MemoryLifeThread> _memoryLifeThreads({int? limit}) {
     final references = memoryReferences();
     final buckets = <String, List<DiaryBlockReference>>{};
+    final seenIds = <String, Set<String>>{};
+    final peopleById = {for (final person in people) person.id: person};
     final metadata = <String, ({MemoryLifeThreadKind kind, String label})>{};
 
     void add(
@@ -130,11 +141,9 @@ extension AgendaStoreMemoryCollections on AgendaStore {
       final normalizedLabel = label.trim();
       if (normalizedId.isEmpty || normalizedLabel.isEmpty) return;
       final key = '${kind.name}:$normalizedId';
-      final bucket = buckets.putIfAbsent(key, () => <DiaryBlockReference>[]);
-      if (bucket.any((candidate) => candidate.block.id == reference.block.id)) {
-        return;
-      }
-      bucket.add(reference);
+      final seen = seenIds.putIfAbsent(key, () => <String>{});
+      if (!seen.add(reference.block.id)) return;
+      buckets.putIfAbsent(key, () => <DiaryBlockReference>[]).add(reference);
       metadata.putIfAbsent(
         key,
         () => (kind: kind, label: normalizedLabel),
@@ -143,12 +152,12 @@ extension AgendaStoreMemoryCollections on AgendaStore {
 
     for (final reference in references) {
       for (final personId in reference.block.personIds.toSet()) {
-        final matches = people.where((person) => person.id == personId);
-        if (matches.isEmpty) continue;
+        final person = peopleById[personId];
+        if (person == null) continue;
         add(
           MemoryLifeThreadKind.person,
           personId,
-          matches.first.name,
+          person.name,
           reference,
         );
       }

@@ -53,6 +53,9 @@ class AgendaStore extends ChangeNotifier {
   final List<TrashEntry> trash = [];
   final Map<String, CloudSyncOperation> _syncQueue = {};
   final Map<String, String> _syncIndex = {};
+  // One canonical local write queue prevents concurrent sync-index rollbacks
+  // from discarding operations committed by another mutation.
+  Future<void> _localMutationTail = Future<void>.value();
   final Set<String> _explicitRestoreKeys = <String>{};
   final Map<String, List<AgendaItem>> _dayIndex = {};
   final Map<String, SharedSpace> _sharedAgendaSpaces = {};
@@ -560,11 +563,39 @@ class AgendaStore extends ChangeNotifier {
         })> mutations, {
     bool createAutoSnapshot = true,
   }) async {
+    final preceding = _localMutationTail;
+    final completed = Completer<void>();
+    _localMutationTail = completed.future;
+    try {
+      await preceding;
+      await _persistEntityMutationsSerial(
+        mutations,
+        createAutoSnapshot: createAutoSnapshot,
+      );
+    } finally {
+      // Even a failed operation must release the next queued writer.
+      completed.complete();
+    }
+  }
+
+  Future<void> _persistEntityMutationsSerial(
+    List<
+        ({
+          String type,
+          String id,
+          Map<String, dynamic>? payload,
+          bool deleted,
+        })> mutations, {
+    bool createAutoSnapshot = true,
+  }) async {
     if (mutations.isEmpty) return;
 
     final prefs = await _localState();
     final changes = <String, String?>{};
     final now = DateTime.now();
+    // Roll back in-memory sync projections if the atomic local write fails.
+    final queueBefore = Map<String, CloudSyncOperation>.from(_syncQueue);
+    final indexBefore = Map<String, String>.from(_syncIndex);
 
     for (final mutation in mutations) {
       final storageKey = _storageKeyForEntityType(mutation.type);
@@ -616,10 +647,30 @@ class AgendaStore extends ChangeNotifier {
       _syncQueue.map((key, value) => MapEntry(key, value.toJson())),
     );
     changes[_syncIndexKey] = jsonEncode(_syncIndex);
-    await prefs.writeBatch(changes);
+    try {
+      await prefs.writeBatch(changes);
+    } catch (_) {
+      _syncQueue
+        ..clear()
+        ..addAll(queueBefore);
+      _syncIndex
+        ..clear()
+        ..addAll(indexBefore);
+      rethrow;
+    }
 
+    // The canonical mutation is durable at this point. A best-effort
+    // automatic snapshot must not turn a successful save into a false FAIL.
     if (createAutoSnapshot) {
-      await _maybeCreateAutomaticSnapshot(prefs);
+      final snapshotsBefore = List<LocalBackupSnapshot>.from(localSnapshots);
+      try {
+        await _maybeCreateAutomaticSnapshot(prefs);
+      } catch (error) {
+        localSnapshots
+          ..clear()
+          ..addAll(snapshotsBefore);
+        debugPrint('Automatic local snapshot unavailable: ${error.runtimeType}');
+      }
     }
     _scheduleCloudSync();
   }
@@ -2805,12 +2856,29 @@ class AgendaStore extends ChangeNotifier {
 
   Future<void> saveJournal(DateTime date, DayJournal journal) async {
     final key = dateKey(date);
+    if (_unreadableStorageKeys.contains(_journalsKey)) {
+      throw StateError('journal_storage_unavailable');
+    }
+    final previous = journals[key];
     journals[key] = journal;
-    await _persistEntityMutation(
-      type: 'journal',
-      id: key,
-      payload: journal.toLocalJson(),
-    );
+    try {
+      await _persistEntityMutation(
+        type: 'journal',
+        id: key,
+        payload: journal.toLocalJson(),
+      );
+    } catch (_) {
+      // Do not leave an unsaved note visible as durable user data.
+      if (identical(journals[key], journal)) {
+        if (previous == null) {
+          journals.remove(key);
+        } else {
+          journals[key] = previous;
+        }
+        _notifyJournalChanged();
+      }
+      rethrow;
+    }
     _scheduleMediaMaintenance(
       delay: const Duration(seconds: 5),
     );
@@ -5391,6 +5459,7 @@ class AgendaStore extends ChangeNotifier {
 
   @override
   void dispose() {
+    _mediaMaintenanceTimer?.cancel();
     _cloudSyncTimer?.cancel();
     _syncDebounceTimer?.cancel();
     _unifiedRealtimeDebounce?.cancel();

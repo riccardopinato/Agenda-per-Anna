@@ -2,7 +2,7 @@
 
 **Status:** canonical product source of truth  
 **Current product line:** v1.05 Memories & Recall 3.0 — Completed (B4 PR #132 merged; trusted-runtime verified; v1.06 not started)  
-**Distribution identity:** 1.0.0-rc.1+110 — Store/physical certification still open  
+**Distribution identity:** 1.0.0-rc.2+111 — v1.05.x maintenance candidate; Store/physical certification still open  
 **Last aligned:** 27 October 2026
 
 This document defines what Anna's Diary is, what it is not, and the product/security invariants that future work must preserve. Implementation details belong in `docs/ARCHITECTURE.md`; execution sequencing belongs in `docs/ROADMAP.md`.

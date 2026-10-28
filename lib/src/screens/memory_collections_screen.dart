@@ -248,7 +248,7 @@ class _MemoryCollectionsScreenState extends State<MemoryCollectionsScreen> {
           store: widget.store,
           title: definition.name,
           recordsBuilder: () =>
-              widget.store.memoryCollectionReferences(definition),
+              widget.store.memoryCollectionReferencesById(definition.id),
         ),
       ),
     );
@@ -431,7 +431,10 @@ class _MemoryDerivedResultsScreen extends StatelessWidget {
         ),
       ),
       body: AnimatedBuilder(
-        animation: store.journalRevision,
+        animation: Listenable.merge([
+          store.journalRevision,
+          store.settingsRevision,
+        ]),
         builder: (context, _) {
           final records = recordsBuilder();
           if (records.isEmpty) {
