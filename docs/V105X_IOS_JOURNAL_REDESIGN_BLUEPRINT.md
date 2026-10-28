@@ -62,6 +62,6 @@ D0 to D5 are independent, reviewable **v1.05.x UX/UI phases**. They do not consu
 
 ## Evidence, stop conditions, and risk
 
-- UI3-D0 status: **IN PROGRESS on stacked branch**, not integrated or signed. It currently includes shared layout primitives, typographic semantic tokens and theme composition. Official Manrope and Lora variable TTF files and SIL OFL notices are bundled in `assets/fonts/`, with variable weights mapped in `pubspec.yaml`. Offline Android/Web execution and multi-locale glyph QA are NOT VERIFIED pending exact-head CI; visual physical-device certification is NOT VERIFIED.
+- UI3-D0 status: **IN PROGRESS on stacked branch**, not integrated or signed. It currently includes shared layout primitives, typographic semantic tokens and theme composition. Official Manrope and Lora variable TTF files and SIL OFL notices are bundled in `assets/fonts/`, with variable weights mapped in `pubspec.yaml` and the OFL notices explicitly packaged as Flutter assets. Offline Android/Web execution and multi-locale glyph QA are NOT VERIFIED pending exact-head CI; visual physical-device certification is NOT VERIFIED.
 - The existing user-created data, profile prefs, local storage, backup, Cloud account/sync, private Vault and paid entitlements must not be touched in the redesign branch.
 - Stop any merge on failing required checks, unresolved reviews, or base-head drift; never bypass the #138 AppLab failure or branch protection.

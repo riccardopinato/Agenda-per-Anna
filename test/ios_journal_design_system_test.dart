@@ -54,6 +54,7 @@ void main() {
   test('offline Manrope/Lora variable fonts and OFL notices are bundled',
       () async {
     final pubspec = File('pubspec.yaml').readAsStringSync();
+    expect(pubspec, contains('assets/fonts/licenses/'));
     for (final family in ['Manrope', 'Lora']) {
       expect(pubspec, contains('family: $family'));
       final filename = family == 'Manrope'
