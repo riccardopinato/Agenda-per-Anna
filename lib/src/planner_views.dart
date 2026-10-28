@@ -22,9 +22,10 @@ class _CalendarHubScreenState extends State<CalendarHubScreen> {
     final strings = AnnaStrings.of(context);
     return Scaffold(
       appBar: AppBar(
+        toolbarHeight: 78,
         title: Text(
           strings.calendar,
-          style: const TextStyle(fontWeight: FontWeight.w800),
+          style: Theme.of(context).textTheme.headlineMedium,
         ),
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(58),
@@ -33,6 +34,16 @@ class _CalendarHubScreenState extends State<CalendarHubScreen> {
             child: SizedBox(
               width: double.infinity,
               child: SegmentedButton<_CalendarHubView>(
+                style: ButtonStyle(
+                  minimumSize: const WidgetStatePropertyAll(Size(0, 44)),
+                  shape: WidgetStatePropertyAll(
+                    RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(
+                        AnnaDesignTokens.radiusMd,
+                      ),
+                    ),
+                  ),
+                ),
                 segments: [
                   ButtonSegment<_CalendarHubView>(
                     value: _CalendarHubView.month,
@@ -63,11 +74,14 @@ class _CalendarHubScreenState extends State<CalendarHubScreen> {
               AnnaDesignTokens.spaceMd,
               0,
             ),
-            child: Row(
-              children: [
-                Expanded(
-                  child: Semantics(
-                    identifier: 'calendar-open-month-notebook',
+            child: AnnaJournalCard(
+              domain: AnnaVisualDomain.calendar,
+              padding: const EdgeInsets.all(AnnaDesignTokens.spaceXs),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Semantics(
+                      identifier: 'calendar-open-month-notebook',
                     button: true,
                     label: strings.v100MyMonth,
                     child: OutlinedButton.icon(
@@ -106,7 +120,8 @@ class _CalendarHubScreenState extends State<CalendarHubScreen> {
                     ),
                   ),
                 ),
-              ],
+                ],
+              ),
             ),
           ),
           const SizedBox(height: AnnaDesignTokens.spaceXs),
@@ -370,12 +385,13 @@ class _PlannerScreenState extends State<PlannerScreen> {
             label: Text(strings.capture),
           ),
           appBar: AppBar(
+            toolbarHeight: 82,
             title: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
                   strings.myDay,
-                  style: const TextStyle(fontWeight: FontWeight.w800),
+                  style: Theme.of(context).textTheme.headlineMedium,
                 ),
                 Text(
                   _cap(
@@ -410,16 +426,9 @@ class _PlannerScreenState extends State<PlannerScreen> {
                       maxWidth: AnnaDesignTokens.readingContentWidth,
                     ),
                     child: ListView(
-                      padding: const EdgeInsets.fromLTRB(14, 8, 14, 110),
+                      padding: const EdgeInsets.fromLTRB(20, 14, 20, 110),
                       children: [
                         _DayOpeningCard(date: day),
-                        if (isToday) ...[
-                          const SizedBox(height: 12),
-                          DailyRitualCard(
-                            store: widget.store,
-                            date: day,
-                          ),
-                        ],
                         const SizedBox(height: 12),
                         AgendaContentFilterBar(store: widget.store),
                         if (isToday) ...[
@@ -467,6 +476,10 @@ class _PlannerScreenState extends State<PlannerScreen> {
                             ),
                           ],
                         ],
+                        const SizedBox(height: AnnaDesignTokens.spaceLg),
+                        AnnaJournalSectionHeading(title: strings.diary),
+                        const SizedBox(height: AnnaDesignTokens.spaceSm),
+                        JournalEditor(store: widget.store, date: day),
                         const SizedBox(height: 12),
                         _DayLifeOverviewCard(
                           snapshot: snapshot,
@@ -489,18 +502,13 @@ class _PlannerScreenState extends State<PlannerScreen> {
                           ),
                           const SizedBox(height: 14),
                         ],
-                        Row(
-                          children: [
-                            const AnnaPastelIcon(
-                              icon: Icons.auto_stories_outlined,
-                              domain: AnnaVisualDomain.memories,
-                            ),
-                            const SizedBox(width: AnnaDesignTokens.spaceSm),
-                            Expanded(child: SectionTitle(strings.diary)),
-                          ],
-                        ),
-                        const SizedBox(height: AnnaDesignTokens.spaceSm),
-                        JournalEditor(store: widget.store, date: day),
+                        if (isToday) ...[
+                          const SizedBox(height: AnnaDesignTokens.spaceLg),
+                          DailyRitualCard(
+                            store: widget.store,
+                            date: day,
+                          ),
+                        ],
                         const SizedBox(height: AnnaDesignTokens.spaceLg),
                         _DayLifeStream(
                           snapshot: snapshot,
