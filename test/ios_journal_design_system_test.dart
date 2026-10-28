@@ -28,7 +28,7 @@ void main() {
           );
           final decorated = AnnaJournalTheme.apply(input);
 
-          expect(decorated.colorScheme, same(scheme));
+          expect(decorated.colorScheme, equals(scheme));
           expect(decorated.useMaterial3, isTrue);
           expect(
             decorated.navigationBarTheme.indicatorColor,
