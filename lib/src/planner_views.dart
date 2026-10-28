@@ -394,10 +394,6 @@ class _PlannerScreenState extends State<PlannerScreen> {
                   onPressed: () => _selectDay(DateTime.now()),
                   child: Text(strings.navToday),
                 ),
-              IconButton(
-                onPressed: () => openUnifiedItemComposer(context, widget.store, day),
-                icon: const Icon(Icons.add_circle_outline),
-              ),
             ],
           ),
           body: Column(
@@ -407,9 +403,15 @@ class _PlannerScreenState extends State<PlannerScreen> {
                 onSelected: _selectDay,
               ),
               Expanded(
-                child: ListView(
-                  padding: const EdgeInsets.fromLTRB(14, 8, 14, 110),
-                  children: [
+                child: Align(
+                  alignment: Alignment.topCenter,
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(
+                      maxWidth: AnnaDesignTokens.readingContentWidth,
+                    ),
+                    child: ListView(
+                      padding: const EdgeInsets.fromLTRB(14, 8, 14, 110),
+                      children: [
                     _DayOpeningCard(date: day),
                     if (isToday) ...[
                       const SizedBox(height: 12),
@@ -487,6 +489,19 @@ class _PlannerScreenState extends State<PlannerScreen> {
                       ),
                       const SizedBox(height: 14),
                     ],
+                    Row(
+                      children: [
+                        const AnnaPastelIcon(
+                          icon: Icons.auto_stories_outlined,
+                          domain: AnnaVisualDomain.memories,
+                        ),
+                        const SizedBox(width: AnnaDesignTokens.spaceSm),
+                        Expanded(child: SectionTitle(strings.diary)),
+                      ],
+                    ),
+                    const SizedBox(height: AnnaDesignTokens.spaceSm),
+                    JournalEditor(store: widget.store, date: day),
+                    const SizedBox(height: AnnaDesignTokens.spaceLg),
                     _DayLifeStream(
                       snapshot: snapshot,
                       store: widget.store,
@@ -514,11 +529,9 @@ class _PlannerScreenState extends State<PlannerScreen> {
                         ),
                       ],
                     ),
-                    const SizedBox(height: 18),
-                    SectionTitle(strings.diary),
-                    const SizedBox(height: 8),
-                    JournalEditor(store: widget.store, date: day),
                   ],
+                    ),
+                  ),
                 ),
               ),
             ],
@@ -743,7 +756,7 @@ class _TodayFocusCard extends StatelessWidget {
         key: const ValueKey<String>('today-focus-card'),
         padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: scheme.surfaceContainerHighest.withValues(alpha: 0.45),
+        color: AnnaVisualDomain.today.softSurface(scheme),
         borderRadius: BorderRadius.circular(22),
         border: Border.all(color: scheme.outlineVariant),
       ),
@@ -1015,7 +1028,7 @@ class _DayLifeOverviewCard extends StatelessWidget {
       key: const ValueKey('day-life-overview'),
       padding: const EdgeInsets.all(17),
       decoration: BoxDecoration(
-        color: scheme.surfaceContainerHighest.withValues(alpha: 0.42),
+        color: AnnaVisualDomain.calendar.softSurface(scheme),
         borderRadius: BorderRadius.circular(22),
         border: Border.all(color: scheme.outlineVariant),
       ),
