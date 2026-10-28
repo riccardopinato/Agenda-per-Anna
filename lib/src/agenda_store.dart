@@ -3620,19 +3620,27 @@ class AgendaStore extends ChangeNotifier {
             (e) => e.name == payload['palette'],
             orElse: () => preferences.palette,
           ),
-          useCustomPalette: payload['useCustomPalette'] == true &&
-              payload['customColorValue'] is int &&
-              (payload['customColorValue'] as int) >= 0 &&
-              (payload['customColorValue'] as int) <= 0xFFFFFFFF,
+          // A pre-HSV client omits these keys entirely. Preserve the local
+          // color choice instead of interpreting absence as a reset.
+          useCustomPalette: payload.containsKey('useCustomPalette')
+              ? payload['useCustomPalette'] == true &&
+                  (payload.containsKey('customColorValue')
+                      ? payload['customColorValue'] is int &&
+                          (payload['customColorValue'] as int) >= 0 &&
+                          (payload['customColorValue'] as int) <= 0xFFFFFFFF
+                      : true)
+              : preferences.useCustomPalette,
           customColorValue: payload['customColorValue'] is int &&
                   (payload['customColorValue'] as int) >= 0 &&
                   (payload['customColorValue'] as int) <= 0xFFFFFFFF
               ? (payload['customColorValue'] as int) | 0xFF000000
               : preferences.customColorValue,
-          colorIntensity: AgendaColorIntensity.values.firstWhere(
-            (e) => e.name == payload['colorIntensity'],
-            orElse: () => AgendaColorIntensity.delicate,
-          ),
+          colorIntensity: payload.containsKey('colorIntensity')
+              ? AgendaColorIntensity.values.firstWhere(
+                  (e) => e.name == payload['colorIntensity'],
+                  orElse: () => AgendaColorIntensity.delicate,
+                )
+              : preferences.colorIntensity,
           showDailyQuote:
               payload['showDailyQuote'] as bool? ??
                   preferences.showDailyQuote,
