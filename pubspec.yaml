@@ -45,6 +45,27 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
+  fonts:
+    - family: Manrope
+      fonts:
+        - asset: assets/fonts/Manrope-VF.ttf
+          weight: 400
+        - asset: assets/fonts/Manrope-VF.ttf
+          weight: 500
+        - asset: assets/fonts/Manrope-VF.ttf
+          weight: 600
+        - asset: assets/fonts/Manrope-VF.ttf
+          weight: 700
+    - family: Lora
+      fonts:
+        - asset: assets/fonts/Lora-VF.ttf
+          weight: 400
+        - asset: assets/fonts/Lora-VF.ttf
+          weight: 500
+        - asset: assets/fonts/Lora-VF.ttf
+          weight: 600
+        - asset: assets/fonts/Lora-VF.ttf
+          weight: 700
 
 flutter_launcher_icons:
   android: "launcher_icon"
