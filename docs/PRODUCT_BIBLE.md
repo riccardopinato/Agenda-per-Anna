@@ -1,9 +1,9 @@
 # Anna's Diary — Product Bible
 
 **Status:** canonical product source of truth  
-**Current product line:** v1.05 Memories & Recall 3.0 — Completed (B4 PR #132 merged; trusted-runtime verified; v1.06 not started)  
-**Distribution identity:** 1.0.0-rc.2+111 — v1.05.x maintenance candidate; Store/physical certification still open  
-**Last aligned:** 27 October 2026
+**Current product line:** v1.05 Memories & Recall 3.0 — Completed; v1.05.x corrective maintenance Completed (PR #134, 4/4 exact-head gates and Codex; v1.06 not started)  
+**Distribution identity:** 1.0.0-rc.2+111 — maintenance software integrated; signed sideload candidate, physical and Store certification remain separate  
+**Last aligned:** 28 October 2026
 
 This document defines what Anna's Diary is, what it is not, and the product/security invariants that future work must preserve. Implementation details belong in `docs/ARCHITECTURE.md`; execution sequencing belongs in `docs/ROADMAP.md`.
 
@@ -259,6 +259,12 @@ A release candidate must, as applicable, pass:
 - documentation alignment.
 
 Public/store release additionally requires valid signing custody, store privacy/Data Safety review and the appropriate Play distribution validation.
+
+### v1.05.x corrective-maintenance boundary
+
+The v1.05.x post-release audit remediation is **Completed at the software/CI level** after PR #134 was merged into `main` (`5578d4141f1a31c8bb6f12aa3af38926ed594b70`). Its exact PR head `4cd9b69745283e3ab327aa4d7fe66c6866e7a3ea` passed Development checks, Web build, Android size audit and AppLab Production Gate; the exact-head Codex review completed with no unresolved findings. Fixes cover template editing, concurrent/failed journal writes, conflict handling, tags, live collections and Life Threads performance without changing canonical data ownership. See `docs/ROADMAP.md` and `docs/V105X_POST_RELEASE_AUDIT_REMEDIATION.md` for the evidence ledger.
+
+**Software completion is not physical or Store certification.** A stable-signed `sideload-arm64` APK must be identified by its exact SHA-256 and physical-certification manifest; only then can the artifact be called **ARTIFACT BUILT**. In-place update on a real device, native/physical workflows, cross-device sync and Google Play purchase/restore remain **NOT VERIFIED** until performed against the exact artifact/account. AppLab artifacts are not release APK substitutes. v1.06 is not authorized by this closure.
 
 ## 14. Source-of-truth hierarchy
 
