@@ -1704,24 +1704,32 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           ),
                     ),
                     const SizedBox(height: 8),
-                    Wrap(
-                      spacing: 8,
-                      runSpacing: 8,
-                      children: AgendaPalette.values.map((palette) {
-                        final selected = prefs.palette == palette;
-                        return ChoiceChip(
-                          selected: selected,
-                          avatar: CircleAvatar(
-                            radius: 8,
-                            backgroundColor: palette.seed,
+                    ListTile(
+                      key: const ValueKey<String>('settings-appearance-colors'),
+                      contentPadding: EdgeInsets.zero,
+                      leading: Container(
+                        width: 46,
+                        height: 46,
+                        decoration: BoxDecoration(
+                          color: prefs.effectiveSeedColor,
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                      ),
+                      title: Text(strings.d3('appearanceColorsTitle')),
+                      subtitle: Text(
+                        prefs.useCustomPalette
+                            ? strings.d3('appearanceCustom')
+                            : strings.agendaPaletteLabel(prefs.palette),
+                      ),
+                      trailing: const Icon(Icons.chevron_right),
+                      onTap: () => Navigator.push(
+                        context,
+                        MaterialPageRoute<void>(
+                          builder: (_) => AppearanceColorsScreen(
+                            store: widget.store,
                           ),
-                          label: Text(strings.agendaPaletteLabel(palette)),
-                          onSelected: (_) =>
-                              widget.store.savePreferences(
-                            prefs.copyWith(palette: palette),
-                          ),
-                        );
-                      }).toList(),
+                        ),
+                      ),
                     ),
                   ],
                 ),

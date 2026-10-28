@@ -68,6 +68,26 @@ class PersonalizationScreen extends StatelessWidget {
               ),
               const SizedBox(height: 16),
               SimpleCard(
+                child: ListTile(
+                  key: const ValueKey<String>('personalization-appearance'),
+                  contentPadding: EdgeInsets.zero,
+                  leading: const AnnaPastelIcon(
+                    icon: Icons.palette_outlined,
+                    domain: AnnaVisualDomain.people,
+                  ),
+                  title: Text(strings.d3('appearanceColorsTitle')),
+                  subtitle: Text(strings.d3('appearanceColorsIntro')),
+                  trailing: const Icon(Icons.chevron_right),
+                  onTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute<void>(
+                      builder: (_) => AppearanceColorsScreen(store: store),
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 12),
+              SimpleCard(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [

@@ -84,6 +84,7 @@ part 'src/screens/workout_screen.dart';
 part 'src/screens/explore_screen.dart';
 part 'src/screens/more_screen.dart';
 part 'src/screens/personalization_screen.dart';
+part 'src/screens/appearance_colors.dart';
 part 'src/screens/settings_hub.dart';
 part 'src/screens/home_inbox_search.dart';
 part 'src/screens/trash_screen.dart';
