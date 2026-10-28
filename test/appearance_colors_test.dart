@@ -122,7 +122,7 @@ void main() {
       'appearanceSaturationSlider',
       'appearanceBrightnessSlider',
     ]) {
-      final line = catalog.split('\\n').firstWhere(
+      final line = catalog.split('\n').firstWhere(
             (line) => line.contains('"$key":'),
           );
       for (final language in ['en', 'it', 'es', 'fr', 'pt']) {
