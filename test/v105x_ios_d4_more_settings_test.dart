@@ -7,6 +7,10 @@ void main() {
     final more = File('lib/src/screens/more_screen.dart').readAsStringSync();
     expect(more, contains('AnnaJournalSectionHeading('));
     expect(more, contains('AnnaJournalCard('));
+    final cards = File('lib/src/ios_journal_design.dart').readAsStringSync();
+    expect(cards, contains('return Material('));
+    expect(cards, contains('clipBehavior: Clip.antiAlias'));
+
     expect(more, contains('journalPageGutter'));
     for (final id in [
       'more-search',
