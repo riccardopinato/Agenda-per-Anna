@@ -5,12 +5,28 @@ part of '../main.dart';
 /// Only view/theme composition. Never owns app data, navigation, cloud state,
 /// a palette, or a second way to write diary content.
 abstract final class AnnaJournalTypography {
-  // Stable family names used by the design system. Until licensed local font
-  // assets are bundled, Flutter must use the named platform fallbacks.
+  // Locally bundled OFL-licensed font families, with platform fallbacks for glyphs.
   static const uiFamily = 'Manrope';
   static const editorialFamily = 'Lora';
   static const uiFallback = <String>['Roboto', 'Arial', 'sans-serif'];
   static const editorialFallback = <String>['Georgia', 'serif'];
+
+  static bool _licensesRegistered = false;
+
+  /// Make redistributed SIL OFL notices available in Flutter's license UI.
+  /// The files are packaged via pubspec assets; no network is required.
+  static void registerLicensesOnce() {
+    if (_licensesRegistered) return;
+    _licensesRegistered = true;
+    LicenseRegistry.addLicense(() async* {
+      for (final family in [uiFamily, editorialFamily]) {
+        final license = await rootBundle.loadString(
+          'assets/fonts/licenses/$family-OFL.txt',
+        );
+        yield LicenseEntryWithLineBreaks([family], license);
+      }
+    });
+  }
 
   static TextTheme fromBase(TextTheme base, ColorScheme scheme) {
     final text = base.apply(

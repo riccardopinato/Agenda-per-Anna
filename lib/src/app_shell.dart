@@ -116,6 +116,7 @@ class AgendaApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    AnnaJournalTypography.registerLicensesOnce();
     return AnimatedBuilder(
       animation: store.shellRevision,
       builder: (context, _) {

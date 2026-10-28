@@ -65,8 +65,9 @@ void main() {
       expect(asset.lengthInBytes, greaterThan(100000));
       // Standard TrueType scaler header, including variable TrueType fonts.
       expect(asset.getUint32(0, Endian.big), 0x00010000);
-      final license =
-          File('assets/fonts/licenses/$family-OFL.txt').readAsStringSync();
+      final license = await rootBundle.loadString(
+        'assets/fonts/licenses/$family-OFL.txt',
+      );
       expect(license, contains('SIL OPEN FONT LICENSE Version 1.1'));
     }
   });
@@ -92,6 +93,7 @@ void main() {
     expect(theme, isNot(contains('CloudSyncService')));
     expect(app, contains('AnnaJournalTheme.apply(ThemeData('));
     expect(app, contains('prefs.effectiveSeedColor'));
+    expect(app, contains('AnnaJournalTypography.registerLicensesOnce()'));
   });
 
   testWidgets('Large page title supports dark mode and large text scale',
