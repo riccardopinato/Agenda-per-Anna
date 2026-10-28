@@ -89,7 +89,7 @@ Source of execution truth for Anna's Diary. Product identity and boundaries are 
 | v1.05-B2 | Year in Review 2.0 | Completed — PR #129 merged after 4/4 exact-head gates | Rebuild the existing YearScreen over modern DiaryBlock/life projections; no duplicate Year product |
 | v1.05-B3 | Collections / Life Threads | Completed — PR #130 merged after 4/4 exact-head gates | Saved views and derived life stories over people/place/tag/time/type without copying canonical data |
 | v1.05-B4 | Polish & QA | **Completed — integration PR #132 merged; 4/4 exact-head gates and Codex PASS** | Bounded UX/performance/accessibility/localization and trusted-runtime closure for v1.05 |
-| v1.05.x | Post-release audit remediation | IN PROGRESS — PR #134; exact-head certification pending | Fix P1/P2 template editing, journal conflict/persistence safety, canonical tags, live collections, Life Threads performance; keep physical/store verification fail-closed |
+| v1.05.x | Post-release audit remediation | **Completed — PR #134 merged; 4/4 exact-head gates and Codex PASS** | P1/P2 template editor, journal conflict/persistence/concurrency safety, canonical tags, live collections and Life Threads performance corrected; physical/store verification remains fail-closed |
 | v1.06 | Ecosystem Expansion | PLANNED | Add specialist integrations one at a time under Shared Ecosystem Core + paired verification; preferred order TrailPath → Notes → SleepMax → CashMate |
 
 ## Current execution order — App Factory v26.6 / Factory Mode v22
@@ -118,6 +118,17 @@ Entitlement Golden does not justify migrating to direct Play Billing.
 Visibility preferences remain separate from entitlement state.
 
 
+
+### v1.05.x corrective-maintenance closure evidence (software only)
+
+- Scope: A-01..A-10 from `docs/V105X_POST_RELEASE_AUDIT_REMEDIATION.md`; no v1.06 feature development.
+- PR **#134** exact tested head: `4cd9b69745283e3ab327aa4d7fe66c6866e7a3ea`.
+- Development checks **#1386: PASS** (run `40603850525`); Web build **#914: PASS** (run `40603850585`, PR deploy job skipped as expected); Android size audit **#862: PASS** (run `40603850521`); AppLab Production Gate **#877: PASS** (run `40603851333`). All four runs target the exact tested head.
+- Codex exact-head review: **Completed**, no major issues; all three recorded P2 review threads resolved on the tested head. This does not replace any mandatory human approval.
+- Squash merge of PR #134 to `main`: `5578d4141f1a31c8bb6f12aa3af38926ed594b70`.
+- **Software maintenance: Completed.** Main-branch Web deploy and stable-signed `sideload-arm64` artifact identity are tracked separately; a PR Web build or AppLab APK is not proof of the public Web deploy or a release APK.
+- **Evidence ceiling:** automated CI/AppLab only. Signed-artifact build may establish **ARTIFACT BUILT** when its SHA-256 and manifest are published. Real-device install/in-place update, cross-device behavior, physical performance and Google Play purchase/restore remain **NOT VERIFIED** until independently tested.
+- **Stop boundary:** v1.06 remains PLANNED, not started.
 
 ### v1.05-B4 and v1.05 final closure evidence
 
