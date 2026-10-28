@@ -12,6 +12,7 @@ const Map<String, Map<String, String>> _d3Catalog = {
   "appearanceSaturationSlider": <String, String>{"en": "Saturation", "it": "Saturazione", "es": "Saturación", "fr": "Saturation", "pt": "Saturação"},
   "appearanceBrightnessSlider": <String, String>{"en": "Brightness", "it": "Luminosità", "es": "Brillo", "fr": "Luminosité", "pt": "Luminosidade"},
   "appearanceHex": <String, String>{"en": "HEX color code", "it": "Codice colore HEX", "es": "Código HEX", "fr": "Code HEX", "pt": "Código HEX"},
+  "appearanceInvalidHex": <String, String>{"en": "Enter a valid 6-digit HEX color.", "it": "Inserisci un colore HEX valido di 6 cifre.", "es": "Introduce un color HEX válido de 6 dígitos.", "fr": "Saisis une couleur HEX valide à 6 chiffres.", "pt": "Introduz uma cor HEX válida de 6 dígitos."},
   "appearanceHexHint": <String, String>{"en": "Use six hexadecimal digits, for example #9A8ED0.", "it": "Inserisci sei cifre esadecimali, ad esempio #9A8ED0.", "es": "Introduce seis dígitos hexadecimales, p. ej. #9A8ED0.", "fr": "Saisis six chiffres hexadécimaux, ex. #9A8ED0.", "pt": "Introduz seis dígitos hexadecimais, por ex. #9A8ED0."},
   "appearanceIntensity": <String, String>{"en": "Color intensity", "it": "Intensità del colore", "es": "Intensidad de color", "fr": "Intensité des couleurs", "pt": "Intensidade da cor"},
   "appearanceDelicate": <String, String>{"en": "Delicate", "it": "Delicato", "es": "Delicado", "fr": "Délicat", "pt": "Delicado"},

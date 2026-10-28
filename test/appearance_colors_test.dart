@@ -140,6 +140,25 @@ void main() {
     expect(store, contains(': preferences.colorIntensity'));
   });
 
+  testWidgets('invalid HEX cannot silently save a stale color',
+      (tester) async {
+    final store = AgendaStore();
+    await tester.pumpWidget(MaterialApp(
+      home: AppearanceColorsScreen(store: store),
+    ));
+    await tester.pumpAndSettle();
+    final hex = find.byKey(const ValueKey<String>('appearance-hex'));
+    final list = find.byType(Scrollable).first;
+    await tester.scrollUntilVisible(hex, 180, scrollable: list);
+    await tester.enterText(hex, '#12345');
+    await tester.pumpAndSettle();
+    final apply = find.byKey(const ValueKey<String>('appearance-apply'));
+    await tester.scrollUntilVisible(apply, 180, scrollable: list);
+    expect(tester.widget<FilledButton>(apply).onPressed, isNull);
+    expect(store.preferences.useCustomPalette, isFalse);
+    store.dispose();
+  });
+
   test('settings and personalization link to the same editor', () {
     final settings =
         File('lib/src/screens/backup_settings.dart').readAsStringSync();
