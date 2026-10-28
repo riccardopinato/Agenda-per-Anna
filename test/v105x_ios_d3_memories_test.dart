@@ -27,6 +27,8 @@ void main() {
     expect(hero, contains('if (!visual)'));
     expect(hero, contains("'memories-editorial-hero'"));
     expect(hero, contains('AnnaJournalCard('));
+    expect(hero, contains('MaterialType.transparency'));
+    expect(hero, contains('child: InkWell('));
     expect(hero, contains('AnnaJournalTypography.editorial('));
     expect(hero, contains('_coverPreview(context, record)'));
     expect(hero, contains('onTap: () => _openRecord(record)'));
