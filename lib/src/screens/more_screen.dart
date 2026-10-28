@@ -11,6 +11,7 @@ class MoreScreen extends StatelessWidget {
   Widget _tile({
     required String id,
     required IconData icon,
+    required AnnaVisualDomain domain,
     required String title,
     String? subtitle,
     Widget? trailing,
@@ -24,8 +25,10 @@ class MoreScreen extends StatelessWidget {
       excludeSemantics: true,
       child: ListTile(
         key: ValueKey<String>(id),
-        contentPadding: EdgeInsets.zero,
-        leading: CircleAvatar(child: Icon(icon)),
+        contentPadding: const EdgeInsets.symmetric(
+          vertical: AnnaDesignTokens.space2xs,
+        ),
+        leading: AnnaPastelIcon(icon: icon, domain: domain),
         title: Text(
           title,
           style: const TextStyle(fontWeight: FontWeight.w700),
@@ -64,7 +67,12 @@ class MoreScreen extends StatelessWidget {
               style: const TextStyle(fontWeight: FontWeight.w800),
             ),
           ),
-          body: ListView(
+          body: Center(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(
+                maxWidth: AnnaDesignTokens.compactContentWidth,
+              ),
+              child: ListView(
             padding: const EdgeInsets.fromLTRB(
               AnnaDesignTokens.spaceMd,
               AnnaDesignTokens.spaceXs,
@@ -92,13 +100,18 @@ class MoreScreen extends StatelessWidget {
                 ),
                 const SizedBox(height: AnnaDesignTokens.spaceLg),
               ],
-              SectionTitle(strings.d3('moreQuickAccess')),
+              AnnaPastelSectionHeader(
+                title: strings.d3('moreQuickAccess'),
+                icon: Icons.bolt_outlined,
+                domain: AnnaVisualDomain.today,
+              ),
               const SizedBox(height: AnnaDesignTokens.spaceSm),
               SimpleCard(
                 child: Column(
                   children: [
                     _tile(
                       id: 'more-search',
+                      domain: AnnaVisualDomain.today,
                       icon: Icons.search,
                       title: strings.search,
                       onTap: () => _open(
@@ -109,6 +122,7 @@ class MoreScreen extends StatelessWidget {
                     const Divider(height: 1),
                     _tile(
                       id: 'more-inbox',
+                      domain: AnnaVisualDomain.today,
                       icon: Icons.inbox_outlined,
                       title: strings.inbox,
                       trailing: store.activeInboxEntries.isEmpty
@@ -126,13 +140,18 @@ class MoreScreen extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: AnnaDesignTokens.spaceLg),
-              SectionTitle(strings.d3('moreYourSpace')),
+              AnnaPastelSectionHeader(
+                title: strings.d3('moreYourSpace'),
+                icon: Icons.favorite_border_rounded,
+                domain: AnnaVisualDomain.shared,
+              ),
               const SizedBox(height: AnnaDesignTokens.spaceSm),
               SimpleCard(
                 child: Column(
                   children: [
                     _tile(
                       id: 'more-explore',
+                      domain: AnnaVisualDomain.people,
                       icon: Icons.apps_outlined,
                       title: strings.v100Explore,
                       subtitle: strings.v100ExploreIntro,
@@ -142,6 +161,7 @@ class MoreScreen extends StatelessWidget {
                     const Divider(height: 1),
                     _tile(
                       id: 'more-personalize',
+                      domain: AnnaVisualDomain.people,
                       icon: Icons.tune_outlined,
                       title: strings.d3('personalizationTitle'),
                       subtitle:
@@ -155,6 +175,7 @@ class MoreScreen extends StatelessWidget {
                       const Divider(height: 1),
                       _tile(
                         id: 'more-shared',
+                      domain: AnnaVisualDomain.shared,
                         icon: Icons.favorite_outline,
                         title: 'Noi ♡',
                         subtitle:
@@ -179,13 +200,18 @@ class MoreScreen extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: AnnaDesignTokens.spaceLg),
-              SectionTitle(strings.d3('moreDataAndApp')),
+              AnnaPastelSectionHeader(
+                title: strings.d3('moreDataAndApp'),
+                icon: Icons.shield_outlined,
+                domain: AnnaVisualDomain.ecosystem,
+              ),
               const SizedBox(height: AnnaDesignTokens.spaceSm),
               SimpleCard(
                 child: Column(
                   children: [
                     _tile(
                       id: 'more-archive',
+                      domain: AnnaVisualDomain.memories,
                       icon: Icons.inventory_2_outlined,
                       title: strings.archive,
                       onTap: () =>
@@ -194,6 +220,7 @@ class MoreScreen extends StatelessWidget {
                     const Divider(height: 1),
                     _tile(
                       id: 'more-backup',
+                      domain: AnnaVisualDomain.vault,
                       icon: Icons.backup_outlined,
                       title: strings.backup,
                       onTap: () =>
@@ -202,6 +229,7 @@ class MoreScreen extends StatelessWidget {
                     const Divider(height: 1),
                     _tile(
                       id: 'more-cloud',
+                      domain: AnnaVisualDomain.ecosystem,
                       icon: Icons.cloud_outlined,
                       title: strings.cloud,
                       onTap: () =>
@@ -210,6 +238,7 @@ class MoreScreen extends StatelessWidget {
                     const Divider(height: 1),
                     _tile(
                       id: 'more-settings',
+                      domain: AnnaVisualDomain.ecosystem,
                       icon: Icons.settings_outlined,
                       title: strings.settings,
                       onTap: () =>
@@ -219,6 +248,8 @@ class MoreScreen extends StatelessWidget {
                 ),
               ),
             ],
+              ),
+            ),
           ),
         );
       },
