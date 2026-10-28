@@ -80,6 +80,71 @@ extension AnnaVisualDomainUi on AnnaVisualDomain {
   }
 }
 
+
+//// Presentation-only pastel accents: preserve the active palette and dark mode.
+class AnnaPastelIcon extends StatelessWidget {
+  final IconData icon;
+  final AnnaVisualDomain domain;
+
+  const AnnaPastelIcon({
+    super.key,
+    required this.icon,
+    required this.domain,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Container(
+      width: 48,
+      height: 48,
+      alignment: Alignment.center,
+      decoration: BoxDecoration(
+        color: domain.softSurface(scheme),
+        borderRadius: BorderRadius.circular(AnnaDesignTokens.radiusMd),
+        border: Border.all(
+          color: scheme.outlineVariant.withValues(alpha: 0.45),
+        ),
+      ),
+      child: Icon(icon, color: scheme.onSurface, size: 22),
+    );
+  }
+}
+
+class AnnaPastelSectionHeader extends StatelessWidget {
+  final String title;
+  final IconData icon;
+  final AnnaVisualDomain domain;
+
+  const AnnaPastelSectionHeader({
+    super.key,
+    required this.title,
+    required this.icon,
+    required this.domain,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        AnnaPastelIcon(icon: icon, domain: domain),
+        const SizedBox(width: AnnaDesignTokens.spaceSm),
+        Expanded(
+          child: Semantics(
+            header: true,
+            child: Text(
+              title,
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w800,
+                  ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
 @immutable
 class AccentSurfaceTokens {
   final Color start;

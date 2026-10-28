@@ -19,6 +19,7 @@ class SettingsHubScreen extends StatelessWidget {
   Widget _tile({
     required String id,
     required IconData icon,
+    required AnnaVisualDomain domain,
     required String title,
     String? subtitle,
     required VoidCallback onTap,
@@ -31,8 +32,10 @@ class SettingsHubScreen extends StatelessWidget {
       excludeSemantics: true,
       child: ListTile(
         key: ValueKey<String>(id),
-        contentPadding: EdgeInsets.zero,
-        leading: CircleAvatar(child: Icon(icon)),
+        contentPadding: const EdgeInsets.symmetric(
+          vertical: AnnaDesignTokens.space2xs,
+        ),
+        leading: AnnaPastelIcon(icon: icon, domain: domain),
         title: Text(
           title,
           style: const TextStyle(fontWeight: FontWeight.w700),
@@ -57,94 +60,121 @@ class SettingsHubScreen extends StatelessWidget {
             style: const TextStyle(fontWeight: FontWeight.w800),
           ),
         ),
-        body: ListView(
-        padding: const EdgeInsets.fromLTRB(
-          AnnaDesignTokens.spaceMd,
-          AnnaDesignTokens.spaceXs,
-          AnnaDesignTokens.spaceMd,
-          AnnaDesignTokens.spaceXl,
-        ),
-        children: [
-          SimpleCard(
-            child: Text(
-              strings.d3('settingsHubIntro'),
-              style: Theme.of(context).textTheme.bodyMedium,
+        body: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(
+              maxWidth: AnnaDesignTokens.compactContentWidth,
             ),
-          ),
-          const SizedBox(height: AnnaDesignTokens.spaceLg),
-          SectionTitle(strings.d3('personalizationTitle')),
-          const SizedBox(height: AnnaDesignTokens.spaceSm),
-          SimpleCard(
-            child: Column(
+            child: ListView(
+              padding: const EdgeInsets.fromLTRB(
+                AnnaDesignTokens.spaceMd,
+                AnnaDesignTokens.spaceXs,
+                AnnaDesignTokens.spaceMd,
+                AnnaDesignTokens.spaceXl,
+              ),
               children: [
-                _tile(
-                  id: 'settings-hub-personalization',
-                  icon: Icons.tune_outlined,
+                Container(
+                  padding: const EdgeInsets.all(AnnaDesignTokens.spaceMd),
+                  decoration: BoxDecoration(
+                    color: AnnaVisualDomain.people.softSurface(
+                      Theme.of(context).colorScheme,
+                    ),
+                    borderRadius: BorderRadius.circular(AnnaDesignTokens.radiusLg),
+                  ),
+                  child: Text(
+                    strings.d3('settingsHubIntro'),
+                    style: Theme.of(context).textTheme.bodyMedium,
+                  ),
+                ),
+                const SizedBox(height: AnnaDesignTokens.spaceLg),
+                AnnaPastelSectionHeader(
                   title: strings.d3('personalizationTitle'),
-                  subtitle: strings.d3('personalizationSettingsSubtitle'),
-                  onTap: () => _open(
-                    context,
-                    PersonalizationScreen(store: store),
+                  icon: Icons.palette_outlined,
+                  domain: AnnaVisualDomain.people,
+                ),
+                const SizedBox(height: AnnaDesignTokens.spaceSm),
+                SimpleCard(
+                  child: Column(
+                    children: [
+                      _tile(
+                        id: 'settings-hub-personalization',
+                        domain: AnnaVisualDomain.people,
+                        icon: Icons.tune_outlined,
+                        title: strings.d3('personalizationTitle'),
+                        subtitle: strings.d3('personalizationSettingsSubtitle'),
+                        onTap: () => _open(
+                          context,
+                          PersonalizationScreen(store: store),
+                        ),
+                      ),
+                      const Divider(height: 1),
+                      _tile(
+                        id: 'settings-hub-preferences-privacy',
+                        domain: AnnaVisualDomain.vault,
+                        icon: Icons.tune_rounded,
+                        title: strings.d3('settingsPreferencesPrivacy'),
+                        subtitle: strings.d3('settingsPreferencesPrivacySubtitle'),
+                        onTap: () => _open(
+                          context,
+                          SettingsScreen(store: store),
+                        ),
+                      ),
+                      const Divider(height: 1),
+                      _tile(
+                        id: 'settings-hub-premium',
+                        domain: AnnaVisualDomain.memories,
+                        icon: Icons.workspace_premium_outlined,
+                        title: strings.premiumTitle,
+                        subtitle: PremiumEntitlementService.instance.paidEntitlement
+                            ? strings.premiumActiveDescription
+                            : strings.premiumSettingsDescription,
+                        onTap: () => _open(
+                          context,
+                          const PremiumScreen(),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-                const Divider(height: 1),
-                _tile(
-                  id: 'settings-hub-preferences-privacy',
-                  icon: Icons.tune_rounded,
-                  title: strings.d3('settingsPreferencesPrivacy'),
-                  subtitle: strings.d3('settingsPreferencesPrivacySubtitle'),
-                  onTap: () => _open(
-                    context,
-                    SettingsScreen(store: store),
-                  ),
+                const SizedBox(height: AnnaDesignTokens.spaceLg),
+                AnnaPastelSectionHeader(
+                  title: strings.v100DataSection,
+                  icon: Icons.shield_outlined,
+                  domain: AnnaVisualDomain.vault,
                 ),
-                const Divider(height: 1),
-                _tile(
-                  id: 'settings-hub-premium',
-                  icon: Icons.workspace_premium_outlined,
-                  title: strings.premiumTitle,
-                  subtitle: PremiumEntitlementService.instance.paidEntitlement
-                      ? strings.premiumActiveDescription
-                      : strings.premiumSettingsDescription,
-                  onTap: () => _open(
-                    context,
-                    const PremiumScreen(),
+                const SizedBox(height: AnnaDesignTokens.spaceSm),
+                SimpleCard(
+                  child: Column(
+                    children: [
+                      _tile(
+                        id: 'settings-hub-account',
+                        domain: AnnaVisualDomain.ecosystem,
+                        icon: Icons.cloud_outlined,
+                        title: strings.v100AccountSync,
+                        subtitle: strings.v100AccountSyncDescription,
+                        onTap: () => _open(
+                          context,
+                          CloudAccountScreen(store: store),
+                        ),
+                      ),
+                      const Divider(height: 1),
+                      _tile(
+                        id: 'settings-hub-backup',
+                        domain: AnnaVisualDomain.vault,
+                        icon: Icons.backup_outlined,
+                        title: strings.v100BackupRestore,
+                        subtitle: strings.v100BackupRestoreDescription,
+                        onTap: () => _open(
+                          context,
+                          BackupScreen(store: store),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ],
             ),
           ),
-          const SizedBox(height: AnnaDesignTokens.spaceLg),
-          SectionTitle(strings.v100DataSection),
-          const SizedBox(height: AnnaDesignTokens.spaceSm),
-          SimpleCard(
-            child: Column(
-              children: [
-                _tile(
-                  id: 'settings-hub-account',
-                  icon: Icons.cloud_outlined,
-                  title: strings.v100AccountSync,
-                  subtitle: strings.v100AccountSyncDescription,
-                  onTap: () => _open(
-                    context,
-                    CloudAccountScreen(store: store),
-                  ),
-                ),
-                const Divider(height: 1),
-                _tile(
-                  id: 'settings-hub-backup',
-                  icon: Icons.backup_outlined,
-                  title: strings.v100BackupRestore,
-                  subtitle: strings.v100BackupRestoreDescription,
-                  onTap: () => _open(
-                    context,
-                    BackupScreen(store: store),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
         ),
       ),
     );
