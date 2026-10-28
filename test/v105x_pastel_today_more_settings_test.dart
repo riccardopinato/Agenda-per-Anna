@@ -28,7 +28,7 @@ void main() {
     expect(diaryPosition, greaterThan(0));
     expect(streamPosition, greaterThan(diaryPosition));
     expect(timelinePosition, greaterThan(streamPosition));
-    expect(planner, contains('SectionTitle(strings.diary)'));
+    expect(planner, contains('AnnaJournalSectionHeading(title: strings.diary)'));
     expect(planner, contains('today-pinned-section'));
   });
 
