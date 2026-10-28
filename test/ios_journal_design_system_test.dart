@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:flutter/services.dart';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -46,6 +47,25 @@ void main() {
           );
         }
       }
+    }
+  });
+
+  test('offline Manrope/Lora variable fonts and OFL notices are bundled',
+      () async {
+    final pubspec = File('pubspec.yaml').readAsStringSync();
+    for (final family in ['Manrope', 'Lora']) {
+      expect(pubspec, contains('family: $family'));
+      final filename = family == 'Manrope'
+          ? 'assets/fonts/Manrope-VF.ttf'
+          : 'assets/fonts/Lora-VF.ttf';
+      expect(pubspec, contains('asset: $filename'));
+      final asset = await rootBundle.load(filename);
+      expect(asset.lengthInBytes, greaterThan(100000));
+      // Standard TrueType scaler header, including variable TrueType fonts.
+      expect(asset.getUint32(0, Endian.big), 0x00010000);
+      final license =
+          File('assets/fonts/licenses/$family-OFL.txt').readAsStringSync();
+      expect(license, contains('SIL OPEN FONT LICENSE Version 1.1'));
     }
   });
 
