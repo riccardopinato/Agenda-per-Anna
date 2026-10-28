@@ -576,6 +576,56 @@ class _DiaryMemoriesScreenState extends State<DiaryMemoriesScreen> {
       AnnaStrings.intlLocale(context),
     ).format(record.date);
 
+    // Text and voice memories use an editorial hero, never an empty
+    // photographic placeholder or a dark photo overlay.
+    final visual = record.block.type == DiaryBlockType.photo ||
+        record.block.type == DiaryBlockType.sketch;
+    if (!visual) {
+      return Semantics(
+        identifier: 'memories-for-you-hero',
+        button: true,
+        label: '$title · $date',
+        child: Padding(
+          padding: const EdgeInsets.only(top: AnnaDesignTokens.spaceSm),
+          child: AnnaJournalCard(
+            domain: AnnaVisualDomain.memories,
+            hero: true,
+            child: Material(
+              type: MaterialType.transparency,
+              child: InkWell(
+                key: const ValueKey<String>('memories-editorial-hero'),
+                onTap: () => _openRecord(record),
+                child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Icon(
+                    record.block.type == DiaryBlockType.voice
+                        ? Icons.mic_none_outlined
+                        : Icons.auto_stories_outlined,
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
+                  const SizedBox(height: AnnaDesignTokens.spaceSm),
+                  Text(
+                    title,
+                    style: AnnaJournalTypography.editorial(
+                      context,
+                      size: 25,
+                    ),
+                  ),
+                  const SizedBox(height: AnnaDesignTokens.spaceXs),
+                  Text(
+                    date,
+                    style: Theme.of(context).textTheme.bodySmall,
+                  ),
+                ],
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+    }
+
     return Semantics(
       identifier: 'memories-for-you-hero',
       button: true,
@@ -636,11 +686,12 @@ class _DiaryMemoriesScreenState extends State<DiaryMemoriesScreen> {
                         title,
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
+                        style: AnnaJournalTypography.editorial(
+                          context,
+                          size: 25,
+                        ).copyWith(
                           color: Colors.white,
-                          fontSize: 23,
-                          height: 1.1,
-                          fontWeight: FontWeight.w800,
+                          fontWeight: FontWeight.w600,
                         ),
                       ),
                       const SizedBox(height: AnnaDesignTokens.spaceXs),
@@ -1087,18 +1138,16 @@ class _DiaryMemoriesScreenState extends State<DiaryMemoriesScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  Text(
-                    strings.d3('memoriesForYou'),
-                    style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                          fontWeight: FontWeight.w800,
-                        ),
-                  ),
-                  const SizedBox(height: AnnaDesignTokens.space2xs),
-                  Text(
-                    strings.d3('memoriesForYouIntro'),
-                    style: Theme.of(context).textTheme.bodyMedium,
+                  AnnaJournalPageHeader(
+                    title: strings.d3('memoriesForYou'),
+                    subtitle: strings.d3('memoriesForYouIntro'),
+                    editorial: true,
                   ),
                   const SizedBox(height: AnnaDesignTokens.spaceMd),
+                  if (hero != null) ...[
+                    _forYouHero(context, hero),
+                    const SizedBox(height: AnnaDesignTokens.spaceSm),
+                  ],
                   Card(
                     child: Column(
                       children: [
@@ -1158,7 +1207,6 @@ class _DiaryMemoriesScreenState extends State<DiaryMemoriesScreen> {
                       ],
                     ),
                   ),
-                  if (hero != null) _forYouHero(context, hero),
                   if (snapshot.isEmpty) ...[
                     const SizedBox(height: AnnaDesignTokens.spaceLg),
                     SimpleCard(
@@ -1627,11 +1675,12 @@ class _DiaryMemoriesScreenState extends State<DiaryMemoriesScreen> {
 
     return Scaffold(
       appBar: AppBar(
+        toolbarHeight: 78,
         title: Text(
           widget.personName == null
               ? strings.v100MyMemories
               : strings.v100MemoriesWithPerson(widget.personName!),
-          style: const TextStyle(fontWeight: FontWeight.w800),
+          style: AnnaJournalTypography.editorial(context, size: 29),
         ),
         actions: [
           IconButton(
