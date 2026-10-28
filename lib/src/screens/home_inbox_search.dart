@@ -157,7 +157,9 @@ class _MainShellState extends State<MainShell> {
                     minWidth: 76,
                     minExtendedWidth: 220,
                     backgroundColor: scheme.surface,
-                    indicatorColor: scheme.primaryContainer,
+                    indicatorColor:
+                        Theme.of(context).navigationBarTheme.indicatorColor ??
+                            scheme.primaryContainer,
                     destinations: _railDestinations(strings),
                   ),
                 ),
