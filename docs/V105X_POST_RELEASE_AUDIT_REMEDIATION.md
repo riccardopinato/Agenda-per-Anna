@@ -1,6 +1,6 @@
 # Anna's Diary — v1.05.x audit remediation
 
-Status: **IMPLEMENTED CANDIDATE — exact-head gates pending**
+Status: **Completed — PR #134 merged after 4/4 exact-head gates and Codex review; physical/Store NOT VERIFIED**
 
 Baseline: v1.05 Completed `7bb4a672b8ec3eabc7cbae5f8dc2ab764837de03`.
 Factory baseline: App-Factory-Core `7b84e33df715cf2a48bda7c7495d0690819bff0f`; Master 26.6; Golden Index 23.
@@ -29,6 +29,14 @@ PR: #134. No v1.06 scope.
 - All P0/P1/P2 software claims require exact-head Development, Web, Android size and AppLab PASS plus clean review.
 - Physical-device install/update, cross-device sync, keyboard/large-font, picker and Play purchase/restore are **NOT VERIFIED** until executed on real devices against the *exact* artifact bytes.
 - Do not promote `ARTIFACT_BUILT` to `PHYSICAL_DEVICE_VERIFIED` or `STORE_READY`.
+
+## Software closure evidence — 28 October 2026
+
+- PR #134 exact head `4cd9b69745283e3ab327aa4d7fe66c6866e7a3ea`: Development checks #1386 PASS; Web build #914 PASS (PR deploy intentionally skipped); Android size audit #862 PASS; AppLab Production Gate #877 PASS.
+- Codex reviewed that exact head, reported no major issues, and all three P2 inline threads are resolved.
+- Squash merge into `main`: `5578d4141f1a31c8bb6f12aa3af38926ed594b70`.
+- Main-branch public Web deploy and stable-signed `sideload-arm64` APK/manifest are separate release-artifact checks; no physical-device or Play Store verification is inferred.
+- v1.06 remains PLANNED and untouched.
 
 ## Required final checks
 
