@@ -256,7 +256,7 @@ class _AppearanceColorsScreenState extends State<AppearanceColorsScreen> {
                     child: TextField(
                       key: const ValueKey<String>('appearance-hex'),
                       controller: hexController,
-                      maxLength: 7,
+                      // Do not truncate pasted values before strict HEX validation.
                       textCapitalization: TextCapitalization.characters,
                       decoration: InputDecoration(
                         labelText: strings.d3('appearanceHex'),
