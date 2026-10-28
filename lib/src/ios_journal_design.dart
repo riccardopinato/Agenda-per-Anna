@@ -235,13 +235,14 @@ class AnnaJournalCard extends StatelessWidget {
     final dark = scheme.brightness == Brightness.dark;
     final bg = domain?.softSurface(scheme) ??
         (dark ? scheme.surfaceContainerLow : scheme.surfaceContainerLowest);
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        color: bg,
+    return Material(
+      color: bg,
+      clipBehavior: Clip.antiAlias,
+      shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(
           hero ? AnnaDesignTokens.radiusHero : AnnaDesignTokens.radiusLg,
         ),
-        border: Border.all(
+        side: BorderSide(
           color: scheme.outlineVariant.withValues(alpha: dark ? 0.35 : 0.5),
         ),
       ),
