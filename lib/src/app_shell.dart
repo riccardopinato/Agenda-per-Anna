@@ -26,7 +26,7 @@ class AgendaApp extends StatelessWidget {
     );
     final dark = brightness == Brightness.dark;
 
-    final theme = ThemeData(
+    final theme = AnnaJournalTheme.apply(ThemeData(
       useMaterial3: true,
       colorScheme: scheme,
       // Keep interactive Material controls at accessible touch-target size.
@@ -109,7 +109,7 @@ class AgendaApp extends StatelessWidget {
           color: scheme.outlineVariant.withValues(alpha: 0.55),
         ),
       ),
-    );
+    ));
     _themeCache[cacheKey] = theme;
     return theme;
   }
