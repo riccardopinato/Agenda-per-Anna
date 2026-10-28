@@ -34,7 +34,7 @@ void main() {
 
   test('More retains canonical routes and clearer pastel groups', () {
     final source = File('lib/src/screens/more_screen.dart').readAsStringSync();
-    expect(source, contains('AnnaPastelSectionHeader('));
+    expect(source, contains('AnnaJournalSectionHeading('));
     expect(source, contains('AnnaPastelIcon(icon: icon, domain: domain)'));
     expect(source, contains('AnnaDesignTokens.compactContentWidth'));
     for (final id in [
@@ -56,7 +56,7 @@ void main() {
 
   test('Settings retains stable routes and constrained Web layout', () {
     final source = File('lib/src/screens/settings_hub.dart').readAsStringSync();
-    expect(source, contains('AnnaPastelSectionHeader('));
+    expect(source, contains('AnnaJournalSectionHeading('));
     expect(source, contains('AnnaDesignTokens.compactContentWidth'));
     for (final id in [
       'settings-hub-personalization',
