@@ -185,6 +185,14 @@ void main() {
     }
     expect(find.byKey(const ValueKey<String>('appearance-custom')),
         findsOneWidget);
+    // The three accessible sliders lengthen the scrollable editor; the
+    // HEX input is lazily built only after it enters the viewport.
+    await tester.scrollUntilVisible(
+      find.byKey(const ValueKey<String>('appearance-hex')),
+      180,
+      scrollable: find.byType(Scrollable).first,
+    );
+    await tester.pumpAndSettle();
     expect(find.byKey(const ValueKey<String>('appearance-hex')),
         findsOneWidget);
     expect(store.preferences.useCustomPalette, isFalse);
