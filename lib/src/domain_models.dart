@@ -30,6 +30,8 @@ extension AppLanguageUi on AppLanguage {
 
 enum AgendaPalette { rose, lilac, sage, peach, sky }
 
+enum AgendaColorIntensity { delicate, expressive }
+
 extension AgendaPaletteUi on AgendaPalette {
   Color get seed => switch (this) {
         AgendaPalette.rose => const Color(0xFFE98FAA),
@@ -121,6 +123,9 @@ class AgendaPreferences {
   final AgendaThemeMode themeMode;
   final AppLanguage appLanguage;
   final AgendaPalette palette;
+  final bool useCustomPalette;
+  final int customColorValue;
+  final AgendaColorIntensity colorIntensity;
   final bool showDailyQuote;
   final StartTab startTab;
   final AgendaCategory defaultCategory;
@@ -150,6 +155,9 @@ class AgendaPreferences {
     this.themeMode = AgendaThemeMode.system,
     this.appLanguage = AppLanguage.system,
     this.palette = AgendaPalette.rose,
+    this.useCustomPalette = false,
+    this.customColorValue = 0xFFE98FAA,
+    this.colorIntensity = AgendaColorIntensity.delicate,
     this.showDailyQuote = true,
     this.startTab = StartTab.today,
     this.defaultCategory = AgendaCategory.personal,
@@ -180,6 +188,9 @@ class AgendaPreferences {
     AgendaThemeMode? themeMode,
     AppLanguage? appLanguage,
     AgendaPalette? palette,
+    bool? useCustomPalette,
+    int? customColorValue,
+    AgendaColorIntensity? colorIntensity,
     bool? showDailyQuote,
     StartTab? startTab,
     AgendaCategory? defaultCategory,
@@ -212,6 +223,9 @@ class AgendaPreferences {
       themeMode: themeMode ?? this.themeMode,
       appLanguage: appLanguage ?? this.appLanguage,
       palette: palette ?? this.palette,
+      useCustomPalette: useCustomPalette ?? this.useCustomPalette,
+      customColorValue: (customColorValue ?? this.customColorValue) | 0xFF000000,
+      colorIntensity: colorIntensity ?? this.colorIntensity,
       showDailyQuote: showDailyQuote ?? this.showDailyQuote,
       startTab: startTab ?? this.startTab,
       defaultCategory: defaultCategory ?? this.defaultCategory,
@@ -250,6 +264,9 @@ class AgendaPreferences {
       memoryCollections: memoryCollections ?? this.memoryCollections,
     );
   }
+
+  Color get effectiveSeedColor =>
+      useCustomPalette ? Color(customColorValue | 0xFF000000) : palette.seed;
 
   bool isModuleEnabled(AppModule module) => enabledModules.contains(module);
 
@@ -291,6 +308,9 @@ class AgendaPreferences {
         'themeMode': themeMode.name,
         'appLanguage': appLanguage.name,
         'palette': palette.name,
+        'useCustomPalette': useCustomPalette,
+        'customColorValue': customColorValue,
+        'colorIntensity': colorIntensity.name,
         'showDailyQuote': showDailyQuote,
         'startTab': startTab.name,
         'defaultCategory': defaultCategory.name,
@@ -335,6 +355,19 @@ class AgendaPreferences {
         palette: AgendaPalette.values.firstWhere(
           (e) => e.name == json['palette'],
           orElse: () => AgendaPalette.rose,
+        ),
+        useCustomPalette: json['useCustomPalette'] == true &&
+            json['customColorValue'] is int &&
+            (json['customColorValue'] as int) >= 0 &&
+            (json['customColorValue'] as int) <= 0xFFFFFFFF,
+        customColorValue: json['customColorValue'] is int &&
+                (json['customColorValue'] as int) >= 0 &&
+                (json['customColorValue'] as int) <= 0xFFFFFFFF
+            ? (json['customColorValue'] as int) | 0xFF000000
+            : 0xFFE98FAA,
+        colorIntensity: AgendaColorIntensity.values.firstWhere(
+          (e) => e.name == json['colorIntensity'],
+          orElse: () => AgendaColorIntensity.delicate,
         ),
         showDailyQuote: json['showDailyQuote'] as bool? ?? true,
         startTab: startTabFromStoredValue(json['startTab']),
