@@ -1,6 +1,10 @@
 part of '../main.dart';
 
 const Map<String, Map<String, String>> _d3Catalog = {
+  "ui5Commitments": <String, String>{"en": "Commitments", "it": "Impegni", "es": "Compromisos", "fr": "Engagements", "pt": "Compromissos"},
+  "ui5Activities": <String, String>{"en": "Activities", "it": "Attività", "es": "Actividades", "fr": "Activités", "pt": "Atividades"},
+  "ui5Wellbeing": <String, String>{"en": "Wellbeing", "it": "Benessere", "es": "Bienestar", "fr": "Bien-être", "pt": "Bem-estar"},
+  "ui5Recorded": <String, String>{"en": "Recorded", "it": "Registrato", "es": "Registrado", "fr": "Noté", "pt": "Registado"},
   "ui5Create": <String, String>{"en": "Create", "it": "Crea", "es": "Crear", "fr": "Créer", "pt": "Criar"},
   "ui5SearchHint": <String, String>{"en": "Search for a moment, person or place", "it": "Cerca un momento, una persona o un luogo", "es": "Busca un momento, persona o lugar", "fr": "Recherche un moment, une personne ou un lieu", "pt": "Procura um momento, uma pessoa ou um lugar"},
   "ui5SearchNoResults": <String, String>{"en": "No memories found", "it": "Nessun ricordo trovato", "es": "No se encontraron recuerdos", "fr": "Aucun souvenir trouvé", "pt": "Nenhuma memória encontrada"},
