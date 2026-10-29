@@ -227,6 +227,18 @@ class _MainShellState extends State<MainShell> {
                         extended ? null : NavigationRailLabelType.all,
                     minWidth: 76,
                     minExtendedWidth: 220,
+                    trailing: Padding(
+                      padding: const EdgeInsets.only(top: 18),
+                      child: Semantics(
+                        identifier: 'main-rail-create',
+                        button: true,
+                        child: IconButton.filled(
+                          tooltip: strings.d3('ui5Create'),
+                          onPressed: _openCentralCreate,
+                          icon: const Icon(Icons.add),
+                        ),
+                      ),
+                    ),
                     backgroundColor: scheme.surface,
                     indicatorColor:
                         Theme.of(context).navigationBarTheme.indicatorColor ??
