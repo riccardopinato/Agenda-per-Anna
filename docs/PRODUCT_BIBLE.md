@@ -1,7 +1,7 @@
 # Anna's Diary — Product Bible
 
 **Status:** canonical product source of truth  
-**Current product line:** v1.05 Memories & Recall 3.0 — Completed; v1.05.x corrective maintenance Completed (PR #134); v1.05.x visual UI1–UI3 completed (PRs #136, #138–#143; combined QA #145); UI4 navigation dedup in progress; v1.06 not started  
+**Current product line:** v1.05 Memories & Recall 3.0 — Completed; v1.05.x corrective maintenance Completed (PR #134); v1.05.x visual UI1–UI3 completed (PRs #136, #138–#143; combined QA #145); UI4 navigation dedup completed (PR #146; documentation closure #147); v1.06 not started  
 **Distribution identity:** 1.0.0-rc.2+111 — maintenance software integrated; signed sideload candidate, physical and Store certification remain separate  
 **Last aligned:** 29 October 2026
 
