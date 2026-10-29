@@ -46,3 +46,97 @@ jobs:
       analysis_mode: fast
       baseline_sha: ${{ github.event.pull_request.base.sha || '' }}
       publish_release_artifact: false
+
+  targeted_personalization:
+    name: QA ONLY — execute personalization-atomic.yaml directly
+    needs: applab
+    if: github.event.pull_request.number == 153 && needs.applab.result == 'success'
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - name: Checkout exact QA source (not synthetic merge ref)
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+
+      - name: Checkout immutable trusted AppLab verifier
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          repository: riccardopinato/AppLab
+          ref: 79309588e117ca5481822cd6394a9ad8ecc338e7
+          path: .applab
+
+      - name: Download exact build artifact from the successful trusted gate
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
+        with:
+          pattern: applab-build-v41-annas-diary-personalization-qa-*
+          path: .applab-build
+          merge-multiple: true
+
+      - name: Validate artifact provenance and source SHA
+        id: contract
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          test "$(git rev-parse HEAD)" = "${{ github.event.pull_request.head.sha }}"
+          python3 .applab/scripts/validate_build_contract.py \
+            --root "$GITHUB_WORKSPACE/.applab-build" \
+            --expected-repository riccardopinato/Agenda-per-Anna \
+            --expected-sha "${{ github.event.pull_request.head.sha }}" \
+            --expected-engine flutter \
+            --expected-analysis-mode fast \
+            --expected-trusted-applab-sha 79309588e117ca5481822cd6394a9ad8ecc338e7 \
+            --github-output "$GITHUB_OUTPUT"
+          test -s "$GITHUB_WORKSPACE/.applab-build/app.apk"
+          test -f .maestro/journeys/personalization-atomic.yaml
+          test -f .maestro/journey/personalization.yaml
+          sha256sum "$GITHUB_WORKSPACE/.applab-build/app.apk"
+
+      - name: Setup Java 17 for pinned Maestro
+        uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Cache pinned Maestro
+        uses: actions/cache@caa296126883cff596d87d8935842f9db880ef25
+        with:
+          path: ~/.maestro
+          key: applab-maestro-${{ runner.os }}-2.10.0
+
+      - name: Install pinned Maestro 2.10.0
+        shell: bash
+        run: bash .applab/scripts/install_maestro.sh
+
+      - name: Directly execute the new flow on Android emulator
+        uses: reactivecircus/android-emulator-runner@a421e43855164a8197daf9d8d40fe71c6996bb0d
+        env:
+          QA_APK: ${{ steps.contract.outputs.apk_file }}
+          MAESTRO_CLI_NO_ANALYTICS: '1'
+        with:
+          api-level: 35
+          target: google_apis
+          arch: x86_64
+          profile: pixel_7_pro
+          disable-animations: true
+          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
+          script: |
+            set -Eeuo pipefail
+            mkdir -p qa-evidence
+            echo 'QA ONLY: direct Maestro execution; not AppLab atomic catalog PASS'
+            echo 'Source SHA: ${{ github.event.pull_request.head.sha }}'
+            echo 'Flow: .maestro/journeys/personalization-atomic.yaml'
+            test -s "$QA_APK"
+            sha256sum "$QA_APK" | tee qa-evidence/apk-sha256.txt
+            adb install -r -t "$QA_APK"
+            maestro test .maestro/journeys/personalization-atomic.yaml --test-output-dir qa-evidence/maestro | tee qa-evidence/direct-maestro.log
+            echo 'DIRECT_PERSONALIZATION_ATOMIC_FLOW_PASS'
+
+      - name: Upload targeted QA evidence (never release artifact)
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: qa-personalization-direct-${{ github.run_id }}
+          path: qa-evidence/
+          if-no-files-found: warn
+          retention-days: 2
