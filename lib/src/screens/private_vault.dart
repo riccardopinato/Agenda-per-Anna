@@ -138,6 +138,9 @@ class _PrivateVaultScreenState extends State<PrivateVaultScreen>
       final ok = await vault.unlockWithPassword(submittedPassword);
       if (!mounted) return;
       if (!ok) {
+        // Clear a rejected credential before the user retries. This also
+        // avoids leftover obscured text in accessibility-driven input.
+        passwordController.clear();
         setState(
           () => errorText = AnnaStrings.of(context).vaultIncorrectPassword,
         );
@@ -147,6 +150,7 @@ class _PrivateVaultScreenState extends State<PrivateVaultScreen>
       unawaited(SharedPasswordService.instance.refreshAllAvailableSpacesSafe());
     } catch (_) {
       if (mounted) {
+        passwordController.clear();
         setState(
           () => errorText = AnnaStrings.of(context).vaultUnlockFailed,
         );

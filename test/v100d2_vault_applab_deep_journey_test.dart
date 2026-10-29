@@ -32,7 +32,9 @@ void main() {
       greaterThanOrEqualTo(4),
     );
     expect(vault, contains("inputText: 'D2WrongPassword2026'"));
-    expect(vault, contains('eraseText: 64'));
+    // Rejected credentials are cleared by the app, not fragile keyboard
+    // automation. The follow-up correct unlock must prove that behavior.
+    expect(vault, isNot(contains('eraseText: 64')));
 
     expect(vault, contains("inputText: 'D2_APPLAB_PERSISTENCE'"));
     expect(
@@ -86,6 +88,9 @@ void main() {
     expect(screen, contains("identifier: 'vault_repeat_password_field'"));
     expect(screen, contains("identifier: 'vault_note_title_field'"));
     expect(screen, contains("identifier: 'vault_note_body_field'"));
+    final rejectedBranch = screen.split('if (!ok) {')[1].split('return;')[0];
+    expect(rejectedBranch, contains('passwordController.clear();'));
+    expect(rejectedBranch, contains('vaultIncorrectPassword'));
     expect(
       "id: 'vault_password_field'".allMatches(vault).length,
       4,

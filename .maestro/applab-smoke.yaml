@@ -164,13 +164,11 @@ appId: com.riccardopinato.agenda_per_anna
 - assertVisible:
     text: '.*(Cassaforte bloccata|Vault locked|Caja fuerte bloqueada|Coffre verrouillé|Cofre bloqueado).*'
 
-# CORRECT UNLOCK: clear the failed value, unlock with the setup password and
-# require the previously encrypted sentinel payload. Hosted x86 runners have
-# measured the real 600k PBKDF2 just beyond five minutes, so the bounded wait
-# must cover KDF completion rather than misclassifying a timeout as data loss.
+# CORRECT UNLOCK: the app must clear a rejected password before retry;
+# enter the correct password into the now-empty field, then require the
+# encrypted sentinel. Preserve the original real 600k PBKDF2 and long wait.
 - tapOn:
     id: 'vault_password_field'
-- eraseText: 64
 - inputText: 'D2VaultPassword2026'
 - hideKeyboard
 - tapOn:

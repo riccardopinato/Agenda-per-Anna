@@ -25,3 +25,9 @@ Factory baseline: `b5573840caaf0e92bd7719b7471d49a8e34995c1` (Master v26.8, Gold
 
 ## Backlog for next audits
 Review duplicated Appearance/Premium links, direct Backup/Cloud vs settings discoverability, habits destination, other overlapping Today/Calendar date views, and pixel-faithfulness to C/C/B/C/A mockups with screenshots and user feedback. No automatic removal of user-facing capabilities.
+
+## AppLab blocking remediation — 29 October 2026
+
+Two exact-head AppLab attempts failed D2's encrypted-payload assertion after a deliberately wrong unlock. Evidence from the trusted runtime's UI hierarchy shows the Vault remained **locked**, displayed **Incorrect password**, and had a populated obscured password input after the second attempt. The encrypted sentinel was successfully created and visible before relock. This is not evidence of data deletion.
+
+The password field retained its rejected credential; Maestro's `eraseText: 64` may fail to fully replace an obscured value. The UI now clears a rejected password on failed unlock or exception. D2's test inputs the correct password without erasing. Wrong-password locking, KDF strength, payload persistence across relock and restart, Vault encryption and key management remain unchanged and mandatory. The change is credential-hygiene and reliability remediation, **not** a gate bypass. Re-run all four exact-head gates and a new Codex review before merge.
