@@ -1687,17 +1687,16 @@ class _DiaryMemoriesScreenState extends State<DiaryMemoriesScreen> {
             tooltip: strings.d3('memoriesSearchAction'),
             onPressed: () {
               unawaited(AnnaFeedback.selection());
-              setState(() {
-                if (searchExpanded) {
-                  searchController.clear();
-                  searchExpanded = false;
-                } else {
-                  searchExpanded = true;
-                  view = _DiaryMemoriesView.timeline;
-                }
-              });
+              Navigator.of(context).push(
+                MaterialPageRoute<void>(
+                  builder: (_) => _DiaryGlobalSearchScreen(
+                    store: widget.store,
+                    personId: widget.personId,
+                  ),
+                ),
+              );
             },
-            icon: Icon(searchExpanded ? Icons.search_off : Icons.search),
+            icon: const Icon(Icons.search),
           ),
           IconButton(
             tooltip: strings.d3('memoriesFilters'),
