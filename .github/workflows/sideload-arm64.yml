@@ -78,6 +78,11 @@ jobs:
       - name: Generate launcher icons
         run: dart run flutter_launcher_icons -f tool/flutter_launcher_icons_android.yaml
 
+      # Gradle setup restores dependencies and Gradle metadata, not task outputs
+      # unless task caching is explicitly enabled; each job builds its own APK.
+      - name: Cache Gradle for Android build
+        uses: gradle/actions/setup-gradle@3f5f9adaf7d9fecd50b5935e54106014257a94e6
+
       - name: Build lightweight ARM64 release APK
         shell: bash
         run: |
