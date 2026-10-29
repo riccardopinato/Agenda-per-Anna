@@ -24,7 +24,7 @@ class PersonalizationScreen extends StatelessWidget {
         AppModule.memories => strings.v100MyMemories,
         AppModule.people => strings.v100ImportantPeople,
         AppModule.habits => strings.d3('personalizationHabits'),
-        AppModule.sharedSpace => 'Noi ♡',
+        AppModule.sharedSpace => strings.d3('sharedSpace'),
         AppModule.shopping => strings.v100Shopping,
         AppModule.workout => strings.v100Workout,
         AppModule.cycleTracker => strings.cycleTitle,

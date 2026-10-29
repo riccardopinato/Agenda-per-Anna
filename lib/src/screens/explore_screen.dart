@@ -13,18 +13,6 @@ class ExploreScreen extends StatelessWidget {
           strings.v100Explore,
           style: const TextStyle(fontWeight: FontWeight.w800),
         ),
-        actions: [
-          IconButton(
-            tooltip: strings.d3('personalizationTitle'),
-            onPressed: () => Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (_) => PersonalizationScreen(store: store),
-              ),
-            ),
-            icon: const Icon(Icons.tune),
-          ),
-        ],
       ),
       body: AnimatedBuilder(
         animation: Listenable.merge([
@@ -114,7 +102,7 @@ class ExploreScreen extends StatelessWidget {
             AppModule.sharedSpace,
             NavigationCard(
               icon: Icons.favorite_outline,
-              title: 'Noi ♡',
+              title: strings.d3('sharedSpace'),
               subtitle: strings.d3('personalizationSharedSpaceSubtitle'),
               onTap: () => Navigator.push(
                 context,

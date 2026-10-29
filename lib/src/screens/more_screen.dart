@@ -144,58 +144,62 @@ class MoreScreen extends StatelessWidget {
                     title: strings.d3('moreYourSpace'),
                   ),
                   const SizedBox(height: AnnaDesignTokens.spaceSm),
+                  if (prefs.isModuleEnabled(AppModule.sharedSpace)) ...[
+                    AnnaJournalCard(
+                      domain: AnnaVisualDomain.shared,
+                      child: _tile(
+                        id: 'more-shared',
+                        domain: AnnaVisualDomain.shared,
+                        icon: Icons.favorite_outline,
+                        title: strings.d3('sharedSpace'),
+                        subtitle: 'Noi ♡ · ${strings.d3('personalizationSharedSpaceSubtitle')}',
+                        trailing: store.totalSharedUnreadCount <= 0
+                            ? const Icon(Icons.chevron_right)
+                            : Badge(
+                                label: Text(
+                                  store.totalSharedUnreadCount > 99
+                                      ? '99+'
+                                      : '${store.totalSharedUnreadCount}',
+                                ),
+                                child: const Icon(Icons.chevron_right),
+                              ),
+                        onTap: () => _open(
+                          context,
+                          SharedSpaceHubScreen(store: store),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: AnnaDesignTokens.spaceSm),
+                  ],
+                  if (prefs.isModuleEnabled(AppModule.privateVault)) ...[
+                    AnnaJournalCard(
+                      domain: AnnaVisualDomain.vault,
+                      child: _tile(
+                        id: 'more-private-vault',
+                        domain: AnnaVisualDomain.vault,
+                        icon: Icons.lock_person_outlined,
+                        title: strings.v100PrivateVault,
+                        subtitle: strings.v100PrivateVaultDescription,
+                        onTap: () => _open(
+                          context,
+                          PrivateVaultScreen(store: store),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: AnnaDesignTokens.spaceSm),
+                  ],
                   AnnaJournalCard(
-                    domain: AnnaVisualDomain.shared,
-                    child: Column(
-                      children: [
-                        _tile(
-                          id: 'more-explore',
-                          domain: AnnaVisualDomain.people,
-                          icon: Icons.apps_outlined,
-                          title: strings.v100Explore,
-                          subtitle: strings.v100ExploreIntro,
-                          onTap: () =>
-                              _open(context, ExploreScreen(store: store)),
-                        ),
-                        const Divider(height: 1),
-                        _tile(
-                          id: 'more-personalize',
-                          domain: AnnaVisualDomain.people,
-                          icon: Icons.tune_outlined,
-                          title: strings.d3('personalizationTitle'),
-                          subtitle:
-                              strings.d3('personalizationSettingsSubtitle'),
-                          onTap: () => _open(
-                            context,
-                            PersonalizationScreen(store: store),
-                          ),
-                        ),
-                        if (prefs.isModuleEnabled(AppModule.sharedSpace)) ...[
-                          const Divider(height: 1),
-                          _tile(
-                            id: 'more-shared',
-                          domain: AnnaVisualDomain.shared,
-                            icon: Icons.favorite_outline,
-                            title: 'Noi ♡',
-                            subtitle:
-                                strings.d3('personalizationSharedSpaceSubtitle'),
-                            trailing: store.totalSharedUnreadCount <= 0
-                                ? const Icon(Icons.chevron_right)
-                                : Badge(
-                                    label: Text(
-                                      store.totalSharedUnreadCount > 99
-                                          ? '99+'
-                                          : '${store.totalSharedUnreadCount}',
-                                    ),
-                                    child: const Icon(Icons.chevron_right),
-                                  ),
-                            onTap: () => _open(
-                              context,
-                              SharedSpaceHubScreen(store: store),
-                            ),
-                          ),
-                        ],
-                      ],
+                    domain: AnnaVisualDomain.people,
+                    child: _tile(
+                      id: 'more-explore',
+                      domain: AnnaVisualDomain.people,
+                      icon: Icons.apps_outlined,
+                      title: strings.v100Explore,
+                      subtitle: strings.v100ExploreIntro,
+                      onTap: () => _open(
+                        context,
+                        ExploreScreen(store: store),
+                      ),
                     ),
                   ),
                   const SizedBox(height: AnnaDesignTokens.spaceLg),
