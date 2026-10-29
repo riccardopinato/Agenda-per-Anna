@@ -4,10 +4,12 @@ enum _CalendarHubView { month, week }
 
 class CalendarHubScreen extends StatefulWidget {
   final AgendaStore store;
+  final ValueChanged<DateTime>? onSelectedDateChanged;
 
   const CalendarHubScreen({
     super.key,
     required this.store,
+    this.onSelectedDateChanged,
   });
 
   @override
@@ -132,6 +134,7 @@ class _CalendarHubScreenState extends State<CalendarHubScreen> {
                 CalendarScreen(
                   store: widget.store,
                   embedded: true,
+                  onSelectedDateChanged: widget.onSelectedDateChanged,
                 ),
                 WeekScreen(
                   store: widget.store,
@@ -149,11 +152,13 @@ class _CalendarHubScreenState extends State<CalendarHubScreen> {
 class CalendarScreen extends StatefulWidget {
   final AgendaStore store;
   final bool embedded;
+  final ValueChanged<DateTime>? onSelectedDateChanged;
 
   const CalendarScreen({
     super.key,
     required this.store,
     this.embedded = false,
+    this.onSelectedDateChanged,
   });
 
   @override
@@ -208,7 +213,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
                     style: const TextStyle(fontWeight: FontWeight.w800),
                   ),
                 ),
-          floatingActionButton: FloatingActionButton.extended(
+          floatingActionButton: widget.embedded ? null : FloatingActionButton.extended(
             onPressed: () => _showQuickCapture(
               context,
               widget.store,
@@ -237,6 +242,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
                         selected = s;
                         focused = f;
                       });
+                      widget.onSelectedDateChanged?.call(s);
                       unawaited(_loadVisibleMonth(f));
                     },
                     onPageChanged: (f) {
@@ -299,11 +305,13 @@ class _CalendarScreenState extends State<CalendarScreen> {
 class PlannerScreen extends StatefulWidget {
   final AgendaStore store;
   final DateTime? initialDate;
+  final bool embedded;
 
   const PlannerScreen({
     super.key,
     required this.store,
     this.initialDate,
+    this.embedded = false,
   });
 
   @override
@@ -374,7 +382,7 @@ class _PlannerScreenState extends State<PlannerScreen> {
             : const <AgendaItem>[];
 
         return Scaffold(
-          floatingActionButton: FloatingActionButton.extended(
+          floatingActionButton: widget.embedded ? null : FloatingActionButton.extended(
             onPressed: () => _showQuickCapture(
               context,
               widget.store,
