@@ -1,0 +1,48 @@
+# Ephemeral draft PR #153 only. Never merge this diagnostic workflow to main.
+# Production applab.yml and its legacy Vault smoke gate remain untouched.
+name: QA ONLY — Personalized Maestro Flow
+# Golden AppLab QA pilot — hardened verifier pinned at an immutable commit.
+
+on:
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: applab-personalization-qa-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  applab:
+    if: github.event.pull_request.number == 153
+    uses: riccardopinato/AppLab/.github/workflows/external-project-runner.yml@79309588e117ca5481822cd6394a9ad8ecc338e7
+    with:
+      repository: riccardopinato/Agenda-per-Anna
+      ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      source_ref: ${{ github.head_ref || github.ref_name }}
+      working_directory: "."
+      flutter_version: "3.47.5"
+      java_version: "17"
+      prepare_command: 'bash "$GITHUB_WORKSPACE/.applab/watch-profiles/agenda_per_anna_prepare.sh"'
+      post_pub_get_command: 'bash "$GITHUB_WORKSPACE/.applab/watch-profiles/agenda_per_anna_post_pub_get.sh"'
+      api_level: "35"
+      emulator_profile: pixel_7_pro
+      apk_path: build/app/outputs/flutter-apk/app-release.apk
+      package_id: com.riccardopinato.agenda_per_anna
+      build_command: >-
+        flutter build apk --release --target-platform android-x64 --tree-shake-icons
+        --dart-define=ANNAS_DIARY_INTEGRATION_TEST=true
+        --dart-define=ANNA_STORE_RELEASE=false
+        --dart-define=ANNA_PREMIUM_PREVIEW=true
+        --dart-define=FIREBASE_ENABLED=true
+      run_maestro: true
+      maestro_flow: .maestro/journeys/personalization-atomic.yaml
+      history_key: annas-diary-personalization-qa
+      cache_verification: true
+      config_fingerprint: annas-diary-qa-personalization-atomic-v1
+      analysis_mode: fast
+      baseline_sha: ${{ github.event.pull_request.base.sha || '' }}
+      publish_release_artifact: false
