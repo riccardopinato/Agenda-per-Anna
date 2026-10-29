@@ -16,7 +16,7 @@ concurrency:
 
 jobs:
   applab:
-    uses: riccardopinato/AppLab/.github/workflows/external-project-runner.yml@79309588e117ca5481822cd6394a9ad8ecc338e7
+    uses: riccardopinato/AppLab/.github/workflows/external-project-runner.yml@46816a1786820eb7c0edab7500ca950b10c7718c
     with:
       repository: riccardopinato/Agenda-per-Anna
       ref: ${{ github.event.pull_request.head.sha || github.sha }}
