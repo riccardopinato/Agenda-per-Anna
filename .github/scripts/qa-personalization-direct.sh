@@ -4,7 +4,9 @@
 set -Eeuo pipefail
 mkdir -p qa-evidence
 FLOW='.maestro/journeys/personalization-atomic.yaml'
-echo "QA_ONLY_DIRECT_MAESTRO_START source_sha=${GITHUB_SHA:-unknown} flow=$FLOW"
+source_sha="$(git rev-parse HEAD)"
+test "$source_sha" = "${QA_SOURCE_SHA:?Missing exact PR head}"
+echo "QA_ONLY_DIRECT_MAESTRO_START source_sha=$source_sha flow=$FLOW"
 echo "QA_ONLY_PRODUCTION_GATE_CONCLUSION=${QA_PRODUCTION_GATE_CONCLUSION:-unknown} (not overridden)"
 test -s "$QA_APK"
 test -s "$FLOW"

@@ -122,6 +122,8 @@ jobs:
         uses: reactivecircus/android-emulator-runner@a421e43855164a8197daf9d8d40fe71c6996bb0d
         env:
           QA_APK: ${{ steps.contract.outputs.apk_file }}
+          QA_SOURCE_SHA: ${{ github.event.pull_request.head.sha }}
+          QA_PRODUCTION_GATE_CONCLUSION: ${{ steps.trusted_gate.outputs.gate_conclusion }}
           MAESTRO_CLI_NO_ANALYTICS: '1'
         with:
           api-level: 35
