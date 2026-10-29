@@ -3,7 +3,7 @@ import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
-  test('Today C places daily focus and diary before secondary summaries', () {
+  test('UI5 Oggi places real day overview before diary and secondary sections', () {
     final source = File('lib/src/planner_views.dart').readAsStringSync();
     final planner = source
         .split('class _PlannerScreenState')[1]
@@ -16,8 +16,8 @@ void main() {
     final stream = planner.indexOf('_DayLifeStream(');
     final timeline = planner.indexOf('ExpansionTile(');
     expect(focus, greaterThan(0));
-    expect(diary, greaterThan(focus));
-    expect(overview, greaterThan(diary));
+    expect(overview, greaterThan(focus));
+    expect(diary, greaterThan(overview));
     expect(wellbeing, greaterThan(overview));
     expect(rituals, greaterThan(wellbeing));
     expect(stream, greaterThan(rituals));
@@ -43,5 +43,6 @@ void main() {
       expect(planner, contains(required));
     }
     expect(planner, contains('EdgeInsets.fromLTRB(20, 14, 20, 110)'));
+    expect(planner, contains('_TodayCompactDiaryPreview('));
   });
 }
