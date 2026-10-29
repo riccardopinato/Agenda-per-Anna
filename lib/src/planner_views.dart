@@ -494,6 +494,7 @@ class _PlannerScreenState extends State<PlannerScreen> {
                           _TodayCompactDiaryPreview(
                             store: widget.store,
                             snapshot: snapshot,
+                            hideDetails: widget.store.preferences.hideHomeDetails,
                           ),
                         ] else ...[
                           AnnaJournalSectionHeading(title: strings.diary),
@@ -520,6 +521,8 @@ class _PlannerScreenState extends State<PlannerScreen> {
                                 ? memoryRecall.onThisDay
                                 : memoryRecall.sameMonthPastYears,
                             exactAnniversary: memoryRecall.onThisDay.isNotEmpty,
+                            hideDetails: widget.embedded &&
+                                widget.store.preferences.hideHomeDetails,
                           ),
                           const SizedBox(height: 14),
                         ],
@@ -729,10 +732,12 @@ class _TodayCompactSummary extends StatelessWidget {
 class _TodayCompactDiaryPreview extends StatelessWidget {
   final AgendaStore store;
   final DayHubSnapshot snapshot;
+  final bool hideDetails;
 
   const _TodayCompactDiaryPreview({
     required this.store,
     required this.snapshot,
+    this.hideDetails = false,
   });
 
   @override
@@ -777,7 +782,9 @@ class _TodayCompactDiaryPreview extends StatelessWidget {
                   DiaryBlockType.photo => Icons.photo_outlined,
                   DiaryBlockType.voice => Icons.mic_none_outlined,
                 }),
-                title: Text(store.diaryBlockDisplayTitle(block, strings: strings),
+                title: Text(hideDetails
+                    ? '•••'
+                    : store.diaryBlockDisplayTitle(block, strings: strings),
                   maxLines: 2, overflow: TextOverflow.ellipsis),
                 trailing: const Icon(Icons.chevron_right),
                 onTap: openDiary,
@@ -785,8 +792,11 @@ class _TodayCompactDiaryPreview extends StatelessWidget {
             ),
           if (blocks.isEmpty)
             Card(child: ListTile(
-              title: Text(snapshot.journal.note.trim().isNotEmpty
-                  ? snapshot.journal.note.trim() : strings.diary,
+              title: Text(hideDetails
+                  ? '•••'
+                  : snapshot.journal.note.trim().isNotEmpty
+                      ? snapshot.journal.note.trim()
+                      : strings.diary,
                 maxLines: 2, overflow: TextOverflow.ellipsis),
               trailing: const Icon(Icons.chevron_right),
               onTap: openDiary,
@@ -804,12 +814,14 @@ class _DayMemoryRecallCard extends StatelessWidget {
   final DateTime anchor;
   final List<DiaryBlockReference> memories;
   final bool exactAnniversary;
+  final bool hideDetails;
 
   const _DayMemoryRecallCard({
     required this.store,
     required this.anchor,
     required this.memories,
     this.exactAnniversary = true,
+    this.hideDetails = false,
   });
 
   @override
@@ -823,14 +835,16 @@ class _DayMemoryRecallCard extends StatelessWidget {
     final title = store.diaryBlockDisplayTitle(
       memory.block, strings: strings);
     final block = memory.block;
-    final preview = block.type == DiaryBlockType.photo && block.hasPhotoMedia
+    final preview = !hideDetails &&
+        block.type == DiaryBlockType.photo && block.hasPhotoMedia
         ? DiaryMediaImage(
             assetId: block.mediaThumbnailAssetId.isNotEmpty
                 ? block.mediaThumbnailAssetId : block.mediaAssetId,
             fallbackBase64: block.imageBase64,
             cacheWidth: 150,
           )
-        : block.type == DiaryBlockType.sketch && block.pages.isNotEmpty
+        : !hideDetails &&
+            block.type == DiaryBlockType.sketch && block.pages.isNotEmpty
             ? DiarySketchPagePreview(page: block.pages.first)
             : Center(child: Icon(switch (block.type) {
                 DiaryBlockType.note => Icons.sticky_note_2_outlined,
@@ -866,7 +880,7 @@ class _DayMemoryRecallCard extends StatelessWidget {
                   Expanded(child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(title, maxLines: 1,
+                      Text(hideDetails ? '•••' : title, maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: const TextStyle(fontWeight: FontWeight.w700)),
                       const SizedBox(height: 3),
