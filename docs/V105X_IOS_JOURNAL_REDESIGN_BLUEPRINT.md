@@ -1,5 +1,7 @@
 # Anna's Diary — iOS Journal visual redesign (v1.05.x only)
 
+**As-built evidence (29 Oct 2026):** All UI3 source PRs #138–#143 merged to main `bf9feef`, with exact-head 4/4 CI/AppLab on source lanes and successful final main Development, Web Pages and signed ARM64 build. QA-only #145 closed unmerged after its tests were integrated. The original dependency/PR-pending descriptions below are historical planning context, not current blockers. Physical-device/Play verification and precise pixel fidelity to mockups remain NOT VERIFIED.
+
 **Approved direction (28 Oct 2026):** Armonia iOS Journal, with editorial memories. Authoritative design choices from the user's explicit blueprint:
 - Today **C** (Harmony); Calendar **C** (Harmony); Memories **B** (Contemporary Diary); More **C** (Harmony); Settings **A** (iOS Essential).
 - UI typography **Manrope**; editorial/selected memory and diary headings **Lora**.

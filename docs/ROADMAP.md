@@ -91,21 +91,29 @@ Source of execution truth for Anna's Diary. Product identity and boundaries are 
 | v1.05-B4 | Polish & QA | **Completed — integration PR #132 merged; 4/4 exact-head gates and Codex PASS** | Bounded UX/performance/accessibility/localization and trusted-runtime closure for v1.05 |
 | v1.05.x | Post-release audit remediation | **Completed — PR #134 merged; 4/4 exact-head gates and Codex PASS** | P1/P2 template editor, journal conflict/persistence/concurrency safety, canonical tags, live collections and Life Threads performance corrected; physical/store verification remains fail-closed |
 | v1.05.x-UI1 | Pastel visual polish: Today / More / Settings | **Completed — PR #136 merged, 4/4 exact-head gates and Codex PASS** | Presentation-only first slice: one Capture action, diary earlier, accessible pastel sections and responsive content width; physical/Store NOT VERIFIED; v1.06 untouched |
-| v1.05.x-UI2 | Custom HSV colors + intensity | **IN PROGRESS — protected PR; exact-head gates pending** | Five existing suggested palettes retained; custom HSV/HEX preview, Delicate/Expressive, confirm/cancel, canonical preferences/backup/cloud, five-language regression; no v1.06 |
-| v1.05.x-UI3-D0 | iOS Journal shared design system | **IN PROGRESS — stacked on HSV PR #138** | C/C/B/C/A blueprint locked; theme, responsive headers/cards and attached nav foundation; Manrope/Lora locally bundled; exact-head offline, QA + parent review required |
-| v1.05.x-UI3-D0b | Offline Manrope + Lora asset closure | **IN PROGRESS — fonts and OFL bundled; exact-head Android/Web verification pending** | Official Manrope/Lora variable TTF sources bundled locally, font weights registered; offline runtime and multilingual QA pending |
-| v1.05.x-UI3-D1 | Today C — Armonia iOS Journal | PLANNED | Real daily data, hero, compact wellbeing/activities, diary editor, memories, timeline; preserve Unified Capture and privacy |
-| v1.05.x-UI3-D2 | Calendar C — Armonia iOS Journal | PLANNED | Month/Week, day focus, event and memory markers; Web/tablet adaptive detail pane; unchanged calendar ownership |
-| v1.05.x-UI3-D3 | Memories B — Diario contemporaneo | PLANNED | Editorial real-photo hero with text/audio/sketch fallbacks, Timeline, For You, collections and map; no memory copy |
-| v1.05.x-UI3-D4 | More C / Settings A | PLANNED | Grouped iOS-inspired sections and HSV appearance entry; preserve all canonical routes, semantic IDs and account/backup/privacy |
-| v1.05.x-UI3-D5 | Visual QA and design closure | PLANNED | 5 locales, 5 presets and custom HSV light/dark, accessibility, large text, tablet/Web, 4/4 CI/AppLab + Codex on exact head; physical/Play separate |
+| v1.05.x-UI2 | Custom HSV colors + intensity | **Completed — PR #138 merged, 4/4 gates PASS** | Five existing suggested palettes retained; custom HSV/HEX preview, Delicate/Expressive, confirm/cancel, canonical preferences/backup/cloud, five-language regression; no v1.06 |
+| v1.05.x-UI3-D0 | iOS Journal shared design system | **Completed — PR #139 merged, 4/4 gates PASS** | C/C/B/C/A blueprint locked; theme, responsive headers/cards and attached nav foundation; Manrope/Lora locally bundled; exact-head offline, QA + parent review required |
+| v1.05.x-UI3-D0b | Offline Manrope + Lora asset closure | **Completed — bundled with PR #139, offline Android/Web checks PASS** | Official Manrope/Lora variable TTF sources bundled locally, font weights registered; offline runtime and multilingual QA pending |
+| v1.05.x-UI3-D1 | Today C — Armonia iOS Journal | **Completed — PR #140 merged, 4/4 gates PASS** | Real daily data, hero, compact wellbeing/activities, diary editor, memories, timeline; preserve Unified Capture and privacy |
+| v1.05.x-UI3-D2 | Calendar C — Armonia iOS Journal | **Completed — PR #141 merged, 4/4 gates PASS** | Month/Week, day focus, event and memory markers; Web/tablet adaptive detail pane; unchanged calendar ownership |
+| v1.05.x-UI3-D3 | Memories B — Diario contemporaneo | **Completed — PR #142 merged, 4/4 gates PASS** | Editorial real-photo hero with text/audio/sketch fallbacks, Timeline, For You, collections and map; no memory copy |
+| v1.05.x-UI3-D4 | More C / Settings A | **Completed — PR #143 merged, 4/4 gates PASS** | Grouped iOS-inspired sections and HSV appearance entry; preserve all canonical routes, semantic IDs and account/backup/privacy |
+| v1.05.x-UI3-D5 | Integrated software QA and design closure | **Software completed — #145 QA PASS (closed unmerged); final #143 and main CI/Web/APK PASS; physical visual QA NOT VERIFIED** | 5 locales, 5 presets and custom HSV light/dark, accessibility, large text, tablet/Web, 4/4 CI/AppLab + Codex on exact head; physical/Play separate |
+| v1.05.x-UI4 | Navigation dedup + prominent Shared Space / Private Vault | **IN PROGRESS — bounded UX follow-up** | Remove duplicate access affordances, retain canonical routes, show Spazio condiviso (Noi ♡) and Cassaforte privata prominently when enabled, preserve privacy/backup/entitlement and all four gates |
 | v1.06 | Ecosystem Expansion | PLANNED | Add specialist integrations one at a time under Shared Ecosystem Core + paired verification; preferred order TrailPath → Notes → SleepMax → CashMate |
 
-## Current execution order — App Factory v26.6 / Factory Mode v22
+## UI3 integration evidence (28–29 Oct 2026)
+
+- Protected PRs #138–#143 were merged in order. Main commit `bf9feef489dfeb8a568fdfe16a7eb653292f0813` retains all five target screen compositions.
+- Source-lane heads #139–#143 passed Development, Web, Android size audit and AppLab Production Gate; dedicated combined QA #145 passed 4/4 and was closed **without merge** because its tests were reconciled into #143.
+- Main push run: Development `40783102325` PASS; Web Pages `40783102300` PASS; stable-signed ARM64 APK `40783102272` PASS. This is not evidence of physical install, appearance screenshot comparison on actual hardware, or Play release.
+- UI4 is a bounded presentation/navigation improvement after the read-only duplicate-function audit. No new state store or v1.06 scope.
+
+## Current execution order — App Factory v26.8 / Golden Index v23
 
 Factory baseline for this roadmap:
-`riccardopinato/App-Factory-Core@ed6466e774a28e95f9f371cd56bbf7278428776a`
-(Master v26.6, Golden Index v22).
+`riccardopinato/App-Factory-Core@b5573840caaf0e92bd7719b7471d49a8e34995c1`
+(Master v26.8, Golden Index v23, resolved 29 Oct 2026). Historical documents retain their original baselines.
 
 Execution uses canonical
 `ROADMAP_FAST_PLUS_CONTINUOUS_MAINTENANCE`:

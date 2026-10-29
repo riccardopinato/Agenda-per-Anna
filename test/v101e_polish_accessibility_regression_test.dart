@@ -163,7 +163,8 @@ void main() {
       journey,
       contains('.maestro/journey/personalization.yaml'),
     );
-    expect(flow, contains("id: 'more-personalize'"));
+    expect(flow, contains("id: 'more-settings'"));
+    expect(flow, contains("id: 'settings-hub-personalization'"));
     expect(flow, contains('personalization_preset_essential'));
     expect(flow, contains('personalization_module_shopping'));
     expect(flow, contains('personalization_restore_complete'));

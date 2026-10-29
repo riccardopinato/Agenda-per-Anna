@@ -88,8 +88,8 @@ void main() {
       'more-search',
       'more-inbox',
       'more-explore',
-      'more-personalize',
       'more-shared',
+      'more-private-vault',
       'more-archive',
       'more-backup',
       'more-cloud',
@@ -107,7 +107,6 @@ void main() {
       'PersonalSearchConnectionsScreen(store: store)',
       'InboxScreen(store: store)',
       'ExploreScreen(store: store)',
-      'PersonalizationScreen(store: store)',
       'SharedSpaceHubScreen(store: store)',
       'ArchiveScreen(store: store)',
       'BackupScreen(store: store)',
@@ -166,8 +165,11 @@ void main() {
       '.maestro/journey/shared.yaml': 'more-shared',
       '.maestro/journey/account.yaml': 'more-cloud',
       '.maestro/journey/trash.yaml': 'more-archive',
-      '.maestro/journey/personalization.yaml': 'more-personalize',
+      '.maestro/journey/personalization.yaml': 'more-settings',
     };
+    final personalizationFlow = File('.maestro/journey/personalization.yaml').readAsStringSync();
+    expect(personalizationFlow, contains("id: 'settings-hub-personalization'"));
+
     for (final entry in routeJourneys.entries) {
       final source = File(entry.key).readAsStringSync();
       expect(source, contains('scrollUntilVisible:'));

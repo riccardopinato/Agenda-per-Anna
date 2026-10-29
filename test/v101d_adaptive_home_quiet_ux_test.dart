@@ -21,7 +21,7 @@ void main() {
       'more-search',
       'more-inbox',
       'more-explore',
-      'more-personalize',
+      'more-private-vault',
       'more-archive',
       'more-backup',
       'more-cloud',

@@ -5,11 +5,18 @@ appId: com.riccardopinato.agenda_per_anna
     timeout: 10000
 - scrollUntilVisible:
     element:
-      id: 'more-personalize'
-    direction: UP
+      id: 'more-settings'
+    direction: DOWN
     timeout: 10000
 - tapOn:
-    id: 'more-personalize'
+    id: 'more-settings'
+- scrollUntilVisible:
+    element:
+      id: 'settings-hub-personalization'
+    direction: DOWN
+    timeout: 10000
+- tapOn:
+    id: 'settings-hub-personalization'
 - extendedWaitUntil:
     visible: '(Personalizza|Personalize|Personalizar|Personnaliser)'
     timeout: 10000
@@ -37,6 +44,7 @@ appId: com.riccardopinato.agenda_per_anna
     direction: UP
     timeout: 10000
 
+- back
 - back
 - extendedWaitUntil:
     visible: '(Altro|More|Más|Plus|Mais)'

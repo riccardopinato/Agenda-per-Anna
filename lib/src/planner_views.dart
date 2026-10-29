@@ -1103,67 +1103,6 @@ class _DayLifeOverviewCard extends StatelessWidget {
                   .toList(),
             ),
           ],
-          if (!hideDetails && snapshot.lifeEntries.isNotEmpty) ...[
-            const SizedBox(height: 12),
-            ...snapshot.lifeEntries.take(3).map(
-                  (entry) => _DayLifePreviewRow(
-                    entry: entry,
-                    date: snapshot.date,
-                  ),
-                ),
-            if (snapshot.lifeEntries.length > 3)
-              Padding(
-                padding: const EdgeInsets.only(top: 4),
-                child: Text(
-                  AnnaStrings.of(context).d3Format(
-                    'moreMoments',
-                    {'count': snapshot.lifeEntries.length - 3},
-                  ),
-                  style: Theme.of(context).textTheme.bodySmall,
-                ),
-              ),
-          ],
-        ],
-      ),
-    );
-  }
-}
-
-class _DayLifePreviewRow extends StatelessWidget {
-  final DayLifeEntry entry;
-  final DateTime date;
-
-  const _DayLifePreviewRow({
-    required this.entry,
-    required this.date,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final data = _dayLifePresentation(
-      entry,
-      date,
-      AnnaStrings.of(context),
-    );
-    return Padding(
-      padding: const EdgeInsets.only(top: 7),
-      child: Row(
-        children: [
-          Icon(data.icon, size: 16),
-          const SizedBox(width: 7),
-          Expanded(
-            child: Text(
-              data.title,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: const TextStyle(fontWeight: FontWeight.w700),
-            ),
-          ),
-          const SizedBox(width: 8),
-          Text(
-            data.timeLabel,
-            style: Theme.of(context).textTheme.bodySmall,
-          ),
         ],
       ),
     );
