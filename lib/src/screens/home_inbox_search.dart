@@ -277,10 +277,26 @@ class _MainShellState extends State<MainShell> {
                         ),
                       ),
                       Positioned(
-                        top: -14,
+                        top: 0,
                         left: 0,
                         right: 0,
                         child: Center(child: _centralCreateButton(context)),
+                      ),
+                      Positioned(
+                        top: 63,
+                        left: 0,
+                        right: 0,
+                        child: IgnorePointer(
+                          child: Center(
+                            child: Text(
+                              strings.d3('ui5Create'),
+                              style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                                color: scheme.primary,
+                                fontWeight: FontWeight.w800,
+                              ),
+                            ),
+                          ),
+                        ),
                       ),
                     ],
                   ),
