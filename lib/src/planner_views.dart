@@ -441,6 +441,7 @@ class _PlannerScreenState extends State<PlannerScreen> {
                         AgendaContentFilterBar(store: widget.store),
                         if (isToday) ...[
                           const SizedBox(height: 12),
+                          if (upcoming.isNotEmpty || pinnedItems.isNotEmpty)
                           _TodayFocusCard(
                             next: upcoming.isEmpty ? null : upcoming.first,
                             globalPendingTasks:
@@ -484,29 +485,55 @@ class _PlannerScreenState extends State<PlannerScreen> {
                             ),
                           ],
                         ],
-                        const SizedBox(height: AnnaDesignTokens.spaceLg),
-                        AnnaJournalSectionHeading(title: strings.diary),
-                        const SizedBox(height: AnnaDesignTokens.spaceSm),
-                        JournalEditor(store: widget.store, date: day),
-                        const SizedBox(height: 12),
-                        _DayLifeOverviewCard(
-                          snapshot: snapshot,
-                          hideDetails: false,
-                        ),
-                        if (isToday) ...[
-                          const SizedBox(height: 14),
-                          _TodayWellbeingCard(
-                            key: const ValueKey<String>('today-wellbeing-card'),
+                        const SizedBox(height: AnnaDesignTokens.spaceMd),
+                        if (widget.embedded) ...[
+                          // DF-08–14: Oggi reads the selected day before
+                          // any editor. Create stays in the shell's + Crea.
+                          _TodayCompactSummary(snapshot: snapshot),
+                          if (!snapshot.isEmpty) ...[
+                            const SizedBox(height: AnnaDesignTokens.spaceSm),
+                            _DayLifeOverviewCard(
+                              snapshot: snapshot,
+                              hideDetails: widget.store.preferences.hideHomeDetails,
+                            ),
+                          ],
+                          if (isToday && snapshot.journal.mood != null) ...[
+                            const SizedBox(height: AnnaDesignTokens.spaceSm),
+                            _TodayWellbeingCard(
+                              key: const ValueKey<String>('today-wellbeing-card'),
+                              store: widget.store,
+                              date: day,
+                            ),
+                          ],
+                          _TodayCompactDiaryPreview(
                             store: widget.store,
-                            date: day,
+                            snapshot: snapshot,
                           ),
+                        ] else ...[
+                          AnnaJournalSectionHeading(title: strings.diary),
+                          const SizedBox(height: AnnaDesignTokens.spaceSm),
+                          JournalEditor(store: widget.store, date: day),
+                          const SizedBox(height: 12),
+                          _DayLifeOverviewCard(snapshot: snapshot, hideDetails: false),
+                          if (isToday) ...[
+                            const SizedBox(height: 14),
+                            _TodayWellbeingCard(
+                              key: const ValueKey<String>('today-wellbeing-card'),
+                              store: widget.store,
+                              date: day,
+                            ),
+                          ],
                         ],
                         const SizedBox(height: 14),
-                        if (memoryRecall.onThisDay.isNotEmpty) ...[
+                        if (memoryRecall.onThisDay.isNotEmpty ||
+                            memoryRecall.sameMonthPastYears.isNotEmpty) ...[
                           _DayMemoryRecallCard(
                             store: widget.store,
                             anchor: day,
-                            memories: memoryRecall.onThisDay,
+                            memories: memoryRecall.onThisDay.isNotEmpty
+                                ? memoryRecall.onThisDay
+                                : memoryRecall.sameMonthPastYears,
+                            exactAnniversary: memoryRecall.onThisDay.isNotEmpty,
                           ),
                           const SizedBox(height: 14),
                         ],
@@ -517,11 +544,10 @@ class _PlannerScreenState extends State<PlannerScreen> {
                             date: day,
                           ),
                         ],
-                        const SizedBox(height: AnnaDesignTokens.spaceLg),
-                        _DayLifeStream(
-                          snapshot: snapshot,
-                          store: widget.store,
-                        ),
+                        if (!widget.embedded && snapshot.lifeEntries.isNotEmpty) ...[
+                          const SizedBox(height: AnnaDesignTokens.spaceLg),
+                          _DayLifeStream(snapshot: snapshot, store: widget.store),
+                        ],
                         const SizedBox(height: 14),
                         ExpansionTile(
                           tilePadding: const EdgeInsets.symmetric(horizontal: 8),
@@ -636,102 +662,242 @@ class _CalendarDayContextCard extends StatelessWidget {
   }
 }
 
+/// DF-08–12: concise, real-data day overview with one empty-day state.
+class _TodayCompactSummary extends StatelessWidget {
+  final DayHubSnapshot snapshot;
+
+  const _TodayCompactSummary({required this.snapshot});
+
+  @override
+  Widget build(BuildContext context) {
+    final strings = AnnaStrings.of(context);
+    if (snapshot.isEmpty) {
+      return Padding(
+        key: const ValueKey<String>('ui5-today-empty'),
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          children: [
+            Icon(Icons.wb_sunny_outlined, size: 30,
+              color: Theme.of(context).colorScheme.primary),
+            const SizedBox(height: 8),
+            Text(strings.d3('ui5NoMemoriesDay'),
+              textAlign: TextAlign.center),
+          ],
+        ),
+      );
+    }
+    final summary = <({IconData icon, String label, String value})>[
+      if (snapshot.agenda.isNotEmpty || snapshot.birthdays.isNotEmpty)
+        (
+          icon: Icons.event_outlined,
+          label: strings.d3('ui5Commitments'),
+          value: '${snapshot.agenda.length + snapshot.birthdays.length}',
+        ),
+      if (snapshot.workouts.isNotEmpty)
+        (
+          icon: Icons.directions_run_outlined,
+          label: strings.d3('ui5Activities'),
+          value: '${snapshot.workouts.length}',
+        ),
+      if (snapshot.journal.mood != null)
+        (
+          icon: Icons.favorite_border,
+          label: strings.d3('ui5Wellbeing'),
+          value: strings.d3('ui5Recorded'),
+        ),
+    ];
+    return Wrap(
+      key: const ValueKey<String>('ui5-today-summary'),
+      spacing: 8,
+      runSpacing: 8,
+      children: summary.map((item) => ConstrainedBox(
+        constraints: const BoxConstraints(minWidth: 98, minHeight: 54),
+        child: Card(
+          margin: EdgeInsets.zero,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 9),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(item.icon, size: 17,
+                  color: Theme.of(context).colorScheme.primary),
+                const SizedBox(width: 6),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(item.label, style: Theme.of(context).textTheme.labelSmall),
+                    Text(item.value,
+                      style: Theme.of(context).textTheme.labelLarge),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ),
+      )).toList(),
+    );
+  }
+}
+
+/// DF-13/14: a read-only selected-day diary summary, NOT a second composer.
+class _TodayCompactDiaryPreview extends StatelessWidget {
+  final AgendaStore store;
+  final DayHubSnapshot snapshot;
+
+  const _TodayCompactDiaryPreview({
+    required this.store,
+    required this.snapshot,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final blocks = snapshot.journal.blocks
+        .where((block) => !block.archived)
+        .toList()
+      ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
+    if (blocks.isEmpty && !snapshot.hasJournalContent) {
+      return const SizedBox.shrink();
+    }
+    final strings = AnnaStrings.of(context);
+    void openDiary() {
+      Navigator.push(context, MaterialPageRoute<void>(
+        builder: (_) => PlannerScreen(
+          store: store, initialDate: snapshot.date),
+      ));
+    }
+    return Padding(
+      padding: const EdgeInsets.only(top: 18),
+      child: Column(
+        key: const ValueKey<String>('ui5-today-diary-preview'),
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            children: [
+              Expanded(child: AnnaJournalSectionHeading(
+                title: strings.d3('ui5DayDiary'))),
+              TextButton(
+                onPressed: openDiary,
+                child: Text(strings.d3('ui5ShowAll')),
+              ),
+            ],
+          ),
+          for (final block in blocks.take(2))
+            Card(
+              margin: const EdgeInsets.only(bottom: 6),
+              child: ListTile(
+                leading: Icon(switch (block.type) {
+                  DiaryBlockType.note => Icons.sticky_note_2_outlined,
+                  DiaryBlockType.sketch => Icons.draw_outlined,
+                  DiaryBlockType.photo => Icons.photo_outlined,
+                  DiaryBlockType.voice => Icons.mic_none_outlined,
+                }),
+                title: Text(store.diaryBlockDisplayTitle(block, strings: strings),
+                  maxLines: 2, overflow: TextOverflow.ellipsis),
+                trailing: const Icon(Icons.chevron_right),
+                onTap: openDiary,
+              ),
+            ),
+          if (blocks.isEmpty)
+            Card(child: ListTile(
+              title: Text(snapshot.journal.note.trim().isNotEmpty
+                  ? snapshot.journal.note.trim() : strings.diary,
+                maxLines: 2, overflow: TextOverflow.ellipsis),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: openDiary,
+            )),
+        ],
+      ),
+    );
+  }
+}
+
+/// DF-19/20: only one compact, real memory teaser in Oggi. Full anniversary
+/// carousel, year chips and fallback navigation live inside Ricordi → Per te.
 class _DayMemoryRecallCard extends StatelessWidget {
   final AgendaStore store;
   final DateTime anchor;
   final List<DiaryBlockReference> memories;
+  final bool exactAnniversary;
 
   const _DayMemoryRecallCard({
     required this.store,
     required this.anchor,
     required this.memories,
+    this.exactAnniversary = true,
   });
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
+    if (memories.isEmpty) return const SizedBox.shrink();
+    final memory = memories.first;
     final strings = AnnaStrings.of(context);
-    return Container(
-      padding: const EdgeInsets.fromLTRB(14, 12, 14, 10),
-      decoration: BoxDecoration(
-        color: scheme.secondaryContainer.withValues(alpha: 0.42),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: scheme.outlineVariant),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              const Icon(Icons.history_toggle_off),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Text(
-                  strings.onThisDay,
-                  style: const TextStyle(fontWeight: FontWeight.w900),
-                ),
-              ),
-              TextButton(
-                onPressed: () => Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => DiaryMemoriesScreen(store: store),
+    final years = anchor.year - memory.date.year;
+    final date = DateFormat(
+      'd MMMM yyyy', AnnaStrings.intlLocale(context)).format(memory.date);
+    final title = store.diaryBlockDisplayTitle(
+      memory.block, strings: strings);
+    final block = memory.block;
+    final preview = block.type == DiaryBlockType.photo && block.hasPhotoMedia
+        ? DiaryMediaImage(
+            assetId: block.mediaThumbnailAssetId.isNotEmpty
+                ? block.mediaThumbnailAssetId : block.mediaAssetId,
+            fallbackBase64: block.imageBase64,
+            cacheWidth: 150,
+          )
+        : block.type == DiaryBlockType.sketch && block.pages.isNotEmpty
+            ? DiarySketchPagePreview(page: block.pages.first)
+            : Center(child: Icon(switch (block.type) {
+                DiaryBlockType.note => Icons.sticky_note_2_outlined,
+                DiaryBlockType.sketch => Icons.draw_outlined,
+                DiaryBlockType.photo => Icons.photo_outlined,
+                DiaryBlockType.voice => Icons.mic_none_outlined,
+              }, color: Theme.of(context).colorScheme.primary));
+    return Column(
+      key: const ValueKey<String>('ui5-today-memory-teaser'),
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        AnnaJournalSectionHeading(title: strings.d3('ui5MemoryTeaser')),
+        const SizedBox(height: 7),
+        Card(
+          margin: EdgeInsets.zero,
+          clipBehavior: Clip.antiAlias,
+          child: InkWell(
+            onTap: () => Navigator.push(context, MaterialPageRoute<void>(
+              builder: (_) => DiaryMemoriesScreen(store: store),
+            )),
+            child: Padding(
+              padding: const EdgeInsets.all(9),
+              child: Row(
+                children: [
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(11),
+                    child: SizedBox(
+                      width: 64, height: 64,
+                      child: preview,
+                    ),
                   ),
-                ),
-                child: Text(strings.memories),
-              ),
-            ],
-          ),
-          ...memories.take(3).map((memory) {
-            final years = anchor.year - memory.date.year;
-            return ListTile(
-              dense: true,
-              contentPadding: EdgeInsets.zero,
-              leading: Icon(
-                switch (memory.block.type) {
-                  DiaryBlockType.note => Icons.sticky_note_2_outlined,
-                  DiaryBlockType.sketch => Icons.draw_outlined,
-                  DiaryBlockType.photo => Icons.photo_outlined,
-                  DiaryBlockType.voice => Icons.mic_none_outlined,
-                },
-              ),
-              title: Text(
-                store.diaryBlockDisplayTitle(
-                  memory.block,
-                  strings: AnnaStrings.of(context),
-                ),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
-              subtitle: Text(
-                '${years == 1 ? AnnaStrings.of(context).d3('yearsAgo1') : AnnaStrings.of(context).d3Format('yearsAgoN', {'count': years})} · '
-                '${DateFormat('d MMMM yyyy', AnnaStrings.intlLocale(context)).format(memory.date)}',
-              ),
-              trailing: const Icon(Icons.chevron_right),
-              onTap: () => Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => PlannerScreen(
-                    store: store,
-                    initialDate: memory.date,
-                  ),
-                ),
-              ),
-            );
-          }),
-          if (memories.length > 3)
-            Padding(
-              padding: const EdgeInsets.only(top: 2),
-              child: Text(
-                AnnaStrings.of(context).d3Format(
-                  'moreMemories',
-                  {'count': memories.length - 3},
-                ),
-                style: Theme.of(context).textTheme.bodySmall,
+                  const SizedBox(width: 11),
+                  Expanded(child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(title, maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(fontWeight: FontWeight.w700)),
+                      const SizedBox(height: 3),
+                      Text(exactAnniversary
+                          ? '${years == 1 ? strings.d3('ui5OneYearAgo') : strings.d3Format('ui5YearsAgo', {'years': years})} · $date'
+                          : date,
+                        style: Theme.of(context).textTheme.bodySmall,
+                        maxLines: 2),
+                    ],
+                  )),
+                  const Icon(Icons.chevron_right),
+                ],
               ),
             ),
-        ],
-      ),
+          ),
+        ),
+      ],
     );
   }
 }
