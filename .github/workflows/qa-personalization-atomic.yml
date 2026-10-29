@@ -1,0 +1,165 @@
+# Ephemeral draft PR #153 only. Never merge this diagnostic workflow to main.
+# Production applab.yml and its legacy Vault smoke gate remain untouched.
+name: QA ONLY — Personalized Maestro Flow
+# Golden AppLab QA pilot — hardened verifier pinned at an immutable commit.
+
+on:
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: applab-personalization-qa-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+# Single diagnostic job: no duplicate reusable AppLab invocation, avoiding cross-workflow SHA concurrency.
+# Waits for production's exact-head gate, preserves its PASS/FAIL, then independently executes Maestro.
+jobs:
+  direct_personalization:
+    name: QA ONLY — direct personalization (not a release gate)
+    if: github.event.pull_request.number == 153
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - name: Checkout exact QA source (not synthetic merge ref)
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+
+      - name: Checkout immutable trusted AppLab verifier
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          repository: riccardopinato/AppLab
+          ref: 79309588e117ca5481822cd6394a9ad8ecc338e7
+          path: .applab
+
+      - name: Wait for exact-head production gate to conclude (do not override its result)
+        id: trusted_gate
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -Eeuo pipefail
+          HEAD='${{ github.event.pull_request.head.sha }}'
+          REPO='${{ github.repository }}'
+          RUN_ID=''
+          for attempt in $(seq 1 90); do
+            RUNS="$(gh api "repos/$REPO/actions/workflows/applab.yml/runs?head_sha=$HEAD&per_page=50")"
+            RUN_ID="$(printf '%s' "$RUNS" | jq -r --arg head "$HEAD" '[.workflow_runs[] | select(.head_sha == $head and .event == "pull_request")] | sort_by(.created_at) | last | .id // empty')"
+            if [[ -n "$RUN_ID" ]]; then break; fi
+            sleep 20
+          done
+          test -n "$RUN_ID"
+          echo "run_id=$RUN_ID" >> "$GITHUB_OUTPUT"
+          CONCLUSION=''
+          for attempt in $(seq 1 160); do
+            STATE="$(gh api "repos/$REPO/actions/runs/$RUN_ID" --jq '.status')"
+            if [[ "$STATE" == 'completed' ]]; then
+              CONCLUSION="$(gh api "repos/$REPO/actions/runs/$RUN_ID" --jq '.conclusion')"
+              break
+            fi
+            sleep 20
+          done
+          test -n "$CONCLUSION"
+          echo "gate_conclusion=$CONCLUSION" >> "$GITHUB_OUTPUT"
+          echo "Production gate $RUN_ID concluded: $CONCLUSION. Direct QA is diagnostic only, not gate authority."
+      - name: Download same-head build artifact from production run (even if its runtime lab failed)
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
+        with:
+          pattern: applab-build-v41-annas-diary-*
+          path: .applab-build
+          merge-multiple: true
+          run-id: ${{ steps.trusted_gate.outputs.run_id }}
+          github-token: ${{ github.token }}
+
+      - name: Validate artifact provenance and source SHA
+        id: contract
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          test "$(git rev-parse HEAD)" = "${{ github.event.pull_request.head.sha }}"
+          python3 .applab/scripts/validate_build_contract.py \
+            --root "$GITHUB_WORKSPACE/.applab-build" \
+            --expected-repository riccardopinato/Agenda-per-Anna \
+            --expected-sha "${{ github.event.pull_request.head.sha }}" \
+            --expected-engine flutter \
+            --expected-analysis-mode fast \
+            --expected-trusted-applab-sha 79309588e117ca5481822cd6394a9ad8ecc338e7 \
+            --github-output "$GITHUB_OUTPUT"
+          test -s "$GITHUB_WORKSPACE/.applab-build/app.apk"
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          q=json.loads(Path('.applab-build/contract.json').read_text())['quality_evidence']
+          assert q['build']=='PASS', f'Build did not pass: {q}'
+          assert 'FAIL' not in q.values(), f'Quality evidence failed: {q}'
+          print('BUILD_CONTRACT_VALID; this does not replace trusted runtime gate')
+          PY
+          test -f .maestro/journeys/personalization-atomic.yaml
+          test -f .maestro/journey/personalization.yaml
+          sha256sum "$GITHUB_WORKSPACE/.applab-build/app.apk"
+
+      - name: Setup Java 17 for pinned Maestro
+        uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Cache pinned Maestro
+        uses: actions/cache@caa296126883cff596d87d8935842f9db880ef25
+        with:
+          path: ~/.maestro
+          key: applab-maestro-${{ runner.os }}-2.10.0
+
+      - name: Install pinned Maestro 2.10.0
+        shell: bash
+        run: bash .applab/scripts/install_maestro.sh
+
+      # Production AppLab enables /dev/kvm before its emulator; without this,
+      # the QA-only x86_64 emulator fell back to software TCG (~15 min boot)
+      # and Maestro's Android driver could not start. Fail closed if KVM absent.
+      - name: Enable and verify KVM for direct QA emulator
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          test -c /dev/kvm || { echo '::error::QA runner lacks /dev/kvm'; exit 1; }
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+          # udev may not update permissions of an already-created /dev/kvm node on hosted runners.
+          # This is an ephemeral QA runner only; explicitly grant rw and verify KVM acceleration.
+          sudo chmod a+rw /dev/kvm
+          ls -l /dev/kvm
+          test -r /dev/kvm && test -w /dev/kvm || { echo '::error::KVM inaccessible after explicit permissions update'; exit 1; }
+          "${ANDROID_HOME:-/usr/local/lib/android/sdk}/emulator/emulator" -accel-check
+
+      - name: Directly execute the new flow on Android emulator
+        uses: reactivecircus/android-emulator-runner@a421e43855164a8197daf9d8d40fe71c6996bb0d
+        env:
+          QA_APK: ${{ steps.contract.outputs.apk_file }}
+          QA_SOURCE_SHA: ${{ github.event.pull_request.head.sha }}
+          QA_PRODUCTION_GATE_CONCLUSION: ${{ steps.trusted_gate.outputs.gate_conclusion }}
+          MAESTRO_CLI_NO_ANALYTICS: '1'
+        with:
+          api-level: 35
+          target: google_apis
+          arch: x86_64
+          # Lower rendering load on the same Android API 35 for QA-only driver startup.
+          profile: pixel_2
+          disable-animations: true
+          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
+          # android-emulator-runner executes each script line via a separate /bin/sh -c.
+          # Run ONE Bash script to preserve pipefail and propagate Maestro's exit status.
+          script: bash .github/scripts/qa-personalization-direct.sh
+
+      - name: Upload targeted QA evidence (never release artifact)
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: qa-personalization-direct-${{ github.run_id }}
+          path: qa-evidence/
+          if-no-files-found: warn
+          retention-days: 2
