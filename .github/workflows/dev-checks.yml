@@ -69,6 +69,11 @@ jobs:
           flutter build web --release
           python3 tool/finalize_web_build.py
 
+      # Gradle cache is an incremental dependency/task cache, not a reusable
+      # signed APK; each job still builds and verifies its own output.
+      - name: Cache Gradle for Android build
+        uses: gradle/actions/setup-gradle@3f5f9adaf7d9fecd50b5935e54106014257a94e6
+
       - name: Build Android ARM64 release gate
         if: github.event_name != 'pull_request'
         run: |
