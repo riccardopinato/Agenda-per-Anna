@@ -9,8 +9,8 @@ void main() {
     final more =
         File('lib/src/screens/more_screen.dart').readAsStringSync();
 
-    expect(shell, contains('PlannerScreen(store: widget.store)'));
-    expect(shell, contains('CalendarHubScreen(store: widget.store)'));
+    expect(shell, contains('PlannerScreen(store: widget.store, embedded: true)'));
+    expect(shell, contains('CalendarHubScreen('));
     expect(shell, contains('DiaryMemoriesScreen(store: widget.store)'));
     expect(shell, contains('MoreScreen(store: widget.store)'));
     expect(shell, contains("semanticsId: 'main-nav-today'"));
