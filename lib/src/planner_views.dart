@@ -444,53 +444,45 @@ class _PlannerScreenState extends State<PlannerScreen> {
                           // DF-08–14: Oggi reads the selected day before
                           // any editor. Create stays in the shell's + Crea.
                           _TodayCompactSummary(snapshot: snapshot),
-                          if (isToday) ...[
-                                                    const SizedBox(height: 12),
-                                                    if (upcoming.isNotEmpty || pinnedItems.isNotEmpty)
-                                                    _TodayFocusCard(
-                                                      next: upcoming.isEmpty ? null : upcoming.first,
-                                                      globalPendingTasks:
-                                                          widget.store.pendingUnifiedTaskCount,
-                                                      inboxCount: widget.store.activeInboxEntries.length,
-                                                      hideDetails: widget.store.preferences.hideHomeDetails,
-                                                      onOpenNext: upcoming.isEmpty
-                                                          ? null
-                                                          : () => openUnifiedAgendaEntry(
-                                                                context,
-                                                                widget.store,
-                                                                upcoming.first,
-                                                              ),
-                                                      onOpenInbox: () => Navigator.push(
-                                                        context,
-                                                        MaterialPageRoute<void>(
-                                                          builder: (_) => InboxScreen(store: widget.store),
-                                                        ),
-                                                      ),
-                                                    ),
-                                                    if (pinnedItems.isNotEmpty) ...[
-                                                      const SizedBox(height: 16),
-                                                      Column(
-                                                        key: const ValueKey<String>(
-                                                          'today-pinned-section',
-                                                        ),
-                                                        crossAxisAlignment: CrossAxisAlignment.start,
-                                                        children: [
-                                                          SectionTitle(strings.v100Pinned),
-                                                          const SizedBox(height: 8),
-                                                          ...pinnedItems.take(3).map(
-                                                                (item) => EventTile(
-                                                                  store: widget.store,
-                                                                  item: item,
-                                                                  compact: true,
-                                                                  hideDetails: widget
-                                                                      .store.preferences.hideHomeDetails,
-                                                                ),
-                                                              ),
-                                                        ],
-                                                      ),
-                                                    ],
-                                                  ],
-
+                          if (isToday && (upcoming.isNotEmpty || pinnedItems.isNotEmpty)) ...[
+                            const SizedBox(height: 12),
+                            _TodayFocusCard(
+                              next: upcoming.isEmpty ? null : upcoming.first,
+                              globalPendingTasks: widget.store.pendingUnifiedTaskCount,
+                              inboxCount: widget.store.activeInboxEntries.length,
+                              hideDetails: widget.store.preferences.hideHomeDetails,
+                              onOpenNext: upcoming.isEmpty
+                                  ? null
+                                  : () => openUnifiedAgendaEntry(
+                                        context,
+                                        widget.store,
+                                        upcoming.first,
+                                      ),
+                              onOpenInbox: () => Navigator.push(
+                                context,
+                                MaterialPageRoute<void>(
+                                  builder: (_) => InboxScreen(store: widget.store),
+                                ),
+                              ),
+                            ),
+                          ],
+                          if (isToday && pinnedItems.isNotEmpty) ...[
+                            const SizedBox(height: 12),
+                            Column(
+                              key: const ValueKey<String>('today-pinned-section'),
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                SectionTitle(strings.v100Pinned),
+                                const SizedBox(height: 8),
+                                ...pinnedItems.take(3).map((item) => EventTile(
+                                  store: widget.store,
+                                  item: item,
+                                  compact: true,
+                                  hideDetails: widget.store.preferences.hideHomeDetails,
+                                )),
+                              ],
+                            ),
+                          ],
                           if (isToday && snapshot.journal.mood != null) ...[
                             const SizedBox(height: AnnaDesignTokens.spaceSm),
                             _TodayWellbeingCard(
