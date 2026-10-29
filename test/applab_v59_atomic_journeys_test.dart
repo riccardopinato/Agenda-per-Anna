@@ -127,13 +127,13 @@ void main() {
     expect(legacy, contains('D2WrongPassword2026'));
   });
 
-  test('AppLab workflow is pinned to completed v5.9 exact SHA', () {
+  test('AppLab workflow is pinned to reviewed v6.3A exact SHA', () {
     final workflow =
         File('.github/workflows/applab.yml').readAsStringSync();
 
     expect(
       workflow,
-      contains('@730dfafecc59871365812f4d7d138b43151fdcc5'),
+      contains('@79309588e117ca5481822cd6394a9ad8ecc338e7'),
     );
     expect(
       workflow,
