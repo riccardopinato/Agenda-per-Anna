@@ -20,7 +20,7 @@ concurrency:
 jobs:
   direct_personalization:
     name: QA ONLY — direct personalization (not a release gate)
-    if: github.event.pull_request.number == 153 && needs.applab.result == 'success'
+    if: github.event.pull_request.number == 153
     runs-on: ubuntu-latest
     timeout-minutes: 90
     steps:
@@ -69,7 +69,7 @@ jobs:
       - name: Download same-head build artifact from production run (even if its runtime lab failed)
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
         with:
-          pattern: applab-build-v41-annas-diary-personalization-qa-*
+          pattern: applab-build-v41-annas-diary-*
           path: .applab-build
           merge-multiple: true
           run-id: ${{ steps.trusted_gate.outputs.run_id }}
