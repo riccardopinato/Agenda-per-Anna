@@ -41,7 +41,7 @@ class _MainShellState extends State<MainShell> {
       identifier: 'main-nav-create',
       button: true,
       child: Tooltip(
-        message: AnnaStrings.of(context).capture,
+        message: AnnaStrings.of(context).d3('ui5Create'),
         child: AnimatedScale(
           scale: _createPressed && animate ? 0.93 : 1.0,
           duration: animate ? const Duration(milliseconds: 190) : Duration.zero,
