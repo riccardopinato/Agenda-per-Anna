@@ -27,10 +27,14 @@ class _DiaryMemoriesScreenState extends State<DiaryMemoriesScreen> {
   final Map<int, GlobalKey> _timelineYearKeys = <int, GlobalKey>{};
   int? _selectedTimelineYear;
   bool _timelineInitialized = false;
+  bool _suggestionsExpanded = false;
+  int _anniversaryIndex = 0;
+  final PageController _anniversaryPager = PageController();
 
   @override
   void dispose() {
     searchController.dispose();
+    _anniversaryPager.dispose();
     super.dispose();
   }
 
@@ -1101,30 +1105,44 @@ class _DiaryMemoriesScreenState extends State<DiaryMemoriesScreen> {
       personId: widget.personId,
       references: records,
     );
-    final hero = snapshot.forYou.isEmpty ? null : snapshot.forYou.first;
+    // All individual exact-date matches remain swipeable. Only when there
+    // are NONE do we show clearly labeled same-month historical fallback.
+    final exact = [...snapshot.onThisDay]..sort((a, b) {
+      final c = b.date.compareTo(a.date);
+      return c != 0 ? c : b.block.createdAt.compareTo(a.block.createdAt);
+    });
+    final fallback = [...snapshot.sameMonthPastYears]..sort((a, b) {
+      final c = b.date.compareTo(a.date);
+      return c != 0 ? c : b.block.createdAt.compareTo(a.block.createdAt);
+    });
+    final anniversary = exact.isNotEmpty ? exact : fallback;
+    if (_anniversaryIndex >= anniversary.length) _anniversaryIndex = 0;
+    final anniversaryIds = anniversary.map((e) => e.block.id).toSet();
+    final suggestions = <DiaryBlockReference>[];
+    final shownIds = <String>{...anniversaryIds};
+    for (final record in <DiaryBlockReference>[
+      ...snapshot.forYou,
+      ...snapshot.yearHighlights,
+      ...snapshot.sameMonthPastYears,
+    ]) {
+      if (shownIds.add(record.block.id)) suggestions.add(record);
+    }
     final linkedPeople = snapshot.people
         .where((facet) => facet.id != widget.personId)
         .take(8)
         .toList(growable: false);
     final linkedPlaces = snapshot.places.take(8).toList(growable: false);
-    final shownIds = <String>{
-      if (hero != null) hero.block.id,
-    };
-    final onThisDay = snapshot.onThisDay
-        .where((entry) => shownIds.add(entry.block.id))
-        .take(3)
-        .toList(growable: false);
-    final sameMonth = snapshot.sameMonthPastYears
-        .where((entry) => shownIds.add(entry.block.id))
-        .take(3)
-        .toList(growable: false);
-    final yearHighlights = snapshot.yearHighlights
-        .where((entry) => shownIds.add(entry.block.id))
-        .take(5)
-        .toList(growable: false);
-    final monthName = _cap(
-      DateFormat('MMMM', AnnaStrings.intlLocale(context)).format(now),
-    );
+    final monthName = _cap(DateFormat(
+      'MMMM', AnnaStrings.intlLocale(context)).format(now));
+    final activeRecord = anniversary.isEmpty ? null : anniversary[_anniversaryIndex];
+    final activeYear = activeRecord?.date.year;
+    final years = anniversary.map((entry) => entry.date.year).toSet().toList()
+      ..sort((a, b) => b.compareTo(a));
+    final yearIndex = activeYear == null ? 0 :
+        anniversary.take(_anniversaryIndex + 1).where(
+          (entry) => entry.date.year == activeYear).length;
+    final yearTotal = activeYear == null ? 0 : anniversary.where(
+      (entry) => entry.date.year == activeYear).length;
 
     return Semantics(
       identifier: 'memories-for-you-surface',
@@ -1150,9 +1168,82 @@ class _DiaryMemoriesScreenState extends State<DiaryMemoriesScreen> {
                     editorial: true,
                   ),
                   const SizedBox(height: AnnaDesignTokens.spaceMd),
-                  if (hero != null) ...[
-                    _forYouHero(context, hero),
-                    const SizedBox(height: AnnaDesignTokens.spaceSm),
+                  if (anniversary.isNotEmpty) ...[
+                    AnnaJournalSectionHeading(
+                      title: exact.isNotEmpty
+                          ? strings.d3('ui5OnThisDay')
+                          : strings.v100MonthAcrossYears(monthName),
+                    ),
+                    if (exact.isEmpty)
+                      Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 6),
+                        child: Text(strings.v100OtherSameMonth),
+                      ),
+                    const SizedBox(height: 8),
+                    SizedBox(
+                      height: 44,
+                      child: ListView(
+                        scrollDirection: Axis.horizontal,
+                        children: years.map((year) => Padding(
+                          padding: const EdgeInsets.only(right: 7),
+                          child: ChoiceChip(
+                            key: ValueKey<String>('ui5-anniversary-year-$year'),
+                            label: Text('$year'),
+                            selected: activeYear == year,
+                            onSelected: (_) {
+                              final position = anniversary.indexWhere(
+                                (record) => record.date.year == year);
+                              if (position < 0) return;
+                              _anniversaryPager.jumpToPage(position);
+                              setState(() => _anniversaryIndex = position);
+                            },
+                          ),
+                        )).toList(),
+                      ),
+                    ),
+                    SizedBox(
+                      height: 328,
+                      child: PageView.builder(
+                        key: const ValueKey<String>('ui5-anniversary-carousel'),
+                        controller: _anniversaryPager,
+                        itemCount: anniversary.length,
+                        onPageChanged: (position) =>
+                            setState(() => _anniversaryIndex = position),
+                        itemBuilder: (context, position) =>
+                            _forYouHero(context, anniversary[position]),
+                      ),
+                    ),
+                    if (activeRecord != null)
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 12),
+                        child: Text(
+                          exact.isEmpty
+                              ? DateFormat('d MMMM yyyy',
+                                  AnnaStrings.intlLocale(context)).format(activeRecord.date)
+                              : '${now.year - activeRecord.date.year == 1 ? strings.d3('ui5OneYearAgo') : strings.d3Format('ui5YearsAgo', {'years': now.year - activeRecord.date.year})} · ${strings.d3Format('ui5MemoryYearCount', {'index': yearIndex, 'total': yearTotal})}',
+                          style: Theme.of(context).textTheme.bodySmall,
+                        ),
+                      ),
+                  ],
+                  if (suggestions.isNotEmpty) ...[
+                    AnnaJournalSectionHeading(title: strings.d3('ui5ForYou')),
+                    const SizedBox(height: 8),
+                    ...(_suggestionsExpanded
+                        ? suggestions : suggestions.take(3))
+                        .map((record) => _recallMemoryRow(context, record)),
+                    if (suggestions.length > 3)
+                      Align(
+                        alignment: Alignment.centerRight,
+                        child: TextButton.icon(
+                          onPressed: () => setState(
+                            () => _suggestionsExpanded = !_suggestionsExpanded),
+                          icon: Icon(_suggestionsExpanded
+                              ? Icons.expand_less : Icons.expand_more),
+                          label: Text(strings.d3(_suggestionsExpanded
+                              ? 'ui5ShowLess' : 'ui5ShowAll')),
+                        ),
+                      ),
+                    const SizedBox(height: 10),
                   ],
                   Card(
                     child: Column(
@@ -1217,41 +1308,6 @@ class _DiaryMemoriesScreenState extends State<DiaryMemoriesScreen> {
                     const SizedBox(height: AnnaDesignTokens.spaceLg),
                     SimpleCard(
                       child: Text(strings.v100RediscoverEmpty),
-                    ),
-                  ],
-                  if (onThisDay.isNotEmpty) ...[
-                    _recallSectionHeader(
-                      context,
-                      title: strings.v100OnThisDayPast,
-                      subtitle: strings.v100SameDatePast(
-                        snapshot.onThisDay.length,
-                      ),
-                      icon: Icons.history_toggle_off,
-                    ),
-                    ...onThisDay.map(
-                      (record) => _recallMemoryRow(context, record),
-                    ),
-                  ],
-                  if (sameMonth.isNotEmpty) ...[
-                    _recallSectionHeader(
-                      context,
-                      title: strings.v100MonthAcrossYears(monthName),
-                      subtitle: strings.v100OtherSameMonth,
-                      icon: Icons.calendar_month_outlined,
-                    ),
-                    ...sameMonth.map(
-                      (record) => _recallMemoryRow(context, record),
-                    ),
-                  ],
-                  if (yearHighlights.isNotEmpty) ...[
-                    _recallSectionHeader(
-                      context,
-                      title: strings.v100JumpAcrossYears,
-                      subtitle: strings.v100RepresentativeMoment,
-                      icon: Icons.auto_awesome_outlined,
-                    ),
-                    ...yearHighlights.map(
-                      (record) => _recallMemoryRow(context, record),
                     ),
                   ],
                   if (widget.personId == null)
