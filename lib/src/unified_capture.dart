@@ -6,6 +6,8 @@ enum _UnifiedCaptureAction {
   text,
   voice,
   photo,
+  sketch,
+  templates,
   inbox,
   task,
   event,
@@ -204,8 +206,8 @@ Future<void> showUnifiedCapture(
   UnifiedCaptureEntryPoint entryPoint = UnifiedCaptureEntryPoint.home,
 }) async {
   final strings = AnnaStrings.of(context);
-  final targetDay = _normalizeUnifiedCaptureDay(initialDate);
-  final dayLabel = strings.dayWord(targetDay);
+  var targetDay = _normalizeUnifiedCaptureDay(initialDate);
+  var dayLabel = strings.dayWord(targetDay);
 
   final action = await showModalBottomSheet<_UnifiedCaptureAction>(
     context: context,
@@ -258,6 +260,32 @@ Future<void> showUnifiedCapture(
                           : strings.captureDayDescription,
                     ),
                   ),
+                  // DF-06/07: display the effective date and permit a
+                  // reversible override before any capture writer runs.
+                  Semantics(
+                    identifier: 'capture-effective-date',
+                    child: ListTile(
+                      leading: const Icon(Icons.event_available_outlined),
+                      title: Text(_cap(DateFormat(
+                        'EEEE d MMMM yyyy',
+                        AnnaStrings.intlLocale(sheetContext),
+                      ).format(targetDay))),
+                      trailing: const Icon(Icons.edit_calendar_outlined),
+                      onTap: () async {
+                        final changed = await showDatePicker(
+                          context: sheetContext,
+                          initialDate: targetDay,
+                          firstDate: DateTime(1900),
+                          lastDate: DateTime(2100),
+                        );
+                        if (changed == null || !sheetContext.mounted) return;
+                        setSheetState(() {
+                          targetDay = _normalizeUnifiedCaptureDay(changed);
+                          dayLabel = strings.dayWord(targetDay);
+                        });
+                      },
+                    ),
+                  ),
                   actionTile(
                     icon: Icons.edit_note_outlined,
                     title: strings.writeMoment,
@@ -283,6 +311,12 @@ Future<void> showUnifiedCapture(
                     title: strings.voiceNote,
                     subtitle: strings.recordDiaryAudio(dayLabel),
                     action: _UnifiedCaptureAction.voice,
+                    primary: true,
+                  ),
+                  actionTile(
+                    icon: Icons.draw_outlined,
+                    title: strings.v100Sketch,
+                    action: _UnifiedCaptureAction.sketch,
                     primary: true,
                   ),
                   Padding(
@@ -344,6 +378,11 @@ Future<void> showUnifiedCapture(
                                 title: strings.importantPerson,
                                 action: _UnifiedCaptureAction.person,
                               ),
+                              actionTile(
+                                icon: Icons.library_books_outlined,
+                                title: strings.d3('templates'),
+                                action: _UnifiedCaptureAction.templates,
+                              ),
                             ],
                           )
                         : const SizedBox.shrink(),
@@ -375,6 +414,70 @@ Future<void> showUnifiedCapture(
   if (!context.mounted || action == null) return;
 
   switch (action) {
+    case _UnifiedCaptureAction.sketch:
+      final pages = await Navigator.push<List<DiarySketchPage>>(
+        context,
+        MaterialPageRoute(
+          builder: (_) => DiarySketchbookScreen(
+            initialPages: [DiarySketchPage(id: const Uuid().v4())],
+          ),
+        ),
+      );
+      if (pages == null || pages.isEmpty) return;
+      final journal = store.journal(targetDay);
+      await store.saveJournal(
+        targetDay,
+        journal.copyWith(
+          blocks: [
+            ...journal.blocks,
+            DiaryBlock(
+              id: const Uuid().v4(),
+              type: DiaryBlockType.sketch,
+              createdAt: DateTime.now(),
+              pages: pages,
+            ),
+          ],
+        ),
+      );
+      unawaited(AnnaFeedback.success());
+      return;
+
+    case _UnifiedCaptureAction.templates:
+      final preset = await showDiaryTemplatePicker(context);
+      if (preset == null || !context.mounted) return;
+      var draft = await showDiaryNoteEditor(
+        context,
+        initialText: preset.seedText.replaceAll('☐', '•'),
+      );
+      while (draft != null && draft.trim().isNotEmpty && context.mounted) {
+        try {
+          await store.applyDiaryTemplate(
+            targetDay,
+            preset,
+            textOverride: draft.trim(),
+          );
+          if (context.mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(strings.d3Format(
+                  'templateAdded',
+                  {'title': preset.title},
+                )),
+              ),
+            );
+          }
+          return;
+        } catch (_) {
+          if (!context.mounted) return;
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(strings.d3('templateSaveFailed'))),
+          );
+          // Never silently lose the draft if a local save fails.
+          draft = await showDiaryNoteEditor(context, initialText: draft);
+        }
+      }
+      return;
+
     case _UnifiedCaptureAction.text:
       final text = await showDiaryNoteEditor(context);
       if (text == null || text.trim().isEmpty) return;
