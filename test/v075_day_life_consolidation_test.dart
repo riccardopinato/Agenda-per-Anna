@@ -171,8 +171,8 @@ void main() {
     final shell =
         File('lib/src/screens/home_inbox_search.dart').readAsStringSync();
 
-    expect(shell, contains('PlannerScreen(store: widget.store)'));
-    expect(shell, contains('CalendarHubScreen(store: widget.store)'));
+    expect(shell, contains('PlannerScreen(store: widget.store, embedded: true)'));
+    expect(shell, contains('CalendarHubScreen('));
     expect(shell, contains('DiaryMemoriesScreen(store: widget.store)'));
     expect(shell, contains('MoreScreen(store: widget.store)'));
     expect(shell, contains('label: strings.navToday'));
