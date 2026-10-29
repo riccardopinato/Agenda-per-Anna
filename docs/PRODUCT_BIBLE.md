@@ -1,9 +1,9 @@
 # Anna's Diary — Product Bible
 
 **Status:** canonical product source of truth  
-**Current product line:** v1.05 Memories & Recall 3.0 — Completed; v1.05.x corrective maintenance Completed (PR #134); v1.05.x Pastello moderno UI1 (Today / More / Settings) Completed — PR #136, 4/4 exact-head gates and Codex; v1.06 not started  
+**Current product line:** v1.05 Memories & Recall 3.0 — Completed; v1.05.x corrective maintenance Completed (PR #134); v1.05.x visual UI1–UI3 completed (PRs #136, #138–#143; combined QA #145); UI4 navigation dedup in progress; v1.06 not started  
 **Distribution identity:** 1.0.0-rc.2+111 — maintenance software integrated; signed sideload candidate, physical and Store certification remain separate  
-**Last aligned:** 28 October 2026
+**Last aligned:** 29 October 2026
 
 This document defines what Anna's Diary is, what it is not, and the product/security invariants that future work must preserve. Implementation details belong in `docs/ARCHITECTURE.md`; execution sequencing belongs in `docs/ROADMAP.md`.
 
@@ -15,7 +15,7 @@ Its primary promise is:
 
 > Capture the important parts of everyday life quickly, keep them accessible offline, and bring them back in useful personal context without turning private life into a work-management system.
 
-The product includes a deliberately bounded shared area, **Noi ♡**, for memories, agenda content and explicitly shared utilities between trusted members.
+The product includes a deliberately bounded **Spazio condiviso (Noi ♡)** for memories, agenda content and explicitly shared utilities between trusted members. `Noi ♡` remains the historical branding and existing underlying shared-space identity; changing the navigation label must not rename data, sharing scopes, authentication or encrypted content.
 
 ## 2. Product boundaries
 

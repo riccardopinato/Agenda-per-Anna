@@ -17,8 +17,9 @@ Before Factory-dependent development, audit, roadmap work or substantial modific
 Do not replace repository truth with chat memory or historical attachments.
 
 Factory baseline adopted for this contract:
-`ed6466e774a28e95f9f371cd56bbf7278428776a`
-(Master v26.6, Golden Index v22).
+`b5573840caaf0e92bd7719b7471d49a8e34995c1`
+(Master v26.8, Golden Index v23, resolved via CURRENT.yaml on 29 Oct 2026).
+Prior release evidence retains its historical SHA.
 
 ## 2. Factory Mode
 

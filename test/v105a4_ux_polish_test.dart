@@ -17,10 +17,10 @@ void main() {
     expect(
       roadmap,
       contains(
-        'App-Factory-Core@ed6466e774a28e95f9f371cd56bbf7278428776a',
+        'App-Factory-Core@b5573840caaf0e92bd7719b7471d49a8e34995c1',
       ),
     );
-    expect(roadmap, contains('(Master v26.6, Golden Index v22).'));
+    expect(roadmap, contains('(Master v26.8, Golden Index v23, resolved 29 Oct 2026).'));
   });
 
   test('v1.05-A4 keeps one canonical capture path behind progressive disclosure', () {

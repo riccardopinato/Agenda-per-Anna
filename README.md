@@ -2,9 +2,15 @@
 
 Flutter app for personal planning, private diary and the shared **Noi ♡** space.
 
-Current release line: **v1.05.x corrective candidate — 1.0.0-rc.2+111** (physical/device and Play/Store certification remain pending).
+Current release line: **v1.05.x UI3 integrated on `main` — 1.0.0-rc.2+111** (Flutter Web Pages and stable-signed ARM64 build PASS; physical-device and Play/Store certification remain pending).
 
 Canonical product scope and security boundaries: `docs/PRODUCT_BIBLE.md`.
+
+## UI3 redesign (merged) and UI4 navigation polish
+
+- Main `bf9feef` integrates the rose/HSV palette and iOS Journal UI3 (Today C, Calendar C, Memories B, More C, Settings A) from PRs #138–#143; source-lane CI/AppLab and final main Web/ARM64 build passed.
+- The canonical first-level tabs remain Today / Calendar / Memories / More. `Noi ♡` is the shared-space identity; the UI4 navigation label is **Spazio condiviso**, and the Private Vault is surfaced with an explicit card when enabled.
+- UI4 reduces redundant navigation and duplicated Today previews while preserving one canonical capture flow, existing account/sync/backup/security and user-controlled module visibility. Software QA is distinct from real-device/Play approval.
 
 ## Core areas
 

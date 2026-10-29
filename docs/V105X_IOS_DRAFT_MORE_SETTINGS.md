@@ -1,7 +1,14 @@
 # Anna's Diary — More C and Settings A
 
-Status: **DRAFT / INDEPENDENT VALIDATION PENDING**, v1.05.x only.
+Status: **SOFTWARE COMPLETED — PR #143 merged into main bf9feef; four exact-head gates PASS.**
 
+## Integrated evidence
+The iOS-like grouped More/Settings UI, HSV appearance route, original stable navigation destinations and attention/backup/account/privacy paths were integrated with Today/Calendar/Memories. The combined five-screen QA PR #145 was checked and intentionally closed unmerged. The final main push passed Development, Web Pages and stable-signed ARM64 build. Physical visual/Store validation remains NOT VERIFIED.
+
+## UI4 follow-up (navigation-only)
+The duplicate-navigation audit found repeated links to personalization in More/Explore/Settings, and repeated Today life entry previews. Reduce redundant affordances while preserving a reversible PersonalizationScreen route from Settings, contextual Explore access, semantic stability for core safety routes and privacy-first feature ownership. Make **Spazio condiviso (Noi ♡)** and **Cassaforte privata** prominent but conditional on existing module-visibility settings; preserve existing underlying shared-space/Private Vault identities and data.
+
+## Historical D4 implementation contract
 ## Implemented first cut
 iOS-like grouped headings/cards, direct AppearanceColorsScreen route, preserve stable semantic IDs, sync attention, backup and premium links.
 
