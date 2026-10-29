@@ -15,44 +15,14 @@ concurrency:
   group: applab-personalization-qa-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 
+# Single diagnostic job: no duplicate reusable AppLab invocation, avoiding cross-workflow SHA concurrency.
+# Waits for production's exact-head gate, preserves its PASS/FAIL, then independently executes Maestro.
 jobs:
-  applab:
-    if: github.event.pull_request.number == 153
-    uses: riccardopinato/AppLab/.github/workflows/external-project-runner.yml@79309588e117ca5481822cd6394a9ad8ecc338e7
-    with:
-      repository: riccardopinato/Agenda-per-Anna
-      ref: ${{ github.event.pull_request.head.sha || github.sha }}
-      source_ref: ${{ github.head_ref || github.ref_name }}
-      working_directory: "."
-      flutter_version: "3.47.5"
-      java_version: "17"
-      prepare_command: 'bash "$GITHUB_WORKSPACE/.applab/watch-profiles/agenda_per_anna_prepare.sh"'
-      post_pub_get_command: 'bash "$GITHUB_WORKSPACE/.applab/watch-profiles/agenda_per_anna_post_pub_get.sh"'
-      api_level: "35"
-      emulator_profile: pixel_7_pro
-      apk_path: build/app/outputs/flutter-apk/app-release.apk
-      package_id: com.riccardopinato.agenda_per_anna
-      build_command: >-
-        flutter build apk --release --target-platform android-x64 --tree-shake-icons
-        --dart-define=ANNAS_DIARY_INTEGRATION_TEST=true
-        --dart-define=ANNA_STORE_RELEASE=false
-        --dart-define=ANNA_PREMIUM_PREVIEW=true
-        --dart-define=FIREBASE_ENABLED=true
-      run_maestro: true
-      maestro_flow: .maestro/journeys/personalization-atomic.yaml
-      history_key: annas-diary-personalization-qa
-      cache_verification: true
-      config_fingerprint: annas-diary-qa-personalization-atomic-v1
-      analysis_mode: fast
-      baseline_sha: ${{ github.event.pull_request.base.sha || '' }}
-      publish_release_artifact: false
-
-  targeted_personalization:
-    name: QA ONLY — execute personalization-atomic.yaml directly
-    needs: applab
+  direct_personalization:
+    name: QA ONLY — direct personalization (not a release gate)
     if: github.event.pull_request.number == 153 && needs.applab.result == 'success'
     runs-on: ubuntu-latest
-    timeout-minutes: 45
+    timeout-minutes: 90
     steps:
       - name: Checkout exact QA source (not synthetic merge ref)
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
@@ -66,110 +36,44 @@ jobs:
           ref: 79309588e117ca5481822cd6394a9ad8ecc338e7
           path: .applab
 
-      - name: Download exact build artifact from the successful trusted gate
-        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
-        with:
-          pattern: applab-build-v41-annas-diary-personalization-qa-*
-          path: .applab-build
-          merge-multiple: true
-
-      - name: Validate artifact provenance and source SHA
-        id: contract
+      - name: Wait for exact-head production gate to conclude (do not override its result)
+        id: trusted_gate
         shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
           set -Eeuo pipefail
-          test "$(git rev-parse HEAD)" = "${{ github.event.pull_request.head.sha }}"
-          python3 .applab/scripts/validate_build_contract.py \
-            --root "$GITHUB_WORKSPACE/.applab-build" \
-            --expected-repository riccardopinato/Agenda-per-Anna \
-            --expected-sha "${{ github.event.pull_request.head.sha }}" \
-            --expected-engine flutter \
-            --expected-analysis-mode fast \
-            --expected-trusted-applab-sha 79309588e117ca5481822cd6394a9ad8ecc338e7 \
-            --github-output "$GITHUB_OUTPUT"
-          test -s "$GITHUB_WORKSPACE/.applab-build/app.apk"
-          test -f .maestro/journeys/personalization-atomic.yaml
-          test -f .maestro/journey/personalization.yaml
-          sha256sum "$GITHUB_WORKSPACE/.applab-build/app.apk"
-
-      - name: Setup Java 17 for pinned Maestro
-        uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6
-        with:
-          distribution: temurin
-          java-version: '17'
-
-      - name: Cache pinned Maestro
-        uses: actions/cache@caa296126883cff596d87d8935842f9db880ef25
-        with:
-          path: ~/.maestro
-          key: applab-maestro-${{ runner.os }}-2.10.0
-
-      - name: Install pinned Maestro 2.10.0
-        shell: bash
-        run: bash .applab/scripts/install_maestro.sh
-
-      - name: Directly execute the new flow on Android emulator
-        uses: reactivecircus/android-emulator-runner@a421e43855164a8197daf9d8d40fe71c6996bb0d
-        env:
-          QA_APK: ${{ steps.contract.outputs.apk_file }}
-          MAESTRO_CLI_NO_ANALYTICS: '1'
-        with:
-          api-level: 35
-          target: google_apis
-          arch: x86_64
-          profile: pixel_7_pro
-          disable-animations: true
-          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
-          script: |
-            set -Eeuo pipefail
-            mkdir -p qa-evidence
-            echo 'QA ONLY: direct Maestro execution; not AppLab atomic catalog PASS'
-            echo 'Source SHA: ${{ github.event.pull_request.head.sha }}'
-            echo 'Flow: .maestro/journeys/personalization-atomic.yaml'
-            test -s "$QA_APK"
-            sha256sum "$QA_APK" | tee qa-evidence/apk-sha256.txt
-            adb install -r -t "$QA_APK"
-            maestro test .maestro/journeys/personalization-atomic.yaml --test-output-dir qa-evidence/maestro | tee qa-evidence/direct-maestro.log
-            echo 'DIRECT_PERSONALIZATION_ATOMIC_FLOW_PASS'
-
-      - name: Upload targeted QA evidence (never release artifact)
-        if: always()
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
-        with:
-          name: qa-personalization-direct-${{ github.run_id }}
-          path: qa-evidence/
-          if-no-files-found: warn
-          retention-days: 2
-
-  # A failing trusted gate must not suppress independent diagnosis of the exact build.
-  # This job never marks the trusted gate green and is never merged into main.
-  diagnostic_personalization:
-    name: QA DIAGNOSTIC — direct personalization flow (non-promoting)
-    needs: applab
-    # Diagnostic evidence only. A failed AppLab runtime gate remains failed and blocks QA promotion.
-    # A verified exact-head APK may still be tested independently to isolate Maestro from emulator stress labs.
-    if: always() && github.event.pull_request.number == 153 && needs.applab.result == 'failure'
-    runs-on: ubuntu-latest
-    timeout-minutes: 45
-    steps:
-      - name: Checkout exact QA source (not synthetic merge ref)
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
-        with:
-          ref: ${{ github.event.pull_request.head.sha }}
-
-      - name: Checkout immutable trusted AppLab verifier
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
-        with:
-          repository: riccardopinato/AppLab
-          ref: 79309588e117ca5481822cd6394a9ad8ecc338e7
-          path: .applab
-
-      - name: Download exact build artifact from the failed trusted gate's successful build stage
+          HEAD='${{ github.event.pull_request.head.sha }}'
+          REPO='${{ github.repository }}'
+          RUN_ID=''
+          for attempt in $(seq 1 90); do
+            RUNS="$(gh api "repos/$REPO/actions/workflows/applab.yml/runs?head_sha=$HEAD&per_page=50")"
+            RUN_ID="$(printf '%s' "$RUNS" | jq -r --arg head "$HEAD" '[.workflow_runs[] | select(.head_sha == $head and .event == "pull_request")] | sort_by(.created_at) | last | .id // empty')"
+            if [[ -n "$RUN_ID" ]]; then break; fi
+            sleep 20
+          done
+          test -n "$RUN_ID"
+          echo "run_id=$RUN_ID" >> "$GITHUB_OUTPUT"
+          CONCLUSION=''
+          for attempt in $(seq 1 160); do
+            STATE="$(gh api "repos/$REPO/actions/runs/$RUN_ID" --jq '.status')"
+            if [[ "$STATE" == 'completed' ]]; then
+              CONCLUSION="$(gh api "repos/$REPO/actions/runs/$RUN_ID" --jq '.conclusion')"
+              break
+            fi
+            sleep 20
+          done
+          test -n "$CONCLUSION"
+          echo "gate_conclusion=$CONCLUSION" >> "$GITHUB_OUTPUT"
+          echo "Production gate $RUN_ID concluded: $CONCLUSION. Direct QA is diagnostic only, not gate authority."
+      - name: Download same-head build artifact from production run (even if its runtime lab failed)
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
         with:
           pattern: applab-build-v41-annas-diary-personalization-qa-*
           path: .applab-build
           merge-multiple: true
+          run-id: ${{ steps.trusted_gate.outputs.run_id }}
+          github-token: ${{ github.token }}
 
       - name: Validate artifact provenance and source SHA
         id: contract
@@ -189,11 +93,10 @@ jobs:
           python3 - <<'PY'
           import json
           from pathlib import Path
-          c=json.loads(Path('.applab-build/contract.json').read_text())
-          q=c['quality_evidence']
-          assert q['build']=='PASS', f'Build was not successful: {q}'
+          q=json.loads(Path('.applab-build/contract.json').read_text())['quality_evidence']
+          assert q['build']=='PASS', f'Build did not pass: {q}'
           assert 'FAIL' not in q.values(), f'Quality evidence failed: {q}'
-          print('DIAGNOSTIC_ONLY_VERIFIED_BUILD_CONTRACT; full runtime gate remains FAILED')
+          print('BUILD_CONTRACT_VALID; this does not replace trusted runtime gate')
           PY
           test -f .maestro/journeys/personalization-atomic.yaml
           test -f .maestro/journey/personalization.yaml
@@ -230,20 +133,20 @@ jobs:
           script: |
             set -Eeuo pipefail
             mkdir -p qa-evidence
-            echo 'DIAGNOSTIC ONLY: direct Maestro; does NOT override failed trusted AppLab runtime gate'
+            echo 'QA ONLY: direct Maestro execution; independent of production runtime gate outcome'
             echo 'Source SHA: ${{ github.event.pull_request.head.sha }}'
             echo 'Flow: .maestro/journeys/personalization-atomic.yaml'
             test -s "$QA_APK"
             sha256sum "$QA_APK" | tee qa-evidence/apk-sha256.txt
             adb install -r -t "$QA_APK"
             maestro test .maestro/journeys/personalization-atomic.yaml --test-output-dir qa-evidence/maestro | tee qa-evidence/direct-maestro.log
-            echo 'DIAGNOSTIC_DIRECT_PERSONALIZATION_ATOMIC_FLOW_PASS_NOT_RELEASE_GATE'
+            echo 'DIRECT_PERSONALIZATION_ATOMIC_FLOW_PASS_DIAGNOSTIC_ONLY'
 
       - name: Upload targeted QA evidence (never release artifact)
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
         with:
-          name: qa-personalization-diagnostic-${{ github.run_id }}
+          name: qa-personalization-direct-${{ github.run_id }}
           path: qa-evidence/
           if-no-files-found: warn
           retention-days: 2
