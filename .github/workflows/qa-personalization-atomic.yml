@@ -118,6 +118,20 @@ jobs:
         shell: bash
         run: bash .applab/scripts/install_maestro.sh
 
+      # Production AppLab enables /dev/kvm before its emulator; without this,
+      # the QA-only x86_64 emulator fell back to software TCG (~15 min boot)
+      # and Maestro's Android driver could not start. Fail closed if KVM absent.
+      - name: Enable and verify KVM for direct QA emulator
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          test -c /dev/kvm || { echo '::error::QA runner lacks /dev/kvm'; exit 1; }
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+          test -r /dev/kvm && test -w /dev/kvm || { echo '::error::KVM inaccessible after permissions update'; exit 1; }
+          "${ANDROID_HOME:-/usr/local/lib/android/sdk}/emulator/emulator" -accel-check
+
       - name: Directly execute the new flow on Android emulator
         uses: reactivecircus/android-emulator-runner@a421e43855164a8197daf9d8d40fe71c6996bb0d
         env:
