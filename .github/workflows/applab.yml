@@ -37,7 +37,7 @@ jobs:
         --dart-define=ANNA_PREMIUM_PREVIEW=true
         --dart-define=FIREBASE_ENABLED=true
       run_maestro: true
-      maestro_flow: .maestro/applab-smoke.yaml
+      maestro_flow: .maestro/journeys/personalization-atomic.yaml
       history_key: annas-diary
       cache_verification: true
       config_fingerprint: annas-diary-factory-fast-v4-journey-aware
