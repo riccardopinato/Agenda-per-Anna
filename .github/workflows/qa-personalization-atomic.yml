@@ -127,20 +127,13 @@ jobs:
           api-level: 35
           target: google_apis
           arch: x86_64
-          profile: pixel_7_pro
+          # Lower rendering load on the same Android API 35 for QA-only driver startup.
+          profile: pixel_2
           disable-animations: true
           emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
-          script: |
-            set -Eeuo pipefail
-            mkdir -p qa-evidence
-            echo 'QA ONLY: direct Maestro execution; independent of production runtime gate outcome'
-            echo 'Source SHA: ${{ github.event.pull_request.head.sha }}'
-            echo 'Flow: .maestro/journeys/personalization-atomic.yaml'
-            test -s "$QA_APK"
-            sha256sum "$QA_APK" | tee qa-evidence/apk-sha256.txt
-            adb install -r -t "$QA_APK"
-            maestro test .maestro/journeys/personalization-atomic.yaml --test-output-dir qa-evidence/maestro | tee qa-evidence/direct-maestro.log
-            echo 'DIRECT_PERSONALIZATION_ATOMIC_FLOW_PASS_DIAGNOSTIC_ONLY'
+          # android-emulator-runner executes each script line via a separate /bin/sh -c.
+          # Run ONE Bash script to preserve pipefail and propagate Maestro's exit status.
+          script: bash .github/scripts/qa-personalization-direct.sh
 
       - name: Upload targeted QA evidence (never release artifact)
         if: always()
