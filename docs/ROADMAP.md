@@ -99,7 +99,7 @@ Source of execution truth for Anna's Diary. Product identity and boundaries are 
 | v1.05.x-UI3-D3 | Memories B — Diario contemporaneo | **Completed — PR #142 merged, 4/4 gates PASS** | Editorial real-photo hero with text/audio/sketch fallbacks, Timeline, For You, collections and map; no memory copy |
 | v1.05.x-UI3-D4 | More C / Settings A | **Completed — PR #143 merged, 4/4 gates PASS** | Grouped iOS-inspired sections and HSV appearance entry; preserve all canonical routes, semantic IDs and account/backup/privacy |
 | v1.05.x-UI3-D5 | Integrated software QA and design closure | **Software completed — #145 QA PASS (closed unmerged); final #143 and main CI/Web/APK PASS; physical visual QA NOT VERIFIED** | 5 locales, 5 presets and custom HSV light/dark, accessibility, large text, tablet/Web, 4/4 CI/AppLab + Codex on exact head; physical/Play separate |
-| v1.05.x-UI4 | Navigation dedup + prominent Shared Space / Private Vault | **IN PROGRESS — bounded UX follow-up** | Remove duplicate access affordances, retain canonical routes, show Spazio condiviso (Noi ♡) and Cassaforte privata prominently when enabled, preserve privacy/backup/entitlement and all four gates |
+| v1.05.x-UI4 | Navigation dedup + prominent Shared Space / Private Vault | **Completed — PR #146 merged, 4/4 exact-head gates PASS; main Web/ARM64/Dev PASS** | Remove duplicate access affordances, retain canonical routes, show Spazio condiviso (Noi ♡) and Cassaforte privata prominently when enabled, preserve privacy/backup/entitlement and all four gates |
 | v1.06 | Ecosystem Expansion | PLANNED | Add specialist integrations one at a time under Shared Ecosystem Core + paired verification; preferred order TrailPath → Notes → SleepMax → CashMate |
 
 ## UI3 integration evidence (28–29 Oct 2026)
@@ -108,6 +108,14 @@ Source of execution truth for Anna's Diary. Product identity and boundaries are 
 - Source-lane heads #139–#143 passed Development, Web, Android size audit and AppLab Production Gate; dedicated combined QA #145 passed 4/4 and was closed **without merge** because its tests were reconciled into #143.
 - Main push run: Development `40783102325` PASS; Web Pages `40783102300` PASS; stable-signed ARM64 APK `40783102272` PASS. This is not evidence of physical install, appearance screenshot comparison on actual hardware, or Play release.
 - UI4 is a bounded presentation/navigation improvement after the read-only duplicate-function audit. No new state store or v1.06 scope.
+
+## UI4 closure evidence (29 October 2026)
+
+- **Merged:** PR #146 exact reviewed head `0c52b170b25ab82f0d7e5e7938f82dd19e0642f3` → `main@0c96c75e71b84b9470521979369602e387166417`, 09:43:57 UTC.
+- **4/4 exact-head CI PASS:** Development [40847528484], Web [40847528481], Android size [40847528537], AppLab [40847530142]. Codex review completed **CLEAN**, no findings and 0 unresolved threads. Trusted AppLab reports **PASS**, Maestro **PASS**, persistence/restart **PASS**; non-blocking visual/performance/resource warnings do not establish pixel-faithful hardware QA.
+- **Main push PASS:** Development [40851937020], GitHub Pages [40851936762], stable-signed ARM64 sideload [40851936804].
+- **Main artifact:** `Anna-Diary-arm64-release.apk`, package `com.riccardopinato.agenda_per_anna`, version `1.0.0-rc.2+111`, SHA-256 `c4ad87a533eb0f45cd05383e1cc5f5d94c83d116ab7bd0a4a15d4bd7cf533724`. Certificate SHA-256 `31BE63155C831F062238179EC9B8F19D1C16A925BED1D526BC7E6A4712C62DC3` matches previous main. Manifest status `ARTIFACT_BUILT`; **real-device install, native physical security, Play acceptance, and screenshot-level visual parity NOT VERIFIED**.
+- No v1.06 scope, new store, crypto/KDF downgrade, or entitlement change. This documentation-only closure does not change the verified APK source SHA.
 
 ## Current execution order — App Factory v26.8 / Golden Index v23
 
