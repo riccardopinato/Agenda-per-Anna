@@ -123,7 +123,7 @@ void main() {
     expect(
       flow,
       contains(
-        '(Usa su questo dispositivo|Use on this device|Usar en este dispositivo|Utiliser sur cet appareil|Usar neste dispositivo)',
+        "id: 'identity-offline-continue'",
       ),
     );
   });
