@@ -1,9 +1,9 @@
 # Anna's Diary — Product Bible
 
 **Status:** canonical product source of truth  
-**Current product line:** v1.05 Memories & Recall 3.0 — Completed; v1.05.x corrective maintenance Completed (PR #134); v1.05.x visual UI1–UI3 completed (PRs #136, #138–#143; combined QA #145); UI4 navigation dedup completed (PR #146; documentation closure #147); v1.06 not started  
-**Distribution identity:** 1.0.0-rc.2+111 — maintenance software integrated; signed sideload candidate, physical and Store certification remain separate  
-**Last aligned:** 29 October 2026
+**Current product line:** v1.05 Memories & Recall 3.0 — Completed; v1.05.x corrective maintenance Completed (PR #134); visual UI1–UI3 and UI4 completed; **UI5 DF-01–DF-35 completed (PR #154 merged; user-reported Android phone smoke PASS on 30 October 2026)**; future aesthetic refinements and animations deferred; v1.06 not started  
+**Distribution identity:** 1.0.0-rc.2+111 — signed UI5 ARM64 sideload artifact built; quick user-reported physical smoke PASS; comprehensive physical and Store certification remain separate  
+**Last aligned:** 30 October 2026
 
 This document defines what Anna's Diary is, what it is not, and the product/security invariants that future work must preserve. Implementation details belong in `docs/ARCHITECTURE.md`; execution sequencing belongs in `docs/ROADMAP.md`.
 

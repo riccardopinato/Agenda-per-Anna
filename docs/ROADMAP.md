@@ -1,13 +1,16 @@
 # Anna's Diary — Roadmap
-## Active UX delivery — UI5 DF-01–DF-35 (29 Oct 2026)
+## UI5 DF-01–DF-35 — CLOSED (30 October 2026)
 
-**Authorized by the user; IMPLEMENTATION IN PROGRESS**, not yet completed.
-The design interview was closed at DF-35 and all decisions, including DF-19
-scope correction, are frozen as the canonical design contract in
-`docs/V105X_UI5_DF01_DF35_IMPLEMENTATION_CONTRACT.md` and planning-only
-[PR #149](https://github.com/riccardopinato/Agenda-per-Anna/pull/149).
-Implementation is separate: [draft PR #154](https://github.com/riccardopinato/Agenda-per-Anna/pull/154)
-on `feat/v105x-ui5-df-implementation`.
+**IMPLEMENTED AND CLOSED at the UI5 scope level.** The user approved the DF-01–DF-35
+design contract in `docs/V105X_UI5_DF01_DF35_IMPLEMENTATION_CONTRACT.md`
+(see [PR #149](https://github.com/riccardopinato/Agenda-per-Anna/pull/149)).
+Implementation was squash-merged in
+[PR #154](https://github.com/riccardopinato/Agenda-per-Anna/pull/154)
+to `main@7c0ad8c6e1577a96188783e22a2264cc19e3aba2`.
+The user reported a brief hands-on test on an Android phone on 30 October 2026:
+the installed UI5 app appeared to work and no bugs were noticed in that session.
+Record this as **USER-REPORTED PHYSICAL SMOKE PASS** (qualitative), not as a
+comprehensive physical-device certification or screenshot-level QA.
 
 - UI5-A: four-tab shell + raised Crea, canonical date-aware capture, Sketch/Modelli.
 - UI5-B: Oggi compact real-data overview, diary up to two, one clickable memory teaser.
@@ -19,11 +22,19 @@ on `feat/v105x-ui5-df-implementation`.
   build, AppLab emulator or screenshot suite, even on the final PR commit.
   Android size audit, integration smoke and stable signed APK remain available
   exclusively via manual workflow_dispatch, independently of AppLab.
-- **Implementation status vs evidence:** code/PR merge is distinct from APK
-  certification. Native runtime, screenshot-level visual fidelity, physical
-  devices, Play and cross-device behavior remain **NOT VERIFIED** until separate
-  manual checks are explicitly performed; never claim those passed from source
-  checks. No v1.06 scope is implied.
+- **UI5 closure evidence:** final PR-head Development/Web/AppLab Source Gate PASS;
+  `main` Development and Web PASS; manually generated stable-signed ARM64
+  UI5 APK from the exact `main` app sources via [GitHub Actions run
+  #41055684148](https://github.com/riccardopinato/Agenda-per-Anna/actions/runs/41055684148).
+  The source-only AppLab check does not build an APK or execute Maestro.
+  User-reported phone smoke: **PASS** (short session, no apparent bugs).
+- **Remaining evidence boundary:** a brief phone smoke does **not** validate
+  preservation of data across an in-place upgrade, every UX screen, Vault
+  security, biometric/restart behaviors, two-device Noi ♡ sync, notification
+  delivery, screenshot-level fidelity, OS/device compatibility matrix or Play
+  purchase/restore. Those remain **NOT VERIFIED** on this artifact unless
+  separately evidenced. Future visual refinements and new animations are
+  deferred; they do not reopen UI5 and do not authorize v1.06.
 - Current Factory Core `CURRENT.yaml`: v27 ACTIVE, pinned
   `174a05e165076c9e4b2d61a20acd85ca6b215f12` (Golden Index v23).
   Historical AppLab reusable workflow pin for earlier UI5 verification:
