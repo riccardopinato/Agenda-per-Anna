@@ -75,7 +75,7 @@ void main() {
     expect(restart, contains('D2_APPLAB_PERSISTENCE'));
 
     for (final flow in <String>[wrong, correct, restart]) {
-      expect(flow, contains("visible: '(Usa su questo dispositivo"));
+      expect(flow, contains("id: 'identity-offline-continue'"));
       expect(flow, contains("id: 'main-nav-more'"));
       expect(flow, contains("visible: '.*(Uno spazio solo tuo"));
     }
