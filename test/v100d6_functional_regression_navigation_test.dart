@@ -110,8 +110,8 @@ void main() {
       '.maestro/journeys/vault-create.yaml',
     ]) {
       final flow = File(path).readAsStringSync();
-      expect(flow, contains("- extendedWaitUntil:\\n    visible:\\n      id: 'identity-offline-continue'"), reason: path);
-      expect(flow, isNot(contains("- extendedWaitUntil:\\n    id: 'identity-offline-continue'")), reason: path);
+      expect(flow, contains("- extendedWaitUntil:\n    visible:\n      id: 'identity-offline-continue'"), reason: path);
+      expect(flow, isNot(contains("- extendedWaitUntil:\n    id: 'identity-offline-continue'")), reason: path);
     }
     for (final path in <String>[
       '.maestro/journeys/memories-critical.yaml',
@@ -122,8 +122,8 @@ void main() {
       '.maestro/journeys/vault-wrong-password.yaml',
     ]) {
       final flow = File(path).readAsStringSync();
-      expect(flow, contains("- runFlow:\\n    when:\\n      visible:\\n        id: 'identity-offline-continue'"), reason: path);
-      expect(flow, isNot(contains("- runFlow:\\n    when:\\n      id: 'identity-offline-continue'")), reason: path);
+      expect(flow, contains("- runFlow:\n    when:\n      visible:\n        id: 'identity-offline-continue'"), reason: path);
+      expect(flow, isNot(contains("- runFlow:\n    when:\n      id: 'identity-offline-continue'")), reason: path);
     }
   });
 }
