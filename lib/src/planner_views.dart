@@ -422,9 +422,13 @@ class _PlannerScreenState extends State<PlannerScreen> {
           ),
           body: Column(
             children: [
-              DateStrip(
-                selected: day,
-                onSelected: _selectDay,
+              Semantics(
+                identifier: 'ui5-today-date-strip',
+                container: true,
+                child: DateStrip(
+                  selected: day,
+                  onSelected: _selectDay,
+                ),
               ),
               Expanded(
                 child: Align(

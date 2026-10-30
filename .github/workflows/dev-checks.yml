@@ -69,18 +69,5 @@ jobs:
           flutter build web --release
           python3 tool/finalize_web_build.py
 
-      # Gradle setup restores dependencies and Gradle metadata, not task outputs
-      # unless task caching is explicitly enabled; each job builds its own APK.
-      - name: Cache Gradle for Android build
-        if: github.event_name != 'pull_request'
-        uses: gradle/actions/setup-gradle@3f5f9adaf7d9fecd50b5935e54106014257a94e6
-
-      - name: Build Android ARM64 release gate
-        if: github.event_name != 'pull_request'
-        run: |
-          FIREBASE_ARG=""
-          if [ -f android/app/google-services.json ]; then
-            FIREBASE_ARG="--dart-define=FIREBASE_ENABLED=true"
-          fi
-          flutter build apk             --release             --split-per-abi             --tree-shake-icons             $FIREBASE_ARG
-          test -s build/app/outputs/flutter-apk/app-arm64-v8a-release.apk
+      # Android APK builds are not part of automatic source validation.
+      # Dispatch the dedicated, signed Android workflows explicitly.

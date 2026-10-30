@@ -1,13 +1,8 @@
 name: Android integration smoke
 
+# Emulator tests are explicit, never implicitly triggered on merge.
 on:
   workflow_dispatch:
-  push:
-    branches: [main]
-    paths:
-      - "integration_test/**"
-      - ".github/workflows/android-integration.yml"
-      - ".android-smoke-trigger"
 
 permissions:
   contents: read

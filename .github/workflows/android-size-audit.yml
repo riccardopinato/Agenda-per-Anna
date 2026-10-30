@@ -1,19 +1,7 @@
 name: Android size audit
 
+# An APK is built only upon explicit user-triggered GitHub Actions dispatch.
 on:
-  pull_request:
-    branches: [main]
-    paths:
-      - "lib/**"
-      - "assets/**"
-      - "firebase/**"
-      - "pubspec.yaml"
-      - "pubspec.lock"
-      - "tool/**"
-      - ".github/workflows/android-size-audit.yml"
-      - ".github/workflows/dev-checks.yml"
-      - ".github/workflows/applab.yml"
-      - ".github/workflows/build.yml"
   workflow_dispatch:
 
 permissions:

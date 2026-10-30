@@ -58,48 +58,44 @@ void main() {
     expect(recovery, isNot(contains('localStorage.clear')));
   });
 
-  test('final release workflows keep every required production gate', () {
+  test('code gates are automatic and APK generation is explicitly manual', () {
     final development =
         File('.github/workflows/dev-checks.yml').readAsStringSync();
     final web = File('.github/workflows/deploy-pages.yml').readAsStringSync();
     final size =
         File('.github/workflows/android-size-audit.yml').readAsStringSync();
     final appLab = File('.github/workflows/applab.yml').readAsStringSync();
+    final androidIntegration =
+        File('.github/workflows/android-integration.yml').readAsStringSync();
+    final sideload =
+        File('.github/workflows/sideload-arm64.yml').readAsStringSync();
     final appLabProject = File('applab.project.json').readAsStringSync();
 
     expect(development, contains('flutter analyze'));
     expect(development, contains('flutter test'));
     expect(development, contains('flutter build web'));
+    expect(development, isNot(contains('flutter build apk')));
     expect(web, contains('flutter build web'));
+
+    for (final manual in [size, sideload, androidIntegration]) {
+      expect(manual, contains('workflow_dispatch:'));
+      expect(manual, isNot(contains('pull_request:')));
+      expect(manual, isNot(contains('push:')));
+    }
     expect(size, contains('--split-per-abi'));
     expect(size, contains('app-arm64-v8a-release.apk'));
-    expect(appLab, contains('AppLab Production Gate'));
-    // Trusted Verify is owned by the pinned reusable AppLab runner; this
-    // repository must keep invoking that trusted runner at an immutable SHA.
-    expect(appLab, contains('uses: riccardopinato/AppLab/.github/workflows/'));
-    expect(
-      appLab,
-      contains('@46816a1786820eb7c0edab7500ca950b10c7718c'),
-    );
-    expect(appLab, contains('analysis_mode: fast'));
-    expect(
-      appLab,
-      contains(r"baseline_sha: ${{ github.event.pull_request.base.sha || '' }}"),
-    );
-    expect(appLab, contains('cache_verification: true'));
+    expect(appLab, contains('AppLab Source Gate'));
+    expect(appLab, contains('tool/check_ui5_visual_flows.py'));
+    expect(appLab, isNot(contains('external-project-runner.yml')));
+    expect(appLab, isNot(contains('flutter build apk')));
+    expect(appLab, isNot(contains('run_maestro: true')));
     expect(appLabProject, contains('"physical_validation"'));
     expect(appLabProject, contains('"required": true'));
-    expect(appLabProject, contains('"biometrics"'));
-    expect(appLabProject, contains('"keystore"'));
-    expect(appLabProject, contains('"notifications"'));
-    expect(appLabProject, contains('"file_picker"'));
-    expect(appLabProject, contains('"billing"'));
-    expect(appLabProject, contains('"play_delivery"'));
-    expect(appLabProject, contains('"cross_app"'));
-    expect(appLab, contains('actions: read'));
-    expect(appLab, contains('run_maestro: true'));
-    expect(appLab, contains('build/app/outputs/flutter-apk/app-release.apk'));
-    expect(appLab, contains('--target-platform android-x64'));
-    expect(appLab, isNot(contains('--split-per-abi')));
-  });
+    for (final capability in [
+      '"biometrics"', '"keystore"', '"notifications"', '"file_picker"',
+      '"billing"', '"play_delivery"', '"cross_app"',
+    ]) {
+      expect(appLabProject, contains(capability));
+    }
+  });;
 }

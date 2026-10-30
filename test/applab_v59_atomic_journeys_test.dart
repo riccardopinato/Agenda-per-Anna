@@ -101,20 +101,18 @@ void main() {
     expect(legacy, contains('D2WrongPassword2026'));
   });
 
-  test('AppLab workflow is pinned to reviewed v6.3A exact SHA', () {
+  test('AppLab source-only lane never compiles or launches Android', () {
     final workflow =
         File('.github/workflows/applab.yml').readAsStringSync();
+    final sourceCheck =
+        File('tool/check_ui5_visual_flows.py').readAsStringSync();
 
-    expect(
-      workflow,
-      contains('@46816a1786820eb7c0edab7500ca950b10c7718c'),
-    );
-    expect(
-      workflow,
-      contains('annas-diary-factory-fast-v4-journey-aware'),
-    );
-    expect(workflow, contains('analysis_mode: fast'));
-    expect(workflow, contains('cache_verification: true'));
+    expect(workflow, contains('AppLab Source Gate'));
+    expect(workflow, contains('tool/check_ui5_visual_flows.py'));
+    expect(workflow, isNot(contains('external-project-runner.yml')));
+    expect(workflow, isNot(contains('flutter build apk')));
+    expect(workflow, isNot(contains('run_maestro: true')));
+    expect(sourceCheck, contains('ui5-today-date-strip'));
   });
 
   test('Factory adoption remains canonical and central', () {

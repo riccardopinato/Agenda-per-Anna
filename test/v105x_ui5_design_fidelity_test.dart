@@ -38,6 +38,7 @@ void main() {
     expect(screen.indexOf('_TodayCompactSummary('),
         lessThan(screen.indexOf('_TodayCompactDiaryPreview(')));
     expect(screen, contains('DateStrip('));
+    expect(screen, contains("identifier: 'ui5-today-date-strip'"));
     expect(screen, contains('onSelected: _selectDay'));
     expect(screen, contains('if (widget.embedded)'));
     expect(planner, contains('blocks.take(2)'));

@@ -13,18 +13,23 @@ on `feat/v105x-ui5-df-implementation`.
 - UI5-B: Oggi compact real-data overview, diary up to two, one clickable memory teaser.
 - UI5-C: Ricordi Per te anniversaries + year chips + compact suggestions;
   Timeline month accordion/year jump; global dedicated search.
-- UI5-QA: locale/light/dark/reduced-motion/small-and-wide screens, non-destructive
-  Flutter validation, exact PR-head Development/Web/size/AppLab gates, independent
-  review and screenshot-level fidelity evidence before any merge.
-- **Implementation status vs evidence:** source changes in draft PR are
-  **NOT VERIFIED** until the complete exact-head gates and visual QA pass.
-  Physical devices, live Google Play and cross-device tests remain separately
-  **NOT VERIFIED**. No v1.06 scope is implied.
+- UI5-QA (updated 30 Oct 2026 by explicit user decision): review visual
+  checkpoints together against UI5, then run source-only Development checks,
+  Web and repository-local AppLab Source Gate on the PR head. No automatic APK
+  build, AppLab emulator or screenshot suite, even on the final PR commit.
+  Android size audit, integration smoke and stable signed APK remain available
+  exclusively via manual workflow_dispatch, independently of AppLab.
+- **Implementation status vs evidence:** code/PR merge is distinct from APK
+  certification. Native runtime, screenshot-level visual fidelity, physical
+  devices, Play and cross-device behavior remain **NOT VERIFIED** until separate
+  manual checks are explicitly performed; never claim those passed from source
+  checks. No v1.06 scope is implied.
 - Current Factory Core `CURRENT.yaml`: v27 ACTIVE, pinned
   `174a05e165076c9e4b2d61a20acd85ca6b215f12` (Golden Index v23).
-  Current AppLab v6.x immutable reusable workflow pin on UI5 branch:
-  `46816a1786820eb7c0edab7500ca950b10c7718c`.
-  AppLab SELF_CANARY feature delivery is not broad autonomous mutation authority.
+  Historical AppLab reusable workflow pin for earlier UI5 verification:
+  `46816a1786820eb7c0edab7500ca950b10c7718c` (not invoked by the
+  source-only workflow). AppLab SELF_CANARY feature delivery is not broad
+  autonomous mutation authority.
 
 
 Source of execution truth for Anna's Diary. Product identity and boundaries are defined by `docs/PRODUCT_BIBLE.md`. The roadmap follows the project Master Prompt: REUSE-FIRST, one stable version at a time, and no release is complete until its required quality gates and documentation are aligned.
