@@ -433,7 +433,7 @@ Future<void> showUnifiedCapture(
             DiaryBlock(
               id: const Uuid().v4(),
               type: DiaryBlockType.sketch,
-              createdAt: DateTime.now(),
+              createdAt: _unifiedCaptureTimestamp(targetDay),
               pages: pages,
             ),
           ],
@@ -454,6 +454,7 @@ Future<void> showUnifiedCapture(
           await store.applyDiaryTemplate(
             targetDay,
             preset,
+            createdAt: _unifiedCaptureTimestamp(targetDay),
             textOverride: draft.trim(),
           );
           if (context.mounted) {

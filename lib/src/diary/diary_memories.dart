@@ -1116,7 +1116,17 @@ class _DiaryMemoriesScreenState extends State<DiaryMemoriesScreen> {
       return c != 0 ? c : b.block.createdAt.compareTo(a.block.createdAt);
     });
     final anniversary = exact.isNotEmpty ? exact : fallback;
-    if (_anniversaryIndex >= anniversary.length) _anniversaryIndex = 0;
+    if (_anniversaryIndex >= anniversary.length) {
+      _anniversaryIndex = anniversary.isEmpty ? 0 : anniversary.length - 1;
+      final targetPage = _anniversaryIndex;
+      if (anniversary.isNotEmpty) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted && _anniversaryPager.hasClients) {
+            _anniversaryPager.jumpToPage(targetPage);
+          }
+        });
+      }
+    }
     final anniversaryIds = anniversary.map((e) => e.block.id).toSet();
     final suggestions = <DiaryBlockReference>[];
     final shownIds = <String>{...anniversaryIds};
@@ -1514,7 +1524,7 @@ class _DiaryMemoriesScreenState extends State<DiaryMemoriesScreen> {
         Expanded(
           child: Semantics(
             identifier: 'memories-timeline-list',
-            child: ListView(
+            child: SingleChildScrollView(
               key: const PageStorageKey<String>('ui5-timeline-scroll'),
               padding: const EdgeInsets.fromLTRB(
                 AnnaDesignTokens.spaceMd,
@@ -1522,7 +1532,8 @@ class _DiaryMemoriesScreenState extends State<DiaryMemoriesScreen> {
                 AnnaDesignTokens.spaceMd,
                 AnnaDesignTokens.spaceXl,
               ),
-              children: months.map((entry) {
+              // Eager layout mounts the first-month key of every year.
+              child: Column(children: months.map((entry) {
                 final bucket = entry.value;
                 final date = bucket.first.date;
                 final isExpanded = _expandedTimelineMonths[entry.key] ?? false;
@@ -1547,7 +1558,7 @@ class _DiaryMemoriesScreenState extends State<DiaryMemoriesScreen> {
                           child: Semantics(
                             button: true,
                             expanded: isExpanded,
-                            label: '$title · ${strings.d3Format('ui5MemoryCount', {'count': bucket.length})}',
+                            label: '$title · ${strings.d3Format(bucket.length == 1 ? 'ui5MemoryCountOne' : 'ui5MemoryCount', {'count': bucket.length})}',
                             child: InkWell(
                               key: ValueKey<String>('ui5-timeline-month-${entry.key}'),
                               borderRadius: BorderRadius.circular(18),
@@ -1562,7 +1573,7 @@ class _DiaryMemoriesScreenState extends State<DiaryMemoriesScreen> {
                                     Expanded(child: Text(title,
                                       style: Theme.of(context).textTheme.titleMedium)),
                                     Text(strings.d3Format(
-                                      'ui5MemoryCount', {'count': bucket.length}),
+                                      bucket.length == 1 ? 'ui5MemoryCountOne' : 'ui5MemoryCount', {'count': bucket.length}),
                                       style: Theme.of(context).textTheme.bodySmall),
                                     const SizedBox(width: 8),
                                     Icon(isExpanded ? Icons.expand_less : Icons.expand_more),
@@ -1579,7 +1590,7 @@ class _DiaryMemoriesScreenState extends State<DiaryMemoriesScreen> {
                     ),
                   ),
                 );
-              }).toList(),
+              }).toList()),
             ),
           ),
         ),

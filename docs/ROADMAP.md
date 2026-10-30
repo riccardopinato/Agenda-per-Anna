@@ -149,11 +149,11 @@ Source of execution truth for Anna's Diary. Product identity and boundaries are 
 - **Main artifact:** `Anna-Diary-arm64-release.apk`, package `com.riccardopinato.agenda_per_anna`, version `1.0.0-rc.2+111`, SHA-256 `c4ad87a533eb0f45cd05383e1cc5f5d94c83d116ab7bd0a4a15d4bd7cf533724`. Certificate SHA-256 `31BE63155C831F062238179EC9B8F19D1C16A925BED1D526BC7E6A4712C62DC3` matches previous main. Manifest status `ARTIFACT_BUILT`; **real-device install, native physical security, Play acceptance, and screenshot-level visual parity NOT VERIFIED**.
 - No v1.06 scope, new store, crypto/KDF downgrade, or entitlement change. This documentation-only closure does not change the verified APK source SHA.
 
-## Current execution order — App Factory v26.8 / Golden Index v23
+## Historical execution order — App Factory v26.8 / Golden Index v23
 
-Factory baseline for this roadmap:
+Historical Factory baseline for this completed execution sequence:
 `riccardopinato/App-Factory-Core@b5573840caaf0e92bd7719b7471d49a8e34995c1`
-(Master v26.8, Golden Index v23, resolved 29 Oct 2026). Historical documents retain their original baselines.
+(Master v26.8, Golden Index v23, resolved 29 Oct 2026). The active UI5 baseline is the Master v27 SHA specified at the top of this roadmap.
 
 Execution uses canonical
 `ROADMAP_FAST_PLUS_CONTINUOUS_MAINTENANCE`:

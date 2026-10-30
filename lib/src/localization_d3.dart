@@ -22,6 +22,7 @@ const Map<String, Map<String, String>> _d3Catalog = {
   "ui5NoMemoriesDay": <String, String>{"en": "A quiet day to make your own.", "it": "Una giornata tutta da vivere.", "es": "Un día por vivir.", "fr": "Une journée à vivre.", "pt": "Um dia por viver."},
   "ui5YearJump": <String, String>{"en": "Jump to year", "it": "Vai all'anno", "es": "Ir al año", "fr": "Aller à l'année", "pt": "Ir para o ano"},
   "ui5MemoryCount": <String, String>{"en": "{count} memories", "it": "{count} ricordi", "es": "{count} recuerdos", "fr": "{count} souvenirs", "pt": "{count} memórias"},
+  "ui5MemoryCountOne": <String, String>{"en": "{count} memory", "it": "{count} ricordo", "es": "{count} recuerdo", "fr": "{count} souvenir", "pt": "{count} memória"},
   "ui5OpenDiaryDay": <String, String>{"en": "Open diary day", "it": "Apri la giornata del diario", "es": "Abrir día del diario", "fr": "Ouvrir la journée du journal", "pt": "Abrir o dia do diário"},
   "ui5PlayVoice": <String, String>{"en": "Play voice note", "it": "Riproduci nota vocale", "es": "Reproducir nota de voz", "fr": "Lire la note vocale", "pt": "Reproduzir nota de voz"},
   "appearanceColorsTitle": <String, String>{"en": "Appearance & colors", "it": "Aspetto e colori", "es": "Apariencia y colores", "fr": "Apparence et couleurs", "pt": "Aspeto e cores"},

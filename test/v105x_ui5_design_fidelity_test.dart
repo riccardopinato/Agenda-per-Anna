@@ -26,6 +26,7 @@ void main() {
     expect(capture, contains('_UnifiedCaptureAction.sketch'));
     expect(capture, contains('_UnifiedCaptureAction.templates'));
     expect(capture, contains('DiarySketchbookScreen('));
+    expect(capture, contains('createdAt: _unifiedCaptureTimestamp(targetDay)'));
     expect(capture, contains('await store.applyDiaryTemplate('));
     expect(capture, contains('var showAllActions = false'));
     expect(capture, contains('showModalBottomSheet<_UnifiedCaptureAction>'));
@@ -67,6 +68,10 @@ void main() {
     expect(memories, contains('Scrollable.ensureVisible('));
     expect(memories, contains("key: const PageStorageKey<String>('ui5-timeline-scroll')"));
     expect(memories, contains("identifier: 'memories-timeline-list'"));
+    expect(memories, contains('child: SingleChildScrollView('));
+    expect(memories, contains('child: Column(children: months.map((entry)'));
+    expect(memories, contains("bucket.length == 1 ? 'ui5MemoryCountOne'"));
+    expect(memories, contains('anniversary.length - 1'));
     expect(memories, contains('bucket.length'));
   });
 
@@ -91,7 +96,7 @@ void main() {
 
   test('UI5 labels exist for all five supported languages', () {
     final labels = read('lib/src/localization_d3.dart');
-    for (final key in ['ui5Create', 'ui5ForYou', 'ui5OnThisDay',
+    for (final key in ['ui5MemoryCountOne', 'ui5Create', 'ui5ForYou', 'ui5OnThisDay',
       'ui5ShowAll', 'ui5SearchHint', 'ui5SearchNoResults',
       'ui5MemoryCount', 'ui5MemoryTeaser', 'ui5DayDiary']) {
       final row = labels.split('\n').firstWhere(
