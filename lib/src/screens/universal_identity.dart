@@ -149,12 +149,16 @@ class _UniversalIdentityScreenState extends State<UniversalIdentityScreen> {
                   SizedBox(
                     width: double.infinity,
                     height: 52,
-                    child: OutlinedButton.icon(
-                      onPressed: busy ? null : _continueOffline,
+                    child: Semantics(
+                      identifier: 'identity-offline-continue',
+                      button: true,
+                      child: OutlinedButton.icon(
+                        onPressed: busy ? null : _continueOffline,
                       icon: const Icon(Icons.phone_android_outlined),
                       label: Text(
                         AnnaStrings.of(context).d3('continueOffline'),
                         style: const TextStyle(fontWeight: FontWeight.w800),
+                      ),
                       ),
                     ),
                   ),
