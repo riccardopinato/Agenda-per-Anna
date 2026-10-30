@@ -3,7 +3,8 @@ appId: com.riccardopinato.agenda_per_anna
 - launchApp:
     clearState: true
 - extendedWaitUntil:
-    id: 'identity-offline-continue'
+    visible:
+      id: 'identity-offline-continue'
     timeout: 15000
 - tapOn:
     id: 'identity-offline-continue'

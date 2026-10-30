@@ -7,7 +7,8 @@ appId: com.riccardopinato.agenda_per_anna
 # without authenticating. The integration-test define is still used only for
 # deterministic persistent storage; it no longer bypasses identity routing.
 - extendedWaitUntil:
-    id: 'identity-offline-continue'
+    visible:
+      id: 'identity-offline-continue'
     timeout: 15000
 - tapOn:
     id: 'identity-offline-continue'
