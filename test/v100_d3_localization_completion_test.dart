@@ -544,15 +544,19 @@ void main() {
     }
     expect(week, contains("id: 'calendar-week-view'"));
 
+    // UI5 shows the day overview even without any diary entry.
     for (final text in const <String>[
-      'Pensieri e note',
-      'Thoughts and notes',
-      'Pensamientos y notas',
-      'Pensées et notes',
-      'Pensamentos e notas',
+      'La mia giornata',
+      'My day',
+      'Mi día',
+      'Ma journée',
+      'O meu dia',
     ]) {
       expect(today, contains(text));
     }
+    expect(today, contains("id: 'ui5-today-date-strip'"));
+    expect(today, contains("id: 'main-nav-create'"));
+    expect(today, isNot(contains('Pensieri e note|Thoughts and notes')));
     expect(today, isNot(contains('Momenti del giorno|Moments of the day')));
 
     for (final text in const <String>[

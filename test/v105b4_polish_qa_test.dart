@@ -159,7 +159,7 @@ void main() {
       agents,
       contains('b5573840caaf0e92bd7719b7471d49a8e34995c1'),
     );
-    expect(agents, contains('Master v26.8'));
+    expect(agents, contains('Master v27'));
     expect(roadmap, contains('v1.05-B4'));
     expect(roadmap, contains('integration PR #132'));
     expect(architecture, contains('No Memory DB, Year DB, Collections DB'));

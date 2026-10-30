@@ -10,6 +10,89 @@ class MainShell extends StatefulWidget {
 
 class _MainShellState extends State<MainShell> {
   late int index;
+  DateTime _calendarCaptureDate = DateTime.now();
+  bool _createPressed = false;
+
+  Future<void> _openCentralCreate() async {
+    if (_createPressed) return;
+    unawaited(AnnaFeedback.selection());
+    setState(() => _createPressed = true);
+    final animate = AnnaDesignTokens.animationsEnabled(context);
+    if (animate) await Future<void>.delayed(const Duration(milliseconds: 135));
+    if (!mounted) return;
+    setState(() => _createPressed = false);
+    await showUnifiedCapture(
+      context,
+      widget.store,
+      initialDate: index == StartTab.calendar.index
+          ? _calendarCaptureDate
+          : DateTime.now(),
+      entryPoint: index == StartTab.calendar.index
+          ? UnifiedCaptureEntryPoint.month
+          : UnifiedCaptureEntryPoint.home,
+    );
+  }
+
+  Widget _centralCreateButton(BuildContext context) {
+    final color = Theme.of(context).colorScheme.primary;
+    final scheme = Theme.of(context).colorScheme;
+    final animate = AnnaDesignTokens.animationsEnabled(context);
+    return Semantics(
+      identifier: 'main-nav-create',
+      button: true,
+      child: Tooltip(
+        message: AnnaStrings.of(context).d3('ui5Create'),
+        child: AnimatedScale(
+          scale: _createPressed && animate ? 0.93 : 1.0,
+          duration: animate ? const Duration(milliseconds: 190) : Duration.zero,
+          curve: Curves.easeOutCubic,
+          child: AnimatedContainer(
+            duration: animate ? const Duration(milliseconds: 190) : Duration.zero,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              boxShadow: [
+                BoxShadow(
+                  color: color.withValues(alpha: _createPressed ? 0.30 : 0.16),
+                  blurRadius: _createPressed ? 26 : 15,
+                  spreadRadius: _createPressed ? 5 : 2,
+                ),
+              ],
+            ),
+            child: Material(
+              color: color,
+              shape: const CircleBorder(),
+              elevation: 2,
+              clipBehavior: Clip.antiAlias,
+              child: InkWell(
+                key: const ValueKey<String>('main-nav-create'),
+                onTap: _openCentralCreate,
+                child: SizedBox(
+                  width: 58,
+                  height: 58,
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.add, color: scheme.onPrimary, size: 25),
+                      Text(
+                        AnnaStrings.of(context).d3('ui5Create'),
+                        maxLines: 1,
+                        style: TextStyle(
+                          color: scheme.onPrimary,
+                          fontSize: 10,
+                          height: 1.0,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
 
   @override
   void initState() {
@@ -42,8 +125,11 @@ class _MainShellState extends State<MainShell> {
   }
 
   List<Widget> _pages() => <Widget>[
-        PlannerScreen(store: widget.store),
-        CalendarHubScreen(store: widget.store),
+        PlannerScreen(store: widget.store, embedded: true),
+        CalendarHubScreen(
+          store: widget.store,
+          onSelectedDateChanged: (date) => _calendarCaptureDate = date,
+        ),
         DiaryMemoriesScreen(store: widget.store),
         MoreScreen(store: widget.store),
       ];
@@ -156,6 +242,18 @@ class _MainShellState extends State<MainShell> {
                         extended ? null : NavigationRailLabelType.all,
                     minWidth: 76,
                     minExtendedWidth: 220,
+                    trailing: Padding(
+                      padding: const EdgeInsets.only(top: 18),
+                      child: Semantics(
+                        identifier: 'main-rail-create',
+                        button: true,
+                        child: IconButton.filled(
+                          tooltip: strings.d3('ui5Create'),
+                          onPressed: _openCentralCreate,
+                          icon: const Icon(Icons.add),
+                        ),
+                      ),
+                    ),
                     backgroundColor: scheme.surface,
                     indicatorColor:
                         Theme.of(context).navigationBarTheme.indicatorColor ??
@@ -180,10 +278,27 @@ class _MainShellState extends State<MainShell> {
           ),
           bottomNavigationBar: useRail
               ? null
-              : NavigationBar(
-                  selectedIndex: index,
-                  onDestinationSelected: _selectDestination,
-                  destinations: _bottomDestinations(strings),
+              : SizedBox(
+                  height: 96 + MediaQuery.paddingOf(context).bottom,
+                  child: Stack(
+                    clipBehavior: Clip.none,
+                    children: [
+                      Positioned.fill(
+                        top: 13,
+                        child: NavigationBar(
+                          selectedIndex: index,
+                          onDestinationSelected: _selectDestination,
+                          destinations: _bottomDestinations(strings),
+                        ),
+                      ),
+                      Positioned(
+                        top: 0,
+                        left: 0,
+                        right: 0,
+                        child: Center(child: _centralCreateButton(context)),
+                      ),
+                    ],
+                  ),
                 ),
         );
       },

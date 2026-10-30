@@ -9,8 +9,8 @@ void main() {
     final more =
         File('lib/src/screens/more_screen.dart').readAsStringSync();
 
-    expect(shell, contains('PlannerScreen(store: widget.store)'));
-    expect(shell, contains('CalendarHubScreen(store: widget.store)'));
+    expect(shell, contains('PlannerScreen(store: widget.store, embedded: true)'));
+    expect(shell, contains('CalendarHubScreen('));
     expect(shell, contains('DiaryMemoriesScreen(store: widget.store)'));
     expect(shell, contains('MoreScreen(store: widget.store)'));
     expect(shell, contains("semanticsId: 'main-nav-today'"));
@@ -89,7 +89,41 @@ void main() {
     expect(flow, contains('Account and sync'));
 
     // D5 entry regression remains a prerequisite for the D6 journey.
-    expect(smoke, contains('Use on this device'));
+    // The offline entry is selected by a stable semantic identifier, not
+    // by a localized or historical label that can change with the UI.
     expect(smoke, contains('clearState: true'));
+    expect(
+      smoke,
+      contains("- extendedWaitUntil:\n    visible:\n      id: 'identity-offline-continue'"),
+    );
+    expect(
+      smoke,
+      contains("- tapOn:\n    id: 'identity-offline-continue'"),
+    );
+  });
+
+  test('UI5 Maestro identity selectors use valid nested visibility conditions', () {
+    for (final path in <String>[
+      '.maestro/applab-smoke.yaml',
+      '.maestro/journeys/core-shell.yaml',
+      '.maestro/journeys/onboarding.yaml',
+      '.maestro/journeys/vault-create.yaml',
+    ]) {
+      final flow = File(path).readAsStringSync();
+      expect(flow, contains("- extendedWaitUntil:\n    visible:\n      id: 'identity-offline-continue'"), reason: path);
+      expect(flow, isNot(contains("- extendedWaitUntil:\n    id: 'identity-offline-continue'")), reason: path);
+    }
+    for (final path in <String>[
+      '.maestro/journeys/memories-critical.yaml',
+      '.maestro/journeys/navigation-critical.yaml',
+      '.maestro/journeys/settings-critical.yaml',
+      '.maestro/journeys/vault-correct-unlock.yaml',
+      '.maestro/journeys/vault-restart-unlock.yaml',
+      '.maestro/journeys/vault-wrong-password.yaml',
+    ]) {
+      final flow = File(path).readAsStringSync();
+      expect(flow, contains("- runFlow:\n    when:\n      visible:\n        id: 'identity-offline-continue'"), reason: path);
+      expect(flow, isNot(contains("- runFlow:\n    when:\n      id: 'identity-offline-continue'")), reason: path);
+    }
   });
 }

@@ -1,43 +1,42 @@
 appId: com.riccardopinato.agenda_per_anna
 ---
+# UI5: Today may have no agenda, diary or reminders. Never require
+# the legacy conditional today-focus-card or the retired Capture FAB.
+- launchApp
+- extendedWaitUntil:
+    visible:
+      id: 'main-nav-today'
+    timeout: 15000
 - tapOn:
-    text: "(Oggi|Today|Hoy|Aujourd’hui|Hoje)[\\s\\S]*"
+    id: 'main-nav-today'
     retryTapIfNoChange: true
 - extendedWaitUntil:
-    visible: '(La mia giornata|My day|Mi día|Ma journée|O meu dia)[\s\S]*'
-    timeout: 10000
-- scrollUntilVisible:
-    element:
-      id: 'today-focus-card'
-    direction: DOWN
-    timeout: 10000
-    visibilityPercentage: 20
+    visible: '(La mia giornata|My day|Mi día|Ma journée|O meu dia)[\\s\\S]*'
+    timeout: 15000
 - assertVisible:
-    id: 'today-focus-card'
+    id: 'ui5-today-date-strip'
+- assertVisible:
+    id: 'main-nav-create'
+- tapOn:
+    id: 'main-nav-create'
 - extendedWaitUntil:
-    visible: '(Cattura|Capture|Capturar|Capturer)'
-    timeout: 10000
-- tapOn: '(Cattura|Capture|Capturar|Capturer)'
+    visible:
+      id: 'capture-effective-date'
+    timeout: 15000
+- assertVisible:
+    id: 'capture-effective-date'
 - extendedWaitUntil:
-    visible: '(Scrivi un momento|Write a moment|Escribir un momento|Écrire un moment|Escrever um momento)[\s\S]*'
+    visible: '(Scrivi un momento|Write a moment|Escribir un momento|Écrire un moment|Escrever um momento)[\\s\\S]*'
     timeout: 10000
 - extendedWaitUntil:
-    visible: '(Nota vocale|Voice note|Nota de voz|Note vocale)[\s\S]*'
+    visible: '(Nota vocale|Voice note|Nota de voz|Note vocale)[\\s\\S]*'
     timeout: 10000
 - extendedWaitUntil:
-    visible: '(Foto|Photo)[\s\S]*'
+    visible: '(Foto|Photo)[\\s\\S]*'
     timeout: 10000
-- scrollUntilVisible:
-    element:
-      text: '(Chiudi|Close|Cerrar|Fermer|Fechar)'
-    direction: DOWN
+- tapOn:
+    text: '(Chiudi|Close|Cerrar|Fermer|Fechar)'
+- extendedWaitUntil:
+    visible:
+      id: 'ui5-today-date-strip'
     timeout: 10000
-- tapOn: '(Chiudi|Close|Cerrar|Fermer|Fechar)'
-# The current Today composition exposes the diary editor after Capture closes.
-# Assert a stable localized section that is actually rendered in this surface.
-- scrollUntilVisible:
-    element:
-      text: '(Pensieri e note|Thoughts and notes|Pensamientos y notas|Pensées et notes|Pensamentos e notas)[\s\S]*'
-    direction: DOWN
-    timeout: 10000
-    visibilityPercentage: 20

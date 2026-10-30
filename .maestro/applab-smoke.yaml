@@ -7,10 +7,11 @@ appId: com.riccardopinato.agenda_per_anna
 # without authenticating. The integration-test define is still used only for
 # deterministic persistent storage; it no longer bypasses identity routing.
 - extendedWaitUntil:
-    visible: '(Usa su questo dispositivo|Use on this device|Usar en este dispositivo|Utiliser sur cet appareil|Usar neste dispositivo)'
+    visible:
+      id: 'identity-offline-continue'
     timeout: 15000
 - tapOn:
-    text: '(Usa su questo dispositivo|Use on this device|Usar en este dispositivo|Utiliser sur cet appareil|Usar neste dispositivo)'
+    id: 'identity-offline-continue'
 - extendedWaitUntil:
     visible: '(La tua agenda, davvero tua\.|Your agenda, truly yours\.|Tu agenda, de verdad tuya\.|Ton agenda, vraiment à toi\.|A tua agenda, verdadeiramente tua\.)'
     timeout: 15000
@@ -29,9 +30,8 @@ appId: com.riccardopinato.agenda_per_anna
 - extendedWaitUntil:
     visible: '(La mia giornata|My day|Mi día|Ma journée|O meu dia)[\s\S]*'
     timeout: 15000
-- extendedWaitUntil:
-    visible: '(Cattura|Capture|Capturar|Capturer)'
-    timeout: 10000
+- assertVisible:
+    id: 'main-nav-create'
 - stopApp
 - launchApp
 - tapOn:
@@ -40,9 +40,8 @@ appId: com.riccardopinato.agenda_per_anna
 - extendedWaitUntil:
     visible: '(La mia giornata|My day|Mi día|Ma journée|O meu dia)[\s\S]*'
     timeout: 15000
-- extendedWaitUntil:
-    visible: '(Cattura|Capture|Capturar|Capturer)'
-    timeout: 10000
+- assertVisible:
+    id: 'main-nav-create'
 
 # Functional Vault deep journey. FLAG_SECURE intentionally excludes Vault from
 # screenshot regression, but setup/unlock/relock/wrong-password/persistence are

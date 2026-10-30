@@ -78,7 +78,7 @@ void main() {
     final theme = File('lib/src/ios_journal_design.dart').readAsStringSync();
     final app = File('lib/src/app_shell.dart').readAsStringSync();
     expect(shell, contains('bottomNavigationBar: useRail'));
-    expect(shell, contains(': NavigationBar('));
+    expect(shell, contains('child: NavigationBar('));
     expect(shell, contains('IndexedStack(index: index, children: pages)'));
     expect(shell, contains('Theme.of(context).navigationBarTheme.indicatorColor'));
     for (final key in [

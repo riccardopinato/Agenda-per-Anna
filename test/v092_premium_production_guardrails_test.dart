@@ -54,10 +54,14 @@ void main() {
     final applab =
         File('.github/workflows/applab.yml').readAsStringSync();
 
-    for (final source in [pages, sideload, applab]) {
+    for (final source in [pages, sideload]) {
       expect(source, contains('ANNA_STORE_RELEASE=false'));
       expect(source, contains('ANNA_PREMIUM_PREVIEW=true'));
     }
+    // Source checks do not compile a preview or production APK.
+    expect(applab, contains('AppLab Source Gate'));
+    expect(applab, isNot(contains('ANNA_STORE_RELEASE=false')));
+    expect(applab, isNot(contains('ANNA_PREMIUM_PREVIEW=true')));
 
     expect(pages, contains('Build web preview'));
     expect(

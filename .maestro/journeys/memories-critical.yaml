@@ -3,10 +3,11 @@ appId: com.riccardopinato.agenda_per_anna
 - launchApp
 - runFlow:
     when:
-      visible: '(Usa su questo dispositivo|Use on this device|Usar en este dispositivo|Utiliser sur cet appareil|Usar neste dispositivo)'
+      visible:
+        id: 'identity-offline-continue'
     commands:
       - tapOn:
-          text: '(Usa su questo dispositivo|Use on this device|Usar en este dispositivo|Utiliser sur cet appareil|Usar neste dispositivo)'
+          id: 'identity-offline-continue'
       - extendedWaitUntil:
           visible: '(La tua agenda, davvero tua\.|Your agenda, truly yours\.|Tu agenda, de verdad tuya\.|Ton agenda, vraiment à toi\.|A tua agenda, verdadeiramente tua\.)'
           timeout: 15000

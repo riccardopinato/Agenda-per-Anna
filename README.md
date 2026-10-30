@@ -6,6 +6,19 @@ Current release line: **v1.05.x UI3 integrated on `main` — 1.0.0-rc.2+111** (F
 
 Canonical product scope and security boundaries: `docs/PRODUCT_BIBLE.md`.
 
+## Source CI and manual Android builds (30 Oct 2026)
+
+PRs automatically run Flutter analysis/tests, Web build and a **source-only**
+UI5/visual-flow contract gate. The AppLab external APK-builder and emulator
+are not part of that source gate.
+
+Android size audit, Android integration smoke, and **signed APK generation**
+are triggered only with `workflow_dispatch` from GitHub Actions. Use
+`.github/workflows/sideload-arm64.yml` for an explicitly requested stable-signed
+direct-install APK; never substitute a test-key audit APK. A source-gate PASS does
+not certify Android runtime, pixel fidelity or physical-device compatibility.
+
+
 ## UI3 redesign (merged) and UI4 navigation polish
 
 - Main `bf9feef` integrates the rose/HSV palette and iOS Journal UI3 (Today C, Calendar C, Memories B, More C, Settings A) from PRs #138–#143; source-lane CI/AppLab and final main Web/ARM64 build passed.

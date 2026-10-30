@@ -1,4 +1,36 @@
 # Anna's Diary — Roadmap
+## Active UX delivery — UI5 DF-01–DF-35 (29 Oct 2026)
+
+**Authorized by the user; IMPLEMENTATION IN PROGRESS**, not yet completed.
+The design interview was closed at DF-35 and all decisions, including DF-19
+scope correction, are frozen as the canonical design contract in
+`docs/V105X_UI5_DF01_DF35_IMPLEMENTATION_CONTRACT.md` and planning-only
+[PR #149](https://github.com/riccardopinato/Agenda-per-Anna/pull/149).
+Implementation is separate: [draft PR #154](https://github.com/riccardopinato/Agenda-per-Anna/pull/154)
+on `feat/v105x-ui5-df-implementation`.
+
+- UI5-A: four-tab shell + raised Crea, canonical date-aware capture, Sketch/Modelli.
+- UI5-B: Oggi compact real-data overview, diary up to two, one clickable memory teaser.
+- UI5-C: Ricordi Per te anniversaries + year chips + compact suggestions;
+  Timeline month accordion/year jump; global dedicated search.
+- UI5-QA (updated 30 Oct 2026 by explicit user decision): review visual
+  checkpoints together against UI5, then run source-only Development checks,
+  Web and repository-local AppLab Source Gate on the PR head. No automatic APK
+  build, AppLab emulator or screenshot suite, even on the final PR commit.
+  Android size audit, integration smoke and stable signed APK remain available
+  exclusively via manual workflow_dispatch, independently of AppLab.
+- **Implementation status vs evidence:** code/PR merge is distinct from APK
+  certification. Native runtime, screenshot-level visual fidelity, physical
+  devices, Play and cross-device behavior remain **NOT VERIFIED** until separate
+  manual checks are explicitly performed; never claim those passed from source
+  checks. No v1.06 scope is implied.
+- Current Factory Core `CURRENT.yaml`: v27 ACTIVE, pinned
+  `174a05e165076c9e4b2d61a20acd85ca6b215f12` (Golden Index v23).
+  Historical AppLab reusable workflow pin for earlier UI5 verification:
+  `46816a1786820eb7c0edab7500ca950b10c7718c` (not invoked by the
+  source-only workflow). AppLab SELF_CANARY feature delivery is not broad
+  autonomous mutation authority.
+
 
 Source of execution truth for Anna's Diary. Product identity and boundaries are defined by `docs/PRODUCT_BIBLE.md`. The roadmap follows the project Master Prompt: REUSE-FIRST, one stable version at a time, and no release is complete until its required quality gates and documentation are aligned.
 
@@ -117,11 +149,11 @@ Source of execution truth for Anna's Diary. Product identity and boundaries are 
 - **Main artifact:** `Anna-Diary-arm64-release.apk`, package `com.riccardopinato.agenda_per_anna`, version `1.0.0-rc.2+111`, SHA-256 `c4ad87a533eb0f45cd05383e1cc5f5d94c83d116ab7bd0a4a15d4bd7cf533724`. Certificate SHA-256 `31BE63155C831F062238179EC9B8F19D1C16A925BED1D526BC7E6A4712C62DC3` matches previous main. Manifest status `ARTIFACT_BUILT`; **real-device install, native physical security, Play acceptance, and screenshot-level visual parity NOT VERIFIED**.
 - No v1.06 scope, new store, crypto/KDF downgrade, or entitlement change. This documentation-only closure does not change the verified APK source SHA.
 
-## Current execution order — App Factory v26.8 / Golden Index v23
+## Historical execution order — App Factory v26.8 / Golden Index v23
 
-Factory baseline for this roadmap:
+Historical Factory baseline for this completed execution sequence:
 `riccardopinato/App-Factory-Core@b5573840caaf0e92bd7719b7471d49a8e34995c1`
-(Master v26.8, Golden Index v23, resolved 29 Oct 2026). Historical documents retain their original baselines.
+(Master v26.8, Golden Index v23, resolved 29 Oct 2026). The active UI5 baseline is the Master v27 SHA specified at the top of this roadmap.
 
 Execution uses canonical
 `ROADMAP_FAST_PLUS_CONTINUOUS_MAINTENANCE`:

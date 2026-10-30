@@ -75,7 +75,7 @@ void main() {
     expect(restart, contains('D2_APPLAB_PERSISTENCE'));
 
     for (final flow in <String>[wrong, correct, restart]) {
-      expect(flow, contains("visible: '(Usa su questo dispositivo"));
+      expect(flow, contains("id: 'identity-offline-continue'"));
       expect(flow, contains("id: 'main-nav-more'"));
       expect(flow, contains("visible: '.*(Uno spazio solo tuo"));
     }
@@ -101,20 +101,18 @@ void main() {
     expect(legacy, contains('D2WrongPassword2026'));
   });
 
-  test('AppLab workflow is pinned to reviewed v6.3A exact SHA', () {
+  test('AppLab source-only lane never compiles or launches Android', () {
     final workflow =
         File('.github/workflows/applab.yml').readAsStringSync();
+    final sourceCheck =
+        File('tool/check_ui5_visual_flows.py').readAsStringSync();
 
-    expect(
-      workflow,
-      contains('@79309588e117ca5481822cd6394a9ad8ecc338e7'),
-    );
-    expect(
-      workflow,
-      contains('annas-diary-factory-fast-v4-journey-aware'),
-    );
-    expect(workflow, contains('analysis_mode: fast'));
-    expect(workflow, contains('cache_verification: true'));
+    expect(workflow, contains('AppLab Source Gate'));
+    expect(workflow, contains('tool/check_ui5_visual_flows.py'));
+    expect(workflow, isNot(contains('external-project-runner.yml')));
+    expect(workflow, isNot(contains('flutter build apk')));
+    expect(workflow, isNot(contains('run_maestro: true')));
+    expect(sourceCheck, contains('ui5-today-date-strip'));
   });
 
   test('Factory adoption remains canonical and central', () {
@@ -124,5 +122,15 @@ void main() {
     expect(adoption, contains('profile_version: 1'));
     expect(adoption, contains('mode: CENTRAL'));
     expect(adoption, contains('overwrite_existing: false'));
+  });
+
+  test('core-shell Capture validates the real date control, not a translated title', () {
+    final flow = File('.maestro/journeys/core-shell.yaml').readAsStringSync();
+    expect(
+      flow,
+      contains("- tapOn:\n    id: 'main-nav-create'\n- extendedWaitUntil:\n    visible:\n      id: 'capture-effective-date'"),
+    );
+    expect(flow, contains("- assertVisible:\n    id: 'capture-effective-date'"));
+    expect(flow, isNot(contains("visible: '(Cattura|Capture|Capturar|Capturer)'")));
   });
 }

@@ -161,7 +161,7 @@ void main() {
     expect(memories, contains('v100Rediscover'));
     expect(memories, contains('memoryRecallSnapshot('));
     expect(planner, contains('memoryRecallSnapshot(day)'));
-    expect(planner, contains('strings.onThisDay'));
+    expect(planner, contains("strings.d3('ui5MemoryTeaser')"));
 
     for (final forbidden in [
       'memory_engine',

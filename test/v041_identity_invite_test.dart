@@ -66,14 +66,14 @@ void main() {
   test('Android release scaffold contains the Supabase OAuth callback', () {
     final prepare =
         File('tool/prepare_android_platform.py').readAsStringSync();
-    final appLab =
-        File('.github/workflows/applab.yml').readAsStringSync();
+    final manualIntegration =
+        File('.github/workflows/android-integration.yml').readAsStringSync();
 
     expect(prepare, contains('io.supabase.annasdiary'));
     expect(prepare, contains('login-callback'));
-    expect(
-      appLab,
-      contains('--dart-define=ANNAS_DIARY_INTEGRATION_TEST=true'),
-    );
+    // The integration-test flag belongs to the optional Android smoke test.
+    expect(manualIntegration, contains('workflow_dispatch:'));
+    expect(manualIntegration, contains('ANNAS_DIARY_INTEGRATION_TEST=true'));
+    expect(manualIntegration, isNot(contains('  push:')));
   });
 }

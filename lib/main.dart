@@ -98,6 +98,7 @@ part 'src/widgets_editors.dart';
 part 'src/diary/diary_templates.dart';
 part 'src/diary/diary_components.dart';
 part 'src/diary/diary_memories.dart';
+part 'src/diary/diary_global_search.dart';
 part 'src/diary/diary_sketchbook.dart';
 part 'src/shared_memories.dart';
 

@@ -1,11 +1,18 @@
 appId: com.riccardopinato.agenda_per_anna
 ---
-# People is nested under Explore in v1.00-B. Return through Explore to Home.
+# Historical return path from People/Explore. UI5 has no legacy Home tab.
 - back
 - extendedWaitUntil:
     visible: '(Esplora|Explore|Explorar|Explorer)'
     timeout: 10000
 - back
 - extendedWaitUntil:
-    visible: "(La mia agenda|My agenda|Mi agenda|Mon agenda|A minha agenda)"
+    visible:
+      id: 'main-nav-more'
     timeout: 10000
+- tapOn:
+    id: 'main-nav-today'
+- extendedWaitUntil:
+    visible:
+      id: 'ui5-today-date-strip'
+    timeout: 15000

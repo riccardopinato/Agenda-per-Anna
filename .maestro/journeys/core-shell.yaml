@@ -3,10 +3,11 @@ appId: com.riccardopinato.agenda_per_anna
 - launchApp:
     clearState: true
 - extendedWaitUntil:
-    visible: '(Usa su questo dispositivo|Use on this device|Usar en este dispositivo|Utiliser sur cet appareil|Usar neste dispositivo)'
+    visible:
+      id: 'identity-offline-continue'
     timeout: 15000
 - tapOn:
-    text: '(Usa su questo dispositivo|Use on this device|Usar en este dispositivo|Utiliser sur cet appareil|Usar neste dispositivo)'
+    id: 'identity-offline-continue'
 - extendedWaitUntil:
     visible: '(La tua agenda, davvero tua\.|Your agenda, truly yours\.|Tu agenda, de verdad tuya\.|Ton agenda, vraiment à toi\.|A tua agenda, verdadeiramente tua\.)'
     timeout: 15000
@@ -30,6 +31,15 @@ appId: com.riccardopinato.agenda_per_anna
     id: 'main-nav-memories'
 - assertVisible:
     id: 'main-nav-more'
+# DF-01 replaces the obsolete shell Capture FAB with a central action.
+- assertVisible:
+    id: 'main-nav-create'
+- tapOn:
+    id: 'main-nav-create'
 - extendedWaitUntil:
-    visible: '(Cattura|Capture|Capturar|Capturer)'
+    visible:
+      id: 'capture-effective-date'
     timeout: 10000
+- assertVisible:
+    id: 'capture-effective-date'
+- back

@@ -12,8 +12,8 @@ void main() {
     final cards = File('lib/src/ios_journal_design.dart').readAsStringSync();
 
     for (final destination in [
-      'PlannerScreen(store: widget.store)',
-      'CalendarHubScreen(store: widget.store)',
+      'PlannerScreen(store: widget.store, embedded: true)',
+      'CalendarHubScreen(',
       'DiaryMemoriesScreen(store: widget.store)',
       'MoreScreen(store: widget.store)',
     ]) {

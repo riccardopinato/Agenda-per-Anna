@@ -9,7 +9,7 @@ void main() {
     final screen = source.split('class _DiaryMemoriesScreenState')[1];
     final forYou = screen.split('Widget _forYouView(')[1]
         .split('Widget _timelineMemoryCard(')[0];
-    final featured = forYou.indexOf('_forYouHero(context, hero)');
+    final featured = forYou.indexOf('_forYouHero(context, anniversary[position])');
     final map = forYou.indexOf("identifier: 'memories-memory-map-entry'");
     expect(featured, greaterThan(0));
     expect(map, greaterThan(featured));
