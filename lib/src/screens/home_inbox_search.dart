@@ -69,7 +69,22 @@ class _MainShellState extends State<MainShell> {
                 child: SizedBox(
                   width: 58,
                   height: 58,
-                  child: Icon(Icons.add, color: scheme.onPrimary, size: 31),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.add, color: scheme.onPrimary, size: 25),
+                      Text(
+                        AnnaStrings.of(context).d3('ui5Create'),
+                        maxLines: 1,
+                        style: TextStyle(
+                          color: scheme.onPrimary,
+                          fontSize: 10,
+                          height: 1.0,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ),
@@ -281,22 +296,6 @@ class _MainShellState extends State<MainShell> {
                         left: 0,
                         right: 0,
                         child: Center(child: _centralCreateButton(context)),
-                      ),
-                      Positioned(
-                        top: 63,
-                        left: 0,
-                        right: 0,
-                        child: IgnorePointer(
-                          child: Center(
-                            child: Text(
-                              strings.d3('ui5Create'),
-                              style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                                color: scheme.primary,
-                                fontWeight: FontWeight.w800,
-                              ),
-                            ),
-                          ),
-                        ),
                       ),
                     ],
                   ),
