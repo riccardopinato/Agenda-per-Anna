@@ -1,7 +1,7 @@
 # UI5 — DF-01–DF-35 approved implementation contract
 Date: 2026-10-29
 Authority: User's explicit design choices recorded in [PR #149](https://github.com/riccardopinato/Agenda-per-Anna/pull/149).
-Status: DESIGN APPROVED; implementation tracked separately per source/PR gate.
+Status: UI5 IMPLEMENTED AND CLOSED — PR #154 merged on 30 October 2026; brief user-reported Android phone smoke PASS (no apparent bugs). Extended native/security/cross-device/Store validation remains separate. Later animations or aesthetic changes are new scope, not unfinished DF-01–DF-35.
 
 ## Baselines
 - Factory: `App-Factory-Core@174a05e165076c9e4b2d61a20acd85ca6b215f12`, `CURRENT.yaml` master v27 and Golden Index v23.
