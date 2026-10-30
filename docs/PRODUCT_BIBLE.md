@@ -1,8 +1,8 @@
 # Anna's Diary — Product Bible
 
 **Status:** canonical product source of truth  
-**Current product line:** v1.05 Memories & Recall 3.0 — Completed; v1.05.x corrective maintenance Completed (PR #134); visual UI1–UI3 and UI4 completed; **UI5 DF-01–DF-35 completed (PR #154 merged; user-reported Android phone smoke PASS on 30 October 2026)**; future aesthetic refinements and animations deferred; v1.06 not started  
-**Distribution identity:** 1.0.0-rc.2+111 — signed UI5 ARM64 sideload artifact built; quick user-reported physical smoke PASS; comprehensive physical and Store certification remain separate  
+**Current product line:** v1.05 Memories & Recall 3.0 and visual UI1–UI5 completed; UI5 PR #154 merged, user-reported Android phone smoke PASS (30 October 2026); v1.05.x-FINAL post-UI5 consolidation is a bounded compatibility/release-doc pass, no new APK; v1.08 Motion & Visual Polish is next for **design selections only** (10 at a time), followed by v1.07 daily-use UX; v1.06 external integrations deferred pending PC/device access  
+**Distribution identity:** 1.0.0-rc.2+111 — signed UI5 ARM64 sideload artifact built and briefly tested on phone; before another APK build, bump Android versionCode strictly above 111 and retain stable signing/package identity; full physical and Store certification remain separate  
 **Last aligned:** 30 October 2026
 
 This document defines what Anna's Diary is, what it is not, and the product/security invariants that future work must preserve. Implementation details belong in `docs/ARCHITECTURE.md`; execution sequencing belongs in `docs/ROADMAP.md`.
@@ -253,8 +253,9 @@ A release candidate must, as applicable, pass:
 - full Flutter test suite;
 - Web release build;
 - production-equivalent Android ARM64 build/size audit;
-- AppLab runtime/visual gate;
-- signed Android artifact validation;
+- repository-local AppLab **Source Gate** (source-only; no emulator/APK);
+- manually dispatched Android size/integration and signed APK artifact checks
+  when release evidence is actually requested (not automatic PR gates);
 - release metadata alignment;
 - documentation alignment.
 

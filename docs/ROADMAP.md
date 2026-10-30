@@ -1,4 +1,37 @@
 # Anna's Diary — Roadmap
+## v1.05.x-FINAL — Post-UI5 consolidation (30 October 2026)
+
+**Scope: v1.05.x software closure, without a new APK or v1.06 implementation.**
+The UI5 code and short user-reported Android phone smoke are already closed in
+[PR #156](https://github.com/riccardopinato/Agenda-per-Anna/pull/156).
+This final bounded pass:
+- Expands the **first-time only** SharedPreferences -> structured-store import
+  allowlist for five known optional personal keys, with regression coverage for
+  non-destructive migration and canonical writes. Historical data added after
+  v0.40 normally already lives in Sembast; this is defensive compatibility,
+  **not** evidence of a reproduced data-loss incident. It does **not** reopen
+  completed migrations or rewrite existing records.
+- Aligns the current UI5/Android release documentation to source-only AppLab
+  and manual-only Android workflows; existing historical CI records stand.
+- Keeps the installed UI5 candidate identity `1.0.0-rc.2+111` unchanged.
+  Before **any future** installable APK is generated, the next build must
+  receive a strictly greater Android versionCode than 111 (e.g. a new release
+  candidate `1.0.0-rc.3+112`), with the same package and stable signing identity.
+  This reservation is a plan, not an artifact that has already been built.
+- Closure criterion: exact-head Development (Flutter analyze/tests/Web),
+  repository-local AppLab Source Gate and Web workflow PASS; PR reviewed and
+  merged. Phone smoke remains user-reported PASS for UI5, while comprehensive
+  native/Store/Noi two-device certification remains separately NOT VERIFIED.
+
+**Next sequencing authorized 30 October 2026:** defer v1.06 external app
+integrations until the user has PC/device access. Run **v1.08 Motion & Visual
+Polish as a DESIGN-ONLY selection round first**, in batches of 10 independent
+choices with multiple options per choice, preserving the UI5 approved design
+and accessible reduced-motion behavior. After v1.08 design selection, return
+to **v1.07 Daily-use UX** planning/implementation. The version order describes
+the approved workflow priority, not a Play/Android versionCode or authorization
+to modify the UI before the choices are approved.
+
 ## UI5 DF-01–DF-35 — CLOSED (30 October 2026)
 
 **IMPLEMENTED AND CLOSED at the UI5 scope level.** The user approved the DF-01–DF-35
@@ -143,7 +176,10 @@ Source of execution truth for Anna's Diary. Product identity and boundaries are 
 | v1.05.x-UI3-D4 | More C / Settings A | **Completed — PR #143 merged, 4/4 gates PASS** | Grouped iOS-inspired sections and HSV appearance entry; preserve all canonical routes, semantic IDs and account/backup/privacy |
 | v1.05.x-UI3-D5 | Integrated software QA and design closure | **Software completed — #145 QA PASS (closed unmerged); final #143 and main CI/Web/APK PASS; physical visual QA NOT VERIFIED** | 5 locales, 5 presets and custom HSV light/dark, accessibility, large text, tablet/Web, 4/4 CI/AppLab + Codex on exact head; physical/Play separate |
 | v1.05.x-UI4 | Navigation dedup + prominent Shared Space / Private Vault | **Completed — PR #146 merged, 4/4 exact-head gates PASS; main Web/ARM64/Dev PASS** | Remove duplicate access affordances, retain canonical routes, show Spazio condiviso (Noi ♡) and Cassaforte privata prominently when enabled, preserve privacy/backup/entitlement and all four gates |
-| v1.06 | Ecosystem Expansion | PLANNED | Add specialist integrations one at a time under Shared Ecosystem Core + paired verification; preferred order TrailPath → Notes → SleepMax → CashMate |
+| v1.05.x-FINAL | Post-UI5 consolidation | Source closure via focused regression + CI | Defensive legacy import, release/CI contract alignment, no APK |
+| v1.06 | Ecosystem Expansion | DEFERRED — awaiting PC/device for external app pairing | Integrations stay scoped and require paired evidence; historical proposal TrailPath → Notes → SleepMax → CashMate |
+| v1.08-DESIGN | Motion & Visual Polish | NEXT DESIGN ONLY — ten choices per round | UI5-consistent options, reduced motion, no implementation until approved |
+| v1.07 | Daily-use UX refinement | PLANNED AFTER v1.08 DESIGN | Simplify repetitive daily flows without new storage or redesign |
 
 ## UI3 integration evidence (28–29 Oct 2026)
 

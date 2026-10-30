@@ -31,6 +31,11 @@ The workflow publishes separate artifacts so they cannot be confused:
   trace symbolication.
 
 File names include both version name and build number.
+The last manually tested UI5 candidate is `1.0.0-rc.2+111`. Before shipping
+another signed update, increment `pubspec.yaml` and `lib/app_version.dart`
+together so the Android versionCode is strictly higher than 111. Keep the
+package ID and stable signing certificate unchanged. Merely planning a version
+bump does not create a new APK.
 
 ## Platform generation contract
 
@@ -51,10 +56,11 @@ shipping a partially configured native project.
 
 ## Size policy
 
-Every pull request that changes application/runtime packaging runs an ARM64
-release-size audit. The audit uses production-equivalent release flags
-(obfuscation, tree-shaken icons and split debug info) but does **not** upload the
-audit APK.
+Android release-size audits are **manual workflow_dispatch only**, not automatic
+pull-request gates. When authorized, the audit uses production-equivalent
+release flags (obfuscation, tree-shaken icons and split debug info) and does
+**not** publish an installable APK. Development/Web/AppLab Source Gate checks
+never invoke external AppLab Android builds.
 
 The lightweight ARM64 sideload workflow uses the same protected repository
 release-signing secrets as the production workflow. It must never generate a

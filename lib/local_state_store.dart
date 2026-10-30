@@ -285,6 +285,14 @@ class LocalStateStore {
       'months_v1',
       'weeks_v1',
       'habits_v1',
+      // Defensive first-time import for optional domains. The v0.40
+      // structured-store migration predates several of these keys; adding
+      // them cannot trigger a new sweep of existing completed migrations.
+      'birthdays_v1',
+      'people_v1',
+      'shopping_v1',
+      'workouts_v1',
+      'trash_v1',
       'backup_snapshots_v1',
       'agenda_preferences_v1',
       'inbox_v1',

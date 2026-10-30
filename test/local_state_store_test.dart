@@ -106,4 +106,58 @@ void main() {
 
     store.dispose();
   });
+
+  test('first-time legacy import preserves optional personal domains', () async {
+    const additionalDomains = <String>[
+      'birthdays_v1',
+      'people_v1',
+      'shopping_v1',
+      'workouts_v1',
+      'trash_v1',
+    ];
+    final legacyValues = <String, Object>{
+      'items_v1': '[]',
+      for (final key in additionalDomains) key: '[{"legacy":"$key"}]',
+      // Never indiscriminately import unrelated settings or sensitive data.
+      'unrelated_app_preference': 'keep-elsewhere',
+      'private_vault_payload_v1': 'not-an-agenda-migration',
+    };
+    SharedPreferences.setMockInitialValues(legacyValues);
+
+    final legacy = await SharedPreferences.getInstance();
+    final state = await LocalStateStore.instance.open(
+      legacyPreferences: legacy,
+    );
+
+    for (final key in additionalDomains) {
+      expect(state.getString(key), '[{"legacy":"$key"}]');
+      // Migration remains non-destructive to the original legacy copy.
+      expect(legacy.getString(key), '[{"legacy":"$key"}]');
+    }
+    expect(state.getString('unrelated_app_preference'), isNull);
+    expect(state.getString('private_vault_payload_v1'), isNull);
+  });
+
+  test('a structured-store write remains authoritative over legacy', () async {
+    SharedPreferences.setMockInitialValues(<String, Object>{
+      'items_v1': '[{"legacy":"original"}]',
+    });
+
+    final prefs = await SharedPreferences.getInstance();
+    final state = await LocalStateStore.instance.open(
+      legacyPreferences: prefs,
+    );
+    expect(state.getString('items_v1'), '[{"legacy":"original"}]');
+
+    await state.setString('items_v1', '[{"updated":"local"}]');
+    expect(state.getString('items_v1'), '[{"updated":"local"}]');
+
+    // Opening the already-initialized store cannot replay a stale legacy
+    // value over a later canonical write.
+    final reopened = await LocalStateStore.instance.open(
+      legacyPreferences: prefs,
+    );
+    expect(reopened.getString('items_v1'), '[{"updated":"local"}]');
+    expect(prefs.getString('items_v1'), '[{"legacy":"original"}]');
+  });
 }
