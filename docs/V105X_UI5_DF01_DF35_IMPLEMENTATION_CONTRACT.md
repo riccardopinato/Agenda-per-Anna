@@ -40,5 +40,5 @@ Status: UI5 IMPLEMENTED AND CLOSED — PR #154 merged on 30 October 2026; brief 
 ## Implementation and acceptance
 - Never alter diary storage schema, user data, privacy, sync, premium, archive/trash, or release signing as a side effect of design.
 - Preserve all existing routes and flows and five-language target strings. Reuse theme and existing domain services; no new persistence layer.
-- Complete in bounded changes, run Flutter analyze/tests, Web, Android size and AppLab Production Gate on exact reviewed head. Preview screenshots are illustration only until visual QA and physical device evidence exists. No Play/cross-device certification without evidence.
+- Complete in bounded changes with Flutter analyze/tests, Web and repository-local AppLab **Source Gate** on the exact reviewed head. Android size/integration and signed sideload APK use **manual-only** workflows, never an automatic external AppLab build. The separately requested UI5 artifact and brief user-reported phone smoke do not certify screenshot fidelity, Play or cross-device behavior.
 - Original PR #149 remains **audit-only**, with DF-35 close-out comment; implementation PR(s) hold code and validation.
