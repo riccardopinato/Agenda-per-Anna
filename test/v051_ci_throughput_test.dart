@@ -3,68 +3,54 @@ import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
-  test('pull requests avoid the duplicate Development Android build', () {
+  test('automatic Development checks never build an APK', () {
     final workflow =
         File('.github/workflows/dev-checks.yml').readAsStringSync();
-
-    expect(
-      workflow,
-      contains("if: github.event_name != 'pull_request'"),
-    );
-    expect(workflow, contains('Build Android ARM64 release gate'));
-    expect(workflow, contains('flutter build apk'));
+    expect(workflow, contains('pull_request:'));
+    expect(workflow, contains('push:'));
+    expect(workflow, contains('flutter analyze'));
+    expect(workflow, contains('flutter test'));
+    expect(workflow, isNot(contains('flutter build apk')));
+    expect(workflow, isNot(contains('Build Android ARM64 release gate')));
   });
 
-  test('PR AppLab uses one x64 runtime artifact while size audit stays separate', () {
-    final appLab =
+  test('AppLab Source Gate validates only visual source contracts', () {
+    final source =
         File('.github/workflows/applab.yml').readAsStringSync();
-    final sizeAudit =
+    final contract =
+        File('tool/check_ui5_visual_flows.py').readAsStringSync();
+    expect(source, contains('AppLab Source Gate'));
+    expect(source, contains('pull_request:'));
+    expect(source, contains('python3 tool/check_ui5_visual_flows.py'));
+    expect(source, isNot(contains('external-project-runner.yml')));
+    expect(source, isNot(contains('flutter build apk')));
+    expect(source, isNot(contains('run_maestro: true')));
+    expect(contract, contains('ui5-today-date-strip'));
+  });
+
+  test('Android size, integration and signed sideload are manual-only', () {
+    final size =
         File('.github/workflows/android-size-audit.yml').readAsStringSync();
-
-    expect(appLab, contains('pull_request:'));
-    expect(appLab, contains('--target-platform android-x64'));
-    expect(appLab, isNot(contains('--split-per-abi')));
-    expect(appLab, contains('build/app/outputs/flutter-apk/app-release.apk'));
-    expect(
-      appLab,
-      contains('watch-profiles/agenda_per_anna_prepare.sh'),
-    );
-    expect(
-      appLab,
-      contains('watch-profiles/agenda_per_anna_post_pub_get.sh'),
-    );
-    expect(sizeAudit, contains('pull_request:'));
-    expect(sizeAudit, contains('--split-per-abi'));
-    expect(sizeAudit, contains('Build production-equivalent ARM64 APK'));
-    expect(
-      sizeAudit,
-      contains('      - ".github/workflows/dev-checks.yml"'),
-    );
-    expect(
-      sizeAudit,
-      contains('      - ".github/workflows/applab.yml"'),
-    );
+    final integration =
+        File('.github/workflows/android-integration.yml').readAsStringSync();
+    final sideload =
+        File('.github/workflows/sideload-arm64.yml').readAsStringSync();
+    for (final workflow in [size, integration, sideload]) {
+      expect(workflow, contains('workflow_dispatch:'));
+      expect(workflow, isNot(contains('  push:')));
+      expect(workflow, isNot(contains('  pull_request:')));
+    }
+    expect(size, contains('--split-per-abi'));
+    expect(size, contains('Build production-equivalent ARM64 APK'));
+    expect(integration, contains('ANNAS_DIARY_INTEGRATION_TEST=true'));
+    expect(sideload, contains('--release-signing'));
   });
 
-  test('AppLab PR runtime uses adaptive FAST with exact baseline/cache', () {
-    final appLab =
-        File('.github/workflows/applab.yml').readAsStringSync();
-
-    expect(appLab, contains('analysis_mode: fast'));
-    expect(
-      appLab,
-      contains(r"baseline_sha: ${{ github.event.pull_request.base.sha || '' }}"),
-    );
-    expect(appLab, contains('cache_verification: true'));
-    expect(appLab, contains('annas-diary-factory-fast-v4-journey-aware'));
-  });
-
-  test('main still keeps the Development Android release gate', () {
+  test('main branch still validates source but does not package Android', () {
     final workflow =
         File('.github/workflows/dev-checks.yml').readAsStringSync();
-
     expect(workflow, contains('push:'));
     expect(workflow, contains('branches: [main]'));
-    expect(workflow, isNot(contains("if: github.event_name == 'push'")));
+    expect(workflow, isNot(contains('flutter build apk')));
   });
 }

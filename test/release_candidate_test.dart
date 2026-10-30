@@ -189,10 +189,15 @@ void main() {
     expect(releaseWorkflow, contains('app-arm64-v8a-release.apk'));
     expect(releaseWorkflow, contains('app-universal-release.apk'));
 
-    expect(devWorkflow, contains('Build Android ARM64 release gate'));
-    expect(devWorkflow, contains("if: github.event_name != 'pull_request'"));
-    expect(devWorkflow, contains('--release'));
-    expect(devWorkflow, contains('app-arm64-v8a-release.apk'));
+    // Source validation is automatic; Android packaging is explicit.
+    expect(devWorkflow, contains('flutter analyze'));
+    expect(devWorkflow, contains('flutter test'));
+    expect(devWorkflow, isNot(contains('flutter build apk')));
+    expect(devWorkflow, isNot(contains('Build Android ARM64 release gate')));
+    expect(sizeWorkflow, contains('workflow_dispatch:'));
+    expect(sizeWorkflow, isNot(contains('  pull_request:')));
+    expect(sideloadWorkflow, contains('workflow_dispatch:'));
+    expect(sideloadWorkflow, isNot(contains('  push:')));
     expect(sizeWorkflow, contains('--split-per-abi'));
     expect(sizeWorkflow, contains('app-arm64-v8a-release.apk'));
 
@@ -210,16 +215,11 @@ void main() {
     expect(dockerfile, startsWith('FROM ghcr.io/cirruslabs/flutter:3.47.5'));
     expect(dockerfile, contains('flutter pub get --enforce-lockfile'));
 
-    expect(appLabWorkflow, contains('AppLab Production Gate'));
-    expect(appLabWorkflow, contains('flutter_version: "3.47.5"'));
-    expect(
-      appLabWorkflow,
-      contains('build/app/outputs/flutter-apk/app-release.apk'),
-    );
-    expect(appLabWorkflow, contains('--target-platform android-x64'));
-    expect(appLabWorkflow, isNot(contains('--split-per-abi')));
-    expect(appLabWorkflow, contains('.maestro/applab-smoke.yaml'));
-    expect(appLabWorkflow, contains('ANNAS_DIARY_INTEGRATION_TEST=true'));
+    expect(appLabWorkflow, contains('AppLab Source Gate'));
+    expect(appLabWorkflow, contains('python3 tool/check_ui5_visual_flows.py'));
+    expect(appLabWorkflow, isNot(contains('external-project-runner.yml')));
+    expect(appLabWorkflow, isNot(contains('flutter build apk')));
+    expect(appLabWorkflow, isNot(contains('run_maestro: true')));
     expect(appLabJourney, contains('"calendar"'));
     expect(appLabJourney, contains('"week"'));
     expect(appLabJourney, contains('"today"'));
