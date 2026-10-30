@@ -1,0 +1,55 @@
+name: Restart v0.66 source-first PR contract
+
+# Validates the legacy AppLab trigger without compiling an APK or deploying.
+on:
+  pull_request:
+    branches:
+      - restart-v066-lifecycle-integrity
+    paths:
+      - ".github/workflows/restart-v066-validation.yml"
+      - ".github/workflows/restart-v066-source-gate.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  source-contract:
+    name: Legacy AppLab manual-only contract (no APK)
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout exact PR head
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          persist-credentials: false
+
+      - name: Verify exact source identity and legacy gates
+        env:
+          EXPECTED_HEAD: ${{ github.event.pull_request.head.sha }}
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          test "$(git rev-parse HEAD)" = "$EXPECTED_HEAD"
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+
+          path = Path(".github/workflows/restart-v066-validation.yml")
+          content = path.read_text(encoding="utf-8")
+          assert re.search(r"(?m)^  (development|android-size|deploy-web):$", content)
+          for job in ("development", "android-size", "deploy-web"):
+              assert re.search(rf"(?m)^  {re.escape(job)}:$", content), f"Missing native/release job: {job}"
+          match = re.search(r"(?ms)^  applab:\n(.*?)(?=^  [a-zA-Z][\w-]*:\n|\Z)", content)
+          assert match, "Missing legacy AppLab job"
+          block = match.group(1)
+          assert re.search(
+              r"(?m)^    if: .*github\.event_name\s*==\s*'workflow_dispatch'",
+              block,
+          ), "Legacy AppLab APK/runtime must require explicit workflow_dispatch"
+          assert "external-project-runner.yml@" in block, "Manual runtime runner was removed"
+          assert "run_maestro: true" in block, "Manual runtime contract changed"
+          assert "Build production-equivalent ARM64 APK" in content
+          assert "Build web release" in content
+          print("SOURCE CONTRACT OK (no APK built, no runtime evidence claimed)")
+          PY
