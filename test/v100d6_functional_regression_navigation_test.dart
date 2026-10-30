@@ -89,7 +89,16 @@ void main() {
     expect(flow, contains('Account and sync'));
 
     // D5 entry regression remains a prerequisite for the D6 journey.
-    expect(smoke, contains('Use on this device'));
+    // The offline entry is selected by a stable semantic identifier, not
+    // by a localized or historical label that can change with the UI.
     expect(smoke, contains('clearState: true'));
+    expect(
+      smoke,
+      contains("- extendedWaitUntil:\n    id: 'identity-offline-continue'"),
+    );
+    expect(
+      smoke,
+      contains("- tapOn:\n    id: 'identity-offline-continue'"),
+    );
   });
 }
