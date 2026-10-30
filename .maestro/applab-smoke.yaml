@@ -29,9 +29,8 @@ appId: com.riccardopinato.agenda_per_anna
 - extendedWaitUntil:
     visible: '(La mia giornata|My day|Mi día|Ma journée|O meu dia)[\s\S]*'
     timeout: 15000
-- extendedWaitUntil:
-    visible: '(Cattura|Capture|Capturar|Capturer)'
-    timeout: 10000
+- assertVisible:
+    id: 'main-nav-create'
 - stopApp
 - launchApp
 - tapOn:
@@ -40,9 +39,8 @@ appId: com.riccardopinato.agenda_per_anna
 - extendedWaitUntil:
     visible: '(La mia giornata|My day|Mi día|Ma journée|O meu dia)[\s\S]*'
     timeout: 15000
-- extendedWaitUntil:
-    visible: '(Cattura|Capture|Capturar|Capturer)'
-    timeout: 10000
+- assertVisible:
+    id: 'main-nav-create'
 
 # Functional Vault deep journey. FLAG_SECURE intentionally excludes Vault from
 # screenshot regression, but setup/unlock/relock/wrong-password/persistence are
