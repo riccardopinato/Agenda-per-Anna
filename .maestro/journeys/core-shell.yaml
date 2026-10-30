@@ -37,7 +37,8 @@ appId: com.riccardopinato.agenda_per_anna
 - tapOn:
     id: 'main-nav-create'
 - extendedWaitUntil:
-    visible: '(Cattura|Capture|Capturar|Capturer)'
+    visible:
+      id: 'capture-effective-date'
     timeout: 10000
 - assertVisible:
     id: 'capture-effective-date'

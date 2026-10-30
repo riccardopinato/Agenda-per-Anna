@@ -125,4 +125,14 @@ void main() {
     expect(adoption, contains('mode: CENTRAL'));
     expect(adoption, contains('overwrite_existing: false'));
   });
+
+  test('core-shell Capture validates the real date control, not a translated title', () {
+    final flow = File('.maestro/journeys/core-shell.yaml').readAsStringSync();
+    expect(
+      flow,
+      contains("- tapOn:\n    id: 'main-nav-create'\n- extendedWaitUntil:\n    visible:\n      id: 'capture-effective-date'"),
+    );
+    expect(flow, contains("- assertVisible:\n    id: 'capture-effective-date'"));
+    expect(flow, isNot(contains("visible: '(Cattura|Capture|Capturar|Capturer)'")));
+  });
 }
