@@ -23,6 +23,12 @@ This final bounded pass:
   merged. Phone smoke remains user-reported PASS for UI5, while comprehensive
   native/Store/Noi two-device certification remains separately NOT VERIFIED.
 
+**v1.08 design decisions, block 01 (M01–M10):** all 10 approved
+on 30 October 2026; exact options and safeguards recorded in
+[`V108_MOTION_VISUAL_DESIGN_DECISIONS.md`](V108_MOTION_VISUAL_DESIGN_DECISIONS.md).
+Next choice M11/20 is **PENDING USER SELECTION**; no v1.08 code, APK or
+implementation authorization has been given.
+
 **Next sequencing authorized 30 October 2026:** defer v1.06 external app
 integrations until the user has PC/device access. Run **v1.08 Motion & Visual
 Polish as a DESIGN-ONLY selection round first**, in batches of 10 independent
