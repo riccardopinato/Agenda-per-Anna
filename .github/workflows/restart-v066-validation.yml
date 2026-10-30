@@ -180,6 +180,8 @@ jobs:
         uses: actions/deploy-pages@v4
 
   applab:
+    # Legacy restart: run AppLab APK/emulator only when explicitly dispatched.
+    if: ${{ github.event_name == 'workflow_dispatch' }}
     uses: riccardopinato/AppLab/.github/workflows/external-project-runner.yml@a871a1c1e0ab8339c48bc8ee53ee4cc34d634d34
     with:
       repository: riccardopinato/Agenda-per-Anna
