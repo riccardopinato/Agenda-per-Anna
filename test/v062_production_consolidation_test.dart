@@ -97,5 +97,5 @@ void main() {
     ]) {
       expect(appLabProject, contains(capability));
     }
-  });;
+  });
 }

@@ -42,7 +42,10 @@ require("id: 'capture-effective-date'" in core,
 require("id: 'main-nav-today'" in home and "id: 'ui5-today-date-strip'" in home,
         "historical Home return must land on UI5 Today")
 for path in [".maestro/journey/today.yaml", ".maestro/journey/home.yaml"]:
-    text = read(path)
+    text = "\n".join(
+        line for line in read(path).splitlines()
+        if not line.lstrip().startswith("#")
+    )
     for obsolete in ("today-focus-card", "(Cattura|Capture|Capturar|Capturer)",
                      "Pensieri e note|Thoughts and notes"):
         require(obsolete not in text, f"stale UI selector in {path}: {obsolete}")
