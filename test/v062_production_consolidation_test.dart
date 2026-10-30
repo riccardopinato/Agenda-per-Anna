@@ -79,7 +79,7 @@ void main() {
     expect(appLab, contains('uses: riccardopinato/AppLab/.github/workflows/'));
     expect(
       appLab,
-      contains('@79309588e117ca5481822cd6394a9ad8ecc338e7'),
+      contains('@c276f03d5935a2cbd9e089175fd311466cf491ef'),
     );
     expect(appLab, contains('analysis_mode: fast'));
     expect(
