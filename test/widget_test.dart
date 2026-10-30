@@ -14,6 +14,6 @@ void main() {
     );
     await tester.pumpAndSettle();
     expect(find.text('La mia giornata'), findsWidgets);
-    expect(find.text('Cattura'), findsOneWidget);
+    expect(find.text('Crea'), findsWidgets);
   });
 }
