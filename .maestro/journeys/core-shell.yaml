@@ -30,6 +30,14 @@ appId: com.riccardopinato.agenda_per_anna
     id: 'main-nav-memories'
 - assertVisible:
     id: 'main-nav-more'
+# DF-01 replaces the obsolete shell Capture FAB with a central action.
+- assertVisible:
+    id: 'main-nav-create'
+- tapOn:
+    id: 'main-nav-create'
 - extendedWaitUntil:
     visible: '(Cattura|Capture|Capturar|Capturer)'
     timeout: 10000
+- assertVisible:
+    id: 'capture-effective-date'
+- back
