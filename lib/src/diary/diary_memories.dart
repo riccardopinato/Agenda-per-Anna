@@ -1500,7 +1500,6 @@ class _DiaryMemoriesScreenState extends State<DiaryMemoriesScreen> {
                 key: const ValueKey<String>('ui5-timeline-year-jump'),
                 value: _selectedTimelineYear,
                 underline: const SizedBox.shrink(),
-                tooltip: strings.d3('ui5YearJump'),
                 items: years.map((year) => DropdownMenuItem<int>(
                   value: year,
                   child: Text('$year'),
