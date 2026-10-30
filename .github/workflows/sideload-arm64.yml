@@ -1,8 +1,14 @@
 name: Build lightweight ARM64 sideload APK
 
-# Signed APK generation is an explicit manual action only.
+# One-time, explicitly requested signed APK build for main@7c0ad8c6e1577a96188783e22a2264cc19e3aba2.
+# This push trigger exists ONLY on manual/apk-ui5-20261030-7c0ad8c,
+# never on main; no app source files are modified.
 on:
   workflow_dispatch:
+  push:
+    branches: [manual/apk-ui5-20261030-7c0ad8c]
+    paths:
+      - ".github/workflows/sideload-arm64.yml"
 
 permissions:
   contents: read
