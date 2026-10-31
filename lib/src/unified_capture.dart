@@ -213,6 +213,10 @@ Future<void> showUnifiedCapture(
     context: context,
     showDragHandle: true,
     isScrollControlled: true,
+    sheetAnimationStyle: AnimationStyle(
+      duration: AnnaMotionV108.duration(context, 416),
+      reverseDuration: AnnaMotionV108.duration(context, 250),
+    ),
     builder: (sheetContext) {
       var showAllActions = false;
 
@@ -240,14 +244,13 @@ Future<void> showUnifiedCapture(
             Navigator.pop(sheetContext, action);
           },
         );
-        return primary
-            ? AnnaMotionStagger(
-                key: ValueKey<String>('v108-capture-action-${action.name}'),
-                order: order,
-                fan: true,
-                child: tile,
-              )
-            : tile;
+        return AnnaMotionStagger(
+          key: ValueKey<String>('v108-capture-action-${action.name}'),
+          order: order,
+          fan: primary,
+          captureCascade: true,
+          child: tile,
+        );
       }
 
       return StatefulBuilder(
@@ -376,26 +379,31 @@ Future<void> showUnifiedCapture(
                                 title: strings.quickInboxNote,
                                 subtitle: strings.organizeLater,
                                 action: _UnifiedCaptureAction.inbox,
+                                 order: 0,
                               ),
                               actionTile(
                                 icon: Icons.event_outlined,
                                 title: strings.appointment,
                                 action: _UnifiedCaptureAction.event,
+                                 order: 1,
                               ),
                               actionTile(
                                 icon: Icons.cake_outlined,
                                 title: strings.birthday,
                                 action: _UnifiedCaptureAction.birthday,
+                                 order: 2,
                               ),
                               actionTile(
                                 icon: Icons.person_add_alt_1_outlined,
                                 title: strings.importantPerson,
                                 action: _UnifiedCaptureAction.person,
+                                 order: 3,
                               ),
                               actionTile(
                                 icon: Icons.library_books_outlined,
                                 title: strings.d3('templates'),
                                 action: _UnifiedCaptureAction.templates,
+                                 order: 4,
                               ),
                             ],
                           )
