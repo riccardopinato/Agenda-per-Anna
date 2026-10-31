@@ -1,0 +1,88 @@
+name: Auto signed ARM64 release candidate
+
+# Only successful checks of a trusted main push may promote a new build number.
+# Pull requests and non-release/documentation-only commits never build signed APKs.
+on:
+  workflow_run:
+    workflows: ["Development checks"]
+    types: [completed]
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: anna-auto-signed-arm64
+  cancel-in-progress: false
+
+jobs:
+  release-preflight:
+    if: >-
+      github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.event == 'push' &&
+      github.event.workflow_run.head_branch == 'main' &&
+      github.event.workflow_run.head_repository.full_name == github.repository
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      build: ${{ steps.release.outputs.build }}
+      source_sha: ${{ steps.release.outputs.source_sha }}
+    steps:
+      - name: Checkout exact successful source revision
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
+          fetch-depth: 2
+          persist-credentials: false
+
+      - name: Accept only a monotonic Flutter build number
+        id: release
+        shell: bash
+        env:
+          CHECKED_SHA: ${{ github.event.workflow_run.head_sha }}
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$CHECKED_SHA"
+          python3 - <<'PY'
+          import os
+          import re
+          import subprocess
+          from pathlib import Path
+
+          def read_identity(source: str) -> tuple[str, int]:
+              match = re.search(r"(?m)^version:\s*(\S+)\s*$", source)
+              if match is None:
+                  raise SystemExit("::error::Missing Flutter version in pubspec.yaml")
+              value = match.group(1)
+              if not re.fullmatch(r"\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?\+\d+", value):
+                  raise SystemExit("::error::Expected an explicit Flutter versionCode: " + value)
+              return value, int(value.rsplit("+", 1)[1])
+
+          current, current_code = read_identity(Path("pubspec.yaml").read_text())
+          previous_source = subprocess.check_output(
+              ["git", "show", "HEAD^:pubspec.yaml"], text=True
+          )
+          previous, previous_code = read_identity(previous_source)
+
+          if current_code < previous_code:
+              raise SystemExit("::error::Android versionCode must not decrease")
+          if current_code == previous_code and current != previous:
+              raise SystemExit("::error::Version name changed without a new versionCode")
+
+          should_build = current_code > previous_code
+          print(
+              f"Signed APK release gate: {previous} -> {current}; "
+              f"build={'yes' if should_build else 'no (unchanged versionCode)'}"
+          )
+          with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as output:
+              output.write(f"build={'true' if should_build else 'false'}\n")
+              output.write(f"source_sha={os.environ['CHECKED_SHA']}\n")
+          PY
+
+  signed-apk:
+    needs: release-preflight
+    if: needs.release-preflight.outputs.build == 'true'
+    uses: ./.github/workflows/sideload-arm64.yml
+    with:
+      source_sha: ${{ needs.release-preflight.outputs.source_sha }}
+    secrets: inherit

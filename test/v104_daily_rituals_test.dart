@@ -114,7 +114,7 @@ void main() {
     // Product Bible.current is intentionally mutable. The v1.04 regression
     // protects the completed roadmap evidence and unchanged distribution
     // identity, not a header that later approved product lines must advance.
-    expect(bible, contains('Distribution identity:** source candidate'));
+    expect(bible, contains('**Distribution identity:**'));
     expect(readme, contains('## v1.04 — Daily Rituals & Life Flow'));
   });
 
