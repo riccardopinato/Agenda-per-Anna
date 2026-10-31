@@ -15,7 +15,11 @@ void main() {
     expect(shared, isNot(contains("title: const Text(\n              'Noi ♡'")));
     expect(shared, contains("AnnaStrings.of(context).d3('sharedSpace')"));
     final history = File('lib/src/unified_agenda.dart').readAsStringSync();
-    // Historical user-generated space names remain unmodified.
-    expect(history, contains("entry.space!.name != 'Noi ♡'"));
+    // Display the stored user-owned name without rewriting legacy names.
+    // The neutral default is localized, not the retired fixed literal.
+    expect(history, contains("entry.space!.name.trim().isNotEmpty"));
+    expect(history, contains("entry.space!.name.trim() !="));
+    expect(history, contains("AnnaStrings.of(context).d3('sharedSpace')"));
+    expect(history, contains("entry.space!.name,"));
   });
 }
