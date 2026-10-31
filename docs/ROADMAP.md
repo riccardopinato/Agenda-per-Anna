@@ -10,7 +10,7 @@
 | S1 | Global Search: explainable title-only single letter, match evidence, sort newest/oldest/A–Z | SOURCE IMPLEMENTED on PR #163 — final exact-head CI not yet verified | Flutter tests, UI, localization, exact-head source CI |
 | S2 | Inbox category chips, create via existing note-tag editor, rename active + archived, derived category views | SOURCE IMPLEMENTED on PR #163 — physical Android QA still REQUIRED | Offline/account/sync + mandatory Android physical create/rename/filter/restart |
 | S3 | Existing 24h invites: QR display/scan, 4 local art themes, classic fallback, explicit join, reusable multi-user | SOURCE CANDIDATE PR — requires CI and two-device Android verification | Invite server authority, scanner/readability, 2+ accounts on devices |
-| S4 | Remaining mock-ups 1–5,7: only deltas to navigation, day/calendar, memories, settings, animations | PARTIAL SOURCE: +Crea #7 microbounce coded/test source; remaining UI deltas PENDING | Actual UI5/v1.08 route/a11y/visual regression + reduce-motion |
+| S4 | Remaining mock-ups 1–5,7: only deltas to navigation, day/calendar, memories, settings, animations | PARTIAL SOURCE: +Crea #7 merged in PR #164; Calendar tagline/timeline and More 58px rows implemented in this PR; navigation and remaining UI still PENDING | Actual UI5/v1.08 route/a11y/visual regression + reduce-motion |
 | S5 | Final integrated QA and separate signed sideload candidate | PENDING | Source gates first; manual Android APK/physical only, versionCode >111 |
 
 **Explicit unchanged:** installed Private Vault (#9). No schema or identity rewrites, no mandatory AI/Hugging Face service. Source changes are not an APK. Preserve stable signing/package and do not trigger sideload automatically.
