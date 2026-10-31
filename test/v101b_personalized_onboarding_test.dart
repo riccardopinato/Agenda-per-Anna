@@ -72,7 +72,7 @@ void main() {
       );
       expect(store.preferences.enabledModules, isEmpty);
       expect(store.shoppingItems.single.id, 'keep-shopping');
-      expect(find.text('La mia giornata'), findsWidgets);
+      expect(find.byKey(const ValueKey<String>('today-open-calendar')), findsOneWidget);
 
       store.dispose();
     },
@@ -93,7 +93,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.byKey(const ValueKey('onboarding-preset-life')), findsNothing);
-    expect(find.text('La mia giornata'), findsWidgets);
+    expect(find.byKey(const ValueKey<String>('today-open-calendar')), findsOneWidget);
 
     store.dispose();
   });
