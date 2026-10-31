@@ -1,5 +1,13 @@
 part of '../../main.dart';
 
+String approvedHolderNamePlaceholder(String code) => switch (code) {
+  'en' => 'Enter your name',
+  'es' => 'Introduce tu nombre',
+  'fr' => 'Saisissez votre prénom',
+  'pt' => 'Insere o teu nome',
+  _ => 'Inserisci il tuo nome',
+};
+
 class SettingsHubScreen extends StatelessWidget {
   final AgendaStore store;
 
@@ -52,7 +60,10 @@ class SettingsHubScreen extends StatelessWidget {
     final strings = AnnaStrings.of(context);
 
     return AnimatedBuilder(
-      animation: PremiumEntitlementService.instance,
+      animation: Listenable.merge([
+        PremiumEntitlementService.instance,
+        store.settingsRevision,
+      ]),
       builder: (context, _) => Scaffold(
         appBar: AppBar(
           toolbarHeight: 78,
@@ -79,6 +90,27 @@ class SettingsHubScreen extends StatelessWidget {
                   child: Text(
                     strings.d3('settingsHubIntro'),
                     style: Theme.of(context).textTheme.bodyMedium,
+                  ),
+                ),
+                const SizedBox(height: AnnaDesignTokens.spaceSm),
+                Semantics(
+                  identifier: 'settings-hub-edit-name',
+                  button: true,
+                  child: SimpleCard(
+                    child: ListTile(
+                      key: const ValueKey<String>('settings-hub-edit-name'),
+                      leading: const Icon(Icons.edit_outlined),
+                      title: Text(
+                        store.preferences.displayName.trim().isEmpty
+                            ? approvedHolderNamePlaceholder(strings.languageCode)
+                            : store.preferences.displayName.trim(),
+                      ),
+                      trailing: const Icon(Icons.chevron_right),
+                      onTap: () => _open(
+                        context,
+                        SettingsScreen(store: store),
+                      ),
+                    ),
                   ),
                 ),
                 const SizedBox(height: AnnaDesignTokens.spaceLg),
@@ -124,7 +156,17 @@ class SettingsHubScreen extends StatelessWidget {
                           SettingsScreen(store: store),
                         ),
                       ),
-                      const Divider(height: 1),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: AnnaDesignTokens.spaceLg),
+                AnnaJournalSectionHeading(
+                  title: strings.v100DataSection,
+                ),
+                const SizedBox(height: AnnaDesignTokens.spaceSm),
+                SimpleCard(
+                  child: Column(
+                    children: [
                       _tile(
                         id: 'settings-hub-premium',
                         domain: AnnaVisualDomain.memories,
@@ -138,17 +180,7 @@ class SettingsHubScreen extends StatelessWidget {
                           const PremiumScreen(),
                         ),
                       ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: AnnaDesignTokens.spaceLg),
-                AnnaJournalSectionHeading(
-                  title: strings.v100DataSection,
-                ),
-                const SizedBox(height: AnnaDesignTokens.spaceSm),
-                SimpleCard(
-                  child: Column(
-                    children: [
+                      const Divider(height: 1),
                       _tile(
                         id: 'settings-hub-account',
                         domain: AnnaVisualDomain.ecosystem,
