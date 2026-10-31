@@ -91,12 +91,20 @@ For behavior-changing Anna's Diary roadmap steps, automatic exact-head source ga
 - Deploy Anna's Diary Web;
 - AppLab Source Gate (repository-local code and visual-flow contract validation; no external AppLab APK runner).
 
-Android size audit, Android emulator integration, and stable signed sideload/Store
-builds are **manual workflow_dispatch actions only**. Never compile an APK
-implicitly on a pull request or a main-branch push. An APK build is no longer an
-AppLab merge prerequisite. Source merge is distinct from an installable release:
-mark runtime/visual/physical verification NOT VERIFIED until explicitly performed
-using a separately authorized Android build and real-device review.
+Android size audit, Android emulator integration, and Store/AAB builds remain
+**manual workflow_dispatch actions only**. By explicit user authorization, the
+**stable-signed ARM64 sideload APK** is now automated for release candidates:
+`.github/workflows/auto-signed-arm64.yml` listens only to a successful
+`Development checks` run from a trusted `main` push, requires a strictly
+increased Flutter `versionCode` compared with that commit's first parent,
+then calls the existing stable-signing `sideload-arm64.yml` with the exact
+CI-tested commit SHA and inherited protected signing secrets. All other pushes,
+PRs, failed CI and unchanged build numbers skip signing. The original
+`workflow_dispatch` remains available for deliberate retries.
+Never compile signed APKs on a PR and never publish to Play automatically.
+An APK build is not an AppLab merge prerequisite. Source merge is distinct
+from installable release: mark runtime/visual/physical verification NOT VERIFIED
+until explicitly performed on the exact APK using a real-device review.
 
 Use the smallest complete validation set for governance/docs-only changes.
 
@@ -119,7 +127,7 @@ sideload artifact is required.
 - Android package: `com.riccardopinato.agenda_per_anna`.
 - Primary navigation: Today · Messages · central (+) Create · Memories · More; Calendar is a dedicated route from Today.
 - Today is the sole daily hub after v1.05-A3.
-- Stable direct-install Android updates must use `.github/workflows/sideload-arm64.yml`.
+- Stable direct-install Android updates use `.github/workflows/sideload-arm64.yml`, invoked automatically only through the new release preflight or manually for a retry.
 - Web preview/deploy uses GitHub Pages.
 - AppLab's external APK-building runner is not invoked by Anna's Diary.
 - The repository-local AppLab Source Gate checks source contracts only; it is not runtime evidence.
