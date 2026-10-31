@@ -187,6 +187,54 @@ class _SharedSpaceHubScreenState extends State<SharedSpaceHubScreen> {
     }
   }
 
+  Future<void> _scanSharedInviteQr() async {
+    final language = AnnaStrings.of(context).languageCode;
+    final code = await Navigator.push<String>(
+      context,
+      MaterialPageRoute(
+        builder: (_) => const SharedInviteQrScanScreen(),
+      ),
+    );
+    if (!mounted || code == null) return;
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: Text(sharedInviteQrText(language, 'joinTitle')),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(sharedInviteQrText(language, 'joinPrompt')),
+            const SizedBox(height: 12),
+            SelectableText(code, style: const TextStyle(
+              fontSize: 24, fontWeight: FontWeight.w800,
+              letterSpacing: 3,
+            )),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: Text(AnnaStrings.of(dialogContext).cancel),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(dialogContext, true),
+            child: Text(AnnaStrings.of(dialogContext).d3('join')),
+          ),
+        ],
+      ),
+    );
+    if (!mounted || confirmed != true) return;
+    setState(() => loading = true);
+    try {
+      await CloudSyncService.instance.joinSharedSpace(code);
+      await _reload();
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => loading = false);
+      _message(AnnaStrings.of(context).d3('invalidInvite'));
+    }
+  }
+
   void _message(String text) {
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
@@ -325,6 +373,16 @@ class _SharedSpaceHubScreenState extends State<SharedSpaceHubScreen> {
                                     label: Text(AnnaStrings.of(context).d3('enterCode')),
                                   ),
                                 ),
+                                const SizedBox(height: 8),
+                                SizedBox(
+                                  width: double.infinity,
+                                  child: OutlinedButton.icon(
+                                    onPressed: _scanSharedInviteQr,
+                                    icon: const Icon(Icons.qr_code_scanner_outlined),
+                                    label: Text(sharedInviteQrText(
+                                      AnnaStrings.of(context).languageCode, 'scan')),
+                                  ),
+                                ),
                               ],
                             ),
                           )
@@ -401,6 +459,13 @@ class _SharedSpaceHubScreenState extends State<SharedSpaceHubScreen> {
                             onPressed: _joinSpace,
                             icon: const Icon(Icons.link),
                             label: Text(AnnaStrings.of(context).d3('joinAnother')),
+                          ),
+                          const SizedBox(height: 8),
+                          OutlinedButton.icon(
+                            onPressed: _scanSharedInviteQr,
+                            icon: const Icon(Icons.qr_code_scanner_outlined),
+                            label: Text(sharedInviteQrText(
+                              AnnaStrings.of(context).languageCode, 'scan')),
                           ),
                         ],
                       ],
@@ -1909,78 +1974,116 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
 
     if (!mounted) return;
     var current = invite;
+    var qrStyle = SharedInviteQrStyle.values[
+        Random().nextInt(SharedInviteQrStyle.values.length)];
+    var classicQr = false;
+    final language = strings.languageCode;
 
     await showDialog<void>(
       context: context,
       builder: (dialogContext) => StatefulBuilder(
-        builder: (dialogContext, setDialogState) {
-          final remaining = current.expiresAt.difference(DateTime.now());
-          final hours = remaining.inHours.clamp(0, 24);
-          final minutes = (remaining.inMinutes % 60).clamp(0, 59);
-
-          return AlertDialog(
-            title: Text(strings.d3('connectionCode')),
-            content: Column(
+        builder: (dialogContext, setDialogState) => AlertDialog(
+          scrollable: true,
+          title: Text(strings.d3('connectionCode')),
+          content: SizedBox(
+            width: 310,
+            child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
                 Text(strings.d3('code24h')),
-                const SizedBox(height: 18),
+                const SizedBox(height: 12),
+                SharedInviteQrArtCard(
+                  code: current.code,
+                  style: qrStyle,
+                  classic: classicQr,
+                ),
+                const SizedBox(height: 12),
                 SelectableText(
                   current.code,
                   style: const TextStyle(
-                    fontSize: 30,
+                    fontSize: 26,
                     fontWeight: FontWeight.w900,
                     letterSpacing: 3,
                   ),
                 ),
+                const SizedBox(height: 8),
+                StreamBuilder<int>(
+                  stream: Stream<int>.periodic(
+                    const Duration(minutes: 1), (count) => count),
+                  builder: (context, snapshot) {
+                    final remaining = current.expiresAt.difference(
+                      DateTime.now());
+                    final hours = remaining.inHours.clamp(0, 24);
+                    final minutes = remaining.isNegative
+                        ? 0 : (remaining.inMinutes % 60).clamp(0, 59);
+                    return Text(
+                      strings.d3Format('shared_inviteExpires', {
+                        'hours': hours,
+                        'minutes': minutes,
+                        'uses': current.usesCount,
+                      }),
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(fontWeight: FontWeight.w700),
+                    );
+                  },
+                ),
                 const SizedBox(height: 10),
-                Text(
-                  strings.d3Format(
-                  'shared_inviteExpires',
-                  {
-                    'hours': hours,
-                    'minutes': minutes,
-                    'uses': current.usesCount,
-                  },
+                Wrap(
+                  spacing: 6,
+                  alignment: WrapAlignment.center,
+                  children: [
+                    TextButton.icon(
+                      onPressed: () => setDialogState(() {
+                        qrStyle = SharedInviteQrStyle.values[
+                            (qrStyle.index + 1 + Random().nextInt(3)) %
+                            SharedInviteQrStyle.values.length];
+                        classicQr = false;
+                      }),
+                      icon: const Icon(Icons.auto_awesome_outlined),
+                      label: Text(sharedInviteQrText(language, 'art')),
+                    ),
+                    TextButton.icon(
+                      onPressed: () =>
+                          setDialogState(() => classicQr = !classicQr),
+                      icon: const Icon(Icons.qr_code_outlined),
+                      label: Text(sharedInviteQrText(language,
+                        classicQr ? 'artistic' : 'classic')),
+                    ),
+                  ],
                 ),
-                  style: const TextStyle(fontWeight: FontWeight.w700),
-                ),
-                const SizedBox(height: 12),
-                TextButton.icon(
-                  onPressed: () async {
-                    try {
-                      final next = await CloudSyncService.instance
-                          .regenerateSpaceInvite(widget.space.id);
-                      await prefs.setString(
-                        cacheKey,
-                        jsonEncode(next.toJson()),
-                      );
-                      setDialogState(() => current = next);
-                    } catch (_) {
-                      if (dialogContext.mounted) {
-                        ScaffoldMessenger.of(dialogContext).showSnackBar(
-                          SnackBar(
-                            content: Text(
-                              strings.d3('generateCodeFailed'),
-                            ),
-                          ),
+                if (widget.space.isOwner)
+                  TextButton.icon(
+                    onPressed: () async {
+                      try {
+                        final next = await CloudSyncService.instance
+                            .regenerateSpaceInvite(widget.space.id);
+                        await prefs.setString(
+                          cacheKey, jsonEncode(next.toJson()),
                         );
+                        if (!dialogContext.mounted) return;
+                        setDialogState(() => current = next);
+                      } catch (_) {
+                        if (dialogContext.mounted) {
+                          ScaffoldMessenger.of(dialogContext).showSnackBar(
+                            SnackBar(content: Text(
+                              strings.d3('generateCodeFailed'))),
+                          );
+                        }
                       }
-                    }
-                  },
-                  icon: const Icon(Icons.refresh),
-                  label: Text(strings.d3('generateNewCode')),
-                ),
+                    },
+                    icon: const Icon(Icons.refresh),
+                    label: Text(strings.d3('generateNewCode')),
+                  ),
               ],
             ),
-            actions: [
-              FilledButton(
-                onPressed: () => Navigator.pop(dialogContext),
-                child: Text(strings.close),
-              ),
-            ],
-          );
-        },
+          ),
+          actions: [
+            FilledButton(
+              onPressed: () => Navigator.pop(dialogContext),
+              child: Text(strings.close),
+            ),
+          ],
+        ),
       ),
     );
   }
