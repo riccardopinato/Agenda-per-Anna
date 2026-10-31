@@ -30,7 +30,7 @@ abstract final class AnnaMotionV108 {
               curve: Curves.easeOutBack,
               builder: (context, value, child) => Transform.scale(
                 scale: value,
-                child: Opacity(opacity: value, child: child),
+                child: Opacity(opacity: value > 1.0 ? 1.0 : value, child: child),
               ),
               child: DecoratedBox(
                 decoration: BoxDecoration(
