@@ -30,7 +30,8 @@ void main() {
     expect(capture, contains('var showAllActions = false'));
     expect(capture, contains("'captureMoreActions'"));
     expect(capture, contains('AnimatedSize('));
-    expect(capture, contains('AnnaDesignTokens.motionStandard'));
+    expect(capture, contains('curve: Curves.easeInOutCubic'));
+    expect(capture, contains('const Duration(milliseconds: 320)'));
 
     for (final action in const <String>[
       '_UnifiedCaptureAction.text',
