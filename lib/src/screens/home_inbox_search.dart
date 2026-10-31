@@ -789,6 +789,50 @@ class _InboxScreenState extends State<InboxScreen> {
     );
   }
 
+  Future<void> _createCategory(BuildContext context) async {
+    final strings = AnnaStrings.of(context);
+    final input = TextEditingController();
+    try {
+      final name = await showDialog<String>(
+        context: context,
+        builder: (dialogContext) => AlertDialog(
+          title: Text(inboxCategoryCopy(strings.languageCode, 'create')),
+          content: TextField(
+            key: const ValueKey<String>('inbox-category-name'),
+            controller: input,
+            autofocus: true,
+            maxLength: 48,
+            decoration: InputDecoration(labelText: strings.tags),
+            onSubmitted: (value) =>
+                Navigator.pop(dialogContext, value.trim()),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext),
+              child: Text(strings.cancel),
+            ),
+            FilledButton(
+              onPressed: () =>
+                  Navigator.pop(dialogContext, input.text.trim()),
+              child: Text(strings.save),
+            ),
+          ],
+        ),
+      );
+      if (!mounted || name == null || name.isEmpty) return;
+      try {
+        await store.createInboxCategory(name);
+      } catch (_) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(this.context).showSnackBar(
+          SnackBar(content: Text(strings.v100SaveFailed)),
+        );
+      }
+    } finally {
+      input.dispose();
+    }
+  }
+
   Future<void> _addTagToNote(BuildContext context) async {
     final strings = AnnaStrings.of(context);
     final notes = store.activeInboxEntries;
@@ -911,6 +955,13 @@ class _InboxScreenState extends State<InboxScreen> {
                       avatar: const Icon(Icons.add, size: 18),
                       label: Text(inboxCategoryCopy(
                           strings.languageCode, 'create')),
+                      onPressed: () => _createCategory(context),
+                    ),
+                    const SizedBox(width: 7),
+                    ActionChip(
+                      avatar: const Icon(Icons.label_outline, size: 18),
+                      label: Text(inboxCategoryCopy(
+                          strings.languageCode, 'choose')),
                       onPressed: () => _addTagToNote(context),
                     ),
                   ],
