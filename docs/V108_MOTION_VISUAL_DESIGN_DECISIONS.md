@@ -46,9 +46,11 @@ selection. **M11 USER APPROVED — B (31 October 2026):** opening an individual 
 
 **M13 USER APPROVED — C (31 October 2026):** the search icon/lens visually expands into the query input, then the dedicated Ricordi search page content enters progressively with brief, accessible motion. Preserve the UI5 dedicated search/results route, initial blank query, the `Tutti` filter default, subtle guidance, existing search data truth and Back behavior; never force users into Timeline or invent recent results. Reduced-motion disables decorative expansion. **DESIGN ONLY — NOT IMPLEMENTED.**
 
-**M14 — PENDING USER SELECTION:** when opening an existing **Ricordi → Raccolte** album, compare A simple route transition, B cover image expanding into album detail, and C editorial album opening with brief staggered thumbnail placement. Must preserve collection identity, actual content, back-navigation position, and avoid introducing a second persistence layer.
+**M14 USER APPROVED — C (31 October 2026):** opening an existing **Ricordi → Raccolte** album uses an editorial album-opening transition: collection cover expands toward the album detail and a small number of visible thumbnails enter progressively. Keep motion **brief, accessible and limited to visible items**; preserve actual collection identity, content, route, back-navigation/scroll position and canonical data owner. Reduced-motion disables decoration. **DESIGN ONLY — NOT IMPLEMENTED.**
 
-**M14–M20 — PENDING:** show one interactive comparison at a time, and await a specific user choice. Never prefill their decision letters.
+**M15 — PENDING USER SELECTION:** results appearing for a real query in the **dedicated Ricordi global search route** (M13): compare **A immediate result list**, **B gentle group crossfade**, **C very short stagger of only visible results**. Preserve UI5 blank-query guidance, `Tutti` default, empty/no-match and error states, focus/keyboard and data truth. No results invented before a query; avoid restarting heavy animations on every keystroke.
+
+**M15–M20 — PENDING:** show one interactive comparison at a time, and await a specific user choice. Never prefill their decision letters.
 
 ### Sequencing
 
