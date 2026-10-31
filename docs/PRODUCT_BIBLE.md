@@ -1,7 +1,7 @@
 # Anna's Diary — Product Bible
 
 **Status:** all 10/10 approved screen source deltas merged (#163/#164/#166/#167/#168/#169/#170); audit correction PRs address search evidence, Inbox empty-category persistence, neutral labels and governance. Real Android certification remains outstanding.
-**Distribution identity:** source candidate `1.0.0-rc.6+115` reserved on merged main by #178, with further localization corrections still undergoing source gates; latest previously built stable-signed APK `rc.4+113` is outdated. Real signed rc.6+115 APK and physical verification are NOT VERIFIED.
+**Distribution identity:** `1.0.0-rc.6+115` signed ARM64 APK built successfully by workflow run #41248307448 from main `31b66ba96d66a3ca3984a3c19061c4f1bfc9f9c7`; physical installation/functional acceptance are NOT VERIFIED. Subsequent versionCode bumps are authorized to build the same stable-signed sideload APK automatically after green main Development checks.
 **Last aligned:** 31 October 2026 (source audit; physical NOT VERIFIED)
 
 This document defines what Anna's Diary is, what it is not, and the product/security invariants that future work must preserve. Implementation details belong in `docs/ARCHITECTURE.md`; execution sequencing belongs in `docs/ROADMAP.md`.
@@ -257,8 +257,10 @@ A release candidate must, as applicable, pass:
 - Web release build;
 - production-equivalent Android ARM64 build/size audit;
 - repository-local AppLab **Source Gate** (source-only; no emulator/APK);
-- manually dispatched Android size/integration and signed APK artifact checks
-  when release evidence is actually requested (not automatic PR gates);
+- manually dispatched Android size/integration and Store/AAB workflows;
+- stable-signed sideload APK built automatically only for a new monotonically
+  increasing Android versionCode after green main Development checks, using the
+  existing protected signing identity (not an automatic PR gate or store release);
 - release metadata alignment;
 - documentation alignment.
 
