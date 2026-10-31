@@ -123,6 +123,33 @@ extension ApprovedSearchPolicy on AgendaStore {
         }
       }
     }
+    if (hit.birthdayId != null) {
+      for (final birthday in birthdays) {
+        if (birthday.id != hit.birthdayId) continue;
+        fields.add(birthday.name);
+        fields.add(birthday.note);
+        break;
+      }
+    }
+    if (hit.kind == PersonalSearchKind.month) {
+      final data = months[hit.id];
+      if (data != null) {
+        fields.add(data.intention);
+        fields.addAll(data.goals);
+        fields.addAll(data.books);
+        fields.addAll(data.films);
+        fields.addAll(data.hobbies);
+        fields.addAll(data.wishes);
+        fields.addAll(data.ideas);
+        fields.add(data.monthWord);
+        fields.add(data.selfCare);
+        fields.add(data.bestMoment);
+        fields.add(data.lesson);
+        fields.add(data.challenge);
+        fields.add(data.nextMonth);
+        fields.add(data.reflection);
+      }
+    }
     final tokens = trimmed.split(RegExp(r'\s+')).where((t) => t.isNotEmpty);
     final evidence = <String>[];
     final pending = tokens.toSet();
