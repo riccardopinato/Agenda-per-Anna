@@ -61,7 +61,11 @@ void main() {
     expect(theme, contains('static bool animationsEnabled(BuildContext context)'));
     expect(capture, contains('AnnaDesignTokens.animationsEnabled(context)'));
     expect(capture, contains('AnnaFeedback.selection()'));
-    expect(capture, contains('AnnaFeedback.success()'));
+    final motion = File('lib/src/motion_v108.dart').readAsStringSync();
+    expect(capture, contains('AnnaMotionV108.showSaveSuccess(context)'));
+    // Preserve the original haptic contract behind the visual success facade.
+    expect(motion, contains('AnnaFeedback.success()'));
+    expect(motion, contains('AnnaDesignTokens.animationsEnabled(context)'));
   });
 
   test('v1.05-A4 More has explicit hierarchy and no duplicate AppBar search', () {
