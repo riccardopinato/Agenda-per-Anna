@@ -44,7 +44,9 @@ selection. **M11 USER APPROVED — B (31 October 2026):** opening an individual 
 
 **M12 USER APPROVED — C (31 October 2026):** brief, fluid **horizontal editorial slide** between Ricordi sub-sections **Per te**, **Timeline**, **Raccolte**, maintaining the UI5 tabs and their order and contents. Sub-tab movement is separate from global tab navigation M02, preserves selected sub-tab, history/scroll and search, and respects reduced-motion settings. Design only, NOT implemented.
 
-**M13 — PENDING:** opening the **dedicated Ricordi global-search/results route**; compare A immediate route, B soft fade + subtle rise, C expanding search field into results with short stagger. Must retain UI5 search route, initial blank query guidance, and no forced Timeline switch.
+**M13 USER APPROVED — C (31 October 2026):** the search icon/lens visually expands into the query input, then the dedicated Ricordi search page content enters progressively with brief, accessible motion. Preserve the UI5 dedicated search/results route, initial blank query, the `Tutti` filter default, subtle guidance, existing search data truth and Back behavior; never force users into Timeline or invent recent results. Reduced-motion disables decorative expansion. **DESIGN ONLY — NOT IMPLEMENTED.**
+
+**M14 — PENDING USER SELECTION:** when opening an existing **Ricordi → Raccolte** album, compare A simple route transition, B cover image expanding into album detail, and C editorial album opening with brief staggered thumbnail placement. Must preserve collection identity, actual content, back-navigation position, and avoid introducing a second persistence layer.
 
 **M13–M20 — PENDING:** show one interactive comparison at a time, and await a specific user choice. Never prefill their decision letters.
 
