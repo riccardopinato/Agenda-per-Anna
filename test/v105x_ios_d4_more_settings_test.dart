@@ -16,7 +16,6 @@ void main() {
       'more-search',
       'more-inbox',
       'more-explore',
-      'more-shared',
       'more-private-vault',
       'more-archive',
       'more-backup',
