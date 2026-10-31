@@ -1,12 +1,12 @@
 appId: com.riccardopinato.agenda_per_anna
 ---
-- scrollUntilVisible:
-    element:
-      id: 'more-shared'
-    direction: UP
-    timeout: 10000
-- tapOn:
-    id: 'more-shared'
+- launchApp
 - extendedWaitUntil:
-    visible: 'Noi ♡'
-    timeout: 10000
+    visible:
+      id: 'main-nav-messages'
+    timeout: 15000
+- tapOn:
+    id: 'main-nav-messages'
+- extendedWaitUntil:
+    visible: '(Noi|Spazio condiviso|Shared Space|Espacio compartido|Espace partagé|Espaço partilhado)'
+    timeout: 15000

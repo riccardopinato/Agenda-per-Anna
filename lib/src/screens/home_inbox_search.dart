@@ -10,7 +10,6 @@ class MainShell extends StatefulWidget {
 
 class _MainShellState extends State<MainShell> {
   late int index;
-  DateTime _calendarCaptureDate = DateTime.now();
   bool _createPressed = false;
   bool _createReleased = false;
 
@@ -33,12 +32,10 @@ class _MainShellState extends State<MainShell> {
     await showUnifiedCapture(
       context,
       widget.store,
-      initialDate: index == StartTab.calendar.index
-          ? _calendarCaptureDate
-          : DateTime.now(),
-      entryPoint: index == StartTab.calendar.index
-          ? UnifiedCaptureEntryPoint.month
-          : UnifiedCaptureEntryPoint.home,
+      // The calendar is now a full-screen route with its own selected-day
+      // +Crea entry. The shell button uses today on its other four destinations.
+      initialDate: DateTime.now(),
+      entryPoint: UnifiedCaptureEntryPoint.home,
     );
   }
 
@@ -110,7 +107,28 @@ class _MainShellState extends State<MainShell> {
   @override
   void initState() {
     super.initState();
-    index = widget.store.preferences.startTab.index;
+    // Preserve the persisted Calendar start preference without retaining
+    // Calendar as a fifth primary tab: present the original Calendar route.
+    final savedCalendar = widget.store.preferences.startTab ==
+        StartTab.calendar;
+    index = savedCalendar
+        ? StartTab.today.index
+        : widget.store.preferences.startTab.index;
+
+    if (savedCalendar &&
+        (!kIsWeb ||
+            (Uri.base.queryParameters['today'] != '1' &&
+             Uri.base.queryParameters['capture'] != '1'))) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        Navigator.push(
+          context,
+          MaterialPageRoute<void>(
+            builder: (_) => CalendarHubScreen(store: widget.store),
+          ),
+        );
+      });
+    }
 
     if (kIsWeb) {
       final query = Uri.base.queryParameters;
@@ -137,12 +155,49 @@ class _MainShellState extends State<MainShell> {
     setState(() => index = value);
   }
 
+  // Module visibility is preserved even though Messages is a permanent tab.
+  Widget _messagesPage() => AnimatedBuilder(
+    animation: widget.store.settingsRevision,
+    builder: (context, _) {
+      if (widget.store.preferences.isModuleEnabled(AppModule.sharedSpace)) {
+        return SharedSpaceHubScreen(store: widget.store);
+      }
+      final strings = AnnaStrings.of(context);
+      return Scaffold(
+        appBar: AppBar(title: Text(strings.navMessages)),
+        body: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(Icons.chat_bubble_outline, size: 36),
+                const SizedBox(height: 12),
+                Text(strings.d3('personalizationSharedSpaceSubtitle'),
+                    textAlign: TextAlign.center),
+                const SizedBox(height: 16),
+                FilledButton.icon(
+                  onPressed: () => Navigator.push(
+                    context,
+                    MaterialPageRoute<void>(
+                      builder: (_) =>
+                          PersonalizationScreen(store: widget.store),
+                    ),
+                  ),
+                  icon: const Icon(Icons.tune_outlined),
+                  label: Text(strings.d3('personalizationTitle')),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    },
+  );
+
   List<Widget> _pages() => <Widget>[
         PlannerScreen(store: widget.store, embedded: true),
-        CalendarHubScreen(
-          store: widget.store,
-          onSelectedDateChanged: (date) => _calendarCaptureDate = date,
-        ),
+        _messagesPage(),
         DiaryMemoriesScreen(store: widget.store),
         MoreScreen(store: widget.store),
       ];
@@ -172,10 +227,10 @@ class _MainShellState extends State<MainShell> {
           selectedIcon: Icons.today,
         ),
         _bottomDestination(
-          semanticsId: 'main-nav-calendar',
-          label: strings.navCalendar,
-          icon: Icons.calendar_month_outlined,
-          selectedIcon: Icons.calendar_month,
+          semanticsId: 'main-nav-messages',
+          label: strings.navMessages,
+          icon: Icons.chat_bubble_outline,
+          selectedIcon: Icons.chat_bubble,
         ),
         _bottomDestination(
           semanticsId: 'main-nav-memories',
@@ -203,11 +258,11 @@ class _MainShellState extends State<MainShell> {
         ),
         NavigationRailDestination(
           icon: const Icon(
-            Icons.calendar_month_outlined,
-            key: ValueKey<String>('main-rail-calendar'),
+            Icons.chat_bubble_outline,
+            key: ValueKey<String>('main-rail-messages'),
           ),
-          selectedIcon: const Icon(Icons.calendar_month),
-          label: Text(strings.navCalendar),
+          selectedIcon: const Icon(Icons.chat_bubble),
+          label: Text(strings.navMessages),
         ),
         NavigationRailDestination(
           icon: const Icon(

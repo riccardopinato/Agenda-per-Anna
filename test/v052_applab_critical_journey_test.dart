@@ -35,7 +35,7 @@ void main() {
     final trash = File('.maestro/journey/trash.yaml').readAsStringSync();
 
     expect(more, contains('Altro|More|Más|Plus|Mais'));
-    expect(shared, contains('Noi ♡'));
+    expect(shared, contains("id: 'main-nav-messages'"));
     expect(account, contains('Account e sincronizzazione'));
     expect(trash, contains('Archivio'));
     expect(trash, contains('Cestino'));

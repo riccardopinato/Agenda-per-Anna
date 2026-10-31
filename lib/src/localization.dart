@@ -68,6 +68,14 @@ class AnnaStrings {
         pt: 'Calendário',
       );
 
+  String get navMessages => _pick(
+        en: 'Messages',
+        it: 'Messaggi',
+        es: 'Mensajes',
+        fr: 'Messages',
+        pt: 'Mensagens',
+      );
+
   String get navMemories => memories;
 
   String get navMore => _pick(

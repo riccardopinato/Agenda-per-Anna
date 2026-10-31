@@ -1,3 +1,4 @@
+import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:agenda_per_anna/main.dart';
@@ -13,7 +14,7 @@ void main() {
       AgendaApp(store: store, bypassIdentityForTesting: true),
     );
     await tester.pumpAndSettle();
-    expect(find.text('La mia giornata'), findsWidgets);
+    expect(find.byKey(const ValueKey<String>('today-open-calendar')), findsOneWidget);
     expect(find.text('Crea'), findsWidgets);
   });
 }

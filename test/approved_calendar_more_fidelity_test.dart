@@ -30,7 +30,7 @@ void main() {
     for (final id in [
       'more-search', 'more-inbox', 'more-private-vault',
       'more-explore', 'more-archive', 'more-backup', 'more-cloud',
-      'more-settings', 'more-shared',
+      'more-settings',
     ]) {
       expect(more, contains("id: '$id'"));
     }

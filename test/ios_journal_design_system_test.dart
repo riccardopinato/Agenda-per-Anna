@@ -83,7 +83,7 @@ void main() {
     expect(shell, contains('Theme.of(context).navigationBarTheme.indicatorColor'));
     for (final key in [
       'main-nav-today',
-      'main-nav-calendar',
+      'main-nav-messages',
       'main-nav-memories',
       'main-nav-more',
     ]) {

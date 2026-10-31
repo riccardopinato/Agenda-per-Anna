@@ -76,7 +76,7 @@ void main() {
     final capture = source('lib/src/unified_capture.dart');
     expect(shell, contains('AnnaMotionReveal('));
     expect(shell, contains('IndexedStack(index: index, children: pages)'));
-    expect(shell, contains('StartTab.calendar.index'));
+    expect(shell, contains('StartTab.calendar'));
     expect(shell, contains('DateTime.now()'));
     expect(shell, contains('AnimatedScale('));
     expect(capture, contains('showModalBottomSheet<_UnifiedCaptureAction>'));

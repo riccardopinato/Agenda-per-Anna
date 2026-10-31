@@ -147,33 +147,6 @@ class MoreScreen extends StatelessWidget {
                     title: strings.d3('moreYourSpace'),
                   ),
                   const SizedBox(height: AnnaDesignTokens.spaceSm),
-                  if (prefs.isModuleEnabled(AppModule.sharedSpace)) ...[
-                    AnnaJournalCard(
-                      domain: AnnaVisualDomain.shared,
-                      child: _tile(
-                        id: 'more-shared',
-                        domain: AnnaVisualDomain.shared,
-                        icon: Icons.favorite_outline,
-                        title: strings.d3('sharedSpace'),
-                        subtitle: 'Noi ♡ · ${strings.d3('personalizationSharedSpaceSubtitle')}',
-                        trailing: store.totalSharedUnreadCount <= 0
-                            ? const Icon(Icons.chevron_right)
-                            : Badge(
-                                label: Text(
-                                  store.totalSharedUnreadCount > 99
-                                      ? '99+'
-                                      : '${store.totalSharedUnreadCount}',
-                                ),
-                                child: const Icon(Icons.chevron_right),
-                              ),
-                        onTap: () => _open(
-                          context,
-                          SharedSpaceHubScreen(store: store),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: AnnaDesignTokens.spaceSm),
-                  ],
                   if (prefs.isModuleEnabled(AppModule.privateVault)) ...[
                     AnnaJournalCard(
                       domain: AnnaVisualDomain.vault,

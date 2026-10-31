@@ -2,6 +2,19 @@ part of '../main.dart';
 
 enum _CalendarHubView { month, week }
 
+String approvedTodayGreeting(String lang, String displayName, int hour) {
+  final part = hour < 12 ? 0 : hour < 18 ? 1 : 2;
+  final greetings = switch (lang) {
+    'en' => const ['Good morning', 'Good afternoon', 'Good evening'],
+    'es' => const ['Buenos días', 'Buenas tardes', 'Buenas noches'],
+    'fr' => const ['Bonjour', 'Bon après-midi', 'Bonsoir'],
+    'pt' => const ['Bom dia', 'Boa tarde', 'Boa noite'],
+    _ => const ['Buongiorno', 'Buon pomeriggio', 'Buonasera'],
+  };
+  final name = displayName.trim();
+  return name.isEmpty ? greetings[part] : '${greetings[part]}, $name';
+}
+
 String approvedCalendarTagline(String languageCode) => switch (languageCode) {
   'en' => 'Every day, a story.',
   'es' => 'Cada día, una historia.',
@@ -26,11 +39,22 @@ class CalendarHubScreen extends StatefulWidget {
 
 class _CalendarHubScreenState extends State<CalendarHubScreen> {
   _CalendarHubView view = _CalendarHubView.month;
+  DateTime _captureDay = DateTime.now();
 
   @override
   Widget build(BuildContext context) {
     final strings = AnnaStrings.of(context);
     return Scaffold(
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () => showUnifiedCapture(
+          context,
+          widget.store,
+          initialDate: _captureDay,
+          entryPoint: UnifiedCaptureEntryPoint.month,
+        ),
+        icon: const Icon(Icons.add),
+        label: Text(strings.d3('ui5Create')),
+      ),
       appBar: AppBar(
         toolbarHeight: 78,
         title: Text(
@@ -161,7 +185,10 @@ class _CalendarHubScreenState extends State<CalendarHubScreen> {
                 CalendarScreen(
                   store: widget.store,
                   embedded: true,
-                  onSelectedDateChanged: widget.onSelectedDateChanged,
+                  onSelectedDateChanged: (selected) {
+                    _captureDay = selected;
+                    widget.onSelectedDateChanged?.call(selected);
+                  },
                 ),
                 WeekScreen(
                   store: widget.store,
@@ -513,7 +540,13 @@ class _PlannerScreenState extends State<PlannerScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  strings.myDay,
+                  widget.embedded
+                      ? approvedTodayGreeting(
+                          strings.languageCode,
+                          widget.store.preferences.displayName,
+                          DateTime.now().hour,
+                        )
+                      : strings.myDay,
                   style: Theme.of(context).textTheme.headlineMedium,
                 ),
                 Text(
@@ -528,6 +561,18 @@ class _PlannerScreenState extends State<PlannerScreen> {
               ],
             ),
             actions: [
+              if (widget.embedded)
+                IconButton(
+                  key: const ValueKey<String>('today-open-calendar'),
+                  tooltip: strings.navCalendar,
+                  onPressed: () => Navigator.push(
+                    context,
+                    MaterialPageRoute<void>(
+                      builder: (_) => CalendarHubScreen(store: widget.store),
+                    ),
+                  ),
+                  icon: const Icon(Icons.calendar_month_outlined),
+                ),
               if (!AgendaStore.sameDay(day, DateTime.now()))
                 TextButton(
                   onPressed: () => _selectDay(DateTime.now()),

@@ -22,13 +22,13 @@ void main() {
     expect(startTabFromStoredValue('more'), StartTab.more);
   });
 
-  test('v1.05-A2 primary shell is Today Calendar Memories More', () {
+  test('approved primary shell is Today Messages Memories More', () {
     final shell =
         File('lib/src/screens/home_inbox_search.dart').readAsStringSync();
 
     for (final page in const <String>[
       'PlannerScreen(store: widget.store, embedded: true)',
-      'CalendarHubScreen(',
+      'SharedSpaceHubScreen(store: widget.store)',
       'DiaryMemoriesScreen(store: widget.store)',
       'MoreScreen(store: widget.store)',
     ]) {
@@ -37,11 +37,11 @@ void main() {
 
     for (final id in const <String>[
       'main-nav-today',
-      'main-nav-calendar',
+      'main-nav-messages',
       'main-nav-memories',
       'main-nav-more',
       'main-rail-today',
-      'main-rail-calendar',
+      'main-rail-messages',
       'main-rail-memories',
       'main-rail-more',
     ]) {
@@ -50,6 +50,7 @@ void main() {
 
     expect(shell, contains('identifier: semanticsId'));
     expect(shell, contains('List<Widget> _bottomDestinations'));
+    expect(shell, contains('strings.navMessages'));
 
     for (final legacy in const <String>[
       'main-nav-home',
@@ -88,7 +89,6 @@ void main() {
       'more-search',
       'more-inbox',
       'more-explore',
-      'more-shared',
       'more-private-vault',
       'more-archive',
       'more-backup',
@@ -107,7 +107,6 @@ void main() {
       'PersonalSearchConnectionsScreen(store: store)',
       'InboxScreen(store: store)',
       'ExploreScreen(store: store)',
-      'SharedSpaceHubScreen(store: store)',
       'ArchiveScreen(store: store)',
       'BackupScreen(store: store)',
       'CloudAccountScreen(store: store)',
@@ -162,8 +161,7 @@ void main() {
     final routeJourneys = <String, String>{
       '.maestro/journey/backup.yaml': 'more-backup',
       '.maestro/journey/archive.yaml': 'more-archive',
-      '.maestro/journey/shared.yaml': 'more-shared',
-      '.maestro/journey/account.yaml': 'more-cloud',
+            '.maestro/journey/account.yaml': 'more-cloud',
       '.maestro/journey/trash.yaml': 'more-archive',
       '.maestro/journey/personalization.yaml': 'more-settings',
     };

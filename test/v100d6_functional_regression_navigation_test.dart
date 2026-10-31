@@ -10,11 +10,12 @@ void main() {
         File('lib/src/screens/more_screen.dart').readAsStringSync();
 
     expect(shell, contains('PlannerScreen(store: widget.store, embedded: true)'));
-    expect(shell, contains('CalendarHubScreen('));
+    final planner = File('lib/src/planner_views.dart').readAsStringSync();
+    expect(planner, contains('CalendarHubScreen('));
     expect(shell, contains('DiaryMemoriesScreen(store: widget.store)'));
     expect(shell, contains('MoreScreen(store: widget.store)'));
     expect(shell, contains("semanticsId: 'main-nav-today'"));
-    expect(shell, contains("semanticsId: 'main-nav-calendar'"));
+    expect(shell, contains("semanticsId: 'main-nav-messages'"));
     expect(shell, contains("semanticsId: 'main-nav-memories'"));
     expect(shell, contains("semanticsId: 'main-nav-more'"));
     expect(shell, contains('identifier: semanticsId'));
@@ -27,7 +28,7 @@ void main() {
     expect(more, contains('InboxScreen(store: store)'));
     expect(more, contains('ArchiveScreen(store: store)'));
     expect(more, contains('BackupScreen(store: store)'));
-    expect(more, contains('SharedSpaceHubScreen(store: store)'));
+    expect(shell, contains('SharedSpaceHubScreen(store: widget.store)'));
     expect(more, contains('CloudAccountScreen(store: store)'));
     expect(more, contains('SettingsHubScreen(store: store)'));
     expect(more, contains('ExploreScreen(store: store)'));
