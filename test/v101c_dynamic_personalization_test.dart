@@ -61,7 +61,7 @@ void main() {
       contains('DiaryMemoriesScreen(store: widget.store)'),
       reason: 'Memories is now a core shell destination',
     );
-    expect(more, contains('AppModule.sharedSpace'));
+    expect(shell, contains('AppModule.sharedSpace'));
     expect(planner, contains('AppModule.habits'));
     expect(editors, contains('AppModule.habits'));
     expect(vault, contains('AppModule.cycleTracker'));
