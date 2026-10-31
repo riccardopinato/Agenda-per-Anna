@@ -74,7 +74,7 @@ void main() {
     expect(account, contains("id: 'more-cloud'"));
     expect(archive, contains("id: 'more-archive'"));
     expect(backup, contains("id: 'more-backup'"));
-    expect(shared, contains("id: 'more-shared'"));
+    expect(shared, contains("id: 'main-nav-messages'"));
     expect(trash, contains("id: 'more-archive'"));
     expect(regression, contains("id: 'more-search'"));
     expect(regression, contains("id: 'more-inbox'"));
