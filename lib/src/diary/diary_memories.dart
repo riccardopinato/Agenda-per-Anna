@@ -1220,7 +1220,12 @@ class _DiaryMemoriesScreenState extends State<DiaryMemoriesScreen> {
                         onPageChanged: (position) =>
                             setState(() => _anniversaryIndex = position),
                         itemBuilder: (context, position) =>
-                            _forYouHero(context, anniversary[position]),
+                            AnnaMotionStagger(
+                              key: ValueKey<String>(
+                                'v108-featured-${anniversary[position].block.id}'),
+                              order: 0,
+                              child: _forYouHero(context, anniversary[position]),
+                            ),
                       ),
                     ),
                     if (activeRecord != null)
@@ -1238,9 +1243,28 @@ class _DiaryMemoriesScreenState extends State<DiaryMemoriesScreen> {
                   if (suggestions.isNotEmpty) ...[
                     AnnaJournalSectionHeading(title: strings.d3('ui5ForYou')),
                     const SizedBox(height: 8),
-                    ...(_suggestionsExpanded
-                        ? suggestions : suggestions.take(3))
+                    ...suggestions.take(3)
                         .map((record) => _recallMemoryRow(context, record)),
+                    AnimatedSize(
+                      duration: AnnaMotionV108.duration(context, 330),
+                      alignment: Alignment.topCenter,
+                      child: Column(
+                        children: _suggestionsExpanded
+                            ? <Widget>[
+                                for (var i = 3; i < suggestions.length; i++)
+                                  if (i < 7)
+                                    AnnaMotionStagger(
+                                      key: ValueKey<String>(
+                                        'v108-suggestion-${suggestions[i].block.id}'),
+                                      order: i - 3,
+                                      child: _recallMemoryRow(context, suggestions[i]),
+                                    )
+                                  else
+                                    _recallMemoryRow(context, suggestions[i]),
+                              ]
+                            : const <Widget>[],
+                      ),
+                    ),
                     if (suggestions.length > 3)
                       Align(
                         alignment: Alignment.centerRight,
@@ -1583,8 +1607,27 @@ class _DiaryMemoriesScreenState extends State<DiaryMemoriesScreen> {
                             ),
                           ),
                         ),
-                        if (isExpanded)
-                          ...bucket.map((record) => _timelineMemoryCard(context, record)),
+                        AnimatedSize(
+                          duration: AnnaMotionV108.duration(context, 300),
+                          alignment: Alignment.topCenter,
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: isExpanded
+                                ? <Widget>[
+                                    for (var i = 0; i < bucket.length; i++)
+                                      if (i < 4)
+                                        AnnaMotionStagger(
+                                          key: ValueKey<String>(
+                                            'v108-timeline-${bucket[i].block.id}'),
+                                          order: i,
+                                          child: _timelineMemoryCard(context, bucket[i]),
+                                        )
+                                      else
+                                        _timelineMemoryCard(context, bucket[i]),
+                                  ]
+                                : const <Widget>[],
+                          ),
+                        ),
                         const SizedBox(height: 5),
                       ],
                     ),
@@ -1981,7 +2024,9 @@ class _DiaryMemoriesScreenState extends State<DiaryMemoriesScreen> {
                   ),
                 ),
               Expanded(
-                child: switch (view) {
+                child: AnnaMotionReveal(
+                  token: view.index,
+                  child: switch (view) {
                   _DiaryMemoriesView.forYou =>
                     _forYouView(context, current),
                   _DiaryMemoriesView.timeline => Semantics(
@@ -2000,6 +2045,7 @@ class _DiaryMemoriesScreenState extends State<DiaryMemoriesScreen> {
                       ? _emptyState()
                       : _yearsView(context, current),
                 },
+                ),
               ),
             ],
           );
