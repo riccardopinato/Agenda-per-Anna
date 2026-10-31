@@ -247,6 +247,7 @@ class _MemoryCollectionsScreenState extends State<MemoryCollectionsScreen> {
         builder: (_) => _MemoryDerivedResultsScreen(
           store: widget.store,
           title: definition.name,
+          collectionId: definition.id,
           recordsBuilder: () =>
               widget.store.memoryCollectionReferencesById(definition.id),
         ),
@@ -334,8 +335,12 @@ class _MemoryCollectionsScreenState extends State<MemoryCollectionsScreen> {
                             key: ValueKey<String>(
                               'memory-collection-${definition.id}',
                             ),
-                            leading:
-                                const Icon(Icons.collections_bookmark_outlined),
+                            leading: _V108MemoryAlbumCover(
+                              store: widget.store,
+                              collectionId: definition.id,
+                              width: 48,
+                              height: 48,
+                            ),
                             title: Text(
                               definition.name,
                               style:
@@ -412,11 +417,13 @@ class _MemoryCollectionsScreenState extends State<MemoryCollectionsScreen> {
 class _MemoryDerivedResultsScreen extends StatelessWidget {
   final AgendaStore store;
   final String title;
+  final String? collectionId;
   final List<DiaryBlockReference> Function() recordsBuilder;
 
   const _MemoryDerivedResultsScreen({
     required this.store,
     required this.title,
+    this.collectionId,
     required this.recordsBuilder,
   });
 
@@ -430,7 +437,20 @@ class _MemoryDerivedResultsScreen extends StatelessWidget {
           style: const TextStyle(fontWeight: FontWeight.w800),
         ),
       ),
-      body: AnimatedBuilder(
+      body: Column(
+        children: [
+          if (collectionId != null)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 10, 16, 0),
+              child: _V108MemoryAlbumCover(
+                store: store,
+                collectionId: collectionId!,
+                width: double.infinity,
+                height: 156,
+              ),
+            ),
+          Expanded(
+            child: AnimatedBuilder(
         animation: Listenable.merge([
           store.journalRevision,
           store.settingsRevision,
@@ -446,7 +466,7 @@ class _MemoryDerivedResultsScreen extends StatelessWidget {
             separatorBuilder: (_, __) => const Divider(height: 1),
             itemBuilder: (context, index) {
               final reference = records[index];
-              return ListTile(
+              final tile = ListTile(
                 leading: Icon(
                   switch (reference.block.type) {
                     DiaryBlockType.note => Icons.sticky_note_2_outlined,
@@ -480,9 +500,71 @@ class _MemoryDerivedResultsScreen extends StatelessWidget {
                   ),
                 ),
               );
+              return index < 4
+                  ? AnnaMotionStagger(
+                      key: ValueKey<String>('v108-album-entry-${reference.block.id}'),
+                      order: index,
+                      child: tile,
+                    )
+                  : tile;
             },
           );
         },
+      ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// A real collection's first available photo is its shared visual identity.
+/// Missing photos receive a neutral themed icon, never fabricated imagery.
+class _V108MemoryAlbumCover extends StatelessWidget {
+  final AgendaStore store;
+  final String collectionId;
+  final double width;
+  final double height;
+  const _V108MemoryAlbumCover({
+    required this.store,
+    required this.collectionId,
+    required this.width,
+    required this.height,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    DiaryBlock? cover;
+    for (final record in store.memoryCollectionReferencesById(collectionId)) {
+      if (record.block.type == DiaryBlockType.photo &&
+          record.block.hasPhotoMedia) {
+        cover = record.block;
+        break;
+      }
+    }
+    final scheme = Theme.of(context).colorScheme;
+    return Hero(
+      tag: 'v108-album-$collectionId',
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(12),
+        child: SizedBox(
+          width: width,
+          height: height,
+          child: cover == null
+              ? ColoredBox(
+                  color: scheme.primaryContainer,
+                  child: Center(
+                    child: Icon(Icons.collections_bookmark_outlined,
+                      color: scheme.onPrimaryContainer),
+                  ),
+                )
+              : DiaryMediaImage(
+                  assetId: cover.mediaThumbnailAssetId.isNotEmpty
+                      ? cover.mediaThumbnailAssetId : cover.mediaAssetId,
+                  fallbackBase64: cover.imageBase64,
+                  fit: BoxFit.cover,
+                ),
+        ),
       ),
     );
   }
