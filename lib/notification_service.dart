@@ -115,7 +115,7 @@ class NotificationLocalization {
     reminderChannelDescription:
         "Anna's Diary reminders for appointments and tasks",
     sharedChannelDescription:
-        'News and updates from the shared Noi ♡ space',
+        'News and updates from the shared space',
     immediateTestBody: 'Immediate test: local notifications are active ♡',
     scheduledTestTitle: "Anna's Diary · Scheduled test",
     scheduledTestBody: 'The scheduled reminder arrived correctly ♡',
@@ -426,7 +426,7 @@ class NotificationService {
       await androidPlugin?.createNotificationChannel(
         AndroidNotificationChannel(
           sharedChannelId,
-          'Noi ♡',
+          'Spazio condiviso',
           description: _localization.sharedChannelDescription,
           importance: Importance.high,
           playSound: true,
