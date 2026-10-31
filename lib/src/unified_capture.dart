@@ -222,8 +222,9 @@ Future<void> showUnifiedCapture(
         String? subtitle,
         required _UnifiedCaptureAction action,
         bool primary = false,
+        int order = 0,
       }) {
-        return ListTile(
+        final tile = ListTile(
           leading: primary
               ? CircleAvatar(child: Icon(icon))
               : Icon(icon),
@@ -239,6 +240,13 @@ Future<void> showUnifiedCapture(
             Navigator.pop(sheetContext, action);
           },
         );
+        return primary
+            ? AnnaMotionStagger(
+                key: ValueKey<String>('v108-capture-action-${action.name}'),
+                order: order,
+                child: tile,
+              )
+            : tile;
       }
 
       return StatefulBuilder(
@@ -292,6 +300,7 @@ Future<void> showUnifiedCapture(
                     subtitle: strings.addDiaryNote(dayLabel),
                     action: _UnifiedCaptureAction.text,
                     primary: true,
+                    order: 0,
                   ),
                   actionTile(
                     icon: Icons.photo_camera_back_outlined,
@@ -299,12 +308,14 @@ Future<void> showUnifiedCapture(
                     subtitle: strings.savePhotoMoment(dayLabel),
                     action: _UnifiedCaptureAction.photo,
                     primary: true,
+                    order: 1,
                   ),
                   actionTile(
                     icon: Icons.check_circle_outline,
                     title: strings.task,
                     action: _UnifiedCaptureAction.task,
                     primary: true,
+                    order: 2,
                   ),
                   actionTile(
                     icon: Icons.mic_none_outlined,
@@ -312,12 +323,14 @@ Future<void> showUnifiedCapture(
                     subtitle: strings.recordDiaryAudio(dayLabel),
                     action: _UnifiedCaptureAction.voice,
                     primary: true,
+                    order: 3,
                   ),
                   actionTile(
                     icon: Icons.draw_outlined,
                     title: strings.v100Sketch,
                     action: _UnifiedCaptureAction.sketch,
                     primary: true,
+                    order: 4,
                   ),
                   Padding(
                     padding: const EdgeInsets.symmetric(
@@ -439,7 +452,7 @@ Future<void> showUnifiedCapture(
           ],
         ),
       );
-      unawaited(AnnaFeedback.success());
+      AnnaMotionV108.showSaveSuccess(context);
       return;
 
     case _UnifiedCaptureAction.templates:
@@ -483,7 +496,7 @@ Future<void> showUnifiedCapture(
       final text = await showDiaryNoteEditor(context);
       if (text == null || text.trim().isEmpty) return;
       await _saveUnifiedCaptureText(store, targetDay, text);
-      unawaited(AnnaFeedback.success());
+      AnnaMotionV108.showSaveSuccess(context);
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(strings.momentSaved(dayLabel))),
@@ -502,7 +515,7 @@ Future<void> showUnifiedCapture(
         capture,
         caption: caption,
       );
-      unawaited(AnnaFeedback.success());
+      AnnaMotionV108.showSaveSuccess(context);
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(strings.voiceSaved(dayLabel))),
@@ -523,7 +536,7 @@ Future<void> showUnifiedCapture(
         imageBytes,
         caption: caption,
       );
-      unawaited(AnnaFeedback.success());
+      AnnaMotionV108.showSaveSuccess(context);
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(strings.photoSaved(dayLabel))),
@@ -540,7 +553,7 @@ Future<void> showUnifiedCapture(
         value,
         toInbox: true,
       );
-      unawaited(AnnaFeedback.success());
+      AnnaMotionV108.showSaveSuccess(context);
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(strings.inboxSaved)),

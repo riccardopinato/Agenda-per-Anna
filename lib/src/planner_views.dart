@@ -128,9 +128,11 @@ class _CalendarHubScreenState extends State<CalendarHubScreen> {
           ),
           const SizedBox(height: AnnaDesignTokens.spaceXs),
           Expanded(
-            child: IndexedStack(
-              index: view.index,
-              children: [
+            child: AnnaMotionReveal(
+              token: view.index,
+              child: IndexedStack(
+                index: view.index,
+                children: [
                 CalendarScreen(
                   store: widget.store,
                   embedded: true,
@@ -141,6 +143,7 @@ class _CalendarHubScreenState extends State<CalendarHubScreen> {
                   embedded: true,
                 ),
               ],
+              ),
             ),
           ),
         ],
@@ -437,7 +440,9 @@ class _PlannerScreenState extends State<PlannerScreen> {
                     constraints: const BoxConstraints(
                       maxWidth: AnnaDesignTokens.readingContentWidth,
                     ),
-                    child: ListView(
+                    child: AnnaMotionReveal(
+                      token: day.millisecondsSinceEpoch,
+                      child: ListView(
                       padding: const EdgeInsets.fromLTRB(20, 14, 20, 110),
                       children: [
                         _DayOpeningCard(date: day),
@@ -447,7 +452,11 @@ class _PlannerScreenState extends State<PlannerScreen> {
                         if (widget.embedded) ...[
                           // DF-08–14: Oggi reads the selected day before
                           // any editor. Create stays in the shell's + Crea.
-                          _TodayCompactSummary(snapshot: snapshot),
+                          AnnaMotionStagger(
+                            key: const ValueKey<String>('v108-today-summary'),
+                            order: 0,
+                            child: _TodayCompactSummary(snapshot: snapshot),
+                          ),
                           if (isToday && (upcoming.isNotEmpty || pinnedItems.isNotEmpty)) ...[
                             const SizedBox(height: 12),
                             _TodayFocusCard(
@@ -495,10 +504,14 @@ class _PlannerScreenState extends State<PlannerScreen> {
                               date: day,
                             ),
                           ],
-                          _TodayCompactDiaryPreview(
-                            store: widget.store,
-                            snapshot: snapshot,
-                            hideDetails: widget.store.preferences.hideHomeDetails,
+                          AnnaMotionStagger(
+                            key: const ValueKey<String>('v108-today-diary'),
+                            order: 2,
+                            child: _TodayCompactDiaryPreview(
+                              store: widget.store,
+                              snapshot: snapshot,
+                              hideDetails: widget.store.preferences.hideHomeDetails,
+                            ),
                           ),
                         ] else ...[
                           AnnaJournalSectionHeading(title: strings.diary),
@@ -565,6 +578,7 @@ class _PlannerScreenState extends State<PlannerScreen> {
                           ],
                         ),
                   ],
+                    ),
                     ),
                   ),
                 ),
