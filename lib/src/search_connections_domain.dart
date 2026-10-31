@@ -1413,12 +1413,7 @@ class _PersonalSearchConnectionsScreenState
                                   return Text(
                                     evidence == null
                                         ? hit.subtitle
-                                        : hit.subtitle +
-                                            '\n' +
-                                            approvedSearchReasonTitle(
-                                                strings.languageCode) +
-                                            ': ' +
-                                            evidence,
+                                        : '${hit.subtitle}\\n${approvedSearchReasonTitle(strings.languageCode)}: $evidence',
                                     maxLines: 3,
                                     overflow: TextOverflow.ellipsis,
                                   );
