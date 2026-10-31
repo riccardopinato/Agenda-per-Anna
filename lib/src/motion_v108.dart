@@ -188,3 +188,95 @@ class _AnnaMotionStaggerState extends State<AnnaMotionStagger> {
     );
   }
 }
+
+/// M16: real photo pair only. The source records and existing detail actions
+/// remain canonical; this widget owns only temporary presentation selection.
+class AnnaThenNowWipe extends StatefulWidget {
+  final DiaryBlock before;
+  final DiaryBlock after;
+  final String beforeLabel;
+  final String afterLabel;
+  const AnnaThenNowWipe({
+    super.key,
+    required this.before,
+    required this.after,
+    required this.beforeLabel,
+    required this.afterLabel,
+  });
+
+  @override
+  State<AnnaThenNowWipe> createState() => _AnnaThenNowWipeState();
+}
+
+class _AnnaThenNowWipeState extends State<AnnaThenNowWipe> {
+  bool _showAfter = false;
+
+  Widget _photo(DiaryBlock block) => DiaryMediaImage(
+        assetId: block.mediaThumbnailAssetId.isNotEmpty
+            ? block.mediaThumbnailAssetId : block.mediaAssetId,
+        fallbackBase64: block.imageBase64,
+        fit: BoxFit.cover,
+      );
+
+  @override
+  Widget build(BuildContext context) {
+    final enabled = AnnaMotionV108.enabled(context);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        LayoutBuilder(
+          builder: (context, constraints) => SizedBox(
+            height: 178,
+            child: Stack(
+              clipBehavior: Clip.hardEdge,
+              children: [
+                Positioned.fill(child: _photo(widget.before)),
+                Positioned(
+                  left: 0,
+                  top: 0,
+                  bottom: 0,
+                  child: TweenAnimationBuilder<double>(
+                    tween: Tween<double>(end: _showAfter ? 1 : 0),
+                    duration: enabled
+                        ? const Duration(milliseconds: 460)
+                        : Duration.zero,
+                    curve: Curves.easeInOutCubic,
+                    builder: (context, fraction, child) => ClipRect(
+                      child: Align(
+                        alignment: Alignment.centerLeft,
+                        widthFactor: fraction,
+                        child: child,
+                      ),
+                    ),
+                    child: SizedBox(
+                      width: constraints.maxWidth,
+                      height: 178,
+                      child: _photo(widget.after),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+        const SizedBox(height: 8),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            ChoiceChip(
+              label: Text(widget.beforeLabel),
+              selected: !_showAfter,
+              onSelected: (_) => setState(() => _showAfter = false),
+            ),
+            const SizedBox(width: 8),
+            ChoiceChip(
+              label: Text(widget.afterLabel),
+              selected: _showAfter,
+              onSelected: (_) => setState(() => _showAfter = true),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+}

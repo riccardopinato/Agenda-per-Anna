@@ -1070,6 +1070,18 @@ class _DiaryMemoriesScreenState extends State<DiaryMemoriesScreen> {
                                     );
                                   },
                                 ),
+                                if (pair.thenMemory.block.type == DiaryBlockType.photo &&
+                                    pair.nowMemory.block.type == DiaryBlockType.photo &&
+                                    pair.thenMemory.block.hasPhotoMedia &&
+                                    pair.nowMemory.block.hasPhotoMedia) ...[
+                                  AnnaThenNowWipe(
+                                    before: pair.thenMemory.block,
+                                    after: pair.nowMemory.block,
+                                    beforeLabel: strings.d3('thenNowThen'),
+                                    afterLabel: strings.d3('thenNowNow'),
+                                  ),
+                                  const SizedBox(height: AnnaDesignTokens.spaceSm),
+                                ],
                                 const Divider(height: 1),
                                 ListTile(
                                   contentPadding: EdgeInsets.zero,
