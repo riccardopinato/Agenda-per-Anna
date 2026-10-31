@@ -314,9 +314,14 @@ class AnnaMotionMapEntry extends StatelessWidget {
 
 class AnnaMotionMapPin extends StatefulWidget {
   final int count;
+  final int order;
   final VoidCallback onPressed;
   const AnnaMotionMapPin({
-    super.key, required this.count, required this.onPressed});
+    super.key,
+    required this.count,
+    this.order = 0,
+    required this.onPressed,
+  });
   @override
   State<AnnaMotionMapPin> createState() => _AnnaMotionMapPinState();
 }
@@ -339,7 +344,9 @@ class _AnnaMotionMapPinState extends State<AnnaMotionMapPin> {
   @override
   Widget build(BuildContext context) {
     final color = Theme.of(context).colorScheme.primary;
-    return AnimatedScale(
+    return AnnaMotionStagger(
+      order: widget.order,
+      child: AnimatedScale(
       scale: _pressed ? 1.24 : 1,
       duration: AnnaMotionV108.duration(context, 180),
       curve: Curves.easeOutBack,
@@ -359,6 +366,7 @@ class _AnnaMotionMapPinState extends State<AnnaMotionMapPin> {
           icon: Text('${widget.count}',
             style: const TextStyle(fontWeight: FontWeight.w900)),
         ),
+      ),
       ),
     );
   }

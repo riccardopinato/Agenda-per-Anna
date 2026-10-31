@@ -27,6 +27,7 @@ class _DiaryMemoriesScreenState extends State<DiaryMemoriesScreen> {
   final Map<int, GlobalKey> _timelineYearKeys = <int, GlobalKey>{};
   int? _selectedTimelineYear;
   String? _highlightTimelineMonth;
+  String? _yearJumpTarget;
   bool _timelineInitialized = false;
   bool _suggestionsExpanded = false;
   int _anniversaryIndex = 0;
@@ -849,6 +850,7 @@ class _DiaryMemoriesScreenState extends State<DiaryMemoriesScreen> {
                                           '${place.label}, ${place.count}',
                                       child: AnnaMotionMapPin(
   count: place.count,
+  order: located.indexOf(place),
   onPressed: () {
     final memory = place.latestMemory;
     unawaited(showModalBottomSheet<void>(
@@ -1570,6 +1572,7 @@ class _DiaryMemoriesScreenState extends State<DiaryMemoriesScreen> {
         _selectedTimelineYear = selected;
         _expandedTimelineMonths[target.key] = true;
         _highlightTimelineMonth = target.key;
+        _yearJumpTarget = target.key;
       });
       Future<void>.delayed(const Duration(milliseconds: 670), () {
         if (mounted && _highlightTimelineMonth == target.key) {
@@ -1658,6 +1661,7 @@ class _DiaryMemoriesScreenState extends State<DiaryMemoriesScreen> {
                               onTap: () => setState(() {
                                 _selectedTimelineYear = date.year;
                                 _expandedTimelineMonths[entry.key] = !isExpanded;
+                                _yearJumpTarget = null;
                               }),
                               child: Padding(
                                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
@@ -1694,7 +1698,7 @@ class _DiaryMemoriesScreenState extends State<DiaryMemoriesScreen> {
                             children: isExpanded
                                 ? <Widget>[
                                     for (var i = 0; i < bucket.length; i++)
-                                      if (i < 4)
+                                      if (i < 4 && _yearJumpTarget != entry.key)
                                         AnnaMotionStagger(
                                           key: ValueKey<String>(
                                             'v108-timeline-${bucket[i].block.id}'),

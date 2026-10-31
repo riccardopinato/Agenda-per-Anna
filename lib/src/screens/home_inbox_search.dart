@@ -12,6 +12,7 @@ class _MainShellState extends State<MainShell> {
   late int index;
   DateTime _calendarCaptureDate = DateTime.now();
   bool _createPressed = false;
+  bool _createReleased = false;
 
   Future<void> _openCentralCreate() async {
     if (_createPressed) return;
@@ -20,7 +21,15 @@ class _MainShellState extends State<MainShell> {
     final animate = AnnaDesignTokens.animationsEnabled(context);
     if (animate) await Future<void>.delayed(const Duration(milliseconds: 135));
     if (!mounted) return;
-    setState(() => _createPressed = false);
+    if (animate) {
+      setState(() => _createReleased = true);
+      await Future<void>.delayed(const Duration(milliseconds: 125));
+      if (!mounted) return;
+    }
+    setState(() {
+      _createPressed = false;
+      _createReleased = false;
+    });
     await showUnifiedCapture(
       context,
       widget.store,
@@ -43,18 +52,22 @@ class _MainShellState extends State<MainShell> {
       child: Tooltip(
         message: AnnaStrings.of(context).d3('ui5Create'),
         child: AnimatedScale(
-          scale: _createPressed && animate ? 0.93 : 1.0,
+          scale: _createPressed && !_createReleased && animate ? 0.93 : 1.0,
           duration: animate ? const Duration(milliseconds: 190) : Duration.zero,
-          curve: Curves.easeOutCubic,
+          curve: Curves.easeOutBack,
           child: AnimatedContainer(
             duration: animate ? const Duration(milliseconds: 190) : Duration.zero,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
               boxShadow: [
                 BoxShadow(
-                  color: color.withValues(alpha: _createPressed ? 0.30 : 0.16),
-                  blurRadius: _createPressed ? 26 : 15,
-                  spreadRadius: _createPressed ? 5 : 2,
+                  color: color.withValues(
+                    alpha: _createReleased && animate ? 0.38 :
+                        _createPressed && animate ? 0.28 : 0.16),
+                  blurRadius: _createReleased && animate ? 29 :
+                      _createPressed && animate ? 24 : 15,
+                  spreadRadius: _createReleased && animate ? 6 :
+                      _createPressed && animate ? 4 : 2,
                 ),
               ],
             ),
