@@ -2,9 +2,11 @@
 
 Status: **SOURCE PREPARATION — APK NOT BUILT — PHYSICAL DEVICE QA NOT VERIFIED**.
 
-Release identity: `1.0.0-rc.4+113`; package `com.riccardopinato.agenda_per_anna`.
-Compared with previously installed `1.0.0-rc.2+111`, Android versionCode 113 is higher.
-Version 113 is **reserved** here; no file should be called an APK until Android Actions produces it with the stable certificate.
+Historical signed candidate `rc.4+113` **was built** from `4fbeb1c` and is not the updated design/fix candidate; the new `rc.5+114` APK is still **NOT BUILT**. See [APPROVED10_FULL_AUDIT_20261031.md](APPROVED10_FULL_AUDIT_20261031.md).
+
+Release identity: `1.0.0-rc.5+114`; package `com.riccardopinato.agenda_per_anna`.
+Compared with previously installed `1.0.0-rc.2+111`, Android versionCode 114 is higher.
+Version 114 is **reserved** here; no file should be called an APK until Android Actions produces it with the stable certificate.
 
 ## Release requirements
 
