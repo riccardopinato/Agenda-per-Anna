@@ -119,7 +119,7 @@ class _SharedSpaceHubScreenState extends State<SharedSpaceHubScreen> {
   }
 
   Future<void> _createSpace() async {
-    final controller = TextEditingController(text: 'Noi ♡');
+    final controller = TextEditingController();
     final name = await showDialog<String>(
       context: context,
       builder: (dialogContext) => AlertDialog(

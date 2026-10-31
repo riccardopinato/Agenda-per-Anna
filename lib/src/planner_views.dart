@@ -1104,7 +1104,7 @@ class _TodayFocusCard extends StatelessWidget {
             ? strings.v100NextScheduled
             : '${DateFormat('EEE d MMM', AnnaStrings.intlLocale(context)).format(next!.date)} · '
                 '${formatTime(next!.start!)} · ${next!.title}'
-                '${next!.isShared ? ' · Noi ♡' : ''}';
+                '${next!.isShared ? ' · ${strings.d3('sharedSpace')}' : ''}';
 
     return Semantics(
       identifier: 'today-focus-card',

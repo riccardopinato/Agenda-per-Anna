@@ -283,7 +283,7 @@ class NotificationService {
       NotificationDetails(
         android: AndroidNotificationDetails(
           sharedChannelId,
-          'Noi ♡',
+          'Spazio condiviso',
           channelDescription: _localization.sharedChannelDescription,
           importance: Importance.max,
           priority: Priority.max,
@@ -712,7 +712,7 @@ class NotificationService {
     if (!status.sharedDeliveryReady) return;
 
     final label =
-        (spaceName ?? '').trim().isEmpty ? 'Noi ♡' : spaceName!.trim();
+        (spaceName ?? '').trim().isEmpty ? 'Spazio condiviso' : spaceName!.trim();
 
     try {
       await _plugin.show(

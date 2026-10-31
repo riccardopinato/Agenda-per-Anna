@@ -1,9 +1,8 @@
 # Anna's Diary — Product Bible
 
-**Status:** canonical product source of truth  
-**Current product line:** v1.05 Memories & Recall 3.0 and visual UI1–UI5 completed; UI5 PR #154 merged, user-reported Android phone smoke PASS (30 October 2026); v1.05.x-FINAL post-UI5 consolidation is a bounded compatibility/release-doc pass, no new APK; v1.08 Motion & Visual Polish is next for **design selections only** (10 at a time), followed by v1.07 daily-use UX; v1.06 external integrations deferred pending PC/device access  
-**Distribution identity:** 1.0.0-rc.2+111 — signed UI5 ARM64 sideload artifact built and briefly tested on phone; before another APK build, bump Android versionCode strictly above 111 and retain stable signing/package identity; full physical and Store certification remain separate  
-**Last aligned:** 30 October 2026
+**Status:** all 10/10 approved screen source deltas merged (#163/#164/#166/#167/#168/#169/#170); audit correction PRs address search evidence, Inbox empty-category persistence, neutral labels and governance. Real Android certification remains outstanding.
+**Distribution identity:** source candidate `1.0.0-rc.5+114` on `main@ac221eec` before these audit fixes; last verified stable-signed APK `rc.4+113` came from older SHA `4fbeb1c` and MUST NOT be advertised as current. A final audit-fix APK requires a new unique versionCode and stable key after merge.
+**Last aligned:** 31 October 2026 (source audit; physical NOT VERIFIED)
 
 This document defines what Anna's Diary is, what it is not, and the product/security invariants that future work must preserve. Implementation details belong in `docs/ARCHITECTURE.md`; execution sequencing belongs in `docs/ROADMAP.md`.
 

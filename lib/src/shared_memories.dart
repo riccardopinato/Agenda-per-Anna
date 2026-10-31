@@ -292,7 +292,7 @@ class _SharedMemoriesScreenState extends State<SharedMemoriesScreen> {
     final uid =
         widget.store.activeAccountId ?? CloudSyncService.instance.userId;
     if (uid != null && entry.updatedBy == uid) return AnnaStrings.of(context).d3('mem_you');
-    return 'Noi ♡';
+    return AnnaStrings.of(context).d3('sharedSpace');
   }
 
   String? _seenLabel(SharedEntry entry) {
@@ -1357,7 +1357,7 @@ class SharedMemoryCollectionScreen extends StatelessWidget {
     if (currentUserId != null && entry.updatedBy == currentUserId) {
       return strings.d3('mem_you');
     }
-    return 'Noi ♡';
+    return strings.d3('sharedSpace');
   }
 
   String? _seen(SharedEntry entry, AnnaStrings strings) {

@@ -1,5 +1,13 @@
 # Anna's Diary — Roadmap
 
+## Audit closure — 31 October 2026 (source corrections in progress)
+
+- Search long-note evidence fix: PR #172; exact-head gates and merge are required.
+- Persistent empty Inbox category names: PR #173; follow original account preferences, backed up/synced, physical Android check still required.
+- Replace retired user-facing «Noi ♡» copy only; **never rename historical space names or credentials**. Branch `fix/anna-audit-labels-governance`; backend push copy requires separately verified redeploy.
+- Android source candidate `rc.5+114` has not been built as an APK. After source fixes, bump the next **unused** versionCode and run the stable-signed manual sideload flow. Do not reuse old signed artifact.
+- Mandatory: Android physical Inbox, QR/two-user owner permission, Vault Keystore, PWA Web Push, all +Crea, accessibility; no source-only certification.
+
 ## Approved 10/10 mock-ups — phased integration (31 October 2026)
 
 **Scope:** ten explicit user-approved visual decisions recorded in [APPROVED_10_MOCKUPS_IMPLEMENTATION_CONTRACT.md](APPROVED_10_MOCKUPS_IMPLEMENTATION_CONTRACT.md). Current code already contains much of UI5/v1.08; integrate **deltas**, never overwrite working features merely because a mock-up does not display them. This design handoff is NEW product scope and does not retroactively reopen or invalidate previously completed UI5/v1.08 milestones.

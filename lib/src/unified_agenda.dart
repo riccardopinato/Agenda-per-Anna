@@ -76,7 +76,7 @@ class UnifiedAgendaEntry {
 
   String visibilityLabel(AnnaStrings strings) {
     if (isShared) {
-      return space?.name.trim().isNotEmpty == true ? space!.name : 'Noi ♡';
+      return space?.name.trim().isNotEmpty == true ? space!.name : strings.d3('sharedSpace');
     }
     if (isExternal) {
       final name = externalEvent!.calendarName.trim();
@@ -263,7 +263,7 @@ class UnifiedAgendaTile extends StatelessWidget {
           children: [
             Text(timeText),
             Text(
-              'Noi ♡',
+              AnnaStrings.of(context).d3('sharedSpace'),
               style: TextStyle(
                 color: color,
                 fontWeight: FontWeight.w800,
@@ -688,9 +688,9 @@ Future<void> openUnifiedItemComposer(
                 foregroundColor: AgendaCategory.couple.color,
                 child: const Icon(Icons.favorite_outline),
               ),
-              title: const Text(
-                'Noi ♡',
-                style: TextStyle(fontWeight: FontWeight.w800),
+              title: Text(
+                AnnaStrings.of(sheetContext).d3('sharedSpace'),
+                style: const TextStyle(fontWeight: FontWeight.w800),
               ),
               subtitle: Text(
                 AnnaStrings.of(sheetContext).d3('unified_syncedShared'),

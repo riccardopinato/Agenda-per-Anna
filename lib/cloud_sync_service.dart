@@ -115,7 +115,7 @@ class SharedSpace {
       SharedSpace(
         id: json['id'] as String,
         ownerId: json['owner_id'] as String,
-        name: json['name'] as String? ?? 'Noi ♡',
+        name: json['name'] as String? ?? 'Spazio condiviso',
         role: role,
         createdAt:
             DateTime.tryParse(json['created_at'] as String? ?? '') ??
@@ -921,7 +921,7 @@ class CloudSyncService extends ChangeNotifier {
   }
 
   Future<String> createSharedSpace({
-    String name = 'Noi ♡',
+    String name = 'Spazio condiviso',
   }) async {
     final client = _requireSignedInClient();
     final result = await client.rpc(
