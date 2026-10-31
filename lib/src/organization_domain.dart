@@ -23,6 +23,7 @@ String inboxCategoryCopy(String code, String key) {
       'choose': 'Choose a note to categorize',
       'empty': 'Create an Inbox note first',
       'hint': 'Tags are saved on the selected note',
+      'failed': 'Could not save the category',
     },
     'es' => {
       'heading': 'Tus categorías', 'all': 'Todas', 'manage': 'Gestionar',
@@ -30,6 +31,7 @@ String inboxCategoryCopy(String code, String key) {
       'choose': 'Elige una nota para clasificar',
       'empty': 'Crea primero una nota en Inbox',
       'hint': 'Las etiquetas se guardan en la nota elegida',
+      'failed': 'No se pudo guardar la categoría',
     },
     'fr' => {
       'heading': 'Vos catégories', 'all': 'Toutes', 'manage': 'Gérer',
@@ -37,6 +39,7 @@ String inboxCategoryCopy(String code, String key) {
       'choose': 'Choisissez une note à classer',
       'empty': 'Créez d’abord une note Inbox',
       'hint': 'Les tags sont enregistrés sur la note choisie',
+      'failed': 'Impossible d’enregistrer la catégorie',
     },
     'pt' => {
       'heading': 'As tuas categorias', 'all': 'Todas', 'manage': 'Gerir',
@@ -44,6 +47,7 @@ String inboxCategoryCopy(String code, String key) {
       'choose': 'Escolhe uma nota para categorizar',
       'empty': 'Cria primeiro uma nota na Inbox',
       'hint': 'As etiquetas são guardadas na nota escolhida',
+      'failed': 'Não foi possível guardar a categoria',
     },
     _ => {
       'heading': 'Le tue categorie', 'all': 'Tutte', 'manage': 'Gestisci',
@@ -51,6 +55,7 @@ String inboxCategoryCopy(String code, String key) {
       'choose': 'Scegli una nota da categorizzare',
       'empty': 'Crea prima una nota Inbox',
       'hint': 'I tag vengono salvati sulla nota scelta',
+      'failed': 'Impossibile salvare la categoria',
     },
   };
   return labels[key] ?? key;
