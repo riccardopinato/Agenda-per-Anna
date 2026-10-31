@@ -18,7 +18,7 @@ void main() {
     expect(shell, contains('AnnaDesignTokens.animationsEnabled(context)'));
     expect(calendar, contains('onSelectedDateChanged?.call(s)'));
     expect(calendar, contains('widget.embedded ? null : FloatingActionButton.extended'));
-    for (final id in ['main-nav-today', 'main-nav-calendar', 'main-nav-memories', 'main-nav-more']) {
+    for (final id in ['main-nav-today', 'main-nav-messages', 'main-nav-memories', 'main-nav-more']) {
       expect(shell, contains(id));
     }
     expect(capture, contains("identifier: 'capture-effective-date'"));
