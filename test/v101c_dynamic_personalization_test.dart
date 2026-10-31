@@ -33,7 +33,6 @@ void main() {
         File('lib/src/screens/explore_screen.dart').readAsStringSync();
     final shell =
         File('lib/src/screens/home_inbox_search.dart').readAsStringSync();
-    final more = File('lib/src/screens/more_screen.dart').readAsStringSync();
     final planner = File('lib/src/planner_views.dart').readAsStringSync();
     final editors = File('lib/src/widgets_editors.dart').readAsStringSync();
     final vault =
