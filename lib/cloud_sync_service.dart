@@ -931,6 +931,21 @@ class CloudSyncService extends ChangeNotifier {
     return result.toString();
   }
 
+  /// Rename an existing shared-space label without changing its UUID.
+  /// The server enforces owner role; no direct shared_spaces table UPDATE.
+  Future<String> renameSharedSpace(String spaceId, String name) async {
+    final trimmed = name.trim();
+    if (trimmed.isEmpty || trimmed.length > 60) {
+      throw ArgumentError.value(name, 'name', 'Expected 1–60 characters');
+    }
+    final client = _requireSignedInClient();
+    final result = await client.rpc(
+      'rename_shared_space',
+      params: {'p_space_id': spaceId, 'p_name': trimmed},
+    );
+    return result.toString();
+  }
+
   Future<SpaceInviteDetails> createOrGetSpaceInvite(
     String spaceId,
   ) async {
