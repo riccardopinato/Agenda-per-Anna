@@ -6,12 +6,14 @@
 
 | Phase | Delivery | State | Verification |
 | --- | --- | --- | --- |
-| S0 | Freeze 10/10 source-of-truth contract and baseline | SOURCE IMPLEMENTED — PR #163, not merged | Source/doc review |
-| S1 | Global Search: explainable title-only single letter, match evidence, sort newest/oldest/A–Z | SOURCE IMPLEMENTED on PR #163 — final exact-head CI not yet verified | Flutter tests, UI, localization, exact-head source CI |
-| S2 | Inbox category chips, create via existing note-tag editor, rename active + archived, derived category views | SOURCE IMPLEMENTED on PR #163 — physical Android QA still REQUIRED | Offline/account/sync + mandatory Android physical create/rename/filter/restart |
-| S3 | Existing 24h invites: QR display/scan, 4 local art themes, classic fallback, explicit join, reusable multi-user | SOURCE CANDIDATE PR — requires CI and two-device Android verification | Invite server authority, scanner/readability, 2+ accounts on devices |
-| S4 | Remaining mock-ups 1–5,7: only deltas to navigation, day/calendar, memories, settings, animations | PARTIAL SOURCE: #164 microbounce, #167 Calendar/More/Settings merged; this branch implements Oggi named greeting + calendar shortcut and Messages primary tab; remaining Memories, shared renaming and full physical acceptance PENDING | Exact-head source gates, navigation/IA/permissions and Android smoke |
-| S5 | Final integrated QA and separate signed sideload candidate | PENDING | Source gates first; manual Android APK/physical only, versionCode >111 |
+| S0 | Freeze 10/10 approved contract and baseline | **MERGED #163** | User approval ledger and Factory baseline |
+| S1 | Search: visible one-character matches, explanation, A–Z/newest/oldest | **MERGED #163** | Flutter/Web/AppLab source gates PASS; Android smoke PENDING |
+| S2 | Inbox tags and categories: create, filter, rename archived + active | **MERGED #163** | Source gates PASS; **mandatory physical Android create/rename/filter/restart PENDING** |
+| S3 | QR: 24h server invite, four local styles, scanner and fallback | **MERGED #166** | Source gates PASS; two-account actual camera/QR and expiry tests PENDING |
+| S4 | Oggi/Messaggi navigation, Calendario, Ricordi, Altro, Impostazioni | **SOURCE INTEGRATED:** existing UI5 plus #164, #167, #168 | Native screen/responsiveness/accessibility regression PENDING |
+| S4a | +Crea faster fluid cascade with gentle microbounce | **MERGED #169** | Source gates PASS; device motion/Reduce Motion QA PENDING |
+| S4b | Rename existing shared-space group by owner without changing identity | **MERGED #170**, live Supabase migration applied 2026-10-31 | Server access permissions verified; two-account role/display test PENDING |
+| S5 | New signed release identity and physical certification | **SOURCE PREPARED rc.5+114** — APK **NOT BUILT** at new SHA | Manual stable-signing ARM64 workflow and physical acceptance PENDING |
 
 **Explicit unchanged:** installed Private Vault (#9). No schema or identity rewrites, no mandatory AI/Hugging Face service. Source changes are not an APK. Preserve stable signing/package and do not trigger sideload automatically.
 
