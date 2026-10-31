@@ -124,7 +124,7 @@ List<String> normalizeInboxCategoryCatalog(Iterable<String> values) {
   final seen = <String>{};
   final normalized = <String>[];
   for (final raw in values) {
-    final label = raw.trim().replaceAll(RegExp(r'\\s+'), ' ');
+    final label = raw.trim().replaceAll(RegExp(r'\s+'), ' ');
     if (label.isEmpty || label.length > 48) continue;
     if (!seen.add(label.toLowerCase())) continue;
     normalized.add(label);
