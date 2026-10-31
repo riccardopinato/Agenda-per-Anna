@@ -170,6 +170,6 @@ void main() {
       )),
     );
     expect(readme, contains('## v1.05 — Memories & Recall 3.0'));
-    expect(bible, contains('v1.05 Memories & Recall 3.0'));
+    expect(bible, contains('all 10/10 approved screen source deltas'));
   });
 }
