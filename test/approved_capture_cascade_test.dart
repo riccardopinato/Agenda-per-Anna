@@ -32,8 +32,8 @@ void main() {
       (tester) async {
     await tester.pumpWidget(const MaterialApp(
       home: MediaQuery(
-        data: const MediaQueryData(disableAnimations: true),
-        child: const Scaffold(body: Column(children: [
+        data: MediaQueryData(disableAnimations: true),
+        child: Scaffold(body: Column(children: [
           AnnaMotionStagger(
             order: 0,
             captureCascade: true,
