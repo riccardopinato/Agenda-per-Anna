@@ -1,11 +1,58 @@
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:flutter/material.dart';
+import 'package:agenda_per_anna/main.dart';
 
 /// Source-contract regression for v1.08. This does not replace interactive
 /// real-device, screenshot, or runtime frame-timing verification.
 void main() {
   String source(String path) => File(path).readAsStringSync();
+
+  testWidgets('reduced motion toggle keeps three real widget subtrees mounted',
+      (tester) async {
+    Widget surface(bool reduced) => MaterialApp(
+          home: MediaQuery(
+            data: MediaQueryData(disableAnimations: reduced),
+            child: Scaffold(
+              body: Column(
+                children: const <Widget>[
+                  AnnaMotionReveal(
+                    token: 1,
+                    child: TextField(key: ValueKey<String>('v108-reveal-state')),
+                  ),
+                  AnnaMotionStagger(
+                    order: 1,
+                    child: TextField(key: ValueKey<String>('v108-stagger-state')),
+                  ),
+                  AnnaMotionMapEntry(
+                    child: TextField(key: ValueKey<String>('v108-map-state')),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+    await tester.pumpWidget(surface(false));
+    await tester.pumpAndSettle();
+    final keys = <String>['v108-reveal-state', 'v108-stagger-state',
+      'v108-map-state'];
+    for (var i = 0; i < keys.length; i++) {
+      await tester.enterText(find.byKey(ValueKey<String>(keys[i])),
+        'preserved-$i');
+    }
+    await tester.pumpWidget(surface(true));
+    await tester.pumpAndSettle();
+    for (var i = 0; i < keys.length; i++) {
+      expect(find.text('preserved-$i'), findsOneWidget);
+    }
+    await tester.pumpWidget(surface(false));
+    await tester.pumpAndSettle();
+    for (var i = 0; i < keys.length; i++) {
+      expect(find.text('preserved-$i'), findsOneWidget);
+    }
+  });
+
 
   test('motion v1.08 is presentation-only and supports reduced motion', () {
     final app = source('lib/main.dart');

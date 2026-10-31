@@ -118,15 +118,17 @@ class _AnnaMotionRevealState extends State<AnnaMotionReveal>
 
   @override
   Widget build(BuildContext context) {
-    if (!AnnaMotionV108.enabled(context)) return widget.child;
     return AnimatedBuilder(
       animation: _controller,
       child: widget.child,
       builder: (context, child) {
-        final t = Curves.easeOutCubic.transform(_controller.value);
-        final drift = (1 - t) * (_forward ? 0.022 : -0.022);
+        final enabled = AnnaMotionV108.enabled(context);
+        final t = enabled
+            ? Curves.easeOutCubic.transform(_controller.value)
+            : 1.0;
+        final drift = enabled ? (1 - t) * (_forward ? 0.022 : -0.022) : 0.0;
         return Opacity(
-          opacity: 0.76 + 0.24 * t,
+          opacity: enabled ? 0.76 + 0.24 * t : 1.0,
           child: FractionalTranslation(
             translation: widget.axis == Axis.horizontal
                 ? Offset(drift, 0) : Offset(0, drift),
@@ -177,22 +179,22 @@ class _AnnaMotionStaggerState extends State<AnnaMotionStagger> {
 
   @override
   Widget build(BuildContext context) {
-    if (!AnnaMotionV108.enabled(context)) return widget.child;
+    final shown = _shown || !AnnaMotionV108.enabled(context);
     return AnimatedRotation(
-      turns: _shown || !widget.fan ? 0 : (widget.order - 2) * 0.008,
+      turns: shown || !widget.fan ? 0 : (widget.order - 2) * 0.008,
       duration: AnnaMotionV108.duration(context, 300),
       curve: Curves.easeOutCubic,
       child: AnimatedSlide(
         duration: AnnaMotionV108.duration(context, 280),
         curve: Curves.easeOutCubic,
-        offset: _shown
+        offset: shown
             ? Offset.zero
             : widget.fan
                 ? Offset((widget.order - 2) * 0.065, 0.10)
                 : const Offset(0, 0.06),
         child: AnimatedOpacity(
           duration: AnnaMotionV108.duration(context, 280),
-          opacity: _shown ? 1 : 0,
+          opacity: shown ? 1 : 0,
           child: widget.child,
         ),
       ),
@@ -297,10 +299,9 @@ class AnnaMotionMapEntry extends StatelessWidget {
   const AnnaMotionMapEntry({super.key, required this.child});
   @override
   Widget build(BuildContext context) {
-    if (!AnnaMotionV108.enabled(context)) return child;
     return TweenAnimationBuilder<double>(
       tween: Tween<double>(begin: 0.94, end: 1),
-      duration: const Duration(milliseconds: 350),
+      duration: AnnaMotionV108.duration(context, 350),
       curve: Curves.easeOutCubic,
       builder: (context, value, child) => Transform.scale(
         scale: value,
