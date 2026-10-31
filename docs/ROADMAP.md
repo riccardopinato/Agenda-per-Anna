@@ -1,11 +1,33 @@
 # Anna's Diary — Roadmap
 
+## Signed ARM64 APK automation — authorized 31 October 2026
+
+- User-authorized automatic distribution candidate: a **new** Android
+  `versionCode` on `main`, after the exact push commit's **Development checks
+  SUCCESS**, triggers `.github/workflows/auto-signed-arm64.yml` and the same
+  stable-keystore `.github/workflows/sideload-arm64.yml` with the verified SHA.
+- No signing on PRs, unchanged versions or failed CI. Manual dispatch remains
+  available for retries. Other Android/Store jobs remain manual.
+- Deliverable: GitHub Actions artifact `annas-diary-light-arm64`, containing
+  `Anna-Diary-arm64-release.apk` and the physical-certification manifest.
+  The APK artifact is **not** an automated Google Play publication.
+- Current `1.0.0-rc.6+115` was already built successfully **manually**
+  from main `31b66ba96d66a3ca3984a3c19061c4f1bfc9f9c7`, run
+  [#41248307448](https://github.com/riccardopinato/Agenda-per-Anna/actions/runs/41248307448).
+  This is ARTIFACT BUILT, not device QA PASS; download/inspect the manifest
+  and validate signing identity, installation, two-device QR and other native
+  acceptance criteria on the physical devices before certification.
+- For every subsequent release: finish source changes, increase the Flutter
+  build number in `pubspec.yaml` on the final release-candidate merge and let
+  the green main push trigger the signed artifact; never reuse a previous
+  build's artifact for newer source.
+
 ## Audit closure — 31 October 2026 (source corrections in progress)
 
 - Search long-note evidence fix: PR #172; exact-head gates and merge are required.
 - Persistent empty Inbox category names: PR #173; follow original account preferences, backed up/synced, physical Android check still required.
 - Replace retired user-facing «Noi ♡» copy only; **never rename historical space names or credentials**. Branch `fix/anna-audit-labels-governance`; backend push copy requires separately verified redeploy.
-- New signed-release source reservation `rc.6+115` merged by #178; no matching stable-signed APK yet. After remaining source PRs pass and merge, run the manual stable-signed ARM64 workflow from exact main. Do not reuse old signed artifact.
+- Signed release `rc.6+115` completed from main `31b66ba9`, run #41248307448; physical certification is still required. Future releases use automatic green-main/versionCode gating. Do not reuse artifacts from other source revisions.
 - Mandatory: Android physical Inbox, QR/two-user owner permission, Vault Keystore, PWA Web Push, all +Crea, accessibility; no source-only certification.
 
 ## Approved 10/10 mock-ups — phased integration (31 October 2026)
@@ -21,9 +43,9 @@
 | S4 | Oggi/Messaggi navigation, Calendario, Ricordi, Altro, Impostazioni | **SOURCE INTEGRATED:** existing UI5 plus #164, #167, #168 | Native screen/responsiveness/accessibility regression PENDING |
 | S4a | +Crea faster fluid cascade with gentle microbounce | **MERGED #169** | Source gates PASS; device motion/Reduce Motion QA PENDING |
 | S4b | Rename existing shared-space group by owner without changing identity | **MERGED #170**, live Supabase migration applied 2026-10-31 | Server access permissions verified; two-account role/display test PENDING |
-| S5 | New signed release identity and physical certification | **SOURCE PREPARED rc.5+114** — APK **NOT BUILT** at new SHA | Manual stable-signing ARM64 workflow and physical acceptance PENDING |
+| S5 | New signed release identity and physical certification | **SIGNED APK BUILT rc.6+115** — run #41248307448 | Real Android physical acceptance PENDING |
 
-**Explicit unchanged:** installed Private Vault (#9). No schema or identity rewrites, no mandatory AI/Hugging Face service. Source changes are not an APK. Preserve stable signing/package and do not trigger sideload automatically.
+**Explicit unchanged:** installed Private Vault (#9). No schema or identity rewrites, no mandatory AI/Hugging Face service. Source changes are not an APK. Preserve stable signing/package. The explicitly authorized green-main/new-versionCode sideload automation must not imply physical acceptance.
 
 
 ## v1.05.x-FINAL — Post-UI5 consolidation (30 October 2026)
