@@ -87,7 +87,7 @@ extension ApprovedSearchPolicy on AgendaStore {
       for (final item in inbox) {
         if (item.id != hit.inboxId) continue;
         fields.add(item.text);
-        fields.addAll(item.tags.map((tag) => '$tag'));
+        fields.addAll(item.tags.map((tag) => '#$tag'));
         break;
       }
     }
@@ -97,7 +97,7 @@ extension ApprovedSearchPolicy on AgendaStore {
           if (block.id != hit.diaryBlockId) continue;
           fields.add(block.text);
           fields.add(block.ocrText);
-          fields.addAll(block.tags.map((tag) => '$tag'));
+          fields.addAll(block.tags.map((tag) => '#$tag'));
           fields.addAll(block.places.map((place) => place.name));
           fields.addAll(block.pages
               .expand((page) => page.textElements)
