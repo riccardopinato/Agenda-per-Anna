@@ -6,10 +6,10 @@ appId: com.riccardopinato.agenda_per_anna
 - launchApp
 - extendedWaitUntil:
     visible:
-      id: 'main-nav-calendar'
+      id: 'today-open-calendar'
     timeout: 15000
 - tapOn:
-    id: 'main-nav-calendar'
+    id: 'today-open-calendar'
     retryTapIfNoChange: true
 - extendedWaitUntil:
     visible:
