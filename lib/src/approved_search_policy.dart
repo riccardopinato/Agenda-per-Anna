@@ -3,6 +3,40 @@ part of '../main.dart';
 /// Ordered, derived view of the *existing* personal search, not a second index.
 enum ApprovedSearchSort { newest, oldest, alphabetical }
 
+/// Labels follow the five language codes supported by Anna's Diary.
+String approvedSearchOrderTitle(String code) => switch (code) {
+  'en' => 'Sort by',
+  'es' => 'Ordenar',
+  'fr' => 'Trier',
+  'pt' => 'Ordenar',
+  _ => 'Ordina',
+};
+
+String approvedSearchReasonTitle(String code) => switch (code) {
+  'en' => 'Match in',
+  'es' => 'Coincidencia en',
+  'fr' => 'Correspondance dans',
+  'pt' => 'Correspondência em',
+  _ => 'Corrispondenza in',
+};
+
+extension ApprovedSearchSortUi on ApprovedSearchSort {
+  String approvedLabel(String code) => switch (this) {
+    ApprovedSearchSort.alphabetical => 'A–Z',
+    ApprovedSearchSort.newest => switch (code) {
+      'en' => 'Newest', 'es' => 'Más recientes',
+      'fr' => 'Plus récents', 'pt' => 'Mais recentes',
+      _ => 'Più recenti',
+    },
+    ApprovedSearchSort.oldest => switch (code) {
+      'en' => 'Oldest', 'es' => 'Más antiguos',
+      'fr' => 'Plus anciens', 'pt' => 'Mais antigos',
+      _ => 'Meno recenti',
+    },
+  };
+}
+
+
 extension ApprovedSearchPolicy on AgendaStore {
   List<PersonalSearchHit> approvedPersonalSearch(
     String query, {
@@ -58,7 +92,7 @@ extension ApprovedSearchPolicy on AgendaStore {
       }
     }
     if (hit.diaryBlockId != null) {
-      for (final journal in journals.values) {
+      diaryLookup: for (final journal in journals.values) {
         for (final block in journal.blocks) {
           if (block.id != hit.diaryBlockId) continue;
           fields.add(block.text);
@@ -68,8 +102,16 @@ extension ApprovedSearchPolicy on AgendaStore {
           fields.addAll(block.pages
               .expand((page) => page.textElements)
               .map((element) => element.text));
-          break;
+          break diaryLookup;
         }
+      }
+    }
+    if (hit.id.startsWith('journal:')) {
+      final journal = journals[hit.id.substring(8)];
+      if (journal != null) {
+        fields.add(journal.note);
+        fields.add(journal.beautiful);
+        fields.addAll(journal.gratitude);
       }
     }
     if (hit.personId != null) {
