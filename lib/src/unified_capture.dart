@@ -473,6 +473,7 @@ Future<void> showUnifiedCapture(
             textOverride: draft.trim(),
           );
           if (context.mounted) {
+            AnnaMotionV108.showSaveSuccess(context);
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
                 content: Text(strings.d3Format(
@@ -559,7 +560,7 @@ Future<void> showUnifiedCapture(
         toInbox: true,
       );
       if (!context.mounted) return;
-      AnnaMotionV108.showSaveSuccess(context);
+      unawaited(AnnaFeedback.success());
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(strings.inboxSaved)),
