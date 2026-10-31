@@ -21,12 +21,12 @@ appId: com.riccardopinato.agenda_per_anna
 - tapOn:
     id: 'onboarding_open_agenda'
 - extendedWaitUntil:
-    visible: '(La mia giornata|My day|Mi día|Ma journée|O meu dia)[\s\S]*'
+    visible: '(Buongiorno|Buon pomeriggio|Buonasera|Good morning|Good afternoon|Good evening|Buenos días|Bonjour|Bom dia|La mia giornata|My day)[\s\S]*'
     timeout: 15000
 - assertVisible:
     id: 'main-nav-today'
 - assertVisible:
-    id: 'main-nav-calendar'
+    id: 'main-nav-messages'
 - assertVisible:
     id: 'main-nav-memories'
 - assertVisible:
