@@ -690,7 +690,7 @@ Future<void> openUnifiedItemComposer(
               ),
               title: Text(
                 AnnaStrings.of(sheetContext).d3('sharedSpace'),
-                style: TextStyle(fontWeight: FontWeight.w800),
+                style: const TextStyle(fontWeight: FontWeight.w800),
               ),
               subtitle: Text(
                 AnnaStrings.of(sheetContext).d3('unified_syncedShared'),
