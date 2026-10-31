@@ -76,7 +76,7 @@ extension ApprovedSearchPolicy on AgendaStore {
   String? approvedSearchMatchEvidence(PersonalSearchHit hit, String query) {
     final trimmed = query.trim().toLowerCase();
     if (trimmed.length < 2 ||
-        (hit.title + ' ' + hit.subtitle).toLowerCase().contains(trimmed)) {
+        '${hit.title} ${hit.subtitle}'.toLowerCase().contains(trimmed)) {
       return null;
     }
     final fields = <String>[];
@@ -87,7 +87,7 @@ extension ApprovedSearchPolicy on AgendaStore {
       for (final item in inbox) {
         if (item.id != hit.inboxId) continue;
         fields.add(item.text);
-        fields.addAll(item.tags.map((tag) => '#'+tag));
+        fields.addAll(item.tags.map((tag) => '$tag'));
         break;
       }
     }
@@ -97,7 +97,7 @@ extension ApprovedSearchPolicy on AgendaStore {
           if (block.id != hit.diaryBlockId) continue;
           fields.add(block.text);
           fields.add(block.ocrText);
-          fields.addAll(block.tags.map((tag) => '#'+tag));
+          fields.addAll(block.tags.map((tag) => '$tag'));
           fields.addAll(block.places.map((place) => place.name));
           fields.addAll(block.pages
               .expand((page) => page.textElements)
@@ -132,7 +132,7 @@ extension ApprovedSearchPolicy on AgendaStore {
       final found = pending.where((token) => text.toLowerCase().contains(token)).toList();
       if (found.isEmpty) continue;
       pending.removeAll(found);
-      evidence.add(text.length > 90 ? text.substring(0, 90) + '…' : text);
+      evidence.add(text.length > 90 ? '${text.substring(0, 90)}…' : text);
       if (pending.isEmpty || evidence.length == 3) break;
     }
     return evidence.isEmpty ? null : evidence.join(' · ');
