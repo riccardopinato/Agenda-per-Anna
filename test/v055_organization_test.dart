@@ -119,6 +119,36 @@ void main() {
     store.dispose();
   });
 
+
+  test('Inbox category catalog and filter stay separated from diary tags',
+      () async {
+    final store = AgendaStore();
+    await store.load();
+    await store.addInboxEntry('Nota uno');
+    await store.addInboxEntry('Nota due');
+    final a = store.inbox.first.id;
+    final b = store.inbox.last.id;
+    await store.setInboxTags(a, ['Viaggi', 'personale']);
+    await store.setInboxTags(b, ['viaggi']);
+    await store.toggleInboxArchived(b);
+    final day = DateTime(2026, 10, 30);
+    await store.saveJournal(day, DayJournal(blocks: [
+      DiaryBlock(
+        id: 'diary-only-category',
+        type: DiaryBlockType.note,
+        createdAt: day,
+        text: 'Diario',
+        tags: ['esclusivo-diario'],
+      ),
+    ]));
+    expect(store.inboxCategoryTags, ['personale', 'Viaggi']);
+    expect(store.inboxEntriesInCategory('VIAGGI'), hasLength(1));
+    expect(store.inboxEntriesInCategory('viaggi', includeArchived: true),
+        hasLength(2));
+    expect(store.inboxEntriesInCategory('viaggi').single.id, a);
+    store.dispose();
+  });
+
   test('diary pin archive and tags use ordinary journal persistence', () async {
     final store = AgendaStore();
     await store.load();
