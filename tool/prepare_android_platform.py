@@ -1797,6 +1797,20 @@ def verify() -> None:
         raise SystemExit("Android platform verification failed: " + ", ".join(failures))
 
 
+def configure_qr_scanner_size() -> None:
+    """Use Play Services unbundled MLKit so the camera scanner adds ~600 KB
+    rather than bundling several megabytes of barcode recognition binaries.
+    The scanner may need Play Services data on first use; manual invite code
+    remains an always-available fallback.
+    """
+    properties = ANDROID / "gradle.properties"
+    content = require_file(properties)
+    line = "dev.steenbakker.mobile_scanner.useUnbundled=true"
+    if line not in content.splitlines():
+        content = content.rstrip() + "\n" + line + "\n"
+    write_if_changed(properties, content)
+
+
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument(
@@ -1817,6 +1831,7 @@ def main() -> None:
     configure_home_widget()
     configure_launcher_shortcuts()
     configure_desugaring()
+    configure_qr_scanner_size()
     firebase_enabled = configure_firebase()
     if args.release_signing:
         configure_release_signing()
