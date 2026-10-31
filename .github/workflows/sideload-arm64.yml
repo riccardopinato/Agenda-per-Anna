@@ -1,21 +1,29 @@
 name: Build lightweight ARM64 sideload APK
 
-# Signed APK generation is an explicit manual action only.
+# Workflow dispatch remains available for explicit retries. The trusted
+# automatic caller must first pass main CI and monotonic versionCode preflight.
 on:
   workflow_dispatch:
+  workflow_call:
+    inputs:
+      source_sha:
+        description: Exact successful main commit to sign
+        required: true
+        type: string
 
 permissions:
   contents: read
 
 concurrency:
   group: annas-diary-arm64-sideload
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 jobs:
   build:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     env:
+      BUILD_SOURCE_SHA: ${{ inputs.source_sha || github.sha }}
       ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
       ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
       ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
@@ -25,6 +33,13 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ inputs.source_sha || github.sha }}
+          persist-credentials: false
+
+      - name: Require exact requested source commit
+        shell: bash
+        run: test "$(git rev-parse HEAD)" = "$BUILD_SOURCE_SHA"
 
       - name: Require stable Android signing configuration
         shell: bash
@@ -122,7 +137,7 @@ jobs:
             --artifact build/direct-apk/Anna-Diary-arm64-release.apk \
             --output build/direct-apk/PHYSICAL_CERTIFICATION_MANIFEST.json \
             --repository "$GITHUB_REPOSITORY" \
-            --commit "$GITHUB_SHA" \
+            --commit "$BUILD_SOURCE_SHA" \
             --version "$VERSION" \
             --variant "arm64-v8a release non-store physical-certification candidate" \
             --signing-sha256 "$SIGNING_SHA256" \
