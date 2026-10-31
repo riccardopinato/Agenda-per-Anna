@@ -328,9 +328,9 @@ class _SharedSpaceHubScreenState extends State<SharedSpaceHubScreen> {
         final accent = context.accentSurface;
         return Scaffold(
           appBar: AppBar(
-            title: const Text(
-              'Noi ♡',
-              style: TextStyle(fontWeight: FontWeight.w900),
+            title: Text(
+              AnnaStrings.of(context).d3('sharedSpace'),
+              style: const TextStyle(fontWeight: FontWeight.w900),
             ),
             actions: [
               if (cloud.signedIn)
