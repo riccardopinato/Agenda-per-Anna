@@ -6,9 +6,9 @@
 
 | Phase | Delivery | State | Verification |
 | --- | --- | --- | --- |
-| S0 | Freeze 10/10 source-of-truth contract and baseline | IN PROGRESS — this integration branch | Source/doc review |
-| S1 | Global Search: explainable title-only single letter, match evidence, sort newest/oldest/A–Z | IN PROGRESS — first bounded source PR | Flutter tests, UI, localization, exact-head source CI |
-| S2 | Inbox editable tag catalog, rename active + archived tags, category views, atomic safe persistence | PENDING | Offline/account/sync + mandatory Android physical create/rename/filter/restart |
+| S0 | Freeze 10/10 source-of-truth contract and baseline | SOURCE IMPLEMENTED — PR #163, not merged | Source/doc review |
+| S1 | Global Search: explainable title-only single letter, match evidence, sort newest/oldest/A–Z | SOURCE IMPLEMENTED on PR #163 — final exact-head CI not yet verified | Flutter tests, UI, localization, exact-head source CI |
+| S2 | Inbox category chips, create via existing note-tag editor, rename active + archived, derived category views | SOURCE IMPLEMENTED on PR #163 — physical Android QA still REQUIRED | Offline/account/sync + mandatory Android physical create/rename/filter/restart |
 | S3 | Existing 24h invites: QR code scan and predesigned locally rendered illustrative themes, reusable multi-user | PENDING | Invite server authority, scanner/readability, 2+ accounts on devices |
 | S4 | Remaining mock-ups 1–5,7: only deltas to navigation, day/calendar, memories, settings, animations | PENDING | Actual UI5/v1.08 route/a11y/visual regression + reduce-motion |
 | S5 | Final integrated QA and separate signed sideload candidate | PENDING | Source gates first; manual Android APK/physical only, versionCode >111 |
