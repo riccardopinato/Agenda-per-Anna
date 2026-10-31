@@ -1141,6 +1141,7 @@ class PersonalSearchConnectionsScreen extends StatefulWidget {
 class _PersonalSearchConnectionsScreenState
     extends State<PersonalSearchConnectionsScreen> {
   String query = '';
+  ApprovedSearchSort sortOrder = ApprovedSearchSort.newest;
   final Set<PersonalSearchKind> selectedKinds = {};
   bool includeArchived = false;
   bool ocrIndexing = false;
@@ -1252,11 +1253,12 @@ class _PersonalSearchConnectionsScreenState
   @override
   Widget build(BuildContext context) {
     final strings = AnnaStrings.of(context);
-    final hits = widget.store.personalSearch(
+    final hits = widget.store.approvedPersonalSearch(
       query,
       kinds: selectedKinds,
       includeArchived: includeArchived,
       languageCode: strings.languageCode,
+      sort: sortOrder,
     );
 
     return Scaffold(
@@ -1352,6 +1354,28 @@ class _PersonalSearchConnectionsScreenState
               ],
             ),
           ),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 14),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                Text(approvedSearchOrderTitle(strings.languageCode)),
+                const SizedBox(width: 8),
+                DropdownButton<ApprovedSearchSort>(
+                  value: sortOrder,
+                  onChanged: (value) {
+                    if (value != null) setState(() => sortOrder = value);
+                  },
+                  items: ApprovedSearchSort.values.map(
+                    (value) => DropdownMenuItem(
+                      value: value,
+                      child: Text(value.approvedLabel(strings.languageCode)),
+                    ),
+                  ).toList(),
+                ),
+              ],
+            ),
+          ),
           const SizedBox(height: 6),
           Expanded(
             child: query.trim().isEmpty
@@ -1382,10 +1406,23 @@ class _PersonalSearchConnectionsScreenState
                                 maxLines: 2,
                                 overflow: TextOverflow.ellipsis,
                               ),
-                              subtitle: Text(
-                                hit.subtitle,
-                                maxLines: 2,
-                                overflow: TextOverflow.ellipsis,
+                              subtitle: Builder(
+                                builder: (context) {
+                                  final evidence = widget.store
+                                      .approvedSearchMatchEvidence(hit, query);
+                                  return Text(
+                                    evidence == null
+                                        ? hit.subtitle
+                                        : hit.subtitle +
+                                            '\\n' +
+                                            approvedSearchReasonTitle(
+                                                strings.languageCode) +
+                                            ': ' +
+                                            evidence,
+                                    maxLines: 3,
+                                    overflow: TextOverflow.ellipsis,
+                                  );
+                                },
                               ),
                               trailing: const Icon(Icons.chevron_right),
                               onTap: () => _openHit(hit),
