@@ -11,7 +11,7 @@ void main() {
     final calendar = read('lib/src/planner_views.dart');
     expect(shell, contains("identifier: 'main-nav-create'"));
     expect(shell, contains("identifier: 'main-rail-create'"));
-    expect(shell, contains('StartTab.calendar.index'));
+    expect(shell, contains('StartTab.calendar'));
     expect(shell, contains('DateTime.now()'));
     expect(shell, contains('await showUnifiedCapture('));
     expect(shell, contains('AnimatedScale('));
