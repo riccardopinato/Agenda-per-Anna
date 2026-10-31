@@ -56,9 +56,11 @@ selection. **M11 USER APPROVED — B (31 October 2026):** opening an individual 
 
 **M18 USER APPROVED — C (31 October 2026):** tapping an existing real Ricordi Map pin produces **one brief pin scale emphasis, a temporary halo and coordinated entrance of the selected memory preview card**. No continuous pulsing or repeated decoration; keep map gestures, stable memory and location identity, performance, accessibility, and reduced-motion fallback. The preview is shown only for actual selected items. **DESIGN ONLY — NOT IMPLEMENTED.**
 
-**M19 — PENDING USER SELECTION:** inline expansion of the existing Ricordi → Per te **`Scelti per te` / `Vedi tutti`** area when additional *eligible real* suggestions exist. Compare A immediate in-place reveal, B smooth bounded in-place accordion reveal, C brief staged arrival of newly revealed cards. Never turn `Vedi tutti` into a Timeline or new page, never invent suggestions, preserve focus/scroll/accessibility. A bounded reduced-motion fallback is mandatory.
+**M19 USER APPROVED — C (31 October 2026):** in Ricordi → Per te, `Vedi tutti` expands the existing `Scelti per te` section **in place** with a smooth, brief bounded expansion and short stagger for **only the newly revealed visible cards**. `Vedi tutti` must be shown only when additional real eligible suggestions exist; preserve canonical suggestions, scroll/focus, Back and accessibility, and never navigate to another page or Timeline. Respect reduced-motion and performance. **DESIGN ONLY — NOT IMPLEMENTED.**
 
-**M19–M20 — PENDING:** show one interactive comparison at a time, and await a specific user choice. Never prefill their decision letters.
+**M20 — PENDING USER SELECTION:** when selecting a year in Ricordi → Timeline, maintain UI5's actual behavior (jump to the most recent actual month in the selected year and expand it). Compare **A immediate jump**, **B soft fade of the month context**, **C short vertical editorial transition with emphasis on the actual target month**. Do not invent months/memories, suppress selection feedback, disrupt year chips or re-run heavy M09 cascades excessively; reduced-motion fallback mandatory.
+
+**M20 — PENDING:** show one interactive comparison at a time, and await a specific user choice. Never prefill their decision letters.
 
 ### Sequencing
 
