@@ -16,7 +16,7 @@ void main() {
             data: MediaQueryData(disableAnimations: reduced),
             child: const Scaffold(
               body: Column(
-                children: const <Widget>[
+                children: <Widget>[
                   AnnaMotionReveal(
                     token: 1,
                     child: TextField(key: ValueKey<String>('v108-reveal-state')),
