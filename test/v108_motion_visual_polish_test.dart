@@ -14,7 +14,7 @@ void main() {
     Widget surface(bool reduced) => MaterialApp(
           home: MediaQuery(
             data: MediaQueryData(disableAnimations: reduced),
-            child: Scaffold(
+            child: const Scaffold(
               body: Column(
                 children: const <Widget>[
                   AnnaMotionReveal(
