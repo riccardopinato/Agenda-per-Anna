@@ -5,13 +5,11 @@ import 'package:flutter_test/flutter_test.dart';
 void main() {
   test('UI4 highlights private/shared routes without exposing hidden modules', () {
     final more = File('lib/src/screens/more_screen.dart').readAsStringSync();
-    expect(more, contains("id: 'more-shared'"));
+    final shell = File('lib/src/screens/home_inbox_search.dart').readAsStringSync();
+    expect(shell, contains("'main-nav-messages'"));
+    expect(more, isNot(contains("id: 'more-shared'")));
     expect(more, contains("id: 'more-private-vault'"));
-    expect(more, contains("strings.d3('sharedSpace')"));
-    expect(more, contains("'Noi ♡ ·"));
-    expect(more, contains('prefs.isModuleEnabled(AppModule.sharedSpace)'));
     expect(more, contains('prefs.isModuleEnabled(AppModule.privateVault)'));
-    expect(more, contains('SharedSpaceHubScreen(store: store)'));
     expect(more, contains('PrivateVaultScreen(store: store)'));
     expect(more, isNot(contains("id: 'more-personalize'")));
     for (final id in const [
