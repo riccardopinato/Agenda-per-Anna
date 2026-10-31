@@ -54,9 +54,11 @@ selection. **M11 USER APPROVED — B (31 October 2026):** opening an individual 
 
 **M17 USER APPROVED — C (31 October 2026):** existing Ricordi Map opens via a **brief contextual expansion** of the map surface from the map entry context, with a one-time progressive entrance of the real geolocated memory pins. The effect must not fake locations, delay map availability, reorder or duplicate the UI5 Ricordi sub-tabs, or disrupt map gestures, accessibility, and back-navigation. No perpetual pin pulses; reduced-motion shows the map and pins immediately. **DESIGN ONLY — NOT IMPLEMENTED.**
 
-**M18 — PENDING USER SELECTION:** tap/select a real Ricordi Map pin. Compare **A immediate preview card**, **B soft bottom preview-sheet rise with fade**, **C brief pin emphasis/expansion followed by a preview card sliding in**. Keep canonical map pin/card behaviors and stable geographic memory identity, support accessible focus and reduced motion.
+**M18 USER APPROVED — C (31 October 2026):** tapping an existing real Ricordi Map pin produces **one brief pin scale emphasis, a temporary halo and coordinated entrance of the selected memory preview card**. No continuous pulsing or repeated decoration; keep map gestures, stable memory and location identity, performance, accessibility, and reduced-motion fallback. The preview is shown only for actual selected items. **DESIGN ONLY — NOT IMPLEMENTED.**
 
-**M18–M20 — PENDING:** show one interactive comparison at a time, and await a specific user choice. Never prefill their decision letters.
+**M19 — PENDING USER SELECTION:** inline expansion of the existing Ricordi → Per te **`Scelti per te` / `Vedi tutti`** area when additional *eligible real* suggestions exist. Compare A immediate in-place reveal, B smooth bounded in-place accordion reveal, C brief staged arrival of newly revealed cards. Never turn `Vedi tutti` into a Timeline or new page, never invent suggestions, preserve focus/scroll/accessibility. A bounded reduced-motion fallback is mandatory.
+
+**M19–M20 — PENDING:** show one interactive comparison at a time, and await a specific user choice. Never prefill their decision letters.
 
 ### Sequencing
 
