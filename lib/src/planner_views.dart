@@ -313,7 +313,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
                 initiallyExpanded: false,
                 leading: const Icon(Icons.schedule_outlined),
                 title: Text(strings.hourlyTimeline),
-                subtitle: Text('07:00–22:00'),
+                subtitle: const Text('07:00–22:00'),
                 children: [
                   for (var hour = 7; hour <= 22; hour++)
                     Builder(
