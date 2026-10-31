@@ -43,7 +43,7 @@ void main() {
 
   test('long search evidence keeps the actual late match visible', () {
     final store = AgendaStore();
-    final longNote = '${'a' * 240} montagna ${'b' * 220}';
+    final longNote = '${List.filled(240, 'a').join()} montagna ${List.filled(220, 'b').join()}';
     store.items.add(AgendaItem(
       id: 'late-ocr-like',
       title: 'Passeggiata',
