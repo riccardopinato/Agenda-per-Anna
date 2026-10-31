@@ -16,6 +16,7 @@ class _DiaryGlobalSearchScreenState extends State<_DiaryGlobalSearchScreen> {
   final TextEditingController _query = TextEditingController();
   final ScrollController _scroll = ScrollController();
   DiaryBlockType? _type;
+  bool _didAnimateSearchGroup = false;
 
   @override
   void dispose() {
@@ -180,6 +181,7 @@ class _DiaryGlobalSearchScreenState extends State<_DiaryGlobalSearchScreen> {
                 builder: (context, _) {
                   final query = _query.text.trim();
                   if (query.isEmpty) {
+                    _didAnimateSearchGroup = false;
                     return Center(child: Padding(
                       padding: const EdgeInsets.all(28),
                       child: Column(
@@ -220,6 +222,8 @@ class _DiaryGlobalSearchScreenState extends State<_DiaryGlobalSearchScreen> {
                       ),
                     ));
                   }
+                  final animateFirstGroup = !_didAnimateSearchGroup;
+                  _didAnimateSearchGroup = true;
                   return ListView.builder(
                     key: const ValueKey<String>('ui5-search-results'),
                     controller: _scroll,
@@ -247,7 +251,7 @@ class _DiaryGlobalSearchScreenState extends State<_DiaryGlobalSearchScreen> {
                           onTap: () => _open(record),
                         ),
                       );
-                      return i < 4
+                      return i < 4 && animateFirstGroup
                           ? AnnaMotionStagger(
                               key: ValueKey<String>(
                                 'v108-search-${record.block.id}'),

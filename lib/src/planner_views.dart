@@ -171,6 +171,7 @@ class CalendarScreen extends StatefulWidget {
 class _CalendarScreenState extends State<CalendarScreen> {
   DateTime selected = DateTime.now();
   DateTime focused = DateTime.now();
+  bool _calendarReflow = false;
 
   @override
   void initState() {
@@ -232,7 +233,11 @@ class _CalendarScreenState extends State<CalendarScreen> {
               Card(
                 child: Padding(
                   padding: const EdgeInsets.all(8),
-                  child: TableCalendar<UnifiedAgendaEntry>(
+                  child: AnimatedScale(
+                    scale: _calendarReflow ? 0.98 : 1.0,
+                    duration: AnnaMotionV108.duration(context, 250),
+                    curve: Curves.easeOutCubic,
+                    child: TableCalendar<UnifiedAgendaEntry>(
                     locale: AnnaStrings.intlLocale(context),
                     firstDay: DateTime(2020),
                     lastDay: DateTime(2040),
@@ -250,6 +255,15 @@ class _CalendarScreenState extends State<CalendarScreen> {
                     },
                     onPageChanged: (f) {
                       focused = f;
+                      if (AnnaMotionV108.enabled(context)) {
+                        setState(() => _calendarReflow = true);
+                        Future<void>.delayed(
+                          const Duration(milliseconds: 100), () {
+                            if (mounted) {
+                              setState(() => _calendarReflow = false);
+                            }
+                          });
+                      }
                       unawaited(_loadVisibleMonth(f));
                     },
                     headerStyle: const HeaderStyle(formatButtonVisible: false, titleCentered: true),
@@ -259,6 +273,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
                         color: Theme.of(context).colorScheme.primary,
                         shape: BoxShape.circle,
                       ),
+                    ),
                     ),
                   ),
                 ),

@@ -244,6 +244,7 @@ Future<void> showUnifiedCapture(
             ? AnnaMotionStagger(
                 key: ValueKey<String>('v108-capture-action-${action.name}'),
                 order: order,
+                fan: true,
                 child: tile,
               )
             : tile;

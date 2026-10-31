@@ -143,10 +143,12 @@ class _AnnaMotionRevealState extends State<AnnaMotionReveal>
 class AnnaMotionStagger extends StatefulWidget {
   final Widget child;
   final int order;
+  final bool fan;
   const AnnaMotionStagger({
     super.key,
     required this.child,
     required this.order,
+    this.fan = false,
   });
   @override
   State<AnnaMotionStagger> createState() => _AnnaMotionStaggerState();
@@ -176,14 +178,23 @@ class _AnnaMotionStaggerState extends State<AnnaMotionStagger> {
   @override
   Widget build(BuildContext context) {
     if (!AnnaMotionV108.enabled(context)) return widget.child;
-    return AnimatedSlide(
-      duration: AnnaMotionV108.duration(context, 280),
+    return AnimatedRotation(
+      turns: _shown || !widget.fan ? 0 : (widget.order - 2) * 0.008,
+      duration: AnnaMotionV108.duration(context, 300),
       curve: Curves.easeOutCubic,
-      offset: _shown ? Offset.zero : const Offset(0, 0.06),
-      child: AnimatedOpacity(
+      child: AnimatedSlide(
         duration: AnnaMotionV108.duration(context, 280),
-        opacity: _shown ? 1 : 0,
-        child: widget.child,
+        curve: Curves.easeOutCubic,
+        offset: _shown
+            ? Offset.zero
+            : widget.fan
+                ? Offset((widget.order - 2) * 0.065, 0.10)
+                : const Offset(0, 0.06),
+        child: AnimatedOpacity(
+          duration: AnnaMotionV108.duration(context, 280),
+          opacity: _shown ? 1 : 0,
+          child: widget.child,
+        ),
       ),
     );
   }
