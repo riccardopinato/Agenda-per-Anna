@@ -1,14 +1,13 @@
 # Anna's Diary — v1.08 Motion & Visual Polish
-## Interactive design decisions — Block 01 (choices 01–10)
+## Design approval register — all choices M01–M20
 
-**Status:** 10/10 USER APPROVED — DESIGN ONLY — NOT IMPLEMENTED.
-**Recorded:** 30 October 2026.
+**Status:** 20/20 USER APPROVED — DESIGN CLOSED — NOT IMPLEMENTED.
+**Recorded:** 30–31 October 2026.
 **Product baseline:** post-UI5, `main@db40f53c4d1287ba14eb67d4b6987738d6e4281d` before this documentation commit.
 **Factory source:** `App-Factory-Core/CURRENT.yaml` read 30 October 2026;
 `App-Factory-Core@f8ec5a324823d79353a056f0d4c12d2979a18b4e`,
 Master v27, Golden Index v23.
-**Next:** choice 11/20, one visual/animated comparison with three options
-and explicit clickable user selection at a time.
+**Next:** see [final implementation-ready DESIGN contract](V108_MOTION_VISUAL_POLISH_FINAL_DESIGN_CONTRACT.md). The 20 decisions are approved as design only. Actual Flutter changes still require a separate, explicit authorization; the previously approved sequence resumes v1.07 Daily-use UX planning after this design round.
 
 ### Block 01 — canonical user decisions
 
@@ -37,10 +36,9 @@ and explicit clickable user selection at a time.
 - v1.08 **design selection only** until user explicitly authorizes implementation.
 - No APK is built to record a design decision. Any future signed APK must use strictly greater Android versionCode than 111.
 
-### Planned block 02 — design review (11–20)
+### Block 02 — canonical user decisions (M11–M20)
 
-Proceed one item at a time with a visual/animated mockup and user-clickable A/B/C
-selection. **M11 USER APPROVED — B (31 October 2026):** opening an individual memory from its preview uses a **Hero/shared-element expansion of the same photograph** into the memory-detail screen; on back navigation this reverses smoothly, returning to the original preview/card. Match stable memory/photo identity (not arbitrary images), maintain focus, scroll restoration, data truth, and reduced-motion fallback. Preserve UI5 memory routes and existing interaction semantics. Design approved, NOT implemented.
+**M11 USER APPROVED — B (31 October 2026):** opening an individual memory from its preview uses a **Hero/shared-element expansion of the same photograph** into the memory-detail screen; on back navigation this reverses smoothly, returning to the original preview/card. Match stable memory/photo identity (not arbitrary images), maintain focus, scroll restoration, data truth, and reduced-motion fallback. Preserve UI5 memory routes and existing interaction semantics. Design approved, NOT implemented.
 
 **M12 USER APPROVED — C (31 October 2026):** brief, fluid **horizontal editorial slide** between Ricordi sub-sections **Per te**, **Timeline**, **Raccolte**, maintaining the UI5 tabs and their order and contents. Sub-tab movement is separate from global tab navigation M02, preserves selected sub-tab, history/scroll and search, and respects reduced-motion settings. Design only, NOT implemented.
 
@@ -58,13 +56,12 @@ selection. **M11 USER APPROVED — B (31 October 2026):** opening an individual 
 
 **M19 USER APPROVED — C (31 October 2026):** in Ricordi → Per te, `Vedi tutti` expands the existing `Scelti per te` section **in place** with a smooth, brief bounded expansion and short stagger for **only the newly revealed visible cards**. `Vedi tutti` must be shown only when additional real eligible suggestions exist; preserve canonical suggestions, scroll/focus, Back and accessibility, and never navigate to another page or Timeline. Respect reduced-motion and performance. **DESIGN ONLY — NOT IMPLEMENTED.**
 
-**M20 — PENDING USER SELECTION:** when selecting a year in Ricordi → Timeline, maintain UI5's actual behavior (jump to the most recent actual month in the selected year and expand it). Compare **A immediate jump**, **B soft fade of the month context**, **C short vertical editorial transition with emphasis on the actual target month**. Do not invent months/memories, suppress selection feedback, disrupt year chips or re-run heavy M09 cascades excessively; reduced-motion fallback mandatory.
+**M20 USER APPROVED — C (31 October 2026):** Ricordi → Timeline year selection uses a **short vertical editorial transition** to the latest **actually populated month** of the selected year, **expands** that month and temporarily emphasizes its heading. Preserve UI5 year-chip selection, actual month counts, expanded groups and in-session history. Never show phantom months or trigger a second expensive M09 item cascade on each year change. Respect reduced-motion and accessibility. **DESIGN ONLY — NOT IMPLEMENTED.**
 
-**M20 — PENDING:** show one interactive comparison at a time, and await a specific user choice. Never prefill their decision letters.
+**M01–M20 CLOSED as design decisions.** All 20 are documented in the final contract. No code, build, APK, runtime or visual certification is implied.
 
 ### Sequencing
 
 v1.05.x software line closed, UI5 physical quick smoke user-reported PASS.
 v1.06 external integrations postponed until PC access.
-Current session: v1.08 design exploration in batches of 10, **then** return
-to v1.07 daily-use UX. Design completion is not feature/runtime certification.
+v1.08 design selection is now **COMPLETE (20/20)**. The approved sequencing returns to **v1.07 Daily-use UX** planning; v1.08 Flutter implementation is **NOT AUTHORIZED** by design approval alone. Design completion is not feature/runtime certification.
