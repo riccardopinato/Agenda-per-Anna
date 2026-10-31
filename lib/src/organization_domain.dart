@@ -14,6 +14,48 @@ List<String> normalizeOrganizationTags(Iterable<String> values) {
   return result;
 }
 
+/// UI copy for the Inbox-specific taxonomy, in all supported languages.
+String inboxCategoryCopy(String code, String key) {
+  final labels = switch (code) {
+    'en' => {
+      'heading': 'Your categories', 'all': 'All', 'manage': 'Manage',
+      'create': 'New tag', 'rename': 'Rename category',
+      'choose': 'Choose a note to categorize',
+      'empty': 'Create an Inbox note first',
+      'hint': 'Tags are saved on the selected note',
+    },
+    'es' => {
+      'heading': 'Tus categorías', 'all': 'Todas', 'manage': 'Gestionar',
+      'create': 'Nueva etiqueta', 'rename': 'Renombrar categoría',
+      'choose': 'Elige una nota para clasificar',
+      'empty': 'Crea primero una nota en Inbox',
+      'hint': 'Las etiquetas se guardan en la nota elegida',
+    },
+    'fr' => {
+      'heading': 'Vos catégories', 'all': 'Toutes', 'manage': 'Gérer',
+      'create': 'Nouveau tag', 'rename': 'Renommer la catégorie',
+      'choose': 'Choisissez une note à classer',
+      'empty': 'Créez d’abord une note Inbox',
+      'hint': 'Les tags sont enregistrés sur la note choisie',
+    },
+    'pt' => {
+      'heading': 'As tuas categorias', 'all': 'Todas', 'manage': 'Gerir',
+      'create': 'Nova etiqueta', 'rename': 'Renomear categoria',
+      'choose': 'Escolhe uma nota para categorizar',
+      'empty': 'Cria primeiro uma nota na Inbox',
+      'hint': 'As etiquetas são guardadas na nota escolhida',
+    },
+    _ => {
+      'heading': 'Le tue categorie', 'all': 'Tutte', 'manage': 'Gestisci',
+      'create': 'Nuovo tag', 'rename': 'Rinomina categoria',
+      'choose': 'Scegli una nota da categorizzare',
+      'empty': 'Crea prima una nota Inbox',
+      'hint': 'I tag vengono salvati sulla nota scelta',
+    },
+  };
+  return labels[key] ?? key;
+}
+
 extension OrganizationAgendaStore on AgendaStore {
   List<InboxEntry> get activeInboxEntries =>
       inbox.where((entry) => !entry.archived).toList(growable: false);
