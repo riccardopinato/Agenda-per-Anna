@@ -81,7 +81,10 @@ extension OrganizationAgendaStore on AgendaStore {
   /// Inbox-only category names (never mix in private diary categories).
   /// A new category becomes persistent when attached to a canonical note.
   List<String> get inboxCategoryTags {
-    final byName = <String, String>{};
+    final byName = <String, String>{
+      for (final category in preferences.inboxCategoryCatalog)
+        category.toLowerCase(): category,
+    };
     for (final entry in inbox) {
       for (final tag in entry.tags) {
         final name = tag.trim();
@@ -91,6 +94,41 @@ extension OrganizationAgendaStore on AgendaStore {
     }
     return byName.values.toList()
       ..sort((a, b) => a.toLowerCase().compareTo(b.toLowerCase()));
+  }
+
+  /// A category can exist before any note uses it. It follows canonical
+  /// account-scoped preferences, including normal backup and sync.
+  Future<void> createInboxCategory(String name) async {
+    final value = name.trim().replaceAll(RegExp(r'\\s+'), ' ');
+    if (value.isEmpty || value.length > 48) {
+      throw ArgumentError.value(name, 'name', 'Invalid category name');
+    }
+    final existing = inboxCategoryTags;
+    if (existing.any((tag) => tag.toLowerCase() == value.toLowerCase())) {
+      return;
+    }
+    final updated = normalizeInboxCategoryCatalog([
+      ...preferences.inboxCategoryCatalog,
+      value,
+    ]);
+    if (updated.length == preferences.inboxCategoryCatalog.length) {
+      throw StateError('Inbox category catalogue full');
+    }
+    await savePreferences(preferences.copyWith(inboxCategoryCatalog: updated));
+    _notifyInboxChanged();
+  }
+
+  /// Empty categories can be removed without detaching tags from notes.
+  Future<void> removeUnusedInboxCategory(String name) async {
+    final key = name.trim().toLowerCase();
+    if (inbox.any((entry) =>
+        entry.tags.any((tag) => tag.trim().toLowerCase() == key))) {
+      throw StateError('Category still used by Inbox notes');
+    }
+    final updated = preferences.inboxCategoryCatalog
+        .where((tag) => tag.toLowerCase() != key).toList();
+    await savePreferences(preferences.copyWith(inboxCategoryCatalog: updated));
+    _notifyInboxChanged();
   }
 
   /// Live Inbox records using the same category, case-insensitively.
@@ -159,8 +197,14 @@ extension OrganizationAgendaStore on AgendaStore {
       if (listEquals(next.tags, entry.tags)) continue;
       updates.add((index: i, entry: next));
     }
-    if (updates.isEmpty) return 0;
-    await _persistEntityMutations(
+    final catalog = preferences.inboxCategoryCatalog;
+    final newCatalog = normalizeInboxCategoryCatalog([
+      for (final name in catalog)
+        name.toLowerCase() == oldKey ? target : name,
+    ]);
+    if (updates.isEmpty && listEquals(catalog, newCatalog)) return 0;
+    if (updates.isNotEmpty) {
+      await _persistEntityMutations(
       updates.map((update) => (
         type: 'inbox',
         id: update.entry.id,
@@ -168,8 +212,14 @@ extension OrganizationAgendaStore on AgendaStore {
         deleted: false,
       )).toList(),
     );
-    for (final update in updates) {
-      inbox[update.index] = update.entry;
+      for (final update in updates) {
+        inbox[update.index] = update.entry;
+      }
+    }
+    if (!listEquals(catalog, newCatalog)) {
+      await savePreferences(
+        preferences.copyWith(inboxCategoryCatalog: newCatalog),
+      );
     }
     _notifyInboxChanged();
     return updates.length;
