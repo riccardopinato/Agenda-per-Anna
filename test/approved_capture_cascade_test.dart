@@ -30,7 +30,7 @@ void main() {
 
   testWidgets('capture cascade respects Reduce Motion without hiding actions',
       (tester) async {
-    await tester.pumpWidget(MaterialApp(
+    await tester.pumpWidget(const MaterialApp(
       home: MediaQuery(
         data: const MediaQueryData(disableAnimations: true),
         child: const Scaffold(body: Column(children: [
