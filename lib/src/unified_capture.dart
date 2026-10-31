@@ -214,8 +214,8 @@ Future<void> showUnifiedCapture(
     showDragHandle: true,
     isScrollControlled: true,
     sheetAnimationStyle: AnimationStyle(
-      duration: AnnaMotionV108.duration(context, 416),
-      reverseDuration: AnnaMotionV108.duration(context, 250),
+      duration: AnnaMotionV108.duration(context, 360),
+      reverseDuration: AnnaMotionV108.duration(context, 220),
     ),
     builder: (sheetContext) {
       var showAllActions = false;
@@ -350,7 +350,7 @@ Future<void> showUnifiedCapture(
                         icon: AnimatedRotation(
                           turns: showAllActions ? 0.5 : 0,
                           duration: animate
-                              ? AnnaDesignTokens.motionStandard
+                              ? const Duration(milliseconds: 300)
                               : Duration.zero,
                           child: const Icon(Icons.expand_more),
                         ),
@@ -366,8 +366,9 @@ Future<void> showUnifiedCapture(
                   ),
                   AnimatedSize(
                     duration: animate
-                        ? AnnaDesignTokens.motionStandard
+                        ? const Duration(milliseconds: 320)
                         : Duration.zero,
+                    curve: Curves.easeInOutCubic,
                     alignment: Alignment.topCenter,
                     child: showAllActions
                         ? Column(
