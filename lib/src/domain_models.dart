@@ -118,6 +118,21 @@ Set<AppModule> _appModulesFromJson(Object? raw) {
   return modules;
 }
 
+/// Legacy notes retain their own tags. This small catalogue is only the
+/// user-managed names and persists even before a note uses them.
+List<String> normalizeInboxCategoryCatalog(Iterable<String> values) {
+  final seen = <String>{};
+  final normalized = <String>[];
+  for (final raw in values) {
+    final label = raw.trim().replaceAll(RegExp(r'\s+'), ' ');
+    if (label.isEmpty || label.length > 48) continue;
+    if (!seen.add(label.toLowerCase())) continue;
+    normalized.add(label);
+    if (normalized.length >= 128) break;
+  }
+  return normalized;
+}
+
 class AgendaPreferences {
   final String displayName;
   final AgendaThemeMode themeMode;
@@ -149,6 +164,7 @@ class AgendaPreferences {
   final PersonalizationPreset personalizationPreset;
   final Set<AppModule> enabledModules;
   final List<MemoryCollectionDefinition> memoryCollections;
+  final List<String> inboxCategoryCatalog;
 
   const AgendaPreferences({
     this.displayName = '',
@@ -181,6 +197,7 @@ class AgendaPreferences {
     this.personalizationPreset = PersonalizationPreset.complete,
     this.enabledModules = completeAppModules,
     this.memoryCollections = const [],
+    this.inboxCategoryCatalog = const [],
   });
 
   AgendaPreferences copyWith({
@@ -214,6 +231,7 @@ class AgendaPreferences {
     PersonalizationPreset? personalizationPreset,
     Set<AppModule>? enabledModules,
     List<MemoryCollectionDefinition>? memoryCollections,
+    List<String>? inboxCategoryCatalog,
     bool clearPrimaryReminder = false,
     bool clearSecondaryReminder = false,
     bool clearPin = false,
@@ -262,6 +280,8 @@ class AgendaPreferences {
           personalizationPreset ?? this.personalizationPreset,
       enabledModules: enabledModules ?? this.enabledModules,
       memoryCollections: memoryCollections ?? this.memoryCollections,
+      inboxCategoryCatalog: normalizeInboxCategoryCatalog(
+        inboxCategoryCatalog ?? this.inboxCategoryCatalog),
     );
   }
 
@@ -339,6 +359,7 @@ class AgendaPreferences {
         'memoryCollections': memoryCollections
             .map((collection) => collection.toJson())
             .toList(growable: false),
+        'inboxCategoryCatalog': inboxCategoryCatalog,
       };
 
   factory AgendaPreferences.fromJson(Map<String, dynamic> json) =>
@@ -408,6 +429,10 @@ class AgendaPreferences {
         personalizationPreset: PersonalizationPreset.values.firstWhere(
           (e) => e.name == json['personalizationPreset'],
           orElse: () => PersonalizationPreset.complete,
+        ),
+        inboxCategoryCatalog: normalizeInboxCategoryCatalog(
+          (json['inboxCategoryCatalog'] as List? ?? const [])
+              .whereType<String>(),
         ),
         enabledModules: _appModulesFromJson(json['enabledModules']),
         memoryCollections: (json['memoryCollections'] as List? ?? const [])

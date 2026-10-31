@@ -19,6 +19,46 @@ void main() {
     await MediaAssetStore.instance.resetForTesting();
   });
 
+  test('empty Inbox category persists across restart and keeps account prefs', () async {
+    final first = AgendaStore();
+    await first.load();
+    expect(first.inbox, isEmpty);
+    await first.createInboxCategory(' Viaggi   futuri ');
+    await first.createInboxCategory('viaggi futuri');
+    expect(first.inboxCategoryTags, ['Viaggi futuri']);
+    expect(first.inbox, isEmpty);
+    first.dispose();
+
+    final second = AgendaStore();
+    await second.load();
+    expect(second.inboxCategoryTags, ['Viaggi futuri']);
+    expect(second.preferences.toJson()['inboxCategoryCatalog'], ['Viaggi futuri']);
+    expect(await second.renameInboxTag('Viaggi futuri', 'Weekend'), 0);
+    expect(second.inboxCategoryTags, ['Weekend']);
+    second.dispose();
+
+    final third = AgendaStore();
+    await third.load();
+    expect(third.inboxCategoryTags, ['Weekend']);
+    await third.removeUnusedInboxCategory('Weekend');
+    expect(third.inboxCategoryTags, isEmpty);
+    third.dispose();
+  });
+
+  test('empty category cannot be removed while referenced by a note', () async {
+    final store = AgendaStore();
+    await store.load();
+    await store.createInboxCategory('Viaggi');
+    await store.addInboxEntry('Un viaggio');
+    await store.setInboxTags(store.inbox.single.id, ['Viaggi']);
+    await expectLater(
+      store.removeUnusedInboxCategory('Viaggi'),
+      throwsStateError,
+    );
+    expect(store.inboxCategoryTags, ['Viaggi']);
+    store.dispose();
+  });
+
   test('organization tags normalize duplicates whitespace and cap', () {
     final values = normalizeOrganizationTags([
       ' viaggio ',
