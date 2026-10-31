@@ -18,7 +18,7 @@ void main() {
 
     for (final page in const <String>[
       'PlannerScreen(store: widget.store, embedded: true)',
-      'CalendarHubScreen(',
+      'SharedSpaceHubScreen(store: widget.store)',
       'DiaryMemoriesScreen(store: widget.store)',
       'MoreScreen(store: widget.store)',
     ]) {
