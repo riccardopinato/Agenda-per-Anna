@@ -193,6 +193,27 @@
         ],
         "risk_class": "deep",
         "always_fast": false
+      },
+      "personalization-critical": {
+        "flow": ".maestro/journeys/personalization-atomic.yaml",
+        "paths": [
+          "lib/src/screens/personalization_screen.dart",
+          ".maestro/journey/personalization.yaml",
+          ".maestro/journeys/personalization-atomic.yaml"
+        ],
+        "labs": [
+          "configuration"
+        ],
+        "surfaces": [
+          "personalization",
+          "settings"
+        ],
+        "capabilities": [
+          "preferences",
+          "configuration"
+        ],
+        "risk_class": "normal",
+        "always_fast": false
       }
     }
   },
