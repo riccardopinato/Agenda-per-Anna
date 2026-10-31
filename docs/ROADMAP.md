@@ -23,11 +23,13 @@ This final bounded pass:
   merged. Phone smoke remains user-reported PASS for UI5, while comprehensive
   native/Store/Noi two-device certification remains separately NOT VERIFIED.
 
-**v1.08 design decisions, block 01 (M01–M10):** all 10 approved
-on 30 October 2026; exact options and safeguards recorded in
-[`V108_MOTION_VISUAL_DESIGN_DECISIONS.md`](V108_MOTION_VISUAL_DESIGN_DECISIONS.md).
-Next choice M11/20 is **PENDING USER SELECTION**; no v1.08 code, APK or
-implementation authorization has been given.
+**v1.08 Motion & Visual Polish DESIGN COMPLETE — 20/20 (31 October 2026).**
+All user choices M01–M20 are approved, recorded in the
+[`V108_MOTION_VISUAL_DESIGN_DECISIONS.md`](V108_MOTION_VISUAL_DESIGN_DECISIONS.md)
+and consolidated into the
+[`V108_MOTION_VISUAL_POLISH_FINAL_DESIGN_CONTRACT.md`](V108_MOTION_VISUAL_POLISH_FINAL_DESIGN_CONTRACT.md).
+This closes **design selection only**. **No v1.08 Flutter implementation, APK, release or source modification** is authorized by these decisions.
+Next according to approved sequencing: **return to v1.07 Daily-use UX** planning/implementation scope. v1.08 implementation waves remain a proposal pending explicit user authorization; v1.06 external integrations stay deferred until PC/device access.
 
 **Next sequencing authorized 30 October 2026:** defer v1.06 external app
 integrations until the user has PC/device access. Run **v1.08 Motion & Visual
