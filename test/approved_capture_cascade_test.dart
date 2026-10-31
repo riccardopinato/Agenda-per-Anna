@@ -12,7 +12,7 @@ void main() {
     final motion = read('lib/src/motion_v108.dart');
     expect(capture, contains('showModalBottomSheet<_UnifiedCaptureAction>'));
     expect(capture, contains('sheetAnimationStyle: AnimationStyle('));
-    expect(capture, contains('AnnaMotionV108.duration(context, 416)'));
+    expect(capture, contains('AnnaMotionV108.duration(context, 360)'));
     expect(capture, contains('captureCascade: true'));
     for (final action in [
       'text', 'photo', 'task', 'voice', 'sketch', 'inbox', 'event',
@@ -20,10 +20,13 @@ void main() {
     ]) {
       expect(capture, contains('_UnifiedCaptureAction.$action'));
     }
-    expect(motion, contains('176 + order * 100'));
-    expect(motion, contains('capture ? 544 : 280'));
+    expect(motion, contains('40 + order * 72'));
+    expect(motion, contains('AnnaMotionV108.duration(context, 420)'));
     expect(motion, contains('Curves.easeOutBack'));
-    expect(motion, contains('const Offset(0, -0.32)'));
+    expect(motion, contains('AnimatedScale('));
+    expect(motion, contains('scale: shown ? 1 : 0.976'));
+    expect(capture, contains('curve: Curves.easeInOutCubic'));
+    expect(motion, contains('const Offset(0, -0.12)'));
     expect(motion, contains('this.captureCascade = false'));
     expect(motion, contains('!AnnaMotionV108.enabled(context)'));
   });
