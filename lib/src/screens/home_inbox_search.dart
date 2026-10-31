@@ -771,7 +771,7 @@ class _InboxScreenState extends State<InboxScreen> {
         ),
       ),
     );
-    if (note != null && mounted) await _editTags(context, note);
+    if (note != null && mounted) await _editTags(this.context, note);
   }
 
   @override
@@ -845,7 +845,7 @@ class _InboxScreenState extends State<InboxScreen> {
                       Padding(
                         padding: const EdgeInsets.only(right: 7),
                         child: ChoiceChip(
-                          label: Text('#'+category),
+                          label: Text('$category'),
                           selected: selectedCategory?.toLowerCase() ==
                               category.toLowerCase(),
                           onSelected: (_) =>
