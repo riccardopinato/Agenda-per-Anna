@@ -28,7 +28,7 @@ void main() {
     expect(more, contains('InboxScreen(store: store)'));
     expect(more, contains('ArchiveScreen(store: store)'));
     expect(more, contains('BackupScreen(store: store)'));
-    expect(more, contains('SharedSpaceHubScreen(store: store)'));
+    expect(shell, contains('SharedSpaceHubScreen(store: widget.store)'));
     expect(more, contains('CloudAccountScreen(store: store)'));
     expect(more, contains('SettingsHubScreen(store: store)'));
     expect(more, contains('ExploreScreen(store: store)'));
