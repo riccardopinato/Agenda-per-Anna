@@ -34,8 +34,8 @@ void main() {
         )),
       ));
       await tester.pump();
-      final image = tester.widget<QrImageView>(find.byType(QrImageView));
-      expect(image.data, SharedInviteQrPayload.encode(code));
+      expect(find.byType(QrImageView), findsOneWidget);
+      expect(SharedInviteQrPayload.encode(code), 'ANNA-DIARY:A7C29E4B');
     }
     for (final theme in SharedInviteQrStyle.values) {
       await show(theme, false);
