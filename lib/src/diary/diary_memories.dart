@@ -788,7 +788,8 @@ class _DiaryMemoriesScreenState extends State<DiaryMemoriesScreen> {
                     child: Text(strings.d3('memoryMapNoPlaces')),
                   )
                 else if (located.isNotEmpty)
-                  LayoutBuilder(
+                  AnnaMotionMapEntry(
+                    child: LayoutBuilder(
                     builder: (context, constraints) {
                       const mapHeight = 250.0;
                       final mapWidth = constraints.maxWidth;
@@ -846,25 +847,59 @@ class _DiaryMemoriesScreenState extends State<DiaryMemoriesScreen> {
                                       button: true,
                                       label:
                                           '${place.label}, ${place.count}',
-                                      child: IconButton.filled(
-                                        iconSize: 18,
-                                        onPressed: () {
-                                          Navigator.pop(sheetContext);
-                                          searchController.text = place.label;
-                                          setState(() {
-                                            filter = null;
-                                            searchExpanded = true;
-                                            view =
-                                                _DiaryMemoriesView.timeline;
-                                          });
-                                        },
-                                        icon: Text(
-                                          '${place.count}',
-                                          style: const TextStyle(
-                                            fontWeight: FontWeight.w900,
-                                          ),
-                                        ),
-                                      ),
+                                      child: AnnaMotionMapPin(
+  count: place.count,
+  onPressed: () {
+    final memory = place.latestMemory;
+    unawaited(showModalBottomSheet<void>(
+      context: sheetContext,
+      showDragHandle: true,
+      builder: (previewContext) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(AnnaDesignTokens.spaceMd),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ListTile(
+                leading: SizedBox(
+                  width: 48, height: 48,
+                  child: _coverPreview(previewContext, memory),
+                ),
+                title: Text(widget.store.diaryBlockDisplayTitle(
+                  memory.block, strings: strings)),
+                subtitle: Text('${place.label} · ${place.count}'),
+                trailing: const Icon(Icons.chevron_right),
+                onTap: () {
+                  Navigator.pop(previewContext);
+                  Navigator.pop(sheetContext);
+                  if (memory.block.type == DiaryBlockType.photo) {
+                    unawaited(_openPhoto(memory));
+                  } else {
+                    unawaited(_openRecord(memory));
+                  }
+                },
+              ),
+              TextButton.icon(
+                icon: const Icon(Icons.place_outlined),
+                label: Text(strings.d3('memoryMapSelectablePlaces')),
+                onPressed: () {
+                  Navigator.pop(previewContext);
+                  Navigator.pop(sheetContext);
+                  searchController.text = place.label;
+                  setState(() {
+                    filter = null;
+                    searchExpanded = true;
+                    view = _DiaryMemoriesView.timeline;
+                  });
+                },
+              ),
+            ],
+          ),
+        ),
+      ),
+    ));
+  },
+),
                                     ),
                                   ),
                                 );
@@ -874,6 +909,7 @@ class _DiaryMemoriesScreenState extends State<DiaryMemoriesScreen> {
                         ),
                       );
                     },
+                    ),
                   ),
                 if (located.isNotEmpty) ...[
                   const SizedBox(height: AnnaDesignTokens.spaceMd),

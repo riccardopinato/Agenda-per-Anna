@@ -280,3 +280,74 @@ class _AnnaThenNowWipeState extends State<AnnaThenNowWipe> {
     );
   }
 }
+
+class AnnaMotionMapEntry extends StatelessWidget {
+  final Widget child;
+  const AnnaMotionMapEntry({super.key, required this.child});
+  @override
+  Widget build(BuildContext context) {
+    if (!AnnaMotionV108.enabled(context)) return child;
+    return TweenAnimationBuilder<double>(
+      tween: Tween<double>(begin: 0.94, end: 1),
+      duration: const Duration(milliseconds: 350),
+      curve: Curves.easeOutCubic,
+      builder: (context, value, child) => Transform.scale(
+        scale: value,
+        child: Opacity(opacity: value, child: child),
+      ),
+      child: child,
+    );
+  }
+}
+
+class AnnaMotionMapPin extends StatefulWidget {
+  final int count;
+  final VoidCallback onPressed;
+  const AnnaMotionMapPin({
+    super.key, required this.count, required this.onPressed});
+  @override
+  State<AnnaMotionMapPin> createState() => _AnnaMotionMapPinState();
+}
+class _AnnaMotionMapPinState extends State<AnnaMotionMapPin> {
+  bool _pressed = false;
+  bool _busy = false;
+  Future<void> _tap() async {
+    if (_busy) return;
+    _busy = true;
+    unawaited(AnnaFeedback.selection());
+    if (AnnaMotionV108.enabled(context)) {
+      setState(() => _pressed = true);
+      await Future<void>.delayed(const Duration(milliseconds: 155));
+    }
+    if (!mounted) return;
+    setState(() => _pressed = false);
+    _busy = false;
+    widget.onPressed();
+  }
+  @override
+  Widget build(BuildContext context) {
+    final color = Theme.of(context).colorScheme.primary;
+    return AnimatedScale(
+      scale: _pressed ? 1.24 : 1,
+      duration: AnnaMotionV108.duration(context, 180),
+      curve: Curves.easeOutBack,
+      child: AnimatedContainer(
+        duration: AnnaMotionV108.duration(context, 180),
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          boxShadow: _pressed
+              ? <BoxShadow>[BoxShadow(
+                  color: color.withValues(alpha: 0.27),
+                  blurRadius: 17, spreadRadius: 4)]
+              : const <BoxShadow>[],
+        ),
+        child: IconButton.filled(
+          iconSize: 18,
+          onPressed: _tap,
+          icon: Text('${widget.count}',
+            style: const TextStyle(fontWeight: FontWeight.w900)),
+        ),
+      ),
+    );
+  }
+}
