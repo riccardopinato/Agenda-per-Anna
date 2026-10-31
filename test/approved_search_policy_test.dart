@@ -65,6 +65,30 @@ void main() {
     store.dispose();
   });
 
+  test('distant multi-token matches each have visible evidence', () {
+    final store = AgendaStore();
+    final text =
+        'montagna ${List.filled(240, 'x').join()} tramonto';
+    store.items.add(AgendaItem(
+      id: 'two-remote-tokens',
+      title: 'Escursione',
+      note: text,
+      date: DateTime(2026, 10, 31),
+      type: ItemType.task,
+    ));
+    final hits = store.approvedPersonalSearch(
+      'montagna tramonto',
+      kinds: {PersonalSearchKind.agenda},
+    );
+    expect(hits, hasLength(1));
+    final evidence = store.approvedSearchMatchEvidence(
+      hits.single, 'montagna tramonto',
+    );
+    expect(evidence, contains('montagna'));
+    expect(evidence, contains('tramonto'));
+    store.dispose();
+  });
+
   test('A-Z, newest and oldest order the same canonical hits', () {
     final store = AgendaStore();
     store.items.addAll([
