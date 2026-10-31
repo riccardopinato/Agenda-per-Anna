@@ -36,6 +36,39 @@ extension OrganizationAgendaStore on AgendaStore {
     return normalized;
   }
 
+  /// Inbox-only category names (never mix in private diary categories).
+  /// A new category becomes persistent when attached to a canonical note.
+  List<String> get inboxCategoryTags {
+    final byName = <String, String>{};
+    for (final entry in inbox) {
+      for (final tag in entry.tags) {
+        final name = tag.trim();
+        if (name.isEmpty) continue;
+        byName.putIfAbsent(name.toLowerCase(), () => name);
+      }
+    }
+    return byName.values.toList()
+      ..sort((a, b) => a.toLowerCase().compareTo(b.toLowerCase()));
+  }
+
+  /// Live Inbox records using the same category, case-insensitively.
+  List<InboxEntry> inboxEntriesInCategory(
+    String category, {
+    bool includeArchived = false,
+  }) {
+    final key = category.trim().toLowerCase();
+    if (key.isEmpty) return const [];
+    final entries = inbox.where((entry) =>
+      (includeArchived || !entry.archived) &&
+      entry.tags.any((tag) => tag.trim().toLowerCase() == key),
+    ).toList();
+    entries.sort((a, b) {
+      if (a.pinned != b.pinned) return a.pinned ? -1 : 1;
+      return b.createdAt.compareTo(a.createdAt);
+    });
+    return entries;
+  }
+
   Future<void> toggleInboxArchived(String id) async {
     final index = inbox.indexWhere((entry) => entry.id == id);
     if (index < 0) return;
