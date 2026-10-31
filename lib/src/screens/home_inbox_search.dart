@@ -825,7 +825,7 @@ class _InboxScreenState extends State<InboxScreen> {
       } catch (_) {
         if (!mounted) return;
         ScaffoldMessenger.of(this.context).showSnackBar(
-          SnackBar(content: Text(strings.v100SaveFailed)),
+          SnackBar(content: Text(inboxCategoryCopy(strings.languageCode, 'failed'))),
         );
       }
     } finally {
