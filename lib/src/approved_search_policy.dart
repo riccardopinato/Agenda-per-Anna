@@ -159,21 +159,22 @@ extension ApprovedSearchPolicy on AgendaStore {
       final found = pending.where((token) => text.toLowerCase().contains(token)).toList();
       if (found.isEmpty) continue;
       pending.removeAll(found);
-      // Keep the actual match visible even when it occurs late in OCR or
-      // a long note. Never show a misleading prefix without the term.
-      final first = found
-          .map((token) => text.toLowerCase().indexOf(token))
-          .where((position) => position >= 0)
-          .reduce((a, b) => a < b ? a : b);
-      final left = (first - 30).clamp(0, text.length).toInt();
-      final right = (first + 90).clamp(0, text.length).toInt();
-      final snippet = [
-        if (left > 0) '…',
-        text.substring(left, right),
-        if (right < text.length) '…',
-      ].join();
-      evidence.add(snippet);
-      if (pending.isEmpty || evidence.length == 6) break;
+      // A long field may contain several search tokens far apart.
+      // Every token that provides evidence must appear in a visible snippet.
+      for (final token in found) {
+        final position = text.toLowerCase().indexOf(token);
+        if (position < 0) continue;
+        final left = (position - 30).clamp(0, text.length).toInt();
+        final right = (position + token.length + 55)
+            .clamp(0, text.length).toInt();
+        evidence.add([
+          if (left > 0) '…',
+          text.substring(left, right),
+          if (right < text.length) '…',
+        ].join());
+        if (evidence.length >= 8) break;
+      }
+      if (pending.isEmpty || evidence.length >= 8) break;
     }
     return evidence.isEmpty ? null : evidence.join(' · ');
   }
