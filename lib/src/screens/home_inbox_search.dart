@@ -272,7 +272,10 @@ class _MainShellState extends State<MainShell> {
               ),
               Expanded(
                 key: const ValueKey<String>('main-shell-content'),
-                child: IndexedStack(index: index, children: pages),
+                child: AnnaMotionReveal(
+                  token: index,
+                  child: IndexedStack(index: index, children: pages),
+                ),
               ),
             ],
           ),
