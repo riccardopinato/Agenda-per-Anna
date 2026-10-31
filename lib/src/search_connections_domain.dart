@@ -1414,7 +1414,7 @@ class _PersonalSearchConnectionsScreenState
                                     evidence == null
                                         ? hit.subtitle
                                         : hit.subtitle +
-                                            '\\n' +
+                                            '\n' +
                                             approvedSearchReasonTitle(
                                                 strings.languageCode) +
                                             ': ' +
