@@ -146,11 +146,15 @@ class AnnaMotionStagger extends StatefulWidget {
   final Widget child;
   final int order;
   final bool fan;
+  /// Only the approved +Crea sheet uses this top-to-bottom micro-bounce.
+  /// All prior calls preserve their original v1.08 animation.
+  final bool captureCascade;
   const AnnaMotionStagger({
     super.key,
     required this.child,
     required this.order,
     this.fan = false,
+    this.captureCascade = false,
   });
   @override
   State<AnnaMotionStagger> createState() => _AnnaMotionStaggerState();
@@ -171,29 +175,40 @@ class _AnnaMotionStaggerState extends State<AnnaMotionStagger> {
         return;
       }
       final order = widget.order.clamp(0, 4);
-      Future<void>.delayed(Duration(milliseconds: order * 60), () {
-        if (mounted) setState(() => _shown = true);
-      });
+      Future<void>.delayed(
+        Duration(milliseconds: widget.captureCascade
+            ? 176 + order * 100
+            : order * 60),
+        () {
+          if (mounted) setState(() => _shown = true);
+        },
+      );
     });
   }
 
   @override
   Widget build(BuildContext context) {
     final shown = _shown || !AnnaMotionV108.enabled(context);
+    final capture = widget.captureCascade;
+    final duration = AnnaMotionV108.duration(context, capture ? 544 : 280);
     return AnimatedRotation(
-      turns: shown || !widget.fan ? 0 : (widget.order - 2) * 0.008,
-      duration: AnnaMotionV108.duration(context, 300),
+      turns: shown || !widget.fan || capture
+          ? 0 : (widget.order - 2) * 0.008,
+      duration: AnnaMotionV108.duration(context, capture ? 544 : 300),
       curve: Curves.easeOutCubic,
       child: AnimatedSlide(
-        duration: AnnaMotionV108.duration(context, 280),
-        curve: Curves.easeOutCubic,
+        duration: duration,
+        curve: capture ? Curves.easeOutBack : Curves.easeOutCubic,
         offset: shown
             ? Offset.zero
-            : widget.fan
-                ? Offset((widget.order - 2) * 0.065, 0.10)
-                : const Offset(0, 0.06),
+            : capture
+                ? const Offset(0, -0.32)
+                : widget.fan
+                    ? Offset((widget.order - 2) * 0.065, 0.10)
+                    : const Offset(0, 0.06),
         child: AnimatedOpacity(
-          duration: AnnaMotionV108.duration(context, 280),
+          duration: duration,
+          curve: Curves.easeOutCubic,
           opacity: shown ? 1 : 0,
           child: widget.child,
         ),
