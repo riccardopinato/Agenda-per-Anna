@@ -21,12 +21,15 @@ appId: com.riccardopinato.agenda_per_anna
       - tapOn:
           id: 'onboarding_open_agenda'
 - tapOn:
-    id: 'main-nav-calendar'
+    id: 'main-nav-today'
+- tapOn:
+    id: 'today-open-calendar'
     retryTapIfNoChange: true
 - extendedWaitUntil:
     visible:
       id: 'calendar-open-month-notebook'
     timeout: 10000
+- back
 - tapOn:
     id: 'main-nav-memories'
     retryTapIfNoChange: true
@@ -44,5 +47,5 @@ appId: com.riccardopinato.agenda_per_anna
     id: 'main-nav-today'
     retryTapIfNoChange: true
 - extendedWaitUntil:
-    visible: '(La mia giornata|My day|Mi día|Ma journée|O meu dia)[\s\S]*'
+    visible: '(Buongiorno|Buon pomeriggio|Buonasera|Good morning|Good afternoon|Good evening|Buenos días|Bonjour|Bom dia|La mia giornata|My day)[\s\S]*'
     timeout: 15000
