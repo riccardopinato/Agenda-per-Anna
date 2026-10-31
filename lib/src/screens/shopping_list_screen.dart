@@ -821,7 +821,7 @@ class _ShoppingTileShell extends StatelessWidget {
           [
             if (quantity.trim().isNotEmpty) quantity.trim(),
             strings.shoppingCategoryLabel(category),
-            if (shared) 'Noi ♡',
+            if (shared) strings.d3('sharedSpace'),
             if (purchaseCount > 1) strings.purchasedTimes(purchaseCount),
           ].join(' · '),
         ),
