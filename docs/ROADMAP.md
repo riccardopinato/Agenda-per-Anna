@@ -23,6 +23,24 @@ This final bounded pass:
   merged. Phone smoke remains user-reported PASS for UI5, while comprehensive
   native/Store/Noi two-device certification remains separately NOT VERIFIED.
 
+## v1.08 Motion & Visual Polish — IMPLEMENTATION IN PROGRESS (31 October 2026)
+
+**Authorisation:** user explicitly requested implementation after the 20/20 design contract.
+**Implementation PR:** [#161](https://github.com/riccardopinato/Agenda-per-Anna/pull/161).
+**Runtime/physical status:** NOT VERIFIED. This is a code PR, **not an APK or installable release**.
+
+Wave 1 implementation scope:
+- Shared motion primitives with accessibility disable-motion fallback.
+- Navigation/daily/calendar content transitions, central +Crea feedback and original capture actions.
+- In-place Ricordi timeline/suggestions animations, featured memory, search entry and real search results.
+- Shared photo Hero where source/target share exact diary block, real collection photo/album route and bounded thumbnails.
+- Then/Now reveal for actual paired photo memories and actual geo-pin feedback and a real memory preview.
+- Preserve UI5 canonical stores, session scroll, search route, original collection/date logic, local-first behavior and no invented diary/map entries.
+
+**Critical acceptance before merge:** exact-head flutter analyze/tests/Web and AppLab Source Gate PASS; no blocking reviews; preserve prior UI5 semantic/route source assertions. Only mark M01–M20 implemented after code and test evidence supports each semantic visual choice; do not infer from green CI alone. No new APK auto-build; any later signed sideload must use versionCode >111.
+
+**Previously approved sequence after v1.08 implementation:** return to v1.07 Daily-use UX. v1.06 remains deferred until PC/device access.
+
 **v1.08 Motion & Visual Polish DESIGN COMPLETE — 20/20 (31 October 2026).**
 All user choices M01–M20 are approved, recorded in the
 [`V108_MOTION_VISUAL_DESIGN_DECISIONS.md`](V108_MOTION_VISUAL_DESIGN_DECISIONS.md)
