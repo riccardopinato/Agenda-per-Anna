@@ -26,6 +26,7 @@ class _DiaryMemoriesScreenState extends State<DiaryMemoriesScreen> {
   final Map<String, bool> _expandedTimelineMonths = <String, bool>{};
   final Map<int, GlobalKey> _timelineYearKeys = <int, GlobalKey>{};
   int? _selectedTimelineYear;
+  String? _highlightTimelineMonth;
   bool _timelineInitialized = false;
   bool _suggestionsExpanded = false;
   int _anniversaryIndex = 0;
@@ -644,13 +645,21 @@ class _DiaryMemoriesScreenState extends State<DiaryMemoriesScreen> {
         clipBehavior: Clip.antiAlias,
         margin: const EdgeInsets.only(top: AnnaDesignTokens.spaceMd),
         child: InkWell(
-          onTap: () => _openRecord(record),
+          onTap: () => record.block.type == DiaryBlockType.photo
+              ? _openPhoto(record)
+              : _openRecord(record),
           child: SizedBox(
             height: 286,
             child: Stack(
               fit: StackFit.expand,
               children: [
-                _coverPreview(context, record),
+                record.block.type == DiaryBlockType.photo &&
+                        record.block.hasPhotoMedia
+                    ? Hero(
+                        tag: 'v108-photo-${record.block.id}',
+                        child: _coverPreview(context, record),
+                      )
+                    : _coverPreview(context, record),
                 DecoratedBox(
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
@@ -1399,7 +1408,13 @@ class _DiaryMemoriesScreenState extends State<DiaryMemoriesScreen> {
                   SizedBox(
                     height: 190,
                     width: double.infinity,
-                    child: _coverPreview(context, record),
+                    child: block.type == DiaryBlockType.photo &&
+                            block.hasPhotoMedia
+                        ? Hero(
+                            tag: 'v108-photo-${block.id}',
+                            child: _coverPreview(context, record),
+                          )
+                        : _coverPreview(context, record),
                   ),
                   Padding(
                     padding: const EdgeInsets.all(AnnaDesignTokens.spaceMd),
@@ -1506,6 +1521,12 @@ class _DiaryMemoriesScreenState extends State<DiaryMemoriesScreen> {
       setState(() {
         _selectedTimelineYear = selected;
         _expandedTimelineMonths[target.key] = true;
+        _highlightTimelineMonth = target.key;
+      });
+      Future<void>.delayed(const Duration(milliseconds: 670), () {
+        if (mounted && _highlightTimelineMonth == target.key) {
+          setState(() => _highlightTimelineMonth = null);
+        }
       });
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (!mounted) return;
@@ -1594,8 +1615,18 @@ class _DiaryMemoriesScreenState extends State<DiaryMemoriesScreen> {
                                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                                 child: Row(
                                   children: [
-                                    Expanded(child: Text(title,
-                                      style: Theme.of(context).textTheme.titleMedium)),
+                                    Expanded(
+                                      child: AnimatedDefaultTextStyle(
+                                        duration: AnnaMotionV108.duration(context, 420),
+                                        style: (Theme.of(context).textTheme.titleMedium ??
+                                            const TextStyle()).copyWith(
+                                          color: _highlightTimelineMonth == entry.key
+                                              ? Theme.of(context).colorScheme.primary
+                                              : Theme.of(context).colorScheme.onSurface,
+                                        ),
+                                        child: Text(title),
+                                      ),
+                                    ),
                                     Text(strings.d3Format(
                                       bucket.length == 1 ? 'ui5MemoryCountOne' : 'ui5MemoryCount', {'count': bucket.length}),
                                       style: Theme.of(context).textTheme.bodySmall),
