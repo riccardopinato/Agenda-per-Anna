@@ -845,7 +845,7 @@ class _InboxScreenState extends State<InboxScreen> {
                       Padding(
                         padding: const EdgeInsets.only(right: 7),
                         child: ChoiceChip(
-                          label: Text('$category'),
+                          label: Text('#$category'),
                           selected: selectedCategory?.toLowerCase() ==
                               category.toLowerCase(),
                           onSelected: (_) =>
