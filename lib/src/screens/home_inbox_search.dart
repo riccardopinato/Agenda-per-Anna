@@ -609,10 +609,16 @@ class _SyncAttentionCard extends StatelessWidget {
   }
 }
 
-class InboxScreen extends StatelessWidget {
+class InboxScreen extends StatefulWidget {
   final AgendaStore store;
-
   const InboxScreen({super.key, required this.store});
+  @override
+  State<InboxScreen> createState() => _InboxScreenState();
+}
+
+class _InboxScreenState extends State<InboxScreen> {
+  AgendaStore get store => widget.store;
+  String? selectedCategory;
 
   Future<void> _convertToTask(
     BuildContext context,
@@ -641,7 +647,7 @@ class InboxScreen extends StatelessWidget {
     final tags = await showOrganizationTagsEditor(
       context,
       initialTags: entry.tags,
-      suggestions: store.organizationTags,
+      suggestions: store.inboxCategoryTags,
     );
     if (tags == null) return;
     await store.setInboxTags(entry.id, tags);
@@ -658,17 +664,130 @@ class InboxScreen extends StatelessWidget {
     await copyNotesBridgePayload(context, text);
   }
 
+  Future<void> _renameCategory(BuildContext context, String previous) async {
+    final strings = AnnaStrings.of(context);
+    final input = TextEditingController(text: previous);
+    try {
+      final renamed = await showDialog<String>(
+        context: context,
+        builder: (dialogContext) => AlertDialog(
+          title: Text(inboxCategoryCopy(strings.languageCode, 'rename')),
+          content: TextField(
+            controller: input,
+            autofocus: true,
+            maxLength: 48,
+            decoration: InputDecoration(labelText: strings.tags),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext),
+              child: Text(strings.cancel),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.pop(dialogContext, input.text.trim()),
+              child: Text(strings.save),
+            ),
+          ],
+        ),
+      );
+      if (!mounted || renamed == null || renamed.isEmpty) return;
+      await store.renameInboxTag(previous, renamed);
+      if (!mounted) return;
+      if (selectedCategory?.toLowerCase() == previous.toLowerCase()) {
+        setState(() => selectedCategory = renamed);
+      }
+    } finally {
+      input.dispose();
+    }
+  }
+
+  Future<void> _manageCategories(BuildContext context) async {
+    final strings = AnnaStrings.of(context);
+    await showDialog<void>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: Text(inboxCategoryCopy(strings.languageCode, 'heading')),
+        content: SizedBox(
+          width: double.maxFinite,
+          child: ListView(
+            shrinkWrap: true,
+            children: [
+              for (final category in store.inboxCategoryTags)
+                ListTile(
+                  title: Text(category),
+                  trailing: const Icon(Icons.edit_outlined),
+                  onTap: () {
+                    Navigator.pop(dialogContext);
+                    _renameCategory(context, category);
+                  },
+                ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext),
+            child: Text(strings.cancel),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _addTagToNote(BuildContext context) async {
+    final strings = AnnaStrings.of(context);
+    final notes = store.activeInboxEntries;
+    if (notes.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text(inboxCategoryCopy(strings.languageCode, 'empty')),
+      ));
+      return;
+    }
+    final note = await showModalBottomSheet<InboxEntry>(
+      context: context,
+      showDragHandle: true,
+      isScrollControlled: true,
+      builder: (sheetContext) => SafeArea(
+        child: SizedBox(
+          height: MediaQuery.sizeOf(sheetContext).height * 0.54,
+          child: Column(
+            children: [
+              ListTile(
+                title: Text(inboxCategoryCopy(strings.languageCode, 'choose')),
+                subtitle: Text(inboxCategoryCopy(strings.languageCode, 'hint')),
+              ),
+              Expanded(
+                child: ListView.builder(
+                  itemCount: notes.length,
+                  itemBuilder: (context, index) => ListTile(
+                    title: Text(notes[index].text, maxLines: 2,
+                        overflow: TextOverflow.ellipsis),
+                    onTap: () => Navigator.pop(sheetContext, notes[index]),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+    if (note != null && mounted) await _editTags(this.context, note);
+  }
+
   @override
   Widget build(BuildContext context) {
     return AnimatedBuilder(
       animation: store.inboxRevision,
       builder: (context, _) {
         final strings = AnnaStrings.of(context);
-        final entries = [...store.activeInboxEntries]
-          ..sort((a, b) {
-            if (a.pinned != b.pinned) return a.pinned ? -1 : 1;
-            return b.createdAt.compareTo(a.createdAt);
-          });
+        final entries = selectedCategory == null
+            ? [...store.activeInboxEntries]
+            : store.inboxEntriesInCategory(selectedCategory!);
+        entries.sort((a, b) {
+          if (a.pinned != b.pinned) return a.pinned ? -1 : 1;
+          return b.createdAt.compareTo(a.createdAt);
+        });
+        final categories = store.inboxCategoryTags;
 
         return Scaffold(
           appBar: AppBar(
@@ -686,7 +805,64 @@ class InboxScreen extends StatelessWidget {
             icon: const Icon(Icons.add),
             label: Text(strings.capture),
           ),
-          body: entries.isEmpty
+          body: Column(
+            children: [
+              Padding(
+                padding: const EdgeInsets.fromLTRB(14, 8, 14, 4),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        inboxCategoryCopy(strings.languageCode, 'heading'),
+                        style: Theme.of(context).textTheme.titleMedium,
+                      ),
+                    ),
+                    TextButton(
+                      onPressed: () => _manageCategories(context),
+                      child: Text(inboxCategoryCopy(
+                          strings.languageCode, 'manage')),
+                    ),
+                  ],
+                ),
+              ),
+              SizedBox(
+                height: 46,
+                child: ListView(
+                  padding: const EdgeInsets.symmetric(horizontal: 14),
+                  scrollDirection: Axis.horizontal,
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.only(right: 7),
+                      child: ChoiceChip(
+                        label: Text(inboxCategoryCopy(
+                            strings.languageCode, 'all')),
+                        selected: selectedCategory == null,
+                        onSelected: (_) =>
+                            setState(() => selectedCategory = null),
+                      ),
+                    ),
+                    for (final category in categories)
+                      Padding(
+                        padding: const EdgeInsets.only(right: 7),
+                        child: ChoiceChip(
+                          label: Text('#$category'),
+                          selected: selectedCategory?.toLowerCase() ==
+                              category.toLowerCase(),
+                          onSelected: (_) =>
+                              setState(() => selectedCategory = category),
+                        ),
+                      ),
+                    ActionChip(
+                      avatar: const Icon(Icons.add, size: 18),
+                      label: Text(inboxCategoryCopy(
+                          strings.languageCode, 'create')),
+                      onPressed: () => _addTagToNote(context),
+                    ),
+                  ],
+                ),
+              ),
+              Expanded(
+                child: entries.isEmpty
               ? Center(
                   child: Padding(
                     padding: const EdgeInsets.all(32),
@@ -775,6 +951,9 @@ class InboxScreen extends StatelessWidget {
                     );
                   },
                 ),
+              ),
+            ],
+          ),
         );
       },
     );

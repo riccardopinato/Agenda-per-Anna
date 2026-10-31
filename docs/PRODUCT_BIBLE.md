@@ -7,6 +7,10 @@
 
 This document defines what Anna's Diary is, what it is not, and the product/security invariants that future work must preserve. Implementation details belong in `docs/ARCHITECTURE.md`; execution sequencing belongs in `docs/ROADMAP.md`.
 
+## Approved 10-screen visual contract — 31 October 2026
+
+All ten Anna's Diary interactive design decisions were explicitly approved by the user. The complete ledger and non-destructive implementation plan are maintained in [APPROVED_10_MOCKUPS_IMPLEMENTATION_CONTRACT.md](APPROVED_10_MOCKUPS_IMPLEMENTATION_CONTRACT.md). These decisions authorize **bounded implementation**, not APK/public release or changes to existing user records. In particular: Cassaforte privata must remain exactly as installed; +Crea retains its current actions with approved top-to-bottom micro-bounce; Inbox tag creation/rename/filter must be tested on a real Android phone before acceptance; global Search must not surface invisible one-character matches and must offer newest/oldest/A–Z. Existing source/release evidence remains valid only for its exact previously tested SHA.
+
 ## 1. Product identity
 
 Anna's Diary is a **personal-life diary, lightweight personal agenda and memory space** designed for low-friction capture and later recall.

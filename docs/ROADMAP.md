@@ -1,4 +1,21 @@
 # Anna's Diary — Roadmap
+
+## Approved 10/10 mock-ups — phased integration (31 October 2026)
+
+**Scope:** ten explicit user-approved visual decisions recorded in [APPROVED_10_MOCKUPS_IMPLEMENTATION_CONTRACT.md](APPROVED_10_MOCKUPS_IMPLEMENTATION_CONTRACT.md). Current code already contains much of UI5/v1.08; integrate **deltas**, never overwrite working features merely because a mock-up does not display them. This design handoff is NEW product scope and does not retroactively reopen or invalidate previously completed UI5/v1.08 milestones.
+
+| Phase | Delivery | State | Verification |
+| --- | --- | --- | --- |
+| S0 | Freeze 10/10 source-of-truth contract and baseline | SOURCE IMPLEMENTED — PR #163, not merged | Source/doc review |
+| S1 | Global Search: explainable title-only single letter, match evidence, sort newest/oldest/A–Z | SOURCE IMPLEMENTED on PR #163 — final exact-head CI not yet verified | Flutter tests, UI, localization, exact-head source CI |
+| S2 | Inbox category chips, create via existing note-tag editor, rename active + archived, derived category views | SOURCE IMPLEMENTED on PR #163 — physical Android QA still REQUIRED | Offline/account/sync + mandatory Android physical create/rename/filter/restart |
+| S3 | Existing 24h invites: QR code scan and predesigned locally rendered illustrative themes, reusable multi-user | PENDING | Invite server authority, scanner/readability, 2+ accounts on devices |
+| S4 | Remaining mock-ups 1–5,7: only deltas to navigation, day/calendar, memories, settings, animations | PENDING | Actual UI5/v1.08 route/a11y/visual regression + reduce-motion |
+| S5 | Final integrated QA and separate signed sideload candidate | PENDING | Source gates first; manual Android APK/physical only, versionCode >111 |
+
+**Explicit unchanged:** installed Private Vault (#9). No schema or identity rewrites, no mandatory AI/Hugging Face service. Source changes are not an APK. Preserve stable signing/package and do not trigger sideload automatically.
+
+
 ## v1.05.x-FINAL — Post-UI5 consolidation (30 October 2026)
 
 **Scope: v1.05.x software closure, without a new APK or v1.06 implementation.**
