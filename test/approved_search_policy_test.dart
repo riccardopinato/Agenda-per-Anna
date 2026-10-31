@@ -41,6 +41,30 @@ void main() {
     store.dispose();
   });
 
+  test('long search evidence keeps the actual late match visible', () {
+    final store = AgendaStore();
+    final longNote = '${List.filled(240, 'a').join()} montagna ${List.filled(220, 'b').join()}';
+    store.items.add(AgendaItem(
+      id: 'late-ocr-like',
+      title: 'Passeggiata',
+      note: longNote,
+      date: DateTime(2026, 10, 31),
+      type: ItemType.task,
+    ));
+    final hits = store.approvedPersonalSearch(
+      'montagna',
+      kinds: {PersonalSearchKind.agenda},
+    );
+    expect(hits.map((hit) => hit.id), ['late-ocr-like']);
+    final snippet =
+        store.approvedSearchMatchEvidence(hits.single, 'montagna');
+    expect(snippet, contains('montagna'));
+    expect(snippet!.length, lessThan(longNote.length));
+    expect(snippet.startsWith('…'), isTrue);
+    expect(snippet.endsWith('…'), isTrue);
+    store.dispose();
+  });
+
   test('A-Z, newest and oldest order the same canonical hits', () {
     final store = AgendaStore();
     store.items.addAll([
