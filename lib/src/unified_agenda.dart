@@ -270,7 +270,10 @@ class UnifiedAgendaTile extends StatelessWidget {
                 fontSize: 11,
               ),
             ),
-            if (entry.space != null && entry.space!.name != 'Noi ♡')
+            if (entry.space != null &&
+                entry.space!.name.trim().isNotEmpty &&
+                entry.space!.name.trim() !=
+                    AnnaStrings.of(context).d3('sharedSpace'))
               Text(
                 entry.space!.name,
                 style: Theme.of(context).textTheme.bodySmall,
