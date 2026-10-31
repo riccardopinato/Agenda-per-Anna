@@ -38,6 +38,22 @@ void main() {
     expect(more, contains('_SyncAttentionCard(store: store)'));
   });
 
+  test('Settings retains all routes and exposes editable holder name', () {
+    final settings = source('lib/src/screens/settings_hub.dart');
+    expect(settings, contains('settings-hub-edit-name'));
+    expect(settings, contains('Inserisci il tuo nome'));
+    expect(settings, contains('store.settingsRevision'));
+    expect(settings, contains('SettingsScreen(store: store)'));
+    for (final route in [
+      'settings-hub-appearance', 'settings-hub-personalization',
+      'settings-hub-preferences-privacy', 'settings-hub-premium',
+      'settings-hub-account', 'settings-hub-backup',
+    ]) {
+      expect(settings, contains(route));
+    }
+    expect(settings.split("id: 'settings-hub-premium'").length, 2);
+  });
+
   test('approved tagline is present in five languages', () {
     final planner = source('lib/src/planner_views.dart');
     for (final tagline in [
