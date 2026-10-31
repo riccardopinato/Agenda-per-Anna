@@ -163,6 +163,7 @@ class AnnaMotionStagger extends StatefulWidget {
 class _AnnaMotionStaggerState extends State<AnnaMotionStagger> {
   bool _shown = false;
   bool _scheduled = false;
+
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
@@ -175,39 +176,56 @@ class _AnnaMotionStaggerState extends State<AnnaMotionStagger> {
         return;
       }
       final order = widget.order.clamp(0, 4);
-      Future<void>.delayed(
-        Duration(milliseconds: widget.captureCascade
-            ? 176 + order * 100
-            : order * 60),
-        () {
-          if (mounted) setState(() => _shown = true);
-        },
-      );
+      // The prior capture animation delayed every row by 176+100n ms,
+      // then moved it by 32% for another 544ms. This felt disconnected
+      // from the opening sheet. A shorter overlapping cascade keeps each
+      // action responsive while retaining the approved visible micro-bounce.
+      final delay = widget.captureCascade
+          ? 40 + order * 72
+          : order * 60;
+      Future<void>.delayed(Duration(milliseconds: delay), () {
+        if (mounted) setState(() => _shown = true);
+      });
     });
   }
 
   @override
   Widget build(BuildContext context) {
     final shown = _shown || !AnnaMotionV108.enabled(context);
-    final capture = widget.captureCascade;
-    final duration = AnnaMotionV108.duration(context, capture ? 544 : 280);
+    if (widget.captureCascade) {
+      return AnimatedSlide(
+        offset: shown ? Offset.zero : const Offset(0, -0.12),
+        duration: AnnaMotionV108.duration(context, 420),
+        curve: Curves.easeOutCubic,
+        child: AnimatedScale(
+          scale: shown ? 1 : 0.976,
+          duration: AnnaMotionV108.duration(context, 420),
+          curve: Curves.easeOutBack,
+          child: AnimatedOpacity(
+            opacity: shown ? 1 : 0,
+            duration: AnnaMotionV108.duration(context, 260),
+            curve: Curves.easeOutCubic,
+            child: widget.child,
+          ),
+        ),
+      );
+    }
+    // The same component serves unrelated, previously approved UI5
+    // animations. Their path remains completely unchanged.
     return AnimatedRotation(
-      turns: shown || !widget.fan || capture
-          ? 0 : (widget.order - 2) * 0.008,
-      duration: AnnaMotionV108.duration(context, capture ? 544 : 300),
+      turns: shown || !widget.fan ? 0 : (widget.order - 2) * 0.008,
+      duration: AnnaMotionV108.duration(context, 300),
       curve: Curves.easeOutCubic,
       child: AnimatedSlide(
-        duration: duration,
-        curve: capture ? Curves.easeOutBack : Curves.easeOutCubic,
+        duration: AnnaMotionV108.duration(context, 280),
+        curve: Curves.easeOutCubic,
         offset: shown
             ? Offset.zero
-            : capture
-                ? const Offset(0, -0.32)
-                : widget.fan
-                    ? Offset((widget.order - 2) * 0.065, 0.10)
-                    : const Offset(0, 0.06),
+            : widget.fan
+                ? Offset((widget.order - 2) * 0.065, 0.10)
+                : const Offset(0, 0.06),
         child: AnimatedOpacity(
-          duration: duration,
+          duration: AnnaMotionV108.duration(context, 280),
           curve: Curves.easeOutCubic,
           opacity: shown ? 1 : 0,
           child: widget.child,
