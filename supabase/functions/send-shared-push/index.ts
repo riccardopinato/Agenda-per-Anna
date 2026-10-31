@@ -823,19 +823,19 @@ Deno.serve(async (req: Request) => {
 
   const messageBody =
     action === "comment"
-      ? "C’è un nuovo commento in Noi ♡."
+      ? "C’è un nuovo commento in Spazio condiviso."
       : action === "reaction"
-        ? "Hai ricevuto una reazione ❤️ in Noi ♡."
+        ? "Hai ricevuto una reazione ❤️ in Spazio condiviso."
         : action === "photo"
-          ? "È stata condivisa una nuova foto in Noi ♡."
+          ? "È stata condivisa una nuova foto in Spazio condiviso."
           : action === "sketch"
-            ? "È stato condiviso un nuovo sketch in Noi ♡."
+            ? "È stato condiviso un nuovo sketch in Spazio condiviso."
             : action === "delete"
               ? "Un elemento condiviso è stato aggiornato."
               : "C’è una nuova attività condivisa da leggere.";
 
   try {
-    const title = "Anna's Diary · Noi ♡";
+    const title = "Anna's Diary · Spazio condiviso";
     const data = {
       kind: "shared_update",
       space_id: spaceId,
