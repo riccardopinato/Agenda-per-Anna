@@ -48,7 +48,7 @@ selection. **M11 USER APPROVED — B (31 October 2026):** opening an individual 
 
 **M14 — PENDING USER SELECTION:** when opening an existing **Ricordi → Raccolte** album, compare A simple route transition, B cover image expanding into album detail, and C editorial album opening with brief staggered thumbnail placement. Must preserve collection identity, actual content, back-navigation position, and avoid introducing a second persistence layer.
 
-**M13–M20 — PENDING:** show one interactive comparison at a time, and await a specific user choice. Never prefill their decision letters.
+**M14–M20 — PENDING:** show one interactive comparison at a time, and await a specific user choice. Never prefill their decision letters.
 
 ### Sequencing
 
