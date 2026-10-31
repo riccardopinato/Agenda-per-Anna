@@ -10,7 +10,7 @@ void main() {
       '.github/workflows/sideload-arm64.yml',
     ]) {
       final workflow = File(path).readAsStringSync();
-      final uses = RegExp(r'(?m)^\s*-\s*uses:\s*([^\s#]+)')
+      final uses = RegExp(r'^\s*-\s*uses:\s*([^\s#]+)', multiLine: true)
           .allMatches(workflow)
           .map((match) => match.group(1)!)
           .toList();
