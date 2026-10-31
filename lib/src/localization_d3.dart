@@ -1015,7 +1015,7 @@ extension AnnaD3Strings on AnnaStrings {
   String unifiedFilterLabel(AgendaContentFilter value) => switch (value) {
         AgendaContentFilter.all => d3('unified_all'),
         AgendaContentFilter.privateOnly => d3('unified_private'),
-        AgendaContentFilter.sharedOnly => 'Noi ♡',
+        AgendaContentFilter.sharedOnly => d3('sharedSpace'),
       };
 
   String editorExpenseCategoryLabel(String value) => switch (value) {
