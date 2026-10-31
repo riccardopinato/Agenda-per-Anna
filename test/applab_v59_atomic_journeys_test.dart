@@ -86,7 +86,7 @@ void main() {
         File('.maestro/journey/calendar.yaml').readAsStringSync();
 
     expect(calendar, contains('- launchApp'));
-    expect(calendar, contains("id: 'main-nav-calendar'"));
+    expect(calendar, contains("id: 'today-open-calendar'"));
     expect(calendar, contains("id: 'calendar-open-month-notebook'"));
   });
 
