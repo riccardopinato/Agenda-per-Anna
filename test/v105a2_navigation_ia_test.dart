@@ -107,7 +107,6 @@ void main() {
       'PersonalSearchConnectionsScreen(store: store)',
       'InboxScreen(store: store)',
       'ExploreScreen(store: store)',
-      'SharedSpaceHubScreen(store: store)',
       'ArchiveScreen(store: store)',
       'BackupScreen(store: store)',
       'CloudAccountScreen(store: store)',
