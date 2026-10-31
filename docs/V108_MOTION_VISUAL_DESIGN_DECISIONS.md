@@ -48,9 +48,11 @@ selection. **M11 USER APPROVED — B (31 October 2026):** opening an individual 
 
 **M14 USER APPROVED — C (31 October 2026):** opening an existing **Ricordi → Raccolte** album uses an editorial album-opening transition: collection cover expands toward the album detail and a small number of visible thumbnails enter progressively. Keep motion **brief, accessible and limited to visible items**; preserve actual collection identity, content, route, back-navigation/scroll position and canonical data owner. Reduced-motion disables decoration. **DESIGN ONLY — NOT IMPLEMENTED.**
 
-**M15 — PENDING USER SELECTION:** results appearing for a real query in the **dedicated Ricordi global search route** (M13): compare **A immediate result list**, **B gentle group crossfade**, **C very short stagger of only visible results**. Preserve UI5 blank-query guidance, `Tutti` default, empty/no-match and error states, focus/keyboard and data truth. No results invented before a query; avoid restarting heavy animations on every keystroke.
+**M15 USER APPROVED — C (31 October 2026):** results in the dedicated Ricordi global-search route enter with a **brief top-to-bottom stagger**, limited to visible rows when a real result group arrives. Do NOT restart the cascade on every keystroke; preserve live query input, focus, filters (`Tutti` default), empty/no-match/error states, real search results and stable item identity. Reduced-motion disables stagger. **DESIGN ONLY — NOT IMPLEMENTED.**
 
-**M15–M20 — PENDING:** show one interactive comparison at a time, and await a specific user choice. Never prefill their decision letters.
+**M16 — PENDING USER SELECTION:** visual motion in the existing Ricordi **Then/Now** comparison when changing the active photograph, with A immediate photo change, B gentle photo crossfade, C directional reveal/wipe. This is a motion-only mockup, not a redefinition of the feature or its persisted data. Preserve the real Then/Now controls and photo identity; reduced-motion fallbacks.
+
+**M16–M20 — PENDING:** show one interactive comparison at a time, and await a specific user choice. Never prefill their decision letters.
 
 ### Sequencing
 
