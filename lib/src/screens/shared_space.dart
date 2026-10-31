@@ -187,6 +187,54 @@ class _SharedSpaceHubScreenState extends State<SharedSpaceHubScreen> {
     }
   }
 
+  Future<void> _scanSharedInviteQr() async {
+    final language = AnnaStrings.of(context).languageCode;
+    final code = await Navigator.push<String>(
+      context,
+      MaterialPageRoute(
+        builder: (_) => const SharedInviteQrScanScreen(),
+      ),
+    );
+    if (!mounted || code == null) return;
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: Text(sharedInviteQrText(language, 'joinTitle')),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(sharedInviteQrText(language, 'joinPrompt')),
+            const SizedBox(height: 12),
+            SelectableText(code, style: const TextStyle(
+              fontSize: 24, fontWeight: FontWeight.w800,
+              letterSpacing: 3,
+            )),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: Text(AnnaStrings.of(dialogContext).cancel),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(dialogContext, true),
+            child: Text(AnnaStrings.of(dialogContext).d3('join')),
+          ),
+        ],
+      ),
+    );
+    if (!mounted || confirmed != true) return;
+    setState(() => loading = true);
+    try {
+      await CloudSyncService.instance.joinSharedSpace(code);
+      await _reload();
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => loading = false);
+      _message(AnnaStrings.of(context).d3('invalidInvite'));
+    }
+  }
+
   void _message(String text) {
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
@@ -325,6 +373,16 @@ class _SharedSpaceHubScreenState extends State<SharedSpaceHubScreen> {
                                     label: Text(AnnaStrings.of(context).d3('enterCode')),
                                   ),
                                 ),
+                                const SizedBox(height: 8),
+                                SizedBox(
+                                  width: double.infinity,
+                                  child: OutlinedButton.icon(
+                                    onPressed: _scanSharedInviteQr,
+                                    icon: const Icon(Icons.qr_code_scanner_outlined),
+                                    label: Text(sharedInviteQrText(
+                                      AnnaStrings.of(context).languageCode, 'scan')),
+                                  ),
+                                ),
                               ],
                             ),
                           )
@@ -401,6 +459,13 @@ class _SharedSpaceHubScreenState extends State<SharedSpaceHubScreen> {
                             onPressed: _joinSpace,
                             icon: const Icon(Icons.link),
                             label: Text(AnnaStrings.of(context).d3('joinAnother')),
+                          ),
+                          const SizedBox(height: 8),
+                          OutlinedButton.icon(
+                            onPressed: _scanSharedInviteQr,
+                            icon: const Icon(Icons.qr_code_scanner_outlined),
+                            label: Text(sharedInviteQrText(
+                              AnnaStrings.of(context).languageCode, 'scan')),
                           ),
                         ],
                       ],
