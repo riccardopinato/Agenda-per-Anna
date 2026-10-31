@@ -1,7 +1,7 @@
 # Anna's Diary — Product Bible
 
 **Status:** all 10/10 approved screen source deltas merged (#163/#164/#166/#167/#168/#169/#170); audit correction PRs address search evidence, Inbox empty-category persistence, neutral labels and governance. Real Android certification remains outstanding.
-**Distribution identity:** source candidate `1.0.0-rc.5+114` on `main@ac221eec` before these audit fixes; last verified stable-signed APK `rc.4+113` came from older SHA `4fbeb1c` and MUST NOT be advertised as current. A final audit-fix APK requires a new unique versionCode and stable key after merge.
+**Distribution identity:** source candidate `1.0.0-rc.6+115` reserved on merged main by #178, with further localization corrections still undergoing source gates; latest previously built stable-signed APK `rc.4+113` is outdated. Real signed rc.6+115 APK and physical verification are NOT VERIFIED.
 **Last aligned:** 31 October 2026 (source audit; physical NOT VERIFIED)
 
 This document defines what Anna's Diary is, what it is not, and the product/security invariants that future work must preserve. Implementation details belong in `docs/ARCHITECTURE.md`; execution sequencing belongs in `docs/ROADMAP.md`.

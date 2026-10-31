@@ -1042,7 +1042,7 @@ extension AnnaD3Strings on AnnaStrings {
         AgendaCategory.work => _pick(en: 'Work', it: 'Lavoro', es: 'Trabajo', fr: 'Travail', pt: 'Trabalho'),
         AgendaCategory.study => _pick(en: 'Study', it: 'Studio', es: 'Estudio', fr: 'Études', pt: 'Estudo'),
         AgendaCategory.health => _pick(en: 'Health', it: 'Salute', es: 'Salud', fr: 'Santé', pt: 'Saúde'),
-        AgendaCategory.couple => 'Noi ♡',
+        AgendaCategory.couple => _pick(en: 'Couple', it: 'Coppia', es: 'Pareja', fr: 'Couple', pt: 'Casal'),
         AgendaCategory.leisure => _pick(en: 'Free time', it: 'Tempo libero', es: 'Tiempo libre', fr: 'Temps libre', pt: 'Tempo livre'),
         AgendaCategory.other => _pick(en: 'Other', it: 'Altro', es: 'Otro', fr: 'Autre', pt: 'Outro'),
       };

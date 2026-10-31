@@ -5,7 +5,7 @@
 - Search long-note evidence fix: PR #172; exact-head gates and merge are required.
 - Persistent empty Inbox category names: PR #173; follow original account preferences, backed up/synced, physical Android check still required.
 - Replace retired user-facing «Noi ♡» copy only; **never rename historical space names or credentials**. Branch `fix/anna-audit-labels-governance`; backend push copy requires separately verified redeploy.
-- Android source candidate `rc.5+114` has not been built as an APK. After source fixes, bump the next **unused** versionCode and run the stable-signed manual sideload flow. Do not reuse old signed artifact.
+- New signed-release source reservation `rc.6+115` merged by #178; no matching stable-signed APK yet. After remaining source PRs pass and merge, run the manual stable-signed ARM64 workflow from exact main. Do not reuse old signed artifact.
 - Mandatory: Android physical Inbox, QR/two-user owner permission, Vault Keystore, PWA Web Push, all +Crea, accessibility; no source-only certification.
 
 ## Approved 10/10 mock-ups — phased integration (31 October 2026)

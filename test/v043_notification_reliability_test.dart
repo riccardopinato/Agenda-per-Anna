@@ -110,7 +110,7 @@ void main() {
       expect(settings, contains('v100NoiChannelBlocked'));
       expect(settings, contains('v100FullLocalTest'));
       expect(localization, contains('canale Promemoria: BLOCCATO'));
-      expect(localization, contains('canale Noi ♡: BLOCCATO'));
+      expect(localization, contains('canale Spazio condiviso: BLOCCATO'));
       expect(localization, contains('Test locale completo'));
     });
 
