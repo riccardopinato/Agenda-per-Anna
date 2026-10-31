@@ -7,7 +7,7 @@ void main() {
     final bible = File('docs/PRODUCT_BIBLE.md').readAsStringSync();
     final roadmap = File('docs/ROADMAP.md').readAsStringSync();
 
-    expect(bible, contains('Current product line:** v1.05'));
+    expect(bible, contains('Status:** all 10/10 approved screen source deltas'));
     expect(
       roadmap,
       contains(
