@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:agenda_per_anna/app_version.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
@@ -7,9 +8,10 @@ void main() {
     final pubspec = File('pubspec.yaml').readAsStringSync();
     final version = File('lib/app_version.dart').readAsStringSync();
 
-    expect(pubspec, contains('version: 1.0.0-rc.2+111'));
-    expect(version, contains("appReleaseVersion = '1.0.0-rc.2'"));
-    expect(version, contains('appReleaseBuildNumber = 111'));
+    expect(pubspec, contains('version: $appReleaseVersion+$appReleaseBuildNumber'));
+    expect(version, contains("appReleaseVersion = '$appReleaseVersion'"));
+    expect(version, contains('appReleaseBuildNumber = $appReleaseBuildNumber'));
+    expect(appReleaseBuildNumber, greaterThan(111));
   });
 
   test('v1.00-E pins current Play Android submission requirements', () {

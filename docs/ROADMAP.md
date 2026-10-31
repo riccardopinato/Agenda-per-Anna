@@ -23,11 +23,20 @@ This final bounded pass:
   merged. Phone smoke remains user-reported PASS for UI5, while comprehensive
   native/Store/Noi two-device certification remains separately NOT VERIFIED.
 
-## v1.08 Motion & Visual Polish — IMPLEMENTATION IN PROGRESS (31 October 2026)
+## v1.08 Android physical release candidate — SOURCE PREPARATION (31 October 2026)
+
+- v1.08 implementation [PR #161](https://github.com/riccardopinato/Agenda-per-Anna/pull/161) **merged** to `main@42edb85433c84e6df33f91b5e6a5f93daf9937d9`; this is not an APK and is not physical evidence.
+- The next signed direct-install build is **reserved as `1.0.0-rc.3+112`**, strictly above the prior installed UI5 `1.0.0-rc.2+111`. Android package and existing stable signing identity must remain unchanged.
+- Release candidate source-only bump and physical acceptance checklist: [V108_ANDROID_PHYSICAL_ACCEPTANCE.md](V108_ANDROID_PHYSICAL_ACCEPTANCE.md). **Build status: NOT BUILT; physical status: NOT VERIFIED.**
+- After required exact-head PR gates, merge source and manually dispatch `.github/workflows/sideload-arm64.yml` on the merged `main`. The workflow produces an ARM64 APK and `PHYSICAL_CERTIFICATION_MANIFEST.json`; preserve exact source SHA, artifact checksum and certificate fingerprint.
+- The physical acceptance gate is an **update-in-place over +111**, without uninstalling or deleting any user data. Independently validate diary/data continuity, navigation, capture, reduced-motion state preservation, real Ricordi content and native security.
+- Do not promote Web/AppLab source, Android build, smoke test or Play Store certification into one another. Store purchasing/two-device sync and broader native capabilities retain separate acceptance gates.
+
+## v1.08 Motion & Visual Polish — IMPLEMENTED / MERGED (31 October 2026)
 
 **Authorisation:** user explicitly requested implementation after the 20/20 design contract.
-**Implementation PR:** [#161](https://github.com/riccardopinato/Agenda-per-Anna/pull/161).
-**Runtime/physical status:** NOT VERIFIED. This is a code PR, **not an APK or installable release**.
+**Implementation PR:** [#161](https://github.com/riccardopinato/Agenda-per-Anna/pull/161), merged at `42edb85433c84e6df33f91b5e6a5f93daf9937d9`.
+**Runtime/physical status:** NOT VERIFIED. The merged code is **not an APK or installable release**.
 
 Wave 1 implementation scope:
 - Shared motion primitives with accessibility disable-motion fallback.
