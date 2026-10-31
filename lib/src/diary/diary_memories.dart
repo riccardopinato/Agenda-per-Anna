@@ -677,7 +677,9 @@ class _DiaryMemoriesScreenState extends State<DiaryMemoriesScreen> {
                   left: AnnaDesignTokens.spaceMd,
                   right: AnnaDesignTokens.spaceMd,
                   bottom: AnnaDesignTokens.spaceMd,
-                  child: Column(
+                  child: AnnaMotionStagger(
+                    order: 2,
+                    child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       DecoratedBox(
@@ -723,6 +725,7 @@ class _DiaryMemoriesScreenState extends State<DiaryMemoriesScreen> {
                         ),
                       ),
                     ],
+                  ),
                   ),
                 ),
               ],

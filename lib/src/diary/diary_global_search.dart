@@ -121,7 +121,9 @@ class _DiaryGlobalSearchScreenState extends State<_DiaryGlobalSearchScreen> {
       body: SafeArea(
         child: Column(
           children: [
-            Padding(
+            AnnaMotionStagger(
+              order: 0,
+              child: Padding(
               padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
               child: TextField(
                 controller: _query,
@@ -149,8 +151,11 @@ class _DiaryGlobalSearchScreenState extends State<_DiaryGlobalSearchScreen> {
                   border: const OutlineInputBorder(),
                 ),
               ),
+              ),
             ),
-            SizedBox(
+            AnnaMotionStagger(
+              order: 1,
+              child: SizedBox(
               height: 54,
               child: ListView(
                 scrollDirection: Axis.horizontal,
@@ -173,6 +178,7 @@ class _DiaryGlobalSearchScreenState extends State<_DiaryGlobalSearchScreen> {
                     },
                   ),
                 )).toList(),
+              ),
               ),
             ),
             Expanded(
