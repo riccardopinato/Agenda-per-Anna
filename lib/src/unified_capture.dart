@@ -452,6 +452,7 @@ Future<void> showUnifiedCapture(
           ],
         ),
       );
+      if (!context.mounted) return;
       AnnaMotionV108.showSaveSuccess(context);
       return;
 
@@ -496,6 +497,7 @@ Future<void> showUnifiedCapture(
       final text = await showDiaryNoteEditor(context);
       if (text == null || text.trim().isEmpty) return;
       await _saveUnifiedCaptureText(store, targetDay, text);
+      if (!context.mounted) return;
       AnnaMotionV108.showSaveSuccess(context);
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -515,6 +517,7 @@ Future<void> showUnifiedCapture(
         capture,
         caption: caption,
       );
+      if (!context.mounted) return;
       AnnaMotionV108.showSaveSuccess(context);
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -536,6 +539,7 @@ Future<void> showUnifiedCapture(
         imageBytes,
         caption: caption,
       );
+      if (!context.mounted) return;
       AnnaMotionV108.showSaveSuccess(context);
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -553,6 +557,7 @@ Future<void> showUnifiedCapture(
         value,
         toInbox: true,
       );
+      if (!context.mounted) return;
       AnnaMotionV108.showSaveSuccess(context);
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
