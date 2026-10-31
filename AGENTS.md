@@ -17,8 +17,8 @@ Before Factory-dependent development, audit, roadmap work or substantial modific
 Do not replace repository truth with chat memory or historical attachments.
 
 Factory baseline for UI5 implementation resolved through central `CURRENT.yaml`:
-`174a05e165076c9e4b2d61a20acd85ca6b215f12`
-(Master v27 modular ACTIVE, Golden Index v23, resolved 29 Oct 2026).
+`632a66dce4aa00e8e1700b0a3e4dfc7ea008197c`
+(Master v27 modular ACTIVE, Golden Index v23, resolved 31 Oct 2026).
 Prior releases retain historical evidence, including former v26.8 baseline SHA
 `b5573840caaf0e92bd7719b7471d49a8e34995c1`.
 For successive steps of the same UI5 session keep the resolved SHA fixed.
@@ -117,7 +117,7 @@ sideload artifact is required.
 
 - Flutter/Dart application.
 - Android package: `com.riccardopinato.agenda_per_anna`.
-- Primary navigation: Today · Calendar · Memories · More.
+- Primary navigation: Today · Messages · central (+) Create · Memories · More; Calendar is a dedicated route from Today.
 - Today is the sole daily hub after v1.05-A3.
 - Stable direct-install Android updates must use `.github/workflows/sideload-arm64.yml`.
 - Web preview/deploy uses GitHub Pages.
