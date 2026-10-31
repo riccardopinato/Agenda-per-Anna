@@ -50,9 +50,13 @@ selection. **M11 USER APPROVED — B (31 October 2026):** opening an individual 
 
 **M15 USER APPROVED — C (31 October 2026):** results in the dedicated Ricordi global-search route enter with a **brief top-to-bottom stagger**, limited to visible rows when a real result group arrives. Do NOT restart the cascade on every keystroke; preserve live query input, focus, filters (`Tutti` default), empty/no-match/error states, real search results and stable item identity. Reduced-motion disables stagger. **DESIGN ONLY — NOT IMPLEMENTED.**
 
-**M16 — PENDING USER SELECTION:** visual motion in the existing Ricordi **Then/Now** comparison when changing the active photograph, with A immediate photo change, B gentle photo crossfade, C directional reveal/wipe. This is a motion-only mockup, not a redefinition of the feature or its persisted data. Preserve the real Then/Now controls and photo identity; reduced-motion fallbacks.
+**M16 USER APPROVED — C (31 October 2026):** Ricordi Then/Now photo comparison reveals the **Ora** photograph horizontally over the **Prima** photograph, with short aligned transition, preserving the photo pair/compare controls, photo identity and data. With reduced motion, use immediate update. **DESIGN ONLY — NOT IMPLEMENTED.**
 
-**M16–M20 — PENDING:** show one interactive comparison at a time, and await a specific user choice. Never prefill their decision letters.
+**M17 USER APPROVED — C (31 October 2026):** existing Ricordi Map opens via a **brief contextual expansion** of the map surface from the map entry context, with a one-time progressive entrance of the real geolocated memory pins. The effect must not fake locations, delay map availability, reorder or duplicate the UI5 Ricordi sub-tabs, or disrupt map gestures, accessibility, and back-navigation. No perpetual pin pulses; reduced-motion shows the map and pins immediately. **DESIGN ONLY — NOT IMPLEMENTED.**
+
+**M18 — PENDING USER SELECTION:** tap/select a real Ricordi Map pin. Compare **A immediate preview card**, **B soft bottom preview-sheet rise with fade**, **C brief pin emphasis/expansion followed by a preview card sliding in**. Keep canonical map pin/card behaviors and stable geographic memory identity, support accessible focus and reduced motion.
+
+**M18–M20 — PENDING:** show one interactive comparison at a time, and await a specific user choice. Never prefill their decision letters.
 
 ### Sequencing
 
