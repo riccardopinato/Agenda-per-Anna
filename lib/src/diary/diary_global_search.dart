@@ -131,7 +131,10 @@ class _DiaryGlobalSearchScreenState extends State<_DiaryGlobalSearchScreen> {
                   setState(() {});
                 },
                 decoration: InputDecoration(
-                  prefixIcon: const Icon(Icons.search),
+                  prefixIcon: const Hero(
+                    tag: 'v108-search-lens',
+                    child: Icon(Icons.search),
+                  ),
                   hintText: strings.v100MemorySearchHint,
                   suffixIcon: _query.text.isEmpty ? null : IconButton(
                     tooltip: strings.v100ClearSearch,
@@ -228,7 +231,7 @@ class _DiaryGlobalSearchScreenState extends State<_DiaryGlobalSearchScreen> {
                         record.block, strings: strings);
                       final date = DateFormat('EEEE d MMMM yyyy',
                         AnnaStrings.intlLocale(context)).format(record.date);
-                      return Card(
+                      final resultCard = Card(
                         margin: const EdgeInsets.only(bottom: 6),
                         child: ListTile(
                           key: ValueKey<String>('ui5-search-result-${record.block.id}'),
@@ -244,6 +247,14 @@ class _DiaryGlobalSearchScreenState extends State<_DiaryGlobalSearchScreen> {
                           onTap: () => _open(record),
                         ),
                       );
+                      return i < 4
+                          ? AnnaMotionStagger(
+                              key: ValueKey<String>(
+                                'v108-search-${record.block.id}'),
+                              order: i,
+                              child: resultCard,
+                            )
+                          : resultCard;
                     },
                   );
                 },

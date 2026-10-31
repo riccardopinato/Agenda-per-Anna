@@ -1872,15 +1872,29 @@ class _DiaryMemoriesScreenState extends State<DiaryMemoriesScreen> {
             onPressed: () {
               unawaited(AnnaFeedback.selection());
               Navigator.of(context).push(
-                MaterialPageRoute<void>(
-                  builder: (_) => _DiaryGlobalSearchScreen(
-                    store: widget.store,
-                    personId: widget.personId,
-                  ),
+                PageRouteBuilder<void>(
+                  transitionDuration: AnnaMotionV108.duration(context, 310),
+                  reverseTransitionDuration: AnnaMotionV108.duration(context, 230),
+                  pageBuilder: (_, animation, secondaryAnimation) =>
+                      _DiaryGlobalSearchScreen(
+                        store: widget.store,
+                        personId: widget.personId,
+                      ),
+                  transitionsBuilder: (context, animation, secondary, child) =>
+                      FadeTransition(
+                        opacity: CurvedAnimation(
+                          parent: animation,
+                          curve: Curves.easeOutCubic,
+                        ),
+                        child: child,
+                      ),
                 ),
               );
             },
-            icon: const Icon(Icons.search),
+            icon: const Hero(
+              tag: 'v108-search-lens',
+              child: Icon(Icons.search),
+            ),
           ),
           IconButton(
             tooltip: strings.d3('memoriesFilters'),
