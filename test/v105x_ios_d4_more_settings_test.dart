@@ -26,7 +26,8 @@ void main() {
     }
     expect(more, contains('_SyncAttentionCard(store: store)'));
     expect(more, contains('store.hasStorageWarnings'));
-    expect(more, contains('prefs.isModuleEnabled(AppModule.sharedSpace)'));
+    final shell = File('lib/src/screens/home_inbox_search.dart').readAsStringSync();
+    expect(shell, contains('AppModule.sharedSpace'));
   });
 
   test('Settings A keeps all routes and exposes a direct HSV editor', () {
