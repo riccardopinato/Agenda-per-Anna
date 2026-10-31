@@ -165,8 +165,8 @@ extension ApprovedSearchPolicy on AgendaStore {
           .map((token) => text.toLowerCase().indexOf(token))
           .where((position) => position >= 0)
           .reduce((a, b) => a < b ? a : b);
-      final left = (first - 30).clamp(0, text.length);
-      final right = (first + 90).clamp(0, text.length);
+      final left = (first - 30).clamp(0, text.length).toInt();
+      final right = (first + 90).clamp(0, text.length).toInt();
       final snippet = [
         if (left > 0) '…',
         text.substring(left, right),
