@@ -27,11 +27,11 @@ void main() {
 
     for (final id in const <String>[
       'main-nav-today',
-      'main-nav-calendar',
+      'main-nav-messages',
       'main-nav-memories',
       'main-nav-more',
       'main-rail-today',
-      'main-rail-calendar',
+      'main-rail-messages',
       'main-rail-memories',
       'main-rail-more',
     ]) {
