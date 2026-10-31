@@ -176,7 +176,8 @@ void main() {
     expect(shell, contains('DiaryMemoriesScreen(store: widget.store)'));
     expect(shell, contains('MoreScreen(store: widget.store)'));
     expect(shell, contains('label: strings.navToday'));
-    expect(shell, contains('label: strings.navCalendar'));
+    expect(shell, contains('label: strings.navMessages'));
+    expect(planner, contains("'today-open-calendar'"));
     expect(shell, contains('label: strings.navMemories'));
     expect(shell, contains('label: strings.navMore'));
     expect(StartTab.today.index, 0);
