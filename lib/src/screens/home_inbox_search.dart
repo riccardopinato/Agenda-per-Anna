@@ -155,9 +155,49 @@ class _MainShellState extends State<MainShell> {
     setState(() => index = value);
   }
 
+  // Module visibility is preserved even though Messages is a permanent tab.
+  Widget _messagesPage() => AnimatedBuilder(
+    animation: widget.store.settingsRevision,
+    builder: (context, _) {
+      if (widget.store.preferences.isModuleEnabled(AppModule.sharedSpace)) {
+        return SharedSpaceHubScreen(store: widget.store);
+      }
+      final strings = AnnaStrings.of(context);
+      return Scaffold(
+        appBar: AppBar(title: Text(strings.navMessages)),
+        body: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(Icons.chat_bubble_outline, size: 36),
+                const SizedBox(height: 12),
+                Text(strings.d3('personalizationSharedSpaceSubtitle'),
+                    textAlign: TextAlign.center),
+                const SizedBox(height: 16),
+                FilledButton.icon(
+                  onPressed: () => Navigator.push(
+                    context,
+                    MaterialPageRoute<void>(
+                      builder: (_) =>
+                          PersonalizationScreen(store: widget.store),
+                    ),
+                  ),
+                  icon: const Icon(Icons.tune_outlined),
+                  label: Text(strings.d3('personalizationTitle')),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    },
+  );
+
   List<Widget> _pages() => <Widget>[
         PlannerScreen(store: widget.store, embedded: true),
-        SharedSpaceHubScreen(store: widget.store),
+        _messagesPage(),
         DiaryMemoriesScreen(store: widget.store),
         MoreScreen(store: widget.store),
       ];
