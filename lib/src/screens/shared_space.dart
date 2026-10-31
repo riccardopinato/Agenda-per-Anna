@@ -1,5 +1,21 @@
 part of '../../main.dart';
 
+String sharedSpaceRenameCopy(String language, String key) {
+  final translations = switch (language) {
+    'en' => {'rename': 'Rename group', 'hint': 'Group name',
+      'done': 'Group renamed', 'failed': 'Unable to rename group'},
+    'es' => {'rename': 'Renombrar grupo', 'hint': 'Nombre del grupo',
+      'done': 'Grupo renombrado', 'failed': 'No se pudo renombrar el grupo'},
+    'fr' => {'rename': 'Renommer le groupe', 'hint': 'Nom du groupe',
+      'done': 'Groupe renommé', 'failed': 'Impossible de renommer le groupe'},
+    'pt' => {'rename': 'Renomear grupo', 'hint': 'Nome do grupo',
+      'done': 'Grupo renomeado', 'failed': 'Não foi possível renomear o grupo'},
+    _ => {'rename': 'Rinomina gruppo', 'hint': 'Nome del gruppo',
+      'done': 'Gruppo rinominato', 'failed': 'Impossibile rinominare il gruppo'},
+  };
+  return translations[key] ?? key;
+}
+
 class SharedSpaceHubScreen extends StatefulWidget {
   final AgendaStore store;
 
@@ -139,6 +155,63 @@ class _SharedSpaceHubScreenState extends State<SharedSpaceHubScreen> {
       if (!mounted) return;
       setState(() => loading = false);
       _message(AnnaStrings.of(context).d3('spaceCreateFailed'));
+    }
+  }
+
+  /// A group is a shared space: rename only its label, never its ID.
+  Future<void> _renameSpace(SharedSpace space) async {
+    if (!space.isOwner || loading) return;
+    final strings = AnnaStrings.of(context);
+    final language = strings.languageCode;
+    final controller = TextEditingController(text: space.name);
+    String? name;
+    try {
+      name = await showDialog<String>(
+        context: context,
+        builder: (dialogContext) => AlertDialog(
+          title: Text(sharedSpaceRenameCopy(language, 'rename')),
+          content: TextField(
+            key: const ValueKey<String>('shared-rename-name'),
+            controller: controller,
+            autofocus: true,
+            maxLength: 60,
+            textCapitalization: TextCapitalization.sentences,
+            decoration: InputDecoration(
+              labelText: sharedSpaceRenameCopy(language, 'hint'),
+            ),
+            onSubmitted: (value) =>
+                Navigator.pop(dialogContext, value.trim()),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext),
+              child: Text(strings.cancel),
+            ),
+            FilledButton(
+              onPressed: () =>
+                  Navigator.pop(dialogContext, controller.text.trim()),
+              child: Text(strings.save),
+            ),
+          ],
+        ),
+      );
+    } finally {
+      controller.dispose();
+    }
+    if (!mounted || name == null || name.isEmpty || name == space.name) {
+      return;
+    }
+    setState(() => loading = true);
+    try {
+      await CloudSyncService.instance.renameSharedSpace(space.id, name);
+      await _reload();
+      if (mounted) {
+        _message(sharedSpaceRenameCopy(language, 'done'));
+      }
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => loading = false);
+      _message(sharedSpaceRenameCopy(language, 'failed'));
     }
   }
 
@@ -425,6 +498,18 @@ class _SharedSpaceHubScreenState extends State<SharedSpaceHubScreen> {
                                           child: const Icon(
                                             Icons.notifications_none,
                                           ),
+                                        ),
+                                      if (space.isOwner)
+                                        IconButton(
+                                          key: ValueKey<String>(
+                                            'shared-rename-${space.id}'),
+                                          tooltip: sharedSpaceRenameCopy(
+                                              AnnaStrings.of(context)
+                                                  .languageCode, 'rename'),
+                                          icon: const Icon(Icons.edit_outlined),
+                                          onPressed: loading
+                                              ? null
+                                              : () => _renameSpace(space),
                                         ),
                                       const SizedBox(width: 6),
                                       const Icon(Icons.chevron_right),
