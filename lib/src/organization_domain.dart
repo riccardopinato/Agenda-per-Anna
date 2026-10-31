@@ -104,7 +104,7 @@ extension OrganizationAgendaStore on AgendaStore {
   /// A category can exist before any note uses it. It follows canonical
   /// account-scoped preferences, including normal backup and sync.
   Future<void> createInboxCategory(String name) async {
-    final value = name.trim().replaceAll(RegExp(r'\\s+'), ' ');
+    final value = name.trim().replaceAll(RegExp(r'\s+'), ' ');
     if (value.isEmpty || value.length > 48) {
       throw ArgumentError.value(name, 'name', 'Invalid category name');
     }
