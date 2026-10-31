@@ -403,7 +403,7 @@ class PushNotificationService {
     if (!_hasRecentRealtimeFallback(parsed.$1)) {
       await NotificationService.instance.showSharedUpdate(
         spaceId: parsed.$1,
-        spaceName: 'Noi ♡',
+        spaceName: 'Spazio condiviso',
       );
     }
   }
