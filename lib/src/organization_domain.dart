@@ -64,6 +64,42 @@ extension OrganizationAgendaStore on AgendaStore {
     _notifyInboxChanged();
   }
 
+  /// Rename a tag in ALL Inbox records, including archived records.
+  /// Persist the batch first; only then update the in-memory projection.
+  Future<int> renameInboxTag(String oldName, String newName) async {
+    final from = normalizeOrganizationTags([oldName]);
+    final to = normalizeOrganizationTags([newName]);
+    if (from.isEmpty || to.isEmpty) return 0;
+    final oldKey = from.single.toLowerCase();
+    final target = to.single;
+    final updates = <({int index, InboxEntry entry})>[];
+    for (var i = 0; i < inbox.length; i++) {
+      final entry = inbox[i];
+      if (!entry.tags.any((tag) => tag.toLowerCase() == oldKey)) continue;
+      final next = entry.copyWith(
+        tags: normalizeOrganizationTags(entry.tags.map(
+          (tag) => tag.toLowerCase() == oldKey ? target : tag,
+        )),
+      );
+      if (listEquals(next.tags, entry.tags)) continue;
+      updates.add((index: i, entry: next));
+    }
+    if (updates.isEmpty) return 0;
+    await _persistEntityMutations(
+      updates.map((update) => (
+        type: 'inbox',
+        id: update.entry.id,
+        payload: update.entry.toJson(),
+        deleted: false,
+      )).toList(),
+    );
+    for (final update in updates) {
+      inbox[update.index] = update.entry;
+    }
+    _notifyInboxChanged();
+    return updates.length;
+  }
+
   Future<void> updateDiaryOrganization(
     DateTime date,
     String blockId, {
