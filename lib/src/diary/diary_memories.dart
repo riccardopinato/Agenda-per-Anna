@@ -26,6 +26,8 @@ class _DiaryMemoriesScreenState extends State<DiaryMemoriesScreen> {
   final Map<String, bool> _expandedTimelineMonths = <String, bool>{};
   final Map<int, GlobalKey> _timelineYearKeys = <int, GlobalKey>{};
   int? _selectedTimelineYear;
+  String? _highlightTimelineMonth;
+  String? _yearJumpTarget;
   bool _timelineInitialized = false;
   bool _suggestionsExpanded = false;
   int _anniversaryIndex = 0;
@@ -644,13 +646,21 @@ class _DiaryMemoriesScreenState extends State<DiaryMemoriesScreen> {
         clipBehavior: Clip.antiAlias,
         margin: const EdgeInsets.only(top: AnnaDesignTokens.spaceMd),
         child: InkWell(
-          onTap: () => _openRecord(record),
+          onTap: () => record.block.type == DiaryBlockType.photo
+              ? _openPhoto(record)
+              : _openRecord(record),
           child: SizedBox(
             height: 286,
             child: Stack(
               fit: StackFit.expand,
               children: [
-                _coverPreview(context, record),
+                record.block.type == DiaryBlockType.photo &&
+                        record.block.hasPhotoMedia
+                    ? Hero(
+                        tag: 'v108-photo-${record.block.id}',
+                        child: _coverPreview(context, record),
+                      )
+                    : _coverPreview(context, record),
                 DecoratedBox(
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
@@ -667,7 +677,9 @@ class _DiaryMemoriesScreenState extends State<DiaryMemoriesScreen> {
                   left: AnnaDesignTokens.spaceMd,
                   right: AnnaDesignTokens.spaceMd,
                   bottom: AnnaDesignTokens.spaceMd,
-                  child: Column(
+                  child: AnnaMotionStagger(
+                    order: 2,
+                    child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       DecoratedBox(
@@ -713,6 +725,7 @@ class _DiaryMemoriesScreenState extends State<DiaryMemoriesScreen> {
                         ),
                       ),
                     ],
+                  ),
                   ),
                 ),
               ],
@@ -779,7 +792,8 @@ class _DiaryMemoriesScreenState extends State<DiaryMemoriesScreen> {
                     child: Text(strings.d3('memoryMapNoPlaces')),
                   )
                 else if (located.isNotEmpty)
-                  LayoutBuilder(
+                  AnnaMotionMapEntry(
+                    child: LayoutBuilder(
                     builder: (context, constraints) {
                       const mapHeight = 250.0;
                       final mapWidth = constraints.maxWidth;
@@ -837,25 +851,60 @@ class _DiaryMemoriesScreenState extends State<DiaryMemoriesScreen> {
                                       button: true,
                                       label:
                                           '${place.label}, ${place.count}',
-                                      child: IconButton.filled(
-                                        iconSize: 18,
-                                        onPressed: () {
-                                          Navigator.pop(sheetContext);
-                                          searchController.text = place.label;
-                                          setState(() {
-                                            filter = null;
-                                            searchExpanded = true;
-                                            view =
-                                                _DiaryMemoriesView.timeline;
-                                          });
-                                        },
-                                        icon: Text(
-                                          '${place.count}',
-                                          style: const TextStyle(
-                                            fontWeight: FontWeight.w900,
-                                          ),
-                                        ),
-                                      ),
+                                      child: AnnaMotionMapPin(
+  count: place.count,
+  order: located.indexOf(place),
+  onPressed: () {
+    final memory = place.latestMemory;
+    unawaited(showModalBottomSheet<void>(
+      context: sheetContext,
+      showDragHandle: true,
+      builder: (previewContext) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(AnnaDesignTokens.spaceMd),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ListTile(
+                leading: SizedBox(
+                  width: 48, height: 48,
+                  child: _coverPreview(previewContext, memory),
+                ),
+                title: Text(widget.store.diaryBlockDisplayTitle(
+                  memory.block, strings: strings)),
+                subtitle: Text('${place.label} · ${place.count}'),
+                trailing: const Icon(Icons.chevron_right),
+                onTap: () {
+                  Navigator.pop(previewContext);
+                  Navigator.pop(sheetContext);
+                  if (memory.block.type == DiaryBlockType.photo) {
+                    unawaited(_openPhoto(memory));
+                  } else {
+                    unawaited(_openRecord(memory));
+                  }
+                },
+              ),
+              TextButton.icon(
+                icon: const Icon(Icons.place_outlined),
+                label: Text(strings.d3('memoryMapSelectablePlaces')),
+                onPressed: () {
+                  Navigator.pop(previewContext);
+                  Navigator.pop(sheetContext);
+                  searchController.text = place.label;
+                  setState(() {
+                    filter = null;
+                    searchExpanded = true;
+                    view = _DiaryMemoriesView.timeline;
+                  });
+                },
+              ),
+            ],
+          ),
+        ),
+      ),
+    ));
+  },
+),
                                     ),
                                   ),
                                 );
@@ -865,6 +914,7 @@ class _DiaryMemoriesScreenState extends State<DiaryMemoriesScreen> {
                         ),
                       );
                     },
+                    ),
                   ),
                 if (located.isNotEmpty) ...[
                   const SizedBox(height: AnnaDesignTokens.spaceMd),
@@ -1061,6 +1111,18 @@ class _DiaryMemoriesScreenState extends State<DiaryMemoriesScreen> {
                                     );
                                   },
                                 ),
+                                if (pair.thenMemory.block.type == DiaryBlockType.photo &&
+                                    pair.nowMemory.block.type == DiaryBlockType.photo &&
+                                    pair.thenMemory.block.hasPhotoMedia &&
+                                    pair.nowMemory.block.hasPhotoMedia) ...[
+                                  AnnaThenNowWipe(
+                                    before: pair.thenMemory.block,
+                                    after: pair.nowMemory.block,
+                                    beforeLabel: strings.d3('thenNowThen'),
+                                    afterLabel: strings.d3('thenNowNow'),
+                                  ),
+                                  const SizedBox(height: AnnaDesignTokens.spaceSm),
+                                ],
                                 const Divider(height: 1),
                                 ListTile(
                                   contentPadding: EdgeInsets.zero,
@@ -1220,7 +1282,12 @@ class _DiaryMemoriesScreenState extends State<DiaryMemoriesScreen> {
                         onPageChanged: (position) =>
                             setState(() => _anniversaryIndex = position),
                         itemBuilder: (context, position) =>
-                            _forYouHero(context, anniversary[position]),
+                            AnnaMotionStagger(
+                              key: ValueKey<String>(
+                                'v108-featured-${anniversary[position].block.id}'),
+                              order: 0,
+                              child: _forYouHero(context, anniversary[position]),
+                            ),
                       ),
                     ),
                     if (activeRecord != null)
@@ -1238,9 +1305,28 @@ class _DiaryMemoriesScreenState extends State<DiaryMemoriesScreen> {
                   if (suggestions.isNotEmpty) ...[
                     AnnaJournalSectionHeading(title: strings.d3('ui5ForYou')),
                     const SizedBox(height: 8),
-                    ...(_suggestionsExpanded
-                        ? suggestions : suggestions.take(3))
+                    ...suggestions.take(3)
                         .map((record) => _recallMemoryRow(context, record)),
+                    AnimatedSize(
+                      duration: AnnaMotionV108.duration(context, 330),
+                      alignment: Alignment.topCenter,
+                      child: Column(
+                        children: _suggestionsExpanded
+                            ? <Widget>[
+                                for (var i = 3; i < suggestions.length; i++)
+                                  if (i < 7)
+                                    AnnaMotionStagger(
+                                      key: ValueKey<String>(
+                                        'v108-suggestion-${suggestions[i].block.id}'),
+                                      order: i - 3,
+                                      child: _recallMemoryRow(context, suggestions[i]),
+                                    )
+                                  else
+                                    _recallMemoryRow(context, suggestions[i]),
+                              ]
+                            : const <Widget>[],
+                      ),
+                    ),
                     if (suggestions.length > 3)
                       Align(
                         alignment: Alignment.centerRight,
@@ -1375,7 +1461,13 @@ class _DiaryMemoriesScreenState extends State<DiaryMemoriesScreen> {
                   SizedBox(
                     height: 190,
                     width: double.infinity,
-                    child: _coverPreview(context, record),
+                    child: block.type == DiaryBlockType.photo &&
+                            block.hasPhotoMedia
+                        ? Hero(
+                            tag: 'v108-photo-${block.id}',
+                            child: _coverPreview(context, record),
+                          )
+                        : _coverPreview(context, record),
                   ),
                   Padding(
                     padding: const EdgeInsets.all(AnnaDesignTokens.spaceMd),
@@ -1482,6 +1574,13 @@ class _DiaryMemoriesScreenState extends State<DiaryMemoriesScreen> {
       setState(() {
         _selectedTimelineYear = selected;
         _expandedTimelineMonths[target.key] = true;
+        _highlightTimelineMonth = target.key;
+        _yearJumpTarget = target.key;
+      });
+      Future<void>.delayed(const Duration(milliseconds: 670), () {
+        if (mounted && _highlightTimelineMonth == target.key) {
+          setState(() => _highlightTimelineMonth = null);
+        }
       });
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (!mounted) return;
@@ -1565,13 +1664,24 @@ class _DiaryMemoriesScreenState extends State<DiaryMemoriesScreen> {
                               onTap: () => setState(() {
                                 _selectedTimelineYear = date.year;
                                 _expandedTimelineMonths[entry.key] = !isExpanded;
+                                _yearJumpTarget = null;
                               }),
                               child: Padding(
                                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                                 child: Row(
                                   children: [
-                                    Expanded(child: Text(title,
-                                      style: Theme.of(context).textTheme.titleMedium)),
+                                    Expanded(
+                                      child: AnimatedDefaultTextStyle(
+                                        duration: AnnaMotionV108.duration(context, 420),
+                                        style: (Theme.of(context).textTheme.titleMedium ??
+                                            const TextStyle()).copyWith(
+                                          color: _highlightTimelineMonth == entry.key
+                                              ? Theme.of(context).colorScheme.primary
+                                              : Theme.of(context).colorScheme.onSurface,
+                                        ),
+                                        child: Text(title),
+                                      ),
+                                    ),
                                     Text(strings.d3Format(
                                       bucket.length == 1 ? 'ui5MemoryCountOne' : 'ui5MemoryCount', {'count': bucket.length}),
                                       style: Theme.of(context).textTheme.bodySmall),
@@ -1583,8 +1693,27 @@ class _DiaryMemoriesScreenState extends State<DiaryMemoriesScreen> {
                             ),
                           ),
                         ),
-                        if (isExpanded)
-                          ...bucket.map((record) => _timelineMemoryCard(context, record)),
+                        AnimatedSize(
+                          duration: AnnaMotionV108.duration(context, 300),
+                          alignment: Alignment.topCenter,
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: isExpanded
+                                ? <Widget>[
+                                    for (var i = 0; i < bucket.length; i++)
+                                      if (i < 4 && _yearJumpTarget != entry.key)
+                                        AnnaMotionStagger(
+                                          key: ValueKey<String>(
+                                            'v108-timeline-${bucket[i].block.id}'),
+                                          order: i,
+                                          child: _timelineMemoryCard(context, bucket[i]),
+                                        )
+                                      else
+                                        _timelineMemoryCard(context, bucket[i]),
+                                  ]
+                                : const <Widget>[],
+                          ),
+                        ),
                         const SizedBox(height: 5),
                       ],
                     ),
@@ -1829,15 +1958,29 @@ class _DiaryMemoriesScreenState extends State<DiaryMemoriesScreen> {
             onPressed: () {
               unawaited(AnnaFeedback.selection());
               Navigator.of(context).push(
-                MaterialPageRoute<void>(
-                  builder: (_) => _DiaryGlobalSearchScreen(
-                    store: widget.store,
-                    personId: widget.personId,
-                  ),
+                PageRouteBuilder<void>(
+                  transitionDuration: AnnaMotionV108.duration(context, 310),
+                  reverseTransitionDuration: AnnaMotionV108.duration(context, 230),
+                  pageBuilder: (_, animation, secondaryAnimation) =>
+                      _DiaryGlobalSearchScreen(
+                        store: widget.store,
+                        personId: widget.personId,
+                      ),
+                  transitionsBuilder: (context, animation, secondary, child) =>
+                      FadeTransition(
+                        opacity: CurvedAnimation(
+                          parent: animation,
+                          curve: Curves.easeOutCubic,
+                        ),
+                        child: child,
+                      ),
                 ),
               );
             },
-            icon: const Icon(Icons.search),
+            icon: const Hero(
+              tag: 'v108-search-lens',
+              child: Icon(Icons.search),
+            ),
           ),
           IconButton(
             tooltip: strings.d3('memoriesFilters'),
@@ -1981,7 +2124,9 @@ class _DiaryMemoriesScreenState extends State<DiaryMemoriesScreen> {
                   ),
                 ),
               Expanded(
-                child: switch (view) {
+                child: AnnaMotionReveal(
+                  token: view.index,
+                  child: switch (view) {
                   _DiaryMemoriesView.forYou =>
                     _forYouView(context, current),
                   _DiaryMemoriesView.timeline => Semantics(
@@ -2000,6 +2145,7 @@ class _DiaryMemoriesScreenState extends State<DiaryMemoriesScreen> {
                       ? _emptyState()
                       : _yearsView(context, current),
                 },
+                ),
               ),
             ],
           );

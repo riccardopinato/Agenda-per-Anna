@@ -16,6 +16,7 @@ class _DiaryGlobalSearchScreenState extends State<_DiaryGlobalSearchScreen> {
   final TextEditingController _query = TextEditingController();
   final ScrollController _scroll = ScrollController();
   DiaryBlockType? _type;
+  bool _didAnimateSearchGroup = false;
 
   @override
   void dispose() {
@@ -120,7 +121,9 @@ class _DiaryGlobalSearchScreenState extends State<_DiaryGlobalSearchScreen> {
       body: SafeArea(
         child: Column(
           children: [
-            Padding(
+            AnnaMotionStagger(
+              order: 0,
+              child: Padding(
               padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
               child: TextField(
                 controller: _query,
@@ -131,7 +134,10 @@ class _DiaryGlobalSearchScreenState extends State<_DiaryGlobalSearchScreen> {
                   setState(() {});
                 },
                 decoration: InputDecoration(
-                  prefixIcon: const Icon(Icons.search),
+                  prefixIcon: const Hero(
+                    tag: 'v108-search-lens',
+                    child: Icon(Icons.search),
+                  ),
                   hintText: strings.v100MemorySearchHint,
                   suffixIcon: _query.text.isEmpty ? null : IconButton(
                     tooltip: strings.v100ClearSearch,
@@ -145,8 +151,11 @@ class _DiaryGlobalSearchScreenState extends State<_DiaryGlobalSearchScreen> {
                   border: const OutlineInputBorder(),
                 ),
               ),
+              ),
             ),
-            SizedBox(
+            AnnaMotionStagger(
+              order: 1,
+              child: SizedBox(
               height: 54,
               child: ListView(
                 scrollDirection: Axis.horizontal,
@@ -170,6 +179,7 @@ class _DiaryGlobalSearchScreenState extends State<_DiaryGlobalSearchScreen> {
                   ),
                 )).toList(),
               ),
+              ),
             ),
             Expanded(
               child: AnimatedBuilder(
@@ -177,6 +187,7 @@ class _DiaryGlobalSearchScreenState extends State<_DiaryGlobalSearchScreen> {
                 builder: (context, _) {
                   final query = _query.text.trim();
                   if (query.isEmpty) {
+                    _didAnimateSearchGroup = false;
                     return Center(child: Padding(
                       padding: const EdgeInsets.all(28),
                       child: Column(
@@ -217,6 +228,8 @@ class _DiaryGlobalSearchScreenState extends State<_DiaryGlobalSearchScreen> {
                       ),
                     ));
                   }
+                  final animateFirstGroup = !_didAnimateSearchGroup;
+                  _didAnimateSearchGroup = true;
                   return ListView.builder(
                     key: const ValueKey<String>('ui5-search-results'),
                     controller: _scroll,
@@ -228,7 +241,7 @@ class _DiaryGlobalSearchScreenState extends State<_DiaryGlobalSearchScreen> {
                         record.block, strings: strings);
                       final date = DateFormat('EEEE d MMMM yyyy',
                         AnnaStrings.intlLocale(context)).format(record.date);
-                      return Card(
+                      final resultCard = Card(
                         margin: const EdgeInsets.only(bottom: 6),
                         child: ListTile(
                           key: ValueKey<String>('ui5-search-result-${record.block.id}'),
@@ -244,6 +257,14 @@ class _DiaryGlobalSearchScreenState extends State<_DiaryGlobalSearchScreen> {
                           onTap: () => _open(record),
                         ),
                       );
+                      return i < 4 && animateFirstGroup
+                          ? AnnaMotionStagger(
+                              key: ValueKey<String>(
+                                'v108-search-${record.block.id}'),
+                              order: i,
+                              child: resultCard,
+                            )
+                          : resultCard;
                     },
                   );
                 },

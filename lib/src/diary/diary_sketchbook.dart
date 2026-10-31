@@ -28,11 +28,14 @@ class DiaryPhotoViewerScreen extends StatelessWidget {
 
     return DiaryPhotoViewerShell(
       title: dateLabel,
-      image: FutureBuilder<Uint8List?>(
-        future: imageFuture,
-        builder: (context, snapshot) => DiaryZoomableImage(
-          bytes: snapshot.data,
-          loading: snapshot.connectionState != ConnectionState.done,
+      image: Hero(
+        tag: 'v108-photo-${block.id}',
+        child: FutureBuilder<Uint8List?>(
+          future: imageFuture,
+          builder: (context, snapshot) => DiaryZoomableImage(
+            bytes: snapshot.data,
+            loading: snapshot.connectionState != ConnectionState.done,
+          ),
         ),
       ),
       caption: block.text,
