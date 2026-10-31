@@ -10,7 +10,7 @@ Version 115 is **reserved** here; no file should be called an APK until Android 
 
 ## Release requirements
 
-1. Include all approved UI PRs, the source-only audit corrections #172/#173/#175, and **wait for #174 to be merged after its required exact-head gates**. Do not build from an incomplete label branch. Merge this version bump PR only after that integration is verified.
+1. Include approved UI PRs #163–#170 plus audit repairs #172/#173/#174/#175/#176/#177 and the final localization PR #179 only after its exact-head gates pass and it is merged. Do not build from an incomplete or stale PR branch.
 2. Verify the **new** exact main commit SHA after all corrections (not old `ac221eec`) and source gates: Development checks Flutter analyze/test/Web crypto, Deploy Web and AppLab Source Gate.
 3. Run **manual** GitHub Actions `.github/workflows/sideload-arm64.yml` from current `main` (never PR push), retaining `--release-signing` and the same four protected keystore secrets from earlier signed releases.
 4. Workflow fails closed on missing signing configuration. No keystore regeneration; no debug/unsigned replacement of an installed package. The generated artifact is `annas-diary-light-arm64` with `Anna-Diary-arm64-release.apk` and `PHYSICAL_CERTIFICATION_MANIFEST.json`.
