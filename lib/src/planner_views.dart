@@ -2,6 +2,14 @@ part of '../main.dart';
 
 enum _CalendarHubView { month, week }
 
+String approvedCalendarTagline(String languageCode) => switch (languageCode) {
+  'en' => 'Every day, a story.',
+  'es' => 'Cada día, una historia.',
+  'fr' => 'Chaque jour, une histoire.',
+  'pt' => 'Cada dia, uma história.',
+  _ => 'Ogni giorno, una storia.',
+};
+
 class CalendarHubScreen extends StatefulWidget {
   final AgendaStore store;
   final ValueChanged<DateTime>? onSelectedDateChanged;
@@ -69,6 +77,23 @@ class _CalendarHubScreenState extends State<CalendarHubScreen> {
       ),
       body: Column(
         children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(
+              AnnaDesignTokens.spaceMd,
+              AnnaDesignTokens.spaceSm,
+              AnnaDesignTokens.spaceMd,
+              0,
+            ),
+            child: Align(
+              alignment: Alignment.centerLeft,
+              child: Text(
+                approvedCalendarTagline(strings.languageCode),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: AnnaJournalTypography.editorial(context, size: 18),
+              ),
+            ),
+          ),
           Padding(
             padding: const EdgeInsets.fromLTRB(
               AnnaDesignTokens.spaceMd,
@@ -280,6 +305,78 @@ class _CalendarScreenState extends State<CalendarScreen> {
               ),
               const SizedBox(height: 12),
               AgendaContentFilterBar(store: widget.store),
+              const SizedBox(height: 10),
+              // Approved calendar-only preview: no second writer or record
+              // ownership. The full existing agenda remains immediately below.
+              ExpansionTile(
+                key: const ValueKey<String>('approved-calendar-hourly-timeline'),
+                initiallyExpanded: false,
+                leading: const Icon(Icons.schedule_outlined),
+                title: Text(strings.hourlyTimeline),
+                subtitle: const Text('07:00–22:00'),
+                children: [
+                  for (var hour = 7; hour <= 22; hour++)
+                    Builder(
+                      builder: (context) {
+                        final timed = events
+                            .where((entry) => entry.start?.hour == hour)
+                            .toList()
+                          ..sort((a, b) =>
+                              a.sortMinutes.compareTo(b.sortMinutes));
+                        return Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 8),
+                          child: Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              SizedBox(
+                                width: 54,
+                                child: Padding(
+                                  padding: const EdgeInsets.only(
+                                    top: 14, left: 4),
+                                  child: Text(
+                                    '${hour.toString().padLeft(2, '0')}:00',
+                                    style: Theme.of(context).textTheme.labelSmall,
+                                  ),
+                                ),
+                              ),
+                              Expanded(
+                                child: timed.isEmpty
+                                    ? const Divider(height: 35)
+                                    : Column(
+                                        children: [
+                                          for (final entry in timed)
+                                            ListTile(
+                                              dense: true,
+                                              minVerticalPadding: 0,
+                                              title: Text(
+                                                entry.title,
+                                                maxLines: 2,
+                                                overflow: TextOverflow.ellipsis,
+                                              ),
+                                              subtitle: Text(
+                                                entry.visibilityLabel(strings),
+                                                maxLines: 1,
+                                                overflow: TextOverflow.ellipsis,
+                                              ),
+                                              trailing: const Icon(
+                                                Icons.chevron_right, size: 16),
+                                              onTap: () =>
+                                                  openUnifiedAgendaEntry(
+                                                    context,
+                                                    widget.store,
+                                                    entry,
+                                                  ),
+                                            ),
+                                        ],
+                                      ),
+                              ),
+                            ],
+                          ),
+                        );
+                      },
+                    ),
+                ],
+              ),
               const SizedBox(height: 18),
               SectionTitle(
                 _cap(

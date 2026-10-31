@@ -23,11 +23,13 @@ class MoreScreen extends StatelessWidget {
       label: title,
       onTap: onTap,
       excludeSemantics: true,
-      child: ListTile(
+      child: SizedBox(
+        height: 58,
+        child: ListTile(
         key: ValueKey<String>(id),
-        contentPadding: const EdgeInsets.symmetric(
-          vertical: AnnaDesignTokens.space2xs,
-        ),
+        dense: true,
+        minVerticalPadding: 0,
+        contentPadding: const EdgeInsets.symmetric(horizontal: 2),
         leading: AnnaPastelIcon(icon: icon, domain: domain),
         title: Text(
           title,
@@ -36,6 +38,7 @@ class MoreScreen extends StatelessWidget {
         subtitle: subtitle == null ? null : Text(subtitle),
         trailing: trailing ?? const Icon(Icons.chevron_right),
         onTap: onTap,
+        ),
       ),
     );
   }
