@@ -1,5 +1,12 @@
 # Anna's Diary — Roadmap
 
+## Stato operativo v1.07-C1/C2 — 2 novembre 2026
+
+- **C1 CAP-0077**: [PR #203](https://github.com/riccardopinato/Agenda-per-Anna/pull/203) MERGED su `main@aab7ace78a375d78f5b868689b7c768e0b29c3fc`; exact-head Development/Web/AppLab PASS. Diagnostica Android in Impostazioni senza forzare permessi, con stati non equivalenti alla consegna. Verifica reale di canali/OEM/calendario/push: **NOT VERIFIED**.
+- **C2 CAP-0069**: [PR #204](https://github.com/riccardopinato/Agenda-per-Anna/pull/204) MERGED su `main@23f92929ab01edaa00b20c90938a4c97d1d301c5`; exact-head Development/AppLab PASS. Matrice 10 checkpoint x 7 varianti, comparatore PNG e test fail-closed nel CI. **Le 70 coppie di screenshot approvate non sono ancora disponibili: visual comparison NOT VERIFIED**.
+- **Release**: candidato `1.0.0-rc.6+119` predisposto dopo C1+C2, ma **APK SIGNED/INSTALLED NOT VERIFIED** finche' il workflow stabile e la sua identity non sono confermati. Nessuna pubblicazione Play. La vecchia release `+118` rimane prova storica distinta.
+- Privacy PR #200 e Google Calendar API PR #199 rimangono separati e bloccati; v1.06 Ecosystem Expansion rimane differita.
+
 ## CAP-0111 Weekly Review — chiusura funzionale, 1 novembre 2026
 
 **Stato di prodotto: CLOSED — IMPLEMENTED / USER-ACCEPTED GENERAL PASS.**
@@ -14,14 +21,14 @@ Le 10 decisioni visuali approvate sono integrate nella release firmata **Anna's 
 | Ordine | Deliverable | Stato verificato | Descrizione / confine |
 | --- | --- | --- | --- |
 | 1 | **QA release +118 e chiusura evidenze fisiche** | **USER_ATTESTED_GENERAL_PASS**, matrice tecnica **NOT VERIFIED** | Identificare APK +118 esatto, salvaguardare dati e provare installazione in-place, backup/restore, reminder, Vault, account/QR e flussi Android; distinguere esito per scenario. L'issue [#181](https://github.com/riccardopinato/Agenda-per-Anna/issues/181) cita il vecchio +115 e non prova la +118: aggiornare/riconciliare l'evidenza senza cancellare la storia. |
-| 2 | **v1.07-C1 — CAP-0077 Permission/Capability Health** | **PLANNED** | Diagnostica veritiera in Impostazioni per permessi e servizi realmente disponibili (notifiche, calendario, accesso nativo), senza confondere consenso, configurazione e consegna effettiva. Offline-first, nessun permesso forzato. |
-| 3 | **v1.07-C2 — CAP-0069 Visual Regression** | **PLANNED** | Ampliare le baseline già esistenti con screenshot deterministici per tema, palette/HSV, 5 lingue, testo grande, dimensioni, motion ridotto; proteggere Cassaforte e contenuti privati. QA source, non certificazione dispositivo. |
+| 2 | **v1.07-C1 — CAP-0077 Permission/Capability Health** | **SOURCE MERGED — PR #203 / CI PASS; DEVICE NOT VERIFIED** | Diagnostica veritiera in Impostazioni per permessi e servizi realmente disponibili (notifiche, calendario, accesso nativo), senza confondere consenso, configurazione e consegna effettiva. Offline-first, nessun permesso forzato. |
+| 3 | **v1.07-C2 — CAP-0069 Visual Regression** | **TOOLING MERGED — PR #204 / CI PASS; 70 SCREENSHOT PAIRS NOT VERIFIED** | Ampliare le baseline già esistenti con screenshot deterministici per tema, palette/HSV, 5 lingue, testo grande, dimensioni, motion ridotto; proteggere Cassaforte e contenuti privati. QA source, non certificazione dispositivo. |
 | 4 | **Privacy UX — PR #200** | **DRAFT / SECURITY GATE OPEN — DO NOT MERGE** | Separare «Personale» da «Riservato», mascheratura Home e shared preview, controlli PIN/biometria. Prima di qualunque merge verificare tutte le vie di fuga dati: calendari esterni già esportati, notifiche consegnate, backup, media, app switcher e accessibilità; non confondere mascheratura con cifratura. |
 | 5 | **Google Calendar diretto — PR #199** | **STAGING ONLY / DRAFT / DO NOT MERGE** | Client API preparato fuori dal codice di produzione. Servono configurazione Google Cloud, OAuth, token sicuri, test su account reale, deduplica con Android Calendar Provider e autorizzazione esplicita prima dell'attivazione. |
 | Differito | **v1.06 Ecosystem Expansion** | **DEFERRED** | Pairing reale con app esterne e prove cross-device/cross-app. Non avviarlo come conseguenza della chiusura CAP-0111. |
 | Esterno | **Google Play / RevenueCat e hardening Supabase** | **PROVE/ADMIN ACTION PENDING** | Billing purchase/restore e distribuzione Play richiedono test esterni; issue [#182](https://github.com/riccardopinato/Agenda-per-Anna/issues/182) per leaked-password protection e pg_net resta una distinta azione amministrativa, non automaticamente risolta dalla release. |
 
-**Storico già integrato:** v1.07-A1/A2 CAP-0014 e CAP-0003; v1.07-B1/B2/B3 CAP-0002, CAP-0001 e CAP-0005 estesa. Il precedente testo `PLANNED` nel piano iniziale è uno snapshot pre-merge, non lo stato corrente. Prossima esecuzione sorgente consigliata: **C1, poi C2**, con QA fisico +118 separato. I PR #199 e #200 restano intenzionalmente bloccati.
+**Storico già integrato:** v1.07-A1/A2 CAP-0014 e CAP-0003; v1.07-B1/B2/B3 CAP-0002, CAP-0001 e CAP-0005 estesa. Il precedente testo `PLANNED` nel piano iniziale è uno snapshot pre-merge, non lo stato corrente. C1 e C2 sono ora integrate nel sorgente (PR #203 e #204); restano necessarie baseline screenshot approvate, test fisici Android e la consegna di un APK firmato con versione crescente. I PR #199 e #200 restano intenzionalmente bloccati.
 
 
 ## Aggiornamento operativo v1.07-B3 — APK firmato +117 (1 novembre 2026)
