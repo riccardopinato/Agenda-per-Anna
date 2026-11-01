@@ -77,7 +77,13 @@ Calcolare intervalli derivati dalle date degli eventi *visibili e autorizzati*, 
 
 **Test/accettazione:** overlap merge, all-day, ordinamento, finestra oltre mezzanotte, assenza evento, calendario esterno in sola lettura, permesso denied/unavailable, bassa latenza offline, nessuna lettura Vault.
 
-### B3: export evento (CAP-0005, decisione separata)
+### B3: sincronizzazione Android unidirezionale (CAP-0005, source merged — device QA pending)
+
+**Decisione utente 2026-11-01:** evoluzione dalla sola esportazione manuale a un opt-in di sincronizzazione automatica Android quando l'app e' attiva; Google Calendar API diretta e' rimandata. PR #195 MERGED su main `ad48e1f5abd7ef8bff96ca25164d205bb62f60b7` (exact-head source CI verde `15028ebffc86de2ed72cc6fd964ac7011212fc01`; quattro finding review chiusi). I paragrafi di esportazione manuale seguenti descrivono l'alternativa originale, non lo scope finale realizzato.
+
+**Scope consegnato:** consenso READ/WRITE_CALENDAR su Android, calendario destinazione scrivibile, link nativo event-ID per scope+calendario, aggiornamenti idempotenti degli appuntamenti privati futuri senza note, niente cancellazione automatica, niente writer su Shared Space/Vault, conflitti visibili, esclusione della copia duplicata nella projection, coda ricontrollo modifiche mentre un ciclo e' attivo. Web/iOS non scrivono su Calendar Provider Android.
+
+**Verifica rimanente:** native Kotlin Android compile gate e signed artifact `+117` come candidato; collaudo fisico e prova di propagazione al servizio Google selezionato ancora **NOT VERIFIED**. La vecchia `+116` non include B1/B2/B3.
 
 Esporre il comando `Aggiungi al calendario del dispositivo` per singoli eventi. Preferire un'azione con intent o file .ics e selezione dell'app/account quando fattibile; evitare `WRITE_CALENDAR` se non serve. Mai sostituire l'attuale overlay read-only o costruire sync bidirezionale. Test ripetizioni, duplicati esterni, timezone e rifiuto export.
 
