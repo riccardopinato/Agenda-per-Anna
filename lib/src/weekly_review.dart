@@ -63,6 +63,10 @@ const _wrCopy = <String,List<String>>{
  'replace':['Sostituire il testo esistente?','Replace existing text?','¿Reemplazar el texto?','Remplacer le texte ?','Substituir o texto?'],
  'cancel':['Annulla','Cancel','Cancelar','Annuler','Cancelar'],
  'confirm':['Sostituisci','Replace','Reemplazar','Remplacer','Substituir'],
+ 'previous':['Settimana precedente','Previous week','Semana anterior','Semaine précédente','Semana anterior'],
+ 'following':['Settimana successiva','Next week','Semana siguiente','Semaine suivante','Semana seguinte'],
+ 'noticeSunday':['Un momento per la tua settimana ♡','A moment for your week ♡','Un momento para tu semana ♡','Un moment pour ta semaine ♡','Um momento para a tua semana ♡'],
+ 'noticeMonday':['Scegli ciò a cui dare spazio questa settimana ♡','Choose what matters this week ♡','Elige qué importa esta semana ♡','Choisis ce qui compte cette semaine ♡','Escolhe o que importa esta semana ♡'],
 };
 String wrText(BuildContext c,String key){
   final lang=Localizations.localeOf(c).languageCode;
@@ -217,6 +221,14 @@ class _WeeklyReviewScreenState extends State<WeeklyReviewScreen>{
      }}
    finally{if(mounted)setState(()=>busy=false);}
  }
+ Future<void> moveWeek(int delta)async{
+   if(!await saveStep()||!mounted)return;
+   final current=widget.reviewWeek;
+   final other=DateTime(current.year,current.month,current.day+delta*7);
+   Navigator.pushReplacement<void,void>(context,MaterialPageRoute(builder:(_)=>
+     WeeklyReviewScreen(store:widget.store,reviewWeek:other,
+       planWeek:DateTime(other.year,other.month,other.day+7))));
+ }
  Future<void> useMemory(String text)async{
    if(best.text.trim().isNotEmpty){
      final confirmed=await showDialog<bool>(context:context,builder:(c)=>AlertDialog(
@@ -240,7 +252,7 @@ class _WeeklyReviewScreenState extends State<WeeklyReviewScreen>{
      }
    }
    return Scaffold(appBar:AppBar(title:Text(wrText(c,'week'))),
-     body:SafeArea(child:AnnaJournalContent(child:ListView(
+     body:SafeArea(child:AnnaJournalContent(child:AnnaMotionReveal(token:step,axis:Axis.vertical,child:ListView(
        padding:const EdgeInsets.symmetric(vertical:14),children:finished?[
          AnnaJournalCard(hero:true,child:Column(children:[
            Icon(Icons.local_florist_outlined,size:46,color:Theme.of(c).colorScheme.primary),
@@ -254,6 +266,12 @@ class _WeeklyReviewScreenState extends State<WeeklyReviewScreen>{
        ]:[
          Text(wrRange(c,step==2?widget.planWeek:widget.reviewWeek),
            style:Theme.of(c).textTheme.bodySmall),
+         Row(mainAxisAlignment:MainAxisAlignment.spaceBetween,children:[
+           IconButton(tooltip:wrText(c,'previous'),onPressed:busy?null:()=>moveWeek(-1),
+             icon:const Icon(Icons.chevron_left)),
+           IconButton(tooltip:wrText(c,'following'),onPressed:busy?null:()=>moveWeek(1),
+             icon:const Icon(Icons.chevron_right)),
+         ]),
          const SizedBox(height:10),
          Text(wrText(c,['review','memories','intentions'][step]),
            style:AnnaJournalTypography.editorial(c,size:27)),
@@ -337,7 +355,7 @@ class _WeeklyReviewScreenState extends State<WeeklyReviewScreen>{
            MaterialPageRoute(builder:(_)=>WeeklyReviewArchivePage(store:widget.store))),
            child:Text(wrText(c,'archive'))),
        ],
-     ))));
+     )))));
  }
 }
 
@@ -352,18 +370,18 @@ class WeeklyReviewArchivePage extends StatelessWidget{
      mondays.add(DateTime(now.year,now.month,now.day-7*i));
    }
    final dates=mondays.toList()..sort((a,b)=>b.compareTo(a));
-   String? group;
+   final groups=<String,List<DateTime>>{};
+   for(final date in dates){
+     final month=DateFormat('MMMM yyyy',AnnaStrings.intlLocale(c)).format(date);
+     groups.putIfAbsent(month,()=>[]).add(date);
+   }
    return Scaffold(appBar:AppBar(title:Text(wrText(c,'archive'))),
      body:AnnaJournalContent(child:ListView(
        padding:const EdgeInsets.symmetric(vertical:15),children:[
-         for(final monday in dates)...[
-           Builder(builder:(ctx){
-             final m=DateFormat('MMMM yyyy',AnnaStrings.intlLocale(ctx)).format(monday);
-             if(m==group)return const SizedBox.shrink();
-             group=m;
-             return Padding(padding:const EdgeInsets.symmetric(vertical:12),
-               child:Text(m,style:AnnaJournalTypography.editorial(ctx,size:22)));
-           }),
+         for(final group in groups.entries)...[
+           Padding(padding:const EdgeInsets.symmetric(vertical:12),
+             child:Text(group.key,style:AnnaJournalTypography.editorial(c,size:22))),
+           for(final monday in group.value)
            Padding(padding:const EdgeInsets.only(bottom:8),child:AnnaJournalCard(
              child:ListTile(contentPadding:EdgeInsets.zero,
                leading:Icon(store.week(monday).reviewCompletedAt!=null?
@@ -406,10 +424,13 @@ abstract final class WeeklyReviewReminders{
      final target=prefs.weeklyReviewReminderDay==7?week:
        DateTime(week.year,week.month,week.day-7);
      if(store.week(target).reviewCompletedAt!=null)continue;
+     final lang=prefs.appLanguage.code.isEmpty?
+       Intl.getCurrentLocale().split('_').first:prefs.appLanguage.code;
+     final index=switch(lang){'it'=>0,'es'=>2,'fr'=>3,'pt'=>4,_=>1};
+     final body=_wrCopy[prefs.weeklyReviewReminderDay==7?
+       'noticeSunday':'noticeMonday']![index];
      await service.schedule(stableId:id(week),when:when,
-       title:"Anna's Diary",requestPermission:false,
-       body:prefs.weeklyReviewReminderDay==7?
-         'Un momento per la tua settimana ♡':'Scegli ciò a cui dare spazio questa settimana ♡');
+       title:"Anna's Diary",requestPermission:false,body:body);
    }
  }
 }
