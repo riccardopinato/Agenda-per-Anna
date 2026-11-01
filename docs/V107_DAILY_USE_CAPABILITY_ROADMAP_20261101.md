@@ -13,6 +13,8 @@ _Aggiornamento post PR #186: A1 source MERGED; F0 USER_ATTESTED_GENERAL_PASS; al
 
 **Aggiornamento B2 post-merge (2026-11-01):** CAP-0001 e' **SOURCE MERGED** tramite [PR #193](https://github.com/riccardopinato/Agenda-per-Anna/pull/193), commit `18ce8b4bd0f8a997aeef381caa57a6430c4d9757`. Exact-head PR `d22b18eb8f89b3c6100946344867aa2bb13df707`: Development checks / Deploy Web / AppLab Source Gate SUCCESS; 2 finding review risolti. La funzione e' un calcolo read-only e richiede salvataggio esplicito nel compositore esistente. L'APK `+116` NON include B1/B2; verifica fisica B2 **NOT VERIFIED**. Per continuare lo sviluppo l'utente ha chiesto di non attendere il gate fisico: nessuna evidenza di test e' stata inventata o certificata. Prossimo: B3 export e' **decision gate separato**, oppure C1 secondo roadmap.
 
+**Aggiornamento B3 post-merge (2026-11-01):** la modalita' Android e' autorizzata dall'utente come soluzione immediata, lasciando Google Calendar API diretta per un secondo momento. SOURCE MERGED tramite [PR #195](https://github.com/riccardopinato/Agenda-per-Anna/pull/195), main `ad48e1f5abd7ef8bff96ca25164d205bb62f60b7`. Dev/Web/AppLab exact-head `15028ebffc86de2ed72cc6fd964ac7011212fc01` SUCCESS e review risolta. La sincronizzazione richiede consent READ/WRITE_CALENDAR Android, selezione calendario scrivibile e attivazione esplicita: non e' certificata da prove su telefono. Questo branch prepara soltanto +117 e **non** dichiara un artifact finche' il workflow di firma non e' completato; nessun Play release automatico. Il promemoria ChatGPT per il collegamento Google di domani NON e' stato creato per limite 5 automazioni attive; nessuna attivita' esistente e' stata sostituita.
+
 ## Fonti, baseline e competenze
 
 - Product scope e privacy: [PRODUCT_BIBLE.md](PRODUCT_BIBLE.md); ordine di delivery e stato: [ROADMAP.md](ROADMAP.md); AGENTS.md nel root.
@@ -31,7 +33,7 @@ _Aggiornamento post PR #186: A1 source MERGED; F0 USER_ATTESTED_GENERAL_PASS; al
 | v1.07-A2 | CAP-0003 | Preparazione leggera: note/checklist contestuali evento | MERGED SOURCE / DEVICE QA FUTURA | no task manager; riuso contenuti e reminder, nessun secondo scheduler |
 | v1.07-B1 | CAP-0002 | Testo -> bozza appuntamento offline deterministica | MERGED SOURCE / DEVICE QA FUTURA | A chiusa; parser EN/IT/ES/FR/PT, preview esplicita, timezone e ricorrenza |
 | v1.07-B2 | CAP-0001 | Slot liberi calcolati da eventi visibili all'utente | MERGED SOURCE / DEVICE QA FUTURA | B1, calendario privato + overlay opt-in read-only; niente evento salvato |
-| v1.07-B3 · optional PR | CAP-0005 | Esportazione singolo evento verso sistema/ICS | DECISION GATE | B1/B2 stabilizzati; consentire selezione provider e rifiuto permessi |
+| v1.07-B3 | CAP-0005 estesa | Sincronizzazione Android Calendar Provider unidirezionale su consenso, senza OAuth Google API | MERGED SOURCE / NATIVE BUILD + DEVICE QA FUTURA | solo appuntamenti privati futuri, selezione calendario, permessi READ/WRITE Android, gestione idempotenza; nessuna cancellazione esterna automatica |
 | v1.07-C1 | CAP-0077 | Diagnostica permessi/capability, correzione assistita | PLANNED | servizi nativi reali; UI non mente su stato 'healthy' |
 | v1.07-C2 | CAP-0069 | Regressione visiva automatica mirata alle 10 schermate | PLANNED | test/dev only, dispositivi/locale/theme/dimensioni di baseline fissati |
 | Follow-up eventuali | CAP-0086, CAP-0039, CAP-0031, CAP-0008 | TTS, copie foto senza EXIF, STT offline, import workout media | EVALUATE LATER | adozione separata; nessuna dipendenza release |
