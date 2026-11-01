@@ -245,7 +245,12 @@ class UnifiedAgendaTile extends StatelessWidget {
             ? Checkbox(
                 value: shared.done,
                 activeColor: color,
-                onChanged: (_) => _toggleSharedAgendaEntry(store, entry),
+                onChanged: (_) async {
+                  if (shared.isSensitive &&
+                      !await requestSensitiveItemAccess(context, store)) return;
+                  if (!context.mounted) return;
+                  await _toggleSharedAgendaEntry(store, entry);
+                },
               )
             : CircleAvatar(
                 backgroundColor: color.withValues(alpha: 0.16),
@@ -410,6 +415,9 @@ Future<void> openUnifiedAgendaEntry(
     context,
     initialDate: shared.date,
     existing: shared,
+    pinAvailable: store.preferences.privacyLockEnabled &&
+        store.preferences.pinHash != null &&
+        store.preferences.pinSalt != null,
   );
   if (result == null) return;
   await _saveSharedAgendaEntry(store, entry.space!.id, result);
@@ -752,6 +760,9 @@ Future<void> openUnifiedItemComposer(
     initialDate: initialDate,
     initialType: sharedType,
     initialTime: initialTime,
+    pinAvailable: store.preferences.privacyLockEnabled &&
+        store.preferences.pinHash != null &&
+        store.preferences.pinSalt != null,
   );
   if (result == null) return;
 
