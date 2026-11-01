@@ -94,7 +94,7 @@ void main() {
         ExternalCalendarEvent(
           id: 'external-event', calendarId: calendar,
           calendarName: 'Device', title: 'Dentist',
-          description: '[AnnaDiary:${marker}]',
+          description: '[AnnaDiary:$marker]',
           location: '', start: DateTime(2026, 11, 7, 10),
           end: DateTime(2026, 11, 7, 11), allDay: false,
         );
