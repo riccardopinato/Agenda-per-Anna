@@ -51,6 +51,11 @@ class VisualComparatorTest(unittest.TestCase):
         Image.new("RGB", (4, 4)).save(self.candidate / "vault__test.png")
         self.assertEqual(compare(self.reference, self.candidate, self.manifest), 2)
 
+    def test_empty_variants_block(self):
+        self.cfg["variants"] = []
+        self._manifest()
+        self.assertEqual(compare(self.reference, self.candidate, self.manifest), 2)
+
     def test_private_checkpoint_blocks(self):
         self.cfg["checkpoints"][0] = "vault"
         self._manifest()
