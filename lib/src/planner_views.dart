@@ -653,8 +653,8 @@ class _PlannerScreenState extends State<PlannerScreen> {
                               next: upcoming.isEmpty ? null : upcoming.first,
                               globalPendingTasks: widget.store.pendingUnifiedTaskCount,
                               inboxCount: widget.store.activeInboxEntries.length,
-                              hideDetails: (widget.store.preferences.hideHomeDetails ||
-                                    widget.store.preferences.homeDiscreetMode),
+                              hideDetails: widget.store.preferences.hideHomeDetails ||
+                                  widget.store.preferences.homeDiscreetMode,
                               onOpenNext: upcoming.isEmpty
                                   ? null
                                   : () => openUnifiedAgendaEntry(
@@ -682,8 +682,8 @@ class _PlannerScreenState extends State<PlannerScreen> {
                                   store: widget.store,
                                   item: item,
                                   compact: true,
-                                  hideDetails: (widget.store.preferences.hideHomeDetails ||
-                                    widget.store.preferences.homeDiscreetMode),
+                                  hideDetails: widget.store.preferences.hideHomeDetails ||
+                                  widget.store.preferences.homeDiscreetMode,
                                 )),
                               ],
                             ),
@@ -702,8 +702,8 @@ class _PlannerScreenState extends State<PlannerScreen> {
                             child: _TodayCompactDiaryPreview(
                               store: widget.store,
                               snapshot: snapshot,
-                              hideDetails: (widget.store.preferences.hideHomeDetails ||
-                                    widget.store.preferences.homeDiscreetMode),
+                              hideDetails: widget.store.preferences.hideHomeDetails ||
+                                  widget.store.preferences.homeDiscreetMode,
                             ),
                           ),
                         ] else ...[
