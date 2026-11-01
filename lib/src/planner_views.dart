@@ -3792,7 +3792,8 @@ Future<void> _showAgendaItemActions(
   );
 
   if (action == 'edit' && context.mounted) {
-    await openItemEditor(context, store, item.date, existing: item);
+    await openItemEditor(context, store, item.date,
+        existing: item, sensitiveAccessGranted: true);
   } else if (action == 'duplicate') {
     await store.duplicateItem(item);
   } else if (action == 'prepareEvent' && context.mounted) {
