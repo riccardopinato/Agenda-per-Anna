@@ -9,6 +9,8 @@ _Aggiornamento post PR #186: A1 source MERGED; F0 USER_ATTESTED_GENERAL_PASS; al
 
 **Aggiornamento release +116 (2026-11-01):** A1 e A2 sono integrate nel commit `6380af49d2dd0e35db747e7862456b4ac6bf6a87`, la release Android `1.0.0-rc.6+116` e stata **costruita e firmata** dal workflow [#41262693723](https://github.com/riccardopinato/Agenda-per-Anna/actions/runs/41262693723) con esito SUCCESS; artefatto `annas-diary-light-arm64` (ID 13065409792) disponibile. **Test fisici +116 NON VERIFICATI.** Verificare in place update, Cassaforte, A1/A2 e checklist nella [matrice v116](V116_ANDROID_PHYSICAL_GATE.md). Tutte le note sopra sullo stato pre-build sono cronologia, non stato corrente.
 
+**Aggiornamento B1 post-merge (2026-11-01):** CAP-0002 e' **SOURCE MERGED** tramite [PR #191](https://github.com/riccardopinato/Agenda-per-Anna/pull/191), commit `58a23f94644b29abf374832164b3a3ac1e5cce56`; Development checks / Deploy Web / AppLab Source Gate tutti SUCCESS all'exact head `58a423a5ae4c8acd3bef5390535a48815f4ef21c`, 6 review finding corretti. Il vecchio APK +116 non include B1. La verifica fisica resta **NOT VERIFIED**.
+
 ## Fonti, baseline e competenze
 
 - Product scope e privacy: [PRODUCT_BIBLE.md](PRODUCT_BIBLE.md); ordine di delivery e stato: [ROADMAP.md](ROADMAP.md); AGENTS.md nel root.
@@ -25,7 +27,7 @@ _Aggiornamento post PR #186: A1 source MERGED; F0 USER_ATTESTED_GENERAL_PASS; al
 | F0 · Release reality | — | Collaudo fisico signed `+115` esatto | USER_ATTESTED_GENERAL_PASS (dettaglio mancante) | [V115_ANDROID_PHYSICAL_GATE.md](V115_ANDROID_PHYSICAL_GATE.md); blocchi reali separati da migliorie |
 | v1.07-A1 | CAP-0014 | Appuntamento passato -> bozza ricordo | MERGED SOURCE / DEVICE QA FUTURA | riuso `AgendaItem`, `DayJournal/DiaryBlock`, `Unified Capture`, nessuna scrittura implicita |
 | v1.07-A2 | CAP-0003 | Preparazione leggera: note/checklist contestuali evento | MERGED SOURCE / DEVICE QA FUTURA | no task manager; riuso contenuti e reminder, nessun secondo scheduler |
-| v1.07-B1 | CAP-0002 | Testo -> bozza appuntamento offline deterministica | PLANNED | A chiusa; parser EN/IT/ES/FR/PT, preview esplicita, timezone e ricorrenza |
+| v1.07-B1 | CAP-0002 | Testo -> bozza appuntamento offline deterministica | MERGED SOURCE / DEVICE QA FUTURA | A chiusa; parser EN/IT/ES/FR/PT, preview esplicita, timezone e ricorrenza |
 | v1.07-B2 | CAP-0001 | Slot liberi calcolati da eventi visibili all'utente | PLANNED | B1, calendario privato + overlay opt-in read-only; niente evento salvato |
 | v1.07-B3 · optional PR | CAP-0005 | Esportazione singolo evento verso sistema/ICS | DECISION GATE | B1/B2 stabilizzati; consentire selezione provider e rifiuto permessi |
 | v1.07-C1 | CAP-0077 | Diagnostica permessi/capability, correzione assistita | PLANNED | servizi nativi reali; UI non mente su stato 'healthy' |
