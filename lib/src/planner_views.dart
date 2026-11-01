@@ -623,16 +623,20 @@ class _PlannerScreenState extends State<PlannerScreen> {
                             key: const ValueKey('privacy-home-discreet'),
                             dense: true,
                             contentPadding: EdgeInsets.zero,
-                            secondary: Icon(widget.store.preferences.homeDiscreetMode
-                                ? Icons.visibility_off_outlined
-                                : Icons.visibility_outlined),
+                            secondary: Icon(
+                              widget.store.preferences.homeDiscreetMode ||
+                                      widget.store.preferences.hideHomeDetails
+                                  ? Icons.visibility_off_outlined
+                                  : Icons.visibility_outlined),
                             title: Text(strings.d3('privacy_discreet')),
                             subtitle: Text(strings.d3('privacy_discreetHint')),
-                            value: widget.store.preferences.homeDiscreetMode,
+                            value: widget.store.preferences.homeDiscreetMode ||
+                                widget.store.preferences.hideHomeDetails,
                             onChanged: (value) => unawaited(
                               widget.store.savePreferences(
                                 widget.store.preferences.copyWith(
                                   homeDiscreetMode: value,
+                                  hideHomeDetails: value,
                                 ),
                               ),
                             ),
