@@ -31,7 +31,7 @@ void main() {
   test('A2 parses and composes checked and unchecked trailing steps', () {
     const original = 'Bring passport\n\n☐ Tickets\n☑ Insurance';
     final draft = EventPreparationDraft.fromNote(original);
-    expect(draft.note, 'Bring passport\n\n');
+    expect(draft.note, 'Bring passport\n');
     expect(draft.steps.map((s) => s.text), ['Tickets', 'Insurance']);
     expect(draft.steps.map((s) => s.completed), [false, true]);
     expect(draft.compose(), original);
@@ -115,6 +115,37 @@ void main() {
     store.dispose();
   });
 
+  test('A2 failed local write rolls back the note and retry persists', () async {
+    final store = AgendaStore();
+    await store.load();
+    final source = event();
+    await store.upsert(source);
+    const proposal = EventPreparationDraft(
+      note: 'Bring passport',
+      steps: [EventPreparationStep('Print tickets')],
+    );
+
+    LocalStateStore.instance.failNextBatchForTesting();
+    await expectLater(
+      saveEventPreparation(
+        store, source, proposal, accountAtOpen: store.activeAccountId,
+      ),
+      throwsStateError,
+    );
+    expect(store.items.single.note, source.note);
+
+    expect(await saveEventPreparation(
+      store, source, proposal, accountAtOpen: store.activeAccountId,
+    ), EventPreparationSaveResult.saved);
+    expect(store.items.single.note, contains('☐ Print tickets'));
+    store.dispose();
+
+    final reloaded = AgendaStore();
+    await reloaded.load();
+    expect(reloaded.items.single.note, contains('☐ Print tickets'));
+    reloaded.dispose();
+  });
+
   test('A2 entire appointment including checklist survives Trash restoration', () async {
     final store = AgendaStore();
     await store.load();
@@ -134,7 +165,9 @@ void main() {
     expect(main, contains("part 'src/event_preparation.dart';"));
     expect(planner, contains("'v107-event-preparation-action'"));
     expect(planner, contains('openEventPreparation(context, store, item)'));
-    expect(source, contains('store.upsert(current.copyWith(note: nextNote))'));
+    expect(source, contains('synchronizeReminders: false'));
+    expect(source, contains('readOnly: _saving'));
+    expect(File('lib/src/agenda_store.dart').readAsStringSync(), contains('final previous = index < 0 ? null : items[index];'));
     expect(source, contains('EventPreparationSaveResult.noteConflict'));
     expect(source, isNot(contains('SharedPreferences.getInstance')));
     expect(source, isNot(contains('CloudSyncService')));

@@ -94,7 +94,10 @@ Future<EventPreparationSaveResult> saveEventPreparation(
   }
   final nextNote = draft.compose();
   if (nextNote == current.note) return EventPreparationSaveResult.unchanged;
-  await store.upsert(current.copyWith(note: nextNote));
+  await store.upsert(
+    current.copyWith(note: nextNote),
+    synchronizeReminders: false,
+  );
   return EventPreparationSaveResult.saved;
 }
 
@@ -229,6 +232,7 @@ class _EventPreparationSheetState extends State<_EventPreparationSheet> {
                   TextField(
                     key: const ValueKey('v107-prep-note'),
                     controller: _note,
+                    readOnly: _saving,
                     maxLines: null,
                     minLines: 3,
                     decoration: InputDecoration(

@@ -8,7 +8,7 @@ Stato: implementazione source candidate, non ancora certificata su dispositivo.
 - La rilettura della sorgente previene la sovrascrittura delle note concorrenti; in conflitto o perdita sorgente l'editor rimane aperto con la bozza e messaggio d'errore. In cambio account l'editor deve chiudere senza scrivere nell'altro account.
 - Archiviazione, Trash, backup/restore e sync usano la rappresentazione esistente dell'appuntamento. Nessun reminder nuovo: gli eventuali reminder dell'evento rimangono sotto il proprietario originale.
 - Cinque lingue UI già supportate: EN, IT, ES, FR, PT. UI leggera, Material semantico, compatibile con mobile e Web.
-- Test: codec nota/checklist, conservazione testo libero, roundtrip, no-op, modifica remota, isolamento account, rimozione evento e restore da Trash.
+- Test: codec nota/checklist, conservazione testo libero, roundtrip, no-op, modifica remota, fail-next-batch con retry persistito, isolamento account, rimozione evento e restore da Trash.
 - Questi test CI sono sorgente, non test fisici. L'APK firmato +115 non contiene A1 né A2; il prossimo APK richiede un `versionCode > 115`, firma stabile e verifica specifica.
 
 Non gestire checklist condivise o riferimenti ad altre persone senza una distinta approvazione di permessi e privacy.
