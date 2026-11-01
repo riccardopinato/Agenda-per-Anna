@@ -72,7 +72,7 @@ String wrText(BuildContext c,String key){
 String wrRange(BuildContext c,DateTime m){
   final locale=AnnaStrings.intlLocale(c);
   final end=DateTime(m.year,m.month,m.day+6);
-  return DateFormat('d MMM',locale).format(m)+' – '+DateFormat('d MMM yyyy',locale).format(end);
+  return '${DateFormat('d MMM',locale).format(m)} – ${DateFormat('d MMM yyyy',locale).format(end)}';
 }
 DateTime wrMonday(DateTime d)=>mondayOf(d);
 
@@ -191,8 +191,10 @@ class _WeeklyReviewScreenState extends State<WeeklyReviewScreen>{
      }
      return true;
    }catch(_){
-     if(mounted)ScaffoldMessenger.of(context).showSnackBar(
-       SnackBar(content:Text(wrText(context,'error'))));
+     if(mounted){
+       ScaffoldMessenger.of(context).showSnackBar(
+         SnackBar(content:Text(wrText(context,'error'))));
+     }
      return false;
    }finally{if(mounted)setState(()=>busy=false);}
  }
@@ -209,8 +211,10 @@ class _WeeklyReviewScreenState extends State<WeeklyReviewScreen>{
        old.copyWith(reviewCompletedAt:DateTime.now()));
      await WeeklyReviewReminders.reconcile(widget.store);
      if(mounted)setState(()=>finished=true);
-   }catch(_){if(mounted)ScaffoldMessenger.of(context).showSnackBar(
-     SnackBar(content:Text(wrText(context,'error'))));}
+   }catch(_){if(mounted){
+       ScaffoldMessenger.of(context).showSnackBar(
+         SnackBar(content:Text(wrText(context,'error'))));
+     }}
    finally{if(mounted)setState(()=>busy=false);}
  }
  Future<void> useMemory(String text)async{
@@ -344,7 +348,9 @@ class WeeklyReviewArchivePage extends StatelessWidget{
    final now=wrMonday(DateTime.now());
    final mondays=<DateTime>{for(final key in store.weeks.keys)
      if(DateTime.tryParse(key)!=null)wrMonday(DateTime.parse(key))};
-   for(var i=0;i<12;i++)mondays.add(DateTime(now.year,now.month,now.day-7*i));
+   for(var i=0;i<12;i++){
+     mondays.add(DateTime(now.year,now.month,now.day-7*i));
+   }
    final dates=mondays.toList()..sort((a,b)=>b.compareTo(a));
    String? group;
    return Scaffold(appBar:AppBar(title:Text(wrText(c,'archive'))),
@@ -379,7 +385,7 @@ class WeeklyReviewArchivePage extends StatelessWidget{
 
 /// Finite one-shot local notification horizon; no background permission prompt.
 abstract final class WeeklyReviewReminders{
- static String id(DateTime monday)=>'wr:week:'+AgendaStore.dateKey(monday);
+ static String id(DateTime monday)=>'wr:week:${AgendaStore.dateKey(monday)}';
  static Future<void> reconcile(AgendaStore store)async{
    if(kIsWeb)return;
    final prefs=store.preferences,now=DateTime.now(),start=wrMonday(now);
@@ -420,14 +426,18 @@ class _WeeklyReviewSettingsState extends State<WeeklyReviewSettingsPage>{
    try{
      if(enabling){
        if(kIsWeb||!await NotificationService.instance.requestPermissions()){
-         if(mounted)ScaffoldMessenger.of(context).showSnackBar(
-           SnackBar(content:Text(wrText(context,'denied'))));
+         if(mounted){
+       ScaffoldMessenger.of(context).showSnackBar(
+         SnackBar(content:Text(wrText(context,'denied'))));
+     }
          return;
        }
        final h=await NotificationService.instance.health();
        if(!h.reminderDeliveryReady){
-         if(mounted)ScaffoldMessenger.of(context).showSnackBar(
-           SnackBar(content:Text(wrText(context,'denied'))));
+         if(mounted){
+       ScaffoldMessenger.of(context).showSnackBar(
+         SnackBar(content:Text(wrText(context,'denied'))));
+     }
          return;
        }
      }
@@ -435,8 +445,10 @@ class _WeeklyReviewSettingsState extends State<WeeklyReviewSettingsPage>{
      await WeeklyReviewReminders.reconcile(widget.store);
      if(mounted)setState((){});
    }catch(_){
-     if(mounted)ScaffoldMessenger.of(context).showSnackBar(
-       SnackBar(content:Text(wrText(context,'error'))));
+     if(mounted){
+       ScaffoldMessenger.of(context).showSnackBar(
+         SnackBar(content:Text(wrText(context,'error'))));
+     }
    }finally{if(mounted)setState(()=>busy=false);}
  }
  @override Widget build(BuildContext c){
@@ -452,19 +464,27 @@ class _WeeklyReviewSettingsState extends State<WeeklyReviewSettingsPage>{
              onChanged:busy?null:(v)=>save(p.copyWith(weeklyReviewReminderEnabled:v),enabling:v)),
            const SizedBox(height:11),
            DropdownButtonFormField<int>(
-             value:p.weeklyReviewReminderDay,
+             initialValue:p.weeklyReviewReminderDay,
              decoration:InputDecoration(labelText:wrText(c,'week')),
              items:[7,1].map((d)=>DropdownMenuItem(value:d,
                child:Text(wrText(c,d==7?'sunday':'monday')))).toList(),
              onChanged:busy?null:(d){if(d!=null)save(p.copyWith(weeklyReviewReminderDay:d));}),
            const SizedBox(height:11),
-           DropdownButtonFormField<int>(
-             value:p.weeklyReviewReminderHour,
-             decoration:InputDecoration(labelText:wrText(c,'time')),
-             items:[6,8,9,12,17,18,19,20,21,22]
-               .map((h)=>DropdownMenuItem(value:h,child:Text(h.toString().padLeft(2,'0')+
-                 ':'+p.weeklyReviewReminderMinute.toString().padLeft(2,'0')))).toList(),
-             onChanged:busy?null:(h){if(h!=null)save(p.copyWith(weeklyReviewReminderHour:h));}),
+          ListTile(
+            contentPadding:EdgeInsets.zero,
+            title:Text(wrText(c,'time')),
+            subtitle:Text('${p.weeklyReviewReminderHour.toString().padLeft(2,'0')}:${p.weeklyReviewReminderMinute.toString().padLeft(2,'0')}'),
+            trailing:const Icon(Icons.access_time_outlined),
+            onTap:busy?null:()async{
+              final chosen=await showTimePicker(context:c,
+                initialTime:TimeOfDay(hour:p.weeklyReviewReminderHour,
+                  minute:p.weeklyReviewReminderMinute));
+              if(chosen!=null&&mounted){
+                await save(p.copyWith(weeklyReviewReminderHour:chosen.hour,
+                  weeklyReviewReminderMinute:chosen.minute));
+              }
+            },
+          ),
          ])),
        ])));
  }
