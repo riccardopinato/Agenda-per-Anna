@@ -107,6 +107,18 @@ void main() {
     expect(shared, contains('if (existing?.isSensitive == true) {'));
   });
 
+  test('external preview contracts redact sensitive records', () {
+    final widget = File('lib/src/home_widget_bridge.dart').readAsStringSync();
+    final store = File('lib/src/agenda_store.dart').readAsStringSync();
+    expect(widget, contains('isMaskedAgendaEntry('));
+    expect(widget, contains('store.preferences.homeDiscreetMode'));
+    expect(widget, contains("nextText = strings.d3('privacy_sensitive')"));
+    expect(widget, contains("birthdayText = strings.d3('privacy_sensitive')"));
+    expect(store, contains('final safeReminderTitle = item.isSensitive'));
+    expect(store, contains('title: safeReminderTitle,'));
+    expect(store, contains('_reminderBody(minutes, safeReminderTitle)'));
+  });
+
   test('filter label is Personale, not a security claim', () {
     final code = File('lib/src/localization_d3.dart').readAsStringSync();
     expect(code, contains('"it": "Personale"'));
