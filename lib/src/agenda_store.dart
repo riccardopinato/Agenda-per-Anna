@@ -5404,6 +5404,7 @@ class AgendaStore extends ChangeNotifier {
 
   Future<void> resetPreferences() async {
     await savePreferences(const AgendaPreferences());
+    await WeeklyReviewReminders.reconcile(this);
   }
 
   Future<void> applyPersonalizationPreset(

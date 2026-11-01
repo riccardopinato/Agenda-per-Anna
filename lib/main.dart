@@ -174,6 +174,24 @@ Future<void> _handleLocalReminderAction(
   final markDone = payload.startsWith(donePrefix);
   final stableId = markDone ? payload.substring(donePrefix.length) : payload;
 
+  if (!markDone && stableId.startsWith('wr:week:')) {
+    final monday = DateTime.tryParse(stableId.substring('wr:week:'.length));
+    if (monday == null || mondayOf(monday) != monday) return;
+    final review = store.preferences.weeklyReviewReminderDay == 7
+        ? monday
+        : DateTime(monday.year, monday.month, monday.day - 7);
+    await _runAfterEntryScope(store, (context) async {
+      await Navigator.of(context).push<void>(
+        MaterialPageRoute<void>(builder: (_) => WeeklyReviewScreen(
+          store: store,
+          reviewWeek: review,
+          planWeek: wrPlanningWeekFor(store, review),
+        )),
+      );
+    });
+    return;
+  }
+
   if (stableId == dailyRitualMorningReminderId ||
       stableId == dailyRitualEveningReminderId) {
     var navigator = appNavigatorKey.currentState;

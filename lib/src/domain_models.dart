@@ -1747,6 +1747,7 @@ class WeekData {
   final String bestThing;
   final String reflection;
   final DateTime? reviewCompletedAt;
+  final String? reviewPlanningWeekKey;
 
   const WeekData({
     this.focus = '',
@@ -1754,6 +1755,7 @@ class WeekData {
     this.bestThing = '',
     this.reflection = '',
     this.reviewCompletedAt,
+    this.reviewPlanningWeekKey,
   });
 
   WeekData copyWith({
@@ -1762,6 +1764,7 @@ class WeekData {
     String? bestThing,
     String? reflection,
     DateTime? reviewCompletedAt,
+    String? reviewPlanningWeekKey,
     bool clearReviewCompleted = false,
   }) {
     return WeekData(
@@ -1770,11 +1773,13 @@ class WeekData {
       bestThing: bestThing ?? this.bestThing,
       reflection: reflection ?? this.reflection,
       reviewCompletedAt: clearReviewCompleted ? null : (reviewCompletedAt ?? this.reviewCompletedAt),
+      reviewPlanningWeekKey: reviewPlanningWeekKey ?? this.reviewPlanningWeekKey,
     );
   }
 
   Map<String, dynamic> toJson() => {
         'reviewCompletedAt': reviewCompletedAt?.toIso8601String(),
+        'reviewPlanningWeekKey': reviewPlanningWeekKey,
         'focus': focus,
         'priorities': priorities,
         'bestThing': bestThing,
@@ -1787,6 +1792,7 @@ class WeekData {
         bestThing: json['bestThing'] as String? ?? '',
         reflection: json['reflection'] as String? ?? '',
         reviewCompletedAt: DateTime.tryParse(json['reviewCompletedAt'] as String? ?? ''),
+        reviewPlanningWeekKey: json['reviewPlanningWeekKey'] as String?,
       );
 }
 

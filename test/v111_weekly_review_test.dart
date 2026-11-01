@@ -21,6 +21,8 @@ void main(){
    final decoded=anna.WeekData.fromJson(completed.toJson());
    expect(decoded.reviewCompletedAt,DateTime.utc(2026,11,1));
    expect(decoded.priorities,['1','2','3','4']);
+   final withMapping=decoded.copyWith(reviewPlanningWeekKey:'2026-11-02');
+   expect(anna.WeekData.fromJson(withMapping.toJson()).reviewPlanningWeekKey,'2026-11-02');
    expect(decoded.copyWith(clearReviewCompleted:true).reviewCompletedAt,isNull);
  });
  test('legacy reminder settings default OFF',(){

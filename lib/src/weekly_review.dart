@@ -79,6 +79,17 @@ String wrRange(BuildContext c,DateTime m){
   return '${DateFormat('d MMM',locale).format(m)} – ${DateFormat('d MMM yyyy',locale).format(end)}';
 }
 DateTime wrMonday(DateTime d)=>mondayOf(d);
+DateTime wrPlanningWeekFor(AgendaStore store,DateTime reviewMonday){
+  final stored=store.week(reviewMonday).reviewPlanningWeekKey;
+  final parsed=DateTime.tryParse(stored??'');
+  if(parsed!=null&&wrMonday(parsed)==parsed)return parsed;
+  final today=DateTime.now();
+  if(wrMonday(today)==reviewMonday&&today.weekday!=DateTime.sunday){
+    return reviewMonday;
+  }
+  return DateTime(reviewMonday.year,reviewMonday.month,reviewMonday.day+7);
+}
+
 
 class WeeklyReviewHomeCard extends StatefulWidget{
  final AgendaStore store;
@@ -100,7 +111,7 @@ class _WeeklyReviewHomeCardState extends State<WeeklyReviewHomeCard>{
      DateTime(current.year,current.month,current.day+7):current;
    final sunday=now.weekday==DateTime.sunday,monday=now.weekday==DateTime.monday;
    final week=widget.store.week(sunday?review:plan);
-   final complete=week.reviewCompletedAt!=null;
+   final complete=widget.store.week(review).reviewCompletedAt!=null;
    final compact=complete||(!sunday&&!monday);
    final hidden=widget.store.preferences.hideHomeDetails;
    final counts=WeeklyReviewSummary.fromItems(widget.store.items,review);
@@ -176,7 +187,7 @@ class _WeeklyReviewScreenState extends State<WeeklyReviewScreen>{
    final old=widget.store.week(widget.planWeek).priorities;
    return TextEditingController(text:i<old.length?old[i]:'');
  });
- bool busy=false,finished=false;
+ bool busy=false,finished=false,allowExit=false;
  @override void dispose(){best.dispose();reflection.dispose();focus.dispose();
    for(final p in priorityFields){p.dispose();}super.dispose();}
  Future<bool> saveStep() async{
@@ -186,12 +197,21 @@ class _WeeklyReviewScreenState extends State<WeeklyReviewScreen>{
      if(step==1){
        final old=widget.store.week(widget.reviewWeek);
        await widget.store.saveWeek(widget.reviewWeek,old.copyWith(
-         bestThing:best.text.trim(),reflection:reflection.text.trim()));
+         bestThing:best.text.trim(),reflection:reflection.text.trim(),
+         reviewPlanningWeekKey:AgendaStore.dateKey(widget.planWeek)));
      }else if(step==2){
        final old=widget.store.week(widget.planWeek);
        final first=priorityFields.map((p)=>p.text.trim()).where((p)=>p.isNotEmpty).toList();
+       final planKey=AgendaStore.dateKey(widget.planWeek);
        await widget.store.saveWeek(widget.planWeek,old.copyWith(
-         focus:focus.text.trim(),priorities:[...first,...old.priorities.skip(3)]));
+         focus:focus.text.trim(),priorities:[...first,...old.priorities.skip(3)],
+         reviewPlanningWeekKey:widget.reviewWeek==widget.planWeek?
+           planKey:old.reviewPlanningWeekKey));
+       if(widget.reviewWeek!=widget.planWeek){
+         final review=widget.store.week(widget.reviewWeek);
+         await widget.store.saveWeek(widget.reviewWeek,
+           review.copyWith(reviewPlanningWeekKey:planKey));
+       }
      }
      return true;
    }catch(_){
@@ -201,6 +221,12 @@ class _WeeklyReviewScreenState extends State<WeeklyReviewScreen>{
      }
      return false;
    }finally{if(mounted)setState(()=>busy=false);}
+ }
+ Future<void> exitReview()async{
+   if(busy||allowExit)return;
+   if(!await saveStep()||!mounted)return;
+   setState(()=>allowExit=true);
+   Navigator.of(context).pop();
  }
  Future<void> changeStep(int n)async{
    if(!await saveStep()||!mounted)return;
@@ -212,7 +238,8 @@ class _WeeklyReviewScreenState extends State<WeeklyReviewScreen>{
    try{
      final old=widget.store.week(widget.reviewWeek);
      await widget.store.saveWeek(widget.reviewWeek,
-       old.copyWith(reviewCompletedAt:DateTime.now()));
+       old.copyWith(reviewCompletedAt:DateTime.now(),
+         reviewPlanningWeekKey:AgendaStore.dateKey(widget.planWeek)));
      await WeeklyReviewReminders.reconcile(widget.store);
      if(mounted)setState(()=>finished=true);
    }catch(_){if(mounted){
@@ -227,7 +254,7 @@ class _WeeklyReviewScreenState extends State<WeeklyReviewScreen>{
    final other=DateTime(current.year,current.month,current.day+delta*7);
    Navigator.pushReplacement<void,void>(context,MaterialPageRoute(builder:(_)=>
      WeeklyReviewScreen(store:widget.store,reviewWeek:other,
-       planWeek:DateTime(other.year,other.month,other.day+7))));
+       planWeek:wrPlanningWeekFor(widget.store,other))));
  }
  Future<void> useMemory(String text)async{
    if(best.text.trim().isNotEmpty){
@@ -251,7 +278,13 @@ class _WeeklyReviewScreenState extends State<WeeklyReviewScreen>{
        memories.add(journal.beautiful.trim());
      }
    }
-   return Scaffold(appBar:AppBar(title:Text(wrText(c,'week'))),
+   return PopScope<void>(
+     canPop:allowExit,
+     onPopInvokedWithResult:(didPop,result){
+       if(!didPop){unawaited(exitReview());}
+     },
+     child:Scaffold(appBar:AppBar(title:Text(wrText(c,'week')),
+       leading:BackButton(onPressed:()=>exitReview())),
      body:SafeArea(child:AnnaJournalContent(child:AnnaMotionReveal(token:step,axis:Axis.vertical,child:ListView(
        padding:const EdgeInsets.symmetric(vertical:14),children:finished?[
          AnnaJournalCard(hero:true,child:Column(children:[
@@ -259,7 +292,7 @@ class _WeeklyReviewScreenState extends State<WeeklyReviewScreen>{
            const SizedBox(height:12),
            Text(wrText(c,'saved'),style:AnnaJournalTypography.editorial(c,size:26)),
            const SizedBox(height:15),
-           FilledButton(onPressed:()=>Navigator.pop(c),child:Text(wrText(c,'close'))),
+           FilledButton(onPressed:()=>exitReview(),child:Text(wrText(c,'close'))),
            TextButton(onPressed:()=>setState(()=>finished=false),
              child:Text(wrText(c,'reopen'))),
          ])),
@@ -344,7 +377,7 @@ class _WeeklyReviewScreenState extends State<WeeklyReviewScreen>{
          const SizedBox(height:17),
          Row(children:[
            Expanded(child:OutlinedButton(onPressed:busy?null:
-             ()=>step==0?Navigator.pop(c):changeStep(step-1),
+             ()=>step==0?exitReview():changeStep(step-1),
              child:Text(wrText(c,'back')))),
            const SizedBox(width:8),
            Expanded(child:FilledButton(onPressed:busy?null:
@@ -355,7 +388,7 @@ class _WeeklyReviewScreenState extends State<WeeklyReviewScreen>{
            MaterialPageRoute(builder:(_)=>WeeklyReviewArchivePage(store:widget.store))),
            child:Text(wrText(c,'archive'))),
        ],
-     )))));
+     ))))));
  }
 }
 
@@ -394,7 +427,7 @@ class WeeklyReviewArchivePage extends StatelessWidget{
                trailing:const Icon(Icons.chevron_right),
                onTap:()=>Navigator.push<void>(c,MaterialPageRoute(builder:(_)=>
                  WeeklyReviewScreen(store:store,reviewWeek:monday,
-                   planWeek:DateTime(monday.year,monday.month,monday.day+7)))),
+                   planWeek:wrPlanningWeekFor(store,monday)))),
              ))),
          ],
        ])));
