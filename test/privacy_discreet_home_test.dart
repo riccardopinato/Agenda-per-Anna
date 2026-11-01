@@ -118,7 +118,7 @@ void main() {
     ));
     expect(find.text('Private conversation'), findsNothing);
     expect(find.text('Shared conversation'), findsNothing);
-    expect(find.text('Contenuto riservato'), findsNWidgets(2));
+    expect(find.text('Sensitive content'), findsNWidgets(2));
     expect(find.text('19:00'), findsNothing);
     expect(find.text('20:30'), findsNothing);
     await tester.pumpWidget(const SizedBox.shrink());
