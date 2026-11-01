@@ -1373,10 +1373,7 @@ Future<void> openItemEditor(
                       AnnaStrings.of(context).languageCode, 'check'),
                       key: const ValueKey('b1-editor-preview'),
                       style: Theme.of(context).textTheme.bodySmall),
-                    Text(naturalEventLabel(
-                      AnnaStrings.of(context).languageCode, 'timezone') +
-                        ': ' + DateTime(date.year, date.month, date.day,
-                          start!.hour, start!.minute).timeZoneName,
+                    Text('${naturalEventLabel(AnnaStrings.of(context).languageCode, 'timezone')}: ${DateTime(date.year, date.month, date.day, start!.hour, start!.minute).timeZoneName}',
                       style: Theme.of(context).textTheme.bodySmall),
                   ],
                   const SizedBox(height: 10),
