@@ -5,7 +5,7 @@ _Aggiornamento post PR #186: A1 source MERGED; F0 USER_ATTESTED_GENERAL_PASS; al
 
 
 
-**Aggiornamento dopo PR #188:** A2 CAP-0003 e' SOURCE MERGED su main al commit \`31500ea9687680f3159f45ff1d4dbeb9bc53ae22\`. L'APK +115 precede A1+A2 e NON le contiene. Il candidato \`1.0.0-rc.6+116\` (build number 116) e' predisposto in questa release PR, e sara' considerato ARTIFACT BUILT solo dopo il successo del workflow stabile su esatto source SHA; [gate fisico v116](V116_ANDROID_PHYSICAL_GATE.md). La wave B1 resta pianificata.
+**Aggiornamento dopo PR #188:** A2 CAP-0003 e' SOURCE MERGED su main al commit `31500ea9687680f3159f45ff1d4dbeb9bc53ae22`. L'APK +115 precede A1+A2 e NON le contiene. Il candidato `1.0.0-rc.6+116` (build number 116) e' predisposto in questa release PR, e sara' considerato ARTIFACT BUILT solo dopo il successo del workflow stabile su esatto source SHA; [gate fisico v116](V116_ANDROID_PHYSICAL_GATE.md). La wave B1 resta pianificata.
 
 ## Fonti, baseline e competenze
 
