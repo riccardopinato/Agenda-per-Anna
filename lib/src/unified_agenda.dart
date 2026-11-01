@@ -289,14 +289,16 @@ class UnifiedAgendaTile extends StatelessWidget {
         trailing: PopupMenuButton<String>(
           tooltip: AnnaStrings.of(context).d3('editor_actions'),
           onSelected: (value) async {
+            if (value == 'edit') {
+              await openUnifiedAgendaEntry(context, store, entry);
+              return;
+            }
             if (shared.isSensitive &&
                 !await requestSensitiveItemAccess(context, store)) {
               return;
             }
             if (!context.mounted) return;
-            if (value == 'edit') {
-              await openUnifiedAgendaEntry(context, store, entry);
-            } else if (value == 'private') {
+            if (value == 'private') {
               await _moveSharedAgendaEntryToPrivate(context, store, entry);
             } else if (value == 'delete') {
               await _deleteSharedAgendaEntry(context, store, entry);
