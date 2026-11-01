@@ -104,12 +104,8 @@ class EventTile extends StatelessWidget {
               ),
           ],
         ),
-        onTap: () async {
-          if (item.isSensitive &&
-              !await requestSensitiveItemAccess(context, store)) { return; }
-          if (!context.mounted) return;
-          await openItemEditor(context, store, item.date, existing: item);
-        },
+        onTap: () => openItemEditor(
+          context, store, item.date, existing: item),
         trailing: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -1219,7 +1215,12 @@ Future<void> openItemEditor(
   TimeOfDay? initialTime,
   ItemType? initialType,
   AgendaItem? existing,
+  bool sensitiveAccessGranted = false,
 }) async {
+  if (existing?.isSensitive == true && !sensitiveAccessGranted) {
+    if (!await requestSensitiveItemAccess(context, store)) return;
+    if (!context.mounted) return;
+  }
   final title = TextEditingController(text: existing?.title ?? '');
   final note = TextEditingController(text: existing?.note ?? '');
   DateTime date = existing?.date ?? initialDate;
