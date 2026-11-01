@@ -127,6 +127,18 @@ void main() {
     expect(archive, contains('if (item.isSensitive || item.date.isAfter(end)) continue;'));
   });
 
+  test('archive excludes the contents of a sensitive personal appointment', () {
+    final store = AgendaStore();
+    store.items.add(privateEvent(isSensitive: true));
+    final matches = store.lifeArchiveEntries(
+      through: DateTime(2027),
+      query: 'Private conversation',
+    );
+    expect(matches.where((entry) => entry.kind == LifeArchiveKind.agenda),
+        isEmpty);
+    store.dispose();
+  });
+
   test('filter label is Personale, not a security claim', () {
     final code = File('lib/src/localization_d3.dart').readAsStringSync();
     expect(code, contains('"it": "Personale"'));
