@@ -527,6 +527,13 @@ const Map<String, Map<String, String>> _d3Catalog = {
   "editor_dayBefore": <String, String>{"en": "1 day before", "it": "1 giorno prima", "es": "1 día antes", "fr": "1 jour avant", "pt": "1 dia antes"},
   "editor_duplicate": <String, String>{"en": "Duplicate", "it": "Duplica", "es": "Duplicar", "fr": "Dupliquer", "pt": "Duplicar"},
   "editor_monthClosing": <String, String>{"en": "Month closing", "it": "Chiusura del mese", "es": "Cierre del mes", "fr": "Clôture du mois", "pt": "Fecho do mês"},
+  "privacy_personalFilter": <String, String>{"en": "Personal", "it": "Personale", "es": "Personal", "fr": "Personnel", "pt": "Pessoal"},
+  "privacy_sensitive": <String, String>{"en": "Sensitive content", "it": "Contenuto riservato", "es": "Contenido reservado", "fr": "Contenu confidentiel", "pt": "Conteúdo reservado"},
+  "privacy_markSensitive": <String, String>{"en": "Hide this item's preview", "it": "Nascondi anteprima di questo elemento", "es": "Ocultar vista previa", "fr": "Masquer l'aperçu", "pt": "Ocultar pré-visualização"},
+  "privacy_discreet": <String, String>{"en": "Discreet home", "it": "Home discreta", "es": "Inicio discreto", "fr": "Accueil discret", "pt": "Início discreto"},
+  "privacy_discreetHint": <String, String>{"en": "Hide home previews, even from shared calendars", "it": "Nascondi le anteprime personali e condivise nella Home", "es": "Oculta vistas previas personales y compartidas", "fr": "Masquer les aperçus personnels et partagés", "pt": "Ocultar as pré-visualizações pessoais e partilhadas"},
+  "privacy_pinRequired": <String, String>{"en": "Set an app PIN in Settings to open sensitive entries. This masks previews; it does not encrypt calendar data.", "it": "Imposta un PIN nelle Impostazioni per aprire elementi riservati. La mascheratura non cifra i dati del calendario.", "es": "Configura un PIN para abrir entradas reservadas. Ocultar no cifra los datos.", "fr": "Définissez un PIN pour ouvrir les éléments réservés. Le masquage ne chiffre pas les données.", "pt": "Configure um PIN para abrir itens reservados. Ocultar não cifra os dados."},
+  "privacy_enterPin": <String, String>{"en": "Enter app PIN to open", "it": "Inserisci il PIN dell'app per aprire", "es": "Introduce el PIN de la app", "fr": "Saisissez le code PIN", "pt": "Introduza o PIN"},
   "unified_all": <String, String>{"en": "All", "it": "Tutto", "es": "Todo", "fr": "Tout", "pt": "Tudo"},
   "unified_private": <String, String>{"en": "Private", "it": "Privato", "es": "Privado", "fr": "Privé", "pt": "Privado"},
   "unified_externalHidden": <String, String>{"en": "External event hidden", "it": "Evento esterno nascosto", "es": "Evento externo oculto", "fr": "Événement externe masqué", "pt": "Evento externo oculto"},
@@ -1029,7 +1036,7 @@ extension AnnaD3Strings on AnnaStrings {
 
   String unifiedFilterLabel(AgendaContentFilter value) => switch (value) {
         AgendaContentFilter.all => d3('unified_all'),
-        AgendaContentFilter.privateOnly => d3('unified_private'),
+        AgendaContentFilter.privateOnly => d3('privacy_personalFilter'),
         AgendaContentFilter.sharedOnly => d3('sharedSpace'),
       };
 
