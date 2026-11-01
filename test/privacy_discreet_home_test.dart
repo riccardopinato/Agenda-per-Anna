@@ -119,6 +119,14 @@ void main() {
     expect(store, contains('_reminderBody(minutes, safeReminderTitle)'));
   });
 
+  test('alternative time views and archive cannot expose sensitive titles', () {
+    final planner = File('lib/src/planner_views.dart').readAsStringSync();
+    final archive = File('lib/src/life_archive_domain.dart').readAsStringSync();
+    expect(planner, contains('!isMaskedAgendaEntry(entry)'));
+    expect(planner, contains('events.where((item) => !item.isSensitive).toList()'));
+    expect(archive, contains('if (item.isSensitive || item.date.isAfter(end)) continue;'));
+  });
+
   test('filter label is Personale, not a security claim', () {
     final code = File('lib/src/localization_d3.dart').readAsStringSync();
     expect(code, contains('"it": "Personale"'));
