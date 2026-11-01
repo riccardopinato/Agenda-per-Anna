@@ -1,6 +1,10 @@
 part of '../main.dart';
 
 const Map<String, Map<String, String>> _d3Catalog = {
+  'v107EventMemoryAction': <String, String>{'en': 'Keep a memory', 'it': 'Conserva un ricordo', 'es': 'Guardar un recuerdo', 'fr': 'Garder un souvenir', 'pt': 'Guardar uma memória'},
+  'v107EventMemorySaved': <String, String>{'en': 'Memory saved in your diary', 'it': 'Ricordo salvato nel diario', 'es': 'Recuerdo guardado en el diario', 'fr': 'Souvenir enregistré dans le journal', 'pt': 'Memória guardada no diário'},
+  'v107EventMemorySaveFailed': <String, String>{'en': 'Could not save the memory. Your draft is still available.', 'it': 'Impossibile salvare il ricordo. La bozza è ancora disponibile.', 'es': 'No se pudo guardar el recuerdo. El borrador sigue disponible.', 'fr': 'Impossible d’enregistrer le souvenir. Le brouillon est conservé.', 'pt': 'Não foi possível guardar a memória. O rascunho continua disponível.'},
+  'v107EventMemorySource': <String, String>{'en': 'From appointment', 'it': 'Da appuntamento', 'es': 'De la cita', 'fr': 'Du rendez-vous', 'pt': 'De compromisso'},
   "ui5Commitments": <String, String>{"en": "Commitments", "it": "Impegni", "es": "Compromisos", "fr": "Engagements", "pt": "Compromissos"},
   "ui5Activities": <String, String>{"en": "Activities", "it": "Attività", "es": "Actividades", "fr": "Activités", "pt": "Atividades"},
   "ui5Wellbeing": <String, String>{"en": "Wellbeing", "it": "Benessere", "es": "Bienestar", "fr": "Bien-être", "pt": "Bem-estar"},
