@@ -1,5 +1,29 @@
 # Anna's Diary — Roadmap
 
+## CAP-0111 Weekly Review — chiusura funzionale, 1 novembre 2026
+
+**Stato di prodotto: CLOSED — IMPLEMENTED / USER-ACCEPTED GENERAL PASS.**
+Le 10 decisioni visuali approvate sono integrate nella release firmata **Anna's Diary `1.0.0-rc.6+118`**. PR [#201](https://github.com/riccardopinato/Agenda-per-Anna/pull/201) **MERGED**, sorgente canonico `main@b05c6c3cad1a0dbb7c66ba639ad8c4d0612cf96b`. Build firmata ARM64 [Actions #41317266363](https://github.com/riccardopinato/Agenda-per-Anna/actions/runs/41317266363) **SUCCESS**, artefatto `annas-diary-light-arm64` ID **13087996964**. Development checks (analyze/test/Web), Web deploy e Android native compile su `main` sono **SUCCESS**; AppLab Source Gate sul PR head finale `44b891b4` **SUCCESS**.
+
+**Accettazione utente in chat**: dopo aver provato la nuova app, l'utente ha dichiarato «Sembra buono nell'app, mi piace» e successivamente «Sembra funzionare tutto»; ha quindi autorizzato esplicitamente la chiusura della capability. È una **USER_ATTESTED_GENERAL_PASS**, non una certificazione fisica tecnica completa. Restano **NOT VERIFIED** i singoli gate privi di prove circostanziate: prova upgrade in-place con matrice dati, backup/restore, reminder settimanale su dispositivo e soppressione effettiva, isolamento/sync multi-account e test su due dispositivi, certificazione firma su telefono e distribuzione Google Play. Non riaprire CAP-0111 per solo polishing senza nuovo problema reale. Le eventuali anomalie di test vanno registrate separatamente nella QA della release +118.
+
+**Ambito completato**: card Home Oggi adattiva (Timeline/Per te/Esplora preservati), task summary privato basato sullo stato corrente, scelta di ricordi e riflessioni, focus e tre priorità riusando `WeekData`, conclusione morbida reversibile, storico mensile, reminder locale opt-in default OFF, localizzazione nelle cinque lingue e motion/accessibilità. Nessun nuovo store o AI obbligatoria. Riferimento: [WEEKLY_REVIEW_10OF10_CONTRACT.md](WEEKLY_REVIEW_10OF10_CONTRACT.md).
+
+### Priorità operative dopo CAP-0111
+
+| Ordine | Deliverable | Stato verificato | Descrizione / confine |
+| --- | --- | --- | --- |
+| 1 | **QA release +118 e chiusura evidenze fisiche** | **USER_ATTESTED_GENERAL_PASS**, matrice tecnica **NOT VERIFIED** | Identificare APK +118 esatto, salvaguardare dati e provare installazione in-place, backup/restore, reminder, Vault, account/QR e flussi Android; distinguere esito per scenario. L'issue [#181](https://github.com/riccardopinato/Agenda-per-Anna/issues/181) cita il vecchio +115 e non prova la +118: aggiornare/riconciliare l'evidenza senza cancellare la storia. |
+| 2 | **v1.07-C1 — CAP-0077 Permission/Capability Health** | **PLANNED** | Diagnostica veritiera in Impostazioni per permessi e servizi realmente disponibili (notifiche, calendario, accesso nativo), senza confondere consenso, configurazione e consegna effettiva. Offline-first, nessun permesso forzato. |
+| 3 | **v1.07-C2 — CAP-0069 Visual Regression** | **PLANNED** | Ampliare le baseline già esistenti con screenshot deterministici per tema, palette/HSV, 5 lingue, testo grande, dimensioni, motion ridotto; proteggere Cassaforte e contenuti privati. QA source, non certificazione dispositivo. |
+| 4 | **Privacy UX — PR #200** | **DRAFT / SECURITY GATE OPEN — DO NOT MERGE** | Separare «Personale» da «Riservato», mascheratura Home e shared preview, controlli PIN/biometria. Prima di qualunque merge verificare tutte le vie di fuga dati: calendari esterni già esportati, notifiche consegnate, backup, media, app switcher e accessibilità; non confondere mascheratura con cifratura. |
+| 5 | **Google Calendar diretto — PR #199** | **STAGING ONLY / DRAFT / DO NOT MERGE** | Client API preparato fuori dal codice di produzione. Servono configurazione Google Cloud, OAuth, token sicuri, test su account reale, deduplica con Android Calendar Provider e autorizzazione esplicita prima dell'attivazione. |
+| Differito | **v1.06 Ecosystem Expansion** | **DEFERRED** | Pairing reale con app esterne e prove cross-device/cross-app. Non avviarlo come conseguenza della chiusura CAP-0111. |
+| Esterno | **Google Play / RevenueCat e hardening Supabase** | **PROVE/ADMIN ACTION PENDING** | Billing purchase/restore e distribuzione Play richiedono test esterni; issue [#182](https://github.com/riccardopinato/Agenda-per-Anna/issues/182) per leaked-password protection e pg_net resta una distinta azione amministrativa, non automaticamente risolta dalla release. |
+
+**Storico già integrato:** v1.07-A1/A2 CAP-0014 e CAP-0003; v1.07-B1/B2/B3 CAP-0002, CAP-0001 e CAP-0005 estesa. Il precedente testo `PLANNED` nel piano iniziale è uno snapshot pre-merge, non lo stato corrente. Prossima esecuzione sorgente consigliata: **C1, poi C2**, con QA fisico +118 separato. I PR #199 e #200 restano intenzionalmente bloccati.
+
+
 ## Aggiornamento operativo v1.07-B3 — APK firmato +117 (1 novembre 2026)
 
 - **Release Android:** `1.0.0-rc.6+117` (`versionCode 117`) **ARTIFACT BUILT / SIGNED**. Source immutabile `main@8824f0dcf427d67aa2e069da6fd2dd02bc6cb1e1`, workflow stabile [#41269542695](https://github.com/riccardopinato/Agenda-per-Anna/actions/runs/41269542695) **SUCCESS**, artefatto `annas-diary-light-arm64` (ID GitHub **13068413157**, 20.508.484 byte ZIP). Include B1 parser locale, B2 slot liberi, B3 sincronizzazione Android opt-in; l'APK +116 precedente non le include tutte.

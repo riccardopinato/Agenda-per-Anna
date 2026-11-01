@@ -1,4 +1,9 @@
 # v1.07 Daily-use UX — piano di implementazione capability
+
+## Aggiornamento di stato — post CAP-0111 (1 novembre 2026)
+
+Il piano qui sotto conserva intenzionalmente i suoi snapshot iniziali; lo stato operativo corrente e' in [ROADMAP.md](ROADMAP.md). **A1 CAP-0014**, **A2 CAP-0003**, **B1 CAP-0002**, **B2 CAP-0001** e **B3 CAP-0005 estesa** risultano implementati e uniti in `main` con i rispettivi gate sorgente. **CAP-0111 Weekly Review** e' **CLOSED / USER-ACCEPTED GENERAL PASS** sulla release firmata `1.0.0-rc.6+118`, PR #201, source `b05c6c3`, workflow firmato #41317266363. La matrice fisica +118 resta **NOT VERIFIED** per gli scenari non documentati. **C1 CAP-0077** e **C2 CAP-0069** rimangono le prossime fasi **PLANNED**, da avviare con PR separate. Privacy PR #200 resta DRAFT non mergeabile operativamente per security review; Google Calendar diretto PR #199 resta STAGING ONLY/DRAFT, vietato merge senza nuovo gate/autorizzazione; v1.06 Ecosystem Expansion rimane DEFERRED.
+
 _Aggiornamento post PR #186: A1 source MERGED; F0 USER_ATTESTED_GENERAL_PASS; altre wave ancora PLANNED._
 
 **Stato aggiornato 2026-11-01:** l'utilizzatore riferisce **«collaudo fatto, tutto ok»** per l'APK firmato `+115`, senza fornire identificativi del dispositivo, impronte digitali o risultati individuali per scenario. Questa comunicazione attesta soddisfazione nell'uso reale; non autorizza a compilare come PASS la tabella dei test fisici che resta senza log. La PR A1 e stata integrata su `main@308faebb7ed06873c244103f107192d8d25a4b18` dopo CI/QA sorgente verde. **A1 non e contenuta nell'APK +115**: richiede successiva build >115 e collaudo sul nuovo artefatto. **Prossima wave: A2**.
