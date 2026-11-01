@@ -346,7 +346,7 @@ Future<void> openUnifiedAgendaEntry(
   AgendaStore store,
   UnifiedAgendaEntry entry,
 ) async {
-  if (isMaskedAgendaEntry(entry) &&
+  if (entry.sharedEntry?.isSensitive == true &&
       !await requestSensitiveItemAccess(context, store)) { return; }
   if (!context.mounted) return;
   if (entry.privateItem != null) {
@@ -418,6 +418,8 @@ Future<void> openUnifiedAgendaEntry(
     pinAvailable: store.preferences.privacyLockEnabled &&
         store.preferences.pinHash != null &&
         store.preferences.pinSalt != null,
+    sensitiveAccessGranted: true,
+    store: store,
   );
   if (result == null) return;
   await _saveSharedAgendaEntry(store, entry.space!.id, result);
@@ -763,6 +765,7 @@ Future<void> openUnifiedItemComposer(
     pinAvailable: store.preferences.privacyLockEnabled &&
         store.preferences.pinHash != null &&
         store.preferences.pinSalt != null,
+    store: store,
   );
   if (result == null) return;
 
