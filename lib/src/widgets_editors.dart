@@ -1228,6 +1228,9 @@ Future<void> openItemEditor(
   int recurrenceCount =
       existing?.isRecurring == true ? max(2, existing!.recurrenceCount) : 4;
   RecurringEditScope recurringEditScope = RecurringEditScope.single;
+  bool naturalDraftApplied = false;
+  final accountAtOpen = store.activeAccountId;
+  bool saving = false;
 
   AgendaItem buildItem({
     required String id,
@@ -1337,6 +1340,44 @@ Future<void> openItemEditor(
                   onSelectionChanged: (v) => setLocal(() => type = v.first),
                 ),
                 const SizedBox(height: 14),
+                if (existing == null && type == ItemType.appointment) ...[
+                  OutlinedButton.icon(
+                    key: const ValueKey('b1-natural-open'),
+                    icon: const Icon(Icons.edit_calendar_outlined),
+                    label: Text(naturalEventLabel(
+                      AnnaStrings.of(context).languageCode, 'action')),
+                    onPressed: () async {
+                      final draft = await showNaturalEventParser(context);
+                      if (draft == null || !sheetContext.mounted) return;
+                      if (store.activeAccountId != accountAtOpen) return;
+                      setLocal(() {
+                        title.text = draft.title;
+                        date = draft.date;
+                        start = draft.start;
+                        end = _timePlusMinutes(
+                          draft.start, store.preferences.defaultEventMinutes);
+                        if (draft.reminderMinutesBefore != null) {
+                          primaryReminder = draft.reminderMinutesBefore!;
+                          if (secondaryReminder == primaryReminder) {
+                            secondaryReminder = -1;
+                          }
+                        }
+                        recurrence = draft.recurrence;
+                        naturalDraftApplied = true;
+                      });
+                    },
+                  ),
+                  if (naturalDraftApplied) ...[
+                    const SizedBox(height: 6),
+                    Text(naturalEventLabel(
+                      AnnaStrings.of(context).languageCode, 'check'),
+                      key: const ValueKey('b1-editor-preview'),
+                      style: Theme.of(context).textTheme.bodySmall),
+                    if (start != null) Text('${naturalEventLabel(AnnaStrings.of(context).languageCode, 'timezone')}: ${DateTime(date.year, date.month, date.day, start!.hour, start!.minute).timeZoneName}',
+                      style: Theme.of(context).textTheme.bodySmall),
+                  ],
+                  const SizedBox(height: 10),
+                ],
                 TextField(
                   controller: title,
                   autofocus: existing == null,
@@ -1456,6 +1497,7 @@ Future<void> openItemEditor(
                     children: [
                       Expanded(
                         child: DropdownButtonFormField<int>(
+                          key: ValueKey('editor-primary-reminder-$primaryReminder'),
                           initialValue: primaryReminder,
                           decoration: InputDecoration(
                             labelText: AnnaStrings.of(context).d3('editor_reminder1'),
@@ -1475,6 +1517,7 @@ Future<void> openItemEditor(
                       const SizedBox(width: 8),
                       Expanded(
                         child: DropdownButtonFormField<int>(
+                          key: ValueKey('editor-secondary-reminder-$secondaryReminder'),
                           initialValue: secondaryReminder,
                           decoration: InputDecoration(
                             labelText: AnnaStrings.of(context).d3('editor_reminder2'),
@@ -1613,10 +1656,11 @@ Future<void> openItemEditor(
                       flex: 2,
                       child: FilledButton.icon(
                         icon: const Icon(Icons.check),
-                        onPressed: () async {
+                        onPressed: saving ? null : () async {
                           final t = title.text.trim();
-                          if (t.isEmpty) return;
-
+                          if (t.isEmpty || store.activeAccountId != accountAtOpen) return;
+                          setLocal(() => saving = true);
+                          try {
                           final base = buildItem(
                             id: existing?.id ?? const Uuid().v4(),
                             itemDate: date,
@@ -1642,6 +1686,15 @@ Future<void> openItemEditor(
 
                           if (sheetContext.mounted) {
                             Navigator.pop(sheetContext);
+                          }
+                          } catch (_) {
+                            if (sheetContext.mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(content: Text(
+                                  AnnaStrings.of(context).d3('templateSaveFailed'))));
+                            }
+                          } finally {
+                            if (sheetContext.mounted) setLocal(() => saving = false);
                           }
                         },
                         label: Text(
