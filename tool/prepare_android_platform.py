@@ -635,7 +635,7 @@ class MainActivity : FlutterFragmentActivity() {
         if (!writable) throw SecurityException("destination calendar not writable")
 
         val marker = MessageDigest.getInstance("SHA-256")
-            .digest(ownerKey.toByteArray(Charsets.UTF_8))
+            .digest((ownerKey + "|" + calendarId).toByteArray(Charsets.UTF_8))
             .joinToString("") { byte -> "%02x".format(byte.toInt() and 0xff) }
         val token = "[AnnaDiary:${marker}]"
         val prefs = getSharedPreferences("anna_calendar_owned_events_v1", MODE_PRIVATE)
