@@ -206,6 +206,18 @@ class SettingsHubScreen extends StatelessWidget {
                       ),
                       const Divider(height: 1),
                       _tile(
+                        id: 'settings-hub-capability-health',
+                        domain: AnnaVisualDomain.ecosystem,
+                        icon: Icons.health_and_safety_outlined,
+                        title: capabilityHealthCopy(strings.languageCode, 'title'),
+                        subtitle: capabilityHealthCopy(strings.languageCode, 'intro'),
+                        onTap: () => _open(
+                          context,
+                          CapabilityHealthScreen(store: store),
+                        ),
+                      ),
+                      const Divider(height: 1),
+                      _tile(
                         id: 'settings-hub-backup',
                         domain: AnnaVisualDomain.vault,
                         icon: Icons.backup_outlined,

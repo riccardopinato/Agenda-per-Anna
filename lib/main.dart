@@ -62,6 +62,7 @@ part 'src/event_preparation.dart';
 part 'src/natural_event_parser.dart';
 part 'src/calendar_free_slots.dart';
 part 'src/android_calendar_sync.dart';
+part 'src/capability_health.dart';
 part 'src/home_widget_bridge.dart';
 part 'src/recurring_life_domain.dart';
 part 'src/organization_domain.dart';
