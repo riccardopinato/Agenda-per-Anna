@@ -123,6 +123,7 @@ void main() {
     final planner = File('lib/src/planner_views.dart').readAsStringSync();
     final archive = File('lib/src/life_archive_domain.dart').readAsStringSync();
     expect(planner, contains('!isMaskedAgendaEntry(entry)'));
+    expect(planner, contains('if (isMaskedAgendaEntry(value)) {'));
     expect(planner, contains('events.where((item) => !item.isSensitive).toList()'));
     expect(archive, contains('if (item.isSensitive || item.date.isAfter(end)) continue;'));
   });
