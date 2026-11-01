@@ -37,7 +37,7 @@ class EventTile extends StatelessWidget {
                 activeColor: color,
                 onChanged: (_) async {
                   if (item.isSensitive &&
-                      !await requestSensitiveItemAccess(context, store)) return;
+                      !await requestSensitiveItemAccess(context, store)) { return; }
                   if (!context.mounted) return;
                   await store.toggle(item.id);
                 },
@@ -106,7 +106,7 @@ class EventTile extends StatelessWidget {
         ),
         onTap: () async {
           if (item.isSensitive &&
-              !await requestSensitiveItemAccess(context, store)) return;
+              !await requestSensitiveItemAccess(context, store)) { return; }
           if (!context.mounted) return;
           await openItemEditor(context, store, item.date, existing: item);
         },
@@ -117,7 +117,7 @@ class EventTile extends StatelessWidget {
               tooltip: AnnaStrings.of(context).lifeBridgeCopyPayload,
               onPressed: () async {
                 if (item.isSensitive &&
-                    !await requestSensitiveItemAccess(context, store)) return;
+                    !await requestSensitiveItemAccess(context, store)) { return; }
                 if (!context.mounted) return;
                 copyLifeBridgePayload(
                   context,
