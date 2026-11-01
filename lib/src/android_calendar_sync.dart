@@ -1,15 +1,10 @@
 part of '../main.dart';
 
-/// Pure payload projection, intentionally omitting diary notes, private
-/// attachments, reminders and all shared-space fields.
+/// Pure payload projection. Does not export notes, media or shared content.
 Map<String, Object?>? androidCalendarEventPayload(
-  AgendaItem item, {
-  required String scope,
-  required String calendarId,
+  AgendaItem item, {required String scope, required String calendarId,
 }) {
-  if (item.type != ItemType.appointment || item.title.trim().isEmpty) {
-    return null;
-  }
+  if (item.type != ItemType.appointment || item.title.trim().isEmpty) return null;
   final start = item.start;
   final end = item.end;
   if (start != null && end == null) return null;
@@ -26,9 +21,15 @@ Map<String, Object?>? androidCalendarEventPayload(
           item.date.day + (overnight ? 1 : 0), end!.hour, end.minute);
   return <String, Object?>{
     'calendarId': calendarId,
-    'ownerKey': '
-/// App-owned private appointments only. The authoritative data stays in
-/// AgendaStore; external events are never imported or silently deleted.
+    'ownerKey': '${scope}:${item.id}',
+    'title': item.title,
+    'startMs': begins.millisecondsSinceEpoch,
+    'endMs': finishes.millisecondsSinceEpoch,
+    'allDay': allDay,
+  };
+}
+
+/// B3 opt-in outbound only. AgendaStore is the source of truth.
 class AndroidCalendarSyncService extends ChangeNotifier
     with WidgetsBindingObserver {
   AndroidCalendarSyncService._();
