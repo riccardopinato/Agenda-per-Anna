@@ -1,4 +1,7 @@
 import 'dart:io';
+import 'dart:convert';
+import 'package:crypto/crypto.dart';
+import 'package:agenda_per_anna/external_calendar_service.dart';
 import 'package:agenda_per_anna/main.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -79,6 +82,54 @@ void main() {
       scope: 'guest', calendarId: '4')!;
     expect(spring['startMs'], DateTime(2026, 3, 29, 1).millisecondsSinceEpoch);
     expect(spring['endMs'], DateTime(2026, 3, 29, 4).millisecondsSinceEpoch);
+  });
+
+  test('B3 suppresses only the current-account owned external duplicate', () {
+    final store = AgendaStore();
+    store.items.add(appointment(
+      start: const TimeOfDay(hour: 10, minute: 0),
+      end: const TimeOfDay(hour: 11, minute: 0)));
+    final owner = sha256.convert(utf8.encode('guest:event-1|cal-9'));
+    ExternalCalendarEvent external(String calendar, String marker) =>
+        ExternalCalendarEvent(
+          id: 'external-event', calendarId: calendar,
+          calendarName: 'Device', title: 'Dentist',
+          description: '[AnnaDiary:
+    final sync = File('lib/src/android_calendar_sync.dart').readAsStringSync();
+    final ui = File('lib/src/screens/android_calendar_sync_settings.dart').readAsStringSync();
+    final native = File('tool/prepare_android_platform.py').readAsStringSync();
+    final main = File('lib/main.dart').readAsStringSync();
+    expect(sync, contains('prefs.getBool('));
+    expect(sync, contains('store.agendaRevision.addListener(_schedule)'));
+    expect(sync, contains('store.accountRevision.addListener(_onAccountChanged)'));
+    expect(sync, contains('if (_working) {'));
+    expect(sync, contains('calendar_owned_event_conflicts'));
+    expect(sync, contains('isOwnedAndroidCalendarDuplicate('));
+    expect(sync, contains('!item.date.isBefore(from)'));
+    expect(sync, contains('items.take(200)'));
+    expect(sync, isNot(contains('VaultService.instance')));
+    expect(sync, isNot(contains('store.upsert(')));
+    expect(ui, contains("ValueKey('b3-android-calendar-enabled')"));
+    expect(ui, contains('requestWriteAccess()'));
+    expect(native, contains('android.permission.WRITE_CALENDAR'));
+    expect(native, contains('"upsertOwnedEvent"'));
+    expect(native, contains('external_event_missing_or_moved'));
+    expect(native, contains('duplicate_external_event_marker'));
+    expect(native, contains('ownerKey + "|" + calendarId'));
+    expect(main, contains("part 'src/android_calendar_sync.dart';"));
+  });
+}
+ + '{marker}]',
+          location: '', start: DateTime(2026, 11, 7, 10),
+          end: DateTime(2026, 11, 7, 11), allDay: false,
+        );
+    expect(isOwnedAndroidCalendarDuplicate(
+      store, external('cal-9', owner.toString())), true);
+    expect(isOwnedAndroidCalendarDuplicate(
+      store, external('cal-10', owner.toString())), false);
+    expect(isOwnedAndroidCalendarDuplicate(
+      store, external('cal-9', 'another-owner')), false);
+    store.dispose();
   });
 
   test('B3 Android provider contract and disabled by default', () {
