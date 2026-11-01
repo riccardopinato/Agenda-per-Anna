@@ -157,6 +157,10 @@ class AgendaPreferences {
   final bool morningRitualEnabled;
   final bool eveningRitualEnabled;
   final bool ritualRemindersEnabled;
+  final bool weeklyReviewReminderEnabled;
+  final int weeklyReviewReminderDay;
+  final int weeklyReviewReminderHour;
+  final int weeklyReviewReminderMinute;
   final int morningRitualHour;
   final int morningRitualMinute;
   final int eveningRitualHour;
@@ -190,6 +194,10 @@ class AgendaPreferences {
     this.morningRitualEnabled = false,
     this.eveningRitualEnabled = false,
     this.ritualRemindersEnabled = false,
+    this.weeklyReviewReminderEnabled = false,
+    this.weeklyReviewReminderDay = 7,
+    this.weeklyReviewReminderHour = 19,
+    this.weeklyReviewReminderMinute = 0,
     this.morningRitualHour = 8,
     this.morningRitualMinute = 0,
     this.eveningRitualHour = 20,
@@ -224,6 +232,10 @@ class AgendaPreferences {
     bool? morningRitualEnabled,
     bool? eveningRitualEnabled,
     bool? ritualRemindersEnabled,
+    bool? weeklyReviewReminderEnabled,
+    int? weeklyReviewReminderDay,
+    int? weeklyReviewReminderHour,
+    int? weeklyReviewReminderMinute,
     int? morningRitualHour,
     int? morningRitualMinute,
     int? eveningRitualHour,
@@ -268,6 +280,10 @@ class AgendaPreferences {
           eveningRitualEnabled ?? this.eveningRitualEnabled,
       ritualRemindersEnabled:
           ritualRemindersEnabled ?? this.ritualRemindersEnabled,
+      weeklyReviewReminderEnabled: weeklyReviewReminderEnabled ?? this.weeklyReviewReminderEnabled,
+      weeklyReviewReminderDay: (weeklyReviewReminderDay ?? this.weeklyReviewReminderDay).clamp(1, 7).toInt(),
+      weeklyReviewReminderHour: (weeklyReviewReminderHour ?? this.weeklyReviewReminderHour).clamp(0, 23).toInt(),
+      weeklyReviewReminderMinute: (weeklyReviewReminderMinute ?? this.weeklyReviewReminderMinute).clamp(0, 59).toInt(),
       morningRitualHour:
           (morningRitualHour ?? this.morningRitualHour).clamp(0, 23).toInt(),
       morningRitualMinute:
@@ -347,6 +363,10 @@ class AgendaPreferences {
         'morningRitualEnabled': morningRitualEnabled,
         'eveningRitualEnabled': eveningRitualEnabled,
         'ritualRemindersEnabled': ritualRemindersEnabled,
+        'weeklyReviewReminderEnabled': weeklyReviewReminderEnabled,
+        'weeklyReviewReminderDay': weeklyReviewReminderDay,
+        'weeklyReviewReminderHour': weeklyReviewReminderHour,
+        'weeklyReviewReminderMinute': weeklyReviewReminderMinute,
         'morningRitualHour': morningRitualHour,
         'morningRitualMinute': morningRitualMinute,
         'eveningRitualHour': eveningRitualHour,
@@ -418,6 +438,10 @@ class AgendaPreferences {
             json['eveningRitualEnabled'] as bool? ?? false,
         ritualRemindersEnabled:
             json['ritualRemindersEnabled'] as bool? ?? false,
+        weeklyReviewReminderEnabled: json['weeklyReviewReminderEnabled'] as bool? ?? false,
+        weeklyReviewReminderDay: (json['weeklyReviewReminderDay'] as num? ?? 7).toInt().clamp(1, 7).toInt(),
+        weeklyReviewReminderHour: (json['weeklyReviewReminderHour'] as num? ?? 19).toInt().clamp(0, 23).toInt(),
+        weeklyReviewReminderMinute: (json['weeklyReviewReminderMinute'] as num? ?? 0).toInt().clamp(0, 59).toInt(),
         morningRitualHour:
             (json['morningRitualHour'] as num? ?? 8).toInt().clamp(0, 23).toInt(),
         morningRitualMinute:
@@ -1722,12 +1746,14 @@ class WeekData {
   final List<String> priorities;
   final String bestThing;
   final String reflection;
+  final DateTime? reviewCompletedAt;
 
   const WeekData({
     this.focus = '',
     this.priorities = const [],
     this.bestThing = '',
     this.reflection = '',
+    this.reviewCompletedAt,
   });
 
   WeekData copyWith({
@@ -1735,16 +1761,20 @@ class WeekData {
     List<String>? priorities,
     String? bestThing,
     String? reflection,
+    DateTime? reviewCompletedAt,
+    bool clearReviewCompleted = false,
   }) {
     return WeekData(
       focus: focus ?? this.focus,
       priorities: priorities ?? this.priorities,
       bestThing: bestThing ?? this.bestThing,
       reflection: reflection ?? this.reflection,
+      reviewCompletedAt: clearReviewCompleted ? null : (reviewCompletedAt ?? this.reviewCompletedAt),
     );
   }
 
   Map<String, dynamic> toJson() => {
+        'reviewCompletedAt': reviewCompletedAt?.toIso8601String(),
         'focus': focus,
         'priorities': priorities,
         'bestThing': bestThing,
@@ -1756,6 +1786,7 @@ class WeekData {
         priorities: List<String>.from(json['priorities'] as List? ?? const []),
         bestThing: json['bestThing'] as String? ?? '',
         reflection: json['reflection'] as String? ?? '',
+        reviewCompletedAt: DateTime.tryParse(json['reviewCompletedAt'] as String? ?? ''),
       );
 }
 

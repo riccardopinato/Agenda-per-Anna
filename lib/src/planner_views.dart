@@ -615,6 +615,10 @@ class _PlannerScreenState extends State<PlannerScreen> {
                       padding: const EdgeInsets.fromLTRB(20, 14, 20, 110),
                       children: [
                         _DayOpeningCard(date: day),
+                        if (widget.embedded && isToday) ...[
+                          const SizedBox(height: 12),
+                          WeeklyReviewHomeCard(store: widget.store),
+                        ],
                         const SizedBox(height: 12),
                         AgendaContentFilterBar(store: widget.store),
                         const SizedBox(height: AnnaDesignTokens.spaceMd),
