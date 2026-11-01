@@ -143,13 +143,8 @@ class _AndroidCalendarSyncSettingsScreenState
                 ),
                 Text(_service.working
                     ? androidSyncCopy(strings, 'busy')
-                    : '${androidSyncCopy(strings, 'last')}: ' +
-                        (_service.lastSuccess == null
-                            ? androidSyncCopy(strings, 'none')
-                            : DateFormat.yMd(AnnaStrings.intlLocale(context))
-                                .add_Hm().format(_service.lastSuccess!))),
-                Text('${androidSyncCopy(strings, 'status')}: ' +
-                    '${_service.updated} / ${_service.skipped}'),
+                    : "${androidSyncCopy(strings, 'last')}: ${_service.lastSuccess == null ? androidSyncCopy(strings, 'none') : DateFormat.yMd(AnnaStrings.intlLocale(context)).add_Hm().format(_service.lastSuccess!)}"),
+                Text("${androidSyncCopy(strings, 'status')}: ${_service.updated} / ${_service.skipped}"),
                 if (_service.error != null)
                   SelectableText(
                     '${androidSyncCopy(strings, 'error')}: ${_service.error}',
