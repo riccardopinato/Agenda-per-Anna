@@ -285,7 +285,7 @@ Future<void> showCalendarFreeSlots(
       external.supported && external.enabled) {
     await external.refreshStatus();
   }
-  if (!context.mounted || store.activeAccountId != accountAtOpen) return;
+  if (!context.mounted || store.activeAccountId != accountAtOpen) { return; }
   final rangeStart = DateTime(day.year, day.month, day.day - 1);
   final rangeEnd = DateTime(day.year, day.month, day.day + 2);
   final externalReady = external.coversRange(rangeStart, rangeEnd);
