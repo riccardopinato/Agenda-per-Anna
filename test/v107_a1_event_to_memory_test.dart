@@ -118,4 +118,71 @@ void main() {
     expect(helper, contains('store.saveJournal('));
     expect(helper, isNot(contains('CloudSyncService')));
   });
+
+  test('A deleted memory keeps its original ID recoverable from Trash', () async {
+    final store = AgendaStore();
+    await store.load();
+    final item = appointment();
+    await store.upsert(item);
+    expect(await saveEventMemoryDraft(
+      store, item, 'Original memory', now: DateTime(2026, 11, 1),
+      expectedAccountId: store.activeAccountId,
+    ), isTrue);
+    final id = eventMemoryBlockId(item);
+    expect(await store.moveDiaryBlockToTrash(item.date, id), isTrue);
+    expect(eventMemoryHasRecoverableTrash(store, item), isTrue);
+    expect(await saveEventMemoryDraft(
+      store, item, 'Replacement', now: DateTime(2026, 11, 1),
+      expectedAccountId: store.activeAccountId,
+    ), isFalse);
+    final deleted = store.trash.firstWhere((e) => e.entityId == id);
+    expect(store.trashRestoreConflictReason(deleted), isNull);
+    expect(await store.restoreTrashEntry(deleted.id), isTrue);
+    expect(store.journal(item.date).blocks.single.text, 'Original memory');
+    store.dispose();
+  });
+
+  test('An entire trashed day cannot be shadowed by a new event memory', () async {
+    final store = AgendaStore();
+    await store.load();
+    final item = appointment();
+    await store.upsert(item);
+    await store.saveJournal(item.date, DayJournal(blocks: [
+      DiaryBlock(id: 'previous-day', type: DiaryBlockType.note,
+        createdAt: item.date, text: 'An existing memory'),
+    ]));
+    expect(await store.moveJournalToTrash(item.date), isTrue);
+    expect(eventMemoryHasRecoverableTrash(store, item), isTrue);
+    expect(await saveEventMemoryDraft(
+      store, item, 'Replacement', now: DateTime(2026, 11, 1),
+      expectedAccountId: store.activeAccountId,
+    ), isFalse);
+    final deleted = store.trash.firstWhere(
+      (e) => e.kind == TrashEntityKind.journal &&
+        e.entityId == AgendaStore.dateKey(item.date),
+    );
+    expect(store.trashRestoreConflictReason(deleted), isNull);
+    expect(await store.restoreTrashEntry(deleted.id), isTrue);
+    expect(store.journal(item.date).blocks.single.text, 'An existing memory');
+    store.dispose();
+  });
+
+  test('A source removed after drafting fails closed and draft recovery remains wired', () async {
+    final store = AgendaStore();
+    await store.load();
+    final item = appointment();
+    await store.upsert(item);
+    await store.deleteItem(item.id);
+    expect(await saveEventMemoryDraft(
+      store, item, 'Draft after source deletion',
+      now: DateTime(2026, 11, 1),
+      expectedAccountId: store.activeAccountId,
+    ), isFalse);
+    expect(store.journal(item.date).blocks, isEmpty);
+    final source = File('lib/src/event_memory_capture.dart').readAsStringSync();
+    expect(source, contains("'v107EventMemorySourceChanged'"));
+    expect(source, contains('draft = await showDiaryNoteEditor('));
+    store.dispose();
+  });
+
 }
