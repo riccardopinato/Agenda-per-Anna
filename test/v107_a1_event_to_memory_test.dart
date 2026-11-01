@@ -5,10 +5,15 @@ import 'package:agenda_per_anna/main.dart';
 import 'package:agenda_per_anna/media_asset_store.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:intl/date_symbol_data_local.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
+  setUpAll(() async {
+    await initializeDateFormatting('en');
+    await initializeDateFormatting('it');
+  });
   setUp(() async {
     await LocalStateStore.instance.resetForTesting();
     await MediaAssetStore.instance.resetForTesting();
