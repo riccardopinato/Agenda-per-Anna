@@ -168,6 +168,18 @@ class ExternalCalendarService extends ChangeNotifier {
       List<ExternalCalendarInfo>.unmodifiable(_calendars);
   Set<String> get selectedCalendarIds =>
       Set<String>.unmodifiable(_selectedCalendarIds);
+  /// True only when the selected, permitted Android calendars have fully
+  /// loaded the requested interval without a known provider error.
+  bool coversRange(DateTime startInclusive, DateTime endExclusive) =>
+      supported &&
+      initialized &&
+      enabled &&
+      permissionGranted &&
+      !busy &&
+      _lastError == null &&
+      _selectedCalendarIds.isNotEmpty &&
+      _rangeCovers(startInclusive, endExclusive);
+
 
   Future<void> initialize() {
     if (_initialized) return Future<void>.value();
