@@ -1,7 +1,7 @@
 # v1.07 Daily-use UX — piano di implementazione capability
 _Aggiornamento post PR #186: A1 source MERGED; F0 USER_ATTESTED_GENERAL_PASS; altre wave ancora PLANNED._
 
-**Stato aggiornato 2026-11-01:** l'utilizzatore riferisce **«collaudo fatto, tutto ok»** per l'APK firmato \`+115\`, senza fornire identificativi del dispositivo, impronte digitali o risultati individuali per scenario. Questa comunicazione attesta soddisfazione nell'uso reale; non autorizza a compilare come PASS la tabella dei test fisici che resta senza log. La PR A1 e stata integrata su \`main@308faebb7ed06873c244103f107192d8d25a4b18\` dopo CI/QA sorgente verde. **A1 non e contenuta nell'APK +115**: richiede successiva build >115 e collaudo sul nuovo artefatto. **Prossima wave: A2**.
+**Stato aggiornato 2026-11-01:** l'utilizzatore riferisce **«collaudo fatto, tutto ok»** per l'APK firmato `+115`, senza fornire identificativi del dispositivo, impronte digitali o risultati individuali per scenario. Questa comunicazione attesta soddisfazione nell'uso reale; non autorizza a compilare come PASS la tabella dei test fisici che resta senza log. La PR A1 e stata integrata su `main@308faebb7ed06873c244103f107192d8d25a4b18` dopo CI/QA sorgente verde. **A1 non e contenuta nell'APK +115**: richiede successiva build >115 e collaudo sul nuovo artefatto. **Prossima wave: A2**.
 
 
 
