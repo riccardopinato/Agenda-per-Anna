@@ -28,8 +28,8 @@ List<CalendarFreeSlot> findCalendarFreeSlots({
   final seen = <String>{};
   for (final item in visibleEntries) {
     if (item.type != ItemType.appointment) continue;
-    final identity = (item.isExternal ? 'external:' :
-        item.isShared ? 'shared:' + (item.space?.id ?? '') + ':' : 'private:') + item.id;
+    final identity = item.isExternal ? 'external:${item.id}' :
+        item.isShared ? 'shared:${item.space?.id}:${item.id}' : 'private:${item.id}';
     if (!seen.add(identity)) continue;
     DateTime first;
     DateTime last;
@@ -193,7 +193,7 @@ Future<void> showCalendarFreeSlots(
                         items: [
                           for (var h = 0; h < 24; h++)
                             DropdownMenuItem<int>(value: h,
-                              child: Text(h.toString().padLeft(2, '0') + ':00')),
+                              child: Text('${h.toString().padLeft(2, '0')}:00')),
                         ],
                         onChanged: workingHours ? null : (hour) {
                           if (hour == null) return;
@@ -239,9 +239,8 @@ Future<void> showCalendarFreeSlots(
                             return ListTile(
                               key: ValueKey('b2-slot-$i'),
                               leading: const Icon(Icons.event_available_outlined),
-                              title: Text(DateFormat('EEE HH:mm').format(slot.start) +
-                                  ' – ' + DateFormat('EEE HH:mm').format(slot.end)),
-                              subtitle: Text(slot.duration.inMinutes.toString() + ' min'),
+                              title: Text("${DateFormat('EEE HH:mm').format(slot.start)} – ${DateFormat('EEE HH:mm').format(slot.end)}"),
+                              subtitle: Text('${slot.duration.inMinutes} min'),
                               onTap: () => Navigator.pop(sheetContext, slot),
                               trailing: const Icon(Icons.chevron_right),
                             );
@@ -257,7 +256,7 @@ Future<void> showCalendarFreeSlots(
     ),
   );
   if (picked == null || !context.mounted ||
-      store.activeAccountId != accountAtOpen) return;
+      store.activeAccountId != accountAtOpen) { return; }
   await openUnifiedItemComposer(
     context, store,
     DateTime(picked.start.year, picked.start.month, picked.start.day),
