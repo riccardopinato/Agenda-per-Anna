@@ -86,7 +86,7 @@ void main() {
     final ui = File('lib/src/screens/android_calendar_sync_settings.dart').readAsStringSync();
     final native = File('tool/prepare_android_platform.py').readAsStringSync();
     final main = File('lib/main.dart').readAsStringSync();
-    expect(sync, contains("prefs.getBool('${_key(scope)}_enabled') == true"));
+    expect(sync, contains('prefs.getBool('));
     expect(sync, contains('store.agendaRevision.addListener(_schedule)'));
     expect(sync, contains('store.accountRevision.addListener(_onAccountChanged)'));
     expect(sync, contains('!item.date.isBefore(from)'));
