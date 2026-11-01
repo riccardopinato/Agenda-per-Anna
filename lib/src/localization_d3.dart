@@ -528,6 +528,7 @@ const Map<String, Map<String, String>> _d3Catalog = {
   "editor_duplicate": <String, String>{"en": "Duplicate", "it": "Duplica", "es": "Duplicar", "fr": "Dupliquer", "pt": "Duplicar"},
   "editor_monthClosing": <String, String>{"en": "Month closing", "it": "Chiusura del mese", "es": "Cierre del mes", "fr": "Clôture du mois", "pt": "Fecho do mês"},
   "privacy_personalFilter": <String, String>{"en": "Personal", "it": "Personale", "es": "Personal", "fr": "Personnel", "pt": "Pessoal"},
+  "privacy_sharedFilter": <String, String>{"en": "Shared", "it": "Condiviso", "es": "Compartido", "fr": "Partagé", "pt": "Partilhado"},
   "privacy_sensitive": <String, String>{"en": "Sensitive content", "it": "Contenuto riservato", "es": "Contenido reservado", "fr": "Contenu confidentiel", "pt": "Conteúdo reservado"},
   "privacy_markSensitive": <String, String>{"en": "Hide this item's preview", "it": "Nascondi anteprima di questo elemento", "es": "Ocultar vista previa", "fr": "Masquer l'aperçu", "pt": "Ocultar pré-visualização"},
   "privacy_discreet": <String, String>{"en": "Discreet home", "it": "Home discreta", "es": "Inicio discreto", "fr": "Accueil discret", "pt": "Início discreto"},
@@ -1037,7 +1038,7 @@ extension AnnaD3Strings on AnnaStrings {
   String unifiedFilterLabel(AgendaContentFilter value) => switch (value) {
         AgendaContentFilter.all => d3('unified_all'),
         AgendaContentFilter.privateOnly => d3('privacy_personalFilter'),
-        AgendaContentFilter.sharedOnly => d3('sharedSpace'),
+        AgendaContentFilter.sharedOnly => d3('privacy_sharedFilter'),
       };
 
   String editorExpenseCategoryLabel(String value) => switch (value) {
