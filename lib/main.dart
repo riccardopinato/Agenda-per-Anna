@@ -61,6 +61,7 @@ part 'src/event_memory_capture.dart';
 part 'src/event_preparation.dart';
 part 'src/natural_event_parser.dart';
 part 'src/calendar_free_slots.dart';
+part 'src/android_calendar_sync.dart';
 part 'src/home_widget_bridge.dart';
 part 'src/recurring_life_domain.dart';
 part 'src/organization_domain.dart';
@@ -95,6 +96,7 @@ part 'src/screens/more_screen.dart';
 part 'src/screens/personalization_screen.dart';
 part 'src/screens/appearance_colors.dart';
 part 'src/screens/settings_hub.dart';
+part 'src/screens/android_calendar_sync_settings.dart';
 part 'src/screens/home_inbox_search.dart';
 part 'src/screens/trash_screen.dart';
 part 'src/screens/backup_settings.dart';
@@ -305,6 +307,9 @@ Future<void> main() async {
   }
 
   runApp(AgendaApp(store: store));
+  // Start the opt-in outbound calendar reconciler only after local state loads.
+  // It does not request permissions or write anything unless enabled.
+  unawaited(AndroidCalendarSyncService.instance.attach(store));
 
   Future<void>.delayed(Duration.zero, () async {
     try {
