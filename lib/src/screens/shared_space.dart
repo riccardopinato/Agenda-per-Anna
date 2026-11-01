@@ -1528,7 +1528,14 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
   Future<void> _edit([
     SharedEntry? existing,
     SharedEntryType? initialType,
+    bool sensitiveAccessGranted = false,
   ]) async {
+    if (existing?.isSensitive == true && !sensitiveAccessGranted) {
+      if (!await requestSensitiveItemAccess(context, widget.store)) return;
+      if (!mounted) return;
+      await _edit(existing, initialType, true);
+      return;
+    }
     if (existing != null && !_canEditSharedEntry(existing)) {
       await _viewReadOnlySharedEntry(context, existing);
       return;
@@ -1557,6 +1564,7 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
       pinAvailable: widget.store.preferences.privacyLockEnabled &&
           widget.store.preferences.pinHash != null &&
           widget.store.preferences.pinSalt != null,
+      sensitiveAccessGranted: sensitiveAccessGranted,
       store: widget.store,
     );
     if (result == null) return;
@@ -1598,6 +1606,7 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
         createdAt:
             existing?.createdAt ?? existing?.updatedAt ?? DateTime.now(),
         memoryPinned: existing?.memoryPinned ?? false,
+        isSensitive: existing?.isSensitive ?? false,
         membersCanEdit: existing?.membersCanEdit ?? true,
         editOwnerId: existing?.editOwnerId ?? (_currentSharedUserId ?? ''),
       ),
@@ -1619,6 +1628,12 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
 
   Future<void> _addSharedPhoto([SharedEntry? existing]) async {
     final strings = AnnaStrings.of(context);
+    // The deferred media-upload record does not yet carry isSensitive.
+    // Refuse replacement rather than silently clearing the privacy flag.
+    if (existing?.isSensitive == true) {
+      _message(strings.d3('privacy_sensitive'));
+      return;
+    }
     if (existing != null && !_canEditSharedEntry(existing)) {
       await _viewReadOnlySharedEntry(context, existing);
       return;
@@ -1754,6 +1769,7 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
             existing?.createdAt ?? existing?.updatedAt ?? DateTime.now(),
         sketchPages: pages,
         memoryPinned: existing?.memoryPinned ?? false,
+        isSensitive: existing?.isSensitive ?? false,
         membersCanEdit: existing?.membersCanEdit ?? true,
         editOwnerId: existing?.editOwnerId ?? (_currentSharedUserId ?? ''),
       ),
@@ -1969,7 +1985,9 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
         builder: (_) => SharedMemoriesScreen(
           store: widget.store,
           space: widget.space,
-          entriesProvider: () => List<SharedEntry>.from(entries),
+          // Shared memories currently has no per-item reveal challenge.
+          // Exclude sensitive entries until that screen has a secure detail gate.
+          entriesProvider: () => entries.where((entry) => !entry.isSensitive).toList(),
           commentsProvider: () => commentsByEntry,
           heartsProvider: () => heartsByEntry,
           readsProvider: () => memberReads,
@@ -2625,6 +2643,31 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
     final likedByMe = uid != null && hearts.contains(uid);
     final comments = commentsByEntry[entry.id] ?? const <SharedEntryComment>[];
     final seen = _seenLabel(entry);
+
+    // Fail closed across feed, calendar and diary cards. Do not build
+    // thumbnails, captions, subtitles, actions or semantics from private data.
+    if (entry.isSensitive) {
+      return Card(
+        margin: const EdgeInsets.only(bottom: 9),
+        child: ListTile(
+          key: ValueKey('shared-sensitive-${entry.id}'),
+          leading: const Icon(Icons.lock_outline),
+          title: Text(AnnaStrings.of(context).d3('privacy_sensitive')),
+          onTap: () async {
+            final granted = await requestSensitiveItemAccess(context, widget.store);
+            if (!granted || !mounted) return;
+            await _viewReadOnlySharedEntry(context, entry);
+          },
+          trailing: _canEditSharedEntry(entry)
+              ? IconButton(
+                  tooltip: AnnaStrings.of(context).edit,
+                  icon: const Icon(Icons.edit_outlined),
+                  onPressed: () => _edit(entry),
+                )
+              : null,
+        ),
+      );
+    }
 
     if (entry.type == SharedEntryType.note ||
         entry.type == SharedEntryType.photo ||
