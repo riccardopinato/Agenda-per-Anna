@@ -617,6 +617,27 @@ class _PlannerScreenState extends State<PlannerScreen> {
                         _DayOpeningCard(date: day),
                         const SizedBox(height: 12),
                         AgendaContentFilterBar(store: widget.store),
+                        if (widget.embedded) ...[
+                          const SizedBox(height: 4),
+                          SwitchListTile.adaptive(
+                            key: const ValueKey('privacy-home-discreet'),
+                            dense: true,
+                            contentPadding: EdgeInsets.zero,
+                            secondary: Icon(widget.store.preferences.homeDiscreetMode
+                                ? Icons.visibility_off_outlined
+                                : Icons.visibility_outlined),
+                            title: Text(strings.d3('privacy_discreet')),
+                            subtitle: Text(strings.d3('privacy_discreetHint')),
+                            value: widget.store.preferences.homeDiscreetMode,
+                            onChanged: (value) => unawaited(
+                              widget.store.savePreferences(
+                                widget.store.preferences.copyWith(
+                                  homeDiscreetMode: value,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
                         const SizedBox(height: AnnaDesignTokens.spaceMd),
                         if (widget.embedded) ...[
                           // DF-08–14: Oggi reads the selected day before
@@ -632,7 +653,8 @@ class _PlannerScreenState extends State<PlannerScreen> {
                               next: upcoming.isEmpty ? null : upcoming.first,
                               globalPendingTasks: widget.store.pendingUnifiedTaskCount,
                               inboxCount: widget.store.activeInboxEntries.length,
-                              hideDetails: widget.store.preferences.hideHomeDetails,
+                              hideDetails: (widget.store.preferences.hideHomeDetails ||
+                                    widget.store.preferences.homeDiscreetMode),
                               onOpenNext: upcoming.isEmpty
                                   ? null
                                   : () => openUnifiedAgendaEntry(
@@ -660,7 +682,8 @@ class _PlannerScreenState extends State<PlannerScreen> {
                                   store: widget.store,
                                   item: item,
                                   compact: true,
-                                  hideDetails: widget.store.preferences.hideHomeDetails,
+                                  hideDetails: (widget.store.preferences.hideHomeDetails ||
+                                    widget.store.preferences.homeDiscreetMode),
                                 )),
                               ],
                             ),
@@ -679,7 +702,8 @@ class _PlannerScreenState extends State<PlannerScreen> {
                             child: _TodayCompactDiaryPreview(
                               store: widget.store,
                               snapshot: snapshot,
-                              hideDetails: widget.store.preferences.hideHomeDetails,
+                              hideDetails: (widget.store.preferences.hideHomeDetails ||
+                                    widget.store.preferences.homeDiscreetMode),
                             ),
                           ),
                         ] else ...[
@@ -708,7 +732,8 @@ class _PlannerScreenState extends State<PlannerScreen> {
                                 : memoryRecall.sameMonthPastYears,
                             exactAnniversary: memoryRecall.onThisDay.isNotEmpty,
                             hideDetails: widget.embedded &&
-                                widget.store.preferences.hideHomeDetails,
+                                (widget.store.preferences.hideHomeDetails ||
+                                    widget.store.preferences.homeDiscreetMode),
                           ),
                           const SizedBox(height: 14),
                         ],
@@ -1112,7 +1137,7 @@ class _TodayFocusCard extends StatelessWidget {
     final scheme = Theme.of(context).colorScheme;
     final nextText = next == null
         ? strings.v100NoUpcoming
-        : hideDetails
+        : hideDetails || isMaskedAgendaEntry(next!)
             ? strings.v100NextScheduled
             : '${DateFormat('EEE d MMM', AnnaStrings.intlLocale(context)).format(next!.date)} · '
                 '${formatTime(next!.start!)} · ${next!.title}'
