@@ -11,6 +11,9 @@ void main() {
       serviceAvailable: true), CapabilityHealthState.permissionRequired);
     expect(assessCapability(supported: true, permissionGranted: true,
       serviceAvailable: false), CapabilityHealthState.unavailable);
+    // A failed plugin reports placeholder consent=false: never blame the user.
+    expect(assessCapability(supported: true, permissionGranted: false,
+      serviceAvailable: false), CapabilityHealthState.unavailable);
     expect(assessCapability(supported: true, permissionGranted: true,
       serviceAvailable: true, configured: false), CapabilityHealthState.degraded);
     expect(assessCapability(supported: true, permissionGranted: true,
