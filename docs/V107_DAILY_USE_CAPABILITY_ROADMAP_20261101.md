@@ -11,6 +11,8 @@ _Aggiornamento post PR #186: A1 source MERGED; F0 USER_ATTESTED_GENERAL_PASS; al
 
 **Aggiornamento B1 post-merge (2026-11-01):** CAP-0002 e' **SOURCE MERGED** tramite [PR #191](https://github.com/riccardopinato/Agenda-per-Anna/pull/191), commit `58a23f94644b29abf374832164b3a3ac1e5cce56`; Development checks / Deploy Web / AppLab Source Gate tutti SUCCESS all'exact head `58a423a5ae4c8acd3bef5390535a48815f4ef21c`, 6 review finding corretti. Il vecchio APK +116 non include B1. La verifica fisica resta **NOT VERIFIED**.
 
+**Aggiornamento B2 post-merge (2026-11-01):** CAP-0001 e' **SOURCE MERGED** tramite [PR #193](https://github.com/riccardopinato/Agenda-per-Anna/pull/193), commit `18ce8b4bd0f8a997aeef381caa57a6430c4d9757`. Exact-head PR `d22b18eb8f89b3c6100946344867aa2bb13df707`: Development checks / Deploy Web / AppLab Source Gate SUCCESS; 2 finding review risolti. La funzione e' un calcolo read-only e richiede salvataggio esplicito nel compositore esistente. L'APK `+116` NON include B1/B2; verifica fisica B2 **NOT VERIFIED**. Per continuare lo sviluppo l'utente ha chiesto di non attendere il gate fisico: nessuna evidenza di test e' stata inventata o certificata. Prossimo: B3 export e' **decision gate separato**, oppure C1 secondo roadmap.
+
 ## Fonti, baseline e competenze
 
 - Product scope e privacy: [PRODUCT_BIBLE.md](PRODUCT_BIBLE.md); ordine di delivery e stato: [ROADMAP.md](ROADMAP.md); AGENTS.md nel root.
@@ -28,7 +30,7 @@ _Aggiornamento post PR #186: A1 source MERGED; F0 USER_ATTESTED_GENERAL_PASS; al
 | v1.07-A1 | CAP-0014 | Appuntamento passato -> bozza ricordo | MERGED SOURCE / DEVICE QA FUTURA | riuso `AgendaItem`, `DayJournal/DiaryBlock`, `Unified Capture`, nessuna scrittura implicita |
 | v1.07-A2 | CAP-0003 | Preparazione leggera: note/checklist contestuali evento | MERGED SOURCE / DEVICE QA FUTURA | no task manager; riuso contenuti e reminder, nessun secondo scheduler |
 | v1.07-B1 | CAP-0002 | Testo -> bozza appuntamento offline deterministica | MERGED SOURCE / DEVICE QA FUTURA | A chiusa; parser EN/IT/ES/FR/PT, preview esplicita, timezone e ricorrenza |
-| v1.07-B2 | CAP-0001 | Slot liberi calcolati da eventi visibili all'utente | PLANNED | B1, calendario privato + overlay opt-in read-only; niente evento salvato |
+| v1.07-B2 | CAP-0001 | Slot liberi calcolati da eventi visibili all'utente | MERGED SOURCE / DEVICE QA FUTURA | B1, calendario privato + overlay opt-in read-only; niente evento salvato |
 | v1.07-B3 · optional PR | CAP-0005 | Esportazione singolo evento verso sistema/ICS | DECISION GATE | B1/B2 stabilizzati; consentire selezione provider e rifiuto permessi |
 | v1.07-C1 | CAP-0077 | Diagnostica permessi/capability, correzione assistita | PLANNED | servizi nativi reali; UI non mente su stato 'healthy' |
 | v1.07-C2 | CAP-0069 | Regressione visiva automatica mirata alle 10 schermate | PLANNED | test/dev only, dispositivi/locale/theme/dimensioni di baseline fissati |
