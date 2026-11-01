@@ -203,10 +203,14 @@ class _EventPreparationSheetState extends State<_EventPreparationSheet> {
   @override
   Widget build(BuildContext context) {
     final strings = AnnaStrings.of(context);
-    final height = MediaQuery.sizeOf(context).height * 0.78;
+    final screenHeight = MediaQuery.sizeOf(context).height;
+    final keyboardInset = MediaQuery.viewInsetsOf(context).bottom;
+    // Avoid exceeding the modal's available height when the keyboard opens.
+    final height = min(screenHeight * 0.78,
+        max(0.0, screenHeight - keyboardInset - 56));
     return Padding(
       padding: EdgeInsets.only(
-        left: 18, right: 18, bottom: MediaQuery.viewInsetsOf(context).bottom + 12,
+        left: 18, right: 18, bottom: keyboardInset + 12,
       ),
       child: SizedBox(
         height: height,
