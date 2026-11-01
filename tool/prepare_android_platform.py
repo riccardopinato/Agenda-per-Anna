@@ -75,6 +75,7 @@ import android.Manifest
 import android.app.PendingIntent
 import android.appwidget.AppWidgetManager
 import android.content.ComponentName
+import android.content.ContentValues
 import android.content.ContentUris
 import android.content.Intent
 import android.content.pm.PackageManager
@@ -96,6 +97,8 @@ import com.google.mlkit.vision.text.TextRecognition
 import com.google.mlkit.vision.text.latin.TextRecognizerOptions
 import java.io.File
 import java.security.KeyStore
+import java.security.MessageDigest
+import java.util.TimeZone
 import javax.crypto.Cipher
 import javax.crypto.KeyGenerator
 import javax.crypto.SecretKey
@@ -112,6 +115,7 @@ class MainActivity : FlutterFragmentActivity() {
         private const val EXTERNAL_CALENDAR_CHANNEL = "annas_diary/external_calendar"
         private const val MICROPHONE_REQUEST_CODE = 4411
         private const val CALENDAR_REQUEST_CODE = 4412
+        private const val CALENDAR_WRITE_REQUEST_CODE = 4413
         private const val KEY_ALIAS = "annas_diary_private_vault_v1"
         private const val IV_BYTES = 12
     }
@@ -128,6 +132,7 @@ class MainActivity : FlutterFragmentActivity() {
     private var pendingEcosystemDeepLink: String? = null
     private var textRecognizer: TextRecognizer? = null
     private var pendingCalendarPermissionResult: MethodChannel.Result? = null
+    private var pendingCalendarWritePermissionResult: MethodChannel.Result? = null
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         pendingHomeWidgetAction = decodeLaunchAction(intent)
@@ -268,6 +273,23 @@ class MainActivity : FlutterFragmentActivity() {
                     }
                     "requestPermission" -> {
                         requestCalendarPermission(result)
+                    }
+                    "writePermissionStatus" -> {
+                        result.success(hasCalendarWritePermission())
+                    }
+                    "requestWritePermission" -> {
+                        requestCalendarWritePermission(result)
+                    }
+                    "writableCalendars" -> {
+                        requireCalendarPermission()
+                        result.success(readWritableCalendars())
+                    }
+                    "upsertOwnedEvent" -> {
+                        requireCalendarPermission()
+                        requireCalendarWritePermission()
+                        val args = call.arguments as? Map<*, *>
+                            ?: throw IllegalArgumentException("missing arguments")
+                        result.success(upsertOwnedCalendarEvent(args))
                     }
                     "listCalendars" -> {
                         requireCalendarPermission()
@@ -450,6 +472,34 @@ class MainActivity : FlutterFragmentActivity() {
         }
     }
 
+
+    private fun hasCalendarWritePermission(): Boolean {
+        return checkSelfPermission(Manifest.permission.WRITE_CALENDAR) ==
+            PackageManager.PERMISSION_GRANTED
+    }
+
+    private fun requireCalendarWritePermission() {
+        if (!hasCalendarWritePermission()) {
+            throw SecurityException("calendar write permission required")
+        }
+    }
+
+    private fun requestCalendarWritePermission(result: MethodChannel.Result) {
+        if (hasCalendarWritePermission()) {
+            result.success(true)
+            return
+        }
+        if (pendingCalendarWritePermissionResult != null) {
+            result.error("calendar_write_permission_busy", "Permission request running", null)
+            return
+        }
+        pendingCalendarWritePermissionResult = result
+        requestPermissions(
+            arrayOf(Manifest.permission.WRITE_CALENDAR),
+            CALENDAR_WRITE_REQUEST_CODE,
+        )
+    }
+
     private fun requestCalendarPermission(result: MethodChannel.Result) {
         if (hasCalendarPermission()) {
             result.success(true)
@@ -476,6 +526,14 @@ class MainActivity : FlutterFragmentActivity() {
         grantResults: IntArray,
     ) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+
+        if (requestCode == CALENDAR_WRITE_REQUEST_CODE) {
+            val granted = grantResults.isNotEmpty() &&
+                grantResults[0] == PackageManager.PERMISSION_GRANTED
+            pendingCalendarWritePermissionResult?.success(granted)
+            pendingCalendarWritePermissionResult = null
+            return
+        }
         if (requestCode != CALENDAR_REQUEST_CODE) return
 
         val granted = grantResults.isNotEmpty() &&
@@ -521,6 +579,144 @@ class MainActivity : FlutterFragmentActivity() {
             }
         }
         return result
+    }
+
+    // Only writable, visible calendars are allowed as outbound destinations.
+    private fun readWritableCalendars(): List<Map<String, Any?>> {
+        val result = mutableListOf<Map<String, Any?>>()
+        val projection = arrayOf(
+            CalendarContract.Calendars._ID,
+            CalendarContract.Calendars.CALENDAR_DISPLAY_NAME,
+            CalendarContract.Calendars.ACCOUNT_NAME,
+            CalendarContract.Calendars.CALENDAR_COLOR,
+            CalendarContract.Calendars.CALENDAR_ACCESS_LEVEL,
+        )
+        contentResolver.query(
+            CalendarContract.Calendars.CONTENT_URI,
+            projection,
+            "${CalendarContract.Calendars.VISIBLE} = 1 AND " +
+                "${CalendarContract.Calendars.CALENDAR_ACCESS_LEVEL} >= ?",
+            arrayOf(CalendarContract.Calendars.CAL_ACCESS_CONTRIBUTOR.toString()),
+            null,
+        )?.use { cursor ->
+            while (cursor.moveToNext()) {
+                result += mapOf(
+                    "id" to cursor.getLong(0).toString(),
+                    "name" to cursor.getString(1).orEmpty(),
+                    "accountName" to cursor.getString(2).orEmpty(),
+                    "color" to cursor.getInt(3),
+                )
+            }
+        }
+        return result
+    }
+
+    private fun upsertOwnedCalendarEvent(args: Map<*, *>): String {
+        val calendarId = args["calendarId"]?.toString()?.toLongOrNull()
+            ?: throw IllegalArgumentException("invalid calendarId")
+        val ownerKey = args["ownerKey"] as? String
+            ?: throw IllegalArgumentException("missing ownerKey")
+        val title = (args["title"] as? String)?.trim()
+            ?: throw IllegalArgumentException("missing title")
+        val firstMs = (args["startMs"] as? Number)?.toLong()
+            ?: throw IllegalArgumentException("missing startMs")
+        val endMs = (args["endMs"] as? Number)?.toLong()
+            ?: throw IllegalArgumentException("missing endMs")
+        val allDay = args["allDay"] == true
+        if (ownerKey.isEmpty() || ownerKey.length > 300 ||
+            title.isEmpty() || title.length > 400 ||
+            endMs <= firstMs) {
+            throw IllegalArgumentException("invalid calendar event")
+        }
+        // Never trust the client-supplied calendar without rechecking ACL.
+        val writable = readWritableCalendars().any {
+            it["id"] == calendarId.toString()
+        }
+        if (!writable) throw SecurityException("destination calendar not writable")
+
+        val marker = MessageDigest.getInstance("SHA-256")
+            .digest((ownerKey + "|" + calendarId).toByteArray(Charsets.UTF_8))
+            .joinToString("") { byte -> "%02x".format(byte.toInt() and 0xff) }
+        val token = "[AnnaDiary:${marker}]"
+        val prefs = getSharedPreferences("anna_calendar_owned_events_v1", MODE_PRIVATE)
+        val oldId = prefs.getString(marker, null)?.toLongOrNull()
+
+        fun lookup(id: Long): Boolean {
+            contentResolver.query(
+                ContentUris.withAppendedId(CalendarContract.Events.CONTENT_URI, id),
+                arrayOf(
+                    CalendarContract.Events.CALENDAR_ID,
+                    CalendarContract.Events.DESCRIPTION,
+                ),
+                null, null, null,
+            )?.use { cursor ->
+                if (cursor.moveToFirst()) {
+                    return cursor.getLong(0) == calendarId &&
+                        cursor.getString(1).orEmpty().contains(token)
+                }
+            }
+            return false
+        }
+
+        var linkedId: Long? = null
+        if (oldId != null) {
+            if (!lookup(oldId)) {
+                // Device-calendar deletion or calendar change: fail closed.
+                // Never silently recreate or overwrite a different event.
+                throw IllegalStateException("external_event_missing_or_moved")
+            }
+            linkedId = oldId
+        } else {
+            val ids = mutableListOf<Long>()
+            contentResolver.query(
+                CalendarContract.Events.CONTENT_URI,
+                arrayOf(CalendarContract.Events._ID,
+                    CalendarContract.Events.DESCRIPTION),
+                "${CalendarContract.Events.CALENDAR_ID} = ? AND " +
+                    "${CalendarContract.Events.DESCRIPTION} LIKE ?",
+                arrayOf(calendarId.toString(), "%${token}%"),
+                null,
+            )?.use { cursor ->
+                while (cursor.moveToNext()) {
+                    if (cursor.getString(1).orEmpty().contains(token)) {
+                        ids.add(cursor.getLong(0))
+                    }
+                }
+            }
+            if (ids.size > 1) {
+                throw IllegalStateException("duplicate_external_event_marker")
+            }
+            linkedId = ids.singleOrNull()
+        }
+        val values = ContentValues().apply {
+            put(CalendarContract.Events.CALENDAR_ID, calendarId)
+            put(CalendarContract.Events.TITLE, title)
+            put(CalendarContract.Events.DESCRIPTION,
+                "Created by Anna's Diary\n${token}")
+            put(CalendarContract.Events.DTSTART, firstMs)
+            put(CalendarContract.Events.DTEND, endMs)
+            put(CalendarContract.Events.ALL_DAY, if (allDay) 1 else 0)
+            put(CalendarContract.Events.EVENT_TIMEZONE,
+                if (allDay) "UTC" else TimeZone.getDefault().id)
+        }
+        val eventId = if (linkedId != null) {
+            val n = contentResolver.update(
+                ContentUris.withAppendedId(
+                    CalendarContract.Events.CONTENT_URI, linkedId),
+                values, null, null,
+            )
+            if (n != 1) throw IllegalStateException("calendar_update_failed")
+            linkedId
+        } else {
+            val uri = contentResolver.insert(
+                CalendarContract.Events.CONTENT_URI, values,
+            ) ?: throw IllegalStateException("calendar_insert_failed")
+            ContentUris.parseId(uri)
+        }
+        if (!prefs.edit().putString(marker, eventId.toString()).commit()) {
+            throw IllegalStateException("calendar_link_persist_failed")
+        }
+        return eventId.toString()
     }
 
     private fun readCalendarEvents(
@@ -959,6 +1155,7 @@ def configure_manifest() -> None:
         '<uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />',
         '<uses-permission android:name="android.permission.RECORD_AUDIO" />',
         '<uses-permission android:name="android.permission.READ_CALENDAR" />',
+        '<uses-permission android:name="android.permission.WRITE_CALENDAR" />',
         '<uses-permission android:name="com.android.vending.BILLING" />',
     ]
     manifest_close = re.search(r"<manifest\b[^>]*>", manifest)
@@ -1789,6 +1986,10 @@ def verify() -> None:
         failures.append("external calendar native permission handling")
     if 'android.permission.READ_CALENDAR' not in manifest:
         failures.append("external calendar manifest permission")
+    if 'android.permission.WRITE_CALENDAR' not in manifest:
+        failures.append("calendar sync write permission")
+    if '"upsertOwnedEvent"' not in activity:
+        failures.append("calendar sync native writer")
     if 'com.android.vending.BILLING' not in manifest:
         failures.append("RevenueCat billing manifest permission")
     if not ICON_JPG.is_file() or ICON_JPG.stat().st_size == 0:

@@ -96,6 +96,7 @@ List<UnifiedAgendaEntry> visibleEntriesForCalendarFreeSlots(
     entries.addAll(store.unifiedForDay(target));
     if (externalReady && store.agendaContentFilter == AgendaContentFilter.all) {
       entries.addAll(ExternalCalendarService.instance.eventsForDay(target)
+          .where((event) => !isOwnedAndroidCalendarDuplicate(store, event))
           .map(UnifiedAgendaEntry.external));
     }
   }

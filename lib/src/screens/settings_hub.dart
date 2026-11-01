@@ -194,6 +194,18 @@ class SettingsHubScreen extends StatelessWidget {
                       ),
                       const Divider(height: 1),
                       _tile(
+                        id: 'settings-hub-android-calendar-sync',
+                        domain: AnnaVisualDomain.ecosystem,
+                        icon: Icons.event_repeat_outlined,
+                        title: androidSyncCopy(strings, 'title'),
+                        subtitle: androidSyncCopy(strings, 'intro'),
+                        onTap: () => _open(
+                          context,
+                          AndroidCalendarSyncSettingsScreen(store: store),
+                        ),
+                      ),
+                      const Divider(height: 1),
+                      _tile(
                         id: 'settings-hub-backup',
                         domain: AnnaVisualDomain.vault,
                         icon: Icons.backup_outlined,
