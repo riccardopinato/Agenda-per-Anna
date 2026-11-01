@@ -21,12 +21,12 @@ NaturalEventDraft? parseNaturalEvent(String phrase, {
   required DateTime now,
 }) {
   if (!const {'en', 'it', 'es', 'fr', 'pt'}.contains(languageCode) ||
-      phrase.trim().isEmpty || phrase.length > 300) return null;
+      phrase.trim().isEmpty || phrase.length > 300) { return null; }
   var remaining = phrase.trim().replaceAll(RegExp(r'\s+'), ' ');
   final normalized = remaining.toLowerCase();
   // Unknown explicit zones cannot safely be translated into local time.
   if (RegExp(r'\b(?:utc|gmt|cet|cest|pst|pdt|est|edt)\b',
-      caseSensitive: false).hasMatch(normalized)) return null;
+      caseSensitive: false).hasMatch(normalized)) { return null; }
 
   final iso = RegExp(r'\b(\d{4})-(\d{2})-(\d{2})\b')
       .allMatches(remaining).toList();
@@ -36,7 +36,7 @@ NaturalEventDraft? parseNaturalEvent(String phrase, {
     r'\b(oggi|domani|today|tomorrow|hoy|mañana|aujourd.hui|demain|hoje|amanhã|amanha)\b',
     caseSensitive: false,
   ).allMatches(remaining).toList();
-  if (iso.length + dayFirst.length + relative.length != 1) return null;
+  if (iso.length + dayFirst.length + relative.length != 1) { return null; }
   late final DateTime date;
   late final String dateToken;
   if (iso.isNotEmpty || dayFirst.isNotEmpty) {
@@ -45,7 +45,7 @@ NaturalEventDraft? parseNaturalEvent(String phrase, {
     final year = int.parse(match.group(isIso ? 1 : 3)!);
     final month = int.parse(match.group(2)!);
     final day = int.parse(match.group(isIso ? 3 : 1)!);
-    if (year < 2020 || year > 2040) return null;
+    if (year < 2020 || year > 2040) { return null; }
     date = DateTime(year, month, day);
     if (date.year != year || date.month != month || date.day != day) {
       return null;
@@ -56,7 +56,7 @@ NaturalEventDraft? parseNaturalEvent(String phrase, {
     const today = {'oggi', 'today', 'hoy', 'aujourd\'hui', 'hoje'};
     final offset = today.contains(dateToken.toLowerCase()) ? 0 : 1;
     date = DateTime(now.year, now.month, now.day + offset);
-    if (date.year > 2040) return null;
+    if (date.year > 2040) { return null; }
   }
   // The phrase must supply a time; no guessing from user preferences.
   final prefixedPattern = RegExp(
@@ -66,16 +66,21 @@ NaturalEventDraft? parseNaturalEvent(String phrase, {
   final plainPattern = RegExp(r'\b(\d{1,2}):(\d{2})\s*(am|pm)?\b',
     caseSensitive: false);
   final prefixed = prefixedPattern.allMatches(remaining).toList();
-  final matches = prefixed.isNotEmpty
-      ? prefixed : plainPattern.allMatches(remaining).toList();
-  if (matches.length != 1) return null;
+  final bareTimes = plainPattern.allMatches(remaining).toList();
+  final matches = prefixed.isNotEmpty ? prefixed : bareTimes;
+  if (matches.length != 1) { return null; }
+  if (prefixed.isNotEmpty && bareTimes.any(
+      (bare) => bare.start < prefixed.single.start ||
+                bare.end > prefixed.single.end)) {
+    return null; // A second unprefixed time is ambiguous.
+  }
   final match = matches.single;
   var hour = int.parse(match.group(1)!);
   final minute = int.tryParse(match.group(2) ?? '0') ?? -1;
   final suffix = match.group(3)?.toLowerCase();
   if (minute < 0 || minute > 59 || (suffix == null && hour > 23) ||
-      (suffix != null && (hour < 1 || hour > 12))) return null;
-  if (suffix != null) hour = hour % 12 + (suffix == 'pm' ? 12 : 0);
+      (suffix != null && (hour < 1 || hour > 12))) { return null; }
+  if (suffix != null) { hour = hour % 12 + (suffix == 'pm' ? 12 : 0); }
   final local = DateTime(date.year, date.month, date.day, hour, minute);
   if (local.year != date.year || local.month != date.month ||
       local.day != date.day || local.hour != hour || local.minute != minute) {
@@ -99,7 +104,7 @@ NaturalEventDraft? parseNaturalEvent(String phrase, {
     caseSensitive: false);
   final reminders = reminderPattern.allMatches(remaining).toList();
   if (reminders.length > 1 ||
-      (remindCue.hasMatch(normalized) && reminders.length != 1)) return null;
+      (remindCue.hasMatch(normalized) && reminders.length != 1)) { return null; }
 
   final recurrenceCue = RegExp(
     r'\b(?:ogni|every|todos|todas|chaque|cada|tous)\b',
@@ -121,8 +126,8 @@ NaturalEventDraft? parseNaturalEvent(String phrase, {
   if (reminders.isNotEmpty) {
     remaining = remaining.replaceFirst(reminders.single.group(0)!, ' ');
   }
-  if (daily.isNotEmpty) remaining = remaining.replaceFirst(daily.single.group(0)!, ' ');
-  if (weekly.isNotEmpty) remaining = remaining.replaceFirst(weekly.single.group(0)!, ' ');
+  if (daily.isNotEmpty) { remaining = remaining.replaceFirst(daily.single.group(0)!, ' '); }
+  if (weekly.isNotEmpty) { remaining = remaining.replaceFirst(weekly.single.group(0)!, ' '); }
   remaining = remaining.replaceAll(RegExp(r'\s+'), ' ')
       .replaceAll(RegExp(r'^[\s,;:\-]+|[\s,;:\-]+$'), '').trim();
   if (remaining.isEmpty || remaining.length > 160 ||
@@ -187,9 +192,7 @@ Future<NaturalEventDraft?> showNaturalEventParser(BuildContext context) async {
                   Text(parsed!.title, style: const TextStyle(fontWeight: FontWeight.bold)),
                   Text(DateFormat('d MMMM yyyy', language).format(parsed!.date)),
                   Text(formatTime(parsed!.start)),
-                  Text(naturalEventLabel(language, 'timezone') + ': ' +
-                    DateTime(parsed!.date.year, parsed!.date.month, parsed!.date.day,
-                      parsed!.start.hour, parsed!.start.minute).timeZoneName),
+                  Text('${naturalEventLabel(language, 'timezone')}: ${DateTime(parsed!.date.year, parsed!.date.month, parsed!.date.day, parsed!.start.hour, parsed!.start.minute).timeZoneName}'),
                   if (parsed!.reminderMinutesBefore != null)
                     Text(AnnaStrings.of(context).d3('editor_dayBefore')),
                   if (parsed!.recurrence != RecurrenceRule.none)
