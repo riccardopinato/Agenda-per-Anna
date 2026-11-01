@@ -100,6 +100,7 @@ List<UnifiedAgendaEntry> agendaEntriesForDayWithExternal(
     result.addAll(
       ExternalCalendarService.instance
           .eventsForDay(date)
+          .where((event) => !isOwnedAndroidCalendarDuplicate(store, event))
           .map(UnifiedAgendaEntry.external),
     );
   }
