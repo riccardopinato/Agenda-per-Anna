@@ -26,6 +26,18 @@ String eventMemoryDraftText(
   return note.isEmpty ? '$reference\n\n' : '$reference\n\n$note\n\n';
 }
 
+
+/// Protect both a deleted block and a deleted whole day. Recreating either
+/// canonical identity would make the original Trash entry unrestorable.
+bool eventMemoryHasRecoverableTrash(AgendaStore store, AgendaItem item) {
+  final day = AgendaStore.dateKey(item.date);
+  final id = eventMemoryBlockId(item);
+  return store.trash.any((entry) =>
+      (entry.kind == TrashEntityKind.diaryBlock &&
+          entry.entityId == id && entry.parentId == day) ||
+      (entry.kind == TrashEntityKind.journal && entry.entityId == day));
+}
+
 final Set<String> _eventMemoryWritesInFlight = <String>{};
 
 Future<bool> saveEventMemoryDraft(
@@ -43,7 +55,7 @@ Future<bool> saveEventMemoryDraft(
       current.id == item.id &&
       current.type == ItemType.appointment &&
       AgendaStore.sameDay(current.date, item.date));
-  if (!exists) return false;
+  if (!exists || eventMemoryHasRecoverableTrash(store, item)) return false;
 
   final id = eventMemoryBlockId(item);
   if (!_eventMemoryWritesInFlight.add(id)) return false;
@@ -78,6 +90,12 @@ Future<void> openEventMemoryDraft(
   AgendaItem item,
 ) async {
   if (!canCaptureEventMemory(item, DateTime.now())) return;
+  if (eventMemoryHasRecoverableTrash(store, item)) {
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+      content: Text(AnnaStrings.of(context).d3('v107MemoryInTrash')),
+    ));
+    return;
+  }
   final accountAtStart = store.activeAccountId;
   final id = eventMemoryBlockId(item);
   final candidates = store.journal(item.date).blocks
@@ -95,12 +113,33 @@ Future<void> openEventMemoryDraft(
     editing: existing != null,
   );
   while (draft != null && draft.trim().isNotEmpty && context.mounted) {
-    if (store.activeAccountId != accountAtStart) return;
+    if (store.activeAccountId != accountAtStart) {
+      // Fail closed on account switch; never display old account content
+      // in a new account's editable surface.
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text(AnnaStrings.of(context).d3('v107EventMemoryAccountChanged')),
+      ));
+      return;
+    }
     try {
       final saved = await saveEventMemoryDraft(
         store, item, draft, expectedAccountId: accountAtStart,
       );
-      if (!context.mounted || !saved) return;
+      if (!context.mounted) return;
+      if (!saved) {
+        final key = eventMemoryHasRecoverableTrash(store, item)
+            ? 'v107MemoryInTrash'
+            : 'v107EventMemorySourceChanged';
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text(AnnaStrings.of(context).d3(key)),
+        ));
+        // Keep submitted text editable and copyable; do not bypass source
+        // checks, silently save elsewhere or discard the user's draft.
+        draft = await showDiaryNoteEditor(
+          context, initialText: draft, editing: true,
+        );
+        continue;
+      }
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
         content: Text(AnnaStrings.of(context).d3('v107EventMemorySaved')),
       ));
