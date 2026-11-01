@@ -139,6 +139,18 @@ void main() {
     store.dispose();
   });
 
+  test('sensitive exports demand PIN and explicit unencrypted-file consent', () {
+    final backup = File('lib/src/screens/backup_settings.dart').readAsStringSync();
+    final translations = File('lib/src/localization_d3.dart').readAsStringSync();
+    expect(backup, contains('widget.store.items.any((item) => item.isSensitive)'));
+    expect(backup, contains('requestSensitiveItemAccess(context, widget.store)'));
+    expect(backup.split('if (!await _confirmSensitiveExport() || !mounted) return;').length - 1,
+        3);
+    expect(translations, contains('privacy_exportWarningTitle'));
+    expect(translations, contains('privacy_exportWarningBody'));
+    expect(translations, contains('privacy_exportContinue'));
+  });
+
   test('filter label is Personale, not a security claim', () {
     final code = File('lib/src/localization_d3.dart').readAsStringSync();
     expect(code, contains('"it": "Personale"'));
