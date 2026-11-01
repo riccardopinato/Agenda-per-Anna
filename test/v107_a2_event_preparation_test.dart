@@ -49,7 +49,7 @@ void main() {
     expect(parsed.steps, isEmpty);
     expect(parsed.note, note);
     expect(parsed.compose(), note);
-    final withStep = EventPreparationDraft(
+    final withStep = const EventPreparationDraft(
       note: note, steps: const [EventPreparationStep('Camera')],
     );
     expect(withStep.compose(), '$note\n\n☐ Camera');
@@ -99,7 +99,7 @@ void main() {
 
     await store.upsert(source.copyWith(note: 'Modified elsewhere'));
     expect(await saveEventPreparation(
-      store, source, EventPreparationDraft(note: 'Older draft', steps: const []),
+      store, source, const EventPreparationDraft(note: 'Older draft', steps: []),
       accountAtOpen: store.activeAccountId,
     ), EventPreparationSaveResult.noteConflict);
     expect(store.items.single.note, 'Modified elsewhere');
