@@ -1559,7 +1559,10 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
     await _persistSharedEntry(
       existing == null
           ? result
-          : result.copyWith(memoryPinned: existing.memoryPinned),
+          : result.copyWith(
+              memoryPinned: existing.memoryPinned,
+              isSensitive: result.isSensitive,
+            ),
     );
   }
 
@@ -3155,6 +3158,7 @@ Future<SharedEntry?> _openSharedEntryEditor(
   var start = existing?.start ?? initialTime;
   var end = existing?.end ??
       (start == null ? null : _timePlusMinutes(start, 60));
+  var isSensitive = existing?.isSensitive ?? false;
 
   final result = await showDialog<SharedEntry>(
     context: context,
@@ -3205,6 +3209,15 @@ Future<SharedEntry?> _openSharedEntryEditor(
                 minLines: 2,
                 maxLines: 4,
                 decoration: InputDecoration(labelText: AnnaStrings.of(context).d3('note')),
+              ),
+              SwitchListTile.adaptive(
+                key: const ValueKey('privacy-shared-sensitive'),
+                contentPadding: EdgeInsets.zero,
+                title: Text(AnnaStrings.of(context).d3('privacy_markSensitive')),
+                subtitle: Text(AnnaStrings.of(context).d3('privacy_pinRequired')),
+                secondary: const Icon(Icons.visibility_off_outlined),
+                value: isSensitive,
+                onChanged: (value) => setLocal(() => isSensitive = value),
               ),
               const SizedBox(height: 8),
               ListTile(
@@ -3279,6 +3292,7 @@ Future<SharedEntry?> _openSharedEntryEditor(
                   start: type.supportsTime ? start : null,
                   end: type.supportsTime ? end : null,
                   done: existing?.done ?? false,
+                  isSensitive: isSensitive,
                 ),
               );
             },
