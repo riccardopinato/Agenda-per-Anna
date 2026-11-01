@@ -1,13 +1,15 @@
 # Anna's Diary — candidate 1.0.0-rc.6+116, physical acceptance
 
-**Stato iniziale: RELEASE CANDIDATE PLANNED, APK NOT BUILT, PHYSICAL NOT VERIFIED.** Questo documento non dichiara un build o un PASS non ancora osservati.
+**Aggiornamento verificato (2026-11-01): ARTIFACT BUILT / PHYSICAL NOT VERIFIED.** GitHub Actions ha completato con **SUCCESS** il workflow di rilascio firmato [#41262693723](https://github.com/riccardopinato/Agenda-per-Anna/actions/runs/41262693723) sul source SHA `6380af49d2dd0e35db747e7862456b4ac6bf6a87`. Preflight versionCode monotono, configurazione firma stabile, build ARM64, preparazione identita fisica e upload artefatto: **PASS**. Artefatto GitHub disponibile: `annas-diary-light-arm64`, ID `13065409792` (ZIP 20.471.451 byte). Verificare il contenuto del manifest, APK hash, impronta del certificato e reale compatibilita con l'installazione +115 sul dispositivo prima di dichiarare **PHYSICAL PASS**. Tutti i casi V116-01…V116-12 restano **NOT VERIFIED**.
+
+_Snapshot storico pre-build: RELEASE CANDIDATE PLANNED / APK NOT BUILT; superato dal workflow sopra._
 
 ## Identita e rilascio
 
 - Flutter version: `1.0.0-rc.6+116` (Android `versionCode=116`, superiore al +115 installato).
 - Package invariato: `com.riccardopinato.agenda_per_anna`.
 - Stable signing invariato: workflow autorizzato `.github/workflows/auto-signed-arm64.yml` esegue il preflight di `Development checks` su `main` e invoca `sideload-arm64.yml` solo sullo SHA verificato, se il build number e' cresciuto rispetto al primo parent.
-- Source revision: **DA COMPILARE dal workflow effettivo** (non il commit di PR); physical manifest, APK SHA-256, signing certificate SHA-256 e artifact run URL **DA VERIFICARE dal pacchetto finale**.
+- Source revision: `6380af49d2dd0e35db747e7862456b4ac6bf6a87` (main esatto, validato dal workflow). Run: [#41262693723](https://github.com/riccardopinato/Agenda-per-Anna/actions/runs/41262693723). Physical manifest, APK SHA-256 e signing certificate SHA-256: **DA VERIFICARE DAL PACCHETTO**, non inferiti dalla sola esecuzione CI.
 - Artifact previsto: `annas-diary-light-arm64` / `Anna-Diary-arm64-release.apk` / `PHYSICAL_CERTIFICATION_MANIFEST.json`.
 - Requisito: installazione IN PLACE sopra +115, senza disinstallazione, wipe o sostituzione della firma. Dati e Cassaforte devono restare intatti.
 
