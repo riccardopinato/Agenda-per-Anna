@@ -30,7 +30,7 @@ class GcalFault implements Exception {
   bool get retryable =>
       kind == GcalFaultKind.transient || kind == GcalFaultKind.rateLimited;
   @override
-  String toString() => 'Google Calendar staging error: ' + kind.name;
+  String toString() => 'Google Calendar staging error: ${kind.name}';
 }
 
 class GcalHttpResult {
@@ -143,15 +143,10 @@ String gcalOwnerHash({
 }
 
 String _civilDate(DateTime value) =>
-    value.year.toString().padLeft(4, '0') +
-    '-' + value.month.toString().padLeft(2, '0') +
-    '-' + value.day.toString().padLeft(2, '0');
+    '${value.year.toString().padLeft(4, '0')}-${value.month.toString().padLeft(2, '0')}-${value.day.toString().padLeft(2, '0')}';
 
 String _civilTime(DateTime day, int minutes) =>
-    _civilDate(day) +
-    'T' + (minutes ~/ 60).toString().padLeft(2, '0') +
-    ':' + (minutes % 60).toString().padLeft(2, '0') +
-    ':00';
+    '${_civilDate(day)}T${(minutes ~/ 60).toString().padLeft(2, '0')}:${(minutes % 60).toString().padLeft(2, '0')}:00';
 
 /// Local civil time + an explicit IANA zone; Google resolves DST correctly.
 /// For all-day events the end is exclusive, as required by Calendar API.
@@ -196,7 +191,7 @@ Map<String, dynamic> gcalEventBody(GcalDraft item, String ownerHash) {
           'timeZone': item.timeZone,
         };
   return <String, dynamic>{
-    'id': 'ad' + ownerHash,
+    'id': 'ad$ownerHash',
     'summary': item.title.trim(),
     'start': begin,
     'end': finish,
@@ -255,7 +250,7 @@ class GcalStagedWriter {
       throw const GcalFault(GcalFaultKind.authorization);
     }
     final headers = <String, String>{
-      'Authorization': 'Bearer ' + accessToken,
+      'Authorization': 'Bearer $accessToken',
       'Accept': 'application/json',
       if (body != null) 'Content-Type': 'application/json; charset=utf-8',
       if (ifMatch != null) 'If-Match': ifMatch,
@@ -402,7 +397,7 @@ class GcalStagedWriter {
     final desiredContent = sha256.convert(utf8.encode(jsonEncode(<dynamic>[
       desired['summary'], desired['start'], desired['end'],
     ]))).toString();
-    final remoteId = 'ad' + hash;
+    final remoteId = 'ad$hash';
     final link = await links.read(hash);
     if (link != null &&
         (link.scopeHash != hash || link.remoteEventId != remoteId ||
