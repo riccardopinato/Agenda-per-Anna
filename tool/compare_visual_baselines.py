@@ -14,6 +14,9 @@ def compare(baseline, candidate, matrix):
     cfg = json.loads(matrix.read_text(encoding="utf-8"))
     names = cfg["checkpoints"]
     variants = [v["id"] for v in cfg["variants"]]
+    if not variants or len(set(variants)) != len(variants):
+        print("BLOCKED: empty or duplicate screenshot variants")
+        return 2
     if len(set(names)) != 10 or set(names) & set(cfg["excluded"]):
         print("BLOCKED: invalid or private checkpoint")
         return 2
