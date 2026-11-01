@@ -104,6 +104,7 @@ part 'src/shared_invite_qr.dart';
 part 'src/screens/shared_space.dart';
 part 'src/screens/shared_passwords_screen.dart';
 part 'src/screens/cloud_account.dart';
+part 'src/weekly_review.dart';
 part 'src/planner_views.dart';
 part 'src/widgets_editors.dart';
 part 'src/diary/diary_templates.dart';
@@ -172,6 +173,24 @@ Future<void> _handleLocalReminderAction(
   const donePrefix = 'reminder_done:';
   final markDone = payload.startsWith(donePrefix);
   final stableId = markDone ? payload.substring(donePrefix.length) : payload;
+
+  if (!markDone && stableId.startsWith('wr:week:')) {
+    final monday = DateTime.tryParse(stableId.substring('wr:week:'.length));
+    if (monday == null || mondayOf(monday) != monday) return;
+    final review = store.preferences.weeklyReviewReminderDay == 7
+        ? monday
+        : DateTime(monday.year, monday.month, monday.day - 7);
+    await _runAfterEntryScope(store, (context) async {
+      await Navigator.of(context).push<void>(
+        MaterialPageRoute<void>(builder: (_) => WeeklyReviewScreen(
+          store: store,
+          reviewWeek: review,
+          planWeek: wrPlanningWeekFor(store, review),
+        )),
+      );
+    });
+    return;
+  }
 
   if (stableId == dailyRitualMorningReminderId ||
       stableId == dailyRitualEveningReminderId) {
