@@ -247,7 +247,7 @@ class UnifiedAgendaTile extends StatelessWidget {
                 activeColor: color,
                 onChanged: (_) async {
                   if (shared.isSensitive &&
-                      !await requestSensitiveItemAccess(context, store)) return;
+                      !await requestSensitiveItemAccess(context, store)) { return; }
                   if (!context.mounted) return;
                   await _toggleSharedAgendaEntry(store, entry);
                 },
@@ -347,7 +347,7 @@ Future<void> openUnifiedAgendaEntry(
   UnifiedAgendaEntry entry,
 ) async {
   if (isMaskedAgendaEntry(entry) &&
-      !await requestSensitiveItemAccess(context, store)) return;
+      !await requestSensitiveItemAccess(context, store)) { return; }
   if (!context.mounted) return;
   if (entry.privateItem != null) {
     await openItemEditor(
