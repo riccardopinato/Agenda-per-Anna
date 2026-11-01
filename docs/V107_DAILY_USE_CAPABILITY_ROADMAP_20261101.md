@@ -7,6 +7,8 @@ _Aggiornamento post PR #186: A1 source MERGED; F0 USER_ATTESTED_GENERAL_PASS; al
 
 **Aggiornamento dopo PR #188:** A2 CAP-0003 e' SOURCE MERGED su main al commit `31500ea9687680f3159f45ff1d4dbeb9bc53ae22`. L'APK +115 precede A1+A2 e NON le contiene. Il candidato `1.0.0-rc.6+116` (build number 116) e' predisposto in questa release PR, e sara' considerato ARTIFACT BUILT solo dopo il successo del workflow stabile su esatto source SHA; [gate fisico v116](V116_ANDROID_PHYSICAL_GATE.md). La wave B1 resta pianificata.
 
+**Aggiornamento release +116 (2026-11-01):** A1 e A2 sono integrate nel commit `6380af49d2dd0e35db747e7862456b4ac6bf6a87`, la release Android `1.0.0-rc.6+116` e stata **costruita e firmata** dal workflow [#41262693723](https://github.com/riccardopinato/Agenda-per-Anna/actions/runs/41262693723) con esito SUCCESS; artefatto `annas-diary-light-arm64` (ID 13065409792) disponibile. **Test fisici +116 NON VERIFICATI.** Verificare in place update, Cassaforte, A1/A2 e checklist nella [matrice v116](V116_ANDROID_PHYSICAL_GATE.md). Tutte le note sopra sullo stato pre-build sono cronologia, non stato corrente.
+
 ## Fonti, baseline e competenze
 
 - Product scope e privacy: [PRODUCT_BIBLE.md](PRODUCT_BIBLE.md); ordine di delivery e stato: [ROADMAP.md](ROADMAP.md); AGENTS.md nel root.
