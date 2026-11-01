@@ -228,14 +228,14 @@ class _CapabilityHealthScreenState extends State<CapabilityHealthScreen>
           for (final check in _checks ?? const <CapabilityHealthCheck>[]) ...[
             const Divider(),
             Semantics(
-              identifier: 'capability-health-' + check.key,
+              identifier: 'capability-health-${check.key}',
               child: ListTile(
                 contentPadding: EdgeInsets.zero,
                 leading: Icon(check.state == CapabilityHealthState.available
                     ? Icons.info_outline : Icons.warning_amber_outlined),
                 title: Text(t(check.key)),
                 subtitle: Text(
-                  t(check.state.name) + '\n' + t(check.explanation),
+                  '${t(check.state.name)}\n${t(check.explanation)}',
                 ),
               ),
             ),
