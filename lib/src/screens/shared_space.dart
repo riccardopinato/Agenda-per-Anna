@@ -1554,6 +1554,9 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
       initialDate: selected,
       existing: existing,
       initialType: initialType,
+      pinAvailable: widget.store.preferences.privacyLockEnabled &&
+          widget.store.preferences.pinHash != null &&
+          widget.store.preferences.pinSalt != null,
     );
     if (result == null) return;
     await _persistSharedEntry(
@@ -3147,6 +3150,7 @@ class _SharedPhotoViewerScreenState extends State<SharedPhotoViewerScreen> {
 Future<SharedEntry?> _openSharedEntryEditor(
   BuildContext context, {
   required DateTime initialDate,
+  required bool pinAvailable,
   SharedEntry? existing,
   SharedEntryType? initialType,
   TimeOfDay? initialTime,
@@ -3217,7 +3221,9 @@ Future<SharedEntry?> _openSharedEntryEditor(
                 subtitle: Text(AnnaStrings.of(context).d3('privacy_pinRequired')),
                 secondary: const Icon(Icons.visibility_off_outlined),
                 value: isSensitive,
-                onChanged: (value) => setLocal(() => isSensitive = value),
+                onChanged: pinAvailable
+                    ? (value) => setLocal(() => isSensitive = value)
+                    : null,
               ),
               const SizedBox(height: 8),
               ListTile(
