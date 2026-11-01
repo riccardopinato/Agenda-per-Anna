@@ -2655,7 +2655,7 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
           title: Text(AnnaStrings.of(context).d3('privacy_sensitive')),
           onTap: () async {
             final granted = await requestSensitiveItemAccess(context, widget.store);
-            if (!granted || !mounted) return;
+            if (!granted || !mounted || !context.mounted) return;
             await _viewReadOnlySharedEntry(context, entry);
           },
           trailing: _canEditSharedEntry(entry)
