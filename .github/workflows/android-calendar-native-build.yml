@@ -1,0 +1,67 @@
+name: Android calendar native compile
+
+# Explicit, source-scoped Android compile gate for calendar bridge changes and
+# Android release candidates. This does not claim physical-device validation.
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - '.github/workflows/android-calendar-native-build.yml'
+      - 'tool/prepare_android_platform.py'
+      - 'lib/src/android_calendar_sync.dart'
+      - 'lib/src/screens/android_calendar_sync_settings.dart'
+      - 'lib/src/unified_agenda.dart'
+      - 'pubspec.yaml'
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/android-calendar-native-build.yml'
+      - 'tool/prepare_android_platform.py'
+      - 'lib/src/android_calendar_sync.dart'
+      - 'lib/src/screens/android_calendar_sync_settings.dart'
+      - 'lib/src/unified_agenda.dart'
+      - 'pubspec.yaml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: android-calendar-native-compile-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  android-compile:
+    name: Compile Android Calendar bridge
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: "3.47.5"
+          channel: stable
+          cache: true
+      - name: Generate pinned Android platform
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf android /tmp/agenda_b3_android
+          flutter create --project-name agenda_per_anna --org com.riccardopinato --platforms=android /tmp/agenda_b3_android
+          cp -R /tmp/agenda_b3_android/android .
+      - name: Apply native patch (including Calendar Provider)
+        shell: bash
+        run: |
+          python3 -m py_compile tool/prepare_android_platform.py
+          python3 tool/prepare_android_platform.py
+      - name: Install locked Flutter dependencies
+        run: flutter pub get --enforce-lockfile
+      - name: Generate app launcher assets
+        run: dart run flutter_launcher_icons -f tool/flutter_launcher_icons_android.yaml
+      - name: Compile Android ARM64 debug APK (test-only)
+        run: flutter build apk --debug --target-platform android-arm64
+      - name: Assert test-only output was produced
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -s build/app/outputs/flutter-apk/app-debug.apk
+          echo "Android native Calendar bridge compiled; no release signature or device QA claimed"
