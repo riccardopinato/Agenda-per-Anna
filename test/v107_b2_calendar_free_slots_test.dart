@@ -115,6 +115,10 @@ void main() {
     expect(source, contains('store.unifiedForDay(target)'));
     expect(source, contains('externalReady && store.agendaContentFilter'));
     expect(source, contains('external.coversRange('));
+    expect(source, contains('store.accountRevision'));
+    expect(source, contains('final fresh = findCalendarFreeSlots('));
+    expect(source, contains('if (!available)'));
+    expect(source, contains('SingleChildScrollView('));
     expect(source, contains('openUnifiedItemComposer('));
     expect(source, isNot(contains('store.upsert(')));
     expect(source, isNot(contains('store.createRecurringSeries(')));
