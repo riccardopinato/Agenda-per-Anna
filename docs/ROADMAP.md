@@ -1,5 +1,13 @@
 # Anna's Diary — Roadmap
 
+## Aggiornamento operativo v1.07-B3 — APK firmato +117 (1 novembre 2026)
+
+- **Release Android:** `1.0.0-rc.6+117` (`versionCode 117`) **ARTIFACT BUILT / SIGNED**. Source immutabile `main@8824f0dcf427d67aa2e069da6fd2dd02bc6cb1e1`, workflow stabile [#41269542695](https://github.com/riccardopinato/Agenda-per-Anna/actions/runs/41269542695) **SUCCESS**, artefatto `annas-diary-light-arm64` (ID GitHub **13068413157**, 20.508.484 byte ZIP). Include B1 parser locale, B2 slot liberi, B3 sincronizzazione Android opt-in; l'APK +116 precedente non le include tutte.
+- **QA tecnico:** la compilazione nativa Android ARM64 (debug, solo CI) del bridge Calendar Provider e' **SUCCESS** sul commit della PR #197 `ef6ca19282f1de1fc600bd8d9d48cdb9bb29bc4d`, run [#41269809343](https://github.com/riccardopinato/Agenda-per-Anna/actions/runs/41269809343). PR [#197](https://github.com/riccardopinato/Agenda-per-Anna/pull/197) MERGED come gate CI aggiuntivo su `main@2876b986df92df1e560b9c8022072c126cbc770a`. Questo gate non cambia il codice dell'APK +117.
+- **QA fisico:** **NOT VERIFIED** su +117. Non attestare installazione in-place, permesso READ/WRITE_CALENDAR, scelta account/calendario, propagazione effettiva a Google, revoca permessi, comportamento multi-dispositivo, fingerprint o Play Store senza prove reali. Gli eventi Android sono aggiornati automaticamente soltanto quando l'app e' attiva; niente Google OAuth/API diretto.
+- **Promemoria Google:** il promemoria del 2 novembre **non e' stato creato** per limite di cinque automazioni attive. Google Calendar diretto resta un'integrazione successiva, con setup/conferma da parte dell'utente.
+
+
 ## Aggiornamento operativo — 1 novembre 2026, post-collaudo +115
 
 - **F0 / Android +115:** il titolare ha comunicato in Chat **«collaudo fatto, tutto ok»**. Stato: **USER_ATTESTED_GENERAL_PASS** (esito funzionale complessivo riferito dall'utilizzatore), non una certificazione tecnica con manifest/fingerprint/logs per tutti gli scenari. La [matrice fisica](V115_ANDROID_PHYSICAL_GATE.md) conserva **NOT VERIFIED** nei singoli casi privi di evidenza circostanziata. Non attribuire PASS a RevenueCat/Play Internal Testing, firma SHA-256, versione iniziale o test cross-device se non documentati.
