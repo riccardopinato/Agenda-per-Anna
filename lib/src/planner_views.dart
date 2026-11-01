@@ -358,7 +358,10 @@ class _CalendarScreenState extends State<CalendarScreen> {
                     Builder(
                       builder: (context) {
                         final timed = events
-                            .where((entry) => entry.start?.hour == hour)
+                            // This strip has no privacy-safe time placement.
+                            .where((entry) =>
+                                !isMaskedAgendaEntry(entry) &&
+                                entry.start?.hour == hour)
                             .toList()
                           ..sort((a, b) =>
                               a.sortMinutes.compareTo(b.sortMinutes));
@@ -1809,7 +1812,11 @@ class DayTimeline extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final totalHeight = (endHour - startHour) * hourHeight;
-    final placements = _placements(events);
+    // A block's vertical position reveals its time even when its text is
+    // masked. Sensitive events remain available via guarded agenda tiles.
+    final placements = _placements(
+      events.where((item) => !item.isSensitive).toList(),
+    );
 
     return LayoutBuilder(
       builder: (context, constraints) {
