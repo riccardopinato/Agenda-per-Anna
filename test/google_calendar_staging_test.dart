@@ -121,13 +121,15 @@ const targetCalendar = 'team+calendar@example.com';
 Future<GcalWriteOutcome> writeSample(GcalStagedWriter service,
         {String title = 'Dentist',
         bool consent = true,
-        bool androidOff = true}) =>
+        bool androidOff = true,
+        bool androidExportsReviewed = true}) =>
     service.upsertOne(
       accountId: 'supabase-account-1',
       calendarId: targetCalendar,
       event: draft(title: title),
       googleConsentGranted: consent,
       androidB3Disabled: androidOff,
+      existingAndroidExportsReviewed: androidExportsReviewed,
     );
 
 void main() {
@@ -202,6 +204,9 @@ void main() {
     await expectLater(writeSample(service, androidOff: false),
       throwsA(isA<GcalFault>().having(
         (x) => x.kind, 'kind', GcalFaultKind.androidWriterStillEnabled)));
+    await expectLater(writeSample(service, androidExportsReviewed: false),
+      throwsA(isA<GcalFault>().having(
+        (x) => x.kind, 'kind', GcalFaultKind.migrationReviewRequired)));
     expect(http.gets + http.posts + http.patches, 0);
   });
 
