@@ -68,3 +68,49 @@ Future<bool> saveEventMemoryDraft(
     _eventMemoryWritesInFlight.remove(id);
   }
 }
+
+
+/// No write until the person confirms an editable note. The original
+/// appointment is never altered and only private events are eligible.
+Future<void> openEventMemoryDraft(
+  BuildContext context,
+  AgendaStore store,
+  AgendaItem item,
+) async {
+  if (!canCaptureEventMemory(item, DateTime.now())) return;
+  final accountAtStart = store.activeAccountId;
+  final id = eventMemoryBlockId(item);
+  final candidates = store.journal(item.date).blocks
+      .where((block) => block.id == id);
+  final existing = candidates.isEmpty ? null : candidates.first;
+  final strings = AnnaStrings.of(context);
+  var draft = await showDiaryNoteEditor(
+    context,
+    initialText: existing?.text ??
+        eventMemoryDraftText(
+          item,
+          locale: AnnaStrings.intlLocale(context),
+          sourceLabel: strings.d3('v107EventMemorySource'),
+        ),
+    editing: existing != null,
+  );
+  while (draft != null && draft.trim().isNotEmpty && context.mounted) {
+    if (store.activeAccountId != accountAtStart) return;
+    try {
+      final saved = await saveEventMemoryDraft(
+        store, item, draft, expectedAccountId: accountAtStart,
+      );
+      if (!context.mounted || !saved) return;
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text(AnnaStrings.of(context).d3('v107EventMemorySaved')),
+      ));
+      return;
+    } catch (_) {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text(AnnaStrings.of(context).d3('v107EventMemorySaveFailed')),
+      ));
+      draft = await showDiaryNoteEditor(context, initialText: draft);
+    }
+  }
+}
