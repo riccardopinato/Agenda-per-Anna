@@ -17,6 +17,26 @@
 - `requestSensitiveItemAccess` riutilizza verifica PIN/biometria dell'app e nega l'apertura se non ci sono credenziali. E' un controllo di disclosure UI, NON cifratura.
 - `AndroidCalendarSyncService`: esclude i nuovi elementi marcati sensibili dal successivo export B3; i precedenti export Android **non vengono rimossi** automaticamente.
 
+## Audit incrementale PR #200 (source-level; non certificazione)
+
+**Mitigazioni implementate in questa iterazione:**
+- SharedSpaceScreen: le card sensibili di feed, giorno e diario sono mascherate senza costruire titoli, note o thumbnail; apertura e modifica passano per challenge PIN/biometrica.
+- SharedMemoriesScreen: le voci sensibili sono escluse da ricerca, copertine, timeline e griglie finche' tali percorsi non hanno gate dedicati. I record restano conservati.
+- Note e sketch condivisi: preservano isSensitive durante le modifiche. La sostituzione di una foto sensibile e' bloccata finche' il percorso di upload differito non propaga il flag.
+- Widget Android: eventi sensibili mascherati; con Home discreta anche appuntamenti ordinari e nominativo del prossimo compleanno sono mascherati.
+- Android e Web Push: i nuovi promemoria sensibili usano testo generico, anche nel payload snooze.
+- Timeline oraria e blocchi temporali: le voci sensibili sono omesse per non rivelare l'orario attraverso il posizionamento.
+- Archivio generale e Year Review fondati su lifeArchiveEntries: le voci agenda sensibili non appaiono nelle proiezioni non autenticate.
+- Challenge: verifica account corrente prima di consentire la visualizzazione dopo PIN o biometria.
+
+**Limitazioni e gate ancora aperti:**
+- Export e backup espliciti possono contenere i dati originali: la mascheratura UI non equivale a cifratura. Serve revisione protezione/condivisione di file.
+- Calendari esterni gia' esportati, notifiche gia' consegnate, screenshot/app switcher, accessibilita' e cache esterne non sono bonificati retroattivamente.
+- SharedMediaPendingUpload non preserva ancora il marker riservato durante sostituzione foto: percorso disabilitato per le foto gia' sensibili, non certificato come flusso completo.
+- Test reali su due dispositivi, account switch, background/resume, permessi biometrici, APK firmato e verifica visuale: NON VERIFICATI.
+- Non e' crittografia at-rest ne' E2EE; nessuna garanzia di riservatezza lato server.
+
+**Decisione:** PR resta Draft; niente merge, APK firmato o PHYSICAL PASS prima di chiudere i gate.
 ## Gate privacy da completare prima del merge
 
 1. **SharedSpaceScreen e feed indipendente:** tutte le righe per appuntamenti, note, foto, descrizioni, interazioni, contenuti ricordo devono rispettare `isSensitive` ove previsto. Al momento questa PR presidia principalmente i componenti agenda/Oggi; non affermare privacy a livello intera app.
