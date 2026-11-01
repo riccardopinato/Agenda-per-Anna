@@ -30,7 +30,7 @@
 - Challenge: verifica account corrente prima di consentire la visualizzazione dopo PIN o biometria.
 
 **Limitazioni e gate ancora aperti:**
-- Export e backup espliciti possono contenere i dati originali: la mascheratura UI non equivale a cifratura. Serve revisione protezione/condivisione di file.
+- I tre export (backup ZIP, archivio aperto ZIP, export TXT) richiedono challenge PIN/biometrica e conferma esplicita se esistono appuntamenti personali sensibili. Il file resta leggibile/non cifrato: conservarlo e condividerlo con cautela.
 - Calendari esterni gia' esportati, notifiche gia' consegnate, screenshot/app switcher, accessibilita' e cache esterne non sono bonificati retroattivamente.
 - SharedMediaPendingUpload non preserva ancora il marker riservato durante sostituzione foto: percorso disabilitato per le foto gia' sensibili, non certificato come flusso completo.
 - Test reali su due dispositivi, account switch, background/resume, permessi biometrici, APK firmato e verifica visuale: NON VERIFICATI.
