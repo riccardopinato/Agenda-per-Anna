@@ -165,7 +165,8 @@ Future<void> showCalendarFreeSlots(
             padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
             child: SizedBox(
               height: MediaQuery.sizeOf(sheetContext).height * 0.72,
-              child: Column(
+              child: SingleChildScrollView(
+                child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(calendarFreeSlotLabel(strings, 'title'),
@@ -230,9 +231,13 @@ Future<void> showCalendarFreeSlots(
                   Text(calendarFreeSlotLabel(strings, 'scope'),
                       style: Theme.of(sheetContext).textTheme.bodySmall),
                   const SizedBox(height: 8),
-                  Expanded(child: slots.isEmpty
-                      ? Center(child: Text(calendarFreeSlotLabel(strings, 'empty')))
+                  slots.isEmpty
+                      ? Center(child: Padding(
+                          padding: const EdgeInsets.all(16),
+                          child: Text(calendarFreeSlotLabel(strings, 'empty'))))
                       : ListView.builder(
+                          shrinkWrap: true,
+                          physics: const NeverScrollableScrollPhysics(),
                           itemCount: slots.length,
                           itemBuilder: (_, i) {
                             final slot = slots[i];
@@ -244,10 +249,11 @@ Future<void> showCalendarFreeSlots(
                               onTap: () => Navigator.pop(sheetContext, slot),
                               trailing: const Icon(Icons.chevron_right),
                             );
-                          })),
+                          }),
                   Text(calendarFreeSlotLabel(strings, 'confirm'),
                     style: Theme.of(sheetContext).textTheme.bodySmall),
                 ],
+              ),
               ),
             ),
           ),
