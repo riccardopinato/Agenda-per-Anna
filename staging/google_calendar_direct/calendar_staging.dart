@@ -311,10 +311,24 @@ class GcalStagedWriter {
   bool _sameContent(
     Map<String, dynamic> remote,
     Map<String, dynamic> payload,
-  ) =>
-      remote['summary'] == payload['summary'] &&
-      jsonEncode(remote['start']) == jsonEncode(payload['start']) &&
-      jsonEncode(remote['end']) == jsonEncode(payload['end']);
+  ) {
+    bool sameEndpoint(dynamic actual, dynamic expected) {
+      if (actual is! Map || expected is! Map) return false;
+      if (expected['date'] != null) {
+        return actual['date'] == expected['date'];
+      }
+      final incoming = actual['dateTime'];
+      final wanted = expected['dateTime'];
+      // Google normally returns an RFC3339 offset even if a civil datetime
+      // plus explicit timeZone was provided in the write.
+      return incoming is String && wanted is String &&
+          incoming.length >= 19 && wanted.length >= 19 &&
+          incoming.substring(0, 19) == wanted.substring(0, 19);
+    }
+    return remote['summary'] == payload['summary'] &&
+        sameEndpoint(remote['start'], payload['start']) &&
+        sameEndpoint(remote['end'], payload['end']);
+  }
 
   /// Restrict the surface to owned/writable calendars. The chosen scopes
   /// need explicit Google OAuth consent when integration is activated.
@@ -400,7 +414,10 @@ class GcalStagedWriter {
       }
       final remoteEtag = _etag(remote);
       if (link == null) {
-        // Recover existing record without overwriting possible Google edits.
+        // Recover only identical content. A Google-side edit is a conflict.
+        if (!_sameContent(remote, desired)) {
+          throw const GcalFault(GcalFaultKind.ownershipConflict);
+        }
         await links.write(GcalLink(
           scopeHash: hash,
           remoteEventId: remoteId,
