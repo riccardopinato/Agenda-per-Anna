@@ -9,9 +9,9 @@ bool canCaptureEventMemory(AgendaItem item, DateTime now) {
 
 String eventMemoryBlockId(AgendaItem item) {
   final digest = sha256.convert(utf8.encode(
-    'anna:v107:event-memory:' + item.id + ':' + AgendaStore.dateKey(item.date),
+    'anna:v107:event-memory:${item.id}:${AgendaStore.dateKey(item.date)}',
   )).toString();
-  return 'event-memory-' + digest.substring(0, 32);
+  return 'event-memory-${digest.substring(0, 32)}';
 }
 
 String eventMemoryDraftText(
@@ -20,10 +20,10 @@ String eventMemoryDraftText(
   required String sourceLabel,
 }) {
   final date = DateFormat.yMd(locale).format(item.date);
-  final time = item.start == null ? '' : ' ' + formatTime(item.start!);
-  final reference = sourceLabel + ': ' + item.title.trim() + ' · ' + date + time;
+  final time = item.start == null ? '' : ' ${formatTime(item.start!)}';
+  final reference = '$sourceLabel: ${item.title.trim()} · $date$time';
   final note = item.note.trim();
-  return note.isEmpty ? reference + '\n\n' : reference + '\n\n' + note + '\n\n';
+  return note.isEmpty ? '$reference\n\n' : '$reference\n\n$note\n\n';
 }
 
 final Set<String> _eventMemoryWritesInFlight = <String>{};
