@@ -1,6 +1,13 @@
 part of '../main.dart';
 
 const Map<String, Map<String, String>> _d3Catalog = {
+  'v107MemoryInTrash': <String, String>{'en': 'This memory is in Trash. Restore it before creating another.', 'it': 'Questo ricordo è nel Cestino. Ripristinalo prima di continuare.', 'es': 'Este recuerdo está en la Papelera. Restáuralo antes de continuar.', 'fr': 'Ce souvenir est dans la Corbeille. Restaure-le avant de continuer.', 'pt': 'Esta memória está no Lixo. Restaura-a antes de continuar.'},
+  'v107EventMemorySourceChanged': <String, String>{'en': 'The appointment changed. Your draft is still available to edit or copy.', 'it': 'L\'appuntamento è cambiato. Puoi ancora modificare o copiare la bozza.', 'es': 'La cita ha cambiado. Puedes editar o copiar el borrador.', 'fr': 'Le rendez-vous a changé. Tu peux encore modifier ou copier le brouillon.', 'pt': 'O compromisso mudou. Ainda podes editar ou copiar o rascunho.'},
+  'v107EventMemoryAccountChanged': <String, String>{'en': 'The account changed. The memory was not saved.', 'it': 'L\'account è cambiato. Il ricordo non è stato salvato.', 'es': 'La cuenta ha cambiado. No se guardó el recuerdo.', 'fr': 'Le compte a changé. Le souvenir n\'a pas été enregistré.', 'pt': 'A conta mudou. A memória não foi guardada.'},
+  'v107EventMemoryAction': <String, String>{'en': 'Keep a memory', 'it': 'Conserva un ricordo', 'es': 'Guardar un recuerdo', 'fr': 'Garder un souvenir', 'pt': 'Guardar uma memória'},
+  'v107EventMemorySaved': <String, String>{'en': 'Memory saved in your diary', 'it': 'Ricordo salvato nel diario', 'es': 'Recuerdo guardado en el diario', 'fr': 'Souvenir enregistré dans le journal', 'pt': 'Memória guardada no diário'},
+  'v107EventMemorySaveFailed': <String, String>{'en': 'Could not save the memory. Your draft is still available.', 'it': 'Impossibile salvare il ricordo. La bozza è ancora disponibile.', 'es': 'No se pudo guardar el recuerdo. El borrador sigue disponible.', 'fr': 'Impossible d’enregistrer le souvenir. Le brouillon est conservé.', 'pt': 'Não foi possível guardar a memória. O rascunho continua disponível.'},
+  'v107EventMemorySource': <String, String>{'en': 'From appointment', 'it': 'Da appuntamento', 'es': 'De la cita', 'fr': 'Du rendez-vous', 'pt': 'De compromisso'},
   "ui5Commitments": <String, String>{"en": "Commitments", "it": "Impegni", "es": "Compromisos", "fr": "Engagements", "pt": "Compromissos"},
   "ui5Activities": <String, String>{"en": "Activities", "it": "Attività", "es": "Actividades", "fr": "Activités", "pt": "Atividades"},
   "ui5Wellbeing": <String, String>{"en": "Wellbeing", "it": "Benessere", "es": "Bienestar", "fr": "Bien-être", "pt": "Bem-estar"},

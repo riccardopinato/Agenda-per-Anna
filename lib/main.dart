@@ -57,6 +57,7 @@ part 'src/ios_journal_design.dart';
 part 'src/day_hub_domain.dart';
 part 'src/daily_rituals.dart';
 part 'src/unified_capture.dart';
+part 'src/event_memory_capture.dart';
 part 'src/home_widget_bridge.dart';
 part 'src/recurring_life_domain.dart';
 part 'src/organization_domain.dart';
