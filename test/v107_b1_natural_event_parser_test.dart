@@ -31,6 +31,17 @@ void main() {
     });
   }
 
+  test('B1 handles accented relative days and curly French apostrophes', () {
+    final portuguese = parseNaturalEvent('Dentista amanhã às 17:30',
+        languageCode: 'pt', now: now);
+    expect(portuguese, isNotNull);
+    expect(portuguese!.date, DateTime(2027, 1, 1));
+    final french = parseNaturalEvent('Dentiste aujourd’hui à 17h30',
+        languageCode: 'fr', now: now);
+    expect(french, isNotNull);
+    expect(french!.date, DateTime(2026, 12, 31));
+  });
+
   test('B1 absolute ISO/date-first, leap day and local today', () {
     final dateFirst = parseNaturalEvent('Analisi 29/02/2028 alle 09:15',
         languageCode: 'it', now: now);
@@ -68,6 +79,10 @@ void main() {
       'Dentista domani alle 17:30 ricordami tra due giorni',
       'Dentista domani alle 17:30 ogni giovedì',
       'Dentista 2027-02-05 08:30 UTC',
+      'Meeting tomorrow at 17:30 IST',
+      'Meeting tomorrow at 17:30 Europe/Rome',
+      'Workout tomorrow at 08:00 every weekday',
+      'Meeting tomorrow at 09:00 or 10:00',
     ];
     for (final phrase in invalid) {
       expect(parseNaturalEvent(phrase,
@@ -95,7 +110,8 @@ void main() {
     expect(main, contains("part 'src/natural_event_parser.dart';"));
     expect(editor, contains("ValueKey('b1-natural-open')"));
     expect(editor, contains('showNaturalEventParser(context)'));
-    expect(editor, contains('naturalDraftApplied = true'));
+    expect(editor, contains('naturalDraftApplied = true')); 
+    expect(editor, contains('if (start != null) Text('));
     expect(editor, contains('accountAtOpen'));
     expect(editor, contains('store.upsert('));
     expect(editor, contains('store.createRecurringSeries('));
