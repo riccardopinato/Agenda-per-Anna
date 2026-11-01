@@ -99,4 +99,58 @@ void main() {
     expect(code, contains('"it": "Personale"'));
     expect(code, contains("AgendaContentFilter.privateOnly => d3('privacy_personalFilter')"));
   });
+
+  testWidgets('sensitive private and shared titles are masked in agenda tiles',
+      (tester) async {
+    final store = AgendaStore();
+    await tester.pumpWidget(MaterialApp(
+      locale: const Locale('it'),
+      home: Scaffold(
+        body: ListView(children: [
+          EventTile(store: store, item: privateEvent(isSensitive: true)),
+          UnifiedAgendaTile(
+            store: store,
+            entry: UnifiedAgendaEntry.shared(
+                sharedEvent(isSensitive: true), null),
+          ),
+        ]),
+      ),
+    ));
+    expect(find.text('Private conversation'), findsNothing);
+    expect(find.text('Shared conversation'), findsNothing);
+    expect(find.text('Contenuto riservato'), findsNWidgets(2));
+    expect(find.text('19:00'), findsNothing);
+    expect(find.text('20:30'), findsNothing);
+    await tester.pumpWidget(const SizedBox.shrink());
+    store.dispose();
+  });
+
+  testWidgets('ordinary personal item remains readable outside discreet mode',
+      (tester) async {
+    final store = AgendaStore();
+    await tester.pumpWidget(MaterialApp(
+      locale: const Locale('it'),
+      home: Scaffold(
+        body: EventTile(store: store, item: privateEvent()),
+      ),
+    ));
+    expect(find.text('Private conversation'), findsOneWidget);
+    await tester.pumpWidget(const SizedBox.shrink());
+    store.dispose();
+  });
+
+  testWidgets('discreet mode hides ordinary personal item previews',
+      (tester) async {
+    final store = AgendaStore();
+    await tester.pumpWidget(MaterialApp(
+      locale: const Locale('it'),
+      home: Scaffold(
+        body: EventTile(store: store, item: privateEvent(),
+          hideDetails: true),
+      ),
+    ));
+    expect(find.text('Private conversation'), findsNothing);
+    await tester.pumpWidget(const SizedBox.shrink());
+    store.dispose();
+  });
 }
