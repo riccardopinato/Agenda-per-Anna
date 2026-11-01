@@ -1602,6 +1602,14 @@ _DayLifePresentation _dayLifePresentation(
   switch (entry.kind) {
     case DayLifeEntryKind.agenda:
       final value = entry.agenda!;
+      if (isMaskedAgendaEntry(value)) {
+        return (
+          icon: Icons.lock_outline,
+          title: strings.d3('privacy_sensitive'),
+          subtitle: '',
+          timeLabel: '',
+        );
+      }
       final when = value.start == null ? strings.d3('day') : formatTime(value.start!);
       return (
         icon: value.isExternal
