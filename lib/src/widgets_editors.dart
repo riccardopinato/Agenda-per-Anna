@@ -1231,6 +1231,7 @@ Future<void> openItemEditor(
   bool naturalDraftApplied = false;
   final accountAtOpen = store.activeAccountId;
   bool saving = false;
+  bool isSensitive = existing?.isSensitive ?? false;
 
   AgendaItem buildItem({
     required String id,
@@ -1253,6 +1254,7 @@ Future<void> openItemEditor(
       end: type == ItemType.task ? null : end,
       done: done,
       pinned: pinned,
+      isSensitive: isSensitive,
       recurrenceRule: existing?.recurrenceRule ?? RecurrenceRule.none,
       recurrenceSeriesId: existing?.recurrenceSeriesId,
       recurrenceIndex: existing?.recurrenceIndex ?? 0,
@@ -1394,6 +1396,15 @@ Future<void> openItemEditor(
                     labelText: AnnaStrings.of(context).d3('editor_notes'),
                     border: const OutlineInputBorder(),
                   ),
+                ),
+                SwitchListTile.adaptive(
+                  key: const ValueKey('privacy-personal-sensitive'),
+                  contentPadding: EdgeInsets.zero,
+                  title: Text(AnnaStrings.of(context).d3('privacy_markSensitive')),
+                  subtitle: Text(AnnaStrings.of(context).d3('privacy_pinRequired')),
+                  secondary: const Icon(Icons.visibility_off_outlined),
+                  value: isSensitive,
+                  onChanged: (value) => setLocal(() => isSensitive = value),
                 ),
                 const SizedBox(height: 16),
                 Text(
