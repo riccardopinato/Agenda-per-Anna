@@ -61,6 +61,11 @@ jobs:
       - name: Test
         run: flutter test
 
+      - name: C2 synthetic visual comparator self-test
+        run: |
+          python3 -m pip install Pillow==11.3.0
+          python3 -m unittest discover -s tool -p 'test_visual_regression.py'
+
       - name: Test Web Vault crypto
         run: flutter test --platform chrome test/v087_web_vault_kdf_browser_test.dart
 
