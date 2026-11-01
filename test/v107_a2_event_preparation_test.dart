@@ -50,7 +50,7 @@ void main() {
     expect(parsed.note, note);
     expect(parsed.compose(), note);
     final withStep = const EventPreparationDraft(
-      note: note, steps: const [EventPreparationStep('Camera')],
+      note: note, steps: [EventPreparationStep('Camera')],
     );
     expect(withStep.compose(), '$note\n\n☐ Camera');
     expect(EventPreparationDraft.fromNote(withStep.compose()).steps.length, 1);
