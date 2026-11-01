@@ -3724,7 +3724,7 @@ Future<void> _showAgendaItemActions(
   AgendaItem item,
 ) async {
   if (item.isSensitive &&
-      !await requestSensitiveItemAccess(context, store)) return;
+      !await requestSensitiveItemAccess(context, store)) { return; }
   if (!context.mounted) return;
   final action = await showModalBottomSheet<String>(
     context: context,
