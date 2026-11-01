@@ -94,19 +94,9 @@ void main() {
         contains('if (!prefs.privacyLockEnabled ||'));
   });
 
-  testWidgets('filter label is Personale, not a security claim',
-      (tester) async {
-    final store = AgendaStore();
-    await tester.pumpWidget(MaterialApp(
-      home: Scaffold(
-        body: AgendaContentFilterBar(store: store),
-      ),
-    ));
-    // The production Localized AnnaStrings context is supplied by AgendaApp.
-    // The label itself is validated by the source localization contract.
+  test('filter label is Personale, not a security claim', () {
     final code = File('lib/src/localization_d3.dart').readAsStringSync();
     expect(code, contains('"it": "Personale"'));
     expect(code, contains("AgendaContentFilter.privateOnly => d3('privacy_personalFilter')"));
-    store.dispose();
   });
 }
