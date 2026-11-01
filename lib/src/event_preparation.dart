@@ -161,6 +161,11 @@ class _EventPreparationSheetState extends State<_EventPreparationSheet> {
 
   Future<void> _save() async {
     if (_saving) return;
+    final pendingStep = _newStep.text.trim();
+    if (pendingStep.isNotEmpty) {
+      _steps.add(EventPreparationStep(pendingStep));
+      _newStep.clear();
+    }
     setState(() { _saving = true; _errorKey = null; });
     try {
       final result = await saveEventPreparation(

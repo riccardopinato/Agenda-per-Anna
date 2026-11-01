@@ -3703,6 +3703,13 @@ Future<void> _showAgendaItemActions(
             subtitle: Text(AnnaStrings.of(context).d3('duplicateSameDay')),
             onTap: () => Navigator.pop(context, 'duplicate'),
           ),
+          if (canPrepareEvent(item))
+            ListTile(
+              key: const ValueKey<String>('v107-event-preparation-action'),
+              leading: const Icon(Icons.checklist_outlined),
+              title: Text(AnnaStrings.of(context).d3('v107PrepTitle')),
+              onTap: () => Navigator.pop(context, 'prepareEvent'),
+            ),
           if (canCaptureEventMemory(item, DateTime.now()))
             ListTile(
               key: const ValueKey<String>('v107-event-to-memory-action'),
@@ -3748,6 +3755,8 @@ Future<void> _showAgendaItemActions(
     await openItemEditor(context, store, item.date, existing: item);
   } else if (action == 'duplicate') {
     await store.duplicateItem(item);
+  } else if (action == 'prepareEvent' && context.mounted) {
+    await openEventPreparation(context, store, item);
   } else if (action == 'eventMemory' && context.mounted) {
     await openEventMemoryDraft(context, store, item);
   } else if (action == 'pin') {
