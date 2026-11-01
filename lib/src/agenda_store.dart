@@ -2610,20 +2610,42 @@ class AgendaStore extends ChangeNotifier {
     );
   }
 
-  Future<void> upsert(AgendaItem item) async {
+  Future<void> upsert(
+    AgendaItem item, {
+    bool synchronizeReminders = true,
+  }) async {
     final index = items.indexWhere((e) => e.id == item.id);
+    final previous = index < 0 ? null : items[index];
     if (index < 0) {
       items.add(item);
     } else {
       items[index] = item;
     }
     _invalidateDayIndex();
-    await _persistEntityMutation(
-      type: 'item',
-      id: item.id,
-      payload: item.toJson(),
-    );
-    await _syncReminders(item);
+    try {
+      await _persistEntityMutation(
+        type: 'item',
+        id: item.id,
+        payload: item.toJson(),
+      );
+    } catch (_) {
+      // Storage failed: never present an unsaved event as durable. Do not
+      // overwrite a newer concurrent edit while rolling back this write.
+      final currentIndex = items.indexWhere((e) => e.id == item.id);
+      if (currentIndex >= 0 && identical(items[currentIndex], item)) {
+        if (previous == null) {
+          items.removeAt(currentIndex);
+        } else {
+          items[currentIndex] = previous;
+        }
+        _invalidateDayIndex();
+        _notifyAgendaChanged();
+      }
+      rethrow;
+    }
+    // Text-only edits use the same canonical writer without cancelling or
+    // re-scheduling existing notifications.
+    if (synchronizeReminders) await _syncReminders(item);
     _notifyAgendaChanged();
   }
 
