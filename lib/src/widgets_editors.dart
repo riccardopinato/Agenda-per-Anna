@@ -35,7 +35,12 @@ class EventTile extends StatelessWidget {
             ? Checkbox(
                 value: item.done,
                 activeColor: color,
-                onChanged: (_) => store.toggle(item.id),
+                onChanged: (_) async {
+                  if (item.isSensitive &&
+                      !await requestSensitiveItemAccess(context, store)) return;
+                  if (!context.mounted) return;
+                  await store.toggle(item.id);
+                },
               )
             : CircleAvatar(
                 backgroundColor: color.withValues(alpha: 0.16),
@@ -1416,7 +1421,11 @@ Future<void> openItemEditor(
                   subtitle: Text(AnnaStrings.of(context).d3('privacy_pinRequired')),
                   secondary: const Icon(Icons.visibility_off_outlined),
                   value: isSensitive,
-                  onChanged: (value) => setLocal(() => isSensitive = value),
+                  onChanged: store.preferences.privacyLockEnabled &&
+                          store.preferences.pinHash != null &&
+                          store.preferences.pinSalt != null
+                      ? (value) => setLocal(() => isSensitive = value)
+                      : null,
                 ),
                 const SizedBox(height: 16),
                 Text(
