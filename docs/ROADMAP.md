@@ -1,5 +1,19 @@
 # Anna's Diary — Roadmap
 
+## Decisione di roadmap — 1 novembre 2026: v1.07 Daily-use UX per capability
+
+**Stato: PIANIFICATA / DOCUMENTAZIONE; nessuna nuova funzione o APK approvati come implementati da questa registrazione.** Questa sezione e il piano operativo corrente per il prossimo filone di prodotto e prevale solo sulle etichette previsionali ormai storiche della tabella in fondo. Non riscrive i milestone gia chiusi (UI5, 10/10, Motion v1.08). Dettaglio, gate e contratti: [V107_DAILY_USE_CAPABILITY_ROADMAP_20261101.md](V107_DAILY_USE_CAPABILITY_ROADMAP_20261101.md).
+
+- **Baseline sorgente:** \`Agenda-per-Anna@fbfc9dc445590fd8652cc7414bebbcd2865c6074\`; Factory \`App-Factory-Core@632a66dce4aa00e8e1700b0a3e4dfc7ea008197c\` (CURRENT Master v27, Golden Index v23). Ricerca idee: [App Factory CAP-0001…CAP-0091](https://github.com/riccardopinato/Idee-app-Archivi-riferimenti/blob/44d251be866e21467d6d8d8c6a42250ceb6fdd54/12-CAPABILITY-E-IMPLEMENTAZIONI/REGISTRO_CAPABILITY.json).
+- **Release gate iniziale, non completato:** \`1.0.0-rc.6+115\` signed ARM64 artifact \`annas-diary-light-arm64\` gia prodotto da \`main@31b66ba96d66a3ca3984a3c19061c4f1bfc9f9c7\`, Actions [#41248307448](https://github.com/riccardopinato/Agenda-per-Anna/actions/runs/41248307448); **ARTIFACT BUILT, PHYSICAL NOT VERIFIED**. L'auto-signed workflow [#41249818053](https://github.com/riccardopinato/Agenda-per-Anna/actions/runs/41249818053) su \`fbfc9dc4\` ha superato il preflight ma saltato la firma per \`+115 -> +115\`; non esiste un APK nuovo di quel commit. Matrice attuale: [V115_ANDROID_PHYSICAL_GATE.md](V115_ANDROID_PHYSICAL_GATE.md). La vecchia checklist \`V108_ANDROID_PHYSICAL_ACCEPTANCE.md\` descrive lo storico \`+112\` e non prevale sul release state \`+115\`.
+- **Maxi-step 1: certificazione fisica +115**, aggiornamento in place e dati intatti, Vault, schermate, Inbox, QR e due account/dispositivi, notifiche; ogni PASS richiede evidenza dell'APK esatto. Test bloccati da device/reti restano NOT VERIFIED o BLOCKED, non green.
+- **Maxi-step 2: v1.07-A — Agenda -> Ricordo**, CAP-0014 + preparazione leggera CAP-0003. Appuntamento passato -> bozza modificabile esplicita nel diario, checklist contestuale non obbligatoria; nessun record automatico e nessun nuovo store. **PLANNED**.
+- **Maxi-step 3: v1.07-B — Calendario intelligente**, CAP-0002 parser offline deterministico per eventi con anteprima e conferma; CAP-0001 slot liberi senza spostare eventi. CAP-0005 export calendario come PR separata post-B. **PLANNED**.
+- **Maxi-step 4: v1.07-C — Diagnostica e QA**, CAP-0077 permission/capability health con stati veritieri e CAP-0069 visual regression come QA source/test, non nuova UX; TTS CAP-0086 solo spike opzionale non bloccante. **PLANNED**.
+- **Maxi-step 5: integrazioni differite**: v1.06 Ecosystem Expansion resta DEFERRED fino a prova cross-app su dispositivi; foto privacy CAP-0039, trascrizione offline CAP-0031 e import workout CAP-0008 sono candidati per decisioni distinte, non prerequisiti di v1.07.
+- **Ordine:** gate fisico +115 -> v1.07-A -> v1.07-B -> v1.07-C; QA sorgente indipendente consentito in parallelo solo con PR non conflittuali. Una versione Flutter \`v1.07\` e un nome di fase, **non** il codice build Android; il prossimo APK installabile richiede \`versionCode > 115\`, firma stabile e gate exact-head green sul proprio sorgente.
+- **Boundary:** Product Bible e invarianti di Cassaforte, dati, backup, offline, account, 10 schermate e RevenueCat immutati; nessun nuovo scheduler/store/sync, cloud AI obbligatoria o condivisione privata silenziosa. Scope di questa PR: **documentazione soltanto**.
+
 ## Signed ARM64 APK automation — authorized 31 October 2026
 
 - User-authorized automatic distribution candidate: a **new** Android
@@ -262,8 +276,8 @@ Source of execution truth for Anna's Diary. Product identity and boundaries are 
 | v1.05.x-UI4 | Navigation dedup + prominent Shared Space / Private Vault | **Completed — PR #146 merged, 4/4 exact-head gates PASS; main Web/ARM64/Dev PASS** | Remove duplicate access affordances, retain canonical routes, show Spazio condiviso (Noi ♡) and Cassaforte privata prominently when enabled, preserve privacy/backup/entitlement and all four gates |
 | v1.05.x-FINAL | Post-UI5 consolidation | Source closure via focused regression + CI | Defensive legacy import, release/CI contract alignment, no APK |
 | v1.06 | Ecosystem Expansion | DEFERRED — awaiting PC/device for external app pairing | Integrations stay scoped and require paired evidence; historical proposal TrailPath → Notes → SleepMax → CashMate |
-| v1.08-DESIGN | Motion & Visual Polish | NEXT DESIGN ONLY — ten choices per round | UI5-consistent options, reduced motion, no implementation until approved |
-| v1.07 | Daily-use UX refinement | PLANNED AFTER v1.08 DESIGN | Simplify repetitive daily flows without new storage or redesign |
+| v1.08-DESIGN | Motion & Visual Polish | DESIGN 20/20 APPROVED; source implementation #161 MERGED; physical NOT VERIFIED | UI5-consistent motion/accessible design; no physical PASS inferred from source |
+| v1.07 | Daily-use UX refinement | PLANNED — A/B/C sequenced in [decision 2026-11-01](#decisione-di-roadmap--1-novembre-2026-v107-daily-use-ux-per-capability) | A: event-to-memory/checklist; B: deterministic event parsing/free slots; C: capability diagnostic/visual QA; no new stores |
 
 ## UI3 integration evidence (28–29 Oct 2026)
 
