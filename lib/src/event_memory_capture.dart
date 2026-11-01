@@ -112,7 +112,8 @@ Future<void> openEventMemoryDraft(
         ),
     editing: existing != null,
   );
-  while (draft != null && draft.trim().isNotEmpty && context.mounted) {
+  while (draft != null && draft.trim().isNotEmpty) {
+    if (!context.mounted) return;
     if (store.activeAccountId != accountAtStart) {
       // Fail closed on account switch; never display old account content
       // in a new account's editable surface.
@@ -149,7 +150,7 @@ Future<void> openEventMemoryDraft(
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
         content: Text(AnnaStrings.of(context).d3('v107EventMemorySaveFailed')),
       ));
-      draft = await showDiaryNoteEditor(context, initialText: draft);
+      draft = await showDiaryNoteEditor(context, initialText: draft!);
     }
   }
 }
