@@ -13,6 +13,7 @@ const googleCalendarListReadScope =
 enum GcalFaultKind {
   consentRequired,
   androidWriterStillEnabled,
+  migrationReviewRequired,
   invalidEvent,
   ownershipConflict,
   authorization,
@@ -379,12 +380,18 @@ class GcalStagedWriter {
     required GcalDraft event,
     required bool googleConsentGranted,
     required bool androidB3Disabled,
+    required bool existingAndroidExportsReviewed,
   }) async {
     if (!googleConsentGranted) {
       throw const GcalFault(GcalFaultKind.consentRequired);
     }
     if (!androidB3Disabled) {
       throw const GcalFault(GcalFaultKind.androidWriterStillEnabled);
+    }
+    if (!existingAndroidExportsReviewed) {
+      // Android-B3 can already have propagated the same appointments through
+      // Google's sync adapter. User-assisted migration/dedupe review is vital.
+      throw const GcalFault(GcalFaultKind.migrationReviewRequired);
     }
     final hash = gcalOwnerHash(
       accountId: accountId,
@@ -409,7 +416,7 @@ class GcalStagedWriter {
       'GET', _url(calendarId, remoteId));
     if (remoteResponse.status == 200) {
       final remote = remoteResponse.json;
-      if (!_ours(remote, hash)) {
+      if (remote['id'] != remoteId || !_ours(remote, hash)) {
         throw const GcalFault(GcalFaultKind.ownershipConflict);
       }
       final remoteEtag = _etag(remote);
