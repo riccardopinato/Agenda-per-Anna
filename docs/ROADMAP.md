@@ -1,5 +1,12 @@
 # Anna's Diary — Roadmap
 
+## Aggiornamento operativo — 1 novembre 2026, post-collaudo +115
+
+- **F0 / Android +115:** il titolare ha comunicato in Chat **«collaudo fatto, tutto ok»**. Stato: **USER_ATTESTED_GENERAL_PASS** (esito funzionale complessivo riferito dall'utilizzatore), non una certificazione tecnica con manifest/fingerprint/logs per tutti gli scenari. La [matrice fisica](V115_ANDROID_PHYSICAL_GATE.md) conserva **NOT VERIFIED** nei singoli casi privi di evidenza circostanziata. Non attribuire PASS a RevenueCat/Play Internal Testing, firma SHA-256, versione iniziale o test cross-device se non documentati.
+- **v1.07-A1 — CAP-0014:** source implementation **MERGED** via [PR #186](https://github.com/riccardopinato/Agenda-per-Anna/pull/186), commit \`308faebb7ed06873c244103f107192d8d25a4b18\`. Exact-head Development, AppLab Source Gate e Web SUCCESS, review findings risolti. La funzione nuova **non era presente** nell'APK +115 collaudato: richiede un **nuovo APK**, \`versionCode > 115\`, per QA fisica specifica A1.
+- **Prossimo sviluppo:** v1.07-A2 — CAP-0003, note/checklist contestuali ad appuntamenti; PR isolata con riuso degli editor esistenti e niente nuovo database/scheduler. La distribuzione resta sotto gate release successivo.
+- Le dichiarazioni precedenti "F0 PENDING DEVICE" e "A1 PLANNED" sono snapshot *prima* di questo aggiornamento e restano archiviate per tracciabilita.
+
 ## Decisione di roadmap — 1 novembre 2026: v1.07 Daily-use UX per capability
 
 **Stato: PIANIFICATA / DOCUMENTAZIONE; nessuna nuova funzione o APK approvati come implementati da questa registrazione.** Questa sezione e il piano operativo corrente per il prossimo filone di prodotto e prevale solo sulle etichette previsionali ormai storiche della tabella in fondo. Non riscrive i milestone gia chiusi (UI5, 10/10, Motion v1.08). Dettaglio, gate e contratti: [V107_DAILY_USE_CAPABILITY_ROADMAP_20261101.md](V107_DAILY_USE_CAPABILITY_ROADMAP_20261101.md).

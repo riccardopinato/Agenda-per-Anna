@@ -1,6 +1,8 @@
 # Anna's Diary — release candidate +115 / collaudo fisico
 
-**Stato al 2026-11-01: ARTIFACT BUILT / PHYSICAL NOT VERIFIED.** Questa checklist aggiorna il riferimento operativo al build reale `+115` senza alterare o cancellare i precedenti verbali della v1.08 `+112`. Non dichiara avvenuto nessuno dei test.
+**Aggiornamento 2026-11-01 — ATTESTAZIONE UTENTE:** dopo l'invio della checklist, il titolare ha comunicato **«collaudo fatto, tutto ok»**. Registriamo **USER_ATTESTED_GENERAL_PASS** come esito globale riferito sul telefono. La testimonianza non contiene modello dispositivo, fingerprint di firma, checksum APK, versione installata prima/dopo, log, screenshots redatti o PASS per singolo scenario P115-01…P115-14. **Non trasformare automaticamente i singoli NOT VERIFIED in PASS**, soprattutto per acquisti Play/RevenueCat o test a due dispositivi che richiedono evidenza separata. Si tratta di riscontro manuale positivo, non di certificazione tecnica completa. La nuova capability A1 introdotta dalla [PR #186](https://github.com/riccardopinato/Agenda-per-Anna/pull/186) non e inclusa nell'APK +115 e dovra essere verificata dopo la prossima release con versione >115.
+
+**Snapshot checklist originale (pre-attestazione): ARTIFACT BUILT / PHYSICAL NOT VERIFIED.** Questa checklist aggiorna il riferimento operativo al build reale `+115` senza alterare o cancellare i precedenti verbali della v1.08 `+112`. Non dichiara avvenuto nessuno dei test.
 
 ## Provenienza dell'APK
 
