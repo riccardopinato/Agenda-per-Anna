@@ -33,7 +33,7 @@ NaturalEventDraft? parseNaturalEvent(String phrase, {
   final dayFirst = RegExp(r'\b(\d{1,2})[/.](\d{1,2})[/.](\d{4})\b')
       .allMatches(remaining).toList();
   final relative = RegExp(
-    r'\b(oggi|domani|today|tomorrow|hoy|mañana|aujourd.hui|demain|hoje|amanhã|amanha)\b',
+    r'(?:^|[\s,;])(oggi|domani|today|tomorrow|hoy|mañana|aujourd.hui|demain|hoje|amanhã|amanha)(?=$|[\s,;.!?])',
     caseSensitive: false,
   ).allMatches(remaining).toList();
   if (iso.length + dayFirst.length + relative.length != 1) { return null; }
@@ -52,9 +52,9 @@ NaturalEventDraft? parseNaturalEvent(String phrase, {
     }
     dateToken = match.group(0)!;
   } else {
-    dateToken = relative.single.group(0)!;
+    dateToken = relative.single.group(1)!;
     const today = {'oggi', 'today', 'hoy', 'aujourd\'hui', 'hoje'};
-    final offset = today.contains(dateToken.toLowerCase()) ? 0 : 1;
+    final offset = today.contains(dateToken.toLowerCase().replaceAll('’', "'")) ? 0 : 1;
     date = DateTime(now.year, now.month, now.day + offset);
     if (date.year > 2040) { return null; }
   }
@@ -65,6 +65,15 @@ NaturalEventDraft? parseNaturalEvent(String phrase, {
   );
   final plainPattern = RegExp(r'\b(\d{1,2}):(\d{2})\s*(am|pm)?\b',
     caseSensitive: false);
+  // Fail closed on an unsupported explicit zone after the stated time.
+  // Uppercase 2-5-letter suffixes and IANA names are not event titles here.
+  if (RegExp(
+    r'\d{1,2}(?:[:h.]\d{2})?\s*(?:am|pm)?\s+(?:[A-Z]{2,5}|[A-Za-z_]+/[A-Za-z_]+)(?=$|[\s,;.!?])',
+  ).hasMatch(remaining) ||
+      RegExp(r'\d{1,2}:\d{2}\s*[+-]\d{2}:\d{2}')
+          .hasMatch(remaining)) {
+    return null;
+  }
   final prefixed = prefixedPattern.allMatches(remaining).toList();
   final bareTimes = plainPattern.allMatches(remaining).toList();
   final matches = prefixed.isNotEmpty ? prefixed : bareTimes;
@@ -110,10 +119,10 @@ NaturalEventDraft? parseNaturalEvent(String phrase, {
     r'\b(?:ogni|every|todos|todas|chaque|cada|tous)\b',
     caseSensitive: false);
   final daily = RegExp(
-    r'(?:ogni\s+giorno|every\s+day|todos\s+los\s+días|todos\s+os\s+dias|chaque\s+jour)',
+    r'(?:ogni\s+giorno|every\s+day|todos\s+los\s+días|todos\s+os\s+dias|chaque\s+jour)(?![A-Za-zÀ-ÖØ-öø-ÿ])',
     caseSensitive: false).allMatches(remaining).toList();
   final weekly = RegExp(
-    r'(?:ogni\s+settimana|every\s+week|cada\s+semana|chaque\s+semaine)',
+    r'(?:ogni\s+settimana|every\s+week|cada\s+semana|chaque\s+semaine)(?![A-Za-zÀ-ÖØ-öø-ÿ])',
     caseSensitive: false).allMatches(remaining).toList();
   if (daily.length + weekly.length > 1 ||
       (recurrenceCue.hasMatch(normalized) && daily.isEmpty && weekly.isEmpty)) {
