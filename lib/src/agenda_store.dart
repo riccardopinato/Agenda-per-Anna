@@ -1414,6 +1414,8 @@ class AgendaStore extends ChangeNotifier {
         hideHomeDetails:
             privacyGuard['hideHomeDetails'] as bool? ??
                 preferences.hideHomeDetails,
+        homeDiscreetMode: privacyGuard['homeDiscreetMode'] as bool? ??
+            preferences.homeDiscreetMode,
         pinSalt: privacyGuard['pinSalt'] as String?,
         pinHash: privacyGuard['pinHash'] as String?,
         clearPin: privacyGuard['pinSalt'] == null ||
@@ -1780,6 +1782,7 @@ class AgendaStore extends ChangeNotifier {
         'biometricUnlock': preferences.biometricUnlock,
         'autoLockMinutes': preferences.autoLockMinutes,
         'hideHomeDetails': preferences.hideHomeDetails,
+        'homeDiscreetMode': preferences.homeDiscreetMode,
         'pinSalt': preferences.pinSalt,
         'pinHash': preferences.pinHash,
       };
@@ -1790,6 +1793,7 @@ class AgendaStore extends ChangeNotifier {
       ..remove('biometricUnlock')
       ..remove('autoLockMinutes')
       ..remove('hideHomeDetails')
+      ..remove('homeDiscreetMode')
       ..remove('pinSalt')
       ..remove('pinHash')
       ..remove('onboardingDone');
