@@ -1557,6 +1557,7 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
       pinAvailable: widget.store.preferences.privacyLockEnabled &&
           widget.store.preferences.pinHash != null &&
           widget.store.preferences.pinSalt != null,
+      store: widget.store,
     );
     if (result == null) return;
     await _persistSharedEntry(
@@ -3150,11 +3151,17 @@ class _SharedPhotoViewerScreenState extends State<SharedPhotoViewerScreen> {
 Future<SharedEntry?> _openSharedEntryEditor(
   BuildContext context, {
   required DateTime initialDate,
+  required AgendaStore store,
   required bool pinAvailable,
+  bool sensitiveAccessGranted = false,
   SharedEntry? existing,
   SharedEntryType? initialType,
   TimeOfDay? initialTime,
 }) async {
+  if (existing?.isSensitive == true && !sensitiveAccessGranted) {
+    if (!await requestSensitiveItemAccess(context, store)) return null;
+    if (!context.mounted) return null;
+  }
   final title = TextEditingController(text: existing?.title ?? '');
   final note = TextEditingController(text: existing?.note ?? '');
   var type = existing?.type ?? initialType ?? SharedEntryType.appointment;
