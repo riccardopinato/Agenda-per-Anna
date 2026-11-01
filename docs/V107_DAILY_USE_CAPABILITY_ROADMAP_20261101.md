@@ -2,7 +2,7 @@
 
 ## Aggiornamento di stato — post CAP-0111 (1 novembre 2026)
 
-Il piano qui sotto conserva intenzionalmente i suoi snapshot iniziali; lo stato operativo corrente e' in [ROADMAP.md](ROADMAP.md). **A1 CAP-0014**, **A2 CAP-0003**, **B1 CAP-0002**, **B2 CAP-0001** e **B3 CAP-0005 estesa** risultano implementati e uniti in `main` con i rispettivi gate sorgente. **CAP-0111 Weekly Review** e' **CLOSED / USER-ACCEPTED GENERAL PASS** sulla release firmata `1.0.0-rc.6+118`, PR #201, source `b05c6c3`, workflow firmato #41317266363. La matrice fisica +118 resta **NOT VERIFIED** per gli scenari non documentati. **C1 CAP-0077** e **C2 CAP-0069** rimangono le prossime fasi **PLANNED**, da avviare con PR separate. Privacy PR #200 resta DRAFT non mergeabile operativamente per security review; Google Calendar diretto PR #199 resta STAGING ONLY/DRAFT, vietato merge senza nuovo gate/autorizzazione; v1.06 Ecosystem Expansion rimane DEFERRED.
+Il piano qui sotto conserva intenzionalmente i suoi snapshot iniziali; lo stato operativo corrente e' in [ROADMAP.md](ROADMAP.md). **A1 CAP-0014**, **A2 CAP-0003**, **B1 CAP-0002**, **B2 CAP-0001** e **B3 CAP-0005 estesa** risultano implementati e uniti in `main` con i rispettivi gate sorgente. **CAP-0111 Weekly Review** e' **CLOSED / USER-ACCEPTED GENERAL PASS** sulla release firmata `1.0.0-rc.6+118`, PR #201, source `b05c6c3`, workflow firmato #41317266363. La matrice fisica +118 resta **NOT VERIFIED** per gli scenari non documentati. **C1 CAP-0077** e **C2 CAP-0069** sono **SOURCE MERGED** via PR #203 e #204; C1 richiede QA fisico, C2 richiede ancora 70 coppie screenshot approvate. Il release candidate Android +119 e' solo predisposto, non certificato. Privacy PR #200 resta DRAFT non mergeabile operativamente per security review; Google Calendar diretto PR #199 resta STAGING ONLY/DRAFT, vietato merge senza nuovo gate/autorizzazione; v1.06 Ecosystem Expansion rimane DEFERRED.
 
 _Aggiornamento post PR #186: A1 source MERGED; F0 USER_ATTESTED_GENERAL_PASS; altre wave ancora PLANNED._
 
@@ -42,8 +42,8 @@ _Aggiornamento post PR #186: A1 source MERGED; F0 USER_ATTESTED_GENERAL_PASS; al
 | v1.07-B1 | CAP-0002 | Testo -> bozza appuntamento offline deterministica | MERGED SOURCE / DEVICE QA FUTURA | A chiusa; parser EN/IT/ES/FR/PT, preview esplicita, timezone e ricorrenza |
 | v1.07-B2 | CAP-0001 | Slot liberi calcolati da eventi visibili all'utente | MERGED SOURCE / DEVICE QA FUTURA | B1, calendario privato + overlay opt-in read-only; niente evento salvato |
 | v1.07-B3 | CAP-0005 estesa | Sincronizzazione Android Calendar Provider unidirezionale su consenso, senza OAuth Google API | MERGED SOURCE / NATIVE BUILD PASS / APK +117 SIGNED / PHYSICAL QA FUTURA | solo appuntamenti privati futuri, selezione calendario, permessi READ/WRITE Android, gestione idempotenza; nessuna cancellazione esterna automatica |
-| v1.07-C1 | CAP-0077 | Diagnostica permessi/capability, correzione assistita | PLANNED | servizi nativi reali; UI non mente su stato 'healthy' |
-| v1.07-C2 | CAP-0069 | Regressione visiva automatica mirata alle 10 schermate | PLANNED | test/dev only, dispositivi/locale/theme/dimensioni di baseline fissati |
+| v1.07-C1 | CAP-0077 | Diagnostica permessi/capability, correzione assistita | SOURCE MERGED / PHYSICAL NOT VERIFIED (#203) | servizi nativi reali; UI non mente su stato 'healthy' |
+| v1.07-C2 | CAP-0069 | Regressione visiva automatica mirata alle 10 schermate | COMPARATOR MERGED / SCREENSHOT BASELINES NOT VERIFIED (#204) | test/dev only, dispositivi/locale/theme/dimensioni di baseline fissati |
 | Follow-up eventuali | CAP-0086, CAP-0039, CAP-0031, CAP-0008 | TTS, copie foto senza EXIF, STT offline, import workout media | EVALUATE LATER | adozione separata; nessuna dipendenza release |
 | v1.06 | Ecosystem Bridge | accoppiamento verificato con app esterne | DEFERRED | due app + device reali, fonte/revision/permission e privacy |
 
@@ -138,6 +138,6 @@ Partire dalla suite di screenshot/baseline gia documentata in v1.05-A5 e dal con
 | Physical device certification +115 | USER_ATTESTED_GENERAL_PASS, dettagli tecnici NON VERIFICATI | messaggio utente 2026-11-01; checklist per scenario priva di prove |
 | v1.07-A1/A2 | SOURCE MERGED; DEVICE QA ON +116 PENDING | PR #186, PR #188, v116 gate |
 | v1.07-B1/B2/B3 | PLANNED / B3 DECISION GATE | questa roadmap |
-| v1.07-C1/C2 | PLANNED | questa roadmap |
+| v1.07-C1/C2 | SOURCE MERGED / QA SCENARIOS PENDING | questa roadmap |
 | v1.06 cross-app | DEFERRED | `docs/ROADMAP.md` |
 
