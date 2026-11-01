@@ -1,5 +1,9 @@
 # v1.07 Daily-use UX — piano di implementazione capability
-_Data: 2026-11-01 · Stato: ROADMAP APPROVATA PER PIANIFICAZIONE, FUNZIONI NON IMPLEMENTATE · Solo documento_
+_Aggiornamento post PR #186: A1 source MERGED; F0 USER_ATTESTED_GENERAL_PASS; altre wave ancora PLANNED._
+
+**Stato aggiornato 2026-11-01:** l'utilizzatore riferisce **«collaudo fatto, tutto ok»** per l'APK firmato `+115`, senza fornire identificativi del dispositivo, impronte digitali o risultati individuali per scenario. Questa comunicazione attesta soddisfazione nell'uso reale; non autorizza a compilare come PASS la tabella dei test fisici che resta senza log. La PR A1 e stata integrata su `main@308faebb7ed06873c244103f107192d8d25a4b18` dopo CI/QA sorgente verde. **A1 non e contenuta nell'APK +115**: richiede successiva build >115 e collaudo sul nuovo artefatto. **Prossima wave: A2**.
+
+
 
 ## Fonti, baseline e competenze
 
@@ -14,8 +18,8 @@ _Data: 2026-11-01 · Stato: ROADMAP APPROVATA PER PIANIFICAZIONE, FUNZIONI NON I
 
 | Wave | CAP | Deliverable previsto | Stato | Dipendenza / gate |
 | --- | --- | --- | --- | --- |
-| F0 · Release reality | — | Collaudo fisico signed `+115` esatto | PENDING DEVICE | [V115_ANDROID_PHYSICAL_GATE.md](V115_ANDROID_PHYSICAL_GATE.md); blocchi reali separati da migliorie |
-| v1.07-A1 | CAP-0014 | Appuntamento passato -> bozza ricordo | PLANNED | riuso `AgendaItem`, `DayJournal/DiaryBlock`, `Unified Capture`, nessuna scrittura implicita |
+| F0 · Release reality | — | Collaudo fisico signed `+115` esatto | USER_ATTESTED_GENERAL_PASS (dettaglio mancante) | [V115_ANDROID_PHYSICAL_GATE.md](V115_ANDROID_PHYSICAL_GATE.md); blocchi reali separati da migliorie |
+| v1.07-A1 | CAP-0014 | Appuntamento passato -> bozza ricordo | MERGED SOURCE / DEVICE QA FUTURA | riuso `AgendaItem`, `DayJournal/DiaryBlock`, `Unified Capture`, nessuna scrittura implicita |
 | v1.07-A2 | CAP-0003 | Preparazione leggera: note/checklist contestuali evento | PLANNED | no task manager; riuso contenuti e reminder, nessun secondo scheduler |
 | v1.07-B1 | CAP-0002 | Testo -> bozza appuntamento offline deterministica | PLANNED | A chiusa; parser EN/IT/ES/FR/PT, preview esplicita, timezone e ricorrenza |
 | v1.07-B2 | CAP-0001 | Slot liberi calcolati da eventi visibili all'utente | PLANNED | B1, calendario privato + overlay opt-in read-only; niente evento salvato |
@@ -113,8 +117,8 @@ Partire dalla suite di screenshot/baseline gia documentata in v1.05-A5 e dal con
 | --- | --- | --- |
 | v1.08/UI5 codice | MERGED | `docs/APPROVED10_FULL_AUDIT_20261031.md`, `docs/ROADMAP.md` |
 | Signed APK +115 | ARTIFACT BUILT | Actions #41248307448 su `31b66ba9` |
-| Physical device certification +115 | NOT VERIFIED | nessun report physical PASS verificato; checklist separata |
-| v1.07-A1/A2 | PLANNED | questa roadmap |
+| Physical device certification +115 | USER_ATTESTED_GENERAL_PASS, dettagli tecnici NON VERIFICATI | messaggio utente 2026-11-01; checklist per scenario priva di prove |
+| v1.07-A1/A2 | A1 SOURCE MERGED, A2 PLANNED | PR #186 e questa roadmap |
 | v1.07-B1/B2/B3 | PLANNED / B3 DECISION GATE | questa roadmap |
 | v1.07-C1/C2 | PLANNED | questa roadmap |
 | v1.06 cross-app | DEFERRED | `docs/ROADMAP.md` |
