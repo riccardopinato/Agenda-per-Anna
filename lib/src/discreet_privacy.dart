@@ -8,6 +8,7 @@ Future<bool> requestSensitiveItemAccess(
   AgendaStore store,
 ) async {
   final prefs = store.preferences;
+  final accountAtChallenge = store.activeAccountId;
   if (!prefs.privacyLockEnabled ||
       prefs.pinSalt == null ||
       prefs.pinHash == null) {
@@ -101,7 +102,10 @@ Future<bool> requestSensitiveItemAccess(
         },
       ),
     );
-    return allowed == true && store.entryScopeReady;
+    // Do not disclose if the signed-in account changed during the challenge.
+    return allowed == true &&
+        store.entryScopeReady &&
+        store.activeAccountId == accountAtChallenge;
   } finally {
     // Modal route has completed; no PIN is persisted.
     controller.dispose();
