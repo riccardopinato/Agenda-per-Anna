@@ -333,6 +333,18 @@ class _CalendarScreenState extends State<CalendarScreen> {
               const SizedBox(height: 12),
               AgendaContentFilterBar(store: widget.store),
               const SizedBox(height: 10),
+              Align(
+                alignment: Alignment.centerLeft,
+                child: OutlinedButton.icon(
+                  key: const ValueKey('b2-calendar-free-slots'),
+                  onPressed: () => showCalendarFreeSlots(
+                      context, widget.store, selected),
+                  icon: const Icon(Icons.event_available_outlined),
+                  label: Text(calendarFreeSlotLabel(
+                      strings, 'open')),
+                ),
+              ),
+              const SizedBox(height: 10),
               // Approved calendar-only preview: no second writer or record
               // ownership. The full existing agenda remains immediately below.
               ExpansionTile(
