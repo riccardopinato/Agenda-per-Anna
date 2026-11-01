@@ -113,6 +113,8 @@ String calendarFreeSlotLabel(AnnaStrings s, String key) {
     'partial': ['Partial results: the external calendar is unavailable, unselected, denied or not fully loaded.', 'Risultati parziali: calendario esterno non disponibile, non selezionato, senza permesso o non aggiornato.', 'Resultados parciales: calendario externo no disponible o no actualizado.', 'Résultats partiels : calendrier externe indisponible ou non actualisé.', 'Resultados parciais: calendário externo indisponível ou desatualizado.'],
     'scope': ['Only authorized visible appointments count. Tasks do not block time. Untimed appointments block all day; missing end times block until midnight.', 'Contano solo gli appuntamenti visibili e autorizzati. Le attività non occupano tempo. Appuntamenti senza orario: giornata intera; senza fine: fino a mezzanotte.', 'Solo citas visibles y autorizadas. Tareas no bloquean; citas sin hora ocupan todo el día.', 'Seuls les rendez-vous autorisés comptent. Les tâches ne bloquent pas ; sans heure, la journée est occupée.', 'Apenas compromissos autorizados contam. Tarefas não bloqueiam; sem hora, o dia fica ocupado.'],
     'confirm': ['Selecting a slot opens the existing editor. Nothing is saved until confirmation. Review the ending time.', 'La scelta apre l’editor esistente. Nessun salvataggio senza conferma. Verifica l’ora di fine.', 'Elegir un hueco abre el editor; nada se guarda sin confirmar. Revisa el fin.', 'Le choix ouvre l’éditeur. Rien n’est enregistré sans confirmation. Vérifiez l’heure de fin.', 'A escolha abre o editor. Nada é guardado sem confirmar. Verifique a hora final.'],
+    'stale': ['The calendar changed. Review updated free times before continuing.', 'Il calendario è cambiato. Rivedi gli orari disponibili prima di continuare.', 'El calendario ha cambiado. Revisa los nuevos horarios.', 'Le calendrier a changé. Vérifiez les créneaux à nouveau.', 'O calendário mudou. Reveja os horários disponíveis.'],
+    'account': ['Account changed. Close and reopen free times.', 'Account cambiato. Chiudi e riapri gli orari liberi.', 'Cuenta cambiada. Cierra y vuelve a abrir.', 'Compte changé. Fermez et rouvrez les créneaux.', 'Conta alterada. Feche e volte a abrir.'],
   };
   final i = switch (s.languageCode) {
     'it' => 1, 'es' => 2, 'fr' => 3, 'pt' => 4, _ => 0,
@@ -144,9 +146,22 @@ Future<void> showCalendarFreeSlots(
     context: context,
     isScrollControlled: true,
     showDragHandle: true,
-    builder: (sheetContext) => StatefulBuilder(
-      builder: (sheetContext, change) {
+    builder: (sheetContext) => AnimatedBuilder(
+      animation: Listenable.merge([
+        store.agendaRevision,
+        store.sharedRevision,
+        store.accountRevision,
+        external,
+      ]),
+      builder: (sheetContext, _) => StatefulBuilder(
+        builder: (sheetContext, change) {
         final strings = AnnaStrings.of(sheetContext);
+        if (store.activeAccountId != accountAtOpen) {
+          return SafeArea(child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Text(calendarFreeSlotLabel(strings, 'account')),
+          ));
+        }
         final wantsExternal = store.agendaContentFilter == AgendaContentFilter.all;
         final ready = external.coversRange(
           DateTime(day.year, day.month, day.day - 1),
@@ -259,10 +274,38 @@ Future<void> showCalendarFreeSlots(
           ),
         );
       },
+      ),
     ),
   );
   if (picked == null || !context.mounted ||
       store.activeAccountId != accountAtOpen) { return; }
+  // A subscribed calendar can change between rendering and tapping. Recheck
+  // the complete suggested range before opening even the manual editor.
+  if (store.agendaContentFilter == AgendaContentFilter.all &&
+      external.supported && external.enabled) {
+    await external.refreshStatus();
+  }
+  if (!context.mounted || store.activeAccountId != accountAtOpen) return;
+  final rangeStart = DateTime(day.year, day.month, day.day - 1);
+  final rangeEnd = DateTime(day.year, day.month, day.day + 2);
+  final externalReady = external.coversRange(rangeStart, rangeEnd);
+  final fresh = findCalendarFreeSlots(
+    day: day,
+    visibleEntries: visibleEntriesForCalendarFreeSlots(store, day,
+      externalReady: store.agendaContentFilter == AgendaContentFilter.all &&
+          externalReady),
+    startHour: workingHours ? 9 : startHour,
+    endHour: workingHours ? 18 : endHour,
+    minimumMinutes: minimumMinutes,
+  );
+  final available = fresh.any((slot) =>
+    !slot.start.isAfter(picked.start) && !slot.end.isBefore(picked.end));
+  if (!available) {
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+      content: Text(calendarFreeSlotLabel(AnnaStrings.of(context), 'stale')),
+    ));
+    return;
+  }
   await openUnifiedItemComposer(
     context, store,
     DateTime(picked.start.year, picked.start.month, picked.start.day),
