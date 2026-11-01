@@ -94,6 +94,19 @@ void main() {
         contains('if (!prefs.privacyLockEnabled ||'));
   });
 
+  test('shared feed and memories conceal sensitive records at the source', () {
+    final shared = File('lib/src/screens/shared_space.dart').readAsStringSync();
+    final memories = File('lib/src/shared_memories.dart').readAsStringSync();
+    expect(shared, contains("ValueKey('shared-sensitive-"));
+    expect(shared, contains('if (entry.isSensitive) {'));
+    expect(shared, contains('await requestSensitiveItemAccess(context, widget.store)'));
+    expect(shared, contains('sensitiveAccessGranted: sensitiveAccessGranted'));
+    expect(shared, contains('entries.where((entry) => !entry.isSensitive)'));
+    expect(memories, contains('.where((entry) => !entry.isSensitive)'));
+    expect(shared, contains('isSensitive: existing?.isSensitive ?? false,'));
+    expect(shared, contains('if (existing?.isSensitive == true) {'));
+  });
+
   test('filter label is Personale, not a security claim', () {
     final code = File('lib/src/localization_d3.dart').readAsStringSync();
     expect(code, contains('"it": "Personale"'));
