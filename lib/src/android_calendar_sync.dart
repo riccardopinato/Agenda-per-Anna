@@ -29,6 +29,23 @@ Map<String, Object?>? androidCalendarEventPayload(
   };
 }
 
+
+/// Hide only an exported instance that corresponds to a still-visible
+/// canonical private appointment in the current account. Exports belonging
+/// to another account, or whose source appointment was deleted, stay visible.
+bool isOwnedAndroidCalendarDuplicate(
+    AgendaStore store, ExternalCalendarEvent event) {
+  if (!event.description.contains('[AnnaDiary:')) return false;
+  final scope = store.activeAccountId == null
+      ? 'guest' : 'user:${store.activeAccountId}';
+  return store.forDay(event.date).any((item) {
+    if (item.type != ItemType.appointment) return false;
+    final ownerKey = '$scope:${item.id}|${event.calendarId}';
+    final token = '[AnnaDiary:${sha256.convert(utf8.encode(ownerKey))}]';
+    return event.description.contains(token);
+  });
+}
+
 /// B3 opt-in outbound only. AgendaStore is the source of truth.
 class AndroidCalendarSyncService extends ChangeNotifier
     with WidgetsBindingObserver {
@@ -47,6 +64,7 @@ class AndroidCalendarSyncService extends ChangeNotifier
   bool _enabled = false;
   bool _loaded = false;
   bool _working = false;
+  bool _pendingReconcile = false;
   bool _writePermissionGranted = false;
   int _updated = 0;
   int _skipped = 0;
@@ -192,6 +210,10 @@ class AndroidCalendarSyncService extends ChangeNotifier
   }
 
   Future<void> reconcile() async {
+    if (_working) {
+      _pendingReconcile = true;
+      return;
+    }
     final store = _store;
     final scope = _scope;
     final calendar = _calendarId;
@@ -217,6 +239,7 @@ class AndroidCalendarSyncService extends ChangeNotifier
         ..sort((a, b) => a.date.compareTo(b.date));
       var updated = 0;
       var skipped = 0;
+      var conflicts = 0;
       for (final item in items.take(200)) {
         if (!_enabled || _accountScope(store) != scope ||
             _calendarId != calendar) { return; }
@@ -226,13 +249,28 @@ class AndroidCalendarSyncService extends ChangeNotifier
           skipped++;
           continue;
         }
-        await _channel.invokeMethod<String>('upsertOwnedEvent', payload);
-        updated++;
+        try {
+          await _channel.invokeMethod<String>('upsertOwnedEvent', payload);
+          updated++;
+        } on PlatformException catch (e) {
+          final message = e.message ?? '';
+          if (message.contains('external_event_missing_or_moved') ||
+              message.contains('duplicate_external_event_marker')) {
+            conflicts++;
+            continue;
+          }
+          rethrow;
+        }
       }
       if (_accountScope(store) == scope && _calendarId == calendar) {
         _updated = updated;
-        _skipped = skipped + (items.length > 200 ? items.length - 200 : 0);
-        _lastSuccess = DateTime.now();
+        _skipped = skipped + conflicts +
+            (items.length > 200 ? items.length - 200 : 0);
+        if (conflicts == 0) {
+          _lastSuccess = DateTime.now();
+        } else {
+          _error = 'calendar_owned_event_conflicts:$conflicts';
+        }
       }
     } on PlatformException catch (e) {
       _error = '${e.code}: ${e.message ?? ''}';
@@ -241,6 +279,10 @@ class AndroidCalendarSyncService extends ChangeNotifier
     } finally {
       _working = false;
       notifyListeners();
+      if (_pendingReconcile) {
+        _pendingReconcile = false;
+        _schedule();
+      }
     }
   }
 }
