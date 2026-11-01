@@ -84,7 +84,7 @@ void main() {
     expect(spring['endMs'], DateTime(2026, 3, 29, 4).millisecondsSinceEpoch);
   });
 
-  test('B3 suppresses only the current-account owned external duplicate', () {
+  test('B3 suppresses only current-account owned exported duplicate', () {
     final store = AgendaStore();
     store.items.add(appointment(
       start: const TimeOfDay(hour: 10, minute: 0),
@@ -94,11 +94,25 @@ void main() {
         ExternalCalendarEvent(
           id: 'external-event', calendarId: calendar,
           calendarName: 'Device', title: 'Dentist',
-          description: '[AnnaDiary:
+          description: '[AnnaDiary:${marker}]',
+          location: '', start: DateTime(2026, 11, 7, 10),
+          end: DateTime(2026, 11, 7, 11), allDay: false,
+        );
+    expect(isOwnedAndroidCalendarDuplicate(
+      store, external('cal-9', owner.toString())), true);
+    expect(isOwnedAndroidCalendarDuplicate(
+      store, external('cal-10', owner.toString())), false);
+    expect(isOwnedAndroidCalendarDuplicate(
+      store, external('cal-9', 'another-owner')), false);
+    store.dispose();
+  });
+
+  test('B3 provider contract and disabled by default', () {
     final sync = File('lib/src/android_calendar_sync.dart').readAsStringSync();
     final ui = File('lib/src/screens/android_calendar_sync_settings.dart').readAsStringSync();
     final native = File('tool/prepare_android_platform.py').readAsStringSync();
     final main = File('lib/main.dart').readAsStringSync();
+    final unified = File('lib/src/unified_agenda.dart').readAsStringSync();
     expect(sync, contains('prefs.getBool('));
     expect(sync, contains('store.agendaRevision.addListener(_schedule)'));
     expect(sync, contains('store.accountRevision.addListener(_onAccountChanged)'));
@@ -116,40 +130,7 @@ void main() {
     expect(native, contains('external_event_missing_or_moved'));
     expect(native, contains('duplicate_external_event_marker'));
     expect(native, contains('ownerKey + "|" + calendarId'));
-    expect(main, contains("part 'src/android_calendar_sync.dart';"));
-  });
-}
- + '{marker}]',
-          location: '', start: DateTime(2026, 11, 7, 10),
-          end: DateTime(2026, 11, 7, 11), allDay: false,
-        );
-    expect(isOwnedAndroidCalendarDuplicate(
-      store, external('cal-9', owner.toString())), true);
-    expect(isOwnedAndroidCalendarDuplicate(
-      store, external('cal-10', owner.toString())), false);
-    expect(isOwnedAndroidCalendarDuplicate(
-      store, external('cal-9', 'another-owner')), false);
-    store.dispose();
-  });
-
-  test('B3 Android provider contract and disabled by default', () {
-    final sync = File('lib/src/android_calendar_sync.dart').readAsStringSync();
-    final ui = File('lib/src/screens/android_calendar_sync_settings.dart').readAsStringSync();
-    final native = File('tool/prepare_android_platform.py').readAsStringSync();
-    final main = File('lib/main.dart').readAsStringSync();
-    expect(sync, contains('prefs.getBool('));
-    expect(sync, contains('store.agendaRevision.addListener(_schedule)'));
-    expect(sync, contains('store.accountRevision.addListener(_onAccountChanged)'));
-    expect(sync, contains('!item.date.isBefore(from)'));
-    expect(sync, contains('items.take(200)'));
-    expect(sync, isNot(contains('VaultService.instance')));
-    expect(sync, isNot(contains('store.upsert(')));
-    expect(ui, contains("ValueKey('b3-android-calendar-enabled')"));
-    expect(ui, contains('requestWriteAccess()'));
-    expect(native, contains('android.permission.WRITE_CALENDAR'));
-    expect(native, contains('"upsertOwnedEvent"'));
-    expect(native, contains('external_event_missing_or_moved'));
-    expect(native, contains('duplicate_external_event_marker'));
+    expect(unified, contains('isOwnedAndroidCalendarDuplicate'));
     expect(main, contains("part 'src/android_calendar_sync.dart';"));
   });
 }
