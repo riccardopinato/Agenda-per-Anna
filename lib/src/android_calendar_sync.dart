@@ -21,7 +21,7 @@ Map<String, Object?>? androidCalendarEventPayload(
           item.date.day + (overnight ? 1 : 0), end!.hour, end.minute);
   return <String, Object?>{
     'calendarId': calendarId,
-    'ownerKey': '${scope}:${item.id}',
+    'ownerKey': '$scope:${item.id}',
     'title': item.title,
     'startMs': begins.millisecondsSinceEpoch,
     'endMs': finishes.millisecondsSinceEpoch,
@@ -197,7 +197,7 @@ class AndroidCalendarSyncService extends ChangeNotifier
     final calendar = _calendarId;
     if (!supported || !_enabled || _working || !_loaded ||
         store == null || !store.entryScopeReady || scope == null ||
-        calendar == null || _accountScope(store) != scope) return;
+        calendar == null || _accountScope(store) != scope) { return; }
     _working = true;
     _error = null;
     notifyListeners();
