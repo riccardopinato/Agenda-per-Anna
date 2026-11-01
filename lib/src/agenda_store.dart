@@ -1414,6 +1414,8 @@ class AgendaStore extends ChangeNotifier {
         hideHomeDetails:
             privacyGuard['hideHomeDetails'] as bool? ??
                 preferences.hideHomeDetails,
+        homeDiscreetMode: privacyGuard['homeDiscreetMode'] as bool? ??
+            preferences.homeDiscreetMode,
         pinSalt: privacyGuard['pinSalt'] as String?,
         pinHash: privacyGuard['pinHash'] as String?,
         clearPin: privacyGuard['pinSalt'] == null ||
@@ -1780,6 +1782,7 @@ class AgendaStore extends ChangeNotifier {
         'biometricUnlock': preferences.biometricUnlock,
         'autoLockMinutes': preferences.autoLockMinutes,
         'hideHomeDetails': preferences.hideHomeDetails,
+        'homeDiscreetMode': preferences.homeDiscreetMode,
         'pinSalt': preferences.pinSalt,
         'pinHash': preferences.pinHash,
       };
@@ -1790,6 +1793,7 @@ class AgendaStore extends ChangeNotifier {
       ..remove('biometricUnlock')
       ..remove('autoLockMinutes')
       ..remove('hideHomeDetails')
+      ..remove('homeDiscreetMode')
       ..remove('pinSalt')
       ..remove('pinHash')
       ..remove('onboardingDone');
@@ -2751,6 +2755,11 @@ class AgendaStore extends ChangeNotifier {
     bool requestPermission = true,
   }) async {
     final start = item.start;
+    // Never place flagged event titles in Android or Web Push notification
+    // bodies/payloads. Snooze continues to use the already-masked payload.
+    final safeReminderTitle = item.isSensitive
+        ? AnnaStrings.forPreference(preferences.appLanguage).d3('privacy_sensitive')
+        : item.title;
     final cloud = CloudSyncService.instance;
     final canSyncWebReminder = cloud.signedIn &&
         _activeAccountId != null &&
@@ -2797,10 +2806,10 @@ class AgendaStore extends ChangeNotifier {
           if (when.isAfter(DateTime.now())) {
             await cloud.upsertWebPushReminder(
               stableId: stableId,
-              title: item.title,
+              title: safeReminderTitle,
               body: minutes == 0
                   ? AnnaStrings.forPreference(preferences.appLanguage).d3('reminderNow')
-                  : _reminderBody(minutes, item.title),
+                  : _reminderBody(minutes, safeReminderTitle),
               when: when,
             );
           } else {
@@ -2820,10 +2829,10 @@ class AgendaStore extends ChangeNotifier {
 
       await NotificationService.instance.schedule(
         stableId: stableId,
-        title: item.title,
+        title: safeReminderTitle,
         body: minutes == 0
             ? AnnaStrings.forPreference(preferences.appLanguage).d3('reminderNow')
-            : _reminderBody(minutes, item.title),
+            : _reminderBody(minutes, safeReminderTitle),
         when: when,
         requestPermission: requestPermission,
         agendaActions: true,

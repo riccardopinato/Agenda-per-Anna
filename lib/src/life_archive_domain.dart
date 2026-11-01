@@ -96,7 +96,9 @@ extension AgendaStoreLifeArchive on AgendaStore {
     }
 
     for (final item in items) {
-      if (item.date.isAfter(end)) continue;
+      // Archive/search/year summaries have no per-result PIN challenge.
+      // Sensitive agenda items remain accessible through guarded agenda views.
+      if (item.isSensitive || item.date.isAfter(end)) continue;
       final timedDate = item.start == null
           ? item.date
           : DateTime(

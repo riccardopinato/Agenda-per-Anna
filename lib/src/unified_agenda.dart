@@ -7,7 +7,7 @@ extension AgendaContentFilterUi on AgendaContentFilter {
 
   IconData get icon => switch (this) {
         AgendaContentFilter.all => Icons.layers_outlined,
-        AgendaContentFilter.privateOnly => Icons.lock_outline,
+        AgendaContentFilter.privateOnly => Icons.person_outline,
         AgendaContentFilter.sharedOnly => Icons.favorite_outline,
       };
 }
@@ -82,7 +82,7 @@ class UnifiedAgendaEntry {
       final name = externalEvent!.calendarName.trim();
       return name.isEmpty ? strings.d3('external_externalCalendar') : name;
     }
-    return strings.d3('unified_private');
+    return strings.d3('privacy_personalFilter');
   }
 
   int get sortMinutes =>
@@ -173,7 +173,7 @@ class UnifiedAgendaTile extends StatelessWidget {
         store: store,
         item: privateItem,
         compact: compact,
-        hideDetails: hideDetails,
+        hideDetails: hideDetails || privateItem.isSensitive,
       );
     }
 
@@ -187,10 +187,11 @@ class UnifiedAgendaTile extends StatelessWidget {
           : '${formatTime(external.startTime!)}'
               '${external.endTime == null ? '' : ' – ${formatTime(external.endTime!)}'}';
       final details = <String>[
-        timeText,
-        external.calendarName.trim().isEmpty
-            ? AnnaStrings.of(context).d3('external_externalCalendar')
-            : external.calendarName,
+        if (!hideDetails) timeText,
+        if (!hideDetails)
+          external.calendarName.trim().isEmpty
+              ? AnnaStrings.of(context).d3('external_externalCalendar')
+              : external.calendarName,
         if (!hideDetails && external.location.isNotEmpty) external.location,
       ];
       return Card(
@@ -225,6 +226,7 @@ class UnifiedAgendaTile extends StatelessWidget {
     }
 
     final shared = entry.sharedEntry!;
+    final concealed = hideDetails || shared.isSensitive;
     final color = AgendaCategory.couple.color;
     final timeText = shared.start == null
         ? (shared.type == SharedEntryType.task ? AnnaStrings.of(context).d3('editor_toDo') : AnnaStrings.of(context).d3('editor_allDay'))
@@ -243,7 +245,12 @@ class UnifiedAgendaTile extends StatelessWidget {
             ? Checkbox(
                 value: shared.done,
                 activeColor: color,
-                onChanged: (_) => _toggleSharedAgendaEntry(store, entry),
+                onChanged: (_) async {
+                  if (shared.isSensitive &&
+                      !await requestSensitiveItemAccess(context, store)) { return; }
+                  if (!context.mounted) return;
+                  await _toggleSharedAgendaEntry(store, entry);
+                },
               )
             : CircleAvatar(
                 backgroundColor: color.withValues(alpha: 0.16),
@@ -251,13 +258,15 @@ class UnifiedAgendaTile extends StatelessWidget {
                 child: const Icon(Icons.favorite_outline),
               ),
         title: Text(
-          hideDetails ? AnnaStrings.of(context).d3('unified_sharedHidden') : shared.title,
+          concealed ? AnnaStrings.of(context).d3('unified_sharedHidden') : shared.title,
           style: TextStyle(
             fontWeight: FontWeight.w700,
             decoration: shared.done ? TextDecoration.lineThrough : null,
           ),
         ),
-        subtitle: Wrap(
+        subtitle: concealed
+          ? Text(AnnaStrings.of(context).d3('privacy_sensitive'))
+          : Wrap(
           spacing: 7,
           runSpacing: 2,
           crossAxisAlignment: WrapCrossAlignment.center,
@@ -287,7 +296,14 @@ class UnifiedAgendaTile extends StatelessWidget {
           onSelected: (value) async {
             if (value == 'edit') {
               await openUnifiedAgendaEntry(context, store, entry);
-            } else if (value == 'private') {
+              return;
+            }
+            if (shared.isSensitive &&
+                !await requestSensitiveItemAccess(context, store)) {
+              return;
+            }
+            if (!context.mounted) return;
+            if (value == 'private') {
               await _moveSharedAgendaEntryToPrivate(context, store, entry);
             } else if (value == 'delete') {
               await _deleteSharedAgendaEntry(context, store, entry);
@@ -330,6 +346,9 @@ Future<void> openUnifiedAgendaEntry(
   AgendaStore store,
   UnifiedAgendaEntry entry,
 ) async {
+  if (entry.sharedEntry?.isSensitive == true &&
+      !await requestSensitiveItemAccess(context, store)) { return; }
+  if (!context.mounted) return;
   if (entry.privateItem != null) {
     await openItemEditor(
       context,
@@ -396,6 +415,11 @@ Future<void> openUnifiedAgendaEntry(
     context,
     initialDate: shared.date,
     existing: shared,
+    pinAvailable: store.preferences.privacyLockEnabled &&
+        store.preferences.pinHash != null &&
+        store.preferences.pinSalt != null,
+    sensitiveAccessGranted: true,
+    store: store,
   );
   if (result == null) return;
   await _saveSharedAgendaEntry(store, entry.space!.id, result);
@@ -513,6 +537,7 @@ Future<void> _movePrivateAgendaItemToShared(
     start: item.start,
     end: item.end,
     done: item.done,
+    isSensitive: item.isSensitive,
   );
   await _saveSharedAgendaEntry(store, space.id, shared);
   await store.deleteItem(item.id);
@@ -562,6 +587,7 @@ Future<void> _moveSharedAgendaEntryToPrivate(
       start: shared.start,
       end: shared.end,
       done: shared.done,
+      isSensitive: shared.isSensitive,
     ),
   );
 
@@ -736,6 +762,10 @@ Future<void> openUnifiedItemComposer(
     initialDate: initialDate,
     initialType: sharedType,
     initialTime: initialTime,
+    pinAvailable: store.preferences.privacyLockEnabled &&
+        store.preferences.pinHash != null &&
+        store.preferences.pinSalt != null,
+    store: store,
   );
   if (result == null) return;
 

@@ -235,6 +235,7 @@ class AndroidCalendarSyncService extends ChangeNotifier
       final until = DateTime(now.year + 1, now.month, now.day);
       final items = store.items.where((item) =>
           item.type == ItemType.appointment &&
+          !item.isSensitive &&
           !item.date.isBefore(from) && item.date.isBefore(until)).toList()
         ..sort((a, b) => a.date.compareTo(b.date));
       var updated = 0;

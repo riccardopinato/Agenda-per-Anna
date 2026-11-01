@@ -82,6 +82,7 @@ part 'src/store/backup_domain.dart';
 part 'src/lifecycle_domain.dart';
 part 'src/agenda_store.dart';
 part 'src/unified_agenda.dart';
+part 'src/discreet_privacy.dart';
 part 'src/screens/universal_identity.dart';
 part 'src/screens/private_vault.dart';
 part 'src/screens/cycle_tracker_screen.dart';
