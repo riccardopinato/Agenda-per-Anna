@@ -4,7 +4,10 @@
 
 - **F0 / Android +115:** il titolare ha comunicato in Chat **«collaudo fatto, tutto ok»**. Stato: **USER_ATTESTED_GENERAL_PASS** (esito funzionale complessivo riferito dall'utilizzatore), non una certificazione tecnica con manifest/fingerprint/logs per tutti gli scenari. La [matrice fisica](V115_ANDROID_PHYSICAL_GATE.md) conserva **NOT VERIFIED** nei singoli casi privi di evidenza circostanziata. Non attribuire PASS a RevenueCat/Play Internal Testing, firma SHA-256, versione iniziale o test cross-device se non documentati.
 - **v1.07-A1 — CAP-0014:** source implementation **MERGED** via [PR #186](https://github.com/riccardopinato/Agenda-per-Anna/pull/186), commit `308faebb7ed06873c244103f107192d8d25a4b18`. Exact-head Development, AppLab Source Gate e Web SUCCESS, review findings risolti. La funzione nuova **non era presente** nell'APK +115 collaudato: richiede un **nuovo APK**, `versionCode > 115`, per QA fisica specifica A1.
-- **Prossimo sviluppo:** v1.07-A2 — CAP-0003, note/checklist contestuali ad appuntamenti; PR isolata con riuso degli editor esistenti e niente nuovo database/scheduler. La distribuzione resta sotto gate release successivo.
+- **v1.07-A2 — CAP-0003:** implementazione sorgente **MERGED** via [PR #188](https://github.com/riccardopinato/Agenda-per-Anna/pull/188), commit `31500ea9687680f3159f45ff1d4dbeb9bc53ae22`; note e checklist dentro `AgendaItem.note`, nessuna nuova persistenza/sync/reminder. Exact-head Development/Web/AppLab green e 3 review finding risolti. Nessuna certificazione fisica di A2 con l'APK precedente +115.
+- **Release candidato successivo:** `1.0.0-rc.6+116` (versionCode 116) per A1+A2, firma stabile tramite automazione main/exact-head dopo merge e CI. Stato iniziale: **PLANNED / NOT BUILT** fino a prova di workflow; collaudo device v116 NON VERIFICATO. Matrice: [V116_ANDROID_PHYSICAL_GATE.md](V116_ANDROID_PHYSICAL_GATE.md).
+- **Prossimo sviluppo funzionale:** v1.07-B1 — CAP-0002, parser locale deterministico per eventi con anteprima e conferma, solo dopo verifica source/release A.
+
 - Le dichiarazioni precedenti "F0 PENDING DEVICE" e "A1 PLANNED" sono snapshot *prima* di questo aggiornamento e restano archiviate per tracciabilita.
 
 ## Decisione di roadmap — 1 novembre 2026: v1.07 Daily-use UX per capability
