@@ -13,11 +13,11 @@ CapabilityHealthState assessCapability({
   bool error = false,
 }) {
   if (!supported) return CapabilityHealthState.unsupported;
+  if (serviceAvailable == false) return CapabilityHealthState.unavailable;
   if (permissionGranted == false) return CapabilityHealthState.permissionRequired;
   if (permissionGranted == null || serviceAvailable == null || configured == null) {
     return CapabilityHealthState.unknown;
   }
-  if (!serviceAvailable) return CapabilityHealthState.unavailable;
   if (error || !configured) return CapabilityHealthState.degraded;
   return CapabilityHealthState.available;
 }
@@ -60,8 +60,9 @@ Future<List<CapabilityHealthCheck>> inspectAnnaCapabilities() async {
         configured: status.reminderChannelEnabled,
         error: status.lastError != null,
       ),
-      !status.reminderChannelEnabled ? 'channelDisabled'
-        : !status.exactAlarmsEnabled ? 'exactFallback' : 'notDelivered',
+      !status.available ? 'checkFailed'
+        : !status.reminderChannelEnabled ? 'channelDisabled'
+          : !status.exactAlarmsEnabled ? 'exactFallback' : 'notDelivered',
     ));
   } catch (_) {
     for (final key in ['notifications', 'reminders']) {
@@ -80,16 +81,18 @@ Future<List<CapabilityHealthCheck>> inspectAnnaCapabilities() async {
   final calendar = ExternalCalendarService.instance;
   try {
     final status = await calendar.refreshStatus();
+    // Calendar enumeration can fail after permission read-back succeeds.
+    final providerError = calendar.lastError ?? status.error;
     checks.add(CapabilityHealthCheck(
       'calendarRead',
       assessCapability(
         supported: status.supported,
         permissionGranted: status.permissionGranted,
-        serviceAvailable: status.error == null,
+        serviceAvailable: providerError == null,
         configured: calendar.enabled && calendar.selectedCalendarIds.isNotEmpty,
-        error: status.error != null,
+        error: providerError != null,
       ),
-      status.error == null ? 'optional' : 'checkFailed',
+      providerError == null ? 'optional' : 'checkFailed',
     ));
   } catch (_) {
     checks.add(const CapabilityHealthCheck(
