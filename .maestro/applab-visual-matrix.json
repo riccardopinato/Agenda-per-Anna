@@ -1,0 +1,107 @@
+{
+  "schema_version": 1,
+  "purpose": "CAP-0069 deterministic visual comparison against separately approved screenshot evidence",
+  "capture_policy": "synthetic-data-only; never capture Vault, shared content or personal accounts",
+  "checkpoint_source": ".maestro/applab-journey.json",
+  "visual_policy": ".maestro/applab-visual.json",
+  "checkpoints": [
+    "today",
+    "calendar",
+    "week",
+    "memories",
+    "people",
+    "more",
+    "backup",
+    "archive",
+    "personalization",
+    "settings-hub"
+  ],
+  "variants": [
+    {
+      "id": "en-light-rose-phone",
+      "locale": "en",
+      "theme": "light",
+      "palette": "rose",
+      "width": 390,
+      "height": 844,
+      "text_scale": 1,
+      "reduced_motion": false
+    },
+    {
+      "id": "it-dark-lilac-phone",
+      "locale": "it",
+      "theme": "dark",
+      "palette": "lilac",
+      "width": 390,
+      "height": 844,
+      "text_scale": 1,
+      "reduced_motion": false
+    },
+    {
+      "id": "es-light-sage-small",
+      "locale": "es",
+      "theme": "light",
+      "palette": "sage",
+      "width": 360,
+      "height": 780,
+      "text_scale": 1,
+      "reduced_motion": false
+    },
+    {
+      "id": "fr-dark-peach-large-text",
+      "locale": "fr",
+      "theme": "dark",
+      "palette": "peach",
+      "width": 390,
+      "height": 844,
+      "text_scale": 1.6,
+      "reduced_motion": false
+    },
+    {
+      "id": "pt-light-sky-tablet",
+      "locale": "pt",
+      "theme": "light",
+      "palette": "sky",
+      "width": 800,
+      "height": 1100,
+      "text_scale": 1,
+      "reduced_motion": false
+    },
+    {
+      "id": "en-dark-custom-hsv",
+      "locale": "en",
+      "theme": "dark",
+      "palette": "custom-hsv",
+      "seed_argb": "0xFF3765C2",
+      "width": 390,
+      "height": 844,
+      "text_scale": 1,
+      "reduced_motion": false
+    },
+    {
+      "id": "it-light-rose-reduced-motion",
+      "locale": "it",
+      "theme": "light",
+      "palette": "rose",
+      "width": 390,
+      "height": 844,
+      "text_scale": 1,
+      "reduced_motion": true
+    }
+  ],
+  "image_contract": {
+    "format": "png",
+    "pixel_channel": "RGB",
+    "max_changed_pixel_ratio": 0.001,
+    "per_channel_difference_threshold": 12,
+    "files": "{checkpoint}__{variant}.png"
+  },
+  "excluded": [
+    "vault",
+    "private-vault",
+    "shared",
+    "account",
+    "private-security"
+  ],
+  "evidence_status": "NOT_VERIFIED_UNTIL_APPROVED_BASELINES_AND_CANDIDATE_PNGS_ARE_PROVIDED"
+}
