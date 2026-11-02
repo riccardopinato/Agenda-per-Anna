@@ -520,7 +520,10 @@ Future<void> showTaskReplanning(
       store.activeAccountId != account) return;
   AgendaItem? current;
   for (final candidate in store.items) {
-    if (candidate.id == original.id) { current = candidate; break; }
+    if (candidate.id == original.id) {
+      current = candidate;
+      break;
+    }
   }
   final stillAvailable = suggestTaskReplanningSlots(
       from: now, visibleForDay: visible).any((v) => v.isAtSameMomentAs(selected));
