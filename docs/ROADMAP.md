@@ -2,8 +2,8 @@
 
 ## Quick wins agenda — 2 novembre 2026
 
-- PR [#206](https://github.com/riccardopinato/Agenda-per-Anna/pull/206): duplicazione con bozza, rinvio task, attività scadute, anteprima domani e avviso conflitti. Dettagli in [V107_DAILY_QUICK_WINS.md](V107_DAILY_QUICK_WINS.md).
-- Stato: codice sul branch, gate finali e verifica fisica **NOT VERIFIED** fino al collaudo. Nessun APK o store release dichiarati.
+- PR [#206](https://github.com/riccardopinato/Agenda-per-Anna/pull/206): **SOURCE MERGED** su `main@d67c64e2aea3d38f1fa32b320d64cb7a3ddfe4a2`; Development checks, Web, AppLab Source Gate PASS sull'head `b8dfabcc10f4c75d0979e965fec91d1b6df961bb`. Include duplicazione con bozza, rinvio task, attività scadute, anteprima domani e avviso conflitti. Specifica: [V107_DAILY_QUICK_WINS.md](V107_DAILY_QUICK_WINS.md).
+- Release candidata `1.0.0-rc.6+120`: versionCode predisposto per APK ARM64 firmato dalla pipeline stabile dopo merge + green main CI. APK e collaudo fisico **NOT VERIFIED**, nessuna pubblicazione Play.
 
 ## Stato operativo v1.07-C1/C2 — 2 novembre 2026
 
