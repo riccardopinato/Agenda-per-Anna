@@ -193,8 +193,10 @@ class _Qw2FavoritesSectionState extends State<Qw2FavoritesSection> {
         builder: (sheetContext, update) => SafeArea(
           child: Padding(
             padding: const EdgeInsets.all(16),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
+            child: ConstrainedBox(
+              constraints: BoxConstraints(maxHeight: MediaQuery.sizeOf(sheetContext).height * 0.78),
+              child: ListView(
+                shrinkWrap: true,
               children: [
                 Text(quickWins2Copy(language, 'chooseFavorites'),
                     style: Theme.of(sheetContext).textTheme.titleMedium),
@@ -220,6 +222,7 @@ class _Qw2FavoritesSectionState extends State<Qw2FavoritesSection> {
                   child: Text(AnnaStrings.of(sheetContext).save),
                 ),
               ],
+              ),
             ),
           ),
         ),
