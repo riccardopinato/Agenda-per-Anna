@@ -139,7 +139,8 @@ void main() {
     expect(screen, contains('Clipboard.setData'));
     expect(screen, contains('Duration(seconds: 30)'));
     expect(screen, contains('current?.text == value'));
-    expect(screen, contains('vault.setSecureScreen(true)'));
+    expect(screen, contains('vault.setSecureScreen(true, owner: this)'));
+    expect(screen, contains('vault.setSecureScreen(false, owner: this)'));
 
     expect(service, contains("static const _payloadKey = 'private_vault_payload_v1'"));
     expect(service, isNot(contains('private_vault_credentials_v1')));
