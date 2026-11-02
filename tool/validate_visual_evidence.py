@@ -41,7 +41,7 @@ def build_manifest(capture_dir: Path, matrix_file: Path, source_sha: str,
     }
     if not capture_dir.is_dir() or capture_dir.is_symlink():
         raise ValueError("capture directory missing or symlink")
-    found = {p.name for p in capture_dir.iterdir() if p.is_file()}
+    found = {p.name for p in capture_dir.iterdir()}
     if found != set(expected):
         raise ValueError(
             f"missing {len(set(expected) - found)}, unexpected "
@@ -53,6 +53,26 @@ def build_manifest(capture_dir: Path, matrix_file: Path, source_sha: str,
         if path.is_symlink() or not path.is_file():
             raise ValueError("capture file is not regular: " + filename)
         raw = path.read_bytes()
+        # PNG metadata chunks can appear AFTER IDAT; Image.info on open
+        # alone is insufficient to detect those. Scan the entire chunk
+        # inventory and require exact termination before trusting the image.
+        if not raw.startswith(b"\\x89PNG\\r\\n\\x1a\\n"):
+            raise ValueError("invalid PNG signature: " + filename)
+        offset = 8
+        has_end = False
+        while offset + 12 <= len(raw):
+            chunk_length = int.from_bytes(raw[offset:offset + 4], "big")
+            kind = raw[offset + 4:offset + 8]
+            offset += 12 + chunk_length
+            if offset > len(raw):
+                raise ValueError("truncated PNG chunk: " + filename)
+            if kind in (b"tEXt", b"zTXt", b"iTXt", b"eXIf"):
+                raise ValueError("PNG metadata is forbidden: " + filename)
+            if kind == b"IEND":
+                has_end = True
+                break
+        if not has_end or offset != len(raw):
+            raise ValueError("invalid PNG end or trailing bytes: " + filename)
         with Image.open(path) as image:
             if image.format != "PNG" or image.mode not in ("RGB", "RGBA"):
                 raise ValueError("PNG RGB/RGBA required: " + filename)
