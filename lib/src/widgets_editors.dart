@@ -1673,7 +1673,9 @@ Future<void> openItemEditor(
                                 existing?.isRecurring == true,
                           );
                           if (!allow ||
-                              store.activeAccountId != accountAtOpen) return;
+                              store.activeAccountId != accountAtOpen) {
+                            return;
+                          }
                           if (existing?.isRecurring == true) {
                             await store.updateRecurringOccurrence(
                               base,
