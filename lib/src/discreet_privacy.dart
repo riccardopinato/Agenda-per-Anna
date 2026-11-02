@@ -116,3 +116,16 @@ bool isMaskedAgendaEntry(UnifiedAgendaEntry entry, {bool hideAll = false}) =>
     hideAll ||
     (entry.privateItem?.isSensitive ?? false) ||
     (entry.sharedEntry?.isSensitive ?? false);
+
+
+/// Trashed appointments retain the original serialized item. The Cestino is
+/// another presentation/export surface and must enforce the same UI gate.
+bool isSensitiveTrashEntry(TrashEntry entry) =>
+    entry.kind == TrashEntityKind.item &&
+    entry.payload['isSensitive'] == true;
+
+/// Local backup and open-export bundles contain active items AND trash.
+/// Do not let a trashed sensitive item bypass the export PIN/consent prompt.
+bool hasSensitiveLocalExportData(AgendaStore store) =>
+    store.items.any((item) => item.isSensitive) ||
+    store.trash.any(isSensitiveTrashEntry);
