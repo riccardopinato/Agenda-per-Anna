@@ -2341,3 +2341,38 @@ Future<void> composePersonalFutureLetter(
   );
   controller.dispose();
 }
+
+Future<void> openPersonalFutureLetter(
+    BuildContext context, FutureLetterRecord record) async {
+  final strings = AnnaStrings.of(context);
+  final today = DateTime.now();
+  final due = DateTime(record.day.year, record.day.month, record.day.day);
+  if (due.isAfter(DateTime(today.year, today.month, today.day))) {
+    final early = await showDialog<bool>(
+      context: context,
+      builder: (dialog) => AlertDialog(
+        title: Text(futureLetterLabel(AnnaStrings.of(dialog), 'early')),
+        content: Text(futureLetterLabel(AnnaStrings.of(dialog), 'notice')),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(dialog, false),
+            child: Text(quickWinText(AnnaStrings.of(dialog), 'undo'))),
+          FilledButton(onPressed: () => Navigator.pop(dialog, true),
+            child: Text(futureLetterLabel(AnnaStrings.of(dialog), 'read'))),
+        ],
+      ),
+    );
+    if (early != true) return;
+  }
+  if (!context.mounted) return;
+  await showDialog<void>(
+    context: context,
+    builder: (dialog) => AlertDialog(
+      title: Text(futureLetterTitle(strings)),
+      content: SingleChildScrollView(child: SelectableText(record.block.text)),
+      actions: [
+        TextButton(onPressed: () => Navigator.pop(dialog),
+          child: Text(futureLetterLabel(AnnaStrings.of(dialog), 'read'))),
+      ],
+    ),
+  );
+}
