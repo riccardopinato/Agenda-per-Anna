@@ -405,3 +405,22 @@ Future<bool> confirmAppointmentOverlap(
   );
   return result ?? false;
 }
+
+// CAP-0102: deterministic alternatives, derived from authorized calendar rows.
+List<DateTime> suggestTaskReplanningSlots({
+  required DateTime from,
+  required Iterable<UnifiedAgendaEntry> Function(DateTime) visibleForDay,
+  int days = 3,
+}) {
+  if (days < 1 || days > 7) return const <DateTime>[];
+  final choices = <DateTime>[];
+  for (var n = 1; n <= days; n++) {
+    final day = DateTime(from.year, from.month, from.day + n);
+    final slots = findCalendarFreeSlots(
+      day: day, visibleEntries: visibleForDay(day),
+      startHour: 9, endHour: 18, minimumMinutes: 30,
+    );
+    if (slots.isNotEmpty) choices.add(slots.first.start);
+  }
+  return List<DateTime>.unmodifiable(choices);
+}
