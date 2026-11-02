@@ -200,6 +200,28 @@ void main() {
     expect(code, contains("AgendaContentFilter.privateOnly => d3('privacy_personalFilter')"));
   });
 
+  testWidgets('Cestino masks sensitive item title and deletion timestamp',
+      (tester) async {
+    final store = AgendaStore();
+    store.trash.add(TrashEntry(
+      id: 'sensitive-bin',
+      kind: TrashEntityKind.item,
+      entityId: 'sensitive-original',
+      title: 'Hidden deleted appointment',
+      deletedAt: DateTime(2026, 11, 2, 22, 30),
+      payload: privateEvent(isSensitive: true).toJson(),
+    ));
+    await tester.pumpWidget(MaterialApp(
+      locale: const Locale('en'),
+      home: TrashScreen(store: store),
+    ));
+    expect(find.text('Hidden deleted appointment'), findsNothing);
+    expect(find.text('22:30'), findsNothing);
+    expect(find.text('Sensitive content'), findsOneWidget);
+    await tester.pumpWidget(const SizedBox.shrink());
+    store.dispose();
+  });
+
   testWidgets('sensitive private and shared titles are masked in agenda tiles',
       (tester) async {
     final store = AgendaStore();
