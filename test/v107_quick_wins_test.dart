@@ -114,4 +114,41 @@ void main() {
       }
     }
   });
+
+  test('CAP-0102 suggests three days only from visible free slots', () {
+    final now = DateTime(2026, 11, 3, 8);
+    final results = suggestTaskReplanningSlots(
+      from: now,
+      visibleForDay: (date) => [
+        UnifiedAgendaEntry.private(AgendaItem(
+          id: 'busy-${date.day}', title: 'Existing appointment',
+          date: date, type: ItemType.appointment,
+          start: const TimeOfDay(hour: 9, minute: 0),
+          end: const TimeOfDay(hour: 10, minute: 0),
+        )),
+      ],
+    );
+    expect(results.length, 3);
+    expect(results.first, DateTime(2026, 11, 4, 10));
+    expect(results[1], DateTime(2026, 11, 5, 10));
+    expect(results[2], DateTime(2026, 11, 6, 10));
+    expect(() => results.add(now), throwsUnsupportedError);
+  });
+
+  test('CAP-0102 never proposes a blocked all-day slot or invalid horizon', () {
+    final from = DateTime(2026, 11, 3);
+    final results = suggestTaskReplanningSlots(
+      from: from,
+      visibleForDay: (day) => [
+        UnifiedAgendaEntry.private(AgendaItem(
+          id: 'all-${day.day}', title: 'All day',
+          date: day, type: ItemType.appointment,
+        )),
+      ],
+    );
+    expect(results, isEmpty);
+    expect(suggestTaskReplanningSlots(
+      from: from, visibleForDay: (_) => [], days: 8,
+    ), isEmpty);
+  });
 }
