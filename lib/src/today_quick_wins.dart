@@ -215,12 +215,20 @@ class TodayCatchUpCard extends StatelessWidget {
                   : () => openItemEditor(context, store, item.date,
                       existing: item),
               trailing: canPostponeTask(item)
-                  ? IconButton(
-                      key: ValueKey('overdue-tomorrow-${item.id}'),
-                      tooltip: quickWinText(strings, 'postpone'),
-                      onPressed: () => showPostponeTask(context, store, item),
-                      icon: const Icon(Icons.redo_outlined),
-                    )
+                  ? Row(mainAxisSize: MainAxisSize.min, children: [
+                      IconButton(
+                        key: ValueKey('overdue-alternatives-${item.id}'),
+                        tooltip: _assistedLabel(strings, 'suggest'),
+                        onPressed: () => showTaskReplanning(context, store, item),
+                        icon: const Icon(Icons.event_available_outlined),
+                      ),
+                      IconButton(
+                        key: ValueKey('overdue-tomorrow-${item.id}'),
+                        tooltip: quickWinText(strings, 'postpone'),
+                        onPressed: () => showPostponeTask(context, store, item),
+                        icon: const Icon(Icons.redo_outlined),
+                      ),
+                    ])
                   : const Icon(Icons.chevron_right),
             ),
           if (overdue.length > 3)
@@ -404,4 +412,134 @@ Future<bool> confirmAppointmentOverlap(
     ),
   );
   return result ?? false;
+}
+
+// CAP-0102: deterministic alternatives, derived from authorized calendar rows.
+List<DateTime> suggestTaskReplanningSlots({
+  required DateTime from,
+  required Iterable<UnifiedAgendaEntry> Function(DateTime) visibleForDay,
+  int days = 3,
+}) {
+  if (days < 1 || days > 7) return const <DateTime>[];
+  final choices = <DateTime>[];
+  for (var n = 1; n <= days; n++) {
+    final day = DateTime(from.year, from.month, from.day + n);
+    final slots = findCalendarFreeSlots(
+      day: day, visibleEntries: visibleForDay(day),
+      startHour: 9, endHour: 18, minimumMinutes: 30,
+    );
+    if (slots.isNotEmpty) choices.add(slots.first.start);
+  }
+  return List<DateTime>.unmodifiable(choices);
+}
+
+String _assistedLabel(AnnaStrings s, String key) {
+  const words = <String, List<String>>{
+    'suggest': ['Suggest another time', 'Suggerisci un altro orario',
+      'Sugerir otra hora', 'Proposer un autre horaire', 'Sugerir outro horário'],
+    'confirm': ['Confirm new date and time?', 'Confermi data e orario?',
+      '¿Confirmar fecha y hora?', 'Confirmer date et heure ?', 'Confirmar data e hora?'],
+    'apply': ['Move task', 'Sposta attività', 'Mover tarea',
+      'Déplacer la tâche', 'Mover tarefa'],
+    'stale': ['The task or calendar changed. Review suggestions again.',
+      'Attività o calendario modificati. Rivedi le alternative.',
+      'La tarea o el calendario ha cambiado.',
+      'La tâche ou le calendrier a changé.',
+      'A tarefa ou o calendário mudou.'],
+  };
+  final index = switch (s.languageCode) {
+    'it' => 1, 'es' => 2, 'fr' => 3, 'pt' => 4, _ => 0,
+  };
+  return words[key]![index];
+}
+
+// Existing postpone UX stays intact; the user explicitly opts into alternatives.
+Future<void> showTaskReplanning(
+    BuildContext context, AgendaStore store, AgendaItem original) async {
+  if (!store.entryScopeReady || !canPostponeTask(original)) return;
+  final account = store.activeAccountId;
+  final before = jsonEncode(original.toJson());
+  final now = DateTime.now();
+  final external = ExternalCalendarService.instance;
+  bool ready(DateTime day) =>
+      store.agendaContentFilter == AgendaContentFilter.all &&
+      external.supported && external.enabled && external.permissionGranted &&
+      external.coversRange(DateTime(day.year, day.month, day.day - 1),
+          DateTime(day.year, day.month, day.day + 2));
+  Iterable<UnifiedAgendaEntry> visible(DateTime day) =>
+      visibleEntriesForCalendarFreeSlots(store, day, externalReady: ready(day));
+  final options = suggestTaskReplanningSlots(from: now, visibleForDay: visible);
+  if (!context.mounted) return;
+  final lang = AnnaStrings.of(context);
+  final format = DateFormat('EEE d MMM, HH:mm', AnnaStrings.intlLocale(context));
+  if (options.isEmpty) {
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+      content: Text(calendarFreeSlotLabel(lang, 'empty')),
+    ));
+    return;
+  }
+  final selected = await showDialog<DateTime>(
+    context: context,
+    builder: (dialog) => SimpleDialog(
+      title: Text(_assistedLabel(AnnaStrings.of(dialog), 'suggest')),
+      children: [
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20),
+          child: Text(calendarFreeSlotLabel(AnnaStrings.of(dialog), 'scope')),
+        ),
+        if (store.agendaContentFilter == AgendaContentFilter.all &&
+            !options.every(ready))
+          Padding(padding: const EdgeInsets.symmetric(horizontal: 20),
+            child: Text(calendarFreeSlotLabel(AnnaStrings.of(dialog), 'partial'))),
+        for (final value in options)
+          SimpleDialogOption(
+            onPressed: () => Navigator.pop(dialog, value),
+            child: Text(format.format(value)),
+          ),
+      ],
+    ),
+  );
+  if (selected == null || !context.mounted || store.activeAccountId != account) {
+    return;
+  }
+  final dateFormat = DateFormat('d MMM yyyy', AnnaStrings.intlLocale(context));
+  final agreed = await showDialog<bool>(
+    context: context,
+    builder: (dialog) => AlertDialog(
+      title: Text(_assistedLabel(AnnaStrings.of(dialog), 'confirm')),
+      content: Text('${dateFormat.format(original.date)} → ${format.format(selected)}'),
+      actions: [
+        TextButton(onPressed: () => Navigator.pop(dialog, false),
+            child: Text(quickWinText(AnnaStrings.of(dialog), 'undo'))),
+        FilledButton(onPressed: () => Navigator.pop(dialog, true),
+            child: Text(_assistedLabel(AnnaStrings.of(dialog), 'apply'))),
+      ],
+    ),
+  );
+  if (agreed != true || !context.mounted || !store.entryScopeReady ||
+      store.activeAccountId != account) {
+    return;
+  }
+  AgendaItem? current;
+  for (final candidate in store.items) {
+    if (candidate.id == original.id) {
+      current = candidate;
+      break;
+    }
+  }
+  final stillAvailable = suggestTaskReplanningSlots(
+      from: now, visibleForDay: visible).any((v) => v.isAtSameMomentAs(selected));
+  if (current == null || !canPostponeTask(current) ||
+      jsonEncode(current.toJson()) != before || !stillAvailable) {
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+      content: Text(_assistedLabel(AnnaStrings.of(context), 'stale')),
+    ));
+    return;
+  }
+  final until = selected.add(const Duration(minutes: 30));
+  await store.upsert(current.copyWith(
+    date: DateTime(selected.year, selected.month, selected.day),
+    start: TimeOfDay(hour: selected.hour, minute: selected.minute),
+    end: TimeOfDay(hour: until.hour, minute: until.minute),
+  ));
 }
