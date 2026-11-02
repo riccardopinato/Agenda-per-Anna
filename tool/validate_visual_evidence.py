@@ -56,7 +56,7 @@ def build_manifest(capture_dir: Path, matrix_file: Path, source_sha: str,
         # PNG metadata chunks can appear AFTER IDAT; Image.info on open
         # alone is insufficient to detect those. Scan the entire chunk
         # inventory and require exact termination before trusting the image.
-        if not raw.startswith(b"\\x89PNG\\r\\n\\x1a\\n"):
+        if not raw.startswith(b"\x89PNG\r\n\x1a\n"):
             raise ValueError("invalid PNG signature: " + filename)
         offset = 8
         has_end = False
