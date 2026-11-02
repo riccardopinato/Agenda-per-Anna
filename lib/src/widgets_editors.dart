@@ -1202,27 +1202,31 @@ Future<void> openItemEditor(
   TimeOfDay? initialTime,
   ItemType? initialType,
   AgendaItem? existing,
+  AgendaItem? duplicateOf,
 }) async {
-  final title = TextEditingController(text: existing?.title ?? '');
-  final note = TextEditingController(text: existing?.note ?? '');
-  DateTime date = existing?.date ?? initialDate;
-  TimeOfDay? start = existing?.start ?? initialTime;
-  TimeOfDay? end = existing?.end ??
+  // Duplicating opens an unsaved draft, preserving canonical writer semantics.
+  final source = existing ?? duplicateOf;
+  final editorHostContext = context;
+  final title = TextEditingController(text: source?.title ?? '');
+  final note = TextEditingController(text: source?.note ?? '');
+  DateTime date = source?.date ?? initialDate;
+  TimeOfDay? start = source?.start ?? initialTime;
+  TimeOfDay? end = source?.end ??
       (start == null
           ? null
           : _timePlusMinutes(
               start,
               store.preferences.defaultEventMinutes,
             ));
-  ItemType type = existing?.type ?? initialType ?? ItemType.appointment;
+  ItemType type = source?.type ?? initialType ?? ItemType.appointment;
   AgendaCategory category =
-      existing?.category ?? store.preferences.defaultCategory;
-  int primaryReminder = existing == null
+      source?.category ?? store.preferences.defaultCategory;
+  int primaryReminder = source == null
       ? (store.preferences.defaultPrimaryReminder ?? -1)
-      : (existing.reminderMinutesBefore ?? -1);
-  int secondaryReminder = existing == null
+      : (source.reminderMinutesBefore ?? -1);
+  int secondaryReminder = source == null
       ? (store.preferences.defaultSecondaryReminder ?? -1)
-      : (existing.secondaryReminderMinutesBefore ?? -1);
+      : (source.secondaryReminderMinutesBefore ?? -1);
   RecurrenceRule recurrence =
       existing?.recurrenceRule ?? RecurrenceRule.none;
   int recurrenceCount =
@@ -1308,15 +1312,11 @@ Future<void> openItemEditor(
                       IconButton.filledTonal(
                         tooltip: AnnaStrings.of(context).d3('editor_duplicate'),
                         onPressed: () async {
-                          final t = title.text.trim();
-                          if (t.isEmpty) return;
-                          await store.upsert(
-                            buildItem(
-                              id: const Uuid().v4(),
-                              itemDate: date,
-                            ).copyWith(clearRecurrence: true),
-                          );
-                          if (sheetContext.mounted) Navigator.pop(sheetContext);
+                          Navigator.pop(sheetContext);
+                          if (editorHostContext.mounted) {
+                            await openItemEditor(editorHostContext, store, date,
+                                duplicateOf: existing);
+                          }
                         },
                         icon: const Icon(Icons.content_copy_outlined),
                       ),
@@ -1667,6 +1667,15 @@ Future<void> openItemEditor(
                             done: existing?.done ?? false,
                             pinned: existing?.pinned ?? false,
                           );
+                          final allow = await confirmAppointmentOverlap(
+                            context, store, base,
+                            recurring: recurrence != RecurrenceRule.none ||
+                                existing?.isRecurring == true,
+                          );
+                          if (!allow ||
+                              store.activeAccountId != accountAtOpen) {
+                            return;
+                          }
                           if (existing?.isRecurring == true) {
                             await store.updateRecurringOccurrence(
                               base,

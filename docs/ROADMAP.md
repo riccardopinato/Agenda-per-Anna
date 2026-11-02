@@ -1,5 +1,10 @@
 # Anna's Diary — Roadmap
 
+## Quick wins agenda — 2 novembre 2026
+
+- PR [#206](https://github.com/riccardopinato/Agenda-per-Anna/pull/206): duplicazione con bozza, rinvio task, attività scadute, anteprima domani e avviso conflitti. Dettagli in [V107_DAILY_QUICK_WINS.md](V107_DAILY_QUICK_WINS.md).
+- Stato: codice sul branch, gate finali e verifica fisica **NOT VERIFIED** fino al collaudo. Nessun APK o store release dichiarati.
+
 ## Stato operativo v1.07-C1/C2 — 2 novembre 2026
 
 - **C1 CAP-0077**: [PR #203](https://github.com/riccardopinato/Agenda-per-Anna/pull/203) MERGED su `main@aab7ace78a375d78f5b868689b7c768e0b29c3fc`; exact-head Development/Web/AppLab PASS. Diagnostica Android in Impostazioni senza forzare permessi, con stati non equivalenti alla consegna. Verifica reale di canali/OEM/calendario/push: **NOT VERIFIED**.

@@ -8,6 +8,73 @@ class CalendarFreeSlot {
   Duration get duration => end.difference(start);
 }
 
+/// Shared interval policy for free-slot discovery and collision warnings.
+/// End instants are exclusive; a missing end is conservatively busy until
+/// midnight, matching the existing free-slot contract.
+CalendarFreeSlot? appointmentOccupiedInterval(UnifiedAgendaEntry item) {
+  if (item.type != ItemType.appointment) return null;
+  DateTime first;
+  DateTime last;
+  final external = item.externalEvent;
+  if (external != null) {
+    first = external.start;
+    last = external.end;
+    if (external.allDay && !last.isAfter(first)) {
+      last = DateTime(first.year, first.month, first.day + 1);
+    }
+  } else if (item.start == null) {
+    first = DateTime(item.date.year, item.date.month, item.date.day);
+    last = DateTime(item.date.year, item.date.month, item.date.day + 1);
+  } else {
+    final clock = item.start!;
+    first = DateTime(item.date.year, item.date.month, item.date.day,
+        clock.hour, clock.minute);
+    if (item.end == null) {
+      last = DateTime(item.date.year, item.date.month, item.date.day + 1);
+    } else {
+      final endClock = item.end!;
+      final crossesMidnight =
+          endClock.hour * 60 + endClock.minute <=
+          clock.hour * 60 + clock.minute;
+      last = DateTime(item.date.year, item.date.month,
+          item.date.day + (crossesMidnight ? 1 : 0),
+          endClock.hour, endClock.minute);
+    }
+  }
+  return last.isAfter(first) ? CalendarFreeSlot(first, last) : null;
+}
+
+/// Pure, non-blocking overlap detection over already-authorized visible
+/// entries. Do not infer completeness or inspect hidden/private scopes.
+List<UnifiedAgendaEntry> findAppointmentConflicts({
+  required AgendaItem candidate,
+  required Iterable<UnifiedAgendaEntry> visibleEntries,
+}) {
+  if (candidate.type != ItemType.appointment) {
+    return const <UnifiedAgendaEntry>[];
+  }
+  final target = appointmentOccupiedInterval(
+      UnifiedAgendaEntry.private(candidate));
+  if (target == null) return const <UnifiedAgendaEntry>[];
+  final conflicts = <UnifiedAgendaEntry>[];
+  final seen = <String>{};
+  for (final entry in visibleEntries) {
+    if (entry.isPrivate && entry.id == candidate.id) continue;
+    final identity = entry.isExternal ? 'external:${entry.id}' :
+        entry.isShared ? 'shared:${entry.space?.id}:${entry.id}' :
+        'private:${entry.id}';
+    if (!seen.add(identity)) continue;
+    final interval = appointmentOccupiedInterval(entry);
+    if (interval == null) continue;
+    if (interval.start.isBefore(target.end) &&
+        interval.end.isAfter(target.start)) {
+      conflicts.add(entry);
+    }
+  }
+  conflicts.sort((a, b) => a.title.compareTo(b.title));
+  return List<UnifiedAgendaEntry>.unmodifiable(conflicts);
+}
+
 /// Computes gaps after intersecting and merging overlapping visible appointments.
 List<CalendarFreeSlot> findCalendarFreeSlots({
   required DateTime day,
@@ -31,35 +98,10 @@ List<CalendarFreeSlot> findCalendarFreeSlots({
     final identity = item.isExternal ? 'external:${item.id}' :
         item.isShared ? 'shared:${item.space?.id}:${item.id}' : 'private:${item.id}';
     if (!seen.add(identity)) continue;
-    DateTime first;
-    DateTime last;
-    final external = item.externalEvent;
-    if (external != null) {
-      first = external.start;
-      last = external.end;
-      if (external.allDay && !last.isAfter(first)) {
-        last = DateTime(first.year, first.month, first.day + 1);
-      }
-    } else if (item.start == null) {
-      // An untimed appointment has no safely known start or end.
-      first = DateTime(item.date.year, item.date.month, item.date.day);
-      last = DateTime(item.date.year, item.date.month, item.date.day + 1);
-    } else {
-      final clock = item.start!;
-      first = DateTime(item.date.year, item.date.month, item.date.day,
-          clock.hour, clock.minute);
-      if (item.end == null) {
-        // Never invent a duration; conservatively busy until midnight.
-        last = DateTime(item.date.year, item.date.month, item.date.day + 1);
-      } else {
-        final endClock = item.end!;
-        final crossesMidnight = endClock.hour * 60 + endClock.minute <=
-            clock.hour * 60 + clock.minute;
-        last = DateTime(item.date.year, item.date.month,
-            item.date.day + (crossesMidnight ? 1 : 0),
-            endClock.hour, endClock.minute);
-      }
-    }
+    final occupied = appointmentOccupiedInterval(item);
+    if (occupied == null) continue;
+    var first = occupied.start;
+    var last = occupied.end;
     if (!last.isAfter(first)) continue;
     first = first.isBefore(from) ? from : first;
     last = last.isAfter(until) ? until : last;
