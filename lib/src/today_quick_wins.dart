@@ -517,7 +517,9 @@ Future<void> showTaskReplanning(
     ),
   );
   if (agreed != true || !context.mounted || !store.entryScopeReady ||
-      store.activeAccountId != account) return;
+      store.activeAccountId != account) {
+    return;
+  }
   AgendaItem? current;
   for (final candidate in store.items) {
     if (candidate.id == original.id) {
