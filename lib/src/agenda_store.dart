@@ -1655,7 +1655,12 @@ class AgendaStore extends ChangeNotifier {
     _accountScopeResolved = true;
     _notifyShellChanged();
     _notifyAllDataChanged();
-    await HomeWidgetBridge.instance.sync(this);
+    // Native launcher integration is best-effort; never break account changes.
+    try {
+      await HomeWidgetBridge.instance.sync(this);
+    } catch (_) {
+      // Locale/platform setup can be unavailable during startup or tests.
+    }
   }
 
   Future<void> continueWithoutAccount() async {
@@ -1749,7 +1754,12 @@ class AgendaStore extends ChangeNotifier {
     }
     _notifyShellChanged();
     _notifyAllDataChanged();
-    await HomeWidgetBridge.instance.sync(this);
+    // Native launcher integration is best-effort; never break account changes.
+    try {
+      await HomeWidgetBridge.instance.sync(this);
+    } catch (_) {
+      // Locale/platform setup can be unavailable during startup or tests.
+    }
   }
 
   void _bindPendingOperationsTo(String ownerId) {
