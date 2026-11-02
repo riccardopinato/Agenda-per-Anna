@@ -2205,3 +2205,52 @@ class _MemoryMapGridPainter extends CustomPainter {
   bool shouldRepaint(covariant _MemoryMapGridPainter oldDelegate) =>
       oldDelegate.lineColor != lineColor;
 }
+
+const String futureLetterTag = 'future_letter_v1';
+
+class FutureLetterRecord {
+  final DateTime day;
+  final DiaryBlock block;
+  const FutureLetterRecord(this.day, this.block);
+}
+
+List<FutureLetterRecord> personalFutureLetters(AgendaStore store) {
+  final result = <FutureLetterRecord>[];
+  for (final entry in store.journals.entries) {
+    final day = DateTime.tryParse(entry.key);
+    if (day == null) continue;
+    for (final block in entry.value.blocks) {
+      if (block.tags.contains(futureLetterTag)) {
+        result.add(FutureLetterRecord(day, block));
+      }
+    }
+  }
+  result.sort((a, b) => a.day.compareTo(b.day));
+  return List<FutureLetterRecord>.unmodifiable(result);
+}
+
+Future<bool> savePersonalFutureLetter(
+  AgendaStore store, DateTime day, String text, {
+  required String? accountAtOpen,
+}) async {
+  final body = text.trim();
+  final now = DateTime.now();
+  final target = DateTime(day.year, day.month, day.day);
+  final today = DateTime(now.year, now.month, now.day);
+  if (!store.entryScopeReady || store.activeAccountId != accountAtOpen ||
+      !target.isAfter(today) || body.isEmpty || body.length > 10000) {
+    return false;
+  }
+  final journal = store.journal(target);
+  final letter = DiaryBlock(
+    id: 'future_letter_${const Uuid().v4()}',
+    type: DiaryBlockType.note,
+    createdAt: now,
+    text: body,
+    tags: const [futureLetterTag],
+  );
+  await store.saveJournal(
+    target, journal.copyWith(blocks: [...journal.blocks, letter]),
+  );
+  return true;
+}
