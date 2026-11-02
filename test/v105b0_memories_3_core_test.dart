@@ -155,4 +155,12 @@ void main() {
       expect(flow, contains("id: '$id'"));
     }
   });
+  test('future letter canonical save and list', () async {
+    final store = AgendaStore();
+    await store.load();
+    final day = DateTime.now().add(const Duration(days: 30));
+    expect(await savePersonalFutureLetter(store, day, 'A future note',
+      accountAtOpen: store.activeAccountId), isTrue);
+    expect(personalFutureLetters(store).single.block.text, 'A future note');
+  });
 }
