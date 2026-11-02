@@ -185,7 +185,7 @@ class _SettingsHubScreenState extends State<SettingsHubScreen> {
                   if (_matches('premium', strings.premiumTitle,
                       strings.premiumSettingsDescription))
                     _tile(
-                      id: 'settings-hub-premium',
+                      id: 'qw2-search-premium',
                       domain: AnnaVisualDomain.memories,
                       icon: Icons.workspace_premium_outlined,
                       title: strings.premiumTitle,
