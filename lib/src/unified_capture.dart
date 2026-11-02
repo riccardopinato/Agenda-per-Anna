@@ -211,7 +211,9 @@ Future<void> showUnifiedCapture(
   final accountAtCaptureOpen = store.activeAccountId;
   final counts = await Qw2UiSettings.captureCounts(store);
   if (!context.mounted ||
-      store.activeAccountId != accountAtCaptureOpen) return;
+      store.activeAccountId != accountAtCaptureOpen) {
+    return;
+  }
   final availableActions =
       <({IconData icon, String title, String? subtitle,
           _UnifiedCaptureAction action})>[
