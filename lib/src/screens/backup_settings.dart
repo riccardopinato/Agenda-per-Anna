@@ -30,7 +30,9 @@ class _BackupScreenState extends State<BackupScreen> {
     final accountAtStart = widget.store.activeAccountId;
     if (!await requestSensitiveItemAccess(context, widget.store)) return false;
     if (!mounted || !widget.store.entryScopeReady ||
-        widget.store.activeAccountId != accountAtStart) return false;
+        widget.store.activeAccountId != accountAtStart) {
+      return false;
+    }
     final strings = AnnaStrings.of(context);
     return await showDialog<bool>(
           context: context,
