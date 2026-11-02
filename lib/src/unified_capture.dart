@@ -428,7 +428,9 @@ Future<void> showUnifiedCapture(
   );
 
   if (!context.mounted || action == null ||
-      store.activeAccountId != accountAtCaptureOpen) return;
+      store.activeAccountId != accountAtCaptureOpen) {
+    return;
+  }
   // Counts represent deliberate action selections, never personal content.
   unawaited(Qw2UiSettings.recordCaptureChoice(
       store, action.name, accountAtCaptureOpen));
