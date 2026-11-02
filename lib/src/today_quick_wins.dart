@@ -245,3 +245,73 @@ class TodayTomorrowCard extends StatelessWidget {
     );
   }
 }
+
+Future<bool> confirmAppointmentOverlap(
+  BuildContext context, AgendaStore store, AgendaItem candidate, {
+  bool recurring = false,
+}) async {
+  if (candidate.type != ItemType.appointment) return true;
+  final ext = ExternalCalendarService.instance;
+  final d = candidate.date;
+  final from = DateTime(d.year, d.month, d.day - 1);
+  final until = DateTime(d.year, d.month, d.day + 2);
+  try {
+    await ext.initialize();
+    if (ext.supported && ext.enabled) {
+      await ext.refreshStatus();
+      if (ext.permissionGranted && !ext.coversRange(from, until)) {
+        await ext.loadRange(from, until);
+      }
+    }
+  } catch (_) {
+    // An unavailable optional external calendar cannot block local editing.
+  }
+  if (!context.mounted) return false;
+  final conflicts = findAppointmentConflicts(
+    candidate: candidate,
+    visibleEntries: visibleEntriesForCalendarFreeSlots(
+      store, d, externalReady: ext.coversRange(from, until),
+    ),
+  );
+  if (conflicts.isEmpty) return true;
+  final strings = AnnaStrings.of(context);
+  final result = await showDialog<bool>(
+    context: context,
+    builder: (dialogContext) => AlertDialog(
+      key: const ValueKey('quick-wins-overlap-dialog'),
+      title: Text(quickWinText(strings, 'conflictTitle')),
+      content: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(quickWinText(strings, 'conflictIntro')),
+            const SizedBox(height: 8),
+            for (final clash in conflicts.take(5))
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 3),
+                child: Text('• ${clash.title}'),
+              ),
+            const SizedBox(height: 8),
+            Text(quickWinText(strings, 'conflictPartial'),
+              style: Theme.of(dialogContext).textTheme.bodySmall),
+            if (recurring)
+              Text(quickWinText(strings, 'conflictSeries'),
+                style: Theme.of(dialogContext).textTheme.bodySmall),
+          ],
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(dialogContext, false),
+          child: Text(quickWinText(strings, 'conflictReview')),
+        ),
+        FilledButton(
+          onPressed: () => Navigator.pop(dialogContext, true),
+          child: Text(quickWinText(strings, 'conflictSave')),
+        ),
+      ],
+    ),
+  );
+  return result ?? false;
+}
