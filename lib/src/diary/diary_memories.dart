@@ -2205,3 +2205,246 @@ class _MemoryMapGridPainter extends CustomPainter {
   bool shouldRepaint(covariant _MemoryMapGridPainter oldDelegate) =>
       oldDelegate.lineColor != lineColor;
 }
+
+const String futureLetterTag = 'future_letter_v1';
+
+class FutureLetterRecord {
+  final DateTime day;
+  final DiaryBlock block;
+  const FutureLetterRecord(this.day, this.block);
+}
+
+List<FutureLetterRecord> personalFutureLetters(AgendaStore store) {
+  final result = <FutureLetterRecord>[];
+  for (final entry in store.journals.entries) {
+    final day = DateTime.tryParse(entry.key);
+    if (day == null) continue;
+    for (final block in entry.value.blocks) {
+      if (block.tags.contains(futureLetterTag)) {
+        result.add(FutureLetterRecord(day, block));
+      }
+    }
+  }
+  result.sort((a, b) => a.day.compareTo(b.day));
+  return List<FutureLetterRecord>.unmodifiable(result);
+}
+
+Future<bool> savePersonalFutureLetter(
+  AgendaStore store, DateTime day, String text, {
+  required String? accountAtOpen,
+}) async {
+  final body = text.trim();
+  final now = DateTime.now();
+  final target = DateTime(day.year, day.month, day.day);
+  final today = DateTime(now.year, now.month, now.day);
+  if (!store.entryScopeReady || store.activeAccountId != accountAtOpen ||
+      !target.isAfter(today) || body.isEmpty || body.length > 10000) {
+    return false;
+  }
+  final journal = store.journal(target);
+  final letter = DiaryBlock(
+    id: 'future_letter_${const Uuid().v4()}',
+    type: DiaryBlockType.note,
+    createdAt: now,
+    text: body,
+    tags: const [futureLetterTag],
+  );
+  await store.saveJournal(
+    target, journal.copyWith(blocks: [...journal.blocks, letter]),
+  );
+  return true;
+}
+
+String futureLetterTitle(AnnaStrings s) => switch (s.languageCode) {
+  'it' => 'Lettere al me futuro',
+  'es' => 'Cartas a mi yo futuro',
+  'fr' => 'Lettres à mon futur moi',
+  'pt' => 'Cartas ao meu eu futuro',
+  _ => 'Letters to future me',
+};
+
+String futureLetterLabel(AnnaStrings s, String key) {
+  const labels = <String, List<String>>{
+    'create': ['Write a letter', 'Scrivi una lettera', 'Escribe una carta', 'Écrire une lettre', 'Escrever uma carta'],
+    'save': ['Save letter', 'Salva lettera', 'Guardar carta', 'Enregistrer', 'Guardar carta'],
+    'date': ['Open on', 'Apri il', 'Abrir el', 'Ouvrir le', 'Abrir em'],
+    'body': ['Write for your future self', 'Scrivi al te del futuro', 'Escribe a tu yo futuro', 'Écris à ton futur moi', 'Escreva para seu eu futuro'],
+    'empty': ['No letters yet', 'Nessuna lettera', 'Sin cartas todavía', 'Aucune lettre', 'Ainda sem cartas'],
+    'early': ['Open ahead of time?', 'Aprire in anticipo?', '¿Abrir antes de tiempo?', 'Ouvrir avant la date ?', 'Abrir antes da data?'],
+    'read': ['Read letter', 'Leggi lettera', 'Leer carta', 'Lire la lettre', 'Ler carta'],
+    'trash': ['Move to Trash', 'Sposta nel Cestino', 'Mover a la papelera', 'Mettre à la corbeille', 'Mover para lixeira'],
+    'notice': ['A reminder date, not a security lock: this note remains accessible from Diary.',
+      'Una data da ricordare, non un blocco: la nota resta accessibile dal Diario.',
+      'Una fecha, no un bloqueo: la nota sigue accesible en el Diario.',
+      'Une date, pas un verrou: la note reste accessible dans le journal.',
+      'Uma data, não um bloqueio: a nota continua acessível no Diário.'],
+  };
+  final i = switch (s.languageCode) {
+    'it' => 1, 'es' => 2, 'fr' => 3, 'pt' => 4, _ => 0,
+  };
+  return labels[key]![i];
+}
+
+Future<void> composePersonalFutureLetter(
+    BuildContext context, AgendaStore store) async {
+  if (!store.entryScopeReady) return;
+  final account = store.activeAccountId;
+  final controller = TextEditingController();
+  final now = DateTime.now();
+  var target = DateTime(now.year, now.month, now.day + 30);
+  await showDialog<void>(
+    context: context,
+    builder: (dialog) => StatefulBuilder(builder: (dialog, refresh) {
+      final text = AnnaStrings.of(dialog);
+      return AlertDialog(
+        title: Text(futureLetterTitle(text)),
+        content: SingleChildScrollView(child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(futureLetterLabel(text, 'notice')),
+            TextField(
+              controller: controller, maxLines: 6, maxLength: 10000,
+              decoration: InputDecoration(
+                labelText: futureLetterLabel(text, 'body')),
+            ),
+            TextButton.icon(
+              icon: const Icon(Icons.event_outlined),
+              label: Text('${futureLetterLabel(text, 'date')} ${DateFormat.yMMMd(AnnaStrings.intlLocale(dialog)).format(target)}'),
+              onPressed: () async {
+                final value = await showDatePicker(
+                  context: dialog,
+                  initialDate: target,
+                  firstDate: DateTime(now.year, now.month, now.day + 1),
+                  lastDate: DateTime(now.year + 10),
+                );
+                if (value != null) refresh(() => target = value);
+              },
+            ),
+          ],
+        )),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(dialog),
+            child: Text(quickWinText(text, 'undo'))),
+          FilledButton(
+            onPressed: () async {
+              if (store.activeAccountId != account) return;
+              final saved = await savePersonalFutureLetter(
+                store, target, controller.text, accountAtOpen: account,
+              );
+              if (saved && dialog.mounted) Navigator.pop(dialog);
+            },
+            child: Text(futureLetterLabel(text, 'save')),
+          ),
+        ],
+      );
+    }),
+  );
+  controller.dispose();
+}
+
+Future<void> openPersonalFutureLetter(
+    BuildContext context, FutureLetterRecord record) async {
+  final strings = AnnaStrings.of(context);
+  final today = DateTime.now();
+  final due = DateTime(record.day.year, record.day.month, record.day.day);
+  if (due.isAfter(DateTime(today.year, today.month, today.day))) {
+    final early = await showDialog<bool>(
+      context: context,
+      builder: (dialog) => AlertDialog(
+        title: Text(futureLetterLabel(AnnaStrings.of(dialog), 'early')),
+        content: Text(futureLetterLabel(AnnaStrings.of(dialog), 'notice')),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(dialog, false),
+            child: Text(quickWinText(AnnaStrings.of(dialog), 'undo'))),
+          FilledButton(onPressed: () => Navigator.pop(dialog, true),
+            child: Text(futureLetterLabel(AnnaStrings.of(dialog), 'read'))),
+        ],
+      ),
+    );
+    if (early != true) return;
+  }
+  if (!context.mounted) return;
+  await showDialog<void>(
+    context: context,
+    builder: (dialog) => AlertDialog(
+      title: Text(futureLetterTitle(strings)),
+      content: SingleChildScrollView(child: SelectableText(record.block.text)),
+      actions: [
+        TextButton(onPressed: () => Navigator.pop(dialog),
+          child: Text(futureLetterLabel(AnnaStrings.of(dialog), 'read'))),
+      ],
+    ),
+  );
+}
+
+class PersonalFutureLettersScreen extends StatelessWidget {
+  final AgendaStore store;
+  const PersonalFutureLettersScreen({super.key, required this.store});
+
+  @override
+  Widget build(BuildContext context) => AnimatedBuilder(
+    animation: store,
+    builder: (context, _) {
+      final strings = AnnaStrings.of(context);
+      final letters = personalFutureLetters(store);
+      return Scaffold(
+        appBar: AppBar(title: Text(futureLetterTitle(strings))),
+        floatingActionButton: FloatingActionButton.extended(
+          onPressed: () => composePersonalFutureLetter(context, store),
+          icon: const Icon(Icons.edit_note_outlined),
+          label: Text(futureLetterLabel(strings, 'create')),
+        ),
+        body: SafeArea(child: ListView(
+          padding: const EdgeInsets.all(16),
+          children: [
+            Text(futureLetterLabel(strings, 'notice'),
+              style: Theme.of(context).textTheme.bodySmall),
+            const SizedBox(height: 16),
+            if (letters.isEmpty)
+              Text(futureLetterLabel(strings, 'empty')),
+            for (final letter in letters)
+              Card(child: ListTile(
+                key: ValueKey('future-letter-${letter.block.id}'),
+                leading: const Icon(Icons.mark_email_unread_outlined),
+                title: Text(DateFormat.yMMMMd(
+                    AnnaStrings.intlLocale(context)).format(letter.day)),
+                subtitle: Text(futureLetterLabel(strings, 'read')),
+                onTap: () => openPersonalFutureLetter(context, letter),
+                trailing: IconButton(
+                  tooltip: futureLetterLabel(strings, 'trash'),
+                  icon: const Icon(Icons.delete_outline),
+                  onPressed: () async {
+                    final account = store.activeAccountId;
+                    final confirmed = await showDialog<bool>(
+                      context: context,
+                      builder: (dialog) => AlertDialog(
+                        title: Text(futureLetterLabel(
+                            AnnaStrings.of(dialog), 'trash')),
+                        actions: [
+                          TextButton(
+                            onPressed: () => Navigator.pop(dialog, false),
+                            child: Text(quickWinText(
+                                AnnaStrings.of(dialog), 'undo')),
+                          ),
+                          FilledButton(
+                            onPressed: () => Navigator.pop(dialog, true),
+                            child: Text(futureLetterLabel(
+                                AnnaStrings.of(dialog), 'trash')),
+                          ),
+                        ],
+                      ),
+                    );
+                    if (confirmed == true && store.entryScopeReady &&
+                        store.activeAccountId == account) {
+                      await store.moveDiaryBlockToTrash(
+                          letter.day, letter.block.id);
+                    }
+                  },
+                ),
+              )),
+          ],
+        )),
+      );
+    },
+  );
+}

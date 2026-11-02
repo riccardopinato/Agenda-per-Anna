@@ -155,4 +155,29 @@ void main() {
       expect(flow, contains("id: '$id'"));
     }
   });
+  test('future letter canonical save and list', () async {
+    final store = AgendaStore();
+    await store.load();
+    await store.continueWithoutAccount();
+    final day = DateTime.now().add(const Duration(days: 30));
+    expect(await savePersonalFutureLetter(store, day, 'A future note',
+      accountAtOpen: store.activeAccountId), isTrue);
+    expect(personalFutureLetters(store).single.block.text, 'A future note');
+  });
+  test('future letter survives reload and uses Trash for cancellation', () async {
+    final store = AgendaStore();
+    await store.load();
+    await store.continueWithoutAccount();
+    final now = DateTime.now();
+    final day = DateTime(now.year, now.month, now.day + 30);
+    await savePersonalFutureLetter(store, day, 'Remember this',
+      accountAtOpen: store.activeAccountId);
+    final block = personalFutureLetters(store).single.block;
+    final reloaded = AgendaStore();
+    await reloaded.load();
+    expect(personalFutureLetters(reloaded), hasLength(1));
+    expect(await reloaded.moveDiaryBlockToTrash(day, block.id), isTrue);
+    expect(personalFutureLetters(reloaded), isEmpty);
+    expect(reloaded.trash.any((entry) => entry.entityId == block.id), isTrue);
+  });
 }
