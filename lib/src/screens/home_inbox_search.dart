@@ -717,7 +717,9 @@ class _InboxScreenState extends State<InboxScreen> {
       duplicateOf: draft,
       onSaved: (saved) async {
         if (store.activeAccountId != accountAtOpen ||
-            !store.entryScopeReady) return;
+            !store.entryScopeReady) {
+          return;
+        }
         final unchangedInbox = store.activeInboxEntries.any(
           (candidate) =>
               candidate.id == entry.id && candidate.text == entry.text,
