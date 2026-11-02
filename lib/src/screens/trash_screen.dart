@@ -69,7 +69,9 @@ class TrashScreen extends StatelessWidget {
 
   Future<void> _restore(BuildContext context, TrashEntry entry) async {
     if (isSensitiveTrashEntry(entry) &&
-        !await requestSensitiveItemAccess(context, store)) return;
+        !await requestSensitiveItemAccess(context, store)) {
+      return;
+    }
     if (!context.mounted) return;
     final strings = AnnaStrings.of(context);
     final conflict = store.trashRestoreConflictReason(entry);
@@ -96,7 +98,9 @@ class TrashScreen extends StatelessWidget {
 
   Future<void> _purge(BuildContext context, TrashEntry entry) async {
     if (isSensitiveTrashEntry(entry) &&
-        !await requestSensitiveItemAccess(context, store)) return;
+        !await requestSensitiveItemAccess(context, store)) {
+      return;
+    }
     if (!context.mounted) return;
     final strings = AnnaStrings.of(context);
     final displayTitle = _displayTitle(context, entry);
@@ -134,7 +138,9 @@ class TrashScreen extends StatelessWidget {
     final count = store.trash.length;
     if (count == 0) return;
     if (store.trash.any(isSensitiveTrashEntry) &&
-        !await requestSensitiveItemAccess(context, store)) return;
+        !await requestSensitiveItemAccess(context, store)) {
+      return;
+    }
     if (!context.mounted) return;
 
     final confirmed = await showDialog<bool>(
