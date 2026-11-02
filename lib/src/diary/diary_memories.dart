@@ -2284,3 +2284,60 @@ String futureLetterLabel(AnnaStrings s, String key) {
   };
   return labels[key]![i];
 }
+
+Future<void> composePersonalFutureLetter(
+    BuildContext context, AgendaStore store) async {
+  if (!store.entryScopeReady) return;
+  final account = store.activeAccountId;
+  final controller = TextEditingController();
+  final now = DateTime.now();
+  var target = DateTime(now.year, now.month, now.day + 30);
+  await showDialog<void>(
+    context: context,
+    builder: (dialog) => StatefulBuilder(builder: (dialog, refresh) {
+      final text = AnnaStrings.of(dialog);
+      return AlertDialog(
+        title: Text(futureLetterTitle(text)),
+        content: SingleChildScrollView(child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(futureLetterLabel(text, 'notice')),
+            TextField(
+              controller: controller, maxLines: 6, maxLength: 10000,
+              decoration: InputDecoration(
+                labelText: futureLetterLabel(text, 'body')),
+            ),
+            TextButton.icon(
+              icon: const Icon(Icons.event_outlined),
+              label: Text('${futureLetterLabel(text, 'date')} ${DateFormat.yMMMd(AnnaStrings.intlLocale(dialog)).format(target)}'),
+              onPressed: () async {
+                final value = await showDatePicker(
+                  context: dialog,
+                  initialDate: target,
+                  firstDate: DateTime(now.year, now.month, now.day + 1),
+                  lastDate: DateTime(now.year + 10),
+                );
+                if (value != null) refresh(() => target = value);
+              },
+            ),
+          ],
+        )),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(dialog),
+            child: Text(quickWinText(text, 'undo'))),
+          FilledButton(
+            onPressed: () async {
+              if (store.activeAccountId != account) return;
+              final saved = await savePersonalFutureLetter(
+                store, target, controller.text, accountAtOpen: account,
+              );
+              if (saved && dialog.mounted) Navigator.pop(dialog);
+            },
+            child: Text(futureLetterLabel(text, 'save')),
+          ),
+        ],
+      );
+    }),
+  );
+  controller.dispose();
+}
