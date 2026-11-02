@@ -46,6 +46,11 @@ class _SettingsHubScreenState extends State<SettingsHubScreen> {
     return haystack.contains(_query);
   }
 
+  String _holderSearchTitle(AnnaStrings strings) =>
+      store.preferences.displayName.trim().isEmpty
+          ? approvedHolderNamePlaceholder(strings.languageCode)
+          : store.preferences.displayName.trim();
+
   void _open(BuildContext context, Widget screen) {
     unawaited(AnnaFeedback.selection());
     Navigator.push(
@@ -138,12 +143,13 @@ class _SettingsHubScreenState extends State<SettingsHubScreen> {
                 ),
                 const SizedBox(height: AnnaDesignTokens.spaceSm),
                 if (_query.isNotEmpty) ...[
-                  if (_matches('name', strings.settings, null))
+                  if (_matches('name', _holderSearchTitle(strings),
+                        approvedHolderNamePlaceholder(strings.languageCode)))
                     _tile(
                       id: 'settings-hub-edit-name',
                       domain: AnnaVisualDomain.people,
                       icon: Icons.edit_outlined,
-                      title: approvedHolderNamePlaceholder(strings.languageCode),
+                      title: _holderSearchTitle(strings),
                       onTap: () => _open(
                           context, SettingsScreen(store: store)),
                     ),
@@ -234,7 +240,8 @@ class _SettingsHubScreenState extends State<SettingsHubScreen> {
                           context, BackupScreen(store: store)),
                     ),
                   if (![
-                    _matches('name', strings.settings, null),
+                    _matches('name', _holderSearchTitle(strings),
+                        approvedHolderNamePlaceholder(strings.languageCode)),
                     _matches('appearance', strings.d3('appearanceColorsTitle'),
                         strings.d3('appearanceColorsIntro')),
                     _matches('personalization', strings.d3('personalizationTitle'),
