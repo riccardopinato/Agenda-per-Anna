@@ -66,6 +66,20 @@ void main() {
     expect(matches.map((e) => e.id), ['all-day', 'night']);
   });
 
+  test('sensitive JSON marker stays masked without adding a new store', () {
+    expect(quickWinPayloadIsSensitive(<String, dynamic>{
+      'isSensitive': true, 'title': 'do not reveal',
+    }), isTrue);
+    expect(quickWinPayloadIsSensitive(<String, dynamic>{
+      'isSensitive': false,
+    }), isFalse);
+    expect(quickWinPayloadIsSensitive(<String, dynamic>{}), isFalse);
+    expect(quickWinPayloadIsSensitive(null), isFalse);
+    final ordinary = item('regular', DateTime(2026, 11, 1),
+        type: ItemType.task);
+    expect(quickWinItemSensitive(ordinary), isFalse);
+  });
+
   test('all five supported languages have quick-action labels', () {
     for (final lang in ['en','it','es','fr','pt']) {
       final strings = AnnaStrings(lang);
