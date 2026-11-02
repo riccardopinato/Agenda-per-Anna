@@ -2262,3 +2262,25 @@ String futureLetterTitle(AnnaStrings s) => switch (s.languageCode) {
   'pt' => 'Cartas ao meu eu futuro',
   _ => 'Letters to future me',
 };
+
+String futureLetterLabel(AnnaStrings s, String key) {
+  const labels = <String, List<String>>{
+    'create': ['Write a letter', 'Scrivi una lettera', 'Escribe una carta', 'Écrire une lettre', 'Escrever uma carta'],
+    'save': ['Save letter', 'Salva lettera', 'Guardar carta', 'Enregistrer', 'Guardar carta'],
+    'date': ['Open on', 'Apri il', 'Abrir el', 'Ouvrir le', 'Abrir em'],
+    'body': ['Write for your future self', 'Scrivi al te del futuro', 'Escribe a tu yo futuro', 'Écris à ton futur moi', 'Escreva para seu eu futuro'],
+    'empty': ['No letters yet', 'Nessuna lettera', 'Sin cartas todavía', 'Aucune lettre', 'Ainda sem cartas'],
+    'early': ['Open ahead of time?', 'Aprire in anticipo?', '¿Abrir antes de tiempo?', 'Ouvrir avant la date ?', 'Abrir antes da data?'],
+    'read': ['Read letter', 'Leggi lettera', 'Leer carta', 'Lire la lettre', 'Ler carta'],
+    'trash': ['Move to Trash', 'Sposta nel Cestino', 'Mover a la papelera', 'Mettre à la corbeille', 'Mover para lixeira'],
+    'notice': ['A reminder date, not a security lock: this note remains accessible from Diary.',
+      'Una data da ricordare, non un blocco: la nota resta accessibile dal Diario.',
+      'Una fecha, no un bloqueo: la nota sigue accesible en el Diario.',
+      'Une date, pas un verrou: la note reste accessible dans le journal.',
+      'Uma data, não um bloqueio: a nota continua acessível no Diário.'],
+  };
+  final i = switch (s.languageCode) {
+    'it' => 1, 'es' => 2, 'fr' => 3, 'pt' => 4, _ => 0,
+  };
+  return labels[key]![i];
+}
