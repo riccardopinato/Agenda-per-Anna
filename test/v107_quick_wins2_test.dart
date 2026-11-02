@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:agenda_per_anna/main.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
@@ -87,6 +88,11 @@ void main() {
     await tester.pumpWidget(MaterialApp(
       locale: const Locale('es'),
       supportedLocales: AnnaStrings.supportedLocales,
+      localizationsDelegates: const [
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
       home: SettingsHubScreen(store: store),
     ));
     await tester.enterText(
