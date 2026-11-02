@@ -1203,6 +1203,7 @@ Future<void> openItemEditor(
   ItemType? initialType,
   AgendaItem? existing,
   AgendaItem? duplicateOf,
+  Future<void> Function(AgendaItem saved)? onSaved,
 }) async {
   // Duplicating opens an unsaved draft, preserving canonical writer semantics.
   final source = existing ?? duplicateOf;
@@ -1693,6 +1694,9 @@ Future<void> openItemEditor(
                             );
                           }
 
+                          // Run follow-up work only after the canonical writer
+                          // succeeds. Cancel/back never invokes this callback.
+                          if (onSaved != null) await onSaved(base);
                           if (sheetContext.mounted) {
                             Navigator.pop(sheetContext);
                           }

@@ -8,6 +8,17 @@
 - **P1 Privacy UX:** mitigazione di compatibilita' quick wins **MERGED #209**, Development/Web/AppLab PASS su `main@7da965fe4dd73ad0444a1059ba9006d32f6ebfae`. La [PR #200](https://github.com/riccardopinato/Agenda-per-Anna/pull/200) resta **DRAFT / DO NOT MERGE**, per audit disclosure (export, vecchi calendari/notifiche, media, accessibilita', app switcher, 2 account/device). Le mascherature UI non equivalgono a cifratura.
 - **Release:** le correzioni sorgente successive al commit firmato +120 NON sono presenti nell'APK +120. Una futura installazione di quelle modifiche richiede nuovo `versionCode`, firma e prove sull'artefatto; nessuna pubblicazione Google Play e' autorizzata da questa nota.
 
+## Quick Wins 2 — approvati il 2 novembre 2026
+
+**SOURCE IN PR / NON ANCORA MERGED, NON CERTIFICATO SU DEVICE.**
+L'utente ha approvato QW2-01 Undo rinvio domani, QW2-02 Inbox -> appuntamento
+con bozza, QW2-03 quattro azioni Crea ordinate per utilizzo locale,
+QW2-04 tre preferiti in Altro, QW2-05 ricerca Impostazioni.
+Implementazione in branch `feat/v107-quick-wins-2`; criteri e verifiche in
+[docs/V107_QUICK_WINS_2.md](V107_QUICK_WINS_2.md).
+Nessuna nuova persistenza applicativa/cloud e nessuna modifica Privacy #200.
+PR, gate esatto SHA, merge e nuova release vanno certificati separatamente.
+
 ## Quick wins agenda — 2 novembre 2026
 
 - PR [#206](https://github.com/riccardopinato/Agenda-per-Anna/pull/206): **SOURCE MERGED** su `main@d67c64e2aea3d38f1fa32b320d64cb7a3ddfe4a2`; Development checks, Web, AppLab Source Gate PASS sull'head `b8dfabcc10f4c75d0979e965fec91d1b6df961bb`. Include duplicazione con bozza, rinvio task, attività scadute, anteprima domani e avviso conflitti. Specifica: [V107_DAILY_QUICK_WINS.md](V107_DAILY_QUICK_WINS.md).

@@ -104,6 +104,10 @@ class MoreScreen extends StatelessWidget {
                     ),
                     const SizedBox(height: AnnaDesignTokens.spaceLg),
                   ],
+                  Qw2FavoritesSection(
+                    key: ValueKey('qw2-favorites-${store.activeAccountId ?? 'guest'}'),
+                    store: store,
+                  ),
                   AnnaJournalSectionHeading(
                     title: strings.d3('moreQuickAccess'),
                   ),

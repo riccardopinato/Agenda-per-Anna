@@ -8,13 +8,48 @@ String approvedHolderNamePlaceholder(String code) => switch (code) {
   _ => 'Inserisci il tuo nome',
 };
 
-class SettingsHubScreen extends StatelessWidget {
+class SettingsHubScreen extends StatefulWidget {
   final AgendaStore store;
+  const SettingsHubScreen({super.key, required this.store});
 
-  const SettingsHubScreen({
-    super.key,
-    required this.store,
-  });
+  @override
+  State<SettingsHubScreen> createState() => _SettingsHubScreenState();
+}
+
+class _SettingsHubScreenState extends State<SettingsHubScreen> {
+  final TextEditingController _search = TextEditingController();
+  String _query = '';
+  AgendaStore get store => widget.store;
+
+  @override
+  void dispose() {
+    _search.dispose();
+    super.dispose();
+  }
+
+  bool _matches(String section, String title, String? subtitle) {
+    if (_query.isEmpty) return true;
+    final aliases = switch (section) {
+      'name' => 'nome name profile profilo',
+      'appearance' => 'colori colors colori tema theme hsv palette sfondo',
+      'personalization' => 'moduli modules funzioni features',
+      'privacy' => 'privacy pin biometria biometric notifiche notifications '
+          'promemoria reminder alerts sicurezza security',
+      'premium' => 'premium pro abbonamento subscription',
+      'account' => 'account sync cloud login accesso google',
+      'calendar' => 'calendario calendar sincronizzazione',
+      'capability' => 'permessi permissions health diagnostica notifiche',
+      'backup' => 'backup restore export archivio esportazione ripristino',
+      _ => '',
+    };
+    final haystack = '$title ${subtitle ?? ''} $aliases'.toLowerCase();
+    return haystack.contains(_query);
+  }
+
+  String _holderSearchTitle(AnnaStrings strings) =>
+      store.preferences.displayName.trim().isEmpty
+          ? approvedHolderNamePlaceholder(strings.languageCode)
+          : store.preferences.displayName.trim();
 
   void _open(BuildContext context, Widget screen) {
     unawaited(AnnaFeedback.selection());
@@ -85,6 +120,152 @@ class SettingsHubScreen extends StatelessWidget {
                 AnnaDesignTokens.spaceXl,
               ),
               children: [
+                TextField(
+                  key: const ValueKey('qw2-settings-search'),
+                  controller: _search,
+                  onChanged: (value) =>
+                      setState(() => _query = value.trim().toLowerCase()),
+                  textInputAction: TextInputAction.search,
+                  decoration: InputDecoration(
+                    prefixIcon: const Icon(Icons.search),
+                    hintText: quickWins2Copy(
+                        strings.languageCode, 'settingsSearch'),
+                    suffixIcon: _query.isEmpty ? null : IconButton(
+                      tooltip: strings.v100ClearSearch,
+                      icon: const Icon(Icons.close),
+                      onPressed: () => setState(() {
+                        _search.clear();
+                        _query = '';
+                      }),
+                    ),
+                    border: const OutlineInputBorder(),
+                  ),
+                ),
+                const SizedBox(height: AnnaDesignTokens.spaceSm),
+                if (_query.isNotEmpty) ...[
+                  if (_matches('name', _holderSearchTitle(strings),
+                        approvedHolderNamePlaceholder(strings.languageCode)))
+                    _tile(
+                      id: 'settings-hub-edit-name',
+                      domain: AnnaVisualDomain.people,
+                      icon: Icons.edit_outlined,
+                      title: _holderSearchTitle(strings),
+                      onTap: () => _open(
+                          context, SettingsScreen(store: store)),
+                    ),
+                  if (_matches('appearance',
+                      strings.d3('appearanceColorsTitle'),
+                      strings.d3('appearanceColorsIntro')))
+                    _tile(
+                      id: 'settings-hub-appearance',
+                      domain: AnnaVisualDomain.people,
+                      icon: Icons.palette_outlined,
+                      title: strings.d3('appearanceColorsTitle'),
+                      subtitle: strings.d3('appearanceColorsIntro'),
+                      onTap: () => _open(
+                          context, AppearanceColorsScreen(store: store)),
+                    ),
+                  if (_matches('personalization',
+                      strings.d3('personalizationTitle'),
+                      strings.d3('personalizationSettingsSubtitle')))
+                    _tile(
+                      id: 'settings-hub-personalization',
+                      domain: AnnaVisualDomain.people,
+                      icon: Icons.tune_outlined,
+                      title: strings.d3('personalizationTitle'),
+                      onTap: () => _open(
+                          context, PersonalizationScreen(store: store)),
+                    ),
+                  if (_matches('privacy',
+                      strings.d3('settingsPreferencesPrivacy'),
+                      strings.d3('settingsPreferencesPrivacySubtitle')))
+                    _tile(
+                      id: 'settings-hub-preferences-privacy',
+                      domain: AnnaVisualDomain.vault,
+                      icon: Icons.security_outlined,
+                      title: strings.d3('settingsPreferencesPrivacy'),
+                      subtitle: strings.d3('settingsPreferencesPrivacySubtitle'),
+                      onTap: () => _open(
+                          context, SettingsScreen(store: store)),
+                    ),
+                  if (_matches('premium', strings.premiumTitle,
+                      strings.premiumSettingsDescription))
+                    _tile(
+                      id: 'qw2-search-premium',
+                      domain: AnnaVisualDomain.memories,
+                      icon: Icons.workspace_premium_outlined,
+                      title: strings.premiumTitle,
+                      onTap: () => _open(context, const PremiumScreen()),
+                    ),
+                  if (_matches('account', strings.v100AccountSync,
+                      strings.v100AccountSyncDescription))
+                    _tile(
+                      id: 'settings-hub-account',
+                      domain: AnnaVisualDomain.ecosystem,
+                      icon: Icons.cloud_outlined,
+                      title: strings.v100AccountSync,
+                      onTap: () => _open(
+                          context, CloudAccountScreen(store: store)),
+                    ),
+                  if (_matches('calendar',
+                      androidSyncCopy(strings, 'title'),
+                      androidSyncCopy(strings, 'intro')))
+                    _tile(
+                      id: 'settings-hub-android-calendar-sync',
+                      domain: AnnaVisualDomain.ecosystem,
+                      icon: Icons.event_repeat_outlined,
+                      title: androidSyncCopy(strings, 'title'),
+                      onTap: () => _open(context,
+                          AndroidCalendarSyncSettingsScreen(store: store)),
+                    ),
+                  if (_matches('capability',
+                      capabilityHealthCopy(strings.languageCode, 'title'),
+                      capabilityHealthCopy(strings.languageCode, 'intro')))
+                    _tile(
+                      id: 'settings-hub-capability-health',
+                      domain: AnnaVisualDomain.ecosystem,
+                      icon: Icons.health_and_safety_outlined,
+                      title: capabilityHealthCopy(strings.languageCode, 'title'),
+                      onTap: () => _open(context,
+                          CapabilityHealthScreen(store: store)),
+                    ),
+                  if (_matches('backup', strings.v100BackupRestore,
+                      strings.v100BackupRestoreDescription))
+                    _tile(
+                      id: 'settings-hub-backup',
+                      domain: AnnaVisualDomain.vault,
+                      icon: Icons.backup_outlined,
+                      title: strings.v100BackupRestore,
+                      onTap: () => _open(
+                          context, BackupScreen(store: store)),
+                    ),
+                  if (![
+                    _matches('name', _holderSearchTitle(strings),
+                        approvedHolderNamePlaceholder(strings.languageCode)),
+                    _matches('appearance', strings.d3('appearanceColorsTitle'),
+                        strings.d3('appearanceColorsIntro')),
+                    _matches('personalization', strings.d3('personalizationTitle'),
+                        strings.d3('personalizationSettingsSubtitle')),
+                    _matches('privacy', strings.d3('settingsPreferencesPrivacy'),
+                        strings.d3('settingsPreferencesPrivacySubtitle')),
+                    _matches('premium', strings.premiumTitle,
+                        strings.premiumSettingsDescription),
+                    _matches('account', strings.v100AccountSync,
+                        strings.v100AccountSyncDescription),
+                    _matches('calendar', androidSyncCopy(strings, 'title'),
+                        androidSyncCopy(strings, 'intro')),
+                    _matches('capability',
+                        capabilityHealthCopy(strings.languageCode, 'title'),
+                        capabilityHealthCopy(strings.languageCode, 'intro')),
+                    _matches('backup', strings.v100BackupRestore,
+                        strings.v100BackupRestoreDescription),
+                  ].contains(true))
+                    Padding(
+                      padding: const EdgeInsets.all(20),
+                      child: Text(quickWins2Copy(
+                          strings.languageCode, 'settingsNoMatch')),
+                    ),
+                ] else ...[
                 AnnaJournalCard(
                   domain: AnnaVisualDomain.people,
                   child: Text(
@@ -231,6 +412,7 @@ class SettingsHubScreen extends StatelessWidget {
                     ],
                   ),
                 ),
+                ],
               ],
             ),
           ),
