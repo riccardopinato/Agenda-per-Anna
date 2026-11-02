@@ -2,7 +2,10 @@ name: Development checks
 
 on:
   push:
-    branches: [main]
+    # Draft #200 cannot use merge-ref PR CI while it conflicts with main.
+    # This branch-only source gate validates the exact privacy head; it is
+    # not a substitute for eventual conflict resolution and PR merge gates.
+    branches: [main, feat/privacy-discreet-home-and-sensitive-items]
   pull_request:
     branches: [main]
   workflow_dispatch:
