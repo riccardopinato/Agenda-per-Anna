@@ -832,6 +832,13 @@ class _PrivacyGateState extends State<_PrivacyGate>
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     locked = widget.store.preferences.privacyLockEnabled;
+    // A configured app PIN now keeps Android recents/screenshots concealed
+    // for the entire app session, including flagged personal/shared routes.
+    // The Vault owns a separate lease and cannot clear this one.
+    unawaited(PrivateVaultService.instance.setSecureScreen(
+      widget.store.preferences.privacyLockEnabled,
+      owner: this,
+    ));
     if (locked && widget.store.preferences.biometricUnlock) {
       WidgetsBinding.instance.addPostFrameCallback((_) => _biometricUnlock());
     }
@@ -840,6 +847,10 @@ class _PrivacyGateState extends State<_PrivacyGate>
   @override
   void didUpdateWidget(covariant _PrivacyGate oldWidget) {
     super.didUpdateWidget(oldWidget);
+    unawaited(PrivateVaultService.instance.setSecureScreen(
+      widget.store.preferences.privacyLockEnabled,
+      owner: this,
+    ));
     if (!widget.store.preferences.privacyLockEnabled && locked) {
       setState(() => locked = false);
     }
@@ -848,6 +859,10 @@ class _PrivacyGateState extends State<_PrivacyGate>
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
+    unawaited(PrivateVaultService.instance.setSecureScreen(
+      false,
+      owner: this,
+    ));
     pinController.dispose();
     super.dispose();
   }

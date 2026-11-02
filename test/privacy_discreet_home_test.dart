@@ -2,10 +2,50 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:agenda_per_anna/main.dart';
+import 'package:agenda_per_anna/vault_service.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
+  testWidgets('Android screenshot leases do not disable one another', (tester) async {
+    const channel = MethodChannel('annas_diary/private_vault');
+    final messenger = TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
+    final transitions = <bool>[];
+    messenger.setMockMethodCallHandler(channel, (call) async {
+      if (call.method == 'setSecureScreen') {
+        transitions.add((call.arguments as Map)['enabled'] as bool);
+      }
+      return null;
+    });
+    final guard = Object();
+    final vaultRoute = Object();
+    try {
+      await PrivateVaultService.instance.setSecureScreen(true, owner: guard);
+      await PrivateVaultService.instance.setSecureScreen(true, owner: vaultRoute);
+      await PrivateVaultService.instance.setSecureScreen(false, owner: vaultRoute);
+      expect(transitions.last, true,
+          reason: 'closing Vault must not clear the app privacy gate');
+      await PrivateVaultService.instance.setSecureScreen(false, owner: guard);
+      expect(transitions.last, false);
+    } finally {
+      await PrivateVaultService.instance.setSecureScreen(false, owner: vaultRoute);
+      await PrivateVaultService.instance.setSecureScreen(false, owner: guard);
+      messenger.setMockMethodCallHandler(channel, null);
+    }
+  });
+
+  test('privacy app gate requests its independent Android secure-screen lease', () {
+    final shell = File('lib/src/app_shell.dart').readAsStringSync();
+    final vault = File('lib/src/screens/private_vault.dart').readAsStringSync();
+    final shared = File('lib/src/screens/shared_passwords_screen.dart').readAsStringSync();
+    expect(shell, contains('PrivateVaultService.instance.setSecureScreen('));
+    expect(shell, contains('widget.store.preferences.privacyLockEnabled,'));
+    expect(vault, contains('vault.setSecureScreen(true, owner: this)'));
+    expect(vault, contains('vault.setSecureScreen(false, owner: this)'));
+    expect(shared, contains('vault.setSecureScreen(true, owner: this)'));
+    expect(shared, contains('vault.setSecureScreen(false, owner: this)'));
+  });
   AgendaItem privateEvent({bool isSensitive = false}) => AgendaItem(
     id: 'private-1',
     title: 'Private conversation',
