@@ -18,8 +18,13 @@ List<AgendaItem> overduePrivateTasks(
   return List<AgendaItem>.unmodifiable(overdue);
 }
 
-bool canPostponeTask(AgendaItem item) =>
-    item.type == ItemType.task && !item.done && !item.isRecurring;
+bool canPostponeTask(AgendaItem item, {DateTime? now}) {
+  final tomorrow = quickWinTomorrow(now ?? DateTime.now());
+  return item.type == ItemType.task &&
+      !item.done &&
+      !item.isRecurring &&
+      item.date.isBefore(tomorrow);
+}
 
 /// Re-read the canonical entity at action time; never move a recurring
 /// occurrence by editing its civil day outside the recurrence engine.
@@ -34,7 +39,9 @@ Future<bool> postponePrivateTask(
       break;
     }
   }
-  if (current == null || !canPostponeTask(current)) return false;
+  if (current == null || !canPostponeTask(current, now: now)) {
+    return false;
+  }
   final tomorrow = quickWinTomorrow(now);
   if (AgendaStore.sameDay(current.date, tomorrow)) return false;
   await store.upsert(current.copyWith(date: tomorrow));
