@@ -1528,7 +1528,14 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
   Future<void> _edit([
     SharedEntry? existing,
     SharedEntryType? initialType,
+    bool sensitiveAccessGranted = false,
   ]) async {
+    if (existing?.isSensitive == true && !sensitiveAccessGranted) {
+      if (!await requestSensitiveItemAccess(context, widget.store)) return;
+      if (!mounted) return;
+      await _edit(existing, initialType, true);
+      return;
+    }
     if (existing != null && !_canEditSharedEntry(existing)) {
       await _viewReadOnlySharedEntry(context, existing);
       return;
@@ -1554,12 +1561,20 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
       initialDate: selected,
       existing: existing,
       initialType: initialType,
+      pinAvailable: widget.store.preferences.privacyLockEnabled &&
+          widget.store.preferences.pinHash != null &&
+          widget.store.preferences.pinSalt != null,
+      sensitiveAccessGranted: sensitiveAccessGranted,
+      store: widget.store,
     );
     if (result == null) return;
     await _persistSharedEntry(
       existing == null
           ? result
-          : result.copyWith(memoryPinned: existing.memoryPinned),
+          : result.copyWith(
+              memoryPinned: existing.memoryPinned,
+              isSensitive: result.isSensitive,
+            ),
     );
   }
 
@@ -1591,6 +1606,7 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
         createdAt:
             existing?.createdAt ?? existing?.updatedAt ?? DateTime.now(),
         memoryPinned: existing?.memoryPinned ?? false,
+        isSensitive: existing?.isSensitive ?? false,
         membersCanEdit: existing?.membersCanEdit ?? true,
         editOwnerId: existing?.editOwnerId ?? (_currentSharedUserId ?? ''),
       ),
@@ -1612,6 +1628,12 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
 
   Future<void> _addSharedPhoto([SharedEntry? existing]) async {
     final strings = AnnaStrings.of(context);
+    // The deferred media-upload record does not yet carry isSensitive.
+    // Refuse replacement rather than silently clearing the privacy flag.
+    if (existing?.isSensitive == true) {
+      _message(strings.d3('privacy_sensitive'));
+      return;
+    }
     if (existing != null && !_canEditSharedEntry(existing)) {
       await _viewReadOnlySharedEntry(context, existing);
       return;
@@ -1747,6 +1769,7 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
             existing?.createdAt ?? existing?.updatedAt ?? DateTime.now(),
         sketchPages: pages,
         memoryPinned: existing?.memoryPinned ?? false,
+        isSensitive: existing?.isSensitive ?? false,
         membersCanEdit: existing?.membersCanEdit ?? true,
         editOwnerId: existing?.editOwnerId ?? (_currentSharedUserId ?? ''),
       ),
@@ -1962,7 +1985,9 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
         builder: (_) => SharedMemoriesScreen(
           store: widget.store,
           space: widget.space,
-          entriesProvider: () => List<SharedEntry>.from(entries),
+          // Shared memories currently has no per-item reveal challenge.
+          // Exclude sensitive entries until that screen has a secure detail gate.
+          entriesProvider: () => entries.where((entry) => !entry.isSensitive).toList(),
           commentsProvider: () => commentsByEntry,
           heartsProvider: () => heartsByEntry,
           readsProvider: () => memberReads,
@@ -2619,6 +2644,31 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
     final comments = commentsByEntry[entry.id] ?? const <SharedEntryComment>[];
     final seen = _seenLabel(entry);
 
+    // Fail closed across feed, calendar and diary cards. Do not build
+    // thumbnails, captions, subtitles, actions or semantics from private data.
+    if (entry.isSensitive) {
+      return Card(
+        margin: const EdgeInsets.only(bottom: 9),
+        child: ListTile(
+          key: ValueKey('shared-sensitive-${entry.id}'),
+          leading: const Icon(Icons.lock_outline),
+          title: Text(AnnaStrings.of(context).d3('privacy_sensitive')),
+          onTap: () async {
+            final granted = await requestSensitiveItemAccess(context, widget.store);
+            if (!granted || !mounted || !context.mounted) return;
+            await _viewReadOnlySharedEntry(context, entry);
+          },
+          trailing: _canEditSharedEntry(entry)
+              ? IconButton(
+                  tooltip: AnnaStrings.of(context).edit,
+                  icon: const Icon(Icons.edit_outlined),
+                  onPressed: () => _edit(entry),
+                )
+              : null,
+        ),
+      );
+    }
+
     if (entry.type == SharedEntryType.note ||
         entry.type == SharedEntryType.photo ||
         entry.type == SharedEntryType.sketch) {
@@ -3144,10 +3194,17 @@ class _SharedPhotoViewerScreenState extends State<SharedPhotoViewerScreen> {
 Future<SharedEntry?> _openSharedEntryEditor(
   BuildContext context, {
   required DateTime initialDate,
+  required AgendaStore store,
+  required bool pinAvailable,
+  bool sensitiveAccessGranted = false,
   SharedEntry? existing,
   SharedEntryType? initialType,
   TimeOfDay? initialTime,
 }) async {
+  if (existing?.isSensitive == true && !sensitiveAccessGranted) {
+    if (!await requestSensitiveItemAccess(context, store)) return null;
+    if (!context.mounted) return null;
+  }
   final title = TextEditingController(text: existing?.title ?? '');
   final note = TextEditingController(text: existing?.note ?? '');
   var type = existing?.type ?? initialType ?? SharedEntryType.appointment;
@@ -3155,6 +3212,7 @@ Future<SharedEntry?> _openSharedEntryEditor(
   var start = existing?.start ?? initialTime;
   var end = existing?.end ??
       (start == null ? null : _timePlusMinutes(start, 60));
+  var isSensitive = existing?.isSensitive ?? false;
 
   final result = await showDialog<SharedEntry>(
     context: context,
@@ -3205,6 +3263,17 @@ Future<SharedEntry?> _openSharedEntryEditor(
                 minLines: 2,
                 maxLines: 4,
                 decoration: InputDecoration(labelText: AnnaStrings.of(context).d3('note')),
+              ),
+              SwitchListTile.adaptive(
+                key: const ValueKey('privacy-shared-sensitive'),
+                contentPadding: EdgeInsets.zero,
+                title: Text(AnnaStrings.of(context).d3('privacy_markSensitive')),
+                subtitle: Text(AnnaStrings.of(context).d3('privacy_pinRequired')),
+                secondary: const Icon(Icons.visibility_off_outlined),
+                value: isSensitive,
+                onChanged: pinAvailable
+                    ? (value) => setLocal(() => isSensitive = value)
+                    : null,
               ),
               const SizedBox(height: 8),
               ListTile(
@@ -3279,6 +3348,7 @@ Future<SharedEntry?> _openSharedEntryEditor(
                   start: type.supportsTime ? start : null,
                   end: type.supportsTime ? end : null,
                   done: existing?.done ?? false,
+                  isSensitive: isSensitive,
                 ),
               );
             },

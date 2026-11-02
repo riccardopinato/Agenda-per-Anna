@@ -47,19 +47,32 @@ class HomeWidgetBridge {
 
     String nextText = strings.d3('widget_noUpcoming');
     if (next != null) {
-      final date = next.date;
-      final day = isSameDay(date, now)
-          ? strings.d3('widget_today')
-          : DateFormat('EEE d MMM', locale).format(date);
-      final time = next.start == null ? '' : ' · ${formatTime(next.start!)}';
-      nextText = '$day$time · ${next.title}';
+      if (isMaskedAgendaEntry(
+        next,
+        hideAll: store.preferences.homeDiscreetMode ||
+            store.preferences.hideHomeDetails,
+      )) {
+        nextText = strings.d3('privacy_sensitive');
+      } else {
+        final date = next.date;
+        final day = isSameDay(date, now)
+            ? strings.d3('widget_today')
+            : DateFormat('EEE d MMM', locale).format(date);
+        final time = next.start == null ? '' : ' · ${formatTime(next.start!)}';
+        nextText = '$day$time · ${next.title}';
+      }
     }
 
     String birthdayText = strings.d3('widget_noBirthday');
     if (birthday != null) {
-      final date = birthday.date;
-      birthdayText =
-          '${birthday.birthday.name} · ${DateFormat('d MMM', locale).format(date)}';
+      if (store.preferences.homeDiscreetMode ||
+          store.preferences.hideHomeDetails) {
+        birthdayText = strings.d3('privacy_sensitive');
+      } else {
+        final date = birthday.date;
+        birthdayText =
+            '${birthday.birthday.name} · ${DateFormat('d MMM', locale).format(date)}';
+      }
     }
 
     try {

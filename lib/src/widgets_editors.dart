@@ -16,6 +16,7 @@ class EventTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final concealed = hideDetails || item.isSensitive;
     final color = item.category.color;
     final timeText = item.start == null
         ? (item.type == ItemType.task ? AnnaStrings.of(context).d3('editor_toDo') : AnnaStrings.of(context).d3('editor_allDay'))
@@ -34,7 +35,12 @@ class EventTile extends StatelessWidget {
             ? Checkbox(
                 value: item.done,
                 activeColor: color,
-                onChanged: (_) => store.toggle(item.id),
+                onChanged: (_) async {
+                  if (item.isSensitive &&
+                      !await requestSensitiveItemAccess(context, store)) { return; }
+                  if (!context.mounted) return;
+                  await store.toggle(item.id);
+                },
               )
             : CircleAvatar(
                 backgroundColor: color.withValues(alpha: 0.16),
@@ -42,13 +48,15 @@ class EventTile extends StatelessWidget {
                 child: Icon(item.category.icon),
               ),
         title: Text(
-          hideDetails ? AnnaStrings.of(context).d3('editor_hiddenContent') : item.title,
+          concealed ? AnnaStrings.of(context).d3('editor_hiddenContent') : item.title,
           style: TextStyle(
             fontWeight: FontWeight.w700,
             decoration: item.done ? TextDecoration.lineThrough : null,
           ),
         ),
-        subtitle: Wrap(
+        subtitle: concealed
+          ? Text(AnnaStrings.of(context).d3('privacy_sensitive'))
+          : Wrap(
           spacing: 7,
           runSpacing: 2,
           crossAxisAlignment: WrapCrossAlignment.center,
@@ -96,17 +104,22 @@ class EventTile extends StatelessWidget {
               ),
           ],
         ),
-        onTap: () =>
-            openItemEditor(context, store, item.date, existing: item),
+        onTap: () => openItemEditor(
+          context, store, item.date, existing: item),
         trailing: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
             IconButton(
               tooltip: AnnaStrings.of(context).lifeBridgeCopyPayload,
-              onPressed: () => copyLifeBridgePayload(
-                context,
-                store.exportLifeBridgeAgendaItem(item),
-              ),
+              onPressed: () async {
+                if (item.isSensitive &&
+                    !await requestSensitiveItemAccess(context, store)) { return; }
+                if (!context.mounted) return;
+                copyLifeBridgePayload(
+                  context,
+                  store.exportLifeBridgeAgendaItem(item),
+                );
+              },
               icon: const Icon(Icons.hub_outlined),
             ),
             IconButton(
@@ -1204,7 +1217,16 @@ Future<void> openItemEditor(
   AgendaItem? existing,
   AgendaItem? duplicateOf,
   Future<void> Function(AgendaItem saved)? onSaved,
+  bool sensitiveAccessGranted = false,
 }) async {
+  if ((existing ?? duplicateOf)?.isSensitive == true && !sensitiveAccessGranted) {
+    if (!await requestSensitiveItemAccess(context, store)) {
+      return;
+    }
+    if (!context.mounted) {
+      return;
+    }
+  }
   // Duplicating opens an unsaved draft, preserving canonical writer semantics.
   final source = existing ?? duplicateOf;
   final editorHostContext = context;
@@ -1236,6 +1258,7 @@ Future<void> openItemEditor(
   bool naturalDraftApplied = false;
   final accountAtOpen = store.activeAccountId;
   bool saving = false;
+  bool isSensitive = source?.isSensitive ?? false;
 
   AgendaItem buildItem({
     required String id,
@@ -1258,6 +1281,7 @@ Future<void> openItemEditor(
       end: type == ItemType.task ? null : end,
       done: done,
       pinned: pinned,
+      isSensitive: isSensitive,
       recurrenceRule: existing?.recurrenceRule ?? RecurrenceRule.none,
       recurrenceSeriesId: existing?.recurrenceSeriesId,
       recurrenceIndex: existing?.recurrenceIndex ?? 0,
@@ -1395,6 +1419,19 @@ Future<void> openItemEditor(
                     labelText: AnnaStrings.of(context).d3('editor_notes'),
                     border: const OutlineInputBorder(),
                   ),
+                ),
+                SwitchListTile.adaptive(
+                  key: const ValueKey('privacy-personal-sensitive'),
+                  contentPadding: EdgeInsets.zero,
+                  title: Text(AnnaStrings.of(context).d3('privacy_markSensitive')),
+                  subtitle: Text(AnnaStrings.of(context).d3('privacy_pinRequired')),
+                  secondary: const Icon(Icons.visibility_off_outlined),
+                  value: isSensitive,
+                  onChanged: store.preferences.privacyLockEnabled &&
+                          store.preferences.pinHash != null &&
+                          store.preferences.pinSalt != null
+                      ? (value) => setLocal(() => isSensitive = value)
+                      : null,
                 ),
                 const SizedBox(height: 16),
                 Text(

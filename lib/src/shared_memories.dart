@@ -67,7 +67,12 @@ class _SharedMemoriesScreenState extends State<SharedMemoriesScreen> {
   }
 
   void _syncSnapshot() {
-    entries = List<SharedEntry>.from(widget.entriesProvider());
+    // This screen shows search, covers, timelines and full-media previews.
+    // Until each route supports a fresh per-entry challenge, omit flagged
+    // content entirely (including its search index and generated covers).
+    entries = widget.entriesProvider()
+        .where((entry) => !entry.isSensitive)
+        .toList(growable: false);
     commentsByEntry = {
       for (final entry in widget.commentsProvider().entries)
         entry.key: List<SharedEntryComment>.from(entry.value),

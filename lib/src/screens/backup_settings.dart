@@ -25,7 +25,40 @@ class _BackupScreenState extends State<BackupScreen> {
     );
   }
 
+  Future<bool> _confirmSensitiveExport() async {
+    if (!hasSensitiveLocalExportData(widget.store)) return true;
+    final accountAtStart = widget.store.activeAccountId;
+    if (!await requestSensitiveItemAccess(context, widget.store)) return false;
+    if (!mounted || !widget.store.entryScopeReady ||
+        widget.store.activeAccountId != accountAtStart) {
+      return false;
+    }
+    final strings = AnnaStrings.of(context);
+    return await showDialog<bool>(
+          context: context,
+          barrierDismissible: false,
+          builder: (dialogContext) => AlertDialog(
+            title: Text(strings.d3('privacy_exportWarningTitle')),
+            content: Text(strings.d3('privacy_exportWarningBody')),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(dialogContext, false),
+                child: Text(strings.cancel),
+              ),
+              FilledButton(
+                onPressed: () => Navigator.pop(dialogContext, true),
+                child: Text(strings.d3('privacy_exportContinue')),
+              ),
+            ],
+          ),
+        ) ==
+        true &&
+        widget.store.entryScopeReady &&
+        widget.store.activeAccountId == accountAtStart;
+  }
+
   Future<void> _exportBackup() async {
+    if (!await _confirmSensitiveExport() || !mounted) return;
     final strings = AnnaStrings.of(context);
     setState(() => busy = true);
     try {
@@ -53,6 +86,7 @@ class _BackupScreenState extends State<BackupScreen> {
   }
 
   Future<void> _exportOpenArchive() async {
+    if (!await _confirmSensitiveExport() || !mounted) return;
     final strings = AnnaStrings.of(context);
     setState(() => busy = true);
     try {
@@ -103,6 +137,7 @@ class _BackupScreenState extends State<BackupScreen> {
   }
 
   Future<void> _exportReadable() async {
+    if (!await _confirmSensitiveExport() || !mounted) return;
     final strings = AnnaStrings.of(context);
     setState(() => busy = true);
     try {

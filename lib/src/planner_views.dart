@@ -358,7 +358,10 @@ class _CalendarScreenState extends State<CalendarScreen> {
                     Builder(
                       builder: (context) {
                         final timed = events
-                            .where((entry) => entry.start?.hour == hour)
+                            // This strip has no privacy-safe time placement.
+                            .where((entry) =>
+                                !isMaskedAgendaEntry(entry) &&
+                                entry.start?.hour == hour)
                             .toList()
                           ..sort((a, b) =>
                               a.sortMinutes.compareTo(b.sortMinutes));
@@ -621,6 +624,31 @@ class _PlannerScreenState extends State<PlannerScreen> {
                         ],
                         const SizedBox(height: 12),
                         AgendaContentFilterBar(store: widget.store),
+                        if (widget.embedded) ...[
+                          const SizedBox(height: 4),
+                          SwitchListTile.adaptive(
+                            key: const ValueKey('privacy-home-discreet'),
+                            dense: true,
+                            contentPadding: EdgeInsets.zero,
+                            secondary: Icon(
+                              widget.store.preferences.homeDiscreetMode ||
+                                      widget.store.preferences.hideHomeDetails
+                                  ? Icons.visibility_off_outlined
+                                  : Icons.visibility_outlined),
+                            title: Text(strings.d3('privacy_discreet')),
+                            subtitle: Text(strings.d3('privacy_discreetHint')),
+                            value: widget.store.preferences.homeDiscreetMode ||
+                                widget.store.preferences.hideHomeDetails,
+                            onChanged: (value) => unawaited(
+                              widget.store.savePreferences(
+                                widget.store.preferences.copyWith(
+                                  homeDiscreetMode: value,
+                                  hideHomeDetails: value,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
                         const SizedBox(height: AnnaDesignTokens.spaceMd),
                         if (widget.embedded) ...[
                           // DF-08–14: Oggi reads the selected day before
@@ -636,7 +664,8 @@ class _PlannerScreenState extends State<PlannerScreen> {
                               next: upcoming.isEmpty ? null : upcoming.first,
                               globalPendingTasks: widget.store.pendingUnifiedTaskCount,
                               inboxCount: widget.store.activeInboxEntries.length,
-                              hideDetails: widget.store.preferences.hideHomeDetails,
+                              hideDetails: widget.store.preferences.hideHomeDetails ||
+                                  widget.store.preferences.homeDiscreetMode,
                               onOpenNext: upcoming.isEmpty
                                   ? null
                                   : () => openUnifiedAgendaEntry(
@@ -664,7 +693,8 @@ class _PlannerScreenState extends State<PlannerScreen> {
                                   store: widget.store,
                                   item: item,
                                   compact: true,
-                                  hideDetails: widget.store.preferences.hideHomeDetails,
+                                  hideDetails: widget.store.preferences.hideHomeDetails ||
+                                  widget.store.preferences.homeDiscreetMode,
                                 )),
                               ],
                             ),
@@ -692,7 +722,8 @@ class _PlannerScreenState extends State<PlannerScreen> {
                             child: _TodayCompactDiaryPreview(
                               store: widget.store,
                               snapshot: snapshot,
-                              hideDetails: widget.store.preferences.hideHomeDetails,
+                              hideDetails: widget.store.preferences.hideHomeDetails ||
+                                  widget.store.preferences.homeDiscreetMode,
                             ),
                           ),
                         ] else ...[
@@ -721,7 +752,8 @@ class _PlannerScreenState extends State<PlannerScreen> {
                                 : memoryRecall.sameMonthPastYears,
                             exactAnniversary: memoryRecall.onThisDay.isNotEmpty,
                             hideDetails: widget.embedded &&
-                                widget.store.preferences.hideHomeDetails,
+                                (widget.store.preferences.hideHomeDetails ||
+                                    widget.store.preferences.homeDiscreetMode),
                           ),
                           const SizedBox(height: 14),
                         ],
@@ -1132,7 +1164,7 @@ class _TodayFocusCard extends StatelessWidget {
     final scheme = Theme.of(context).colorScheme;
     final nextText = next == null
         ? strings.v100NoUpcoming
-        : hideDetails
+        : hideDetails || isMaskedAgendaEntry(next!)
             ? strings.v100NextScheduled
             : '${DateFormat('EEE d MMM', AnnaStrings.intlLocale(context)).format(next!.date)} · '
                 '${formatTime(next!.start!)} · ${next!.title}'
@@ -1590,6 +1622,14 @@ _DayLifePresentation _dayLifePresentation(
   switch (entry.kind) {
     case DayLifeEntryKind.agenda:
       final value = entry.agenda!;
+      if (isMaskedAgendaEntry(value)) {
+        return (
+          icon: Icons.lock_outline,
+          title: strings.d3('privacy_sensitive'),
+          subtitle: '',
+          timeLabel: '',
+        );
+      }
       final when = value.start == null ? strings.d3('day') : formatTime(value.start!);
       return (
         icon: value.isExternal
@@ -1800,7 +1840,11 @@ class DayTimeline extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final totalHeight = (endHour - startHour) * hourHeight;
-    final placements = _placements(events);
+    // A block's vertical position reveals its time even when its text is
+    // masked. Sensitive events remain available via guarded agenda tiles.
+    final placements = _placements(
+      events.where((item) => !item.isSensitive).toList(),
+    );
 
     return LayoutBuilder(
       builder: (context, constraints) {
@@ -3718,6 +3762,9 @@ Future<void> _showAgendaItemActions(
   AgendaStore store,
   AgendaItem item,
 ) async {
+  if (item.isSensitive &&
+      !await requestSensitiveItemAccess(context, store)) { return; }
+  if (!context.mounted) return;
   final action = await showModalBottomSheet<String>(
     context: context,
     showDragHandle: true,
@@ -3791,7 +3838,8 @@ Future<void> _showAgendaItemActions(
   );
 
   if (action == 'edit' && context.mounted) {
-    await openItemEditor(context, store, item.date, existing: item);
+    await openItemEditor(context, store, item.date,
+        existing: item, sensitiveAccessGranted: true);
   } else if (action == 'duplicate' && context.mounted) {
     await openItemEditor(context, store, item.date, duplicateOf: item);
   } else if (action == 'postpone' && context.mounted) {

@@ -151,6 +151,7 @@ class AgendaPreferences {
   final bool biometricUnlock;
   final int autoLockMinutes;
   final bool hideHomeDetails;
+  final bool homeDiscreetMode;
   final String? pinSalt;
   final String? pinHash;
   final bool onboardingDone;
@@ -188,6 +189,7 @@ class AgendaPreferences {
     this.biometricUnlock = false,
     this.autoLockMinutes = 2,
     this.hideHomeDetails = false,
+    this.homeDiscreetMode = true,
     this.pinSalt,
     this.pinHash,
     this.onboardingDone = true,
@@ -226,6 +228,7 @@ class AgendaPreferences {
     bool? biometricUnlock,
     int? autoLockMinutes,
     bool? hideHomeDetails,
+    bool? homeDiscreetMode,
     String? pinSalt,
     String? pinHash,
     bool? onboardingDone,
@@ -271,6 +274,7 @@ class AgendaPreferences {
       biometricUnlock: biometricUnlock ?? this.biometricUnlock,
       autoLockMinutes: autoLockMinutes ?? this.autoLockMinutes,
       hideHomeDetails: hideHomeDetails ?? this.hideHomeDetails,
+      homeDiscreetMode: homeDiscreetMode ?? this.homeDiscreetMode,
       pinSalt: clearPin ? null : (pinSalt ?? this.pinSalt),
       pinHash: clearPin ? null : (pinHash ?? this.pinHash),
       onboardingDone: onboardingDone ?? this.onboardingDone,
@@ -357,6 +361,7 @@ class AgendaPreferences {
         'biometricUnlock': biometricUnlock,
         'autoLockMinutes': autoLockMinutes,
         'hideHomeDetails': hideHomeDetails,
+        'homeDiscreetMode': homeDiscreetMode,
         'pinSalt': pinSalt,
         'pinHash': pinHash,
         'onboardingDone': onboardingDone,
@@ -429,6 +434,7 @@ class AgendaPreferences {
             (json['autoLockMinutes'] as int? ?? 2).clamp(0, 60).toInt(),
         hideHomeDetails:
             json['hideHomeDetails'] as bool? ?? false,
+        homeDiscreetMode: json['homeDiscreetMode'] as bool? ?? true,
         pinSalt: json['pinSalt'] as String?,
         pinHash: json['pinHash'] as String?,
         onboardingDone: json['onboardingDone'] as bool? ?? true,
@@ -536,6 +542,7 @@ class AgendaItem {
   final int? secondaryReminderMinutesBefore;
   final bool done;
   final bool pinned;
+  final bool isSensitive;
   final RecurrenceRule recurrenceRule;
   final String? recurrenceSeriesId;
   final int recurrenceIndex;
@@ -554,6 +561,7 @@ class AgendaItem {
     this.end,
     this.done = false,
     this.pinned = false,
+    this.isSensitive = false,
     this.recurrenceRule = RecurrenceRule.none,
     this.recurrenceSeriesId,
     this.recurrenceIndex = 0,
@@ -577,6 +585,7 @@ class AgendaItem {
     int? secondaryReminderMinutesBefore,
     bool? done,
     bool? pinned,
+    bool? isSensitive,
     RecurrenceRule? recurrenceRule,
     String? recurrenceSeriesId,
     int? recurrenceIndex,
@@ -602,6 +611,7 @@ class AgendaItem {
       end: clearTime ? null : (end ?? this.end),
       done: done ?? this.done,
       pinned: pinned ?? this.pinned,
+      isSensitive: isSensitive ?? this.isSensitive,
       recurrenceRule:
           clearRecurrence ? RecurrenceRule.none : (recurrenceRule ?? this.recurrenceRule),
       recurrenceSeriesId:
@@ -622,6 +632,7 @@ class AgendaItem {
         'secondaryReminderMinutesBefore': secondaryReminderMinutesBefore,
         'done': done,
         'pinned': pinned,
+        'isSensitive': isSensitive,
         'recurrenceRule': recurrenceRule.name,
         'recurrenceSeriesId': recurrenceSeriesId,
         'recurrenceIndex': recurrenceIndex,
@@ -656,6 +667,7 @@ class AgendaItem {
           json['secondaryReminderMinutesBefore'] as int?,
       done: json['done'] as bool? ?? false,
       pinned: json['pinned'] as bool? ?? false,
+      isSensitive: json['isSensitive'] as bool? ?? false,
       recurrenceRule: RecurrenceRule.values.firstWhere(
         (value) => value.name == json['recurrenceRule'],
         orElse: () => RecurrenceRule.none,
@@ -1987,6 +1999,7 @@ class SharedEntry {
   final TimeOfDay? start;
   final TimeOfDay? end;
   final bool done;
+  final bool isSensitive;
   final String? updatedBy;
   final DateTime? updatedAt;
   final String editorName;
@@ -2014,6 +2027,7 @@ class SharedEntry {
     this.start,
     this.end,
     this.done = false,
+    this.isSensitive = false,
     this.updatedBy,
     this.updatedAt,
     this.editorName = '',
@@ -2062,6 +2076,7 @@ class SharedEntry {
     TimeOfDay? start,
     TimeOfDay? end,
     bool? done,
+    bool? isSensitive,
     String? updatedBy,
     DateTime? updatedAt,
     String? editorName,
@@ -2093,6 +2108,7 @@ class SharedEntry {
         start: clearTime ? null : (start ?? this.start),
         end: clearTime ? null : (end ?? this.end),
         done: done ?? this.done,
+        isSensitive: isSensitive ?? this.isSensitive,
         updatedBy: clearUpdatedBy ? null : (updatedBy ?? this.updatedBy),
         updatedAt: updatedAt ?? this.updatedAt,
         editorName: editorName ?? this.editorName,
@@ -2132,6 +2148,7 @@ class SharedEntry {
             ? null
             : {'hour': end!.hour, 'minute': end!.minute},
         'done': done,
+        'isSensitive': isSensitive,
         'editorName': editorName,
         'mediaPath': mediaPath,
         'mediaThumbnailBase64': mediaThumbnailBase64,
@@ -2196,6 +2213,7 @@ class SharedEntry {
       start: parseTime(json['start']),
       end: parseTime(json['end']),
       done: json['done'] as bool? ?? false,
+      isSensitive: json['isSensitive'] as bool? ?? false,
       updatedBy: updatedBy,
       updatedAt: updatedAt,
       editorName: json['editorName'] as String? ?? '',
