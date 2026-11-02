@@ -61,13 +61,18 @@ Future<bool> postponePrivateTask(
   }
   final tomorrow = quickWinTomorrow(now);
   if (AgendaStore.sameDay(current.date, tomorrow)) return false;
-  await store.upsert(current.copyWith(date: tomorrow));
-  // Capture the committed canonical record, not just the requested draft.
-  // Undo must refuse later edits, account changes and recurring/sensitive items.
-  if (onPostponed != null) {
+  final postponed = current.copyWith(date: tomorrow);
+  final writtenFingerprint = jsonEncode(postponed.toJson());
+  await store.upsert(postponed);
+  // Never fingerprint an intervening concurrent edit as if it were ours.
+  // If the persisted canonical record diverged during an await, do not
+  // expose Undo. The action itself checks the same fingerprint again.
+  if (onPostponed != null &&
+      store.activeAccountId == accountAtOpen) {
     for (final saved in store.items) {
-      if (saved.id == id && store.activeAccountId == accountAtOpen) {
-        onPostponed(current, jsonEncode(saved.toJson()));
+      if (saved.id == id &&
+          jsonEncode(saved.toJson()) == writtenFingerprint) {
+        onPostponed(current, writtenFingerprint);
         break;
       }
     }
