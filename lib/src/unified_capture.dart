@@ -208,6 +208,39 @@ Future<void> showUnifiedCapture(
   final strings = AnnaStrings.of(context);
   var targetDay = _normalizeUnifiedCaptureDay(initialDate);
   var dayLabel = strings.dayWord(targetDay);
+  final accountAtCaptureOpen = store.activeAccountId;
+  final counts = await Qw2UiSettings.captureCounts(store);
+  if (!context.mounted ||
+      store.activeAccountId != accountAtCaptureOpen) return;
+  final availableActions =
+      <({IconData icon, String title, String? subtitle,
+          _UnifiedCaptureAction action})>[
+    (icon: Icons.edit_note_outlined, title: strings.writeMoment,
+     subtitle: strings.addDiaryNote(dayLabel),
+     action: _UnifiedCaptureAction.text),
+    (icon: Icons.photo_camera_back_outlined, title: strings.photo,
+     subtitle: strings.savePhotoMoment(dayLabel),
+     action: _UnifiedCaptureAction.photo),
+    (icon: Icons.check_circle_outline, title: strings.task,
+     subtitle: null, action: _UnifiedCaptureAction.task),
+    (icon: Icons.mic_none_outlined, title: strings.voiceNote,
+     subtitle: strings.recordDiaryAudio(dayLabel),
+     action: _UnifiedCaptureAction.voice),
+    (icon: Icons.draw_outlined, title: strings.v100Sketch,
+     subtitle: null, action: _UnifiedCaptureAction.sketch),
+    (icon: Icons.inbox_outlined, title: strings.quickInboxNote,
+     subtitle: strings.organizeLater, action: _UnifiedCaptureAction.inbox),
+    (icon: Icons.event_outlined, title: strings.appointment,
+     subtitle: null, action: _UnifiedCaptureAction.event),
+    (icon: Icons.cake_outlined, title: strings.birthday,
+     subtitle: null, action: _UnifiedCaptureAction.birthday),
+    (icon: Icons.person_add_alt_1_outlined, title: strings.importantPerson,
+     subtitle: null, action: _UnifiedCaptureAction.person),
+    (icon: Icons.library_books_outlined, title: strings.d3('templates'),
+     subtitle: null, action: _UnifiedCaptureAction.templates),
+  ];
+  final rankedActions = qw2RankCaptureActions(
+      availableActions, counts, (choice) => choice.action.name);
 
   final action = await showModalBottomSheet<_UnifiedCaptureAction>(
     context: context,
@@ -298,44 +331,16 @@ Future<void> showUnifiedCapture(
                       },
                     ),
                   ),
-                  actionTile(
-                    icon: Icons.edit_note_outlined,
-                    title: strings.writeMoment,
-                    subtitle: strings.addDiaryNote(dayLabel),
-                    action: _UnifiedCaptureAction.text,
-                    primary: true,
-                    order: 0,
-                  ),
-                  actionTile(
-                    icon: Icons.photo_camera_back_outlined,
-                    title: strings.photo,
-                    subtitle: strings.savePhotoMoment(dayLabel),
-                    action: _UnifiedCaptureAction.photo,
-                    primary: true,
-                    order: 1,
-                  ),
-                  actionTile(
-                    icon: Icons.check_circle_outline,
-                    title: strings.task,
-                    action: _UnifiedCaptureAction.task,
-                    primary: true,
-                    order: 2,
-                  ),
-                  actionTile(
-                    icon: Icons.mic_none_outlined,
-                    title: strings.voiceNote,
-                    subtitle: strings.recordDiaryAudio(dayLabel),
-                    action: _UnifiedCaptureAction.voice,
-                    primary: true,
-                    order: 3,
-                  ),
-                  actionTile(
-                    icon: Icons.draw_outlined,
-                    title: strings.v100Sketch,
-                    action: _UnifiedCaptureAction.sketch,
-                    primary: true,
-                    order: 4,
-                  ),
+                  // Four most chosen capture actions, sorted locally.
+                  for (var i = 0; i < 4; i++)
+                    actionTile(
+                      icon: rankedActions[i].icon,
+                      title: rankedActions[i].title,
+                      subtitle: rankedActions[i].subtitle,
+                      action: rankedActions[i].action,
+                      primary: true,
+                      order: i,
+                    ),
                   Padding(
                     padding: const EdgeInsets.symmetric(
                       horizontal: AnnaDesignTokens.spaceSm,
@@ -375,37 +380,14 @@ Future<void> showUnifiedCapture(
                             mainAxisSize: MainAxisSize.min,
                             children: [
                               const Divider(height: 1),
-                              actionTile(
-                                icon: Icons.inbox_outlined,
-                                title: strings.quickInboxNote,
-                                subtitle: strings.organizeLater,
-                                action: _UnifiedCaptureAction.inbox,
-                                 order: 0,
-                              ),
-                              actionTile(
-                                icon: Icons.event_outlined,
-                                title: strings.appointment,
-                                action: _UnifiedCaptureAction.event,
-                                 order: 1,
-                              ),
-                              actionTile(
-                                icon: Icons.cake_outlined,
-                                title: strings.birthday,
-                                action: _UnifiedCaptureAction.birthday,
-                                 order: 2,
-                              ),
-                              actionTile(
-                                icon: Icons.person_add_alt_1_outlined,
-                                title: strings.importantPerson,
-                                action: _UnifiedCaptureAction.person,
-                                 order: 3,
-                              ),
-                              actionTile(
-                                icon: Icons.library_books_outlined,
-                                title: strings.d3('templates'),
-                                action: _UnifiedCaptureAction.templates,
-                                 order: 4,
-                              ),
+                              for (var i = 4; i < rankedActions.length; i++)
+                                actionTile(
+                                  icon: rankedActions[i].icon,
+                                  title: rankedActions[i].title,
+                                  subtitle: rankedActions[i].subtitle,
+                                  action: rankedActions[i].action,
+                                  order: i - 4,
+                                ),
                             ],
                           )
                         : const SizedBox.shrink(),
@@ -434,7 +416,11 @@ Future<void> showUnifiedCapture(
     },
   );
 
-  if (!context.mounted || action == null) return;
+  if (!context.mounted || action == null ||
+      store.activeAccountId != accountAtCaptureOpen) return;
+  // Counts represent deliberate action selections, never personal content.
+  unawaited(Qw2UiSettings.recordCaptureChoice(
+      store, action.name, accountAtCaptureOpen));
 
   switch (action) {
     case _UnifiedCaptureAction.sketch:
