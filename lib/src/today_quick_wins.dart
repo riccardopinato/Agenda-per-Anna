@@ -1,6 +1,18 @@
 part of '../main.dart';
 
 /// Derived daily-use helpers: no second agenda owner or persisted flags.
+///
+/// The approved privacy staging PR adds an isSensitive field to canonical
+/// JSON. Consult that optional serialized flag here so already-merged daily
+/// previews remain fail-closed when the privacy schema is later integrated.
+/// Legacy records lack the field and keep existing behavior.
+bool quickWinItemSensitive(AgendaItem item) =>
+    item.toJson()['isSensitive'] == true;
+
+bool quickWinEntrySensitive(UnifiedAgendaEntry entry) =>
+    (entry.privateItem?.toJson()['isSensitive'] == true) ||
+    (entry.sharedEntry?.toJson()['isSensitive'] == true);
+
 DateTime quickWinTomorrow(DateTime now) =>
     DateTime(now.year, now.month, now.day + 1);
 
@@ -23,6 +35,7 @@ bool canPostponeTask(AgendaItem item, {DateTime? now}) {
   return item.type == ItemType.task &&
       !item.done &&
       !item.isRecurring &&
+      !quickWinItemSensitive(item) &&
       item.date.isBefore(tomorrow);
 }
 
@@ -126,13 +139,17 @@ class TodayCatchUpCard extends StatelessWidget {
             ListTile(
               contentPadding: EdgeInsets.zero,
               dense: true,
-              title: Text(hideDetails
+              title: Text(hideDetails || quickWinItemSensitive(item)
                   ? strings.d3('editor_hiddenContent')
                   : item.title, maxLines: 1, overflow: TextOverflow.ellipsis),
-              subtitle: Text(DateFormat('d MMM', AnnaStrings.intlLocale(context))
-                  .format(item.date)),
-              onTap: () => openItemEditor(context, store, item.date,
-                  existing: item),
+              subtitle: hideDetails || quickWinItemSensitive(item)
+                  ? null
+                  : Text(DateFormat('d MMM', AnnaStrings.intlLocale(context))
+                      .format(item.date)),
+              onTap: quickWinItemSensitive(item)
+                  ? null
+                  : () => openItemEditor(context, store, item.date,
+                      existing: item),
               trailing: canPostponeTask(item)
                   ? IconButton(
                       key: ValueKey('overdue-tomorrow-${item.id}'),
@@ -170,12 +187,14 @@ Future<void> _showAllOverdueTasks(
                     style: Theme.of(ctx).textTheme.titleLarge),
                 for (final item in overdue)
                   ListTile(
-                    title: Text(hideDetails
+                    title: Text(hideDetails || quickWinItemSensitive(item)
                         ? AnnaStrings.of(ctx).d3('editor_hiddenContent')
                         : item.title),
-                    subtitle: Text(DateFormat('d MMM yyyy',
-                        AnnaStrings.intlLocale(ctx)).format(item.date)),
-                    onTap: () async {
+                    subtitle: hideDetails || quickWinItemSensitive(item)
+                        ? null
+                        : Text(DateFormat('d MMM yyyy',
+                            AnnaStrings.intlLocale(ctx)).format(item.date)),
+                    onTap: quickWinItemSensitive(item) ? null : () async {
                       Navigator.pop(sheetContext);
                       if (context.mounted) {
                         await openItemEditor(context, store, item.date,
@@ -237,7 +256,7 @@ class TodayTomorrowCard extends StatelessWidget {
                 Padding(
                   padding: const EdgeInsets.symmetric(vertical: 3),
                   child: Text(
-                    hideDetails
+                    hideDetails || quickWinEntrySensitive(entry)
                         ? strings.d3('editor_hiddenContent')
                         : '${entry.start == null ? '' : '${formatTime(entry.start!)} · '}${entry.title}',
                     maxLines: 1, overflow: TextOverflow.ellipsis,
@@ -297,7 +316,7 @@ Future<bool> confirmAppointmentOverlap(
             for (final clash in conflicts.take(5))
               Padding(
                 padding: const EdgeInsets.symmetric(vertical: 3),
-                child: Text('• ${clash.title}'),
+                child: Text('• ${quickWinEntrySensitive(clash) ? strings.d3('editor_hiddenContent') : clash.title}'),
               ),
             const SizedBox(height: 8),
             Text(quickWinText(strings, 'conflictPartial'),
