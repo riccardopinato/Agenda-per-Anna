@@ -1,8 +1,8 @@
 # Anna's Diary — Product Bible
 
-**Status:** all 10/10 approved screen source deltas merged (#163/#164/#166/#167/#168/#169/#170); audit correction PRs address search evidence, Inbox empty-category persistence, neutral labels and governance. Real Android certification remains outstanding.
-**Distribution identity:** `1.0.0-rc.6+115` signed ARM64 APK built successfully by workflow run #41248307448 from main `31b66ba96d66a3ca3984a3c19061c4f1bfc9f9c7`; physical installation/functional acceptance are NOT VERIFIED. Subsequent versionCode bumps are authorized to build the same stable-signed sideload APK automatically after green main Development checks.
-**Last aligned:** 31 October 2026 (source audit; physical NOT VERIFIED)
+**Status:** 10/10 approved visual source deltas merged; daily-use quick wins merged #206, Privacy quick-win compatibility merged #209. Android +120 has USER_ATTESTED_GENERAL_PASS on user's instruction, not individual technical physical certificates. Full Privacy UX PR #200 remains DRAFT / not merged.
+**Distribution identity:** `1.0.0-rc.6+120` stable-signed ARM64 APK built successfully from `main@fb476545426fb6bf290e74f53e735fa13616e4e9` by workflow #41367895694, artifact ID 13107988055. User requested general Android acceptance; per-scenario technical/device/Play QA remain separate. Later source-only fixes are not inside this APK.
+**Last aligned:** 2 November 2026 (signed release / user-attested general acceptance; specialist QA not verified)
 
 This document defines what Anna's Diary is, what it is not, and the product/security invariants that future work must preserve. Implementation details belong in `docs/ARCHITECTURE.md`; execution sequencing belongs in `docs/ROADMAP.md`.
 
