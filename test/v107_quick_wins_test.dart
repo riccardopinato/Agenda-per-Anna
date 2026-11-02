@@ -3,6 +3,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
+  test('shared agenda filter uses people, never the heart icon', () {
+    expect(AgendaContentFilter.sharedOnly.icon, Icons.people_outline);
+    expect(AgendaContentFilter.all.icon, Icons.layers_outlined);
+  });
+
   AgendaItem item(String id, DateTime date, {ItemType type = ItemType.appointment,
     bool done = false, TimeOfDay? start, TimeOfDay? end,
     RecurrenceRule recurrence = RecurrenceRule.none, String? series}) =>
