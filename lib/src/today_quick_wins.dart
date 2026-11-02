@@ -46,7 +46,8 @@ bool canPostponeTask(AgendaItem item, {DateTime? now}) {
 /// occurrence by editing its civil day outside the recurrence engine.
 Future<bool> postponePrivateTask(
     AgendaStore store, String id, DateTime now,
-    {required String? accountAtOpen}) async {
+    {required String? accountAtOpen,
+    void Function(AgendaItem previous, String savedFingerprint)? onPostponed}) async {
   if (store.activeAccountId != accountAtOpen) return false;
   AgendaItem? current;
   for (final item in store.items) {
@@ -61,7 +62,35 @@ Future<bool> postponePrivateTask(
   final tomorrow = quickWinTomorrow(now);
   if (AgendaStore.sameDay(current.date, tomorrow)) return false;
   await store.upsert(current.copyWith(date: tomorrow));
+  // Capture the committed canonical record, not just the requested draft.
+  // Undo must refuse later edits, account changes and recurring/sensitive items.
+  if (onPostponed != null) {
+    for (final saved in store.items) {
+      if (saved.id == id && store.activeAccountId == accountAtOpen) {
+        onPostponed(current, jsonEncode(saved.toJson()));
+        break;
+      }
+    }
+  }
   return true;
+}
+
+Future<bool> undoPostponedTask(
+    AgendaStore store, AgendaItem previous, String savedFingerprint,
+    {required String? accountAtOpen}) async {
+  if (!store.entryScopeReady || store.activeAccountId != accountAtOpen) {
+    return false;
+  }
+  for (final current in store.items) {
+    if (current.id != previous.id) continue;
+    if (current.done || current.isRecurring || quickWinItemSensitive(current) ||
+        jsonEncode(current.toJson()) != savedFingerprint) {
+      return false;
+    }
+    await store.upsert(current.copyWith(date: previous.date));
+    return true;
+  }
+  return false;
 }
 
 String quickWinText(AnnaStrings strings, String key) {
@@ -69,6 +98,8 @@ String quickWinText(AnnaStrings strings, String key) {
     'duplicateDate': ['Duplicate and choose date', 'Duplica e scegli la data', 'Duplicar y elegir fecha', 'Dupliquer et choisir la date', 'Duplicar e escolher a data'],
     'postpone': ['Move to tomorrow', 'Rimanda a domani', 'Pasar a mañana', 'Reporter à demain', 'Adiar para amanhã'],
     'postponed': ['Task moved to tomorrow', 'Attività spostata a domani', 'Tarea pasada a mañana', 'Tâche reportée à demain', 'Tarefa adiada para amanhã'],
+    'undo': ['Undo', 'Annulla', 'Deshacer', 'Annuler', 'Desfazer'],
+    'undoFailed': ['The task changed; undo is unavailable.', 'Attività modificata: impossibile annullare.', 'La tarea ha cambiado; no se puede deshacer.', 'La tâche a changé : annulation impossible.', 'A tarefa foi alterada; não é possível desfazer.'],
     'postponeFailed': ['Could not move this task. Try again.', 'Impossibile spostare l’attività. Riprova.', 'No se pudo mover la tarea.', 'Impossible de déplacer la tâche.', 'Não foi possível adiar a tarefa.'],
     'overdue': ['To catch up', 'Da recuperare', 'Pendiente de recuperar', 'À rattraper', 'Por recuperar'],
     'overdueCount': ['Overdue tasks', 'Attività in sospeso', 'Tareas pendientes', 'Tâches en retard', 'Tarefas em atraso'],
@@ -92,13 +123,38 @@ String quickWinText(AnnaStrings strings, String key) {
 Future<void> showPostponeTask(
     BuildContext context, AgendaStore store, AgendaItem item) async {
   final account = store.activeAccountId;
+  AgendaItem? original;
+  String? savedFingerprint;
   try {
     final moved = await postponePrivateTask(
-      store, item.id, DateTime.now(), accountAtOpen: account);
+      store, item.id, DateTime.now(), accountAtOpen: account,
+      onPostponed: (before, fingerprint) {
+        original = before;
+        savedFingerprint = fingerprint;
+      },
+    );
     if (context.mounted) {
+      final strings = AnnaStrings.of(context);
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text(quickWinText(AnnaStrings.of(context),
+        content: Text(quickWinText(strings,
             moved ? 'postponed' : 'postponeFailed')),
+        action: moved && original != null && savedFingerprint != null
+            ? SnackBarAction(
+                label: quickWinText(strings, 'undo'),
+                onPressed: () async {
+                  final restored = await undoPostponedTask(
+                    store, original!, savedFingerprint!,
+                    accountAtOpen: account,
+                  );
+                  if (!restored && context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                      content: Text(quickWinText(
+                          AnnaStrings.of(context), 'undoFailed')),
+                    ));
+                  }
+                },
+              )
+            : null,
       ));
     }
   } catch (_) {
