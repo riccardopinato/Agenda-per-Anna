@@ -10,14 +10,17 @@
 
 ## Quick Wins 2 — approvati il 2 novembre 2026
 
-**SOURCE IN PR / NON ANCORA MERGED, NON CERTIFICATO SU DEVICE.**
+**SOURCE MERGED / QA DEVICE NON VERIFICATO.** PR [#211](https://github.com/riccardopinato/Agenda-per-Anna/pull/211)
+integrata in `main@6be32e00532deecb9fd3127c4d1923c5f572581b`.
 L'utente ha approvato QW2-01 Undo rinvio domani, QW2-02 Inbox -> appuntamento
 con bozza, QW2-03 quattro azioni Crea ordinate per utilizzo locale,
 QW2-04 tre preferiti in Altro, QW2-05 ricerca Impostazioni.
-Implementazione in branch `feat/v107-quick-wins-2`; criteri e verifiche in
-[docs/V107_QUICK_WINS_2.md](V107_QUICK_WINS_2.md).
-Nessuna nuova persistenza applicativa/cloud e nessuna modifica Privacy #200.
-PR, gate esatto SHA, merge e nuova release vanno certificati separatamente.
+Sull'head esatto `36b6897c4be113a536ab9b02e073c066b4972ed9`:
+Development checks, Web e AppLab **SUCCESS**, tre rilievi di review risolti.
+Specifiche/test: [V107_QUICK_WINS_2.md](V107_QUICK_WINS_2.md).
+Nessuna modifica al cloud schema/Vault/Privacy #200. La release Android
+firmata `+120` precede #211; installazione delle nuove funzioni richiede
+un nuovo APK firmato con `versionCode > 120`, proof fisica separata.
 
 ## Quick wins agenda — 2 novembre 2026
 
