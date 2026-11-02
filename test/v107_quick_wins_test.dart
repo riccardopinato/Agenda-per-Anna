@@ -27,7 +27,9 @@ void main() {
       item('appointment', DateTime(2026, 11, 1)),
     ], today);
     expect(overdue.map((e) => e.id), ['recent', 'old']);
-    expect(canPostponeTask(overdue.first), isTrue);
+    expect(canPostponeTask(overdue.first, now: today), isTrue);
+    expect(canPostponeTask(item('future', DateTime(2026, 11, 10),
+      type: ItemType.task), now: today), isFalse);
     expect(canPostponeTask(item('recurring', today, type: ItemType.task,
       recurrence: RecurrenceRule.weekly, series: 's')), isFalse);
   });
