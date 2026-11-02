@@ -71,9 +71,30 @@ void main() {
     expect(capture, contains('Qw2UiSettings.recordCaptureChoice('));
     expect(capture, contains('subtitleFor('));
     expect(more, contains('Qw2FavoritesSection('));
+    final favorites = File('lib/src/quick_wins2.dart').readAsStringSync();
+    expect(favorites, contains('maxHeight: MediaQuery.sizeOf(sheetContext).height * 0.78'));
+    expect(favorites, contains('child: ListView('));
     expect(settings, contains("ValueKey('qw2-settings-search')"));
     expect(undo, contains('jsonEncode(current.toJson()) != savedFingerprint'));
+    expect(undo, contains('final writtenFingerprint = jsonEncode(postponed.toJson());'));
+    expect(undo, contains('jsonEncode(saved.toJson()) == writtenFingerprint'));
     expect(undo, contains('SnackBarAction('));
+  });
+
+  testWidgets('settings search matches the Spanish name placeholder',
+      (tester) async {
+    final store = AgendaStore();
+    await tester.pumpWidget(MaterialApp(
+      locale: const Locale('es'),
+      home: SettingsHubScreen(store: store),
+    ));
+    await tester.enterText(
+        find.byKey(const ValueKey('qw2-settings-search')), 'nombre');
+    await tester.pump();
+    expect(find.byKey(const ValueKey('settings-hub-edit-name')),
+        findsOneWidget);
+    await tester.pumpWidget(const SizedBox.shrink());
+    store.dispose();
   });
 
   testWidgets('settings search finds backup and removes unrelated tiles',
