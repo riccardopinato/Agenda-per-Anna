@@ -27,6 +27,12 @@ void main() {
     isSensitive: isSensitive,
   );
 
+  test('Shared filter uses a neutral people icon, not a heart', () {
+    expect(AgendaContentFilter.sharedOnly.icon, Icons.people_outline);
+    expect(AgendaContentFilter.privateOnly.icon, Icons.person_outline);
+    expect(AgendaContentFilter.all.icon, Icons.layers_outlined);
+  });
+
   test('personal content and sensitivity are independent dimensions', () {
     final personal = privateEvent(isSensitive: true);
     final ordinary = privateEvent();
