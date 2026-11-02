@@ -86,6 +86,7 @@ void main() {
     final store = AgendaStore();
     await tester.pumpWidget(MaterialApp(
       locale: const Locale('es'),
+      supportedLocales: AnnaStrings.supportedLocales,
       home: SettingsHubScreen(store: store),
     ));
     await tester.enterText(
