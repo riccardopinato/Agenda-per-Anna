@@ -2376,3 +2376,75 @@ Future<void> openPersonalFutureLetter(
     ),
   );
 }
+
+class PersonalFutureLettersScreen extends StatelessWidget {
+  final AgendaStore store;
+  const PersonalFutureLettersScreen({super.key, required this.store});
+
+  @override
+  Widget build(BuildContext context) => AnimatedBuilder(
+    animation: store,
+    builder: (context, _) {
+      final strings = AnnaStrings.of(context);
+      final letters = personalFutureLetters(store);
+      return Scaffold(
+        appBar: AppBar(title: Text(futureLetterTitle(strings))),
+        floatingActionButton: FloatingActionButton.extended(
+          onPressed: () => composePersonalFutureLetter(context, store),
+          icon: const Icon(Icons.edit_note_outlined),
+          label: Text(futureLetterLabel(strings, 'create')),
+        ),
+        body: SafeArea(child: ListView(
+          padding: const EdgeInsets.all(16),
+          children: [
+            Text(futureLetterLabel(strings, 'notice'),
+              style: Theme.of(context).textTheme.bodySmall),
+            const SizedBox(height: 16),
+            if (letters.isEmpty)
+              Text(futureLetterLabel(strings, 'empty')),
+            for (final letter in letters)
+              Card(child: ListTile(
+                key: ValueKey('future-letter-${letter.block.id}'),
+                leading: const Icon(Icons.mark_email_unread_outlined),
+                title: Text(DateFormat.yMMMMd(
+                    AnnaStrings.intlLocale(context)).format(letter.day)),
+                subtitle: Text(futureLetterLabel(strings, 'read')),
+                onTap: () => openPersonalFutureLetter(context, letter),
+                trailing: IconButton(
+                  tooltip: futureLetterLabel(strings, 'trash'),
+                  icon: const Icon(Icons.delete_outline),
+                  onPressed: () async {
+                    final account = store.activeAccountId;
+                    final confirmed = await showDialog<bool>(
+                      context: context,
+                      builder: (dialog) => AlertDialog(
+                        title: Text(futureLetterLabel(
+                            AnnaStrings.of(dialog), 'trash')),
+                        actions: [
+                          TextButton(
+                            onPressed: () => Navigator.pop(dialog, false),
+                            child: Text(quickWinText(
+                                AnnaStrings.of(dialog), 'undo')),
+                          ),
+                          FilledButton(
+                            onPressed: () => Navigator.pop(dialog, true),
+                            child: Text(futureLetterLabel(
+                                AnnaStrings.of(dialog), 'trash')),
+                          ),
+                        ],
+                      ),
+                    );
+                    if (confirmed == true && store.entryScopeReady &&
+                        store.activeAccountId == account) {
+                      await store.moveDiaryBlockToTrash(
+                          letter.day, letter.block.id);
+                    }
+                  },
+                ),
+              )),
+          ],
+        )),
+      );
+    },
+  );
+}
