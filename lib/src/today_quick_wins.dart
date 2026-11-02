@@ -215,12 +215,20 @@ class TodayCatchUpCard extends StatelessWidget {
                   : () => openItemEditor(context, store, item.date,
                       existing: item),
               trailing: canPostponeTask(item)
-                  ? IconButton(
-                      key: ValueKey('overdue-tomorrow-${item.id}'),
-                      tooltip: quickWinText(strings, 'postpone'),
-                      onPressed: () => showPostponeTask(context, store, item),
-                      icon: const Icon(Icons.redo_outlined),
-                    )
+                  ? Row(mainAxisSize: MainAxisSize.min, children: [
+                      IconButton(
+                        key: ValueKey('overdue-alternatives-${item.id}'),
+                        tooltip: _assistedLabel(strings, 'suggest'),
+                        onPressed: () => showTaskReplanning(context, store, item),
+                        icon: const Icon(Icons.event_available_outlined),
+                      ),
+                      IconButton(
+                        key: ValueKey('overdue-tomorrow-${item.id}'),
+                        tooltip: quickWinText(strings, 'postpone'),
+                        onPressed: () => showPostponeTask(context, store, item),
+                        icon: const Icon(Icons.redo_outlined),
+                      ),
+                    ])
                   : const Icon(Icons.chevron_right),
             ),
           if (overdue.length > 3)
