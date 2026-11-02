@@ -241,6 +241,13 @@ Future<void> showUnifiedCapture(
   ];
   final rankedActions = qw2RankCaptureActions(
       availableActions, counts, (choice) => choice.action.name);
+  String? subtitleFor(_UnifiedCaptureAction selected, String? fallback) =>
+      switch (selected) {
+        _UnifiedCaptureAction.text => strings.addDiaryNote(dayLabel),
+        _UnifiedCaptureAction.photo => strings.savePhotoMoment(dayLabel),
+        _UnifiedCaptureAction.voice => strings.recordDiaryAudio(dayLabel),
+        _ => fallback,
+      };
 
   final action = await showModalBottomSheet<_UnifiedCaptureAction>(
     context: context,
@@ -336,7 +343,8 @@ Future<void> showUnifiedCapture(
                     actionTile(
                       icon: rankedActions[i].icon,
                       title: rankedActions[i].title,
-                      subtitle: rankedActions[i].subtitle,
+                      subtitle: subtitleFor(
+                          rankedActions[i].action, rankedActions[i].subtitle),
                       action: rankedActions[i].action,
                       primary: true,
                       order: i,
@@ -384,7 +392,8 @@ Future<void> showUnifiedCapture(
                                 actionTile(
                                   icon: rankedActions[i].icon,
                                   title: rankedActions[i].title,
-                                  subtitle: rankedActions[i].subtitle,
+                                  subtitle: subtitleFor(
+                          rankedActions[i].action, rankedActions[i].subtitle),
                                   action: rankedActions[i].action,
                                   order: i - 4,
                                 ),
