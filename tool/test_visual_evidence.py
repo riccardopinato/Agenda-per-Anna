@@ -1,6 +1,7 @@
 """Fail-closed screenshot evidence packaging regression tests."""
 import json
 import tempfile
+import zlib
 import unittest
 from pathlib import Path
 from PIL import Image, PngImagePlugin
@@ -59,6 +60,23 @@ class VisualEvidenceContractTest(unittest.TestCase):
             self.validate()
         (self.captures / "unapproved.png").write_bytes(b"invalid")
         with self.assertRaises(ValueError):
+            self.validate()
+
+    def test_extra_subdirectory_blocks(self):
+        (self.captures / "unapproved_subdir").mkdir()
+        with self.assertRaisesRegex(ValueError, "unexpected"):
+            self.validate()
+
+    def test_text_chunk_after_idat_blocks(self):
+        path = self.captures / "screen-0__variant-0.png"
+        raw = path.read_bytes()
+        # Insert a valid tEXt chunk immediately before IEND, after IDAT.
+        chunk = b"tEXt" + b"Comment\x00secret"
+        payload = (len(chunk) - 4).to_bytes(4, "big") + chunk
+        payload += (zlib.crc32(chunk) & 0xffffffff).to_bytes(4, "big")
+        end = raw.rfind(b"IEND") - 4
+        path.write_bytes(raw[:end] + payload + raw[end:])
+        with self.assertRaisesRegex(ValueError, "metadata"):
             self.validate()
 
     def test_mismatched_dimensions_block(self):
