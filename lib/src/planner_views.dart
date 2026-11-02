@@ -669,6 +669,15 @@ class _PlannerScreenState extends State<PlannerScreen> {
                               ],
                             ),
                           ],
+                          if (isToday &&
+                              widget.store.agendaContentFilter !=
+                                  AgendaContentFilter.sharedOnly) ...[
+                            const SizedBox(height: 12),
+                            TodayCatchUpCard(
+                              store: widget.store,
+                              hideDetails: widget.store.preferences.hideHomeDetails,
+                            ),
+                          ],
                           if (isToday && snapshot.journal.mood != null) ...[
                             const SizedBox(height: AnnaDesignTokens.spaceSm),
                             _TodayWellbeingCard(
@@ -721,6 +730,13 @@ class _PlannerScreenState extends State<PlannerScreen> {
                           DailyRitualCard(
                             store: widget.store,
                             date: day,
+                          ),
+                        ],
+                        if (widget.embedded && isToday) ...[
+                          const SizedBox(height: 12),
+                          TodayTomorrowCard(
+                            store: widget.store,
+                            hideDetails: widget.store.preferences.hideHomeDetails,
                           ),
                         ],
                         if (!widget.embedded && snapshot.lifeEntries.isNotEmpty) ...[
@@ -3716,9 +3732,16 @@ Future<void> _showAgendaItemActions(
           ListTile(
             leading: const Icon(Icons.content_copy_outlined),
             title: Text(AnnaStrings.of(context).d3('duplicate')),
-            subtitle: Text(AnnaStrings.of(context).d3('duplicateSameDay')),
+            subtitle: Text(quickWinText(AnnaStrings.of(context), 'duplicateDate')),
             onTap: () => Navigator.pop(context, 'duplicate'),
           ),
+          if (canPostponeTask(item))
+            ListTile(
+              key: const ValueKey('quick-wins-postpone-action'),
+              leading: const Icon(Icons.redo_outlined),
+              title: Text(quickWinText(AnnaStrings.of(context), 'postpone')),
+              onTap: () => Navigator.pop(context, 'postpone'),
+            ),
           if (canPrepareEvent(item))
             ListTile(
               key: const ValueKey<String>('v107-event-preparation-action'),
@@ -3769,8 +3792,10 @@ Future<void> _showAgendaItemActions(
 
   if (action == 'edit' && context.mounted) {
     await openItemEditor(context, store, item.date, existing: item);
-  } else if (action == 'duplicate') {
-    await store.duplicateItem(item);
+  } else if (action == 'duplicate' && context.mounted) {
+    await openItemEditor(context, store, item.date, duplicateOf: item);
+  } else if (action == 'postpone' && context.mounted) {
+    await showPostponeTask(context, store, item);
   } else if (action == 'prepareEvent' && context.mounted) {
     await openEventPreparation(context, store, item);
   } else if (action == 'eventMemory' && context.mounted) {
