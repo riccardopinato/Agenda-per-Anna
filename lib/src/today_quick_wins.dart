@@ -6,12 +6,15 @@ part of '../main.dart';
 /// JSON. Consult that optional serialized flag here so already-merged daily
 /// previews remain fail-closed when the privacy schema is later integrated.
 /// Legacy records lack the field and keep existing behavior.
+bool quickWinPayloadIsSensitive(Map<String, dynamic>? payload) =>
+    payload?['isSensitive'] == true;
+
 bool quickWinItemSensitive(AgendaItem item) =>
-    item.toJson()['isSensitive'] == true;
+    quickWinPayloadIsSensitive(item.toJson());
 
 bool quickWinEntrySensitive(UnifiedAgendaEntry entry) =>
-    (entry.privateItem?.toJson()['isSensitive'] == true) ||
-    (entry.sharedEntry?.toJson()['isSensitive'] == true);
+    quickWinPayloadIsSensitive(entry.privateItem?.toJson()) ||
+    quickWinPayloadIsSensitive(entry.sharedEntry?.toJson());
 
 DateTime quickWinTomorrow(DateTime now) =>
     DateTime(now.year, now.month, now.day + 1);
