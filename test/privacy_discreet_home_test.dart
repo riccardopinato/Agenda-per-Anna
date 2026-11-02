@@ -143,13 +143,55 @@ void main() {
   test('sensitive exports demand PIN and explicit unencrypted-file consent', () {
     final backup = File('lib/src/screens/backup_settings.dart').readAsStringSync();
     final translations = File('lib/src/localization_d3.dart').readAsStringSync();
-    expect(backup, contains('widget.store.items.any((item) => item.isSensitive)'));
+    expect(backup, contains('hasSensitiveLocalExportData(widget.store)'));
+    expect(backup, contains('widget.store.activeAccountId == accountAtStart'));
+    expect(backup, contains('widget.store.entryScopeReady'));
     expect(backup, contains('requestSensitiveItemAccess(context, widget.store)'));
     expect(backup.split('if (!await _confirmSensitiveExport() || !mounted) return;').length - 1,
         3);
     expect(translations, contains('privacy_exportWarningTitle'));
     expect(translations, contains('privacy_exportWarningBody'));
     expect(translations, contains('privacy_exportContinue'));
+  });
+
+  test('sensitive trash is not omitted from the export PIN gate', () {
+    final store = AgendaStore();
+    final sensitive = TrashEntry(
+      id: 'deleted-sensitive',
+      kind: TrashEntityKind.item,
+      entityId: 'private-1',
+      title: 'Do not disclose',
+      deletedAt: DateTime(2026, 11, 2),
+      payload: privateEvent(isSensitive: true).toJson(),
+    );
+    final legacy = TrashEntry(
+      id: 'deleted-legacy',
+      kind: TrashEntityKind.item,
+      entityId: 'other',
+      title: 'Ordinary event',
+      deletedAt: DateTime(2026, 11, 2),
+      payload: privateEvent().toJson(),
+    );
+    expect(isSensitiveTrashEntry(sensitive), isTrue);
+    expect(isSensitiveTrashEntry(legacy), isFalse);
+    expect(hasSensitiveLocalExportData(store), isFalse);
+    store.trash.add(sensitive);
+    expect(hasSensitiveLocalExportData(store), isTrue);
+    store.trash.clear();
+    store.trash.add(legacy);
+    expect(hasSensitiveLocalExportData(store), isFalse);
+    store.items.add(privateEvent(isSensitive: true));
+    expect(hasSensitiveLocalExportData(store), isTrue);
+    store.dispose();
+  });
+
+  test('trash UI does not reveal sensitive titles or offer an unguarded restore', () {
+    final trashScreen = File('lib/src/screens/trash_screen.dart').readAsStringSync();
+    expect(trashScreen, contains('if (isSensitiveTrashEntry(entry)) {'));
+    expect(trashScreen, contains("strings.d3('privacy_sensitive')"));
+    expect(trashScreen, contains('store.trash.any(isSensitiveTrashEntry)'));
+    expect(trashScreen.split(
+      '!await requestSensitiveItemAccess(context, store)').length - 1, 3);
   });
 
   test('filter label is Personale, not a security claim', () {
