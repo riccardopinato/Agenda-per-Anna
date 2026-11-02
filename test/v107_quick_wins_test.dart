@@ -3,6 +3,26 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
+  test('agenda source filters use concise localized labels, not privacy claims', () {
+    expect(AgendaContentFilter.all.icon, Icons.layers_outlined);
+    expect(AgendaContentFilter.privateOnly.icon, Icons.person_outline);
+    expect(AgendaContentFilter.sharedOnly.icon, Icons.people_outline);
+    final expected = <String, List<String>>{
+      'en': ['All', 'Personal', 'Shared'],
+      'it': ['Tutto', 'Personale', 'Condiviso'],
+      'es': ['Todo', 'Personal', 'Compartido'],
+      'fr': ['Tout', 'Personnel', 'Partagé'],
+      'pt': ['Tudo', 'Pessoal', 'Partilhado'],
+    };
+    for (final entry in expected.entries) {
+      final strings = AnnaStrings(entry.key);
+      expect(
+        AgendaContentFilter.values.map((f) => f.localizedLabel(strings)).toList(),
+        entry.value,
+      );
+    }
+  });
+
   test('shared agenda filter uses people, never the heart icon', () {
     expect(AgendaContentFilter.sharedOnly.icon, Icons.people_outline);
     expect(AgendaContentFilter.all.icon, Icons.layers_outlined);

@@ -7,7 +7,7 @@ extension AgendaContentFilterUi on AgendaContentFilter {
 
   IconData get icon => switch (this) {
         AgendaContentFilter.all => Icons.layers_outlined,
-        AgendaContentFilter.privateOnly => Icons.lock_outline,
+        AgendaContentFilter.privateOnly => Icons.person_outline,
         AgendaContentFilter.sharedOnly => Icons.people_outline,
       };
 }
