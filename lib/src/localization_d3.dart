@@ -528,6 +528,8 @@ const Map<String, Map<String, String>> _d3Catalog = {
   "editor_duplicate": <String, String>{"en": "Duplicate", "it": "Duplica", "es": "Duplicar", "fr": "Dupliquer", "pt": "Duplicar"},
   "editor_monthClosing": <String, String>{"en": "Month closing", "it": "Chiusura del mese", "es": "Cierre del mes", "fr": "Clôture du mois", "pt": "Fecho do mês"},
   "unified_all": <String, String>{"en": "All", "it": "Tutto", "es": "Todo", "fr": "Tout", "pt": "Tudo"},
+  "privacy_personalFilter": <String, String>{"en": "Personal", "it": "Personale", "es": "Personal", "fr": "Personnel", "pt": "Pessoal"},
+  "privacy_sharedFilter": <String, String>{"en": "Shared", "it": "Condiviso", "es": "Compartido", "fr": "Partagé", "pt": "Partilhado"},
   "unified_private": <String, String>{"en": "Private", "it": "Privato", "es": "Privado", "fr": "Privé", "pt": "Privado"},
   "unified_externalHidden": <String, String>{"en": "External event hidden", "it": "Evento esterno nascosto", "es": "Evento externo oculto", "fr": "Événement externe masqué", "pt": "Evento externo oculto"},
   "unified_readOnly": <String, String>{"en": "Read-only", "it": "Sola lettura", "es": "Solo lectura", "fr": "Lecture seule", "pt": "Só de leitura"},
@@ -1029,8 +1031,8 @@ extension AnnaD3Strings on AnnaStrings {
 
   String unifiedFilterLabel(AgendaContentFilter value) => switch (value) {
         AgendaContentFilter.all => d3('unified_all'),
-        AgendaContentFilter.privateOnly => d3('unified_private'),
-        AgendaContentFilter.sharedOnly => d3('sharedSpace'),
+        AgendaContentFilter.privateOnly => d3('privacy_personalFilter'),
+        AgendaContentFilter.sharedOnly => d3('privacy_sharedFilter'),
       };
 
   String editorExpenseCategoryLabel(String value) => switch (value) {
