@@ -695,6 +695,45 @@ class _InboxScreenState extends State<InboxScreen> {
     );
   }
 
+  Future<void> _convertToAppointment(
+    BuildContext context,
+    InboxEntry entry,
+  ) async {
+    // The draft uses the canonical editor but cannot modify an existing
+    // appointment. Cancellation leaves the Inbox record untouched.
+    final accountAtOpen = store.activeAccountId;
+    final draft = AgendaItem(
+      id: const Uuid().v4(),
+      title: entry.text,
+      note: '',
+      date: DateTime.now(),
+      type: ItemType.appointment,
+      category: store.preferences.defaultCategory,
+    );
+    await openItemEditor(
+      context,
+      store,
+      draft.date,
+      duplicateOf: draft,
+      onSaved: (saved) async {
+        if (store.activeAccountId != accountAtOpen ||
+            !store.entryScopeReady) return;
+        final unchangedInbox = store.activeInboxEntries.any(
+          (candidate) =>
+              candidate.id == entry.id && candidate.text == entry.text,
+        );
+        if (!unchangedInbox) return;
+        try {
+          await store.deleteInboxEntry(entry.id);
+        } catch (_) {
+          // The appointment is already committed. Keep the Inbox source
+          // instead of pretending conversion was atomic or deleting data.
+          return;
+        }
+      },
+    );
+  }
+
   Future<void> _editTags(
     BuildContext context,
     InboxEntry entry,
@@ -1020,6 +1059,8 @@ class _InboxScreenState extends State<InboxScreen> {
                               await _copyToNotes(context, entry);
                             } else if (value == 'task') {
                               await _convertToTask(context, entry);
+                            } else if (value == 'event') {
+                              await _convertToAppointment(context, entry);
                             } else if (value == 'delete') {
                               await store.deleteInboxEntry(entry.id);
                             }
