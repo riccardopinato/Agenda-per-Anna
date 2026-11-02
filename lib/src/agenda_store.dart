@@ -1613,6 +1613,8 @@ class AgendaStore extends ChangeNotifier {
       return;
     }
 
+    // The launcher retains preview text outside the app's privacy gate.
+    await HomeWidgetBridge.instance.clear();
     await _compactActiveEntityDeltas(prefs);
 
     final profiles = _readAccountProfiles(prefs);
@@ -1653,6 +1655,7 @@ class AgendaStore extends ChangeNotifier {
     _accountScopeResolved = true;
     _notifyShellChanged();
     _notifyAllDataChanged();
+    await HomeWidgetBridge.instance.sync(this);
   }
 
   Future<void> continueWithoutAccount() async {
@@ -1682,6 +1685,7 @@ class AgendaStore extends ChangeNotifier {
     // reminders are reconciled again after the switch, so reminders belonging
     // to the erased account cannot survive on the device.
     if (_activeAccountId == ownerId) {
+      await HomeWidgetBridge.instance.clear();
       await NotificationService.instance.cancelAll();
     }
 
@@ -1745,6 +1749,7 @@ class AgendaStore extends ChangeNotifier {
     }
     _notifyShellChanged();
     _notifyAllDataChanged();
+    await HomeWidgetBridge.instance.sync(this);
   }
 
   void _bindPendingOperationsTo(String ownerId) {
