@@ -158,6 +158,7 @@ void main() {
   test('future letter canonical save and list', () async {
     final store = AgendaStore();
     await store.load();
+    await store.continueWithoutAccount();
     final day = DateTime.now().add(const Duration(days: 30));
     expect(await savePersonalFutureLetter(store, day, 'A future note',
       accountAtOpen: store.activeAccountId), isTrue);
@@ -166,6 +167,7 @@ void main() {
   test('future letter survives reload and uses Trash for cancellation', () async {
     final store = AgendaStore();
     await store.load();
+    await store.continueWithoutAccount();
     final now = DateTime.now();
     final day = DateTime(now.year, now.month, now.day + 30);
     await savePersonalFutureLetter(store, day, 'Remember this',
