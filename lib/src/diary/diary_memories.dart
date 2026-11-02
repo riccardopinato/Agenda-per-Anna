@@ -2254,3 +2254,11 @@ Future<bool> savePersonalFutureLetter(
   );
   return true;
 }
+
+String futureLetterTitle(AnnaStrings s) => switch (s.languageCode) {
+  'it' => 'Lettere al me futuro',
+  'es' => 'Cartas a mi yo futuro',
+  'fr' => 'Lettres à mon futur moi',
+  'pt' => 'Cartas ao meu eu futuro',
+  _ => 'Letters to future me',
+};
