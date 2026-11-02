@@ -1089,6 +1089,11 @@ class _InboxScreenState extends State<InboxScreen> {
                               child: Text(strings.convertToTask),
                             ),
                             PopupMenuItem(
+                              value: 'event',
+                              child: Text(quickWins2Copy(
+                                  strings.languageCode, 'inboxEvent')),
+                            ),
+                            PopupMenuItem(
                               value: 'delete',
                               child: Text(strings.delete),
                             ),
