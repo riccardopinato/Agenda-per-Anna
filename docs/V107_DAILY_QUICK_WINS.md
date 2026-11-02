@@ -24,5 +24,5 @@ Validation: `test/v107_quick_wins_test.dart` covers date boundaries,
 overdue exclusions, recurring safety, interval edges, overnight cases and
 localization in EN/IT/ES/FR/PT.
 
-Status: source PR pending exact-head Development/Web/AppLab gates.
+Status: source PR #206 MERGED on main d67c64e2; exact-head Development/Web/AppLab gates PASS. Build +120 prepared; APK and physical QA NOT VERIFIED.
 Android signed APK, install, physical QA and visual acceptance: NOT VERIFIED.
