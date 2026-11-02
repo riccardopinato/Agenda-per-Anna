@@ -34,10 +34,33 @@ class HomeWidgetBridge {
     }
   }
 
+  Future<void> clear() async {
+    if (!supported) return;
+    try {
+      await _channel.invokeMethod<void>('clearWidget');
+    } catch (_) {
+      // Widget failure must not block an account transition.
+    }
+  }
+
+  static String visibleDetail({
+    required bool hidden,
+    required bool sensitive,
+    required String fallback,
+    required String detail,
+  }) => hidden || sensitive ? fallback : detail;
+
   Future<void> sync(AgendaStore store) async {
     if (!supported) return;
 
+    if (!store.entryScopeReady) {
+      await clear();
+      return;
+    }
+    final accountAtStart = store.activeAccountId;
     final strings = AnnaStrings.forPreference(store.preferences.appLanguage);
+    final hidden = store.preferences.hideHomeDetails;
+    final protectedText = strings.v100HomeProtected;
     final locale = strings.languageCode;
     final now = DateTime.now();
     final upcoming = store.unifiedUpcoming(now);
@@ -52,16 +75,29 @@ class HomeWidgetBridge {
           ? strings.d3('widget_today')
           : DateFormat('EEE d MMM', locale).format(date);
       final time = next.start == null ? '' : ' · ${formatTime(next.start!)}';
-      nextText = '$day$time · ${next.title}';
+      nextText = visibleDetail(
+        hidden: hidden,
+        sensitive: quickWinEntrySensitive(next),
+        fallback: protectedText,
+        detail: '$day$time · ${next.title}',
+      );
     }
 
     String birthdayText = strings.d3('widget_noBirthday');
     if (birthday != null) {
       final date = birthday.date;
-      birthdayText =
-          '${birthday.birthday.name} · ${DateFormat('d MMM', locale).format(date)}';
+      birthdayText = visibleDetail(
+        hidden: hidden,
+        sensitive: false,
+        fallback: protectedText,
+        detail: '${birthday.birthday.name} · ${DateFormat('d MMM', locale).format(date)}',
+      );
     }
 
+    if (!store.entryScopeReady || store.activeAccountId != accountAtStart) {
+      await clear();
+      return;
+    }
     try {
       await _channel.invokeMethod<void>('updateWidget', {
         'title': "Anna's Diary",
