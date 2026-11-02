@@ -121,7 +121,7 @@ void main() {
       from: now,
       visibleForDay: (date) => [
         UnifiedAgendaEntry.private(AgendaItem(
-          id: 'busy-${date.day}', title: 'Existing appointment',
+          id: 'busy-${date.day}', title: 'Existing appointment', note: '',
           date: date, type: ItemType.appointment,
           start: const TimeOfDay(hour: 9, minute: 0),
           end: const TimeOfDay(hour: 10, minute: 0),
@@ -141,7 +141,7 @@ void main() {
       from: from,
       visibleForDay: (day) => [
         UnifiedAgendaEntry.private(AgendaItem(
-          id: 'all-${day.day}', title: 'All day',
+          id: 'all-${day.day}', title: 'All day', note: '',
           date: day, type: ItemType.appointment,
         )),
       ],
