@@ -24,5 +24,12 @@ Validation: `test/v107_quick_wins_test.dart` covers date boundaries,
 overdue exclusions, recurring safety, interval edges, overnight cases and
 localization in EN/IT/ES/FR/PT.
 
-Status: source PR #206 MERGED on main d67c64e2; exact-head Development/Web/AppLab gates PASS. Build +120 prepared; APK and physical QA NOT VERIFIED.
-Android signed APK, install, physical QA and visual acceptance: NOT VERIFIED.
+Status: source PR #206 MERGED on main d67c64e2; exact-head
+Development/Web/AppLab gates PASS. Signed ARM64 APK +120 was produced
+from main fb476545, workflow #41367895694, artifact 13107988055.
+The user explicitly accepted general Android QA on 2 November 2026:
+USER_ATTESTED_GENERAL_PASS, not per-scenario physical certification.
+Specialist data recovery, cross-device, biometric, notification,
+visual and Play verification remain NOT VERIFIED where evidence is missing.
+Quick-win sensitive-preview compatibility later merged in PR #209 and
+is therefore NOT present in the earlier +120 APK.
