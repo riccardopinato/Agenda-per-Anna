@@ -2,18 +2,29 @@
 
 **Stato 03/11/2026:** PR #199 DRAFT, nessun OAuth Calendar eseguito. Non modificare account Google né condividere segreti in chat/GitHub. App in main: `1.0.0-rc.6+121`, senza modulo API diretto.
 
-## Passaggio 1/6 — Google Cloud (tu)
+## Passaggio 1/6 — Google Cloud (TEST CONFIGURATO IL 03/11/2026)
 
-Il progetto Supabase già esistente è `agenda-per-anna`, reference `pxsxlorntswypdbeerzw` (verificato attivo in sola lettura; NON equivale alla verifica di Google Cloud).
+Il proprietario ha identificato il client login di Anna nel progetto Google Cloud
+`My Maps Project` (ID `versatile-being-499917-p0`). La produzione rimane
+inalterata: OAuth Google esistente e Supabase `agenda-per-anna` ref
+`pxsxlorntswypdbeerzw` non sono stati riconfigurati.
 
-1. Apri [Google Cloud Console — API Library](https://console.cloud.google.com/apis/library) e **seleziona il progetto Google OAuth effettivamente collegato a Supabase**, non un progetto scelto per somiglianza di nome.
-2. Cerca **Google Calendar API** e abilitala se non è già attiva. Segna soltanto lo stato `ABILITATA / NON ABILITATA`, senza inviare chiavi.
-3. Vai in **Google Auth Platform → Branding / Audience / Data Access**. Conferma nome Anna’s Diary, indirizzi di supporto, tipo pubblico e stato test; aggiungi i test account autorizzati se Audience è External/Testing.
-4. In **Data Access** configura gli scope minimi `https://www.googleapis.com/auth/calendar.events.owned` e `https://www.googleapis.com/auth/calendar.calendarlist.readonly`, distinti dal login `openid email profile`. **Non chiedere `calendar` o `calendar.events` generale** per questa V1. Gli scope sono per contenuti di calendari di proprietà, non calendari condivisi sui quali sei solo writer.
-5. Controlla il **client OAuth Web esistente**: il redirect verso Supabase documentato è `https://pxsxlorntswypdbeerzw.supabase.co/auth/v1/callback`. Non creare o incollare un nuovo client secret in questa chat; Google client secret resta su Google/Supabase.
-6. Controlla in Supabase Auth la *Google provider configuration* già esistente e gli allowed redirect `https://riccardopinato.github.io/Agenda-per-Anna/` e `io.supabase.annasdiary://login-callback/`. Non modificare ora la configurazione di produzione senza test di regressione login.
+Per Google Calendar è stato creato un progetto separato `Anna Diary Calendar Test`
+(ID previsto `anna-diary-calendar-test`). Dalle schermate Google Cloud:
+- Calendar API attiva nel progetto test;
+- app External / Testing;
+- scope `calendar.events.owned` e `calendar.calendarlist.readonly` inseriti;
+- client Web `Anna's Diary Calendar STAGING` creato;
+- due utenti tester (proprietario e Anna) confermati;
+- Client Secret conservato solo dal proprietario.
 
-**Importante:** lo stato External/Testing può comportare refresh token di prova validi soltanto 7 giorni per scope Calendar. Per utenti pubblici possono servire verifica Google, privacy policy e materiale di verifica aggiuntivo. Non promettere che il collegamento rimarrà attivo indefinitamente in modalità Testing.
+Non è registrato alcun URI di reindirizzamento. **NON** inserire la
+callback Supabase di produzione. Serve prima un endpoint HTTPS staging
+effettivamente distribuito per lo scambio codice/PKCE lato server.
+Vedi [progetto OAuth staging](OAUTH_STAGING_DESIGN.md).
+
+Queste prove non attestano consenso reale, token emessi, accesso ai calendari
+o autorizzazione alla scrittura. Google login standard rimane separato.
 
 ## Passaggio 2/6 — OAuth separato (assistente, non attivato)
 
