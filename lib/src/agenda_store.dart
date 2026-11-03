@@ -5393,11 +5393,212 @@ class AgendaStore extends ChangeNotifier {
     );
   }
 
+  // In-memory attempt throttle for app PIN and sensitive record challenges.
+  // This is NOT persistent anti-bruteforce or Keystore-backed verification.
+  String? _lastPinVerifier;
+  int _pinFailureCount = 0;
+  DateTime? _pinBlockedUntil;
+
+  bool get pinTemporarilyBlocked =>
+      _pinBlockedUntil?.isAfter(DateTime.now()) ?? false;
+
   bool verifyPin(String pin) {
     final salt = preferences.pinSalt;
     final expected = preferences.pinHash;
     if (salt == null || expected == null) return false;
-    return _derivePinHash(pin.trim(), salt) == expected;
+    if (_lastPinVerifier != expected) {
+      _lastPinVerifier = expected;
+      _pinFailureCount = 0;
+      _pinBlockedUntil = null;
+    }
+    final now = DateTime.now();
+    if (_pinBlockedUntil?.isAfter(now) ?? false) return false;
+    if (_pinBlockedUntil != null) {
+      _pinBlockedUntil = null;
+      _pinFailureCount = 0;
+    }
+
+    var matches = false;
+    final normalized = pin.trim();
+    if (RegExp(r'^\d{4,8}
+
+  Future<void> savePreferences(AgendaPreferences value) async {
+    preferences = value;
+    NotificationService.instance.configureLocalization(
+      notificationLocalizationForPreference(preferences.appLanguage),
+    );
+    unawaited(HomeWidgetBridge.instance.sync(this));
+
+    // Preferences drive shell-level navigation (including onboarding and the
+    // preferred start surface). Publish the in-memory state immediately so UI
+    // transitions never wait for local persistence or cloud queue work.
+    _notifyShellChanged();
+    _notifySettingsChanged();
+
+    final prefs = await _localState();
+    if (!_unreadableStorageKeys.contains(_preferencesKey)) {
+      await prefs.setString(
+        _preferencesKey,
+        jsonEncode(preferences.toJson()),
+      );
+    }
+    await prefs.setString(
+      _privacyGuardKey,
+      jsonEncode(_privacyGuardPayload()),
+    );
+    await _queuePreferencesSync();
+  }
+
+  Future<void> resetPreferences() async {
+    await savePreferences(const AgendaPreferences());
+    await WeeklyReviewReminders.reconcile(this);
+  }
+
+  Future<void> applyPersonalizationPreset(
+    PersonalizationPreset preset,
+  ) async {
+    await savePreferences(
+      preferences.applyPersonalizationPreset(preset),
+    );
+  }
+
+  Future<void> setModuleEnabled(
+    AppModule module,
+    bool enabled,
+  ) async {
+    await savePreferences(
+      preferences.withModuleEnabled(module, enabled),
+    );
+  }
+
+  Future<void> addHabit(String name) async {
+    final value = name.trim();
+    if (value.isEmpty) return;
+    final habit = HabitDefinition(
+      id: const Uuid().v4(),
+      name: value,
+    );
+    habits.add(habit);
+    await _persistEntityMutation(
+      type: 'habit',
+      id: habit.id,
+      payload: habit.toJson(),
+    );
+    _notifyPlanningChanged();
+  }
+
+  Future<void> removeHabit(String id) async {
+    await moveHabitToTrash(id);
+  }
+
+  Future<void> toggleHabit(DateTime date, String habitId) async {
+    final current = journal(date);
+    final completed = [...current.completedHabitIds];
+    if (completed.contains(habitId)) {
+      completed.remove(habitId);
+    } else {
+      completed.add(habitId);
+    }
+    final key = dateKey(date);
+    final updated = current.copyWith(completedHabitIds: completed);
+    journals[key] = updated;
+    await _persistEntityMutation(
+      type: 'journal',
+      id: key,
+      payload: updated.toLocalJson(),
+    );
+    _notifyJournalChanged();
+  }
+
+  MonthlyData month(int year, int month) => months[monthKey(year, month)] ?? const MonthlyData();
+
+  Future<void> saveMonth(int year, int month, MonthlyData value) async {
+    final key = monthKey(year, month);
+    months[key] = value;
+    await _persistEntityMutation(
+      type: 'month',
+      id: key,
+      payload: value.toJson(),
+    );
+    _notifyPlanningChanged();
+  }
+
+  WeekData week(DateTime anyDay) {
+    final monday = mondayOf(anyDay);
+    return weeks[dateKey(monday)] ?? const WeekData();
+  }
+
+  Future<void> saveWeek(DateTime anyDay, WeekData value) async {
+    final monday = mondayOf(anyDay);
+    final key = dateKey(monday);
+    weeks[key] = value;
+    await _persistEntityMutation(
+      type: 'week',
+      id: key,
+      payload: value.toJson(),
+    );
+    _notifyPlanningChanged();
+  }
+
+  static bool sameDay(DateTime a, DateTime b) =>
+      a.year == b.year && a.month == b.month && a.day == b.day;
+
+  static String dateKey(DateTime d) =>
+      '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
+
+  static String monthKey(int y, int m) => '$y-${m.toString().padLeft(2, '0')}';
+
+  @override
+  void dispose() {
+    _mediaMaintenanceTimer?.cancel();
+    _cloudSyncTimer?.cancel();
+    _syncDebounceTimer?.cancel();
+    _unifiedRealtimeDebounce?.cancel();
+    _deferredCloudSyncTimer?.cancel();
+    for (final timer in _sharedNotificationFallbackTimers.values) {
+      timer.cancel();
+    }
+    _sharedNotificationFallbackTimers.clear();
+    for (final spaceId in _unifiedRealtimeSpaceIds.toList()) {
+      unawaited(
+        CloudSyncService.instance.unsubscribeSharedSpace(
+          spaceId: spaceId,
+          listenerKey: 'unified-agenda',
+        ),
+      );
+    }
+    _unifiedRealtimeSpaceIds.clear();
+    shellRevision.dispose();
+    syncRevision.dispose();
+    signals.dispose();
+    super.dispose();
+  }
+}
+).hasMatch(normalized)) {
+      try {
+        final actual = _derivePinHash(normalized, salt).codeUnits;
+        final stored = expected.codeUnits;
+        if (actual.length == stored.length) {
+          var difference = 0;
+          for (var i = 0; i < stored.length; i++) {
+            difference |= actual[i] ^ stored[i];
+          }
+          matches = difference == 0;
+        }
+      } catch (_) {
+        // Invalid verifier material fails closed.
+      }
+    }
+    if (matches) {
+      _pinFailureCount = 0;
+      return true;
+    }
+    _pinFailureCount++;
+    if (_pinFailureCount >= 5) {
+      _pinBlockedUntil = now.add(const Duration(seconds: 60));
+      _pinFailureCount = 0;
+    }
+    return false;
   }
 
   Future<void> savePreferences(AgendaPreferences value) async {
