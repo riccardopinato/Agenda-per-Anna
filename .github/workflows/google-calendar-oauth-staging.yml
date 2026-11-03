@@ -4,6 +4,7 @@ on:
   pull_request:
     paths:
       - 'staging/google_calendar_direct/backend/**'
+      - 'staging/google_calendar_direct/supabase/**'
       - '.github/workflows/google-calendar-oauth-staging.yml'
   workflow_dispatch:
 
@@ -26,3 +27,8 @@ jobs:
         run: node --check staging/google_calendar_direct/backend/oauth_broker.mjs
       - name: Execute mocked OAuth security tests
         run: node --test staging/google_calendar_direct/backend/oauth_broker.test.mjs
+
+      - name: Check Deno WebCrypto portable module syntax
+        run: node --check staging/google_calendar_direct/supabase/functions/gcal-oauth-callback/webcrypto_core.mjs
+      - name: Execute mocked Deno WebCrypto OAuth tests
+        run: node --test staging/google_calendar_direct/supabase/functions/gcal-oauth-callback/webcrypto_core.test.mjs
