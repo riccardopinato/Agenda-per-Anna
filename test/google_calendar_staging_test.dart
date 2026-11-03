@@ -362,6 +362,56 @@ void main() {
       isNot(contains('Very private')));
   });
 
+  test('readiness requires authorized Google account, owner and privacy', () {
+    List<GcalActivationBlocker> gaps(GcalActivationReview review) =>
+        review.blockersFor(
+          currentAppAccountId: 'supabase-account-1',
+          targetCalendarId: targetCalendar,
+        );
+    expect(gaps(readyActivation()), isEmpty);
+    expect(gaps(readyActivation(confirmedGoogleSubject: 'other-user')),
+        contains(GcalActivationBlocker.googleIdentity));
+    expect(gaps(readyActivation(appAccountId: 'other-account')),
+        contains(GcalActivationBlocker.accountMismatch));
+    expect(gaps(readyActivation(calendarOwnerVerified: false)),
+        contains(GcalActivationBlocker.destinationOwnership));
+    expect(gaps(readyActivation(secureTokenLifecycleVerified: false)),
+        contains(GcalActivationBlocker.secureTokenLifecycle));
+    expect(gaps(readyActivation(requiredScopesGranted: false)),
+        contains(GcalActivationBlocker.googleScopes));
+    expect(gaps(readyActivation(privacyExportReviewed: false)),
+        contains(GcalActivationBlocker.privacyExportReview));
+    expect(gaps(readyActivation(androidB3Disabled: false)),
+        contains(GcalActivationBlocker.androidWriterStillEnabled));
+    expect(gaps(readyActivation(historicalAndroidExportsReviewed: false)),
+        contains(GcalActivationBlocker.historicalExportReview));
+    expect(gaps(readyActivation(exportPreviewConfirmed: false)),
+        contains(GcalActivationBlocker.explicitPreviewConsent));
+    expect(gaps(readyActivation(calendarApiEnabled: false)),
+        contains(GcalActivationBlocker.cloudConfiguration));
+  });
+
+  test('missing secure OAuth readiness never calls Calendar API', () async {
+    final http = FakeCalendarHttp();
+    final writer = GcalStagedWriter(
+      transport: http, tokens: FakeProviderToken(),
+      links: FakeLinkStore(),
+    );
+    await expectLater(writeSample(writer,
+        activation: readyActivation(secureTokenLifecycleVerified: false)),
+      throwsA(isA<GcalFault>().having(
+        (x) => x.kind, 'kind', GcalFaultKind.activationIncomplete)));
+    await expectLater(writeSample(writer,
+        activation: readyActivation(confirmedGoogleSubject: 'other-google')),
+      throwsA(isA<GcalFault>().having(
+        (x) => x.kind, 'kind', GcalFaultKind.activationIncomplete)));
+    await expectLater(writeSample(writer,
+        activation: readyActivation(selectedOwnedCalendarId: 'wrong-id')),
+      throwsA(isA<GcalFault>().having(
+        (x) => x.kind, 'kind', GcalFaultKind.activationIncomplete)));
+    expect(http.gets + http.posts + http.patches + http.listCalls, 0);
+  });
+
   test('staging cannot run in main without new integration work', () {
     // A branch with an isolated module is not a deployed integration:
     // the production imports/routes and pubspec must be modified later.
