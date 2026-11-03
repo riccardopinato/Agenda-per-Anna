@@ -70,7 +70,11 @@ List<AgendaItem> upcomingPreparationItems(AgendaStore store, DateTime now) {
       .where((item) =>
           canPrepareEvent(item) &&
           !item.date.isBefore(today) &&
-          item.date.isBefore(cutoff))
+          item.date.isBefore(cutoff) &&
+          (item.start == null ||
+              item.date.isAfter(today) ||
+              item.start!.hour * 60 + item.start!.minute >=
+                  now.hour * 60 + now.minute))
       .toList(growable: false)
     ..sort((a, b) {
       final day = a.date.compareTo(b.date);
@@ -170,11 +174,21 @@ class RealisticDayCard extends StatelessWidget {
         );
     final advice = RealisticDayAdvisor.evaluate(
       day: day,
-      visibleEntries: visibleEntriesForCalendarFreeSlots(
-        store,
-        day,
-        externalReady: externalReady,
-      ),
+      visibleEntries: [
+        ...visibleEntriesForCalendarFreeSlots(
+          store,
+          day,
+          externalReady: externalReady,
+        ),
+        // Coverage can be partial while Today already has authorized
+        // current-day external events. Preserve those observed busy hours;
+        // do not claim the unseen adjacent days are empty.
+        if (!externalReady &&
+            store.agendaContentFilter == AgendaContentFilter.all &&
+            external.enabled &&
+            external.permissionGranted)
+          ...snapshot.agenda.where((entry) => entry.isExternal),
+      ],
       pendingTasks: snapshot.pendingTaskCount,
       now: now,
     );
