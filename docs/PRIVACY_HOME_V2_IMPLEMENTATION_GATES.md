@@ -8,7 +8,7 @@
 - **Anteprima riservata:** un attributo ortogonale `isSensitive` sia su `AgendaItem` sia su `SharedEntry`. I due partecipanti possono considerare riservato anche un elemento condiviso.
 - **Home discreta:** preferenza esclusivamente locale `homeDiscreetMode`, inizializzata a `true` quando manca il campo anche nelle configurazioni precedenti. L'impostazione non e' sincronizzata via cloud e non sostituisce l'autenticazione dell'app.
 
-## Implementazione sorgente (PR #200)
+## Implementazione sorgente (storica #200, riconciliata nella Draft #215)
 
 - Filtro `AgendaContentFilter.privateOnly` invariato per compatibilità con cache, UI etichettata **Personale**. Stesso schema lingue EN/IT/ES/FR/PT.
 - Campi `isSensitive` nei payload locali/sincronizzati e nei `copyWith`, `fromJson` legacy `false`: nessuna cancellazione dei dati preesistenti, nessuna migrazione distruttiva.
@@ -53,4 +53,13 @@
 - Con PIN non configurato, l'app deve spiegare perché non puo' rendere sensibile un nuovo elemento; con PIN attivo deve richiedere una verifica per l'apertura.
 - Riavvio, aggiornamento versione e account switch non cancellano gli elementi o i flag.
 
-Questa PR non deve essere confusa con un gate di sicurezza completato. L'APK 1.0.0-rc.6+117 resta la release valida sino ad apposita promozione.
+Questa PR non deve essere confusa con un gate di sicurezza completato. Anna's Diary `main` ora include l'APK firmato `1.0.0-rc.6+121`, che **NON include Privacy V2**. La Draft #215 non produce APK né una release autorizzata; il merge richiederà approvazione specifica e test fisici.
+
+## Stato riconciliazione 03/11/2026 — NON MERGERE
+
+- Base source del ramo: `main@cb477cbecc85c1b1c415c60fd69bbd128fb82904` (+121); HEAD Privacy da validare tramite exact-head CI.
+- Il codice widget +121 (clear cache su account switch, `hideHomeDetails`) e `homeDiscreetMode` devono restare entrambi funzionanti.
+- Il flag riservato arriva alla coda media locale e all'upsert condiviso, ma la sostituzione delle foto già riservate resta disabilitata; blocco di sicurezza multi-device aperto.
+- PIN: limitazione di tentativi nella sessione e confronto senza uscita anticipata; non è anti-bruteforce persistente/Keystore.
+- [Matrice dei percorsi di esposizione, evidenze e prove fisiche](PRIVACY215_SOURCE_ROUTE_MATRIX_2026_11_03.md).
+- **Decisione proprietario:** consentite solo riconciliazione, correzioni sorgente e test automatici. PR OPEN + DRAFT, niente merge, auto-merge, release, Play, certificazione senza successiva autorizzazione.
