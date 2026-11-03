@@ -22,6 +22,7 @@ abstract final class RealisticDayAdvisor {
     required DateTime day,
     required Iterable<UnifiedAgendaEntry> visibleEntries,
     required int pendingTasks,
+    DateTime? now,
   }) {
     final slots = findCalendarFreeSlots(
       day: day,
@@ -30,11 +31,20 @@ abstract final class RealisticDayAdvisor {
       endHour: 21,
       minimumMinutes: 1,
     );
-    final minutes = slots.fold<int>(
+    final effectiveSlots = now == null
+        ? slots
+        : slots
+            .where((slot) => slot.end.isAfter(now))
+            .map((slot) => CalendarFreeSlot(
+                  slot.start.isBefore(now) ? now : slot.start,
+                  slot.end,
+                ))
+            .toList(growable: false);
+    final minutes = effectiveSlots.fold<int>(
       0,
       (sum, slot) => sum + slot.duration.inMinutes,
     );
-    final candidate = slots.where(
+    final candidate = effectiveSlots.where(
       (slot) => slot.duration.inMinutes >= 30,
     );
     return RealisticDayAdvice(
@@ -46,6 +56,39 @@ abstract final class RealisticDayAdvisor {
           : 'VISIBLE_WINDOW_CAPACITY',
     );
   }
+}
+
+/// Preparation candidates are private events by civil date, not only timed
+/// entries. No shared/private-scope promotion or implicit changes.
+List<AgendaItem> upcomingPreparationItems(AgendaStore store, DateTime now) {
+  if (store.agendaContentFilter == AgendaContentFilter.sharedOnly) {
+    return const [];
+  }
+  final today = DateTime(now.year, now.month, now.day);
+  final cutoff = DateTime(today.year, today.month, today.day + 3);
+  final result = store.items
+      .where((item) =>
+          canPrepareEvent(item) &&
+          !item.date.isBefore(today) &&
+          item.date.isBefore(cutoff) &&
+          (item.start == null ||
+              item.date.isAfter(today) ||
+              item.start!.hour * 60 + item.start!.minute >=
+                  now.hour * 60 + now.minute))
+      .toList(growable: false)
+    ..sort((a, b) {
+      final day = a.date.compareTo(b.date);
+      if (day != 0) return day;
+      final aMinutes = a.start == null
+          ? 0
+          : a.start!.hour * 60 + a.start!.minute;
+      final bMinutes = b.start == null
+          ? 0
+          : b.start!.hour * 60 + b.start!.minute;
+      final clock = aMinutes.compareTo(bMinutes);
+      return clock != 0 ? clock : a.id.compareTo(b.id);
+    });
+  return List.unmodifiable(result);
 }
 
 class RealisticDayCard extends StatelessWidget {
@@ -119,26 +162,38 @@ class RealisticDayCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    if (hideDetails) return const SizedBox.shrink();
     final strings = AnnaStrings.of(context);
-    final advice = RealisticDayAdvisor.evaluate(
-      day: snapshot.date,
-      visibleEntries: snapshot.agenda,
-      pendingTasks: snapshot.pendingTaskCount,
-    );
     final now = DateTime.now();
-    final cutoff = DateTime(now.year, now.month, now.day + 3);
-    final upcoming = store.agendaContentFilter == AgendaContentFilter.sharedOnly
-        ? <UnifiedAgendaEntry>[]
-        : store
-            .unifiedUpcoming(now)
-            .where((entry) =>
-                entry.isPrivate &&
-                entry.type == ItemType.appointment &&
-                !entry.date.isBefore(DateTime(now.year, now.month, now.day)) &&
-                entry.date.isBefore(cutoff) &&
-                canPrepareEvent(entry.privateItem!))
-            .toList(growable: false);
-    final prep = upcoming.isEmpty ? null : upcoming.first.privateItem;
+    final external = ExternalCalendarService.instance;
+    final day = snapshot.date;
+    final externalReady = store.agendaContentFilter == AgendaContentFilter.all &&
+        external.coversRange(
+          DateTime(day.year, day.month, day.day - 1),
+          DateTime(day.year, day.month, day.day + 2),
+        );
+    final advice = RealisticDayAdvisor.evaluate(
+      day: day,
+      visibleEntries: [
+        ...visibleEntriesForCalendarFreeSlots(
+          store,
+          day,
+          externalReady: externalReady,
+        ),
+        // Coverage can be partial while Today already has authorized
+        // current-day external events. Preserve those observed busy hours;
+        // do not claim the unseen adjacent days are empty.
+        if (!externalReady &&
+            store.agendaContentFilter == AgendaContentFilter.all &&
+            external.enabled &&
+            external.permissionGranted)
+          ...snapshot.agenda.where((entry) => entry.isExternal),
+      ],
+      pendingTasks: snapshot.pendingTaskCount,
+      now: now,
+    );
+    final upcoming = upcomingPreparationItems(store, now);
+    final prep = upcoming.isEmpty ? null : upcoming.first;
     if (snapshot.pendingTaskCount == 0 && prep == null) {
       return const SizedBox.shrink();
     }

@@ -487,11 +487,11 @@ class _PlannerScreenState extends State<PlannerScreen> {
   }
 
   Future<void> _loadDay(DateTime value) {
-    final start = DateTime(value.year, value.month, value.day);
-    return ExternalCalendarService.instance.loadRange(
-      start,
-      start.add(const Duration(days: 1)),
-    );
+    // The Today advisor and free-slot engine inspect overnight appointments.
+    // Load adjacent civil days so external entries match local overlap rules.
+    final start = DateTime(value.year, value.month, value.day - 1);
+    final end = DateTime(value.year, value.month, value.day + 2);
+    return ExternalCalendarService.instance.loadRange(start, end);
   }
 
   void _selectDay(DateTime value) {
