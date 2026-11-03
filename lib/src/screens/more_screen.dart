@@ -104,6 +104,10 @@ class MoreScreen extends StatelessWidget {
                     ),
                     const SizedBox(height: AnnaDesignTokens.spaceLg),
                   ],
+                  Qw2FavoritesSection(
+                    key: ValueKey('qw2-favorites-${store.activeAccountId ?? 'guest'}'),
+                    store: store,
+                  ),
                   AnnaJournalSectionHeading(
                     title: strings.d3('moreQuickAccess'),
                   ),
@@ -159,6 +163,22 @@ class MoreScreen extends StatelessWidget {
                         onTap: () => _open(
                           context,
                           PrivateVaultScreen(store: store),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: AnnaDesignTokens.spaceSm),
+                  ],
+                  if (prefs.isModuleEnabled(AppModule.memories)) ...[
+                    AnnaJournalCard(
+                      domain: AnnaVisualDomain.memories,
+                      child: _tile(
+                        id: 'more-future-letters',
+                        domain: AnnaVisualDomain.memories,
+                        icon: Icons.mark_email_unread_outlined,
+                        title: futureLetterTitle(strings),
+                        onTap: () => _open(
+                          context,
+                          PersonalFutureLettersScreen(store: store),
                         ),
                       ),
                     ),

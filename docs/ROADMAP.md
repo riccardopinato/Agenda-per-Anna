@@ -1,5 +1,63 @@
 # Anna's Diary — Roadmap
 
+## Priorita' P1 — stato riconciliato (2 novembre 2026)
+
+- **Android rc.6+120:** source `main@fb476545426fb6bf290e74f53e735fa13616e4e9`, signed ARM64 workflow [#41367895694](https://github.com/riccardopinato/Agenda-per-Anna/actions/runs/41367895694) SUCCESS, artifact `annas-diary-light-arm64` ID **13107988055**. L'utente ha chiesto espressamente di considerare effettuato il collaudo Android: registrare **USER_ATTESTED_GENERAL_PASS / GATE GENERALE ACCETTATO**, non `PHYSICAL DEVICE VERIFIED` per ogni singolo scenario. L'issue storica [#181](https://github.com/riccardopinato/Agenda-per-Anna/issues/181) e' CLOSED per accettazione generale; fingerprint sul dispositivo, upgrade con inventario dati, Vault/QR dual-device, backup/restore, notifiche native/Web Push e Play purchase restano **NOT VERIFIED** dove manchi evidenza per scenario.
+- **P1 CAP-0077 (diagnostica permessi):** codice gia' MERGED in #203 e presente nella +120 firmata; accettazione generale utente registrata, ma salute reale dei servizi Android/OEM/permessi NON dimostrata per ogni funzione. Non confondere UI diagnostica con consegna notifiche.
+- **P1 CAP-0069 (regressione visiva):** comparatore e matrice 10 x 7 MERGED #204; PR [#208](https://github.com/riccardopinato/Agenda-per-Anna/pull/208) **MERGED** su `main@98b2e4d9a80114cd8fe9a17434ab0747841e8a35` dopo Development/AppLab PASS e risoluzione dei tre rilievi review: validatore fail-closed per le catture (inventario, dimensioni, metadati PNG anche post-IDAT e provenienza dichiarata). I **70 baseline PNG approvati e 70 PNG candidati reali** non sono stati forniti: **CAPTURE / APPROVAL / VISUAL PASS NON VERIFICATI**. Un test sintetico del comparatore non equivale all'accettazione visiva.
+- **P1 Privacy UX:** mitigazione di compatibilita' quick wins **MERGED #209**, Development/Web/AppLab PASS su `main@7da965fe4dd73ad0444a1059ba9006d32f6ebfae`. La [PR #200](https://github.com/riccardopinato/Agenda-per-Anna/pull/200) resta **DRAFT / DO NOT MERGE**, per audit disclosure (export, vecchi calendari/notifiche, media, accessibilita', app switcher, 2 account/device). Le mascherature UI non equivalgono a cifratura.
+- **Release:** le correzioni sorgente successive al commit firmato +120 NON sono presenti nell'APK +120. Una futura installazione di quelle modifiche richiede nuovo `versionCode`, firma e prove sull'artefatto; nessuna pubblicazione Google Play e' autorizzata da questa nota.
+
+## Quick Wins 2 — approvati il 2 novembre 2026
+
+**SOURCE MERGED / QA DEVICE NON VERIFICATO.** PR [#211](https://github.com/riccardopinato/Agenda-per-Anna/pull/211)
+integrata in `main@6be32e00532deecb9fd3127c4d1923c5f572581b`.
+L'utente ha approvato QW2-01 Undo rinvio domani, QW2-02 Inbox -> appuntamento
+con bozza, QW2-03 quattro azioni Crea ordinate per utilizzo locale,
+QW2-04 tre preferiti in Altro, QW2-05 ricerca Impostazioni.
+Sull'head esatto `36b6897c4be113a536ab9b02e073c066b4972ed9`:
+Development checks, Web e AppLab **SUCCESS**, tre rilievi di review risolti.
+Specifiche/test: [V107_QUICK_WINS_2.md](V107_QUICK_WINS_2.md).
+Nessuna modifica al cloud schema/Vault/Privacy #200. La release Android
+firmata `+120` precede #211; installazione delle nuove funzioni richiede
+un nuovo APK firmato con `versionCode > 120`, proof fisica separata.
+
+## Quick wins agenda — 2 novembre 2026
+
+- PR [#206](https://github.com/riccardopinato/Agenda-per-Anna/pull/206): **SOURCE MERGED** su `main@d67c64e2aea3d38f1fa32b320d64cb7a3ddfe4a2`; Development checks, Web, AppLab Source Gate PASS sull'head `b8dfabcc10f4c75d0979e965fec91d1b6df961bb`. Include duplicazione con bozza, rinvio task, attività scadute, anteprima domani e avviso conflitti. Specifica: [V107_DAILY_QUICK_WINS.md](V107_DAILY_QUICK_WINS.md).
+- Release `1.0.0-rc.6+120`: APK ARM64 stabile **BUILT/SIGNED** da `fb476545` (run #41367895694), accettazione generale Android richiesta e attestata dall'utente; matrice fisica per-scenario **NOT VERIFIED** e Play Store non pubblicato.
+
+## Stato operativo v1.07-C1/C2 — 2 novembre 2026
+
+- **C1 CAP-0077**: [PR #203](https://github.com/riccardopinato/Agenda-per-Anna/pull/203) MERGED su `main@aab7ace78a375d78f5b868689b7c768e0b29c3fc`; exact-head Development/Web/AppLab PASS. Diagnostica Android in Impostazioni senza forzare permessi, con stati non equivalenti alla consegna. Verifica reale di canali/OEM/calendario/push: **NOT VERIFIED**.
+- **C2 CAP-0069**: [PR #204](https://github.com/riccardopinato/Agenda-per-Anna/pull/204) MERGED su `main@23f92929ab01edaa00b20c90938a4c97d1d301c5`; exact-head Development/AppLab PASS. Matrice 10 checkpoint x 7 varianti, comparatore PNG e test fail-closed nel CI. **Le 70 coppie di screenshot approvate non sono ancora disponibili: visual comparison NOT VERIFIED**.
+- **Release**: candidato `1.0.0-rc.6+119` predisposto dopo C1+C2, ma **APK SIGNED/INSTALLED NOT VERIFIED** finche' il workflow stabile e la sua identity non sono confermati. Nessuna pubblicazione Play. La vecchia release `+118` rimane prova storica distinta.
+- Privacy PR #200 e Google Calendar API PR #199 rimangono separati e bloccati; v1.06 Ecosystem Expansion rimane differita.
+
+## CAP-0111 Weekly Review — chiusura funzionale, 1 novembre 2026
+
+**Stato di prodotto: CLOSED — IMPLEMENTED / USER-ACCEPTED GENERAL PASS.**
+Le 10 decisioni visuali approvate sono integrate nella release firmata **Anna's Diary `1.0.0-rc.6+118`**. PR [#201](https://github.com/riccardopinato/Agenda-per-Anna/pull/201) **MERGED**, sorgente canonico `main@b05c6c3cad1a0dbb7c66ba639ad8c4d0612cf96b`. Build firmata ARM64 [Actions #41317266363](https://github.com/riccardopinato/Agenda-per-Anna/actions/runs/41317266363) **SUCCESS**, artefatto `annas-diary-light-arm64` ID **13087996964**. Development checks (analyze/test/Web), Web deploy e Android native compile su `main` sono **SUCCESS**; AppLab Source Gate sul PR head finale `44b891b4` **SUCCESS**.
+
+**Accettazione utente in chat**: dopo aver provato la nuova app, l'utente ha dichiarato «Sembra buono nell'app, mi piace» e successivamente «Sembra funzionare tutto»; ha quindi autorizzato esplicitamente la chiusura della capability. È una **USER_ATTESTED_GENERAL_PASS**, non una certificazione fisica tecnica completa. Restano **NOT VERIFIED** i singoli gate privi di prove circostanziate: prova upgrade in-place con matrice dati, backup/restore, reminder settimanale su dispositivo e soppressione effettiva, isolamento/sync multi-account e test su due dispositivi, certificazione firma su telefono e distribuzione Google Play. Non riaprire CAP-0111 per solo polishing senza nuovo problema reale. Le eventuali anomalie di test vanno registrate separatamente nella QA della release +118.
+
+**Ambito completato**: card Home Oggi adattiva (Timeline/Per te/Esplora preservati), task summary privato basato sullo stato corrente, scelta di ricordi e riflessioni, focus e tre priorità riusando `WeekData`, conclusione morbida reversibile, storico mensile, reminder locale opt-in default OFF, localizzazione nelle cinque lingue e motion/accessibilità. Nessun nuovo store o AI obbligatoria. Riferimento: [WEEKLY_REVIEW_10OF10_CONTRACT.md](WEEKLY_REVIEW_10OF10_CONTRACT.md).
+
+### Priorità operative dopo CAP-0111
+
+| Ordine | Deliverable | Stato verificato | Descrizione / confine |
+| --- | --- | --- | --- |
+| 1 | **QA release +118 e chiusura evidenze fisiche** | **USER_ATTESTED_GENERAL_PASS**, matrice tecnica **NOT VERIFIED** | Identificare APK +118 esatto, salvaguardare dati e provare installazione in-place, backup/restore, reminder, Vault, account/QR e flussi Android; distinguere esito per scenario. L'issue [#181](https://github.com/riccardopinato/Agenda-per-Anna/issues/181) cita il vecchio +115 e non prova la +118: aggiornare/riconciliare l'evidenza senza cancellare la storia. |
+| 2 | **v1.07-C1 — CAP-0077 Permission/Capability Health** | **SOURCE MERGED — PR #203 / CI PASS; DEVICE NOT VERIFIED** | Diagnostica veritiera in Impostazioni per permessi e servizi realmente disponibili (notifiche, calendario, accesso nativo), senza confondere consenso, configurazione e consegna effettiva. Offline-first, nessun permesso forzato. |
+| 3 | **v1.07-C2 — CAP-0069 Visual Regression** | **TOOLING MERGED — PR #204 / CI PASS; 70 SCREENSHOT PAIRS NOT VERIFIED** | Ampliare le baseline già esistenti con screenshot deterministici per tema, palette/HSV, 5 lingue, testo grande, dimensioni, motion ridotto; proteggere Cassaforte e contenuti privati. QA source, non certificazione dispositivo. |
+| 4 | **Privacy UX — PR #200** | **DRAFT / SECURITY GATE OPEN — DO NOT MERGE** | Separare «Personale» da «Riservato», mascheratura Home e shared preview, controlli PIN/biometria. Prima di qualunque merge verificare tutte le vie di fuga dati: calendari esterni già esportati, notifiche consegnate, backup, media, app switcher e accessibilità; non confondere mascheratura con cifratura. |
+| 5 | **Google Calendar diretto — PR #199** | **STAGING ONLY / DRAFT / DO NOT MERGE** | Client API preparato fuori dal codice di produzione. Servono configurazione Google Cloud, OAuth, token sicuri, test su account reale, deduplica con Android Calendar Provider e autorizzazione esplicita prima dell'attivazione. |
+| Differito | **v1.06 Ecosystem Expansion** | **DEFERRED** | Pairing reale con app esterne e prove cross-device/cross-app. Non avviarlo come conseguenza della chiusura CAP-0111. |
+| Esterno | **Google Play / RevenueCat e hardening Supabase** | **PROVE/ADMIN ACTION PENDING** | Billing purchase/restore e distribuzione Play richiedono test esterni; issue [#182](https://github.com/riccardopinato/Agenda-per-Anna/issues/182) per leaked-password protection e pg_net resta una distinta azione amministrativa, non automaticamente risolta dalla release. |
+
+**Storico già integrato:** v1.07-A1/A2 CAP-0014 e CAP-0003; v1.07-B1/B2/B3 CAP-0002, CAP-0001 e CAP-0005 estesa. Il precedente testo `PLANNED` nel piano iniziale è uno snapshot pre-merge, non lo stato corrente. C1 e C2 sono ora integrate nel sorgente (PR #203 e #204); restano necessarie baseline screenshot approvate, test fisici Android e la consegna di un APK firmato con versione crescente. I PR #199 e #200 restano intenzionalmente bloccati.
+
+
 ## Aggiornamento operativo v1.07-B3 — APK firmato +117 (1 novembre 2026)
 
 - **Release Android:** `1.0.0-rc.6+117` (`versionCode 117`) **ARTIFACT BUILT / SIGNED**. Source immutabile `main@8824f0dcf427d67aa2e069da6fd2dd02bc6cb1e1`, workflow stabile [#41269542695](https://github.com/riccardopinato/Agenda-per-Anna/actions/runs/41269542695) **SUCCESS**, artefatto `annas-diary-light-arm64` (ID GitHub **13068413157**, 20.508.484 byte ZIP). Include B1 parser locale, B2 slot liberi, B3 sincronizzazione Android opt-in; l'APK +116 precedente non le include tutte.

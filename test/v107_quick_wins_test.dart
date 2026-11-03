@@ -1,0 +1,154 @@
+import 'package:agenda_per_anna/main.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_test/flutter_test.dart';
+
+void main() {
+  test('agenda source filters use concise localized labels, not privacy claims', () {
+    expect(AgendaContentFilter.all.icon, Icons.layers_outlined);
+    expect(AgendaContentFilter.privateOnly.icon, Icons.person_outline);
+    expect(AgendaContentFilter.sharedOnly.icon, Icons.people_outline);
+    final expected = <String, List<String>>{
+      'en': ['All', 'Personal', 'Shared'],
+      'it': ['Tutto', 'Personale', 'Condiviso'],
+      'es': ['Todo', 'Personal', 'Compartido'],
+      'fr': ['Tout', 'Personnel', 'Partagé'],
+      'pt': ['Tudo', 'Pessoal', 'Partilhado'],
+    };
+    for (final entry in expected.entries) {
+      final strings = AnnaStrings(entry.key);
+      expect(
+        AgendaContentFilter.values.map((f) => f.localizedLabel(strings)).toList(),
+        entry.value,
+      );
+    }
+  });
+
+  test('shared agenda filter uses people, never the heart icon', () {
+    expect(AgendaContentFilter.sharedOnly.icon, Icons.people_outline);
+    expect(AgendaContentFilter.all.icon, Icons.layers_outlined);
+  });
+
+  AgendaItem item(String id, DateTime date, {ItemType type = ItemType.appointment,
+    bool done = false, TimeOfDay? start, TimeOfDay? end,
+    RecurrenceRule recurrence = RecurrenceRule.none, String? series}) =>
+    AgendaItem(id: id, title: id, note: '', date: date, type: type,
+      done: done, start: start, end: end,
+      recurrenceRule: recurrence, recurrenceSeriesId: series);
+  TimeOfDay at(int hour, [int minute = 0]) =>
+    TimeOfDay(hour: hour, minute: minute);
+
+  test('tomorrow handles year and leap day boundaries', () {
+    expect(quickWinTomorrow(DateTime(2026, 12, 31)), DateTime(2027, 1, 1));
+    expect(quickWinTomorrow(DateTime(2028, 2, 28)), DateTime(2028, 2, 29));
+  });
+
+  test('overdue includes unfinished previous-day private tasks only', () {
+    final today = DateTime(2026, 11, 2);
+    final overdue = overduePrivateTasks([
+      item('old', DateTime(2026, 10, 28), type: ItemType.task),
+      item('recent', DateTime(2026, 11, 1), type: ItemType.task),
+      item('done', DateTime(2026, 11, 1), type: ItemType.task, done: true),
+      item('today', today, type: ItemType.task),
+      item('appointment', DateTime(2026, 11, 1)),
+    ], today);
+    expect(overdue.map((e) => e.id), ['recent', 'old']);
+    expect(canPostponeTask(overdue.first, now: today), isTrue);
+    expect(canPostponeTask(item('future', DateTime(2026, 11, 10),
+      type: ItemType.task), now: today), isFalse);
+    expect(canPostponeTask(item('recurring', today, type: ItemType.task,
+      recurrence: RecurrenceRule.weekly, series: 's')), isFalse);
+  });
+
+  test('collision check skips self, tasks and adjacent endpoints', () {
+    final day = DateTime(2026, 11, 2);
+    final candidate = item('self', day, start: at(10), end: at(11));
+    final matches = findAppointmentConflicts(
+      candidate: candidate,
+      visibleEntries: [
+        UnifiedAgendaEntry.private(candidate),
+        UnifiedAgendaEntry.private(item('before', day,
+          start: at(9), end: at(10))),
+        UnifiedAgendaEntry.private(item('hit', day,
+          start: at(10,30), end: at(11,30))),
+        UnifiedAgendaEntry.private(item('after', day,
+          start: at(11), end: at(12))),
+        UnifiedAgendaEntry.private(item('task', day,
+          type: ItemType.task, start: at(10), end: at(12))),
+      ]);
+    expect(matches.map((e) => e.id), ['hit']);
+  });
+
+  test('overnight and untimed appointments are conservatively occupied', () {
+    final day = DateTime(2026, 11, 2);
+    final candidate = item('candidate', day, start: at(0,30), end: at(1));
+    final matches = findAppointmentConflicts(
+      candidate: candidate,
+      visibleEntries: [
+        UnifiedAgendaEntry.private(item('night',
+          DateTime(2026, 11, 1), start: at(23), end: at(1))),
+        UnifiedAgendaEntry.private(item('all-day', day)),
+      ]);
+    expect(matches.map((e) => e.id), ['all-day', 'night']);
+  });
+
+  test('sensitive JSON marker stays masked without adding a new store', () {
+    expect(quickWinPayloadIsSensitive(<String, dynamic>{
+      'isSensitive': true, 'title': 'do not reveal',
+    }), isTrue);
+    expect(quickWinPayloadIsSensitive(<String, dynamic>{
+      'isSensitive': false,
+    }), isFalse);
+    expect(quickWinPayloadIsSensitive(<String, dynamic>{}), isFalse);
+    expect(quickWinPayloadIsSensitive(null), isFalse);
+    final ordinary = item('regular', DateTime(2026, 11, 1),
+        type: ItemType.task);
+    expect(quickWinItemSensitive(ordinary), isFalse);
+  });
+
+  test('all five supported languages have quick-action labels', () {
+    for (final lang in ['en','it','es','fr','pt']) {
+      final strings = AnnaStrings(lang);
+      for (final key in ['duplicateDate','postpone','overdue',
+        'tomorrow','conflictTitle','conflictSave']) {
+        expect(quickWinText(strings, key).isNotEmpty, isTrue);
+      }
+    }
+  });
+
+  test('CAP-0102 suggests three days only from visible free slots', () {
+    final now = DateTime(2026, 11, 3, 8);
+    final results = suggestTaskReplanningSlots(
+      from: now,
+      visibleForDay: (date) => [
+        UnifiedAgendaEntry.private(AgendaItem(
+          id: 'busy-${date.day}', title: 'Existing appointment', note: '',
+          date: date, type: ItemType.appointment,
+          start: const TimeOfDay(hour: 9, minute: 0),
+          end: const TimeOfDay(hour: 10, minute: 0),
+        )),
+      ],
+    );
+    expect(results.length, 3);
+    expect(results.first, DateTime(2026, 11, 4, 10));
+    expect(results[1], DateTime(2026, 11, 5, 10));
+    expect(results[2], DateTime(2026, 11, 6, 10));
+    expect(() => results.add(now), throwsUnsupportedError);
+  });
+
+  test('CAP-0102 never proposes a blocked all-day slot or invalid horizon', () {
+    final from = DateTime(2026, 11, 3);
+    final results = suggestTaskReplanningSlots(
+      from: from,
+      visibleForDay: (day) => [
+        UnifiedAgendaEntry.private(AgendaItem(
+          id: 'all-${day.day}', title: 'All day', note: '',
+          date: day, type: ItemType.appointment,
+        )),
+      ],
+    );
+    expect(results, isEmpty);
+    expect(suggestTaskReplanningSlots(
+      from: from, visibleForDay: (_) => [], days: 8,
+    ), isEmpty);
+  });
+}
