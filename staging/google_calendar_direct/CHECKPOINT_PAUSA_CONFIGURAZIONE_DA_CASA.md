@@ -104,7 +104,7 @@ Quando il proprietario scriverà **«Riprendiamo Google Calendar di Anna's Diary
 5. mantenere tutto in **SOLO Chat**, senza Work.
 
 Riferimenti:
-- [Roadmap generale](../../../docs/ROADMAP.md)
+- [Roadmap generale](../../docs/ROADMAP.md)
 - [Contratto OAuth a due fasi](supabase/TWO_PHASE_OAUTH_CONTRACT.md)
 - [Stato Supabase staging](supabase/README.md)
 
