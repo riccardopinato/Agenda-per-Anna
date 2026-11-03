@@ -98,7 +98,8 @@ export async function verifyGoogleIdToken(jwt,{clientId,nonce,now=Math.floor(Dat
      !Number.isInteger(claims.exp)||claims.exp<=now||
      !Number.isInteger(claims.iat)||claims.iat>now+120||claims.iat<now-86400||
      (claims.nbf!==undefined&&(!Number.isInteger(claims.nbf)||claims.nbf>now))) deny('BAD_ID_CLAIMS');
-  return {subject:claims.sub,email:typeof claims.email==='string'?claims.email:null};
+  return {subject:claims.sub,email:typeof claims.email==='string'?claims.email:null,
+    emailVerified:claims.email_verified===true};
 }
 export async function exchangeGoogleCode({clientId,clientSecret,redirectUri,code,verifier,fetcher=fetch}) {
   if(!str(clientSecret,4096)||!str(code,4096)||!str(verifier,128))deny('TOKEN_REQUEST_INVALID');
