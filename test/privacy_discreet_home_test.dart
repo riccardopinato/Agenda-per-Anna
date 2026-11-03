@@ -6,6 +6,7 @@ import 'package:agenda_per_anna/vault_service.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
   testWidgets('Android screenshot leases do not disable one another', (tester) async {
@@ -158,8 +159,10 @@ void main() {
     final store = File('lib/src/agenda_store.dart').readAsStringSync();
     expect(widget, contains('isMaskedAgendaEntry('));
     expect(widget, contains('store.preferences.homeDiscreetMode'));
-    expect(widget, contains("nextText = strings.d3('privacy_sensitive')"));
-    expect(widget, contains("birthdayText = strings.d3('privacy_sensitive')"));
+    expect(widget, contains("final protectedText = strings.d3('privacy_sensitive')"));
+    expect(widget, contains('nextText = visibleDetail('));
+    expect(widget, contains('birthdayText = visibleDetail('));
+    expect(widget, contains('store.activeAccountId != accountAtStart'));
     expect(store, contains('final safeReminderTitle = item.isSensitive'));
     expect(store, contains('title: safeReminderTitle,'));
     expect(store, contains('_reminderBody(minutes, safeReminderTitle)'));
@@ -348,6 +351,7 @@ void main() {
   });
 
   test('app PIN throttles repeated failures without revealing verifier', () async {
+    SharedPreferences.setMockInitialValues(<String, Object>{});
     final store = AgendaStore();
     await store.load();
     await store.continueWithoutAccount();
