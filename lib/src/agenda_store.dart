@@ -5420,7 +5420,35 @@ class AgendaStore extends ChangeNotifier {
 
     var matches = false;
     final normalized = pin.trim();
-    if (RegExp(r'^\d{4,8}
+    final numericPin = normalized.length >= 4 &&
+        normalized.length <= 8 &&
+        normalized.codeUnits.every((unit) => unit >= 48 && unit <= 57);
+    if (numericPin) {
+      try {
+        final actual = _derivePinHash(normalized, salt).codeUnits;
+        final stored = expected.codeUnits;
+        if (actual.length == stored.length) {
+          var difference = 0;
+          for (var idx = 0; idx < stored.length; idx++) {
+            difference |= actual[idx] ^ stored[idx];
+          }
+          matches = difference == 0;
+        }
+      } catch (_) {
+        // Corrupt verifier material must fail closed.
+      }
+    }
+    if (matches) {
+      _pinFailureCount = 0;
+      return true;
+    }
+    _pinFailureCount++;
+    if (_pinFailureCount >= 5) {
+      _pinBlockedUntil = now.add(const Duration(seconds: 60));
+      _pinFailureCount = 0;
+    }
+    return false;
+  }
 
   Future<void> savePreferences(AgendaPreferences value) async {
     preferences = value;
