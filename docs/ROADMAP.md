@@ -1,5 +1,38 @@
 # Anna's Diary — Roadmap
 
+## Google Calendar Direct — PAUSA OPERATIVA SU RICHIESTA UTENTE (03/11/2026)
+
+**Stato: SOSPESO / DA RIPRENDERE DAL PC DI CASA.** L'utente ha chiesto
+di rimandare la configurazione delicata di credenziali e segreti, mantenendola
+nella roadmap e ricevendo nuovamente tutte le istruzioni quando sara' disponibile
+a casa. **Non trattare la sospensione come autorizzazione a proseguire.**
+
+- PR [#199](https://github.com/riccardopinato/Agenda-per-Anna/pull/199):
+  **OPEN / DRAFT / DO NOT MERGE**; sviluppo Google OAuth backend, consenso
+  a due fasi, test di sicurezza e adapter SQL sono nel branch separato.
+- Google Cloud TEST `Anna Diary Calendar Test`: due tester confermati, Calendar
+  API/scopes configurati, client Web STAGING creato; secret Web custodito
+  privatamente dal proprietario. **Nessun redirect Google registrato.**
+- Supabase TEST `anna-calendar-staging` (`pdanpljacyozslrutsor`):
+  preventivo **0 USD/mese**, tre tabelle private con RLS, Edge Function
+  `gcal-oauth-callback` v1 distribuita **BLOCCATA**; flusso OAuth reale,
+  Google Calendar e backend `index_ready.mjs` NON attivati.
+- Head di sviluppo prima del checkpoint: `ace7afe7`; Development checks
+  Flutter, AppLab Source Gate e Google OAuth security tests **PASS**. Dopo
+  gli aggiornamenti documentali verificare il nuovo head prima di usare i gate.
+- **Da casa, nell'ordine:** Supabase staging Secrets; Client ID/Secret
+  Google STAGING, chiave Supabase **publishable/anon** (mai service_role),
+  AES-256 Base64 generata localmente; revisione Deno/runtime, sicurezza,
+  redirect esatto solo dopo callback realmente pronta, test con consenso,
+  QA Android e deduplica B3. **Non impostare `ANNA_GCAL_STAGING_ENABLE`
+  e non incollare segreti in chat/GitHub.**
+- [Checkpoint operativo completo, checklist e comando di ripresa](../staging/google_calendar_direct/CHECKPOINT_PAUSA_CONFIGURAZIONE_DA_CASA.md).
+
+**Trigger di ripresa:** «Riprendiamo Google Calendar di Anna's Diary dal
+checkpoint di casa». Fornire istruzioni passo passo e restare in SOLO Chat,
+senza azioni su credenziali, Google Cloud o produzione durante la sospensione.
+
+
 ## Priorita' P1 — stato riconciliato (2 novembre 2026)
 
 - **Android rc.6+120:** source `main@fb476545426fb6bf290e74f53e735fa13616e4e9`, signed ARM64 workflow [#41367895694](https://github.com/riccardopinato/Agenda-per-Anna/actions/runs/41367895694) SUCCESS, artifact `annas-diary-light-arm64` ID **13107988055**. L'utente ha chiesto espressamente di considerare effettuato il collaudo Android: registrare **USER_ATTESTED_GENERAL_PASS / GATE GENERALE ACCETTATO**, non `PHYSICAL DEVICE VERIFIED` per ogni singolo scenario. L'issue storica [#181](https://github.com/riccardopinato/Agenda-per-Anna/issues/181) e' CLOSED per accettazione generale; fingerprint sul dispositivo, upgrade con inventario dati, Vault/QR dual-device, backup/restore, notifiche native/Web Push e Play purchase restano **NOT VERIFIED** dove manchi evidenza per scenario.
