@@ -61,6 +61,7 @@ part 'src/event_memory_capture.dart';
 part 'src/event_preparation.dart';
 part 'src/natural_event_parser.dart';
 part 'src/calendar_free_slots.dart';
+part 'src/realistic_day_advice.dart';
 part 'src/today_quick_wins.dart';
 part 'src/quick_wins2.dart';
 part 'src/android_calendar_sync.dart';
