@@ -6,6 +6,7 @@ import 'package:flutter_test/flutter_test.dart';
 
 import '../staging/google_calendar_direct/agenda_projection_staging.dart';
 import '../staging/google_calendar_direct/calendar_staging.dart';
+import '../staging/google_calendar_direct/activation_contract.dart';
 
 class FakeProviderToken implements GcalAccessTokenPort {
   @override
@@ -119,15 +120,45 @@ GcalDraft draft({
 
 const targetCalendar = 'team+calendar@example.com';
 
+GcalActivationReview readyActivation({
+  String appAccountId = 'supabase-account-1',
+  String authorizedGoogleSubject = 'google-user-123',
+  String confirmedGoogleSubject = 'google-user-123',
+  String selectedOwnedCalendarId = targetCalendar,
+  bool calendarApiEnabled = true,
+  bool requiredScopesGranted = true,
+  bool calendarOwnerVerified = true,
+  bool secureTokenLifecycleVerified = true,
+  bool privacyExportReviewed = true,
+  bool exportPreviewConfirmed = true,
+  bool androidB3Disabled = true,
+  bool historicalAndroidExportsReviewed = true,
+}) => GcalActivationReview(
+  appAccountId: appAccountId,
+  authorizedGoogleSubject: authorizedGoogleSubject,
+  confirmedGoogleSubject: confirmedGoogleSubject,
+  selectedOwnedCalendarId: selectedOwnedCalendarId,
+  calendarApiEnabled: calendarApiEnabled,
+  requiredScopesGranted: requiredScopesGranted,
+  calendarOwnerVerified: calendarOwnerVerified,
+  secureTokenLifecycleVerified: secureTokenLifecycleVerified,
+  privacyExportReviewed: privacyExportReviewed,
+  exportPreviewConfirmed: exportPreviewConfirmed,
+  androidB3Disabled: androidB3Disabled,
+  historicalAndroidExportsReviewed: historicalAndroidExportsReviewed,
+);
+
 Future<GcalWriteOutcome> writeSample(GcalStagedWriter service,
         {String title = 'Dentist',
         bool consent = true,
         bool androidOff = true,
-        bool androidExportsReviewed = true}) =>
+        bool androidExportsReviewed = true,
+        GcalActivationReview? activation}) =>
     service.upsertOne(
       accountId: 'supabase-account-1',
       calendarId: targetCalendar,
       event: draft(title: title),
+      activation: activation ?? readyActivation(),
       googleConsentGranted: consent,
       androidB3Disabled: androidOff,
       existingAndroidExportsReviewed: androidExportsReviewed,
