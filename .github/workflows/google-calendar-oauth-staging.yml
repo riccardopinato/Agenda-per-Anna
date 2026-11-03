@@ -37,3 +37,11 @@ jobs:
         run: node --check staging/google_calendar_direct/supabase/functions/gcal-oauth-callback/db_ports.mjs
       - name: Mock-test atomic state and encrypted link adapters
         run: node --test staging/google_calendar_direct/supabase/functions/gcal-oauth-callback/db_ports.test.mjs
+
+      - name: Verify two-phase consent and identity verifier syntax
+        run: |
+          node --check staging/google_calendar_direct/supabase/functions/gcal-oauth-callback/two_phase_core.mjs
+          node --check staging/google_calendar_direct/supabase/functions/gcal-oauth-callback/production_identity.mjs
+          node --check staging/google_calendar_direct/supabase/functions/gcal-oauth-callback/confirmation_ports.mjs
+      - name: Mock-test two-phase Google OAuth and production identity bridge
+        run: node --test staging/google_calendar_direct/supabase/functions/gcal-oauth-callback/two_phase_core.test.mjs
