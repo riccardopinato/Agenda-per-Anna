@@ -4,8 +4,16 @@
 
 Branch: `staging/google-calendar-direct-prepared-v1`. **Riconciliato con `main@cb477cbecc85c1b1c415c60fd69bbd128fb82904`**, APK corrente `1.0.0-rc.6+121`; questa PR rimane **DRAFT / NON MERGE**. Factory baseline: `App-Factory-Core@a9a051d2dbb1a89ad7eacad8a3d7d293087fe182` (Master v27, Golden Index v28). Privacy #215 è una PR Draft separata e non viene incorporata.
 
+> **Aggiornamento Google Cloud (03/11/2026):** il proprietario ha configurato il progetto
+> separato `Anna Diary Calendar Test`: Calendar API attiva, OAuth External/Testing,
+> due account tester confermati, entrambi gli scope richiesti, client OAuth Web
+> STAGING creato e secret conservato privatamente. Il redirect non è ancora
+> registrato; nessuna connessione Google reale è stata effettuata.
+> Vedere [OAuth staging / callback gate](OAUTH_STAGING_DESIGN.md).
+>
 ## Cosa è disponibile
 
+- `oauth_staging.dart`: Authorization Code + PKCE S256, state/nonce anti-replay, vincolo account Anna, callback entro 10 minuti e fail-closed; **nessun code exchange né token**, con test mock in `test/google_calendar_oauth_staging_test.dart`.
 - `calendar_staging.dart`: client Google Calendar API v3 tramite porte iniettate (HTTP, access token provider, archivio link), esportazione monodirezionale di appuntamenti, gestione eventi all-day e a orario tramite IANA timezone, update PATCH condizionale su etag, ID remoti deterministici e marker privati.
 - `agenda_projection_staging.dart`: conversione controllata dei soli `AgendaItem` privati e appuntamenti, massimo 200 entro un anno; esclusi `SharedEntry`, attività, note, allegati, diario, ricordi e Vault.
 - `test/google_calendar_staging_test.dart`: test locali deterministici con token e API **simulati**, nessuna chiamata a Google.
@@ -30,7 +38,7 @@ La B3 Android attuale scrive su `Calendar Provider`. Se la destinazione è un ca
 
 ## Attivazione futura — 6 passaggi con controllo umano prima di ogni servizio reale
 
-1. **Google Cloud, intervento utente:** selezionare il progetto OAuth già usato per Supabase; abilitare `Google Calendar API`; aggiungere gli scope minimi sopra indicati alla schermata consenso (o verificare i permessi effettivamente necessari); aggiungere gli account tester mentre l'app è in modalità test.
+1. **Google Cloud, configurazione TEST confermata dall'utente:** progetto dedicato `Anna Diary Calendar Test`, Google Calendar API attiva, due scope minimi aggiunti e due account tester presenti; client Web STAGING creato ma senza redirect. La produzione resta su `My Maps Project`; non sostituire l'OAuth Supabase esistente. Resta aperto il gate callback HTTPS staging effettivamente distribuito.
 2. **OAuth, intervento assistente + consenso utente:** definire una richiesta di autorizzazione Calendar separata dal normale login di Anna; `openid email profile` non basta. Testare `providerToken`, `providerRefreshToken`, `access_type=offline` / `prompt=consent` secondo la versione Supabase in uso. Verificare refresh, revoca, cambio account, deep link, navigazione Web e ritorno Android. Trattare i token Google separatamente dalle sessioni Supabase; vietato salvarli in chiaro, log o SharedPreferences.
 3. **Transport & secure link store, intervento assistente:** realizzare `GcalHttpPort` per Web/Android/iOS e `GcalAccessTokenPort` con refresh/expiry/revoca; implementare `GcalLinkPort` su storage cifrato/segregato per account e calendario. Prevedere timeouts e retry/backoff limitato per 429/5xx. Le porte presenti in questo staging sono interfacce, non provider live.
 4. **Configurazione UI, intervento assistente:** impostazioni opt-in con scelta esplicita Google Calendar, stato permessi, anteprima dei cambiamenti, diagnosi e comando Disconnect. Non cambiare login Google standard né avviare B3 e Google direct contemporaneamente.
