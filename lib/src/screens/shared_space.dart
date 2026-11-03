@@ -1690,6 +1690,7 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
         mediaPath: '',
         mediaThumbnailAssetId: thumbnailAssetId,
         memoryPinned: existing?.memoryPinned ?? false,
+        isSensitive: existing?.isSensitive ?? false,
         membersCanEdit: existing?.membersCanEdit ?? true,
         editOwnerId: existing?.editOwnerId ?? (_currentSharedUserId ?? ''),
       );
@@ -1715,6 +1716,7 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
           thumbnailAssetId: thumbnailAssetId,
           membersCanEdit: localPreview.membersCanEdit,
           editOwnerId: localPreview.editOwnerId,
+          isSensitive: localPreview.isSensitive,
           oldMediaPath: existing?.mediaPath ?? '',
           createdAt: localPreview.createdAt ?? revision,
         ),
