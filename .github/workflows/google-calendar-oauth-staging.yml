@@ -32,3 +32,8 @@ jobs:
         run: node --check staging/google_calendar_direct/supabase/functions/gcal-oauth-callback/webcrypto_core.mjs
       - name: Execute mocked Deno WebCrypto OAuth tests
         run: node --test staging/google_calendar_direct/supabase/functions/gcal-oauth-callback/webcrypto_core.test.mjs
+
+      - name: Verify private Postgres OAuth adapter syntax
+        run: node --check staging/google_calendar_direct/supabase/functions/gcal-oauth-callback/db_ports.mjs
+      - name: Mock-test atomic state and encrypted link adapters
+        run: node --test staging/google_calendar_direct/supabase/functions/gcal-oauth-callback/db_ports.test.mjs
