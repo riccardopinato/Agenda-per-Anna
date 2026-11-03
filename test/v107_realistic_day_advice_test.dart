@@ -11,6 +11,7 @@ void main() {
       AgendaItem(
         id: id,
         title: 'Visible appointment',
+        note: '',
         date: DateTime(2026, 11, 3),
         type: ItemType.appointment,
         start: TimeOfDay(hour: start, minute: 0),
