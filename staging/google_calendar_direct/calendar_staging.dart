@@ -326,14 +326,14 @@ class GcalStagedWriter {
         sameEndpoint(remote['end'], payload['end']);
   }
 
-  /// Restrict the surface to owned/writable calendars. The chosen scopes
+  /// Restrict the surface to OWNER calendars only. The chosen scopes
   /// need explicit Google OAuth consent when integration is activated.
   Future<List<GcalCalendar>> listWritableCalendars() async {
     final result = <GcalCalendar>[];
     String? page;
     for (var i = 0; i < 10; i++) {
       final params = <String, String>{
-        'minAccessRole': 'writer',
+        'minAccessRole': 'owner',
         'maxResults': '250',
         if (page != null) 'pageToken': page,
       };
@@ -355,7 +355,7 @@ class GcalStagedWriter {
           final id = value['id'];
           final role = value['accessRole'];
           if (id is String &&
-              (role == 'writer' || role == 'owner')) {
+              role == 'owner') {
             result.add(GcalCalendar(
               id, (value['summary'] as String?) ?? id,
               role as String, value['primary'] == true));
