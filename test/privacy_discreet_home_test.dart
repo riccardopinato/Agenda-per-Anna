@@ -321,4 +321,47 @@ void main() {
     await tester.pumpWidget(const SizedBox.shrink());
     store.dispose();
   });
+
+  test('deferred shared photo queue retains sensitivity through JSON', () {
+    final upload = SharedMediaPendingUpload(
+      id: 'queue-1', spaceId: 'couple', entryId: 'image-1',
+      title: 'Private photo', note: 'Only us',
+      date: DateTime(2026, 11, 3), isSensitive: true,
+      oldMediaPath: '', createdAt: DateTime.utc(2026, 11, 3),
+    );
+    final parsed = SharedMediaPendingUpload.fromJson(upload.toJson());
+    expect(parsed.isSensitive, isTrue);
+    expect(parsed.toJson()['isSensitive'], isTrue);
+    final legacy = Map<String, dynamic>.from(upload.toJson())
+      ..remove('isSensitive');
+    expect(SharedMediaPendingUpload.fromJson(legacy).isSensitive, isFalse);
+  });
+
+  test('deferred shared media worker keeps sensitivity in remote payload', () {
+    final store = File('lib/src/agenda_store.dart').readAsStringSync();
+    final shared = File('lib/src/screens/shared_space.dart').readAsStringSync();
+    expect(store, contains('isSensitive: upload.isSensitive,'));
+    expect(shared, contains('isSensitive: localPreview.isSensitive,'));
+    // Still fail closed: sensitive existing photos cannot be replaced in UI
+    // without a two-device/media-retry security certification.
+    expect(shared, contains('if (existing?.isSensitive == true) {'));
+  });
+
+  test('app PIN throttles repeated failures without revealing verifier', () async {
+    final store = AgendaStore();
+    await store.load();
+    await store.continueWithoutAccount();
+    await store.setPin('2468');
+    expect(store.verifyPin('0000'), isFalse);
+    expect(store.verifyPin('2468'), isTrue);
+    for (var i = 0; i < 5; i++) {
+      expect(store.verifyPin('1111'), isFalse);
+    }
+    expect(store.pinTemporarilyBlocked, isTrue);
+    expect(store.verifyPin('2468'), isFalse);
+    // In-session lock clears with a newly configured verifier.
+    await store.setPin('8642');
+    expect(store.verifyPin('8642'), isTrue);
+    store.dispose();
+  });
 }
