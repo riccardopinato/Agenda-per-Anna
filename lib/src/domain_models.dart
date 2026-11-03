@@ -2347,6 +2347,7 @@ class SharedMediaPendingUpload {
   final String thumbnailAssetId;
   final bool membersCanEdit;
   final String editOwnerId;
+  final bool isSensitive;
 
   // Legacy fallback fields for queues created before v0.33.
   final String imageBase64;
@@ -2365,6 +2366,7 @@ class SharedMediaPendingUpload {
     this.thumbnailAssetId = '',
     this.membersCanEdit = true,
     this.editOwnerId = '',
+    this.isSensitive = false,
     this.imageBase64 = '',
     this.thumbnailBase64 = '',
     required this.oldMediaPath,
@@ -2385,6 +2387,7 @@ class SharedMediaPendingUpload {
         'thumbnailAssetId': thumbnailAssetId,
         'membersCanEdit': membersCanEdit,
         'editOwnerId': editOwnerId,
+        'isSensitive': isSensitive,
         'imageBase64': mediaAssetId.isEmpty ? imageBase64 : '',
         'thumbnailBase64':
             thumbnailAssetId.isEmpty ? thumbnailBase64 : '',
@@ -2408,6 +2411,7 @@ class SharedMediaPendingUpload {
         thumbnailAssetId: json['thumbnailAssetId'] as String? ?? '',
         membersCanEdit: json['membersCanEdit'] as bool? ?? true,
         editOwnerId: json['editOwnerId'] as String? ?? '',
+        isSensitive: json['isSensitive'] as bool? ?? false,
         imageBase64: json['imageBase64'] as String? ?? '',
         thumbnailBase64: json['thumbnailBase64'] as String? ?? '',
         oldMediaPath: json['oldMediaPath'] as String? ?? '',
