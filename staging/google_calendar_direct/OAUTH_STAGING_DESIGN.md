@@ -36,7 +36,13 @@ remain unchanged.
 - Region: `eu-central-1`; status verified `ACTIVE_HEALTHY`.
 - Project base URL: `https://pdanpljacyozslrutsor.supabase.co`.
 - Existing production ref `pxsxlorntswypdbeerzw` remains an independent active project.
-- **No Edge Function, OAuth callback, database migration or secrets deployed yet.**
+- **Now deployed:** private `gcal_stage.oauth_pending` and `gcal_stage.oauth_links`
+  tables (RLS, no anon/authenticated grants, empty), and `gcal-oauth-callback`
+  Edge Function v1 with `verify_jwt=false`. The function is intentionally
+  LOCKED (503) and does not perform OAuth or access Google.
+- **Not deployed:** WebCrypto broker/Google code exchange, persistent adapters,
+  Supabase session verification, login/start/return and any secret.
+  Source and evidence: [Supabase staging README](supabase/README.md).
 
 **Runtime compatibility gate:** `backend/oauth_broker.mjs` targets Node
 (`node:crypto`) and is not directly an executable Supabase Edge Function (Deno).
@@ -44,10 +50,11 @@ Port the broker to the Supabase Edge runtime using WebCrypto, checked dependenci
 and an authenticated state transaction store before deployment. Do not deploy
 the Node mock server as a Deno function or substitute an unauthenticated callback.
 
-**Potential future redirect form (NOT REGISTERED, NOT LIVE):**
+**Deployed endpoint address, but callback logic NOT ACTIVE or registered in Google:**
 `https://pdanpljacyozslrutsor.supabase.co/functions/v1/gcal-oauth-callback`.
-Only register this string in Google Cloud if a deployed, tested Edge Function
-really handles the callback. Supabase Edge callbacks from Google cannot depend
+Only register this string in Google Cloud after the Edge Function implements,
+passes and enables real authenticated callback handling. The currently
+deployed kill-switch is NOT adequate for live OAuth. Supabase Edge callbacks from Google cannot depend
 solely on an incoming Supabase Authorization JWT: implement single-use state
 verification and verified account binding. Keep service secrets and token
 encryption key exclusively server-side. This document makes no claim that a
@@ -125,3 +132,14 @@ verification; testing mode is not a substitute for public approval.
 - https://datatracker.ietf.org/doc/html/rfc7636
 
 **RELEASE STATE: NO MERGE. NO APK. NO LIVE GOOGLE REQUESTS.**
+
+### Deno WebCrypto staging update (03/11/2026)
+
+`supabase/functions/gcal-oauth-callback/webcrypto_core.mjs` now implements
+WebCrypto PKCE, AES-GCM and verified Google ID-token primitives with Node 22
+mock tests. It is **not invoked** by the deployed `index.ts` kill-switch.
+The staging database migration was executed only on project
+`pdanpljacyozslrutsor`. The next gate is the authenticated cross-project
+Supabase session + one-time browser handoff + atomic transaction and link-store
+adapters, followed by end-to-end staging tests and separate user approval
+before a live test-account OAuth flow.
