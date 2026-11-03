@@ -211,7 +211,11 @@ class GcalOAuthStagingHandshake {
       throw const GcalOAuthStagingException(
           GcalOAuthStagingFailure.accountChanged);
     }
-    if (response.replace(query: null, fragment: null) != config.redirectUri ||
+    if (response.scheme != config.redirectUri.scheme ||
+        response.host != config.redirectUri.host ||
+        response.port != config.redirectUri.port ||
+        response.path != config.redirectUri.path ||
+        response.userInfo != config.redirectUri.userInfo ||
         response.hasFragment) {
       throw const GcalOAuthStagingException(
           GcalOAuthStagingFailure.wrongRedirect);
