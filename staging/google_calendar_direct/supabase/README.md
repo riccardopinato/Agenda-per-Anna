@@ -9,9 +9,9 @@ intentionally **LOCKED**. No real Google OAuth flow or Calendar API access.
 - Supabase staging project: `anna-calendar-staging`, ref `pdanpljacyozslrutsor`, region `eu-central-1`.
 - Production `agenda-per-anna`, ref `pxsxlorntswypdbeerzw`, is a different project and was not modified.
 - Applied migration: `gcal_staging_private_oauth_store_v1` (source in `migrations/`).
-- Private `gcal_stage.oauth_pending` and `gcal_stage.oauth_links` tables:
+- Private `gcal_stage.oauth_pending`, `gcal_stage.oauth_completions`, and `gcal_stage.oauth_links` tables:
   no anon/authenticated grants; RLS enabled; zero rows at latest check.
-  A two-entry INFO advisor finding (`rls_enabled_no_policy`) is intentional
+  An INFO advisor finding (`rls_enabled_no_policy`) is intentional
   for these private backend-only tables, **not** approval to expose them.
 - Deployed Supabase Edge Function `gcal-oauth-callback` **v1, ACTIVE**.
 - Actual HTTPS base:
@@ -40,15 +40,36 @@ intentionally **LOCKED**. No real Google OAuth flow or Calendar API access.
 - `functions/gcal-oauth-callback` must not be deployed with the broker
   enabled until the remaining integration gates are implemented and audited.
 
+## Selected source contract — two-phase OAuth, no cross-site cookie dependency
+
+The active design is documented in [TWO_PHASE_OAUTH_CONTRACT.md](TWO_PHASE_OAUTH_CONTRACT.md).
+The older experimental `GcalStageBroker` remains mock-only and must not be
+deployed or mixed with this server-owned implementation.
+
+- `two_phase_core.mjs`: app-authenticated start, single-use Google callback,
+  encrypted pending consent, app-authenticated preview and explicit confirmation.
+- `production_identity.mjs`: verifies an existing production Supabase JWT
+  with the **read-only production Auth /user endpoint**, never with a
+  user-provided account ID, and never connects to the production database.
+- `confirmation_ports.mjs`: backend-only atomic scoped completion persistence.
+- `migrations/gcal_staging_two_phase_completion_v1.sql`: applied on
+  `pdanpljacyozslrutsor` only, with RLS enabled and no client grants.
+- `two_phase_core.test.mjs`: mock-only security and account-switch tests.
+
+The deployed Edge Function remains the original **503 kill-switch**, and the
+new two-phase implementation has **no user-facing live endpoints yet**.
+
 ## Blocking gates before live OAuth
 
-1. Implement secure app-to-browser handoff. The first-party browser navigates
-   to the staging host so that a `Secure; HttpOnly; SameSite=Lax` cookie
-   can bind start to callback. A cross-origin XHR cookie alone is unreliable.
-   The handoff must be short-lived and one-time; no production JWT in URL.
-2. Verify production **Supabase Auth user identity** at the server boundary
-   without changing production Auth configuration. Derive account ID from
-   verified JWT, never from caller-supplied JSON.
+1. Complete the two-phase app-to-browser handoff and HTTP routing:
+   authenticate start/preview/confirm via a verified Supabase Auth JWT sent in
+   the Authorization header, never a URL; Google browser callback uses only
+   server-bound one-time state; the app holds an independent private one-time
+   completion handle and must explicitly confirm. No third-party cookies.
+2. Connect `production_identity.mjs` to a reviewed server-only staging Edge
+   HTTP router. Pin the read-only existing production Supabase Auth /user URL
+   and use only its **public** publishable/anon key. Never trust a user-supplied
+   account ID or unverified JWT claim.
 3. Connect and integration-test the source-only Postgres ports to a server-side
    **transaction-pooler** connection using a reviewed Deno PostgreSQL driver;
    configure one connection per instance, no prepared statements and required
