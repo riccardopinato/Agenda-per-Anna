@@ -119,10 +119,9 @@ void main() {
   });
 
   testWidgets('hide-details never displays contextual day card', (tester) async {
-    SharedPreferences.setMockInitialValues({});
-    await LocalStateStore.instance.resetForTesting();
+    // No persistence or platform initialization inside the widget test's
+    // simulated clock: privacy masking is synchronous and read-only.
     final store = AgendaStore();
-    await store.load();
     await tester.pumpWidget(
       MaterialApp(
         home: Scaffold(
@@ -135,8 +134,8 @@ void main() {
       ),
     );
     expect(find.byKey(const ValueKey('realistic-day-advice')), findsNothing);
+    await tester.pumpWidget(const SizedBox.shrink());
     store.dispose();
-    await LocalStateStore.instance.resetForTesting();
   });
 
   test('preparation skips completed-time appointments but keeps untimed', () async {
