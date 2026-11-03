@@ -4892,6 +4892,7 @@ class AgendaStore extends ChangeNotifier {
       thumbnailAssetId: thumbnailAssetId,
       membersCanEdit: upload.membersCanEdit,
       editOwnerId: upload.editOwnerId,
+      isSensitive: upload.isSensitive,
       imageBase64: upload.imageBase64,
       thumbnailBase64: upload.thumbnailBase64,
       oldMediaPath: upload.oldMediaPath,
@@ -5099,6 +5100,7 @@ class AgendaStore extends ChangeNotifier {
               mediaThumbnailAssetId: upload.thumbnailAssetId,
               membersCanEdit: upload.membersCanEdit,
               editOwnerId: upload.editOwnerId,
+              isSensitive: upload.isSensitive,
             );
             await enqueueSharedUpsert(
               spaceId: currentSpaceId,
