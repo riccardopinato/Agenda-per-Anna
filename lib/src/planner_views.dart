@@ -621,6 +621,14 @@ class _PlannerScreenState extends State<PlannerScreen> {
                         ],
                         const SizedBox(height: 12),
                         AgendaContentFilterBar(store: widget.store),
+                        if (widget.embedded && isToday) ...[
+                          const SizedBox(height: AnnaDesignTokens.spaceSm),
+                          RealisticDayCard(
+                            store: widget.store,
+                            snapshot: snapshot,
+                            hideDetails: widget.store.preferences.hideHomeDetails,
+                          ),
+                        ],
                         const SizedBox(height: AnnaDesignTokens.spaceMd),
                         if (widget.embedded) ...[
                           // DF-08–14: Oggi reads the selected day before
