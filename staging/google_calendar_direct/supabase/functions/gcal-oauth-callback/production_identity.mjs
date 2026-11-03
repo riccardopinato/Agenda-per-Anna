@@ -12,10 +12,19 @@ export function createProductionIdentityVerifier({
     productionPublishableKey.length>4096||
     !Number.isInteger(timeoutMs)||timeoutMs<1000||timeoutMs>15000)
     fail('PRODUCTION_AUTH_CONFIG_MISSING');
-  if(productionPublishableKey.startsWith('sb_secret_')||
-    productionPublishableKey.startsWith('eyJ')===false&&
-    productionPublishableKey.startsWith('sb_publishable_')===false)
-    fail('NOT_A_PUBLIC_KEY');
+  if(productionPublishableKey.startsWith('sb_secret_')) fail('NOT_A_PUBLIC_KEY');
+  if(!productionPublishableKey.startsWith('sb_publishable_')) {
+    // Legacy anon keys are JWTs. Decode only to classify the *configured key*,
+    // never to authenticate a request. Reject legacy service_role credentials.
+    let role;
+    try {
+      const fields=productionPublishableKey.split('.');
+      if(fields.length!==3) fail('NOT_A_PUBLIC_KEY');
+      const payload=fields[1].replaceAll('-','+').replaceAll('_','/');
+      role=JSON.parse(atob(payload)).role;
+    } catch {fail('NOT_A_PUBLIC_KEY');}
+    if(role!=='anon')fail('NOT_A_PUBLIC_KEY');
+  }
   return async function verifiedIdentity(authHeader) {
     if(typeof authHeader!=='string'||!/^Bearer [A-Za-z0-9._-]{50,8192}$/.test(authHeader))
       fail('MISSING_USER_TOKEN');
