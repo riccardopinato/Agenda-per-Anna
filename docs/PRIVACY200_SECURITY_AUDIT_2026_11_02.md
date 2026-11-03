@@ -1,6 +1,6 @@
 # Privacy UX #200 — security assurance assessment (2026-11-02)
 
-**Decision: BLOCKED — NOT CERTIFIED. Keep PR #200 DRAFT and DO NOT MERGE.**
+**Decision: BLOCKED — NOT CERTIFIED. Keep active PR #215 DRAFT and DO NOT MERGE.** PR #200 is retained only as historical source.
 
 This review is restricted to UI-disclosure control of optional `isSensitive`
 markers on personal agenda items and shared entries. It does **not** audit
@@ -17,10 +17,10 @@ source-level review and mitigations, **not** a physical/device security pass.
 | P200-02 | HIGH | Backup ZIP and open-export ZIP contain the trash payload; the previous export dialog checked only active `store.items`. Deleted sensitive records could bypass PIN/unencrypted-export warning. | `hasSensitiveLocalExportData` checks active items AND sensitive personal items in trash; export confirmation also requires stable account scope after the dialog. | `lib/src/store/backup_domain.dart`, `lib/src/screens/backup_settings.dart`, `test/privacy_discreet_home_test.dart`. SOURCE PATCHED; exact-head CI pending. |
 | P200-03 | HIGH | Sensitive content may appear in Android recents/screenshots after PIN; Web/PWA has no native secure window. | Android source now holds an app-PIN secure-screen lease for the full app session; Vault/shared-password routes use independent leases and ordered native FLAG_SECURE updates, so closing one does not disable the other. Screen protection on lifecycle transitions and physical Android/Web behavior still require adversarial validation. | ANDROID SOURCE PATCHED; WEB/PHYSICAL NOT VERIFIED. KEEP BLOCKED. |
 | P200-04 | HIGH | Previously exported Calendar Provider/Google events and already delivered notifications may retain original titles, even though new sensitive exports/reminders are masked. | Inventory and explicit user-approved cleanup guidance; no silent deletion of external data. | OPEN; external state cannot be proven/cleaned from source. |
-| P200-05 | HIGH | Original #200 was behind `main`, including Quick Wins. | Reconciled onto the latest main in draft #215, retaining Quick Wins 2, translations/icons and current CI. | SOURCE RECONCILED; final exact-head gates/review after each security fix still required. |
-| P200-06 | MEDIUM | Deferred shared photo upload lacks full `isSensitive` propagation; the current draft denies sensitive photo replacement as fail-closed workaround. | Preserve marker through the queue, cache, remote payload and retry, then test with two accounts; until then keep replacement disabled. | OPEN; per-device/offline concurrency NOT VERIFIED. |
+| P200-05 | HIGH | Original #200 was behind `main`, including Quick Wins. | Reconciled Draft #215 via a two-parent merge against `main@cb477cbe` (+121), preserving merged widget cache clearing, task replanning and future letters. | SOURCE RECONCILED TO +121; PR still Draft; final exact-head checks required. |
+| P200-06 | MEDIUM | Deferred shared photo upload lost the `isSensitive` marker in local queue/remote payload. | Added marker to `SharedMediaPendingUpload`, legacy JSON parsing, media localization, local preview and remote `SharedEntry` write. Existing sensitive-photo replacement remains fail-closed. | SOURCE PATCHED; queued legacy records and two-device/offline race/authorization NOT VERIFIED. |
 | P200-07 | MEDIUM | Backup/export files are intentionally readable and contain sensitive personal data if user authorizes export. | PIN + explicit warning; prohibit claims of encrypted backup or E2EE; verify the warning/accessibility on device. | Source warning implemented; external file handling NOT VERIFIED. |
-| P200-08 | MEDIUM | App PIN reveal path uses a local PIN verifier; brute-force throttling and biometric/lifecycle edge cases are not certified as part of this feature. | Security review of PIN attempts, device biometric failure/revocation, foreground/background and account switch. | OPEN. |
+| P200-08 | MEDIUM | Local app PIN verifier had no attempt throttling. | Added a bounded in-memory 60-second lock after five failures and a fixed-length code-unit comparison; same verifier serves app gate and sensitive disclosure. | SOURCE MITIGATION ONLY; restart bypass, Keystore-backed verifier, device biometric failure/revocation and lifecycle remain OPEN. |
 | P200-09 | MEDIUM | Shared-entry commentary, search, archives, previews, widget and semantic labels have multiple entry points; source masking covers identified paths but cannot exclude all runtime leaks without dynamic adversarial testing. | Add multi-device and accessibility/screen-reader traversal, media and deep-link tests; inspect every displayed source field. | PARTIAL SOURCE COVERAGE; physical NOT VERIFIED. |
 
 ## Tests and remaining acceptance gates
@@ -79,3 +79,15 @@ and Recents protected; verify toggle of the app PIN and screen capture after
 the last lease is released. Repeat with background/resume, biometric prompt,
 keyboard, account switch and old notification history. Source tests alone are
 not enough to mark P200-03 PASS.
+
+
+## 2026-11-03 — +121 source reconciliation and controlled privacy hardening
+
+- **Factory baseline:** `App-Factory-Core@b73013a8c676fa5eb2be64a52cf753c5bdd1460a`, Master v27, Golden Index v28.
+- **App baseline:** `main@cb477cbecc85c1b1c415c60fd69bbd128fb82904`, Flutter `1.0.0-rc.6+121`. Privacy PR #215 now includes main history as second parent, and remains **OPEN / DRAFT / NO MERGE / NO RELEASE**.
+- **Reconciliation conflicts:** only `agenda_store.dart` and `home_widget_bridge.dart` touched by both branches. Preserved old widget account transition clear and locale error tolerance; added Home discreta, sensitive mask and new outgoing reminder redaction. All other 21 privacy files carried forward exactly without replacing unrelated +121 features.
+- **P200-06:** sensitivity marker now roundtrips through pending uploads and the shared-photo upsert; older queues with absent markers default to false, so cross-device concurrency remains a **residual threat**. Existing sensitive photo replacement stays fail-closed pending dual-device test and stricter legacy queue policy if needed.
+- **P200-08:** added in-session PIN retry budget and fixed-length comparison, but it can be reset by process restart and does not use a Keystore-bound verifier; **not a security certification**. No claims on biometric lifecycle until Android physical test.
+- **P200-03/P200-04/P200-09:** remain HIGH/MEDIUM residual conditions; in particular no retroactive deletion of historical calendar provider entries or already delivered notifications. Web/PWA cannot enforce Android FLAG_SECURE.
+- **New regression contracts:** pending-media flag serialization, remote marker preservation, bounded PIN attempts, existing screenshot ownership tests and privacy redaction matrix. Exact-head GitHub checks must complete after the latest code changes.
+- **Forbidden actions before user authorization:** mark ready for review, merge, auto-merge, signed APK, Play deployment, change production account/cloud/backup data, or claim DEVICE_VERIFIED / E2EE / privacy certified.
