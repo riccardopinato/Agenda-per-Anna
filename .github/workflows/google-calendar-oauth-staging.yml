@@ -45,3 +45,8 @@ jobs:
           node --check staging/google_calendar_direct/supabase/functions/gcal-oauth-callback/confirmation_ports.mjs
       - name: Mock-test two-phase Google OAuth and production identity bridge
         run: node --test staging/google_calendar_direct/supabase/functions/gcal-oauth-callback/two_phase_core.test.mjs
+
+      - name: Verify locked Deno HTTP gateway syntax
+        run: node --check staging/google_calendar_direct/supabase/functions/gcal-oauth-callback/http_handler.mjs
+      - name: Mock-test authenticated web and browser OAuth HTTP endpoints
+        run: node --test staging/google_calendar_direct/supabase/functions/gcal-oauth-callback/http_handler.test.mjs
