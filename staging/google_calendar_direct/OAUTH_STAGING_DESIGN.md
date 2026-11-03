@@ -73,38 +73,38 @@ working callback exists.
   exchange a code, parse an ID token, refresh a token, persist a link, or
   modify the live Supabase project.
 
-## Callback design — requires deployment BEFORE Google Console change
+## Selected callback design (SOURCE ONLY, not live)
 
-The Web OAuth client needs an **exact-match HTTPS callback belonging to a
-deployed staging backend**. Neither the callback URL nor a production
-Supabase callback is to be invented or copied from a different project.
+The selected backend design is the **server-owned two-phase OAuth flow**
+documented in [Supabase staging — Two-phase OAuth contract](supabase/TWO_PHASE_OAUTH_CONTRACT.md).
 
-1. Choose and deploy a distinct staging backend host (or a truly separate
-   staging Supabase project after owner has reviewed any cost implications).
-   Select an actual stable HTTPS route, e.g. the backend's own
-   `/oauth/google-calendar/callback` path, only once its host is known.
-2. Register that exact HTTPS URL under **Authorized redirect URIs** on the
-   **test** Web OAuth client. Leave JavaScript origins empty unless the
-   selected front-end flow truly requires them.
-3. Protect the Web client secret **only server-side** in the staging provider
-   secret store. Never add it to Flutter, GitHub, logs or chat. Do not add an
-   imaginary placeholder URI to Google Cloud.
-4. Server callback must validate the one-time pending state and PKCE
-   transaction, bind it to the already authenticated app account, exchange
-   authorization code **on the backend**, verify OIDC ID-token signature,
-   issuer, audience, nonce and Google `sub`, and check the actual granted
-   scopes before allowing a link.
-5. Token refresh, revocation and encrypted persistence must be scoped by
-   app-account + Google subject, and separated from normal Supabase Auth.
-   No refresh token or client secret in ordinary preferences/backup/browser
-   local storage. A page reload cannot reuse an in-memory-only PKCE session.
-6. For Android, a Web OAuth client must **not** use the existing Android
-   `io.supabase.annasdiary://login-callback/` directly as its Google redirect.
-   A backend continuation and an Android return channel require separate
-   review and validation. No authorization is currently attempted.
-7. Only after a real provider adapter and reviewed privacy/B3 de-duplication
-   guards are ready may the owner approve test-account access and later the
-   first outbound event write. Never use private life data as mock fixtures.
+- The authenticated app first calls `POST /start` with its existing
+  **production Supabase user JWT** in an HTTPS Authorization header.
+  The staging server verifies that session through the production Auth
+  `GET /auth/v1/user` endpoint **without modifying production**.
+- The server creates one-use Google OAuth state/PKCE/nonce and independently
+  generates a 256-bit **completion handle** returned only to the app in
+  an authenticated JSON response. No Supabase session or handle appears in
+  Google/browser URLs.
+- Google's browser callback at
+  `https://pdanpljacyozslrutsor.supabase.co/functions/v1/gcal-oauth-callback`
+  atomically consumes state, verifies Google's token and scope, and stores
+  an expiring encrypted **pending grant**. The callback alone **never
+  activates a link** and returns no tokens.
+- The app then uses authenticated `POST /preview` and separately
+  `POST /confirm` (explicit consent) with its private handle. Completion
+  is account-scoped and atomic, so an account switch or replay fails closed.
+- Backend storage is restricted to the staging project's private `gcal_stage`
+  schema with RLS and no access to anon/authenticated clients. The staging
+  secrets and any database connection must never target production.
+- `http_handler.mjs` and `index_ready.mjs` implement source-only HTTP
+  routing, CORS, secret and activation gates; `index_ready.mjs` is **NOT
+  deployed**. The live Edge `index.ts` remains locked with 503 responses.
+  A third-party browser cookie is no longer the selected solution; the
+  app-bound one-time completion handle replaces that requirement.
+- Do not register the Google redirect until the genuine, security-checked
+  callback has been deployed and tested. Never use the production Supabase
+  callback or alter its existing Google login client.
 
 ## Conditions that keep the Google writer blocked
 
