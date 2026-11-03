@@ -138,4 +138,47 @@ void main() {
     store.dispose();
     await LocalStateStore.instance.resetForTesting();
   });
+
+  test('preparation skips completed-time appointments but keeps untimed', () async {
+    SharedPreferences.setMockInitialValues({});
+    await LocalStateStore.instance.resetForTesting();
+    final store = AgendaStore();
+    await store.load();
+    for (final item in [
+      AgendaItem(
+        id: 'passed',
+        title: 'Morning appointment',
+        note: '',
+        date: DateTime(2026, 11, 3),
+        type: ItemType.appointment,
+        start: const TimeOfDay(hour: 9, minute: 0),
+        end: const TimeOfDay(hour: 10, minute: 0),
+      ),
+      AgendaItem(
+        id: 'next',
+        title: 'Afternoon appointment',
+        note: '',
+        date: DateTime(2026, 11, 3),
+        type: ItemType.appointment,
+        start: const TimeOfDay(hour: 17, minute: 0),
+        end: const TimeOfDay(hour: 18, minute: 0),
+      ),
+      AgendaItem(
+        id: 'without-time',
+        title: 'Tomorrow appointment',
+        note: '',
+        date: DateTime(2026, 11, 4),
+        type: ItemType.appointment,
+      ),
+    ]) {
+      await store.upsert(item);
+    }
+    final result = upcomingPreparationItems(
+      store,
+      DateTime(2026, 11, 3, 12),
+    );
+    expect(result.map((item) => item.id), ['next', 'without-time']);
+    store.dispose();
+    await LocalStateStore.instance.resetForTesting();
+  });
 }
