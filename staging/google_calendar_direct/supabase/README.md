@@ -30,6 +30,11 @@ intentionally **LOCKED**. No real Google OAuth flow or Calendar API access.
   signature verification, OIDC claims, least-privilege Calendar scope checks,
   and fail-closed transaction broker.
 - `webcrypto_core.test.mjs` runs mock-only Node 22 WebCrypto tests.
+- `db_ports.mjs` supplies source-only, injected SQL Postgres ports:
+  encrypted `INSERT ... ON CONFLICT`, atomic `DELETE ... RETURNING` for
+  one-time OAuth state, and encrypted link upsert in private `gcal_stage`.
+  `db_ports.test.mjs` verifies SQL shapes and input validation.
+  **No database client or credentials are connected in the deployed Function.**
 - Current `index.ts` is **a kill-switch**, not a live adapter. It deliberately
   does NOT import or call `webcrypto_core.mjs`.
 - `functions/gcal-oauth-callback` must not be deployed with the broker
@@ -44,10 +49,12 @@ intentionally **LOCKED**. No real Google OAuth flow or Calendar API access.
 2. Verify production **Supabase Auth user identity** at the server boundary
    without changing production Auth configuration. Derive account ID from
    verified JWT, never from caller-supplied JSON.
-3. Implement persistent atomic transaction `create` and `take` (DELETE
-   RETURNING) in private schema; encrypt verifier/nonce/proof. Implement
-   encrypted account-scoped link storage with key rotation, revocation,
-   refresh and recovery policy. No in-memory store in production.
+3. Connect and integration-test the source-only Postgres ports to a server-side
+   **transaction-pooler** connection using a reviewed Deno PostgreSQL driver;
+   configure one connection per instance, no prepared statements and required
+   TLS. The SQL schema and injected query adapter exist but are NOT wired to
+   the deployed `index.ts`. Complete key rotation, revocation, refresh and
+   recovery policy. Never use in-memory state in production.
 4. Use a private **staging-only** Edge Function secret store for Google Web
    client ID/secret and the independently generated 256-bit AES encryption
    key. Never transmit secrets in chat, git, browser, APK or screenshots.
