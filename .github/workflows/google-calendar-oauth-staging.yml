@@ -1,0 +1,28 @@
+name: Google Calendar OAuth staging security tests
+
+on:
+  pull_request:
+    paths:
+      - 'staging/google_calendar_direct/backend/**'
+      - '.github/workflows/google-calendar-oauth-staging.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  oauth-staging:
+    name: Node OAuth broker mock security tests (no Google access)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout PR source
+        uses: actions/checkout@v4
+      - name: Set up Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Syntax check
+        run: node --check staging/google_calendar_direct/backend/oauth_broker.mjs
+      - name: Execute mocked OAuth security tests
+        run: node --test staging/google_calendar_direct/backend/oauth_broker.test.mjs
