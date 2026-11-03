@@ -59,6 +59,37 @@ deployed or mixed with this server-owned implementation.
 The deployed Edge Function remains the original **503 kill-switch**, and the
 new two-phase implementation has **no user-facing live endpoints yet**.
 
+## Reviewed, NOT deployed: Deno runtime bootstrap and HTTP host
+
+- `functions/gcal-oauth-callback/http_handler.mjs`: HTTP `start`,
+  `preview`, `confirm` and browser `callback`, with production Supabase
+  session verification on app routes, origin allowlist, bounded JSON requests,
+  `no-store` headers and non-leaking HTML callback. Defaults to disabled.
+- `functions/gcal-oauth-callback/index_ready.mjs`: source-only
+  **activation-gated** Deno bootstrap. Loads a pinned Postgres.js package
+  (`npm:postgres@3.4.7`), uses `SUPABASE_DB_URL` with TLS / no prepared
+  statements and refuses any database URL that does not belong to
+  `pdanpljacyozslrutsor` staging. Verifies real Anna account through the
+  existing **read-only production Supabase Auth** endpoint.
+- Exact enabling value is `ANNA_GCAL_STAGING_ENABLE=approved-for-live-oauth-testing`,
+  deliberately **NOT set** or deployed. The running `index.ts` remains the
+  original locked handler; there is NO endpoint for real OAuth yet.
+- All required private environment entries, if separately approved later:
+  `ANNA_GCAL_STAGING_WEB_CLIENT_ID` (nonsecret),
+  `ANNA_GCAL_STAGING_WEB_CLIENT_SECRET` (sensitive),
+  `ANNA_GCAL_PRODUCTION_PUBLISHABLE_KEY` (public/legacy anon only),
+  `ANNA_GCAL_STAGING_AES256_KEY_BASE64` (32 random bytes, secret).
+  `SUPABASE_DB_URL` is supplied by Supabase automatically. The last
+  variable must never be enabled until independently tested under exact-head
+  CI and explicitly approved.
+- Never put environment values, Google credentials, DB passwords or tokens in
+  this PR, ChatGPT, Flutter, GitHub Actions logs, screenshots, or the device APK.
+
+**Secure configuration will be done directly through**
+[Supabase Edge Function Secrets](https://supabase.com/dashboard/project/pdanpljacyozslrutsor/functions/secrets)
+**once the user explicitly authorizes real test-account OAuth.** Do not register
+Google's redirect until a real callback is actually deployed and verified.
+
 ## Blocking gates before live OAuth
 
 1. Complete the two-phase app-to-browser handoff and HTTP routing:
