@@ -1615,6 +1615,8 @@ class AgendaStore extends ChangeNotifier {
       return;
     }
 
+    // The launcher retains preview text outside the app's privacy gate.
+    await HomeWidgetBridge.instance.clear();
     await _compactActiveEntityDeltas(prefs);
 
     final profiles = _readAccountProfiles(prefs);
@@ -1655,6 +1657,12 @@ class AgendaStore extends ChangeNotifier {
     _accountScopeResolved = true;
     _notifyShellChanged();
     _notifyAllDataChanged();
+    // Native launcher integration is best-effort; never break account changes.
+    try {
+      await HomeWidgetBridge.instance.sync(this);
+    } catch (_) {
+      // Locale/platform setup can be unavailable during startup or tests.
+    }
   }
 
   Future<void> continueWithoutAccount() async {
@@ -1684,6 +1692,7 @@ class AgendaStore extends ChangeNotifier {
     // reminders are reconciled again after the switch, so reminders belonging
     // to the erased account cannot survive on the device.
     if (_activeAccountId == ownerId) {
+      await HomeWidgetBridge.instance.clear();
       await NotificationService.instance.cancelAll();
     }
 
@@ -1747,6 +1756,12 @@ class AgendaStore extends ChangeNotifier {
     }
     _notifyShellChanged();
     _notifyAllDataChanged();
+    // Native launcher integration is best-effort; never break account changes.
+    try {
+      await HomeWidgetBridge.instance.sync(this);
+    } catch (_) {
+      // Locale/platform setup can be unavailable during startup or tests.
+    }
   }
 
   void _bindPendingOperationsTo(String ownerId) {
@@ -2755,8 +2770,7 @@ class AgendaStore extends ChangeNotifier {
     bool requestPermission = true,
   }) async {
     final start = item.start;
-    // Never place flagged event titles in Android or Web Push notification
-    // bodies/payloads. Snooze continues to use the already-masked payload.
+    // Redact sensitive titles before publishing new notification payloads.
     final safeReminderTitle = item.isSensitive
         ? AnnaStrings.forPreference(preferences.appLanguage).d3('privacy_sensitive')
         : item.title;

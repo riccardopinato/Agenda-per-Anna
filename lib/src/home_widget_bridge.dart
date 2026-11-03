@@ -34,10 +34,34 @@ class HomeWidgetBridge {
     }
   }
 
+  Future<void> clear() async {
+    if (!supported) return;
+    try {
+      await _channel.invokeMethod<void>('clearWidget');
+    } catch (_) {
+      // Widget failure must not block an account transition.
+    }
+  }
+
+  static String visibleDetail({
+    required bool hidden,
+    required bool sensitive,
+    required String fallback,
+    required String detail,
+  }) => hidden || sensitive ? fallback : detail;
+
   Future<void> sync(AgendaStore store) async {
     if (!supported) return;
 
+    if (!store.entryScopeReady) {
+      await clear();
+      return;
+    }
+    final accountAtStart = store.activeAccountId;
     final strings = AnnaStrings.forPreference(store.preferences.appLanguage);
+    final hidden = store.preferences.hideHomeDetails ||
+        store.preferences.homeDiscreetMode;
+    final protectedText = strings.d3('privacy_sensitive');
     final locale = strings.languageCode;
     final now = DateTime.now();
     final upcoming = store.unifiedUpcoming(now);
@@ -47,34 +71,35 @@ class HomeWidgetBridge {
 
     String nextText = strings.d3('widget_noUpcoming');
     if (next != null) {
-      if (isMaskedAgendaEntry(
-        next,
-        hideAll: store.preferences.homeDiscreetMode ||
-            store.preferences.hideHomeDetails,
-      )) {
-        nextText = strings.d3('privacy_sensitive');
-      } else {
-        final date = next.date;
-        final day = isSameDay(date, now)
-            ? strings.d3('widget_today')
-            : DateFormat('EEE d MMM', locale).format(date);
-        final time = next.start == null ? '' : ' · ${formatTime(next.start!)}';
-        nextText = '$day$time · ${next.title}';
-      }
+      final date = next.date;
+      final day = isSameDay(date, now)
+          ? strings.d3('widget_today')
+          : DateFormat('EEE d MMM', locale).format(date);
+      final time = next.start == null ? '' : ' · ${formatTime(next.start!)}';
+      nextText = visibleDetail(
+        hidden: hidden,
+        sensitive: quickWinEntrySensitive(next) ||
+            isMaskedAgendaEntry(next, hideAll: false),
+        fallback: protectedText,
+        detail: '$day$time · ${next.title}',
+      );
     }
 
     String birthdayText = strings.d3('widget_noBirthday');
     if (birthday != null) {
-      if (store.preferences.homeDiscreetMode ||
-          store.preferences.hideHomeDetails) {
-        birthdayText = strings.d3('privacy_sensitive');
-      } else {
-        final date = birthday.date;
-        birthdayText =
-            '${birthday.birthday.name} · ${DateFormat('d MMM', locale).format(date)}';
-      }
+      final date = birthday.date;
+      birthdayText = visibleDetail(
+        hidden: hidden,
+        sensitive: false,
+        fallback: protectedText,
+        detail: '${birthday.birthday.name} · ${DateFormat('d MMM', locale).format(date)}',
+      );
     }
 
+    if (!store.entryScopeReady || store.activeAccountId != accountAtStart) {
+      await clear();
+      return;
+    }
     try {
       await _channel.invokeMethod<void>('updateWidget', {
         'title': "Anna's Diary",

@@ -345,6 +345,24 @@ class MainActivity : FlutterFragmentActivity() {
                             pendingHomeWidgetAction = null
                             result.success(action)
                         }
+                        "clearWidget" -> {
+                            val prefs = getSharedPreferences(
+                                HomeWidgetProvider.PREFS,
+                                MODE_PRIVATE,
+                            )
+                            prefs.edit().clear().commit()
+                            val manager = AppWidgetManager.getInstance(this)
+                            val ids = manager.getAppWidgetIds(
+                                ComponentName(this, HomeWidgetProvider::class.java),
+                            )
+                            sendBroadcast(
+                                Intent(this, HomeWidgetProvider::class.java).apply {
+                                    action = AppWidgetManager.ACTION_APPWIDGET_UPDATE
+                                    putExtra(AppWidgetManager.EXTRA_APPWIDGET_IDS, ids)
+                                },
+                            )
+                            result.success(null)
+                        }
                         "updateWidget" -> {
                             val args = call.arguments as? Map<*, *>
                                 ?: emptyMap<String, Any>()

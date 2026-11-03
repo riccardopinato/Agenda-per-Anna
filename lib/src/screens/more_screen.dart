@@ -168,6 +168,22 @@ class MoreScreen extends StatelessWidget {
                     ),
                     const SizedBox(height: AnnaDesignTokens.spaceSm),
                   ],
+                  if (prefs.isModuleEnabled(AppModule.memories)) ...[
+                    AnnaJournalCard(
+                      domain: AnnaVisualDomain.memories,
+                      child: _tile(
+                        id: 'more-future-letters',
+                        domain: AnnaVisualDomain.memories,
+                        icon: Icons.mark_email_unread_outlined,
+                        title: futureLetterTitle(strings),
+                        onTap: () => _open(
+                          context,
+                          PersonalFutureLettersScreen(store: store),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: AnnaDesignTokens.spaceSm),
+                  ],
                   AnnaJournalCard(
                     domain: AnnaVisualDomain.people,
                     child: _tile(
