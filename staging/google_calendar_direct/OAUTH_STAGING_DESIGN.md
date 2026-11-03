@@ -29,6 +29,30 @@ remain unchanged.
 - The production project's Calendar API was also enabled during setup; this
   does NOT grant access to any user's calendar.
 
+## Supabase HTTPS staging project provisioned — 03/11/2026
+
+- Project: `anna-calendar-staging`, ref `pdanpljacyozslrutsor`.
+- Organization: `fzieziuyodhojemtzeya`, **Free**; Supabase quoted `0 USD/month` before creation.
+- Region: `eu-central-1`; status verified `ACTIVE_HEALTHY`.
+- Project base URL: `https://pdanpljacyozslrutsor.supabase.co`.
+- Existing production ref `pxsxlorntswypdbeerzw` remains an independent active project.
+- **No Edge Function, OAuth callback, database migration or secrets deployed yet.**
+
+**Runtime compatibility gate:** `backend/oauth_broker.mjs` targets Node
+(`node:crypto`) and is not directly an executable Supabase Edge Function (Deno).
+Port the broker to the Supabase Edge runtime using WebCrypto, checked dependencies
+and an authenticated state transaction store before deployment. Do not deploy
+the Node mock server as a Deno function or substitute an unauthenticated callback.
+
+**Potential future redirect form (NOT REGISTERED, NOT LIVE):**
+`https://pdanpljacyozslrutsor.supabase.co/functions/v1/gcal-oauth-callback`.
+Only register this string in Google Cloud if a deployed, tested Edge Function
+really handles the callback. Supabase Edge callbacks from Google cannot depend
+solely on an incoming Supabase Authorization JWT: implement single-use state
+verification and verified account binding. Keep service secrets and token
+encryption key exclusively server-side. This document makes no claim that a
+working callback exists.
+
 ## Source delivered in this PR
 
 - `oauth_staging.dart` provides an independent Authorization Code + PKCE S256
