@@ -58,6 +58,10 @@ La B3 Android attuale scrive su `Calendar Provider`. Se la destinazione è un ca
 
 **NON UNIRE questo branch/PR a `main` ora.** Il materiale è conservato come prototipo di integrazione dormiente per una successiva richiesta esplicita. I test CI su branch sono evidenze di compatibilità sorgente, non una certificazione Google Calendar reale. Un merge futuro richiederà una PR di attivazione distinta con token/permessi, audit sicurezza, test esatti, no duplicazione Android e QA fisica.
 
+## Product Bible — decisione di prodotto ancora da formalizzare
+
+La sezione 7 dell'attuale `docs/PRODUCT_BIBLE.md` dichiara «External calendar integration is read-only», mentre la successiva B3 Android approvata esporta già appuntamenti in modalità opt-in. **Non interpretare lo staging come deroga automatica.** Prima di attivare il writer Google API occorre approvare e documentare nel Product Bible la distinzione tra **overlay esterno in sola lettura** ed **esportazione esplicita unidirezionale**. Questa PR NON modifica la Product Bible, la privacy esistente né la release +121.
+
 ## Decisione del proprietario del 03/11/2026
 
 Autorizzati **progettazione, sviluppo di staging e controlli automatici** da PR #199; non autorizzati merge, release, firma APK, chiamate OAuth verso account reale o modifiche alla configurazione Cloud di produzione senza ulteriore conferma. Le nuove guardie non sono né token store né OAuth attivo. Prima del primo accesso servono la verifica manuale di Google Cloud, gli adapter sicuri reali, una UI di consenso separato e test su account/telefono.
