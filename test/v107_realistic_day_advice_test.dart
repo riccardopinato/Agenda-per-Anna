@@ -53,7 +53,7 @@ void main() {
     expect(advice.reasonCode, 'VISIBLE_WINDOW_CAPACITY');
   });
 
-  test('adjacent-day appointment blocks today's overlapping time', () async {
+  test("adjacent-day appointment blocks today's overlapping time", () async {
     SharedPreferences.setMockInitialValues({});
     await LocalStateStore.instance.resetForTesting();
     final store = AgendaStore();
