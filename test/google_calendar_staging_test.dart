@@ -49,6 +49,7 @@ class FakeCalendarHttp implements GcalHttpPort {
     expect(headers['Authorization'], 'Bearer TEST-NOT-REAL');
     if (forcedStatus != null) return GcalHttpResult(forcedStatus!, {});
     if (endpoint.path.endsWith('/calendarList')) {
+      expect(endpoint.queryParameters['minAccessRole'], 'owner');
       listCalls++;
       return const GcalHttpResult(200, <String, dynamic>{
         'items': <Map<String, dynamic>>[
@@ -295,14 +296,14 @@ void main() {
           .having((e) => e.retryable, 'retryable', true)));
   });
 
-  test('calendar chooser excludes read-only calendars', () async {
+  test('owned-events scope chooser excludes writer and reader calendars', () async {
     final http = FakeCalendarHttp();
     final service = GcalStagedWriter(
         transport: http, tokens: FakeProviderToken(),
         links: FakeLinkStore());
     final calendars = await service.listWritableCalendars();
     expect(calendars.map((c) => c.id), contains('personal@example.com'));
-    expect(calendars.map((c) => c.id), contains('writable@example.com'));
+    expect(calendars.map((c) => c.id), isNot(contains('writable@example.com')));
     expect(calendars.map((c) => c.id), isNot(contains('readonly@example.com')));
     expect(http.listCalls, 1);
   });
