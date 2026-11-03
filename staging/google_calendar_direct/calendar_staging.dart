@@ -4,6 +4,7 @@
 // Activation requires a later, separately reviewed integration PR.
 import 'dart:convert';
 import 'package:crypto/crypto.dart';
+import 'activation_contract.dart';
 
 const googleCalendarOwnedEventsScope =
     'https://www.googleapis.com/auth/calendar.events.owned';
@@ -14,6 +15,7 @@ enum GcalFaultKind {
   consentRequired,
   androidWriterStillEnabled,
   migrationReviewRequired,
+  activationIncomplete,
   invalidEvent,
   ownershipConflict,
   authorization,
@@ -373,6 +375,7 @@ class GcalStagedWriter {
     required String accountId,
     required String calendarId,
     required GcalDraft event,
+    required GcalActivationReview activation,
     required bool googleConsentGranted,
     required bool androidB3Disabled,
     required bool existingAndroidExportsReviewed,
@@ -387,6 +390,14 @@ class GcalStagedWriter {
       // Android-B3 can already have propagated the same appointments through
       // Google's sync adapter. User-assisted migration/dedupe review is vital.
       throw const GcalFault(GcalFaultKind.migrationReviewRequired);
+    }
+    // A secure adapter must attest the actual Google subject and ownership;
+    // this staging-only guard never establishes trust on its own.
+    if (activation.blockersFor(
+      currentAppAccountId: accountId,
+      targetCalendarId: calendarId,
+    ).isNotEmpty) {
+      throw const GcalFault(GcalFaultKind.activationIncomplete);
     }
     final hash = gcalOwnerHash(
       accountId: accountId,
