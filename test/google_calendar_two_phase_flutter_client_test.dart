@@ -75,6 +75,28 @@ class Harness {
                 {'id':'shared','name':'Condiviso','primary':false,'accessRole':'reader'}
               ],
             });
+          case '/events':
+            expect(body['googleSubject'],googleSubject);
+            expect(body['calendarId'],'personal');
+            expect(body['timeMin'],'2026-11-01T00:00:00.000Z');
+            expect(body['timeMax'],'2026-12-01T00:00:00.000Z');
+            expect(body.containsKey('localDiary'),false);
+            return const GcalStageResponse(200,{
+              'calendarId':'personal',
+              'readonly':true,
+              'truncated':false,
+              'windowStart':'2026-11-01T00:00:00.000Z',
+              'windowEnd':'2026-12-01T00:00:00.000Z',
+              'events':[
+                {'eventId':'event-one','title':'Dentista',
+                 'start':'2026-11-12T14:00:00.000Z',
+                 'end':'2026-11-12T14:30:00.000Z','allDay':false,
+                 'recurringEventId':null,'iCalUID':'stable@google'},
+                {'eventId':'holiday','title':'Festività',
+                 'start':'2026-11-15','end':'2026-11-16',
+                 'allDay':true,'recurringEventId':null,'iCalUID':null}
+              ]
+            });
           case '/disconnect':
             expect(body['explicitConfirmation'], true);
             expect(body['googleSubject'], googleSubject);
@@ -204,6 +226,37 @@ void main() {
     await expectFault(() => h.client.readCalendars(),
         GcalStageClientFault.notConnected);
     expect(h.calls, isEmpty);
+  });
+
+  test('verified Google owned calendar events are read without writes or local diary upload',() async {
+    final h=Harness()..hasExistingConnection=true;
+    await h.client.recoverConnections();
+    final batch=await h.client.readEvents(
+      calendarId:'personal',
+      from:DateTime.utc(2026,11,1),
+      until:DateTime.utc(2026,12,1),
+    );
+    expect(batch.truncated,false);
+    expect(batch.events.length,2);
+    expect(batch.events.first.eventId,'event-one');
+    expect(batch.events.first.title,'Dentista');
+    expect(batch.events.first.iCalUid,'stable@google');
+    expect(batch.events.first.sourceKey,contains('personal'));
+    expect(batch.events.last.allDay,true);
+    expect(h.calls,['/connections','/events']);
+    expect(h.calls.any((route)=>route.contains('write')||
+        route.contains('update')),false);
+  });
+
+  test('event reading requires a previously connected verified account',() async {
+    final h=Harness();
+    await expectLater(
+      h.client.readEvents(calendarId:'personal',
+        from:DateTime.utc(2026,11,1),until:DateTime.utc(2026,12,1)),
+      throwsA(isA<GcalStageClientException>().having(
+        (e)=>e.kind,'kind',GcalStageClientFault.notConnected)),
+    );
+    expect(h.calls,isEmpty);
   });
 
   test('wrong app account cannot use recovered link', () async {
