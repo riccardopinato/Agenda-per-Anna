@@ -1,6 +1,13 @@
 name: Google Calendar OAuth staging security tests
 
 on:
+  push:
+    branches:
+      - staging/google-calendar-direct-prepared-v1
+    paths:
+      - 'staging/google_calendar_direct/backend/**'
+      - 'staging/google_calendar_direct/supabase/**'
+      - '.github/workflows/google-calendar-oauth-staging.yml'
   pull_request:
     paths:
       - 'staging/google_calendar_direct/backend/**'
