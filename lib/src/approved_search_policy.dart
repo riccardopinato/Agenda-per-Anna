@@ -46,9 +46,9 @@ int annaFuzzyEditDistance(String left, String right, {int maxEdits = 2}) {
 
 int? annaFuzzyTitleDistance(String query, String title) {
   final tokens = query.toLowerCase()
-      .split(RegExp(r'\\s+')).where((t) => t.length >= 2).toList();
+      .split(RegExp(r'\s+')).where((t) => t.length >= 2).toList();
   if (tokens.isEmpty || tokens.length > 6 || query.length > 80) return null;
-  final words = RegExp(r'[\\p{L}\\p{N}]+', unicode: true)
+  final words = RegExp(r'[\p{L}\p{N}]+', unicode: true)
       .allMatches(title.toLowerCase())
       .map((m) => m.group(0)!)
       .where((w) => w.length >= 2 && w.length <= 48)
@@ -111,7 +111,7 @@ extension ApprovedSearchPolicy on AgendaStore {
     // The same source retriever owns exclusions, account scope and kinds.
     if (hits.isEmpty && query.trim().length >= 3 && query.length <= 80) {
       final needle = query.trim().toLowerCase();
-      final terms = needle.split(RegExp(r'\\s+'));
+      final terms = needle.split(RegExp(r'\s+'));
       if (terms.length <= 6 && terms.every((t) => t.length >= 2)) {
         final anchors = <String>{
           if (terms.first.isNotEmpty) terms.first.substring(0, 1),
