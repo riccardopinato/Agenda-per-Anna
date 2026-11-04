@@ -120,6 +120,12 @@ class RealisticDayCard extends StatefulWidget {
 class _RealisticDayCardState extends State<RealisticDayCard> {
   static const _preferenceKey = 'anna_contextual_day_dismissed_v1';
   bool _loaded = false;
+  int _bufferMinutes = 0;
+  String? _observedAccount;
+  static const _bufferPreferencePrefix = 'anna_realistic_buffer_v1_';
+  String get _bufferKey => _bufferPreferencePrefix +
+      sha256.convert(utf8.encode(widget.store.activeAccountId ?? 'local'))
+          .toString();
   final Set<String> _dismissed = <String>{};
 
   String get _dayKey {
@@ -132,19 +138,51 @@ class _RealisticDayCardState extends State<RealisticDayCard> {
   @override
   void initState() {
     super.initState();
+    _observedAccount = _bufferKey;
     _load();
+  }
+
+  @override
+  void didUpdateWidget(covariant RealisticDayCard oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (_observedAccount != _bufferKey) {
+      _observedAccount = _bufferKey;
+      _loaded = false;
+      _bufferMinutes = 0;
+      _load();
+    }
   }
 
   Future<void> _load() async {
     try {
       final prefs = await SharedPreferences.getInstance();
       if (!mounted) return;
+      final key = _bufferKey;
+      final buffer = (prefs.getInt(key) ?? 0).clamp(0, 120).toInt();
+      if (key != _observedAccount) return;
       setState(() {
         _dismissed.addAll(prefs.getStringList(_preferenceKey) ?? const []);
+        _bufferMinutes = buffer;
         _loaded = true;
       });
     } catch (_) {
       // Fail closed on inability to restore local visibility preferences.
+    }
+  }
+
+  Future<void> _chooseBuffer(int minutes) async {
+    final choice = minutes.clamp(0, 120).toInt();
+    final previous = _bufferMinutes;
+    final accountKey = _bufferKey;
+    setState(() => _bufferMinutes = choice);
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      if (_bufferKey != accountKey) return;
+      final stored = await prefs.setInt(accountKey, choice);
+      if (!stored) throw StateError('buffer not saved');
+    } catch (_) {
+      if (!mounted || _bufferKey != accountKey) return;
+      setState(() => _bufferMinutes = previous);
     }
   }
 
@@ -182,6 +220,8 @@ class _RealisticDayCardState extends State<RealisticDayCard> {
       snapshot: widget.snapshot,
       hideDetails: widget.hideDetails,
       onDismiss: _dismissToday,
+      bufferMinutes: _bufferMinutes,
+      onSelectBuffer: _chooseBuffer,
     );
   }
 }
@@ -192,12 +232,16 @@ class _RealisticDayCardBody extends StatelessWidget {
     required this.snapshot,
     required this.hideDetails,
     required this.onDismiss,
+    required this.bufferMinutes,
+    required this.onSelectBuffer,
   });
 
   final AgendaStore store;
   final DayHubSnapshot snapshot;
   final bool hideDetails;
   final VoidCallback onDismiss;
+  final int bufferMinutes;
+  final ValueChanged<int> onSelectBuffer;
 
   String _localized(String lang, String key) {
     const copy = <String, List<String>>{
@@ -230,6 +274,16 @@ class _RealisticDayCardBody extends StatelessWidget {
         'Estimación: no incluye tareas sin horario ni otros calendarios.',
         'Estimation : hors tâches non planifiées et calendriers indisponibles.',
         'Estimativa: exclui tarefas sem horário e calendários indisponíveis.',
+      ],
+      'buffer': [
+        'Keep free as buffer', 'Tieni libero come margine',
+        'Reservar como margen', 'Garder comme marge',
+        'Reservar como margem',
+      ],
+      'usable': [
+        'Time left after buffer', 'Tempo dopo il margine',
+        'Tiempo después del margen', 'Temps après la marge',
+        'Tempo depois da margem',
       ],
       'slots': [
         'Review free times',
@@ -294,6 +348,7 @@ class _RealisticDayCardBody extends StatelessWidget {
       ],
       pendingTasks: snapshot.pendingTaskCount,
       now: now,
+      bufferMinutes: bufferMinutes,
     );
     final upcoming = upcomingPreparationItems(store, now);
     final prep = upcoming.isEmpty ? null : upcoming.first;
@@ -302,6 +357,8 @@ class _RealisticDayCardBody extends StatelessWidget {
     }
     final hours = advice.freeMinutes ~/ 60;
     final minutes = advice.freeMinutes % 60;
+    final usableHours = advice.usableMinutes ~/ 60;
+    final usableMinutes = advice.usableMinutes % 60;
     return Card(
       key: const ValueKey('realistic-day-advice'),
       child: Padding(
@@ -319,6 +376,26 @@ class _RealisticDayCardBody extends StatelessWidget {
                   ? _localized(strings.languageCode, 'pressure')
                   : '${_localized(strings.languageCode, 'capacity')}: '
                       '${hours}h ${minutes}m',
+            ),
+            const SizedBox(height: 7),
+            Wrap(
+              spacing: 8,
+              crossAxisAlignment: WrapCrossAlignment.center,
+              children: [
+                Text(_localized(strings.languageCode, 'buffer')),
+                for (final choice in const [0, 15, 30, 60])
+                  ChoiceChip(
+                    key: ValueKey('day-buffer-$choice'),
+                    label: Text('${choice}m'),
+                    selected: bufferMinutes == choice,
+                    onSelected: (_) => onSelectBuffer(choice),
+                  ),
+              ],
+            ),
+            Text(
+              '${_localized(strings.languageCode, 'usable')}: '
+              '${usableHours}h ${usableMinutes}m',
+              style: Theme.of(context).textTheme.bodySmall,
             ),
             const SizedBox(height: 4),
             Text(
