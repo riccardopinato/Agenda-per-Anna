@@ -59,11 +59,13 @@ class _GcalDiaryReadScreenState extends State<GcalDiaryReadScreen> {
     try {
       await action();
     } on GcalStageClientException catch(error) {
-      if(mounted) setState(() {
-        _batch=null;
-        _local=const [];
-        _message=gcalQaErrorMessage(error.kind);
-      });
+      if(mounted) {
+        setState(() {
+          _batch=null;
+          _local=const [];
+          _message=gcalQaErrorMessage(error.kind);
+        });
+      }
     } catch (_) {
       if(mounted) {
         setState(() {
@@ -81,14 +83,16 @@ class _GcalDiaryReadScreenState extends State<GcalDiaryReadScreen> {
   Future<void> _loadConnections() => _perform(() async {
     // Invalidate any old provider data before checking the current app account.
     // A failed refresh must never leave another account's Google event titles.
-    if(mounted) setState(() {
-      _accounts=const [];
-      _selectedSubject=null;
-      _calendars=const [];
-      _selectedCalendar=null;
-      _batch=null;
-      _local=const [];
-    });
+    if(mounted) {
+      setState(() {
+        _accounts=const [];
+        _selectedSubject=null;
+        _calendars=const [];
+        _selectedCalendar=null;
+        _batch=null;
+        _local=const [];
+      });
+    }
     final accounts=await _client.recoverConnections();
     if(!mounted)return;
     setState(() {
