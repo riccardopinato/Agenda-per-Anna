@@ -2,7 +2,7 @@
 // This is NOT a public-callback/IP flood limiter. Deploy only after the private
 // gcal_staging_rate_budget_v1 migration and separate ingress rate-limit review.
 import {sha256Hex} from './webcrypto_core.mjs';
-const limits=Object.freeze({start:6,preview:30,confirm:8,disconnect:6,connections:20,calendars:10});
+const limits=Object.freeze({start:6,preview:30,confirm:8,disconnect:6,connections:20,calendars:10,events:6});
 const uuid=/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 export class GcalStageRequestBudget {
   constructor(sql) {
