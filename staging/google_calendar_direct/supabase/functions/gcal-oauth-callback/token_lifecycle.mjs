@@ -16,7 +16,7 @@ export class GcalStageTokenLifecycle {
     clock=()=>Math.floor(Date.now()/1000),timeoutMs=8000}={}) {
     if(!textOk(clientId,256)||!clientId.endsWith('.apps.googleusercontent.com')||
        !textOk(clientSecret)||!(vault instanceof GcalStageVault)||
-       !linkStore||!['getLink','replaceLink','takeLink'].every(x=>typeof linkStore[x]==='function')||
+       !linkStore||!['getLink','replaceLink','takeLink','listLinks'].every(x=>typeof linkStore[x]==='function')||
        typeof fetcher!=='function'||typeof clock!=='function'||
        !Number.isInteger(timeoutMs)||timeoutMs<1000||timeoutMs>15000) fail('LIFECYCLE_NOT_CONFIGURED');
     Object.assign(this,{clientId,clientSecret,vault,linkStore,fetcher,clock,timeoutMs});
@@ -70,6 +70,31 @@ export class GcalStageTokenLifecycle {
     if(await this.linkStore.replaceLink(accountHash,subjectHash,oldEnvelope,encrypted)!==true)
       fail('TOKEN_CHANGED_RETRY');
     return updated.accessToken;
+  }
+  async listConnections({verifiedAccountId}={}) {
+    if(!textOk(verifiedAccountId,256))fail('ACCOUNT_REQUIRED');
+    const accountHash=await sha256Hex('anna-staging-account-v2:'+verifiedAccountId);
+    const rows=await this.linkStore.listLinks(accountHash);
+    if(!Array.isArray(rows)||rows.length>10)fail('UNTRUSTED_LINK_LIST');
+    const seen=new Set(),accounts=[];
+    for(const row of rows) {
+      if(typeof row?.google_subject_hash!=='string'||
+         !/^[a-f0-9]{64}$/.test(row.google_subject_hash)||
+         seen.has(row.google_subject_hash))fail('UNTRUSTED_LINK_LIST');
+      seen.add(row.google_subject_hash);
+      const record=await this.vault.open(row.envelope,
+        accountHash+':'+row.google_subject_hash);
+      this._assertRecord(record,record?.googleSubject);
+      const expected=await sha256Hex('anna-staging-google-v2:'+record.googleSubject);
+      if(expected!==row.google_subject_hash)fail('UNTRUSTED_LINK_LIST');
+      accounts.push({
+        googleSubject:record.googleSubject,
+        googleEmail:typeof record.googleEmail==='string'&&record.googleEmail.length<=320
+          ?record.googleEmail:null,
+      });
+    }
+    // Whitelisted identity metadata only; absolutely no tokens or envelopes.
+    return {connections:accounts};
   }
   async disconnect({verifiedAccountId,googleSubject,explicitConfirmation=false}={}) {
     if(explicitConfirmation!==true)fail('CONFIRMATION_REQUIRED');
