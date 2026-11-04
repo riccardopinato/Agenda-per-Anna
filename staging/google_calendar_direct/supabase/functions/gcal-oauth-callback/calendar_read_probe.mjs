@@ -52,8 +52,9 @@ export class GcalStageCalendarReadProbe {
       for(const part of chunks){buffer.set(part,pos);pos+=part.byteLength;}
       json=JSON.parse(new TextDecoder('utf-8',{fatal:true}).decode(buffer));
     } catch {fail();}
-    if(!Array.isArray(json?.items)||json.items.length>25)fail();
-    const calendars=json.items.map(c=>{
+    const items=json?.items??[];
+    if(!Array.isArray(items)||items.length>25)fail();
+    const calendars=items.map(c=>{
       if(typeof c?.id!=='string'||c.id.length<1||c.id.length>1024||
          typeof c.summary!=='string'||c.summary.length>300)fail();
       return {id:c.id,name:c.summary,primary:c.primary===true,
