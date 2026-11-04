@@ -119,12 +119,21 @@ extension ApprovedSearchPolicy on AgendaStore {
         };
         final candidates = <String, PersonalSearchHit>{};
         var tooMany = false;
+        // Place lookup is currently built eagerly by the canonical source,
+        // so it is excluded from this bounded typo fallback (exact search
+        // still covers places normally).
+        final sourceKinds = (kinds == null || kinds.isEmpty
+            ? PersonalSearchKind.values.toSet()
+            : kinds.toSet())
+          ..remove(PersonalSearchKind.place);
         for (final anchor in anchors) {
+          if (sourceKinds.isEmpty) break;
           for (final hit in personalSearch(
             anchor,
-            kinds: kinds,
+            kinds: sourceKinds,
             includeArchived: includeArchived,
             languageCode: languageCode,
+            maxScannedRecords: 5000,
           )) {
             candidates.putIfAbsent('${hit.kind.name}:${hit.id}', () => hit);
             if (candidates.length > 5000) { tooMany = true; break; }
