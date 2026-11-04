@@ -19,7 +19,7 @@ void main() {
   });
 
   test('buffer is clamped and cannot manufacture negative capacity', () {
-    final a=RealisticDayAdvice(
+    final a=const RealisticDayAdvice(
       freeMinutes: 15,pendingTasks:3,reasonCode:'VISIBLE_WINDOW_CONGESTED',
       firstFreeSlot:null,bufferMinutes:60,
     );
