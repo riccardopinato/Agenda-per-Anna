@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import {scopesContainRequired,GOOGLE_SCOPE_EVENTS,
   GOOGLE_SCOPE_CALENDAR_LIST} from './webcrypto_core.mjs';
 
-test('accepts Google's canonical userinfo.email while requiring every Calendar scope',()=>{
+test("accepts Google's canonical userinfo.email while requiring every Calendar scope",()=>{
   const google='openid https://www.googleapis.com/auth/userinfo.email '+
     GOOGLE_SCOPE_EVENTS+' '+GOOGLE_SCOPE_CALENDAR_LIST;
   assert.equal(scopesContainRequired(google),true);
