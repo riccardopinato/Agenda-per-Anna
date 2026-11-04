@@ -65,8 +65,10 @@ List<DiaryBlock> externalCalendarDiaryCandidates(
 }
 
 ExternalDiaryCorrespondence externalCalendarDiaryCorrespondence(
-  AgendaStore store, ExternalCalendarEvent event, {DateTime? now},
-) {
+  AgendaStore store,
+  ExternalCalendarEvent event, {
+  DateTime? now,
+}) {
   if (!store.entryScopeReady ||
       !canCaptureExternalCalendarMemory(event, now ?? DateTime.now())) {
     return const ExternalDiaryCorrespondence(
@@ -263,6 +265,6 @@ Future<void> openExternalCalendarMemoryDraft(
       ));
     }
     // Do not discard the user's draft on failed persistence.
-    draft = await showDiaryNoteEditor(context, initialText: draft!, editing: true);
+    draft = await showDiaryNoteEditor(context, initialText: draft, editing: true);
   }
 }
