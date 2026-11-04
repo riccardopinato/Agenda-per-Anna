@@ -61,6 +61,11 @@ jobs:
       - name: Mock-test fail-closed account request budgets
         run: node --test staging/google_calendar_direct/supabase/functions/gcal-oauth-callback/request_budget.test.mjs
 
+      - name: Check public browser callback global quota syntax
+        run: node --check staging/google_calendar_direct/supabase/functions/gcal-oauth-callback/callback_budget.mjs
+      - name: Mock-test global callback throttle and fail-closed behavior
+        run: node --test staging/google_calendar_direct/supabase/functions/gcal-oauth-callback/callback_budget.test.mjs
+
       - name: Check unreleased Deno Edge entrypoint syntax
         run: node --check staging/google_calendar_direct/supabase/functions/gcal-oauth-callback/index_ready.mjs
       - name: Assert deployed function remains locked and staging dependencies are pinned
