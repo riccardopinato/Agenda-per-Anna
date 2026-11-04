@@ -143,7 +143,7 @@ export function createGoogleCalendarStagingHandler({
        return browserResponse('Collegamento non completato. Torna nell\u2019app e riprova.',400);
      }
    }
-   if(req.method!=='POST'||!['/start','/preview','/confirm','/disconnect','/connections','/calendars'].includes(suffix))
+   if(req.method!=='POST'||!['/start','/preview','/confirm','/disconnect','/connections','/calendars','/events'].includes(suffix))
      return json({error:'METHOD_NOT_ALLOWED'},405);
    const mime=req.headers.get('content-type')?.split(';')[0].toLowerCase().trim();
    if(mime!=='application/json')return json({error:'JSON_REQUIRED'},415,origin);
