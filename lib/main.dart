@@ -24,6 +24,11 @@ import 'package:table_calendar/table_calendar.dart';
 import 'package:uuid/uuid.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../staging/google_calendar_direct/qa_flutter_screen.dart';
+
+const bool annaGoogleCalendarQaBuild =
+    bool.fromEnvironment('ANNA_GCAL_STAGING_QA', defaultValue: false);
+
 import 'app_version.dart';
 import 'external_calendar_service.dart';
 import 'backup_service.dart';
