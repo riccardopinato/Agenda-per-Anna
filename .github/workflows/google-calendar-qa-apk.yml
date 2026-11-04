@@ -112,7 +112,16 @@ jobs:
           aapt=$(find "$ANDROID_HOME/build-tools" -type f -name aapt -print | sort -V | tail -1)
           test -n "$aapt"
           "$aapt" dump badging "$apk" > /tmp/anna-qa-badging.txt
-          grep -q "package: name='com.riccardopinato.agenda_per_anna' versionCode='123'" /tmp/anna-qa-badging.txt
+          package_line=$(grep '^package:' /tmp/anna-qa-badging.txt | head -1)
+          echo "Signed QA APK metadata: $package_line"
+          if [[ "$package_line" != *"name='com.riccardopinato.agenda_per_anna'"* ]]; then
+            echo "::error::Unexpected package ID; refusing delivery"
+            exit 1
+          fi
+          if [[ "$package_line" != *"versionCode='123'"* ]]; then
+            echo "::error::Unexpected QA build number; refusing delivery"
+            exit 1
+          fi
           apksigner=$(find "$ANDROID_HOME/build-tools" -type f -name apksigner -print | sort -V | tail -1)
           test -n "$apksigner"
           "$apksigner" verify --verbose "$apk"
