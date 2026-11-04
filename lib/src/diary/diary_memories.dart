@@ -1,5 +1,179 @@
 part of '../../main.dart';
 
+/// CAP-0145: private count of user-created memory blocks. No mood, health,
+/// Vault, shared inference, tracking or background collection. Missing dates
+/// mean 'not recorded', never 'no life activity'.
+Map<String, int> annaRecordedMemoriesByDay(
+  Iterable<DiaryBlockReference> authorizedMemories, {
+  required DateTime endingMonth,
+}) {
+  final from = DateTime(endingMonth.year, endingMonth.month - 11, 1);
+  final until = DateTime(endingMonth.year, endingMonth.month + 1, 1);
+  final counts = <String, int>{};
+  final seen = <String>{};
+  for (final ref in authorizedMemories) {
+    final block = ref.block;
+    final day = DateTime(ref.date.year, ref.date.month, ref.date.day);
+    if (block.archived || day.isBefore(from) || !day.isBefore(until) ||
+        block.id.trim().isEmpty || !seen.add(block.id)) {
+      continue;
+    }
+    final key = AgendaStore.dateKey(day);
+    counts[key] = (counts[key] ?? 0) + 1;
+  }
+  return Map.unmodifiable(counts);
+}
+
+String _annaMemoryFrequencyCopy(String code, String key) {
+  const copies = <String, Map<String, String>>{
+    'title': {
+      'it': 'Ricordi registrati', 'en': 'Recorded memories',
+      'es': 'Recuerdos registrados', 'fr': 'Souvenirs enregistrés',
+      'pt': 'Memórias registadas',
+    },
+    'empty': {
+      'it': 'Nessun ricordo registrato', 'en': 'No memory recorded',
+      'es': 'No se registraron recuerdos', 'fr': 'Aucun souvenir enregistré',
+      'pt': 'Nenhuma memória registada',
+    },
+    'count': {
+      'it': 'ricordi', 'en': 'memories', 'es': 'recuerdos',
+      'fr': 'souvenirs', 'pt': 'memórias',
+    },
+    'private': {
+      'it': 'Solo ricordi privati già salvati',
+      'en': 'Only already saved private memories',
+      'es': 'Solo recuerdos privados ya guardados',
+      'fr': 'Uniquement les souvenirs privés enregistrés',
+      'pt': 'Apenas memórias privadas já guardadas',
+    },
+    'hidden': {
+      'it': 'Dettagli nascosti per privacy', 'en': 'Details hidden for privacy',
+      'es': 'Detalles ocultos por privacidad',
+      'fr': 'Détails masqués pour la confidentialité',
+      'pt': 'Detalhes ocultos por privacidade',
+    },
+  };
+  return copies[key]?[code] ?? copies[key]?['en'] ?? key;
+}
+
+Future<void> showAnnaMemoryFrequency(
+  BuildContext context,
+  AgendaStore store, {
+  String? personId,
+}) async {
+  final accountAtOpen = store.activeAccountId;
+  final now = DateTime.now();
+  await showModalBottomSheet<void>(
+    context: context,
+    isScrollControlled: true,
+    useSafeArea: true,
+    showDragHandle: true,
+    builder: (sheetContext) => AnimatedBuilder(
+      animation: store,
+      builder: (context, _) {
+        final strings = AnnaStrings.of(context);
+        final code = strings.languageCode;
+        final blocked = store.activeAccountId != accountAtOpen ||
+            store.preferences.hideHomeDetails;
+        final counts = blocked
+            ? const <String, int>{}
+            : annaRecordedMemoriesByDay(
+                store.memoryReferences(
+                  includeArchived: false, personId: personId),
+                endingMonth: now);
+        return SizedBox(
+          height: MediaQuery.sizeOf(context).height * 0.8,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 4, 20, 12),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(_annaMemoryFrequencyCopy(code, 'title'),
+                      style: Theme.of(context).textTheme.titleLarge),
+                    Text(blocked ? _annaMemoryFrequencyCopy(code, 'hidden') : 
+                        _annaMemoryFrequencyCopy(code, 'private'),
+                      style: Theme.of(context).textTheme.bodySmall),
+                  ],
+                ),
+              ),
+              Expanded(
+                child: blocked
+                    ? const SizedBox.shrink()
+                    : ListView.builder(
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        itemCount: 12,
+                        itemBuilder: (context, index) {
+                          final month = DateTime(now.year, now.month - index, 1);
+                          final days = DateTime(month.year, month.month + 1, 0).day;
+                          final locale = AnnaStrings.intlLocale(context);
+                          return Padding(
+                            padding: const EdgeInsets.only(bottom: 18),
+                            child: AnnaJournalCard(child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(DateFormat('MMMM yyyy', locale).format(month),
+                                  style: Theme.of(context).textTheme.titleMedium),
+                                const SizedBox(height: 10),
+                                GridView.count(
+                                  crossAxisCount: 7,
+                                  shrinkWrap: true,
+                                  physics: const NeverScrollableScrollPhysics(),
+                                  mainAxisSpacing: 4,
+                                  crossAxisSpacing: 4,
+                                  children: [
+                                    for (var day = 1; day <= days; day++)
+                                      Builder(builder: (context) {
+                                        final date = DateTime(
+                                            month.year, month.month, day);
+                                        final count = counts[
+                                            AgendaStore.dateKey(date)] ?? 0;
+                                        final info = count == 0
+                                            ? _annaMemoryFrequencyCopy(code, 'empty')
+                                            : '$count ${_annaMemoryFrequencyCopy(code, 'count')}';
+                                        final label = '${DateFormat('d MMMM', locale).format(date)} · $info';
+                                        return Semantics(
+                                          label: label,
+                                          child: Tooltip(
+                                            message: label,
+                                            child: DecoratedBox(
+                                              decoration: BoxDecoration(
+                                                color: count == 0
+                                                    ? Theme.of(context)
+                                                        .colorScheme.surfaceContainerHigh
+                                                    : Theme.of(context).colorScheme.primary
+                                                        .withValues(alpha:
+                                                          count >= 4 ? 0.9 :
+                                                          count >= 2 ? 0.65 : 0.35),
+                                                borderRadius:
+                                                    BorderRadius.circular(6),
+                                              ),
+                                              child: Center(child: Text('$day',
+                                                style: Theme.of(context)
+                                                    .textTheme.labelSmall)),
+                                            ),
+                                          ),
+                                        );
+                                      }),
+                                  ],
+                                ),
+                              ],
+                            )),
+                          );
+                        },
+                      ),
+              ),
+            ],
+          ),
+        );
+      },
+    ),
+  );
+}
+
 class DiaryMemoriesScreen extends StatefulWidget {
   final AgendaStore store;
   final String? personId;
@@ -1962,6 +2136,16 @@ class _DiaryMemoriesScreenState extends State<DiaryMemoriesScreen> {
           style: AnnaJournalTypography.editorial(context, size: 29),
         ),
         actions: [
+          IconButton(
+            key: const ValueKey('cap0145-memory-frequency'),
+            tooltip: _annaMemoryFrequencyCopy(
+                strings.languageCode, 'title'),
+            onPressed: widget.store.preferences.hideHomeDetails
+                ? null
+                : () => showAnnaMemoryFrequency(
+                    context, widget.store, personId: widget.personId),
+            icon: const Icon(Icons.calendar_view_month_outlined),
+          ),
           IconButton(
             tooltip: strings.d3('memoriesSearchAction'),
             onPressed: () {
