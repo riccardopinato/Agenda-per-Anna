@@ -59,6 +59,59 @@ class _SettingsHubScreenState extends State<SettingsHubScreen> {
     );
   }
 
+
+  /// Ephemeral private-only comparison: never persists links or uploads
+  /// Anna's Diary event/note content to Google or Supabase.
+  List<GcalDiaryLocalContext> _googleLocalContexts(
+      DateTime startInclusive,DateTime endExclusive) {
+    final result=<GcalDiaryLocalContext>[];
+    for(var day=DateTime(startInclusive.year,startInclusive.month,startInclusive.day);
+        day.isBefore(endExclusive);
+        day=DateTime(day.year,day.month,day.day+1)) {
+      for(final item in store.forDay(day)) {
+        if(item.type!=ItemType.appointment)continue;
+        final start=item.start;
+        result.add(GcalDiaryLocalContext(
+          id:item.id,title:item.title,day:day,
+          kind:GcalDiaryContextKind.appointment,
+          startTime:start==null?null:DateTime(
+            day.year,day.month,day.day,start.hour,start.minute),
+        ));
+      }
+      final journal=store.journal(day);
+      final notes=journal.blocks.where((b)=>
+        b.type==DiaryBlockType.note&&!b.archived&&b.text.trim().isNotEmpty);
+      for(final note in notes) {
+        final firstLine=note.text.trim().split('\n').first.trim();
+        if(firstLine.isEmpty)continue;
+        result.add(GcalDiaryLocalContext(
+          id:note.id,title:firstLine.length>300
+              ?firstLine.substring(0,300):firstLine,
+          day:day,kind:GcalDiaryContextKind.diaryNote,
+        ));
+      }
+      if(journal.note.trim().isNotEmpty){
+        final title=journal.note.trim().split('\n').first.trim();
+        if(title.isNotEmpty)result.add(GcalDiaryLocalContext(
+          id:'journal:'+AgendaStore.dateKey(day),
+          title:title.length>300?title.substring(0,300):title,
+          day:day,kind:GcalDiaryContextKind.diaryNote,
+        ));
+      }
+    }
+    return List.unmodifiable(result);
+  }
+
+  void _openGoogleReadOnly(BuildContext context) {
+    _open(context,GcalDiaryReadScreen(
+      localContextsForWindow:_googleLocalContexts,
+      onManageConnection:()=>_open(context,AnnaGcalQaScreen(
+        signedIn:()=>CloudSyncService.instance.signedIn,
+        signInWithGoogle:()=>CloudSyncService.instance.signInWithGoogle(),
+      )),
+    ));
+  }
+
   Widget _tile({
     required String id,
     required IconData icon,
@@ -207,6 +260,17 @@ class _SettingsHubScreenState extends State<SettingsHubScreen> {
                       onTap: () => _open(
                           context, CloudAccountScreen(store: store)),
                     ),
+                  if (annaGoogleCalendarQaBuild &&
+                      _matches('calendar','Google Calendar — eventi',
+                        'Lettura eventi e corrispondenze col diario'))
+                    _tile(
+                      id:'settings-hub-google-diary-readonly',
+                      domain:AnnaVisualDomain.ecosystem,
+                      icon:Icons.event_note_outlined,
+                      title:'Google Calendar — eventi',
+                      subtitle:'Lettura e corrispondenze col diario · QA',
+                      onTap:()=>_openGoogleReadOnly(context),
+                    ),
                   if (_matches('calendar',
                       androidSyncCopy(strings, 'title'),
                       androidSyncCopy(strings, 'intro')))
@@ -254,6 +318,9 @@ class _SettingsHubScreenState extends State<SettingsHubScreen> {
                         strings.v100AccountSyncDescription),
                     _matches('calendar', androidSyncCopy(strings, 'title'),
                         androidSyncCopy(strings, 'intro')),
+                    annaGoogleCalendarQaBuild&&_matches('calendar',
+                      'Google Calendar — eventi',
+                      'Lettura eventi e corrispondenze col diario'),
                     _matches('capability',
                         capabilityHealthCopy(strings.languageCode, 'title'),
                         capabilityHealthCopy(strings.languageCode, 'intro')),
@@ -385,6 +452,17 @@ class _SettingsHubScreenState extends State<SettingsHubScreen> {
                           AndroidCalendarSyncSettingsScreen(store: store),
                         ),
                       ),
+                      if(annaGoogleCalendarQaBuild) ...[
+                        const Divider(height:1),
+                        _tile(
+                          id:'settings-hub-google-diary-readonly',
+                          domain:AnnaVisualDomain.ecosystem,
+                          icon:Icons.event_note_outlined,
+                          title:'Google Calendar — eventi',
+                          subtitle:'Eventi e corrispondenze · sola lettura QA',
+                          onTap:()=>_openGoogleReadOnly(context),
+                        ),
+                      ],
                       const Divider(height: 1),
                       _tile(
                         id: 'settings-hub-capability-health',
