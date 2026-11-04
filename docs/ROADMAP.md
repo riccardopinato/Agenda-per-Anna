@@ -1,5 +1,33 @@
 # Anna's Diary — Roadmap
 
+## Google Calendar Direct — ripresa staging 04/11/2026
+
+**Ripresa documentata:** il proprietario ha confermato 4/4 Edge Function Secrets
+inseriti direttamente in Supabase staging. La correttezza dei valori e la loro
+iniezione nell'handler non sono verificabili tramite il connettore; nessuna
+credenziale e' stata riportata su GitHub o in chat.
+
+- PR #199: nuovi test regressione del lifecycle Google refresh/rotate/revoke,
+  workflow CI estesa e rate limiting per operazioni autenticate con database.
+- Staging Supabase `pdanpljacyozslrutsor`: migrazione
+  `gcal_staging_rate_budget_v1` applicata e verificata il 04/11/2026,
+  tabella privata `gcal_stage.oauth_request_budget` vuota, RLS attiva,
+  ruoli `anon` e `authenticated` senza accesso.
+- Controllo SQL della query atomica: `EXPLAIN` PASS (nessuna riga inserita);
+  CI/Node sulla HEAD corrente da verificare, provider Google e QA Android
+  ancora NOT VERIFIED.
+- La funzione distribuita `index.ts` resta **503 LOCKED**; non impostare
+  `ANNA_GCAL_STAGING_ENABLE`, non effettuare redirect/consenso OAuth reale,
+  non distribuire `index_ready.mjs`, non fare merge/firmare APK.
+- Gate aperti: flood control per callback anonima, lifecycle e revoca reali,
+  consenso user/tester separato, browser/Flutter integration,
+  Privacy #215 e storico B3, riallineamento branch a main,
+  CI exact-head e validazione dispositivo. Un via libera ai secrets non
+  costituisce via libera all'accesso Google reale.
+
+Il blocco del 03/11 seguente e' mantenuto come cronologia, non indica che
+l'utente debba ripetere la configurazione gia' completata.
+
 ## Google Calendar Direct — PAUSA OPERATIVA SU RICHIESTA UTENTE (03/11/2026)
 
 **Stato: SOSPESO / DA RIPRENDERE DAL PC DI CASA.** L'utente ha chiesto
