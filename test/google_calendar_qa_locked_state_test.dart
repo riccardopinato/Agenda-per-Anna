@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import '../lib/qa/google_calendar/two_phase_flutter_client.dart';
-import '../lib/qa/google_calendar/two_phase_flutter_panel.dart';
+import 'package:agenda_per_anna/qa/google_calendar/two_phase_flutter_client.dart';
+import 'package:agenda_per_anna/qa/google_calendar/two_phase_flutter_panel.dart';
 
 void main() {
   test('known staging 503 is not misreported as generic request rejection',
