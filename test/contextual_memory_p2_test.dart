@@ -90,6 +90,12 @@ void main() {
     expect(source, contains("key: const ValueKey('contextual-memory-reset-excluded')"));
     expect(source, contains('_digestFor(String id)'));
     expect(source, contains('maxPicks = limit.clamp(0, 2)'));
+    expect(source, contains("prefs.setInt('${key}_selected_day', today)"));
+    expect(source, contains("prefs.setStringList("));
+    expect(source, contains("'${key}_selected_hashes'"));
+    expect(source, contains('_dailySelectedDay == today'));
+    expect(source, contains('while (_excluded.length > 500)'), isFalse);
+    expect(source, contains('_snoozedThrough > today'));
     expect(source, isNot(contains('onThisDayPushNotification')));
   });
 }
