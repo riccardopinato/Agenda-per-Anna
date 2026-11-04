@@ -49,6 +49,12 @@ class GcalStagePreview {
   const GcalStagePreview._(this.waiting, this.googleSubject, this.verifiedEmail);
 }
 
+class GcalStageConnection {
+  final String googleSubject;
+  final String? verifiedEmail;
+  const GcalStageConnection(this.googleSubject, this.verifiedEmail);
+}
+
 class GcalStageDisconnected {
   final bool locallyDisconnected;
   final bool? providerRevoked;
@@ -69,6 +75,7 @@ class GcalTwoPhaseFlutterStagingClient {
   DateTime? _expiry;
   String? _previewedSubject;
   String? _connectedSubject;
+  List<GcalStageConnection> _knownConnections = const [];
   bool _busy = false;
 
   GcalTwoPhaseFlutterStagingClient({
@@ -82,6 +89,8 @@ class GcalTwoPhaseFlutterStagingClient {
   bool get hasPreviewedIdentity => _previewedSubject != null;
   bool get connectedThisSession => _connectedSubject != null;
   String? get connectedGoogleSubject => _connectedSubject;
+  List<GcalStageConnection> get knownConnections =>
+      List.unmodifiable(_knownConnections);
 
   void clearForAccountSwitch() {
     _pendingHandle = null;
@@ -89,6 +98,7 @@ class GcalTwoPhaseFlutterStagingClient {
     _expiry = null;
     _previewedSubject = null;
     _connectedSubject = null;
+    _knownConnections = const [];
   }
 
   Future<GcalStageAppAuth> _requireAuth() async {
@@ -214,6 +224,56 @@ class GcalTwoPhaseFlutterStagingClient {
         _previewedSubject = subject;
         return GcalStagePreview._(false, subject, email as String?);
       });
+
+  /// Rehydrates non-secret connection metadata after a process restart.
+  /// The server verifies the current production session on every call.
+  Future<List<GcalStageConnection>> recoverConnections() =>
+      _serial(() async {
+        final auth = await _requireAuth();
+        if (_pendingHandle != null) {
+          throw const GcalStageClientException(
+              GcalStageClientFault.alreadyPending);
+        }
+        final response = await _post('/connections', auth, const {});
+        final raw = response.json['connections'];
+        if (raw is! List || raw.length > 10) {
+          throw const GcalStageClientException(
+              GcalStageClientFault.malformedBackendResponse);
+        }
+        final output = <GcalStageConnection>[];
+        final seen = <String>{};
+        for (final item in raw) {
+          if (item is! Map ||
+              item['googleSubject'] is! String ||
+              (item['googleSubject'] as String).isEmpty ||
+              (item['googleSubject'] as String).length > 256 ||
+              item['googleEmail'] != null &&
+                  (item['googleEmail'] is! String ||
+                      (item['googleEmail'] as String).length > 320)) {
+            throw const GcalStageClientException(
+                GcalStageClientFault.malformedBackendResponse);
+          }
+          final subject = item['googleSubject'] as String;
+          if (!seen.add(subject)) {
+            throw const GcalStageClientException(
+                GcalStageClientFault.malformedBackendResponse);
+          }
+          output.add(GcalStageConnection(
+              subject, item['googleEmail'] as String?));
+        }
+        _ownerAccountId = auth.accountId;
+        _knownConnections = List.unmodifiable(output);
+        _connectedSubject =
+            output.length == 1 ? output.first.googleSubject : null;
+        return List.unmodifiable(output);
+      });
+
+  void selectConnection(String googleSubject) {
+    if (!_knownConnections.any((link) => link.googleSubject == googleSubject)) {
+      throw const GcalStageClientException(GcalStageClientFault.notConnected);
+    }
+    _connectedSubject = googleSubject;
+  }
 
   Future<void> confirm({required bool explicitConfirmation}) =>
       _serial(() async {
