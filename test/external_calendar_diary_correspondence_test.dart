@@ -37,6 +37,7 @@ void main() {
   test('past-only external source never becomes a memory automatically', () async {
     final store = AgendaStore();
     await store.load();
+    await store.continueWithoutAccount();
     final external = event();
     final report = externalCalendarDiaryCorrespondence(
       store, external, now: DateTime(2026, 11, 4),
@@ -56,6 +57,7 @@ void main() {
   test('possible duplicate stays in review, never merges or deletes', () async {
     final store = AgendaStore();
     await store.load();
+    await store.continueWithoutAccount();
     final external = event();
     await store.saveJournal(external.date, DayJournal(blocks: [
       DiaryBlock(
@@ -78,6 +80,7 @@ void main() {
   test('confirmed diary save is idempotent and preserves unrelated blocks', () async {
     final store = AgendaStore();
     await store.load();
+    await store.continueWithoutAccount();
     final external = event();
     await store.saveJournal(external.date, DayJournal(blocks: [
       DiaryBlock(
@@ -121,6 +124,7 @@ void main() {
   test('account mismatch, future events and empty text fail closed', () async {
     final store = AgendaStore();
     await store.load();
+    await store.continueWithoutAccount();
     final external = event();
     expect(await saveExternalCalendarMemoryDraft(
       store, external, 'Private diary', now: DateTime(2026, 11, 4),
