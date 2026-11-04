@@ -43,6 +43,7 @@ function scenario() {
       revocations++;return {status:200};
     },
     linkStore:{
+      async listLinks(accountHash){return [...links].filter(([k])=>k.startsWith(accountHash+':')).map(([k,envelope])=>({google_subject_hash:k.slice(65),envelope}));},
       async getLink(a,s){return links.get(a+':'+s)??null;},
       async replaceLink(a,s,old,next){
         const k=a+':'+s;
