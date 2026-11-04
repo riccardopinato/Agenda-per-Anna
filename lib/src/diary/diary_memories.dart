@@ -15,7 +15,9 @@ Map<String, int> annaRecordedMemoriesByDay(
     final block = ref.block;
     final day = DateTime(ref.date.year, ref.date.month, ref.date.day);
     if (block.archived || day.isBefore(from) || !day.isBefore(until) ||
-        block.id.trim().isEmpty || !seen.add(block.id)) continue;
+        block.id.trim().isEmpty || !seen.add(block.id)) {
+      continue;
+    }
     final key = AgendaStore.dateKey(day);
     counts[key] = (counts[key] ?? 0) + 1;
   }
