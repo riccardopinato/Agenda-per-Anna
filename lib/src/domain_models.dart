@@ -1488,6 +1488,9 @@ class DiaryBlock {
   final DiaryBlockType type;
   final DateTime createdAt;
   final String text;
+  /// Optional author-written accessibility description of a diary photo.
+  /// Not generated from a model or derived from OCR/caption.
+  final String altText;
 
   // imageBase64 is retained only as a legacy/portable transport field.
   // New local photos live in MediaAssetStore and persist only these IDs.
@@ -1512,6 +1515,7 @@ class DiaryBlock {
     required this.type,
     required this.createdAt,
     this.text = '',
+    this.altText = '',
     this.imageBase64 = '',
     this.audioBase64 = '',
     this.mediaAssetId = '',
@@ -1539,6 +1543,7 @@ class DiaryBlock {
 
   DiaryBlock copyWith({
     String? text,
+    String? altText,
     String? imageBase64,
     String? audioBase64,
     String? mediaAssetId,
@@ -1560,6 +1565,7 @@ class DiaryBlock {
         type: type,
         createdAt: createdAt,
         text: text ?? this.text,
+        altText: altText ?? this.altText,
         imageBase64: imageBase64 ?? this.imageBase64,
         audioBase64: audioBase64 ?? this.audioBase64,
         mediaAssetId: mediaAssetId ?? this.mediaAssetId,
@@ -1583,6 +1589,7 @@ class DiaryBlock {
         'type': type.name,
         'createdAt': createdAt.toUtc().toIso8601String(),
         'text': text,
+        'altText': altText,
         'imageBase64': imageBase64,
         'audioBase64': audioBase64,
         'mediaAssetId': mediaAssetId,
@@ -1617,6 +1624,8 @@ class DiaryBlock {
             DateTime.tryParse(json['createdAt'] as String? ?? '')?.toLocal() ??
                 DateTime.now(),
         text: json['text'] as String? ?? '',
+        altText: ((json['altText'] as String?) ?? '').trim().length > 500
+            ? '' : ((json['altText'] as String?) ?? '').trim(),
         imageBase64: json['imageBase64'] as String? ?? '',
         audioBase64: json['audioBase64'] as String? ?? '',
         mediaAssetId: json['mediaAssetId'] as String? ?? '',
