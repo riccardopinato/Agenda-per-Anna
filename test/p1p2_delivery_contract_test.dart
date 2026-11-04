@@ -25,10 +25,10 @@ void main() {
         if (rawPath.endsWith('/**')) {
           final directory = rawPath.substring(0, rawPath.length - 3);
           expect(Directory(directory).existsSync(), isTrue,
-              reason: '${entry.key}: ${rawPath}');
+              reason: '${entry.key}: $rawPath');
         } else {
           expect(File(rawPath).existsSync(), isTrue,
-              reason: '${entry.key}: ${rawPath}');
+              reason: '${entry.key}: $rawPath');
         }
       }
     }
