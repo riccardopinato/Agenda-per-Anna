@@ -6,7 +6,7 @@
 // explicitly confirmed authenticated completion is required to link accounts.
 // No cookies or cross-origin bearer URLs required.
 import {GcalStageFault, GcalStageVault, randomUrl,sha256Hex,pkceS256,
-  REQUIRED_SCOPES,AUTH_ENDPOINT,checkOauthConfig,exchangeGoogleCode,
+  REQUIRED_SCOPES,scopesContainRequired,AUTH_ENDPOINT,checkOauthConfig,exchangeGoogleCode,
   verifyGoogleIdToken} from './webcrypto_core.mjs';
 
 const fail = kind => { throw new GcalStageFault(kind); };
@@ -78,8 +78,7 @@ export class GcalTwoPhaseBroker {
        !valid(tokens?.id_token,12000)||tokens?.token_type?.toLowerCase()!=='bearer'||
        !Number.isInteger(tokens.expires_in)||tokens.expires_in<60||
        tokens.expires_in>86400||!valid(tokens.scope,4096))fail('BAD_TOKEN_RESPONSE');
-    const granted=new Set(tokens.scope.split(/\s+/));
-    if(!REQUIRED_SCOPES.every(s=>granted.has(s)))fail('SCOPE_MISMATCH');
+    if(!scopesContainRequired(tokens.scope))fail('SCOPE_MISMATCH');
     const identity=await this.idVerifier(tokens.id_token,{
       clientId:this.clientId,nonce:tx.nonce,now:this.clock()});
     if(!valid(identity?.subject))fail('BAD_GOOGLE_SUBJECT');
