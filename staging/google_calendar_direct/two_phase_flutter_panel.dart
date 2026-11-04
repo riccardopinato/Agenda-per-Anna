@@ -35,6 +35,7 @@ class _GcalStagingTestPanelState extends State<GcalStagingTestPanel> {
   bool _busy = false;
   GcalStagePreview? _preview;
   List<GcalStageConnection> _connections = const [];
+  List<GcalStageCalendar> _calendars = const [];
   String _message = 'Collegamento Google Calendar di test non avviato.';
   String? _error;
   bool _expectedLocked = false;
@@ -130,6 +131,17 @@ class _GcalStagingTestPanelState extends State<GcalStagingTestPanel> {
     });
   }
 
+  Future<void> _readCalendars() => _perform(() async {
+    final result = await widget.client.readCalendars();
+    if (!mounted) return;
+    setState(() {
+      _calendars = result;
+      _message = result.isEmpty
+          ? 'Google Calendar risponde correttamente: nessun calendario visibile.'
+          : 'Lettura Google Calendar riuscita: ${result.length} calendari trovati.';
+    });
+  });
+
   Future<void> _disconnect() async {
     if (!await _ask('Scollegare l’account Google Calendar di test? '
         'Gli eventi Google già esistenti non verranno cancellati.')) {
@@ -141,6 +153,7 @@ class _GcalStagingTestPanelState extends State<GcalStagingTestPanel> {
       setState(() {
         _preview = null;
         _connections = const [];
+        _calendars = const [];
         _message = result.providerRevoked == true
             ? 'Scollegato e revoca Google confermata.'
             : 'Scollegato localmente. Revoca Google non verificata: '
@@ -179,6 +192,21 @@ class _GcalStagingTestPanelState extends State<GcalStagingTestPanel> {
                 child: Text(connection.verifiedEmail ?? connection.googleSubject),
               ),
           ],
+          if (_calendars.isNotEmpty) ...[
+            const SizedBox(height: 10),
+            const Text('Calendari Google — sola lettura',
+                style: TextStyle(fontWeight: FontWeight.w600)),
+            for (final calendar in _calendars)
+              ListTile(
+                dense: true,
+                contentPadding: EdgeInsets.zero,
+                leading: Icon(calendar.primary
+                    ? Icons.event_available_outlined
+                    : Icons.event_note_outlined),
+                title: Text(calendar.name),
+                subtitle: Text(calendar.accessRole),
+              ),
+          ],
           if (_preview != null && !_preview!.waiting) ...[
             const SizedBox(height: 10),
             SelectableText('Google: ${_preview!.verifiedEmail ?? 'email non verificata'}'),
@@ -213,6 +241,11 @@ class _GcalStagingTestPanelState extends State<GcalStagingTestPanel> {
               FilledButton(
                 onPressed: _busy ? null : _confirm,
                 child: const Text('Conferma collegamento'),
+              ),
+            if (widget.client.connectedThisSession)
+              FilledButton.tonal(
+                onPressed: _busy ? null : _readCalendars,
+                child: const Text('Leggi calendari Google'),
               ),
             if (widget.client.connectedThisSession)
               OutlinedButton(
