@@ -178,7 +178,6 @@ class _RealisticDayCardBody extends StatelessWidget {
     required this.snapshot,
     required this.hideDetails,
     required this.onDismiss,
-    super.key,
   });
 
   final AgendaStore store;
