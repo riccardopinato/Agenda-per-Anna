@@ -159,6 +159,7 @@ test('connections list is authenticated, rate-limited and never discloses bearer
  assert.equal(response.headers.get('cache-control'),'no-store, max-age=0');
 });
 
+test('authenticated disconnect requires explicit consent and never exposes provider tokens',async()=>{
   const calls=[];
   const handler=createGoogleCalendarStagingHandler({
     enabled:true,broker:{},requestBudget:{consume:async()=>true},callbackBudget:{consume:async()=>true},
