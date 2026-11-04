@@ -18,7 +18,7 @@ permissions:
 
 concurrency:
   group: anna-gcal-qa-signed-apk
-  cancel-in-progress: false
+  cancel-in-progress: true # Supersede obsolete QA source builds; deliver latest SHA only
 
 jobs:
   qa-arm64:
