@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {createGoogleCalendarStagingHandler} from './http_handler.mjs';
+import {createGoogleCalendarStagingHandler,safeCallbackFailureCode} from './http_handler.mjs';
+import {GcalStageFault} from './webcrypto_core.mjs';
 const base='https://pdanpljacyozslrutsor.supabase.co/functions/v1/gcal-oauth-callback';
 const validOrigin='https://riccardopinato.github.io';
 const userId='c16e0ec0-415c-4e53-a488-5c6ed75d2662';
@@ -132,6 +133,27 @@ test('callback response hides OAuth code and Google identity and requires no JWT
  assert.equal(html.includes(validState),false);
  assert.equal(f.calls[0][0],'callback');
  assert.equal(f.verified(),0);
+});
+test('browser callback intentionally sends human-readable plain text',async()=>{
+ const f=fixture();
+ const response=await f.handler(new Request(base+'?code=PRIVATE-CODE&state='+validState));
+ assert.equal(response.status,200);
+ assert.match(response.headers.get('content-type'),/^text\/plain/);
+ const message=await response.text();
+ assert.match(message,/Anna.*Diary - Google Calendar QA/);
+ assert.equal(message.includes('<html'),false);
+ assert.equal(message.includes('PRIVATE-CODE'),false);
+ assert.equal(message.includes(validState),false);
+});
+test('server diagnostic classification is finite and never returns secret error strings',()=>{
+ assert.equal(safeCallbackFailureCode(new GcalStageFault('GOOGLE_TOKEN_REJECTED')),
+   'GOOGLE_TOKEN_REJECTED');
+ assert.equal(safeCallbackFailureCode(new GcalStageFault('BAD_ID_CLAIMS')),
+   'BAD_ID_CLAIMS');
+ assert.equal(safeCallbackFailureCode(new Error('PRIVATE_REFRESH_TOKEN_AND_DB_URL')),
+   'UNCLASSIFIED_CALLBACK_FAILURE');
+ assert.equal(safeCallbackFailureCode({name:'GcalStageFault',kind:'PRIVATE_REFRESH_TOKEN'}),
+   'UNCLASSIFIED_CALLBACK_FAILURE');
 });
 test('Google callback failure cannot leak error or authorization code',async()=>{
  const f=fixture();
