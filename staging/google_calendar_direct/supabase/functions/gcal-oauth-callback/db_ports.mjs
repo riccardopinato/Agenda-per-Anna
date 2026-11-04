@@ -30,6 +30,17 @@ export class GcalStagePostgresPorts {
     `;
     return rows[0]?.envelope??null;
   }
+  async listLinks(accountHash) {
+    check(hashOk(accountHash),'BAD_HASH');
+    // Bound the decrypted result count: never enumerate another account.
+    const rows=await this.sql`
+      select google_subject_hash,envelope from gcal_stage.oauth_links
+       where app_account_hash=${accountHash}
+       order by google_subject_hash asc limit 11
+    `;
+    if(rows.length>10)throw new GcalStageDbError('TOO_MANY_LINKS');
+    return rows;
+  }
   async getLink(accountHash,subjectHash) {
     check(hashOk(accountHash)&&hashOk(subjectHash),'BAD_HASH');
     const rows=await this.sql`
