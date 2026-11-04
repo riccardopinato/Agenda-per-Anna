@@ -61,10 +61,12 @@ class _GcalDiaryReadScreenState extends State<GcalDiaryReadScreen> {
     } on GcalStageClientException catch(error) {
       if(mounted) setState(() {_message=gcalQaErrorMessage(error.kind);});
     } catch (_) {
-      if(mounted) setState(() {
-        _message='Impossibile completare la lettura. '
-          'Nessun evento del diario è stato modificato.';
-      });
+      if(mounted) {
+        setState(() {
+          _message='Impossibile completare la lettura. '
+            'Nessun evento del diario è stato modificato.';
+        });
+      }
     } finally {
       if(mounted) setState(() {_busy=false;});
     }
@@ -130,9 +132,9 @@ class _GcalDiaryReadScreenState extends State<GcalDiaryReadScreen> {
     final date=event.start.toLocal();
     final localizations=MaterialLocalizations.of(context);
     final day=localizations.formatMediumDate(date);
-    if(event.allDay)return day+' · Tutto il giorno';
+    if(event.allDay)return '${day} · Tutto il giorno';
     final clock=TimeOfDay.fromDateTime(date).format(context);
-    return day+' · '+clock;
+    return '${day} · ${clock}';
   }
 
   Widget _eventCard(GcalStageEvent event){
@@ -176,7 +178,7 @@ class _GcalDiaryReadScreenState extends State<GcalDiaryReadScreen> {
                   ),
                 ),
               if(matches.length>3)Text(
-                'Altre corrispondenze possibili: '+(matches.length-3).toString(),
+                'Altre corrispondenze possibili: ${matches.length-3}',
                 style:const TextStyle(fontSize:12),
               ),
             ],
@@ -247,8 +249,7 @@ class _GcalDiaryReadScreenState extends State<GcalDiaryReadScreen> {
             if(_selectedSubject!=null && _accounts.isNotEmpty) ...[
               const SizedBox(height:12),
               DropdownButtonFormField<String>(
-                key:ValueKey('google-diary-calendar-'+
-                    (_selectedCalendar??'none')),
+                key:ValueKey('google-diary-calendar-${_selectedCalendar??'none'}'),
                 initialValue:_selectedCalendar,
                 decoration:const InputDecoration(labelText:'Calendario Google'),
                 items:owned.map((calendar)=>DropdownMenuItem(
@@ -262,8 +263,8 @@ class _GcalDiaryReadScreenState extends State<GcalDiaryReadScreen> {
               if(restricted>0)Padding(
                 padding:const EdgeInsets.only(top:8),
                 child:Text(
-                  'Calendari non di proprietà: '+restricted.toString()+
-                  '. Gli attuali permessi Google consentono la lettura '
+                  'Calendari non di proprietà: ${restricted}. '
+                  'Gli attuali permessi Google consentono la lettura '
                   'degli eventi solo dai calendari di tua proprietà.',
                   style:Theme.of(context).textTheme.bodySmall,
                 ),
@@ -310,7 +311,7 @@ class _GcalDiaryReadScreenState extends State<GcalDiaryReadScreen> {
               ),
             if(_batch!=null)...[
               const SizedBox(height:20),
-              Text('Eventi trovati: '+events.length.toString(),
+              Text('Eventi trovati: ${events.length}',
                 style:Theme.of(context).textTheme.titleMedium),
               const SizedBox(height:8),
               if(_batch!.truncated)
