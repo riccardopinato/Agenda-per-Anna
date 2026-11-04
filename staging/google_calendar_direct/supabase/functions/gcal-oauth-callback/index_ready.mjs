@@ -71,7 +71,8 @@ function readyRouter() {
   });
 }
 let handler=createGoogleCalendarStagingHandler({enabled:false});
-if(Deno.env.get('ANNA_GCAL_STAGING_ENABLE')==='approved-for-live-oauth-testing') {
+if(Deno.env.get('ANNA_GCAL_STAGING_ENABLE')==='approved-for-live-oauth-testing' &&
+   Deno.env.get('ANNA_GCAL_STAGING_LIVE_APPROVED_20261104')==='owner-authorized-google-consent') {
   try {handler=readyRouter();}
   catch {
     // Do NOT print environment variables or provider secrets.
