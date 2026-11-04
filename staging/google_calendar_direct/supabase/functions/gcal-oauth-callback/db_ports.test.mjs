@@ -35,3 +35,22 @@ test('reject unhashed owner IDs and plaintext or missing envelopes',async()=>{
   await assert.rejects(port.create(hash,envelope,-1),GcalStageDbError);
   assert.equal(calls.length,0);
 });
+
+
+test('link lifecycle uses owner-scoped read, CAS replacement and atomic unlink',async()=>{
+  let f=fixture();
+  assert.equal(await f.port.getLink(hash,'b'.repeat(64)),null);
+  assert.match(f.calls[0].query,/select envelope from gcal_stage\.oauth_links/);
+  assert.match(f.calls[0].query,/app_account_hash=\?/);
+  f=fixture();
+  assert.equal(await f.port.replaceLink(hash,'b'.repeat(64),envelope,
+    {v:1,iv:'new',data:'more-ciphertext'}),true);
+  assert.match(f.calls[0].query,/update gcal_stage\.oauth_links/);
+  assert.match(f.calls[0].query,/and envelope=\?/);
+  assert.match(f.calls[0].query,/returning app_account_hash/);
+  f=fixture();
+  assert.equal(await f.port.takeLink(hash,'b'.repeat(64)),null);
+  assert.match(f.calls[0].query,/delete from gcal_stage\.oauth_links/);
+  assert.match(f.calls[0].query,/returning envelope/);
+  await assert.rejects(f.port.takeLink('invalid','b'.repeat(64)),GcalStageDbError);
+});
