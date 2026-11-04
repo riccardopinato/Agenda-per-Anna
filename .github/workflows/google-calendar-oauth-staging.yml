@@ -140,6 +140,8 @@ jobs:
             --header 'Accept: application/json' \
             --output /tmp/anna-stage-public-health.json \
             --write-out '%{http_code}' "$endpoint/health")
+          echo "Public staging health HTTP status: $status"
+          node -e "const fs=require('fs');const t=fs.readFileSync('/tmp/anna-stage-public-health.json','utf8');try{const r=JSON.parse(t);console.log('Health diagnostic:',JSON.stringify({service:r.service??null,status:r.status??null,oauth:r.google_oauth_active??null,writes:r.google_calendar_writes_active??null,error:r.error??null}));}catch{console.log('Health diagnostic: non-JSON response');}"
           test "$status" = '200'
           node -e "const fs=require('fs');const r=JSON.parse(fs.readFileSync('/tmp/anna-stage-public-health.json','utf8'));if(r.service!=='anna-calendar-staging'||r.status!=='locked'||r.google_oauth_active!==false||r.google_calendar_writes_active!==false)process.exit(1)"
       - name: Prove staging /start rejects unauthenticated requests
