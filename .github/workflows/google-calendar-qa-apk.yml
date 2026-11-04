@@ -44,6 +44,9 @@ jobs:
           test "$GITHUB_REF_NAME" = "staging/google-calendar-direct-prepared-v1"
           grep -q "ANNA_GCAL_STAGING_QA" lib/main.dart
           grep -q "anna-gcal-qa-launcher" lib/src/app_shell.dart
+          for file in two_phase_flutter_client.dart two_phase_flutter_panel.dart two_phase_flutter_transport.dart qa_flutter_screen.dart; do
+            cmp "staging/google_calendar_direct/$file" "lib/qa/google_calendar/$file"
+          done
           grep -q "STAGING_NOT_ACTIVATED" staging/google_calendar_direct/qa_flutter_screen.dart
           for var in ANDROID_KEYSTORE_BASE64 ANDROID_KEYSTORE_PASSWORD ANDROID_KEY_ALIAS ANDROID_KEY_PASSWORD; do
             if [ -z "${!var:-}" ]; then
