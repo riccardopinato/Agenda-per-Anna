@@ -615,20 +615,26 @@ class _PlannerScreenState extends State<PlannerScreen> {
                       padding: const EdgeInsets.fromLTRB(20, 14, 20, 110),
                       children: [
                         _DayOpeningCard(date: day),
-                        if (widget.embedded && isToday) ...[
-                          const SizedBox(height: 12),
-                          WeeklyReviewHomeCard(store: widget.store),
-                        ],
+                        // CAP-0147: two existing derived cards, no new data
+                        // owner. Legacy profiles retain review-first order.
+                        if (widget.embedded && isToday)
+                          for (final card in widget.store.preferences.todayCardOrder) ...[
+                            const SizedBox(height: 12),
+                            if (card == 'review')
+                              WeeklyReviewHomeCard(
+                                key: const ValueKey('cap0147-review'),
+                                store: widget.store,
+                              ),
+                            if (card == 'realistic')
+                              RealisticDayCard(
+                                key: const ValueKey('cap0147-realistic'),
+                                store: widget.store,
+                                snapshot: snapshot,
+                                hideDetails: widget.store.preferences.hideHomeDetails,
+                              ),
+                          ],
                         const SizedBox(height: 12),
                         AgendaContentFilterBar(store: widget.store),
-                        if (widget.embedded && isToday) ...[
-                          const SizedBox(height: AnnaDesignTokens.spaceSm),
-                          RealisticDayCard(
-                            store: widget.store,
-                            snapshot: snapshot,
-                            hideDetails: widget.store.preferences.hideHomeDetails,
-                          ),
-                        ],
                         const SizedBox(height: AnnaDesignTokens.spaceMd),
                         if (widget.embedded) ...[
                           // DF-08–14: Oggi reads the selected day before

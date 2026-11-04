@@ -1682,6 +1682,8 @@ class _DiaryMemoryCardState extends State<DiaryMemoryCard> {
           blocks.indexWhere((candidate) => candidate.id == block.id);
       if (index >= 0) {
         blocks[index] = block.copyWith(
+          // The new image must not inherit the previous image description.
+          altText: '',
           imageBase64: '',
           mediaAssetId: mediaAssetId,
           mediaThumbnailAssetId: mediaThumbnailAssetId,

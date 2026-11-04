@@ -133,6 +133,24 @@ List<String> normalizeInboxCategoryCatalog(Iterable<String> values) {
   return normalized;
 }
 
+/// CAP-0147: only two currently implemented, safe-to-reorder Today cards.
+/// Legacy data without the new field keeps the original review-first order.
+const annaTodayCardDefaults = <String>['review', 'realistic'];
+
+List<String> annaNormalizeTodayCardOrder(Iterable<dynamic>? values) {
+  final out = <String>[];
+  for (final raw in values ?? const <dynamic>[]) {
+    if (raw is String && annaTodayCardDefaults.contains(raw) &&
+        !out.contains(raw)) {
+      out.add(raw);
+    }
+  }
+  for (final id in annaTodayCardDefaults) {
+    if (!out.contains(id)) out.add(id);
+  }
+  return List<String>.unmodifiable(out);
+}
+
 class AgendaPreferences {
   final String displayName;
   final AgendaThemeMode themeMode;
@@ -169,6 +187,7 @@ class AgendaPreferences {
   final Set<AppModule> enabledModules;
   final List<MemoryCollectionDefinition> memoryCollections;
   final List<String> inboxCategoryCatalog;
+  final List<String> todayCardOrder;
 
   const AgendaPreferences({
     this.displayName = '',
@@ -206,6 +225,7 @@ class AgendaPreferences {
     this.enabledModules = completeAppModules,
     this.memoryCollections = const [],
     this.inboxCategoryCatalog = const [],
+    this.todayCardOrder = annaTodayCardDefaults,
   });
 
   AgendaPreferences copyWith({
@@ -244,6 +264,7 @@ class AgendaPreferences {
     Set<AppModule>? enabledModules,
     List<MemoryCollectionDefinition>? memoryCollections,
     List<String>? inboxCategoryCatalog,
+    List<String>? todayCardOrder,
     bool clearPrimaryReminder = false,
     bool clearSecondaryReminder = false,
     bool clearPin = false,
@@ -298,6 +319,7 @@ class AgendaPreferences {
       memoryCollections: memoryCollections ?? this.memoryCollections,
       inboxCategoryCatalog: normalizeInboxCategoryCatalog(
         inboxCategoryCatalog ?? this.inboxCategoryCatalog),
+      todayCardOrder: annaNormalizeTodayCardOrder(todayCardOrder ?? this.todayCardOrder),
     );
   }
 
@@ -380,6 +402,7 @@ class AgendaPreferences {
             .map((collection) => collection.toJson())
             .toList(growable: false),
         'inboxCategoryCatalog': inboxCategoryCatalog,
+        'todayCardOrder': annaNormalizeTodayCardOrder(todayCardOrder),
       };
 
   factory AgendaPreferences.fromJson(Map<String, dynamic> json) =>
@@ -458,6 +481,9 @@ class AgendaPreferences {
           (json['inboxCategoryCatalog'] as List? ?? const [])
               .whereType<String>(),
         ),
+        todayCardOrder: annaNormalizeTodayCardOrder(
+          json['todayCardOrder'] is List ?
+              json['todayCardOrder'] as List : null),
         enabledModules: _appModulesFromJson(json['enabledModules']),
         memoryCollections: (json['memoryCollections'] as List? ?? const [])
             .whereType<Map>()
@@ -1483,11 +1509,21 @@ class DiaryPlaceReference {
   }
 }
 
+/// Respect Flutter TextField's grapheme-cluster character counter.
+String _annaNormalizedPhotoAltText(Object? value) {
+  if (value is! String) return '';
+  final trimmed = value.trim();
+  return trimmed.characters.length <= 500 ? trimmed : '';
+}
+
 class DiaryBlock {
   final String id;
   final DiaryBlockType type;
   final DateTime createdAt;
   final String text;
+  /// Optional author-written accessibility description of a diary photo.
+  /// Not generated from a model or derived from OCR/caption.
+  final String altText;
 
   // imageBase64 is retained only as a legacy/portable transport field.
   // New local photos live in MediaAssetStore and persist only these IDs.
@@ -1512,6 +1548,7 @@ class DiaryBlock {
     required this.type,
     required this.createdAt,
     this.text = '',
+    this.altText = '',
     this.imageBase64 = '',
     this.audioBase64 = '',
     this.mediaAssetId = '',
@@ -1539,6 +1576,7 @@ class DiaryBlock {
 
   DiaryBlock copyWith({
     String? text,
+    String? altText,
     String? imageBase64,
     String? audioBase64,
     String? mediaAssetId,
@@ -1560,6 +1598,7 @@ class DiaryBlock {
         type: type,
         createdAt: createdAt,
         text: text ?? this.text,
+        altText: altText ?? this.altText,
         imageBase64: imageBase64 ?? this.imageBase64,
         audioBase64: audioBase64 ?? this.audioBase64,
         mediaAssetId: mediaAssetId ?? this.mediaAssetId,
@@ -1583,6 +1622,7 @@ class DiaryBlock {
         'type': type.name,
         'createdAt': createdAt.toUtc().toIso8601String(),
         'text': text,
+        'altText': altText,
         'imageBase64': imageBase64,
         'audioBase64': audioBase64,
         'mediaAssetId': mediaAssetId,
@@ -1617,6 +1657,7 @@ class DiaryBlock {
             DateTime.tryParse(json['createdAt'] as String? ?? '')?.toLocal() ??
                 DateTime.now(),
         text: json['text'] as String? ?? '',
+        altText: _annaNormalizedPhotoAltText(json['altText']),
         imageBase64: json['imageBase64'] as String? ?? '',
         audioBase64: json['audioBase64'] as String? ?? '',
         mediaAssetId: json['mediaAssetId'] as String? ?? '',

@@ -86,6 +86,80 @@ class PersonalizationScreen extends StatelessWidget {
                   ),
                 ),
               ),
+              SimpleCard(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Semantics(
+                      header: true,
+                      child: Text(switch (strings.languageCode) {
+                        'it' => 'Ordine delle card Oggi',
+                        'es' => 'Orden de tarjetas Hoy',
+                        'fr' => 'Ordre des cartes Aujourd’hui',
+                        'pt' => 'Ordem dos cartões Hoje',
+                        _ => 'Today card order',
+                      }, style: Theme.of(context).textTheme.titleMedium),
+                    ),
+                    const SizedBox(height: 6),
+                    for (var i = 0; i < prefs.todayCardOrder.length; i++)
+                      ListTile(
+                        key: ValueKey('cap0147-home-order-${prefs.todayCardOrder[i]}'),
+                        title: Text(switch (prefs.todayCardOrder[i]) {
+                          'review' => switch (strings.languageCode) {
+                            'it' => 'Bilancio settimanale',
+                            'es' => 'Revisión semanal',
+                            'fr' => 'Bilan hebdomadaire',
+                            'pt' => 'Revisão semanal',
+                            _ => 'Weekly Review',
+                          },
+                          _ => switch (strings.languageCode) {
+                            'it' => 'Giornata realistica',
+                            'es' => 'Día realista',
+                            'fr' => 'Journée réaliste',
+                            'pt' => 'Dia realista',
+                            _ => 'Realistic day',
+                          },
+                        }),
+                        trailing: IconButton(
+                          tooltip: switch (strings.languageCode) {
+                            'it' => 'Sposta in alto',
+                            'es' => 'Mover arriba',
+                            'fr' => 'Déplacer vers le haut',
+                            'pt' => 'Mover para cima',
+                            _ => 'Move up',
+                          },
+                          onPressed: i == 0 ? null : () {
+                            final order = [...prefs.todayCardOrder];
+                            final moved = order.removeAt(i);
+                            order.insert(i-1, moved);
+                            unawaited(store.savePreferences(
+                              prefs.copyWith(todayCardOrder: order)));
+                          },
+                          icon: const Icon(Icons.arrow_upward),
+                        ),
+                      ),
+                    Align(
+                      alignment: Alignment.centerRight,
+                      child: TextButton.icon(
+                        onPressed: prefs.todayCardOrder.first == 'review'
+                            ? null
+                            : () => unawaited(store.savePreferences(
+                                prefs.copyWith(
+                                  todayCardOrder: annaTodayCardDefaults))),
+                        icon: const Icon(Icons.restore),
+                        label: Text(switch (strings.languageCode) {
+                          'it' => 'Ripristina ordine',
+                          'es' => 'Restablecer orden',
+                          'fr' => 'Rétablir l’ordre',
+                          'pt' => 'Repor ordem',
+                          _ => 'Reset order',
+                        }),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 12),
               const SizedBox(height: 12),
               SimpleCard(
                 child: Column(
