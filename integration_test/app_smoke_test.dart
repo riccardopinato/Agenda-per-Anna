@@ -73,6 +73,12 @@ void main() {
     expect(tester.widget<NavigationBar>(bar).selectedIndex, 0);
 
     // +Crea is a separate central action, never an extra bottom-bar tab.
-    expect(find.bySemanticsIdentifier('main-nav-create'), findsOneWidget);
+    expect(
+      find.byWidgetPredicate(
+        (widget) => widget is Semantics &&
+            widget.properties.identifier == 'main-nav-create',
+      ),
+      findsOneWidget,
+    );
   });
 }
