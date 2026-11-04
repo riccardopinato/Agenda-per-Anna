@@ -15,6 +15,11 @@ String _annaPhotoAltCopy(String code, String key) {
       'es': 'La foto ha cambiado. Ábrela de nuevo.',
       'fr': 'La photo a changé. Ouvre-la de nouveau.',
       'pt': 'A foto mudou. Abre-a novamente.'},
+    'failed': {'it': 'Salvataggio non riuscito. Riprova.',
+      'en': 'Could not save. Try again.',
+      'es': 'No se pudo guardar. Inténtalo de nuevo.',
+      'fr': 'Enregistrement impossible. Réessaie.',
+      'pt': 'Não foi possível guardar. Tenta novamente.'},
   };
   return values[key]?[code] ?? values[key]?['en'] ?? key;
 }
@@ -27,7 +32,10 @@ Future<bool> annaSavePhotoAltText(
   required String? accountAtOpen,
 }) async {
   if (source.type != DiaryBlockType.photo ||
-      store.activeAccountId != accountAtOpen || text.length > 500) return false;
+      store.activeAccountId != accountAtOpen ||
+      text.trim().characters.length > 500) {
+    return false;
+  }
   final currentDay = store.journal(date);
   final matches = currentDay.blocks
       .where((b) => b.id == source.id).toList(growable: false);
@@ -38,7 +46,9 @@ Future<bool> annaSavePhotoAltText(
       current.mediaAssetId != source.mediaAssetId ||
       current.imageBase64 != source.imageBase64 ||
       current.text != source.text ||
-      current.altText != source.altText) return false;
+      current.altText != source.altText) {
+    return false;
+  }
   final trimmed = text.trim();
   if (trimmed == current.altText) return true;
   final updated = [
@@ -50,45 +60,98 @@ Future<bool> annaSavePhotoAltText(
 }
 
 Future<void> _annaEditPhotoDescription(
-  BuildContext context, AgendaStore store,
-  DateTime date, DiaryBlock block,
+  BuildContext context,
+  AgendaStore store,
+  DateTime date,
+  DiaryBlock block,
 ) async {
   final language = AnnaStrings.of(context).languageCode;
   final account = store.activeAccountId;
   final controller = TextEditingController(text: block.altText);
-  final result = await showDialog<String>(
+  var saved = false;
+  var saving = false;
+  String? error;
+
+  // Keep the draft and its editor open on write failures so it can be retried.
+  await showDialog<void>(
     context: context,
-    builder: (dialogContext) => AlertDialog(
-      title: Text(_annaPhotoAltCopy(language, 'title')),
-      content: TextField(
-        key: const ValueKey('cap0120-photo-description'),
-        controller: controller,
-        autofocus: true,
-        maxLines: 4, minLines: 2, maxLength: 500,
-        decoration: InputDecoration(
-          hintText: _annaPhotoAltCopy(language, 'hint'),
-          border: const OutlineInputBorder()),
+    barrierDismissible: false,
+    builder: (dialogContext) => StatefulBuilder(
+      builder: (dialogContext, updateDialog) => AlertDialog(
+        title: Text(_annaPhotoAltCopy(language, 'title')),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            TextField(
+              key: const ValueKey('cap0120-photo-description'),
+              controller: controller,
+              autofocus: true,
+              maxLines: 4,
+              minLines: 2,
+              maxLength: 500,
+              decoration: InputDecoration(
+                hintText: _annaPhotoAltCopy(language, 'hint'),
+                border: const OutlineInputBorder(),
+              ),
+            ),
+            if (error != null)
+              Text(
+                _annaPhotoAltCopy(language, error!),
+                key: const ValueKey('cap0120-photo-save-error'),
+                style: TextStyle(color: Theme.of(dialogContext).colorScheme.error),
+              ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: saving ? null : () => Navigator.pop(dialogContext),
+            child: Text(AnnaStrings.of(dialogContext).cancel),
+          ),
+          FilledButton(
+            onPressed: saving
+                ? null
+                : () async {
+                    updateDialog(() {
+                      saving = true;
+                      error = null;
+                    });
+                    try {
+                      final didSave = await annaSavePhotoAltText(
+                        store,
+                        date,
+                        block,
+                        controller.text,
+                        accountAtOpen: account,
+                      );
+                      if (!dialogContext.mounted) return;
+                      if (didSave) {
+                        saved = true;
+                        Navigator.pop(dialogContext);
+                      } else {
+                        updateDialog(() {
+                          saving = false;
+                          error = 'changed';
+                        });
+                      }
+                    } catch (_) {
+                      if (!dialogContext.mounted) return;
+                      updateDialog(() {
+                        saving = false;
+                        error = 'failed';
+                      });
+                    }
+                  },
+            child: Text(AnnaStrings.of(dialogContext).save),
+          ),
+        ],
       ),
-      actions: [
-        TextButton(onPressed: () => Navigator.pop(dialogContext),
-          child: Text(AnnaStrings.of(dialogContext).cancel)),
-        FilledButton(
-          onPressed: () => Navigator.pop(dialogContext, controller.text),
-          child: Text(AnnaStrings.of(dialogContext).save)),
-      ],
     ),
   );
   controller.dispose();
-  if (result == null || !context.mounted) return;
-  final saved = await annaSavePhotoAltText(
-      store, date, block, result, accountAtOpen: account);
-  if (!context.mounted) return;
-  if (saved) {
-    // Close the viewer so no stale source snapshot remains in the widget.
+  if (saved && context.mounted) {
+    // Close the photo viewer; it still holds the old immutable block snapshot.
     Navigator.pop(context);
-  } else {
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-      content: Text(_annaPhotoAltCopy(language, 'changed'))));
   }
 }
 
