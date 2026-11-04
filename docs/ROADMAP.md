@@ -1,5 +1,16 @@
 # Anna's Diary — Roadmap
 
+## Google Calendar Direct — stato staging dopo deploy v6 (04/11/2026)
+
+- **PR #199 OPEN/DRAFT, non integrare in produzione.** Branch allineato a `main@d57ae48fdc60f69355efe7fe7cbafaa5dd08395b` tramite merge commit `e5321807fa76058bac2e4cbe4e00c4669b85fe4e`; eventuali nuovi aggiornamenti `main` richiedono un nuovo confronto.
+- Sul commit allineato `e5321807`: Development checks run **41754424703**, AppLab Source Gate run **41754424681**, OAuth Security run **41754424651** tutte SUCCESS. I successivi cambiamenti Flutter/dual gate richiedono nuovi gate sull'ultimo SHA.
+- Supabase STAGING `pdanpljacyozslrutsor`: Edge Function **v6 ACTIVE**, distribuita dal sorgente `index_ready.mjs` (10 file, `ezbr_sha256 ca73ce888dea0ebc391b6817318d768adadfb0af580250ede2690d52d3864633`). Richiede ENTRAMBI i flag di abilitazione; il nuovo `ANNA_GCAL_STAGING_LIVE_APPROVED_20261104` non è stato impostato. Deno local locked smoke PASS, HTTP live remoto non verificabile da questo ambiente.
+- Cinque tabelle `gcal_stage` ancora vuote, RLS privata; **0 collegamenti/consensi/test Google reali**; produzione Supabase e login Anna invariati.
+- Implementati controller Flutter e pannello QA **solo nel branch staging**, senza route di produzione, firma APK o attivazione cloud. Mancano un browser/tester reale, redirect di test nel client OAuth Web, revisione privacy e B3 per l'eventuale writer, applicazione su device, e validazione di scadenza/refresh Google. Google External/Testing può invalidare refresh token dopo 7 giorni.
+- Nessun deploy attivo OAuth, nessuna sincronizzazione/creazione Google Calendar, nessun merge o release; non incollare ID token, app JWT, codici OAuth o segreti in chat.
+
+
+
 ## Google Calendar Direct — ripresa staging 04/11/2026
 
 **Ripresa documentata:** il proprietario ha confermato 4/4 Edge Function Secrets
