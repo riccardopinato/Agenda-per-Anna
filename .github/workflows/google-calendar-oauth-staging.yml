@@ -80,3 +80,47 @@ jobs:
         run: node --check staging/google_calendar_direct/supabase/functions/gcal-oauth-callback/index_ready.mjs
       - name: Assert deployed function remains locked and staging dependencies are pinned
         run: node --test staging/google_calendar_direct/supabase/functions/gcal-oauth-callback/index_ready.static.test.mjs
+
+  deno-runtime-preflight:
+    name: Deno locked runtime preflight (no secrets, no Google)
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - name: Checkout candidate branch
+        uses: actions/checkout@v4
+      - name: Install pinned Deno 2.9.8
+        uses: denoland/setup-deno@22d081ff2d3a40755e97629de92e3bcbfa7cf2ed
+        with:
+          deno-version: '2.9.8'
+      - name: Check Deno module graph and npm Postgres import
+        run: deno check staging/google_calendar_direct/supabase/functions/gcal-oauth-callback/index_ready.mjs
+      - name: Exercise Deno runtime with explicit locked configuration only
+        shell: bash
+        run: |
+          set -euo pipefail
+          export DENO_NO_PROMPT=1
+          unset ANNA_GCAL_STAGING_ENABLE
+          deno run --allow-net --allow-env=ANNA_GCAL_STAGING_ENABLE \
+            staging/google_calendar_direct/supabase/functions/gcal-oauth-callback/index_ready.mjs > /tmp/anna-gcal-deno-runtime.log 2>&1 &
+          server_pid=$!
+          trap 'kill "$server_pid" 2>/dev/null || true' EXIT
+          healthy=0
+          for attempt in {1..30}; do
+            if curl -fsS --max-time 1 http://127.0.0.1:8000/functions/v1/gcal-oauth-callback/health > /tmp/anna-gcal-health.json; then
+              healthy=1
+              break
+            fi
+            if ! kill -0 "$server_pid" 2>/dev/null; then
+              echo "Deno runtime failed to start"
+              exit 1
+            fi
+            sleep 1
+          done
+          test "$healthy" -eq 1
+          node -e "const f=require('fs');const h=JSON.parse(f.readFileSync('/tmp/anna-gcal-health.json','utf8'));if(h.status!=='locked'||h.google_oauth_active!==false||h.google_calendar_writes_active!==false)process.exit(1);"
+          status=$(curl -sS -o /tmp/anna-gcal-start.json -w '%{http_code}' \
+            -X POST -H 'Content-Type: application/json' -d '{}' \
+            http://127.0.0.1:8000/functions/v1/gcal-oauth-callback/start)
+          test "$status" = "503"
+          node -e "const f=require('fs');const h=JSON.parse(f.readFileSync('/tmp/anna-gcal-start.json','utf8'));if(h.error!=='STAGING_NOT_ACTIVATED')process.exit(1);"
+
