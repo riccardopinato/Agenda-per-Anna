@@ -62,8 +62,8 @@ class _SettingsHubScreenState extends State<SettingsHubScreen> {
 
   /// Ephemeral private-only comparison: never persists links or uploads
   /// Anna's Diary event/note content to Google or Supabase.
-  List<GcalDiaryLocalContext> _googleLocalContexts(
-      DateTime startInclusive,DateTime endExclusive) {
+  static List<GcalDiaryLocalContext> googleLocalContextsForStore(
+      AgendaStore store,DateTime startInclusive,DateTime endExclusive) {
     final result=<GcalDiaryLocalContext>[];
     for(var day=DateTime(startInclusive.year,startInclusive.month,startInclusive.day);
         day.isBefore(endExclusive);
@@ -104,7 +104,8 @@ class _SettingsHubScreenState extends State<SettingsHubScreen> {
 
   void _openGoogleReadOnly(BuildContext context) {
     _open(context,GcalDiaryReadScreen(
-      localContextsForWindow:_googleLocalContexts,
+      localContextsForWindow:(start,end)=>
+          googleLocalContextsForStore(store,start,end),
       onManageConnection:()=>_open(context,AnnaGcalQaScreen(
         signedIn:()=>CloudSyncService.instance.signedIn,
         signInWithGoogle:()=>CloudSyncService.instance.signInWithGoogle(),
