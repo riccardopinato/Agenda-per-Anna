@@ -119,6 +119,43 @@ jobs:
         with:
           enablement: true
 
+      # Recovery is pinned to the orphaned Pages deployment from the
+      # cancelled 2026-11-04 main workflow. A cancelled Actions run can leave
+      # its independent Pages deployment locked in updating_pages.
+      # This step does not cancel any other source SHA or modify site files.
+      - name: Release cancelled main Pages deployment lock
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          orphan="ccfe469e7e9149c27d478aef7a9aa1d1f8c97596"
+          if [ "$GITHUB_SHA" = "$orphan" ]; then
+            exit 0
+          fi
+          endpoint="repos/${GITHUB_REPOSITORY}/pages/deployments/${orphan}"
+          status="$(gh api "$endpoint" --jq '.status // "unknown"' 2>/dev/null || echo 'not_found')"
+          case "$status" in
+            updating_pages|building|queued|in_progress)
+              echo "Cancelling orphaned GitHub Pages deployment $orphan (status=$status)"
+              gh api --method POST "$endpoint/cancel" --silent
+              for attempt in 1 2 3 4 5; do
+                status="$(gh api "$endpoint" --jq '.status // "unknown"' 2>/dev/null || echo 'not_found')"
+                case "$status" in
+                  updating_pages|building|queued|in_progress)
+                    sleep 4
+                    ;;
+                  *)
+                    break
+                    ;;
+                esac
+              done
+              ;;
+            *)
+              echo "No active orphaned Pages deployment to cancel (status=$status)"
+              ;;
+          esac
+
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@368f82528645a54fb793d4d04e342629a3f51346 # v5.0.1
