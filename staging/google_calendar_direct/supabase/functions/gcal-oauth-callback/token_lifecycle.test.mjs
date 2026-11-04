@@ -115,7 +115,24 @@ test('refresh token rotation updates only the encrypted account-bound record',as
   assert.equal(JSON.stringify([...f.records]).includes('rotated-refresh'),false);
 });
 
-test('disconnect is idempotent and does not revoke a missing grant twice',async()=>{
+test('connections listing returns only account-bound verified identity metadata',async()=>{
+  const f=setup();await f.seed();
+  const result=await f.subject.listConnections({verifiedAccountId:USER});
+  assert.deepEqual(result,{connections:[{googleSubject:SUB,googleEmail:null}]});
+  assert.equal(JSON.stringify(result).includes('renew'),false);
+  assert.equal(JSON.stringify(result).includes('old'),false);
+  assert.deepEqual(await f.subject.listConnections({
+    verifiedAccountId:'other-app-user'}),{connections:[]});
+  assert.equal(f.requests.length,0); // listing never contacts Google.
+});
+test('connections listing disappears after disconnect, without cached tokens',async()=>{
+  const f=setup();await f.seed();
+  await f.subject.disconnect({verifiedAccountId:USER,googleSubject:SUB,
+    explicitConfirmation:true});
+  assert.deepEqual(await f.subject.listConnections({verifiedAccountId:USER}),
+    {connections:[]});
+});
+
   const f=setup(false,async()=>({status:200}));await f.seed();
   const args={verifiedAccountId:USER,googleSubject:SUB,explicitConfirmation:true};
   assert.deepEqual(await f.subject.disconnect(args),
