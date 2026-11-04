@@ -1423,6 +1423,12 @@ class _DiaryMemoriesScreenState extends State<DiaryMemoriesScreen> {
                     editorial: true,
                   ),
                   const SizedBox(height: AnnaDesignTokens.spaceMd),
+                  ContextualMemoryPanel(
+                    store: widget.store,
+                    authorizedPrivateMemories: records,
+                    onOpen: (record) => unawaited(_openRecord(record)),
+                  ),
+                  const SizedBox(height: AnnaDesignTokens.spaceSm),
                   if (anniversary.isNotEmpty) ...[
                     AnnaJournalSectionHeading(
                       title: exact.isNotEmpty
