@@ -59,10 +59,16 @@ class _GcalDiaryReadScreenState extends State<GcalDiaryReadScreen> {
     try {
       await action();
     } on GcalStageClientException catch(error) {
-      if(mounted) setState(() {_message=gcalQaErrorMessage(error.kind);});
+      if(mounted) setState(() {
+        _batch=null;
+        _local=const [];
+        _message=gcalQaErrorMessage(error.kind);
+      });
     } catch (_) {
       if(mounted) {
         setState(() {
+          _batch=null;
+          _local=const [];
           _message='Impossibile completare la lettura. '
             'Nessun evento del diario è stato modificato.';
         });
@@ -73,6 +79,16 @@ class _GcalDiaryReadScreenState extends State<GcalDiaryReadScreen> {
   }
 
   Future<void> _loadConnections() => _perform(() async {
+    // Invalidate any old provider data before checking the current app account.
+    // A failed refresh must never leave another account's Google event titles.
+    if(mounted) setState(() {
+      _accounts=const [];
+      _selectedSubject=null;
+      _calendars=const [];
+      _selectedCalendar=null;
+      _batch=null;
+      _local=const [];
+    });
     final accounts=await _client.recoverConnections();
     if(!mounted)return;
     setState(() {
@@ -108,6 +124,8 @@ class _GcalDiaryReadScreenState extends State<GcalDiaryReadScreen> {
   });
 
   Future<void> _readMonth() => _perform(() async {
+    // No stale events if Google refresh fails or the account has switched.
+    if(mounted) setState(() {_batch=null;_local=const [];});
     final id=_selectedCalendar;
     if(id==null)return;
     final start=DateTime(_month.year,_month.month,1);
