@@ -73,6 +73,13 @@ jobs:
       - name: Mock-test global callback throttle and fail-closed behavior
         run: node --test staging/google_calendar_direct/supabase/functions/gcal-oauth-callback/callback_budget.test.mjs
 
+      - name: Check read-only Google Calendar inventory module syntax
+        run: node --check staging/google_calendar_direct/supabase/functions/gcal-oauth-callback/calendar_read_probe.mjs
+      - name: Mock-test provider read-only calendar API and auth-scoped HTTP
+        run: |
+          node --test staging/google_calendar_direct/supabase/functions/gcal-oauth-callback/calendar_read_probe.test.mjs
+          node --test staging/google_calendar_direct/supabase/functions/gcal-oauth-callback/calendar_read_http.test.mjs
+
       - name: End-to-end mocked two-phase HTTP consent and disconnect
         run: node --test staging/google_calendar_direct/supabase/functions/gcal-oauth-callback/oauth_http_integration.test.mjs
 
@@ -143,7 +150,7 @@ jobs:
           echo "Public staging health HTTP status: $status"
           node -e "const fs=require('fs');const t=fs.readFileSync('/tmp/anna-stage-public-health.json','utf8');try{const r=JSON.parse(t);console.log('Health diagnostic:',JSON.stringify({service:r.service??null,status:r.status??null,oauth:r.google_oauth_active??null,writes:r.google_calendar_writes_active??null,error:r.error??null}));}catch{console.log('Health diagnostic: non-JSON response');}"
           test "$status" = '200'
-          node -e "const fs=require('fs');const r=JSON.parse(fs.readFileSync('/tmp/anna-stage-public-health.json','utf8'));if(r.service!=='anna-calendar-staging'||r.status!=='locked'||r.google_oauth_active!==false||r.google_calendar_writes_active!==false)process.exit(1)"
+          node -e "const fs=require('fs');const r=JSON.parse(fs.readFileSync('/tmp/anna-stage-public-health.json','utf8'));const valid=r.status==='locked'&&r.google_oauth_active===false||r.status==='configured'&&r.google_oauth_active===true;if(r.service!=='anna-calendar-staging'||!valid||r.google_calendar_writes_active!==false)process.exit(1)"
       - name: Prove staging /start rejects unauthenticated requests
         shell: bash
         run: |
@@ -156,6 +163,9 @@ jobs:
             --data '{}' \
             --output /tmp/anna-stage-public-start.json \
             --write-out '%{http_code}' "$endpoint/start")
-          test "$status" = '503'
-          node -e "const fs=require('fs');const r=JSON.parse(fs.readFileSync('/tmp/anna-stage-public-start.json','utf8'));if(r.error!=='STAGING_NOT_ACTIVATED')process.exit(1)"
+          # With owner-authorized staging enabled, missing JWT must always
+          # return 401 AUTH_REQUIRED; if locked, 503 STAGING_NOT_ACTIVATED.
+          # Both prove no unauthorized account can start Google OAuth.
+          test "$status" = '503' -o "$status" = '401'
+          node -e "const fs=require('fs');const r=JSON.parse(fs.readFileSync('/tmp/anna-stage-public-start.json','utf8'));if(!['STAGING_NOT_ACTIVATED','AUTH_REQUIRED'].includes(r.error))process.exit(1)"
 
