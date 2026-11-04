@@ -116,7 +116,7 @@ export class GcalTwoPhaseBroker {
     const record=await this.vault.open(envelope,handleHash);
     this._checkPending(record,accountHash);
     const encrypted=await this.vault.seal({
-      googleSubject:record.googleSubject,
+      googleSubject:record.googleSubject,googleEmail:record.googleEmail||null,
       accessToken:record.accessToken,refreshToken:record.refreshToken,
       expiresAt:record.expiresAt,scope:record.scope,
     },accountHash+':'+record.subjectHash);
