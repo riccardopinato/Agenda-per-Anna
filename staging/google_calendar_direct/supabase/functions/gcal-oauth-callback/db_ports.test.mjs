@@ -40,12 +40,19 @@ test('reject unhashed owner IDs and plaintext or missing envelopes',async()=>{
 
 
 test('encrypted inventory query is restricted to authenticated account hash',async()=>{
- const f=fixture();assert.deepEqual(await f.port.listLinks(hash),[]);
- assert.match(f.calls[0].query,/select google_subject_hash,envelope from gcal_stage\\.oauth_links/);
- assert.match(f.calls[0].query,/app_account_hash=\\?/);
- assert.match(f.calls[0].query,/limit 11/);
- assert.equal(f.calls[0].values[0],hash);
- await assert.rejects(f.port.listLinks('plain-account'),GcalStageDbError);
+ const calls=[];
+ const sql=(strings,...values)=>{
+   calls.push({query:strings.join('?'),values});
+   return Promise.resolve([]);
+ };
+ sql.json=value=>({json:value});
+ const port=new GcalStagePostgresPorts(sql);
+ assert.deepEqual(await port.listLinks(hash),[]);
+ assert.match(calls[0].query,/select google_subject_hash,envelope from gcal_stage\.oauth_links/);
+ assert.match(calls[0].query,/app_account_hash=\?/);
+ assert.match(calls[0].query,/limit 11/);
+ assert.equal(calls[0].values[0],hash);
+ await assert.rejects(port.listLinks('plain-account'),GcalStageDbError);
 });
 
 test('link lifecycle uses owner-scoped read, CAS replacement and atomic unlink',async()=>{
