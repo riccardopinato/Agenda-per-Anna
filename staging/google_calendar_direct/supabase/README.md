@@ -20,7 +20,7 @@ intentionally **LOCKED**. No real Google OAuth flow or Calendar API access.
   browser callback. The deployed code **never** exchanges a code or reads
   tokens and always returns 503 except its locked health response. Its public
   availability is not equivalent to OAuth readiness.
-- No Google credentials or extra paid resources configured.
+- 04/11/2026: owner confirmed entry of four named staging Edge Function Secrets directly in Supabase; secret presence, value correctness and runtime injection were NOT independently verified. No real OAuth is active.
 
 ## Source implementation (not deployed or connected)
 
@@ -85,9 +85,9 @@ new two-phase implementation has **no user-facing live endpoints yet**.
 - Never put environment values, Google credentials, DB passwords or tokens in
   this PR, ChatGPT, Flutter, GitHub Actions logs, screenshots, or the device APK.
 
-**Secure configuration will be done directly through**
+**Owner-reported secret entry was performed directly through**
 [Supabase Edge Function Secrets](https://supabase.com/dashboard/project/pdanpljacyozslrutsor/functions/secrets)
-**once the user explicitly authorizes real test-account OAuth.** Do not register
+**but this is NOT approval for real test-account OAuth.** Do not register
 Google's redirect until a real callback is actually deployed and verified.
 
 ## Blocking gates before live OAuth
@@ -137,3 +137,12 @@ Official references:
 - https://supabase.com/docs/guides/functions/secrets
 - https://developers.google.com/identity/protocols/oauth2/web-server
 - https://developers.google.com/identity/openid-connect/openid-connect
+
+
+## 04/11/2026 — source-only authenticated request budgets
+
+- New `request_budget.mjs` and `request_budget.test.mjs`: atomic PostgreSQL per-account/per-action minute quotas, account ID hashed, no caller clock, explicit 429 when exhausted, fail-closed 503 on SQL outage.
+- `http_handler.mjs` requires a durable request budget before an enabled router can be constructed. `index_ready.mjs` wires it to the **staging-only** SQL connection. Existing deployed `index.ts` remains unchanged and locked.
+- Migration `migrations/gcal_staging_rate_budget_v1.sql` is **SOURCE ONLY / NOT APPLIED**. It creates private `gcal_stage.oauth_request_budget` with RLS and no anon/authenticated grants. Apply and verify in isolated staging only, then review security before considering a live backend.
+- This mitigates **authenticated app endpoints only**. Public Google browser callback and unauthenticated ingress require an independent trusted-edge IP/provider rate-limit design; never claim this migration mitigates those flood paths.
+- Neither successful CI nor the user's confirmation of 4/4 secret entries proves a live Google consent/callback, token refresh, provider revocation, Cloud redirect, Android connection or privacy/B3 acceptance.
