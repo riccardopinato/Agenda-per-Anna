@@ -12,6 +12,8 @@ test('deployed production path remains locked and cannot call live broker',()=>{
 });
 test('unreleased broker entrypoint requires explicit activation gate',()=>{
  assert.match(live,/ANNA_GCAL_STAGING_ENABLE/);
+ assert.match(live,/ANNA_GCAL_STAGING_LIVE_APPROVED_20261104/);
+ assert.match(live,/owner-authorized-google-consent/);
  assert.match(live,/approved-for-live-oauth-testing/);
  assert.match(live,/createGoogleCalendarStagingHandler\(\{enabled:false\}\)/);
  assert.match(live,/catch\s*\{[\s\S]*enabled:false/);
