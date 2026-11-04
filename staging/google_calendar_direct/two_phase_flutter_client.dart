@@ -56,6 +56,19 @@ class GcalStageConnection {
   const GcalStageConnection(this.googleSubject, this.verifiedEmail);
 }
 
+class GcalStageCalendar {
+  final String id;
+  final String name;
+  final bool primary;
+  final String accessRole;
+  const GcalStageCalendar({
+    required this.id,
+    required this.name,
+    required this.primary,
+    required this.accessRole,
+  });
+}
+
 class GcalStageDisconnected {
   final bool locallyDisconnected;
   final bool? providerRevoked;
@@ -314,6 +327,57 @@ class GcalTwoPhaseFlutterStagingClient {
         _expiry = null;
         _previewedSubject = null;
         _connectedSubject = subject;
+      });
+
+  /// Read-only Google Calendar inventory. Only the server receives
+  /// provider tokens; no Android Calendar write permission is requested.
+  Future<List<GcalStageCalendar>> readCalendars() =>
+      _serial(() async {
+        final auth = await _requireAuth();
+        final subject = _connectedSubject;
+        if (subject == null) {
+          throw const GcalStageClientException(
+              GcalStageClientFault.notConnected);
+        }
+        final response = await _post('/calendars', auth,
+            <String, Object?>{'googleSubject': subject});
+        if (response.json['readonly'] != true ||
+            response.json['calendars'] is! List) {
+          throw const GcalStageClientException(
+              GcalStageClientFault.malformedBackendResponse);
+        }
+        final rows = response.json['calendars'] as List;
+        if (rows.length > 25) {
+          throw const GcalStageClientException(
+              GcalStageClientFault.malformedBackendResponse);
+        }
+        final seen = <String>{};
+        final calendars = <GcalStageCalendar>[];
+        for (final row in rows) {
+          if (row is! Map ||
+              row['id'] is! String ||
+              (row['id'] as String).isEmpty ||
+              (row['id'] as String).length > 1024 ||
+              row['name'] is! String ||
+              (row['name'] as String).length > 300 ||
+              row['primary'] is! bool ||
+              row['accessRole'] is! String) {
+            throw const GcalStageClientException(
+                GcalStageClientFault.malformedBackendResponse);
+          }
+          final id = row['id'] as String;
+          if (!seen.add(id)) {
+            throw const GcalStageClientException(
+                GcalStageClientFault.malformedBackendResponse);
+          }
+          calendars.add(GcalStageCalendar(
+            id: id,
+            name: row['name'] as String,
+            primary: row['primary'] as bool,
+            accessRole: row['accessRole'] as String,
+          ));
+        }
+        return List.unmodifiable(calendars);
       });
 
   Future<GcalStageDisconnected> disconnect(
