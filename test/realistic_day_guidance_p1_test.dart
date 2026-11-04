@@ -114,5 +114,6 @@ void main() {
     expect(source, contains('DateTime(now.year, now.month, now.day + 7)'));
     expect(source, contains("key: const ValueKey('realistic-day-nudge-snooze')"));
     expect(source, contains('advisePressure'));
+    expect(source, contains('snoozedThrough > todayKey'));
   });
 }
