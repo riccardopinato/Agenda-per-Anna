@@ -11,7 +11,7 @@ function routeSuffix(path,basePath) {
  for(const root of roots) {
    if(root==='') {
      if(path==='/')return '';
-     if(['/health','/start','/preview','/confirm','/disconnect','/connections','/calendars'].includes(path))
+     if(['/health','/start','/preview','/confirm','/disconnect','/connections','/calendars','/events'].includes(path))
        return path;
      continue;
    }
@@ -78,7 +78,7 @@ async function boundedBody(req,limit=2048) {
 const onlyFields=(value,fields)=>value&&typeof value==='object'&&!Array.isArray(value)&&
   Object.keys(value).every(k=>fields.includes(k));
 export function createGoogleCalendarStagingHandler({
-  enabled=false,broker=null,verifyAppIdentity=null,tokenLifecycle=null,requestBudget=null,callbackBudget=null,calendarReadProbe=null,allowedWebOrigins=[],
+  enabled=false,broker=null,verifyAppIdentity=null,tokenLifecycle=null,requestBudget=null,callbackBudget=null,calendarReadProbe=null,eventsReadProbe=null,allowedWebOrigins=[],
   basePath=BASE,
 }={}) {
  if(enabled&&(!broker||typeof verifyAppIdentity!=='function'||
@@ -93,7 +93,7 @@ export function createGoogleCalendarStagingHandler({
    try{url=new URL(req.url);}catch{return json({error:'BAD_URL'},400);}
    const suffix=routeSuffix(url.pathname,basePath);
    if(suffix===null)return json({error:'NOT_FOUND'},404);
-   if(!['','/health','/start','/preview','/confirm','/disconnect','/connections','/calendars'].includes(suffix))
+   if(!['','/health','/start','/preview','/confirm','/disconnect','/connections','/calendars','/events'].includes(suffix))
      return json({error:'NOT_FOUND'},404);
    if(req.method==='GET'&&suffix==='/health')return json({
      service:'anna-calendar-staging',status:enabled?'configured':'locked',
@@ -161,7 +161,7 @@ export function createGoogleCalendarStagingHandler({
    } catch {return json({error:'RATE_LIMIT_UNAVAILABLE'},503,origin);}
    let body;
    try{body=await boundedBody(req);}catch{return json({error:'INVALID_BODY'},400,origin);}
-   if(!onlyFields(body,['/start','/connections'].includes(suffix)?[]:suffix==='/preview'?['handle']:suffix==='/calendars'?['googleSubject']:
+   if(!onlyFields(body,['/start','/connections'].includes(suffix)?[]:suffix==='/preview'?['handle']:suffix==='/calendars'?['googleSubject']:suffix==='/events'?['googleSubject','calendarId','timeMin','timeMax']:
      suffix==='/disconnect'?['googleSubject','explicitConfirmation']:
      ['handle','explicitConfirmation']))return json({error:'UNEXPECTED_FIELDS'},400,origin);
    try {
@@ -184,6 +184,29 @@ export function createGoogleCalendarStagingHandler({
        const result=await calendarReadProbe.calendars({verifiedAccountId:verified.accountId,
          googleSubject:body.googleSubject});
        return json(result,200,origin);
+     }
+     if(suffix==='/events') {
+       if(!eventsReadProbe||typeof eventsReadProbe.events!=='function')
+         return json({error:'EVENTS_NOT_READY'},503,origin);
+       // The handler never accepts local diary data, event contents, or a write mode.
+       if(!['googleSubject','calendarId','timeMin','timeMax'].every(k=>
+         typeof body[k]==='string'))
+         return json({error:'EVENTS_INVALID_INPUT'},400,origin);
+       try {
+         const result=await eventsReadProbe.events({
+           verifiedAccountId:verified.accountId,googleSubject:body.googleSubject,
+           calendarId:body.calendarId,timeMin:body.timeMin,timeMax:body.timeMax,
+         });
+         return json(result,200,origin);
+       } catch(error) {
+         // Finite non-sensitive protocol codes; never echo Google payloads.
+         if(error?.message==='EVENTS_OWNER_ONLY')
+           return json({error:'EVENTS_OWNER_ONLY'},403,origin);
+         if(error?.message==='EVENTS_INVALID_INPUT'||
+            error?.message==='EVENTS_INVALID_WINDOW')
+           return json({error:'EVENTS_INVALID_INPUT'},400,origin);
+         return json({error:'EVENTS_UNAVAILABLE'},503,origin);
+       }
      }
      if(suffix==='/disconnect') {
        if(!tokenLifecycle||typeof tokenLifecycle.disconnect!=='function')
