@@ -40,13 +40,19 @@ class RecordedTaskTime {
   final int withTime;
   final int withoutTime;
 
-  static RecordedTaskTime fromVisible(Iterable<UnifiedAgendaEntry> entries) {
+  static RecordedTaskTime fromVisible(
+    Iterable<UnifiedAgendaEntry> entries, {
+    required DateTime day,
+  }) {
     var minutes = 0;
     var withTime = 0;
     var withoutTime = 0;
     final seen = <String>{};
     for (final entry in entries) {
       if (entry.isExternal || entry.type != ItemType.task || entry.done ||
+          entry.date.year != day.year ||
+          entry.date.month != day.month ||
+          entry.date.day != day.day ||
           !seen.add(entry.id)) {
         continue;
       }
@@ -83,7 +89,7 @@ abstract final class RealisticDayAdvisor {
     int bufferMinutes = 0,
   }) {
     final observed = visibleEntries.toList(growable: false);
-    final recorded = RecordedTaskTime.fromVisible(observed);
+    final recorded = RecordedTaskTime.fromVisible(observed, day: day);
     final slots = findCalendarFreeSlots(
       day: day,
       visibleEntries: observed,
@@ -514,7 +520,7 @@ class _RealisticDayCardBody extends StatelessWidget {
     final snoozeDate = DateTime.now();
     final todayKey = snoozeDate.year * 10000 +
         snoozeDate.month * 100 + snoozeDate.day;
-    final snoozed = snoozedThrough >= todayKey;
+    final snoozed = snoozedThrough > todayKey;
     final advisePressure = nudgesEnabled && !snoozed && advice.hasPressure;
     return Card(
       key: const ValueKey('realistic-day-advice'),
