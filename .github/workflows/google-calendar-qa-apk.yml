@@ -118,7 +118,9 @@ jobs:
             echo "::error::Unexpected package ID; refusing delivery"
             exit 1
           fi
-          if [[ "$package_line" != *"versionCode='123'"* ]]; then
+          # Custom Anna's Diary Android namespace adds the 2000 version-code lane.
+          # Flutter --build-number=123 therefore maps to Play versionCode 2123.
+          if [[ "$package_line" != *"versionCode='2123'"* ]]; then
             echo "::error::Unexpected QA build number; refusing delivery"
             exit 1
           fi
@@ -126,7 +128,7 @@ jobs:
           test -n "$apksigner"
           "$apksigner" verify --verbose "$apk"
           sha256sum "$apk" > build/qa-delivery/SHA256SUMS.txt
-          printf 'source=%s\nbuild=123\ntype=QA-staging\noauth=locked\npackage=com.riccardopinato.agenda_per_anna\n' \
+          printf 'source=%s\nbuild=123\nandroid_version_code=2123\ntype=QA-staging\noauth=locked\npackage=com.riccardopinato.agenda_per_anna\n' \
             "$GITHUB_SHA" > build/qa-delivery/QA_BUILD_INFO.txt
           ls -lh build/qa-delivery/
 
