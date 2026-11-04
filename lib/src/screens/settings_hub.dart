@@ -92,11 +92,13 @@ class _SettingsHubScreenState extends State<SettingsHubScreen> {
       }
       if(journal.note.trim().isNotEmpty){
         final title=journal.note.trim().split('\n').first.trim();
-        if(title.isNotEmpty)result.add(GcalDiaryLocalContext(
-          id:'journal:'+AgendaStore.dateKey(day),
+        if(title.isNotEmpty){
+          result.add(GcalDiaryLocalContext(
+          id:'journal:${AgendaStore.dateKey(day)}',
           title:title.length>300?title.substring(0,300):title,
           day:day,kind:GcalDiaryContextKind.diaryNote,
-        ));
+          ));
+        }
       }
     }
     return List.unmodifiable(result);
