@@ -27,6 +27,8 @@ test('staging database URL and callback pinned to test, not production',()=>{
 test('JWT authentication and OAuth credentials remain server-side only',()=>{
  assert.match(live,/createProductionIdentityVerifier/);
  assert.match(live,/GcalTwoPhaseBroker/);
+ assert.match(live,/GcalStageTokenLifecycle/);
+ assert.equal(deployed.includes('token_lifecycle.mjs'),false);
  assert.match(live,/ANNA_GCAL_STAGING_WEB_CLIENT_SECRET/);
  assert.match(live,/ANNA_GCAL_PRODUCTION_PUBLISHABLE_KEY/);
  assert.equal(live.includes('supabase.co/auth/v1/callback'),false);
