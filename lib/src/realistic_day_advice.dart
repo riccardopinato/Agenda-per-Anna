@@ -142,7 +142,13 @@ class _RealisticDayCardState extends State<RealisticDayCard> {
 
   Future<void> _dismissToday() async {
     final key = _dayKey;
-    setState(() => _dismissed.add(key));
+    setState(() {
+      _dismissed.remove(key);
+      _dismissed.add(key);
+      while (_dismissed.length > 90) {
+        _dismissed.remove(_dismissed.first);
+      }
+    });
     try {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setStringList(
