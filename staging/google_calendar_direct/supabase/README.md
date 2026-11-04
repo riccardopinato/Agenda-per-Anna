@@ -1,5 +1,18 @@
 # Anna's Diary — Supabase Google Calendar STAGING
 
+## STAGING VERIFIED DEPLOY — 04/11/2026 (AUTHORITATIVE STATUS)
+
+- Project: `anna-calendar-staging` `pdanpljacyozslrutsor` only. The 10-module backend candidate was **DEPLOYED as Edge Function version 6** from GitHub source `374b5ecb5975eb2c280e54ca97e12e7f96e95693`, entrypoint `index_ready.mjs`, `verify_jwt=false` for the browser callback.
+- Deployment identity: `ezbr_sha256=ca73ce888dea0ebc391b6817318d768adadfb0af580250ede2690d52d3864633`. Runtime version and dual-gate source were retrieved again through Supabase.
+- Live consent requires **BOTH** `ANNA_GCAL_STAGING_ENABLE=approved-for-live-oauth-testing` and `ANNA_GCAL_STAGING_LIVE_APPROVED_20261104=owner-authorized-google-consent`. The second variable was **never set by ChatGPT**, and the owner has not confirmed setting it; thus, **NO LIVE GOOGLE OAUTH is authorized or verified**.
+- Local GitHub Actions Deno preflight tested a locked server, including first flag ON/second flag OFF, and validated health/503. The public Supabase HTTPS URL was **NOT reachable for direct HTTP verification from the available environment**, so external runtime smoke is **NOT VERIFIED**. Supabase reports function ACTIVE v6, which is deploy-state evidence, not an external request result.
+- `gcal_stage.oauth_pending`, `oauth_completions`, `oauth_links`, both budget tables all remain at **0 rows**. Production project `pxsxlorntswypdbeerzw` was not modified.
+- Flutter staging-only two-phase client, HTTP transport, review/confirmation panel and tests are on PR #199. **Not imported by production routes; no Android signed QA APK or real user session/browser completion**.
+- To finish a real provider/Flutter test, a human must register the exact redirect URI in Google Cloud TEST, operate tester consent and verify the real device/browser session. Never paste secrets, provider tokens, authorization codes or app JWTs in ChatGPT.
+
+**Historical sections below reflect their 03/11 or earlier 04/11 snapshots; this latest status supersedes statements that the deployed function is only the original v1/v5 placeholder.**
+
+
 **Status 03/11/2026:** Supabase project is live; the OAuth Edge Function is
 intentionally **LOCKED**. No real Google OAuth flow or Calendar API access.
 
