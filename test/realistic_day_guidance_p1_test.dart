@@ -59,15 +59,6 @@ void main() {
   });
 
   test('adjacent-day task is excluded from current-day duration provenance', () {
-    final yesterday = DiaryBlockReference(
-      date: date.subtract(const Duration(days: 1)),
-      block: DiaryBlock(
-        id: 'not-an-agenda-entry',
-        type: DiaryBlockType.note,
-        createdAt: date,
-      ),
-    );
-    expect(yesterday.block.id, 'not-an-agenda-entry');
     final adjacent = UnifiedAgendaEntry.private(
       AgendaItem(
         id: 'yesterday-task',
