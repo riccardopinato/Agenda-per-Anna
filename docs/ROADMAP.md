@@ -25,6 +25,13 @@ credenziale e' stata riportata su GitHub o in chat.
   CI exact-head e validazione dispositivo. Un via libera ai secrets non
   costituisce via libera all'accesso Google reale.
 
+- **04/11 — Callback pubblica:** migrazione `gcal_staging_callback_budget_v1`
+  applicata SOLO a staging, tabella RLS privata e vuota, EXPLAIN query atomica
+  PASS; nuovo limite globale 30/min e validazione HTTP nel codice sorgente.
+  Test integrato mock `oauth_http_integration.test.mjs` incluso nella
+  workflow. Non e' un controllo ingress/WAF e NON certifica il provider reale.
+  CI sul nuovo head ancora da verificare. Deployed kill-switch invariato.
+
 Il blocco del 03/11 seguente e' mantenuto come cronologia, non indica che
 l'utente debba ripetere la configurazione gia' completata.
 
