@@ -28,6 +28,7 @@ enum GcalStageClientFault {
   malformedBackendResponse,
   failedToOpenBrowser,
   requestRejected,
+  stagingLocked,
   explicitConfirmationRequired,
   previewRequired,
   notConnected,
@@ -134,7 +135,19 @@ class GcalTwoPhaseFlutterStagingClient {
     try {
       final response = await post(route, auth.accessToken, body);
       if (response.status != 200) {
-        throw const GcalStageClientException(GcalStageClientFault.requestRejected);
+        // Only the server's exact, known kill-switch response means this
+        // expected QA state; do not conflate it with network/auth failures.
+        if (response.status == 503 &&
+            response.json['error'] == 'STAGING_NOT_ACTIVATED') {
+          throw const GcalStageClientException(
+              GcalStageClientFault.stagingLocked);
+        }
+        if (response.status == 401) {
+          throw const GcalStageClientException(
+              GcalStageClientFault.authenticationRequired);
+        }
+        throw const GcalStageClientException(
+            GcalStageClientFault.requestRejected);
       }
       return response;
     } on GcalStageClientException {
