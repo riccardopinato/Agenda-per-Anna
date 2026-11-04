@@ -129,7 +129,36 @@ test('CORS only permits declared web origin with no wildcard and no credentials'
 });
 
 
-test('authenticated disconnect requires explicit consent and never exposes provider tokens',async()=>{
+test('connections list is authenticated, rate-limited and never discloses bearer or provider tokens',async()=>{
+ let queries=0;
+ const handler=createGoogleCalendarStagingHandler({
+  enabled:true,broker:{},requestBudget:{async consume(account,action){
+   assert.equal(account,userId);assert.equal(action,'connections');return true;
+  }},callbackBudget:{consume:async()=>true},
+  allowedWebOrigins:[validOrigin],
+  verifyAppIdentity:async header=>{
+   if(header!==fakeToken)throw Error('wrong-token');
+   return {accountId:userId};
+  },
+  tokenLifecycle:{async listConnections({verifiedAccountId}){
+   queries++;assert.equal(verifiedAccountId,userId);
+   return {connections:[{googleSubject:'google-one',googleEmail:'verified@example.invalid'}]};
+  }},
+ });
+ let response=await handler(post('/connections',{}, {auth:'Bearer BAD'}));
+ assert.equal(response.status,401);assert.equal(queries,0);
+ response=await handler(post('/connections',{accountId:'imposter'}));
+ assert.equal(response.status,400);assert.equal(queries,0);
+ response=await handler(post('/connections',{}));
+ assert.equal(response.status,200);
+ const body=JSON.stringify(await response.json());
+ assert.equal(queries,1);
+ assert.equal(body.includes('TEST-user-session-token'),false);
+ assert.equal(body.includes('refreshToken'),false);
+ assert.match(body,/google-one/);
+ assert.equal(response.headers.get('cache-control'),'no-store, max-age=0');
+});
+
   const calls=[];
   const handler=createGoogleCalendarStagingHandler({
     enabled:true,broker:{},requestBudget:{consume:async()=>true},callbackBudget:{consume:async()=>true},
