@@ -3,6 +3,14 @@
 export const GOOGLE_SCOPE_EVENTS = 'https://www.googleapis.com/auth/calendar.events.owned';
 export const GOOGLE_SCOPE_CALENDAR_LIST = 'https://www.googleapis.com/auth/calendar.calendarlist.readonly';
 export const REQUIRED_SCOPES = Object.freeze(['openid','email',GOOGLE_SCOPE_EVENTS,GOOGLE_SCOPE_CALENDAR_LIST]);
+const GOOGLE_EMAIL_SCOPE_CANONICAL='https://www.googleapis.com/auth/userinfo.email';
+export function scopesContainRequired(scope) {
+  if(typeof scope!=='string'||scope.length===0||scope.length>4096)return false;
+  const granted=new Set(scope.split(/\s+/).filter(Boolean));
+  return REQUIRED_SCOPES.every(s=>s==='email'
+    ?(granted.has('email')||granted.has(GOOGLE_EMAIL_SCOPE_CANONICAL))
+    :granted.has(s));
+}
 export const AUTH_ENDPOINT = 'https://accounts.google.com/o/oauth2/v2/auth';
 export const TOKEN_ENDPOINT = 'https://oauth2.googleapis.com/token';
 export const JWKS_ENDPOINT = 'https://www.googleapis.com/oauth2/v3/certs';
@@ -161,7 +169,7 @@ export class GcalStageBroker {
       !Number.isInteger(tokens.expires_in)||tokens.expires_in<60||tokens.expires_in>86400||
       !str(tokens.scope,4096)) deny('BAD_TOKEN_RESPONSE');
     const scopes=new Set(tokens.scope.split(/\s+/));
-    if(!REQUIRED_SCOPES.every(s=>scopes.has(s))) deny('SCOPE_MISMATCH');
+    if(!scopesContainRequired(tokens.scope)) deny('SCOPE_MISMATCH');
     const identity=await this.idVerifier(tokens.id_token,{clientId:this.clientId,
       nonce:tx.nonce,now:this.clock()});
     if(!str(identity?.subject,256))deny('BAD_GOOGLE_ID');
