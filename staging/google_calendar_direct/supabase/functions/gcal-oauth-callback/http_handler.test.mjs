@@ -5,6 +5,7 @@ const base='https://pdanpljacyozslrutsor.supabase.co/functions/v1/gcal-oauth-cal
 const validOrigin='https://riccardopinato.github.io';
 const userId='c16e0ec0-415c-4e53-a488-5c6ed75d2662';
 const fakeToken='Bearer TEST-user-session-token';
+const validState='A'.repeat(43);
 function fixture({enabled=true}={}) {
  const calls=[];
  const broker={
@@ -20,7 +21,7 @@ function fixture({enabled=true}={}) {
  };
  let verified=0;
  const handler=createGoogleCalendarStagingHandler({
-   enabled,broker,requestBudget:{consume:async()=>true},allowedWebOrigins:[validOrigin],
+   enabled,broker,requestBudget:{consume:async()=>true},callbackBudget:{consume:async()=>true},allowedWebOrigins:[validOrigin],
    verifyAppIdentity:async header=>{
      verified++;
      if(header!==fakeToken)throw Error('invalid');
@@ -82,24 +83,24 @@ test('preview/confirm use verified active account and explicit final consent',as
 });
 test('callback response hides OAuth code and Google identity and requires no JWT',async()=>{
  const f=fixture();
- const url=base+'?code=SENSITIVE-GOOGLE-CODE&state=RANDOM';
+ const url=base+'?code=SENSITIVE-GOOGLE-CODE&state='+validState;
  const response=await f.handler(new Request(url));
  assert.equal(response.status,200);
  assert.match(response.headers.get('content-security-policy'),/default-src 'none'/);
  assert.equal(response.headers.get('referrer-policy'),'no-referrer');
  const html=await response.text();
  assert.equal(html.includes('SENSITIVE-GOOGLE-CODE'),false);
- assert.equal(html.includes('state=RANDOM'),false);
+ assert.equal(html.includes(validState),false);
  assert.equal(f.calls[0][0],'callback');
  assert.equal(f.verified(),0);
 });
 test('Google callback failure cannot leak error or authorization code',async()=>{
  const f=fixture();
  const handle=createGoogleCalendarStagingHandler({
-   enabled:true,requestBudget:{consume:async()=>true},verifyAppIdentity:async()=>({accountId:userId}),
+   enabled:true,requestBudget:{consume:async()=>true},callbackBudget:{consume:async()=>true},verifyAppIdentity:async()=>({accountId:userId}),
    broker:{callback:async()=>{throw Error('SUPER-SECRET-TOKEN');}},
  });
- const response=await handle(new Request(base+'?code=SECRET&state=TEST'));
+ const response=await handle(new Request(base+'?code=SECRET&state='+validState));
  assert.equal(response.status,400);
  const text=await response.text();
  assert.equal(text.includes('SECRET'),false);
@@ -131,7 +132,7 @@ test('CORS only permits declared web origin with no wildcard and no credentials'
 test('authenticated disconnect requires explicit consent and never exposes provider tokens',async()=>{
   const calls=[];
   const handler=createGoogleCalendarStagingHandler({
-    enabled:true,broker:{},requestBudget:{consume:async()=>true},
+    enabled:true,broker:{},requestBudget:{consume:async()=>true},callbackBudget:{consume:async()=>true},
     allowedWebOrigins:[validOrigin],
     verifyAppIdentity:async header=>{
       if(header!==fakeToken)throw Error('invalid');
@@ -186,5 +187,64 @@ test('budget database outage blocks OAuth operations rather than bypassing quota
 test('unconfigured budget rejects live router construction',()=>{
   assert.throws(()=>createGoogleCalendarStagingHandler({
     enabled:true,broker:{},verifyAppIdentity:async()=>({accountId:userId}),
+  }),/MISSING_AUTH_GATE/);
+});
+
+test('callback shape rejected without touching quota, Google or production identity',async()=>{
+  let quotaCalls=0,oauthCalls=0;
+  const handler=createGoogleCalendarStagingHandler({
+    enabled:true,broker:{callback:async()=>{oauthCalls++;}},
+    requestBudget:{consume:async()=>true},
+    callbackBudget:{consume:async()=>{quotaCalls++;return true;}},
+    verifyAppIdentity:async()=>{throw Error('SHOULD_NOT_AUTHENTICATE');},
+  });
+  const cases=[
+    base+'?code=CODE&state=short',
+    base+'?code=CODE&state='+validState+'&state='+validState,
+    base+'?code=CODE&state='+validState+'&error=access_denied',
+    base+'?code=CODE&state='+validState+'&code=SECOND',
+    base+'?code='+('X'.repeat(9000))+'&state='+validState,
+  ];
+  for(const uri of cases) {
+    const response=await handler(new Request(uri));
+    assert.equal(response.status,400);
+    assert.equal(response.headers.get('cache-control'),'no-store, max-age=0');
+  }
+  assert.equal(quotaCalls,0);
+  assert.equal(oauthCalls,0);
+});
+test('callback global quota 429 blocks broker and never exposes credentials',async()=>{
+  let brokerCalls=0;
+  const handler=createGoogleCalendarStagingHandler({
+    enabled:true,broker:{callback:async()=>{brokerCalls++;}},
+    requestBudget:{consume:async()=>true},
+    callbackBudget:{consume:async()=>false},
+    verifyAppIdentity:async()=>({accountId:userId}),
+  });
+  const response=await handler(new Request(base+'?state='+validState+'&code=SENSITIVE_GOOGLE_CODE'));
+  assert.equal(response.status,429);
+  const body=await response.text();
+  assert.equal(body.includes('SENSITIVE_GOOGLE_CODE'),false);
+  assert.equal(brokerCalls,0);
+});
+test('callback SQL outage 503 fails closed, no broker call or DB detail leaks',async()=>{
+  let brokerCalls=0;
+  const handler=createGoogleCalendarStagingHandler({
+    enabled:true,broker:{callback:async()=>{brokerCalls++;}},
+    requestBudget:{consume:async()=>true},
+    callbackBudget:{consume:async()=>{throw Error('PRIVATE_SQL_SECRET');}},
+    verifyAppIdentity:async()=>({accountId:userId}),
+  });
+  const response=await handler(new Request(base+'?state='+validState+'&code=SECRET_CODE'));
+  assert.equal(response.status,503);
+  const body=await response.text();
+  assert.equal(body.includes('PRIVATE_SQL_SECRET'),false);
+  assert.equal(body.includes('SECRET_CODE'),false);
+  assert.equal(brokerCalls,0);
+});
+test('enabled OAuth router rejects missing public callback quota',()=>{
+  assert.throws(()=>createGoogleCalendarStagingHandler({
+    enabled:true,broker:{},verifyAppIdentity:async()=>({accountId:userId}),
+    requestBudget:{consume:async()=>true},
   }),/MISSING_AUTH_GATE/);
 });
