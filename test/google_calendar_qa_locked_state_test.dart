@@ -27,7 +27,7 @@ void main() {
     expect(client.connectedThisSession, false);
   });
 
-  test('other 503 responses stay general, not incorrectly marked locked',
+  test('other 503 responses report server unavailable, not incorrectly marked locked',
       () async {
     final client = GcalTwoPhaseFlutterStagingClient(
       currentAuth: () async => const GcalStageAppAuth('id', 'jwt'),
@@ -37,7 +37,7 @@ void main() {
     );
     await expectLater(client.begin(),
         throwsA(isA<GcalStageClientException>().having(
-            (e) => e.kind, 'kind', GcalStageClientFault.requestRejected)));
+            (e) => e.kind, 'kind', GcalStageClientFault.serverUnavailable)));
   });
 
   test('expired production JWT is distinct from backend kill switch',
