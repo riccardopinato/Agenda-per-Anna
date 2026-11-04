@@ -93,10 +93,11 @@ export class GcalStageEventsReadProbe{
     }catch{fail('EVENTS_UNAVAILABLE');}
     if(!response?.ok)fail('EVENTS_UNAVAILABLE');
     const data=await boundedJson(response);
-    if(!Array.isArray(data?.items)||data.items.length>MAX_EVENTS)
+    const items=data?.items??[];
+    if(!Array.isArray(items)||items.length>MAX_EVENTS)
       fail('EVENTS_UNAVAILABLE');
     const events=[],seen=new Set();
-    for(const source of data.items){
+    for(const source of items){
       const event=parseEvent(source);
       if(!event)continue;
       if(seen.has(event.eventId))continue;
