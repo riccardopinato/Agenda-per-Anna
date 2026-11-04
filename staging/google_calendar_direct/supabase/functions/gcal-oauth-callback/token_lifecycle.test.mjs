@@ -9,6 +9,7 @@ function setup(expired=false,provider=async()=>({ok:true,status:200,
   const records=new Map();
   const vault=new GcalStageVault(crypto.getRandomValues(new Uint8Array(32)));
   const sql={
+    async listLinks(accountHash){return [...records].filter(([k])=>k.startsWith(accountHash+':')).map(([k,envelope])=>({google_subject_hash:k.slice(65),envelope}));},
     async getLink(a,s){return records.get(a+':'+s)??null;},
     async replaceLink(a,s,old,next){
       const key=a+':'+s;
