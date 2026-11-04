@@ -30,6 +30,35 @@ export class GcalStagePostgresPorts {
     `;
     return rows[0]?.envelope??null;
   }
+  async getLink(accountHash,subjectHash) {
+    check(hashOk(accountHash)&&hashOk(subjectHash),'BAD_HASH');
+    const rows=await this.sql`
+      select envelope from gcal_stage.oauth_links
+       where app_account_hash=${accountHash} and google_subject_hash=${subjectHash}
+    `;
+    return rows[0]?.envelope??null;
+  }
+  async replaceLink(accountHash,subjectHash,prior,next) {
+    check(hashOk(accountHash)&&hashOk(subjectHash),'BAD_HASH');
+    check(envelopeOk(prior)&&envelopeOk(next),'BAD_ENVELOPE');
+    // Optimistic compare-and-swap prevents stale refresh writing after unlink.
+    const rows=await this.sql`
+      update gcal_stage.oauth_links set envelope=${this.sql.json(next)},updated_at=now()
+       where app_account_hash=${accountHash} and google_subject_hash=${subjectHash}
+         and envelope=${this.sql.json(prior)}
+       returning app_account_hash
+    `;
+    return rows.length===1;
+  }
+  async takeLink(accountHash,subjectHash) {
+    check(hashOk(accountHash)&&hashOk(subjectHash),'BAD_HASH');
+    const rows=await this.sql`
+      delete from gcal_stage.oauth_links
+       where app_account_hash=${accountHash} and google_subject_hash=${subjectHash}
+       returning envelope
+    `;
+    return rows[0]?.envelope??null;
+  }
   async put(accountHash,subjectHash,envelope) {
     check(hashOk(accountHash)&&hashOk(subjectHash),'BAD_HASH');
     check(envelopeOk(envelope),'BAD_ENVELOPE');
