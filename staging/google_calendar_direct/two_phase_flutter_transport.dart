@@ -39,7 +39,7 @@ class GcalStagingEdgeTransport {
 
   Future<GcalStageResponse> post(
       String route, String productionJwt, Map<String, Object?> json) async {
-    if (!const {'/start', '/preview', '/confirm', '/disconnect'}
+    if (!const {'/start', '/preview', '/confirm', '/disconnect', '/connections'}
         .contains(route)) {
       throw const GcalStageClientException(
           GcalStageClientFault.malformedBackendResponse);
