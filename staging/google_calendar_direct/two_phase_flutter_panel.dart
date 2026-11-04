@@ -3,6 +3,26 @@
 import 'package:flutter/material.dart';
 import 'two_phase_flutter_client.dart';
 
+String gcalQaErrorMessage(GcalStageClientFault fault) => switch (fault) {
+  GcalStageClientFault.stagingLocked =>
+    'Il collegamento Google Calendar non è ancora abilitato nello staging. '
+    'Il blocco di sicurezza è attivo: non è un problema del tuo account.',
+  GcalStageClientFault.authenticationRequired =>
+    'La sessione Anna’s Diary non è valida o è scaduta. Accedi nuovamente.',
+  GcalStageClientFault.requestRejected =>
+    'Richiesta non completata. Verifica la connessione oppure la '
+    'configurazione del backend di test.',
+  GcalStageClientFault.expired =>
+    'La richiesta Google è scaduta. Avvia un nuovo collegamento.',
+  GcalStageClientFault.accountChanged =>
+    'Hai cambiato account Anna’s Diary. Riavvia il collegamento.',
+  GcalStageClientFault.failedToOpenBrowser =>
+    'Impossibile aprire il browser per il consenso Google.',
+  GcalStageClientFault.previewRequired =>
+    'Verifica l’account Google prima di confermare.',
+  _ => 'Operazione di prova non completata: ${fault.name}.',
+};
+
 class GcalStagingTestPanel extends StatefulWidget {
   final GcalTwoPhaseFlutterStagingClient client;
   const GcalStagingTestPanel({super.key, required this.client});
@@ -17,16 +37,22 @@ class _GcalStagingTestPanelState extends State<GcalStagingTestPanel> {
   List<GcalStageConnection> _connections = const [];
   String _message = 'Collegamento Google Calendar di test non avviato.';
   String? _error;
+  bool _expectedLocked = false;
 
   Future<void> _perform(Future<void> Function() action) async {
     if (_busy) return;
-    setState(() { _busy = true; _error = null; });
+    setState(() { _busy = true; _error = null; _expectedLocked = false; });
     try {
       await action();
     } on GcalStageClientException catch (error) {
-      if (mounted) setState(() { _error = error.kind.name; });
+      if (mounted) setState(() {
+        _error = gcalQaErrorMessage(error.kind);
+        _expectedLocked = error.kind == GcalStageClientFault.stagingLocked;
+      });
     } catch (_) {
-      if (mounted) setState(() { _error = 'requestRejected'; });
+      if (mounted) setState(() {
+        _error = gcalQaErrorMessage(GcalStageClientFault.requestRejected);
+      });
     } finally {
       if (mounted) setState(() { _busy = false; });
     }
@@ -156,8 +182,10 @@ class _GcalStagingTestPanelState extends State<GcalStagingTestPanel> {
           ],
           if (_error != null) ...[
             const SizedBox(height: 8),
-            Text('Operazione non riuscita: $_error',
-                style: TextStyle(color: Theme.of(context).colorScheme.error)),
+            Text(_error!,
+                style: TextStyle(color: _expectedLocked
+                    ? Theme.of(context).colorScheme.onSurfaceVariant
+                    : Theme.of(context).colorScheme.error)),
           ],
           const SizedBox(height: 12),
           Wrap(spacing: 8, runSpacing: 8, children: [
