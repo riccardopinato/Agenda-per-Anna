@@ -3,6 +3,23 @@
 // authenticate the EXISTING production Supabase user via verifyAppIdentity.
 // Google OAuth browser callback is public, but single-use state is mandatory.
 const BASE='/functions/v1/gcal-oauth-callback';
+const STAGING_HOST='https://pdanpljacyozslrutsor.supabase.co';
+// The hosted Supabase gateway may strip /functions/v1/<slug> from req.url.
+// Accept only these exact representations; never accept arbitrary URL paths.
+function routeSuffix(path,basePath) {
+ const roots=basePath===BASE?[BASE,'/gcal-oauth-callback','']: [basePath];
+ for(const root of roots) {
+   if(root==='') {
+     if(path==='/')return '';
+     if(['/health','/start','/preview','/confirm','/disconnect','/connections'].includes(path))
+       return path;
+     continue;
+   }
+   if(path===root)return '';
+   if(path.startsWith(root+'/'))return path.slice(root.length);
+ }
+ return null;
+}
 const SECURITY={
  'cache-control':'no-store, max-age=0',
  'referrer-policy':'no-referrer',
@@ -59,8 +76,8 @@ export function createGoogleCalendarStagingHandler({
  return async function handle(req) {
    let url;
    try{url=new URL(req.url);}catch{return json({error:'BAD_URL'},400);}
-   if(!url.pathname.startsWith(basePath))return json({error:'NOT_FOUND'},404);
-   const suffix=url.pathname.slice(basePath.length);
+   const suffix=routeSuffix(url.pathname,basePath);
+   if(suffix===null)return json({error:'NOT_FOUND'},404);
    if(!['','/health','/start','/preview','/confirm','/disconnect','/connections'].includes(suffix))
      return json({error:'NOT_FOUND'},404);
    if(req.method==='GET'&&suffix==='/health')return json({
@@ -98,7 +115,11 @@ export function createGoogleCalendarStagingHandler({
      } catch {return browserResponse('Servizio temporaneamente non disponibile.',503);}
      // Browser callback never receives Supabase JWT and NEVER links accounts.
      try {
-       await broker.callback({callbackUrl:req.url});
+       // Reconstruct the externally registered HTTPS redirect: the gateway
+       // may expose an internal http:// URL with its function prefix stripped.
+       const publicCallback=new URL(STAGING_HOST+BASE);
+       publicCallback.search=url.search;
+       await broker.callback({callbackUrl:publicCallback.href});
        return browserResponse('Consenso ricevuto. Torna nell\u2019app per verificare l\u2019account Google e confermare il collegamento.');
      } catch {
        return browserResponse('Collegamento non completato. Torna nell\u2019app e riprova.',400);
