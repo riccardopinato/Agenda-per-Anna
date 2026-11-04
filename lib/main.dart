@@ -25,6 +25,8 @@ import 'package:uuid/uuid.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import 'qa/google_calendar/qa_flutter_screen.dart';
+import 'qa/google_calendar/diary_events_read_screen.dart';
+import 'qa/google_calendar/event_correspondence.dart';
 
 import 'app_version.dart';
 import 'external_calendar_service.dart';
