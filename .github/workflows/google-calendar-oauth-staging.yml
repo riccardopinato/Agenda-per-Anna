@@ -99,8 +99,9 @@ jobs:
         run: |
           set -euo pipefail
           export DENO_NO_PROMPT=1
-          unset ANNA_GCAL_STAGING_ENABLE
-          deno run --allow-net --allow-env=ANNA_GCAL_STAGING_ENABLE \
+          export ANNA_GCAL_STAGING_ENABLE=approved-for-live-oauth-testing
+          unset ANNA_GCAL_STAGING_LIVE_APPROVED_20261104
+          deno run --allow-net --allow-env=ANNA_GCAL_STAGING_ENABLE,ANNA_GCAL_STAGING_LIVE_APPROVED_20261104 \
             staging/google_calendar_direct/supabase/functions/gcal-oauth-callback/index_ready.mjs > /tmp/anna-gcal-deno-runtime.log 2>&1 &
           server_pid=$!
           trap 'kill "$server_pid" 2>/dev/null || true' EXIT
