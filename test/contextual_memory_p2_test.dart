@@ -94,7 +94,7 @@ void main() {
     expect(source, contains("prefs.setStringList("));
     expect(source, contains("'\${key}_selected_hashes'"));
     expect(source, contains('_dailySelectedDay == today'));
-    expect(source, contains('while (_excluded.length > 500)'), isFalse);
+    expect(source, isNot(contains('while (_excluded.length > 500)')));
     expect(source, contains('_snoozedThrough > today'));
     expect(source, isNot(contains('onThisDayPushNotification')));
   });
