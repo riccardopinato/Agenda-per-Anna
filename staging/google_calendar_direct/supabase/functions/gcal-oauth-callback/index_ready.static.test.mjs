@@ -4,7 +4,7 @@ import {readFileSync} from 'node:fs';
 const dir=new URL('./',import.meta.url);
 const live=readFileSync(new URL('index_ready.mjs',dir),'utf8');
 const deployed=readFileSync(new URL('index.ts',dir),'utf8');
-test('deployed production path remains locked and cannot call live broker',()=>{
+test('checked-in legacy index.ts is a locked fallback; deployed v6 is audited separately',()=>{
  assert.match(deployed,/STAGING_NOT_ACTIVATED/);
  assert.match(deployed,/google_oauth_active: false/);
  assert.equal(deployed.includes('two_phase_core.mjs'),false);
