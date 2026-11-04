@@ -23,11 +23,29 @@ class ExternalDiaryCorrespondence {
 /// Provider occurrence + calendar namespace prevents accidental overlap with
 /// native Anna appointments. The ID lives only in the existing DayJournal.
 String externalCalendarMemoryBlockId(ExternalCalendarEvent event) {
+  final occurrence = event.sourceOccurrenceKey ?? event.id;
   final digest = sha256.convert(utf8.encode(
-    'anna:external-calendar:diary:v1:${event.calendarId}:${event.id}:'
-    '${AgendaStore.dateKey(event.date)}',
+    'anna:external-calendar:diary:v1:${event.calendarId}:$occurrence',
   )).toString();
   return 'external-calendar-memory-${digest.substring(0, 32)}';
+}
+
+/// Finds a linked block even when a timezone change shifts the displayed
+/// event into a different civil day. Do not move or duplicate the diary page.
+DateTime? externalCalendarLinkedMemoryDay(
+  AgendaStore store, ExternalCalendarEvent event,
+) {
+  final id = externalCalendarMemoryBlockId(event);
+  if (store.journal(event.date).blocks.any((block) => block.id == id)) {
+    return event.date;
+  }
+  for (final entry in store.journals.entries) {
+    if (entry.value.blocks.any((block) => block.id == id)) {
+      final day = DateTime.tryParse(entry.key);
+      if (day != null) return day;
+    }
+  }
+  return null;
 }
 
 bool canCaptureExternalCalendarMemory(ExternalCalendarEvent event, DateTime now) {
@@ -42,8 +60,7 @@ bool externalCalendarMemoryHasRecoverableTrash(
   final day = AgendaStore.dateKey(event.date);
   final id = externalCalendarMemoryBlockId(event);
   return store.trash.any((entry) =>
-      (entry.kind == TrashEntityKind.diaryBlock &&
-          entry.entityId == id && entry.parentId == day) ||
+      (entry.kind == TrashEntityKind.diaryBlock && entry.entityId == id) ||
       (entry.kind == TrashEntityKind.journal && entry.entityId == day));
 }
 
@@ -80,8 +97,7 @@ ExternalDiaryCorrespondence externalCalendarDiaryCorrespondence(
       ExternalDiaryMatchState.recoverableTrash,
     );
   }
-  final id = externalCalendarMemoryBlockId(event);
-  if (store.journal(event.date).blocks.any((block) => block.id == id)) {
+  if (externalCalendarLinkedMemoryDay(store, event) != null) {
     return const ExternalDiaryCorrespondence(ExternalDiaryMatchState.linked);
   }
   final count = externalCalendarDiaryCandidates(store, event).length;
@@ -162,7 +178,7 @@ Future<bool> saveExternalCalendarMemoryDraft(
     if (!store.entryScopeReady || store.activeAccountId != expectedAccountId) {
       return false;
     }
-    final day = event.date;
+    final day = externalCalendarLinkedMemoryDay(store, event) ?? event.date;
     final journal = store.journal(day);
     final blocks = [...journal.blocks];
     final index = blocks.indexWhere((block) => block.id == id);
@@ -219,7 +235,8 @@ Future<void> openExternalCalendarMemoryDraft(
     return;
   }
   final id = externalCalendarMemoryBlockId(event);
-  final matches = store.journal(event.date).blocks.where(
+  final linkedDay = externalCalendarLinkedMemoryDay(store, event);
+  final matches = store.journal(linkedDay ?? event.date).blocks.where(
     (block) => block.id == id,
   );
   final existing = matches.isEmpty ? null : matches.first;
