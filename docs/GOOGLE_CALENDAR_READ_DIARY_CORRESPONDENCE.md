@@ -42,9 +42,12 @@ is activated here.
 - No automatic diary import, no automatic writing to device/Google calendars.
 - No separate link database, provider token, background sync or schema migration.
 - No automatic fuzzy linking, merging, deletion or overwrite of unrelated notes.
-- Stable link key derives from calendar ID, external occurrence ID and civil day;
-  provider IDs may change during account/provider migration. A same-title match
-  is only a review warning, not a durable verified link.
+- Stable link key derives from calendar ID and a timezone-independent
+  provider occurrence key (Android event ID + original UTC milliseconds).
+  The original diary day is retained if the device timezone later moves
+  the same event into another civil day. Provider IDs can still change
+  after account/provider migration; same-title matches are review warnings,
+  never verified links or automatic mergers.
 - Account scope must be ready and unchanged before save. An existing Trash
   entry blocks silently recreating a recoverable memory/day.
 - Existing DayJournal blocks remain intact. No Vault, Noi, attachments or
