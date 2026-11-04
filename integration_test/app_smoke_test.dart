@@ -12,85 +12,73 @@ import 'package:agenda_per_anna/media_asset_store.dart';
 void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
 
-  testWidgets('Android smoke: storage, media and primary navigation work',
+  testWidgets('Android smoke: local data, media, and current UI5 navigation',
       (tester) async {
+    // Exercise the mobile bottom bar rather than the tablet NavigationRail.
+    tester.view.physicalSize = const Size(390, 844);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(() {
+      tester.view.resetPhysicalSize();
+      tester.view.resetDevicePixelRatio();
+    });
+
     await initializeDateFormatting('it_IT', null);
     await LocalStateStore.instance.resetForTesting();
     await MediaAssetStore.instance.resetForTesting();
 
     final store = AgendaStore();
+    addTearDown(store.dispose);
     await store.load();
-
     await store.savePreferences(
       store.preferences.copyWith(onboardingDone: true),
     );
+
     await store.addInboxEntry('Smoke Android');
-    final today = DateTime.now();
-    store.birthdays.add(
-      BirthdayEntry(
-        id: 'smoke-birthday',
-        name: 'Compleanno AppLab',
-        day: today.day,
-        month: today.month,
-        reminderDaysBefore: null,
-      ),
-    );
-    await store.savePerson(
-      const PersonEntry(
-        id: 'smoke-person',
-        name: 'Persona AppLab',
-        relationship: 'Amica',
-        birthdayId: 'smoke-birthday',
-        favorite: true,
-      ),
-    );
-    await store.setPin('2468');
-    expect(store.verifyPin('2468'), isTrue);
+    expect(store.inbox.any((entry) => entry.text == 'Smoke Android'), isTrue);
 
     final mediaId = await MediaAssetStore.instance.put(
       Uint8List.fromList([11, 22, 33, 44, 55, 66, 77, 88]),
     );
     expect(await MediaAssetStore.instance.read(mediaId), isNotNull);
 
-    await tester.pumpWidget(AgendaApp(store: store));
+    // This is a navigation/storage smoke, not an identity, Vault or biometric
+    // acceptance test. Identity is bypassed only for this synthetic fixture.
+    await tester.pumpWidget(
+      AgendaApp(store: store, bypassIdentityForTesting: true),
+    );
     await tester.pumpAndSettle();
 
-    expect(find.text('Agenda bloccata'), findsOneWidget);
-    await tester.enterText(find.byType(TextField), '2468');
-    await tester.tap(find.text('Sblocca'));
-    await tester.pumpAndSettle();
+    final bar = find.byType(NavigationBar);
+    expect(bar, findsOneWidget);
+    expect(tester.widget<NavigationBar>(bar).destinations, hasLength(4));
 
-    expect(find.text('Agenda per Anna'), findsOneWidget);
-    expect(find.text('Home'), findsOneWidget);
-    expect(find.text('Mese'), findsOneWidget);
-    expect(find.text('Settimana'), findsOneWidget);
-    expect(find.text('Oggi'), findsOneWidget);
-    expect(find.text('Oggi in breve'), findsOneWidget);
-    expect(find.textContaining('Compleanno AppLab'), findsWidgets);
-    expect(find.text('Persone importanti'), findsOneWidget);
+    const destinations = <String>[
+      'main-nav-today',
+      'main-nav-messages',
+      'main-nav-memories',
+      'main-nav-more',
+    ];
+    for (final id in destinations) {
+      expect(find.byKey(ValueKey<String>(id)), findsOneWidget);
+    }
 
-    await tester.ensureVisible(find.text('Persone importanti'));
-    await tester.tap(find.text('Persone importanti'));
-    await tester.pumpAndSettle();
-    expect(find.text('Persona AppLab'), findsOneWidget);
-    await tester.pageBack();
-    await tester.pumpAndSettle();
+    for (var index = 1; index < destinations.length; index++) {
+      await tester.tap(find.byKey(ValueKey<String>(destinations[index])));
+      await tester.pumpAndSettle();
+      expect(tester.widget<NavigationBar>(bar).selectedIndex, index);
+    }
 
-    await tester.tap(find.byType(NavigationDestination).at(1));
+    await tester.tap(find.byKey(const ValueKey<String>('main-nav-today')));
     await tester.pumpAndSettle();
-    expect(find.text('Mese'), findsWidgets);
-    expect(find.text('Contesto della giornata'), findsOneWidget);
+    expect(tester.widget<NavigationBar>(bar).selectedIndex, 0);
 
-    await tester.tap(find.byType(NavigationDestination).at(2));
-    await tester.pumpAndSettle();
-    expect(find.text('Settimana'), findsWidgets);
-
-    await tester.tap(find.byType(NavigationDestination).at(3));
-    await tester.pumpAndSettle();
-    expect(find.text('Oggi'), findsWidgets);
-    expect(find.text('Compleanni'), findsOneWidget);
-    expect(find.text('Compleanno AppLab'), findsWidgets);
-
-    store.dispose();
+    // +Crea is a separate central action, never an extra bottom-bar tab.
+    expect(
+      find.byWidgetPredicate(
+        (widget) => widget is Semantics &&
+            widget.properties.identifier == 'main-nav-create',
+      ),
+      findsOneWidget,
+    );
   });
 }

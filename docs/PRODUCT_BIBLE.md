@@ -1,8 +1,8 @@
 # Anna's Diary — Product Bible
 
-**Status:** all 10/10 approved screen source deltas merged; daily-use quick wins merged #206, Privacy quick-win compatibility merged #209. Android +120 has USER_ATTESTED_GENERAL_PASS on user's instruction, not individual technical physical certificates. Full Privacy UX PR #200 remains DRAFT / not merged.
-**Distribution identity:** `1.0.0-rc.6+120` stable-signed ARM64 APK built successfully from `main@fb476545426fb6bf290e74f53e735fa13616e4e9` by workflow #41367895694, artifact ID 13107988055. User requested general Android acceptance; per-scenario technical/device/Play QA remain separate. Later source-only fixes are not inside this APK.
-**Last aligned:** 2 November 2026 (signed release / user-attested general acceptance; specialist QA not verified)
+**Status:** all 10/10 approved screen source deltas merged; approved 10-screen design and the four 4 November CAP maxi-steps are source-integrated. User explicitly accepted the Android +123 P0 physical gate at a general level on 4 November 2026 (`USER_ATTESTED_GENERAL_PASS`); no per-scenario/device/fingerprint proof was supplied. Privacy V2 #215 and Google Calendar Direct #199 remain independent DRAFT / DO NOT MERGE.
+**Distribution identity:** `1.0.0-rc.6+123` stable-signed ARM64 APK built from `main@20b0d2c7375f4e33e0009e04e82c666cf07a3128`, signed workflow [#41871951662](https://github.com/riccardopinato/Agenda-per-Anna/actions/runs/41871951662), artifact ID 13346141160. Source Development/Android-native PASS; Web Pages deployment for this SHA failed on retry and must be repaired. Play, iOS, two-device E2EE specifics, and per-test physical reports are not independently certified.
+**Last aligned:** 4 November 2026 (source+signed APK verified; P0 general user acceptance; specialist/Store QA unverified)
 
 This document defines what Anna's Diary is, what it is not, and the product/security invariants that future work must preserve. Implementation details belong in `docs/ARCHITECTURE.md`; execution sequencing belongs in `docs/ROADMAP.md`.
 

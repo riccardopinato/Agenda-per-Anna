@@ -5,13 +5,20 @@ Created 4 November 2026. Source basis: four feature PRs #229, #230,
 
 ## Provenance / do not overclaim
 
-- Proposed Android release identity: `com.riccardopinato.agenda_per_anna`,
-  `1.0.0-rc.6+123`, stable-signed ARM64 **pending exact-source workflow**.
-- Exact signing-cert fingerprint, SHA-256 APK and workflow run ID must be
-  recorded from `PHYSICAL_CERTIFICATION_MANIFEST.json` *after* a successful
-  `signed-apk` job. A green preflight with skipped signing is not a build.
-- This plan does **not** assert an installed build, physical PASS,
-  Play distribution, Web Push on iPhone or a signed artifact.
+- Confirmed Android identity: `com.riccardopinato.agenda_per_anna`,
+  `1.0.0-rc.6+123`; **signed-apk SUCCESS** from
+  `main@20b0d2c7375f4e33e0009e04e82c666cf07a3128`,
+  [workflow #41871951662](https://github.com/riccardopinato/Agenda-per-Anna/actions/runs/41871951662),
+  artifact ID `13346141160`.
+- The signed artifact contains `PHYSICAL_CERTIFICATION_MANIFEST.json`.
+  Extract its APK SHA-256 and certificate SHA-256 from that exact artifact before
+  claiming a device fingerprint/upgrade observation; a CI preflight alone is
+  not sufficient.
+- On 4 November 2026 the owner explicitly accepted the **P0 physical gate
+  generally** for +123: `USER_ATTESTED_GENERAL_PASS`. This is a release
+  acceptance decision, **not** an assertion that R0–R13 were individually
+  performed or independently observed. Record any missing individual device,
+  timing, backup, sync, Vault and Store evidence as `NOT VERIFIED`.
 - Treat the existing Privacy V2 #215 and Google Calendar Direct #199 as
   independent blocked/draft scopes. Neither is activated by this release.
 
