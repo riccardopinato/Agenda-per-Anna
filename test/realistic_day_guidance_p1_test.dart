@@ -41,7 +41,7 @@ void main() {
           start: const TimeOfDay(hour: 15, minute: 0),
           end: const TimeOfDay(hour: 16, minute: 0),
           done: true),
-    ]);
+    ], day: date);
     expect(observed.minutes, 105);
     expect(observed.withTime, 1);
     expect(observed.withoutTime, 3);
@@ -52,10 +52,38 @@ void main() {
       task('night',
           start: const TimeOfDay(hour: 23, minute: 15),
           end: const TimeOfDay(hour: 0, minute: 30)),
-    ]);
+    ], day: date);
     expect(result.minutes, 75);
     expect(result.withTime, 1);
     expect(result.withoutTime, 0);
+  });
+
+  test('adjacent-day task is excluded from current-day duration provenance', () {
+    final yesterday = DiaryBlockReference(
+      date: date.subtract(const Duration(days: 1)),
+      block: DiaryBlock(
+        id: 'not-an-agenda-entry',
+        type: DiaryBlockType.note,
+        createdAt: date,
+      ),
+    );
+    expect(yesterday.block.id, 'not-an-agenda-entry');
+    final adjacent = UnifiedAgendaEntry.private(
+      AgendaItem(
+        id: 'yesterday-task',
+        title: 'Adjacent source busy slot',
+        note: '',
+        date: date.subtract(const Duration(days: 1)),
+        type: ItemType.task,
+        start: const TimeOfDay(hour: 23, minute: 0),
+        end: const TimeOfDay(hour: 1, minute: 0),
+      ),
+    );
+    final today = RecordedTaskTime.fromVisible(
+      [adjacent, task('today-unknown')], day: date);
+    expect(today.minutes, 0);
+    expect(today.withTime, 0);
+    expect(today.withoutTime, 1);
   });
 
   test('visible duplicate task is counted once, never silently subtracted', () {
