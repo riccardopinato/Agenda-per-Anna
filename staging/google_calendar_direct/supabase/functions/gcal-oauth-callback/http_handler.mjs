@@ -46,11 +46,12 @@ async function boundedBody(req,limit=2048) {
 const onlyFields=(value,fields)=>value&&typeof value==='object'&&!Array.isArray(value)&&
   Object.keys(value).every(k=>fields.includes(k));
 export function createGoogleCalendarStagingHandler({
-  enabled=false,broker=null,verifyAppIdentity=null,tokenLifecycle=null,requestBudget=null,allowedWebOrigins=[],
+  enabled=false,broker=null,verifyAppIdentity=null,tokenLifecycle=null,requestBudget=null,callbackBudget=null,allowedWebOrigins=[],
   basePath=BASE,
 }={}) {
  if(enabled&&(!broker||typeof verifyAppIdentity!=='function'||
-   !requestBudget||typeof requestBudget.consume!=='function'))
+   !requestBudget||typeof requestBudget.consume!=='function'||
+   !callbackBudget||typeof callbackBudget.consume!=='function'))
    throw Error('MISSING_AUTH_GATE');
  const allowed=new Set(allowedWebOrigins.filter(x=>{
    try{const uri=new URL(x);return uri.origin===x&&uri.protocol==='https:';}catch{return false;}
@@ -78,6 +79,23 @@ export function createGoogleCalendarStagingHandler({
        'access-control-max-age':'300','vary':'Origin'}});
    }
    if(req.method==='GET'&&suffix==='') {
+     // Public browser callback: validate shape before database and token exchange.
+     // An arbitrary Origin/IP header is NOT a trustworthy rate-limit identity.
+     const states=url.searchParams.getAll('state'),
+       codes=url.searchParams.getAll('code'),
+       errors=url.searchParams.getAll('error');
+     if(url.search.length>8192||states.length!==1||
+       !/^[A-Za-z0-9_-]{43}$/.test(states[0])||
+       (codes.length===1&&errors.length!==0)||
+       (errors.length===1&&codes.length!==0)||
+       (codes.length!==1&&errors.length!==1))
+       return browserResponse('Collegamento non completato. Torna nell\u2019app e riprova.',400);
+     // One atomic global quota across Edge isolates. It is NOT a substitute
+     // for a verified upstream ingress/WAF throttle against network floods.
+     try {
+       if(await callbackBudget.consume()!==true)
+         return browserResponse('Troppe richieste. Riprova tra poco.',429);
+     } catch {return browserResponse('Servizio temporaneamente non disponibile.',503);}
      // Browser callback never receives Supabase JWT and NEVER links accounts.
      try {
        await broker.callback({callbackUrl:req.url});
