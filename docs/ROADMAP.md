@@ -1,5 +1,84 @@
 # Anna's Diary — Roadmap
 
+## Google Calendar Direct — stato staging dopo deploy v6 (04/11/2026)
+
+- **PR #199 OPEN/DRAFT, non integrare in produzione.** Branch allineato a `main@d57ae48fdc60f69355efe7fe7cbafaa5dd08395b` tramite merge commit `e5321807fa76058bac2e4cbe4e00c4669b85fe4e`; eventuali nuovi aggiornamenti `main` richiedono un nuovo confronto.
+- Sul commit allineato `e5321807`: Development checks run **41754424703**, AppLab Source Gate run **41754424681**, OAuth Security run **41754424651** tutte SUCCESS. I successivi cambiamenti Flutter/dual gate richiedono nuovi gate sull'ultimo SHA.
+- Supabase STAGING `pdanpljacyozslrutsor`: Edge Function **v6 ACTIVE**, distribuita dal sorgente `index_ready.mjs` (10 file, `ezbr_sha256 ca73ce888dea0ebc391b6817318d768adadfb0af580250ede2690d52d3864633`). Richiede ENTRAMBI i flag di abilitazione; il nuovo `ANNA_GCAL_STAGING_LIVE_APPROVED_20261104` non è stato impostato. Deno local locked smoke PASS, HTTP live remoto non verificabile da questo ambiente.
+- Cinque tabelle `gcal_stage` ancora vuote, RLS privata; **0 collegamenti/consensi/test Google reali**; produzione Supabase e login Anna invariati.
+- Implementati controller Flutter e pannello QA **solo nel branch staging**, senza route di produzione, firma APK o attivazione cloud. Mancano un browser/tester reale, redirect di test nel client OAuth Web, revisione privacy e B3 per l'eventuale writer, applicazione su device, e validazione di scadenza/refresh Google. Google External/Testing può invalidare refresh token dopo 7 giorni.
+- Nessun deploy attivo OAuth, nessuna sincronizzazione/creazione Google Calendar, nessun merge o release; non incollare ID token, app JWT, codici OAuth o segreti in chat.
+
+
+
+## Google Calendar Direct — ripresa staging 04/11/2026
+
+**Ripresa documentata:** il proprietario ha confermato 4/4 Edge Function Secrets
+inseriti direttamente in Supabase staging. La correttezza dei valori e la loro
+iniezione nell'handler non sono verificabili tramite il connettore; nessuna
+credenziale e' stata riportata su GitHub o in chat.
+
+- PR #199: nuovi test regressione del lifecycle Google refresh/rotate/revoke,
+  workflow CI estesa e rate limiting per operazioni autenticate con database.
+- Staging Supabase `pdanpljacyozslrutsor`: migrazione
+  `gcal_staging_rate_budget_v1` applicata e verificata il 04/11/2026,
+  tabella privata `gcal_stage.oauth_request_budget` vuota, RLS attiva,
+  ruoli `anon` e `authenticated` senza accesso.
+- Controllo SQL della query atomica: `EXPLAIN` PASS (nessuna riga inserita);
+  CI/Node sulla HEAD corrente da verificare, provider Google e QA Android
+  ancora NOT VERIFIED.
+- La funzione distribuita `index.ts` resta **503 LOCKED**; non impostare
+  `ANNA_GCAL_STAGING_ENABLE`, non effettuare redirect/consenso OAuth reale,
+  non distribuire `index_ready.mjs`, non fare merge/firmare APK.
+- Gate aperti: flood control per callback anonima, lifecycle e revoca reali,
+  consenso user/tester separato, browser/Flutter integration,
+  Privacy #215 e storico B3, riallineamento branch a main,
+  CI exact-head e validazione dispositivo. Un via libera ai secrets non
+  costituisce via libera all'accesso Google reale.
+
+- **04/11 — Callback pubblica:** migrazione `gcal_staging_callback_budget_v1`
+  applicata SOLO a staging, tabella RLS privata e vuota, EXPLAIN query atomica
+  PASS; nuovo limite globale 30/min e validazione HTTP nel codice sorgente.
+  Test integrato mock `oauth_http_integration.test.mjs` incluso nella
+  workflow. Non e' un controllo ingress/WAF e NON certifica il provider reale.
+  CI sul nuovo head ancora da verificare. Deployed kill-switch invariato.
+
+Il blocco del 03/11 seguente e' mantenuto come cronologia, non indica che
+l'utente debba ripetere la configurazione gia' completata.
+
+## Google Calendar Direct — PAUSA OPERATIVA SU RICHIESTA UTENTE (03/11/2026)
+
+**Stato: SOSPESO / DA RIPRENDERE DAL PC DI CASA.** L'utente ha chiesto
+di rimandare la configurazione delicata di credenziali e segreti, mantenendola
+nella roadmap e ricevendo nuovamente tutte le istruzioni quando sara' disponibile
+a casa. **Non trattare la sospensione come autorizzazione a proseguire.**
+
+- PR [#199](https://github.com/riccardopinato/Agenda-per-Anna/pull/199):
+  **OPEN / DRAFT / DO NOT MERGE**; sviluppo Google OAuth backend, consenso
+  a due fasi, test di sicurezza e adapter SQL sono nel branch separato.
+- Google Cloud TEST `Anna Diary Calendar Test`: due tester confermati, Calendar
+  API/scopes configurati, client Web STAGING creato; secret Web custodito
+  privatamente dal proprietario. **Nessun redirect Google registrato.**
+- Supabase TEST `anna-calendar-staging` (`pdanpljacyozslrutsor`):
+  preventivo **0 USD/mese**, tre tabelle private con RLS, Edge Function
+  `gcal-oauth-callback` v1 distribuita **BLOCCATA**; flusso OAuth reale,
+  Google Calendar e backend `index_ready.mjs` NON attivati.
+- Head di sviluppo prima del checkpoint: `ace7afe7`; Development checks
+  Flutter, AppLab Source Gate e Google OAuth security tests **PASS**. Dopo
+  gli aggiornamenti documentali verificare il nuovo head prima di usare i gate.
+- **Da casa, nell'ordine:** Supabase staging Secrets; Client ID/Secret
+  Google STAGING, chiave Supabase **publishable/anon** (mai service_role),
+  AES-256 Base64 generata localmente; revisione Deno/runtime, sicurezza,
+  redirect esatto solo dopo callback realmente pronta, test con consenso,
+  QA Android e deduplica B3. **Non impostare `ANNA_GCAL_STAGING_ENABLE`
+  e non incollare segreti in chat/GitHub.**
+- [Checkpoint operativo completo, checklist e comando di ripresa](../staging/google_calendar_direct/CHECKPOINT_PAUSA_CONFIGURAZIONE_DA_CASA.md).
+
+**Trigger di ripresa:** «Riprendiamo Google Calendar di Anna's Diary dal
+checkpoint di casa». Fornire istruzioni passo passo e restare in SOLO Chat,
+senza azioni su credenziali, Google Cloud o produzione durante la sospensione.
+
+
 ## Audit UX nudge and new Android sideload identity — 4 November 2026
 
 - This branch adds a per-device, per-account, per-civil-day **dismiss today** control for the read-only day summary. Only a SHA-256 account/day digest is stored; the event or Vault contents are never persisted in this preference. No background alerts or rescheduling.

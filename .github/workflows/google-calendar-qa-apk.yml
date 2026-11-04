@@ -1,0 +1,144 @@
+name: Anna Diary Google Calendar QA signed APK (staging only)
+
+on:
+  push:
+    branches:
+      - staging/google-calendar-direct-prepared-v1
+    paths:
+      - 'lib/main.dart'
+      - 'lib/src/app_shell.dart'
+      - 'lib/src/screens/settings_hub.dart'
+      - 'lib/src/planner_views.dart'
+      - 'lib/qa/google_calendar/**'
+      - 'staging/google_calendar_direct/**'
+      - 'pubspec.yaml'
+      - 'pubspec.lock'
+      - 'test/google_calendar_*'
+      - '.github/workflows/google-calendar-qa-apk.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: anna-gcal-qa-signed-apk
+  cancel-in-progress: true # Supersede obsolete QA source builds; deliver latest SHA only
+
+jobs:
+  qa-arm64:
+    name: Build and verify signed Anna Diary Google Calendar QA APK
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+      ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+      ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+      ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+      ANDROID_KEYSTORE_PATH: ${{ github.workspace }}/.signing/agenda-release.jks
+    steps:
+      - name: Checkout exact QA source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Require staging branch, signing keys and QA routing
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$GITHUB_REF_NAME" = "staging/google-calendar-direct-prepared-v1"
+          grep -q "ANNA_GCAL_STAGING_QA" lib/main.dart
+          grep -q "anna-gcal-qa-launcher" lib/src/app_shell.dart
+          for file in two_phase_flutter_client.dart two_phase_flutter_panel.dart two_phase_flutter_transport.dart qa_flutter_screen.dart; do
+            cmp "staging/google_calendar_direct/$file" "lib/qa/google_calendar/$file"
+          done
+          grep -q "STAGING_NOT_ACTIVATED" staging/google_calendar_direct/qa_flutter_screen.dart
+          for var in ANDROID_KEYSTORE_BASE64 ANDROID_KEYSTORE_PASSWORD ANDROID_KEY_ALIAS ANDROID_KEY_PASSWORD; do
+            if [ -z "${!var:-}" ]; then
+              echo "::error::Signing prerequisite missing: $var"
+              exit 1
+            fi
+          done
+
+      - name: Setup Flutter 3.47.5
+        uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2.23.0
+        with:
+          flutter-version: '3.47.5'
+          channel: stable
+          cache: true
+
+      - name: Generate Android and configure stable release signature
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf android /tmp/agenda_android
+          flutter create --project-name agenda_per_anna --org com.riccardopinato --platforms=android /tmp/agenda_android
+          cp -R /tmp/agenda_android/android .
+          python3 tool/prepare_android_platform.py --release-signing
+
+      - name: Restore locked dependencies
+        run: flutter pub get --enforce-lockfile
+
+      - name: Analyze source and QA tests
+        shell: bash
+        run: |
+          set -euo pipefail
+          flutter analyze
+          flutter test test/google_calendar_two_phase_flutter_client_test.dart test/google_calendar_staging_transport_test.dart test/google_calendar_qa_locked_state_test.dart test/google_calendar_event_correspondence_test.dart
+
+      - name: Generate launcher icons
+        run: dart run flutter_launcher_icons -f tool/flutter_launcher_icons_android.yaml
+
+      - name: Configure Gradle
+        uses: gradle/actions/setup-gradle@3f5f9adaf7d9fecd50b5935e54106014257a94e6
+
+      - name: Compile signed ARM64 QA APK build 127
+        shell: bash
+        run: |
+          set -euo pipefail
+          flutter build apk \
+            --release \
+            --split-per-abi \
+            --tree-shake-icons \
+            --build-number=127 \
+            --dart-define=ANNA_GCAL_STAGING_QA=true \
+            --dart-define=ANNA_STORE_RELEASE=false \
+            --dart-define=ANNA_PREMIUM_PREVIEW=true
+
+      - name: Validate version package signature and checksums
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p build/qa-delivery
+          cp build/app/outputs/flutter-apk/app-arm64-v8a-release.apk \
+             build/qa-delivery/Anna-Diary-Google-Calendar-QA-arm64-build127.apk
+          apk=build/qa-delivery/Anna-Diary-Google-Calendar-QA-arm64-build127.apk
+          test -s "$apk"
+          aapt=$(find "$ANDROID_HOME/build-tools" -type f -name aapt -print | sort -V | tail -1)
+          test -n "$aapt"
+          "$aapt" dump badging "$apk" > /tmp/anna-qa-badging.txt
+          package_line=$(grep '^package:' /tmp/anna-qa-badging.txt | head -1)
+          echo "Signed QA APK metadata: $package_line"
+          if [[ "$package_line" != *"name='com.riccardopinato.agenda_per_anna'"* ]]; then
+            echo "::error::Unexpected package ID; refusing delivery"
+            exit 1
+          fi
+          # Custom Anna's Diary Android namespace adds the 2000 version-code lane.
+          # Flutter --build-number=127 therefore maps to Play versionCode 2127.
+          if [[ "$package_line" != *"versionCode='2127'"* ]]; then
+            echo "::error::Unexpected QA build number; refusing delivery"
+            exit 1
+          fi
+          apksigner=$(find "$ANDROID_HOME/build-tools" -type f -name apksigner -print | sort -V | tail -1)
+          test -n "$apksigner"
+          "$apksigner" verify --verbose "$apk"
+          sha256sum "$apk" > build/qa-delivery/SHA256SUMS.txt
+          printf 'source=%s\nbuild=127\nandroid_version_code=2127\ntype=QA-staging\noauth=staging-readonly-owner-controlled\npackage=com.riccardopinato.agenda_per_anna\n' \
+            "$GITHUB_SHA" > build/qa-delivery/QA_BUILD_INFO.txt
+          ls -lh build/qa-delivery/
+
+      - name: Upload QA signed install files
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: anna-diary-gcal-qa-build127-arm64
+          path: build/qa-delivery/
+          if-no-files-found: error
+          retention-days: 30

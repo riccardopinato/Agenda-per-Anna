@@ -24,6 +24,10 @@ import 'package:table_calendar/table_calendar.dart';
 import 'package:uuid/uuid.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import 'qa/google_calendar/qa_flutter_screen.dart';
+import 'qa/google_calendar/diary_events_read_screen.dart';
+import 'qa/google_calendar/event_correspondence.dart';
+
 import 'app_version.dart';
 import 'external_calendar_service.dart';
 import 'backup_service.dart';
@@ -117,6 +121,9 @@ part 'src/diary/diary_memories.dart';
 part 'src/diary/diary_global_search.dart';
 part 'src/diary/diary_sketchbook.dart';
 part 'src/shared_memories.dart';
+
+const bool annaGoogleCalendarQaBuild =
+    bool.fromEnvironment('ANNA_GCAL_STAGING_QA', defaultValue: false);
 
 final GlobalKey<NavigatorState> appNavigatorKey = GlobalKey<NavigatorState>();
 

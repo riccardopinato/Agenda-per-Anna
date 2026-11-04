@@ -1,0 +1,182 @@
+name: Google Calendar OAuth staging security tests
+
+on:
+  push:
+    branches:
+      - staging/google-calendar-direct-prepared-v1
+    paths:
+      - 'staging/google_calendar_direct/backend/**'
+      - 'staging/google_calendar_direct/supabase/**'
+      - '.github/workflows/google-calendar-oauth-staging.yml'
+  pull_request:
+    paths:
+      - 'staging/google_calendar_direct/backend/**'
+      - 'staging/google_calendar_direct/supabase/**'
+      - '.github/workflows/google-calendar-oauth-staging.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  oauth-staging:
+    name: Node OAuth broker mock security tests (no Google access)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout PR source
+        uses: actions/checkout@v4
+      - name: Set up Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Syntax check
+        run: node --check staging/google_calendar_direct/backend/oauth_broker.mjs
+      - name: Execute mocked OAuth security tests
+        run: node --test staging/google_calendar_direct/backend/oauth_broker.test.mjs
+
+      - name: Check Deno WebCrypto portable module syntax
+        run: node --check staging/google_calendar_direct/supabase/functions/gcal-oauth-callback/webcrypto_core.mjs
+      - name: Execute mocked Deno WebCrypto OAuth tests
+        run: node --test staging/google_calendar_direct/supabase/functions/gcal-oauth-callback/webcrypto_core.test.mjs
+      - name: Verify safe Google token endpoint diagnostic codes
+        run: node --test staging/google_calendar_direct/supabase/functions/gcal-oauth-callback/google_token_error_codes.test.mjs
+      - name: Verify canonical Google email scope compatibility
+        run: node --test staging/google_calendar_direct/supabase/functions/gcal-oauth-callback/google_scope_normalization.test.mjs
+
+      - name: Verify private Postgres OAuth adapter syntax
+        run: node --check staging/google_calendar_direct/supabase/functions/gcal-oauth-callback/db_ports.mjs
+      - name: Mock-test atomic state and encrypted link adapters
+        run: node --test staging/google_calendar_direct/supabase/functions/gcal-oauth-callback/db_ports.test.mjs
+
+      - name: Verify two-phase consent and identity verifier syntax
+        run: |
+          node --check staging/google_calendar_direct/supabase/functions/gcal-oauth-callback/two_phase_core.mjs
+          node --check staging/google_calendar_direct/supabase/functions/gcal-oauth-callback/production_identity.mjs
+          node --check staging/google_calendar_direct/supabase/functions/gcal-oauth-callback/confirmation_ports.mjs
+      - name: Mock-test two-phase Google OAuth and production identity bridge
+        run: node --test staging/google_calendar_direct/supabase/functions/gcal-oauth-callback/two_phase_core.test.mjs
+
+      - name: Verify locked Deno HTTP gateway syntax
+        run: node --check staging/google_calendar_direct/supabase/functions/gcal-oauth-callback/http_handler.mjs
+      - name: Mock-test authenticated web and browser OAuth HTTP endpoints
+        run: node --test staging/google_calendar_direct/supabase/functions/gcal-oauth-callback/http_handler.test.mjs
+
+      - name: Syntax-check owner-only Google event preview
+        run: node --check staging/google_calendar_direct/supabase/functions/gcal-oauth-callback/events_read_probe.mjs
+      - name: Mock-test read-only event ranges, ownership and HTTP auth
+        run: |
+          node --test staging/google_calendar_direct/supabase/functions/gcal-oauth-callback/events_read_probe.test.mjs
+          node --test staging/google_calendar_direct/supabase/functions/gcal-oauth-callback/events_read_http.test.mjs
+
+      - name: Check server-only Google token refresh and revocation syntax
+        run: node --check staging/google_calendar_direct/supabase/functions/gcal-oauth-callback/token_lifecycle.mjs
+      - name: Mock-test account-scoped refresh and revocation lifecycle
+        run: node --test staging/google_calendar_direct/supabase/functions/gcal-oauth-callback/token_lifecycle.test.mjs
+
+      - name: Check staging database request budget syntax
+        run: node --check staging/google_calendar_direct/supabase/functions/gcal-oauth-callback/request_budget.mjs
+      - name: Mock-test fail-closed account request budgets
+        run: node --test staging/google_calendar_direct/supabase/functions/gcal-oauth-callback/request_budget.test.mjs
+
+      - name: Check public browser callback global quota syntax
+        run: node --check staging/google_calendar_direct/supabase/functions/gcal-oauth-callback/callback_budget.mjs
+      - name: Mock-test global callback throttle and fail-closed behavior
+        run: node --test staging/google_calendar_direct/supabase/functions/gcal-oauth-callback/callback_budget.test.mjs
+
+      - name: Check read-only Google Calendar inventory module syntax
+        run: node --check staging/google_calendar_direct/supabase/functions/gcal-oauth-callback/calendar_read_probe.mjs
+      - name: Mock-test provider read-only calendar API and auth-scoped HTTP
+        run: |
+          node --test staging/google_calendar_direct/supabase/functions/gcal-oauth-callback/calendar_read_probe.test.mjs
+          node --test staging/google_calendar_direct/supabase/functions/gcal-oauth-callback/calendar_read_http.test.mjs
+
+      - name: End-to-end mocked two-phase HTTP consent and disconnect
+        run: node --test staging/google_calendar_direct/supabase/functions/gcal-oauth-callback/oauth_http_integration.test.mjs
+
+      - name: Check unreleased Deno Edge entrypoint syntax
+        run: node --check staging/google_calendar_direct/supabase/functions/gcal-oauth-callback/index_ready.mjs
+      - name: Assert deployed function remains locked and staging dependencies are pinned
+        run: node --test staging/google_calendar_direct/supabase/functions/gcal-oauth-callback/index_ready.static.test.mjs
+
+  deno-runtime-preflight:
+    name: Deno locked runtime preflight (no secrets, no Google)
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - name: Checkout candidate branch
+        uses: actions/checkout@v4
+      - name: Install pinned Deno 2.9.8
+        uses: denoland/setup-deno@22d081ff2d3a40755e97629de92e3bcbfa7cf2ed
+        with:
+          deno-version: '2.9.8'
+      - name: Check Deno module graph and npm Postgres import
+        run: deno check staging/google_calendar_direct/supabase/functions/gcal-oauth-callback/index_ready.mjs
+      - name: Exercise Deno runtime with explicit locked configuration only
+        shell: bash
+        run: |
+          set -euo pipefail
+          export DENO_NO_PROMPT=1
+          export ANNA_GCAL_STAGING_ENABLE=approved-for-live-oauth-testing
+          unset ANNA_GCAL_STAGING_LIVE_APPROVED_20261104
+          deno run --allow-net --allow-env=ANNA_GCAL_STAGING_ENABLE,ANNA_GCAL_STAGING_LIVE_APPROVED_20261104 \
+            staging/google_calendar_direct/supabase/functions/gcal-oauth-callback/index_ready.mjs > /tmp/anna-gcal-deno-runtime.log 2>&1 &
+          server_pid=$!
+          trap 'kill "$server_pid" 2>/dev/null || true' EXIT
+          healthy=0
+          for attempt in {1..30}; do
+            if curl -fsS --max-time 1 http://127.0.0.1:8000/functions/v1/gcal-oauth-callback/health > /tmp/anna-gcal-health.json; then
+              healthy=1
+              break
+            fi
+            if ! kill -0 "$server_pid" 2>/dev/null; then
+              echo "Deno runtime failed to start"
+              exit 1
+            fi
+            sleep 1
+          done
+          test "$healthy" -eq 1
+          node -e "const f=require('fs');const h=JSON.parse(f.readFileSync('/tmp/anna-gcal-health.json','utf8'));if(h.status!=='locked'||h.google_oauth_active!==false||h.google_calendar_writes_active!==false)process.exit(1);"
+          status=$(curl -sS -o /tmp/anna-gcal-start.json -w '%{http_code}' \
+            -X POST -H 'Content-Type: application/json' -d '{}' \
+            http://127.0.0.1:8000/functions/v1/gcal-oauth-callback/start)
+          test "$status" = "503"
+          node -e "const f=require('fs');const h=JSON.parse(f.readFileSync('/tmp/anna-gcal-start.json','utf8'));if(h.error!=='STAGING_NOT_ACTIVATED')process.exit(1);"
+
+  public-staging-locked-smoke:
+    name: Public Supabase staging locked HTTPS smoke (no OAuth)
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Verify public staging health remains locked
+        shell: bash
+        run: |
+          set -euo pipefail
+          endpoint='https://pdanpljacyozslrutsor.supabase.co/functions/v1/gcal-oauth-callback'
+          # Fixed public staging URL; no bearer, apikey, Google consent or provider calls.
+          status=$(curl --silent --show-error --connect-timeout 7 --max-time 20 \
+            --header 'Accept: application/json' \
+            --output /tmp/anna-stage-public-health.json \
+            --write-out '%{http_code}' "$endpoint/health")
+          echo "Public staging health HTTP status: $status"
+          node -e "const fs=require('fs');const t=fs.readFileSync('/tmp/anna-stage-public-health.json','utf8');try{const r=JSON.parse(t);console.log('Health diagnostic:',JSON.stringify({service:r.service??null,status:r.status??null,oauth:r.google_oauth_active??null,writes:r.google_calendar_writes_active??null,error:r.error??null}));}catch{console.log('Health diagnostic: non-JSON response');}"
+          test "$status" = '200'
+          node -e "const fs=require('fs');const r=JSON.parse(fs.readFileSync('/tmp/anna-stage-public-health.json','utf8'));const valid=r.status==='locked'&&r.google_oauth_active===false||r.status==='configured'&&r.google_oauth_active===true;if(r.service!=='anna-calendar-staging'||!valid||r.google_calendar_writes_active!==false)process.exit(1)"
+      - name: Prove staging /start rejects unauthenticated requests
+        shell: bash
+        run: |
+          set -euo pipefail
+          endpoint='https://pdanpljacyozslrutsor.supabase.co/functions/v1/gcal-oauth-callback'
+          # No credentials or account data; even an accidental live enable returns
+          # 401 and FAILS this safety gate instead of starting a Google OAuth flow.
+          status=$(curl --silent --show-error --connect-timeout 7 --max-time 20 \
+            --request POST --header 'Content-Type: application/json' \
+            --data '{}' \
+            --output /tmp/anna-stage-public-start.json \
+            --write-out '%{http_code}' "$endpoint/start")
+          # With owner-authorized staging enabled, missing JWT must always
+          # return 401 AUTH_REQUIRED; if locked, 503 STAGING_NOT_ACTIVATED.
+          # Both prove no unauthorized account can start Google OAuth.
+          test "$status" = '503' -o "$status" = '401'
+          node -e "const fs=require('fs');const r=JSON.parse(fs.readFileSync('/tmp/anna-stage-public-start.json','utf8'));if(!['STAGING_NOT_ACTIVATED','AUTH_REQUIRED'].includes(r.error))process.exit(1)"
+

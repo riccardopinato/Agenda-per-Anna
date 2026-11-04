@@ -3,6 +3,8 @@ name: AppLab Source Gate
 # APK-building runner. Native builds are manual workflows owned by this project.
 
 on:
+  push:
+    branches: [staging/google-calendar-direct-prepared-v1]
   pull_request:
     branches: [main]
   workflow_dispatch:

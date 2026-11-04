@@ -1,0 +1,7 @@
+# Staging-only configuration; source path is NOT the production Supabase config.
+# The callback is deliberately unauthenticated at the gateway because the
+# external provider does not have a staging Supabase JWT.
+# The deployed handler FAILS CLOSED until a verified account/state/cookie
+# implementation is separately tested and approved.
+[functions.gcal-oauth-callback]
+verify_jwt = false

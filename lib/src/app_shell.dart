@@ -11,6 +11,8 @@ class AgendaApp extends StatelessWidget {
   });
 
   static final Map<String, ThemeData> _themeCache = {};
+  // Only used by the opt-in QA build. Hide its shortcut while the QA route is open.
+  static final ValueNotifier<bool> _qaRouteVisible = ValueNotifier<bool>(false);
 
   ThemeData _theme(Brightness brightness) {
     final prefs = store.preferences;
@@ -142,16 +144,62 @@ class AgendaApp extends StatelessWidget {
           themeMode: mode,
           theme: _theme(Brightness.light),
           darkTheme: _theme(Brightness.dark),
-          builder: (context, child) => FocusTraversalGroup(
-            policy: ReadingOrderTraversalPolicy(),
-            child: _AuthRecoveryGate(
-              store: store,
-              child: _PrivacyGate(
+          builder: (context, child) {
+            final protectedApp = FocusTraversalGroup(
+              policy: ReadingOrderTraversalPolicy(),
+              child: _AuthRecoveryGate(
                 store: store,
-                child: child ?? const SizedBox.shrink(),
+                child: _PrivacyGate(
+                  store: store,
+                  child: child ?? const SizedBox.shrink(),
+                ),
               ),
-            ),
-          ),
+            );
+            if (!annaGoogleCalendarQaBuild) return protectedApp;
+            return Stack(
+              children: [
+                protectedApp,
+                ValueListenableBuilder<bool>(
+                  valueListenable: _qaRouteVisible,
+                  builder: (context, routeOpen, _) {
+                    if (routeOpen) return const SizedBox.shrink();
+                    return Positioned(
+                      right: 12,
+                      bottom: MediaQuery.paddingOf(context).bottom + 92,
+                      child: Material(
+                        elevation: 5,
+                        borderRadius: BorderRadius.circular(20),
+                        child: FilledButton.tonalIcon(
+                          key: const ValueKey('anna-gcal-qa-launcher'),
+                          icon: const Icon(Icons.event_available_outlined),
+                          label: const Text('Calendar QA'),
+                          onPressed: () {
+                            if (_qaRouteVisible.value) return;
+                            final navigator = appNavigatorKey.currentState;
+                            if (navigator == null) return;
+                            _qaRouteVisible.value = true;
+                            final route = navigator.push<void>(
+                              MaterialPageRoute<void>(
+                                builder: (_) => AnnaGcalQaScreen(
+                                  signedIn: () =>
+                                      CloudSyncService.instance.signedIn,
+                                  signInWithGoogle: () =>
+                                      CloudSyncService.instance.signInWithGoogle(),
+                                ),
+                              ),
+                            );
+                            route.whenComplete(() {
+                              _qaRouteVisible.value = false;
+                            });
+                          },
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ],
+            );
+          },
           home: AgendaRoot(
             store: store,
             bypassIdentityForTesting: bypassIdentityForTesting,
