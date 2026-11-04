@@ -96,6 +96,8 @@ void main() {
     expect(source, contains('_dailySelectedDay == today'));
     expect(source, isNot(contains('while (_excluded.length > 500)')));
     expect(source, contains('_snoozedThrough > today'));
+    expect(source, isNot(contains('diaryBlockDisplayTitle')));
+    expect(source, contains('fromDate'));
     expect(source, isNot(contains('onThisDayPushNotification')));
   });
 }
