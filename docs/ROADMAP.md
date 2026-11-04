@@ -1,5 +1,11 @@
 # Anna's Diary — Roadmap
 
+## Audit UX nudge and new Android sideload identity — 4 November 2026
+
+- This branch adds a per-device, per-account, per-civil-day **dismiss today** control for the read-only day summary. Only a SHA-256 account/day digest is stored; the event or Vault contents are never persisted in this preference. No background alerts or rescheduling.
+- The old privacy PR #200 is closed/unmerged; replacement privacy V2 PR #215 remains DRAFT/BLOCKED with independent security approval. Google Calendar API PR #199 stays PAUSED/STAGING under the owner's separate gate.
+- Candidate source build number rc.6+122 is not a signed artifact until the protected sideload workflow actually succeeds. Source CI, installed Android QA, Play and E5 are separate evidence gates. Never report a skipped signing job as a delivered APK.
+
 ## Assistenza contestuale locale — maxi-step 3/5 (4 novembre 2026)
 
 **SOURCE INTEGRATED / DEVICE QA NOT VERIFIED.** Il passo 3 del piano condiviso con
@@ -24,7 +30,7 @@ mascheratura Home. Nessuna ripianificazione automatica o scrittura implicita.
   viste filtro/account, appuntamenti oltre mezzanotte e gestione offline),
   nuova release firmata da sorgente esatto, eventuale prova di installazione
   in-place, test Store e misure d'utilità reale. SOURCE PASS non è PHYSICAL PASS.
-- **NON TOCCARE:** [Privacy V2 PR #200](https://github.com/riccardopinato/Agenda-per-Anna/pull/200)
+- **NON TOCCARE:** [Privacy V2 PR #215](https://github.com/riccardopinato/Agenda-per-Anna/pull/215)
   e [Google Calendar API PR #199](https://github.com/riccardopinato/Agenda-per-Anna/pull/199)
   restano DRAFT con gate di sicurezza/staging; nessun merge implicito.
   Il Consumer Notes e i candidate Golden hanno gate autonomi.

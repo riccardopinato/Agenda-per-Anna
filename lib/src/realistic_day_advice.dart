@@ -91,7 +91,9 @@ List<AgendaItem> upcomingPreparationItems(AgendaStore store, DateTime now) {
   return List.unmodifiable(result);
 }
 
-class RealisticDayCard extends StatelessWidget {
+/// Read-only daily guidance may be dismissed on this device for one day.
+/// Only a SHA-256 digest of account scope and civil date is persisted.
+class RealisticDayCard extends StatefulWidget {
   const RealisticDayCard({
     required this.store,
     required this.snapshot,
@@ -102,6 +104,92 @@ class RealisticDayCard extends StatelessWidget {
   final AgendaStore store;
   final DayHubSnapshot snapshot;
   final bool hideDetails;
+
+  @override
+  State<RealisticDayCard> createState() => _RealisticDayCardState();
+}
+
+class _RealisticDayCardState extends State<RealisticDayCard> {
+  static const _preferenceKey = 'anna_contextual_day_dismissed_v1';
+  bool _loaded = false;
+  final Set<String> _dismissed = <String>{};
+
+  String get _dayKey {
+    final date = widget.snapshot.date;
+    final owner = widget.store.activeAccountId ?? 'local';
+    final raw = '$owner:${date.year}-${date.month}-${date.day}';
+    return sha256.convert(utf8.encode(raw)).toString();
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _load();
+  }
+
+  Future<void> _load() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      if (!mounted) return;
+      setState(() {
+        _dismissed.addAll(prefs.getStringList(_preferenceKey) ?? const []);
+        _loaded = true;
+      });
+    } catch (_) {
+      // Fail closed on inability to restore local visibility preferences.
+    }
+  }
+
+  Future<void> _dismissToday() async {
+    final key = _dayKey;
+    setState(() {
+      _dismissed.remove(key);
+      _dismissed.add(key);
+      while (_dismissed.length > 90) {
+        _dismissed.remove(_dismissed.first);
+      }
+    });
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setStringList(
+        _preferenceKey,
+        _dismissed.take(90).toList(growable: false),
+      );
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => _dismissed.remove(key));
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Impossibile salvare la preferenza locale.')),
+      );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (!_loaded || widget.hideDetails || _dismissed.contains(_dayKey)) {
+      return const SizedBox.shrink();
+    }
+    return _RealisticDayCardBody(
+      store: widget.store,
+      snapshot: widget.snapshot,
+      hideDetails: widget.hideDetails,
+      onDismiss: _dismissToday,
+    );
+  }
+}
+
+class _RealisticDayCardBody extends StatelessWidget {
+  const _RealisticDayCardBody({
+    required this.store,
+    required this.snapshot,
+    required this.hideDetails,
+    required this.onDismiss,
+  });
+
+  final AgendaStore store;
+  final DayHubSnapshot snapshot;
+  final bool hideDetails;
+  final VoidCallback onDismiss;
 
   String _localized(String lang, String key) {
     const copy = <String, List<String>>{
@@ -148,6 +236,13 @@ class RealisticDayCard extends StatelessWidget {
         'Preparar cita',
         'Préparer le rendez-vous',
         'Preparar compromisso',
+      ],
+      'dismiss': [
+        'Hide for today',
+        'Ignora per oggi',
+        'Ocultar por hoy',
+        'Masquer pour aujourd’hui',
+        'Ocultar por hoje',
       ],
     };
     final index = switch (lang) {
@@ -245,6 +340,12 @@ class RealisticDayCard extends StatelessWidget {
                     icon: const Icon(Icons.checklist_outlined),
                     label: Text(_localized(strings.languageCode, 'prepare')),
                   ),
+                TextButton.icon(
+                  key: const ValueKey('realistic-day-dismiss-today'),
+                  onPressed: onDismiss,
+                  icon: const Icon(Icons.visibility_off_outlined),
+                  label: Text(_localized(strings.languageCode, 'dismiss')),
+                ),
               ],
             ),
           ],
