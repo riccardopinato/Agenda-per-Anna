@@ -49,7 +49,7 @@ class GcalStagingEdgeTransport {
         path: _base.path + suffix,
       );
 
-  Future<GcalStageResponse> _sendJson(http.Request request) async {
+  Future<GcalStageResponse> _sendJson(http.Request request, {int maxBytes = 8192}) async {
     request.followRedirects = false;
     try {
       final response =
@@ -57,7 +57,7 @@ class GcalStagingEdgeTransport {
       final bytes = <int>[];
       await for (final part
           in response.stream.timeout(const Duration(seconds: 10))) {
-        if (bytes.length + part.length > 8192) {
+        if (bytes.length + part.length > maxBytes) {
           throw const FormatException('Oversized response');
         }
         bytes.addAll(part);
@@ -91,7 +91,7 @@ class GcalStagingEdgeTransport {
     _requireBase();
     if (!const {
       '/start', '/preview', '/confirm', '/disconnect',
-      '/connections', '/calendars'
+      '/connections', '/calendars', '/events'
     }.contains(route) || productionJwt.trim().isEmpty) {
       throw const GcalStageClientException(
           GcalStageClientFault.malformedBackendResponse);
@@ -104,7 +104,7 @@ class GcalStagingEdgeTransport {
       'cache-control': 'no-store',
     });
     request.body = jsonEncode(json);
-    return _sendJson(request);
+    return _sendJson(request, maxBytes: route == '/events' ? 65536 : 8192);
   }
 
   /// Public connectivity-only probe. Never sends JWTs or user identifiers.
