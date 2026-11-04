@@ -82,6 +82,33 @@ class GcalStageCalendar {
   });
 }
 
+class GcalStageEvent {
+  final String calendarId;
+  final String eventId;
+  final String title;
+  final DateTime start;
+  final DateTime end; // All-day end is exclusive.
+  final bool allDay;
+  final String? recurringEventId;
+  final String? iCalUid;
+
+  const GcalStageEvent({
+    required this.calendarId, required this.eventId, required this.title,
+    required this.start, required this.end, required this.allDay,
+    this.recurringEventId, this.iCalUid,
+  });
+
+  /// A stable unambiguous source key, never a canonical local diary ID.
+  String get sourceKey => calendarId.length.toString()+':'+calendarId+
+      ':'+eventId.length.toString()+':'+eventId;
+}
+
+class GcalStageEventBatch {
+  final List<GcalStageEvent> events;
+  final bool truncated;
+  const GcalStageEventBatch(this.events, this.truncated);
+}
+
 class GcalStageDisconnected {
   final bool locallyDisconnected;
   final bool? providerRevoked;
@@ -399,6 +426,88 @@ class GcalTwoPhaseFlutterStagingClient {
         }
         return List.unmodifiable(calendars);
       });
+
+  /// Explicit, ephemeral owner-only Google event read (maximum 32 days).
+  /// No event data is persisted, synchronized or written to Google.
+  Future<GcalStageEventBatch> readEvents({
+    required String calendarId, required DateTime from, required DateTime until,
+  }) => _serial(() async {
+    final auth = await _requireAuth();
+    final subject = _connectedSubject;
+    if (subject == null) {
+      throw const GcalStageClientException(GcalStageClientFault.notConnected);
+    }
+    final low = from.toUtc(), high = until.toUtc();
+    if (calendarId.isEmpty || calendarId.length > 1024 ||
+        !high.isAfter(low) ||
+        high.difference(low) > const Duration(days: 32)) {
+      throw const GcalStageClientException(
+          GcalStageClientFault.malformedBackendResponse);
+    }
+    final startIso = low.toIso8601String();
+    final endIso = high.toIso8601String();
+    final response = await _post('/events', auth, {
+      'googleSubject': subject,
+      'calendarId': calendarId,
+      'timeMin': startIso,
+      'timeMax': endIso,
+    });
+    if (response.json['readonly'] != true ||
+        response.json['calendarId'] != calendarId ||
+        response.json['truncated'] is! bool ||
+        response.json['windowStart'] != startIso ||
+        response.json['windowEnd'] != endIso ||
+        response.json['events'] is! List) {
+      throw const GcalStageClientException(
+          GcalStageClientFault.malformedBackendResponse);
+    }
+    final raw = response.json['events'] as List;
+    if (raw.length > 60) {
+      throw const GcalStageClientException(
+          GcalStageClientFault.malformedBackendResponse);
+    }
+    final output = <GcalStageEvent>[];
+    final seen = <String>{};
+    for (final item in raw) {
+      if (item is! Map ||
+          item['eventId'] is! String ||
+          (item['eventId'] as String).isEmpty ||
+          (item['eventId'] as String).length > 1024 ||
+          item['title'] is! String ||
+          (item['title'] as String).length > 300 ||
+          item['start'] is! String || item['end'] is! String ||
+          item['allDay'] is! bool ||
+          item['recurringEventId'] != null &&
+              (item['recurringEventId'] is! String ||
+               (item['recurringEventId'] as String).length > 1024) ||
+          item['iCalUID'] != null &&
+              (item['iCalUID'] is! String ||
+               (item['iCalUID'] as String).length > 1024)) {
+        throw const GcalStageClientException(
+            GcalStageClientFault.malformedBackendResponse);
+      }
+      final id = item['eventId'] as String;
+      if (!seen.add(id)) {
+        throw const GcalStageClientException(
+            GcalStageClientFault.malformedBackendResponse);
+      }
+      final begins = DateTime.tryParse(item['start'] as String);
+      final ends = DateTime.tryParse(item['end'] as String);
+      if (begins == null || ends == null || !ends.isAfter(begins)) {
+        throw const GcalStageClientException(
+            GcalStageClientFault.malformedBackendResponse);
+      }
+      output.add(GcalStageEvent(
+        calendarId: calendarId, eventId: id,
+        title: item['title'] as String, start: begins, end: ends,
+        allDay: item['allDay'] as bool,
+        recurringEventId: item['recurringEventId'] as String?,
+        iCalUid: item['iCalUID'] as String?,
+      ));
+    }
+    return GcalStageEventBatch(
+        List.unmodifiable(output), response.json['truncated'] as bool);
+  });
 
   Future<GcalStageDisconnected> disconnect(
           {required bool explicitConfirmation}) =>
