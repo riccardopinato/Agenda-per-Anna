@@ -114,13 +114,12 @@ class _ContextualMemoryPanelState extends State<ContextualMemoryPanel> {
   final Set<String> _excluded = <String>{};
   String? _observedScope;
 
-  String get _scopeKey => 'anna_contextual_memory_v1_' +
-      sha256.convert(
+  String get _scopeKey => 'anna_contextual_memory_v1_${sha256.convert(
         utf8.encode(widget.store.activeAccountId ?? 'local'),
-      ).toString();
+      )}';
 
   String _digestFor(String id) =>
-      sha256.convert(utf8.encode('${_scopeKey}:$id')).toString();
+      sha256.convert(utf8.encode('$_scopeKey:$id')).toString();
 
   @override
   void initState() {
