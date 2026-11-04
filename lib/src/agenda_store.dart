@@ -1414,6 +1414,8 @@ class AgendaStore extends ChangeNotifier {
         hideHomeDetails:
             privacyGuard['hideHomeDetails'] as bool? ??
                 preferences.hideHomeDetails,
+        homeDiscreetMode: privacyGuard['homeDiscreetMode'] as bool? ??
+            preferences.homeDiscreetMode,
         pinSalt: privacyGuard['pinSalt'] as String?,
         pinHash: privacyGuard['pinHash'] as String?,
         clearPin: privacyGuard['pinSalt'] == null ||
@@ -1795,6 +1797,7 @@ class AgendaStore extends ChangeNotifier {
         'biometricUnlock': preferences.biometricUnlock,
         'autoLockMinutes': preferences.autoLockMinutes,
         'hideHomeDetails': preferences.hideHomeDetails,
+        'homeDiscreetMode': preferences.homeDiscreetMode,
         'pinSalt': preferences.pinSalt,
         'pinHash': preferences.pinHash,
       };
@@ -1805,6 +1808,7 @@ class AgendaStore extends ChangeNotifier {
       ..remove('biometricUnlock')
       ..remove('autoLockMinutes')
       ..remove('hideHomeDetails')
+      ..remove('homeDiscreetMode')
       ..remove('pinSalt')
       ..remove('pinHash')
       ..remove('onboardingDone');
@@ -2766,6 +2770,10 @@ class AgendaStore extends ChangeNotifier {
     bool requestPermission = true,
   }) async {
     final start = item.start;
+    // Redact sensitive titles before publishing new notification payloads.
+    final safeReminderTitle = item.isSensitive
+        ? AnnaStrings.forPreference(preferences.appLanguage).d3('privacy_sensitive')
+        : item.title;
     final cloud = CloudSyncService.instance;
     final canSyncWebReminder = cloud.signedIn &&
         _activeAccountId != null &&
@@ -2812,10 +2820,10 @@ class AgendaStore extends ChangeNotifier {
           if (when.isAfter(DateTime.now())) {
             await cloud.upsertWebPushReminder(
               stableId: stableId,
-              title: item.title,
+              title: safeReminderTitle,
               body: minutes == 0
                   ? AnnaStrings.forPreference(preferences.appLanguage).d3('reminderNow')
-                  : _reminderBody(minutes, item.title),
+                  : _reminderBody(minutes, safeReminderTitle),
               when: when,
             );
           } else {
@@ -2835,10 +2843,10 @@ class AgendaStore extends ChangeNotifier {
 
       await NotificationService.instance.schedule(
         stableId: stableId,
-        title: item.title,
+        title: safeReminderTitle,
         body: minutes == 0
             ? AnnaStrings.forPreference(preferences.appLanguage).d3('reminderNow')
-            : _reminderBody(minutes, item.title),
+            : _reminderBody(minutes, safeReminderTitle),
         when: when,
         requestPermission: requestPermission,
         agendaActions: true,
@@ -4884,6 +4892,7 @@ class AgendaStore extends ChangeNotifier {
       thumbnailAssetId: thumbnailAssetId,
       membersCanEdit: upload.membersCanEdit,
       editOwnerId: upload.editOwnerId,
+      isSensitive: upload.isSensitive,
       imageBase64: upload.imageBase64,
       thumbnailBase64: upload.thumbnailBase64,
       oldMediaPath: upload.oldMediaPath,
@@ -5091,6 +5100,7 @@ class AgendaStore extends ChangeNotifier {
               mediaThumbnailAssetId: upload.thumbnailAssetId,
               membersCanEdit: upload.membersCanEdit,
               editOwnerId: upload.editOwnerId,
+              isSensitive: upload.isSensitive,
             );
             await enqueueSharedUpsert(
               spaceId: currentSpaceId,
@@ -5383,11 +5393,61 @@ class AgendaStore extends ChangeNotifier {
     );
   }
 
+  // In-memory attempt throttle for app PIN and sensitive record challenges.
+  // This is NOT persistent anti-bruteforce or Keystore-backed verification.
+  String? _lastPinVerifier;
+  int _pinFailureCount = 0;
+  DateTime? _pinBlockedUntil;
+
+  bool get pinTemporarilyBlocked =>
+      _pinBlockedUntil?.isAfter(DateTime.now()) ?? false;
+
   bool verifyPin(String pin) {
     final salt = preferences.pinSalt;
     final expected = preferences.pinHash;
     if (salt == null || expected == null) return false;
-    return _derivePinHash(pin.trim(), salt) == expected;
+    if (_lastPinVerifier != expected) {
+      _lastPinVerifier = expected;
+      _pinFailureCount = 0;
+      _pinBlockedUntil = null;
+    }
+    final now = DateTime.now();
+    if (_pinBlockedUntil?.isAfter(now) ?? false) return false;
+    if (_pinBlockedUntil != null) {
+      _pinBlockedUntil = null;
+      _pinFailureCount = 0;
+    }
+
+    var matches = false;
+    final normalized = pin.trim();
+    final numericPin = normalized.length >= 4 &&
+        normalized.length <= 8 &&
+        normalized.codeUnits.every((unit) => unit >= 48 && unit <= 57);
+    if (numericPin) {
+      try {
+        final actual = _derivePinHash(normalized, salt).codeUnits;
+        final stored = expected.codeUnits;
+        if (actual.length == stored.length) {
+          var difference = 0;
+          for (var idx = 0; idx < stored.length; idx++) {
+            difference |= actual[idx] ^ stored[idx];
+          }
+          matches = difference == 0;
+        }
+      } catch (_) {
+        // Corrupt verifier material must fail closed.
+      }
+    }
+    if (matches) {
+      _pinFailureCount = 0;
+      return true;
+    }
+    _pinFailureCount++;
+    if (_pinFailureCount >= 5) {
+      _pinBlockedUntil = now.add(const Duration(seconds: 60));
+      _pinFailureCount = 0;
+    }
+    return false;
   }
 
   Future<void> savePreferences(AgendaPreferences value) async {

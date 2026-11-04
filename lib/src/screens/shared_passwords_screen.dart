@@ -28,7 +28,7 @@ class _SharedPasswordsScreenState extends State<SharedPasswordsScreen>
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-    unawaited(vault.setSecureScreen(true));
+    unawaited(vault.setSecureScreen(true, owner: this));
     unawaited(_initialize());
     _bindRealtime();
   }
@@ -63,7 +63,7 @@ class _SharedPasswordsScreenState extends State<SharedPasswordsScreen>
         listenerKey: 'shared-passwords',
       ),
     );
-    unawaited(vault.setSecureScreen(false));
+    unawaited(vault.setSecureScreen(false, owner: this));
     super.dispose();
   }
 

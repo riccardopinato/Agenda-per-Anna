@@ -10,6 +10,9 @@ class TrashScreen extends StatelessWidget {
 
   String _displayTitle(BuildContext context, TrashEntry entry) {
     final strings = AnnaStrings.of(context);
+    if (isSensitiveTrashEntry(entry)) {
+      return strings.d3('privacy_sensitive');
+    }
     final locale = AnnaStrings.intlLocale(context);
 
     switch (entry.kind) {
@@ -65,6 +68,11 @@ class TrashScreen extends StatelessWidget {
   }
 
   Future<void> _restore(BuildContext context, TrashEntry entry) async {
+    if (isSensitiveTrashEntry(entry) &&
+        !await requestSensitiveItemAccess(context, store)) {
+      return;
+    }
+    if (!context.mounted) return;
     final strings = AnnaStrings.of(context);
     final conflict = store.trashRestoreConflictReason(entry);
     if (conflict != null) {
@@ -89,6 +97,11 @@ class TrashScreen extends StatelessWidget {
   }
 
   Future<void> _purge(BuildContext context, TrashEntry entry) async {
+    if (isSensitiveTrashEntry(entry) &&
+        !await requestSensitiveItemAccess(context, store)) {
+      return;
+    }
+    if (!context.mounted) return;
     final strings = AnnaStrings.of(context);
     final displayTitle = _displayTitle(context, entry);
     final confirmed = await showDialog<bool>(
@@ -124,6 +137,11 @@ class TrashScreen extends StatelessWidget {
     final strings = AnnaStrings.of(context);
     final count = store.trash.length;
     if (count == 0) return;
+    if (store.trash.any(isSensitiveTrashEntry) &&
+        !await requestSensitiveItemAccess(context, store)) {
+      return;
+    }
+    if (!context.mounted) return;
 
     final confirmed = await showDialog<bool>(
           context: context,
@@ -218,10 +236,14 @@ class TrashScreen extends StatelessWidget {
                           style: const TextStyle(fontWeight: FontWeight.w800),
                         ),
                         subtitle: Text(
-                          strings.trashEntrySubtitle(
-                            strings.trashKindLabel(entry.kind),
-                            DateFormat('d MMM yyyy, HH:mm', AnnaStrings.intlLocale(context)).format(entry.deletedAt),
-                          ),
+                          isSensitiveTrashEntry(entry)
+                              ? strings.trashKindLabel(entry.kind)
+                              : strings.trashEntrySubtitle(
+                                  strings.trashKindLabel(entry.kind),
+                                  DateFormat('d MMM yyyy, HH:mm',
+                                    AnnaStrings.intlLocale(context))
+                                      .format(entry.deletedAt),
+                                ),
                         ),
                         trailing: PopupMenuButton<String>(
                           tooltip: strings.trashActions,

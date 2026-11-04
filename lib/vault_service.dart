@@ -120,6 +120,11 @@ class PrivateVaultService extends ChangeNotifier {
   Map<String, dynamic>? _meta;
   bool _initialized = false;
   Timer? _autoLockTimer;
+  // Each route owns its screenshot-protection lease. A Vault route must never
+  // clear FLAG_SECURE while another route (for example the app PIN gate)
+  // still needs it. Native writes are serialized to avoid close/open races.
+  final Set<Object> _secureScreenOwners = <Object>{};
+  Future<void> _secureScreenUpdate = Future<void>.value();
 
   bool get initialized => _initialized;
   bool get configured => _meta != null;
@@ -873,14 +878,27 @@ class PrivateVaultService extends ChangeNotifier {
     _initialized = false;
   }
 
-  Future<void> setSecureScreen(bool enabled) async {
-    if (kIsWeb) return;
-    try {
-      await _native.invokeMethod<void>(
-        'setSecureScreen',
-        {'enabled': enabled},
-      );
-    } catch (_) {}
+  Future<void> setSecureScreen(bool enabled, {Object? owner}) {
+    if (kIsWeb) return Future<void>.value();
+    // Legacy callers share this service-owned lease; route callers must pass
+    // their State as owner so independent screens cannot release one another.
+    final lease = owner ?? this;
+    if (enabled) {
+      _secureScreenOwners.add(lease);
+    } else {
+      _secureScreenOwners.remove(lease);
+    }
+    _secureScreenUpdate = _secureScreenUpdate.then((_) async {
+      try {
+        await _native.invokeMethod<void>(
+          'setSecureScreen',
+          {'enabled': _secureScreenOwners.isNotEmpty},
+        );
+      } catch (_) {
+        // Platform support must still be verified on the actual device.
+      }
+    });
+    return _secureScreenUpdate;
   }
 
   Future<void> _loadEntries() async {

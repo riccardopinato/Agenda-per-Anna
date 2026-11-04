@@ -59,8 +59,9 @@ class HomeWidgetBridge {
     }
     final accountAtStart = store.activeAccountId;
     final strings = AnnaStrings.forPreference(store.preferences.appLanguage);
-    final hidden = store.preferences.hideHomeDetails;
-    final protectedText = strings.v100HomeProtected;
+    final hidden = store.preferences.hideHomeDetails ||
+        store.preferences.homeDiscreetMode;
+    final protectedText = strings.d3('privacy_sensitive');
     final locale = strings.languageCode;
     final now = DateTime.now();
     final upcoming = store.unifiedUpcoming(now);
@@ -77,7 +78,8 @@ class HomeWidgetBridge {
       final time = next.start == null ? '' : ' · ${formatTime(next.start!)}';
       nextText = visibleDetail(
         hidden: hidden,
-        sensitive: quickWinEntrySensitive(next),
+        sensitive: quickWinEntrySensitive(next) ||
+            isMaskedAgendaEntry(next, hideAll: false),
         fallback: protectedText,
         detail: '$day$time · ${next.title}',
       );
