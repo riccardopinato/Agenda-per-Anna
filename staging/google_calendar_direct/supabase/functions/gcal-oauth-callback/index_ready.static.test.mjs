@@ -29,6 +29,9 @@ test('JWT authentication and OAuth credentials remain server-side only',()=>{
  assert.match(live,/GcalTwoPhaseBroker/);
  assert.match(live,/GcalStageTokenLifecycle/);
  assert.match(live,/GcalStageRequestBudget/);
+ assert.match(live,/GcalStageCallbackBudget/);
+ assert.match(live,/callbackBudget/);
+ assert.equal(deployed.includes('callback_budget.mjs'),false);
  assert.match(live,/requestBudget/);
  assert.equal(deployed.includes('request_budget.mjs'),false);
  assert.equal(deployed.includes('token_lifecycle.mjs'),false);
