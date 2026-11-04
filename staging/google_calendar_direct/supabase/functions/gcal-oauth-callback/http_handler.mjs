@@ -46,10 +46,12 @@ async function boundedBody(req,limit=2048) {
 const onlyFields=(value,fields)=>value&&typeof value==='object'&&!Array.isArray(value)&&
   Object.keys(value).every(k=>fields.includes(k));
 export function createGoogleCalendarStagingHandler({
-  enabled=false,broker=null,verifyAppIdentity=null,tokenLifecycle=null,allowedWebOrigins=[],
+  enabled=false,broker=null,verifyAppIdentity=null,tokenLifecycle=null,requestBudget=null,allowedWebOrigins=[],
   basePath=BASE,
 }={}) {
- if(enabled&&(!broker||typeof verifyAppIdentity!=='function'))throw Error('MISSING_AUTH_GATE');
+ if(enabled&&(!broker||typeof verifyAppIdentity!=='function'||
+   !requestBudget||typeof requestBudget.consume!=='function'))
+   throw Error('MISSING_AUTH_GATE');
  const allowed=new Set(allowedWebOrigins.filter(x=>{
    try{const uri=new URL(x);return uri.origin===x&&uri.protocol==='https:';}catch{return false;}
  }));
@@ -94,6 +96,12 @@ export function createGoogleCalendarStagingHandler({
    catch {return json({error:'AUTH_REQUIRED'},401,origin);}
    if(!verified||typeof verified.accountId!=='string'||verified.accountId.trim()==='')
      return json({error:'AUTH_REQUIRED'},401,origin);
+   // Durable account-scoped throttle. Reject if DB budget is missing or unavailable.
+   // Public browser callback remains subject to a separate ingress flood gate.
+   try {
+     if(await requestBudget.consume(verified.accountId,suffix.slice(1))!==true)
+       return json({error:'RATE_LIMITED'},429,origin);
+   } catch {return json({error:'RATE_LIMIT_UNAVAILABLE'},503,origin);}
    let body;
    try{body=await boundedBody(req);}catch{return json({error:'INVALID_BODY'},400,origin);}
    if(!onlyFields(body,suffix==='/start'?[]:suffix==='/preview'?['handle']:
