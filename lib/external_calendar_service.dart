@@ -42,6 +42,9 @@ class ExternalCalendarInfo {
 
 class ExternalCalendarEvent {
   final String id;
+  /// Stable provider occurrence identity, independent of the device timezone.
+  /// Null for legacy/test-created projections without raw instance metadata.
+  final String? sourceOccurrenceKey;
   final String calendarId;
   final String calendarName;
   final String title;
@@ -54,6 +57,7 @@ class ExternalCalendarEvent {
 
   const ExternalCalendarEvent({
     required this.id,
+    this.sourceOccurrenceKey,
     required this.calendarId,
     required this.calendarName,
     required this.title,
@@ -87,6 +91,7 @@ class ExternalCalendarEvent {
 
     return ExternalCalendarEvent(
       id: '$calendarId:$eventId:${instanceStart.toIso8601String()}',
+      sourceOccurrenceKey: '$eventId:$startMs',
       calendarId: calendarId,
       calendarName: ('${raw['calendarName'] ?? ''}').trim(),
       title: ('${raw['title'] ?? ''}').trim(),

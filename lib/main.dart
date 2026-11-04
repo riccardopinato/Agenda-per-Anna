@@ -58,6 +58,7 @@ part 'src/day_hub_domain.dart';
 part 'src/daily_rituals.dart';
 part 'src/unified_capture.dart';
 part 'src/event_memory_capture.dart';
+part 'src/external_calendar_diary.dart';
 part 'src/event_preparation.dart';
 part 'src/natural_event_parser.dart';
 part 'src/calendar_free_slots.dart';

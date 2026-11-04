@@ -1,5 +1,24 @@
 # Anna's Diary — Roadmap
 
+## Google Calendar read-first / Diary correspondence — 4 November 2026
+
+**IN PR #228 / CI AND PHYSICAL QA TO BE VERIFIED.** Extend the existing
+Android device-calendar **read-only overlay** in the definitive Unified Agenda
+with explicit correspondence to private diary notes: linked source occurrence,
+review-only same-day candidates, and an editable, user-confirmed
+external-event-to-memory capture using canonical DayJournal. No silent imports,
+no external writes, no new database or new OAuth scope.
+[Spec and QA](GOOGLE_CALENDAR_READ_DIARY_CORRESPONDENCE.md).
+
+**Hard gate:** Google Calendar Direct API PR #199 is independent DRAFT staging,
+with deployed callback intentionally locked. Direct Web/PWA/iPhone read and
+real Google consent are **NOT VERIFIED / NOT ACTIVATED**. It must not be merged
+or enabled as a side effect. Existing Android B3 writer remains unchanged;
+new Google Direct outbound writes, conflict/duplicate reconciliation and
+deletion semantics are deferred behind separate explicit authorization.
+Privacy V2 #215 remains a separate review gate.
+
+
 ## Audit UX nudge and new Android sideload identity — 4 November 2026
 
 - This branch adds a per-device, per-account, per-civil-day **dismiss today** control for the read-only day summary. Only a SHA-256 account/day digest is stored; the event or Vault contents are never persisted in this preference. No background alerts or rescheduling.

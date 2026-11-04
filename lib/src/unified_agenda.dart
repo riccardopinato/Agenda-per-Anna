@@ -342,52 +342,99 @@ Future<void> openUnifiedAgendaEntry(
 
   if (entry.externalEvent != null) {
     final event = entry.externalEvent!;
+    final correspondence = externalCalendarDiaryCorrespondence(store, event);
     final when = event.allDay
         ? AnnaStrings.of(context).d3('editor_allDay')
         : '${formatTime(event.startTime!)}'
             '${event.endTime == null ? '' : ' – ${formatTime(event.endTime!)}'}';
-    await showDialog<void>(
+    final showMemoryEditor = await showDialog<bool>(
       context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: Text(
-          event.title.trim().isEmpty
-              ? AnnaStrings.of(dialogContext).d3('external_untitledEvent')
-              : event.title,
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(when, style: const TextStyle(fontWeight: FontWeight.w800)),
-            const SizedBox(height: 6),
-            Text(
-              event.calendarName.trim().isEmpty
-                  ? AnnaStrings.of(dialogContext).d3('external_externalCalendar')
-                  : event.calendarName,
+      builder: (dialogContext) {
+        final strings = AnnaStrings.of(dialogContext);
+        final memoryStatus = switch (correspondence.state) {
+          ExternalDiaryMatchState.linked =>
+            externalDiaryCopy(strings, 'linked'),
+          ExternalDiaryMatchState.reviewCandidates =>
+            externalDiaryCopy(strings, 'review').replaceAll(
+              '{count}', '${correspondence.candidateCount}',
             ),
-            if (event.location.isNotEmpty) ...[
-              const SizedBox(height: 8),
-              Text(event.location),
-            ],
-            if (event.description.isNotEmpty) ...[
-              const SizedBox(height: 8),
-              Text(event.description),
-            ],
-            const SizedBox(height: 12),
-            Text(
-              AnnaStrings.of(dialogContext).d3('unified_externalReadOnly'),
-              style: Theme.of(dialogContext).textTheme.bodySmall,
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(dialogContext),
-            child: Text(AnnaStrings.of(dialogContext).close),
+          ExternalDiaryMatchState.unlinked =>
+            externalDiaryCopy(strings, 'none'),
+          ExternalDiaryMatchState.recoverableTrash =>
+            externalDiaryCopy(strings, 'trash'),
+          ExternalDiaryMatchState.unavailable =>
+            externalDiaryCopy(strings, 'unavailable'),
+        };
+        return AlertDialog(
+          title: Text(
+            event.title.trim().isEmpty
+                ? strings.d3('external_untitledEvent')
+                : event.title,
           ),
-        ],
-      ),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(when, style: const TextStyle(fontWeight: FontWeight.w800)),
+                const SizedBox(height: 6),
+                Text(
+                  event.calendarName.trim().isEmpty
+                      ? strings.d3('external_externalCalendar')
+                      : event.calendarName,
+                ),
+                if (event.location.isNotEmpty) ...[
+                  const SizedBox(height: 8),
+                  Text(event.location),
+                ],
+                if (event.description.isNotEmpty) ...[
+                  const SizedBox(height: 8),
+                  Text(event.description),
+                ],
+                const SizedBox(height: 12),
+                Text(
+                  strings.d3('unified_externalReadOnly'),
+                  style: Theme.of(dialogContext).textTheme.bodySmall,
+                ),
+                const SizedBox(height: 12),
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Icon(Icons.auto_stories_outlined, size: 19),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        memoryStatus,
+                        key: const ValueKey('external-diary-correspondence'),
+                        style: Theme.of(dialogContext).textTheme.bodyMedium,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext, false),
+              child: Text(strings.close),
+            ),
+            if (correspondence.canCapture)
+              TextButton.icon(
+                key: const ValueKey('external-diary-capture-action'),
+                icon: const Icon(Icons.bookmark_add_outlined),
+                label: Text(externalDiaryCopy(strings,
+                    correspondence.state == ExternalDiaryMatchState.linked
+                        ? 'edit' : 'create')),
+                onPressed: () => Navigator.pop(dialogContext, true),
+              ),
+          ],
+        );
+      },
     );
+    if (showMemoryEditor == true && context.mounted) {
+      await openExternalCalendarMemoryDraft(context, store, event);
+    }
     return;
   }
 
