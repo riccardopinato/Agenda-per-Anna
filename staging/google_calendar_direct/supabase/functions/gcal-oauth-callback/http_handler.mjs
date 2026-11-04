@@ -46,7 +46,7 @@ async function boundedBody(req,limit=2048) {
 const onlyFields=(value,fields)=>value&&typeof value==='object'&&!Array.isArray(value)&&
   Object.keys(value).every(k=>fields.includes(k));
 export function createGoogleCalendarStagingHandler({
-  enabled=false,broker=null,verifyAppIdentity=null,allowedWebOrigins=[],
+  enabled=false,broker=null,verifyAppIdentity=null,tokenLifecycle=null,allowedWebOrigins=[],
   basePath=BASE,
 }={}) {
  if(enabled&&(!broker||typeof verifyAppIdentity!=='function'))throw Error('MISSING_AUTH_GATE');
@@ -58,7 +58,7 @@ export function createGoogleCalendarStagingHandler({
    try{url=new URL(req.url);}catch{return json({error:'BAD_URL'},400);}
    if(!url.pathname.startsWith(basePath))return json({error:'NOT_FOUND'},404);
    const suffix=url.pathname.slice(basePath.length);
-   if(!['','/health','/start','/preview','/confirm'].includes(suffix))
+   if(!['','/health','/start','/preview','/confirm','/disconnect'].includes(suffix))
      return json({error:'NOT_FOUND'},404);
    if(req.method==='GET'&&suffix==='/health')return json({
      service:'anna-calendar-staging',status:enabled?'configured':'locked',
@@ -84,7 +84,7 @@ export function createGoogleCalendarStagingHandler({
        return browserResponse('Collegamento non completato. Torna nell\u2019app e riprova.',400);
      }
    }
-   if(req.method!=='POST'||!['/start','/preview','/confirm'].includes(suffix))
+   if(req.method!=='POST'||!['/start','/preview','/confirm','/disconnect'].includes(suffix))
      return json({error:'METHOD_NOT_ALLOWED'},405);
    const mime=req.headers.get('content-type')?.split(';')[0].toLowerCase().trim();
    if(mime!=='application/json')return json({error:'JSON_REQUIRED'},415,origin);
@@ -97,10 +97,23 @@ export function createGoogleCalendarStagingHandler({
    let body;
    try{body=await boundedBody(req);}catch{return json({error:'INVALID_BODY'},400,origin);}
    if(!onlyFields(body,suffix==='/start'?[]:suffix==='/preview'?['handle']:
+     suffix==='/disconnect'?['googleSubject','explicitConfirmation']:
      ['handle','explicitConfirmation']))return json({error:'UNEXPECTED_FIELDS'},400,origin);
    try {
      if(suffix==='/start') {
        const result=await broker.start({verifiedAccountId:verified.accountId});
+       return json(result,200,origin);
+     }
+     if(suffix==='/disconnect') {
+       if(!tokenLifecycle||typeof tokenLifecycle.disconnect!=='function')
+         return json({error:'LIFECYCLE_NOT_READY'},503,origin);
+       if(body.explicitConfirmation!==true)
+         return json({error:'EXPLICIT_CONFIRMATION_REQUIRED'},400,origin);
+       if(typeof body.googleSubject!=='string'||body.googleSubject.length<1||
+          body.googleSubject.length>256)
+         return json({error:'INVALID_GOOGLE_SUBJECT'},400,origin);
+       const result=await tokenLifecycle.disconnect({verifiedAccountId:verified.accountId,
+         googleSubject:body.googleSubject,explicitConfirmation:true});
        return json(result,200,origin);
      }
      if(typeof body.handle!=='string'||body.handle.length>128)
