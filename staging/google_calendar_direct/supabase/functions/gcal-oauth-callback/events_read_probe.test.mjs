@@ -93,6 +93,15 @@ test('owner calendar event body is limited and paginated results disclose incomp
   verifiedAccountId:account,googleSubject:subject,calendarId,
   timeMin:since,timeMax:until}),/EVENTS_UNAVAILABLE/);
 });
+test('empty Google event lists do not become a provider error',async()=>{
+ const f=fixture({fetcher:async()=>new Response('{}',{status:200})});
+ const data=await f.probe.events({
+   verifiedAccountId:account,googleSubject:subject,calendarId,
+   timeMin:since,timeMax:until,
+ });
+ assert.deepEqual(data.events,[]);
+ assert.equal(data.truncated,false);
+});
 test('never sends a Google write operation even when provider returns an error',async()=>{
  const f=fixture({fetcher:async(url,opts)=>{
   assert.equal(opts.method,'GET');
