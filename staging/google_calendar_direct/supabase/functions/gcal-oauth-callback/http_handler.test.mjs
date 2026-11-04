@@ -20,7 +20,7 @@ function fixture({enabled=true}={}) {
  };
  let verified=0;
  const handler=createGoogleCalendarStagingHandler({
-   enabled,broker,allowedWebOrigins:[validOrigin],
+   enabled,broker,requestBudget:{consume:async()=>true},allowedWebOrigins:[validOrigin],
    verifyAppIdentity:async header=>{
      verified++;
      if(header!==fakeToken)throw Error('invalid');
@@ -96,7 +96,7 @@ test('callback response hides OAuth code and Google identity and requires no JWT
 test('Google callback failure cannot leak error or authorization code',async()=>{
  const f=fixture();
  const handle=createGoogleCalendarStagingHandler({
-   enabled:true,verifyAppIdentity:async()=>({accountId:userId}),
+   enabled:true,requestBudget:{consume:async()=>true},verifyAppIdentity:async()=>({accountId:userId}),
    broker:{callback:async()=>{throw Error('SUPER-SECRET-TOKEN');}},
  });
  const response=await handle(new Request(base+'?code=SECRET&state=TEST'));
@@ -131,7 +131,7 @@ test('CORS only permits declared web origin with no wildcard and no credentials'
 test('authenticated disconnect requires explicit consent and never exposes provider tokens',async()=>{
   const calls=[];
   const handler=createGoogleCalendarStagingHandler({
-    enabled:true,broker:{},
+    enabled:true,broker:{},requestBudget:{consume:async()=>true},
     allowedWebOrigins:[validOrigin],
     verifyAppIdentity:async header=>{
       if(header!==fakeToken)throw Error('invalid');
@@ -155,4 +155,36 @@ test('authenticated disconnect requires explicit consent and never exposes provi
   assert.equal(response.headers.get('cache-control'),'no-store, max-age=0');
   assert.deepEqual(calls,[{verifiedAccountId:userId,googleSubject:'subject',
     explicitConfirmation:true}]);
+});
+
+test('authenticated staging budget fails closed at the configured quota',async()=>{
+  const seen=[];
+  const handler=createGoogleCalendarStagingHandler({
+    enabled:true,broker:{start:async()=>{throw Error('SHOULD_NOT_START');}},
+    requestBudget:{async consume(accountId,action){seen.push([accountId,action]);return false;}},
+    verifyAppIdentity:async()=>({accountId:userId}),
+    allowedWebOrigins:[validOrigin],
+  });
+  const response=await handler(post('/start',{}));
+  assert.equal(response.status,429);
+  assert.deepEqual(await response.json(),{error:'RATE_LIMITED'});
+  assert.deepEqual(seen,[[userId,'start']]);
+});
+test('budget database outage blocks OAuth operations rather than bypassing quota',async()=>{
+  const handler=createGoogleCalendarStagingHandler({
+    enabled:true,broker:{start:async()=>{throw Error('SHOULD_NOT_START');}},
+    requestBudget:{async consume(){throw Error('SENSITIVE_DB_ERROR');}},
+    verifyAppIdentity:async()=>({accountId:userId}),
+    allowedWebOrigins:[validOrigin],
+  });
+  const response=await handler(post('/start',{}));
+  assert.equal(response.status,503);
+  const body=await response.text();
+  assert.equal(body.includes('SENSITIVE_DB_ERROR'),false);
+  assert.match(body,/RATE_LIMIT_UNAVAILABLE/);
+});
+test('unconfigured budget rejects live router construction',()=>{
+  assert.throws(()=>createGoogleCalendarStagingHandler({
+    enabled:true,broker:{},verifyAppIdentity:async()=>({accountId:userId}),
+  }),/MISSING_AUTH_GATE/);
 });
