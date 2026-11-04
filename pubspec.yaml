@@ -27,6 +27,7 @@ dependencies:
   pointycastle: 4.0.0
   archive: ^4.3.0
   supabase_flutter: ^2.17.2
+  http: 1.6.0 # existing locked transitive dependency; explicit staging HTTP port
   firebase_core: ^4.15.0
   firebase_messaging: ^16.7.0
   image_picker: ^1.2.0
