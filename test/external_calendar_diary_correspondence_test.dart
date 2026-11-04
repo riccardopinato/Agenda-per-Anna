@@ -22,8 +22,10 @@ void main() {
     String calendarId = 'google-account',
     String title = 'Dentist visit',
     DateTime? date,
+    String? occurrenceKey,
   }) => ExternalCalendarEvent(
     id: id,
+    sourceOccurrenceKey: occurrenceKey,
     calendarId: calendarId,
     calendarName: 'Personal Google calendar',
     title: title,
@@ -139,6 +141,69 @@ void main() {
       expectedAccountId: store.activeAccountId,
     ), isFalse);
     expect(store.journal(external.date).blocks, isEmpty);
+  });
+
+  test('provider occurrence identity survives timezone display changes', () {
+    final startMs = DateTime.utc(2026, 10, 18, 16, 30).millisecondsSinceEpoch;
+    final native = ExternalCalendarEvent.fromPlatform({
+      'calendarId': 'cal-1',
+      'eventId': 'event-33',
+      'calendarName': 'Google',
+      'title': 'Flight',
+      'startMs': startMs,
+      'endMs': startMs + 3600000,
+      'allDay': false,
+    });
+    expect(native.sourceOccurrenceKey, 'event-33:$startMs');
+    final sameInstantDifferentDisplayId = ExternalCalendarEvent(
+      id: 'cal-1:event-33:2026-10-18T18:30:00',
+      sourceOccurrenceKey: native.sourceOccurrenceKey,
+      calendarId: 'cal-1',
+      calendarName: 'Google',
+      title: 'Flight',
+      description: '',
+      location: '',
+      start: DateTime(2026, 10, 18, 18, 30),
+      end: DateTime(2026, 10, 18, 19, 30),
+      allDay: false,
+    );
+    expect(externalCalendarMemoryBlockId(sameInstantDifferentDisplayId),
+        externalCalendarMemoryBlockId(native));
+  });
+
+  test('civil-day shift edits original diary block rather than duplicating', () async {
+    final store = AgendaStore();
+    await store.load();
+    await store.continueWithoutAccount();
+    final original = event(occurrenceKey: 'event-33:1792331400000');
+    expect(await saveExternalCalendarMemoryDraft(
+      store, original, 'The original memory',
+      now: DateTime(2026, 11, 4),
+      expectedAccountId: store.activeAccountId,
+    ), isTrue);
+    final shifted = ExternalCalendarEvent(
+      id: 'provider:rendered-in-new-timezone',
+      sourceOccurrenceKey: original.sourceOccurrenceKey,
+      calendarId: original.calendarId,
+      calendarName: original.calendarName,
+      title: original.title,
+      description: original.description,
+      location: original.location,
+      start: DateTime(2026, 10, 19, 0, 30),
+      end: DateTime(2026, 10, 19, 1, 30),
+      allDay: false,
+    );
+    expect(externalCalendarDiaryCorrespondence(
+      store, shifted, now: DateTime(2026, 11, 4),
+    ).state, ExternalDiaryMatchState.linked);
+    expect(await saveExternalCalendarMemoryDraft(
+      store, shifted, 'Updated from shifted timezone',
+      now: DateTime(2026, 11, 4),
+      expectedAccountId: store.activeAccountId,
+    ), isTrue);
+    expect(store.journal(original.date).blocks.single.text,
+        'Updated from shifted timezone');
+    expect(store.journal(shifted.date).blocks, isEmpty);
   });
 
   test('draft is an editable proposal and strips B3 transport markers', () {
