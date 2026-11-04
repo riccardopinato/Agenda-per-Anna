@@ -99,8 +99,8 @@ class GcalStageEvent {
   });
 
   /// A stable unambiguous source key, never a canonical local diary ID.
-  String get sourceKey => calendarId.length.toString()+':'+calendarId+
-      ':'+eventId.length.toString()+':'+eventId;
+  String get sourceKey => '${calendarId.length}:$calendarId:'
+      '${eventId.length}:$eventId';
 }
 
 class GcalStageEventBatch {
