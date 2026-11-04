@@ -51,6 +51,11 @@ jobs:
       - name: Mock-test authenticated web and browser OAuth HTTP endpoints
         run: node --test staging/google_calendar_direct/supabase/functions/gcal-oauth-callback/http_handler.test.mjs
 
+      - name: Check server-only Google token refresh and revocation syntax
+        run: node --check staging/google_calendar_direct/supabase/functions/gcal-oauth-callback/token_lifecycle.mjs
+      - name: Mock-test account-scoped refresh and revocation lifecycle
+        run: node --test staging/google_calendar_direct/supabase/functions/gcal-oauth-callback/token_lifecycle.test.mjs
+
       - name: Check unreleased Deno Edge entrypoint syntax
         run: node --check staging/google_calendar_direct/supabase/functions/gcal-oauth-callback/index_ready.mjs
       - name: Assert deployed function remains locked and staging dependencies are pinned
