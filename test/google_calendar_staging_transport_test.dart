@@ -64,7 +64,7 @@ void main() {
 
   test('oversized JSON and non JSON responses fail closed', () async {
     final oversized = GcalStagingEdgeTransport.forStaging(MockClient((_) async =>
-        http.Response('X' * 9000, 200)));
+        http.Response(List<String>.filled(9000, 'X').join(), 200)));
     await expectLater(oversized.post('/preview', 'JWT', const {}),
         throwsA(isA<GcalStageClientException>()));
     final malformed = GcalStagingEdgeTransport.forStaging(MockClient((_) async =>
