@@ -45,14 +45,18 @@ class _GcalStagingTestPanelState extends State<GcalStagingTestPanel> {
     try {
       await action();
     } on GcalStageClientException catch (error) {
-      if (mounted) setState(() {
-        _error = gcalQaErrorMessage(error.kind);
-        _expectedLocked = error.kind == GcalStageClientFault.stagingLocked;
-      });
+      if (mounted) {
+        setState(() {
+          _error = gcalQaErrorMessage(error.kind);
+          _expectedLocked = error.kind == GcalStageClientFault.stagingLocked;
+        });
+      }
     } catch (_) {
-      if (mounted) setState(() {
-        _error = gcalQaErrorMessage(GcalStageClientFault.requestRejected);
-      });
+      if (mounted) {
+        setState(() {
+          _error = gcalQaErrorMessage(GcalStageClientFault.requestRejected);
+        });
+      }
     } finally {
       if (mounted) setState(() { _busy = false; });
     }
