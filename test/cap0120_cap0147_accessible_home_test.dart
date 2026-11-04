@@ -19,6 +19,17 @@ void main() {
     expect(described.mediaAssetId, original.mediaAssetId);
     expect(described.text, original.text);
     expect(original.altText, isEmpty);
+    final emojiDescription = List<String>.filled(300, '🌻').join();
+    final combinedDescription = List<String>.filled(300, 'e\u0301').join();
+    expect(DiaryBlock.fromJson(original.copyWith(
+      altText: emojiDescription,
+    ).toJson()).altText, emojiDescription);
+    expect(DiaryBlock.fromJson(original.copyWith(
+      altText: combinedDescription,
+    ).toLocalJson()).altText, combinedDescription);
+    expect(DiaryBlock.fromJson(original.copyWith(
+      altText: List<String>.filled(501, 'a').join(),
+    ).toJson()).altText, isEmpty);
   });
 
   test('CAP-0147 Today order defaults, normalizes, and persists', () {
@@ -38,7 +49,7 @@ void main() {
   });
 
   test('CAP-0147 state cannot own or erase module data', () {
-    final original = AgendaPreferences(
+    const original = AgendaPreferences(
       displayName: 'Anna',
       enabledModules: {AppModule.memories, AppModule.shopping},
     );
