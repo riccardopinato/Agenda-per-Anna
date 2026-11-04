@@ -322,6 +322,10 @@ class _ContextualMemoryPanelState extends State<ContextualMemoryPanel> {
       'place': ['Place saved by you', 'Luogo salvato da te',
         'Lugar guardado por ti', 'Lieu enregistré par vos soins',
         'Local guardado por ti'],
+      'fromDate': [
+        'Saved on', 'Salvato il', 'Guardado el', 'Enregistré le',
+        'Guardado em',
+      ],
       'never': ['Never suggest this memory', 'Non suggerire più questo ricordo',
         'No volver a sugerir este recuerdo', 'Ne plus proposer ce souvenir',
         'Não voltar a sugerir esta memória'],
@@ -400,10 +404,15 @@ class _ContextualMemoryPanelState extends State<ContextualMemoryPanel> {
               ListTile(
                 key: ValueKey<String>(
                   'contextual-memory-${pick.reference.block.id}'),
-                title: Text(widget.store.diaryBlockDisplayTitle(
-                  pick.reference.block,
-                  strings: AnnaStrings.of(context),
-                ), maxLines: 1, overflow: TextOverflow.ellipsis),
+                // Do not render diary text or photo captions in a suggestion.
+                // Only the explicit source date is disclosed after opt-in.
+                title: Text(
+                  '${_copy(lang, 'fromDate')} '
+                  '${DateFormat('d MMM yyyy',
+                    AnnaStrings.intlLocale(context)).format(pick.reference.date)}',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
                 subtitle: Text(_copy(lang, pick.reason)),
                 leading: const Icon(Icons.auto_stories_outlined),
                 onTap: () => widget.onOpen(pick.reference),
