@@ -8,6 +8,9 @@ class RealisticDayAdvice {
     required this.reasonCode,
     required this.firstFreeSlot,
     this.bufferMinutes = 0,
+    this.recordedTaskMinutes = 0,
+    this.tasksWithRecordedTime = 0,
+    this.tasksWithoutRecordedTime = 0,
   });
 
   final int freeMinutes;
@@ -16,9 +19,59 @@ class RealisticDayAdvice {
   final CalendarFreeSlot? firstFreeSlot;
   /// User-selected voluntary space left unbooked. Never assumed task time.
   final int bufferMinutes;
+  /// Sum of explicit start/end task durations, shown for provenance only.
+  /// Timed tasks already occupy calendar slots; do NOT subtract twice.
+  final int recordedTaskMinutes;
+  final int tasksWithRecordedTime;
+  final int tasksWithoutRecordedTime;
   int get usableMinutes => max(0, freeMinutes - bufferMinutes);
 
   bool get hasPressure => reasonCode == 'VISIBLE_WINDOW_CONGESTED';
+}
+
+/// Only real time fields on currently visible, authorized task entries count.
+class RecordedTaskTime {
+  const RecordedTaskTime({
+    required this.minutes,
+    required this.withTime,
+    required this.withoutTime,
+  });
+  final int minutes;
+  final int withTime;
+  final int withoutTime;
+
+  static RecordedTaskTime fromVisible(Iterable<UnifiedAgendaEntry> entries) {
+    var minutes = 0;
+    var withTime = 0;
+    var withoutTime = 0;
+    final seen = <String>{};
+    for (final entry in entries) {
+      if (entry.isExternal || entry.type != ItemType.task || entry.done ||
+          !seen.add(entry.id)) {
+        continue;
+      }
+      final start = entry.start;
+      final end = entry.end;
+      if (start == null || end == null) {
+        withoutTime++;
+        continue;
+      }
+      final s = start.hour * 60 + start.minute;
+      final e = end.hour * 60 + end.minute;
+      if (s == e) {
+        withoutTime++; // Ambiguous all-day vs zero-length: never guess.
+        continue;
+      }
+      final recorded = e > s ? e - s : 1440 - s + e;
+      minutes += recorded;
+      withTime++;
+    }
+    return RecordedTaskTime(
+      minutes: minutes,
+      withTime: withTime,
+      withoutTime: withoutTime,
+    );
+  }
 }
 
 abstract final class RealisticDayAdvisor {
@@ -29,9 +82,11 @@ abstract final class RealisticDayAdvisor {
     DateTime? now,
     int bufferMinutes = 0,
   }) {
+    final observed = visibleEntries.toList(growable: false);
+    final recorded = RecordedTaskTime.fromVisible(observed);
     final slots = findCalendarFreeSlots(
       day: day,
-      visibleEntries: visibleEntries,
+      visibleEntries: observed,
       startHour: 9,
       endHour: 21,
       minimumMinutes: 1,
@@ -57,6 +112,9 @@ abstract final class RealisticDayAdvisor {
     return RealisticDayAdvice(
       freeMinutes: minutes,
       bufferMinutes: boundedBuffer,
+      recordedTaskMinutes: recorded.minutes,
+      tasksWithRecordedTime: recorded.withTime,
+      tasksWithoutRecordedTime: recorded.withoutTime,
       pendingTasks: pendingTasks,
       firstFreeSlot: candidate.isEmpty ? null : candidate.first,
       reasonCode: pendingTasks > 0 && usable < 90
