@@ -37,6 +37,45 @@ const post=(route,body={},{
  if(origin) headers.origin=origin;
  return new Request(base+route,{method:'POST',headers,body:JSON.stringify(body)});
 };
+test('hosted Supabase gateway stripped paths return locked health and deny start',async()=>{
+  const f=fixture({enabled:false});
+  const origin=new URL(base).origin;
+  for(const path of ['/health','/gcal-oauth-callback/health',
+                       '/functions/v1/gcal-oauth-callback/health']) {
+    const response=await f.handler(new Request(origin+path));
+    assert.equal(response.status,200,path);
+    const data=await response.json();
+    assert.equal(data.status,'locked');
+    assert.equal(data.google_oauth_active,false);
+    assert.equal(data.google_calendar_writes_active,false);
+  }
+  for(const path of ['/start','/gcal-oauth-callback/start',
+                       '/functions/v1/gcal-oauth-callback/start']) {
+    const response=await f.handler(postUrl(origin+path));
+    assert.equal(response.status,503,path);
+    assert.deepEqual(await response.json(),{error:'STAGING_NOT_ACTIVATED'});
+  }
+  assert.equal((await f.handler(new Request(origin+'/unrecognized'))).status,404);
+  assert.equal(f.verified(),0);
+  assert.deepEqual(f.calls,[]);
+});
+test('gateway callback internal URL is reconstructed to exact Google redirect',async()=>{
+  const f=fixture();
+  const local='http://127.0.0.1:8000/';
+  const response=await f.handler(new Request(local+'?state='+validState+'&code=TEST_CODE'));
+  assert.equal(response.status,200);
+  assert.equal(f.calls.length,1);
+  assert.equal(f.calls[0][0],'callback');
+  const u=new URL(f.calls[0][1].callbackUrl);
+  assert.equal(u.origin,'https://pdanpljacyozslrutsor.supabase.co');
+  assert.equal(u.pathname,'/functions/v1/gcal-oauth-callback');
+  assert.equal(u.searchParams.get('state'),validState);
+  assert.equal(u.searchParams.get('code'),'TEST_CODE');
+  assert.equal((await response.text()).includes('TEST_CODE'),false);
+});
+const postUrl=(url)=>new Request(url,{method:'POST',headers:{
+  'Content-Type':'application/json'},body:'{}'});
+
 test('locked Edge mode blocks real flows without touching identity or OAuth',async()=>{
  const f=fixture({enabled:false});
  const health=await f.handler(new Request(base+'/health'));
