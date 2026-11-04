@@ -1,8 +1,47 @@
 # Anna's Diary — Roadmap
 
+## Quattro maxi-step CAP integrati — 4 novembre 2026
+
+**SOFTWARE SOURCE MERGED / PR EXACT-HEAD CHECKS PASS / PHYSICAL QA NOT VERIFIED.**
+Le quattro capability sono su `main`, senza nuovo cloud, AI obbligatoria,
+database parallelo o modifica a Privacy V2 / Google Calendar Direct:
+
+- **CAP-0152** — ricerca fuzzy locale su sorgenti personali autorizzate,
+  exact-first, limite di scansione prima della materializzazione, massimo
+  25 suggerimenti e nessun accesso al Vault; [PR #229](https://github.com/riccardopinato/Agenda-per-Anna/pull/229),
+  squash `8af342c8da500d1437ab6dbfb1edf92e5a0eb924`.
+- **CAP-0092 / CAP-0093** — frase in bozza task e testo-elenco in bozza
+  checklist via Unified Capture e editor canonico, senza salvataggi impliciti;
+  [PR #230](https://github.com/riccardopinato/Agenda-per-Anna/pull/230),
+  squash `02077882ae19cc7a048a08e1a437fe78e40bd263`.
+- **CAP-0120 / CAP-0147** — descrizione foto manuale con accessibilità,
+  ripristino del testo in caso di errore salvataggio, pulizia su sostituzione
+  media, conteggio grapheme, e ordine reversibile di due card Oggi tramite
+  preferenze canoniche; [PR #232](https://github.com/riccardopinato/Agenda-per-Anna/pull/232),
+  squash `d77fb599bb1dbddf5d82e874c73f9c5cc96181ad`.
+- **CAP-0145 / CAP-0101** — griglia informativa privata dei ricordi per
+  dodici mesi e indicatori deterministici nella Weekly Review esistente;
+  niente inferenze emotive o conteggi Vault/ciclo;
+  [PR #231](https://github.com/riccardopinato/Agenda-per-Anna/pull/231),
+  squash `bcab075b1843c5c1ca4a31be315e077b85b93d16`.
+
+Tutte e quattro le PR hanno **Development checks, Web e AppLab Source Gate
+SUCCESS sugli esatti SHA delle rispettive PR** dopo le correzioni di lint e
+review. La fusione finale su main richiede una verifica CI integrata separata:
+non riciclare il PASS isolato di una PR per il tree combinato.
+
+**Release lane rc.6+123:** bump monotono da +122, firma stabile ARM64 solo
+se il trusted push su `main` supera Development checks e il workflow
+`auto-signed-arm64` esegue realmente `signed-apk`. Nessun APK è considerato
+BUILT/SIGNED fino alla verifica di run, manifest e checksum del file.
+[Checklist fisica RC +123](RC6_123_PHYSICAL_QA_CHECKLIST.md).
+Benchmark su dispositivo con 500/5000 record, TalkBack, account switch,
+backup/restore e upgrade in-place restano **NOT VERIFIED** fino a prova reale.
+Play Store, privacy fisica e Google Direct sono gate indipendenti.
+
 ## Google Calendar read-first / Diary correspondence — 4 November 2026
 
-**IN PR #228 / CI AND PHYSICAL QA TO BE VERIFIED.** Extend the existing
+**SOURCE MERGED #228 / PHYSICAL QA TO BE VERIFIED.** Extend the existing
 Android device-calendar **read-only overlay** in the definitive Unified Agenda
 with explicit correspondence to private diary notes: linked source occurrence,
 review-only same-day candidates, and an editable, user-confirmed
