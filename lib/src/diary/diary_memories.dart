@@ -183,7 +183,15 @@ class _DiaryMemoriesScreenState extends State<DiaryMemoriesScreen> {
             child: Center(child: Icon(Icons.photo_outlined, size: 42)),
           );
         }
-        return DiaryMediaImage(
+        return Semantics(
+          image: true,
+          label: widget.store.preferences.hideHomeDetails
+              ? AnnaStrings.of(context).v100Photo
+              : (block.altText.isEmpty
+                  ? (block.text.isEmpty
+                      ? AnnaStrings.of(context).v100Photo : block.text)
+                  : block.altText),
+          child: DiaryMediaImage(
           assetId: block.mediaThumbnailAssetId.isNotEmpty
               ? block.mediaThumbnailAssetId
               : block.mediaAssetId,
@@ -193,6 +201,7 @@ class _DiaryMemoriesScreenState extends State<DiaryMemoriesScreen> {
           empty: const ColoredBox(
             color: Color(0xFFF2EEF5),
             child: Center(child: Icon(Icons.broken_image_outlined)),
+          ),
           ),
         );
       case DiaryBlockType.sketch:
