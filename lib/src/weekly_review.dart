@@ -5,6 +5,13 @@ class WeeklyReviewSummary {
   final int completedDatedThisWeek, pendingDatedThisWeek, overdueFromBefore;
   const WeeklyReviewSummary(this.completedDatedThisWeek,
       this.pendingDatedThisWeek, this.overdueFromBefore);
+  /// Private derived metric; null means there are no dated tasks this week.
+  /// Overdue tasks from earlier weeks are shown separately, not in denominator.
+  int? get completionPercentage {
+    final total = completedDatedThisWeek + pendingDatedThisWeek;
+    return total == 0 ? null : (completedDatedThisWeek * 100 ~/ total);
+  }
+
   static WeeklyReviewSummary fromItems(Iterable<AgendaItem> items, DateTime anyDay) {
     final start = mondayOf(anyDay);
     final end = DateTime(start.year, start.month, start.day + 7);
@@ -33,6 +40,9 @@ const _wrCopy = <String,List<String>>{
  'saved':['Una settimana da custodire','A week to cherish','Una semana para recordar','Une semaine à garder','Uma semana para guardar'],
  'done':['Segnate come fatte','Marked done','Marcadas hechas','Marquées faites','Marcadas feitas'],
  'pending':['Da riprendere','To revisit','Pendientes','À reprendre','Por retomar'],
+ 'overdue':['In ritardo','Overdue','Atrasadas','En retard','Atrasadas'],
+ 'completion':['Completamento','Completion','Finalización','Achèvement','Conclusão'],
+
  'open':['Apri la Weekly Review','Open Weekly Review','Abrir revisión semanal','Ouvrir le bilan','Abrir revisão semanal'],
  'reopen':['Rileggi o modifica','Read or edit','Leer o editar','Relire ou modifier','Reler ou editar'],
  'archive':['Le tue settimane','Your weeks','Tus semanas','Tes semaines','As tuas semanas'],
@@ -322,14 +332,27 @@ class _WeeklyReviewScreenState extends State<WeeklyReviewScreen>{
            crossAxisAlignment:CrossAxisAlignment.start,children:[
              Text(wrText(c,'summary'),style:Theme.of(c).textTheme.bodySmall),
              const SizedBox(height:12),
+             // CAP-0101: three real counters from the existing canonical
+             // dated tasks. No new analytics storage or mood inference.
              Row(children:[
-               Expanded(child:_WrMetric(value:hidden?'—':counts.completedDatedThisWeek.toString(),
+               Expanded(child:_WrMetric(
+                 value:hidden?'—':counts.completedDatedThisWeek.toString(),
                  label:wrText(c,'done'))),
-               const SizedBox(width:8),
-               Expanded(child:_WrMetric(value:hidden?'—':
-                 (counts.pendingDatedThisWeek+counts.overdueFromBefore).toString(),
+               const SizedBox(width:6),
+               Expanded(child:_WrMetric(
+                 value:hidden?'—':counts.pendingDatedThisWeek.toString(),
                  label:wrText(c,'pending'))),
+               const SizedBox(width:6),
+               Expanded(child:_WrMetric(
+                 value:hidden?'—':counts.overdueFromBefore.toString(),
+                 label:wrText(c,'overdue'))),
              ]),
+             const SizedBox(height:8),
+             Text(
+               hidden ? wrText(c,'privacy') :
+                   '${wrText(c,'completion')}: ${counts.completionPercentage?.toString() ?? '—'}%',
+               style: Theme.of(c).textTheme.bodySmall,
+             ),
              if(!hidden)...[
                const SizedBox(height:10),
                for(final task in widget.store.items.where((e)=>
