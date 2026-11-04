@@ -142,16 +142,49 @@ class AgendaApp extends StatelessWidget {
           themeMode: mode,
           theme: _theme(Brightness.light),
           darkTheme: _theme(Brightness.dark),
-          builder: (context, child) => FocusTraversalGroup(
-            policy: ReadingOrderTraversalPolicy(),
-            child: _AuthRecoveryGate(
-              store: store,
-              child: _PrivacyGate(
+          builder: (context, child) {
+            final protectedApp = FocusTraversalGroup(
+              policy: ReadingOrderTraversalPolicy(),
+              child: _AuthRecoveryGate(
                 store: store,
-                child: child ?? const SizedBox.shrink(),
+                child: _PrivacyGate(
+                  store: store,
+                  child: child ?? const SizedBox.shrink(),
+                ),
               ),
-            ),
-          ),
+            );
+            if (!annaGoogleCalendarQaBuild) return protectedApp;
+            return Stack(
+              children: [
+                protectedApp,
+                Positioned(
+                  right: 8,
+                  top: MediaQuery.paddingOf(context).top + 64,
+                  child: Material(
+                    elevation: 5,
+                    borderRadius: BorderRadius.circular(20),
+                    child: FilledButton.tonalIcon(
+                      key: const ValueKey('anna-gcal-qa-launcher'),
+                      icon: const Icon(Icons.event_available_outlined),
+                      label: const Text('Calendar QA'),
+                      onPressed: () {
+                        appNavigatorKey.currentState?.push(
+                          MaterialPageRoute<void>(
+                            builder: (_) => AnnaGcalQaScreen(
+                              signedIn: () =>
+                                  CloudSyncService.instance.signedIn,
+                              signInWithGoogle: () =>
+                                  CloudSyncService.instance.signInWithGoogle(),
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                ),
+              ],
+            );
+          },
           home: AgendaRoot(
             store: store,
             bypassIdentityForTesting: bypassIdentityForTesting,
