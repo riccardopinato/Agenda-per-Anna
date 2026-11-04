@@ -48,6 +48,7 @@ test('encrypted inventory query is restricted to authenticated account hash',asy
  await assert.rejects(f.port.listLinks('plain-account'),GcalStageDbError);
 });
 
+test('link lifecycle uses owner-scoped read, CAS replacement and atomic unlink',async()=>{
   let f=fixture();
   assert.equal(await f.port.getLink(hash,'b'.repeat(64)),null);
   assert.match(f.calls[0].query,/select envelope from gcal_stage\.oauth_links/);
