@@ -133,6 +133,7 @@ test('connections listing disappears after disconnect, without cached tokens',as
     {connections:[]});
 });
 
+test('disconnect is idempotent and does not revoke a missing grant twice',async()=>{
   const f=setup(false,async()=>({status:200}));await f.seed();
   const args={verifiedAccountId:USER,googleSubject:SUB,explicitConfirmation:true};
   assert.deepEqual(await f.subject.disconnect(args),
