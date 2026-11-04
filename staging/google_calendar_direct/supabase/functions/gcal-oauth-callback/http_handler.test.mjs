@@ -126,3 +126,33 @@ test('CORS only permits declared web origin with no wildcard and no credentials'
  }));
  assert.equal(denied.status,403);
 });
+
+
+test('authenticated disconnect requires explicit consent and never exposes provider tokens',async()=>{
+  const calls=[];
+  const handler=createGoogleCalendarStagingHandler({
+    enabled:true,broker:{},
+    allowedWebOrigins:[validOrigin],
+    verifyAppIdentity:async header=>{
+      if(header!==fakeToken)throw Error('invalid');
+      return {accountId:userId};
+    },
+    tokenLifecycle:{async disconnect(args){
+      calls.push(args);return {disconnected:true,providerRevoked:false};
+    }},
+  });
+  let response=await handler(post('/disconnect',{googleSubject:'subject'}));
+  assert.equal(response.status,400);
+  assert.equal(calls.length,0);
+  response=await handler(post('/disconnect',{googleSubject:'subject',
+    explicitConfirmation:true},{auth:'Bearer BAD'}));
+  assert.equal(response.status,401);
+  assert.equal(calls.length,0);
+  response=await handler(post('/disconnect',{googleSubject:'subject',
+    explicitConfirmation:true}));
+  assert.equal(response.status,200);
+  assert.deepEqual(await response.json(),{disconnected:true,providerRevoked:false});
+  assert.equal(response.headers.get('cache-control'),'no-store, max-age=0');
+  assert.deepEqual(calls,[{verifiedAccountId:userId,googleSubject:'subject',
+    explicitConfirmation:true}]);
+});
