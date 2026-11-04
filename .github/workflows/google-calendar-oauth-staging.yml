@@ -62,6 +62,13 @@ jobs:
       - name: Mock-test authenticated web and browser OAuth HTTP endpoints
         run: node --test staging/google_calendar_direct/supabase/functions/gcal-oauth-callback/http_handler.test.mjs
 
+      - name: Syntax-check owner-only Google event preview
+        run: node --check staging/google_calendar_direct/supabase/functions/gcal-oauth-callback/events_read_probe.mjs
+      - name: Mock-test read-only event ranges, ownership and HTTP auth
+        run: |
+          node --test staging/google_calendar_direct/supabase/functions/gcal-oauth-callback/events_read_probe.test.mjs
+          node --test staging/google_calendar_direct/supabase/functions/gcal-oauth-callback/events_read_http.test.mjs
+
       - name: Check server-only Google token refresh and revocation syntax
         run: node --check staging/google_calendar_direct/supabase/functions/gcal-oauth-callback/token_lifecycle.mjs
       - name: Mock-test account-scoped refresh and revocation lifecycle
