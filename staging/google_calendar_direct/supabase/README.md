@@ -143,6 +143,6 @@ Official references:
 
 - New `request_budget.mjs` and `request_budget.test.mjs`: atomic PostgreSQL per-account/per-action minute quotas, account ID hashed, no caller clock, explicit 429 when exhausted, fail-closed 503 on SQL outage.
 - `http_handler.mjs` requires a durable request budget before an enabled router can be constructed. `index_ready.mjs` wires it to the **staging-only** SQL connection. Existing deployed `index.ts` remains unchanged and locked.
-- Migration `migrations/gcal_staging_rate_budget_v1.sql` is **SOURCE ONLY / NOT APPLIED**. It creates private `gcal_stage.oauth_request_budget` with RLS and no anon/authenticated grants. Apply and verify in isolated staging only, then review security before considering a live backend.
+- Migration `migrations/gcal_staging_rate_budget_v1.sql` **APPLIED TO STAGING on 04/11/2026** (Supabase history version `20261104002607`). Verified private `gcal_stage.oauth_request_budget`, RLS enabled, zero rows, zero anon/authenticated schema usage and table SELECT rights. Backend still remains dormant; request budget was not exercised through live HTTP.
 - This mitigates **authenticated app endpoints only**. Public Google browser callback and unauthenticated ingress require an independent trusted-edge IP/provider rate-limit design; never claim this migration mitigates those flood paths.
 - Neither successful CI nor the user's confirmation of 4/4 secret entries proves a live Google consent/callback, token refresh, provider revocation, Cloud redirect, Android connection or privacy/B3 acceptance.
