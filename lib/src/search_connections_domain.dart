@@ -704,6 +704,7 @@ extension SearchConnectionsAgendaStore on AgendaStore {
     Set<PersonalSearchKind>? kinds,
     bool includeArchived = false,
     String languageCode = 'it',
+    int? maxScannedRecords,
   }) {
     final strings = AnnaStrings(languageCode);
     final locale = AnnaStrings.resolveLocale(Locale(languageCode)).languageCode;
@@ -712,10 +713,25 @@ extension SearchConnectionsAgendaStore on AgendaStore {
         : kinds;
     if (query.trim().isEmpty) return const [];
 
+    // Optional bounded retrieval, used ONLY by the fuzzy candidate
+    // shortlist. Normal exact search remains unchanged by default.
+    // The cap applies before constructing hits and before sorting them.
+    if (maxScannedRecords != null &&
+        (maxScannedRecords < 1 || maxScannedRecords > 5000)) {
+      return const [];
+    }
     final hits = <PersonalSearchHit>[];
+    var scannedRecords = 0;
+    bool scanNext() {
+      if (maxScannedRecords == null) return true;
+      if (scannedRecords >= maxScannedRecords) return false;
+      scannedRecords++;
+      return true;
+    }
 
     if (enabled.contains(PersonalSearchKind.agenda)) {
       for (final item in items) {
+        if (!scanNext()) break;
         if (!_matchesPersonalSearch(query, [
           item.title,
           item.note,
@@ -742,6 +758,7 @@ extension SearchConnectionsAgendaStore on AgendaStore {
 
     if (enabled.contains(PersonalSearchKind.diary)) {
       for (final entry in journals.entries) {
+        if (!scanNext()) break;
         final date = DateTime.tryParse(entry.key);
         if (date == null) continue;
         final journal = entry.value;
@@ -769,6 +786,7 @@ extension SearchConnectionsAgendaStore on AgendaStore {
         }
 
         for (final block in journal.blocks) {
+        if (!scanNext()) break;
           if (!includeArchived && block.archived) continue;
           final linkedPeople = peopleForIds(block.personIds);
           final sketchText = block.pages
@@ -827,6 +845,7 @@ extension SearchConnectionsAgendaStore on AgendaStore {
 
     if (enabled.contains(PersonalSearchKind.person)) {
       for (final person in people) {
+        if (!scanNext()) break;
         final birthday = birthdayForPerson(person);
         if (!_matchesPersonalSearch(query, [
           person.name,
@@ -858,7 +877,10 @@ extension SearchConnectionsAgendaStore on AgendaStore {
       }
     }
 
-    if (enabled.contains(PersonalSearchKind.place)) {
+    // The place projection currently eagerly materializes memoryReferences;
+    // keep it outside the bounded typo fallback until it has a lazy port.
+    if (maxScannedRecords == null &&
+        enabled.contains(PersonalSearchKind.place)) {
       final latestByPlace = <String, DiaryBlockReference>{};
       final labels = <String, String>{};
       for (final reference
@@ -898,6 +920,7 @@ extension SearchConnectionsAgendaStore on AgendaStore {
     if (enabled.contains(PersonalSearchKind.birthday)) {
       final now = DateTime.now();
       for (final birthday in birthdays) {
+        if (!scanNext()) break;
         if (!_matchesPersonalSearch(query, [
           birthday.name,
           birthday.note,
@@ -927,6 +950,7 @@ extension SearchConnectionsAgendaStore on AgendaStore {
 
     if (enabled.contains(PersonalSearchKind.inbox)) {
       for (final entry in inbox) {
+        if (!scanNext()) break;
         if (!includeArchived && entry.archived) continue;
         if (!_matchesPersonalSearch(query, [
           entry.text,
@@ -955,6 +979,7 @@ extension SearchConnectionsAgendaStore on AgendaStore {
 
     if (enabled.contains(PersonalSearchKind.month)) {
       for (final entry in months.entries) {
+        if (!scanNext()) break;
         final parts = entry.key.split('-');
         if (parts.length != 2) continue;
         final year = int.tryParse(parts[0]);
