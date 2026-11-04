@@ -1,5 +1,16 @@
 # Anna's Diary — Google Calendar STAGING — Checkpoint sospensione
 
+> **Aggiornamento operativo 04/11/2026 — Ripresa per configurazione e sviluppo staging.**
+> Il proprietario ha confermato in Chat l'inserimento nel pannello Supabase di tutti e
+> quattro i secrets previsti. I valori non sono stati comunicati in chat o GitHub;
+> la loro effettiva iniezione nel runtime non e' verificabile con i tool disponibili.
+> Sono autorizzati i lavori sul sorgente e i test mock dello staging; NON risultano
+> autorizzati il consenso Google reale, l'attivazione della callback, la registrazione
+> del redirect, un merge o un rilascio. Il blocco storico del 03/11 qui sotto
+> rimane documento del checkpoint iniziale, non piu' istruzione di ripetere i
+> quattro inserimenti. Il nuovo codice per il rate limiting e' SOURCE ONLY:
+> migrazione `gcal_staging_rate_budget_v1.sql` non applicata.
+
 **Decisione del proprietario: 03/11/2026.**
 **STATO DEL 03/11: sospeso; ripresa del 04/11 documentata separatamente.**
 
