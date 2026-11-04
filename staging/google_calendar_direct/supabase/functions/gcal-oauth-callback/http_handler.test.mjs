@@ -163,6 +163,7 @@ test('authenticated staging budget fails closed at the configured quota',async()
   const handler=createGoogleCalendarStagingHandler({
     enabled:true,broker:{start:async()=>{throw Error('SHOULD_NOT_START');}},
     requestBudget:{async consume(accountId,action){seen.push([accountId,action]);return false;}},
+    callbackBudget:{consume:async()=>true},
     verifyAppIdentity:async()=>({accountId:userId}),
     allowedWebOrigins:[validOrigin],
   });
@@ -175,6 +176,7 @@ test('budget database outage blocks OAuth operations rather than bypassing quota
   const handler=createGoogleCalendarStagingHandler({
     enabled:true,broker:{start:async()=>{throw Error('SHOULD_NOT_START');}},
     requestBudget:{async consume(){throw Error('SENSITIVE_DB_ERROR');}},
+    callbackBudget:{consume:async()=>true},
     verifyAppIdentity:async()=>({accountId:userId}),
     allowedWebOrigins:[validOrigin],
   });
