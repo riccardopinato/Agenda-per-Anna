@@ -45,6 +45,12 @@ String _annaMemoryFrequencyCopy(String code, String key) {
       'fr': 'Uniquement les souvenirs privés enregistrés',
       'pt': 'Apenas memórias privadas já guardadas',
     },
+    'hidden': {
+      'it': 'Dettagli nascosti per privacy', 'en': 'Details hidden for privacy',
+      'es': 'Detalles ocultos por privacidad',
+      'fr': 'Détails masqués pour la confidentialité',
+      'pt': 'Detalhes ocultos por privacidade',
+    },
   };
   return copies[key]?[code] ?? copies[key]?['en'] ?? key;
 }
@@ -86,7 +92,7 @@ Future<void> showAnnaMemoryFrequency(
                   children: [
                     Text(_annaMemoryFrequencyCopy(code, 'title'),
                       style: Theme.of(context).textTheme.titleLarge),
-                    Text(blocked ? strings.v100Privacy : 
+                    Text(blocked ? _annaMemoryFrequencyCopy(code, 'hidden') : 
                         _annaMemoryFrequencyCopy(code, 'private'),
                       style: Theme.of(context).textTheme.bodySmall),
                   ],
