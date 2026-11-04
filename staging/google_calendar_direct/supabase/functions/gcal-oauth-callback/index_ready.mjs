@@ -7,6 +7,7 @@ import {GcalStageVault} from './webcrypto_core.mjs';
 import {GcalTwoPhaseBroker} from './two_phase_core.mjs';
 import {GcalStageTokenLifecycle} from './token_lifecycle.mjs';
 import {GcalStageRequestBudget} from './request_budget.mjs';
+import {GcalStageCallbackBudget} from './callback_budget.mjs';
 import {GcalStagePostgresPorts} from './db_ports.mjs';
 import {GcalStageConfirmationPorts} from './confirmation_ports.mjs';
 import {createProductionIdentityVerifier} from './production_identity.mjs';
@@ -57,6 +58,7 @@ function readyRouter() {
     pendingStore:ports,completionStore:confirmations,linkStore:ports,
   });
   const requestBudget=new GcalStageRequestBudget(conn);
+  const callbackBudget=new GcalStageCallbackBudget(conn);
   const tokenLifecycle=new GcalStageTokenLifecycle({
     clientId,clientSecret,vault,linkStore:ports,
   });
@@ -64,7 +66,7 @@ function readyRouter() {
     productionPublishableKey:prodPublicKey,
   });
   return createGoogleCalendarStagingHandler({
-    enabled:true,broker,verifyAppIdentity,tokenLifecycle,requestBudget,
+    enabled:true,broker,verifyAppIdentity,tokenLifecycle,requestBudget,callbackBudget,
     allowedWebOrigins:['https://riccardopinato.github.io'],
   });
 }
