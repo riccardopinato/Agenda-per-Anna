@@ -132,9 +132,9 @@ class _GcalDiaryReadScreenState extends State<GcalDiaryReadScreen> {
     final date=event.start.toLocal();
     final localizations=MaterialLocalizations.of(context);
     final day=localizations.formatMediumDate(date);
-    if(event.allDay)return '${day} · Tutto il giorno';
+    if(event.allDay)return '$day · Tutto il giorno';
     final clock=TimeOfDay.fromDateTime(date).format(context);
-    return '${day} · ${clock}';
+    return '$day · $clock';
   }
 
   Widget _eventCard(GcalStageEvent event){
@@ -263,7 +263,7 @@ class _GcalDiaryReadScreenState extends State<GcalDiaryReadScreen> {
               if(restricted>0)Padding(
                 padding:const EdgeInsets.only(top:8),
                 child:Text(
-                  'Calendari non di proprietà: ${restricted}. '
+                  'Calendari non di proprietà: $restricted. '
                   'Gli attuali permessi Google consentono la lettura '
                   'degli eventi solo dai calendari di tua proprietà.',
                   style:Theme.of(context).textTheme.bodySmall,
