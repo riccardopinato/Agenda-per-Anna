@@ -146,3 +146,12 @@ Official references:
 - Migration `migrations/gcal_staging_rate_budget_v1.sql` **APPLIED TO STAGING on 04/11/2026** (Supabase history version `20261104002607`). Verified private `gcal_stage.oauth_request_budget`, RLS enabled, zero rows, zero anon/authenticated schema usage and table SELECT rights. Backend still remains dormant; request budget was not exercised through live HTTP.
 - This mitigates **authenticated app endpoints only**. Public Google browser callback and unauthenticated ingress require an independent trusted-edge IP/provider rate-limit design; never claim this migration mitigates those flood paths.
 - Neither successful CI nor the user's confirmation of 4/4 secret entries proves a live Google consent/callback, token refresh, provider revocation, Cloud redirect, Android connection or privacy/B3 acceptance.
+
+
+## 04/11/2026 — public OAuth callback budget and mock E2E
+
+- Added `callback_budget.mjs` with a **global 30-per-minute** atomic PostgreSQL quota shared by staging Edge isolates, without trusting spoofable IP/forwarded headers. Syntactic callback shape and URI length are checked before any database call; invalid requests return non-leaking HTML 400, over-quota 429, unavailable budget 503. No Google code is exchanged when the quota denies a request.
+- Migration `gcal_staging_callback_budget_v1` **APPLIED ONLY TO STAGING**, Supabase history version `20261104010325`: table `gcal_stage.oauth_callback_budget` present, empty, RLS ON, anon/authenticated have no schema usage/table SELECT rights. Read-only `EXPLAIN` for the atomic UPSERT PASS.
+- `index_ready.mjs` source-only bootstrap now requires both authenticated request budget and global callback budget; the deployed `index.ts` remains the unchanged 503 kill-switch.
+- Added `oauth_http_integration.test.mjs` to mock the complete two-phase HTTP start/callback/preview/confirm/disconnect path, wrong-account access, replay and local unlink/provider revocation. CI workflow now includes callback budget and this end-to-end mocked test. **On this SHA, CI results must be checked independently**; writing tests to a branch is not proof they passed.
+- Global PostgreSQL budget does **NOT** prevent abusive traffic from hitting Edge ingress or DB. Trusted upstream/WAF-level admission protection and Deno runtime/provider/device QA remain open. No redirect, real Google consent, credential verification, active deploy, PR merge or release was performed.
