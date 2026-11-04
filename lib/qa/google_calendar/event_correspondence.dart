@@ -49,9 +49,9 @@ List<GcalDiaryMatchSuggestion> googleDiarySuggestions(
   final candidates=<({GcalDiaryLocalContext entry,GcalDiaryMatchLevel level})>[];
   final seen=<String>{};
   for(final local in localEntries){
-    if(!seen.add(local.kind.name+':'+local.id) ||
+    if(!seen.add('${local.kind.name}:${local.id}') ||
        !_sameDay(eventDay,local.day)||
-       _normalizeTitle(local.title)!=normalized)continue;
+       _normalizeTitle(local.title)!=normalized){continue;}
     final at=local.startTime;
     final timeMatch=!google.allDay&&at!=null&&
       at.toLocal().difference(eventDay).abs()<=const Duration(minutes:15);
