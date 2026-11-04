@@ -1,6 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {GcalStagePostgresPorts,GcalStageDbError} from './db_ports.mjs';
+// The CI job for this test file also runs the new source-only lifecycle cases.
+import './token_lifecycle.test.mjs';
 function fixture() {
   const calls=[];
   const sql=(strings,...values)=>{calls.push({query:strings.join('?'),values});return Promise.resolve(
