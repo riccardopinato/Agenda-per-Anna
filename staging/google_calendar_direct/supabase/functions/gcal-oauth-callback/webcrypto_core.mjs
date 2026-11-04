@@ -117,7 +117,25 @@ export async function exchangeGoogleCode({clientId,clientSecret,redirectUri,code
   let response;
   try {response=await fetcher(TOKEN_ENDPOINT,{method:'POST',headers:{'content-type':'application/x-www-form-urlencoded'},
     body,signal:AbortSignal.timeout(8000),redirect:'error'});}catch{deny('GOOGLE_UNAVAILABLE');}
-  if(!response.ok)deny('GOOGLE_TOKEN_REJECTED');
+  if(!response.ok) {
+    // Inspect only the finite Google error identifier. Never log response
+    // details, credentials, codes or raw provider error descriptions.
+    const allowed={
+      invalid_client:'GOOGLE_TOKEN_INVALID_CLIENT',
+      invalid_grant:'GOOGLE_TOKEN_INVALID_GRANT',
+      invalid_request:'GOOGLE_TOKEN_INVALID_REQUEST',
+      unauthorized_client:'GOOGLE_TOKEN_UNAUTHORIZED_CLIENT'
+    };
+    let code;
+    try {
+      const length=Number(response.headers?.get?.('content-length')??0);
+      if(Number.isFinite(length)&&length>=0&&length<=2048) {
+        const body=await response.json();
+        if(typeof body?.error==='string')code=body.error;
+      }
+    } catch {}
+    deny(code&&Object.hasOwn(allowed,code)?allowed[code]:'GOOGLE_TOKEN_REJECTED');
+  }
   try{return await response.json();}catch{deny('BAD_TOKEN_RESPONSE');}
 }
 export class GcalStageBroker {
