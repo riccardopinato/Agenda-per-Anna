@@ -9,7 +9,7 @@
 > del redirect, un merge o un rilascio. Il blocco storico del 03/11 qui sotto
 > rimane documento del checkpoint iniziale, non piu' istruzione di ripetere i
 > quattro inserimenti. Il nuovo codice per il rate limiting e' SOURCE ONLY:
-> migrazione `gcal_staging_rate_budget_v1.sql` non applicata.
+> migrazione `gcal_staging_rate_budget_v1.sql` applicata SOLO allo staging il 04/11/2026 (zero righe, RLS attiva, nessun grant per ruoli client).
 
 **Decisione del proprietario: 03/11/2026.**
 **STATO DEL 03/11: sospeso; ripresa del 04/11 documentata separatamente.**
