@@ -15,6 +15,7 @@ class Harness {
   DateTime time = fixedTime;
   final calls = <String>[];
   String previewStatus = 'waiting';
+  bool hasExistingConnection = false;
   String authorizationUrl =
       'https://accounts.google.com/o/oauth2/v2/auth'
       '?client_id=mock.apps.googleusercontent.com'
@@ -60,6 +61,11 @@ class Harness {
             expect(body['handle'], handle);
             return const GcalStageResponse(
                 200, {'connected': true, 'googleSubject': googleSubject});
+          case '/connections':
+            expect(body, isEmpty);
+            return GcalStageResponse(200, {'connections': hasExistingConnection ? [
+              {'googleSubject': googleSubject, 'googleEmail': 'verified@example.invalid'}
+            ] : <Object>[]});
           case '/disconnect':
             expect(body['explicitConfirmation'], true);
             expect(body['googleSubject'], googleSubject);
@@ -157,6 +163,31 @@ void main() {
           (x) => x.kind, 'kind', GcalStageClientFault.expired)));
     expect(h.calls, ['/start']);
     expect(h.client.awaitingGoogleConsent, false);
+  });
+
+  test('restart recovers encrypted backend link identity, never token', () async {
+    final h = Harness()..hasExistingConnection = true;
+    expect(h.client.connectedThisSession, false);
+    final links = await h.client.recoverConnections();
+    expect(links.length, 1);
+    expect(links.single.googleSubject, googleSubject);
+    expect(links.single.verifiedEmail, 'verified@example.invalid');
+    expect(h.client.connectedThisSession, true);
+    expect(h.calls, ['/connections']);
+    final result = await h.client.disconnect(explicitConfirmation: true);
+    expect(result.locallyDisconnected, true);
+    expect(h.calls, ['/connections', '/disconnect']);
+  });
+
+  test('wrong app account cannot use recovered link', () async {
+    final h = Harness()..hasExistingConnection = true;
+    await h.client.recoverConnections();
+    h.currentUser = other;
+    await expectLater(h.client.disconnect(explicitConfirmation: true),
+        throwsA(isA<GcalStageClientException>().having(
+            (x) => x.kind, 'kind', GcalStageClientFault.accountChanged)));
+    expect(h.calls, ['/connections']);
+    expect(h.client.connectedThisSession, false);
   });
 
   test('controller state is memory-only and not reusable across restarts', () async {
