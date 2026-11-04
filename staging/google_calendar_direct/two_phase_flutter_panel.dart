@@ -14,6 +14,7 @@ class GcalStagingTestPanel extends StatefulWidget {
 class _GcalStagingTestPanelState extends State<GcalStagingTestPanel> {
   bool _busy = false;
   GcalStagePreview? _preview;
+  List<GcalStageConnection> _connections = const [];
   String _message = 'Collegamento Google Calendar di test non avviato.';
   String? _error;
 
@@ -30,6 +31,17 @@ class _GcalStagingTestPanelState extends State<GcalStagingTestPanel> {
       if (mounted) setState(() { _busy = false; });
     }
   }
+
+  Future<void> _recover() => _perform(() async {
+    final connections = await widget.client.recoverConnections();
+    if (!mounted) return;
+    setState(() {
+      _connections = connections;
+      _message = connections.isEmpty
+          ? 'Nessun account Google Calendar collegato in staging.'
+          : 'Collegamenti trovati. Seleziona un account per scollegarlo.';
+    });
+  });
 
   Future<void> _start() => _perform(() async {
     await widget.client.begin();
@@ -98,6 +110,7 @@ class _GcalStagingTestPanelState extends State<GcalStagingTestPanel> {
       if (!mounted) return;
       setState(() {
         _preview = null;
+        _connections = const [];
         _message = result.providerRevoked == true
             ? 'Scollegato e revoca Google confermata.'
             : 'Scollegato localmente. Revoca Google non verificata: '
@@ -127,6 +140,15 @@ class _GcalStagingTestPanelState extends State<GcalStagingTestPanel> {
               'Nessuna scrittura nel calendario.'),
           const SizedBox(height: 12),
           Text(_message),
+          if (_connections.isNotEmpty) ...[
+            const SizedBox(height: 10),
+            for (final connection in _connections)
+              TextButton(
+                onPressed: _busy ? null : () => setState(
+                    () => widget.client.selectConnection(connection.googleSubject)),
+                child: Text(connection.verifiedEmail ?? connection.googleSubject),
+              ),
+          ],
           if (_preview != null && !_preview!.waiting) ...[
             const SizedBox(height: 10),
             SelectableText('Google: ${_preview!.verifiedEmail ?? 'email non verificata'}'),
@@ -139,6 +161,11 @@ class _GcalStagingTestPanelState extends State<GcalStagingTestPanel> {
           ],
           const SizedBox(height: 12),
           Wrap(spacing: 8, runSpacing: 8, children: [
+            if (!widget.client.awaitingGoogleConsent)
+              OutlinedButton(
+                onPressed: _busy ? null : _recover,
+                child: const Text('Verifica collegamenti salvati'),
+              ),
             if (!widget.client.awaitingGoogleConsent &&
                 !widget.client.connectedThisSession)
               FilledButton(
