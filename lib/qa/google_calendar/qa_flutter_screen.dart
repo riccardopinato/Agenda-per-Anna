@@ -24,6 +24,8 @@ class AnnaGcalQaScreen extends StatefulWidget {
 class _AnnaGcalQaScreenState extends State<AnnaGcalQaScreen> {
   late final http.Client _http = http.Client();
   late final _client = createGcalStagingClient(httpClient: _http);
+  late final _serverProbe =
+      GcalStagingEdgeTransport.forStaging(_http).probeServer;
   bool _busySignIn = false;
   String? _signInMessage;
 
@@ -91,7 +93,7 @@ class _AnnaGcalQaScreenState extends State<AnnaGcalQaScreen> {
                 Text(_signInMessage!),
               ],
               const SizedBox(height: 16),
-              GcalStagingTestPanel(client: _client),
+              GcalStagingTestPanel(client: _client, serverProbe: _serverProbe),
               const SizedBox(height: 12),
               const Text(
                 'Se il backend restituisce STAGING_NOT_ACTIVATED o 503, '

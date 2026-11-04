@@ -1,7 +1,6 @@
-// STAGING ONLY — no import from production lib/ entrypoints.
-// The Google OAuth client secret, Google refresh/access tokens and code exchange
-// belong exclusively to the staging Edge Function. This client transports only
-// the existing short-lived Supabase app session JWT over pinned HTTPS.
+// STAGING ONLY — no production app entrypoint imports this file.
+// Google tokens/client secrets stay solely on the Supabase staging backend.
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
@@ -14,8 +13,8 @@ import 'two_phase_flutter_client.dart';
 const gcalStagingEdgeBase =
     'https://pdanpljacyozslrutsor.supabase.co/functions/v1/gcal-oauth-callback';
 
-/// The already configured production Supabase identity is authoritative.
-/// Never copy Supabase tokens to URLs, callback query parameters or logs.
+/// Uses the logged-in production Supabase account only for identity.
+/// Never sends JWTs in URLs, error messages or QA health checks.
 Future<GcalStageAppAuth?> gcalCurrentAppAuth() async {
   final client = Supabase.instance.client;
   final session = client.auth.currentSession;
@@ -27,8 +26,6 @@ Future<GcalStageAppAuth?> gcalCurrentAppAuth() async {
   return GcalStageAppAuth(user.id, session.accessToken);
 }
 
-/// Only the four authenticated app routes are permitted. Browser callback
-/// is handled by Google -> Supabase, not by Flutter.
 class GcalStagingEdgeTransport {
   final http.Client client;
   final Uri _base;
@@ -37,26 +34,69 @@ class GcalStagingEdgeTransport {
   factory GcalStagingEdgeTransport.forStaging(http.Client client) =>
       GcalStagingEdgeTransport(client, Uri.parse(gcalStagingEdgeBase));
 
-  Future<GcalStageResponse> post(
-      String route, String productionJwt, Map<String, Object?> json) async {
-    if (!const {'/start', '/preview', '/confirm', '/disconnect', '/connections', '/calendars'}
-        .contains(route)) {
-      throw const GcalStageClientException(
-          GcalStageClientFault.malformedBackendResponse);
-    }
+  void _requireBase() {
     if (_base.scheme != 'https' ||
         _base.host != 'pdanpljacyozslrutsor.supabase.co' ||
-        _base.path != '/functions/v1/gcal-oauth-callback' ||
-        productionJwt.trim().isEmpty) {
+        _base.path != '/functions/v1/gcal-oauth-callback') {
       throw const GcalStageClientException(
           GcalStageClientFault.malformedBackendResponse);
     }
-    final uri = Uri(
+  }
+
+  Uri _uri(String suffix) => Uri(
         scheme: 'https',
         host: _base.host,
-        path: _base.path + route);
-    final request = http.Request('POST', uri);
-    request.followRedirects = false; // Never forward an app JWT to a redirect.
+        path: _base.path + suffix,
+      );
+
+  Future<GcalStageResponse> _sendJson(http.Request request) async {
+    request.followRedirects = false;
+    try {
+      final response =
+          await client.send(request).timeout(const Duration(seconds: 10));
+      final bytes = <int>[];
+      await for (final part
+          in response.stream.timeout(const Duration(seconds: 10))) {
+        if (bytes.length + part.length > 8192) {
+          throw const FormatException('Oversized response');
+        }
+        bytes.addAll(part);
+      }
+      if (response.statusCode >= 300 && response.statusCode < 400) {
+        throw const FormatException('Unexpected redirect');
+      }
+      final decoded = jsonDecode(utf8.decode(bytes));
+      if (decoded is! Map) throw const FormatException('Not a JSON map');
+      return GcalStageResponse(
+          response.statusCode, Map<String, Object?>.from(decoded));
+    } on TimeoutException {
+      throw const GcalStageClientException(GcalStageClientFault.requestTimedOut);
+    } on http.ClientException {
+      throw const GcalStageClientException(
+          GcalStageClientFault.networkUnavailable);
+    } on FormatException {
+      throw const GcalStageClientException(
+          GcalStageClientFault.invalidServerResponse);
+    } on GcalStageClientException {
+      rethrow;
+    } catch (_) {
+      // Do not print exception bodies; they may contain URLs/headers.
+      throw const GcalStageClientException(
+          GcalStageClientFault.requestRejected);
+    }
+  }
+
+  Future<GcalStageResponse> post(
+      String route, String productionJwt, Map<String, Object?> json) async {
+    _requireBase();
+    if (!const {
+      '/start', '/preview', '/confirm', '/disconnect',
+      '/connections', '/calendars'
+    }.contains(route) || productionJwt.trim().isEmpty) {
+      throw const GcalStageClientException(
+          GcalStageClientFault.malformedBackendResponse);
+    }
+    final request = http.Request('POST', _uri(route));
     request.headers.addAll({
       'authorization': 'Bearer $productionJwt',
       'content-type': 'application/json; charset=utf-8',
@@ -64,32 +104,39 @@ class GcalStagingEdgeTransport {
       'cache-control': 'no-store',
     });
     request.body = jsonEncode(json);
+    return _sendJson(request);
+  }
 
-    http.StreamedResponse response;
-    try {
-      response = await client.send(request).timeout(const Duration(seconds: 10));
-      final bytes = <int>[];
-      await for (final part in response.stream.timeout(const Duration(seconds: 10))) {
-        if (bytes.length + part.length > 8192) {
-          throw const FormatException('response too large');
-        }
-        bytes.addAll(part);
-      }
-      if (response.statusCode >= 300 && response.statusCode < 400) {
-        throw const FormatException('unexpected redirect');
-      }
-      final decoded = jsonDecode(utf8.decode(bytes));
-      if (decoded is! Map) throw const FormatException('not a JSON object');
-      return GcalStageResponse(
-          response.statusCode, Map<String, Object?>.from(decoded));
-    } catch (_) {
-      // No credentials, URLs or response bodies escape in an exception.
-      throw const GcalStageClientException(GcalStageClientFault.requestRejected);
+  /// Public connectivity-only probe. Never sends JWTs or user identifiers.
+  Future<GcalStageServerHealth> probeServer() async {
+    _requireBase();
+    final request = http.Request('GET', _uri('/health'));
+    request.headers.addAll({
+      'accept': 'application/json',
+      'cache-control': 'no-store',
+    });
+    final response = await _sendJson(request);
+    if (response.status != 200) {
+      throw const GcalStageClientException(
+          GcalStageClientFault.serverUnavailable);
     }
+    final json = response.json;
+    if (json['service'] != 'anna-calendar-staging' ||
+        !const {'locked', 'configured'}.contains(json['status']) ||
+        json['google_oauth_active'] is! bool ||
+        json['google_calendar_writes_active'] != false ||
+        (json['status'] == 'configured') != json['google_oauth_active']) {
+      throw const GcalStageClientException(
+          GcalStageClientFault.invalidServerResponse);
+    }
+    return GcalStageServerHealth(
+      json['status'] as String,
+      json['google_oauth_active'] as bool,
+    );
   }
 }
 
-/// Opens Google in the external system browser (not an embedded WebView).
+/// Google consent opens in the system browser, never inside a WebView.
 Future<void> gcalOpenSystemBrowser(Uri url) async {
   if (url.scheme != 'https' ||
       url.host != 'accounts.google.com' ||
@@ -107,7 +154,6 @@ Future<void> gcalOpenSystemBrowser(Uri url) async {
   }
 }
 
-/// No provider tokens or callback handles are written to disk.
 GcalTwoPhaseFlutterStagingClient createGcalStagingClient(
         {required http.Client httpClient}) =>
     GcalTwoPhaseFlutterStagingClient(

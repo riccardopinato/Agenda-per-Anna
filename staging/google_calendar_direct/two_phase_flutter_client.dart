@@ -13,6 +13,14 @@ class GcalStageAppAuth {
   const GcalStageAppAuth(this.accountId, this.accessToken);
 }
 
+typedef GcalStageProbeServer = Future<GcalStageServerHealth> Function();
+
+class GcalStageServerHealth {
+  final String status;
+  final bool googleOauthActive;
+  const GcalStageServerHealth(this.status, this.googleOauthActive);
+}
+
 class GcalStageResponse {
   final int status;
   final Map<String, Object?> json;
@@ -28,6 +36,11 @@ enum GcalStageClientFault {
   malformedBackendResponse,
   failedToOpenBrowser,
   requestRejected,
+  networkUnavailable,
+  requestTimedOut,
+  invalidServerResponse,
+  serverUnavailable,
+  rateLimited,
   stagingLocked,
   explicitConfirmationRequired,
   previewRequired,
@@ -154,6 +167,13 @@ class GcalTwoPhaseFlutterStagingClient {
             response.json['error'] == 'STAGING_NOT_ACTIVATED') {
           throw const GcalStageClientException(
               GcalStageClientFault.stagingLocked);
+        }
+        if (response.status == 429) {
+          throw const GcalStageClientException(GcalStageClientFault.rateLimited);
+        }
+        if (response.status >= 500) {
+          throw const GcalStageClientException(
+              GcalStageClientFault.serverUnavailable);
         }
         if (response.status == 401) {
           throw const GcalStageClientException(

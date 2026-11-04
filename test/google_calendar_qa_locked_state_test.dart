@@ -53,6 +53,27 @@ void main() {
             (e) => e.kind, 'kind', GcalStageClientFault.authenticationRequired)));
   });
 
+  testWidgets('QA server connectivity button shows provider activation safely',
+      (tester) async {
+    final client = GcalTwoPhaseFlutterStagingClient(
+      currentAuth: () async => null,
+      post: (route, jwt, body) async => fail('No OAuth call expected'),
+      openBrowser: (_) async => fail('No browser'),
+    );
+    await tester.pumpWidget(MaterialApp(home: Scaffold(
+      body: GcalStagingTestPanel(
+        client: client,
+        serverProbe: () async => const GcalStageServerHealth('configured', true),
+      ),
+    )));
+    await tester.tap(find.text('Verifica connessione server'));
+    await tester.pumpAndSettle();
+    expect(find.textContaining('Server di test raggiungibile'),
+        findsOneWidget);
+    expect(find.textContaining('scrittura eventi disattivata'),
+        findsOneWidget);
+  });
+
   testWidgets('QA card explains staging safety block without red generic error',
       (tester) async {
     final client = GcalTwoPhaseFlutterStagingClient(

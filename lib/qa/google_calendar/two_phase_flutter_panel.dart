@@ -9,6 +9,19 @@ String gcalQaErrorMessage(GcalStageClientFault fault) => switch (fault) {
     'Il blocco di sicurezza è attivo: non è un problema del tuo account.',
   GcalStageClientFault.authenticationRequired =>
     'La sessione Anna’s Diary non è valida o è scaduta. Accedi nuovamente.',
+  GcalStageClientFault.networkUnavailable =>
+    'Connessione dal telefono al server di test non riuscita. '
+    'Prova Wi-Fi o dati mobili e premi Verifica connessione server.',
+  GcalStageClientFault.requestTimedOut =>
+    'Il server non ha risposto entro 10 secondi. '
+    'Controlla la connessione e riprova.',
+  GcalStageClientFault.invalidServerResponse =>
+    'Il server ha restituito una risposta non valida. '
+    'Verifica la connessione al server di test.',
+  GcalStageClientFault.serverUnavailable =>
+    'Il server di test è temporaneamente non disponibile.',
+  GcalStageClientFault.rateLimited =>
+    'Troppe richieste consecutive. Riprova più tardi.',
   GcalStageClientFault.requestRejected =>
     'Richiesta non completata. Verifica la connessione oppure la '
     'configurazione del backend di test.',
@@ -25,7 +38,10 @@ String gcalQaErrorMessage(GcalStageClientFault fault) => switch (fault) {
 
 class GcalStagingTestPanel extends StatefulWidget {
   final GcalTwoPhaseFlutterStagingClient client;
-  const GcalStagingTestPanel({super.key, required this.client});
+  final GcalStageProbeServer? serverProbe;
+  const GcalStagingTestPanel({
+    super.key, required this.client, this.serverProbe,
+  });
 
   @override
   State<GcalStagingTestPanel> createState() => _GcalStagingTestPanelState();
@@ -62,6 +78,19 @@ class _GcalStagingTestPanelState extends State<GcalStagingTestPanel> {
       if (mounted) setState(() { _busy = false; });
     }
   }
+
+  Future<void> _probeServer() => _perform(() async {
+    final probe = widget.serverProbe;
+    if (probe == null) return;
+    final health = await probe();
+    if (!mounted) return;
+    setState(() {
+      _message = health.googleOauthActive
+          ? 'Server di test raggiungibile. OAuth attivo; '
+            'scrittura eventi disattivata.'
+          : 'Server di test raggiungibile. OAuth ancora bloccato.';
+    });
+  });
 
   Future<void> _recover() => _perform(() async {
     final connections = await widget.client.recoverConnections();
@@ -221,6 +250,12 @@ class _GcalStagingTestPanelState extends State<GcalStagingTestPanel> {
           ],
           const SizedBox(height: 12),
           Wrap(spacing: 8, runSpacing: 8, children: [
+            if (widget.serverProbe != null)
+              OutlinedButton.icon(
+                onPressed: _busy ? null : _probeServer,
+                icon: const Icon(Icons.wifi_find),
+                label: const Text('Verifica connessione server'),
+              ),
             if (!widget.client.awaitingGoogleConsent)
               OutlinedButton(
                 onPressed: _busy ? null : _recover,

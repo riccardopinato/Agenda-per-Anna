@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter_test/flutter_test.dart';
@@ -35,6 +36,59 @@ void main() {
     expect(result.json['handle'], 'opaque');
     expect(calls, 1);
     client.close();
+  });
+
+  test('public health probe uses GET and NEVER sends an app bearer', () async {
+    final client = MockClient((request) async {
+      expect(request.method, 'GET');
+      expect(request.url.path,
+          '/functions/v1/gcal-oauth-callback/health');
+      expect(request.headers.containsKey('authorization'), false);
+      expect(request.headers.containsKey('apikey'), false);
+      expect(request.url.query, isEmpty);
+      return http.Response(jsonEncode({
+        'service': 'anna-calendar-staging',
+        'status': 'configured',
+        'google_oauth_active': true,
+        'google_calendar_writes_active': false,
+      }), 200);
+    });
+    final result =
+        await GcalStagingEdgeTransport.forStaging(client).probeServer();
+    expect(result.googleOauthActive, true);
+    expect(result.status, 'configured');
+    client.close();
+  });
+
+  test('health probe fails closed if Google calendar writes become active',
+      () async {
+    final port = GcalStagingEdgeTransport.forStaging(MockClient((_) async =>
+        http.Response(jsonEncode({
+          'service': 'anna-calendar-staging',
+          'status': 'configured',
+          'google_oauth_active': true,
+          'google_calendar_writes_active': true,
+        }), 200)));
+    await expectLater(port.probeServer(), throwsA(
+        isA<GcalStageClientException>().having(
+          (e) => e.kind, 'kind',
+          GcalStageClientFault.invalidServerResponse)));
+  });
+
+  test('socket errors and request timeouts have distinct safe categories',
+      () async {
+    final unreachable = GcalStagingEdgeTransport.forStaging(
+        MockClient((_) async => throw http.ClientException('PRIVATE_URL')));
+    await expectLater(unreachable.post('/start', 'JWT', const {}),
+        throwsA(isA<GcalStageClientException>().having(
+            (e) => e.kind, 'kind',
+            GcalStageClientFault.networkUnavailable)));
+    final slow = GcalStagingEdgeTransport.forStaging(
+        MockClient((_) async => throw TimeoutException('PRIVATE_JWT')));
+    await expectLater(slow.probeServer(),
+        throwsA(isA<GcalStageClientException>().having(
+            (e) => e.kind, 'kind',
+            GcalStageClientFault.requestTimedOut)));
   });
 
   test('invalid route is rejected without sending any network request',
