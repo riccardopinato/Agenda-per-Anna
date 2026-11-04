@@ -98,7 +98,7 @@
         "paths": [
           "lib/src/screens/more_screen.dart",
           "lib/src/screens/settings_hub.dart",
-          "lib/src/screens/privacy_center.dart"
+          "lib/src/screens/backup_settings.dart"
         ],
         "labs": [
           "configuration"
