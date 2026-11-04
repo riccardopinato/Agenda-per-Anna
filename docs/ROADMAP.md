@@ -1,11 +1,46 @@
 # Anna's Diary — Roadmap
 
+## P1/P2 implementation and RC +124 — 5 November 2026
+
+- **P1 #226:** explicit recorded time for visible tasks (no invented estimates
+  or double subtraction), account-scoped optional workload advice, bounded
+  reversible seven-day pause, partial-calendar/unknown-time disclosure.
+  [PR #240](https://github.com/riccardopinato/Agenda-per-Anna/pull/240)
+  MERGED as `main@ae6aa5adc4b9a9005c530ce759da98fb18d7e23f`;
+  exact PR-head Development/Web/AppLab PASS and review comments resolved.
+- **P2 #224:** optional in-page contextual private diary recall (max two/day
+  across filter/never-suggest changes; deterministic date/person/place provenance,
+  durable account-scoped SHA-256 preference digests, no diary text in preview,
+  seven-day pause, explicit reset). [PR #241](https://github.com/riccardopinato/Agenda-per-Anna/pull/241)
+  MERGED as `main@3e88fa27441cdf1d4753072cbb98608bb1ea2ffc`.
+  Exact combined-head Development/Web/AppLab PASS before merge.
+- **Web recovery:** cancelled Pages deployment backend lock released after owner
+  unpublished Pages and the same artifact was redeployed successfully:
+  [workflow #41927266625, attempt 3](https://github.com/riccardopinato/Agenda-per-Anna/actions/runs/41927266625),
+  source `4c90545fc1b56a3efbcc8f78ea03c2274b66daca`. Issue #239 CLOSED;
+  later main Web workflows are independent evidence gates.
+- **Release lane:** `1.0.0-rc.6+124` is the proposed monotonic signed ARM64
+  version for the integrated P1/P2 changes. `SIGNED` is **PENDING** until the
+  trusted `auto-signed-arm64` workflow actually runs its `signed-apk` job and
+  the produced artifact/manifest are checked. The older +123 APK is separately
+  built and has an owner-accepted general P0 gate; that acceptance does **not**
+  certify newly added P1/P2 interaction tests or iOS/Play.
+  [Release QA matrix](RC6_124_P1_P2_QA.md).
+- **Open, not simulated:** enforceable `main` ruleset
+  [#236](https://github.com/riccardopinato/Agenda-per-Anna/issues/236),
+  70 real visual baseline/candidate screenshot pairs
+  [#237](https://github.com/riccardopinato/Agenda-per-Anna/issues/237),
+  live Supabase Auth/pg_net admin decisions
+  [#182](https://github.com/riccardopinato/Agenda-per-Anna/issues/182).
+  Privacy V2 #215 and Google Calendar Direct #199 remain separate blocked drafts.
+
+
 ## Audit remediation P1/P2 — 4 November 2026
 
 - **Android +123:** signed workflow [#41871951662](https://github.com/riccardopinato/Agenda-per-Anna/actions/runs/41871951662) SUCCESS on `main@20b0d2c7`; owner explicitly accepted the **P0 physical gate generally** on 4 November: `USER_ATTESTED_GENERAL_PASS`. Individual R0–R13 checks remain unverified where no device evidence exists. No Play/iOS certification follows from this acceptance.
-- **Web deployment:** latest +123 run [#41871248268](https://github.com/riccardopinato/Agenda-per-Anna/actions/runs/41871248268) failed after Pages timeout, then a failed-job rerun looking for an artifact from the wrong attempt. Fix uses the `build-web` job output for the artifact actually uploaded; pending new exact-main deployment confirmation.
+- **Web deployment:** latest +123 run [#41871248268](https://github.com/riccardopinato/Agenda-per-Anna/actions/runs/41871248268) failed after Pages timeout, then a failed-job rerun looking for an artifact from the wrong attempt. Fix uses the `build-web` job output for the actual artifact; the later unpublish/retry recovery completed successfully on workflow #41927266625 (attempt 3).
 - **P1/P2 correction lane:** current navigation Android smoke, AppLab catalog stale path, governance/documentation and bounded regression were audited. No activation/merge of Privacy V2 #215 or Google Direct #199. Branch protection, real visual screenshot baselines, store billing and live Supabase Auth/pg_net decisions remain independently gated; no CI-generated evidence is substituted for operator controls.
-- **P1 #226:** partial read-only capacity buffer **MERGED** via [PR #233](https://github.com/riccardopinato/Agenda-per-Anna/pull/233), main commit `ccfe469e7e9149c27d478aef7a9aa1d1f8c97596`, exact-head Development/Web/AppLab SUCCESS. Explicit-duration capture and other opt-in functionality remain outside this partial implementation.
+- **P1 #226:** partial read-only capacity buffer **MERGED** via [PR #233](https://github.com/riccardopinato/Agenda-per-Anna/pull/233), main commit `ccfe469e7e9149c27d478aef7a9aa1d1f8c97596`, exact-head Development/Web/AppLab SUCCESS. The later PR #240 adds observed-time provenance and opt-in control; no inferred task estimates or silent scheduling.
 - See [audit remediation ledger](AUDIT_P1_P2_REMEDIATION_20261104.md) for completed changes, pending evidence and operator-only actions.
 
 

@@ -1,5 +1,23 @@
 # Anna's Diary — remediation P1/P2 audit (4 November 2026)
 
+## Subsequent resolution — 5 November 2026
+
+- GitHub Pages recovered: unpublish by owner and successful attempt 3 of
+  [workflow #41927266625](https://github.com/riccardopinato/Agenda-per-Anna/actions/runs/41927266625).
+  The initial PENDING Web status in this audit is historical.
+- P1 #226 source implementation completed across #233 and
+  [#240](https://github.com/riccardopinato/Agenda-per-Anna/pull/240)
+  (merged `ae6aa5adc4b9a9005c530ce759da98fb18d7e23f`).
+- P2 #224 controlled contextual memory recall source merged in
+  [#241](https://github.com/riccardopinato/Agenda-per-Anna/pull/241)
+  (merged `3e88fa27441cdf1d4753072cbb98608bb1ea2ffc`).
+- Proposed monotonic build `1.0.0-rc.6+124`: do **not** claim a new signed
+  artifact until successful exact-source signing evidence exists.
+- Administrator-only branch ruleset #236, real visual evidence #237 and live
+  Supabase security advisory #182 remain OPEN; Play, iOS and detailed P1/P2
+  physical QA are not implied by the +123 general P0 acceptance.
+
+
 Scope: repository-level corrections after the cross-functional audit. Only Chat; no Google API activation, no Privacy V2 merge, no Play release.
 
 ## P0: user acceptance (not fabricated device evidence)
