@@ -66,6 +66,15 @@ class Harness {
             return GcalStageResponse(200, {'connections': hasExistingConnection ? [
               {'googleSubject': googleSubject, 'googleEmail': 'verified@example.invalid'}
             ] : <Object>[]});
+          case '/calendars':
+            expect(body['googleSubject'], googleSubject);
+            return const GcalStageResponse(200, {
+              'readonly': true,
+              'calendars': [
+                {'id':'personal','name':'Personale','primary':true,'accessRole':'owner'},
+                {'id':'shared','name':'Condiviso','primary':false,'accessRole':'reader'}
+              ],
+            });
           case '/disconnect':
             expect(body['explicitConfirmation'], true);
             expect(body['googleSubject'], googleSubject);
@@ -177,6 +186,24 @@ void main() {
     final result = await h.client.disconnect(explicitConfirmation: true);
     expect(result.locallyDisconnected, true);
     expect(h.calls, ['/connections', '/disconnect']);
+  });
+
+  test('connected real-flow QA reads calendars without event writes', () async {
+    final h = Harness()..hasExistingConnection = true;
+    await h.client.recoverConnections();
+    final calendars = await h.client.readCalendars();
+    expect(calendars.length, 2);
+    expect(calendars.first.name, 'Personale');
+    expect(calendars.first.primary, true);
+    expect(h.calls, ['/connections','/calendars']);
+    expect(h.calls.any((route) => route.contains('event')), false);
+  });
+
+  test('calendar read before confirmed connection fails without HTTP', () async {
+    final h = Harness();
+    await expectFault(() => h.client.readCalendars(),
+        GcalStageClientFault.notConnected);
+    expect(h.calls, isEmpty);
   });
 
   test('wrong app account cannot use recovered link', () async {
