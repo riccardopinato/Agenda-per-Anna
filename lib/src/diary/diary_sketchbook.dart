@@ -1,5 +1,97 @@
 part of '../../main.dart';
 
+String _annaPhotoAltCopy(String code, String key) {
+  const values = <String, Map<String, String>>{
+    'title': {'it': 'Descrizione accessibile', 'en': 'Accessible description',
+      'es': 'Descripción accesible', 'fr': 'Description accessible',
+      'pt': 'Descrição acessível'},
+    'hint': {'it': 'Descrivi la foto con parole tue (facoltativo)',
+      'en': 'Describe the photo in your words (optional)',
+      'es': 'Describe la foto con tus palabras (opcional)',
+      'fr': 'Décris la photo avec tes propres mots (facultatif)',
+      'pt': 'Descreve a foto por palavras tuas (opcional)'},
+    'changed': {'it': 'La foto è cambiata. Riaprila.',
+      'en': 'The photo changed. Open it again.',
+      'es': 'La foto ha cambiado. Ábrela de nuevo.',
+      'fr': 'La photo a changé. Ouvre-la de nouveau.',
+      'pt': 'A foto mudou. Abre-a novamente.'},
+  };
+  return values[key]?[code] ?? values[key]?['en'] ?? key;
+}
+
+/// CAP-0120 uses the existing DayJournal writer and verifies the exact source
+/// after user confirmation. No extra database or automatic photo inference.
+Future<bool> annaSavePhotoAltText(
+  AgendaStore store, DateTime date, DiaryBlock source,
+  String text, {
+  required String? accountAtOpen,
+}) async {
+  if (source.type != DiaryBlockType.photo ||
+      store.activeAccountId != accountAtOpen || text.length > 500) return false;
+  final currentDay = store.journal(date);
+  final matches = currentDay.blocks
+      .where((b) => b.id == source.id).toList(growable: false);
+  if (matches.length != 1) return false;
+  final current = matches.single;
+  if (current.archived || current.type != DiaryBlockType.photo ||
+      current.createdAt != source.createdAt ||
+      current.mediaAssetId != source.mediaAssetId ||
+      current.imageBase64 != source.imageBase64 ||
+      current.text != source.text ||
+      current.altText != source.altText) return false;
+  final trimmed = text.trim();
+  if (trimmed == current.altText) return true;
+  final updated = [
+    for (final block in currentDay.blocks)
+      if (block.id == source.id) block.copyWith(altText: trimmed) else block,
+  ];
+  await store.saveJournal(date, currentDay.copyWith(blocks: updated));
+  return true;
+}
+
+Future<void> _annaEditPhotoDescription(
+  BuildContext context, AgendaStore store,
+  DateTime date, DiaryBlock block,
+) async {
+  final language = AnnaStrings.of(context).languageCode;
+  final account = store.activeAccountId;
+  final controller = TextEditingController(text: block.altText);
+  final result = await showDialog<String>(
+    context: context,
+    builder: (dialogContext) => AlertDialog(
+      title: Text(_annaPhotoAltCopy(language, 'title')),
+      content: TextField(
+        key: const ValueKey('cap0120-photo-description'),
+        controller: controller,
+        autofocus: true,
+        maxLines: 4, minLines: 2, maxLength: 500,
+        decoration: InputDecoration(
+          hintText: _annaPhotoAltCopy(language, 'hint'),
+          border: const OutlineInputBorder()),
+      ),
+      actions: [
+        TextButton(onPressed: () => Navigator.pop(dialogContext),
+          child: Text(AnnaStrings.of(dialogContext).cancel)),
+        FilledButton(
+          onPressed: () => Navigator.pop(dialogContext, controller.text),
+          child: Text(AnnaStrings.of(dialogContext).save)),
+      ],
+    ),
+  );
+  controller.dispose();
+  if (result == null || !context.mounted) return;
+  final saved = await annaSavePhotoAltText(
+      store, date, block, result, accountAtOpen: account);
+  if (!context.mounted) return;
+  if (saved) {
+    // Close the viewer so no stale source snapshot remains in the widget.
+    Navigator.pop(context);
+  } else {
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+      content: Text(_annaPhotoAltCopy(language, 'changed'))));
+  }
+}
+
 class DiaryPhotoViewerScreen extends StatelessWidget {
   final AgendaStore store;
   final DateTime date;
@@ -28,7 +120,14 @@ class DiaryPhotoViewerScreen extends StatelessWidget {
 
     return DiaryPhotoViewerShell(
       title: dateLabel,
-      image: Hero(
+      image: Semantics(
+        label: store.preferences.hideHomeDetails
+            ? AnnaStrings.of(context).v100Photo
+            : (block.altText.isNotEmpty ? block.altText :
+              block.text.isNotEmpty ? block.text :
+              AnnaStrings.of(context).v100Photo),
+        image: true,
+        child: Hero(
         tag: 'v108-photo-${block.id}',
         child: FutureBuilder<Uint8List?>(
           future: imageFuture,
@@ -37,9 +136,18 @@ class DiaryPhotoViewerScreen extends StatelessWidget {
             loading: snapshot.connectionState != ConnectionState.done,
           ),
         ),
+        ),
       ),
       caption: block.text,
       appBarActions: [
+        IconButton(
+          key: const ValueKey('cap0120-edit-photo-description'),
+          tooltip: _annaPhotoAltCopy(
+            AnnaStrings.of(context).languageCode, 'title'),
+          onPressed: () => _annaEditPhotoDescription(
+              context, store, date, block),
+          icon: const Icon(Icons.accessibility_new_outlined),
+        ),
         IconButton(
           tooltip: AnnaStrings.of(context).d3('openDay'),
           onPressed: () => Navigator.push(
