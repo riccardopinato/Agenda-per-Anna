@@ -56,7 +56,7 @@ AnnaCaptureTaskProposal? annaProposeTaskFromText(
   // Reuse the established parser if the phrase has an unambiguous date/time.
   // Unsupported explicit timezone abbreviations fail closed.
   if (RegExp(r'\b(?:utc|gmt|cet|cest|pst|pdt|est|edt)\b',
-      caseSensitive: false).hasMatch(clean)) return null;
+      caseSensitive: false).hasMatch(clean)) { return null; }
   final parsed = parseNaturalEvent(clean,
     languageCode: languageCode, now: now);
   final label = parsed?.title.trim() ?? clean;
@@ -791,7 +791,7 @@ Future<void> showUnifiedCapture(
     case _UnifiedCaptureAction.taskFromText:
       final phrase = await _askLocalTaskSentence(context);
       if (phrase == null || !context.mounted ||
-          store.activeAccountId != accountAtCaptureOpen) return;
+          store.activeAccountId != accountAtCaptureOpen) { return; }
       final proposal = annaProposeTaskFromText(
         phrase, selectedDay: targetDay,
         languageCode: strings.languageCode, now: DateTime.now());
@@ -804,7 +804,7 @@ Future<void> showUnifiedCapture(
     case _UnifiedCaptureAction.checklistFromNote:
       final selected = await _pickLocalChecklistNote(context, store, targetDay);
       if (selected == null || !context.mounted ||
-          store.activeAccountId != accountAtCaptureOpen) return;
+          store.activeAccountId != accountAtCaptureOpen) { return; }
       final current = store.journal(selected.date).blocks
           .where((b) => b.id == selected.block.id).toList(growable: false);
       if (current.length != 1 || current.single.archived ||
