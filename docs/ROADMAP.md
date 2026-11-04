@@ -68,6 +68,35 @@ checkpoint di casa». Fornire istruzioni passo passo e restare in SOLO Chat,
 senza azioni su credenziali, Google Cloud o produzione durante la sospensione.
 
 
+## Assistenza contestuale locale — maxi-step 3/5 (4 novembre 2026)
+
+**SOURCE INTEGRATED / DEVICE QA NOT VERIFIED.** Il passo 3 del piano condiviso con
+Notes-Ecosistema e App-Factory-Core non è una nuova AI né un calendario
+parallelo. [PR #220](https://github.com/riccardopinato/Agenda-per-Anna/pull/220)
+ha integrato proposte **solo in lettura** per la capacità oraria visibile
+della giornata e accesso ai preparativi nell'editor appuntamenti esistente.
+[PR #221](https://github.com/riccardopinato/Agenda-per-Anna/pull/221)
+ha corretto intervalli che attraversano mezzanotte, appuntamenti senza ora e
+mascheratura Home. Nessuna ripianificazione automatica o scrittura implicita.
+
+- Main integrato: `a383c1674365813a468a3ef2d34be27f2d6558a0`.
+  [Development checks](https://github.com/riccardopinato/Agenda-per-Anna/actions/runs/41739763949)
+  e [Web](https://github.com/riccardopinato/Agenda-per-Anna/actions/runs/41739763876)
+  SUCCESS; PR #221 head esatto `a870cee2557b627b073f049edfebe37cd3ead49a`
+  con [AppLab Source Gate](https://github.com/riccardopinato/Agenda-per-Anna/actions/runs/41739215308)
+  SUCCESS.
+- [Auto signed ARM64 run #41740305682](https://github.com/riccardopinato/Agenda-per-Anna/actions/runs/41740305682):
+  preflight SUCCESS, ma **job `signed-apk` SKIPPED**. Non certifica un APK
+  aggiornato con le nuove modifiche.
+- **GATE APERTI:** prove fisiche Android (effettiva disponibilità calendar provider,
+  viste filtro/account, appuntamenti oltre mezzanotte e gestione offline),
+  nuova release firmata da sorgente esatto, eventuale prova di installazione
+  in-place, test Store e misure d'utilità reale. SOURCE PASS non è PHYSICAL PASS.
+- **NON TOCCARE:** [Privacy V2 PR #200](https://github.com/riccardopinato/Agenda-per-Anna/pull/200)
+  e [Google Calendar API PR #199](https://github.com/riccardopinato/Agenda-per-Anna/pull/199)
+  restano DRAFT con gate di sicurezza/staging; nessun merge implicito.
+  Il Consumer Notes e i candidate Golden hanno gate autonomi.
+
 ## Priorita' P1 — stato riconciliato (2 novembre 2026)
 
 - **Android rc.6+120:** source `main@fb476545426fb6bf290e74f53e735fa13616e4e9`, signed ARM64 workflow [#41367895694](https://github.com/riccardopinato/Agenda-per-Anna/actions/runs/41367895694) SUCCESS, artifact `annas-diary-light-arm64` ID **13107988055**. L'utente ha chiesto espressamente di considerare effettuato il collaudo Android: registrare **USER_ATTESTED_GENERAL_PASS / GATE GENERALE ACCETTATO**, non `PHYSICAL DEVICE VERIFIED` per ogni singolo scenario. L'issue storica [#181](https://github.com/riccardopinato/Agenda-per-Anna/issues/181) e' CLOSED per accettazione generale; fingerprint sul dispositivo, upgrade con inventario dati, Vault/QR dual-device, backup/restore, notifiche native/Web Push e Play purchase restano **NOT VERIFIED** dove manchi evidenza per scenario.

@@ -487,11 +487,11 @@ class _PlannerScreenState extends State<PlannerScreen> {
   }
 
   Future<void> _loadDay(DateTime value) {
-    final start = DateTime(value.year, value.month, value.day);
-    return ExternalCalendarService.instance.loadRange(
-      start,
-      start.add(const Duration(days: 1)),
-    );
+    // The Today advisor and free-slot engine inspect overnight appointments.
+    // Load adjacent civil days so external entries match local overlap rules.
+    final start = DateTime(value.year, value.month, value.day - 1);
+    final end = DateTime(value.year, value.month, value.day + 2);
+    return ExternalCalendarService.instance.loadRange(start, end);
   }
 
   void _selectDay(DateTime value) {
@@ -621,6 +621,14 @@ class _PlannerScreenState extends State<PlannerScreen> {
                         ],
                         const SizedBox(height: 12),
                         AgendaContentFilterBar(store: widget.store),
+                        if (widget.embedded && isToday) ...[
+                          const SizedBox(height: AnnaDesignTokens.spaceSm),
+                          RealisticDayCard(
+                            store: widget.store,
+                            snapshot: snapshot,
+                            hideDetails: widget.store.preferences.hideHomeDetails,
+                          ),
+                        ],
                         const SizedBox(height: AnnaDesignTokens.spaceMd),
                         if (widget.embedded) ...[
                           // DF-08–14: Oggi reads the selected day before
