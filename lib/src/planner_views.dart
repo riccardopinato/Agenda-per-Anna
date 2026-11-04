@@ -175,6 +175,32 @@ class _CalendarHubScreenState extends State<CalendarHubScreen> {
               ),
             ),
           ),
+          if(annaGoogleCalendarQaBuild)
+            Padding(
+              padding:const EdgeInsets.fromLTRB(16,8,16,4),
+              child:Align(
+                alignment:Alignment.centerLeft,
+                child:OutlinedButton.icon(
+                  key:const ValueKey('calendar-google-events-readonly'),
+                  icon:const Icon(Icons.event_note_outlined),
+                  label:const Text('Eventi Google · sola lettura'),
+                  onPressed:()=>Navigator.push(context,
+                    MaterialPageRoute<void>(builder:(_)=>GcalDiaryReadScreen(
+                      localContextsForWindow:(start,end)=>
+                        _SettingsHubScreenState.googleLocalContextsForStore(
+                          widget.store,start,end),
+                      onManageConnection:()=>Navigator.push(context,
+                        MaterialPageRoute<void>(builder:(_)=>AnnaGcalQaScreen(
+                          signedIn:()=>CloudSyncService.instance.signedIn,
+                          signInWithGoogle:()=>
+                            CloudSyncService.instance.signInWithGoogle(),
+                        )),
+                      ),
+                    )),
+                  ),
+                ),
+              ),
+            ),
           const SizedBox(height: AnnaDesignTokens.spaceXs),
           Expanded(
             child: AnnaMotionReveal(
