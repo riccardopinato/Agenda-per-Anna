@@ -144,8 +144,9 @@ class DiaryPhotoViewerScreen extends StatelessWidget {
           key: const ValueKey('cap0120-edit-photo-description'),
           tooltip: _annaPhotoAltCopy(
             AnnaStrings.of(context).languageCode, 'title'),
-          onPressed: () => _annaEditPhotoDescription(
-              context, store, date, block),
+          onPressed: store.preferences.hideHomeDetails
+              ? null : () => _annaEditPhotoDescription(
+                  context, store, date, block),
           icon: const Icon(Icons.accessibility_new_outlined),
         ),
         IconButton(
