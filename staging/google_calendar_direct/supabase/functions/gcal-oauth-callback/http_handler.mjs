@@ -11,7 +11,7 @@ function routeSuffix(path,basePath) {
  for(const root of roots) {
    if(root==='') {
      if(path==='/')return '';
-     if(['/health','/start','/preview','/confirm','/disconnect','/connections'].includes(path))
+     if(['/health','/start','/preview','/confirm','/disconnect','/connections','/calendars'].includes(path))
        return path;
      continue;
    }
@@ -63,7 +63,7 @@ async function boundedBody(req,limit=2048) {
 const onlyFields=(value,fields)=>value&&typeof value==='object'&&!Array.isArray(value)&&
   Object.keys(value).every(k=>fields.includes(k));
 export function createGoogleCalendarStagingHandler({
-  enabled=false,broker=null,verifyAppIdentity=null,tokenLifecycle=null,requestBudget=null,callbackBudget=null,allowedWebOrigins=[],
+  enabled=false,broker=null,verifyAppIdentity=null,tokenLifecycle=null,requestBudget=null,callbackBudget=null,calendarReadProbe=null,allowedWebOrigins=[],
   basePath=BASE,
 }={}) {
  if(enabled&&(!broker||typeof verifyAppIdentity!=='function'||
@@ -78,7 +78,7 @@ export function createGoogleCalendarStagingHandler({
    try{url=new URL(req.url);}catch{return json({error:'BAD_URL'},400);}
    const suffix=routeSuffix(url.pathname,basePath);
    if(suffix===null)return json({error:'NOT_FOUND'},404);
-   if(!['','/health','/start','/preview','/confirm','/disconnect','/connections'].includes(suffix))
+   if(!['','/health','/start','/preview','/confirm','/disconnect','/connections','/calendars'].includes(suffix))
      return json({error:'NOT_FOUND'},404);
    if(req.method==='GET'&&suffix==='/health')return json({
      service:'anna-calendar-staging',status:enabled?'configured':'locked',
@@ -125,7 +125,7 @@ export function createGoogleCalendarStagingHandler({
        return browserResponse('Collegamento non completato. Torna nell\u2019app e riprova.',400);
      }
    }
-   if(req.method!=='POST'||!['/start','/preview','/confirm','/disconnect','/connections'].includes(suffix))
+   if(req.method!=='POST'||!['/start','/preview','/confirm','/disconnect','/connections','/calendars'].includes(suffix))
      return json({error:'METHOD_NOT_ALLOWED'},405);
    const mime=req.headers.get('content-type')?.split(';')[0].toLowerCase().trim();
    if(mime!=='application/json')return json({error:'JSON_REQUIRED'},415,origin);
@@ -143,7 +143,7 @@ export function createGoogleCalendarStagingHandler({
    } catch {return json({error:'RATE_LIMIT_UNAVAILABLE'},503,origin);}
    let body;
    try{body=await boundedBody(req);}catch{return json({error:'INVALID_BODY'},400,origin);}
-   if(!onlyFields(body,['/start','/connections'].includes(suffix)?[]:suffix==='/preview'?['handle']:
+   if(!onlyFields(body,['/start','/connections'].includes(suffix)?[]:suffix==='/preview'?['handle']:suffix==='/calendars'?['googleSubject']:
      suffix==='/disconnect'?['googleSubject','explicitConfirmation']:
      ['handle','explicitConfirmation']))return json({error:'UNEXPECTED_FIELDS'},400,origin);
    try {
@@ -155,6 +155,16 @@ export function createGoogleCalendarStagingHandler({
        if(!tokenLifecycle||typeof tokenLifecycle.listConnections!=='function')
          return json({error:'LIFECYCLE_NOT_READY'},503,origin);
        const result=await tokenLifecycle.listConnections({verifiedAccountId:verified.accountId});
+       return json(result,200,origin);
+     }
+     if(suffix==='/calendars') {
+       if(!calendarReadProbe||typeof calendarReadProbe.calendars!=='function')
+         return json({error:'CALENDAR_READ_NOT_READY'},503,origin);
+       if(typeof body.googleSubject!=='string'||body.googleSubject.length<1||
+          body.googleSubject.length>256)
+         return json({error:'INVALID_GOOGLE_SUBJECT'},400,origin);
+       const result=await calendarReadProbe.calendars({verifiedAccountId:verified.accountId,
+         googleSubject:body.googleSubject});
        return json(result,200,origin);
      }
      if(suffix==='/disconnect') {
