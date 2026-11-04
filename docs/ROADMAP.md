@@ -1,5 +1,14 @@
 # Anna's Diary — Roadmap
 
+## Audit remediation P1/P2 — 4 November 2026
+
+- **Android +123:** signed workflow [#41871951662](https://github.com/riccardopinato/Agenda-per-Anna/actions/runs/41871951662) SUCCESS on `main@20b0d2c7`; owner explicitly accepted the **P0 physical gate generally** on 4 November: `USER_ATTESTED_GENERAL_PASS`. Individual R0–R13 checks remain unverified where no device evidence exists. No Play/iOS certification follows from this acceptance.
+- **Web deployment:** latest +123 run [#41871248268](https://github.com/riccardopinato/Agenda-per-Anna/actions/runs/41871248268) failed after Pages timeout, then a failed-job rerun looking for an artifact from the wrong attempt. Fix uses the `build-web` job output for the artifact actually uploaded; pending new exact-main deployment confirmation.
+- **P1/P2 correction lane:** current navigation Android smoke, AppLab catalog stale path, governance/documentation and bounded regression were audited. No activation/merge of Privacy V2 #215 or Google Direct #199. Branch protection, real visual screenshot baselines, store billing and live Supabase Auth/pg_net decisions remain independently gated; no CI-generated evidence is substituted for operator controls.
+- **P1 #226:** partial read-only capacity buffer in [PR #233](https://github.com/riccardopinato/Agenda-per-Anna/pull/233), isolated and subject to its own exact-head gates. Do not conflate with this hardening.
+- See [audit remediation ledger](AUDIT_P1_P2_REMEDIATION_20261104.md) for completed changes, pending evidence and operator-only actions.
+
+
 ## Quattro maxi-step CAP integrati — 4 novembre 2026
 
 **SOFTWARE SOURCE MERGED / PR EXACT-HEAD CHECKS PASS / PHYSICAL QA NOT VERIFIED.**
