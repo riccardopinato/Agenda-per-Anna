@@ -179,6 +179,8 @@ class _RealisticDayCardState extends State<RealisticDayCard> {
   static const _preferenceKey = 'anna_contextual_day_dismissed_v1';
   bool _loaded = false;
   int _bufferMinutes = 0;
+  bool _nudgesEnabled = false;
+  int _snoozedThrough = 0;
   String? _observedAccount;
   static const _bufferPreferencePrefix = 'anna_realistic_buffer_v1_';
   String get _bufferKey => _bufferPreferencePrefix +
@@ -207,6 +209,8 @@ class _RealisticDayCardState extends State<RealisticDayCard> {
       _observedAccount = _bufferKey;
       _loaded = false;
       _bufferMinutes = 0;
+      _nudgesEnabled = false;
+      _snoozedThrough = 0;
       _load();
     }
   }
@@ -217,10 +221,14 @@ class _RealisticDayCardState extends State<RealisticDayCard> {
       if (!mounted) return;
       final key = _bufferKey;
       final buffer = (prefs.getInt(key) ?? 0).clamp(0, 120).toInt();
+      final nudges = prefs.getBool('${key}_nudges') ?? false;
+      final snoozed = prefs.getInt('${key}_snoozed_through') ?? 0;
       if (key != _observedAccount) return;
       setState(() {
         _dismissed.addAll(prefs.getStringList(_preferenceKey) ?? const []);
         _bufferMinutes = buffer;
+        _nudgesEnabled = nudges;
+        _snoozedThrough = snoozed;
         _loaded = true;
       });
     } catch (_) {
@@ -241,6 +249,48 @@ class _RealisticDayCardState extends State<RealisticDayCard> {
     } catch (_) {
       if (!mounted || _bufferKey != accountKey) return;
       setState(() => _bufferMinutes = previous);
+    }
+  }
+
+  Future<void> _setNudgesEnabled(bool enabled) async {
+    final key = _bufferKey;
+    final previous = _nudgesEnabled;
+    setState(() => _nudgesEnabled = enabled);
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      if (_bufferKey != key) return;
+      if (!await prefs.setBool('${key}_nudges', enabled)) {
+        throw StateError('nudge setting not saved');
+      }
+    } catch (_) {
+      if (mounted && _bufferKey == key) {
+        setState(() => _nudgesEnabled = previous);
+      }
+    }
+  }
+
+  /// Snooze is at most 7 civil days, local to this account and device.
+  /// An always-visible resume control keeps the action reversible.
+  Future<void> _setSnooze(bool snooze) async {
+    final key = _bufferKey;
+    final previous = _snoozedThrough;
+    final now = DateTime.now();
+    final until = snooze
+        ? DateTime(now.year, now.month, now.day + 7)
+        : null;
+    final next = until == null
+        ? 0 : until.year * 10000 + until.month * 100 + until.day;
+    setState(() => _snoozedThrough = next);
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      if (_bufferKey != key) return;
+      if (!await prefs.setInt('${key}_snoozed_through', next)) {
+        throw StateError('snooze setting not saved');
+      }
+    } catch (_) {
+      if (mounted && _bufferKey == key) {
+        setState(() => _snoozedThrough = previous);
+      }
     }
   }
 
@@ -280,6 +330,10 @@ class _RealisticDayCardState extends State<RealisticDayCard> {
       onDismiss: _dismissToday,
       bufferMinutes: _bufferMinutes,
       onSelectBuffer: _chooseBuffer,
+      nudgesEnabled: _nudgesEnabled,
+      onSetNudges: _setNudgesEnabled,
+      snoozedThrough: _snoozedThrough,
+      onSetSnooze: _setSnooze,
     );
   }
 }
@@ -292,6 +346,10 @@ class _RealisticDayCardBody extends StatelessWidget {
     required this.onDismiss,
     required this.bufferMinutes,
     required this.onSelectBuffer,
+    required this.nudgesEnabled,
+    required this.onSetNudges,
+    required this.snoozedThrough,
+    required this.onSetSnooze,
   });
 
   final AgendaStore store;
@@ -300,6 +358,10 @@ class _RealisticDayCardBody extends StatelessWidget {
   final VoidCallback onDismiss;
   final int bufferMinutes;
   final ValueChanged<int> onSelectBuffer;
+  final bool nudgesEnabled;
+  final ValueChanged<bool> onSetNudges;
+  final int snoozedThrough;
+  final ValueChanged<bool> onSetSnooze;
 
   String _localized(String lang, String key) {
     const copy = <String, List<String>>{
@@ -356,6 +418,38 @@ class _RealisticDayCardBody extends StatelessWidget {
         'Preparar cita',
         'Préparer le rendez-vous',
         'Preparar compromisso',
+      ],
+      'taskTime': [
+        'Recorded task duration', 'Durata registrata delle attività',
+        'Duración registrada de las tareas', 'Durée enregistrée des tâches',
+        'Duração registada das tarefas',
+      ],
+      'taskUnknown': [
+        'Tasks with unknown duration', 'Attività senza durata nota',
+        'Tareas sin duración conocida', 'Tâches sans durée connue',
+        'Tarefas sem duração conhecida',
+      ],
+      'partial': [
+        'Other calendars may be missing. Time is not guaranteed free.',
+        'Altri calendari potrebbero mancare: il tempo non è certamente libero.',
+        'Pueden faltar otros calendarios. El tiempo no está garantizado.',
+        'D’autres agendas peuvent manquer : temps libre non garanti.',
+        'Podem faltar outros calendários: tempo livre não garantido.',
+      ],
+      'nudge': [
+        'Enable workload advice', 'Attiva consigli sul carico',
+        'Activar consejos de carga', 'Activer les conseils de charge',
+        'Ativar conselhos de carga',
+      ],
+      'snooze': [
+        'Pause advice for 7 days', 'Sospendi consigli per 7 giorni',
+        'Pausar consejos 7 días', 'Suspendre les conseils 7 jours',
+        'Pausar conselhos 7 dias',
+      ],
+      'resume': [
+        'Resume advice', 'Riattiva consigli',
+        'Reanudar consejos', 'Reprendre les conseils',
+        'Retomar conselhos',
       ],
       'dismiss': [
         'Hide for today',
@@ -417,6 +511,11 @@ class _RealisticDayCardBody extends StatelessWidget {
     final minutes = advice.freeMinutes % 60;
     final usableHours = advice.usableMinutes ~/ 60;
     final usableMinutes = advice.usableMinutes % 60;
+    final snoozeDate = DateTime.now();
+    final todayKey = snoozeDate.year * 10000 +
+        snoozeDate.month * 100 + snoozeDate.day;
+    final snoozed = snoozedThrough >= todayKey;
+    final advisePressure = nudgesEnabled && !snoozed && advice.hasPressure;
     return Card(
       key: const ValueKey('realistic-day-advice'),
       child: Padding(
@@ -430,7 +529,7 @@ class _RealisticDayCardBody extends StatelessWidget {
             ),
             const SizedBox(height: 6),
             Text(
-              advice.hasPressure
+              advisePressure
                   ? _localized(strings.languageCode, 'pressure')
                   : '${_localized(strings.languageCode, 'capacity')}: '
                       '${hours}h ${minutes}m',
@@ -455,6 +554,43 @@ class _RealisticDayCardBody extends StatelessWidget {
               '${usableHours}h ${usableMinutes}m',
               style: Theme.of(context).textTheme.bodySmall,
             ),
+            if (advice.tasksWithRecordedTime > 0) ...[
+              const SizedBox(height: 4),
+              Text(
+                '${_localized(strings.languageCode, 'taskTime')}: '
+                '${advice.recordedTaskMinutes}m '
+                '(${advice.tasksWithRecordedTime})',
+                style: Theme.of(context).textTheme.bodySmall,
+              ),
+            ],
+            if (advice.tasksWithoutRecordedTime > 0)
+              Text(
+                '${_localized(strings.languageCode, 'taskUnknown')}: '
+                '${advice.tasksWithoutRecordedTime}',
+                style: Theme.of(context).textTheme.bodySmall,
+              ),
+            if (store.agendaContentFilter == AgendaContentFilter.all &&
+                external.enabled && !externalReady)
+              Text(
+                _localized(strings.languageCode, 'partial'),
+                style: Theme.of(context).textTheme.bodySmall,
+              ),
+            SwitchListTile.adaptive(
+              key: const ValueKey('realistic-day-nudge-optin'),
+              contentPadding: EdgeInsets.zero,
+              dense: true,
+              value: nudgesEnabled,
+              onChanged: onSetNudges,
+              title: Text(_localized(strings.languageCode, 'nudge')),
+            ),
+            if (nudgesEnabled)
+              TextButton.icon(
+                key: const ValueKey('realistic-day-nudge-snooze'),
+                onPressed: () => onSetSnooze(!snoozed),
+                icon: Icon(snoozed ? Icons.play_arrow_outlined : Icons.snooze),
+                label: Text(_localized(
+                  strings.languageCode, snoozed ? 'resume' : 'snooze')),
+              ),
             const SizedBox(height: 4),
             Text(
               _localized(strings.languageCode, 'scope'),
