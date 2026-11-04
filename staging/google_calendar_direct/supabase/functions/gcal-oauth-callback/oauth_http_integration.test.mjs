@@ -126,6 +126,15 @@ test('authenticated start -> public callback -> account preview -> explicit conf
   assert.equal(r.status,400); // One-time state, no second exchange.
   assert.equal(f.exchanges(),1);
 
+  r=await f.post('/connections');
+  assert.equal(r.status,200);
+  const active=await r.json();
+  assert.deepEqual(active.connections,[{
+    googleSubject:providerSubject,googleEmail:'fixture@example.invalid',
+  }]);
+  const wrongList=await f.post('/connections',{},'Bearer OTHER_TEST_JWT');
+  assert.deepEqual(await wrongList.json(),{connections:[]});
+
   r=await f.post('/disconnect',{googleSubject:providerSubject,explicitConfirmation:true});
   assert.equal(r.status,200);
   assert.deepEqual(await r.json(),{disconnected:true,providerRevoked:true});
