@@ -8,6 +8,7 @@ on:
       - 'lib/main.dart'
       - 'lib/src/app_shell.dart'
       - 'lib/src/screens/settings_hub.dart'
+      - 'lib/src/planner_views.dart'
       - 'lib/qa/google_calendar/**'
       - 'staging/google_calendar_direct/**'
       - 'pubspec.yaml'
