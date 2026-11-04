@@ -1,12 +1,12 @@
 // STAGING SOURCE ONLY — server-side token lifecycle for the selected two-phase flow.
 // Do NOT import from Flutter or deploy as the live callback before gated QA.
 // Only a trusted backend may call accessToken(); never serialize its return to HTTP.
-import {GcalStageFault,GcalStageVault,sha256Hex,REQUIRED_SCOPES,TOKEN_ENDPOINT} from './webcrypto_core.mjs';
+import {GcalStageFault,GcalStageVault,sha256Hex,scopesContainRequired,TOKEN_ENDPOINT} from './webcrypto_core.mjs';
 
 const REVOCATION_ENDPOINT='https://oauth2.googleapis.com/revoke';
 const fail=code=>{throw new GcalStageFault(code);};
 const textOk=(x,max=4096)=>typeof x==='string'&&x.length>0&&x.length<=max;
-const scopesOk=s=>textOk(s)&&REQUIRED_SCOPES.every(x=>new Set(s.split(/\s+/)).has(x));
+const scopesOk=s=>textOk(s)&&scopesContainRequired(s);
 
 export class GcalStageTokenLifecycle {
   // linkStore.getLink(accountHash,subjectHash): encrypted envelope|null
