@@ -1,7 +1,9 @@
 # Anna's Diary — Google Calendar STAGING — Checkpoint sospensione
 
 **Decisione del proprietario: 03/11/2026.**
-**STATO: SOSPESO SU RICHIESTA UTENTE — RIPRENDERE SOLO DAL PC DI CASA.**
+**STATO DEL 03/11: sospeso; ripresa del 04/11 documentata separatamente.**
+
+**AGGIORNAMENTO 04/11:** il proprietario ha ripreso la procedura e confermato i quattro secrets inseriti. La preparazione del backend prosegue soltanto su branch non distribuito. Consulta [STATUS_2026-11-04.md](STATUS_2026-11-04.md) per lo stato successivo. La conferma dei secrets NON autorizza OAuth reale, redirect, deploy attivo, merge o release.
 
 Questa fase riguarda credenziali, segreti di cifratura e abilitazione OAuth reale.
 Non eseguire ulteriori operazioni di configurazione dei segreti, attivazione OAuth,
