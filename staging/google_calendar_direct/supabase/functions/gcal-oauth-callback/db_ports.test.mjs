@@ -39,7 +39,15 @@ test('reject unhashed owner IDs and plaintext or missing envelopes',async()=>{
 });
 
 
-test('link lifecycle uses owner-scoped read, CAS replacement and atomic unlink',async()=>{
+test('encrypted inventory query is restricted to authenticated account hash',async()=>{
+ const f=fixture();assert.deepEqual(await f.port.listLinks(hash),[]);
+ assert.match(f.calls[0].query,/select google_subject_hash,envelope from gcal_stage\\.oauth_links/);
+ assert.match(f.calls[0].query,/app_account_hash=\\?/);
+ assert.match(f.calls[0].query,/limit 11/);
+ assert.equal(f.calls[0].values[0],hash);
+ await assert.rejects(f.port.listLinks('plain-account'),GcalStageDbError);
+});
+
   let f=fixture();
   assert.equal(await f.port.getLink(hash,'b'.repeat(64)),null);
   assert.match(f.calls[0].query,/select envelope from gcal_stage\.oauth_links/);
