@@ -7,12 +7,16 @@ class RealisticDayAdvice {
     required this.pendingTasks,
     required this.reasonCode,
     required this.firstFreeSlot,
+    this.bufferMinutes = 0,
   });
 
   final int freeMinutes;
   final int pendingTasks;
   final String reasonCode;
   final CalendarFreeSlot? firstFreeSlot;
+  /// User-selected voluntary space left unbooked. Never assumed task time.
+  final int bufferMinutes;
+  int get usableMinutes => max(0, freeMinutes - bufferMinutes);
 
   bool get hasPressure => reasonCode == 'VISIBLE_WINDOW_CONGESTED';
 }
@@ -23,6 +27,7 @@ abstract final class RealisticDayAdvisor {
     required Iterable<UnifiedAgendaEntry> visibleEntries,
     required int pendingTasks,
     DateTime? now,
+    int bufferMinutes = 0,
   }) {
     final slots = findCalendarFreeSlots(
       day: day,
@@ -44,14 +49,17 @@ abstract final class RealisticDayAdvisor {
       0,
       (sum, slot) => sum + slot.duration.inMinutes,
     );
+    final boundedBuffer = bufferMinutes.clamp(0, 120).toInt();
+    final usable = max(0, minutes - boundedBuffer);
     final candidate = effectiveSlots.where(
       (slot) => slot.duration.inMinutes >= 30,
     );
     return RealisticDayAdvice(
       freeMinutes: minutes,
+      bufferMinutes: boundedBuffer,
       pendingTasks: pendingTasks,
       firstFreeSlot: candidate.isEmpty ? null : candidate.first,
-      reasonCode: pendingTasks > 0 && minutes < 90
+      reasonCode: pendingTasks > 0 && usable < 90
           ? 'VISIBLE_WINDOW_CONGESTED'
           : 'VISIBLE_WINDOW_CAPACITY',
     );
