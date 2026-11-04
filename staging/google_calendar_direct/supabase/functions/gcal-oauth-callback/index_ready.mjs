@@ -8,6 +8,7 @@ import {GcalTwoPhaseBroker} from './two_phase_core.mjs';
 import {GcalStageTokenLifecycle} from './token_lifecycle.mjs';
 import {GcalStageRequestBudget} from './request_budget.mjs';
 import {GcalStageCallbackBudget} from './callback_budget.mjs';
+import {GcalStageCalendarReadProbe} from './calendar_read_probe.mjs';
 import {GcalStagePostgresPorts} from './db_ports.mjs';
 import {GcalStageConfirmationPorts} from './confirmation_ports.mjs';
 import {createProductionIdentityVerifier} from './production_identity.mjs';
@@ -62,11 +63,13 @@ function readyRouter() {
   const tokenLifecycle=new GcalStageTokenLifecycle({
     clientId,clientSecret,vault,linkStore:ports,
   });
+  const calendarReadProbe=new GcalStageCalendarReadProbe({tokenLifecycle});
   const verifyAppIdentity=createProductionIdentityVerifier({
     productionPublishableKey:prodPublicKey,
   });
   return createGoogleCalendarStagingHandler({
     enabled:true,broker,verifyAppIdentity,tokenLifecycle,requestBudget,callbackBudget,
+    calendarReadProbe,
     allowedWebOrigins:['https://riccardopinato.github.io'],
   });
 }
