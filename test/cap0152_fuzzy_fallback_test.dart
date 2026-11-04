@@ -37,6 +37,24 @@ void main() {
     store.dispose();
   });
 
+  test('bounded source retriever stops materializing after 5000 rows', () {
+    final store = AgendaStore();
+    for (var i = 0; i < 5200; i++) {
+      store.items.add(AgendaItem(
+        id: 'task-$i', title: 'Anna progetto $i', note: '',
+        date: DateTime(2026, 11, 4), type: ItemType.task,
+      ));
+    }
+    final scoped = store.personalSearch('Anna',
+      kinds: {PersonalSearchKind.agenda},
+      maxScannedRecords: 5000);
+    expect(scoped.length, 5000);
+    expect(store.personalSearch('Anna',
+      kinds: {PersonalSearchKind.agenda},
+      maxScannedRecords: 0), isEmpty);
+    store.dispose();
+  });
+
   test('different personal search kind never leaks to fuzzy agenda', () {
     final store = AgendaStore();
     store.items.add(AgendaItem(
