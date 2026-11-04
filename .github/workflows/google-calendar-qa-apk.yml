@@ -87,7 +87,7 @@ jobs:
       - name: Configure Gradle
         uses: gradle/actions/setup-gradle@3f5f9adaf7d9fecd50b5935e54106014257a94e6
 
-      - name: Compile signed ARM64 QA APK build 124
+      - name: Compile signed ARM64 QA APK build 125
         shell: bash
         run: |
           set -euo pipefail
@@ -95,7 +95,7 @@ jobs:
             --release \
             --split-per-abi \
             --tree-shake-icons \
-            --build-number=124 \
+            --build-number=125 \
             --dart-define=ANNA_GCAL_STAGING_QA=true \
             --dart-define=ANNA_STORE_RELEASE=false \
             --dart-define=ANNA_PREMIUM_PREVIEW=true
@@ -106,8 +106,8 @@ jobs:
           set -euo pipefail
           mkdir -p build/qa-delivery
           cp build/app/outputs/flutter-apk/app-arm64-v8a-release.apk \
-             build/qa-delivery/Anna-Diary-Google-Calendar-QA-arm64-build124.apk
-          apk=build/qa-delivery/Anna-Diary-Google-Calendar-QA-arm64-build124.apk
+             build/qa-delivery/Anna-Diary-Google-Calendar-QA-arm64-build125.apk
+          apk=build/qa-delivery/Anna-Diary-Google-Calendar-QA-arm64-build125.apk
           test -s "$apk"
           aapt=$(find "$ANDROID_HOME/build-tools" -type f -name aapt -print | sort -V | tail -1)
           test -n "$aapt"
@@ -119,8 +119,8 @@ jobs:
             exit 1
           fi
           # Custom Anna's Diary Android namespace adds the 2000 version-code lane.
-          # Flutter --build-number=124 therefore maps to Play versionCode 2124.
-          if [[ "$package_line" != *"versionCode='2124'"* ]]; then
+          # Flutter --build-number=125 therefore maps to Play versionCode 2125.
+          if [[ "$package_line" != *"versionCode='2125'"* ]]; then
             echo "::error::Unexpected QA build number; refusing delivery"
             exit 1
           fi
@@ -128,14 +128,14 @@ jobs:
           test -n "$apksigner"
           "$apksigner" verify --verbose "$apk"
           sha256sum "$apk" > build/qa-delivery/SHA256SUMS.txt
-          printf 'source=%s\nbuild=124\nandroid_version_code=2124\ntype=QA-staging\noauth=locked\npackage=com.riccardopinato.agenda_per_anna\n' \
+          printf 'source=%s\nbuild=125\nandroid_version_code=2125\ntype=QA-staging\noauth=locked\npackage=com.riccardopinato.agenda_per_anna\n' \
             "$GITHUB_SHA" > build/qa-delivery/QA_BUILD_INFO.txt
           ls -lh build/qa-delivery/
 
       - name: Upload QA signed install files
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
-          name: anna-diary-gcal-qa-build124-arm64
+          name: anna-diary-gcal-qa-build125-arm64
           path: build/qa-delivery/
           if-no-files-found: error
           retention-days: 30
