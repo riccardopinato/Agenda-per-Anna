@@ -11,7 +11,7 @@ void main() {
     expect(annaFuzzyTitleDistance('cenna', 'Cena con Anna'), 1);
     expect(annaFuzzyTitleDistance('ca', 'Cena con Anna'), isNull);
     expect(annaFuzzyTitleDistance('casa', 'Cena con Anna'), isNull);
-    expect(annaFuzzyTitleDistance('x' * 90, 'x' * 90), isNull);
+    expect(annaFuzzyTitleDistance(List.filled(90, 'x').join(), List.filled(90, 'x').join()), isNull);
   });
 
   test('fuzzy typo is proposed only after exact search, and source is bounded', () {
