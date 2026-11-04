@@ -112,6 +112,9 @@ class _ContextualMemoryPanelState extends State<ContextualMemoryPanel> {
   bool _enabled = false;
   int _snoozedThrough = 0;
   final Set<String> _excluded = <String>{};
+  final Set<String> _dailySelected = <String>{};
+  int _dailySelectedDay = 0;
+  bool _selecting = false;
   String? _observedScope;
 
   String get _scopeKey => 'anna_contextual_memory_v1_${sha256.convert(
@@ -137,6 +140,8 @@ class _ContextualMemoryPanelState extends State<ContextualMemoryPanel> {
       _enabled = false;
       _snoozedThrough = 0;
       _excluded.clear();
+      _dailySelected.clear();
+      _dailySelectedDay = 0;
       _load();
     }
   }
@@ -152,10 +157,63 @@ class _ContextualMemoryPanelState extends State<ContextualMemoryPanel> {
         _excluded
           ..clear()
           ..addAll(prefs.getStringList('${key}_excluded') ?? const []);
+        _dailySelectedDay = prefs.getInt('${key}_selected_day') ?? 0;
+        _dailySelected
+          ..clear()
+          ..addAll(prefs.getStringList('${key}_selected_hashes') ?? const []);
         _loaded = true;
       });
+      if (_enabled) unawaited(_ensureDailyPicks());
     } catch (_) {
       // If preference loading fails, do not surface private suggestions.
+    }
+  }
+
+  /// The first two suggestions seen on a civil day are persisted as
+  /// account-scoped digests. Excluding one cannot introduce a third suggestion,
+  /// and switching a search/person filter cannot refill the day's quota.
+  Future<void> _ensureDailyPicks() async {
+    if (!mounted || !_loaded || !_enabled || _selecting ||
+        _observedScope != _scopeKey ||
+        widget.store.agendaContentFilter == AgendaContentFilter.sharedOnly) {
+      return;
+    }
+    final now = DateTime.now();
+    final today = now.year * 10000 + now.month * 100 + now.day;
+    if (_dailySelectedDay == today || _snoozedThrough > today) return;
+    _selecting = true;
+    final key = _scopeKey;
+    try {
+      final eligible = widget.authorizedPrivateMemories.toList(growable: false);
+      final chosen = ContextualMemorySelector.choose(
+        authorizedPrivateMemories: eligible,
+        today: now,
+        excludedIds: eligible
+            .where((item) => _excluded.contains(_digestFor(item.block.id)))
+            .map((item) => item.block.id).toSet(),
+      );
+      final hashes = chosen
+          .map((item) => _digestFor(item.reference.block.id))
+          .toSet();
+      final prefs = await SharedPreferences.getInstance();
+      if (!mounted || _scopeKey != key || !_enabled) return;
+      if (!await prefs.setStringList(
+        '${key}_selected_hashes', hashes.toList(growable: false),
+      )) {
+        throw StateError('Cannot persist daily selection');
+      }
+      if (!await prefs.setInt('${key}_selected_day', today)) {
+        throw StateError('Cannot persist selection day');
+      }
+      if (!mounted || _scopeKey != key) return;
+      setState(() {
+        _dailySelectedDay = today;
+        _dailySelected..clear()..addAll(hashes);
+      });
+    } catch (_) {
+      // Never display a private suggestion until its daily quota is durable.
+    } finally {
+      _selecting = false;
     }
   }
 
@@ -169,6 +227,7 @@ class _ContextualMemoryPanelState extends State<ContextualMemoryPanel> {
       if (!await prefs.setBool('${key}_enabled', enabled)) {
         throw StateError('Recall opt-in not saved');
       }
+      if (enabled) await _ensureDailyPicks();
     } catch (_) {
       if (mounted && _scopeKey == key) {
         setState(() => _enabled = previous);
@@ -190,6 +249,7 @@ class _ContextualMemoryPanelState extends State<ContextualMemoryPanel> {
       if (!await prefs.setInt('${key}_snoozed', choice)) {
         throw StateError('Recall snooze not saved');
       }
+      if (!pause) await _ensureDailyPicks();
     } catch (_) {
       if (mounted && _scopeKey == key) {
         setState(() => _snoozedThrough = previous);
@@ -204,9 +264,7 @@ class _ContextualMemoryPanelState extends State<ContextualMemoryPanel> {
     setState(() {
       _excluded.remove(hashed);
       _excluded.add(hashed);
-      while (_excluded.length > 500) {
-        _excluded.remove(_excluded.first);
-      }
+      // Never evict an earlier "never suggest" choice without explicit reset.
     });
     try {
       final prefs = await SharedPreferences.getInstance();
@@ -292,10 +350,17 @@ class _ContextualMemoryPanelState extends State<ContextualMemoryPanel> {
     }
     final now = DateTime.now();
     final today = now.year * 10000 + now.month * 100 + now.day;
-    final paused = _snoozedThrough >= today;
-    final candidates = _enabled && !paused
+    final paused = _snoozedThrough > today;
+    if (_enabled && !paused && _dailySelectedDay != today && !_selecting) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) unawaited(_ensureDailyPicks());
+      });
+    }
+    final candidates = _enabled && !paused && _dailySelectedDay == today
         ? ContextualMemorySelector.choose(
-            authorizedPrivateMemories: widget.authorizedPrivateMemories,
+            authorizedPrivateMemories: widget.authorizedPrivateMemories
+                .where((reference) => _dailySelected
+                    .contains(_digestFor(reference.block.id))),
             today: now,
             excludedIds: widget.authorizedPrivateMemories
                 .where((reference) =>
