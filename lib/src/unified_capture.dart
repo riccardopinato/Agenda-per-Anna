@@ -10,9 +10,215 @@ enum _UnifiedCaptureAction {
   templates,
   inbox,
   task,
+  taskFromText,
+  checklistFromNote,
   event,
   birthday,
   person,
+}
+
+/// CAP-0092/0093: preview-only local proposals. No persistence until the
+/// existing canonical item editor explicitly saves. No new task database.
+class AnnaCaptureTaskProposal {
+  final String title;
+  final String note;
+  final DateTime date;
+  final TimeOfDay? time;
+
+  const AnnaCaptureTaskProposal({
+    required this.title,
+    required this.note,
+    required this.date,
+    this.time,
+  });
+
+  AgendaItem toEditorDraft() => AgendaItem(
+    id: const Uuid().v4(),
+    title: title,
+    note: note,
+    date: date,
+    start: time,
+    type: ItemType.task,
+  );
+}
+
+AnnaCaptureTaskProposal? annaProposeTaskFromText(
+  String text, {
+  required DateTime selectedDay,
+  required String languageCode,
+  required DateTime now,
+}) {
+  final clean = text.trim().replaceAll(RegExp(r'\s+'), ' ');
+  if (clean.length < 3 || clean.length > 300 ||
+      !const {'it', 'en', 'es', 'fr', 'pt'}.contains(languageCode)) {
+    return null;
+  }
+  // Reuse the established parser if the phrase has an unambiguous date/time.
+  // Unsupported explicit timezone abbreviations fail closed.
+  if (RegExp(r'\b(?:utc|gmt|cet|cest|pst|pdt|est|edt)\b',
+      caseSensitive: false).hasMatch(clean)) { return null; }
+  final parsed = parseNaturalEvent(clean,
+    languageCode: languageCode, now: now);
+  final label = parsed?.title.trim() ?? clean;
+  if (label.length < 3 || label.length > 160) return null;
+  return AnnaCaptureTaskProposal(
+    title: label,
+    note: parsed == null ? '' : clean,
+    date: parsed?.date ?? DateTime(
+      selectedDay.year, selectedDay.month, selectedDay.day),
+    time: parsed?.start,
+  );
+}
+
+AnnaCaptureTaskProposal? annaProposeChecklistFromDiary(
+  String sourceText, {
+  required DateTime targetDay,
+}) {
+  if (sourceText.isEmpty || sourceText.length > 4000) return null;
+  final lines = sourceText.split('\n');
+  final checklist = <EventPreparationStep>[];
+  final other = <String>[];
+  final pattern = RegExp(r'^\s*(?:[-*•]|\d+[.)]|\[[ xX]\]|[☐☑])\s+(.+?)\s*$');
+  for (final line in lines) {
+    final match = pattern.firstMatch(line);
+    if (match == null) {
+      other.add(line);
+      continue;
+    }
+    final label = match.group(1)!.trim();
+    if (label.length < 2 || label.length > 180) return null;
+    checklist.add(EventPreparationStep(label));
+    if (checklist.length > 20) return null;
+  }
+  if (checklist.isEmpty) return null;
+  final prose = other.join('\n').trim();
+  final title = (prose.isEmpty ? checklist.first.text : prose.split('\n').first)
+      .trim();
+  final safeTitle = title.length > 120 ? title.substring(0, 120) : title;
+  if (safeTitle.isEmpty) return null;
+  final note = EventPreparationDraft(note: prose, steps: checklist).compose();
+  return AnnaCaptureTaskProposal(
+    title: safeTitle, note: note,
+    date: DateTime(targetDay.year, targetDay.month, targetDay.day),
+  );
+}
+
+String _annaCaptureProposalLabel(String languageCode, String key) {
+  const strings = <String, Map<String, String>>{
+    'taskFromText': {
+      'it': 'Task da una frase', 'en': 'Task from a sentence',
+      'es': 'Tarea desde una frase', 'fr': 'Tâche depuis une phrase',
+      'pt': 'Tarefa a partir de uma frase',
+    },
+    'checklistFromNote': {
+      'it': 'Checklist da una nota', 'en': 'Checklist from a note',
+      'es': 'Lista desde una nota', 'fr': 'Liste depuis une note',
+      'pt': 'Lista a partir de uma nota',
+    },
+    'writePhrase': {
+      'it': 'Scrivi cosa vorresti fare', 'en': 'Write what you want to do',
+      'es': 'Escribe lo que quieres hacer', 'fr': 'Écris ce que tu veux faire',
+      'pt': 'Escreve o que queres fazer',
+    },
+    'review': {
+      'it': 'Rivedi la bozza', 'en': 'Review draft',
+      'es': 'Revisar borrador', 'fr': 'Vérifier le brouillon',
+      'pt': 'Rever rascunho',
+    },
+    'noChecklist': {
+      'it': 'Nessuna nota con un elenco adatto', 'en': 'No note has a suitable list',
+      'es': 'No hay notas con una lista válida', 'fr': 'Aucune note avec une liste adaptée',
+      'pt': 'Nenhuma nota com uma lista adequada',
+    },
+    'staleSource': {
+      'it': 'La nota è cambiata. Riapri la cattura.',
+      'en': 'The note changed. Open capture again.',
+      'es': 'La nota ha cambiado. Vuelve a abrir la captura.',
+      'fr': 'La note a changé. Rouvre la saisie.',
+      'pt': 'A nota mudou. Abre novamente a captura.',
+    },
+  };
+  return strings[key]?[languageCode] ?? strings[key]?['en'] ?? key;
+}
+
+Future<String?> _askLocalTaskSentence(BuildContext context) async {
+  final language = AnnaStrings.of(context).languageCode;
+  final controller = TextEditingController();
+  final result = await showDialog<String>(
+    context: context,
+    builder: (dialogContext) => AlertDialog(
+      title: Text(_annaCaptureProposalLabel(language, 'taskFromText')),
+      content: TextField(
+        key: const ValueKey('anna-cap0092-task-source'),
+        controller: controller,
+        autofocus: true,
+        minLines: 2,
+        maxLines: 4,
+        maxLength: 300,
+        decoration: InputDecoration(
+          hintText: _annaCaptureProposalLabel(language, 'writePhrase')),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(dialogContext),
+          child: Text(AnnaStrings.of(dialogContext).cancel),
+        ),
+        FilledButton(
+          onPressed: () => Navigator.pop(dialogContext, controller.text),
+          child: Text(_annaCaptureProposalLabel(language, 'review')),
+        ),
+      ],
+    ),
+  );
+  controller.dispose();
+  return result;
+}
+
+Future<DiaryBlockReference?> _pickLocalChecklistNote(
+  BuildContext context,
+  AgendaStore store,
+  DateTime targetDay,
+) async {
+  final language = AnnaStrings.of(context).languageCode;
+  final available = store.allDiaryBlockReferences(includeArchived: false)
+      .where((ref) => ref.block.type == DiaryBlockType.note &&
+          annaProposeChecklistFromDiary(ref.block.text,
+              targetDay: targetDay) != null)
+      .take(40)
+      .toList(growable: false);
+  if (available.isEmpty) {
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+      content: Text(_annaCaptureProposalLabel(language, 'noChecklist'))));
+    return null;
+  }
+  return showDialog<DiaryBlockReference>(
+    context: context,
+    builder: (dialogContext) => AlertDialog(
+      title: Text(_annaCaptureProposalLabel(language, 'checklistFromNote')),
+      content: SizedBox(
+        width: 540,
+        height: 420,
+        child: ListView.builder(
+          itemCount: available.length,
+          itemBuilder: (context, index) {
+            final ref = available[index];
+            final preview = ref.block.text.replaceAll(RegExp(r'\s+'), ' ');
+            return ListTile(
+              title: Text(preview.length > 95
+                  ? '${preview.substring(0, 95)}…' : preview),
+              subtitle: Text(DateFormat('d MMM yyyy',
+                  AnnaStrings.intlLocale(context)).format(ref.date)),
+              onTap: () => Navigator.pop(dialogContext, ref),
+            );
+          },
+        ),
+      ),
+      actions: [
+        TextButton(onPressed: () => Navigator.pop(dialogContext),
+          child: Text(AnnaStrings.of(dialogContext).cancel)),
+      ],
+    ),
+  );
 }
 
 DateTime _normalizeUnifiedCaptureDay(DateTime? value) {
@@ -225,6 +431,12 @@ Future<void> showUnifiedCapture(
      action: _UnifiedCaptureAction.photo),
     (icon: Icons.check_circle_outline, title: strings.task,
      subtitle: null, action: _UnifiedCaptureAction.task),
+    (icon: Icons.auto_awesome_motion_outlined,
+     title: _annaCaptureProposalLabel(strings.languageCode, 'taskFromText'),
+     subtitle: null, action: _UnifiedCaptureAction.taskFromText),
+    (icon: Icons.playlist_add_check_outlined,
+     title: _annaCaptureProposalLabel(strings.languageCode, 'checklistFromNote'),
+     subtitle: null, action: _UnifiedCaptureAction.checklistFromNote),
     (icon: Icons.mic_none_outlined, title: strings.voiceNote,
      subtitle: strings.recordDiaryAudio(dayLabel),
      action: _UnifiedCaptureAction.voice),
@@ -574,6 +786,40 @@ Future<void> showUnifiedCapture(
           SnackBar(content: Text(strings.inboxSaved)),
         );
       }
+      return;
+
+    case _UnifiedCaptureAction.taskFromText:
+      final phrase = await _askLocalTaskSentence(context);
+      if (phrase == null || !context.mounted ||
+          store.activeAccountId != accountAtCaptureOpen) { return; }
+      final proposal = annaProposeTaskFromText(
+        phrase, selectedDay: targetDay,
+        languageCode: strings.languageCode, now: DateTime.now());
+      if (proposal == null) return;
+      // Explicit editor Save owns writes, account checks and reminders.
+      await openItemEditor(context, store, proposal.date,
+        initialType: ItemType.task, duplicateOf: proposal.toEditorDraft());
+      return;
+
+    case _UnifiedCaptureAction.checklistFromNote:
+      final selected = await _pickLocalChecklistNote(context, store, targetDay);
+      if (selected == null || !context.mounted ||
+          store.activeAccountId != accountAtCaptureOpen) { return; }
+      final current = store.journal(selected.date).blocks
+          .where((b) => b.id == selected.block.id).toList(growable: false);
+      if (current.length != 1 || current.single.archived ||
+          current.single.type != DiaryBlockType.note ||
+          current.single.text != selected.block.text) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text(_annaCaptureProposalLabel(
+              strings.languageCode, 'staleSource'))));
+        return;
+      }
+      final draft = annaProposeChecklistFromDiary(
+        current.single.text, targetDay: targetDay);
+      if (draft == null) return;
+      await openItemEditor(context, store, targetDay,
+        initialType: ItemType.task, duplicateOf: draft.toEditorDraft());
       return;
 
     case _UnifiedCaptureAction.task:
