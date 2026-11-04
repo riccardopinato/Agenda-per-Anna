@@ -33,13 +33,26 @@ function json(data,status=200,origin=null) {
  return new Response(JSON.stringify(data),{status,headers});
 }
 function browserResponse(message,status=200) {
- return new Response(
-  '<!doctype html><html lang="it"><head><meta charset="utf-8">'+
-  '<meta name="viewport" content="width=device-width,initial-scale=1">'+
-  '<title>Anna\u2019s Diary - Calendar Test</title></head><body><main><p>'+
-  message+'</p></main></body></html>',
-  {status,headers:{'content-type':'text/html; charset=utf-8',...SECURITY,
+ // Supabase's public Edge gateway serves HTML as text/plain for safety.
+ // Return deliberate readable plain text instead of raw <html> markup.
+ return new Response('Anna\u2019s Diary - Google Calendar QA\n\n'+message,
+  {status,headers:{'content-type':'text/plain; charset=utf-8',...SECURITY,
     'content-security-policy':"default-src 'none'; base-uri 'none'; frame-ancestors 'none'; form-action 'none'"}});
+}
+const CALLBACK_DIAGNOSTIC_CODES=new Set([
+  'BAD_CALLBACK','BAD_STATE','WRONG_CALLBACK','REPLAY_OR_UNKNOWN_STATE',
+  'VAULT_INTEGRITY','EXPIRED','ACCESS_DENIED','GOOGLE_UNAVAILABLE',
+  'GOOGLE_TOKEN_REJECTED','TOKEN_REQUEST_INVALID','BAD_TOKEN_RESPONSE',
+  'SCOPE_MISMATCH','BAD_ID_TOKEN','BAD_ALGORITHM','JWKS_UNAVAILABLE',
+  'UNKNOWN_KID','BAD_ID_SIGNATURE','BAD_ID_CLAIMS','BAD_GOOGLE_SUBJECT',
+  'STATE_COLLISION','COMPLETION_COLLISION',
+]);
+export function safeCallbackFailureCode(error) {
+  // A deliberately finite allowlist. NEVER log error.message, stack,
+  // JWTs, callback query, Google code, tokens or SQL/DB secrets.
+  return error?.name==='GcalStageFault'&&
+    CALLBACK_DIAGNOSTIC_CODES.has(error.kind)
+    ? error.kind : 'UNCLASSIFIED_CALLBACK_FAILURE';
 }
 async function boundedBody(req,limit=2048) {
  const reader=req.body?.getReader();
@@ -121,7 +134,10 @@ export function createGoogleCalendarStagingHandler({
        publicCallback.search=url.search;
        await broker.callback({callbackUrl:publicCallback.href});
        return browserResponse('Consenso ricevuto. Torna nell\u2019app per verificare l\u2019account Google e confermare il collegamento.');
-     } catch {
+     } catch(error) {
+       // Non-sensitive failure classification for server-side diagnosis only.
+       // No URL, user ID, token, auth code, Google email or free-form exception.
+       console.warn('ANNA_GCAL_QA_CALLBACK_RESULT',safeCallbackFailureCode(error));
        return browserResponse('Collegamento non completato. Torna nell\u2019app e riprova.',400);
      }
    }
