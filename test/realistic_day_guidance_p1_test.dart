@@ -89,9 +89,9 @@ void main() {
   test('voluntary nudges are off by default and explicitly reversible', () {
     final source = File('lib/src/realistic_day_advice.dart').readAsStringSync();
     expect(source, contains('bool _nudgesEnabled = false;'));
-    expect(source, contains("prefs.getBool('${key}_nudges') ?? false"));
-    expect(source, contains("prefs.setBool('${key}_nudges', enabled)"));
-    expect(source, contains("prefs.setInt('${key}_snoozed_through', next)"));
+    expect(source, contains("prefs.getBool('\${key}_nudges') ?? false"));
+    expect(source, contains("prefs.setBool('\${key}_nudges', enabled)"));
+    expect(source, contains("prefs.setInt('\${key}_snoozed_through', next)"));
     expect(source, contains('DateTime(now.year, now.month, now.day + 7)'));
     expect(source, contains("key: const ValueKey('realistic-day-nudge-snooze')"));
     expect(source, contains('advisePressure'));
