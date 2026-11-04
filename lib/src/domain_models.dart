@@ -141,7 +141,9 @@ List<String> annaNormalizeTodayCardOrder(Iterable<dynamic>? values) {
   final out = <String>[];
   for (final raw in values ?? const <dynamic>[]) {
     if (raw is String && annaTodayCardDefaults.contains(raw) &&
-        !out.contains(raw)) out.add(raw);
+        !out.contains(raw)) {
+      out.add(raw);
+    }
   }
   for (final id in annaTodayCardDefaults) {
     if (!out.contains(id)) out.add(id);
@@ -1507,6 +1509,13 @@ class DiaryPlaceReference {
   }
 }
 
+/// Respect Flutter TextField's grapheme-cluster character counter.
+String _annaNormalizedPhotoAltText(Object? value) {
+  if (value is! String) return '';
+  final trimmed = value.trim();
+  return trimmed.characters.length <= 500 ? trimmed : '';
+}
+
 class DiaryBlock {
   final String id;
   final DiaryBlockType type;
@@ -1648,8 +1657,7 @@ class DiaryBlock {
             DateTime.tryParse(json['createdAt'] as String? ?? '')?.toLocal() ??
                 DateTime.now(),
         text: json['text'] as String? ?? '',
-        altText: ((json['altText'] as String?) ?? '').trim().length > 500
-            ? '' : ((json['altText'] as String?) ?? '').trim(),
+        altText: _annaNormalizedPhotoAltText(json['altText']),
         imageBase64: json['imageBase64'] as String? ?? '',
         audioBase64: json['audioBase64'] as String? ?? '',
         mediaAssetId: json['mediaAssetId'] as String? ?? '',
