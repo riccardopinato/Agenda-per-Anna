@@ -177,7 +177,8 @@
           "lib/vault_service.dart",
           "lib/src/security/**",
           "lib/src/screens/private_vault.dart",
-          "lib/src/storage/**"
+          "lib/local_state_store.dart",
+          "lib/local_state_backend_io.dart"
         ],
         "labs": [
           "persistence",
