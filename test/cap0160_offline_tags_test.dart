@@ -165,10 +165,18 @@ void main() {
 
     final guard = Cap0160TagEditGuard(store);
     expect(guard.isCurrent, isTrue);
+    final oldEpoch = store.accountScopeEpoch;
+    // Cloud sync may bump every UI revision; this is NOT an account switch.
+    store.signals.bumpAll();
+    expect(store.accountScopeEpoch, oldEpoch);
+    expect(guard.isCurrent, isTrue);
     await store.activateCloudAccount('account-B');
     expect(guard.isCurrent, isFalse);
     expect(Cap0160TagSuggester.forInbox(store, current, 'it'), isEmpty);
     expect(Cap0160TagSuggester.forDiary(store, date, private, 'it'), isEmpty);
+    await store.activateCloudAccount(null);
+    expect(store.accountScopeEpoch, oldEpoch + 2);
+    expect(guard.isCurrent, isFalse); // Switching A -> B -> A is stale.
     store.dispose();
   });
 
