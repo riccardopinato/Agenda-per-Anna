@@ -134,9 +134,9 @@ void main() {
       tester.view.resetPhysicalSize();
       tester.view.resetDevicePixelRatio();
     });
-    await tester.pumpWidget(MaterialApp(
+    await tester.pumpWidget(const MaterialApp(
       home: Scaffold(
-        body: const SizedBox.expand(),
+        body: SizedBox.expand(),
         bottomNavigationBar: AnnaEditorialDockSurface(
           child: SizedBox(
             height: 56,
