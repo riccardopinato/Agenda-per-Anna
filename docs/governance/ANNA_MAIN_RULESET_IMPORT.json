@@ -44,10 +44,6 @@
             "integration_id": 15368
           },
           {
-            "context": "build-web",
-            "integration_id": 15368
-          },
-          {
             "context": "UI5 source and visual-flow contracts",
             "integration_id": 15368
           }
