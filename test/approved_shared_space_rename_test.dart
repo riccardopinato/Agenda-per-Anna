@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:agenda_per_anna/main.dart';
+import 'package:agenda_per_anna/cloud_sync_service.dart';
 
 void main() {
   final sql = File(
