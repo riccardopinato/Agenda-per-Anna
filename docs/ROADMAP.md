@@ -1,5 +1,13 @@
 # Anna's Diary — Roadmap
 
+## 5 November 2026 — Editorial Hybrid real-data Home DS2 (implementation PR)
+
+- **Opt-in / reversible:** classic Home stays default; Hybrid is enabled from Personalizzazione or directly from Oggi. Device-local cosmetic boolean only; no change to synchronized AgendaPreferences, account/profile data, backup or cloud.
+- **Canonical day data:** keep PlannerScreen, dayHubSnapshot, calendar, agenda filters, Crea menu, real diary/memory/ritual cards and hourly timeline. New editorial hero and daily metrics derive only from selected day; hidden details remain masked. No fake preview records or duplicate writers.
+- **Artifact boundary:** source PR with tests, exact-head Development/Web/AppLab and review. No signed APK/versionCode change or Play release until separate user device QA; Physical Visual NOT VERIFIED.
+- **Contract:** [EDITORIAL_HYBRID_DS2_20261105.md](EDITORIAL_HYBRID_DS2_20261105.md). Follow with editorial navigation and remaining screens after visual approval.
+
+
 ## 5 November 2026 — Editorial Hybrid DS1 (bounded implementation)
 
 - User-selected Editorial Hybrid visual identity. **Step 1:** extract reusable theme-aware presentation primitives in `lib/src/editorial_hybrid_design.dart`; keep canonical AgendaApp `ColorScheme`, custom HSV, Lora/Manrope, 48dp touch targets and attached dock geometry.
