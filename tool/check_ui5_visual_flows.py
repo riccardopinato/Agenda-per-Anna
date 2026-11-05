@@ -27,19 +27,19 @@ shell = read("lib/src/screens/home_inbox_search.dart")
 capture = read("lib/src/unified_capture.dart")
 
 for label in (
-    "main-nav-today", "ui5-today-date-strip", "main-nav-create",
+    "main-nav-today", "ui5-today-single-date", "main-nav-create",
     "capture-effective-date",
 ):
     require(f"id: '{label}'" in today, f"Today UI5 visual flow missing {label}")
-require("identifier: 'ui5-today-date-strip'" in planner,
-        "Today date strip lacks stable semantics")
+require("identifier: 'ui5-today-single-date'" in planner,
+        "Today single-date selector lacks stable semantics")
 require("identifier: 'main-nav-create'" in shell,
         "central Create lacks stable semantics")
 require("identifier: 'capture-effective-date'" in capture,
         "capture date lacks stable semantics")
 require("id: 'capture-effective-date'" in core,
         "core-shell must verify real Capture date control")
-require("id: 'main-nav-today'" in home and "id: 'ui5-today-date-strip'" in home,
+require("id: 'main-nav-today'" in home and "id: 'ui5-today-single-date'" in home,
         "historical Home return must land on UI5 Today")
 for path in [".maestro/journey/today.yaml", ".maestro/journey/home.yaml"]:
     text = "\n".join(

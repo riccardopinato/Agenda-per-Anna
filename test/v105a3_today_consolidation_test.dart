@@ -52,8 +52,8 @@ void main() {
   test('v1.05-A3 runtime journey verifies the consolidated Today surface', () {
     final flow = File('.maestro/journey/today.yaml').readAsStringSync();
 
-    // UI5 has a stable date strip; the legacy focus card is conditional.
-    expect(flow, contains("id: 'ui5-today-date-strip'"));
+    // UI5 now uses one central date with two arrows; the legacy focus card is conditional.
+    expect(flow, contains("id: 'ui5-today-single-date'"));
     expect(flow, contains("id: 'main-nav-create'"));
     expect(flow, contains("id: 'capture-effective-date'"));
     expect(flow, contains('assertVisible:'));

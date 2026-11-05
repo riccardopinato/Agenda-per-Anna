@@ -84,7 +84,7 @@ void main() {
     for (final action in ['text', 'photo', 'voice', 'task', 'sketch']) {
       expect(capture, contains('_UnifiedCaptureAction.$action'));
     }
-    expect(planner, contains("identifier: 'ui5-today-date-strip'"));
+    expect(planner, contains("identifier: 'ui5-today-single-date'"));
     expect(planner, contains('AnnaMotionStagger('));
     expect(planner, contains('AnnaMotionReveal('));
     expect(planner, contains('TableCalendar<UnifiedAgendaEntry>('));
