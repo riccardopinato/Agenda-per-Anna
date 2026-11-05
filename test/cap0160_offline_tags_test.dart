@@ -84,6 +84,14 @@ void main() {
     );
     expect(cut, isEmpty);
 
+    final beforeAtSign = Cap0160TagSuggester.propose(
+      text: "${' '.padRight(3991)}sensitive@example.org",
+      languageCode: 'it',
+      scopeReady: true,
+      authorizedPrivateCorpus: const [],
+    );
+    expect(beforeAtSign, isEmpty);
+
     // Cutting a full or partial Unicode email TLD must never expose either
     // the local part or the domain as an offline tag proposal.
     for (final padding in [3978, 3981]) {
@@ -401,6 +409,12 @@ void main() {
     expect(engine, isNot(contains('CloudSyncService.instance')));
     expect(editor, contains('offlineProposals: proposals'));
     expect(editor, contains('Cap0160InlineTagSuggestions('));
+    expect(editor, contains('inlineFastPath: true'));
+    expect(inbox, contains('inlineFastPath: true'));
+    final organization = File('lib/src/organization_domain.dart')
+        .readAsStringSync();
+    expect(organization, contains('identical(candidate, updated)'));
+    expect(organization, isNot(contains('identical(inbox[index], updated)')));
     expect(inbox, contains('Cap0160InlineTagSuggestions('));
     expect(editor, contains('preselectedTag: tag'));
     expect(inbox, contains('preselectedTag: tag'));

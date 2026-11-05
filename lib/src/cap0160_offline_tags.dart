@@ -68,18 +68,16 @@ abstract final class Cap0160TagSuggester {
   static List<String> _tokens(String text, Set<String> stop) {
     final bounded = text.length <= maxTextChars
         ? text : text.substring(0, maxTextChars);
-    // Strip private addresses BEFORE trimming partial words: a cutoff within
-    // the TLD can otherwise make a previously valid email unrecognizable.
+    // Strip complete addresses first. If the 4000-unit cutoff falls
+    // anywhere inside a non-whitespace token (including exactly before '@'),
+    // drop that entire trailing token rather than exposing a partial email,
+    // URL or keyword in the inline suggestions.
     var clean = bounded.replaceAll(_urls, ' ').replaceAll(_emails, ' ');
-    if (bounded.length < text.length) {
-      // A bounded email with an incomplete domain/TLD may not match _emails.
-      // Fail closed for an address-like tail, including Unicode local parts.
-      clean = clean.replaceFirst(RegExp(r'\S+@\S*$'), ' ');
-      if (_words.hasMatch(text[maxTextChars])) {
-        clean = clean.replaceFirst(
-          RegExp(r'[\p{L}\p{M}]+$', unicode: true), '',
-        );
-      }
+    if (bounded.length < text.length &&
+        bounded.isNotEmpty &&
+        !RegExp(r'\s').hasMatch(bounded[bounded.length - 1]) &&
+        !RegExp(r'\s').hasMatch(text[maxTextChars])) {
+      clean = clean.replaceFirst(RegExp(r'\S+$'), ' ');
     }
     return _words.allMatches(clean)
         .map((match) => match.group(0)!.toLowerCase())
@@ -147,8 +145,9 @@ abstract final class Cap0160TagSuggester {
 
   /// No shared-space, Vault, credentials or other account profiles are read.
   static List<Cap0160TagSuggestion> forInbox(
-    AgendaStore store, InboxEntry entry, String languageCode,
-  ) {
+    AgendaStore store, InboxEntry entry, String languageCode, {
+    bool inlineFastPath = false,
+  }) {
     if (!store.entryScopeReady ||
         store.agendaContentFilter == AgendaContentFilter.sharedOnly ||
         entry.archived ||
@@ -161,17 +160,23 @@ abstract final class Cap0160TagSuggester {
       languageCode: languageCode,
       currentTags: entry.tags,
       scopeReady: true,
-      authorizedPrivateCorpus: store.inbox
-          .where((item) => !item.archived && item.id != entry.id)
-          .map((item) => Cap0160PrivateDocument(
-                id: item.id, text: item.text,
-              )),
+      // Cards only rank words in this note. Deep TF-IDF across the
+      // authorized corpus remains available when the editor opens, but never
+      // repeats up to 512 document scans for each visible Inbox card.
+      authorizedPrivateCorpus: inlineFastPath
+          ? const <Cap0160PrivateDocument>[]
+          : store.inbox
+              .where((item) => !item.archived && item.id != entry.id)
+              .map((item) => Cap0160PrivateDocument(
+                    id: item.id, text: item.text,
+                  )),
     );
   }
 
   static List<Cap0160TagSuggestion> forDiary(
-    AgendaStore store, DateTime day, DiaryBlock block, String languageCode,
-  ) {
+    AgendaStore store, DateTime day, DiaryBlock block, String languageCode, {
+    bool inlineFastPath = false,
+  }) {
     if (!store.entryScopeReady ||
         store.agendaContentFilter == AgendaContentFilter.sharedOnly ||
         block.archived ||
@@ -184,13 +189,17 @@ abstract final class Cap0160TagSuggester {
       languageCode: languageCode,
       currentTags: block.tags,
       scopeReady: true,
-      authorizedPrivateCorpus: store.journals.entries.expand((entry) =>
-          entry.value.blocks.where((item) =>
-              !item.archived && item.id != block.id).map((item) =>
-                  Cap0160PrivateDocument(
-                    id: '${entry.key}/${item.id}',
-                    text: item.text,
-                  ))),
+      // Eager Diary card rendering must be O(note length), not
+      // O(visible notes * 512 private documents).
+      authorizedPrivateCorpus: inlineFastPath
+          ? const <Cap0160PrivateDocument>[]
+          : store.journals.entries.expand((entry) =>
+              entry.value.blocks.where((item) =>
+                  !item.archived && item.id != block.id).map((item) =>
+                      Cap0160PrivateDocument(
+                        id: '${entry.key}/${item.id}',
+                        text: item.text,
+                      ))),
     );
   }
 }

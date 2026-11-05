@@ -1919,6 +1919,7 @@ class _DiaryMemoryCardState extends State<DiaryMemoryCard> {
     final backlinks = widget.store.backlinksForDiaryBlock(block.id);
     final proposals = Cap0160TagSuggester.forDiary(
       widget.store, widget.date, block, AnnaStrings.of(context).languageCode,
+      inlineFastPath: true,
     );
     final hasMetadata = linked.isNotEmpty ||
         block.tags.isNotEmpty ||
@@ -2011,7 +2012,11 @@ class _DiaryMemoryCardState extends State<DiaryMemoryCard> {
       AnnaStrings.of(context).languageCode,
     );
     if (preselectedTag != null &&
-        !proposals.any((item) => item.tag == preselectedTag)) {
+        !Cap0160TagSuggester.forDiary(
+          widget.store, widget.date, block,
+          AnnaStrings.of(context).languageCode,
+          inlineFastPath: true,
+        ).any((item) => item.tag == preselectedTag)) {
       return;
     }
     final draftTags = preselectedTag == null
