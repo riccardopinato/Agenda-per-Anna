@@ -1,6 +1,8 @@
 import 'dart:io';
 
 import 'package:agenda_per_anna/main.dart';
+import 'package:intl/date_symbol_data_local.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -119,6 +121,44 @@ void main() {
     for (final label in labels) {
       expect(find.text(label), findsOneWidget);
     }
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('actual AgendaApp Hybrid shell mounts original animated Create button',
+      (tester) async {
+    await initializeDateFormatting('it_IT', null);
+    SharedPreferences.setMockInitialValues(<String, Object>{
+      AnnaEditorialTodayMode.storageKey: true,
+    });
+    await AnnaEditorialTodayMode.ensureLoaded();
+    AnnaEditorialTodayMode.enabled.value = true;
+    addTearDown(() => AnnaEditorialTodayMode.enabled.value = false);
+
+    final store = AgendaStore();
+    store.preferences = const AgendaPreferences(
+      appLanguage: AppLanguage.italian,
+    );
+    await tester.pumpWidget(
+      AgendaApp(store: store, bypassIdentityForTesting: true),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const ValueKey<String>('main-editorial-dock')),
+        findsOneWidget);
+    expect(find.byKey(const ValueKey<String>('main-nav-create')),
+        findsOneWidget);
+    expect(find.byKey(const ValueKey<String>('anna-editorial-anchored-dock')),
+        findsOneWidget);
+    expect(tester.takeException(), isNull);
+
+    // A local appearance switch restores the original M3 NavigationBar.
+    AnnaEditorialTodayMode.enabled.value = false;
+    await tester.pumpAndSettle();
+    expect(find.byKey(const ValueKey<String>('main-editorial-dock')),
+        findsNothing);
+    expect(find.byType(NavigationBar), findsOneWidget);
+    expect(find.byKey(const ValueKey<String>('main-nav-create')),
+        findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 
