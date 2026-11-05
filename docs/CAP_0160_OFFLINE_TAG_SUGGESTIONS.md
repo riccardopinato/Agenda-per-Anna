@@ -18,6 +18,13 @@ A TF-IDF keyword is not a reliable semantic or sensitive-data classifier. It can
 
 No uncontrolled indexing of entire media/voice transcripts, OCR, passwords or shared conversations. Avoid changing source authorization, login/sync, Google Direct #199, Privacy V2 #215 or the +124 signed APK.
 
+## Review fixes (5 November 2026)
+
+- Account-scoped CAP writes now recheck the editor's profile-only epoch inside the serialized local mutation writer, after obtaining the local store and before deriving any account-dependent delta/sync owner. Profile activation/erasure waits for queued writes to settle before moving the canonical working set. Rejected optimistic Inbox/diary projections are rolled back before the queue barrier releases.
+- Unicode-aware email stripping also covers accented address components. The 4,000-unit bound discards a truncated trailing word rather than suggesting its fragment.
+- The existing tag normalizer and CAP candidate exclusion share an accent-preserving canonical-equivalence comparison key for Latin characters (IT/EN/ES/FR/PT); no dependency or wholesale diacritic removal.
+- Regression tests cover accented addresses, cut words, canonical-equivalent tags, stale account writer rejection and concurrent Save/profile activation. No source scope, backup schema, APK version or signing identity changes.
+
 ## Gate before merge
 
 1. All five-language negative fixtures, stopwords, deterministic ranking, one/duplicate/5000 documents and 512-source cap.

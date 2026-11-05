@@ -2,6 +2,13 @@ part of '../main.dart';
 
 /// CAP-0160: local, deterministic sparse TF-IDF. No model, I/O or writes.
 /// Source documents are supplied only by the currently active private store.
+class Cap0160ScopeChanged implements Exception {
+  const Cap0160ScopeChanged();
+
+  @override
+  String toString() => 'CAP-0160: account scope changed before Save';
+}
+
 class Cap0160PrivateDocument {
   const Cap0160PrivateDocument({required this.id, required this.text});
   final String id;
@@ -52,12 +59,21 @@ abstract final class Cap0160TagSuggester {
   };
   static final _words = RegExp(r'[\p{L}\p{M}]+', unicode: true);
   static final _urls = RegExp(r'(?:https?://|www\.)\S+', caseSensitive: false);
-  static final _emails =
-      RegExp(r'[\w.+-]+@[\w.-]+\.[A-Za-z]{2,}', caseSensitive: false);
+  static final _emails = RegExp(
+    r'[\p{L}\p{M}\p{N}._%+-]+@[\p{L}\p{M}\p{N}.-]+\.[\p{L}]{2,}',
+    unicode: true,
+    caseSensitive: false,
+  );
 
   static List<String> _tokens(String text, Set<String> stop) {
-    final bounded = text.length <= maxTextChars
+    var bounded = text.length <= maxTextChars
         ? text : text.substring(0, maxTextChars);
+    // Never turn the prefix of a cut-off word into an invented tag.
+    if (bounded.length < text.length && _words.hasMatch(text[maxTextChars])) {
+      bounded = bounded.replaceFirst(
+        RegExp(r'[\p{L}\p{M}]+$', unicode: true), '',
+      );
+    }
     final clean = bounded.replaceAll(_urls, ' ').replaceAll(_emails, ' ');
     return _words.allMatches(clean)
         .map((match) => match.group(0)!.toLowerCase())
@@ -103,10 +119,10 @@ abstract final class Cap0160TagSuggester {
         }
       }
     }
-    final excluded = currentTags.map((tag) => tag.trim().toLowerCase()).toSet();
+    final excluded = currentTags.map(organizationTagComparisonKey).toSet();
     final result = <Cap0160TagSuggestion>[];
     for (final word in candidates) {
-      if (excluded.contains(word)) continue;
+      if (excluded.contains(organizationTagComparisonKey(word))) continue;
       final tf = 1 + log(frequency[word]!);
       final idf = documents == 0
           ? 1.0 : log((documents + 1) / ((df[word] ?? 0) + 1)) + 1;

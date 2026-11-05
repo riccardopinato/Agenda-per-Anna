@@ -770,8 +770,8 @@ class _OrganizationTagsEditorDialogState
                     controller.text.split(','),
                   );
                   if (current.length >= 12 ||
-                      current.any((tag) => tag.toLowerCase() ==
-                          proposal.tag.toLowerCase())) {
+                      current.any((tag) => organizationTagComparisonKey(tag) ==
+                          organizationTagComparisonKey(proposal.tag))) {
                     return;
                   }
                   controller.text = [...current, proposal.tag].join(', ');
@@ -1950,7 +1950,13 @@ class _DiaryMemoryCardState extends State<DiaryMemoryCard> {
         )) {
       return;
     }
-    await widget.store.setDiaryTags(widget.date, block.id, tags);
+    try {
+      await widget.store.setDiaryTags(widget.date, block.id, tags,
+          scopeGuard: guard);
+    } on Cap0160ScopeChanged {
+      // Profile transition invalidated this edit; no data was committed.
+      return;
+    }
   }
 
   Future<void> _togglePinned(DiaryBlock block) =>

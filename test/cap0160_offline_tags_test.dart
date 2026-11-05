@@ -65,6 +65,40 @@ void main() {
     expect(result.map((x) => x.tag), contains('bellissima'));
   });
 
+  test('CAP-0160 Unicode email and 4000-unit cut never leak partial tags', () {
+    final mail = Cap0160TagSuggester.propose(
+      text: 'joséphine@example.org montagna montagna',
+      languageCode: 'it',
+      scopeReady: true,
+      authorizedPrivateCorpus: const [],
+    );
+    expect(mail.map((value) => value.tag), isNot(contains('josé')));
+    expect(mail.map((value) => value.tag), isNot(contains('joséphine')));
+    expect(mail.map((value) => value.tag), contains('montagna'));
+
+    final cut = Cap0160TagSuggester.propose(
+      text: "${' ' * 3995}montagna",
+      languageCode: 'it',
+      scopeReady: true,
+      authorizedPrivateCorpus: const [],
+    );
+    expect(cut, isEmpty);
+  });
+
+  test('CAP-0160 Latin canonical-equivalent tags collapse, not accents', () {
+    expect(normalizeOrganizationTags(['café', 'cafe\u0301', 'cafe']),
+        ['café', 'cafe']);
+    final result = Cap0160TagSuggester.propose(
+      text: 'cafe\u0301 cafe\u0301 passeggiata',
+      languageCode: 'it',
+      scopeReady: true,
+      currentTags: ['café'],
+      authorizedPrivateCorpus: const [],
+    );
+    expect(result.map((value) => value.tag), isNot(contains('cafe\u0301')));
+    expect(result.map((value) => value.tag), contains('passeggiata'));
+  });
+
   test('CAP-0160 missing account scope, shared-only, or unknown locale fails shut', () {
     final sources = [
       const Cap0160PrivateDocument(id: '1', text: 'segreto nascosto'),
@@ -177,6 +211,61 @@ void main() {
     await store.activateCloudAccount(null);
     expect(store.accountScopeEpoch, oldEpoch + 2);
     expect(guard.isCurrent, isFalse); // Switching A -> B -> A is stale.
+    store.dispose();
+  });
+
+  test('CAP-0160 guarded writers reject stale profile edits', () async {
+    final store = AgendaStore();
+    await store.load();
+    await store.continueWithoutAccount();
+    await store.addInboxEntry('passeggiata privata');
+    final oldEntry = store.inbox.first;
+    final day = DateTime(2026, 11, 5);
+    final block = DiaryBlock(
+      id: 'tag-source',
+      type: DiaryBlockType.note,
+      createdAt: day,
+      text: 'pensiero privato',
+    );
+    await store.saveJournal(day, DayJournal(blocks: [block]));
+    final guard = Cap0160TagEditGuard(store);
+
+    await store.activateCloudAccount('different-owner');
+    await expectLater(
+      store.setInboxTags(oldEntry.id, ['segreto'], scopeGuard: guard),
+      throwsA(isA<Cap0160ScopeChanged>()),
+    );
+    await expectLater(
+      store.setDiaryTags(day, block.id, ['segreto'], scopeGuard: guard),
+      throwsA(isA<Cap0160ScopeChanged>()),
+    );
+    expect(store.inbox.where((entry) => entry.id == oldEntry.id), isEmpty);
+    await store.activateCloudAccount(null);
+    expect(store.inbox.firstWhere((entry) => entry.id == oldEntry.id).tags,
+        isEmpty);
+    expect(store.journal(day).blocks.first.tags, isEmpty);
+    store.dispose();
+  });
+
+  test('CAP-0160 simultaneous Save/profile switch never writes into B', () async {
+    final store = AgendaStore();
+    await store.load();
+    await store.continueWithoutAccount();
+    await store.addInboxEntry('passeggiata privata');
+    final entry = store.inbox.first;
+    final guard = Cap0160TagEditGuard(store);
+    final write = store.setInboxTags(entry.id, ['privato'], scopeGuard: guard);
+    final switchAccount = store.activateCloudAccount('account-B');
+    try {
+      await write;
+    } on Cap0160ScopeChanged {
+      // A rejected in-flight write is an allowed fail-closed outcome.
+    }
+    await switchAccount;
+    expect(store.inbox.any((item) => item.id == entry.id), isFalse);
+    await store.activateCloudAccount(null);
+    expect(store.inbox.firstWhere((item) => item.id == entry.id).tags,
+        anyOf(isEmpty, equals(['privato'])));
     store.dispose();
   });
 

@@ -757,7 +757,12 @@ class _InboxScreenState extends State<InboxScreen> {
             listEquals(current.tags, entry.tags))) {
       return;
     }
-    await store.setInboxTags(entry.id, tags);
+    try {
+      await store.setInboxTags(entry.id, tags, scopeGuard: guard);
+    } on Cap0160ScopeChanged {
+      // Fail closed if the profile changed while the queued write waited.
+      return;
+    }
   }
 
   Future<void> _copyToNotes(
