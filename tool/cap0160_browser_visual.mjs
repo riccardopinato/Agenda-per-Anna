@@ -136,6 +136,14 @@ try {
   if (await clickText('Cattura') || await clickContaining('Cattura')) {
     await capture('07-inbox-capture');
     await snapshotAccessibility('07-inbox-capture');
+    if (await clickText('Altre opzioni') || await clickContaining('Altre opzioni')) {
+      await capture('08-other-capture-options');
+      await snapshotAccessibility('08-other-capture-options');
+      if (await clickText('Inbox') || await clickContaining('Inbox')) {
+        await capture('09-inbox-note-editor');
+        await snapshotAccessibility('09-inbox-note-editor');
+      }
+    }
   }
 
   const captureRoute = await context.newPage();
