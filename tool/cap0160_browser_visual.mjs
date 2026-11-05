@@ -29,6 +29,17 @@ async function capture(name) {
   log.push(name + ': screenshot=' + statSync(filename).size + ' bytes, url=' + page.url());
 }
 async function clickText(label) {
+  const tab = page.getByRole('tab', { name: label, exact: true }).first();
+  if (await tab.count()) {
+    try {
+      await tab.click({ timeout: 3500 });
+      log.push('CLICKED TAB: ' + label);
+      await page.waitForTimeout(1000);
+      return true;
+    } catch (error) {
+      log.push('TAB CLICK FAILED: ' + label + ' :: ' + error.message.slice(0, 140));
+    }
+  }
   const locator = page.getByText(label, { exact: true }).first();
   if (await locator.count()) {
     try {
