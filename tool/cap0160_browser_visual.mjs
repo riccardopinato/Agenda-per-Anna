@@ -62,8 +62,8 @@ try {
   const placeholder = page.locator('flt-semantics-placeholder');
   if (await placeholder.count()) {
     try {
-      await placeholder.first().click({ timeout: 2500 });
-      log.push('Enabled Flutter accessibility');
+      await placeholder.first().evaluate((element) => element.click());
+      log.push('Requested Flutter accessibility programmatically');
     } catch (e) {
       log.push('Flutter accessibility placeholder inaccessible: ' + e.message.slice(0, 200));
     }
@@ -74,10 +74,18 @@ try {
   await capture('01-launch');
   await snapshotAccessibility('01-launch');
 
-  for (const label of ['Continua senza account','Continua senza accedere','Usa senza account','Senza account','Solo su questo dispositivo','Continua','Inizia','Inizia ora','Completo','Completa']) {
+  let usedLocal = await clickText('Usa su questo dispositivo');
+  if (!usedLocal) {
+    // Coordinates grounded in the captured 430x932 entry-screen screenshot.
+    await page.mouse.click(215, 520);
+    log.push('TAPPED mobile local-only entry at x=215,y=520');
+    await page.waitForTimeout(2500);
+  }
+  await capture('02-after-local-entry');
+  await snapshotAccessibility('02-after-local-entry');
+  for (const label of ['Salta', 'Avanti', 'Continua', 'Inizia', 'Completo', 'Conferma', 'OK']) {
     if (await clickText(label)) {
-      await capture('02-post-onboarding');
-      break;
+      await capture('02a-after-setup-step');
     }
   }
   await snapshotAccessibility('02-post-onboarding');
