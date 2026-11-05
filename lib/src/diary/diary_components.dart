@@ -716,7 +716,7 @@ Future<List<String>?> showOrganizationTagsEditor(
               spacing: 6,
               runSpacing: 6,
               children: offlineProposals.map((proposal) => ActionChip(
-                key: ValueKey('cap0160-chip-' + proposal.tag),
+                key: ValueKey('cap0160-chip-${proposal.tag}'),
                 label: Text(proposal.tag),
                 onPressed: () {
                   final current = normalizeOrganizationTags(
@@ -724,7 +724,9 @@ Future<List<String>?> showOrganizationTagsEditor(
                   );
                   if (current.length >= 12 ||
                       current.any((tag) => tag.toLowerCase() ==
-                          proposal.tag.toLowerCase())) return;
+                          proposal.tag.toLowerCase())) {
+                    return;
+                  }
                   controller.text = [...current, proposal.tag].join(', ');
                   controller.selection = TextSelection.collapsed(
                     offset: controller.text.length,
@@ -1900,7 +1902,9 @@ class _DiaryMemoryCardState extends State<DiaryMemoryCard> {
           (current) => current.id == block.id && !current.archived &&
               current.text == block.text &&
               listEquals(current.tags, block.tags),
-        )) return;
+        )) {
+      return;
+    }
     await widget.store.setDiaryTags(widget.date, block.id, tags);
   }
 
