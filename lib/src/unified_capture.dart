@@ -483,7 +483,7 @@ Future<void> showUnifiedCapture(
     showDragHandle: true,
     isScrollControlled: true,
     sheetAnimationStyle: AnimationStyle(
-      duration: AnnaMotionV108.duration(context, 360),
+      duration: AnnaMotionV108.duration(context, 416),
       reverseDuration: AnnaMotionV108.duration(context, 220),
     ),
     builder: (sheetContext) {

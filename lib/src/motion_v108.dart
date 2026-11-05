@@ -176,12 +176,10 @@ class _AnnaMotionStaggerState extends State<AnnaMotionStagger> {
         return;
       }
       final order = widget.order.clamp(0, 4);
-      // The prior capture animation delayed every row by 176+100n ms,
-      // then moved it by 32% for another 544ms. This felt disconnected
-      // from the opening sheet. A shorter overlapping cascade keeps each
-      // action responsive while retaining the approved visible micro-bounce.
+      // Final approved 7/10 R5: visible 100 ms spacing and a 544 ms
+      // micro-bounce. Delay remains bounded to the first five rows.
       final delay = widget.captureCascade
-          ? 40 + order * 72
+          ? 40 + order * 100
           : order * 60;
       Future<void>.delayed(Duration(milliseconds: delay), () {
         if (mounted) setState(() => _shown = true);
@@ -195,11 +193,11 @@ class _AnnaMotionStaggerState extends State<AnnaMotionStagger> {
     if (widget.captureCascade) {
       return AnimatedSlide(
         offset: shown ? Offset.zero : const Offset(0, -0.12),
-        duration: AnnaMotionV108.duration(context, 420),
+        duration: AnnaMotionV108.duration(context, 544),
         curve: Curves.easeOutCubic,
         child: AnimatedScale(
           scale: shown ? 1 : 0.976,
-          duration: AnnaMotionV108.duration(context, 420),
+          duration: AnnaMotionV108.duration(context, 544),
           curve: Curves.easeOutBack,
           child: AnimatedOpacity(
             opacity: shown ? 1 : 0,
