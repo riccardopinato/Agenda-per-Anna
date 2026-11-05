@@ -90,6 +90,24 @@ void main() {
     expect(shell, contains('PlannerScreen(store: widget.store, embedded: true)'));
   });
 
+  test('Hybrid Home has no filter bar or stale invisible content filter', () {
+    final planner = File('lib/src/planner_views.dart').readAsStringSync();
+    final start = planner.indexOf('class _PlannerScreenState');
+    final end = planner.indexOf('class _CalendarDayContextCard', start);
+    expect(start, greaterThanOrEqualTo(0));
+    expect(end, greaterThan(start));
+    final home = planner.substring(start, end);
+    // Only the Hybrid Home loses the chips; Classic and Calendar retain them.
+    expect(home, contains("if (!editorial) ...["));
+    expect(home, contains('AgendaContentFilterBar(store: widget.store)'));
+    expect(planner.split('AgendaContentFilterBar(store: widget.store)').length - 1, 4);
+    // When a global filter was chosen elsewhere, reset it after the frame
+    // so Hybrid never silently hides private/shared items.
+    expect(home, contains('widget.store.agendaContentFilter != AgendaContentFilter.all'));
+    expect(home, contains('WidgetsBinding.instance.addPostFrameCallback'));
+    expect(home, contains('widget.store.setAgendaContentFilter(AgendaContentFilter.all)'));
+  });
+
   test('mode selection has copy for all five target locales', () {
     for (final language in ['it', 'en', 'es', 'fr', 'pt']) {
       expect(annaEditorialTodayModeLabel(
