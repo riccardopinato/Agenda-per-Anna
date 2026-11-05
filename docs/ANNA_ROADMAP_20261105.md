@@ -14,19 +14,19 @@ Regola di evidenza: SOURCE MERGED != APK aggiornato != physical QA != Play relea
 | Rinomina tutti gli spazi di cui si e proprietari | #246 | MERGED, vincolo server owner |
 | Ricordi raggruppati per nome del luogo anche singoli | #247 | MERGED |
 | Riassunti estrattivi locali settimanali/mensili/luogo/persona | #248 | MERGED; ranking lessicale, non TextRank |
-| Alias personale per spazi di cui si e membro | #249 | IN VALIDAZIONE, merge solo con gate |
-| APK incrementale +125 | release lane | NON ANCORA CERTIFICATA |
+| Alias personale per spazi di cui si e membro | #249 | MERGED as 6b447eb9; exact-head Flutter/Web/AppLab PASS |
+| APK incrementale +125 | release lane | CANDIDATA A FIRMA DOPO IL MERGE E CI |
 
 ## Cinque maxi-step, nell'ordine
 
 ### 1. Finire Shared Space + Inbox (BLOCKING_NOW)
-- #249: unire solo dopo CI Flutter, Web, AppLab e review all'esatto head.
+- #249: MERGED con Flutter/Web/AppLab PASS; resta da verificare su due telefoni reali.
 - Rinomina owner globale via RPC (migration SQL #099), membro solo alias per account e dispositivo.
 - Nomi storici predefiniti con cuore resi neutri senza riscrivere i record del server; non eliminare cuori da nomi creati dall'utente.
 - Verificare creare secondo e terzo spazio, accesso membro, QR, riavvio, cache e account switch; finestra Nota rapida su piccolo Android con tastiera, font grande, Annulla e Salva.
 
 ### 2. APK firmato +125 e collaudo fisico (RELEASE GATE)
-- Dopo i merge sorgente, versione +124 -> +125 con PR monotona separata e test esatti.
+- Dopo i merge sorgente, versione +124 -> +125 in PR di documentazione e release gate con test esatti.
 - Lane di firma ARM64 solo da trusted main e CI verde; registrare SHA sorgente, hash APK, fingerprint della firma e manifest.
 - Installazione come update in-place, preservando dati privati, Vault, ricordi, categorie e shared; test propietario + membro e sync su due telefoni.
 - Il collaudo reale richiede una verifica su device; nessun Play/Store rollout automatico.

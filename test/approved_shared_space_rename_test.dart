@@ -60,6 +60,33 @@ void main() {
     expect(sharedSpaceCanRename(spaces.first, ''), isFalse);
   });
 
+  test('legacy heart decoration is hidden only for the default label', () {
+    expect(sharedSpaceNeutralDisplayName('Spazio condiviso<3'),
+        'Spazio condiviso');
+    expect(sharedSpaceNeutralDisplayName('Spazio condiviso ♡'),
+        'Spazio condiviso');
+    expect(sharedSpaceNeutralDisplayName('Weekend ♡'),
+        'Weekend ♡');
+  });
+
+  test('local-only badge is shown solely for a saved member alias', () {
+    expect(screen, contains(
+        '_memberAliases.containsKey(space.id)'));
+    expect(screen, contains(
+        '_memberAliasScope == _memberAliasKey'));
+    expect(screen, contains(
+        'sharedSpaceNeutralDisplayName(space.name)'));
+  });
+
+  test('local aliases count grapheme clusters like Flutter TextField', () {
+    expect(sharedSpaceAliasWithinLimit(List.filled(60, '🌻').join()), isTrue);
+    expect(sharedSpaceAliasWithinLimit(List.filled(61, '🌻').join()), isFalse);
+    expect(sharedSpaceAliasWithinLimit(List.filled(60, 'e\u0301').join()),
+        isTrue);
+    expect(sharedSpaceAliasWithinLimit(' '), isFalse);
+    expect(screen, contains('sharedSpaceAliasWithinLimit(alias)'));
+  });
+
   test('create another space remains available after first; role enforced',
       () {
     expect(screen, contains("key: const ValueKey('shared-create-another')"));
@@ -69,12 +96,17 @@ void main() {
   });
 
   test('only actual owner sees rename and all five languages have labels', () {
-    expect(screen, contains('if (sharedSpaceCanRename('));
+    expect(screen, contains('final isOwner = sharedSpaceCanRename('));
     expect(screen, contains('shared-rename-'));
     expect(screen, contains('_renameSpace(space)'));
-    expect(screen, contains(
-        'sharedSpaceCanRename(space, CloudSyncService.instance.userId)'));
+    expect(screen, contains('CloudSyncService.instance.userId'));
     expect(screen, contains('await _reload()'));
+    expect(screen, contains(r"'shared-rename-${space.id}'"));
+    expect(screen, contains("isOwner ? 'rename' : 'renameLocal'"));
+    expect(screen, contains("await prefs.setString(key, jsonEncode(next))"));
+    expect(screen, contains('key != _memberAliasKey'));
+    expect(screen, contains('_spaceForDisplay(space)'));
+    expect(screen, contains('space.ownerId == userId'));
     expect(screen, contains("key: const ValueKey<String>('shared-rename-name')"));
     for (final label in ['Rename group', 'Rinomina gruppo',
       'Renombrar grupo', 'Renommer le groupe', 'Renomear grupo']) {
