@@ -178,13 +178,13 @@ abstract final class Cap0160TagSuggester {
 class Cap0160TagEditGuard {
   Cap0160TagEditGuard(this.store)
       : accountId = store.activeAccountId,
-        revision = store.accountRevision.value;
+        epoch = store.accountScopeEpoch;
   final AgendaStore store;
   final String? accountId;
-  final int revision;
+  final int epoch;
   bool get isCurrent =>
       store.entryScopeReady &&
       store.agendaContentFilter != AgendaContentFilter.sharedOnly &&
       store.activeAccountId == accountId &&
-      store.accountRevision.value == revision;
+      store.accountScopeEpoch == epoch;
 }
