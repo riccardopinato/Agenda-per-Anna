@@ -3,6 +3,20 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:agenda_per_anna/main.dart';
 
 void main() {
+  test('Oggi R3 arrows use civil dates across DST and year boundaries', () {
+    expect(addCivilDays(DateTime(2026, 3, 29), 1),
+        DateTime(2026, 3, 30));
+    expect(addCivilDays(DateTime(2026, 12, 31), 1),
+        DateTime(2027, 1, 1));
+    expect(addCivilDays(DateTime(2027, 1, 1), -1),
+        DateTime(2026, 12, 31));
+    final today = File('lib/src/planner_views.dart').readAsStringSync();
+    expect(today, contains("identifier: 'today-date-prev'"));
+    expect(today, contains("identifier: 'today-date-next'"));
+    expect(today, contains('if (!widget.embedded) _DayOpeningCard(date: day)'));
+    expect(today, contains('_dailyQuote(day, strings).$2'));
+  });
+
   test('pinned Inbox headings do not skip, duplicate or reorder entries', () {
     expect(List.generate(3, (i) => inboxPinnedListEntryIndex(i, 0, 3)),
         [0, 1, 2]);

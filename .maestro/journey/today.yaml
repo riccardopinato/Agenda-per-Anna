@@ -16,6 +16,17 @@ appId: com.riccardopinato.agenda_per_anna
 - assertVisible:
     id: 'ui5-today-single-date'
 - assertVisible:
+    id: 'today-date-prev'
+- assertVisible:
+    id: 'today-date-next'
+# Arrow round-trip returns to the same civil date without a new store.
+- tapOn:
+    id: 'today-date-prev'
+- tapOn:
+    id: 'today-date-next'
+- assertVisible:
+    id: 'ui5-today-single-date'
+- assertVisible:
     id: 'main-nav-create'
 - tapOn:
     id: 'main-nav-create'

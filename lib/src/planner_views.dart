@@ -532,11 +532,15 @@ class _TodaySingleDateNavigator extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
         child: Row(
           children: [
-            IconButton(
-              key: const ValueKey('today-date-prev'),
-              tooltip: copy.$1,
-              onPressed: () => onSelected(addCivilDays(selected, -1)),
-              icon: const Icon(Icons.chevron_left),
+            Semantics(
+              identifier: 'today-date-prev',
+              button: true,
+              child: IconButton(
+                key: const ValueKey('today-date-prev'),
+                tooltip: copy.$1,
+                onPressed: () => onSelected(addCivilDays(selected, -1)),
+                icon: const Icon(Icons.chevron_left),
+              ),
             ),
             Expanded(
               child: AnimatedSwitcher(
@@ -553,11 +557,15 @@ class _TodaySingleDateNavigator extends StatelessWidget {
                 ),
               ),
             ),
-            IconButton(
-              key: const ValueKey('today-date-next'),
-              tooltip: copy.$2,
-              onPressed: () => onSelected(addCivilDays(selected, 1)),
-              icon: const Icon(Icons.chevron_right),
+            Semantics(
+              identifier: 'today-date-next',
+              button: true,
+              child: IconButton(
+                key: const ValueKey('today-date-next'),
+                tooltip: copy.$2,
+                onPressed: () => onSelected(addCivilDays(selected, 1)),
+                icon: const Icon(Icons.chevron_right),
+              ),
             ),
           ],
         ),
