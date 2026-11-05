@@ -25,6 +25,12 @@ No uncontrolled indexing of entire media/voice transcripts, OCR, passwords or sh
 - The existing tag normalizer and CAP candidate exclusion share an accent-preserving canonical-equivalence comparison key for Latin characters (IT/EN/ES/FR/PT); no dependency or wholesale diacritic removal.
 - Regression tests cover accented addresses, cut words, canonical-equivalent tags, stale account writer rejection and concurrent Save/profile activation. No source scope, backup schema, APK version or signing identity changes.
 
+## Review follow-up fixes (5 November 2026)
+
+- Scope restoration is now published before both profile-switch and account-erasure completion notifications and native launcher sync. Android calendar and Home Widget consumers see `entryScopeReady == true` on completion; an added test watches shell/store notifications across guest → B → guest.
+- Unicode email exclusion now runs before incomplete trailing-word removal. A separate bounded partial-address tail filter also prevents leaks for domains cut at the first TLD character. Boundary fixtures cover full and partial TLD matches.
+- All changes are source-only; exact-head Flutter CI, review closure and physical QA remain separate required evidence. Signed `+124` is untouched.
+
 ## Gate before merge
 
 1. All five-language negative fixtures, stopwords, deterministic ranking, one/duplicate/5000 documents and 512-source cap.

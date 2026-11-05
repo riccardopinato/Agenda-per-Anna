@@ -1684,6 +1684,9 @@ class AgendaStore extends ChangeNotifier {
       }
 
       _accountScopeResolved = true;
+      // Profile is now loaded. Native listeners and the launcher must observe
+      // a ready scope, not the transition state used to reject stale writes.
+      _accountScopeTransitioning = false;
       _notifyShellChanged();
       _notifyAllDataChanged();
       // Native launcher integration is best-effort; never break account changes.
@@ -1795,6 +1798,9 @@ class AgendaStore extends ChangeNotifier {
         await reconcileReminders();
         await reconcileBirthdayReminders();
       }
+      // Erasure also switches to the guest profile. Publish the ready state
+      // before Android calendar listeners and HomeWidgetBridge are notified.
+      _accountScopeTransitioning = false;
       _notifyShellChanged();
       _notifyAllDataChanged();
       // Native launcher integration is best-effort; never break account changes.

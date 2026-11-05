@@ -66,15 +66,21 @@ abstract final class Cap0160TagSuggester {
   );
 
   static List<String> _tokens(String text, Set<String> stop) {
-    var bounded = text.length <= maxTextChars
+    final bounded = text.length <= maxTextChars
         ? text : text.substring(0, maxTextChars);
-    // Never turn the prefix of a cut-off word into an invented tag.
-    if (bounded.length < text.length && _words.hasMatch(text[maxTextChars])) {
-      bounded = bounded.replaceFirst(
-        RegExp(r'[\p{L}\p{M}]+$', unicode: true), '',
-      );
+    // Strip private addresses BEFORE trimming partial words: a cutoff within
+    // the TLD can otherwise make a previously valid email unrecognizable.
+    var clean = bounded.replaceAll(_urls, ' ').replaceAll(_emails, ' ');
+    if (bounded.length < text.length) {
+      // A bounded email with an incomplete domain/TLD may not match _emails.
+      // Fail closed for an address-like tail, including Unicode local parts.
+      clean = clean.replaceFirst(RegExp(r'\S+@\S*$'), ' ');
+      if (_words.hasMatch(text[maxTextChars])) {
+        clean = clean.replaceFirst(
+          RegExp(r'[\p{L}\p{M}]+$', unicode: true), '',
+        );
+      }
     }
-    final clean = bounded.replaceAll(_urls, ' ').replaceAll(_emails, ' ');
     return _words.allMatches(clean)
         .map((match) => match.group(0)!.toLowerCase())
         .where((term) => term.runes.length >= 4 &&

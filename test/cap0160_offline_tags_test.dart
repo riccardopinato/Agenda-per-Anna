@@ -83,6 +83,18 @@ void main() {
       authorizedPrivateCorpus: const [],
     );
     expect(cut, isEmpty);
+
+    // Cutting a full or partial Unicode email TLD must never expose either
+    // the local part or the domain as an offline tag proposal.
+    for (final padding in [3978, 3981]) {
+      final emailAtBoundary = Cap0160TagSuggester.propose(
+        text: "${' '.padRight(padding)}joséphine@example.museum",
+        languageCode: 'it',
+        scopeReady: true,
+        authorizedPrivateCorpus: const [],
+      );
+      expect(emailAtBoundary, isEmpty, reason: 'padding=$padding');
+    }
   });
 
   test('CAP-0160 Latin canonical-equivalent tags collapse, not accents', () {
@@ -204,11 +216,23 @@ void main() {
     store.signals.bumpAll();
     expect(store.accountScopeEpoch, oldEpoch);
     expect(guard.isCurrent, isTrue);
+    final readyOnProfileNotifications = <bool>[];
+    store.shellRevision.addListener(() {
+      readyOnProfileNotifications.add(store.entryScopeReady);
+    });
+    store.addListener(() {
+      readyOnProfileNotifications.add(store.entryScopeReady);
+    });
     await store.activateCloudAccount('account-B');
+    expect(readyOnProfileNotifications, isNotEmpty);
+    expect(readyOnProfileNotifications, everyElement(isTrue));
     expect(guard.isCurrent, isFalse);
     expect(Cap0160TagSuggester.forInbox(store, current, 'it'), isEmpty);
     expect(Cap0160TagSuggester.forDiary(store, date, private, 'it'), isEmpty);
+    readyOnProfileNotifications.clear();
     await store.activateCloudAccount(null);
+    expect(readyOnProfileNotifications, isNotEmpty);
+    expect(readyOnProfileNotifications, everyElement(isTrue));
     expect(store.accountScopeEpoch, oldEpoch + 2);
     expect(guard.isCurrent, isFalse); // Switching A -> B -> A is stale.
     store.dispose();
