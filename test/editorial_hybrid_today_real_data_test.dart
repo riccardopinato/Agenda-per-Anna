@@ -87,7 +87,10 @@ void main() {
     expect(planner, contains('showUnifiedCapture('));
     expect(preferences, contains("'personalization-editorial-home'"));
     expect(shell, contains('Center(child: _centralCreateButton(context))'));
-    expect(shell, contains('PlannerScreen(store: widget.store, embedded: true)'));
+    expect(shell, contains('PlannerScreen('));
+    expect(shell, contains('activeInShell: index == 0'));
+    expect(planner, contains('widget.activeInShell'));
+
   });
 
   test('Hybrid Home has no filter bar or stale invisible content filter', () {
@@ -104,6 +107,9 @@ void main() {
     // When a global filter was chosen elsewhere, reset it after the frame
     // so Hybrid never silently hides private/shared items.
     expect(home, contains('widget.store.agendaContentFilter != AgendaContentFilter.all'));
+    expect(home, contains('widget.activeInShell &&'));
+    expect(shell, contains('activeInShell: index == 0'));
+
     expect(home, contains('WidgetsBinding.instance.addPostFrameCallback'));
     expect(home, contains('widget.store.setAgendaContentFilter(AgendaContentFilter.all)'));
   });
