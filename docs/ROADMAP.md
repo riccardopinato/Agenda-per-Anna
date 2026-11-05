@@ -1,5 +1,7 @@
 # Anna's Diary — Roadmap
 
+**Roadmap attuale:** [5 novembre 2026 — cinque maxi-step, CAP e release](ANNA_ROADMAP_20261105.md). Gli step storici sotto restano evidenza dell'esecuzione precedente.
+
 ## 5 November 2026 — Shared Spaces + Inbox Comfort remediation (source lane)
 
 - CAP-0160 inline offline tag suggestions: [PR #245](https://github.com/riccardopinato/Agenda-per-Anna/pull/245) **MERGED** as `main@bcae4cca369f6c3cc4f216a00e52c0be3cb2a927`. Exact-head Development/Web/AppLab source checks PASS; isolated Web E2E Save/Cancel PASS. Stable-signed Android +124 remains separately gated.
