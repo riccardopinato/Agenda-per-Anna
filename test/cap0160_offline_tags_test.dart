@@ -77,7 +77,7 @@ void main() {
     expect(mail.map((value) => value.tag), contains('montagna'));
 
     final cut = Cap0160TagSuggester.propose(
-      text: "${' ' * 3995}montagna",
+      text: "${' '.padRight(3995)}montagna",
       languageCode: 'it',
       scopeReady: true,
       authorizedPrivateCorpus: const [],
