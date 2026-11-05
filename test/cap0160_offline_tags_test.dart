@@ -176,6 +176,7 @@ void main() {
       (tester) async {
     List<String>? result;
     await tester.pumpWidget(MaterialApp(
+      locale: const Locale('it'),
       home: Builder(builder: (context) => Scaffold(
         body: ElevatedButton(
           onPressed: () async {
@@ -196,7 +197,8 @@ void main() {
     expect(find.text('Tag suggeriti offline'), findsOneWidget);
     await tester.tap(find.byKey(const ValueKey('cap0160-chip-montagna')));
     await tester.pump();
-    expect(find.widgetWithText(TextField, 'existing, montagna'), findsNothing);
+    final field = tester.widget<TextField>(find.byType(TextField));
+    expect(field.controller!.text, 'existing, montagna');
     await tester.tap(find.text('Annulla'));
     await tester.pumpAndSettle();
     expect(result, isNull);
