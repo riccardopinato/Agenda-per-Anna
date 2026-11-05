@@ -82,6 +82,8 @@ void main() {
     expect(planner, contains('_DayMemoryRecallCard('));
     expect(planner, contains('DayTimeline('));
     expect(planner, contains('today-open-calendar'));
+    expect(planner, contains("'editorial-today-return'"));
+    expect(planner, contains('onPressed: () => _selectDay(DateTime.now())'));
     expect(planner, contains('showUnifiedCapture('));
     expect(preferences, contains("'personalization-editorial-home'"));
     expect(shell, contains('Center(child: _centralCreateButton(context))'));
