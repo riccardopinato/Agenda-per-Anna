@@ -3,18 +3,30 @@ part of '../../main.dart';
 String sharedSpaceRenameCopy(String language, String key) {
   final translations = switch (language) {
     'en' => {'rename': 'Rename group', 'hint': 'Group name',
-      'done': 'Group renamed', 'failed': 'Unable to rename group'},
+      'done': 'Group renamed', 'failed': 'Unable to rename group',
+      'ownerOnly': 'Only the space owner can rename it'},
     'es' => {'rename': 'Renombrar grupo', 'hint': 'Nombre del grupo',
-      'done': 'Grupo renombrado', 'failed': 'No se pudo renombrar el grupo'},
+      'done': 'Grupo renombrado', 'failed': 'No se pudo renombrar el grupo',
+      'ownerOnly': 'Solo quien creó el espacio puede renombrarlo'},
     'fr' => {'rename': 'Renommer le groupe', 'hint': 'Nom du groupe',
-      'done': 'Groupe renommé', 'failed': 'Impossible de renommer le groupe'},
+      'done': 'Groupe renommé', 'failed': 'Impossible de renommer le groupe',
+      'ownerOnly': 'Seul le propriétaire peut renommer cet espace'},
     'pt' => {'rename': 'Renomear grupo', 'hint': 'Nome do grupo',
-      'done': 'Grupo renomeado', 'failed': 'Não foi possível renomear o grupo'},
+      'done': 'Grupo renomeado', 'failed': 'Não foi possível renomear o grupo',
+      'ownerOnly': 'Só o proprietário pode mudar o nome do espaço'},
     _ => {'rename': 'Rinomina gruppo', 'hint': 'Nome del gruppo',
-      'done': 'Gruppo rinominato', 'failed': 'Impossibile rinominare il gruppo'},
+      'done': 'Gruppo rinominato', 'failed': 'Impossibile rinominare il gruppo',
+      'ownerOnly': 'Solo il proprietario può rinominare questo spazio'},
   };
   return translations[key] ?? key;
 }
+
+/// The server rename RPC verifies shared_spaces.owner_id, not the cached
+/// membership role. A migrated owner may have a stale 'member' role cache.
+bool sharedSpaceCanRename(SharedSpace space, String? userId) =>
+    userId != null &&
+    userId.isNotEmpty &&
+    space.ownerId == userId;
 
 class SharedSpaceHubScreen extends StatefulWidget {
   final AgendaStore store;
@@ -160,7 +172,10 @@ class _SharedSpaceHubScreenState extends State<SharedSpaceHubScreen> {
 
   /// A group is a shared space: rename only its label, never its ID.
   Future<void> _renameSpace(SharedSpace space) async {
-    if (!space.isOwner || loading) return;
+    if (!sharedSpaceCanRename(space, CloudSyncService.instance.userId) ||
+        loading) {
+      return;
+    }
     final strings = AnnaStrings.of(context);
     final language = strings.languageCode;
     final controller = TextEditingController(text: space.name);
@@ -395,7 +410,7 @@ class _SharedSpaceHubScreenState extends State<SharedSpaceHubScreen> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Icon(
-                                Icons.favorite_outline,
+                                Icons.groups_outlined,
                                 size: 30,
                                 color: accent.foreground,
                               ),
@@ -460,6 +475,20 @@ class _SharedSpaceHubScreenState extends State<SharedSpaceHubScreen> {
                             ),
                           )
                         else ...[
+                          Padding(
+                            padding: const EdgeInsets.only(bottom: 14),
+                            child: SizedBox(
+                              width: double.infinity,
+                              child: FilledButton.icon(
+                                key: const ValueKey('shared-create-another'),
+                                onPressed: loading ? null : _createSpace,
+                                icon: const Icon(Icons.add),
+                                label: Text(
+                                  AnnaStrings.of(context).d3('createSharedSpace'),
+                                ),
+                              ),
+                            ),
+                          ),
                           ...spaces.map(
                             (space) {
                               final unread = widget.store.sharedUnreadCount(space.id);
@@ -469,9 +498,9 @@ class _SharedSpaceHubScreenState extends State<SharedSpaceHubScreen> {
                                 child: ListTile(
                                   leading: CircleAvatar(
                                     child: Icon(
-                                      space.isOwner
-                                          ? Icons.favorite
-                                          : Icons.favorite_outline,
+                                      sharedSpaceCanRename(space, cloud.userId)
+                                          ? Icons.admin_panel_settings_outlined
+                                          : Icons.groups_outlined,
                                     ),
                                   ),
                                   title: Text(
@@ -499,7 +528,8 @@ class _SharedSpaceHubScreenState extends State<SharedSpaceHubScreen> {
                                             Icons.notifications_none,
                                           ),
                                         ),
-                                      if (space.isOwner)
+                                      if (sharedSpaceCanRename(
+                                          space, cloud.userId))
                                         IconButton(
                                           key: ValueKey<String>(
                                             'shared-rename-${space.id}'),
@@ -510,6 +540,14 @@ class _SharedSpaceHubScreenState extends State<SharedSpaceHubScreen> {
                                           onPressed: loading
                                               ? null
                                               : () => _renameSpace(space),
+                                        )
+                                      else
+                                        Tooltip(
+                                          message: sharedSpaceRenameCopy(
+                                              AnnaStrings.of(context)
+                                                  .languageCode, 'ownerOnly'),
+                                          child: const Icon(Icons.lock_outline,
+                                              size: 20),
                                         ),
                                       const SizedBox(width: 6),
                                       const Icon(Icons.chevron_right),

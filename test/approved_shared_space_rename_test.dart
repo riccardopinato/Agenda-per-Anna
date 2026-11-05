@@ -1,6 +1,8 @@
 import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
 
+import 'package:agenda_per_anna/main.dart';
+
 void main() {
   final sql = File(
     'supabase/migrations/099_owner_shared_space_rename_v109.sql',
@@ -35,11 +37,42 @@ void main() {
     expect(cloud, isNot(contains(".from('shared_spaces').update(")));
   });
 
-  test('only owner sees rename and all five languages have labels', () {
-    expect(screen, contains('if (space.isOwner)'));
+  test('owner identified by server owner_id, even when membership role lags',
+      () {
+    SharedSpace named(String id, String owner, String role) => SharedSpace(
+          id: id,
+          ownerId: owner,
+          role: role,
+          name: 'Spazio $id',
+          createdAt: DateTime(2026, 11, 5),
+        );
+    final spaces = [
+      named('first', 'account-a', 'owner'),
+      named('second', 'account-a', 'member'),
+      named('joined', 'account-b', 'member'),
+    ];
+    expect(spaces.where((space) =>
+        sharedSpaceCanRename(space, 'account-a')).map((space) => space.id),
+        ['first', 'second']);
+    expect(sharedSpaceCanRename(spaces.last, 'account-a'), isFalse);
+    expect(sharedSpaceCanRename(spaces.first, null), isFalse);
+    expect(sharedSpaceCanRename(spaces.first, ''), isFalse);
+  });
+
+  test('create another space remains available after first; role enforced',
+      () {
+    expect(screen, contains("key: const ValueKey('shared-create-another')"));
+    expect(screen, contains("onPressed: loading ? null : _createSpace"));
+    expect(screen, contains("AnnaStrings.of(context).d3('createSharedSpace')"));
+    expect(screen, contains("'ownerOnly'"));
+  });
+
+  test('only actual owner sees rename and all five languages have labels', () {
+    expect(screen, contains('if (sharedSpaceCanRename('));
     expect(screen, contains('shared-rename-'));
     expect(screen, contains('_renameSpace(space)'));
-    expect(screen, contains('!space.isOwner || loading'));
+    expect(screen, contains(
+        'sharedSpaceCanRename(space, CloudSyncService.instance.userId)'));
     expect(screen, contains('await _reload()'));
     expect(screen, contains("key: const ValueKey<String>('shared-rename-name')"));
     for (final label in ['Rename group', 'Rinomina gruppo',

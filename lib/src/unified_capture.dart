@@ -377,15 +377,30 @@ Future<String?> _showUnifiedInboxEditor(BuildContext context) async {
   final value = await showDialog<String>(
     context: context,
     builder: (dialogContext) => AlertDialog(
+      // Make the quick capture feel like a writing surface while remaining
+      // keyboard-safe on compact Android screens and under large text scale.
+      key: const ValueKey('quick-note-comfort-dialog'),
+      scrollable: true,
+      insetPadding: const EdgeInsets.symmetric(
+        horizontal: 12,
+        vertical: 12,
+      ),
+      constraints: const BoxConstraints(maxWidth: 560),
+      contentPadding: const EdgeInsets.fromLTRB(20, 18, 20, 18),
       title: Text(strings.quickNote),
-      content: TextField(
-        controller: controller,
-        autofocus: true,
-        minLines: 2,
-        maxLines: 6,
-        textCapitalization: TextCapitalization.sentences,
-        decoration: InputDecoration(
-          hintText: strings.writeQuickly,
+      content: SizedBox(
+        width: MediaQuery.sizeOf(dialogContext).width - 64,
+        child: TextField(
+          key: const ValueKey('quick-note-comfort-field'),
+          controller: controller,
+          autofocus: true,
+          minLines: 5,
+          maxLines: 8,
+          textCapitalization: TextCapitalization.sentences,
+          decoration: InputDecoration(
+            hintText: strings.writeQuickly,
+            alignLabelWithHint: true,
+          ),
         ),
       ),
       actions: [
