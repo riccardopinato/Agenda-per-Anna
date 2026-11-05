@@ -42,6 +42,20 @@ async function clickText(label) {
   }
   return false;
 }
+async function clickContaining(label) {
+  const locator = page.locator('flt-semantics[role="button"]').filter({ hasText: label }).first();
+  if (await locator.count()) {
+    try {
+      await locator.click({ timeout: 3500 });
+      log.push('CLICKED SEMANTIC BUTTON: ' + label);
+      await page.waitForTimeout(1300);
+      return true;
+    } catch (error) {
+      log.push('BUTTON CLICK FAILED: ' + label + ' :: ' + error.message.slice(0, 180));
+    }
+  }
+  return false;
+}
 async function snapshotAccessibility(stage) {
   const raw = await page.evaluate(() => {
     const all = document.querySelectorAll('[role], [aria-label], button, flt-semantics-placeholder');
@@ -89,14 +103,25 @@ try {
     }
   }
   await snapshotAccessibility('02-post-onboarding');
-  for (const label of ['Altro','Esplora','Inbox']) {
-    if (await clickText(label)) {
-      await capture('03-open-' + label.toLowerCase());
-      if (label === 'Inbox') break;
+  if (await clickContaining('Apri l’agenda')) {
+    await capture('03-dashboard');
+    await snapshotAccessibility('03-dashboard');
+  }
+  if (await clickText('Inbox') || await clickContaining('Inbox')) {
+    await capture('04-inbox');
+    await snapshotAccessibility('04-inbox');
+  } else {
+    if (await clickText('Altro') || await clickContaining('Altro')) {
+      await capture('04-more');
+      await snapshotAccessibility('04-more');
+      if (await clickText('Inbox') || await clickContaining('Inbox')) {
+        await capture('05-inbox');
+        await snapshotAccessibility('05-inbox');
+      }
     }
   }
-  await capture('04-current-screen');
-  await snapshotAccessibility('04-current-screen');
+  await capture('06-current-screen');
+  await snapshotAccessibility('06-current-screen');
 
   const captureRoute = await context.newPage();
   await captureRoute.goto('http://127.0.0.1:8765/?capture=1', { waitUntil: 'domcontentloaded', timeout: 45000 });
