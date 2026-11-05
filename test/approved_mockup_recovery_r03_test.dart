@@ -41,6 +41,11 @@ void main() {
     expect(source, contains("_queryController.text = text"));
     expect(source, contains("onPressed: () => _trySearchExample(term)"));
     expect(source, contains("key: const ValueKey('search-reset-filters')"));
+    final emptyResultPanel = source.split(': hits.isEmpty').last
+        .split(': ListView.separated(').first;
+    expect(emptyResultPanel, contains('SingleChildScrollView('));
+    expect(emptyResultPanel,
+        contains('ScrollViewKeyboardDismissBehavior.onDrag'));
     expect(source, contains('selectedKinds.clear();'));
     expect(source, contains('includeArchived = false;'));
     expect(source, contains('sortOrder = ApprovedSearchSort.newest;'));
