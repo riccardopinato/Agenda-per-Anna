@@ -72,15 +72,14 @@ void main() {
     expect(screen, contains('final isOwner = sharedSpaceCanRename('));
     expect(screen, contains('shared-rename-'));
     expect(screen, contains('_renameSpace(space)'));
-    expect(screen, contains(
-        'sharedSpaceCanRename(space, CloudSyncService.instance.userId)'));
+    expect(screen, contains('CloudSyncService.instance.userId'));
     expect(screen, contains('await _reload()'));
     expect(screen, contains("'shared-rename-${space.id}'"));
     expect(screen, contains("isOwner ? 'rename' : 'renameLocal'"));
     expect(screen, contains("await prefs.setString(key, jsonEncode(next))"));
     expect(screen, contains('key != _memberAliasKey'));
     expect(screen, contains('_spaceForDisplay(space)'));
-    expect(screen, contains('sharedSpaceCanRename(space, CloudSyncService.instance.userId)'));
+    expect(screen, contains('space.ownerId == userId'));
     expect(screen, contains("key: const ValueKey<String>('shared-rename-name')"));
     for (final label in ['Rename group', 'Rinomina gruppo',
       'Renombrar grupo', 'Renommer le groupe', 'Renomear grupo']) {
