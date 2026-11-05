@@ -52,6 +52,18 @@ void main() {
     expect(capture, contains('_pickCompressedDiaryImageBytes(source)'));
   });
 
+  test('quick Inbox capture uses keyboard-safe, taller writing dialog', () {
+    final source =
+        File('lib/src/unified_capture.dart').readAsStringSync();
+    expect(source, contains("key: const ValueKey('quick-note-comfort-dialog')"));
+    expect(source, contains('scrollable: true'));
+    expect(source, contains('maxWidth: 560'));
+    expect(source, contains('minLines: 5'));
+    expect(source, contains('maxLines: 8'));
+    expect(source, contains('MediaQuery.sizeOf(dialogContext).width - 64'));
+    expect(source, contains('Navigator.pop(dialogContext, controller.text.trim())'));
+  });
+
   test('entry points remain a projection choice, not a persistence model', () {
     expect(
       UnifiedCaptureEntryPoint.values,

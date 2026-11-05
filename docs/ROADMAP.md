@@ -1,5 +1,15 @@
 # Anna's Diary — Roadmap
 
+## 5 November 2026 — Shared Spaces + Inbox Comfort remediation (source lane)
+
+- CAP-0160 inline offline tag suggestions: [PR #245](https://github.com/riccardopinato/Agenda-per-Anna/pull/245) **MERGED** as `main@bcae4cca369f6c3cc4f216a00e52c0be3cb2a927`. Exact-head Development/Web/AppLab source checks PASS; isolated Web E2E Save/Cancel PASS. Stable-signed Android +124 remains separately gated.
+- Shared Space: expose **Create shared space** on both empty and nonempty list; use the authenticated `owner_id` to show rename for EVERY owned space, including those with stale member-role cache. Non-owner spaces remain owner-only as enforced by the Supabase RPC. Preserve all IDs/member permissions/invites/sync.
+- Inbox Quick Note: responsive full-width dialog (bounded on desktop), taller five-to-eight-line text field, keyboard/large-font-safe scrolling. No persisted schema changes.
+- Stage gates: exact-head Flutter analyze/test, AppLab Source Gate, Web release, review; merge only after green. Cloud migration #099 must already be deployed for live rename RPC; provider-side confirmation requires owner login.
+- Next isolated steps: **Ricordi per luogo** reuse MemoryMapSnapshot / MemoryLifeThreads (do not duplicate storage), then **CAP-0151** local extractive summaries with exact citations. Privacy-sensitive account and physical QA remain separate.
+
+
+
 ## CAP-0160 — Offline suggested tags (source candidate, 5 Nov 2026)
 
 - Approved for a **single bounded feature branch**, not approved as new signed +124 artifact. Reuse existing Inbox and diary tag-editor writer/undo semantics.
