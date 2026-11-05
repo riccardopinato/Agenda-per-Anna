@@ -749,7 +749,10 @@ class _InboxScreenState extends State<InboxScreen> {
     // The inline chip must still be a current authorized proposal, and only
     // seeds a dialog draft: the canonical store is unchanged until Save.
     if (preselectedTag != null &&
-        !proposals.any((item) => item.tag == preselectedTag)) {
+        !Cap0160TagSuggester.forInbox(
+          store, entry, AnnaStrings.of(context).languageCode,
+          inlineFastPath: true,
+        ).any((item) => item.tag == preselectedTag)) {
       return;
     }
     final draftTags = preselectedTag == null
@@ -1053,6 +1056,7 @@ class _InboxScreenState extends State<InboxScreen> {
                     final entry = entries[index];
                     final proposals = Cap0160TagSuggester.forInbox(
                       store, entry, strings.languageCode,
+                      inlineFastPath: true,
                     );
                     return Card(
                       child: ListTile(

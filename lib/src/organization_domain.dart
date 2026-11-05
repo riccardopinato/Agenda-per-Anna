@@ -324,8 +324,14 @@ extension OrganizationAgendaStore on AgendaStore {
     final updated = previous.copyWith(tags: normalizeOrganizationTags(tags));
     inbox[index] = updated;
     void rollbackRejectedTag() {
-      if (index < inbox.length && identical(inbox[index], updated)) {
-        inbox[index] = previous;
+      // Another Inbox capture may insert at index zero while the serial
+      // writer waits. Restore by the exact optimistic object identity, never
+      // by the stale index captured before the asynchronous gap.
+      final currentIndex = inbox.indexWhere(
+        (candidate) => identical(candidate, updated),
+      );
+      if (currentIndex >= 0) {
+        inbox[currentIndex] = previous;
         _notifyInboxChanged();
       }
     }

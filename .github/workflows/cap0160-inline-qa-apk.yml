@@ -30,12 +30,12 @@ jobs:
         run: |
           set -euo pipefail
           test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
-          git merge-base --is-ancestor 1ea50493e40412f2d74a531069fe1e2cd66f5558 HEAD
+          git merge-base --is-ancestor dcfe77935641edf1919d404796f0199833ba70bb HEAD
           python3 - <<'PY'
           import subprocess
           changed = subprocess.check_output([
               'git', 'diff', '--name-only',
-              '1ea50493e40412f2d74a531069fe1e2cd66f5558', 'HEAD'
+              'dcfe77935641edf1919d404796f0199833ba70bb', 'HEAD'
           ], text=True).splitlines()
           assert changed == ['.github/workflows/cap0160-inline-qa-apk.yml'], changed
           PY
@@ -143,7 +143,7 @@ jobs:
           cp "$APK" build/cap0160-qa/Anna-Diary-CAP0160-Inline-QA-arm64.apk
           cd build/cap0160-qa
           sha256sum *.apk > SHA256SUMS.txt
-          printf 'CAP-0160 source SHA: 1ea50493e40412f2d74a531069fe1e2cd66f5558\nQA workflow commit: %s\nNot an upgrade to stable-signed +124. Data is isolated. No cloud auth/store certification.\n' "$GITHUB_SHA" > QA_README.txt
+          printf 'CAP-0160 source SHA: dcfe77935641edf1919d404796f0199833ba70bb\nQA workflow commit: %s\nNot an upgrade to stable-signed +124. Data is isolated. No cloud auth/store certification.\n' "$GITHUB_SHA" > QA_README.txt
           ls -lh *.apk
 
       - name: Upload sideloadable isolated QA APK

@@ -25,6 +25,12 @@ No uncontrolled indexing of entire media/voice transcripts, OCR, passwords or sh
 - Locale-aware inline header and accessible chip labels reuse the same five supported languages. Hidden/archived/shared-only and unsupported-language notes produce no inline tag chips. There is no automatic classification or persistence.
 - Source and UI regressions assert visible Inbox suggestion and Cancel-is-nonwriting, plus reusable inline chip selection. Physical QA must be repeated on a new APK; the prior standalone CAP QA binary does not include Option A.
 
+## Option A hardening (5 November 2026)
+
+- In-card previews use fast single-note term frequencies, without scanning 512 private corpus documents for every on-screen or eagerly rendered Diary card. Opening the tag editor still offers the original full TF-IDF ranking, and clicked fast-path candidates are verified against the same authorized inline source before seeding drafts.
+- When the 4,000-unit input boundary cuts through *any* non-whitespace token, exclude the complete trailing fragment (including a cutoff immediately before an email `@`). Regression: `sensitive@example.org` straddling the boundary produces no proposal.
+- Rejected Inbox optimistic tag edits roll back by exact entry identity, not an index that another capture might shift while queued. No profile data, saved tags or signatures are migrated.
+
 ## Review fixes (5 November 2026)
 
 - Account-scoped CAP writes now recheck the editor's profile-only epoch inside the serialized local mutation writer, after obtaining the local store and before deriving any account-dependent delta/sync owner. Profile activation/erasure waits for queued writes to settle before moving the canonical working set. Rejected optimistic Inbox/diary projections are rolled back before the queue barrier releases.
