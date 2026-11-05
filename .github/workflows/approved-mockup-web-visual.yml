@@ -1,0 +1,77 @@
+name: Anna approved mockup R3-R5 Web visual QA (isolated)
+on:
+  push:
+    branches:
+      - qa/approved-mockup-r03-web-visual-20261105
+permissions:
+  contents: read
+jobs:
+  browser-preview:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    steps:
+      - name: Checkout exact tested UI and QA-only instrumentation
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 12
+          persist-credentials: false
+      - name: Ensure only isolated QA files differ from PR source head
+        shell: bash
+        run: |
+          set -euo pipefail
+          git merge-base --is-ancestor 863d12ed7b1b4b587567dbe153a77fb49844697b HEAD
+          python3 - <<'PY'
+          import subprocess
+          base='863d12ed7b1b4b587567dbe153a77fb49844697b'
+          files=set(subprocess.check_output(
+            ['git','diff','--name-only',base,'HEAD'],text=True).splitlines())
+          expected={
+            '.github/workflows/approved-mockup-web-visual.yml',
+            'tool/approved_mockup_web_visual.mjs'
+          }
+          assert files==expected, (files,expected)
+          PY
+      - name: Setup pinned Flutter
+        uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2.23.0
+        with:
+          flutter-version: "3.47.5"
+          channel: stable
+          cache: true
+      - name: Create pinned Web skeleton and legal preview identity
+        shell: bash
+        run: |
+          set -euo pipefail
+          flutter create --project-name agenda_per_anna --org com.riccardopinato --platforms=web --no-pub /tmp/anna_web_mockup
+          rm -rf web
+          cp -R /tmp/anna_web_mockup/web .
+          python3 tool/prepare_web_platform.py
+          mkdir -p assets/icon
+          base64 -d assets/icon/app_icon.b64 > assets/icon/app_icon.jpg
+          sed -i 's#assets/icon/app_icon.png#assets/icon/app_icon.jpg#g' pubspec.yaml
+          flutter pub get --enforce-lockfile
+          flutter build web --release --base-href "/" --dart-define=ANNA_STORE_RELEASE=false --dart-define=ANNA_PREMIUM_PREVIEW=true
+          python3 tool/finalize_web_build.py
+      - name: Install isolated Playwright Chromium controller
+        shell: bash
+        run: |
+          npm install --no-save --no-audit --no-fund playwright@1.56.1
+          test -x /usr/bin/google-chrome
+      - name: Exercise R3/R4 browser visual flows
+        shell: bash
+        run: |
+          python3 -m http.server 8765 --bind 127.0.0.1 --directory build/web > /tmp/anna_qa_http.log 2>&1 &
+          server_pid=$!
+          trap 'kill "$server_pid" 2>/dev/null || true' EXIT
+          for attempt in 1 2 3 4 5 6 7 8 9 10; do
+            if curl -f -s http://127.0.0.1:8765/ >/dev/null; then break; fi
+            sleep 1
+          done
+          node tool/approved_mockup_web_visual.mjs
+      - name: Upload screenshots, DOM semantics and report
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: anna-approved-mockup-r3-r5-web-visual
+          path: build/approved-mockup-qa/
+          if-no-files-found: warn
+          retention-days: 14
