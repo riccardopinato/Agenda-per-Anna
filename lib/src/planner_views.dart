@@ -653,6 +653,23 @@ class _PlannerScreenState extends State<PlannerScreen> {
         unawaited(HomeWidgetBridge.instance.sync(widget.store));
         final strings = AnnaStrings.of(context);
         final editorial = widget.embedded && AnnaEditorialTodayMode.enabled.value;
+        // Hybrid deliberately shows the complete day without filter chips.
+        // A filter selected in Calendar/Week must not remain invisibly active
+        // when returning to this Home. Reset only the in-memory view filter,
+        // never the private/shared records or their persisted preferences.
+        if (editorial &&
+            widget.store.agendaContentFilter != AgendaContentFilter.all) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (!mounted ||
+                !widget.embedded ||
+                !AnnaEditorialTodayMode.enabled.value) {
+              return;
+            }
+            if (widget.store.agendaContentFilter != AgendaContentFilter.all) {
+              widget.store.setAgendaContentFilter(AgendaContentFilter.all);
+            }
+          });
+        }
         final snapshot = widget.store.dayHubSnapshot(day);
         final memoryRecall = widget.store.memoryRecallSnapshot(day);
         final timedPrivate = snapshot.agenda
@@ -848,9 +865,12 @@ class _PlannerScreenState extends State<PlannerScreen> {
                                 hideDetails: widget.store.preferences.hideHomeDetails,
                               ),
                           ],
-                        const SizedBox(height: 12),
-                        AgendaContentFilterBar(store: widget.store),
-                        const SizedBox(height: AnnaDesignTokens.spaceMd),
+                        if (!editorial) ...[
+                          const SizedBox(height: 12),
+                          AgendaContentFilterBar(store: widget.store),
+                          const SizedBox(height: AnnaDesignTokens.spaceMd),
+                        ] else
+                          const SizedBox(height: 12),
                         if (widget.embedded) ...[
                           // DF-08–14: Oggi reads the selected day before
                           // any editor. Create stays in the shell's + Crea.
