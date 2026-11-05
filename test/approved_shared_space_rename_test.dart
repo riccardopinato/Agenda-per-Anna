@@ -69,6 +69,15 @@ void main() {
         'Weekend ♡');
   });
 
+  test('local-only badge is shown solely for a saved member alias', () {
+    expect(screen, contains(
+        '_memberAliases.containsKey(space.id)'));
+    expect(screen, contains(
+        '_memberAliasScope == _memberAliasKey'));
+    expect(screen, contains(
+        'sharedSpaceNeutralDisplayName(space.name)'));
+  });
+
   test('local aliases count grapheme clusters like Flutter TextField', () {
     expect(sharedSpaceAliasWithinLimit(List.filled(60, '🌻').join()), isTrue);
     expect(sharedSpaceAliasWithinLimit(List.filled(61, '🌻').join()), isFalse);
