@@ -75,6 +75,17 @@ jobs:
             echo "ANDROID_KEYSTORE_PATH=$GITHUB_WORKSPACE/.signing/agenda-release.jks"
           } >> "$GITHUB_ENV"
 
+      - name: Disable production Firebase configuration for isolated QA
+        shell: bash
+        run: |
+          set -euo pipefail
+          # Test package is NOT registered in the real Firebase project.
+          # Remove the production client file in this ephemeral CI workspace
+          # before the native configuration generates Gradle plugins.
+          if [ -f firebase/google-services.json ]; then
+            rm firebase/google-services.json
+          fi
+
       - name: Apply native Android configuration
         shell: bash
         run: |
@@ -116,6 +127,7 @@ jobs:
           flutter build apk --release --split-per-abi --tree-shake-icons \
             --dart-define=ANNA_STORE_RELEASE=false \
             --dart-define=ANNA_STORE_QA=true \
+            --dart-define=FIREBASE_ENABLED=false \
             --dart-define=ANNA_PREMIUM_PREVIEW=true
 
       - name: Verify distinct APK identity and attach checksums
