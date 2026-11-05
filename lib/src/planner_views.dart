@@ -810,6 +810,16 @@ class _PlannerScreenState extends State<PlannerScreen> {
                             ),
                             subtitle: _dailyQuote(day, strings).$2,
                           ),
+                          if (!AgendaStore.sameDay(day, DateTime.now()))
+                            Align(
+                              alignment: Alignment.centerLeft,
+                              child: TextButton.icon(
+                                key: const ValueKey<String>('editorial-today-return'),
+                                onPressed: () => _selectDay(DateTime.now()),
+                                icon: const Icon(Icons.today_outlined),
+                                label: Text(strings.navToday),
+                              ),
+                            ),
                           const SizedBox(height: 20),
                           _TodaySingleDateNavigator(
                             selected: day,
