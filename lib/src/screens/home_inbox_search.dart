@@ -52,7 +52,10 @@ class _MainShellState extends State<MainShell> {
     );
   }
 
-  Widget _centralCreateButton(BuildContext context) {
+  Widget _centralCreateButton(
+    BuildContext context, {
+    bool editorial = false,
+  }) {
     final color = Theme.of(context).colorScheme.primary;
     final scheme = Theme.of(context).colorScheme;
     final animate = AnnaDesignTokens.animationsEnabled(context);
@@ -69,6 +72,7 @@ class _MainShellState extends State<MainShell> {
             duration: animate ? const Duration(milliseconds: 190) : Duration.zero,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
+              color: editorial ? AnnaEditorialColors.of(context).dock : null,
               boxShadow: [
                 BoxShadow(
                   color: color.withValues(
@@ -81,6 +85,7 @@ class _MainShellState extends State<MainShell> {
                 ),
               ],
             ),
+            padding: editorial ? const EdgeInsets.all(5) : EdgeInsets.zero,
             child: Material(
               color: color,
               shape: const CircleBorder(),
@@ -379,27 +384,84 @@ class _MainShellState extends State<MainShell> {
           ),
           bottomNavigationBar: useRail
               ? null
-              : SizedBox(
-                  height: 96 + MediaQuery.paddingOf(context).bottom,
-                  child: Stack(
-                    clipBehavior: Clip.none,
-                    children: [
-                      Positioned.fill(
-                        top: 13,
-                        child: NavigationBar(
-                           selectedIndex: MainShell.bottomBarSlotForPage(index),
-                           onDestinationSelected: _selectBottomDestination,
-                           destinations: _bottomDestinations(strings),
-                         ),
+              : ValueListenableBuilder<bool>(
+                  valueListenable: AnnaEditorialTodayMode.enabled,
+                  builder: (context, editorial, _) {
+                    if (editorial) {
+                      return SizedBox(
+                        key: const ValueKey<String>('main-editorial-dock'),
+                        height: 102 + MediaQuery.paddingOf(context).bottom,
+                        child: Stack(
+                          clipBehavior: Clip.none,
+                          children: [
+                            Positioned.fill(
+                              top: 24,
+                              child: AnnaEditorialDockBar(
+                                selectedPage: index,
+                                onPageSelected: _selectDestination,
+                                labels: [
+                                  strings.navToday,
+                                  strings.navMessages,
+                                  strings.navMemories,
+                                  strings.navMore,
+                                ],
+                                icons: const [
+                                  Icons.today_outlined,
+                                  Icons.chat_bubble_outline,
+                                  Icons.photo_library_outlined,
+                                  Icons.grid_view_outlined,
+                                ],
+                                selectedIcons: const [
+                                  Icons.today,
+                                  Icons.chat_bubble,
+                                  Icons.photo_library,
+                                  Icons.grid_view_rounded,
+                                ],
+                                semanticIds: const [
+                                  'main-nav-today',
+                                  'main-nav-messages',
+                                  'main-nav-memories',
+                                  'main-nav-more',
+                                ],
+                              ),
+                            ),
+                            Positioned(
+                              top: 0,
+                              left: 0,
+                              right: 0,
+                              child: Center(
+                                child: _centralCreateButton(
+                                  context, editorial: true,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      );
+                    }
+                    return SizedBox(
+                      height: 96 + MediaQuery.paddingOf(context).bottom,
+                      child: Stack(
+                        clipBehavior: Clip.none,
+                        children: [
+                          Positioned.fill(
+                            top: 13,
+                            child: NavigationBar(
+                              selectedIndex: MainShell.bottomBarSlotForPage(index),
+                              onDestinationSelected: _selectBottomDestination,
+                              destinations: _bottomDestinations(strings),
+                            ),
+                          ),
+                          Positioned(
+                            top: 0,
+                            left: 0,
+                            right: 0,
+                            child: Center(child: _centralCreateButton(context)),
+                          ),
+                        ],
                       ),
-                      Positioned(
-                        top: 0,
-                        left: 0,
-                        right: 0,
-                        child: Center(child: _centralCreateButton(context)),
-                      ),
-                    ],
-                  ),
+                    );
+                  },
                 ),
         );
       },

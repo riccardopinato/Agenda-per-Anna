@@ -698,6 +698,28 @@ class _PlannerScreenState extends State<PlannerScreen> {
             ? widget.store.items.where((item) => item.pinned).toList()
             : const <AgendaItem>[];
 
+        // Existing approved cards keep their order and data ownership.
+        // Editorial places them BELOW its journal hero, while Classic
+        // preserves the original review-first sequence.
+        final planningCards = <Widget>[
+          if (widget.embedded && isToday)
+            for (final card in widget.store.preferences.todayCardOrder) ...[
+              const SizedBox(height: 12),
+              if (card == 'review')
+                WeeklyReviewHomeCard(
+                  key: const ValueKey('cap0147-review'),
+                  store: widget.store,
+                ),
+              if (card == 'realistic')
+                RealisticDayCard(
+                  key: const ValueKey('cap0147-realistic'),
+                  store: widget.store,
+                  snapshot: snapshot,
+                  hideDetails: widget.store.preferences.hideHomeDetails,
+                ),
+            ],
+        ];
+
         return Scaffold(
           backgroundColor: editorial ? AnnaEditorialColors.of(context).canvas : null,
           floatingActionButton: widget.embedded ? null : FloatingActionButton.extended(
@@ -855,24 +877,8 @@ class _PlannerScreenState extends State<PlannerScreen> {
                         // R3 embeds the daily wish directly below the greeting,
                         // not in a repeated standalone opening card.
                         if (!widget.embedded) _DayOpeningCard(date: day),
-                        // CAP-0147: two existing derived cards, no new data
-                        // owner. Legacy profiles retain review-first order.
-                        if (widget.embedded && isToday)
-                          for (final card in widget.store.preferences.todayCardOrder) ...[
-                            const SizedBox(height: 12),
-                            if (card == 'review')
-                              WeeklyReviewHomeCard(
-                                key: const ValueKey('cap0147-review'),
-                                store: widget.store,
-                              ),
-                            if (card == 'realistic')
-                              RealisticDayCard(
-                                key: const ValueKey('cap0147-realistic'),
-                                store: widget.store,
-                                snapshot: snapshot,
-                                hideDetails: widget.store.preferences.hideHomeDetails,
-                              ),
-                          ],
+                        // Classic keeps its original planning-first hierarchy.
+                        if (!editorial) ...planningCards,
                         if (!editorial) ...[
                           const SizedBox(height: 12),
                           AgendaContentFilterBar(store: widget.store),
@@ -896,6 +902,8 @@ class _PlannerScreenState extends State<PlannerScreen> {
                               order: 0,
                               child: _TodayCompactSummary(snapshot: snapshot),
                             ),
+                          // Hero-first rhythm is exclusive to the Editorial Home.
+                          if (editorial) ...planningCards,
                           if (isToday && (upcoming.isNotEmpty || pinnedItems.isNotEmpty)) ...[
                             const SizedBox(height: 12),
                             _TodayFocusCard(
