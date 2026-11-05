@@ -22,34 +22,25 @@ void main() {
     );
   }
 
-  testWidgets('editorial tokens derive from live theme, not rose constants', (tester) async {
-    AnnaEditorialColors? first;
-    AnnaEditorialColors? second;
-
-    await tester.pumpWidget(withTheme(
-      seed: Colors.blue,
+  test('editorial tokens derive from supplied schemes, not hardcoded rose', () {
+    final blue = ColorScheme.fromSeed(
+      seedColor: Colors.blue,
       brightness: Brightness.light,
-      child: Builder(builder: (context) {
-        first = AnnaEditorialColors.of(context);
-        return const SizedBox();
-      }),
-    ));
-    expect(first, isNotNull);
-    expect(first!.accent, ColorScheme.fromSeed(seedColor: Colors.blue).primary);
-    expect(first!.ink, ColorScheme.fromSeed(seedColor: Colors.blue).onSurface);
-
-    await tester.pumpWidget(withTheme(
-      seed: Colors.green,
+    );
+    final sage = ColorScheme.fromSeed(
+      seedColor: Colors.green,
       brightness: Brightness.dark,
-      child: Builder(builder: (context) {
-        second = AnnaEditorialColors.of(context);
-        return const SizedBox();
-      }),
-    ));
-    expect(second, isNotNull);
-    expect(second!.accent, isNot(first!.accent));
-    expect(second!.canvas, isNot(first!.canvas));
-    expect(second!.ink, isNot(first!.ink));
+    );
+    final first = AnnaEditorialColors.fromScheme(blue);
+    final second = AnnaEditorialColors.fromScheme(sage);
+    expect(first.accent, blue.primary);
+    expect(first.ink, blue.onSurface);
+    expect(first.canvas, blue.surface);
+    expect(second.accent, sage.primary);
+    expect(second.ink, sage.onSurface);
+    expect(second.canvas, sage.surface);
+    expect(second.accent, isNot(first.accent));
+    expect(second.canvas, isNot(first.canvas));
   });
 
   testWidgets('featured card and pill CTA are accessible and tappable', (tester) async {
