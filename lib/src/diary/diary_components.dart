@@ -638,11 +638,57 @@ Future<List<String>?> showOrganizationTagsEditor(
   required List<String> initialTags,
   List<String> suggestions = const [],
   List<Cap0160TagSuggestion> offlineProposals = const [],
-}) async {
-  final controller = TextEditingController(text: initialTags.join(', '));
-  final value = await showDialog<List<String>>(
-    context: context,
-    builder: (dialogContext) => AlertDialog(
+}) =>
+    showDialog<List<String>>(
+      context: context,
+      builder: (_) => _OrganizationTagsEditorDialog(
+        initialTags: initialTags,
+        suggestions: suggestions,
+        offlineProposals: offlineProposals,
+      ),
+    );
+
+/// A dialog owns its editing controller for the *route's* lifetime.
+/// The showDialog future resolves before reverse animation completes; callers
+/// must never dispose the TextEditingController as soon as Navigator.pop fires.
+class _OrganizationTagsEditorDialog extends StatefulWidget {
+  const _OrganizationTagsEditorDialog({
+    required this.initialTags,
+    required this.suggestions,
+    required this.offlineProposals,
+  });
+
+  final List<String> initialTags;
+  final List<String> suggestions;
+  final List<Cap0160TagSuggestion> offlineProposals;
+
+  @override
+  State<_OrganizationTagsEditorDialog> createState() =>
+      _OrganizationTagsEditorDialogState();
+}
+
+class _OrganizationTagsEditorDialogState
+    extends State<_OrganizationTagsEditorDialog> {
+  late final TextEditingController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = TextEditingController(text: widget.initialTags.join(', '));
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final controller = _controller;
+    final suggestions = widget.suggestions;
+    final offlineProposals = widget.offlineProposals;
+    return AlertDialog(
       scrollable: true,
       title: Text(AnnaStrings.of(context).tags),
       content: Column(
@@ -742,21 +788,19 @@ Future<List<String>?> showOrganizationTagsEditor(
       ),
       actions: [
         TextButton(
-          onPressed: () => Navigator.pop(dialogContext),
+          onPressed: () => Navigator.pop(context),
           child: Text(AnnaStrings.of(context).cancel),
         ),
         FilledButton(
           onPressed: () => Navigator.pop(
-            dialogContext,
+            context,
             normalizeOrganizationTags(controller.text.split(',')),
           ),
           child: Text(AnnaStrings.of(context).save),
         ),
       ],
-    ),
-  );
-  controller.dispose();
-  return value;
+    );
+  }
 }
 
 
