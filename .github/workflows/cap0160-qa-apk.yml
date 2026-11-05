@@ -1,0 +1,138 @@
+name: CAP-0160 isolated Android QA APK
+
+# Deliberately lives ONLY on the dedicated QA branch, not on the feature PR
+# or protected main. The signing key and Android application ID are disposable.
+on:
+  push:
+    branches:
+      - qa/cap0160-physical-apk
+
+permissions:
+  contents: read
+
+concurrency:
+  group: cap0160-qa-apk
+  cancel-in-progress: false
+
+jobs:
+  build-isolated-qa-apk:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - name: Checkout QA branch source
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Verify exact CAP-0160 source parent
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+          test "$(git rev-parse HEAD^)" = "04c18a785968d7dc684e1e6d6279b9262d0896fa"
+          grep -q "class Cap0160TagSuggester" lib/src/cap0160_offline_tags.dart
+
+      - name: Setup pinned Flutter SDK
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: "3.47.5"
+          channel: stable
+          cache: true
+
+      - name: Generate pinned Android platform
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf android /tmp/cap0160_qa_android
+          flutter create --project-name agenda_per_anna --org com.riccardopinato --platforms=android /tmp/cap0160_qa_android
+          cp -R /tmp/cap0160_qa_android/android .
+
+      - name: Create DISPOSABLE QA signing key
+        shell: bash
+        run: |
+          set -euo pipefail
+          AUDIT_STORE="$RUNNER_TEMP/cap0160-qa.p12"
+          keytool -genkeypair -storetype PKCS12 -keystore "$AUDIT_STORE" \
+            -storepass cap0160-qa-store -keypass cap0160-qa-store -alias cap0160qa \
+            -keyalg RSA -keysize 2048 -validity 2 \
+            -dname "CN=Anna Diary CAP0160 QA,O=Ephemeral Testing,C=IT" -noprompt
+          AUDIT_B64=$(base64 -w0 "$AUDIT_STORE")
+          echo "::add-mask::$AUDIT_B64"
+          {
+            echo "ANDROID_KEYSTORE_BASE64=$AUDIT_B64"
+            echo "ANDROID_KEYSTORE_PASSWORD=cap0160-qa-store"
+            echo "ANDROID_KEY_ALIAS=cap0160qa"
+            echo "ANDROID_KEY_PASSWORD=cap0160-qa-store"
+            echo "ANDROID_KEYSTORE_PATH=$GITHUB_WORKSPACE/.signing/agenda-release.jks"
+          } >> "$GITHUB_ENV"
+
+      - name: Apply native Android configuration
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 tool/prepare_android_platform.py --release-signing
+
+      - name: Set unique side-by-side QA application identity
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          gradle = Path('android/app/build.gradle.kts')
+          source = gradle.read_text()
+          old = 'applicationId = "com.riccardopinato.agenda_per_anna"'
+          new = 'applicationId = "com.riccardopinato.agenda_per_anna.cap0160qa"'
+          if source.count(old) != 1:
+              raise SystemExit("Expected exactly one Android application ID marker")
+          gradle.write_text(source.replace(old,new))
+          manifest = Path('android/app/src/main/AndroidManifest.xml')
+          xml = manifest.read_text()
+          old_label = 'android:label="Anna\\'s Diary"'
+          if old_label in xml:
+              xml = xml.replace(old_label, 'android:label="Anna CAP0160 QA"')
+          else:
+              import re
+              xml, n = re.subn(r'android:label="[^"]+"',
+                               'android:label="Anna CAP0160 QA"', xml, count=1)
+              if n != 1: raise SystemExit("Cannot isolate app label")
+          manifest.write_text(xml)
+          print("QA ID and label isolated from installed signed +124")
+          PY
+
+      - name: Install Flutter dependencies
+        run: flutter pub get --enforce-lockfile
+
+      - name: Generate Android launcher icons
+        run: dart run flutter_launcher_icons -f tool/flutter_launcher_icons_android.yaml
+
+      - name: Build standalone ARM64 release-mode QA APK
+        shell: bash
+        run: |
+          set -euo pipefail
+          flutter build apk --release --split-per-abi --tree-shake-icons \
+            --dart-define=ANNA_STORE_RELEASE=false \
+            --dart-define=ANNA_STORE_QA=true \
+            --dart-define=ANNA_PREMIUM_PREVIEW=true
+
+      - name: Verify distinct APK identity and attach checksums
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p build/cap0160-qa
+          APK=build/app/outputs/flutter-apk/app-arm64-v8a-release.apk
+          test -s "$APK"
+          AAPT=$(find "$ANDROID_HOME/build-tools" -type f -name aapt -print | sort -V | tail -1)
+          test -n "$AAPT"
+          "$AAPT" dump badging "$APK" | grep -F "package: name='com.riccardopinato.agenda_per_anna.cap0160qa'"
+          cp "$APK" build/cap0160-qa/Anna-Diary-CAP0160-QA-arm64.apk
+          cd build/cap0160-qa
+          sha256sum *.apk > SHA256SUMS.txt
+          printf 'CAP-0160 source SHA: 04c18a785968d7dc684e1e6d6279b9262d0896fa\nQA workflow commit: %s\nNot an upgrade to stable-signed +124. Data is isolated. No cloud auth/store certification.\n' "$GITHUB_SHA" > QA_README.txt
+          ls -lh *.apk
+
+      - name: Upload sideloadable isolated QA APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: Anna-Diary-CAP0160-QA-ARM64
+          path: build/cap0160-qa/*
+          if-no-files-found: error
+          retention-days: 14
