@@ -1,6 +1,6 @@
 # Anna's Diary — Recovery of approved R3/R4/R5 mockups (5 Nov 2026)
 
-**Scope:** PR #251, based on `main@62a7157abd7a63e5a4f38aa34136870778571e64`. Factory baseline: `App-Factory-Core@42ad47a9ebacc55ae901ea55a01a6855e320377d`, Master v27 / Golden Index v28.
+**Scope:** PR #251, merged as `main@1b9ea9513e6d6be920457d7af5d17dea84c55403` after Flutter/Web/AppLab PASS. R3/R4 independent visual smoke: [Actions #42052066982](https://github.com/riccardopinato/Agenda-per-Anna/actions/runs/42052066982), source-only test ancestor `863d12ed7b1b4b587567dbe153a77fb49844697b`. New signed +126 remains separately gated. Factory baseline: `App-Factory-Core@42ad47a9ebacc55ae901ea55a01a6855e320377d`, Master v27 / Golden Index v28.
 
 **Evidence basis:** audit V2 supplied by the user (`Anna_Diary_Audit_Recupero_Chat_Mockup_2026-11-05_V2.md`); original R1 global-search HTML referenced via the user's Library link; repo contracts `APPROVED_10_MOCKUPS_IMPLEMENTATION_CONTRACT.md`, `V108_MOTION_VISUAL_POLISH_FINAL_DESIGN_CONTRACT.md` and `WEEKLY_REVIEW_10OF10_CONTRACT.md`. Full chat transcripts / inline visual image baselines not fully retrievable here; this ledger does not claim otherwise.
 

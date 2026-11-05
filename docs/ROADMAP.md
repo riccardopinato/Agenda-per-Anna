@@ -1,12 +1,12 @@
 # Anna's Diary — Roadmap
 
-## 5 November 2026 — Mockup recovery R02/R03 (PR #251, SOURCE CANDIDATE)
+## 5 November 2026 — Mockup recovery R02/R03 (PR #251, SOURCE MERGED)
 
 - Audit: `docs/APPROVED_MOCKUP_RECOVERY_20261105.md`, integrating user-provided V2 report. Approved 31 October R3 Today (single date + arrows and daily wish directly below greeting), R4 Calendar (hourly creation 07–22), R5 +Crea cascade (416/544/100ms), Inbox 8/10 pinned grouping, Search 10/10 R1 contextual help/examples/reset.
 - Existing editor is the only writer: tap on calendar hourly slot opens `openItemEditor` with selected civil date, exact hour and `ItemType.appointment`. User must Save explicitly; no calendar schema or sync path changes.
 - Subsequent QW2 approval (2 Nov) remains authoritative for dynamic Create actions and optional Favorites; Shared Space favorite icon is neutral (not heart), no favorite record deleted.
 - Exact-head Flutter analyze/test/Web + AppLab source contract gates before merge. 70 visual screenshot pairs, Android physical/IME/font-scale checks and two-device shared flows remain **NOT VERIFIED** until real artifacts exist; do not mark them PASS on CI alone.
-- `+125` is the previously signed APK and does **not** contain this branch. A future +126 requires a separately gated signed release after source merge.
+- PR #251 was merged as `main@1b9ea9513e6d6be920457d7af5d17dea84c55403` after exact-head Flutter/Web/AppLab source PASS and resolved Codex feedback. An isolated real Flutter Web visual run validated R3 date arrows and the R4 Calendar hourly editor. The signed +125 APK remains the previous build; +126 is a new source-based signed release candidate, subject to its own exact-head tests and physical update acceptance. No Play rollout.
 
 
 **Roadmap aggiornata:** [5 novembre 2026 — cinque maxi-step, PR integrate, APK +125](ANNA_ROADMAP_20261105.md). Lo storico delle modifiche resta sotto.
