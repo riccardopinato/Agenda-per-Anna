@@ -22,6 +22,31 @@ void main() {
     expect(find.byKey(const ValueKey('hero-write')), findsOneWidget);
   });
 
+  testWidgets('navigation is docked edge-to-edge, not a floating capsule', (tester) async {
+    await tester.pumpWidget(const EditorialPreview());
+    final bar = find.byKey(const ValueKey('nav-anchored-surface'));
+    final scaffold = find.byType(Scaffold).first;
+    expect(bar, findsOneWidget);
+
+    // Bottom edge and horizontal edges must reach the screen boundary.
+    final surfaceLeft = tester.getTopLeft(bar);
+    final surfaceRight = tester.getBottomRight(bar);
+    final screenLeft = tester.getTopLeft(scaffold);
+    final screenRight = tester.getBottomRight(scaffold);
+    expect(surfaceLeft.dx, closeTo(screenLeft.dx, .1));
+    expect(surfaceRight.dx, closeTo(screenRight.dx, .1));
+    expect(surfaceRight.dy, closeTo(screenRight.dy, .1));
+
+    // The raised CTA and all four destinations remain tappable.
+    expect(find.byKey(const ValueKey('nav-create')), findsOneWidget);
+    for (final id in ['0', '1', '3', '4']) {
+      expect(find.byKey(ValueKey('nav-' + id)), findsOneWidget);
+    }
+    await tester.tap(find.byKey(const ValueKey('nav-3')));
+    await tester.pumpAndSettle();
+    expect(find.text('Le pagine da ritrovare'), findsOneWidget);
+  });
+
   testWidgets('create menu and local entry work without any account', (tester) async {
     await tester.pumpWidget(const EditorialPreview());
     await tester.tap(find.byKey(const ValueKey('nav-create')));
