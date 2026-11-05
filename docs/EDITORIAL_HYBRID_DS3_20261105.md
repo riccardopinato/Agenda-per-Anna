@@ -17,3 +17,11 @@
 - After main checks PASS: existing stable-signed ARM64 workflow on strictly monotonic +127, no ephemeral keystore, verify package/version/cert/manifest/SHA256.
 - Phone: install over +126 without uninstalling, switch Classic/Hybrid, check all four tabs, +Crea, back/Calendar, private/shared filters, gesture insets, 320dp/large text/dark/custom palette.
 - All on-device visual, update-in-place and data-retention results are **NOT VERIFIED** until actual user test.
+
+## 6 November 2026 — Compact diary hero (user visual feedback)
+
+- Keep only the first-person localized heading `Il mio diario` (five locales) and the original `Vedi tutti` button. No eyebrow, status summary, placeholders or microtext in the hero.
+- Align the book icon vertically with the heading in the same centered `Row`; reduce icon from 40dp to 34dp.
+- Reduce hero internal spacing with 22dp horizontal / 18dp vertical padding and 18dp title-to-CTA gap. No fixed height, clipping or font-size reduction; allow text wrapping for accessibility.
+- Keep existing gradient/ColorScheme palette and original `onOpenDiary` callback. Quick-action counts and privacy masking outside the hero remain unchanged.
+- This refinement is source-only; the previously signed +127 APK does not include it. New release requires a monotonic versionCode and existing stable signing gate.
