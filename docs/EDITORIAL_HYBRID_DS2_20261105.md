@@ -27,3 +27,7 @@ Factory baseline: App-Factory-Core@42ad47a9ebacc55ae901ea55a01a6855e320377d (Mas
 ## Next approved boundary
 
 After user testing of the real-data Hybrid Home, extend shared editorial surfaces to Calendar, Ricordi, Messaggi and Altro while preserving the installed Private Vault appearance.
+
+## Refinement — simplified Editorial Hybrid Home (5 November 2026)
+
+Following physical user feedback on the installed signed +126 candidate, hide the visible `Tutto / Personale / Condiviso` filter strip **only on embedded Editorial Hybrid Oggi**. Preserve Classic Oggi and Calendar/Week/Month filter controls. On entering the unfiltered Hybrid Home, clear any stale global in-memory agenda content filter to `AgendaContentFilter.all` after the frame, so private or shared items cannot remain silently hidden. No records, account data, saved preferences or synchronization are changed. This is a source-level refinement; physical verification on a future signed candidate remains NOT VERIFIED.
