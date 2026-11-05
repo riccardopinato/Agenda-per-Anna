@@ -1,5 +1,33 @@
 part of '../../main.dart';
 
+/// CAP-0159 reuse-first: named places are grouped from canonical private
+/// memory references. No GPS inference, new store, or shared data exposure.
+String memoryPlacesCopy(String code, String key) {
+  final copy = switch (code) {
+    'en' => {'title': 'Memories by place',
+      'intro': 'Your saved places, including places with one memory.',
+      'empty': 'Add a place to a memory to see it here.',
+      'all': 'See all places'},
+    'es' => {'title': 'Recuerdos por lugar',
+      'intro': 'Tus lugares guardados, también los de un solo recuerdo.',
+      'empty': 'Añade un lugar a un recuerdo para verlo aquí.',
+      'all': 'Ver todos los lugares'},
+    'fr' => {'title': 'Souvenirs par lieu',
+      'intro': 'Vos lieux enregistrés, même avec un seul souvenir.',
+      'empty': 'Ajoutez un lieu à un souvenir pour le retrouver ici.',
+      'all': 'Voir tous les lieux'},
+    'pt' => {'title': 'Memórias por lugar',
+      'intro': 'Os teus lugares guardados, mesmo com uma só memória.',
+      'empty': 'Adiciona um lugar a uma memória para o veres aqui.',
+      'all': 'Ver todos os lugares'},
+    _ => {'title': 'Ricordi per luogo',
+      'intro': 'Tutti i luoghi salvati, anche con un solo ricordo.',
+      'empty': 'Aggiungi un luogo a un ricordo per ritrovarlo qui.',
+      'all': 'Vedi tutti i luoghi'},
+  };
+  return copy[key] ?? key;
+}
+
 class MemoryCollectionsScreen extends StatefulWidget {
   final AgendaStore store;
 
@@ -283,6 +311,7 @@ class _MemoryCollectionsScreenState extends State<MemoryCollectionsScreen> {
       builder: (context, _) {
         final collections = widget.store.preferences.memoryCollections;
         final threads = widget.store.memoryLifeThreads();
+        final placeGroups = widget.store.memoryMapSnapshot().places;
 
         return Scaffold(
       appBar: AppBar(
@@ -373,6 +402,45 @@ class _MemoryCollectionsScreenState extends State<MemoryCollectionsScreen> {
               ),
             const SizedBox(height: AnnaDesignTokens.spaceXl),
             Text(
+              memoryPlacesCopy(strings.languageCode, 'title'),
+              key: const ValueKey('memories-by-place-heading'),
+              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                    fontWeight: FontWeight.w900,
+                  ),
+            ),
+            const SizedBox(height: AnnaDesignTokens.space2xs),
+            Text(memoryPlacesCopy(strings.languageCode, 'intro')),
+            const SizedBox(height: AnnaDesignTokens.spaceMd),
+            if (placeGroups.isEmpty)
+              SimpleCard(
+                child: Text(memoryPlacesCopy(strings.languageCode, 'empty')),
+              )
+            else ...[
+              for (final place in placeGroups.take(6))
+                _MemoryPlaceTile(
+                  key: ValueKey('memory-place-${place.key}'),
+                  store: widget.store,
+                  place: place,
+                ),
+              if (placeGroups.length > 6)
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: TextButton.icon(
+                    key: const ValueKey('memories-by-place-all'),
+                    onPressed: () => Navigator.of(context).push(
+                      MaterialPageRoute<void>(
+                        builder: (_) =>
+                            _MemoryAllPlacesScreen(store: widget.store),
+                      ),
+                    ),
+                    icon: const Icon(Icons.place_outlined),
+                    label: Text(memoryPlacesCopy(
+                        strings.languageCode, 'all')),
+                  ),
+                ),
+            ],
+            const SizedBox(height: AnnaDesignTokens.spaceXl),
+            Text(
               strings.v105LifeThreads,
               style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                     fontWeight: FontWeight.w900,
@@ -412,6 +480,81 @@ class _MemoryCollectionsScreenState extends State<MemoryCollectionsScreen> {
       },
     );
   }
+}
+
+class _MemoryPlaceTile extends StatelessWidget {
+  const _MemoryPlaceTile({
+    super.key,
+    required this.store,
+    required this.place,
+  });
+
+  final AgendaStore store;
+  final MemoryPlaceCluster place;
+
+  @override
+  Widget build(BuildContext context) {
+    final strings = AnnaStrings.of(context);
+    final latest = DateFormat(
+      'd MMM yyyy',
+      AnnaStrings.intlLocale(context),
+    ).format(place.latestMemory.date);
+    return Card(
+      child: ListTile(
+        leading: const Icon(Icons.place_outlined),
+        title: Text(place.label),
+        subtitle: Text(
+          '${strings.v105MemoryCount(place.count)} · $latest',
+        ),
+        trailing: const Icon(Icons.chevron_right),
+        onTap: () => Navigator.of(context).push(
+          MaterialPageRoute<void>(
+            builder: (_) => _MemoryDerivedResultsScreen(
+              store: store,
+              title: place.label,
+              recordsBuilder: () => store.memoryLifeThreadReferences(
+                'place:${place.key}',
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _MemoryAllPlacesScreen extends StatelessWidget {
+  const _MemoryAllPlacesScreen({required this.store});
+  final AgendaStore store;
+
+  @override
+  Widget build(BuildContext context) => Scaffold(
+    appBar: AppBar(
+      title: Text(memoryPlacesCopy(
+        AnnaStrings.of(context).languageCode, 'title')),
+    ),
+    body: AnimatedBuilder(
+      animation: store.journalRevision,
+      builder: (context, _) {
+        final places = store.memoryMapSnapshot().places;
+        return places.isEmpty
+            ? Center(child: Text(memoryPlacesCopy(
+                AnnaStrings.of(context).languageCode, 'empty')))
+            : ListView.builder(
+                padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
+                itemCount: places.length,
+                itemBuilder: (context, index) {
+                  final place = places[index];
+                  return _MemoryPlaceTile(
+                    key: ValueKey('memory-place-full-${place.key}'),
+                    store: store,
+                    place: place,
+                  );
+                },
+              );
+      },
+    ),
+  );
 }
 
 class _MemoryDerivedResultsScreen extends StatelessWidget {
