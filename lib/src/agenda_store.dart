@@ -104,10 +104,14 @@ class AgendaStore extends ChangeNotifier {
   DateTime? _lastSharedSyncAttemptAt;
   String? _lastSharedSyncError;
   String? _activeAccountId;
+  // Changes only on actual profile transitions, unlike accountRevision
+  // which may also change during unrelated background sync invalidations.
+  int _accountScopeEpoch = 0;
   bool _localEntrySelected = false;
   bool _accountScopeResolved = true;
 
   String? get activeAccountId => _activeAccountId;
+  int get accountScopeEpoch => _accountScopeEpoch;
   bool get localEntrySelected => _localEntrySelected;
   bool get accountScopeResolved => _accountScopeResolved;
   bool get entryScopeReady =>
@@ -1613,6 +1617,8 @@ class AgendaStore extends ChangeNotifier {
       return;
     }
 
+    // Invalidate open private edit dialogs before switching profiles.
+    _accountScopeEpoch++;
     // The launcher retains preview text outside the app's privacy gate.
     await HomeWidgetBridge.instance.clear();
     await _compactActiveEntityDeltas(prefs);
@@ -1684,6 +1690,9 @@ class AgendaStore extends ChangeNotifier {
     final ownerId = accountId.trim();
     if (ownerId.isEmpty) return;
 
+    // This operation activates the guest profile even if another account
+    // was selected; prevent any in-flight private tag write in that window.
+    _accountScopeEpoch++;
     final prefs = await _localState();
 
     // Clear every app notification before replacing the working set. Guest
