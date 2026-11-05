@@ -1,5 +1,14 @@
 # Anna's Diary — Roadmap
 
+## 5 November 2026 — Editorial Hybrid DS3: docked navigation + Home polish, signed +127
+
+- Approved bundled delivery: **full-width attached bottom nav** in Editorial Hybrid mode; Classic Material 3 NavigationBar when local style toggle is off. Four original destinations and one preserved +Crea owner/animations; responsive NavigationRail unchanged.
+- New DS1-derived `AnnaEditorialDockBar` uses existing theme/HSV colors, Manrope, original navigation IDs, five equal slots and safe-area anchoring; no second router/store/writer.
+- **Home polish:** Editorial journal hero precedes Weekly Review / Realistic Day cards; Classic retains its approved order. Filter chips remain removed only in Editorial Today, respecting foreground/modal-visibility guard from PR #258.
+- **QA:** exact-head Flutter analyze/all tests/Web, AppLab Source Gate, review; stable-signed Android +127 only after merged-main tests. Physical visual, safe-area, update/no-loss remains NOT VERIFIED until device test.
+- [DS3 contract](EDITORIAL_HYBRID_DS3_20261105.md).
+
+
 ## 5 November 2026 — Editorial Hybrid real-data Home DS2 (implementation PR)
 
 - **Opt-in / reversible:** classic Home stays default; Hybrid is enabled from Personalizzazione or directly from Oggi. Device-local cosmetic boolean only; no change to synchronized AgendaPreferences, account/profile data, backup or cloud.
