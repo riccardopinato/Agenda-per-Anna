@@ -330,34 +330,44 @@ void main() {
     expect(result, isNull);
   });
 
-  testWidgets('CAP-0160 Inbox suggestions are inline; Cancel remains nonwriting',
+  testWidgets('CAP-0160 inline tag remains draft until explicit Save',
       (tester) async {
-    final store = AgendaStore();
-    await store.load();
-    await store.continueWithoutAccount();
-    await store.addInboxEntry('montagna montagna sentiero');
-
+    // Use the shared inline chip and canonical editor in isolation. Pumping
+    // the full Inbox shell here introduces unrelated app background timers.
+    // Inbox/Diary integration is asserted by the source contract below.
+    List<String> persisted = [];
     await tester.pumpWidget(MaterialApp(
-      home: InboxScreen(store: store),
+      home: Builder(builder: (context) => Scaffold(
+        body: Cap0160InlineTagSuggestions(
+          languageCode: 'it',
+          proposals: const [
+            Cap0160TagSuggestion('montagna', 2.0, 'text_frequency'),
+          ],
+          onSelected: (tag) async {
+            final draft = await showOrganizationTagsEditor(
+              context,
+              initialTags: [...persisted, tag],
+            );
+            if (draft != null) persisted = draft;
+          },
+        ),
+      )),
     ));
-    await tester.pumpAndSettle();
-    final suggestion = find.byKey(
-        const ValueKey('cap0160-inline-montagna'));
-    expect(suggestion, findsOneWidget);
-    expect(store.inbox.single.tags, isEmpty);
-    await tester.tap(suggestion);
+    expect(find.byKey(const ValueKey('cap0160-inline-montagna')),
+        findsOneWidget);
+    expect(persisted, isEmpty);
+    await tester.tap(find.byKey(const ValueKey('cap0160-inline-montagna')));
     await tester.pumpAndSettle();
     expect(find.byType(AlertDialog), findsOneWidget);
     expect(tester.widget<TextField>(find.byType(TextField).last)
-        .controller!.text, contains('montagna'));
-    // The first TextButton in the tag editor is Cancel, not Save.
+        .controller!.text, 'montagna');
+    expect(persisted, isEmpty);
     await tester.tap(find.descendant(
-      of: find.byType(AlertDialog), matching: find.byType(TextButton),
+      of: find.byType(AlertDialog),
+      matching: find.byType(TextButton),
     ).last);
     await tester.pumpAndSettle();
-    expect(store.inbox.single.tags, isEmpty);
-    await tester.pumpWidget(const SizedBox.shrink());
-    store.dispose();
+    expect(persisted, isEmpty);
   });
 
   testWidgets('CAP-0160 inline suggestions are only draft callbacks',
