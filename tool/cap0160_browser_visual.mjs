@@ -151,24 +151,41 @@ try {
             await page.waitForTimeout(1000);
             await capture('11-saved-note-inline-suggestions');
             await snapshotAccessibility('11-saved-note-inline-suggestions');
-            const tagsBefore = await page.locator('flt-semantics[role="button"]')
-                .filter({ hasText: '#montagna' }).count();
-            log.push('INLINE #montagna BUTTON COUNT: ' + tagsBefore);
+            // ActionChip exposes a checkbox semantic in Flutter Web.
+            const inlineChip = page.getByRole('checkbox', {
+              name: '#montagna', exact: true,
+            }).first();
+            const tagsBefore = await inlineChip.count();
+            log.push('INLINE #montagna SEMANTIC CHIP COUNT: ' + tagsBefore);
             if (tagsBefore) {
-              await clickContaining('#montagna');
+              await inlineChip.click({ timeout: 5000 });
+              await page.waitForTimeout(600);
               await capture('12-selected-suggestion-draft');
               await snapshotAccessibility('12-selected-suggestion-draft');
               if (await clickText('Annulla') || await clickContaining('Annulla')) {
                 await capture('13-after-cancel-no-tag-save');
                 await snapshotAccessibility('13-after-cancel-no-tag-save');
+                const afterCancel = await page.getByRole('checkbox', {
+                  name: '#montagna', exact: true,
+                }).count();
+                log.push('AFTER CANCEL: #montagna remains unassigned proposal=' + afterCancel);
               }
-              if (await clickContaining('#montagna')) {
+              const secondChip = page.getByRole('checkbox', {
+                name: '#montagna', exact: true,
+              }).first();
+              if (await secondChip.count()) {
+                await secondChip.click({ timeout: 5000 });
+                await page.waitForTimeout(600);
                 await capture('14-second-suggestion-draft');
                 if (await clickText('Salva') || await clickContaining('Salva')) {
                   await page.waitForTimeout(900);
                   await capture('15-after-explicit-tag-save');
                   await snapshotAccessibility('15-after-explicit-tag-save');
-                  log.push('EXPLICIT SAVE COMPLETED: check tag in screenshot');
+                  const afterSave = await page.getByRole('checkbox', {
+                    name: '#montagna', exact: true,
+                  }).count();
+                  log.push('AFTER SAVE: #montagna unassigned proposal count=' + afterSave);
+                  log.push('EXPLICIT SAVE COMPLETED: inspect canonical tag in screenshot');
                 }
               }
             }
