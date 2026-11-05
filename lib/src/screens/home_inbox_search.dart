@@ -740,12 +740,21 @@ class _InboxScreenState extends State<InboxScreen> {
     BuildContext context,
     InboxEntry entry,
   ) async {
+    final guard = Cap0160TagEditGuard(store);
+    if (!guard.isCurrent) return;
+    final proposals = Cap0160TagSuggester.forInbox(
+      store, entry, AnnaStrings.of(context).languageCode,
+    );
     final tags = await showOrganizationTagsEditor(
       context,
       initialTags: entry.tags,
       suggestions: store.inboxCategoryTags,
+      offlineProposals: proposals,
     );
-    if (tags == null) return;
+    if (tags == null || !guard.isCurrent ||
+        !store.inbox.any((current) => current.id == entry.id &&
+            !current.archived && current.text == entry.text &&
+            listEquals(current.tags, entry.tags))) return;
     await store.setInboxTags(entry.id, tags);
   }
 
