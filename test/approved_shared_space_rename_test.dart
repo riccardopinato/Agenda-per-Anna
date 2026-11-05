@@ -74,7 +74,7 @@ void main() {
     expect(screen, contains('_renameSpace(space)'));
     expect(screen, contains('CloudSyncService.instance.userId'));
     expect(screen, contains('await _reload()'));
-    expect(screen, contains("'shared-rename-${space.id}'"));
+    expect(screen, contains(r"'shared-rename-${space.id}'"));
     expect(screen, contains("isOwner ? 'rename' : 'renameLocal'"));
     expect(screen, contains("await prefs.setString(key, jsonEncode(next))"));
     expect(screen, contains('key != _memberAliasKey'));
