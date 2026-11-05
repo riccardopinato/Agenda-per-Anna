@@ -637,6 +637,7 @@ Future<List<String>?> showOrganizationTagsEditor(
   BuildContext context, {
   required List<String> initialTags,
   List<String> suggestions = const [],
+  List<Cap0160TagSuggestion> offlineProposals = const [],
 }) async {
   final controller = TextEditingController(text: initialTags.join(', '));
   final value = await showDialog<List<String>>(
@@ -685,6 +686,53 @@ Future<List<String>?> showOrganizationTagsEditor(
                   },
                 );
               }).toList(),
+            ),
+          ],
+          if (offlineProposals.isNotEmpty) ...[
+            const SizedBox(height: 12),
+            Text(
+              switch (AnnaStrings.of(context).languageCode) {
+                'en' => 'Offline tag suggestions',
+                'es' => 'Etiquetas sugeridas sin conexión',
+                'fr' => 'Tags suggérés hors ligne',
+                'pt' => 'Etiquetas sugeridas offline',
+                _ => 'Tag suggeriti offline',
+              },
+              style: Theme.of(context).textTheme.labelLarge,
+            ),
+            const SizedBox(height: 4),
+            Text(
+              switch (AnnaStrings.of(context).languageCode) {
+                'en' => 'Tap to add to the draft. Save to confirm.',
+                'es' => 'Toca para añadir al borrador. Guarda para confirmar.',
+                'fr' => 'Touchez pour ajouter au brouillon. Enregistrez pour confirmer.',
+                'pt' => 'Toque para adicionar ao rascunho. Guarde para confirmar.',
+                _ => 'Tocca per aggiungere alla bozza. Salva per confermare.',
+              },
+              style: Theme.of(context).textTheme.bodySmall,
+            ),
+            const SizedBox(height: 6),
+            Wrap(
+              spacing: 6,
+              runSpacing: 6,
+              children: offlineProposals.map((proposal) => ActionChip(
+                key: ValueKey('cap0160-chip-' + proposal.tag),
+                label: Text(proposal.tag),
+                onPressed: () {
+                  final current = normalizeOrganizationTags(
+                    controller.text.split(','),
+                  );
+                  if (current.length >= 12 ||
+                      current.any((tag) => tag.toLowerCase() ==
+                          proposal.tag.toLowerCase())) return;
+                  controller.text = [...current, proposal.tag].join(', ');
+                  controller.selection = TextSelection.collapsed(
+                    offset: controller.text.length,
+                  );
+                  // The chip only updates a temporary TextEditingController.
+                  // The canonical writer is outside the dialog's Save action.
+                },
+              )).toList(growable: false),
             ),
           ],
         ],
