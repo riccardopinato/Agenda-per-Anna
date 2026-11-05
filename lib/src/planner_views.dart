@@ -663,11 +663,13 @@ class _PlannerScreenState extends State<PlannerScreen> {
         // never the private/shared records or their persisted preferences.
         if (editorial &&
             widget.activeInShell &&
+            ModalRoute.of(context)?.isCurrent == true &&
             widget.store.agendaContentFilter != AgendaContentFilter.all) {
           WidgetsBinding.instance.addPostFrameCallback((_) {
             if (!mounted ||
                 !widget.embedded ||
                 !widget.activeInShell ||
+                ModalRoute.of(context)?.isCurrent != true ||
                 !AnnaEditorialTodayMode.enabled.value) {
               return;
             }
