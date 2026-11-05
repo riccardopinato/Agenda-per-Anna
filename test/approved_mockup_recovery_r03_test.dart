@@ -14,7 +14,7 @@ void main() {
     expect(today, contains("identifier: 'today-date-prev'"));
     expect(today, contains("identifier: 'today-date-next'"));
     expect(today, contains('if (!widget.embedded) _DayOpeningCard(date: day)'));
-    expect(today, contains('_dailyQuote(day, strings).$2'));
+    expect(today, contains(r'_dailyQuote(day, strings).$2'));
   });
 
   test('pinned Inbox headings do not skip, duplicate or reorder entries', () {
