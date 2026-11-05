@@ -1,5 +1,11 @@
 # Anna's Diary — Roadmap
 
+## 5 November 2026 — Member-only shared space aliases
+
+- Live Supabase read-only audit: `owner_shared_space_rename_v109` migration and `rename_shared_space` RPC exist with authenticated execute; anonymous execution denied. There are both owner and joined-member memberships. The owner-only server RPC is intentional.
+- To restore **Rename** on *all* shared-space cards safely, owners rename globally; members can set **Rinomina per te**, an account-scoped, device-local display alias only. This does **not** rename other devices or the canonical server name, and never alters membership, IDs or invitation state.
+- Member label is marked “Solo su questo dispositivo”. Stored with the existing account-scoped local preferences; canonical server cache is untouched. Multi-account and physical two-device QA remain separate.
+
 ## 5 November 2026 — Shared Spaces + Inbox Comfort remediation (source lane)
 
 - CAP-0160 inline offline tag suggestions: [PR #245](https://github.com/riccardopinato/Agenda-per-Anna/pull/245) **MERGED** as `main@bcae4cca369f6c3cc4f216a00e52c0be3cb2a927`. Exact-head Development/Web/AppLab source checks PASS; isolated Web E2E Save/Cancel PASS. Stable-signed Android +124 remains separately gated.
