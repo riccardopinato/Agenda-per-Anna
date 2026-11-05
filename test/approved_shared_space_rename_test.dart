@@ -61,9 +61,10 @@ void main() {
   });
 
   test('local aliases count grapheme clusters like Flutter TextField', () {
-    expect(sharedSpaceAliasWithinLimit('🌻' * 60), isTrue);
-    expect(sharedSpaceAliasWithinLimit('🌻' * 61), isFalse);
-    expect(sharedSpaceAliasWithinLimit('e\u0301' * 60), isTrue);
+    expect(sharedSpaceAliasWithinLimit(List.filled(60, '🌻').join()), isTrue);
+    expect(sharedSpaceAliasWithinLimit(List.filled(61, '🌻').join()), isFalse);
+    expect(sharedSpaceAliasWithinLimit(List.filled(60, 'e\u0301').join()),
+        isTrue);
     expect(sharedSpaceAliasWithinLimit(' '), isFalse);
     expect(screen, contains('sharedSpaceAliasWithinLimit(alias)'));
   });
