@@ -48,6 +48,26 @@ bool sharedSpaceCanRename(SharedSpace space, String? userId) =>
     userId.isNotEmpty &&
     space.ownerId == userId;
 
+/// Legacy decorative default names are displayed neutrally without
+/// rewriting the user's canonical server-owned title or sync metadata.
+String sharedSpaceNeutralDisplayName(String name) {
+  final cleaned = name.trim();
+  const decorativeDefaults = <String>{
+    'spazio condiviso<3',
+    'spazio condiviso <3',
+    'spazio condiviso ♡',
+    'spazio condiviso♡',
+    'spazio condiviso ♥',
+    'spazio condiviso♥',
+    'spazio condiviso ❤️',
+    'spazio condiviso❤️',
+  };
+  if (decorativeDefaults.contains(cleaned.toLowerCase())) {
+    return 'Spazio condiviso';
+  }
+  return cleaned;
+}
+
 /// Match Flutter TextField(maxLength: 60): count user-perceived grapheme
 /// clusters, not UTF-16 units (emoji and composed accents survive reload).
 bool sharedSpaceAliasWithinLimit(String value) {
@@ -76,11 +96,12 @@ class _SharedSpaceHubScreenState extends State<SharedSpaceHubScreen> {
 
   String _displayName(SharedSpace space) {
     // Owner naming remains authoritative on the server.
+    final canonicalLabel = sharedSpaceNeutralDisplayName(space.name);
     if (sharedSpaceCanRename(space, CloudSyncService.instance.userId)) {
-      return space.name;
+      return canonicalLabel;
     }
-    if (_memberAliasScope != _memberAliasKey) return space.name;
-    return _memberAliases[space.id] ?? space.name;
+    if (_memberAliasScope != _memberAliasKey) return canonicalLabel;
+    return _memberAliases[space.id] ?? canonicalLabel;
   }
 
   SharedSpace _spaceForDisplay(SharedSpace source) => SharedSpace(

@@ -4,7 +4,7 @@
 
 - Live Supabase read-only audit: `owner_shared_space_rename_v109` migration and `rename_shared_space` RPC exist with authenticated execute; anonymous execution denied. There are both owner and joined-member memberships. The owner-only server RPC is intentional.
 - To restore **Rename** on *all* shared-space cards safely, owners rename globally; members can set **Rinomina per te**, an account-scoped, device-local display alias only. This does **not** rename other devices or the canonical server name, and never alters membership, IDs or invitation state.
-- Member label is marked “Solo su questo dispositivo”. Stored with the existing account-scoped local preferences; canonical server cache is untouched. Multi-account and physical two-device QA remain separate.
+- Member label is marked “Solo su questo dispositivo”. Stored with the existing account-scoped local preferences; canonical server cache is untouched. Exact legacy decorative default titles such as `Spazio condiviso<3` are displayed neutrally as `Spazio condiviso` without overwriting a user-owned server value; genuinely custom names keep their hearts by design. Multi-account and physical two-device QA remain separate.
 
 ## 5 November 2026 — Shared Spaces + Inbox Comfort remediation (source lane)
 

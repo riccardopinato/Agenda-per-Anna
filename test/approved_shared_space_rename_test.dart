@@ -60,6 +60,15 @@ void main() {
     expect(sharedSpaceCanRename(spaces.first, ''), isFalse);
   });
 
+  test('legacy heart decoration is hidden only for the default label', () {
+    expect(sharedSpaceNeutralDisplayName('Spazio condiviso<3'),
+        'Spazio condiviso');
+    expect(sharedSpaceNeutralDisplayName('Spazio condiviso ♡'),
+        'Spazio condiviso');
+    expect(sharedSpaceNeutralDisplayName('Weekend ♡'),
+        'Weekend ♡');
+  });
+
   test('local aliases count grapheme clusters like Flutter TextField', () {
     expect(sharedSpaceAliasWithinLimit(List.filled(60, '🌻').join()), isTrue);
     expect(sharedSpaceAliasWithinLimit(List.filled(61, '🌻').join()), isFalse);
