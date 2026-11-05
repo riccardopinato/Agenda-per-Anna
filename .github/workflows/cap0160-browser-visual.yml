@@ -17,7 +17,7 @@ jobs:
       - name: Checkout fixed review source + QA-only scripts
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          fetch-depth: 8
+          fetch-depth: 25
           persist-credentials: false
 
       - name: Verify exact source and isolated test-only modifications
