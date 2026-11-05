@@ -565,7 +565,8 @@ class _EditorialPreviewState extends State<EditorialPreview> {
   }
 
   Future<void> createEntry(String kind) async {
-    final controller = TextEditingController();
+    // Keep the draft as text: no disposed TextEditingController during sheet animation.
+    String draft = '';
     final value = await showModalBottomSheet<String>(
       context: _screenContext!, isScrollControlled: true, backgroundColor: panel,
       shape: const RoundedRectangleBorder(
@@ -579,7 +580,7 @@ class _EditorialPreviewState extends State<EditorialPreview> {
             const SizedBox(height: 16),
             TextField(
               key: const ValueKey('entry-input'),
-              controller: controller, autofocus: true, maxLines: 3, minLines: 2,
+              onChanged: (value) => draft = value, autofocus: true, maxLines: 3, minLines: 2,
               style: TextStyle(color: tone),
               decoration: InputDecoration(
                 hintText: 'Scrivi qualcosa per provare…',
@@ -592,7 +593,7 @@ class _EditorialPreviewState extends State<EditorialPreview> {
             const SizedBox(height: 17),
             ElevatedButton(
               key: const ValueKey('entry-save'),
-              onPressed: () => Navigator.pop(sheet, controller.text.trim()),
+              onPressed: () => Navigator.pop(sheet, draft.trim()),
               style: ElevatedButton.styleFrom(
                 backgroundColor: p.accent, foregroundColor: Colors.white,
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
@@ -603,7 +604,6 @@ class _EditorialPreviewState extends State<EditorialPreview> {
         ),
       ),
     );
-    controller.dispose();
     if (mounted && value != null && value.isNotEmpty) {
       setState(() { entries.add(PreviewEntry(kind, value)); tab = 0; });
     }
