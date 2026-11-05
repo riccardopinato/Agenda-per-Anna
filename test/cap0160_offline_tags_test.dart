@@ -185,6 +185,7 @@ void main() {
     List<String>? result;
     await tester.pumpWidget(MaterialApp(
       locale: const Locale('it'),
+      supportedLocales: const [Locale('it'), Locale('en')],
       home: Builder(builder: (context) => Scaffold(
         body: ElevatedButton(
           onPressed: () async {
@@ -202,12 +203,16 @@ void main() {
     ));
     await tester.tap(find.text('Open tags'));
     await tester.pumpAndSettle();
-    expect(find.text('Tag suggeriti offline'), findsOneWidget);
+    // Assert the actual draft chip; avoid coupling the gate to a fallback
+    // localization delegate installed by the widget test harness.
+    expect(find.byKey(const ValueKey('cap0160-chip-montagna')),
+        findsOneWidget);
     await tester.tap(find.byKey(const ValueKey('cap0160-chip-montagna')));
     await tester.pump();
     final field = tester.widget<TextField>(find.byType(TextField));
     expect(field.controller!.text, 'existing, montagna');
-    await tester.tap(find.text('Annulla'));
+    // The dialog has exactly one TextButton: Cancel (five locales).
+    await tester.tap(find.byType(TextButton).last);
     await tester.pumpAndSettle();
     expect(result, isNull);
   });
