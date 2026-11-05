@@ -578,12 +578,16 @@ class PlannerScreen extends StatefulWidget {
   final AgendaStore store;
   final DateTime? initialDate;
   final bool embedded;
+  // IndexedStack retains hidden tab states. Only foreground Oggi may clear
+  // the transient shared filter for the chip-free Editorial presentation.
+  final bool activeInShell;
 
   const PlannerScreen({
     super.key,
     required this.store,
     this.initialDate,
     this.embedded = false,
+    this.activeInShell = true,
   });
 
   @override
@@ -658,10 +662,12 @@ class _PlannerScreenState extends State<PlannerScreen> {
         // when returning to this Home. Reset only the in-memory view filter,
         // never the private/shared records or their persisted preferences.
         if (editorial &&
+            widget.activeInShell &&
             widget.store.agendaContentFilter != AgendaContentFilter.all) {
           WidgetsBinding.instance.addPostFrameCallback((_) {
             if (!mounted ||
                 !widget.embedded ||
+                !widget.activeInShell ||
                 !AnnaEditorialTodayMode.enabled.value) {
               return;
             }
