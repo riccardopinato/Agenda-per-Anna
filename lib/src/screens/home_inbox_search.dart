@@ -72,6 +72,7 @@ class _MainShellState extends State<MainShell> {
             duration: animate ? const Duration(milliseconds: 190) : Duration.zero,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
+              color: editorial ? AnnaEditorialColors.of(context).dock : null,
               boxShadow: [
                 BoxShadow(
                   color: color.withValues(
@@ -85,7 +86,6 @@ class _MainShellState extends State<MainShell> {
               ],
             ),
             padding: editorial ? const EdgeInsets.all(5) : EdgeInsets.zero,
-            color: editorial ? AnnaEditorialColors.of(context).dock : null,
             child: Material(
               color: color,
               shape: const CircleBorder(),
