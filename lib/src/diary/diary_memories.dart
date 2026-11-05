@@ -2143,6 +2143,19 @@ class _DiaryMemoriesScreenState extends State<DiaryMemoriesScreen> {
         ),
         actions: [
           IconButton(
+            key: const ValueKey('cap0151-memory-extractive-summary'),
+            tooltip: memoryExtractiveCopy(strings.languageCode, 'title'),
+            icon: const Icon(Icons.summarize_outlined),
+            onPressed: () => Navigator.of(context).push(
+              MaterialPageRoute<void>(
+                builder: (_) => MemoryExtractiveSummaryScreen(
+                  store: widget.store,
+                  personId: widget.personId,
+                ),
+              ),
+            ),
+          ),
+          IconButton(
             key: const ValueKey('cap0145-memory-frequency'),
             tooltip: _annaMemoryFrequencyCopy(
                 strings.languageCode, 'title'),
