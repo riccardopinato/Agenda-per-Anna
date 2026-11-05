@@ -1,5 +1,13 @@
 # Anna's Diary — Roadmap
 
+## 5 November 2026 — Editorial Hybrid DS1 (bounded implementation)
+
+- User-selected Editorial Hybrid visual identity. **Step 1:** extract reusable theme-aware presentation primitives in `lib/src/editorial_hybrid_design.dart`; keep canonical AgendaApp `ColorScheme`, custom HSV, Lora/Manrope, 48dp touch targets and attached dock geometry.
+- Source contract: [EDITORIAL_HYBRID_DS1_20261105.md](EDITORIAL_HYBRID_DS1_20261105.md). Standalone design lab PR #254 stays DRAFT; no mock records or independent router/store move into production.
+- The production Home, bottom navigation, existing data and `+125` APK remain unchanged. Step 2 = real-data Home behind opt-in before replacing any screen. No new APK, versionCode or physical visual certification from DS1 alone.
+- Required evidence: exact-head Development checks (Flutter analyze/test/Web), AppLab Source Gate, mergeable PR/review. Physical UI verification **NOT VERIFIED**.
+
+
 ## 5 November 2026 — Mockup recovery R02/R03 (PR #251, SOURCE CANDIDATE)
 
 - Audit: `docs/APPROVED_MOCKUP_RECOVERY_20261105.md`, integrating user-provided V2 report. Approved 31 October R3 Today (single date + arrows and daily wish directly below greeting), R4 Calendar (hourly creation 07–22), R5 +Crea cascade (416/544/100ms), Inbox 8/10 pinned grouping, Search 10/10 R1 contextual help/examples/reset.
