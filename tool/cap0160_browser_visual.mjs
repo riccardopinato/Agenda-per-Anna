@@ -142,6 +142,38 @@ try {
       if (await clickText('Inbox') || await clickContaining('Inbox')) {
         await capture('09-inbox-note-editor');
         await snapshotAccessibility('09-inbox-note-editor');
+        const field = page.locator('textarea').first();
+        if (await field.count()) {
+          await field.fill('Oggi lavoro in ufficio, poi passeggiata in montagna montagna.');
+          log.push('FILLED safe private QA note');
+          await capture('10-note-draft');
+          if (await clickText('Salva') || await clickContaining('Salva')) {
+            await page.waitForTimeout(1000);
+            await capture('11-saved-note-inline-suggestions');
+            await snapshotAccessibility('11-saved-note-inline-suggestions');
+            const tagsBefore = await page.locator('flt-semantics[role="button"]')
+                .filter({ hasText: '#montagna' }).count();
+            log.push('INLINE #montagna BUTTON COUNT: ' + tagsBefore);
+            if (tagsBefore) {
+              await clickContaining('#montagna');
+              await capture('12-selected-suggestion-draft');
+              await snapshotAccessibility('12-selected-suggestion-draft');
+              if (await clickText('Annulla') || await clickContaining('Annulla')) {
+                await capture('13-after-cancel-no-tag-save');
+                await snapshotAccessibility('13-after-cancel-no-tag-save');
+              }
+              if (await clickContaining('#montagna')) {
+                await capture('14-second-suggestion-draft');
+                if (await clickText('Salva') || await clickContaining('Salva')) {
+                  await page.waitForTimeout(900);
+                  await capture('15-after-explicit-tag-save');
+                  await snapshotAccessibility('15-after-explicit-tag-save');
+                  log.push('EXPLICIT SAVE COMPLETED: check tag in screenshot');
+                }
+              }
+            }
+          }
+        }
       }
     }
   }
