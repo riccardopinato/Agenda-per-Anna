@@ -643,6 +643,7 @@ Future<List<String>?> showOrganizationTagsEditor(
   final value = await showDialog<List<String>>(
     context: context,
     builder: (dialogContext) => AlertDialog(
+      scrollable: true,
       title: Text(AnnaStrings.of(context).tags),
       content: Column(
         mainAxisSize: MainAxisSize.min,
