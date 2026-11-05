@@ -33,6 +33,7 @@ class PreviewEntry {
 }
 
 class _EditorialPreviewState extends State<EditorialPreview> {
+  BuildContext? _screenContext;
   int tab = 0;
   int paletteIndex = 0;
   bool dark = false;
@@ -63,7 +64,9 @@ class _EditorialPreviewState extends State<EditorialPreview> {
         brightness: dark ? Brightness.dark : Brightness.light,
       ),
     ),
-    home: Scaffold(
+    home: Builder(builder: (screenContext) {
+      _screenContext = screenContext;
+      return Scaffold(
       backgroundColor: background,
       body: SafeArea(
         bottom: false,
@@ -83,7 +86,8 @@ class _EditorialPreviewState extends State<EditorialPreview> {
           Positioned(left: 0, right: 0, bottom: 0, child: navigation()),
         ]),
       ),
-    ),
+    );
+    }),
   );
 
   Widget page() {
@@ -124,7 +128,7 @@ class _EditorialPreviewState extends State<EditorialPreview> {
         Container(margin: const EdgeInsets.only(top: 6), height: 1, width: 74,
             color: p.accent.withValues(alpha: .4)),
     ])),
-    iconButton(Icons.search, () => ScaffoldMessenger.of(context).showSnackBar(
+    iconButton(Icons.search, () => ScaffoldMessenger.of(_screenContext!).showSnackBar(
       const SnackBar(content: Text('Questa è solo una preview offline. La ricerca reale resta nell’app principale.')),
     )),
   ]);
@@ -447,7 +451,7 @@ class _EditorialPreviewState extends State<EditorialPreview> {
   ]);
 
   Widget navigation() {
-    final inset = MediaQuery.paddingOf(context).bottom;
+    final inset = MediaQuery.paddingOf(_screenContext!).bottom;
     return Center(
       heightFactor: 1,
       child: ConstrainedBox(
@@ -536,7 +540,7 @@ class _EditorialPreviewState extends State<EditorialPreview> {
 
   Future<void> createMenu() async {
     final kind = await showModalBottomSheet<String>(
-      context: context, backgroundColor: panel,
+      context: _screenContext!, backgroundColor: panel,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(26))),
       builder: (sheet) => SafeArea(
@@ -563,7 +567,7 @@ class _EditorialPreviewState extends State<EditorialPreview> {
   Future<void> createEntry(String kind) async {
     final controller = TextEditingController();
     final value = await showModalBottomSheet<String>(
-      context: context, isScrollControlled: true, backgroundColor: panel,
+      context: _screenContext!, isScrollControlled: true, backgroundColor: panel,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(25))),
       builder: (sheet) => Padding(
@@ -607,7 +611,7 @@ class _EditorialPreviewState extends State<EditorialPreview> {
 
   Future<void> selectMood() async {
     final value = await showModalBottomSheet<String>(
-      context: context, backgroundColor: panel,
+      context: _screenContext!, backgroundColor: panel,
       builder: (sheet) => SafeArea(child: Column(
         mainAxisSize: MainAxisSize.min, children: [
           const SizedBox(height: 17),
