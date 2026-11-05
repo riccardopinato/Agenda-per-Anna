@@ -25,7 +25,7 @@ void main() {
     expect(source, isNot(contains('external-project-runner.yml')));
     expect(source, isNot(contains('flutter build apk')));
     expect(source, isNot(contains('run_maestro: true')));
-    expect(contract, contains('ui5-today-date-strip'));
+    expect(contract, contains('ui5-today-single-date'));
   });
 
   test('Android size, integration and signed sideload are manual-only', () {

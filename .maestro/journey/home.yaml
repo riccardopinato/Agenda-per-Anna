@@ -14,5 +14,5 @@ appId: com.riccardopinato.agenda_per_anna
     id: 'main-nav-today'
 - extendedWaitUntil:
     visible:
-      id: 'ui5-today-date-strip'
+      id: 'ui5-today-single-date'
     timeout: 15000

@@ -112,7 +112,7 @@ void main() {
     expect(workflow, isNot(contains('external-project-runner.yml')));
     expect(workflow, isNot(contains('flutter build apk')));
     expect(workflow, isNot(contains('run_maestro: true')));
-    expect(sourceCheck, contains('ui5-today-date-strip'));
+    expect(sourceCheck, contains('ui5-today-single-date'));
   });
 
   test('Factory adoption remains canonical and central', () {

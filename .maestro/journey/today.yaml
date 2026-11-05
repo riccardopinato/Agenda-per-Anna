@@ -14,7 +14,18 @@ appId: com.riccardopinato.agenda_per_anna
     visible: '(La mia giornata|My day|Mi día|Ma journée|O meu dia)[\\s\\S]*'
     timeout: 15000
 - assertVisible:
-    id: 'ui5-today-date-strip'
+    id: 'ui5-today-single-date'
+- assertVisible:
+    id: 'today-date-prev'
+- assertVisible:
+    id: 'today-date-next'
+# Arrow round-trip returns to the same civil date without a new store.
+- tapOn:
+    id: 'today-date-prev'
+- tapOn:
+    id: 'today-date-next'
+- assertVisible:
+    id: 'ui5-today-single-date'
 - assertVisible:
     id: 'main-nav-create'
 - tapOn:
@@ -38,5 +49,5 @@ appId: com.riccardopinato.agenda_per_anna
     text: '(Chiudi|Close|Cerrar|Fermer|Fechar)'
 - extendedWaitUntil:
     visible:
-      id: 'ui5-today-date-strip'
+      id: 'ui5-today-single-date'
     timeout: 10000

@@ -235,6 +235,20 @@ class _CalendarScreenState extends State<CalendarScreen> {
     );
   }
 
+  Future<void> _createAtHour(int hour) async {
+    if (hour < 7 || hour > 22 || !mounted) return;
+    final date = DateTime(selected.year, selected.month, selected.day);
+    await openItemEditor(
+      context,
+      widget.store,
+      date,
+      initialTime: TimeOfDay(hour: hour, minute: 0),
+      initialType: ItemType.appointment,
+    );
+    // The canonical editor owns Save and persistence; agendaRevision
+    // refreshes both the timeline and the selected-day list after Save.
+  }
+
   Future<void> _loadVisibleMonth(DateTime anchor) {
     final start = DateTime(anchor.year, anchor.month, 1)
         .subtract(const Duration(days: 7));
@@ -368,10 +382,14 @@ class _CalendarScreenState extends State<CalendarScreen> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               SizedBox(
-                                width: 54,
-                                child: Padding(
-                                  padding: const EdgeInsets.only(
-                                    top: 14, left: 4),
+                                width: 62,
+                                child: TextButton(
+                                  key: ValueKey('calendar-hour-create-$hour'),
+                                  onPressed: () => _createAtHour(hour),
+                                  style: TextButton.styleFrom(
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: 2, vertical: 12),
+                                  ),
                                   child: Text(
                                     '${hour.toString().padLeft(2, '0')}:00',
                                     style: Theme.of(context).textTheme.labelSmall,
@@ -380,7 +398,34 @@ class _CalendarScreenState extends State<CalendarScreen> {
                               ),
                               Expanded(
                                 child: timed.isEmpty
-                                    ? const Divider(height: 35)
+                                    ? Semantics(
+                                        identifier: 'calendar-hour-slot-$hour',
+                                        button: true,
+                                        child: InkWell(
+                                          key: ValueKey('calendar-hour-slot-$hour'),
+                                          borderRadius: BorderRadius.circular(10),
+                                          onTap: () => _createAtHour(hour),
+                                          child: SizedBox(
+                                            height: 44,
+                                            child: Row(children: [
+                                              const Icon(
+                                                Icons.add_circle_outline,
+                                                size: 18,
+                                              ),
+                                              const SizedBox(width: 8),
+                                              Flexible(
+                                                child: Text(
+                                                  '${strings.d3('ui5Create')} ${strings.appointment}',
+                                                  maxLines: 1,
+                                                  overflow: TextOverflow.ellipsis,
+                                                  style: Theme.of(context)
+                                                      .textTheme.bodySmall,
+                                                ),
+                                              ),
+                                            ]),
+                                          ),
+                                        ),
+                                      )
                                     : Column(
                                         children: [
                                           for (final entry in timed)
@@ -452,6 +497,79 @@ class _CalendarScreenState extends State<CalendarScreen> {
           ),
         );
       },
+    );
+  }
+}
+
+/// Approved Oggi R3: one civil date and two accessible arrows.
+class _TodaySingleDateNavigator extends StatelessWidget {
+  const _TodaySingleDateNavigator({
+    required this.selected,
+    required this.onSelected,
+  });
+
+  final DateTime selected;
+  final ValueChanged<DateTime> onSelected;
+
+  @override
+  Widget build(BuildContext context) {
+    final language = AnnaStrings.of(context).languageCode;
+    final date = _cap(DateFormat(
+      'EEEE d MMMM yyyy',
+      AnnaStrings.intlLocale(context),
+    ).format(selected));
+    final copy = switch (language) {
+      'en' => ('Previous day', 'Next day'),
+      'es' => ('Día anterior', 'Día siguiente'),
+      'fr' => ('Jour précédent', 'Jour suivant'),
+      'pt' => ('Dia anterior', 'Dia seguinte'),
+      _ => ('Giorno precedente', 'Giorno successivo'),
+    };
+    return Semantics(
+      identifier: 'ui5-today-single-date',
+      container: true,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        child: Row(
+          children: [
+            Semantics(
+              identifier: 'today-date-prev',
+              button: true,
+              child: IconButton(
+                key: const ValueKey('today-date-prev'),
+                tooltip: copy.$1,
+                onPressed: () => onSelected(addCivilDays(selected, -1)),
+                icon: const Icon(Icons.chevron_left),
+              ),
+            ),
+            Expanded(
+              child: AnimatedSwitcher(
+                duration: AnnaMotionV108.duration(context, 210),
+                child: Text(
+                  date,
+                  key: ValueKey<String>(AgendaStore.dateKey(selected)),
+                  textAlign: TextAlign.center,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+            ),
+            Semantics(
+              identifier: 'today-date-next',
+              button: true,
+              child: IconButton(
+                key: const ValueKey('today-date-next'),
+                tooltip: copy.$2,
+                onPressed: () => onSelected(addCivilDays(selected, 1)),
+                icon: const Icon(Icons.chevron_right),
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }
@@ -562,12 +680,14 @@ class _PlannerScreenState extends State<PlannerScreen> {
                   style: Theme.of(context).textTheme.headlineMedium,
                 ),
                 Text(
-                  _cap(
-                    DateFormat(
-                      'EEEE d MMMM',
-                      AnnaStrings.intlLocale(context),
-                    ).format(day),
-                  ),
+                  widget.embedded
+                      ? _dailyQuote(day, strings).$2
+                      : _cap(DateFormat(
+                          'EEEE d MMMM',
+                          AnnaStrings.intlLocale(context),
+                        ).format(day)),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                   style: Theme.of(context).textTheme.bodySmall,
                 ),
               ],
@@ -594,14 +714,16 @@ class _PlannerScreenState extends State<PlannerScreen> {
           ),
           body: Column(
             children: [
-              Semantics(
-                identifier: 'ui5-today-date-strip',
-                container: true,
-                child: DateStrip(
+              if (widget.embedded)
+                _TodaySingleDateNavigator(
+                  selected: day,
+                  onSelected: _selectDay,
+                )
+              else
+                DateStrip(
                   selected: day,
                   onSelected: _selectDay,
                 ),
-              ),
               Expanded(
                 child: Align(
                   alignment: Alignment.topCenter,
@@ -614,7 +736,9 @@ class _PlannerScreenState extends State<PlannerScreen> {
                       child: ListView(
                       padding: const EdgeInsets.fromLTRB(20, 14, 20, 110),
                       children: [
-                        _DayOpeningCard(date: day),
+                        // R3 embeds the daily wish directly below the greeting,
+                        // not in a repeated standalone opening card.
+                        if (!widget.embedded) _DayOpeningCard(date: day),
                         // CAP-0147: two existing derived cards, no new data
                         // owner. Legacy profiles retain review-first order.
                         if (widget.embedded && isToday)

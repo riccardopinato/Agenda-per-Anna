@@ -554,7 +554,7 @@ void main() {
     ]) {
       expect(today, contains(text));
     }
-    expect(today, contains("id: 'ui5-today-date-strip'"));
+    expect(today, contains("id: 'ui5-today-single-date'"));
     expect(today, contains("id: 'main-nav-create'"));
     expect(today, isNot(contains('Pensieri e note|Thoughts and notes')));
     expect(today, isNot(contains('Momenti del giorno|Moments of the day')));
