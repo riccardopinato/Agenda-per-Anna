@@ -48,6 +48,13 @@ bool sharedSpaceCanRename(SharedSpace space, String? userId) =>
     userId.isNotEmpty &&
     space.ownerId == userId;
 
+/// Match Flutter TextField(maxLength: 60): count user-perceived grapheme
+/// clusters, not UTF-16 units (emoji and composed accents survive reload).
+bool sharedSpaceAliasWithinLimit(String value) {
+  final name = value.trim();
+  return name.isNotEmpty && name.characters.length <= 60;
+}
+
 class SharedSpaceHubScreen extends StatefulWidget {
   final AgendaStore store;
 
@@ -94,7 +101,7 @@ class _SharedSpaceHubScreenState extends State<SharedSpaceHubScreen> {
         final decoded = Map<String, dynamic>.from(jsonDecode(raw) as Map);
         for (final entry in decoded.entries) {
           final alias = entry.value.toString().trim();
-          if (entry.key.isNotEmpty && alias.isNotEmpty && alias.length <= 60) {
+          if (entry.key.isNotEmpty && sharedSpaceAliasWithinLimit(alias)) {
             result[entry.key] = alias;
           }
         }
@@ -287,7 +294,8 @@ class _SharedSpaceHubScreenState extends State<SharedSpaceHubScreen> {
     } finally {
       controller.dispose();
     }
-    if (!mounted || name == null || name.isEmpty || name == displayedName) {
+    if (!mounted || name == null ||
+        !sharedSpaceAliasWithinLimit(name) || name == displayedName) {
       return;
     }
     if (!isOwner) {
