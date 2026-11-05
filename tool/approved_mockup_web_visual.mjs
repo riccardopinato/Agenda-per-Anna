@@ -112,6 +112,24 @@ try {
           await screenshot('08-appointment-prefilled');
           await semantics('08-appointment-prefilled');
           log.push('CALENDAR SLOT EDITOR OPEN: true');
+          const titleField = page.locator('input[aria-label="Titolo"]').first();
+          const saveButton = page.getByRole('button', { name: 'Salva', exact: true }).first();
+          if (await titleField.count() && await saveButton.count()) {
+            await titleField.fill('QA appuntamento 07 - mockup R4');
+            await screenshot('09-event-draft-filled');
+            await saveButton.scrollIntoViewIfNeeded();
+            await saveButton.click({ timeout: 5000 });
+            await page.waitForTimeout(1200);
+            await screenshot('10-event-after-save');
+            await semantics('10-event-after-save');
+            const saved = await page.getByText(
+              'QA appuntamento 07 - mockup R4', { exact: true }).count();
+            log.push('CANONICAL EVENT SAVE IN CALENDAR: ' + saved);
+            if (!saved) throw new Error(
+              'The 07:00 appointment was not visible after explicit Save');
+          } else {
+            log.push('CANONICAL EVENT SAVE: title or save control was not accessible');
+          }
         } catch(e) {
           log.push('CALENDAR SLOT EDITOR: ' + e.message.slice(0,200));
         }
