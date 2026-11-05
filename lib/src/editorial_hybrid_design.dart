@@ -501,6 +501,133 @@ class AnnaEditorialDockSurface extends StatelessWidget {
 }
 
 
+
+/// Visual-only, responsive four-destination strip for the attached dock.
+/// The central fifth slot is owned exclusively by MainShell's original Crea
+/// button; this widget NEVER opens a second capture writer or navigator.
+class AnnaEditorialDockBar extends StatelessWidget {
+  final int selectedPage;
+  final ValueChanged<int> onPageSelected;
+  final List<String> labels;
+  final List<IconData> icons;
+  final List<IconData> selectedIcons;
+  final List<String> semanticIds;
+
+  const AnnaEditorialDockBar({
+    super.key,
+    required this.selectedPage,
+    required this.onPageSelected,
+    required this.labels,
+    required this.icons,
+    required this.selectedIcons,
+    required this.semanticIds,
+  }) : assert(labels.length == 4),
+       assert(icons.length == 4),
+       assert(selectedIcons.length == 4),
+       assert(semanticIds.length == 4);
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = AnnaEditorialColors.of(context);
+    return AnnaEditorialDockSurface(
+      child: Material(
+        type: MaterialType.transparency,
+        child: SizedBox(
+          height: 60,
+          child: Center(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 600),
+              child: Row(
+                children: [
+                  _destination(context, colors, 0),
+                  _destination(context, colors, 1),
+                  const Expanded(child: SizedBox(
+                    key: ValueKey<String>('main-nav-create-space'),
+                  )),
+                  _destination(context, colors, 2),
+                  _destination(context, colors, 3),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _destination(
+    BuildContext context,
+    AnnaEditorialColors colors,
+    int page,
+  ) {
+    final selected = selectedPage == page;
+    return Expanded(
+      child: Semantics(
+        identifier: semanticIds[page],
+        label: labels[page],
+        button: true,
+        selected: selected,
+        explicitChildNodes: false,
+        child: Tooltip(
+          message: labels[page],
+          child: InkWell(
+            key: ValueKey<String>(semanticIds[page]),
+            onTap: () => onPageSelected(page),
+            borderRadius: BorderRadius.circular(16),
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(
+                minHeight: AnnaEditorialTokens.minTapTarget,
+              ),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 2),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  mainAxisSize: MainAxisSize.max,
+                  children: [
+                    AnimatedContainer(
+                      duration: AnnaDesignTokens.animationsEnabled(context)
+                          ? const Duration(milliseconds: 180)
+                          : Duration.zero,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12, vertical: 3,
+                      ),
+                      decoration: BoxDecoration(
+                        color: selected ? colors.quiet : Colors.transparent,
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      child: Icon(
+                        selected ? selectedIcons[page] : icons[page],
+                        color: selected ? colors.accent : colors.mutedInk,
+                        size: 21,
+                      ),
+                    ),
+                    const SizedBox(height: 3),
+                    Text(
+                      labels[page],
+                      maxLines: 1,
+                      softWrap: false,
+                      overflow: TextOverflow.ellipsis,
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontFamily: AnnaJournalTypography.uiFamily,
+                        color: selected ? colors.accent : colors.mutedInk,
+                        fontSize: 11,
+                        fontWeight: selected
+                            ? FontWeight.w800
+                            : FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 /// UI-only, opt-in appearance choice for this device.
 ///
 /// An isolated boolean is intentionally NOT written to AgendaPreferences:
