@@ -1,5 +1,15 @@
 # Anna's Diary — Roadmap
 
+## CAP-0160 — Offline suggested tags (source candidate, 5 Nov 2026)
+
+- Approved for a **single bounded feature branch**, not approved as new signed +124 artifact. Reuse existing Inbox and diary tag-editor writer/undo semantics.
+- Only local, current-account, private nonarchived note/diary text. Independent corpora. No shared-space, Vault, external calendars, cloud, new model/database or passive indexing.
+- Source-only TF-IDF ranking: maximum four proposals, five actual locales IT/EN/ES/FR/PT, truncated corpus, deterministic/smoothed IDF, conservative single-note fallback. Tap to stage the proposed tag; Save required before canonical write.
+- Before any save, check account ID plus profile-transition-only epoch, source text, existing tags and not archived. Cancel leaves source untouched.
+- [Specification and QA](CAP_0160_OFFLINE_TAG_SUGGESTIONS.md). Required: exact-head Development/Web/AppLab PASS, review closure and protected-main enforcement. Physical confirmation and any next signed APK remain **NOT VERIFIED / NOT STARTED**.
+- `main` is protected with GitHub ruleset [26578645](https://github.com/riccardopinato/Agenda-per-Anna/rules/26578645), issue #236 closed. Signed `+124` remains independent and unchanged.
+
+
 ## P1/P2 implementation and RC +124 — 5 November 2026
 
 - **P1 #226:** explicit recorded time for visible tasks (no invented estimates

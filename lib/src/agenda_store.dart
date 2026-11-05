@@ -104,14 +104,19 @@ class AgendaStore extends ChangeNotifier {
   DateTime? _lastSharedSyncAttemptAt;
   String? _lastSharedSyncError;
   String? _activeAccountId;
+  // Changes only on actual profile transitions, unlike accountRevision
+  // which may also change during unrelated background sync invalidations.
+  int _accountScopeEpoch = 0;
+  bool _accountScopeTransitioning = false;
   bool _localEntrySelected = false;
   bool _accountScopeResolved = true;
 
   String? get activeAccountId => _activeAccountId;
+  int get accountScopeEpoch => _accountScopeEpoch;
   bool get localEntrySelected => _localEntrySelected;
   bool get accountScopeResolved => _accountScopeResolved;
   bool get entryScopeReady =>
-      _accountScopeResolved &&
+      !_accountScopeTransitioning && _accountScopeResolved &&
       (_activeAccountId != null || _localEntrySelected);
   bool get hasStorageWarnings => _unreadableStorageKeys.isNotEmpty;
   Set<String> get unreadableStorageKeys =>
@@ -562,6 +567,8 @@ class AgendaStore extends ChangeNotifier {
           bool deleted,
         })> mutations, {
     bool createAutoSnapshot = true,
+    Cap0160TagEditGuard? scopeGuard,
+    void Function()? onScopeRejected,
   }) async {
     final preceding = _localMutationTail;
     final completed = Completer<void>();
@@ -571,7 +578,13 @@ class AgendaStore extends ChangeNotifier {
       await _persistEntityMutationsSerial(
         mutations,
         createAutoSnapshot: createAutoSnapshot,
+        scopeGuard: scopeGuard,
       );
+    } on Cap0160ScopeChanged {
+      // Revert private UI projections before releasing the mutation queue:
+      // a profile transition awaiting this tail must not snapshot a rejected edit.
+      onScopeRejected?.call();
+      rethrow;
     } finally {
       // Even a failed operation must release the next queued writer.
       completed.complete();
@@ -587,10 +600,16 @@ class AgendaStore extends ChangeNotifier {
           bool deleted,
         })> mutations, {
     bool createAutoSnapshot = true,
+    Cap0160TagEditGuard? scopeGuard,
   }) async {
     if (mutations.isEmpty) return;
 
     final prefs = await _localState();
+    // The queue may have waited through a profile transition. Never derive
+    // a delta key or sync owner using a profile different from the editor's.
+    if (scopeGuard != null && !scopeGuard.isCurrent) {
+      throw const Cap0160ScopeChanged();
+    }
     final changes = <String, String?>{};
     final now = DateTime.now();
     // Roll back in-memory sync projections if the atomic local write fails.
@@ -681,6 +700,8 @@ class AgendaStore extends ChangeNotifier {
     Map<String, dynamic>? payload,
     bool deleted = false,
     bool createAutoSnapshot = true,
+    Cap0160TagEditGuard? scopeGuard,
+    void Function()? onScopeRejected,
   }) =>
       _persistEntityMutations(
         [
@@ -692,6 +713,8 @@ class AgendaStore extends ChangeNotifier {
           ),
         ],
         createAutoSnapshot: createAutoSnapshot,
+        scopeGuard: scopeGuard,
+        onScopeRejected: onScopeRejected,
       );
 
   Map<String, dynamic>? _localEntityPayload(
@@ -1613,53 +1636,67 @@ class AgendaStore extends ChangeNotifier {
       return;
     }
 
-    // The launcher retains preview text outside the app's privacy gate.
-    await HomeWidgetBridge.instance.clear();
-    await _compactActiveEntityDeltas(prefs);
-
-    final profiles = _readAccountProfiles(prefs);
-    final currentScope =
-        _activeAccountId == null ? 'guest' : 'user:$_activeAccountId';
-    final currentProfile = _captureWorkingProfile(prefs);
-    profiles[currentScope] = currentProfile;
-
-    final targetScope =
-        accountId == null ? 'guest' : 'user:$accountId';
-
-    // Guest and authenticated scopes are deliberately isolated. Signing in
-    // must never claim, merge or erase guest content implicitly.
-    final rawTarget = profiles[targetScope];
-    final target = rawTarget is Map
-        ? Map<String, dynamic>.from(rawTarget)
-        : <String, dynamic>{};
-
-    final changes = <String, String?>{
-      _accountProfilesKey: jsonEncode(profiles),
-      ..._workingProfileChanges(target),
-      _activeAccountKey: accountId,
-    };
-
-    // Archive the previous profile, activate the target profile and move the
-    // active-account pointer in one Sembast transaction. A crash cannot leave
-    // a partially switched working set.
-    await prefs.writeBatch(changes);
-
-    await load();
-
-    if (accountId != null) {
-      _activeAccountId = accountId;
-      _bindPendingOperationsTo(accountId);
-      await _persistSyncMetadata(prefs);
-    }
-
-    _accountScopeResolved = true;
-    _notifyShellChanged();
-    _notifyAllDataChanged();
-    // Native launcher integration is best-effort; never break account changes.
+    // Invalidate open private edit dialogs before switching profiles.
+    _accountScopeEpoch++;
+    _accountScopeTransitioning = true;
     try {
-      await HomeWidgetBridge.instance.sync(this);
-    } catch (_) {
-      // Locale/platform setup can be unavailable during startup or tests.
+      // Drain already queued private writes before moving profile data.
+      // CAP-0160 writers recheck their epoch after the queue and roll back
+      // rejected projections before this barrier is released.
+      await _localMutationTail;
+      // The launcher retains preview text outside the app's privacy gate.
+      await HomeWidgetBridge.instance.clear();
+      await _compactActiveEntityDeltas(prefs);
+
+      final profiles = _readAccountProfiles(prefs);
+      final currentScope =
+          _activeAccountId == null ? 'guest' : 'user:$_activeAccountId';
+      final currentProfile = _captureWorkingProfile(prefs);
+      profiles[currentScope] = currentProfile;
+
+      final targetScope =
+          accountId == null ? 'guest' : 'user:$accountId';
+
+      // Guest and authenticated scopes are deliberately isolated. Signing in
+      // must never claim, merge or erase guest content implicitly.
+      final rawTarget = profiles[targetScope];
+      final target = rawTarget is Map
+          ? Map<String, dynamic>.from(rawTarget)
+          : <String, dynamic>{};
+
+      final changes = <String, String?>{
+        _accountProfilesKey: jsonEncode(profiles),
+        ..._workingProfileChanges(target),
+        _activeAccountKey: accountId,
+      };
+
+      // Archive the previous profile, activate the target profile and move the
+      // active-account pointer in one Sembast transaction. A crash cannot leave
+      // a partially switched working set.
+      await prefs.writeBatch(changes);
+
+      await load();
+
+      if (accountId != null) {
+        _activeAccountId = accountId;
+        _bindPendingOperationsTo(accountId);
+        await _persistSyncMetadata(prefs);
+      }
+
+      _accountScopeResolved = true;
+      // Profile is now loaded. Native listeners and the launcher must observe
+      // a ready scope, not the transition state used to reject stale writes.
+      _accountScopeTransitioning = false;
+      _notifyShellChanged();
+      _notifyAllDataChanged();
+      // Native launcher integration is best-effort; never break account changes.
+      try {
+        await HomeWidgetBridge.instance.sync(this);
+      } catch (_) {
+        // Locale/platform setup can be unavailable during startup or tests.
+      }
+    } finally {
+      _accountScopeTransitioning = false;
     }
   }
 
@@ -1684,81 +1721,96 @@ class AgendaStore extends ChangeNotifier {
     final ownerId = accountId.trim();
     if (ownerId.isEmpty) return;
 
-    final prefs = await _localState();
-
-    // Clear every app notification before replacing the working set. Guest
-    // reminders are reconciled again after the switch, so reminders belonging
-    // to the erased account cannot survive on the device.
-    if (_activeAccountId == ownerId) {
-      await HomeWidgetBridge.instance.clear();
-      await NotificationService.instance.cancelAll();
-    }
-
-    Map<String, dynamic> profiles;
+    // This operation activates the guest profile even if another account
+    // was selected; prevent any in-flight private tag write in that window.
+    _accountScopeEpoch++;
+    _accountScopeTransitioning = true;
     try {
-      profiles = _readAccountProfiles(prefs);
-    } catch (_) {
-      profiles = <String, dynamic>{};
-    }
-    profiles.remove('user:$ownerId');
+      // Drain already queued private writes before moving profile data.
+      // CAP-0160 writers recheck their epoch after the queue and roll back
+      // rejected projections before this barrier is released.
+      await _localMutationTail;
+      final prefs = await _localState();
 
-    final rawGuest = profiles['guest'];
-    final guestProfile = rawGuest is Map
-        ? Map<String, dynamic>.from(rawGuest)
-        : <String, dynamic>{};
-
-    final changes = <String, String?>{
-      _accountProfilesKey: jsonEncode(profiles),
-      ..._workingProfileChanges(guestProfile),
-      _activeAccountKey: null,
-    };
-    if (prefs.getString(_legacyClaimedByKey) == ownerId) {
-      changes[_legacyClaimedByKey] = null;
-    }
-
-    final scopeToken = _entityScopeToken(ownerId);
-    final scopedPrefixes = <String>[
-      '$_entityDeltaPrefix$scopeToken:',
-      '$_sharedSyncCursorPrefix$scopeToken:',
-      'shared_cache_${ownerId}_',
-      'shared_pending_${ownerId}_',
-      'shared_interactions_pending_${ownerId}_',
-      'shared_media_pending_${ownerId}_',
-      'shared_interactions_cache_${ownerId}_',
-      '$_sharedMediaDeleteRetryPrefix$scopeToken:',
-    ];
-    final scopedExactKeys = <String>{
-      '$_privateSyncCursorPrefix$scopeToken',
-      '$_webReminderDeleteRetryPrefix$scopeToken',
-      '$_restoreIntentPrefix$scopeToken',
-      'shared_spaces_$ownerId',
-      'shared_unread_$ownerId',
-      'cloud_first_sync_snapshot_$ownerId',
-    };
-    for (final key in prefs.getKeys()) {
-      if (scopedExactKeys.contains(key) ||
-          scopedPrefixes.any(key.startsWith)) {
-        changes[key] = null;
+      // Clear every app notification before replacing the working set. Guest
+      // reminders are reconciled again after the switch, so reminders belonging
+      // to the erased account cannot survive on the device.
+      if (_activeAccountId == ownerId) {
+        await HomeWidgetBridge.instance.clear();
+        await NotificationService.instance.cancelAll();
       }
-    }
 
-    await prefs.writeBatch(changes);
-    await load();
+      Map<String, dynamic> profiles;
+      try {
+        profiles = _readAccountProfiles(prefs);
+      } catch (_) {
+        profiles = <String, dynamic>{};
+      }
+      profiles.remove('user:$ownerId');
 
-    _localEntrySelected = true;
-    await prefs.setBool(_localEntrySelectedKey, true);
-    _accountScopeResolved = true;
-    if (!kIsWeb) {
-      await reconcileReminders();
-      await reconcileBirthdayReminders();
-    }
-    _notifyShellChanged();
-    _notifyAllDataChanged();
-    // Native launcher integration is best-effort; never break account changes.
-    try {
-      await HomeWidgetBridge.instance.sync(this);
-    } catch (_) {
-      // Locale/platform setup can be unavailable during startup or tests.
+      final rawGuest = profiles['guest'];
+      final guestProfile = rawGuest is Map
+          ? Map<String, dynamic>.from(rawGuest)
+          : <String, dynamic>{};
+
+      final changes = <String, String?>{
+        _accountProfilesKey: jsonEncode(profiles),
+        ..._workingProfileChanges(guestProfile),
+        _activeAccountKey: null,
+      };
+      if (prefs.getString(_legacyClaimedByKey) == ownerId) {
+        changes[_legacyClaimedByKey] = null;
+      }
+
+      final scopeToken = _entityScopeToken(ownerId);
+      final scopedPrefixes = <String>[
+        '$_entityDeltaPrefix$scopeToken:',
+        '$_sharedSyncCursorPrefix$scopeToken:',
+        'shared_cache_${ownerId}_',
+        'shared_pending_${ownerId}_',
+        'shared_interactions_pending_${ownerId}_',
+        'shared_media_pending_${ownerId}_',
+        'shared_interactions_cache_${ownerId}_',
+        '$_sharedMediaDeleteRetryPrefix$scopeToken:',
+      ];
+      final scopedExactKeys = <String>{
+        '$_privateSyncCursorPrefix$scopeToken',
+        '$_webReminderDeleteRetryPrefix$scopeToken',
+        '$_restoreIntentPrefix$scopeToken',
+        'shared_spaces_$ownerId',
+        'shared_unread_$ownerId',
+        'cloud_first_sync_snapshot_$ownerId',
+      };
+      for (final key in prefs.getKeys()) {
+        if (scopedExactKeys.contains(key) ||
+            scopedPrefixes.any(key.startsWith)) {
+          changes[key] = null;
+        }
+      }
+
+      await prefs.writeBatch(changes);
+      await load();
+
+      _localEntrySelected = true;
+      await prefs.setBool(_localEntrySelectedKey, true);
+      _accountScopeResolved = true;
+      if (!kIsWeb) {
+        await reconcileReminders();
+        await reconcileBirthdayReminders();
+      }
+      // Erasure also switches to the guest profile. Publish the ready state
+      // before Android calendar listeners and HomeWidgetBridge are notified.
+      _accountScopeTransitioning = false;
+      _notifyShellChanged();
+      _notifyAllDataChanged();
+      // Native launcher integration is best-effort; never break account changes.
+      try {
+        await HomeWidgetBridge.instance.sync(this);
+      } catch (_) {
+        // Locale/platform setup can be unavailable during startup or tests.
+      }
+    } finally {
+      _accountScopeTransitioning = false;
     }
   }
 
@@ -2891,21 +2943,21 @@ class AgendaStore extends ChangeNotifier {
 
   DayJournal journal(DateTime date) => journals[dateKey(date)] ?? const DayJournal();
 
-  Future<void> saveJournal(DateTime date, DayJournal journal) async {
+  Future<void> saveJournal(DateTime date, DayJournal journal, {
+    Cap0160TagEditGuard? scopeGuard,
+  }) async {
+    if (scopeGuard != null && !scopeGuard.isCurrent) {
+      throw const Cap0160ScopeChanged();
+    }
     final key = dateKey(date);
     if (_unreadableStorageKeys.contains(_journalsKey)) {
       throw StateError('journal_storage_unavailable');
     }
     final previous = journals[key];
     journals[key] = journal;
-    try {
-      await _persistEntityMutation(
-        type: 'journal',
-        id: key,
-        payload: journal.toLocalJson(),
-      );
-    } catch (_) {
-      // Do not leave an unsaved note visible as durable user data.
+    void rollbackRejectedJournal() {
+      // Scope change may already have requested a transition; only touch
+      // this exact in-memory projection, never a newly loaded profile.
       if (identical(journals[key], journal)) {
         if (previous == null) {
           journals.remove(key);
@@ -2914,6 +2966,17 @@ class AgendaStore extends ChangeNotifier {
         }
         _notifyJournalChanged();
       }
+    }
+    try {
+      await _persistEntityMutation(
+        type: 'journal',
+        id: key,
+        payload: journal.toLocalJson(),
+        scopeGuard: scopeGuard,
+        onScopeRejected: rollbackRejectedJournal,
+      );
+    } catch (_) {
+      rollbackRejectedJournal();
       rethrow;
     }
     _scheduleMediaMaintenance(
