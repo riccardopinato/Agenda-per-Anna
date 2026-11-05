@@ -1878,12 +1878,24 @@ class _DiaryMemoryCardState extends State<DiaryMemoryCard> {
   }
 
   Future<void> _editTags(DiaryBlock block) async {
+    final guard = Cap0160TagEditGuard(widget.store);
+    if (!guard.isCurrent) return;
+    final proposals = Cap0160TagSuggester.forDiary(
+      widget.store, widget.date, block,
+      AnnaStrings.of(context).languageCode,
+    );
     final tags = await showOrganizationTagsEditor(
       context,
       initialTags: block.tags,
       suggestions: widget.store.organizationTags,
+      offlineProposals: proposals,
     );
-    if (tags == null) return;
+    if (tags == null || !guard.isCurrent ||
+        !widget.store.journal(widget.date).blocks.any(
+          (current) => current.id == block.id && !current.archived &&
+              current.text == block.text &&
+              listEquals(current.tags, block.tags),
+        )) return;
     await widget.store.setDiaryTags(widget.date, block.id, tags);
   }
 
