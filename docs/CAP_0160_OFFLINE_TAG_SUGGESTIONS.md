@@ -10,7 +10,7 @@
 - Maximum 4 proposals, minimum 4 letters, maximum 32 letters; input text bounded at 4,000 UTF-16 units; corpus scan bounded at 512 distinct authorized documents. Deduplicated document frequencies, smoothed IDF, deterministic score ordering and lexical tie-break. Single-note empty-corpus fallback uses term frequency only.
 - Candidate words come from the exact source note; no hallucinated or inferred labels. URL and email strings are removed before tokenization. Existing tags are excluded.
 - Separate **Inbox** and **private diary** source selectors: no cross-domain corpus; only current local account's live, nonarchived canonical items; no Shared Spaces, private/password/cycle Vault, other profiles, external calendar or hidden/trashed records. Shared-only agenda filter disables candidates and editing.
-- Before any canonical write, the caller verifies the same account ID, account revision epoch, source text, nonarchive state and unchanged tags. Existing source writers retain ownership.
+- Before any canonical write, the caller verifies the same account ID, **profile-transition-only epoch** (not general sync/UI revision), source text, nonarchive state and unchanged tags. Existing source writers retain ownership.
 
 ## Limits and privacy
 
