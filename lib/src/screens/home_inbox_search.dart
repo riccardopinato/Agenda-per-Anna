@@ -754,7 +754,9 @@ class _InboxScreenState extends State<InboxScreen> {
     if (tags == null || !guard.isCurrent ||
         !store.inbox.any((current) => current.id == entry.id &&
             !current.archived && current.text == entry.text &&
-            listEquals(current.tags, entry.tags))) return;
+            listEquals(current.tags, entry.tags))) {
+      return;
+    }
     await store.setInboxTags(entry.id, tags);
   }
 
