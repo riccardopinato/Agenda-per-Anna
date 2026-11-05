@@ -51,6 +51,7 @@ class PersonalizationScreen extends StatelessWidget {
       builder: (context, _) {
         final strings = AnnaStrings.of(context);
         final prefs = store.preferences;
+        unawaited(AnnaEditorialTodayMode.ensureLoaded());
 
         return Scaffold(
           appBar: AppBar(
@@ -83,6 +84,32 @@ class PersonalizationScreen extends StatelessWidget {
                     MaterialPageRoute<void>(
                       builder: (_) => AppearanceColorsScreen(store: store),
                     ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 12),
+              SimpleCard(
+                child: AnimatedBuilder(
+                  animation: AnnaEditorialTodayMode.enabled,
+                  builder: (context, _) => SwitchListTile.adaptive(
+                    key: const ValueKey<String>('personalization-editorial-home'),
+                    contentPadding: EdgeInsets.zero,
+                    secondary: const Icon(Icons.auto_awesome_outlined),
+                    title: const Text('Home Editorial Hybrid'),
+                    subtitle: Text(annaEditorialTodayModeDescription(
+                      strings.languageCode,
+                    )),
+                    value: AnnaEditorialTodayMode.enabled.value,
+                    onChanged: (enabled) async {
+                      final saved = await AnnaEditorialTodayMode.setEnabled(enabled);
+                      if (!saved && context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                          content: Text(annaEditorialTodaySaveFailure(
+                            strings.languageCode,
+                          )),
+                        ));
+                      }
+                    },
                   ),
                 ),
               ),
