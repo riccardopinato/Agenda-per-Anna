@@ -4,6 +4,19 @@ class MainShell extends StatefulWidget {
   final AgendaStore store;
   const MainShell({super.key, required this.store});
 
+  // Five equal mobile slots: Today, Messages, raised Create, Memories, More.
+  // The page stack and desktop rail still use the original four page indices.
+  static int bottomBarSlotForPage(int pageIndex) {
+    assert(pageIndex >= 0 && pageIndex < 4);
+    return pageIndex >= 2 ? pageIndex + 1 : pageIndex;
+  }
+
+  static int? pageForBottomBarSlot(int slotIndex) {
+    assert(slotIndex >= 0 && slotIndex < 5);
+    if (slotIndex == 2) return null; // Raised Create owns the middle slot.
+    return slotIndex > 2 ? slotIndex - 1 : slotIndex;
+  }
+
   @override
   State<MainShell> createState() => _MainShellState();
 }
@@ -155,6 +168,11 @@ class _MainShellState extends State<MainShell> {
     setState(() => index = value);
   }
 
+  void _selectBottomDestination(int slotIndex) {
+    final pageIndex = MainShell.pageForBottomBarSlot(slotIndex);
+    if (pageIndex != null) _selectDestination(pageIndex);
+  }
+
   // Module visibility is preserved even though Messages is a permanent tab.
   Widget _messagesPage() => AnimatedBuilder(
     animation: widget.store.settingsRevision,
@@ -231,6 +249,14 @@ class _MainShellState extends State<MainShell> {
           label: strings.navMessages,
           icon: Icons.chat_bubble_outline,
           selectedIcon: Icons.chat_bubble,
+        ),
+        // A real, equal-width slot keeps the four labels evenly spaced
+        // around the raised Create control, without altering M3 styling.
+        const NavigationDestination(
+          key: ValueKey<String>('main-nav-create-space'),
+          icon: SizedBox.shrink(),
+          label: '',
+          enabled: false,
         ),
         _bottomDestination(
           semanticsId: 'main-nav-memories',
@@ -357,10 +383,10 @@ class _MainShellState extends State<MainShell> {
                       Positioned.fill(
                         top: 13,
                         child: NavigationBar(
-                          selectedIndex: index,
-                          onDestinationSelected: _selectDestination,
-                          destinations: _bottomDestinations(strings),
-                        ),
+                           selectedIndex: MainShell.bottomBarSlotForPage(index),
+                           onDestinationSelected: _selectBottomDestination,
+                           destinations: _bottomDestinations(strings),
+                         ),
                       ),
                       Positioned(
                         top: 0,
