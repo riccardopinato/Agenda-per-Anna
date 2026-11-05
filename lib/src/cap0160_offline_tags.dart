@@ -126,7 +126,9 @@ abstract final class Cap0160TagSuggester {
         store.agendaContentFilter == AgendaContentFilter.sharedOnly ||
         entry.archived ||
         !store.inbox.any((item) => item.id == entry.id &&
-            !item.archived && item.text == entry.text)) return const [];
+            !item.archived && item.text == entry.text)) {
+      return const [];
+    }
     return propose(
       text: entry.text,
       languageCode: languageCode,
@@ -147,7 +149,9 @@ abstract final class Cap0160TagSuggester {
         store.agendaContentFilter == AgendaContentFilter.sharedOnly ||
         block.archived ||
         !store.journal(day).blocks.any((item) => item.id == block.id &&
-            !item.archived && item.text == block.text)) return const [];
+            !item.archived && item.text == block.text)) {
+      return const [];
+    }
     return propose(
       text: block.text,
       languageCode: languageCode,
@@ -157,7 +161,7 @@ abstract final class Cap0160TagSuggester {
           entry.value.blocks.where((item) =>
               !item.archived && item.id != block.id).map((item) =>
                   Cap0160PrivateDocument(
-                    id: entry.key + '/' + item.id,
+                    id: '${entry.key}/${item.id}',
                     text: item.text,
                   ))),
     );
