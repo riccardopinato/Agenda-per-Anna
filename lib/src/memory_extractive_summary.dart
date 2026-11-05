@@ -57,13 +57,17 @@ MemoryExtractiveReport memoryExtractiveReport(
   final eligible = references.where((entry) {
     final block = entry.block;
     if (block.archived || block.type != DiaryBlockType.note ||
-        block.text.trim().isEmpty) return false;
+        block.text.trim().isEmpty) {
+      return false;
+    }
     if (normalizedPlace != null && normalizedPlace.isNotEmpty &&
         !block.places.any((p) => p.normalizedName == normalizedPlace)) {
       return false;
     }
     if (personId != null && personId.isNotEmpty &&
-        !block.personIds.contains(personId)) return false;
+        !block.personIds.contains(personId)) {
+      return false;
+    }
     final date = DateTime(entry.date.year, entry.date.month, entry.date.day);
     if (fromInclusive != null && date.isBefore(fromInclusive)) return false;
     if (toExclusive != null && !date.isBefore(toExclusive)) return false;

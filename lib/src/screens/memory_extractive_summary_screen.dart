@@ -100,7 +100,7 @@ class _MemoryExtractiveSummaryScreenState
                 children: [
                   for (final option in _ExtractiveScope.values)
                     ChoiceChip(
-                      key: ValueKey('cap0151-filter-' + option.name),
+                      key: ValueKey('cap0151-filter-${option.name}'),
                       label: Text(memoryExtractiveCopy(language, option.name)),
                       selected: scope == option,
                       onSelected: (_) => setState(() => scope = option),
@@ -109,7 +109,7 @@ class _MemoryExtractiveSummaryScreenState
               ),
               if (scope == _ExtractiveScope.place && placeId != null)
                 DropdownButtonFormField<String>(
-                  key: ValueKey('cap0151-place-' + placeId),
+                  key: ValueKey('cap0151-place-$placeId'),
                   initialValue: placeId,
                   isExpanded: true,
                   decoration: InputDecoration(
@@ -126,7 +126,7 @@ class _MemoryExtractiveSummaryScreenState
                 ),
               if (scope == _ExtractiveScope.person && personId != null)
                 DropdownButtonFormField<String>(
-                  key: ValueKey('cap0151-person-' + personId),
+                  key: ValueKey('cap0151-person-$personId'),
                   initialValue: personId,
                   isExpanded: true,
                   decoration: InputDecoration(
