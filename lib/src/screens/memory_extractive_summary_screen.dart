@@ -55,14 +55,23 @@ class _MemoryExtractiveSummaryScreenState
           }
           final now = DateTime.now();
           final today = DateTime(now.year, now.month, now.day);
-          final places = widget.store.memoryMapSnapshot().places;
-          final people = widget.store.people;
+          // Contextual entry from a person must never offer destinations
+          // outside the person's own, already-authorized memory corpus.
+          final places = widget.store.memoryMapSnapshot(
+            personId: widget.personId,
+          ).places;
+          final people = widget.personId == null
+              ? widget.store.people
+              : widget.store.people
+                  .where((person) => person.id == widget.personId)
+                  .toList(growable: false);
           final placeId = places.any((p) => p.key == selectedPlace)
               ? selectedPlace
               : (places.isEmpty ? null : places.first.key);
-          final personId = people.any((p) => p.id == selectedPerson)
-              ? selectedPerson
-              : (widget.personId ?? (people.isEmpty ? null : people.first.id));
+          final personId = widget.personId ??
+              (people.any((p) => p.id == selectedPerson)
+                  ? selectedPerson
+                  : (people.isEmpty ? null : people.first.id));
           final from = switch (scope) {
             _ExtractiveScope.week =>
               DateTime(today.year, today.month, today.day - 6),

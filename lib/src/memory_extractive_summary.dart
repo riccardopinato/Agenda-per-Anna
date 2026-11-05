@@ -86,12 +86,19 @@ MemoryExtractiveReport memoryExtractiveReport(
   final tokens = RegExp(r'[\p{L}\p{N}]{3,}', unicode: true);
   final sentencePattern = RegExp(r'[^.!?\n]+[.!?]?');
 
+  var scannedNotes = 0;
+  var candidateBudgetReached = false;
   for (final record in eligible.take(budget)) {
+    scannedNotes++;
     final raw = record.block.text;
     final bounded = raw.length > 12000 ? raw.substring(0, 12000) : raw;
     var perNote = 0;
     for (final match in sentencePattern.allMatches(bounded)) {
-      if (perNote >= 8 || candidates.length >= 600) break;
+      if (perNote >= 8) break;
+      if (candidates.length >= 600) {
+        candidateBudgetReached = true;
+        break;
+      }
       if (bounded.length < raw.length && match.end == bounded.length) break;
       var start = match.start;
       var end = match.end;
@@ -114,7 +121,10 @@ MemoryExtractiveReport memoryExtractiveReport(
       }
       perNote++;
     }
-    if (candidates.length >= 600) break;
+    if (candidates.length >= 600) {
+      candidateBudgetReached = true;
+      break;
+    }
   }
 
   double rank(_MemorySentenceCandidate c) {
@@ -147,6 +157,6 @@ MemoryExtractiveReport memoryExtractiveReport(
       c.reference, c.sentence, c.start, c.end)).toList(growable: false);
   return MemoryExtractiveReport(
       List.unmodifiable(quotes), eligible.length,
-      eligible.length < budget ? eligible.length : budget,
-      eligible.length > budget);
+      scannedNotes,
+      eligible.length > budget || candidateBudgetReached);
 }

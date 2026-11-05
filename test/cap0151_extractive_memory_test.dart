@@ -76,6 +76,29 @@ void main() {
     expect(report.quotes.length, lessThanOrEqualTo(4));
   });
 
+  test('candidate budget tracks actual scanned notes and partial coverage', () {
+    final sources = List.generate(100, (index) {
+      final text = List.generate(8, (sentence) =>
+        'Un ricordo univoco numero ${index + 1000} con dettaglio ${sentence + 1000}.')
+          .join(' ');
+      return note('case-$index', text, DateTime(2026, 11, 5));
+    });
+    final report = memoryExtractiveReport(sources);
+    expect(report.eligibleNotes, 100);
+    expect(report.scannedNotes, lessThan(100));
+    expect(report.partial, isTrue);
+    expect(report.quotes, isNotEmpty);
+  });
+
+  test('contextual person filter keeps the person-only corpus', () {
+    final screen = File(
+      'lib/src/screens/memory_extractive_summary_screen.dart',
+    ).readAsStringSync();
+    expect(screen, contains('personId: widget.personId,'));
+    expect(screen, contains('widget.store.people'));
+    expect(screen, contains('person.id == widget.personId'));
+  });
+
   test('five locales and canonical private-only source contracts', () {
     for (final code in ['it', 'en', 'es', 'fr', 'pt']) {
       for (final key in ['title','intro','week','month','place',
