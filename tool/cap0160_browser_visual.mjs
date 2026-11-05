@@ -133,6 +133,10 @@ try {
   }
   await capture('06-current-screen');
   await snapshotAccessibility('06-current-screen');
+  if (await clickText('Cattura') || await clickContaining('Cattura')) {
+    await capture('07-inbox-capture');
+    await snapshotAccessibility('07-inbox-capture');
+  }
 
   const captureRoute = await context.newPage();
   await captureRoute.goto('http://127.0.0.1:8765/?capture=1', { waitUntil: 'domcontentloaded', timeout: 45000 });
