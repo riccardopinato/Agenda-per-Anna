@@ -26,10 +26,6 @@ class AnnaEditorialTodayOverview extends StatelessWidget {
     final colors = AnnaEditorialColors.of(context);
     final commitments = snapshot.agenda.length + snapshot.birthdays.length;
     final activities = snapshot.workouts.length;
-    final privateSummary = snapshot.hasJournalContent
-        ? strings.journalStarted
-        : strings.journalEmpty;
-
     return Column(
       key: const ValueKey<String>('editorial-today-real-overview'),
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -37,47 +33,35 @@ class AnnaEditorialTodayOverview extends StatelessWidget {
         AnnaEditorialSurface(
           key: const ValueKey<String>('editorial-today-diary-hero'),
           tone: AnnaEditorialSurfaceTone.featured,
+          padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 18),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
             children: [
               Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
+                crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
                   Expanded(
                     child: Text(
-                      strings.d3('ui5DayDiary').toUpperCase(),
-                      style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                        color: colors.accent,
-                        fontWeight: FontWeight.w800,
-                        letterSpacing: AnnaEditorialTokens.eyebrowTracking,
-                      ),
+                      strings.d3('ui5DayDiary'),
+                      key: const ValueKey<String>('editorial-today-diary-title'),
+                      softWrap: true,
+                      style: AnnaJournalTypography.editorial(
+                        context, size: 27,
+                      ).copyWith(color: colors.ink),
                     ),
                   ),
+                  const SizedBox(width: 12),
                   Icon(
                     Icons.auto_stories_outlined,
+                    key: const ValueKey<String>('editorial-today-diary-icon'),
                     color: colors.accent.withValues(alpha: 0.68),
-                    size: 40,
+                    size: 34,
                     semanticLabel: null,
                   ),
                 ],
               ),
-              const SizedBox(height: 16),
-              Text(
-                strings.d3('ui5DayDiary'),
-                style: AnnaJournalTypography.editorial(context, size: 27)
-                    .copyWith(color: colors.ink),
-              ),
-              const SizedBox(height: 12),
-              Text(
-                hideDetails ? '•••' : privateSummary,
-                maxLines: 3,
-                overflow: TextOverflow.ellipsis,
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: colors.mutedInk,
-                  height: 1.5,
-                ),
-              ),
-              const SizedBox(height: 20),
+              const SizedBox(height: 18),
               AnnaEditorialPrimaryAction(
                 label: strings.d3('ui5ShowAll'),
                 icon: Icons.arrow_forward_rounded,
