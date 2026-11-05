@@ -87,7 +87,34 @@ void main() {
     expect(planner, contains('showUnifiedCapture('));
     expect(preferences, contains("'personalization-editorial-home'"));
     expect(shell, contains('Center(child: _centralCreateButton(context))'));
-    expect(shell, contains('PlannerScreen(store: widget.store, embedded: true)'));
+    expect(shell, contains('PlannerScreen('));
+    expect(shell, contains('activeInShell: index == 0'));
+    expect(planner, contains('widget.activeInShell'));
+
+  });
+
+  test('Hybrid Home has no filter bar or stale invisible content filter', () {
+    final planner = File('lib/src/planner_views.dart').readAsStringSync();
+    final shell = File('lib/src/screens/home_inbox_search.dart').readAsStringSync();
+    final start = planner.indexOf('class _PlannerScreenState');
+    final end = planner.indexOf('class _CalendarDayContextCard', start);
+    expect(start, greaterThanOrEqualTo(0));
+    expect(end, greaterThan(start));
+    final home = planner.substring(start, end);
+    // Only the Hybrid Home loses the chips; Classic and Calendar retain them.
+    expect(home, contains("if (!editorial) ...["));
+    expect(home, contains('AgendaContentFilterBar(store: widget.store)'));
+    expect(planner.split('AgendaContentFilterBar(store: widget.store)').length - 1, 4);
+    // When a global filter was chosen elsewhere, reset it after the frame
+    // so Hybrid never silently hides private/shared items.
+    expect(home, contains('widget.store.agendaContentFilter != AgendaContentFilter.all'));
+    expect(home, contains('widget.activeInShell &&'));
+    expect(home, contains('ModalRoute.of(context)?.isCurrent == true'));
+    expect(home, contains('ModalRoute.of(context)?.isCurrent != true'));
+    expect(shell, contains('activeInShell: index == 0'));
+
+    expect(home, contains('WidgetsBinding.instance.addPostFrameCallback'));
+    expect(home, contains('widget.store.setAgendaContentFilter(AgendaContentFilter.all)'));
   });
 
   test('mode selection has copy for all five target locales', () {

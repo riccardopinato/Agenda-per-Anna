@@ -27,7 +27,8 @@ void main() {
         File('lib/src/screens/home_inbox_search.dart').readAsStringSync();
 
     for (final page in const <String>[
-      'PlannerScreen(store: widget.store, embedded: true)',
+      'PlannerScreen(',
+      'activeInShell: index == 0',
       'SharedSpaceHubScreen(store: widget.store)',
       'DiaryMemoriesScreen(store: widget.store)',
       'MoreScreen(store: widget.store)',

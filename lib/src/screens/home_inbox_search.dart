@@ -214,7 +214,11 @@ class _MainShellState extends State<MainShell> {
   );
 
   List<Widget> _pages() => <Widget>[
-        PlannerScreen(store: widget.store, embedded: true),
+        PlannerScreen(
+          store: widget.store,
+          embedded: true,
+          activeInShell: index == 0,
+        ),
         _messagesPage(),
         DiaryMemoriesScreen(store: widget.store),
         MoreScreen(store: widget.store),

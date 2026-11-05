@@ -9,7 +9,8 @@ void main() {
     final more =
         File('lib/src/screens/more_screen.dart').readAsStringSync();
 
-    expect(shell, contains('PlannerScreen(store: widget.store, embedded: true)'));
+    expect(shell, contains('PlannerScreen('));
+    expect(shell, contains('activeInShell: index == 0'));
     final planner = File('lib/src/planner_views.dart').readAsStringSync();
     expect(planner, contains('CalendarHubScreen('));
     expect(shell, contains('DiaryMemoriesScreen(store: widget.store)'));
