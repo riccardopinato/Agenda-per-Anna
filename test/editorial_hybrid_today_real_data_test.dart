@@ -108,6 +108,8 @@ void main() {
     // so Hybrid never silently hides private/shared items.
     expect(home, contains('widget.store.agendaContentFilter != AgendaContentFilter.all'));
     expect(home, contains('widget.activeInShell &&'));
+    expect(home, contains('ModalRoute.of(context)?.isCurrent == true'));
+    expect(home, contains('ModalRoute.of(context)?.isCurrent != true'));
     expect(shell, contains('activeInShell: index == 0'));
 
     expect(home, contains('WidgetsBinding.instance.addPostFrameCallback'));
