@@ -450,65 +450,74 @@ class _EditorialPreviewState extends State<EditorialPreview> {
     disclaimer(),
   ]);
 
+  // Full-width, bottom-docked navigation. Only the Create control protrudes
+  // above the attached surface; system gesture space remains inside it.
   Widget navigation() {
     final inset = MediaQuery.paddingOf(_screenContext!).bottom;
-    return Center(
-      heightFactor: 1,
-      child: ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: 600),
-        child: SizedBox(
-          height: 110 + inset,
-          child: Stack(clipBehavior: Clip.none, children: [
-            Positioned(
-              top: 27, left: 8, right: 8, bottom: inset + 8,
-              child: Container(
-                decoration: BoxDecoration(
-                  color: dark ? const Color(0xF234383D) : const Color(0xFDFDF9F8),
-                  borderRadius: BorderRadius.circular(hybrid ? 26 : 35),
-                  border: Border.all(color: dark ? stroke : Colors.white, width: 1.1),
-                  boxShadow: [
-                    BoxShadow(color: p.ink.withValues(alpha: dark ? .22 : .10),
-                      blurRadius: hybrid ? 19 : 29, offset: const Offset(0, 7)),
-                  ],
+    return SizedBox(
+      height: 106 + inset,
+      child: Stack(clipBehavior: Clip.none, children: [
+        Positioned(
+          top: 27, left: 0, right: 0, bottom: 0,
+          child: Container(
+            key: const ValueKey('nav-anchored-surface'),
+            decoration: BoxDecoration(
+              color: dark ? const Color(0xF234383D) : const Color(0xFFFDF9F8),
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+              border: Border(top: BorderSide(color: stroke, width: .85)),
+              boxShadow: [
+                BoxShadow(
+                  color: p.ink.withValues(alpha: dark ? .14 : .065),
+                  blurRadius: 12,
+                  offset: const Offset(0, -3),
                 ),
-                child: Row(children: [
-                  navItem(0, 'Oggi', Icons.calendar_today_outlined),
-                  navItem(1, 'Messaggi', Icons.chat_bubble_outline),
-                  const Expanded(child: SizedBox()), // True 5th slot for Create.
-                  navItem(3, 'Ricordi', Icons.photo_library_outlined),
-                  navItem(4, 'Altro', Icons.more_horiz),
+              ],
+            ),
+            child: Padding(
+              padding: EdgeInsets.only(top: 7, bottom: inset + 5),
+              child: Center(
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 600),
+                  child: Row(children: [
+                    navItem(0, 'Oggi', Icons.calendar_today_outlined),
+                    navItem(1, 'Messaggi', Icons.chat_bubble_outline),
+                    const Expanded(child: SizedBox()), // Reserved for Crea.
+                    navItem(3, 'Ricordi', Icons.photo_library_outlined),
+                    navItem(4, 'Altro', Icons.more_horiz),
+                  ]),
+                ),
+              ),
+            ),
+          ),
+        ),
+        Positioned(
+          top: 0, left: 0, right: 0,
+          child: Center(
+            child: InkWell(
+              key: const ValueKey('nav-create'),
+              onTap: createMenu,
+              customBorder: const CircleBorder(),
+              child: Container(
+                width: 74, height: 74,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  gradient: LinearGradient(colors: [
+                    p.accent.withValues(alpha: .81), p.accent,
+                  ], begin: Alignment.topLeft, end: Alignment.bottomRight),
+                  border: Border.all(color: panel, width: 5),
+                  boxShadow: [BoxShadow(color: p.accent.withValues(alpha: .30),
+                    blurRadius: 17, offset: const Offset(0, 6))],
+                ),
+                child: const Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+                  Icon(Icons.add, color: Colors.white, size: 26),
+                  Text('Crea', style: TextStyle(color: Colors.white,
+                    fontSize: 11, fontWeight: FontWeight.w800)),
                 ]),
               ),
             ),
-            Positioned(top: 0, left: 0, right: 0,
-              child: Center(
-                child: InkWell(
-                  key: const ValueKey('nav-create'),
-                  onTap: createMenu,
-                  customBorder: const CircleBorder(),
-                  child: Container(
-                    width: 74, height: 74,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      gradient: LinearGradient(colors: [
-                        p.accent.withValues(alpha: .81), p.accent,
-                      ], begin: Alignment.topLeft, end: Alignment.bottomRight),
-                      border: Border.all(color: panel, width: 5),
-                      boxShadow: [BoxShadow(color: p.accent.withValues(alpha: .30),
-                        blurRadius: 17, offset: const Offset(0, 6))],
-                    ),
-                    child: const Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-                      Icon(Icons.add, color: Colors.white, size: 26),
-                      Text('Crea', style: TextStyle(color: Colors.white,
-                        fontSize: 11, fontWeight: FontWeight.w800)),
-                    ]),
-                  ),
-                ),
-              ),
-            ),
-          ]),
+          ),
         ),
-      ),
+      ]),
     );
   }
 
