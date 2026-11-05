@@ -95,6 +95,7 @@ void main() {
 
   test('Hybrid Home has no filter bar or stale invisible content filter', () {
     final planner = File('lib/src/planner_views.dart').readAsStringSync();
+    final shell = File('lib/src/screens/home_inbox_search.dart').readAsStringSync();
     final start = planner.indexOf('class _PlannerScreenState');
     final end = planner.indexOf('class _CalendarDayContextCard', start);
     expect(start, greaterThanOrEqualTo(0));
