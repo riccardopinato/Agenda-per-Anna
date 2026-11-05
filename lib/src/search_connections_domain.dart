@@ -1150,6 +1150,27 @@ Future<List<String>?> showDiaryConnectionsPicker(
   );
 }
 
+/// Approved 10/10 R1 search help; the canonical search matcher and
+/// one-character title-only rule remain the sole source of results.
+String approvedSearchExampleCopy(String code, String key) {
+  final labels = switch (code) {
+    'en' => {'help': 'How it works', 'detail': 'One letter searches titles. From two letters, search also includes tags, note text, dates and photo text. Archived items are optional.', 'try': 'Try a search', 'reset': 'Reset filters'},
+    'es' => {'help': 'Cómo funciona', 'detail': 'Una letra busca títulos. A partir de dos letras también se buscan etiquetas, notas, fechas y texto de fotos. El archivo es opcional.', 'try': 'Prueba una búsqueda', 'reset': 'Restablecer filtros'},
+    'fr' => {'help': 'Comment ça marche', 'detail': 'Une lettre cherche dans les titres. Dès deux lettres, la recherche inclut les tags, notes, dates et textes de photos. Les archives sont facultatives.', 'try': 'Essayer une recherche', 'reset': 'Réinitialiser les filtres'},
+    'pt' => {'help': 'Como funciona', 'detail': 'Uma letra procura nos títulos. A partir de duas letras, procura também tags, notas, datas e texto de fotos. O arquivo é opcional.', 'try': 'Experimenta pesquisar', 'reset': 'Limpar filtros'},
+    _ => {'help': 'Come funziona', 'detail': 'Con una lettera cerchi nei titoli. Da due lettere anche nei tag, nei testi, nelle date e nel testo delle foto. Gli elementi archiviati sono facoltativi.', 'try': 'Prova una ricerca', 'reset': 'Azzera filtri'},
+  };
+  return labels[key] ?? key;
+}
+
+List<String> approvedSearchExampleTerms(String code) => switch (code) {
+  'en' => const ['travel', 'photo', 'a'],
+  'es' => const ['viaje', 'foto', 'a'],
+  'fr' => const ['voyage', 'photo', 'a'],
+  'pt' => const ['viagem', 'foto', 'a'],
+  _ => const ['viaggi', 'foto', 'a'],
+};
+
 class PersonalSearchConnectionsScreen extends StatefulWidget {
   final AgendaStore store;
 
@@ -1166,6 +1187,7 @@ class PersonalSearchConnectionsScreen extends StatefulWidget {
 class _PersonalSearchConnectionsScreenState
     extends State<PersonalSearchConnectionsScreen> {
   String query = '';
+  final TextEditingController _queryController = TextEditingController();
   ApprovedSearchSort sortOrder = ApprovedSearchSort.newest;
   final Set<PersonalSearchKind> selectedKinds = {};
   bool includeArchived = false;
@@ -1176,6 +1198,28 @@ class _PersonalSearchConnectionsScreenState
   void initState() {
     super.initState();
     unawaited(_indexPhotoText());
+  }
+
+  @override
+  void dispose() {
+    _queryController.dispose();
+    super.dispose();
+  }
+
+  void _trySearchExample(String text) {
+    _queryController.text = text;
+    _queryController.selection = TextSelection.collapsed(
+      offset: text.length,
+    );
+    setState(() => query = text);
+  }
+
+  void _resetSearchFilters() {
+    setState(() {
+      selectedKinds.clear();
+      includeArchived = false;
+      sortOrder = ApprovedSearchSort.newest;
+    });
   }
 
   Future<void> _indexPhotoText() async {
@@ -1322,6 +1366,8 @@ class _PersonalSearchConnectionsScreenState
           Padding(
             padding: const EdgeInsets.fromLTRB(14, 4, 14, 8),
             child: TextField(
+              key: const ValueKey('approved-search-query'),
+              controller: _queryController,
               autofocus: true,
               onChanged: (value) => setState(() => query = value),
               decoration: InputDecoration(
@@ -1404,17 +1450,68 @@ class _PersonalSearchConnectionsScreenState
           const SizedBox(height: 6),
           Expanded(
             child: query.trim().isEmpty
-                ? Center(
+                ? SingleChildScrollView(
                     child: Padding(
-                      padding: const EdgeInsets.all(32),
-                      child: Text(
-                        strings.v100SearchPrompt,
-                        textAlign: TextAlign.center,
+                      padding: const EdgeInsets.all(24),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(strings.v100SearchPrompt),
+                          const SizedBox(height: 16),
+                          Text(
+                            approvedSearchExampleCopy(
+                                strings.languageCode, 'try'),
+                            style: Theme.of(context).textTheme.titleMedium,
+                          ),
+                          const SizedBox(height: 8),
+                          Wrap(
+                            spacing: 8,
+                            runSpacing: 8,
+                            children: [
+                              for (final (index, term) in
+                                  approvedSearchExampleTerms(
+                                          strings.languageCode)
+                                      .indexed)
+                                ActionChip(
+                                  key: ValueKey('search-example-$index'),
+                                  label: Text(term),
+                                  onPressed: () => _trySearchExample(term),
+                                ),
+                            ],
+                          ),
+                          const SizedBox(height: 18),
+                          Text(
+                            approvedSearchExampleCopy(
+                                strings.languageCode, 'help'),
+                            style: Theme.of(context).textTheme.titleMedium,
+                          ),
+                          const SizedBox(height: 6),
+                          Text(approvedSearchExampleCopy(
+                              strings.languageCode, 'detail')),
+                        ],
                       ),
                     ),
                   )
                 : hits.isEmpty
-                    ? Center(child: Text(strings.v100NoResults))
+                    ? Center(
+                        child: Padding(
+                          padding: const EdgeInsets.all(24),
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(strings.v100NoResults),
+                              const SizedBox(height: 10),
+                              TextButton.icon(
+                                key: const ValueKey('search-reset-filters'),
+                                onPressed: _resetSearchFilters,
+                                icon: const Icon(Icons.filter_alt_off_outlined),
+                                label: Text(approvedSearchExampleCopy(
+                                    strings.languageCode, 'reset')),
+                              ),
+                            ],
+                          ),
+                        ),
+                      )
                     : ListView.separated(
                         padding: const EdgeInsets.fromLTRB(14, 8, 14, 40),
                         itemCount: hits.length,

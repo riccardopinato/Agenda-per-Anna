@@ -664,6 +664,29 @@ class _SyncAttentionCard extends StatelessWidget {
   }
 }
 
+/// Index mapping for the approved 8/10 pinned header without altering
+/// the canonical order or persistence of any Inbox entry.
+int inboxPinnedListEntryIndex(int position, int pinnedCount, int total) {
+  if (pinnedCount <= 0) return position;
+  if (position == 0) return -1; // In evidenza
+  if (pinnedCount < total && position == pinnedCount + 1) {
+    return -2; // Altre note
+  }
+  return position - 1 -
+      (pinnedCount < total && position > pinnedCount + 1 ? 1 : 0);
+}
+
+String approvedInboxSectionTitle(String language, bool pinned) {
+  final captions = switch (language) {
+    'en' => ('Pinned', 'Other notes'),
+    'es' => ('Destacadas', 'Otras notas'),
+    'fr' => ('À la une', 'Autres notes'),
+    'pt' => ('Em destaque', 'Outras notas'),
+    _ => ('In evidenza', 'Altre note'),
+  };
+  return pinned ? captions.$1 : captions.$2;
+}
+
 class InboxScreen extends StatefulWidget {
   final AgendaStore store;
   const InboxScreen({super.key, required this.store});
@@ -957,6 +980,10 @@ class _InboxScreenState extends State<InboxScreen> {
           return b.createdAt.compareTo(a.createdAt);
         });
         final categories = store.inboxCategoryTags;
+        final pinnedCount = entries.where((entry) => entry.pinned).length;
+        final sectionHeaders = pinnedCount == 0
+            ? 0
+            : pinnedCount == entries.length ? 1 : 2;
 
         return Scaffold(
           appBar: AppBar(
@@ -1050,10 +1077,26 @@ class _InboxScreenState extends State<InboxScreen> {
                 )
               : ListView.separated(
                   padding: const EdgeInsets.fromLTRB(14, 8, 14, 100),
-                  itemCount: entries.length,
+                  itemCount: entries.length + sectionHeaders,
                   separatorBuilder: (_, __) => const SizedBox(height: 8),
                   itemBuilder: (context, index) {
-                    final entry = entries[index];
+                    final entryIndex = inboxPinnedListEntryIndex(
+                      index, pinnedCount, entries.length);
+                    if (entryIndex < 0) {
+                      return Padding(
+                        key: ValueKey(entryIndex == -1
+                            ? 'inbox-section-pinned'
+                            : 'inbox-section-other'),
+                        padding: const EdgeInsets.fromLTRB(4, 10, 4, 4),
+                        child: Text(
+                          approvedInboxSectionTitle(
+                            strings.languageCode, entryIndex == -1),
+                          style: Theme.of(context).textTheme.titleMedium
+                              ?.copyWith(fontWeight: FontWeight.w800),
+                        ),
+                      );
+                    }
+                    final entry = entries[entryIndex];
                     final proposals = Cap0160TagSuggester.forInbox(
                       store, entry, strings.languageCode,
                       inlineFastPath: true,

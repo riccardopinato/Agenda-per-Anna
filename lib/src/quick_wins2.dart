@@ -156,7 +156,9 @@ class _Qw2FavoritesSectionState extends State<Qw2FavoritesSection> {
   };
 
   IconData _icon(AppModule module) => switch (module) {
-    AppModule.sharedSpace => Icons.favorite_outline,
+    // QW2 explicitly allows favorite shortcuts to shared spaces; this
+    // neutral icon does not reintroduce the retired heart branding.
+    AppModule.sharedSpace => Icons.groups_outlined,
     AppModule.shopping => Icons.shopping_cart_outlined,
     AppModule.workout => Icons.sports_outlined,
     AppModule.people => Icons.people_outline,
