@@ -499,3 +499,73 @@ class AnnaEditorialDockSurface extends StatelessWidget {
     );
   }
 }
+
+
+/// UI-only, opt-in appearance choice for this device.
+///
+/// An isolated boolean is intentionally NOT written to AgendaPreferences:
+/// that object is cloud-synced and controls sensitive app/account settings.
+/// All diary content continues to use the existing canonical AgendaStore.
+abstract final class AnnaEditorialTodayMode {
+  static const storageKey = 'anna.local_ui.today_editorial_hybrid_v1';
+  static final ValueNotifier<bool> enabled = ValueNotifier<bool>(false);
+  static Future<void>? _readFuture;
+
+  static Future<void> ensureLoaded() => _readFuture ??= _read();
+
+  static Future<void> _read() async {
+    try {
+      final preferences = await SharedPreferences.getInstance();
+      enabled.value = preferences.getBool(storageKey) ?? false;
+    } catch (_) {
+      // A failed cosmetic read must not block the canonical classic Home.
+    }
+  }
+
+  static Future<bool> setEnabled(bool value) async {
+    await ensureLoaded();
+    try {
+      final preferences = await SharedPreferences.getInstance();
+      final saved = await preferences.setBool(storageKey, value);
+      if (saved) enabled.value = value;
+      return saved;
+    } catch (_) {
+      return false;
+    }
+  }
+}
+
+String annaEditorialTodayModeLabel(String languageCode, {required bool returnToClassic}) {
+  if (returnToClassic) {
+    return switch (languageCode) {
+      'en' => 'Switch to classic Home',
+      'es' => 'Volver al inicio clásico',
+      'fr' => 'Revenir à l’accueil classique',
+      'pt' => 'Voltar à página inicial clássica',
+      _ => 'Torna alla Home classica',
+    };
+  }
+  return switch (languageCode) {
+    'en' => 'Try Editorial Hybrid Home',
+    'es' => 'Probar inicio Editorial Hybrid',
+    'fr' => 'Essayer l’accueil Editorial Hybrid',
+    'pt' => 'Experimentar página inicial Editorial Hybrid',
+    _ => 'Prova la Home Editorial Hybrid',
+  };
+}
+
+String annaEditorialTodayModeDescription(String languageCode) => switch (languageCode) {
+  'en' => 'Alternative design, same diary and calendar data. Only on this device.',
+  'es' => 'Diseño alternativo, mismos datos del diario y calendario. Solo aquí.',
+  'fr' => 'Design alternatif, mêmes données du journal et du calendrier. Sur cet appareil.',
+  'pt' => 'Visual alternativo, os mesmos dados do diário e calendário. Só neste dispositivo.',
+  _ => 'Grafica alternativa, stessi dati di diario e calendario. Solo su questo dispositivo.',
+};
+
+String annaEditorialTodaySaveFailure(String languageCode) => switch (languageCode) {
+  'en' => 'Unable to save the Home style on this device.',
+  'es' => 'No se pudo guardar el estilo de inicio en este dispositivo.',
+  'fr' => 'Impossible d’enregistrer le style de l’accueil sur cet appareil.',
+  'pt' => 'Não foi possível guardar o estilo inicial neste dispositivo.',
+  _ => 'Impossibile salvare lo stile della Home su questo dispositivo.',
+};
