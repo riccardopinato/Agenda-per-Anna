@@ -122,8 +122,8 @@ try {
             await page.waitForTimeout(1200);
             await screenshot('10-event-after-save');
             await semantics('10-event-after-save');
-            const saved = await page.getByText(
-              'QA appuntamento 07 - mockup R4', { exact: true }).count();
+            const saved = await page.locator('flt-semantics')
+              .filter({hasText: 'QA appuntamento 07 - mockup R4'}).count();
             log.push('CANONICAL EVENT SAVE IN CALENDAR: ' + saved);
             if (!saved) throw new Error(
               'The 07:00 appointment was not visible after explicit Save');
@@ -150,5 +150,8 @@ try {
 }
 if (!ready || !openedToday) {
   throw new Error('Flutter Web/Oggi R3 flow could not be verified');
+}
+if (!log.some(line => /^CANONICAL EVENT SAVE IN CALENDAR: [1-9]/.test(line))) {
+  throw new Error('Canonical R4 Calendar Save verification is missing');
 }
 console.log(log.join('\n'));
