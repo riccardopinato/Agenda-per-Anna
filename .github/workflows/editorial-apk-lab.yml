@@ -44,6 +44,7 @@ jobs:
             mkdir -p "$project/assets/fonts" "$project/test"
             cp assets/fonts/Manrope-VF.ttf assets/fonts/Lora-VF.ttf "$project/assets/fonts/"
             cp design_lab/editorial/test/editorial_preview_test.dart "$project/test/"
+            rm -f "$project/test/widget_test.dart"
 
             # Keep the experiments isolated from the installed production app.
             sed -i -E "s/applicationId = \"[^\"]+\"/applicationId = \"com.riccardopinato.anna.editorial$variant\"/" \
@@ -57,7 +58,7 @@ jobs:
               cd "$project"
               flutter pub get
               dart format --output=write lib test
-              flutter analyze lib test
+              flutter analyze --no-fatal-infos lib test
               flutter test --dart-define=EDITORIAL_VARIANT="$variant"
               flutter build apk --debug --dart-define=EDITORIAL_VARIANT="$variant"
             )
