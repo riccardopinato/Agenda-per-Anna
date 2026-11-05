@@ -1887,7 +1887,12 @@ class _DiaryMemoryCardState extends State<DiaryMemoryCard> {
     final tags = await showOrganizationTagsEditor(
       context,
       initialTags: block.tags,
-      suggestions: widget.store.organizationTags,
+      suggestions: normalizeOrganizationTags(
+        widget.store.journals.values
+            .expand((journal) => journal.blocks)
+            .where((record) => !record.archived)
+            .expand((record) => record.tags),
+      ),
       offlineProposals: proposals,
     );
     if (tags == null || !guard.isCurrent ||
