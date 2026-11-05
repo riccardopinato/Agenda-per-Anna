@@ -597,6 +597,7 @@ class _PlannerScreenState extends State<PlannerScreen> {
   void initState() {
     super.initState();
     day = widget.initialDate ?? DateTime.now();
+    unawaited(AnnaEditorialTodayMode.ensureLoaded());
     unawaited(
       ExternalCalendarService.instance.initialize().then(
         (_) => _loadDay(day),
@@ -617,6 +618,23 @@ class _PlannerScreenState extends State<PlannerScreen> {
     unawaited(_loadDay(value));
   }
 
+  Future<void> _setEditorialMode(bool enabled) async {
+    final saved = await AnnaEditorialTodayMode.setEnabled(enabled);
+    if (!saved && mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text(annaEditorialTodaySaveFailure(
+          AnnaStrings.of(context).languageCode,
+        )),
+      ));
+    }
+  }
+
+  void _openSelectedDay() {
+    Navigator.push(context, MaterialPageRoute<void>(
+      builder: (_) => PlannerScreen(store: widget.store, initialDate: day),
+    ));
+  }
+
   @override
   Widget build(BuildContext context) {
     return AnimatedBuilder(
@@ -628,11 +646,13 @@ class _PlannerScreenState extends State<PlannerScreen> {
         widget.store.planningRevision,
         widget.store.workoutRevision,
         widget.store.settingsRevision,
+        AnnaEditorialTodayMode.enabled,
         ExternalCalendarService.instance,
       ]),
       builder: (context, _) {
         unawaited(HomeWidgetBridge.instance.sync(widget.store));
         final strings = AnnaStrings.of(context);
+        final editorial = widget.embedded && AnnaEditorialTodayMode.enabled.value;
         final snapshot = widget.store.dayHubSnapshot(day);
         final memoryRecall = widget.store.memoryRecallSnapshot(day);
         final timedPrivate = snapshot.agenda
@@ -654,6 +674,7 @@ class _PlannerScreenState extends State<PlannerScreen> {
             : const <AgendaItem>[];
 
         return Scaffold(
+          backgroundColor: editorial ? AnnaEditorialColors.of(context).canvas : null,
           floatingActionButton: widget.embedded ? null : FloatingActionButton.extended(
             onPressed: () => _showQuickCapture(
               context,
@@ -664,7 +685,7 @@ class _PlannerScreenState extends State<PlannerScreen> {
             icon: const Icon(Icons.add),
             label: Text(strings.capture),
           ),
-          appBar: AppBar(
+          appBar: editorial ? null : AppBar(
             toolbarHeight: 82,
             title: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -705,6 +726,15 @@ class _PlannerScreenState extends State<PlannerScreen> {
                   ),
                   icon: const Icon(Icons.calendar_month_outlined),
                 ),
+              if (widget.embedded)
+                IconButton(
+                  key: const ValueKey<String>('today-editorial-enable'),
+                  tooltip: annaEditorialTodayModeLabel(
+                    strings.languageCode, returnToClassic: false,
+                  ),
+                  onPressed: () => unawaited(_setEditorialMode(true)),
+                  icon: const Icon(Icons.auto_awesome_outlined),
+                ),
               if (!AgendaStore.sameDay(day, DateTime.now()))
                 TextButton(
                   onPressed: () => _selectDay(DateTime.now()),
@@ -712,14 +742,17 @@ class _PlannerScreenState extends State<PlannerScreen> {
                 ),
             ],
           ),
-          body: Column(
+          body: SafeArea(
+            top: editorial,
+            bottom: false,
+            child: Column(
             children: [
-              if (widget.embedded)
+              if (widget.embedded && !editorial)
                 _TodaySingleDateNavigator(
                   selected: day,
                   onSelected: _selectDay,
                 )
-              else
+              else if (!widget.embedded)
                 DateStrip(
                   selected: day,
                   onSelected: _selectDay,
@@ -736,6 +769,54 @@ class _PlannerScreenState extends State<PlannerScreen> {
                       child: ListView(
                       padding: const EdgeInsets.fromLTRB(20, 14, 20, 110),
                       children: [
+                        if (editorial) ...[
+                          Row(
+                            children: [
+                              Expanded(
+                                child: Text(
+                                  'Anna’s Diary',
+                                  style: AnnaJournalTypography.editorial(
+                                    context, size: 22,
+                                  ),
+                                ),
+                              ),
+                              IconButton(
+                                key: const ValueKey<String>('today-open-calendar'),
+                                tooltip: strings.navCalendar,
+                                onPressed: () => Navigator.push(
+                                  context,
+                                  MaterialPageRoute<void>(
+                                    builder: (_) => CalendarHubScreen(store: widget.store),
+                                  ),
+                                ),
+                                icon: const Icon(Icons.calendar_month_outlined),
+                              ),
+                              IconButton(
+                                key: const ValueKey<String>('today-editorial-disable'),
+                                tooltip: annaEditorialTodayModeLabel(
+                                  strings.languageCode, returnToClassic: true,
+                                ),
+                                onPressed: () => unawaited(_setEditorialMode(false)),
+                                icon: const Icon(Icons.view_agenda_outlined),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 25),
+                          AnnaEditorialHeader(
+                            title: approvedTodayGreeting(
+                              strings.languageCode,
+                              widget.store.preferences.displayName,
+                              DateTime.now().hour,
+                            ),
+                            subtitle: _dailyQuote(day, strings).$2,
+                          ),
+                          const SizedBox(height: 20),
+                          _TodaySingleDateNavigator(
+                            selected: day,
+                            onSelected: _selectDay,
+                          ),
+                          const SizedBox(height: 16),
+                        ],
                         // R3 embeds the daily wish directly below the greeting,
                         // not in a repeated standalone opening card.
                         if (!widget.embedded) _DayOpeningCard(date: day),
@@ -763,11 +844,20 @@ class _PlannerScreenState extends State<PlannerScreen> {
                         if (widget.embedded) ...[
                           // DF-08–14: Oggi reads the selected day before
                           // any editor. Create stays in the shell's + Crea.
-                          AnnaMotionStagger(
-                            key: const ValueKey<String>('v108-today-summary'),
-                            order: 0,
-                            child: _TodayCompactSummary(snapshot: snapshot),
-                          ),
+                          if (editorial)
+                            AnnaEditorialTodayOverview(
+                              snapshot: snapshot,
+                              hideDetails: widget.store.preferences.hideHomeDetails,
+                              onOpenDiary: _openSelectedDay,
+                              onOpenCalendar: _openSelectedDay,
+                              onOpenDay: _openSelectedDay,
+                            )
+                          else
+                            AnnaMotionStagger(
+                              key: const ValueKey<String>('v108-today-summary'),
+                              order: 0,
+                              child: _TodayCompactSummary(snapshot: snapshot),
+                            ),
                           if (isToday && (upcoming.isNotEmpty || pinnedItems.isNotEmpty)) ...[
                             const SizedBox(height: 12),
                             _TodayFocusCard(
@@ -911,6 +1001,7 @@ class _PlannerScreenState extends State<PlannerScreen> {
                 ),
               ),
             ],
+          ),
           ),
         );
       },
