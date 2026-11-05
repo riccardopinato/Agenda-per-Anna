@@ -17,6 +17,11 @@ void main() {
     expect(planner, contains('approved-calendar-hourly-timeline'));
     expect(planner, contains('initiallyExpanded: false'));
     expect(planner, contains('for (var hour = 7; hour <= 22; hour++)'));
+    expect(planner, contains("identifier: 'calendar-hour-slot-$hour'"));
+    expect(planner, contains("key: ValueKey('calendar-hour-create-$hour')"));
+    expect(planner, contains('initialTime: TimeOfDay(hour: hour, minute: 0)'));
+    expect(planner, contains('initialType: ItemType.appointment'));
+    expect(planner, contains('await openItemEditor('));
     expect(planner, contains('openUnifiedAgendaEntry('));
     expect(planner, contains('AgendaContentFilterBar(store: widget.store)'));
     expect(planner, contains('UnifiedAgendaTile('));

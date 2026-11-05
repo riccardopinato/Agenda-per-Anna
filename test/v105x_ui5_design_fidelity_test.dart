@@ -38,8 +38,12 @@ void main() {
         .split('class _CalendarDayContextCard')[0];
     expect(screen.indexOf('_TodayCompactSummary('),
         lessThan(screen.indexOf('_TodayCompactDiaryPreview(')));
-    expect(screen, contains('DateStrip('));
-    expect(screen, contains("identifier: 'ui5-today-date-strip'"));
+    expect(screen, contains('if (widget.embedded)'));
+    expect(screen, contains('_TodaySingleDateNavigator('));
+    expect(screen, contains('DateStrip(')); // non-embedded route remains stable
+    expect(planner, contains("identifier: 'ui5-today-single-date'"));
+    expect(planner, contains("ValueKey('today-date-prev')"));
+    expect(planner, contains("ValueKey('today-date-next')"));
     expect(screen, contains('onSelected: _selectDay'));
     expect(screen, contains('if (widget.embedded)'));
     expect(planner, contains('blocks.take(2)'));
