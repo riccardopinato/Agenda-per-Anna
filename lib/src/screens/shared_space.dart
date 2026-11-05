@@ -4,19 +4,39 @@ String sharedSpaceRenameCopy(String language, String key) {
   final translations = switch (language) {
     'en' => {'rename': 'Rename group', 'hint': 'Group name',
       'done': 'Group renamed', 'failed': 'Unable to rename group',
-      'ownerOnly': 'Only the space owner can rename it'},
+      'ownerOnly': 'Only the space owner can rename it',
+      'renameLocal': 'Rename for me',
+      'doneLocal': 'Your personal label was saved on this device',
+      'failedLocal': 'Unable to save this label',
+      'localOnly': 'Only on this device'},
     'es' => {'rename': 'Renombrar grupo', 'hint': 'Nombre del grupo',
       'done': 'Grupo renombrado', 'failed': 'No se pudo renombrar el grupo',
-      'ownerOnly': 'Solo quien creó el espacio puede renombrarlo'},
+      'ownerOnly': 'Solo quien creó el espacio puede renombrarlo',
+      'renameLocal': 'Renombrar para mí',
+      'doneLocal': 'Nombre personal guardado en este dispositivo',
+      'failedLocal': 'No se pudo guardar el nombre',
+      'localOnly': 'Solo en este dispositivo'},
     'fr' => {'rename': 'Renommer le groupe', 'hint': 'Nom du groupe',
       'done': 'Groupe renommé', 'failed': 'Impossible de renommer le groupe',
-      'ownerOnly': 'Seul le propriétaire peut renommer cet espace'},
+      'ownerOnly': 'Seul le propriétaire peut renommer cet espace',
+      'renameLocal': 'Renommer pour moi',
+      'doneLocal': 'Nom personnel enregistré sur cet appareil',
+      'failedLocal': 'Impossible d’enregistrer ce nom',
+      'localOnly': 'Uniquement sur cet appareil'},
     'pt' => {'rename': 'Renomear grupo', 'hint': 'Nome do grupo',
       'done': 'Grupo renomeado', 'failed': 'Não foi possível renomear o grupo',
-      'ownerOnly': 'Só o proprietário pode mudar o nome do espaço'},
+      'ownerOnly': 'Só o proprietário pode mudar o nome do espaço',
+      'renameLocal': 'Mudar o nome para mim',
+      'doneLocal': 'Nome pessoal guardado neste dispositivo',
+      'failedLocal': 'Não foi possível guardar o nome',
+      'localOnly': 'Só neste dispositivo'},
     _ => {'rename': 'Rinomina gruppo', 'hint': 'Nome del gruppo',
       'done': 'Gruppo rinominato', 'failed': 'Impossibile rinominare il gruppo',
-      'ownerOnly': 'Solo il proprietario può rinominare questo spazio'},
+      'ownerOnly': 'Solo il proprietario può rinominare questo spazio',
+      'renameLocal': 'Rinomina per te',
+      'doneLocal': 'Nome personale salvato su questo dispositivo',
+      'failedLocal': 'Impossibile salvare il nome',
+      'localOnly': 'Solo su questo dispositivo'},
   };
   return translations[key] ?? key;
 }
@@ -27,6 +47,33 @@ bool sharedSpaceCanRename(SharedSpace space, String? userId) =>
     userId != null &&
     userId.isNotEmpty &&
     space.ownerId == userId;
+
+/// Legacy decorative default names are displayed neutrally without
+/// rewriting the user's canonical server-owned title or sync metadata.
+String sharedSpaceNeutralDisplayName(String name) {
+  final cleaned = name.trim();
+  const decorativeDefaults = <String>{
+    'spazio condiviso<3',
+    'spazio condiviso <3',
+    'spazio condiviso ♡',
+    'spazio condiviso♡',
+    'spazio condiviso ♥',
+    'spazio condiviso♥',
+    'spazio condiviso ❤️',
+    'spazio condiviso❤️',
+  };
+  if (decorativeDefaults.contains(cleaned.toLowerCase())) {
+    return 'Spazio condiviso';
+  }
+  return cleaned;
+}
+
+/// Match Flutter TextField(maxLength: 60): count user-perceived grapheme
+/// clusters, not UTF-16 units (emoji and composed accents survive reload).
+bool sharedSpaceAliasWithinLimit(String value) {
+  final name = value.trim();
+  return name.isNotEmpty && name.characters.length <= 60;
+}
 
 class SharedSpaceHubScreen extends StatefulWidget {
   final AgendaStore store;
@@ -41,6 +88,56 @@ class _SharedSpaceHubScreenState extends State<SharedSpaceHubScreen> {
   bool loading = true;
   List<SharedSpace> spaces = const [];
   final Map<String, int> pendingBySpace = {};
+  Map<String, String> _memberAliases = {};
+  String? _memberAliasScope;
+
+  String get _memberAliasKey =>
+      '${widget.store.sharedSpacesCacheStorageKey}_member_labels';
+
+  String _displayName(SharedSpace space) {
+    // Owner naming remains authoritative on the server.
+    final canonicalLabel = sharedSpaceNeutralDisplayName(space.name);
+    if (sharedSpaceCanRename(space, CloudSyncService.instance.userId)) {
+      return canonicalLabel;
+    }
+    if (_memberAliasScope != _memberAliasKey) return canonicalLabel;
+    return _memberAliases[space.id] ?? canonicalLabel;
+  }
+
+  SharedSpace _spaceForDisplay(SharedSpace source) => SharedSpace(
+        id: source.id,
+        ownerId: source.ownerId,
+        name: _displayName(source),
+        role: source.role,
+        createdAt: source.createdAt,
+      );
+
+  Future<void> _loadMemberAliases() async {
+    final key = _memberAliasKey;
+    final prefs = await widget.store._localState();
+    final raw = prefs.getString(key);
+    final result = <String, String>{};
+    if (raw != null) {
+      try {
+        final decoded = Map<String, dynamic>.from(jsonDecode(raw) as Map);
+        for (final entry in decoded.entries) {
+          final alias = entry.value.toString().trim();
+          if (entry.key.isNotEmpty && sharedSpaceAliasWithinLimit(alias)) {
+            result[entry.key] = alias;
+          }
+        }
+      } catch (_) {
+        // Corrupt local display preferences never invalidate shared data.
+      }
+    }
+    if (mounted && _memberAliasKey == key) {
+      setState(() {
+        _memberAliases = result;
+        _memberAliasScope = key;
+      });
+    }
+  }
+
   @override
   void initState() {
     super.initState();
@@ -48,6 +145,7 @@ class _SharedSpaceHubScreenState extends State<SharedSpaceHubScreen> {
   }
 
   Future<void> _loadCachedThenReload() async {
+    await _loadMemberAliases();
     final prefs = await widget.store._localState();
     final raw = prefs.getString(widget.store.sharedSpacesCacheStorageKey);
     if (raw != null) {
@@ -170,21 +268,25 @@ class _SharedSpaceHubScreenState extends State<SharedSpaceHubScreen> {
     }
   }
 
-  /// A group is a shared space: rename only its label, never its ID.
+  /// Server owner: rename for everyone. Joined member: device-only alias.
+  /// Neither path ever changes an existing shared-space ID or role.
   Future<void> _renameSpace(SharedSpace space) async {
-    if (!sharedSpaceCanRename(space, CloudSyncService.instance.userId) ||
-        loading) {
-      return;
-    }
+    if (loading || !CloudSyncService.instance.signedIn) return;
     final strings = AnnaStrings.of(context);
     final language = strings.languageCode;
-    final controller = TextEditingController(text: space.name);
+    final isOwner = sharedSpaceCanRename(
+      space, CloudSyncService.instance.userId,
+    );
+    final displayedName = _displayName(space);
+    final controller = TextEditingController(text: displayedName);
     String? name;
     try {
       name = await showDialog<String>(
         context: context,
         builder: (dialogContext) => AlertDialog(
-          title: Text(sharedSpaceRenameCopy(language, 'rename')),
+          title: Text(sharedSpaceRenameCopy(
+            language, isOwner ? 'rename' : 'renameLocal',
+          )),
           content: TextField(
             key: const ValueKey<String>('shared-rename-name'),
             controller: controller,
@@ -213,7 +315,31 @@ class _SharedSpaceHubScreenState extends State<SharedSpaceHubScreen> {
     } finally {
       controller.dispose();
     }
-    if (!mounted || name == null || name.isEmpty || name == space.name) {
+    if (!mounted || name == null ||
+        !sharedSpaceAliasWithinLimit(name) || name == displayedName) {
+      return;
+    }
+    if (!isOwner) {
+      final key = _memberAliasKey;
+      try {
+        final prefs = await widget.store._localState();
+        if (!mounted || key != _memberAliasKey) return;
+        final next = {..._memberAliases};
+        if (name == space.name) {
+          next.remove(space.id);
+        } else {
+          next[space.id] = name;
+        }
+        await prefs.setString(key, jsonEncode(next));
+        if (!mounted || key != _memberAliasKey) return;
+        setState(() {
+          _memberAliases = next;
+          _memberAliasScope = key;
+        });
+        _message(sharedSpaceRenameCopy(language, 'doneLocal'));
+      } catch (_) {
+        if (mounted) _message(sharedSpaceRenameCopy(language, 'failedLocal'));
+      }
       return;
     }
     setState(() => loading = true);
@@ -504,17 +630,31 @@ class _SharedSpaceHubScreenState extends State<SharedSpaceHubScreen> {
                                     ),
                                   ),
                                   title: Text(
-                                    space.name,
+                                    _displayName(space),
                                     style: const TextStyle(
                                       fontWeight: FontWeight.w800,
                                     ),
                                   ),
                                   subtitle: Text(
-                                    pending > 0
-                                        ? AnnaStrings.of(context).d3Format('sharedPendingChanges', {'count': pending})
-                                        : space.isOwner
-                                            ? AnnaStrings.of(context).d3('sharedCreatedSynced')
-                                            : AnnaStrings.of(context).d3('sharedSynced'),
+                                    [
+                                      pending > 0
+                                          ? AnnaStrings.of(context).d3Format(
+                                              'sharedPendingChanges',
+                                              {'count': pending})
+                                          : sharedSpaceCanRename(
+                                                  space, cloud.userId)
+                                              ? AnnaStrings.of(context).d3(
+                                                  'sharedCreatedSynced')
+                                              : AnnaStrings.of(context).d3(
+                                                  'sharedSynced'),
+                                      if (!sharedSpaceCanRename(
+                                            space, cloud.userId) &&
+                                          _memberAliasScope == _memberAliasKey &&
+                                          _memberAliases.containsKey(space.id))
+                                        sharedSpaceRenameCopy(
+                                            AnnaStrings.of(context).languageCode,
+                                            'localOnly'),
+                                    ].join(' · '),
                                   ),
                                   trailing: Row(
                                     mainAxisSize: MainAxisSize.min,
@@ -528,27 +668,20 @@ class _SharedSpaceHubScreenState extends State<SharedSpaceHubScreen> {
                                             Icons.notifications_none,
                                           ),
                                         ),
-                                      if (sharedSpaceCanRename(
-                                          space, cloud.userId))
-                                        IconButton(
-                                          key: ValueKey<String>(
-                                            'shared-rename-${space.id}'),
-                                          tooltip: sharedSpaceRenameCopy(
-                                              AnnaStrings.of(context)
-                                                  .languageCode, 'rename'),
-                                          icon: const Icon(Icons.edit_outlined),
-                                          onPressed: loading
-                                              ? null
-                                              : () => _renameSpace(space),
-                                        )
-                                      else
-                                        Tooltip(
-                                          message: sharedSpaceRenameCopy(
-                                              AnnaStrings.of(context)
-                                                  .languageCode, 'ownerOnly'),
-                                          child: const Icon(Icons.lock_outline,
-                                              size: 20),
+                                      IconButton(
+                                        key: ValueKey<String>(
+                                          'shared-rename-${space.id}'),
+                                        tooltip: sharedSpaceRenameCopy(
+                                          AnnaStrings.of(context).languageCode,
+                                          sharedSpaceCanRename(
+                                              space, cloud.userId)
+                                              ? 'rename' : 'renameLocal',
                                         ),
+                                        icon: const Icon(Icons.edit_outlined),
+                                        onPressed: loading
+                                            ? null
+                                            : () => _renameSpace(space),
+                                      ),
                                       const SizedBox(width: 6),
                                       const Icon(Icons.chevron_right),
                                     ],
@@ -563,7 +696,7 @@ class _SharedSpaceHubScreenState extends State<SharedSpaceHubScreen> {
                                       MaterialPageRoute(
                                         builder: (_) => SharedSpaceScreen(
                                           store: widget.store,
-                                          space: space,
+                                          space: _spaceForDisplay(space),
                                         ),
                                       ),
                                     );
