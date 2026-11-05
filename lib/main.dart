@@ -70,6 +70,7 @@ part 'src/capability_health.dart';
 part 'src/home_widget_bridge.dart';
 part 'src/recurring_life_domain.dart';
 part 'src/organization_domain.dart';
+part 'src/cap0160_offline_tags.dart';
 part 'src/life_archive_domain.dart';
 part 'src/life_bridge.dart';
 part 'src/notes_bridge.dart';
