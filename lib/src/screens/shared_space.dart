@@ -647,7 +647,10 @@ class _SharedSpaceHubScreenState extends State<SharedSpaceHubScreen> {
                                                   'sharedCreatedSynced')
                                               : AnnaStrings.of(context).d3(
                                                   'sharedSynced'),
-                                      if (_displayName(space) != space.name)
+                                      if (!sharedSpaceCanRename(
+                                            space, cloud.userId) &&
+                                          _memberAliasScope == _memberAliasKey &&
+                                          _memberAliases.containsKey(space.id))
                                         sharedSpaceRenameCopy(
                                             AnnaStrings.of(context).languageCode,
                                             'localOnly'),
