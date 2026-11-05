@@ -87,10 +87,15 @@ abstract final class Cap0160TagSuggester {
     final candidates = frequency.keys.toSet();
     final df = <String, int>{};
     var documents = 0;
+    var scanned = 0;
     final seenIds = <String>{};
-    for (final document in authorizedPrivateCorpus) {
-      if (documents >= maxCorpusDocs) break;
-      if (document.id.trim().isEmpty || !seenIds.add(document.id)) continue;
+    final iterator = authorizedPrivateCorpus.iterator;
+    while (scanned < maxCorpusDocs && iterator.moveNext()) {
+      scanned++;
+      final document = iterator.current;
+      if (document.id.trim().isEmpty || !seenIds.add(document.id)) {
+        continue;
+      }
       documents++;
       for (final word in _tokens(document.text, stop).toSet()) {
         if (candidates.contains(word)) {
