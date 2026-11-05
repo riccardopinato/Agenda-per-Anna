@@ -86,14 +86,10 @@ jobs:
           gradle.write_text(source.replace(old,new))
           manifest = Path('android/app/src/main/AndroidManifest.xml')
           xml = manifest.read_text()
-          old_label = 'android:label="Anna\\'s Diary"'
-          if old_label in xml:
-              xml = xml.replace(old_label, 'android:label="Anna CAP0160 QA"')
-          else:
-              import re
-              xml, n = re.subn(r'android:label="[^"]+"',
-                               'android:label="Anna CAP0160 QA"', xml, count=1)
-              if n != 1: raise SystemExit("Cannot isolate app label")
+          import re
+          xml, n = re.subn(r'android:label="[^"]+"',
+                           'android:label="Anna CAP0160 QA"', xml, count=1)
+          if n != 1: raise SystemExit("Cannot isolate app label")
           manifest.write_text(xml)
           print("QA ID and label isolated from installed signed +124")
           PY
