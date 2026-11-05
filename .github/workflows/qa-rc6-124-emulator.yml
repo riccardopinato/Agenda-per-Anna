@@ -1,0 +1,77 @@
+name: RC6+124 exact-source Android emulator smoke
+
+# Explicitly authorized, single release-candidate QA execution. This workflow
+# lives only on its dedicated QA branch. The app under test is checked out at
+# the immutable signed-artifact source SHA, not the workflow branch.
+on:
+  push:
+    branches:
+      - qa/anna-rc6-124-emulator-20261105
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: anna-rc6-124-emulator-once
+  cancel-in-progress: false
+
+jobs:
+  qa-android-emulator:
+    name: RC6+124 Android emulator (synthetic fixture)
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - name: Checkout signed +124 exact source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: 905146ad615dad6bf963e1b09b2d2ca66a50d355
+          persist-credentials: false
+      - name: Assert exact source and release version
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "905146ad615dad6bf963e1b09b2d2ca66a50d355"
+          grep -Fq 'version: 1.0.0-rc.6+124' pubspec.yaml
+          grep -Fq 'appReleaseBuildNumber = 124' lib/app_version.dart
+      - name: Setup Flutter pinned to signed release
+        uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2.23.0
+        with:
+          flutter-version: "3.47.5"
+          channel: stable
+          cache: true
+      - name: Prepare identical Android platform configuration
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf android /tmp/agenda_rc124_android
+          flutter create --project-name agenda_per_anna --org com.riccardopinato --platforms=android /tmp/agenda_rc124_android
+          cp -R /tmp/agenda_rc124_android/android .
+          python3 tool/prepare_android_platform.py
+      - name: Install locked dependencies
+        run: flutter pub get --enforce-lockfile
+      - name: Generate app launcher icons
+        run: dart run flutter_launcher_icons -f tool/flutter_launcher_icons_android.yaml
+      - name: Test P1/P2 pure logic on exact source
+        run: |
+          flutter test test/realistic_day_guidance_p1_test.dart
+          flutter test test/contextual_memory_p2_test.dart
+      - name: Enable KVM
+        shell: bash
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+      - name: Run Android UI5 navigation + persistence smoke on emulator
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 35
+          target: default
+          arch: x86_64
+          profile: pixel_6
+          disable-animations: true
+          emulator-boot-timeout: 600
+          script: |
+            adb devices
+            flutter devices
+            flutter test integration_test/app_smoke_test.dart -d emulator-5554 --dart-define=ANNAS_DIARY_INTEGRATION_TEST=true
