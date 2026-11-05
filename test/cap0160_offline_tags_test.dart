@@ -183,9 +183,9 @@ void main() {
   testWidgets('CAP-0160 chip previews draft only; cancel never commits',
       (tester) async {
     List<String>? result;
+    // The default English Material delegate is available without additional
+    // localization wiring; the five-language word fixtures are tested above.
     await tester.pumpWidget(MaterialApp(
-      locale: const Locale('it'),
-      supportedLocales: const [Locale('it'), Locale('en')],
       home: Builder(builder: (context) => Scaffold(
         body: ElevatedButton(
           onPressed: () async {
