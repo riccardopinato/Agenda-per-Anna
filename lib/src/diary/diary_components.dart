@@ -633,6 +633,67 @@ Future<String?> showDiaryCaptionEditor(
   return value;
 }
 
+/// Visible beside each private note: proposals are not persisted or tagged
+/// until the user confirms the existing canonical tag editor's Save action.
+/// Limit to a maximum of four already-computed, account-scoped candidates.
+class Cap0160InlineTagSuggestions extends StatelessWidget {
+  const Cap0160InlineTagSuggestions({
+    super.key,
+    required this.proposals,
+    required this.languageCode,
+    required this.onSelected,
+  });
+
+  final List<Cap0160TagSuggestion> proposals;
+  final String languageCode;
+  final ValueChanged<String> onSelected;
+
+  @override
+  Widget build(BuildContext context) {
+    if (proposals.isEmpty) return const SizedBox.shrink();
+    final title = switch (languageCode) {
+      'en' => 'Suggested tags',
+      'es' => 'Etiquetas sugeridas',
+      'fr' => 'Tags suggérés',
+      'pt' => 'Etiquetas sugeridas',
+      _ => 'Tag suggeriti',
+    };
+    final guidance = switch (languageCode) {
+      'en' => 'Choose a tag, then Save to confirm',
+      'es' => 'Elige una etiqueta y guarda para confirmar',
+      'fr' => 'Choisissez un tag puis enregistrez',
+      'pt' => 'Escolhe uma etiqueta e guarda para confirmar',
+      _ => 'Tocca un tag e premi Salva per confermare',
+    };
+    return Column(
+      key: const ValueKey('cap0160-inline-suggestions'),
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text(title, style: Theme.of(context).textTheme.labelSmall),
+        const SizedBox(height: 3),
+        Wrap(
+          spacing: 6,
+          runSpacing: 4,
+          children: [
+            for (final proposal in proposals.take(Cap0160TagSuggester.maxSuggestionCount))
+              Tooltip(
+                message: guidance,
+                child: ActionChip(
+                  key: ValueKey('cap0160-inline-${proposal.tag}'),
+                  avatar: const Icon(Icons.add, size: 16),
+                  label: Text('#${proposal.tag}'),
+                  visualDensity: VisualDensity.compact,
+                  onPressed: () => onSelected(proposal.tag),
+                ),
+              ),
+          ],
+        ),
+      ],
+    );
+  }
+}
+
 Future<List<String>?> showOrganizationTagsEditor(
   BuildContext context, {
   required List<String> initialTags,
@@ -1856,19 +1917,26 @@ class _DiaryMemoryCardState extends State<DiaryMemoryCard> {
     final linked = widget.store.peopleForIds(block.personIds);
     final outgoing = widget.store.relatedDiaryBlocks(block);
     final backlinks = widget.store.backlinksForDiaryBlock(block.id);
-    if (linked.isEmpty &&
-        block.tags.isEmpty &&
-        block.places.isEmpty &&
-        outgoing.isEmpty &&
-        backlinks.isEmpty) {
-      return null;
-    }
+    final proposals = Cap0160TagSuggester.forDiary(
+      widget.store, widget.date, block, AnnaStrings.of(context).languageCode,
+    );
+    final hasMetadata = linked.isNotEmpty ||
+        block.tags.isNotEmpty ||
+        block.places.isNotEmpty ||
+        outgoing.isNotEmpty ||
+        backlinks.isNotEmpty;
+    if (!hasMetadata && proposals.isEmpty) return null;
     return Padding(
       padding: const EdgeInsets.fromLTRB(12, 8, 12, 10),
-      child: Wrap(
-        spacing: 6,
-        runSpacing: 6,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          if (hasMetadata)
+            Wrap(
+              spacing: 6,
+              runSpacing: 6,
+              children: [
           ...block.tags.map(
             (tag) => Chip(
               visualDensity: VisualDensity.compact,
@@ -1905,6 +1973,17 @@ class _DiaryMemoryCardState extends State<DiaryMemoryCard> {
               avatar: const Icon(Icons.link, size: 16),
               label: Text(AnnaStrings.of(context).d3BacklinksCount(backlinks.length)),
             ),
+              ],
+            ),
+          if (proposals.isNotEmpty) ...[
+            if (hasMetadata) const SizedBox(height: 8),
+            Cap0160InlineTagSuggestions(
+              proposals: proposals,
+              languageCode: AnnaStrings.of(context).languageCode,
+              onSelected: (tag) =>
+                  _editTags(block, preselectedTag: tag),
+            ),
+          ],
         ],
       ),
     );
@@ -1924,16 +2003,23 @@ class _DiaryMemoryCardState extends State<DiaryMemoryCard> {
     );
   }
 
-  Future<void> _editTags(DiaryBlock block) async {
+  Future<void> _editTags(DiaryBlock block, {String? preselectedTag}) async {
     final guard = Cap0160TagEditGuard(widget.store);
     if (!guard.isCurrent) return;
     final proposals = Cap0160TagSuggester.forDiary(
       widget.store, widget.date, block,
       AnnaStrings.of(context).languageCode,
     );
+    if (preselectedTag != null &&
+        !proposals.any((item) => item.tag == preselectedTag)) {
+      return;
+    }
+    final draftTags = preselectedTag == null
+        ? block.tags
+        : normalizeOrganizationTags([...block.tags, preselectedTag]);
     final tags = await showOrganizationTagsEditor(
       context,
-      initialTags: block.tags,
+      initialTags: draftTags,
       suggestions: normalizeOrganizationTags(
         widget.store.journals.values
             .expand((journal) => journal.blocks)

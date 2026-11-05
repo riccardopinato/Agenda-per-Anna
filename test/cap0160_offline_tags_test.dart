@@ -330,6 +330,57 @@ void main() {
     expect(result, isNull);
   });
 
+  testWidgets('CAP-0160 Inbox suggestions are inline; Cancel remains nonwriting',
+      (tester) async {
+    final store = AgendaStore();
+    await store.load();
+    await store.continueWithoutAccount();
+    await store.addInboxEntry('montagna montagna sentiero');
+
+    await tester.pumpWidget(MaterialApp(
+      home: InboxScreen(store: store),
+    ));
+    await tester.pumpAndSettle();
+    final suggestion = find.byKey(
+        const ValueKey('cap0160-inline-montagna'));
+    expect(suggestion, findsOneWidget);
+    expect(store.inbox.single.tags, isEmpty);
+    await tester.tap(suggestion);
+    await tester.pumpAndSettle();
+    expect(find.byType(AlertDialog), findsOneWidget);
+    expect(tester.widget<TextField>(find.byType(TextField).last)
+        .controller!.text, contains('montagna'));
+    // The first TextButton in the tag editor is Cancel, not Save.
+    await tester.tap(find.descendant(
+      of: find.byType(AlertDialog), matching: find.byType(TextButton),
+    ).last);
+    await tester.pumpAndSettle();
+    expect(store.inbox.single.tags, isEmpty);
+    await tester.pumpWidget(const SizedBox.shrink());
+    store.dispose();
+  });
+
+  testWidgets('CAP-0160 inline suggestions are only draft callbacks',
+      (tester) async {
+    String? selected;
+    await tester.pumpWidget(MaterialApp(
+      home: Scaffold(body: Cap0160InlineTagSuggestions(
+        languageCode: 'it',
+        proposals: const [
+          Cap0160TagSuggestion('passeggiata', 2, 'text_frequency'),
+        ],
+        onSelected: (tag) => selected = tag,
+      )),
+    ));
+    expect(find.text('Tag suggeriti'), findsOneWidget);
+    expect(find.byKey(const ValueKey('cap0160-inline-passeggiata')),
+        findsOneWidget);
+    expect(selected, isNull);
+    await tester.tap(find.byKey(
+        const ValueKey('cap0160-inline-passeggiata')));
+    expect(selected, 'passeggiata');
+  });
+
   test('CAP-0160 dialogs must keep writer outside the ranker', () {
     final engine = File('lib/src/cap0160_offline_tags.dart').readAsStringSync();
     final editor = File('lib/src/diary/diary_components.dart').readAsStringSync();
@@ -339,6 +390,10 @@ void main() {
     expect(engine, isNot(contains('setInboxTags(')));
     expect(engine, isNot(contains('CloudSyncService.instance')));
     expect(editor, contains('offlineProposals: proposals'));
+    expect(editor, contains('Cap0160InlineTagSuggestions('));
+    expect(inbox, contains('Cap0160InlineTagSuggestions('));
+    expect(editor, contains('preselectedTag: tag'));
+    expect(inbox, contains('preselectedTag: tag'));
     expect(editor, contains('final guard = Cap0160TagEditGuard(widget.store)'));
     expect(inbox, contains('final guard = Cap0160TagEditGuard(store)'));
     expect(editor, contains('normalizeOrganizationTags(controller.text.split('));

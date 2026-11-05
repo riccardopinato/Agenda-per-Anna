@@ -18,6 +18,13 @@ A TF-IDF keyword is not a reliable semantic or sensitive-data classifier. It can
 
 No uncontrolled indexing of entire media/voice transcripts, OCR, passwords or shared conversations. Avoid changing source authorization, login/sync, Google Direct #199, Privacy V2 #215 or the +124 signed APK.
 
+## Option A — inline suggestions (5 November 2026)
+
+- Inbox and private Diary cards display up to four local tag proposals immediately below each note (without opening the Tags menu). The user can tap a proposal to open the canonical tag editor with that tag preselected in a **draft**; only pressing **Save** commits it. Cancel leaves the note unchanged.
+- Inline suggestions are computed only from authorized local content, for the current profile, reusing the CAP-0160 privacy guards and existing tag writers; neither list rendering nor chip tap performs a write.
+- Locale-aware inline header and accessible chip labels reuse the same five supported languages. Hidden/archived/shared-only and unsupported-language notes produce no inline tag chips. There is no automatic classification or persistence.
+- Source and UI regressions assert visible Inbox suggestion and Cancel-is-nonwriting, plus reusable inline chip selection. Physical QA must be repeated on a new APK; the prior standalone CAP QA binary does not include Option A.
+
 ## Review fixes (5 November 2026)
 
 - Account-scoped CAP writes now recheck the editor's profile-only epoch inside the serialized local mutation writer, after obtaining the local store and before deriving any account-dependent delta/sync owner. Profile activation/erasure waits for queued writes to settle before moving the canonical working set. Rejected optimistic Inbox/diary projections are rolled back before the queue barrier releases.

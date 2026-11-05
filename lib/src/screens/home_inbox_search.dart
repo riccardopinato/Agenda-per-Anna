@@ -738,16 +738,26 @@ class _InboxScreenState extends State<InboxScreen> {
 
   Future<void> _editTags(
     BuildContext context,
-    InboxEntry entry,
-  ) async {
+    InboxEntry entry, {
+    String? preselectedTag,
+  }) async {
     final guard = Cap0160TagEditGuard(store);
     if (!guard.isCurrent) return;
     final proposals = Cap0160TagSuggester.forInbox(
       store, entry, AnnaStrings.of(context).languageCode,
     );
+    // The inline chip must still be a current authorized proposal, and only
+    // seeds a dialog draft: the canonical store is unchanged until Save.
+    if (preselectedTag != null &&
+        !proposals.any((item) => item.tag == preselectedTag)) {
+      return;
+    }
+    final draftTags = preselectedTag == null
+        ? entry.tags
+        : normalizeOrganizationTags([...entry.tags, preselectedTag]);
     final tags = await showOrganizationTagsEditor(
       context,
-      initialTags: entry.tags,
+      initialTags: draftTags,
       suggestions: store.inboxCategoryTags,
       offlineProposals: proposals,
     );
@@ -1041,6 +1051,9 @@ class _InboxScreenState extends State<InboxScreen> {
                   separatorBuilder: (_, __) => const SizedBox(height: 8),
                   itemBuilder: (context, index) {
                     final entry = entries[index];
+                    final proposals = Cap0160TagSuggester.forInbox(
+                      store, entry, strings.languageCode,
+                    );
                     return Card(
                       child: ListTile(
                         contentPadding: const EdgeInsets.fromLTRB(
@@ -1055,15 +1068,28 @@ class _InboxScreenState extends State<InboxScreen> {
                               : Icons.sticky_note_2_outlined,
                         ),
                         title: Text(entry.text),
-                        subtitle: Text(
-                          [
-                            DateFormat(
-                              'd MMM, HH:mm',
-                              AnnaStrings.intlLocale(context),
-                            ).format(entry.createdAt),
-                            if (entry.tags.isNotEmpty)
-                              entry.tags.map((tag) => '#$tag').join(' · '),
-                          ].join(' · '),
+                        subtitle: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text([
+                              DateFormat(
+                                'd MMM, HH:mm',
+                                AnnaStrings.intlLocale(context),
+                              ).format(entry.createdAt),
+                              if (entry.tags.isNotEmpty)
+                                entry.tags.map((tag) => '#$tag').join(' · '),
+                            ].join(' · ')),
+                            if (proposals.isNotEmpty) ...[
+                              const SizedBox(height: 8),
+                              Cap0160InlineTagSuggestions(
+                                proposals: proposals,
+                                languageCode: strings.languageCode,
+                                onSelected: (tag) =>
+                                    _editTags(context, entry, preselectedTag: tag),
+                              ),
+                            ],
+                          ],
                         ),
                         trailing: PopupMenuButton<String>(
                           onSelected: (value) async {
