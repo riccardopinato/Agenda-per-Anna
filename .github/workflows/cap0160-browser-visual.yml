@@ -7,6 +7,7 @@ on:
 
 permissions:
   contents: read
+  actions: read
 
 jobs:
   browser-simulation:
@@ -37,33 +38,13 @@ jobs:
           }, changed
           PY
 
-      - name: Setup pinned Flutter
-        uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2.23.0
+      - name: Restore exact tested Web preview without rebuilding
+        uses: actions/download-artifact@v4
         with:
-          flutter-version: "3.47.5"
-          channel: stable
-          cache: true
-
-      - name: Rebuild real Flutter Web preview from CAP-0160 source
-        shell: bash
-        run: |
-          set -euo pipefail
-          rm -rf web /tmp/anna-cap0160-preview-web
-          flutter create --project-name agenda_per_anna --org com.riccardopinato \
-            --platforms=web --no-pub /tmp/anna-cap0160-preview-web
-          cp -R /tmp/anna-cap0160-preview-web/web .
-          python3 tool/prepare_web_platform.py
-          base64 -d assets/icon/app_icon.b64 > assets/icon/app_icon.jpg
-          sed -i 's#assets/icon/app_icon.png#assets/icon/app_icon.jpg#g' pubspec.yaml
-          flutter pub get --enforce-lockfile
-          flutter build web --release --base-href "/" \
-            --dart-define=ANNA_STORE_RELEASE=false \
-            --dart-define=ANNA_PREMIUM_PREVIEW=true \
-            --dart-define=FIREBASE_ENABLED=false
-          python3 tool/finalize_web_build.py
-          cp legal/privacy.html build/web/privacy.html
-          cp legal/terms.html build/web/terms.html
-          cp legal/delete-account.html build/web/delete-account.html
+          name: anna-cap0160-web-qa-preview
+          run-id: 42017010319
+          github-token: ${{ github.token }}
+          path: build/web
 
       - name: Install isolated browser test runner
         shell: bash
@@ -96,10 +77,3 @@ jobs:
           if-no-files-found: warn
           retention-days: 14
 
-      - name: Upload standalone Web preview build
-        if: success()
-        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
-        with:
-          name: anna-cap0160-web-qa-preview
-          path: build/web/
-          retention-days: 14
