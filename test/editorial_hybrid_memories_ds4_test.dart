@@ -73,7 +73,6 @@ void main() {
     await initializeDateFormatting('it_IT', null);
     final store = AgendaStore();
     await store.load();
-    await store.continueWithoutAccount();
 
     final now = DateTime.now();
     final pastDay = DateTime(now.year - 1, now.month, now.day);
