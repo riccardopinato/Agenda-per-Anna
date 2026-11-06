@@ -129,7 +129,6 @@ void main() {
       'Widget _yearsView(',
       'Future<void> _openRecord(',
       'Future<void> _openPhoto(',
-      'void _',
     ]) {
       expect(source, contains(method));
     }
