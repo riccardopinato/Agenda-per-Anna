@@ -44,7 +44,10 @@ class _CalendarHubScreenState extends State<CalendarHubScreen> {
   @override
   Widget build(BuildContext context) {
     final strings = AnnaStrings.of(context);
-    return Scaffold(
+    return ValueListenableBuilder<bool>(
+      valueListenable: AnnaEditorialTodayMode.enabled,
+      builder: (context, editorial, _) => Scaffold(
+      backgroundColor: editorial ? AnnaEditorialColors.of(context).canvas : null,
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => showUnifiedCapture(
           context,
@@ -56,10 +59,14 @@ class _CalendarHubScreenState extends State<CalendarHubScreen> {
         label: Text(strings.d3('ui5Create')),
       ),
       appBar: AppBar(
+        backgroundColor: editorial ? AnnaEditorialColors.of(context).canvas : null,
+        surfaceTintColor: editorial ? Colors.transparent : null,
         toolbarHeight: 78,
         title: Text(
           strings.calendar,
-          style: Theme.of(context).textTheme.headlineMedium,
+          style: editorial
+              ? AnnaJournalTypography.editorial(context, size: 29)
+              : Theme.of(context).textTheme.headlineMedium,
         ),
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(58),
@@ -69,6 +76,9 @@ class _CalendarHubScreenState extends State<CalendarHubScreen> {
               width: double.infinity,
               child: SegmentedButton<_CalendarHubView>(
                 style: ButtonStyle(
+                  backgroundColor: editorial
+                      ? WidgetStatePropertyAll(AnnaEditorialColors.of(context).quiet)
+                      : null,
                   minimumSize: const WidgetStatePropertyAll(Size(0, 44)),
                   shape: WidgetStatePropertyAll(
                     RoundedRectangleBorder(
@@ -114,7 +124,11 @@ class _CalendarHubScreenState extends State<CalendarHubScreen> {
                 approvedCalendarTagline(strings.languageCode),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: AnnaJournalTypography.editorial(context, size: 18),
+                style: AnnaJournalTypography.editorial(
+                  context, size: editorial ? 20 : 18,
+                ).copyWith(
+                  color: editorial ? AnnaEditorialColors.of(context).ink : null,
+                ),
               ),
             ),
           ),
@@ -125,10 +139,9 @@ class _CalendarHubScreenState extends State<CalendarHubScreen> {
               AnnaDesignTokens.spaceMd,
               0,
             ),
-            child: AnnaJournalCard(
-              domain: AnnaVisualDomain.calendar,
-              padding: const EdgeInsets.all(AnnaDesignTokens.spaceXs),
-              child: Row(
+            child: Builder(
+              builder: (context) {
+                final notebookLinks = Row(
                 children: [
                   Expanded(
                     child: Semantics(
@@ -172,7 +185,19 @@ class _CalendarHubScreenState extends State<CalendarHubScreen> {
                   ),
                 ),
                 ],
-              ),
+              );
+                return editorial
+                    ? AnnaEditorialSurface(
+                        key: const ValueKey<String>('editorial-calendar-notebooks'),
+                        padding: const EdgeInsets.all(8),
+                        child: notebookLinks,
+                      )
+                    : AnnaJournalCard(
+                        domain: AnnaVisualDomain.calendar,
+                        padding: const EdgeInsets.all(AnnaDesignTokens.spaceXs),
+                        child: notebookLinks,
+                      );
+              },
             ),
           ),
           const SizedBox(height: AnnaDesignTokens.spaceXs),
@@ -200,6 +225,7 @@ class _CalendarHubScreenState extends State<CalendarHubScreen> {
           ),
         ],
       ),
+    ),
     );
   }
 }
@@ -268,13 +294,22 @@ class _CalendarScreenState extends State<CalendarScreen> {
         widget.store.planningRevision,
         widget.store.workoutRevision,
         ExternalCalendarService.instance,
+        AnnaEditorialTodayMode.enabled,
       ]),
       builder: (context, _) {
         final strings = AnnaStrings.of(context);
+        final editorial = AnnaEditorialTodayMode.enabled.value;
         final events =
             agendaEntriesForDayWithExternal(widget.store, selected);
         final dayHub = widget.store.dayHubSnapshot(selected);
+        final selectedDateTitle = _cap(
+          DateFormat(
+            'EEEE d MMMM',
+            AnnaStrings.intlLocale(context),
+          ).format(selected),
+        );
         return Scaffold(
+          backgroundColor: editorial ? AnnaEditorialColors.of(context).canvas : null,
           appBar: widget.embedded
               ? null
               : AppBar(
@@ -296,7 +331,9 @@ class _CalendarScreenState extends State<CalendarScreen> {
           body: ListView(
             padding: const EdgeInsets.fromLTRB(14, 0, 14, 100),
             children: [
-              Card(
+              AnnaEditorialCalendarPanel(
+                key: const ValueKey<String>('editorial-calendar-month-grid'),
+                enabled: editorial,
                 child: Padding(
                   padding: const EdgeInsets.all(8),
                   child: AnimatedScale(
@@ -332,7 +369,15 @@ class _CalendarScreenState extends State<CalendarScreen> {
                       }
                       unawaited(_loadVisibleMonth(f));
                     },
-                    headerStyle: const HeaderStyle(formatButtonVisible: false, titleCentered: true),
+                    headerStyle: HeaderStyle(
+                      formatButtonVisible: false,
+                      titleCentered: true,
+                      titleTextStyle: editorial
+                          ? AnnaJournalTypography.editorial(
+                              context, size: 21,
+                            ).copyWith(color: AnnaEditorialColors.of(context).ink)
+                          : Theme.of(context).textTheme.titleLarge!,
+                    ),
                     calendarStyle: CalendarStyle(
                       outsideDaysVisible: false,
                       selectedDecoration: BoxDecoration(
@@ -361,7 +406,9 @@ class _CalendarScreenState extends State<CalendarScreen> {
               const SizedBox(height: 10),
               // Approved calendar-only preview: no second writer or record
               // ownership. The full existing agenda remains immediately below.
-              ExpansionTile(
+              AnnaEditorialCalendarPanel(
+                enabled: editorial,
+                child: ExpansionTile(
                 key: const ValueKey<String>('approved-calendar-hourly-timeline'),
                 initiallyExpanded: false,
                 leading: const Icon(Icons.schedule_outlined),
@@ -461,15 +508,12 @@ class _CalendarScreenState extends State<CalendarScreen> {
                     ),
                 ],
               ),
-              const SizedBox(height: 18),
-              SectionTitle(
-                _cap(
-                  DateFormat(
-                    'EEEE d MMMM',
-                    AnnaStrings.intlLocale(context),
-                  ).format(selected),
-                ),
               ),
+              const SizedBox(height: 18),
+              if (editorial)
+                AnnaEditorialSectionHeading(title: selectedDateTitle)
+              else
+                SectionTitle(selectedDateTitle),
               const SizedBox(height: 10),
               if (events.isEmpty)
                 SimpleCard(child: Text(strings.noCommitments))
@@ -2583,8 +2627,10 @@ class _WeekScreenState extends State<WeekScreen> {
         widget.store.journalRevision,
         widget.store.planningRevision,
         ExternalCalendarService.instance,
+        AnnaEditorialTodayMode.enabled,
       ]),
       builder: (context, _) {
+        final editorial = AnnaEditorialTodayMode.enabled.value;
         final data = widget.store.week(start);
         final end = addCivilDays(start, 6);
         final events = <UnifiedAgendaEntry>[
@@ -2603,6 +2649,7 @@ class _WeekScreenState extends State<WeekScreen> {
         ];
 
         return Scaffold(
+          backgroundColor: editorial ? AnnaEditorialColors.of(context).canvas : null,
           appBar: widget.embedded
               ? null
               : AppBar(
@@ -2630,13 +2677,22 @@ class _WeekScreenState extends State<WeekScreen> {
                 child: ListView(
                   padding: const EdgeInsets.fromLTRB(14, 8, 14, 110),
                   children: [
-                    _WeekHero(
-                start: start,
-                end: end,
-                eventCount: events.length,
-                completedTasks: completedTasks,
-                totalTasks: totalTasks,
-              ),
+                    if (editorial)
+                      AnnaEditorialCalendarWeekSummary(
+                        start: start,
+                        end: end,
+                        eventCount: events.length,
+                        completedTasks: completedTasks,
+                        totalTasks: totalTasks,
+                      )
+                    else
+                      _WeekHero(
+                        start: start,
+                        end: end,
+                        eventCount: events.length,
+                        completedTasks: completedTasks,
+                        totalTasks: totalTasks,
+                      ),
               const SizedBox(height: 12),
               AgendaContentFilterBar(store: widget.store),
               const SizedBox(height: 14),
@@ -2652,7 +2708,12 @@ class _WeekScreenState extends State<WeekScreen> {
                 onSave: (value) => widget.store.saveWeek(start, value),
               ),
               const SizedBox(height: 18),
-              SectionTitle(AnnaStrings.of(context).d3('plannerSevenDays')),
+              if (editorial)
+                AnnaEditorialSectionHeading(
+                  title: AnnaStrings.of(context).d3('plannerSevenDays'),
+                )
+              else
+                SectionTitle(AnnaStrings.of(context).d3('plannerSevenDays')),
               const SizedBox(height: 10),
               for (int i = 6; i >= 0; i--) ...[
                 _WeekDayCard(
