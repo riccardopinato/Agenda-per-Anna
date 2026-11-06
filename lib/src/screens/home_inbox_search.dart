@@ -788,6 +788,21 @@ class InboxScreen extends StatefulWidget {
 
 class _InboxScreenState extends State<InboxScreen> {
   AgendaStore get store => widget.store;
+
+  Widget _noteCard({
+    required bool editorial,
+    required bool pinned,
+    required Widget child,
+  }) {
+    if (!editorial) return Card(child: child);
+    return AnnaEditorialSurface(
+      tone: pinned
+          ? AnnaEditorialSurfaceTone.featured
+          : AnnaEditorialSurfaceTone.regular,
+      padding: EdgeInsets.zero,
+      child: child,
+    );
+  }
   String? selectedCategory;
 
   Future<void> _convertToTask(
@@ -1061,9 +1076,13 @@ class _InboxScreenState extends State<InboxScreen> {
   @override
   Widget build(BuildContext context) {
     return AnimatedBuilder(
-      animation: store.inboxRevision,
+      animation: Listenable.merge([
+        store.inboxRevision,
+        AnnaEditorialTodayMode.enabled,
+      ]),
       builder: (context, _) {
         final strings = AnnaStrings.of(context);
+        final editorial = AnnaEditorialTodayMode.enabled.value;
         final entries = selectedCategory == null
             ? [...store.activeInboxEntries]
             : store.inboxEntriesInCategory(selectedCategory!);
@@ -1081,7 +1100,9 @@ class _InboxScreenState extends State<InboxScreen> {
           appBar: AppBar(
             title: Text(
               strings.inbox,
-              style: const TextStyle(fontWeight: FontWeight.w900),
+              style: editorial
+                  ? AnnaJournalTypography.editorial(context, size: 25)
+                  : const TextStyle(fontWeight: FontWeight.w900),
             ),
           ),
           floatingActionButton: FloatingActionButton.extended(
@@ -1095,6 +1116,15 @@ class _InboxScreenState extends State<InboxScreen> {
           ),
           body: Column(
             children: [
+              if (editorial)
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(18, 8, 18, 8),
+                  child: AnnaEditorialHeader(
+                    title: strings.inbox,
+                    eyebrow: inboxCategoryCopy(
+                      strings.languageCode, 'heading'),
+                  ),
+                ),
               Padding(
                 padding: const EdgeInsets.fromLTRB(14, 8, 14, 4),
                 child: Row(
@@ -1193,7 +1223,9 @@ class _InboxScreenState extends State<InboxScreen> {
                       store, entry, strings.languageCode,
                       inlineFastPath: true,
                     );
-                    return Card(
+                    return _noteCard(
+                      editorial: editorial,
+                      pinned: entry.pinned,
                       child: ListTile(
                         contentPadding: const EdgeInsets.fromLTRB(
                           14,
@@ -1206,7 +1238,14 @@ class _InboxScreenState extends State<InboxScreen> {
                               ? Icons.push_pin
                               : Icons.sticky_note_2_outlined,
                         ),
-                        title: Text(entry.text),
+                        title: Text(
+                          entry.text,
+                          style: editorial
+                              ? AnnaJournalTypography.editorial(
+                                  context, size: entry.pinned ? 21 : 18,
+                                )
+                              : null,
+                        ),
                         subtitle: Column(
                           mainAxisSize: MainAxisSize.min,
                           crossAxisAlignment: CrossAxisAlignment.start,
