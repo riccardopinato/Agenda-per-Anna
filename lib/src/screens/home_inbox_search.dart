@@ -1212,6 +1212,38 @@ class _InboxScreenState extends State<InboxScreen> {
                         setState(() => _noteQuery = value),
                   ),
                 ),
+              // DS6 keeps archive/trash in their canonical screens, reachable
+              // directly from Inbox, rather than projecting a second archive.
+              if (editorial)
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(14, 0, 14, 7),
+                  child: Wrap(
+                    spacing: 8,
+                    runSpacing: 5,
+                    children: [
+                      ActionChip(
+                        avatar: const Icon(Icons.archive_outlined, size: 18),
+                        label: Text(strings.archive),
+                        onPressed: () => Navigator.push(
+                          context,
+                          MaterialPageRoute<void>(
+                            builder: (_) => ArchiveScreen(store: store),
+                          ),
+                        ),
+                      ),
+                      ActionChip(
+                        avatar: const Icon(Icons.delete_outline, size: 18),
+                        label: Text(strings.trash),
+                        onPressed: () => Navigator.push(
+                          context,
+                          MaterialPageRoute<void>(
+                            builder: (_) => TrashScreen(store: store),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
               Expanded(
                 child: entries.isEmpty
               ? Center(
