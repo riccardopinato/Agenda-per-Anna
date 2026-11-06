@@ -52,16 +52,29 @@ class AnnaEditorialTodayOverview extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(width: 12),
-                  Icon(
-                    Icons.auto_stories_outlined,
-                    key: const ValueKey<String>('editorial-today-diary-icon'),
-                    color: colors.accent.withValues(alpha: 0.68),
-                    size: 34,
-                    semanticLabel: null,
+                  // DS6: notebook emblem uses the existing themed colors.
+                  Container(
+                    width: 50,
+                    height: 50,
+                    alignment: Alignment.center,
+                    decoration: BoxDecoration(
+                      color: colors.quiet,
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: colors.border),
+                    ),
+                    child: Icon(
+                      Icons.auto_stories_outlined,
+                      key: const ValueKey<String>('editorial-today-diary-icon'),
+                      color: colors.accent,
+                      size: 27,
+                      semanticLabel: null,
+                    ),
                   ),
                 ],
               ),
-              const SizedBox(height: 18),
+              const SizedBox(height: 17),
+              Divider(color: colors.border, height: 1),
+              const SizedBox(height: 16),
               AnnaEditorialPrimaryAction(
                 label: strings.d3('ui5ShowAll'),
                 icon: Icons.arrow_forward_rounded,
