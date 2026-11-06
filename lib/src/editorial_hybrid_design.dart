@@ -150,9 +150,10 @@ class AnnaEditorialHeader extends StatelessWidget {
           Text(
             eyebrow!,
             style: theme.textTheme.labelSmall?.copyWith(
-              color: colors.mutedInk,
+              // DS6: a palette-derived editorial kicker, without new copy.
+              color: colors.accent,
               letterSpacing: AnnaEditorialTokens.eyebrowTracking,
-              fontWeight: FontWeight.w700,
+              fontWeight: FontWeight.w800,
             ),
           ),
           const SizedBox(height: AnnaDesignTokens.spaceSm),
@@ -239,7 +240,13 @@ class AnnaEditorialSurface extends StatelessWidget {
               colors: [colors.featuredStart, colors.featuredEnd],
             )
           : null,
-      border: Border.all(color: colors.border, width: 0.75),
+      // DS6: the hero's delicate accent outline is derived from ColorScheme.
+      border: Border.all(
+        color: featured
+            ? colors.accent.withValues(alpha: 0.25)
+            : colors.border,
+        width: featured ? 1 : 0.75,
+      ),
       boxShadow: [
         BoxShadow(
           color: colors.shadow,
@@ -354,7 +361,18 @@ class AnnaEditorialQuickAction extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(icon, size: 24, color: colors.accent),
+          // DS6: premium inset icon, while keeping original action semantics.
+          Container(
+            width: 43,
+            height: 43,
+            decoration: BoxDecoration(
+              color: colors.quiet,
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(color: colors.border, width: 0.75),
+            ),
+            alignment: Alignment.center,
+            child: Icon(icon, size: 22, color: colors.accent),
+          ),
           const SizedBox(height: AnnaDesignTokens.spaceLg),
           Text(
             title,
