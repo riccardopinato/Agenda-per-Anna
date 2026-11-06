@@ -2627,8 +2627,10 @@ class _WeekScreenState extends State<WeekScreen> {
         widget.store.journalRevision,
         widget.store.planningRevision,
         ExternalCalendarService.instance,
+        AnnaEditorialTodayMode.enabled,
       ]),
       builder: (context, _) {
+        final editorial = AnnaEditorialTodayMode.enabled.value;
         final data = widget.store.week(start);
         final end = addCivilDays(start, 6);
         final events = <UnifiedAgendaEntry>[
@@ -2647,6 +2649,7 @@ class _WeekScreenState extends State<WeekScreen> {
         ];
 
         return Scaffold(
+          backgroundColor: editorial ? AnnaEditorialColors.of(context).canvas : null,
           appBar: widget.embedded
               ? null
               : AppBar(
@@ -2674,13 +2677,22 @@ class _WeekScreenState extends State<WeekScreen> {
                 child: ListView(
                   padding: const EdgeInsets.fromLTRB(14, 8, 14, 110),
                   children: [
-                    _WeekHero(
-                start: start,
-                end: end,
-                eventCount: events.length,
-                completedTasks: completedTasks,
-                totalTasks: totalTasks,
-              ),
+                    if (editorial)
+                      AnnaEditorialCalendarWeekSummary(
+                        start: start,
+                        end: end,
+                        eventCount: events.length,
+                        completedTasks: completedTasks,
+                        totalTasks: totalTasks,
+                      )
+                    else
+                      _WeekHero(
+                        start: start,
+                        end: end,
+                        eventCount: events.length,
+                        completedTasks: completedTasks,
+                        totalTasks: totalTasks,
+                      ),
               const SizedBox(height: 12),
               AgendaContentFilterBar(store: widget.store),
               const SizedBox(height: 14),
@@ -2696,7 +2708,12 @@ class _WeekScreenState extends State<WeekScreen> {
                 onSave: (value) => widget.store.saveWeek(start, value),
               ),
               const SizedBox(height: 18),
-              SectionTitle(AnnaStrings.of(context).d3('plannerSevenDays')),
+              if (editorial)
+                AnnaEditorialSectionHeading(
+                  title: AnnaStrings.of(context).d3('plannerSevenDays'),
+                )
+              else
+                SectionTitle(AnnaStrings.of(context).d3('plannerSevenDays')),
               const SizedBox(height: 10),
               for (int i = 6; i >= 0; i--) ...[
                 _WeekDayCard(
