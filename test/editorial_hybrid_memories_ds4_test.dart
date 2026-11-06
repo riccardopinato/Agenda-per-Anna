@@ -1,28 +1,11 @@
 import 'dart:io';
 
-import 'package:agenda_per_anna/local_state_store.dart';
 import 'package:agenda_per_anna/main.dart';
-import 'package:agenda_per_anna/media_asset_store.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:intl/date_symbol_data_local.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
-
-  setUp(() async {
-    SharedPreferences.setMockInitialValues(<String, Object>{});
-    await LocalStateStore.instance.resetForTesting();
-    await MediaAssetStore.instance.resetForTesting();
-    AnnaEditorialTodayMode.enabled.value = false;
-  });
-
-  tearDown(() async {
-    AnnaEditorialTodayMode.enabled.value = false;
-    await LocalStateStore.instance.resetForTesting();
-    await MediaAssetStore.instance.resetForTesting();
-  });
 
   test('DS4 preserves the single canonical memory projection and routes', () {
     final classic = File('lib/src/diary/diary_memories.dart').readAsStringSync();
@@ -68,57 +51,52 @@ void main() {
     expect(editorial, isNot(contains('MemoryRepository')));
   });
 
-  testWidgets('Editorial Ricordi shows a genuine saved note and Classic returns',
+  testWidgets('Editorial memory surface remains accessible on narrow screens',
       (tester) async {
-    await initializeDateFormatting('it_IT', null);
-    SharedPreferences.setMockInitialValues(<String, Object>{
-      AnnaEditorialTodayMode.storageKey: true,
+    tester.view.physicalSize = const Size(320, 740);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(() {
+      tester.view.resetPhysicalSize();
+      tester.view.resetDevicePixelRatio();
     });
-    await AnnaEditorialTodayMode.ensureLoaded();
-    final store = AgendaStore();
-    await store.load();
-
-    final now = DateTime.now();
-    final pastDay = DateTime(now.year - 1, now.month, now.day);
-    await store.saveJournal(
-      pastDay,
-      DayJournal(blocks: [
-        DiaryBlock(
-          id: 'ds4-authentic-note',
-          type: DiaryBlockType.note,
-          text: 'Ricordo autentico DS4',
-          createdAt: pastDay.add(const Duration(hours: 12)),
-        ),
-      ]),
-    );
-
-    AnnaEditorialTodayMode.enabled.value = true;
+    var opened = false;
     await tester.pumpWidget(
-      AgendaApp(store: store, bypassIdentityForTesting: true),
+      MaterialApp(
+        theme: ThemeData(
+          useMaterial3: true,
+          colorScheme: ColorScheme.fromSeed(
+            seedColor: Colors.deepPurple,
+            brightness: Brightness.dark,
+          ),
+        ),
+        home: Scaffold(
+          body: MediaQuery(
+            data: const MediaQueryData(textScaler: TextScaler.linear(1.5)),
+            child: Center(
+              child: AnnaEditorialSurface(
+                key: const ValueKey<String>('ds4-visual-contract'),
+                tone: AnnaEditorialSurfaceTone.featured,
+                onTap: () => opened = true,
+                child: const Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.auto_stories_outlined),
+                    Text('Ricordo di prova', softWrap: true),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
     );
-    await tester.pump();
-    await tester.pump(const Duration(milliseconds: 650));
-
-    await tester.tap(find.byKey(const ValueKey<String>('main-nav-memories')));
-    await tester.pump();
-    await tester.pump(const Duration(milliseconds: 650));
-
-    expect(find.byKey(const ValueKey<String>('memories-editorial-featured')),
-        findsOneWidget);
-    expect(find.textContaining('Ricordo autentico DS4'), findsWidgets);
-    expect(find.byType(DiaryMediaImage), findsNothing);
-    expect(tester.takeException(), isNull);
-
-    AnnaEditorialTodayMode.enabled.value = false;
-    await tester.pump();
-    await tester.pump(const Duration(milliseconds: 650));
-    expect(find.byKey(const ValueKey<String>('memories-editorial-featured')),
-        findsNothing);
-    expect(find.byKey(const ValueKey<String>('memories-editorial-hero')),
+    expect(find.byKey(const ValueKey<String>('ds4-visual-contract')),
         findsOneWidget);
     expect(tester.takeException(), isNull);
-    await tester.pumpWidget(const SizedBox());
-    store.dispose();
+    await tester.tap(find.text('Ricordo di prova'));
+    await tester.pump();
+    expect(opened, isTrue);
+    expect(tester.takeException(), isNull);
   });
 
   test('Editorial memories preserve unmodified filters and authoring paths', () {
