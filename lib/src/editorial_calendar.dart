@@ -26,13 +26,32 @@ class AnnaEditorialCalendarPanel extends StatelessWidget {
         child: Padding(padding: padding, child: child),
       );
     }
+    final colors = AnnaEditorialColors.of(context);
     return AnnaEditorialSurface(
       tone: featured
           ? AnnaEditorialSurfaceTone.featured
           : AnnaEditorialSurfaceTone.regular,
-      padding: padding,
+      padding: EdgeInsets.zero,
       semanticLabel: semanticLabel,
-      child: child,
+      // DS6 notebook binding: subtle themed rule above the SAME calendar.
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Container(
+            height: 2,
+            margin: const EdgeInsets.symmetric(horizontal: 30),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(colors: [
+                colors.card,
+                colors.accent.withValues(alpha: 0.55),
+                colors.card,
+              ]),
+            ),
+          ),
+          Padding(padding: padding, child: child),
+        ],
+      ),
     );
   }
 }
