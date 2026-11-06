@@ -1,5 +1,14 @@
 # Anna's Diary — Roadmap
 
+## 6 November 2026 — Editorial Hybrid DS4 Ricordi (source implementation)
+
+- **Product-authorized:** redesign Ricordi from the approved B — Diario contemporaneo, reusing the shared Editorial Hybrid DS, only when the local appearance toggle is enabled. Classic remains available.
+- **For You:** authentic anniversary photo/sketch or truthful note/voice hero; Lora editorial title, date, original year chips, arrows, counters and deterministic memory projections. Move contextual suggestions BELOW the featured hero in Hybrid; keep Classic order.
+- **Timeline and Discover:** use palette-derived rounded editorial timeline/month surfaces; Map, Collections/Life Threads, Then & Now, search, filters and year/day/month navigation remain original. No invented images, duplicate databases or changed private/cloud ownership.
+- **Boundary:** source PR + exact-head Flutter, Web and AppLab checks, review; version stays `+127`. Integrate with Calendar in a later **+128** signed Android candidate after separate release gates; real-device UI/performance and update tests are NOT VERIFIED.
+- [DS4 contract](EDITORIAL_HYBRID_DS4_20261106.md).
+
+
 ## 5 November 2026 — Editorial Hybrid DS3: docked navigation + Home polish, signed +127
 
 - Approved bundled delivery: **full-width attached bottom nav** in Editorial Hybrid mode; Classic Material 3 NavigationBar when local style toggle is off. Four original destinations and one preserved +Crea owner/animations; responsive NavigationRail unchanged.
