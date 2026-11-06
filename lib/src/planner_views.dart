@@ -294,13 +294,22 @@ class _CalendarScreenState extends State<CalendarScreen> {
         widget.store.planningRevision,
         widget.store.workoutRevision,
         ExternalCalendarService.instance,
+        AnnaEditorialTodayMode.enabled,
       ]),
       builder: (context, _) {
         final strings = AnnaStrings.of(context);
+        final editorial = AnnaEditorialTodayMode.enabled.value;
         final events =
             agendaEntriesForDayWithExternal(widget.store, selected);
         final dayHub = widget.store.dayHubSnapshot(selected);
+        final selectedDateTitle = _cap(
+          DateFormat(
+            'EEEE d MMMM',
+            AnnaStrings.intlLocale(context),
+          ).format(selected),
+        );
         return Scaffold(
+          backgroundColor: editorial ? AnnaEditorialColors.of(context).canvas : null,
           appBar: widget.embedded
               ? null
               : AppBar(
@@ -322,7 +331,9 @@ class _CalendarScreenState extends State<CalendarScreen> {
           body: ListView(
             padding: const EdgeInsets.fromLTRB(14, 0, 14, 100),
             children: [
-              Card(
+              AnnaEditorialCalendarPanel(
+                key: const ValueKey<String>('editorial-calendar-month-grid'),
+                enabled: editorial,
                 child: Padding(
                   padding: const EdgeInsets.all(8),
                   child: AnimatedScale(
@@ -358,7 +369,15 @@ class _CalendarScreenState extends State<CalendarScreen> {
                       }
                       unawaited(_loadVisibleMonth(f));
                     },
-                    headerStyle: const HeaderStyle(formatButtonVisible: false, titleCentered: true),
+                    headerStyle: HeaderStyle(
+                      formatButtonVisible: false,
+                      titleCentered: true,
+                      titleTextStyle: editorial
+                          ? AnnaJournalTypography.editorial(
+                              context, size: 21,
+                            ).copyWith(color: AnnaEditorialColors.of(context).ink)
+                          : Theme.of(context).textTheme.titleLarge!,
+                    ),
                     calendarStyle: CalendarStyle(
                       outsideDaysVisible: false,
                       selectedDecoration: BoxDecoration(
@@ -387,7 +406,9 @@ class _CalendarScreenState extends State<CalendarScreen> {
               const SizedBox(height: 10),
               // Approved calendar-only preview: no second writer or record
               // ownership. The full existing agenda remains immediately below.
-              ExpansionTile(
+              AnnaEditorialCalendarPanel(
+                enabled: editorial,
+                child: ExpansionTile(
                 key: const ValueKey<String>('approved-calendar-hourly-timeline'),
                 initiallyExpanded: false,
                 leading: const Icon(Icons.schedule_outlined),
@@ -487,15 +508,12 @@ class _CalendarScreenState extends State<CalendarScreen> {
                     ),
                 ],
               ),
-              const SizedBox(height: 18),
-              SectionTitle(
-                _cap(
-                  DateFormat(
-                    'EEEE d MMMM',
-                    AnnaStrings.intlLocale(context),
-                  ).format(selected),
-                ),
               ),
+              const SizedBox(height: 18),
+              if (editorial)
+                AnnaEditorialSectionHeading(title: selectedDateTitle)
+              else
+                SectionTitle(selectedDateTitle),
               const SizedBox(height: 10),
               if (events.isEmpty)
                 SimpleCard(child: Text(strings.noCommitments))
