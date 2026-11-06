@@ -761,6 +761,9 @@ class _DiaryMemoriesScreenState extends State<DiaryMemoriesScreen> {
     BuildContext context,
     DiaryBlockReference record,
   ) {
+    if (AnnaEditorialTodayMode.enabled.value) {
+      return _editorialFeaturedMemory(context, record);
+    }
     final strings = AnnaStrings.of(context);
     final title = widget.store.diaryBlockDisplayTitle(
       record.block,
@@ -1344,6 +1347,7 @@ class _DiaryMemoriesScreenState extends State<DiaryMemoriesScreen> {
     List<DiaryBlockReference> records,
   ) {
     final strings = AnnaStrings.of(context);
+    final editorial = AnnaEditorialTodayMode.enabled.value;
     final now = DateTime.now();
     final snapshot = widget.store.memoryRecallSnapshot(
       now,
@@ -1417,24 +1421,39 @@ class _DiaryMemoriesScreenState extends State<DiaryMemoriesScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  AnnaJournalPageHeader(
-                    title: strings.d3('memoriesForYou'),
-                    subtitle: strings.d3('memoriesForYouIntro'),
-                    editorial: true,
-                  ),
-                  const SizedBox(height: AnnaDesignTokens.spaceMd),
-                  ContextualMemoryPanel(
-                    store: widget.store,
-                    authorizedPrivateMemories: records,
-                    onOpen: (record) => unawaited(_openRecord(record)),
-                  ),
-                  const SizedBox(height: AnnaDesignTokens.spaceSm),
-                  if (anniversary.isNotEmpty) ...[
-                    AnnaJournalSectionHeading(
-                      title: exact.isNotEmpty
-                          ? strings.d3('ui5OnThisDay')
-                          : strings.v100MonthAcrossYears(monthName),
+                  if (editorial)
+                    AnnaEditorialHeader(
+                      title: strings.d3('memoriesForYou'),
+                      subtitle: strings.d3('memoriesForYouIntro'),
+                    )
+                  else
+                    AnnaJournalPageHeader(
+                      title: strings.d3('memoriesForYou'),
+                      subtitle: strings.d3('memoriesForYouIntro'),
+                      editorial: true,
                     ),
+                  const SizedBox(height: AnnaDesignTokens.spaceMd),
+                  if (!editorial) ...[
+                    ContextualMemoryPanel(
+                      store: widget.store,
+                      authorizedPrivateMemories: records,
+                      onOpen: (record) => unawaited(_openRecord(record)),
+                    ),
+                    const SizedBox(height: AnnaDesignTokens.spaceSm),
+                  ],
+                  if (anniversary.isNotEmpty) ...[
+                    if (editorial)
+                      AnnaEditorialSectionHeading(
+                        title: exact.isNotEmpty
+                            ? strings.d3('ui5OnThisDay')
+                            : strings.v100MonthAcrossYears(monthName),
+                      )
+                    else
+                      AnnaJournalSectionHeading(
+                        title: exact.isNotEmpty
+                            ? strings.d3('ui5OnThisDay')
+                            : strings.v100MonthAcrossYears(monthName),
+                      ),
                     if (exact.isEmpty)
                       Padding(
                         padding: const EdgeInsets.symmetric(vertical: 6),
@@ -1491,8 +1510,24 @@ class _DiaryMemoriesScreenState extends State<DiaryMemoriesScreen> {
                         ),
                       ),
                   ],
+                  if (editorial) ...[
+                    const SizedBox(height: AnnaDesignTokens.spaceMd),
+                    ContextualMemoryPanel(
+                      store: widget.store,
+                      authorizedPrivateMemories: records,
+                      onOpen: (record) => unawaited(_openRecord(record)),
+                    ),
+                    const SizedBox(height: AnnaDesignTokens.spaceMd),
+                  ],
                   if (suggestions.isNotEmpty) ...[
-                    AnnaJournalSectionHeading(title: strings.d3('ui5ForYou')),
+                    if (editorial)
+                      AnnaEditorialSectionHeading(
+                        title: strings.d3('ui5ForYou'),
+                      )
+                    else
+                      AnnaJournalSectionHeading(
+                        title: strings.d3('ui5ForYou'),
+                      ),
                     const SizedBox(height: 8),
                     ...suggestions.take(3)
                         .map((record) => _recallMemoryRow(context, record)),
@@ -1530,7 +1565,7 @@ class _DiaryMemoriesScreenState extends State<DiaryMemoriesScreen> {
                       ),
                     const SizedBox(height: 10),
                   ],
-                  Card(
+                  _memoryExploreSurface(
                     child: Column(
                       children: [
                         Semantics(
@@ -1623,6 +1658,9 @@ class _DiaryMemoriesScreenState extends State<DiaryMemoriesScreen> {
     BuildContext context,
     DiaryBlockReference record,
   ) {
+    if (AnnaEditorialTodayMode.enabled.value) {
+      return _editorialTimelineMemoryCard(context, record);
+    }
     final strings = AnnaStrings.of(context);
     final block = record.block;
     final title = widget.store.diaryBlockDisplayTitle(
@@ -1841,8 +1879,7 @@ class _DiaryMemoriesScreenState extends State<DiaryMemoriesScreen> {
                           : null,
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        Card(
-                          margin: const EdgeInsets.only(bottom: 6),
+                        _memoryMonthSurface(
                           child: Semantics(
                             button: true,
                             expanded: isExpanded,
@@ -1862,8 +1899,11 @@ class _DiaryMemoriesScreenState extends State<DiaryMemoriesScreen> {
                                     Expanded(
                                       child: AnimatedDefaultTextStyle(
                                         duration: AnnaMotionV108.duration(context, 420),
-                                        style: (Theme.of(context).textTheme.titleMedium ??
-                                            const TextStyle()).copyWith(
+                                        style: (AnnaEditorialTodayMode.enabled.value
+                                            ? AnnaJournalTypography.editorial(
+                                                context, size: 20)
+                                            : (Theme.of(context).textTheme.titleMedium ??
+                                                const TextStyle())).copyWith(
                                           color: _highlightTimelineMonth == entry.key
                                               ? Theme.of(context).colorScheme.primary
                                               : Theme.of(context).colorScheme.onSurface,
@@ -2132,8 +2172,13 @@ class _DiaryMemoriesScreenState extends State<DiaryMemoriesScreen> {
       _ => strings.d3('memoriesBrowse'),
     };
 
-    return Scaffold(
+    return ValueListenableBuilder<bool>(
+      valueListenable: AnnaEditorialTodayMode.enabled,
+      builder: (context, editorial, _) => Scaffold(
+      backgroundColor: editorial ? AnnaEditorialColors.of(context).canvas : null,
       appBar: AppBar(
+        backgroundColor: editorial ? AnnaEditorialColors.of(context).canvas : null,
+        surfaceTintColor: editorial ? Colors.transparent : null,
         toolbarHeight: 78,
         title: Text(
           widget.personName == null
@@ -2363,6 +2408,7 @@ class _DiaryMemoriesScreenState extends State<DiaryMemoriesScreen> {
           );
         },
       ),
+    ),
     );
   }
 }
