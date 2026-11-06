@@ -1,5 +1,11 @@
 # Anna's Diary — Roadmap
 
+## 7 November 2026 — DS6 Premium Editorial (10/10 approved; implementation in progress)
+
+- Baseline: App-Factory-Core `3481a8190a5db5965bb22f84832094268d05be98`, Anna's Diary +128 `01151f379ebd9669c3936058aa089433a05a63ae`.
+- Frozen ten-decision contract: [DS6_PREMIUM_EDITORIAL_10_10_20261107.md](DS6_PREMIUM_EDITORIAL_10_10_20261107.md). All approved, no additional mock-up requests. S1: use existing ColorScheme/Editorial Hybrid primitives and add bounded premium visual polish; S2 Oggi/Calendar/Ricordi; S3 More/Settings/Shared; S4 Inbox/Search/Crea; S5 exact-head CI/AppLab, optional stable-signed +129 and real-device acceptance. Never duplicate already-merged +128 functionality.
+- Private Vault is an explicit NO-REDESIGN exclusion. QR server contract and two-device joins, Inbox persistence/restart and in-place update remain independent physical/security gates. No automatic Play release. Branch source implementation != signed APK != physical QA.
+
 ## 6 November 2026 — Editorial Hybrid DS5 Calendar and signed +128 bundle
 
 - Approved Calendar C: themed header, palette-aware grid, Month/Week switch, one-line localized tagline and original Il mio mese / Il mio anno routes.
