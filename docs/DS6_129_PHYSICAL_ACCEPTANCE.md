@@ -16,8 +16,10 @@ Fill these from actual GitHub Actions output. Do not substitute prior-release ev
 - AppLab Source Gate run ID/conclusion: NOT VERIFIED
 - Auto-signed ARM64 workflow run and source SHA: NOT VERIFIED
 - Manifest package/versionCode/versionName: NOT VERIFIED
-- Signing certificate SHA256 compared to installed +128: NOT VERIFIED
-- Exact APK artifact URL, byte length and SHA256: NOT VERIFIED
+- Verified +128 release-manifest signing certificate SHA256: `31BE63155C831F062238179EC9B8F19D1C16A925BED1D526BC7E6A4712C62DC3` (source +128 manifest, not a check against the installed phone).
+- Verify +129 certificate SHA256 equals that +128 manifest fingerprint: NOT VERIFIED
+- Verified +128 prior artifact SHA256: `d1fa6b9ba8df521a92114ad5da9bc6fbc6ab51bf971eeee660e0cf05331454cd` (prior stable-signed ZIP manifest).
+- Exact +129 APK artifact URL, byte length and SHA256: NOT VERIFIED
 - In-place install over +128 and record retention: NOT VERIFIED
 - Physical devices/OEM/Android/installer signatures: NOT VERIFIED
 - Google Play distribution: NOT AUTHORIZED.
