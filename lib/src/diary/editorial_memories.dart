@@ -113,7 +113,16 @@ extension _EditorialMemoriesPresentation on _DiaryMemoriesScreenState {
                           color: colors.accent,
                           size: 32,
                         ),
-                        const SizedBox(height: 24),
+                        const SizedBox(height: 20),
+                        Container(
+                          width: 60,
+                          height: 2,
+                          decoration: BoxDecoration(
+                            color: colors.accent.withValues(alpha: 0.62),
+                            borderRadius: BorderRadius.circular(2),
+                          ),
+                        ),
+                        const SizedBox(height: 16),
                         Text(
                           title,
                           key: const ValueKey<String>(
