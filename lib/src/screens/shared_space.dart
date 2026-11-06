@@ -464,9 +464,12 @@ class _SharedSpaceHubScreenState extends State<SharedSpaceHubScreen> {
         cloud,
         widget.store.sharedRevision,
         widget.store.accountRevision,
+        AnnaEditorialTodayMode.enabled,
       ]),
       builder: (context, _) {
         final accent = context.accentSurface;
+        final editorial = AnnaEditorialTodayMode.enabled.value;
+        final colors = AnnaEditorialColors.of(context);
         return Scaffold(
           appBar: AppBar(
             title: Text(
@@ -529,7 +532,16 @@ class _SharedSpaceHubScreenState extends State<SharedSpaceHubScreen> {
                         Container(
                           padding: const EdgeInsets.all(20),
                           decoration: BoxDecoration(
-                            gradient: accent.gradient,
+                            gradient: editorial
+                                ? LinearGradient(
+                                    begin: Alignment.topLeft,
+                                    end: Alignment.bottomRight,
+                                    colors: [colors.featuredStart, colors.featuredEnd],
+                                  )
+                                : accent.gradient,
+                            border: editorial
+                                ? Border.all(color: colors.border)
+                                : null,
                             borderRadius: BorderRadius.circular(26),
                           ),
                           child: Column(
@@ -538,23 +550,29 @@ class _SharedSpaceHubScreenState extends State<SharedSpaceHubScreen> {
                               Icon(
                                 Icons.groups_outlined,
                                 size: 30,
-                                color: accent.foreground,
+                                color: editorial ? colors.accent : accent.foreground,
                               ),
                               const SizedBox(height: 10),
                               Text(
                                 AnnaStrings.of(context).d3('sharedSpace'),
-                                style: TextStyle(
-                                  color: accent.foreground,
-                                  fontSize: 23,
-                                  fontWeight: FontWeight.w900,
-                                ),
+                                style: editorial
+                                    ? AnnaJournalTypography.editorial(
+                                        context, size: 26,
+                                      ).copyWith(color: colors.ink)
+                                    : TextStyle(
+                                        color: accent.foreground,
+                                        fontSize: 23,
+                                        fontWeight: FontWeight.w900,
+                                      ),
                               ),
                               const SizedBox(height: 6),
                               Text(
                                 '${AnnaStrings.of(context).d3('sharedRealtimeIntro')} '
                                 '${AnnaStrings.of(context).d3('offlineQueue')}',
                                 style: TextStyle(
-                                  color: accent.secondaryForeground,
+                                  color: editorial
+                                      ? colors.mutedInk
+                                      : accent.secondaryForeground,
                                 ),
                               ),
                             ],
@@ -2972,12 +2990,15 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
         CloudSyncService.instance,
         widget.store.sharedRevision,
         widget.store.syncRevision,
+        AnnaEditorialTodayMode.enabled,
       ]),
       builder: (context, _) => Scaffold(
         appBar: AppBar(
           title: Text(
             widget.space.name,
-            style: const TextStyle(fontWeight: FontWeight.w900),
+            style: AnnaEditorialTodayMode.enabled.value
+                ? AnnaJournalTypography.editorial(context, size: 25)
+                : const TextStyle(fontWeight: FontWeight.w900),
           ),
           actions: [
             IconButton(
