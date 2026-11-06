@@ -59,6 +59,14 @@ class _SettingsHubScreenState extends State<SettingsHubScreen> {
     );
   }
 
+  Widget _groupSurface({required Widget child}) {
+    if (!AnnaEditorialTodayMode.enabled.value) return SimpleCard(child: child);
+    return AnnaEditorialSurface(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
+      child: child,
+    );
+  }
+
   Widget _tile({
     required String id,
     required IconData icon,
@@ -98,6 +106,7 @@ class _SettingsHubScreenState extends State<SettingsHubScreen> {
       animation: Listenable.merge([
         PremiumEntitlementService.instance,
         store.settingsRevision,
+        AnnaEditorialTodayMode.enabled,
       ]),
       builder: (context, _) => Scaffold(
         appBar: AppBar(
@@ -120,6 +129,57 @@ class _SettingsHubScreenState extends State<SettingsHubScreen> {
                 AnnaDesignTokens.spaceXl,
               ),
               children: [
+                if (AnnaEditorialTodayMode.enabled.value) ...[
+                  AnnaEditorialHeader(
+                    title: strings.settings,
+                    eyebrow: strings.d3('personalizationTitle'),
+                  ),
+                  const SizedBox(height: AnnaDesignTokens.spaceLg),
+                  AnnaEditorialSurface(
+                    key: const ValueKey<String>('ds6-settings-color-preview'),
+                    tone: AnnaEditorialSurfaceTone.featured,
+                    semanticLabel: strings.d3('appearanceColorsTitle'),
+                    onTap: () => _open(
+                      context, AppearanceColorsScreen(store: store)),
+                    child: Row(
+                      children: [
+                        Container(
+                          width: 44, height: 44,
+                          decoration: BoxDecoration(
+                            color: Theme.of(context).colorScheme.primary,
+                            borderRadius: BorderRadius.circular(14),
+                          ),
+                        ),
+                        const SizedBox(width: 13),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                strings.d3('appearanceColorsTitle'),
+                                style: AnnaJournalTypography.editorial(
+                                  context, size: 21),
+                              ),
+                              const SizedBox(height: 5),
+                              Text(
+                                store.preferences.useCustomPalette
+                                    ? strings.d3('appearanceCustom')
+                                    : strings.agendaPaletteLabel(
+                                        store.preferences.palette),
+                                style: Theme.of(context).textTheme.bodySmall,
+                              ),
+                            ],
+                          ),
+                        ),
+                        Icon(
+                          Icons.arrow_forward_rounded,
+                          color: AnnaEditorialColors.of(context).accent,
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: AnnaDesignTokens.spaceLg),
+                ],
                 TextField(
                   key: const ValueKey('qw2-settings-search'),
                   controller: _search,
@@ -277,7 +337,7 @@ class _SettingsHubScreenState extends State<SettingsHubScreen> {
                 Semantics(
                   identifier: 'settings-hub-edit-name',
                   button: true,
-                  child: SimpleCard(
+                  child: _groupSurface(
                     child: ListTile(
                       key: const ValueKey<String>('settings-hub-edit-name'),
                       leading: const Icon(Icons.edit_outlined),
@@ -295,11 +355,11 @@ class _SettingsHubScreenState extends State<SettingsHubScreen> {
                   ),
                 ),
                 const SizedBox(height: AnnaDesignTokens.spaceLg),
-                AnnaJournalSectionHeading(
-                  title: strings.d3('personalizationTitle'),
-                ),
+                AnnaEditorialTodayMode.enabled.value
+                    ? AnnaEditorialSectionHeading(title: strings.d3('personalizationTitle'))
+                    : AnnaJournalSectionHeading(title: strings.d3('personalizationTitle')),
                 const SizedBox(height: AnnaDesignTokens.spaceSm),
-                SimpleCard(
+                _groupSurface(
                   child: Column(
                     children: [
                       _tile(
@@ -341,11 +401,11 @@ class _SettingsHubScreenState extends State<SettingsHubScreen> {
                   ),
                 ),
                 const SizedBox(height: AnnaDesignTokens.spaceLg),
-                AnnaJournalSectionHeading(
-                  title: strings.v100DataSection,
-                ),
+                AnnaEditorialTodayMode.enabled.value
+                    ? AnnaEditorialSectionHeading(title: strings.v100DataSection)
+                    : AnnaJournalSectionHeading(title: strings.v100DataSection),
                 const SizedBox(height: AnnaDesignTokens.spaceSm),
-                SimpleCard(
+                _groupSurface(
                   child: Column(
                     children: [
                       _tile(

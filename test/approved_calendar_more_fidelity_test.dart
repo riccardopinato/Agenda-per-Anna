@@ -29,9 +29,9 @@ void main() {
     expect(planner, contains('class DayTimeline extends StatelessWidget'));
   });
 
-  test('More keeps every existing route and renders uniform 58px rows', () {
+  test('More preserves routes and minimum 58px accessible rows', () {
     final more = source('lib/src/screens/more_screen.dart');
-    expect(more, contains('height: 58,'));
+    expect(more, contains('minHeight: 58'));
     for (final id in [
       'more-search', 'more-inbox', 'more-private-vault',
       'more-explore', 'more-archive', 'more-backup', 'more-cloud',
