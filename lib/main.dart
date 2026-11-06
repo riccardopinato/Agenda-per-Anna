@@ -120,6 +120,7 @@ part 'src/widgets_editors.dart';
 part 'src/diary/diary_templates.dart';
 part 'src/diary/diary_components.dart';
 part 'src/diary/diary_memories.dart';
+part 'src/diary/editorial_memories.dart';
 part 'src/diary/diary_contextual_memory.dart';
 part 'src/diary/diary_global_search.dart';
 part 'src/diary/diary_sketchbook.dart';
