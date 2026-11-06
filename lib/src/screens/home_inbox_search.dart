@@ -804,6 +804,7 @@ class _InboxScreenState extends State<InboxScreen> {
     );
   }
   String? selectedCategory;
+  String _noteQuery = '';
 
   Future<void> _convertToTask(
     BuildContext context,
@@ -1085,7 +1086,14 @@ class _InboxScreenState extends State<InboxScreen> {
         final editorial = AnnaEditorialTodayMode.enabled.value;
         final entries = selectedCategory == null
             ? [...store.activeInboxEntries]
-            : store.inboxEntriesInCategory(selectedCategory!);
+            : [...store.inboxEntriesInCategory(selectedCategory!)];
+        // DS6: local, authorized Inbox title/tag filtering, no new index.
+        final needle = _noteQuery.trim().toLowerCase();
+        if (needle.isNotEmpty) {
+          entries.removeWhere((entry) =>
+              !entry.text.toLowerCase().contains(needle) &&
+              !entry.tags.any((tag) => tag.toLowerCase().contains(needle)));
+        }
         entries.sort((a, b) {
           if (a.pinned != b.pinned) return a.pinned ? -1 : 1;
           return b.createdAt.compareTo(a.createdAt);
@@ -1186,6 +1194,24 @@ class _InboxScreenState extends State<InboxScreen> {
                   ],
                 ),
               ),
+              if (editorial)
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(14, 3, 14, 8),
+                  child: TextField(
+                    key: const ValueKey<String>('ds6-inbox-search'),
+                    textInputAction: TextInputAction.search,
+                    decoration: InputDecoration(
+                      prefixIcon: const Icon(Icons.search),
+                      hintText: strings.search,
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      isDense: true,
+                    ),
+                    onChanged: (value) =>
+                        setState(() => _noteQuery = value),
+                  ),
+                ),
               Expanded(
                 child: entries.isEmpty
               ? Center(
