@@ -1,5 +1,30 @@
 part of '../../main.dart';
 
+// DS6 approved visual-only copy, localized for all five app languages.
+String ds6MoreHeading(String code) => switch (code) {
+  'en' => 'Your little world.',
+  'es' => 'Todo tu mundo.',
+  'fr' => 'Tout ton univers.',
+  'pt' => 'Todo o teu mundo.',
+  _ => 'Tutto il tuo mondo.',
+};
+
+String ds6MoreKicker(String code) => switch (code) {
+  'en' => 'YOUR SPACE, YOUR WAY',
+  'es' => 'TU ESPACIO, A TU MANERA',
+  'fr' => 'TON ESPACE, À TA FAÇON',
+  'pt' => 'O TEU ESPAÇO, À TUA MANEIRA',
+  _ => 'IL TUO SPAZIO, A MODO TUO',
+};
+
+String ds6MoreIntro(String code) => switch (code) {
+  'en' => 'Everything in its place, without losing what matters.',
+  'es' => 'Todo en su lugar, sin perder lo importante.',
+  'fr' => 'Chaque chose à sa place, sans perdre l’essentiel.',
+  'pt' => 'Tudo no seu lugar, sem perder o que importa.',
+  _ => 'Ogni cosa al suo posto, senza perdere ciò che conta.',
+};
+
 class MoreScreen extends StatelessWidget {
   final AgendaStore store;
 
@@ -23,8 +48,8 @@ class MoreScreen extends StatelessWidget {
       label: title,
       onTap: onTap,
       excludeSemantics: true,
-      child: SizedBox(
-        height: 58,
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(minHeight: 58),
         child: ListTile(
         key: ValueKey<String>(id),
         dense: true,
@@ -40,6 +65,18 @@ class MoreScreen extends StatelessWidget {
         onTap: onTap,
         ),
       ),
+    );
+  }
+
+  Widget _sectionCard({
+    required bool editorial,
+    required AnnaVisualDomain domain,
+    required Widget child,
+  }) {
+    if (!editorial) return AnnaJournalCard(domain: domain, child: child);
+    return AnnaEditorialSurface(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
+      child: child,
     );
   }
 
@@ -60,9 +97,11 @@ class MoreScreen extends StatelessWidget {
         store.sharedRevision,
         store.settingsRevision,
         store.backupRevision,
+        AnnaEditorialTodayMode.enabled,
       ]),
       builder: (context, _) {
         final prefs = store.preferences;
+        final editorial = AnnaEditorialTodayMode.enabled.value;
         return Scaffold(
           appBar: AppBar(
             toolbarHeight: 78,
@@ -84,6 +123,52 @@ class MoreScreen extends StatelessWidget {
                   AnnaDesignTokens.spaceXl,
                 ),
                 children: [
+                  if (editorial) ...[
+                    AnnaEditorialHeader(
+                      title: ds6MoreHeading(strings.languageCode),
+                      eyebrow: ds6MoreKicker(strings.languageCode),
+                      subtitle: ds6MoreIntro(strings.languageCode),
+                    ),
+                    const SizedBox(height: AnnaDesignTokens.spaceLg),
+                    AnnaEditorialSurface(
+                      key: const ValueKey<String>('ds6-more-profile'),
+                      tone: AnnaEditorialSurfaceTone.featured,
+                      semanticLabel: strings.settings,
+                      onTap: () => _open(context, SettingsScreen(store: store)),
+                      child: Row(
+                        children: [
+                          Container(
+                            width: 49, height: 49,
+                            alignment: Alignment.center,
+                            decoration: BoxDecoration(
+                              color: AnnaEditorialColors.of(context).quiet,
+                              borderRadius: BorderRadius.circular(16),
+                            ),
+                            child: Icon(
+                              Icons.person_outline,
+                              color: AnnaEditorialColors.of(context).accent,
+                            ),
+                          ),
+                          const SizedBox(width: 13),
+                          Expanded(
+                            child: Text(
+                              prefs.displayName.trim().isEmpty
+                                  ? approvedHolderNamePlaceholder(strings.languageCode)
+                                  : prefs.displayName.trim(),
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                              style: AnnaJournalTypography.editorial(context, size: 21),
+                            ),
+                          ),
+                          Icon(
+                            Icons.arrow_forward_rounded,
+                            color: AnnaEditorialColors.of(context).accent,
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: AnnaDesignTokens.spaceLg),
+                  ],
                   _SyncAttentionCard(store: store),
                   if (store.hasStorageWarnings) ...[
                     const SizedBox(height: AnnaDesignTokens.spaceSm),
@@ -108,11 +193,12 @@ class MoreScreen extends StatelessWidget {
                     key: ValueKey('qw2-favorites-${store.activeAccountId ?? 'guest'}'),
                     store: store,
                   ),
-                  AnnaJournalSectionHeading(
-                    title: strings.d3('moreQuickAccess'),
-                  ),
+                  editorial
+                      ? AnnaEditorialSectionHeading(title: strings.d3('moreQuickAccess'))
+                      : AnnaJournalSectionHeading(title: strings.d3('moreQuickAccess')),
                   const SizedBox(height: AnnaDesignTokens.spaceSm),
-                  AnnaJournalCard(
+                  _sectionCard(
+                    editorial: editorial,
                     domain: AnnaVisualDomain.today,
                     child: Column(
                       children: [
@@ -147,13 +233,14 @@ class MoreScreen extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: AnnaDesignTokens.spaceLg),
-                  AnnaJournalSectionHeading(
-                    title: strings.d3('moreYourSpace'),
-                  ),
+                  editorial
+                      ? AnnaEditorialSectionHeading(title: strings.d3('moreYourSpace'))
+                      : AnnaJournalSectionHeading(title: strings.d3('moreYourSpace')),
                   const SizedBox(height: AnnaDesignTokens.spaceSm),
                   if (prefs.isModuleEnabled(AppModule.privateVault)) ...[
-                    AnnaJournalCard(
-                      domain: AnnaVisualDomain.vault,
+                    _sectionCard(
+                    editorial: editorial,
+                    domain: AnnaVisualDomain.vault,
                       child: _tile(
                         id: 'more-private-vault',
                         domain: AnnaVisualDomain.vault,
@@ -169,8 +256,9 @@ class MoreScreen extends StatelessWidget {
                     const SizedBox(height: AnnaDesignTokens.spaceSm),
                   ],
                   if (prefs.isModuleEnabled(AppModule.memories)) ...[
-                    AnnaJournalCard(
-                      domain: AnnaVisualDomain.memories,
+                    _sectionCard(
+                    editorial: editorial,
+                    domain: AnnaVisualDomain.memories,
                       child: _tile(
                         id: 'more-future-letters',
                         domain: AnnaVisualDomain.memories,
@@ -184,7 +272,8 @@ class MoreScreen extends StatelessWidget {
                     ),
                     const SizedBox(height: AnnaDesignTokens.spaceSm),
                   ],
-                  AnnaJournalCard(
+                  _sectionCard(
+                    editorial: editorial,
                     domain: AnnaVisualDomain.people,
                     child: _tile(
                       id: 'more-explore',
@@ -199,11 +288,12 @@ class MoreScreen extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: AnnaDesignTokens.spaceLg),
-                  AnnaJournalSectionHeading(
-                    title: strings.d3('moreDataAndApp'),
-                  ),
+                  editorial
+                      ? AnnaEditorialSectionHeading(title: strings.d3('moreDataAndApp'))
+                      : AnnaJournalSectionHeading(title: strings.d3('moreDataAndApp')),
                   const SizedBox(height: AnnaDesignTokens.spaceSm),
-                  AnnaJournalCard(
+                  _sectionCard(
+                    editorial: editorial,
                     domain: AnnaVisualDomain.ecosystem,
                     child: Column(
                       children: [
