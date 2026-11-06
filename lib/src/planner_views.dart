@@ -44,7 +44,10 @@ class _CalendarHubScreenState extends State<CalendarHubScreen> {
   @override
   Widget build(BuildContext context) {
     final strings = AnnaStrings.of(context);
-    return Scaffold(
+    return ValueListenableBuilder<bool>(
+      valueListenable: AnnaEditorialTodayMode.enabled,
+      builder: (context, editorial, _) => Scaffold(
+      backgroundColor: editorial ? AnnaEditorialColors.of(context).canvas : null,
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => showUnifiedCapture(
           context,
@@ -56,10 +59,14 @@ class _CalendarHubScreenState extends State<CalendarHubScreen> {
         label: Text(strings.d3('ui5Create')),
       ),
       appBar: AppBar(
+        backgroundColor: editorial ? AnnaEditorialColors.of(context).canvas : null,
+        surfaceTintColor: editorial ? Colors.transparent : null,
         toolbarHeight: 78,
         title: Text(
           strings.calendar,
-          style: Theme.of(context).textTheme.headlineMedium,
+          style: editorial
+              ? AnnaJournalTypography.editorial(context, size: 29)
+              : Theme.of(context).textTheme.headlineMedium,
         ),
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(58),
@@ -69,6 +76,9 @@ class _CalendarHubScreenState extends State<CalendarHubScreen> {
               width: double.infinity,
               child: SegmentedButton<_CalendarHubView>(
                 style: ButtonStyle(
+                  backgroundColor: editorial
+                      ? WidgetStatePropertyAll(AnnaEditorialColors.of(context).quiet)
+                      : null,
                   minimumSize: const WidgetStatePropertyAll(Size(0, 44)),
                   shape: WidgetStatePropertyAll(
                     RoundedRectangleBorder(
@@ -114,7 +124,11 @@ class _CalendarHubScreenState extends State<CalendarHubScreen> {
                 approvedCalendarTagline(strings.languageCode),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: AnnaJournalTypography.editorial(context, size: 18),
+                style: AnnaJournalTypography.editorial(
+                  context, size: editorial ? 20 : 18,
+                ).copyWith(
+                  color: editorial ? AnnaEditorialColors.of(context).ink : null,
+                ),
               ),
             ),
           ),
@@ -125,10 +139,9 @@ class _CalendarHubScreenState extends State<CalendarHubScreen> {
               AnnaDesignTokens.spaceMd,
               0,
             ),
-            child: AnnaJournalCard(
-              domain: AnnaVisualDomain.calendar,
-              padding: const EdgeInsets.all(AnnaDesignTokens.spaceXs),
-              child: Row(
+            child: Builder(
+              builder: (context) {
+                final notebookLinks = Row(
                 children: [
                   Expanded(
                     child: Semantics(
@@ -172,7 +185,19 @@ class _CalendarHubScreenState extends State<CalendarHubScreen> {
                   ),
                 ),
                 ],
-              ),
+              );
+                return editorial
+                    ? AnnaEditorialSurface(
+                        key: const ValueKey<String>('editorial-calendar-notebooks'),
+                        padding: const EdgeInsets.all(8),
+                        child: notebookLinks,
+                      )
+                    : AnnaJournalCard(
+                        domain: AnnaVisualDomain.calendar,
+                        padding: const EdgeInsets.all(AnnaDesignTokens.spaceXs),
+                        child: notebookLinks,
+                      );
+              },
             ),
           ),
           const SizedBox(height: AnnaDesignTokens.spaceXs),
@@ -200,6 +225,7 @@ class _CalendarHubScreenState extends State<CalendarHubScreen> {
           ),
         ],
       ),
+    ),
     );
   }
 }
