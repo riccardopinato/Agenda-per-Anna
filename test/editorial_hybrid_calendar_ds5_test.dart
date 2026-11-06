@@ -99,11 +99,11 @@ void main() {
 
   testWidgets('Classic calendar surface still uses original Card',
       (tester) async {
-    await tester.pumpWidget(MaterialApp(
+    await tester.pumpWidget(const MaterialApp(
       home: Scaffold(
         body: AnnaEditorialCalendarPanel(
           enabled: false,
-          child: const Text('Il mio anno'),
+          child: Text('Il mio anno'),
         ),
       ),
     ));
