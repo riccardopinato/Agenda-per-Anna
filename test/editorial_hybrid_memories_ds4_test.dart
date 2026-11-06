@@ -93,10 +93,12 @@ void main() {
     await tester.pumpWidget(
       AgendaApp(store: store, bypassIdentityForTesting: true),
     );
-    await tester.pumpAndSettle();
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 650));
 
     await tester.tap(find.byKey(const ValueKey<String>('main-nav-memories')));
-    await tester.pumpAndSettle();
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 650));
 
     expect(find.byKey(const ValueKey<String>('memories-editorial-featured')),
         findsOneWidget);
@@ -105,7 +107,8 @@ void main() {
     expect(tester.takeException(), isNull);
 
     AnnaEditorialTodayMode.enabled.value = false;
-    await tester.pumpAndSettle();
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 650));
     expect(find.byKey(const ValueKey<String>('memories-editorial-featured')),
         findsNothing);
     expect(find.byKey(const ValueKey<String>('memories-editorial-hero')),
