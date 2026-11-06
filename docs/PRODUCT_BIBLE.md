@@ -1,5 +1,9 @@
 # Anna's Diary — Product Bible
 
+## DS6 Premium Editorial — 7 November 2026 (10/10 APPROVED)
+
+The next visual refinement cycle received 10/10 explicit user approvals after the original 31 October ten-screen contract. Its canonical product/design contract is [DS6_PREMIUM_EDITORIAL_10_10_20261107.md](DS6_PREMIUM_EDITORIAL_10_10_20261107.md). The changes are incremental over the signed +128 Editorial Hybrid shell, not a rewrite. **Privacy First: no source or visual change inside the Private Vault.** Shared-space server ownership, real-data writers, Classic reversible mode, five palettes/HSV, global Search exclusions, selected-day Capture and all existing routes remain authoritative. Implemented source, merged CI, signed APK and physical acceptance remain separate gates.
+
 **Status:** all 10/10 approved screen source deltas merged; approved 10-screen design and the four 4 November CAP maxi-steps are source-integrated. User explicitly accepted the Android +123 P0 physical gate at a general level on 4 November 2026 (`USER_ATTESTED_GENERAL_PASS`); no per-scenario/device/fingerprint proof was supplied. Privacy V2 #215 and Google Calendar Direct #199 remain independent DRAFT / DO NOT MERGE.
 **Distribution identity:** `1.0.0-rc.6+123` stable-signed ARM64 APK built from `main@20b0d2c7375f4e33e0009e04e82c666cf07a3128`, signed workflow [#41871951662](https://github.com/riccardopinato/Agenda-per-Anna/actions/runs/41871951662), artifact ID 13346141160. Source Development/Android-native PASS; the Pages backend lock was recovered via workflow #41927266625 attempt 3. New P1/P2 source is merged and targets the separate rc.6+124 signed candidate. Play, iOS, two-device E2EE specifics, and per-test physical reports are not independently certified.
 **Last aligned:** 5 November 2026 (+123 signed and user-attested general P0; P1/P2 source merged; +124 signing, Store and specialist device QA independently gated)
