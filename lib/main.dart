@@ -55,6 +55,7 @@ part 'src/theme_semantics.dart';
 part 'src/motion_v108.dart';
 part 'src/ios_journal_design.dart';
 part 'src/editorial_hybrid_design.dart';
+part 'src/editorial_calendar.dart';
 part 'src/editorial_today_home.dart';
 part 'src/day_hub_domain.dart';
 part 'src/daily_rituals.dart';
