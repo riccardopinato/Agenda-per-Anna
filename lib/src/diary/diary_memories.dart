@@ -1879,8 +1879,7 @@ class _DiaryMemoriesScreenState extends State<DiaryMemoriesScreen> {
                           : null,
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        Card(
-                          margin: const EdgeInsets.only(bottom: 6),
+                        _memoryMonthSurface(
                           child: Semantics(
                             button: true,
                             expanded: isExpanded,
@@ -1900,8 +1899,11 @@ class _DiaryMemoriesScreenState extends State<DiaryMemoriesScreen> {
                                     Expanded(
                                       child: AnimatedDefaultTextStyle(
                                         duration: AnnaMotionV108.duration(context, 420),
-                                        style: (Theme.of(context).textTheme.titleMedium ??
-                                            const TextStyle()).copyWith(
+                                        style: (AnnaEditorialTodayMode.enabled.value
+                                            ? AnnaJournalTypography.editorial(
+                                                context, size: 20)
+                                            : (Theme.of(context).textTheme.titleMedium ??
+                                                const TextStyle())).copyWith(
                                           color: _highlightTimelineMonth == entry.key
                                               ? Theme.of(context).colorScheme.primary
                                               : Theme.of(context).colorScheme.onSurface,
