@@ -1,5 +1,14 @@
 # Anna's Diary — Roadmap
 
+## 6 November 2026 — Editorial Hybrid DS5 Calendar and signed +128 bundle
+
+- Approved Calendar C: themed header, palette-aware grid, Month/Week switch, one-line localized tagline and original Il mio mese / Il mio anno routes.
+- Reuse the original calendar date markers, selected-day agenda, filters, external/shared/private events, 07:00–22:00 initially-collapsed hourly slots, and canonical editor. No second writer.
+- Week overview derives from existing real events/tasks, retaining all planners and navigation; Classic mode preserved.
+- Bundle already merged DS4 Ricordi and compact 'Il mio diario' into +128, after exact-head PR/main tests and stable signing. Physical update/no-loss QA remains NOT VERIFIED.
+- [DS5 contract](EDITORIAL_HYBRID_DS5_20261106.md).
+
+
 ## 6 November 2026 — Editorial Hybrid DS4 Ricordi (source implementation)
 
 - **Product-authorized:** redesign Ricordi from the approved B — Diario contemporaneo, reusing the shared Editorial Hybrid DS, only when the local appearance toggle is enabled. Classic remains available.
