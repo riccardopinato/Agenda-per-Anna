@@ -245,6 +245,23 @@ extension _EditorialMemoriesPresentation on _DiaryMemoriesScreenState {
     );
   }
 
+  /// Timeline month accordion keeps its existing expanded state and actions.
+  Widget _memoryMonthSurface({required Widget child}) {
+    if (AnnaEditorialTodayMode.enabled.value) {
+      return Padding(
+        padding: const EdgeInsets.only(bottom: 6),
+        child: AnnaEditorialSurface(
+          padding: EdgeInsets.zero,
+          child: child,
+        ),
+      );
+    }
+    return Card(
+      margin: const EdgeInsets.only(bottom: 6),
+      child: child,
+    );
+  }
+
   Widget _memoryExploreSurface({required Widget child}) {
     if (AnnaEditorialTodayMode.enabled.value) {
       return AnnaEditorialSurface(
