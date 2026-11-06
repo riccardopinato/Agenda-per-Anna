@@ -71,6 +71,10 @@ void main() {
   testWidgets('Editorial Ricordi shows a genuine saved note and Classic returns',
       (tester) async {
     await initializeDateFormatting('it_IT', null);
+    SharedPreferences.setMockInitialValues(<String, Object>{
+      AnnaEditorialTodayMode.storageKey: true,
+    });
+    await AnnaEditorialTodayMode.ensureLoaded();
     final store = AgendaStore();
     await store.load();
 
