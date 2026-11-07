@@ -1133,10 +1133,12 @@ class _InboxScreenState extends State<InboxScreen> {
             builder: (context, constraints) {
               // Preserve search/results on landscape while the IME is visible.
               // Collapse only nonessential header/category/shortcut controls.
-              final compact = constraints.maxHeight < 360;
+              final keyboardVisible =
+                  MediaQuery.viewInsetsOf(context).bottom > 0;
+              final compact = constraints.maxHeight < 360 && keyboardVisible;
               return Column(
                 children: [
-              if (editorial && !compact)
+              if (editorial && constraints.maxHeight >= 380 && !compact)
                 Padding(
                   padding: const EdgeInsets.fromLTRB(18, 8, 18, 8),
                   child: AnnaEditorialHeader(
