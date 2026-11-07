@@ -7,6 +7,41 @@ void main() {
     await initializeDateFormatting('it');
   });
 
+  test('empty, one-character missing and zero-hit queries never crash', () {
+    final store = AgendaStore();
+
+    // personalSearch returns an immutable const [] for empty queries. The
+    // derived DS6 view must still support sorting/filtering without mutating
+    // that source or throwing UnsupportedError on first Search screen open.
+    for (final query in ['', '   ', 'z', 'never-matches']) {
+      for (final order in ApprovedSearchSort.values) {
+        expect(
+          store.approvedPersonalSearch(
+            query,
+            kinds: {PersonalSearchKind.agenda},
+            sort: order,
+          ),
+          isEmpty,
+          reason: 'empty corpus: query="$query" sort=$order',
+        );
+      }
+    }
+
+    store.items.add(AgendaItem(
+      id: 'one',
+      title: 'Cena',
+      note: '',
+      date: DateTime(2026, 11, 7),
+      type: ItemType.task,
+    ));
+    expect(store.approvedPersonalSearch(''), isEmpty);
+    expect(store.approvedPersonalSearch('z',
+      kinds: {PersonalSearchKind.agenda}), isEmpty);
+    // Repeated empty queries must not mutate the canonical source list.
+    expect(store.personalSearch(''), isEmpty);
+    store.dispose();
+  });
+
   test('one-letter search must match visible title, not hidden note', () {
     final store = AgendaStore();
     store.items.addAll([

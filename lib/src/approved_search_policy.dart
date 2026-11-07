@@ -97,12 +97,15 @@ extension ApprovedSearchPolicy on AgendaStore {
     String languageCode = 'it',
     ApprovedSearchSort sort = ApprovedSearchSort.newest,
   }) {
+    // The canonical retriever legitimately returns const [] for empty queries
+    // and other non-result paths. Sort/filter/fuzzy completion below must own
+    // a writable derived list without mutating the canonical source result.
     final hits = personalSearch(
       query,
       kinds: kinds,
       includeArchived: includeArchived,
       languageCode: languageCode,
-    );
+    ).toList(growable: true);
     if (query.trim().runes.length == 1) {
       final letter = query.trim().toLowerCase();
       hits.removeWhere((hit) => !hit.title.toLowerCase().contains(letter));

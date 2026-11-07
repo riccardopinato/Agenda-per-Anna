@@ -1,5 +1,13 @@
 # Anna's Diary — Roadmap
 
+## 7 November 2026 — Web-first cadence + DS6 Step 2 (owner-authorized)
+
+- **Execution channel:** Flutter Web / installed Chrome PWA on the owner's and Anna's devices for the daily visual/UX feedback cycle. Protected PR -> exact-head Flutter/Web/AppLab Source Gate -> merge -> GitHub Pages deploy -> user observation. No automatic APK for each UI iteration; periodical signed Android QA remains on-demand and uses a strictly increasing versionCode. A PWA is Flutter Web, not an Android native APK.
+- **Previous audit Step 1:** owner accepts continuing without blocking on full physical QA. State is `WEB_FIRST_ACCEPTED / CONTINUOUS_OBSERVATION`, **not** `PHYSICAL_DEVICE_VERIFIED`; native Vault, screenshot protection, notification reliability, account/E2EE, backup and shared QR/backend testing keep their original independent gates.
+- **Step 2 now active:** bounded visual/responsive and performance QA for all ten DS6 surfaces; synthetic Flutter widget regression at small/tablet breakpoints, original visual matrix #237 still without approved captures, two-person Web feedback on actual devices. Source and evidence plan: [WEB_FIRST_DS6_STEP2_QA_20261107.md](WEB_FIRST_DS6_STEP2_QA_20261107.md).
+- Web `main@3105c47` includes the single-line Oggi ticker; existing signed +129 APK was built earlier at `cb8c3d0`. Subsequent stable signing workflow skips unchanged build number by design. Do not claim binary/Web parity or install an unversioned replacement.
+- Web releases may require refreshing/reopening an installed PWA to load the latest build; never force a reload during an unsaved editor state. Actual UI observations and performance timings are not certified by source-only tests.
+
 ## 7 November 2026 — DS6 Premium Editorial (10/10 approved; implementation in progress)
 
 - Baseline: App-Factory-Core `3481a8190a5db5965bb22f84832094268d05be98`, Anna's Diary +128 `01151f379ebd9669c3936058aa089433a05a63ae`.
