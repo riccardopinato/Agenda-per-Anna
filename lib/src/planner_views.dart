@@ -15,6 +15,108 @@ String approvedTodayGreeting(String lang, String displayName, int hour) {
   return name.isEmpty ? greetings[part] : '${greetings[part]}, $name';
 }
 
+/// DS6: a single compact Today header sharing its row with the original
+/// Calendar and Classic buttons. Greeting layout is based on real free width.
+class AnnaTodayEditorialGreetingToolbar extends StatelessWidget {
+  final String greeting;
+  final String calendarTooltip;
+  final String classicTooltip;
+  final VoidCallback onOpenCalendar;
+  final VoidCallback onReturnToClassic;
+
+  const AnnaTodayEditorialGreetingToolbar({
+    super.key,
+    required this.greeting,
+    required this.calendarTooltip,
+    required this.classicTooltip,
+    required this.onOpenCalendar,
+    required this.onReturnToClassic,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = AnnaEditorialColors.of(context);
+    final label = greeting.replaceFirst(', ', ',\n');
+    final scaler = MediaQuery.textScalerOf(context);
+    final direction = Directionality.of(context);
+
+    return Row(
+      key: const ValueKey<String>('ds6-today-compact-header'),
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Expanded(
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              // The old hero was 36sp; this heading is capped at 32sp.
+              // Fill the available width while respecting long names and
+              // all five localizations. Large accessibility text can wrap.
+              var fontSize = 32.0;
+              for (; fontSize > 17.0; fontSize -= 0.5) {
+                final style = AnnaJournalTypography.editorial(
+                  context, size: fontSize,
+                ).copyWith(
+                  height: 1.11,
+                  letterSpacing: -0.55,
+                  color: colors.ink,
+                );
+                var fits = true;
+                for (final line in label.split('\n')) {
+                  final painter = TextPainter(
+                    text: TextSpan(text: line, style: style),
+                    textDirection: direction,
+                    textScaler: scaler,
+                    maxLines: 1,
+                  )..layout(maxWidth: double.infinity);
+                  final measuredWidth = painter.width;
+                  painter.dispose();
+                  if (measuredWidth > constraints.maxWidth) {
+                    fits = false;
+                    break;
+                  }
+                }
+                if (fits) break;
+              }
+              return Padding(
+                padding: const EdgeInsets.only(top: 3),
+                child: Semantics(
+                  header: true,
+                  label: greeting,
+                  child: ExcludeSemantics(
+                    child: Text(
+                      label,
+                      key: const ValueKey<String>('ds6-today-greeting'),
+                      softWrap: true,
+                      style: AnnaJournalTypography.editorial(
+                        context, size: fontSize,
+                      ).copyWith(
+                        height: 1.11,
+                        letterSpacing: -0.55,
+                        color: colors.ink,
+                      ),
+                    ),
+                  ),
+                ),
+              );
+            },
+          ),
+        ),
+        IconButton(
+          key: const ValueKey<String>('today-open-calendar'),
+          tooltip: calendarTooltip,
+          onPressed: onOpenCalendar,
+          icon: const Icon(Icons.calendar_month_outlined),
+        ),
+        IconButton(
+          key: const ValueKey<String>('today-editorial-disable'),
+          tooltip: classicTooltip,
+          onPressed: onReturnToClassic,
+          icon: const Icon(Icons.view_agenda_outlined),
+        ),
+      ],
+    );
+  }
+}
+
 String approvedCalendarTagline(String languageCode) => switch (languageCode) {
   'en' => 'Every day, a story.',
   'es' => 'Cada día, una historia.',
@@ -861,46 +963,28 @@ class _PlannerScreenState extends State<PlannerScreen> {
                       padding: const EdgeInsets.fromLTRB(20, 14, 20, 110),
                       children: [
                         if (editorial) ...[
-                          Row(
-                            children: [
-                              Expanded(
-                                child: Text(
-                                  'Anna’s Diary',
-                                  style: AnnaJournalTypography.editorial(
-                                    context, size: 22,
-                                  ),
-                                ),
-                              ),
-                              IconButton(
-                                key: const ValueKey<String>('today-open-calendar'),
-                                tooltip: strings.navCalendar,
-                                onPressed: () => Navigator.push(
-                                  context,
-                                  MaterialPageRoute<void>(
-                                    builder: (_) => CalendarHubScreen(store: widget.store),
-                                  ),
-                                ),
-                                icon: const Icon(Icons.calendar_month_outlined),
-                              ),
-                              IconButton(
-                                key: const ValueKey<String>('today-editorial-disable'),
-                                tooltip: annaEditorialTodayModeLabel(
-                                  strings.languageCode, returnToClassic: true,
-                                ),
-                                onPressed: () => unawaited(_setEditorialMode(false)),
-                                icon: const Icon(Icons.view_agenda_outlined),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 25),
-                          AnnaEditorialHeader(
-                            title: approvedTodayGreeting(
+                          AnnaTodayEditorialGreetingToolbar(
+                            greeting: approvedTodayGreeting(
                               strings.languageCode,
                               widget.store.preferences.displayName,
                               DateTime.now().hour,
                             ),
-                            subtitle: _dailyQuote(day, strings).$2,
+                            calendarTooltip: strings.navCalendar,
+                            classicTooltip: annaEditorialTodayModeLabel(
+                              strings.languageCode, returnToClassic: true,
+                            ),
+                            onOpenCalendar: () => Navigator.push(
+                              context,
+                              MaterialPageRoute<void>(
+                                builder: (_) => CalendarHubScreen(
+                                  store: widget.store,
+                                ),
+                              ),
+                            ),
+                            onReturnToClassic: () =>
+                                unawaited(_setEditorialMode(false)),
                           ),
+                          const SizedBox(height: 12),
                           if (!AgendaStore.sameDay(day, DateTime.now()))
                             Align(
                               alignment: Alignment.centerLeft,
