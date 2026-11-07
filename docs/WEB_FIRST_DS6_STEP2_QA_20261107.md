@@ -54,7 +54,7 @@ Status vocabulary: `SOURCE_PRESENT` / `WIDGET_QA` / `WEB_USER_PASS` / `WEB_USER_
 - Check light/dark/system, rose/lilac/sage/peach/sky/custom HSV, EN/IT/ES/FR/PT, Reduce Motion, on-screen keyboard and gesture insets.
 - Check loading, empty, recoverable error and offline/degraded states. No false `synced` labels when backend not confirmed.
 - No clipping, inaccessible buttons, tap overlap or sensitive content in general search/notifications/widgets.
-- Current tests: `test/ds6_web_first_step2_responsive_test.dart` (synthetic empty account; real Flutter widget shell and routes); original `test/ds6_*.dart`, `test/v107_c2_visual_regression_matrix_test.dart` and `test/v100_golden_core_cleanup_test.dart`.
+- Current tests: `test/ds6_web_first_step2_responsive_test.dart` (synthetic empty account; real Flutter widget shell/More quick actions plus static route wiring); original `test/ds6_*.dart`, `test/v107_c2_visual_regression_matrix_test.dart` and `test/v100_golden_core_cleanup_test.dart`.
 - **Widget test PASS does not imply screenshot comparison, browser Lighthouse, frame timing or physical PASS.**
 
 ## Performance budgets and measurement plan
@@ -82,10 +82,12 @@ The new real-widget More → Search regression exposed a concrete first-open cra
 Bounded correction: copy canonical search results to a writable, ephemeral
 `List<PersonalSearchHit>` before one-character filtering, optional fuzzy
 fallback and sorting. The original source query, permissions, ordering rules,
-storage, Vault exclusion and user data remain unchanged. Added regression tests
-for blank/whitespace, zero-hit one-character and unmatched queries, plus the
-actual More → Search route in a synthetic guest UI journey. Mark this **FIX
-CANDIDATE** until exact-head CI succeeds and Pages deploys; it is not yet proof
+storage, Vault exclusion and user data remain unchanged. Added direct regression tests
+for blank/whitespace, zero-hit one-character and unmatched queries. The first
+synthetic More → Search navigation attempt revealed the bug; the final widget
+suite retains the reliable More entry-point and source-wiring assertions while
+tap-through browser navigation remains an independent live PWA check. Mark
+this **FIX CANDIDATE** until exact-head CI succeeds and Pages deploys; it is not yet proof
 of full interactive browser QA.
 
 ## Next engineering follow-ups
