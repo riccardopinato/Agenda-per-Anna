@@ -1,5 +1,14 @@
 # Anna's Diary — Roadmap
 
+## 7 November 2026 — Parallel work: Step 2 OPEN / Step 3 ACTIVE / Step 4 AUDITED
+
+- **Factory pinned for this work:** App-Factory-Core `989c5123c62c07d1dd85a3c520f0d04b7fe3f543`, CURRENT Master v27, Golden Index v28. Earlier baseline references below are historical.
+- **Step 2 stays OPEN**: ten DS6 screens require real Web/PWA visual QA, accessibility, approved synthetic screenshots and physical-browser performance. No claim of completion based only on widget tests. [Web-first QA matrix](WEB_FIRST_DS6_STEP2_QA_20261107.md).
+- **Step 3 started**: [app alignment](STEP3_CAPABILITY_AND_DOC_ALIGNMENT_20261107.md), catalog audit of 74 Anna associations, sources of CAP-0152/0160 partial implementations, README correction; canonical catalog statuses and generated views still pending synchronized update. No new feature is implicitly approved.
+- **Step 4 preliminary read-only audit**: [Supabase/RLS/security report](STEP4_BACKEND_PRELIMINARY_AUDIT_20261107.md). 16/16 public RLS; two real security WARN, 14 informational unused indexes. No production change, extension move or secret inspection.
+- **Web-first release truth**: Anna `main@dc601002` Pages #42402256546 is deployed; latest signed APK +129 predates it. Continue PWA testing on two devices; native APK only periodically with monotonically higher versionCode.
+- **Boundaries**: Privacy V2 #215 and Google Calendar Direct #199 remain independently gated. Step 1 = WEB_FIRST_ACCEPTED / CONTINUOUS_OBSERVATION, not DEVICE_VERIFIED.
+
 ## 7 November 2026 — Web-first cadence + DS6 Step 2 (owner-authorized)
 
 - **Execution channel:** Flutter Web / installed Chrome PWA on the owner's and Anna's devices for the daily visual/UX feedback cycle. Protected PR -> exact-head Flutter/Web/AppLab Source Gate -> merge -> GitHub Pages deploy -> user observation. No automatic APK for each UI iteration; periodical signed Android QA remains on-demand and uses a strictly increasing versionCode. A PWA is Flutter Web, not an Android native APK.
