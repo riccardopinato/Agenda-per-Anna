@@ -15,10 +15,12 @@ String approvedTodayGreeting(String lang, String displayName, int hour) {
   return name.isEmpty ? greetings[part] : '${greetings[part]}, $name';
 }
 
-/// DS6: a single compact Today header sharing its row with the original
-/// Calendar and Classic buttons. Greeting layout is based on real free width.
-class AnnaTodayEditorialGreetingToolbar extends StatelessWidget {
+/// DS6 Today ticker: the greeting stays on one line in the icon band.
+/// Only presentation changes: the calendar/Classic routes and real account
+/// display name remain owned by PlannerScreen and AgendaStore.
+class AnnaTodayEditorialGreetingToolbar extends StatefulWidget {
   final String greeting;
+  final bool activeInShell;
   final String calendarTooltip;
   final String classicTooltip;
   final VoidCallback onOpenCalendar;
@@ -27,6 +29,7 @@ class AnnaTodayEditorialGreetingToolbar extends StatelessWidget {
   const AnnaTodayEditorialGreetingToolbar({
     super.key,
     required this.greeting,
+    this.activeInShell = true,
     required this.calendarTooltip,
     required this.classicTooltip,
     required this.onOpenCalendar,
@@ -34,82 +37,163 @@ class AnnaTodayEditorialGreetingToolbar extends StatelessWidget {
   });
 
   @override
+  State<AnnaTodayEditorialGreetingToolbar> createState() =>
+      _AnnaTodayEditorialGreetingToolbarState();
+}
+
+class _AnnaTodayEditorialGreetingToolbarState
+    extends State<AnnaTodayEditorialGreetingToolbar>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _ticker;
+  bool _shouldScroll = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _ticker = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 12),
+    );
+  }
+
+  @override
+  void didUpdateWidget(covariant AnnaTodayEditorialGreetingToolbar oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.greeting != widget.greeting) {
+      _ticker.value = 0;
+    }
+  }
+
+  // Synchronize only after layout: the width is unknown before LayoutBuilder.
+  // An inactive or reduced-motion greeting does not keep a ticker running.
+  void _setScrolling(bool active) {
+    // AnimationController.value stops repeat() even when the overflow flag
+    // remains true (e.g. a changed account name / locale). Compare the actual
+    // ticker state too, so updates restart instead of freezing the greeting.
+    if (_shouldScroll == active && _ticker.isAnimating == active) return;
+    _shouldScroll = active;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      if (_shouldScroll) {
+        if (!_ticker.isAnimating) _ticker.repeat();
+      } else {
+        if (_ticker.isAnimating) _ticker.stop();
+        if (_ticker.value != 0) _ticker.value = 0;
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _ticker.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final colors = AnnaEditorialColors.of(context);
-    final label = greeting.replaceFirst(', ', ',\n');
-    final scaler = MediaQuery.textScalerOf(context);
-    final direction = Directionality.of(context);
+    final color = AnnaEditorialColors.of(context).ink;
+    final style = AnnaJournalTypography.editorial(
+      context,
+      size: 26,
+    ).copyWith(height: 1.12, letterSpacing: -0.55, color: color);
 
     return Row(
       key: const ValueKey<String>('ds6-today-compact-header'),
-      crossAxisAlignment: CrossAxisAlignment.start,
+      crossAxisAlignment: CrossAxisAlignment.center,
       children: [
         Expanded(
           child: LayoutBuilder(
             builder: (context, constraints) {
-              // The old hero was 36sp; this heading is capped at 32sp.
-              // Fill the available width while respecting long names and
-              // all five localizations. Large accessibility text can wrap.
-              var fontSize = 32.0;
-              for (; fontSize > 17.0; fontSize -= 0.5) {
-                final style = AnnaJournalTypography.editorial(
-                  context, size: fontSize,
-                ).copyWith(
-                  height: 1.11,
-                  letterSpacing: -0.55,
-                  color: colors.ink,
-                );
-                var fits = true;
-                for (final line in label.split('\n')) {
-                  final painter = TextPainter(
-                    text: TextSpan(text: line, style: style),
-                    textDirection: direction,
-                    textScaler: scaler,
-                    maxLines: 1,
-                  )..layout(maxWidth: double.infinity);
-                  final measuredWidth = painter.width;
-                  painter.dispose();
-                  if (measuredWidth > constraints.maxWidth) {
-                    fits = false;
-                    break;
-                  }
-                }
-                if (fits) break;
-              }
-              return Padding(
-                padding: const EdgeInsets.only(top: 3),
-                child: Semantics(
-                  header: true,
-                  label: greeting,
-                  child: ExcludeSemantics(
-                    child: Text(
-                      label,
-                      key: const ValueKey<String>('ds6-today-greeting'),
-                      softWrap: true,
-                      style: AnnaJournalTypography.editorial(
-                        context, size: fontSize,
-                      ).copyWith(
-                        height: 1.11,
-                        letterSpacing: -0.55,
-                        color: colors.ink,
-                      ),
-                    ),
+              final painter = TextPainter(
+                text: TextSpan(text: widget.greeting, style: style),
+                textDirection: Directionality.of(context),
+                textScaler: MediaQuery.textScalerOf(context),
+                maxLines: 1,
+              )..layout(maxWidth: double.infinity);
+              final textWidth = painter.width;
+              final textHeight = painter.height;
+              painter.dispose();
+
+              final height = textHeight + 8 > 48 ? textHeight + 8 : 48.0;
+              final visibleWidth = constraints.maxWidth;
+              // IndexedStack retains offscreen tabs: never animate a
+              // hidden Today screen (CPU/battery), even with overflow.
+              final scroll = widget.activeInShell &&
+                  AnnaMotionV108.enabled(context) &&
+                  textWidth > visibleWidth + 1;
+              _setScrolling(scroll);
+
+              final text = Semantics(
+                header: true,
+                label: widget.greeting,
+                child: ExcludeSemantics(
+                  child: SizedBox(
+                    key: const ValueKey<String>('ds6-today-greeting'),
+                    height: height,
+                    child: scroll
+                        ? ClipRect(
+                            key: const ValueKey<String>('ds6-today-marquee'),
+                            child: RepaintBoundary(
+                              child: AnimatedBuilder(
+                                animation: _ticker,
+                                builder: (context, _) {
+                                  const gap = 36.0;
+                                  final cycle = textWidth + gap;
+                                  final shift = _ticker.value * cycle;
+                                  final count =
+                                      (visibleWidth / cycle).ceil() + 2;
+                                  return Stack(
+                                    clipBehavior: Clip.hardEdge,
+                                    children: [
+                                      for (var i = 0; i < count; i++)
+                                        Positioned(
+                                          left: i * cycle - shift,
+                                          top: (height - textHeight) / 2,
+                                          width: textWidth + 2,
+                                          child: Text(
+                                            widget.greeting,
+                                            maxLines: 1,
+                                            softWrap: false,
+                                            overflow: TextOverflow.visible,
+                                            style: style,
+                                          ),
+                                        ),
+                                    ],
+                                  );
+                                },
+                              ),
+                            ),
+                          )
+                        : Align(
+                            alignment: Alignment.centerLeft,
+                            child: Text(
+                              widget.greeting,
+                              key: const ValueKey<String>(
+                                'ds6-today-static-greeting',
+                              ),
+                              maxLines: 1,
+                              softWrap: false,
+                              overflow: TextOverflow.ellipsis,
+                              style: style,
+                            ),
+                          ),
                   ),
                 ),
               );
+              return text;
             },
           ),
         ),
         IconButton(
           key: const ValueKey<String>('today-open-calendar'),
-          tooltip: calendarTooltip,
-          onPressed: onOpenCalendar,
+          tooltip: widget.calendarTooltip,
+          onPressed: widget.onOpenCalendar,
           icon: const Icon(Icons.calendar_month_outlined),
         ),
         IconButton(
           key: const ValueKey<String>('today-editorial-disable'),
-          tooltip: classicTooltip,
-          onPressed: onReturnToClassic,
+          tooltip: widget.classicTooltip,
+          onPressed: widget.onReturnToClassic,
           icon: const Icon(Icons.view_agenda_outlined),
         ),
       ],
@@ -964,6 +1048,7 @@ class _PlannerScreenState extends State<PlannerScreen> {
                       children: [
                         if (editorial) ...[
                           AnnaTodayEditorialGreetingToolbar(
+                            activeInShell: widget.activeInShell,
                             greeting: approvedTodayGreeting(
                               strings.languageCode,
                               widget.store.preferences.displayName,
@@ -984,7 +1069,7 @@ class _PlannerScreenState extends State<PlannerScreen> {
                             onReturnToClassic: () =>
                                 unawaited(_setEditorialMode(false)),
                           ),
-                          const SizedBox(height: 12),
+                          const SizedBox(height: 4),
                           if (!AgendaStore.sameDay(day, DateTime.now()))
                             Align(
                               alignment: Alignment.centerLeft,
