@@ -128,6 +128,44 @@ void main() {
     store.dispose();
   });
 
+  testWidgets('DS6 More -> Search opens real synthetic Search screen',
+      (tester) async {
+    // This is Flutter widget navigation with a synthetic guest store.
+    // It is NOT installed-PWA, browser performance or two-account QA.
+    tester.view.physicalSize = const Size(390, 844);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(() {
+      tester.view.resetPhysicalSize();
+      tester.view.resetDevicePixelRatio();
+    });
+
+    final store = AgendaStore();
+    store.preferences = const AgendaPreferences(
+      onboardingDone: true,
+      appLanguage: AppLanguage.italian,
+    );
+    await tester.pumpWidget(
+      AgendaApp(store: store, bypassIdentityForTesting: true),
+    );
+    await tester.pump(const Duration(milliseconds: 400));
+
+    await tester.tap(find.byKey(const ValueKey<String>('main-nav-more')));
+    await tester.pump(const Duration(milliseconds: 500));
+    final search = find.byKey(const ValueKey<String>('more-search'));
+    expect(search, findsOneWidget);
+    await tester.ensureVisible(search);
+    await tester.pump(const Duration(milliseconds: 150));
+    await tester.tap(search);
+    await tester.pump(const Duration(milliseconds: 600));
+
+    expect(find.byType(PersonalSearchConnectionsScreen), findsOneWidget);
+    expect(tester.takeException(), isNull,
+        reason: 'More -> Search must not crash on empty canonical results');
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.pump();
+    store.dispose();
+  });
+
   test('More entry points retain the canonical source-screen routes', () {
     // Source contract only. Real browser tap/navigation will be verified on
     // installed PWAs; no claim of end-to-end pass is made here.
