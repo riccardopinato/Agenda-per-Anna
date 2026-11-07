@@ -20,6 +20,7 @@ String approvedTodayGreeting(String lang, String displayName, int hour) {
 /// display name remain owned by PlannerScreen and AgendaStore.
 class AnnaTodayEditorialGreetingToolbar extends StatefulWidget {
   final String greeting;
+  final bool activeInShell;
   final String calendarTooltip;
   final String classicTooltip;
   final VoidCallback onOpenCalendar;
@@ -28,6 +29,7 @@ class AnnaTodayEditorialGreetingToolbar extends StatefulWidget {
   const AnnaTodayEditorialGreetingToolbar({
     super.key,
     required this.greeting,
+    this.activeInShell = true,
     required this.calendarTooltip,
     required this.classicTooltip,
     required this.onOpenCalendar,
@@ -65,15 +67,18 @@ class _AnnaTodayEditorialGreetingToolbarState
   // Synchronize only after layout: the width is unknown before LayoutBuilder.
   // An inactive or reduced-motion greeting does not keep a ticker running.
   void _setScrolling(bool active) {
-    if (_shouldScroll == active) return;
+    // AnimationController.value stops repeat() even when the overflow flag
+    // remains true (e.g. a changed account name / locale). Compare the actual
+    // ticker state too, so updates restart instead of freezing the greeting.
+    if (_shouldScroll == active && _ticker.isAnimating == active) return;
     _shouldScroll = active;
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       if (_shouldScroll) {
-        _ticker.repeat();
+        if (!_ticker.isAnimating) _ticker.repeat();
       } else {
-        _ticker.stop();
-        _ticker.value = 0;
+        if (_ticker.isAnimating) _ticker.stop();
+        if (_ticker.value != 0) _ticker.value = 0;
       }
     });
   }
@@ -111,7 +116,11 @@ class _AnnaTodayEditorialGreetingToolbarState
 
               final height = textHeight + 8 > 48 ? textHeight + 8 : 48.0;
               final visibleWidth = constraints.maxWidth;
-              final scroll = AnnaMotionV108.enabled(context) &&
+              // IndexedStack retains offscreen tabs: never animate a
+              // hidden Today screen (CPU/battery), even with overflow.
+              final scroll = widget.activeInShell &&
+                  TickerMode.of(context) &&
+                  AnnaMotionV108.enabled(context) &&
                   textWidth > visibleWidth + 1;
               _setScrolling(scroll);
 
@@ -1040,6 +1049,7 @@ class _PlannerScreenState extends State<PlannerScreen> {
                       children: [
                         if (editorial) ...[
                           AnnaTodayEditorialGreetingToolbar(
+                            activeInShell: widget.activeInShell,
                             greeting: approvedTodayGreeting(
                               strings.languageCode,
                               widget.store.preferences.displayName,
