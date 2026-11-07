@@ -805,6 +805,13 @@ class _InboxScreenState extends State<InboxScreen> {
   }
   String? selectedCategory;
   String _noteQuery = '';
+  final TextEditingController _noteSearchController = TextEditingController();
+
+  @override
+  void dispose() {
+    _noteSearchController.dispose();
+    super.dispose();
+  }
 
   Future<void> _convertToTask(
     BuildContext context,
@@ -1122,9 +1129,14 @@ class _InboxScreenState extends State<InboxScreen> {
             icon: const Icon(Icons.add),
             label: Text(strings.capture),
           ),
-          body: Column(
-            children: [
-              if (editorial)
+          body: LayoutBuilder(
+            builder: (context, constraints) {
+              // Preserve search/results on landscape while the IME is visible.
+              // Collapse only nonessential header/category/shortcut controls.
+              final compact = constraints.maxHeight < 360;
+              return Column(
+                children: [
+              if (editorial && !compact)
                 Padding(
                   padding: const EdgeInsets.fromLTRB(18, 8, 18, 8),
                   child: AnnaEditorialHeader(
@@ -1133,8 +1145,9 @@ class _InboxScreenState extends State<InboxScreen> {
                       strings.languageCode, 'heading'),
                   ),
                 ),
-              Padding(
-                padding: const EdgeInsets.fromLTRB(14, 8, 14, 4),
+              if (!compact)
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(14, 8, 14, 4),
                 child: Row(
                   children: [
                     Expanded(
@@ -1151,9 +1164,10 @@ class _InboxScreenState extends State<InboxScreen> {
                   ],
                 ),
               ),
-              SizedBox(
-                height: 46,
-                child: ListView(
+              if (!compact)
+                SizedBox(
+                  height: 46,
+                  child: ListView(
                   padding: const EdgeInsets.symmetric(horizontal: 14),
                   scrollDirection: Axis.horizontal,
                   children: [
@@ -1199,6 +1213,7 @@ class _InboxScreenState extends State<InboxScreen> {
                   padding: const EdgeInsets.fromLTRB(14, 3, 14, 8),
                   child: TextField(
                     key: const ValueKey<String>('ds6-inbox-search'),
+                    controller: _noteSearchController,
                     textInputAction: TextInputAction.search,
                     decoration: InputDecoration(
                       prefixIcon: const Icon(Icons.search),
@@ -1214,7 +1229,7 @@ class _InboxScreenState extends State<InboxScreen> {
                 ),
               // DS6 keeps archive/trash in their canonical screens, reachable
               // directly from Inbox, rather than projecting a second archive.
-              if (editorial)
+              if (editorial && !compact)
                 Padding(
                   padding: const EdgeInsets.fromLTRB(14, 0, 14, 7),
                   child: Wrap(
@@ -1384,7 +1399,9 @@ class _InboxScreenState extends State<InboxScreen> {
                   },
                 ),
               ),
-            ],
+                ],
+              );
+            },
           ),
         );
       },
