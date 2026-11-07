@@ -1186,6 +1186,11 @@ class PersonalSearchConnectionsScreen extends StatefulWidget {
 
 class _PersonalSearchConnectionsScreenState
     extends State<PersonalSearchConnectionsScreen> {
+  Widget _resultCard({required Widget child}) {
+    if (!AnnaEditorialTodayMode.enabled.value) return Card(child: child);
+    return AnnaEditorialSurface(padding: EdgeInsets.zero, child: child);
+  }
+
   String query = '';
   final TextEditingController _queryController = TextEditingController();
   ApprovedSearchSort sortOrder = ApprovedSearchSort.newest;
@@ -1341,7 +1346,9 @@ class _PersonalSearchConnectionsScreenState
         ),
         title: Text(
           strings.v100SearchConnectTitle,
-          style: const TextStyle(fontWeight: FontWeight.w800),
+          style: AnnaEditorialTodayMode.enabled.value
+              ? AnnaJournalTypography.editorial(context, size: 25)
+              : const TextStyle(fontWeight: FontWeight.w800),
         ),
         actions: [
           IconButton(
@@ -1521,7 +1528,7 @@ class _PersonalSearchConnectionsScreenState
                             const SizedBox(height: 8),
                         itemBuilder: (context, index) {
                           final hit = hits[index];
-                          return Card(
+                          return _resultCard(
                             child: ListTile(
                               leading:
                                   CircleAvatar(child: Icon(hit.kind.icon)),
