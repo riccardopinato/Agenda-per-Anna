@@ -42,3 +42,31 @@
 - [Golden AppLab QA](https://github.com/riccardopinato/App-Factory-Core/blob/989c5123c62c07d1dd85a3c520f0d04b7fe3f543/golden/release/GOLDEN_APPLAB_QA_CERTIFICATION_v1.txt)
 
 **Esito:** baseline sicurezza iniziale incoraggiante, due WARN operativi reali e scenari Web/native non attestati; nessuna evidenza di esposizione account, ma non è un penetration test.
+
+
+## Follow-up live — 7 novembre 2026 | Dipendenze pg_net e gestione rischio
+
+**Risultato:** READ_ONLY_DEPENDENCY_MAPPING_COMPLETE / PRODUCTION_CHANGE_NOT_PERFORMED. Rilevazione puntuale tramite Security/Performance Advisor e query SQL **solo metadati/conteggi** (nessun contenuto utenti, URL di push, token, segreto o corpo HTTP consultato). Questo follow-up non attesta test end-to-end.
+
+| Elemento | Evidenza live | Conseguenza |
+| --- | --- | --- |
+| pg_net | Versione `0.20.4`, installata in `public`, `extrelocatable=false` | Non eseguire `ALTER EXTENSION pg_net SET SCHEMA`: relocation diretta non supportata |
+| pg_cron | Versione `1.6.4`, installata in `pg_catalog`; **1 job attivo ogni minuto** | Il job chiama `invoke_annas_diary_web_push_reminders`; mantenere operatività del reminder |
+| Funzione Web Push | `SECURITY DEFINER`; chiama `net.http_*` | La catena cron → funzione → pg_net è una dipendenza di produzione, non una estensione inutilizzata |
+| Execute sulla funzione reminder | `anon=false`, `authenticated=false` | Buon controllo di accesso diretto, ma non sostituisce audit dei ruoli, del body e di ACL end-to-end |
+| Coda pg_net | **0 richieste pendenti** al momento del campionamento | Snapshot non persistente: riesaminare immediatamente prima di ogni eventuale intervento |
+| Risposte pg_net | **360 risposte conservate** al momento del campionamento | Una ricreazione elimina le risposte: analizzare impatti diagnostici/retention; non pubblicare payload |
+| Schema `extensions` | Esiste già | Destinazione documentata dal provider, non motivo sufficiente per procedere |
+| Advisor | 2 WARN security invariati; 14 INFO index invariati | Nessun indice rimosso, nessun livello di certificazione promosso |
+
+**Documentazione provider verificata:** [Supabase pg_net](https://supabase.com/docs/guides/database/extensions/pg_net) (aggiornata 3 novembre 2026): il warning per installazione in `public` non si risolve con un semplice spostamento perché l'estensione non è relocatable. Il provider descrive una rimozione/ricreazione nel nuovo schema, con perdita di richieste pendenti e risposte conservate; **non è una procedura eseguita o approvata in questo audit**. [Password security](https://supabase.com/docs/guides/auth/password-security) (aggiornata 1 ottobre 2026): protezione password compromesse disponibile dal piano Pro. Piano effettivo e modalità email/password non verificati; non assumere che il warning sia eliminabile gratuitamente.
+
+### Gate di remediation (non eseguiti)
+1. **Preflight:** confermare piano Auth, provider email/password, flussi di recovery; verificare compatibilità con prodotto, test di account sintetici e costo; abilitazione della password protection solo con change autorizzato e test successivi.
+2. **Isolamento:** approntare uno staging **rappresentativo** con versioni, migration, pg_net, funzione di reminder, cron, dati sintetici, endpoint push di test, permessi e log redatti. L'attuale `anna-calendar-staging` è uno staging OAuth e **non è stato certificato come clone** dell'ambiente Web Push.
+3. **Rollback e change window:** esportare definizioni (non segreti), garantire backup/restore indipendente, enumerare dipendenze, interruzioni temporanee, oggetti extension-owned, coda/risposte e cron. Preservare evidenze non sensibili delle risposte necessarie prima di eventuale drop. Niente `CASCADE` indiscriminato.
+4. **Test staging prima dell'eventuale produzione:** riprodurre procedura ufficiale di re-installazione `pg_net` nel nuovo schema, confermare che funzione cron e `net.http_*` continuino a funzionare, osservare esiti push/errori e rieseguire gli advisor; testare fallimento, ripristino e rollback.
+5. **Produzione solo dopo gate espliciti:** finestra di manutenzione approvata, coda verificata vuota nel momento effettivo, compatibilità del job e controllo delivery, baseline prima/dopo, checkpoint di rollback e osservabilità. Non trasformare una procedura documentata in consenso implicito al change.
+6. **Indici e ACL:** mantenere tutti i 14 indici fino a misurazioni rappresentative; continuare la matrice RLS/ACL di due account e il test PWA su due dispositivi separatamente. RLS ON non equivale a pen test.
+
+**Stato finale Step 4:** mappatura live della catena pg_net completata, rimedi di sicurezza e QA end-to-end ancora APERTI; nessun cambiamento a Supabase o ai dati utente.

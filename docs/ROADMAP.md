@@ -1,5 +1,12 @@
 # Anna's Diary — Roadmap
 
+## 7 November 2026 — Follow-up verificato: catalogo #45 e dipendenze backend
+
+- **Factory baseline della presente continuazione:** App-Factory-Core `cf2be9484af63bedd49deea066349e6009f8432a`, CURRENT Master v27 / Golden Index v28; il commit include il comando incremental capability sync #81. Le baseline storiche delle sezioni successive restano riferimenti di sessione.
+- **Step 3 avanzato:** catalogo [PR #45](https://github.com/riccardopinato/Idee-app-Archivi-riferimenti/pull/45) merged `55224b1` dopo capability-catalogue PASS: CAP-0152/0160 Anna hanno evidenza locale scoped, non sono CAP FULL, app_states e 160 CAP / 385 associazioni invariati; altre CAP e QA aperti.
+- **Step 2 aggiornato:** Search first-open fix [#270](https://github.com/riccardopinato/Agenda-per-Anna/pull/270) integrato; Flutter [#42402256538](https://github.com/riccardopinato/Agenda-per-Anna/actions/runs/42402256538) e Pages [#42402256546](https://github.com/riccardopinato/Agenda-per-Anna/actions/runs/42402256546) PASS per `dc601002`; PWA su due dispositivi e dati di performance reali restano NOT VERIFIED.
+- **Step 4 approfondito in sola lettura:** `pg_net 0.20.4` in `public` è non-relocatable; reminder Web Push usa un cron attivo a cadenza minuto e una funzione SECURITY DEFINER che chiama `net.http_*`. Snapshot: 0 richieste HTTP pendenti, 360 risposte conservate; eventuale reinstallazione può eliminarle. Staging, rollback, auth-plan e scenario test sono prerequisiti. **Nessun change prod, nessun deploy, nessun APK.** [Runbook](STEP4_BACKEND_PRELIMINARY_AUDIT_20261107.md).
+
 ## 7 November 2026 — Parallel work: Step 2 OPEN / Step 3 ACTIVE / Step 4 AUDITED
 
 - **Factory pinned for this work:** App-Factory-Core `989c5123c62c07d1dd85a3c520f0d04b7fe3f543`, CURRENT Master v27, Golden Index v28. Earlier baseline references below are historical.

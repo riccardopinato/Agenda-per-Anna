@@ -86,12 +86,10 @@ storage, Vault exclusion and user data remain unchanged. Added direct regression
 for blank/whitespace, zero-hit one-character and unmatched queries. The first
 synthetic More → Search navigation attempt revealed the bug; the final widget
 suite retains the reliable More entry-point and source-wiring assertions while
-tap-through browser navigation remains an independent live PWA check. Mark
-this **FIX CANDIDATE** until exact-head CI succeeds and Pages deploys; it is not yet proof
-of full interactive browser QA.
+tap-through browser navigation remains an independent live PWA check. **SOURCE FIX MERGED / WEB DEPLOYED:** [PR #270](https://github.com/riccardopinato/Agenda-per-Anna/pull/270) is merged; [Flutter checks #42402256538](https://github.com/riccardopinato/Agenda-per-Anna/actions/runs/42402256538) and [Pages #42402256546](https://github.com/riccardopinato/Agenda-per-Anna/actions/runs/42402256546) completed successfully on exact source `dc601002`. Real More → Search interaction in installed PWA, account isolation and latency remain **NOT VERIFIED**.
 
 ## Next engineering follow-ups
-1. Merge exact-head source QA, the bounded first-open Search fix and this Web-first policy after gates.
+1. **Already merged:** source QA and first-open Search fix (#270) with exact-head CI/Web PASS. **Next:** two real installed-PWA More → Search tap-through runs, empty query, single-character results, editor save/reopen and account switch; do not collect personal data in public issues.
 2. Use Web-first user observations to identify **bounded** DS6 polish changes; implement one screen/related group at a time, ship directly through Pages.
 3. Obtain independent synthetic screenshot provenance for issue #237 separately (existing 70-pair Android matrix remains pending); consider a dedicated, safe Web/PWA capture track only if it can run without real account data.
 4. Review source/layout hotspots if actual Web measurements show jank, slow load, excessive memory, or overflow. Do not refactor large stores preemptively.

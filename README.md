@@ -12,7 +12,7 @@ The owner and Anna use the installed Chrome Flutter Web PWA for ongoing UI and f
 
 AppLab source checks run on routine PRs; emulator/Maestro/physical/Android signed builds are on-demand or release gates. A future Android build must have versionCode higher than 129 and keep stable signing identity. Do not infer native-device parity from Web CI.
 
-**Roadmap:** [Step 2 UI/visual/performance remains OPEN](docs/WEB_FIRST_DS6_STEP2_QA_20261107.md); [Step 3 capability reconciliation started](docs/STEP3_CAPABILITY_AND_DOC_ALIGNMENT_20261107.md); [Step 4 security/backend preliminary read-only audit](docs/STEP4_BACKEND_PRELIMINARY_AUDIT_20261107.md). Previous Step 1 advances under continuous observation; native physical QA is not certified.
+**Roadmap:** [Step 2 UI/visual/performance remains OPEN](docs/WEB_FIRST_DS6_STEP2_QA_20261107.md); [Step 3 partial CAP-0152/0160 evidence merged to canonical catalog #45; remaining reconciliation open](docs/STEP3_CAPABILITY_AND_DOC_ALIGNMENT_20261107.md); [Step 4 security/backend preliminary read-only audit](docs/STEP4_BACKEND_PRELIMINARY_AUDIT_20261107.md). Previous Step 1 advances under continuous observation; native physical QA is not certified.
 
 ## UI3 redesign (merged) and UI4 navigation polish
 
