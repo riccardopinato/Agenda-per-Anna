@@ -119,7 +119,6 @@ class _AnnaTodayEditorialGreetingToolbarState
               // IndexedStack retains offscreen tabs: never animate a
               // hidden Today screen (CPU/battery), even with overflow.
               final scroll = widget.activeInShell &&
-                  TickerMode.of(context) &&
                   AnnaMotionV108.enabled(context) &&
                   textWidth > visibleWidth + 1;
               _setScrolling(scroll);
