@@ -118,12 +118,8 @@ void main() {
         findsOneWidget);
     expect(find.byKey(const ValueKey<String>('more-inbox')),
         findsOneWidget);
-    expect(find.byKey(const ValueKey<String>('more-settings')),
-        findsOneWidget);
-    // Cassaforte stays reachable: no Vault screen or secret data is rendered
-    // or captured by this visual/UI test.
-    expect(find.byKey(const ValueKey<String>('more-private-vault')),
-        findsOneWidget);
+    // More uses a lazily laid-out ListView. Settings and Vault can be
+    // below the fold; assert those destinations *after* scrolling to them.
     expect(tester.takeException(), isNull);
 
     await tester.ensureVisible(
@@ -148,9 +144,30 @@ void main() {
 
     await tester.pageBack();
     await tester.pump(const Duration(milliseconds: 500));
-    await tester.ensureVisible(
-        find.byKey(const ValueKey<String>('more-settings')));
-    await tester.pump();
+    final moreScrollable = find.descendant(
+      of: find.byType(MoreScreen),
+      matching: find.byType(Scrollable),
+    ).first;
+
+    // Cassaforte stays reachable, but no Vault screen or private content is
+    // opened or captured for Web-first UI verification.
+    await tester.scrollUntilVisible(
+      find.byKey(const ValueKey<String>('more-private-vault')),
+      220,
+      scrollable: moreScrollable,
+      maxScrolls: 16,
+    );
+    expect(find.byKey(const ValueKey<String>('more-private-vault')),
+        findsOneWidget);
+
+    await tester.scrollUntilVisible(
+      find.byKey(const ValueKey<String>('more-settings')),
+      220,
+      scrollable: moreScrollable,
+      maxScrolls: 16,
+    );
+    expect(find.byKey(const ValueKey<String>('more-settings')),
+        findsOneWidget);
     await tester.tap(find.byKey(const ValueKey<String>('more-settings')));
     await tester.pump(const Duration(milliseconds: 500));
     expect(find.byType(SettingsHubScreen), findsOneWidget);
