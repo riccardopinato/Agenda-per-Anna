@@ -11,6 +11,7 @@ void main() {
     required VoidCallback calendar,
     required VoidCallback classic,
     bool reduceMotion = false,
+    bool activeInShell = true,
     double textScale = 1.0,
   }) {
     return MaterialApp(
@@ -27,6 +28,7 @@ void main() {
               width: width,
               child: AnnaTodayEditorialGreetingToolbar(
                 greeting: greeting,
+                activeInShell: activeInShell,
                 calendarTooltip: 'Calendario',
                 classicTooltip: 'Classic',
                 onOpenCalendar: calendar,
@@ -138,6 +140,81 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
+  testWidgets('ticker restarts when an overflowing greeting changes',
+      (tester) async {
+    await tester.pumpWidget(app(
+      width: 320,
+      greeting: 'Buon pomeriggio, Riccardo',
+      calendar: () {},
+      classic: () {},
+    ));
+    await tester.pump();
+    await tester.pump(const Duration(seconds: 2));
+
+    // Same widget position keeps the existing AnimationController mounted.
+    await tester.pumpWidget(app(
+      width: 320,
+      greeting: 'Buon pomeriggio, Alessandro',
+      calendar: () {},
+      classic: () {},
+    ));
+    await tester.pump();
+    final repeated = find.descendant(
+      of: find.byKey(const ValueKey<String>('ds6-today-marquee')),
+      matching: find.text('Buon pomeriggio, Alessandro'),
+    );
+    expect(repeated, findsWidgets);
+    final before = tester.getTopLeft(repeated.first).dx;
+    await tester.pump(const Duration(seconds: 2));
+    expect(tester.getTopLeft(repeated.first).dx, lessThan(before));
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('hidden Today tab stops ticker and reactivates on return',
+      (tester) async {
+    await tester.pumpWidget(app(
+      width: 320,
+      greeting: 'Buon pomeriggio, Riccardo',
+      calendar: () {},
+      classic: () {},
+    ));
+    await tester.pump(const Duration(seconds: 1));
+    expect(find.byKey(
+      const ValueKey<String>('ds6-today-marquee'),
+    ), findsOneWidget);
+
+    await tester.pumpWidget(app(
+      width: 320,
+      greeting: 'Buon pomeriggio, Riccardo',
+      activeInShell: false,
+      calendar: () {},
+      classic: () {},
+    ));
+    await tester.pumpAndSettle();
+    expect(find.byKey(
+      const ValueKey<String>('ds6-today-marquee'),
+    ), findsNothing);
+    expect(find.byKey(
+      const ValueKey<String>('ds6-today-static-greeting'),
+    ), findsOneWidget);
+
+    await tester.pumpWidget(app(
+      width: 320,
+      greeting: 'Buon pomeriggio, Riccardo',
+      calendar: () {},
+      classic: () {},
+    ));
+    await tester.pump();
+    final repeated = find.descendant(
+      of: find.byKey(const ValueKey<String>('ds6-today-marquee')),
+      matching: find.text('Buon pomeriggio, Riccardo'),
+    );
+    final before = tester.getTopLeft(repeated.first).dx;
+    await tester.pump(const Duration(seconds: 2));
+    expect(tester.getTopLeft(repeated.first).dx, lessThan(before));
+    expect(tester.takeException(), isNull);
+  });
+
   test('Editorial Today has no separate brand or quote below greeting', () {
     final source = File('lib/src/planner_views.dart').readAsStringSync();
     final start = source.indexOf('if (editorial) ...[\n'
@@ -150,5 +227,6 @@ void main() {
     expect(editorialHeader, isNot(contains('AnnaEditorialHeader(')));
     expect(editorialHeader, isNot(contains('subtitle: _dailyQuote')));
     expect(editorialHeader, contains('const SizedBox(height: 4)'));
+    expect(editorialHeader, contains('activeInShell: widget.activeInShell'));
   });
 }
