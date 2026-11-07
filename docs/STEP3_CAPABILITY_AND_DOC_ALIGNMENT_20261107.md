@@ -1,6 +1,6 @@
 # Anna's Diary — Step 3 | Allineamento capability e documentazione
 
-**Data:** 7 novembre 2026. **Stato:** AVVIATO, primo crosswalk verificato; riconciliazione del registro canonico NON ancora chiusa.
+**Data:** 7 novembre 2026. **Stato:** riconciliazione parziale CAP-0152/0160 unita a catalogo `main` con [PR #45](https://github.com/riccardopinato/Idee-app-Archivi-riferimenti/pull/45), commit `55224b1`. Le altre associazioni e la verifica funzionale restano aperte.
 
 ## Source of truth
 - Factory Core: [989c5123](https://github.com/riccardopinato/App-Factory-Core/tree/989c5123c62c07d1dd85a3c520f0d04b7fe3f543), CURRENT.yaml Master v27, Golden Index v28.
@@ -9,7 +9,7 @@
 - Ambito prodotto: Product Bible, senza nuove approvazioni implicite.
 
 ## Quadro attuale del catalogo
-74 associazioni Anna: **8 già integrati, 52 da verificare, 14 da valutare**. Questi numeri sono lo stato dei derivati del registro, NON quantità di feature mancanti. Prove aggiornate sono riportate nel crosswalk; il JSON canonico e le viste derivate devono essere aggiornati insieme in un follow-up protetto.
+74 associazioni Anna: **8 già integrati, 52 da verificare, 14 da valutare**. Questi numeri sono lo stato dei derivati del registro, NON quantità di feature mancanti. Le evidenze scoped di CAP-0152/0160 sono ora nel JSON canonico dopo PR #45, **senza promuovere gli stati**; i generatori correnti non consumano il nuovo metadata, perciò le viste derivate rimangono identiche e il gate catalogo è PASS. L'audit delle altre associazioni prosegue.
 
 | CAP | Implementazione app rilevata | Stato del contratto completo |
 | --- | --- | --- |
@@ -27,8 +27,8 @@
 - **Idee future e non approvate:** CAP-0093 checklist da note, CAP-0147 home reversibile, CAP-0120 alt-text; non implementare prima di una decisione di prodotto.
 
 ## Sequenza per completare lo Step 3
-1. Inserire nel JSON canonico prove app-scoped di SOURCE_PARTIAL e delta FULL per CAP-0152/0160 senza falsi DEVICE.
-2. Rigenerare tutto con scripts/build_catalog.py e scripts/build_status_views.py nel repo catalogo; verificare --check/test prima del merge.
+1. **COMPLETATO:** annotare SOURCE_PARTIAL e delta FULL per CAP-0152/0160 nel JSON canonico, senza dichiarare device QA.
+2. **GATE PASS:** CI catalogo per PR #45 sul commit esatto; nessuna vista derivata cambia con i nuovi metadati opzionali. Continuare a usare `build_catalog.py --check` e generatori per ogni futura modifica ai campi renderizzati.
 3. Incrociare le 74 associazioni con test, codice attuale e prove reali man mano ottenute; conservare gli storici.
 4. Tenere Step 2 APERTO: UI/visual/performance Web, due PWA; nessun APK continuo.
 5. Registrare audit Step 4 separato in STEP4_BACKEND_PRELIMINARY_AUDIT_20261107.md. Nessuna migrazione o interruzione del servizio.
