@@ -128,6 +128,43 @@ void main() {
     store.dispose();
   });
 
+  testWidgets('DS6 More exposes an actionable Search tile for guest',
+      (tester) async {
+    // Source/widget wiring only. The route tap-through did not pass in this
+    // synthetic shell and is explicitly left for installed-PWA evaluation.
+    tester.view.physicalSize = const Size(390, 844);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(() {
+      tester.view.resetPhysicalSize();
+      tester.view.resetDevicePixelRatio();
+    });
+
+    final store = AgendaStore();
+    store.preferences = const AgendaPreferences(
+      onboardingDone: true,
+      appLanguage: AppLanguage.italian,
+    );
+    await tester.pumpWidget(
+      AgendaApp(store: store, bypassIdentityForTesting: true),
+    );
+    await tester.pump(const Duration(milliseconds: 400));
+    await tester.tap(find.byKey(const ValueKey<String>('main-nav-more')));
+    await tester.pump(const Duration(milliseconds: 500));
+
+    expect(find.byType(MoreScreen), findsOneWidget);
+    final searchTile = find.byKey(const ValueKey<String>('more-search'));
+    expect(searchTile, findsOneWidget);
+    expect(tester.widget<ListTile>(searchTile).onTap, isNotNull);
+    // Independently prove the canonical blank-query result cannot mutate or
+    // crash; do not claim the browser/navigation path was exercised.
+    expect(store.approvedPersonalSearch(''), isEmpty);
+    expect(tester.takeException(), isNull);
+
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.pump();
+    store.dispose();
+  });
+
   test('More entry points retain the canonical source-screen routes', () {
     // Source contract only. Real browser tap/navigation will be verified on
     // installed PWAs; no claim of end-to-end pass is made here.

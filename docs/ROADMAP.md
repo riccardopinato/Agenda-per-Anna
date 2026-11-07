@@ -1,5 +1,12 @@
 # Anna's Diary — Roadmap
 
+## 7 novembre 2026 — Prossime priorità: QA PWA e staging readiness
+
+- [PR #272](https://github.com/riccardopinato/Agenda-per-Anna/pull/272) integrata a `cc192a59` con CI Flutter/AppLab PASS; la nuova Factory baseline è `8ff583e5`, v27/Golden v28.
+- **Step 2:** protocollo reale [due PWA](STEP2_PWA_TWO_DEVICE_ACCEPTANCE_20261107.md) e verifica widget del pulsante Cerca (click-through sintetico fallito e tuttora NOT_VERIFIED). Una prova widget non certifica installazioni PWA: fino ai risultati A/B, `WEB_USER_PASS = NOT_VERIFIED`.
+- **Step 4:** [Staging readiness](STEP4_STAGING_READINESS_20261107.md): Supabase Free impedisce leaked-password protection Pro; staging OAuth senza 16 tabelle, pg_net, cron e reminder; costo branch di sviluppo quotato dal provider, nessuna nuova risorsa creata. Staging Web Push e remediation produzione rimangono bloccati da costo/ambiente/test.
+- **Step 3:** continuare la riconciliazione scoped delle CAP ancora da verificare nel solo JSON canonico del catalogo; non promuovere per analogia stati o score delle altre app.
+
 ## 7 November 2026 — Follow-up verificato: catalogo #45 e dipendenze backend
 
 - **Factory baseline della presente continuazione:** App-Factory-Core `cf2be9484af63bedd49deea066349e6009f8432a`, CURRENT Master v27 / Golden Index v28; il commit include il comando incremental capability sync #81. Le baseline storiche delle sezioni successive restano riferimenti di sessione.
