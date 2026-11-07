@@ -788,7 +788,30 @@ class InboxScreen extends StatefulWidget {
 
 class _InboxScreenState extends State<InboxScreen> {
   AgendaStore get store => widget.store;
+
+  Widget _noteCard({
+    required bool editorial,
+    required bool pinned,
+    required Widget child,
+  }) {
+    if (!editorial) return Card(child: child);
+    return AnnaEditorialSurface(
+      tone: pinned
+          ? AnnaEditorialSurfaceTone.featured
+          : AnnaEditorialSurfaceTone.regular,
+      padding: EdgeInsets.zero,
+      child: child,
+    );
+  }
   String? selectedCategory;
+  String _noteQuery = '';
+  final TextEditingController _noteSearchController = TextEditingController();
+
+  @override
+  void dispose() {
+    _noteSearchController.dispose();
+    super.dispose();
+  }
 
   Future<void> _convertToTask(
     BuildContext context,
@@ -1061,12 +1084,23 @@ class _InboxScreenState extends State<InboxScreen> {
   @override
   Widget build(BuildContext context) {
     return AnimatedBuilder(
-      animation: store.inboxRevision,
+      animation: Listenable.merge([
+        store.inboxRevision,
+        AnnaEditorialTodayMode.enabled,
+      ]),
       builder: (context, _) {
         final strings = AnnaStrings.of(context);
+        final editorial = AnnaEditorialTodayMode.enabled.value;
         final entries = selectedCategory == null
             ? [...store.activeInboxEntries]
-            : store.inboxEntriesInCategory(selectedCategory!);
+            : [...store.inboxEntriesInCategory(selectedCategory!)];
+        // DS6: local, authorized Inbox title/tag filtering, no new index.
+        final needle = _noteQuery.trim().toLowerCase();
+        if (needle.isNotEmpty) {
+          entries.removeWhere((entry) =>
+              !entry.text.toLowerCase().contains(needle) &&
+              !entry.tags.any((tag) => tag.toLowerCase().contains(needle)));
+        }
         entries.sort((a, b) {
           if (a.pinned != b.pinned) return a.pinned ? -1 : 1;
           return b.createdAt.compareTo(a.createdAt);
@@ -1081,7 +1115,9 @@ class _InboxScreenState extends State<InboxScreen> {
           appBar: AppBar(
             title: Text(
               strings.inbox,
-              style: const TextStyle(fontWeight: FontWeight.w900),
+              style: editorial
+                  ? AnnaJournalTypography.editorial(context, size: 25)
+                  : const TextStyle(fontWeight: FontWeight.w900),
             ),
           ),
           floatingActionButton: FloatingActionButton.extended(
@@ -1093,10 +1129,27 @@ class _InboxScreenState extends State<InboxScreen> {
             icon: const Icon(Icons.add),
             label: Text(strings.capture),
           ),
-          body: Column(
-            children: [
-              Padding(
-                padding: const EdgeInsets.fromLTRB(14, 8, 14, 4),
+          body: LayoutBuilder(
+            builder: (context, constraints) {
+              // Preserve search/results on landscape while the IME is visible.
+              // Collapse only nonessential header/category/shortcut controls.
+              final keyboardVisible =
+                  MediaQuery.viewInsetsOf(context).bottom > 0;
+              final compact = constraints.maxHeight < 360 && keyboardVisible;
+              return Column(
+                children: [
+              if (editorial && constraints.maxHeight >= 380 && !compact)
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(18, 8, 18, 8),
+                  child: AnnaEditorialHeader(
+                    title: strings.inbox,
+                    eyebrow: inboxCategoryCopy(
+                      strings.languageCode, 'heading'),
+                  ),
+                ),
+              if (!compact)
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(14, 8, 14, 4),
                 child: Row(
                   children: [
                     Expanded(
@@ -1113,9 +1166,10 @@ class _InboxScreenState extends State<InboxScreen> {
                   ],
                 ),
               ),
-              SizedBox(
-                height: 46,
-                child: ListView(
+              if (!compact)
+                SizedBox(
+                  height: 46,
+                  child: ListView(
                   padding: const EdgeInsets.symmetric(horizontal: 14),
                   scrollDirection: Axis.horizontal,
                   children: [
@@ -1156,6 +1210,57 @@ class _InboxScreenState extends State<InboxScreen> {
                   ],
                 ),
               ),
+              if (editorial)
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(14, 3, 14, 8),
+                  child: TextField(
+                    key: const ValueKey<String>('ds6-inbox-search'),
+                    controller: _noteSearchController,
+                    textInputAction: TextInputAction.search,
+                    decoration: InputDecoration(
+                      prefixIcon: const Icon(Icons.search),
+                      hintText: strings.search,
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      isDense: true,
+                    ),
+                    onChanged: (value) =>
+                        setState(() => _noteQuery = value),
+                  ),
+                ),
+              // DS6 keeps archive/trash in their canonical screens, reachable
+              // directly from Inbox, rather than projecting a second archive.
+              if (editorial && !compact)
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(14, 0, 14, 7),
+                  child: Wrap(
+                    spacing: 8,
+                    runSpacing: 5,
+                    children: [
+                      ActionChip(
+                        avatar: const Icon(Icons.archive_outlined, size: 18),
+                        label: Text(strings.archive),
+                        onPressed: () => Navigator.push(
+                          context,
+                          MaterialPageRoute<void>(
+                            builder: (_) => ArchiveScreen(store: store),
+                          ),
+                        ),
+                      ),
+                      ActionChip(
+                        avatar: const Icon(Icons.delete_outline, size: 18),
+                        label: Text(strings.trash),
+                        onPressed: () => Navigator.push(
+                          context,
+                          MaterialPageRoute<void>(
+                            builder: (_) => TrashScreen(store: store),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
               Expanded(
                 child: entries.isEmpty
               ? Center(
@@ -1193,7 +1298,9 @@ class _InboxScreenState extends State<InboxScreen> {
                       store, entry, strings.languageCode,
                       inlineFastPath: true,
                     );
-                    return Card(
+                    return _noteCard(
+                      editorial: editorial,
+                      pinned: entry.pinned,
                       child: ListTile(
                         contentPadding: const EdgeInsets.fromLTRB(
                           14,
@@ -1206,7 +1313,14 @@ class _InboxScreenState extends State<InboxScreen> {
                               ? Icons.push_pin
                               : Icons.sticky_note_2_outlined,
                         ),
-                        title: Text(entry.text),
+                        title: Text(
+                          entry.text,
+                          style: editorial
+                              ? AnnaJournalTypography.editorial(
+                                  context, size: entry.pinned ? 21 : 18,
+                                )
+                              : null,
+                        ),
                         subtitle: Column(
                           mainAxisSize: MainAxisSize.min,
                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -1287,7 +1401,9 @@ class _InboxScreenState extends State<InboxScreen> {
                   },
                 ),
               ),
-            ],
+                ],
+              );
+            },
           ),
         );
       },
