@@ -2,22 +2,17 @@
 
 Flutter app for personal planning, private diary and the shared **Noi ♡** space.
 
-Current release line: **v1.05.x UI3 integrated on `main` — 1.0.0-rc.2+111** (Flutter Web Pages and stable-signed ARM64 build PASS; physical-device and Play/Store certification remain pending).
+**Current Web-first source (7 Nov 2026):** `main@dc601002` (`1.0.0-rc.6+129`); [GitHub Pages deploy #42402256546](https://github.com/riccardopinato/Agenda-per-Anna/actions/runs/42402256546) PASS. Latest signed Android +129 was built earlier at `cb8c3d0`, so it does not contain the subsequent Web changes. Physical/native/Play certification remains pending. The historical sections below retain their original release context.
 
 Canonical product scope and security boundaries: `docs/PRODUCT_BIBLE.md`.
 
-## Source CI and manual Android builds (30 Oct 2026)
+## Current workflow: Flutter Web-first (7 Nov 2026)
 
-PRs automatically run Flutter analysis/tests, Web build and a **source-only**
-UI5/visual-flow contract gate. The AppLab external APK-builder and emulator
-are not part of that source gate.
+The owner and Anna use the installed Chrome Flutter Web PWA for ongoing UI and functional review. Changes follow protected PRs, exact-head Flutter/Web/AppLab Source Gate, merge and verified Pages deployment. Reopen or refresh the PWA after saving edits; a Chrome-installed PWA is not an Android APK.
 
-Android size audit, Android integration smoke, and **signed APK generation**
-are triggered only with `workflow_dispatch` from GitHub Actions. Use
-`.github/workflows/sideload-arm64.yml` for an explicitly requested stable-signed
-direct-install APK; never substitute a test-key audit APK. A source-gate PASS does
-not certify Android runtime, pixel fidelity or physical-device compatibility.
+AppLab source checks run on routine PRs; emulator/Maestro/physical/Android signed builds are on-demand or release gates. A future Android build must have versionCode higher than 129 and keep stable signing identity. Do not infer native-device parity from Web CI.
 
+**Roadmap:** [Step 2 UI/visual/performance remains OPEN](docs/WEB_FIRST_DS6_STEP2_QA_20261107.md); [Step 3 capability reconciliation started](docs/STEP3_CAPABILITY_AND_DOC_ALIGNMENT_20261107.md); [Step 4 security/backend preliminary read-only audit](docs/STEP4_BACKEND_PRELIMINARY_AUDIT_20261107.md). Previous Step 1 advances under continuous observation; native physical QA is not certified.
 
 ## UI3 redesign (merged) and UI4 navigation polish
 
@@ -46,7 +41,7 @@ not certify Android runtime, pixel fidelity or physical-device compatibility.
 
 GitHub Actions runs locked dependency resolution, platform generation/verification, Flutter analyze, the full test suite and a Web release build on pull requests and `main`. Pull requests keep Android coverage through the production-equivalent size audit plus AppLab; the Development ARM64 build is reserved for `main`/manual runs to avoid compiling the same PR three times.
 
-Pull requests also run the AppLab Production Gate: release-mode ARM64 build, Android emulator install/launch, Maestro restart smoke, multi-screen visual journey, screenshot/UI hierarchy checks, visual regression, Logcat and crash/ANR scanning. Production distribution remains pinned to Flutter 3.47.5 and the persistent sideload/release signing contracts.
+Routine pull requests use the AppLab Source Gate; APK release-mode, emulator/Maestro runtime, screenshots and native diagnostics require a separate explicit QA/release lane. Production build tools stay pinned; source PASS alone does not prove device or visual acceptance.
 
 See `docs/ARCHITECTURE.md` and `supabase/README.md` for implementation details.
 
