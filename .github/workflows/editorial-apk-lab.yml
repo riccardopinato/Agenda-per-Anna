@@ -1,0 +1,88 @@
+name: Anna Editorial Design Lab - isolated Android APKs
+
+# Dedicated Android previews. Never uses Anna's Diary signing secrets or services.
+on:
+  push:
+    branches:
+      - experiment/editorial-premium-home-isolated-apks-20261105
+    paths:
+      - design_lab/editorial/**
+      - .github/workflows/editorial-apk-lab.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build-editorial-previews:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - name: Checkout exact design-lab source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Set up pinned Flutter
+        uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2.23.0
+        with:
+          flutter-version: '3.47.5'
+          channel: stable
+          cache: true
+
+      - name: Build and test both independent APKs
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p build/editorial-lab
+          for variant in premium hybrid; do
+            project="$RUNNER_TEMP/anna-editorial-$variant"
+            flutter create --project-name anna_editorial_lab \
+              --org com.riccardopinato --platforms=android "$project"
+            cp design_lab/editorial/pubspec.yaml "$project/pubspec.yaml"
+            cp design_lab/editorial/lib/main.dart "$project/lib/main.dart"
+            mkdir -p "$project/assets/fonts" "$project/test"
+            cp assets/fonts/Manrope-VF.ttf assets/fonts/Lora-VF.ttf "$project/assets/fonts/"
+            cp design_lab/editorial/test/editorial_preview_test.dart "$project/test/"
+            rm -f "$project/test/widget_test.dart"
+
+            # Keep the experiments isolated from the installed production app.
+            sed -i -E "s/applicationId = \"[^\"]+\"/applicationId = \"com.riccardopinato.anna.editorial$variant\"/" \
+              "$project/android/app/build.gradle.kts"
+            sed -i -E "s/android:label=\"[^\"]+\"/android:label=\"Anna Lab $variant\"/" \
+              "$project/android/app/src/main/AndroidManifest.xml"
+            grep -F "com.riccardopinato.anna.editorial$variant" "$project/android/app/build.gradle.kts"
+            grep -F "Anna Lab $variant" "$project/android/app/src/main/AndroidManifest.xml"
+
+            (
+              cd "$project"
+              flutter pub get
+              dart format --output=write lib test
+              flutter analyze --no-fatal-infos lib test
+              flutter test --dart-define=EDITORIAL_VARIANT="$variant"
+              # Release-optimized ARM64, but intentionally signed with the generated
+              # debug keystore (NOT the production Anna keystore).
+              flutter build apk --release --target-platform android-arm64 \
+                --split-per-abi --tree-shake-icons --dart-define=EDITORIAL_VARIANT="$variant"
+            )
+
+            if [[ "$variant" == premium ]]; then
+              name="Anna-Editorial-B-Premium.apk"
+            else
+              name="Anna-Editorial-C-Hybrid.apk"
+            fi
+            cp "$project/build/app/outputs/flutter-apk/app-arm64-v8a-release.apk" "build/editorial-lab/$name"
+            test -s "build/editorial-lab/$name"
+          done
+          (cd build/editorial-lab && sha256sum *.apk > SHA256SUMS.txt)
+          ls -lh build/editorial-lab
+
+      - name: Upload side-by-side preview APKs
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: Anna-Editorial-B-and-C-ARM64-preview-APK
+          path: |
+            build/editorial-lab/*.apk
+            build/editorial-lab/SHA256SUMS.txt
+          if-no-files-found: error
+          retention-days: 30

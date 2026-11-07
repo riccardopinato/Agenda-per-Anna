@@ -1,0 +1,32 @@
+name: anna_editorial_lab
+description: Isolated interactive home design previews for Anna's Diary
+publish_to: none
+version: 1.0.0+1
+
+environment:
+  sdk: ">=3.10.0 <4.0.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^5.0.0
+
+flutter:
+  uses-material-design: true
+  fonts:
+    - family: Manrope
+      fonts:
+        - asset: assets/fonts/Manrope-VF.ttf
+          weight: 400
+        - asset: assets/fonts/Manrope-VF.ttf
+          weight: 700
+    - family: Lora
+      fonts:
+        - asset: assets/fonts/Lora-VF.ttf
+          weight: 400
+        - asset: assets/fonts/Lora-VF.ttf
+          weight: 600
