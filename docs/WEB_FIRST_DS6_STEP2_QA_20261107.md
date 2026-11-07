@@ -72,8 +72,24 @@ For each issue or meaningful PASS, record:
 `tester=owner/partner (no personal identifiers); device/browser; PWA or browser tab; viewport if known; route; expected; observed; status; source/deployment revision if visible; reproducibility`.
 Do not submit real diary screenshots or security-sensitive values to a public issue. If only a subjective impression is available, record `USER_FEEDBACK`, not `PERFORMANCE_CERTIFIED`.
 
+## Step 2 first live source finding — P1 Search first-open error
+
+The new real-widget More → Search regression exposed a concrete first-open crash
+(`Unsupported operation: Cannot modify an unmodifiable list`) when the canonical
+`personalSearch('')` returns its documented empty `const []`. The DS6 derived
+`approvedPersonalSearch` then attempted `sort` on that immutable instance.
+
+Bounded correction: copy canonical search results to a writable, ephemeral
+`List<PersonalSearchHit>` before one-character filtering, optional fuzzy
+fallback and sorting. The original source query, permissions, ordering rules,
+storage, Vault exclusion and user data remain unchanged. Added regression tests
+for blank/whitespace, zero-hit one-character and unmatched queries, plus the
+actual More → Search route in a synthetic guest UI journey. Mark this **FIX
+CANDIDATE** until exact-head CI succeeds and Pages deploys; it is not yet proof
+of full interactive browser QA.
+
 ## Next engineering follow-ups
-1. Merge exact-head source QA and this Web-first policy after gates.
+1. Merge exact-head source QA, the bounded first-open Search fix and this Web-first policy after gates.
 2. Use Web-first user observations to identify **bounded** DS6 polish changes; implement one screen/related group at a time, ship directly through Pages.
 3. Obtain independent synthetic screenshot provenance for issue #237 separately (existing 70-pair Android matrix remains pending); consider a dedicated, safe Web/PWA capture track only if it can run without real account data.
 4. Review source/layout hotspots if actual Web measurements show jank, slow load, excessive memory, or overflow. Do not refactor large stores preemptively.
