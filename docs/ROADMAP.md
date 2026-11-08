@@ -1,5 +1,12 @@
 # Anna's Diary — Roadmap
 
+## 8 novembre 2026 — Web-first DS6 S2: Oggi, Calendario e Ricordi (PR in verifica)
+
+- **Scope visual-only:** il design di base DS6 è già in source, quindi niente riscritture. Una regola notebook tenue condivisa, derivata dal ColorScheme/HSV esistente, rifinisce il diario Oggi e il Calendario. Un piccolo badge di data coerente è usato nel riepilogo settimanale e nei Ricordi (foto o testo autentici, mai immagini di esempio).
+- **Source owners invariati:** `AnnaEditorialTodayOverview`, `AnnaEditorialCalendarPanel`, `AnnaEditorialCalendarWeekSummary`, `_EditorialMemoriesPresentation`; nessun writer, store, modello, sincronizzazione, QR, Vault, identità o route aggiunti. Classic rimane il percorso originario; nessun APK per il Web-first.
+- **Evidenze:** `test/ds6_webfirst_editorial_s2_test.dart` copre gerarchia/azione del diario, count masking, calendario + Classic, date reali Ricordi e 320dp con testo ingrandito. Finché CI, PR/merge e deploy non sono conclusi, lo stato è `SOURCE_IMPLEMENTED / CI_PENDING / WEB_DEPLOY_PENDING` e `TWO_PWA_NOT_VERIFIED`.
+- **Accettazione manuale:** controllare le superfici Oggi, Calendario Mese/Settimana e Ricordi (foto/non foto) su entrambe le PWA e registrare tema, palette, font size e screenshot sintetici come da protocollo due dispositivi. Nessuna attestazione fisica è derivabile dai soli widget test.
+
 ## 8 novembre 2026 — Web-first S1: navigazione Cerca e UX mobile (PR #274)
 
 - **Canale:** Flutter Web / GitHub Pages, con collaudo successivo da parte dei due utenti sulle PWA installate. Nessun APK o versione Android richiesta da questo step.
