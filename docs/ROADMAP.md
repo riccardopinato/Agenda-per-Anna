@@ -1,10 +1,18 @@
 # Anna's Diary — Roadmap
 
-## 8 novembre 2026 — Web-first DS6 S2: Oggi, Calendario e Ricordi (PR in verifica)
+## 8 novembre 2026 — Web-first DS6 S3: Inbox, Cerca, Crea (PR in validazione)
+
+- **Inbox:** in Editorial aggiunta azione X per cancellare il filtro testuale, tastiera Cerca con submit che non cambia contenuti, stato "Nessun risultato" quando una query/tag esclude tutte le note. **FIX_CURRENT_STEP:** una query rimasta memorizzata non può filtrare invisibilmente la modalità Classic, che non espone il campo.
+- **Cerca globale:** etichetta ordinamento flessibile su display stretto e chiusura tastiera su scroll, senza cambiare l'indice canonico, l'ordinamento, i filtri autorizzati, gli archivi o l'esclusione Vault.
+- **Crea:** il giorno realmente selezionato usa il badge data Editorial già introdotto in S2; Classic mantiene il normale testo, picker/giorno selezionato/write path/azione originari. Tempi 416/544 ms e cascata TOP→BOTTOM 100 ms invariati.
+- **QA:** test Flutter mirati con dati sintetici `test/ds6_webfirst_inbox_search_create_s3_test.dart`, più suite e build Web release, AppLab Gate, review e deploy exact-head. All'inizio `SOURCE_IMPLEMENTED`, `CI_PENDING`, `WEB_DEPLOY_PENDING`, `WEB_USER_NOT_VERIFIED`.
+- **Vincoli:** soltanto Chat, senza Work, nessun APK, no migrazioni, no nuove persistence/index/route/backend, nessuna modifica a sicurezza, account, sync, Vault o cron. La certificazione PWA su due dispositivi resta distinta dal PASS Flutter.
+
+## 8 novembre 2026 — Web-first DS6 S2: Oggi, Calendario e Ricordi (PR #275 merged; Web PASS)
 
 - **Scope visual-only:** il design di base DS6 è già in source, quindi niente riscritture. Una regola notebook tenue condivisa, derivata dal ColorScheme/HSV esistente, rifinisce il diario Oggi e il Calendario. Un piccolo badge di data coerente è usato nel riepilogo settimanale e nei Ricordi (foto o testo autentici, mai immagini di esempio).
 - **Source owners invariati:** `AnnaEditorialTodayOverview`, `AnnaEditorialCalendarPanel`, `AnnaEditorialCalendarWeekSummary`, `_EditorialMemoriesPresentation`; nessun writer, store, modello, sincronizzazione, QR, Vault, identità o route aggiunti. Classic rimane il percorso originario; nessun APK per il Web-first.
-- **Evidenze:** `test/ds6_webfirst_editorial_s2_test.dart` copre gerarchia/azione del diario, count masking, calendario + Classic, date reali Ricordi e 320dp con testo ingrandito. Finché CI, PR/merge e deploy non sono conclusi, lo stato è `SOURCE_IMPLEMENTED / CI_PENDING / WEB_DEPLOY_PENDING` e `TWO_PWA_NOT_VERIFIED`.
+- **Evidenze:** `test/ds6_webfirst_editorial_s2_test.dart` copre gerarchia/azione del diario, count masking, calendario + Classic, date reali Ricordi e 320dp con testo ingrandito. Il commit `2b01f820bbe541258a9292c2863a2e37c2018e8d` è merged con CI main PASS `42491342800` e Pages PASS `42491342827`; `TWO_PWA_NOT_VERIFIED` resta aperto.
 - **Accettazione manuale:** controllare le superfici Oggi, Calendario Mese/Settimana e Ricordi (foto/non foto) su entrambe le PWA e registrare tema, palette, font size e screenshot sintetici come da protocollo due dispositivi. Nessuna attestazione fisica è derivabile dai soli widget test.
 
 ## 8 novembre 2026 — Web-first S1: navigazione Cerca e UX mobile (PR #274)
@@ -12,7 +20,7 @@
 - **Canale:** Flutter Web / GitHub Pages, con collaudo successivo da parte dei due utenti sulle PWA installate. Nessun APK o versione Android richiesta da questo step.
 - **Repro test #273:** la verifica Navigator ha dimostrato che Altro → Cerca monta la route al frame successivo (e la rimuove dopo l'animazione di back). I test precedenti che facevano un solo `pump(Duration)` classificavano il percorso come FAIL erroneamente. Questo non equivale a un PASS sui dispositivi veri.
 - **Modifica UX limitata:** nuova azione di cancellazione query in Cerca, con etichetta già localizzata IT/EN/ES/FR/PT; tastiera mobile con azione Cerca e chiusura su submit. Nessuna modifica a ranking, indicizzazione, storage, privacy o account.
-- **Gate:** test Flutter reale widget tap Altro → Cerca → digita → cancella → Indietro; Development (analyze / test / build Web), AppLab Source Gate, Deploy Pages exact-head, review e utente su due PWA per chiudere `WEB_USER_PASS`. Al momento la PR è in verifica; finché il Pages deploy non è verde, non dichiarare pubblicazione aggiornata.
+- **Gate:** test Flutter reale widget tap Altro → Cerca → digita → cancella → Indietro; Development (analyze / test / build Web), AppLab Source Gate, Deploy Pages exact-head, review e utente su due PWA per chiudere `WEB_USER_PASS`. PR #274 merged a `ac0fa02ea0674d180101013702da64b82781d166`: main CI PASS `42480601280`, Pages PASS `42480601318`; PWA reali ancora NOT_VERIFIED.
 
 ## 7 novembre 2026 — Prossime priorità: QA PWA e staging readiness
 
