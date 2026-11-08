@@ -1,5 +1,12 @@
 # Anna's Diary — Roadmap
 
+## 8 novembre 2026 — Web-first S1: navigazione Cerca e UX mobile (PR #274)
+
+- **Canale:** Flutter Web / GitHub Pages, con collaudo successivo da parte dei due utenti sulle PWA installate. Nessun APK o versione Android richiesta da questo step.
+- **Repro test #273:** la verifica Navigator ha dimostrato che Altro → Cerca monta la route al frame successivo (e la rimuove dopo l'animazione di back). I test precedenti che facevano un solo `pump(Duration)` classificavano il percorso come FAIL erroneamente. Questo non equivale a un PASS sui dispositivi veri.
+- **Modifica UX limitata:** nuova azione di cancellazione query in Cerca, con etichetta già localizzata IT/EN/ES/FR/PT; tastiera mobile con azione Cerca e chiusura su submit. Nessuna modifica a ranking, indicizzazione, storage, privacy o account.
+- **Gate:** test Flutter reale widget tap Altro → Cerca → digita → cancella → Indietro; Development (analyze / test / build Web), AppLab Source Gate, Deploy Pages exact-head, review e utente su due PWA per chiudere `WEB_USER_PASS`. Al momento la PR è in verifica; finché il Pages deploy non è verde, non dichiarare pubblicazione aggiornata.
+
 ## 7 novembre 2026 — Prossime priorità: QA PWA e staging readiness
 
 - [PR #272](https://github.com/riccardopinato/Agenda-per-Anna/pull/272) integrata a `cc192a59` con CI Flutter/AppLab PASS; la nuova Factory baseline è `8ff583e5`, v27/Golden v28.

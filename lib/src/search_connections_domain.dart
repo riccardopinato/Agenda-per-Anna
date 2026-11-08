@@ -1376,10 +1376,23 @@ class _PersonalSearchConnectionsScreenState
               key: const ValueKey('approved-search-query'),
               controller: _queryController,
               autofocus: true,
+              textInputAction: TextInputAction.search,
+              onSubmitted: (_) => FocusScope.of(context).unfocus(),
               onChanged: (value) => setState(() => query = value),
               decoration: InputDecoration(
                 hintText: strings.v100SearchHint,
                 prefixIcon: const Icon(Icons.search),
+                suffixIcon: query.isEmpty
+                    ? null
+                    : IconButton(
+                        key: const ValueKey<String>('approved-search-clear'),
+                        tooltip: strings.v100ClearSearch,
+                        onPressed: () {
+                          _queryController.clear();
+                          setState(() => query = '');
+                        },
+                        icon: const Icon(Icons.close_rounded),
+                      ),
                 filled: true,
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(18),

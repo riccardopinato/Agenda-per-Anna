@@ -165,6 +165,64 @@ void main() {
     store.dispose();
   });
 
+
+  testWidgets('DS6 More → Search touch, clear query and back work',
+      (tester) async {
+    // Synthetic Flutter widget navigation, not installed-browser QA.
+    tester.view.physicalSize = const Size(390, 844);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(() {
+      tester.view.resetPhysicalSize();
+      tester.view.resetDevicePixelRatio();
+    });
+
+    final store = AgendaStore();
+    store.preferences = const AgendaPreferences(
+      onboardingDone: true,
+      appLanguage: AppLanguage.italian,
+    );
+    await tester.pumpWidget(
+      AgendaApp(store: store, bypassIdentityForTesting: true),
+    );
+    await tester.pump(const Duration(milliseconds: 400));
+    await tester.tap(find.byKey(const ValueKey<String>('main-nav-more')));
+    await tester.pump(const Duration(milliseconds: 500));
+    final moreSearch = find.byKey(const ValueKey<String>('more-search'));
+    expect(moreSearch, findsOneWidget);
+    await tester.ensureVisible(moreSearch);
+    await tester.pump(const Duration(milliseconds: 250));
+    await tester.tap(moreSearch);
+    // Navigator inserts the route on the NEXT frame; advancing time in only
+    // one pump incorrectly asserted before the new route was mounted.
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 1100));
+
+    expect(find.byType(PersonalSearchConnectionsScreen), findsOneWidget);
+    final queryInput = find.byKey(const ValueKey<String>('approved-search-query'));
+    expect(queryInput, findsOneWidget);
+    expect(find.byKey(const ValueKey<String>('approved-search-clear')),
+        findsNothing);
+    await tester.enterText(queryInput, 'cenna');
+    await tester.pump();
+    final clear = find.byKey(const ValueKey<String>('approved-search-clear'));
+    expect(clear, findsOneWidget);
+    await tester.tap(clear);
+    await tester.pump();
+    expect(tester.widget<TextField>(queryInput).controller!.text, isEmpty);
+    expect(clear, findsNothing);
+    expect(store.approvedPersonalSearch(''), isEmpty);
+    expect(tester.takeException(), isNull);
+
+    await tester.tap(find.byType(BackButton));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 700));
+    expect(find.byType(PersonalSearchConnectionsScreen), findsNothing);
+    expect(find.byType(MoreScreen), findsOneWidget);
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.pump();
+    store.dispose();
+  });
+
   test('More entry points retain the canonical source-screen routes', () {
     // Source contract only. Real browser tap/navigation will be verified on
     // installed PWAs; no claim of end-to-end pass is made here.
