@@ -1,6 +1,6 @@
 # Anna's Diary — Step 2 | Protocollo collaudo due PWA, 7 novembre 2026
 
-**Status: NOT EXECUTED / REAL_DEVICE_EVIDENCE_PENDING.** Questo protocollo non costituisce evidenza di PASS. Sorgente Flutter Web app `dc601002c3308b6579c30945867638b84ad35de9` (Pages [PASS](https://github.com/riccardopinato/Agenda-per-Anna/actions/runs/42402256546)); documentazione a commit più recente non cambia i byte della Web app. Factory per questa esecuzione `8ff583e598b2e55bb4edc44e8f42b243a967b710`, Master v27/Golden Index v28.
+**Status: PARTIAL USER_REPORTED_MANUAL_PASS (solo Spazio condiviso online e persistenza) / OTHER_REAL_DEVICE_EVIDENCE_PENDING.** Le altre verifiche restano NON ESEGUITE; il resoconto manuale non equivale a un test indipendente o a copertura delle ACL. Sorgente Flutter Web app `dc601002c3308b6579c30945867638b84ad35de9` (Pages [PASS](https://github.com/riccardopinato/Agenda-per-Anna/actions/runs/42402256546)); documentazione a commit più recente non cambia i byte della Web app. Factory per questa esecuzione `8ff583e598b2e55bb4edc44e8f42b243a967b710`, Master v27/Golden Index v28.
 
 ## Aggiornamento collaudo manuale riferito — 9 novembre 2026
 
