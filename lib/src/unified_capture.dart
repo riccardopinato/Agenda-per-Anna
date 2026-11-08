@@ -525,6 +525,10 @@ Future<void> showUnifiedCapture(
       return StatefulBuilder(
         builder: (context, setSheetState) {
           final animate = AnnaDesignTokens.animationsEnabled(context);
+          final effectiveDateText = _cap(DateFormat(
+            'EEEE d MMMM yyyy',
+            AnnaStrings.intlLocale(sheetContext),
+          ).format(targetDay));
           return SafeArea(
             child: SingleChildScrollView(
               child: Column(
@@ -547,10 +551,13 @@ Future<void> showUnifiedCapture(
                     identifier: 'capture-effective-date',
                     child: ListTile(
                       leading: const Icon(Icons.event_available_outlined),
-                      title: Text(_cap(DateFormat(
-                        'EEEE d MMMM yyyy',
-                        AnnaStrings.intlLocale(sheetContext),
-                      ).format(targetDay))),
+                      title: AnnaEditorialTodayMode.enabled.value
+                          ? AnnaEditorialDateLabel(
+                              key: const ValueKey<String>(
+                                  'capture-editorial-effective-date'),
+                              text: effectiveDateText,
+                            )
+                          : Text(effectiveDateText),
                       trailing: const Icon(Icons.edit_calendar_outlined),
                       onTap: () async {
                         final changed = await showDatePicker(
