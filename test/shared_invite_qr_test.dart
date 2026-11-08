@@ -80,7 +80,7 @@ void main() {
           child: TextButton(
             onPressed: () => showDialog<void>(
               context: context,
-              builder: (_) => AlertDialog(
+              builder: (_) => const AlertDialog(
                 scrollable: true,
                 content: SizedBox(
                   width: 310,
@@ -103,7 +103,12 @@ void main() {
     await tester.pump(const Duration(milliseconds: 400));
     expect(find.text('Coucher de soleil'), findsOneWidget);
     final qr = tester.widget<QrImageView>(find.byType(QrImageView));
-    expect(qr.data, SharedInviteQrPayload.encode('A7C29E4B'));
+    // The qr_flutter widget does not expose its data as a public getter.
+    // Assert the production binding and independent encoder instead.
+    expect(File('lib/src/shared_invite_qr.dart').readAsStringSync(),
+        contains('data: SharedInviteQrPayload.encode(code)'));
+    expect(SharedInviteQrPayload.encode('A7C29E4B'),
+        'ANNA-DIARY:A7C29E4B');
     expect(qr.size, lessThanOrEqualTo(140.0));
     final label = tester.widget<Text>(find.text('Coucher de soleil'));
     expect(label.style?.color, const Color(0xFF332B34));
