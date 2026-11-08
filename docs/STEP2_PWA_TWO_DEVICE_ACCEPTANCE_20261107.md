@@ -1,6 +1,15 @@
 # Anna's Diary — Step 2 | Protocollo collaudo due PWA, 7 novembre 2026
 
-**Status: NOT EXECUTED / REAL_DEVICE_EVIDENCE_PENDING.** Questo protocollo non costituisce evidenza di PASS. Sorgente Flutter Web app `dc601002c3308b6579c30945867638b84ad35de9` (Pages [PASS](https://github.com/riccardopinato/Agenda-per-Anna/actions/runs/42402256546)); documentazione a commit più recente non cambia i byte della Web app. Factory per questa esecuzione `8ff583e598b2e55bb4edc44e8f42b243a967b710`, Master v27/Golden Index v28.
+**Status: PARTIAL USER_REPORTED_MANUAL_PASS (solo Spazio condiviso online e persistenza) / OTHER_REAL_DEVICE_EVIDENCE_PENDING.** Le altre verifiche restano NON ESEGUITE; il resoconto manuale non equivale a un test indipendente o a copertura delle ACL. Sorgente Flutter Web app `dc601002c3308b6579c30945867638b84ad35de9` (Pages [PASS](https://github.com/riccardopinato/Agenda-per-Anna/actions/runs/42402256546)); documentazione a commit più recente non cambia i byte della Web app. Factory per questa esecuzione `8ff583e598b2e55bb4edc44e8f42b243a967b710`, Master v27/Golden Index v28.
+
+## Aggiornamento collaudo manuale riferito — 9 novembre 2026
+
+**Origine:** feedback diretto dell'utente in Chat, non log, screenshot o fixture e2e. Versione esatta dei due dispositivi **non fornita**: non assumere che il test sia stato eseguito sul commit corrente.
+
+- **Shared space (parte di W08):** due persone su due telefoni hanno ciascuna creato e modificato contenuti e le modifiche erano visibili sul telefono dell'altra. `USER_REPORTED_MANUAL_PASS` per flusso online bidirezionale. La parte QR invito valido/scaduto, owner/revoca e cross-space ACL resta **NOT_VERIFIED**.
+- **Persistenza (W10, limitatamente ai contenuti provati):** l'utente conferma che i contenuti rimangono presenti dopo riapertura. `USER_REPORTED_MANUAL_PASS`. Non equivale a test su ogni tipo di record o a backup/recovery.
+- **Offline (W09):** l'utente ha osservato che senza connessione la Web app non si apre. Nessuna scrittura offline è stata provata, quindi ripresa sync online non è `PASS`. L'utente ha richiesto di **rinviare il tema offline** e continuare lo sviluppo: `DEFERRED_BY_USER`; non è uno stop all'implementazione Web-first.
+- Non raccogliere in repository nomi o contenuti personali. Mancano device/browser/versione build, tempi, screenshot e log: i rimanenti scenari continuano a richiedere QA separata.
 
 ## Requisiti e preparazione
 

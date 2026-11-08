@@ -2270,6 +2270,7 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
                   code: current.code,
                   style: qrStyle,
                   classic: classicQr,
+                  languageCode: language,
                 ),
                 const SizedBox(height: 12),
                 SelectableText(

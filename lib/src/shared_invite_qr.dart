@@ -34,6 +34,18 @@ extension SharedInviteQrStyleVisual on SharedInviteQrStyle {
         SharedInviteQrStyle.watercolor => 'Acquerello',
       };
 
+  /// Presentation-only copy: the original eight-character invite is shared
+  /// across all four artwork variants and all supported UI languages.
+  String labelFor(String languageCode) => sharedInviteQrText(
+        languageCode,
+        switch (this) {
+          SharedInviteQrStyle.sunset => 'styleSunset',
+          SharedInviteQrStyle.garden => 'styleGarden',
+          SharedInviteQrStyle.stars => 'styleStars',
+          SharedInviteQrStyle.watercolor => 'styleWatercolor',
+        },
+      );
+
   IconData get icon => switch (this) {
         SharedInviteQrStyle.sunset => Icons.wb_sunny_outlined,
         SharedInviteQrStyle.garden => Icons.local_florist_outlined,
@@ -65,6 +77,8 @@ String sharedInviteQrText(String locale, String key) {
         'joinTitle': 'Join shared space?', 'joinPrompt': 'Confirm this invitation code',
         'art': 'Change picture', 'classic': 'Classic QR', 'artistic': 'Artistic QR',
         'unavailable': 'Camera not available. Enter the code manually.',
+        'styleSunset': 'Sunset', 'styleGarden': 'Garden',
+        'styleStars': 'Stars', 'styleWatercolor': 'Watercolor',
       },
     'es' => <String, String>{
         'scan': 'Escanear QR', 'instruction': 'Escanea una invitación de Anna’s Diary',
@@ -72,6 +86,8 @@ String sharedInviteQrText(String locale, String key) {
         'joinTitle': '¿Unirse al espacio?', 'joinPrompt': 'Confirma este código',
         'art': 'Cambiar imagen', 'classic': 'QR clásico', 'artistic': 'QR artístico',
         'unavailable': 'Cámara no disponible. Introduce el código a mano.',
+        'styleSunset': 'Atardecer', 'styleGarden': 'Jardín',
+        'styleStars': 'Estrellas', 'styleWatercolor': 'Acuarela',
       },
     'fr' => <String, String>{
         'scan': 'Scanner le QR', 'instruction': 'Scannez une invitation Anna’s Diary',
@@ -79,6 +95,8 @@ String sharedInviteQrText(String locale, String key) {
         'joinTitle': 'Rejoindre cet espace ?', 'joinPrompt': 'Confirmez ce code',
         'art': 'Changer l’image', 'classic': 'QR classique', 'artistic': 'QR artistique',
         'unavailable': 'Caméra indisponible. Saisissez le code.',
+        'styleSunset': 'Coucher de soleil', 'styleGarden': 'Jardin',
+        'styleStars': 'Étoiles', 'styleWatercolor': 'Aquarelle',
       },
     'pt' => <String, String>{
         'scan': 'Ler código QR', 'instruction': 'Lê um convite do Anna’s Diary',
@@ -86,6 +104,8 @@ String sharedInviteQrText(String locale, String key) {
         'joinTitle': 'Entrar no espaço?', 'joinPrompt': 'Confirma este código',
         'art': 'Mudar imagem', 'classic': 'QR clássico', 'artistic': 'QR artístico',
         'unavailable': 'Câmara indisponível. Introduz o código.',
+        'styleSunset': 'Pôr do sol', 'styleGarden': 'Jardim',
+        'styleStars': 'Estrelas', 'styleWatercolor': 'Aguarela',
       },
     _ => <String, String>{
         'scan': 'Scansiona QR', 'instruction': 'Inquadra un invito Anna’s Diary',
@@ -93,6 +113,8 @@ String sharedInviteQrText(String locale, String key) {
         'joinTitle': 'Collegarti allo spazio?', 'joinPrompt': 'Conferma questo codice',
         'art': 'Cambia immagine', 'classic': 'QR classico', 'artistic': 'QR artistico',
         'unavailable': 'Fotocamera non disponibile. Inserisci il codice a mano.',
+        'styleSunset': 'Tramonto', 'styleGarden': 'Giardino',
+        'styleStars': 'Stelle', 'styleWatercolor': 'Acquerello',
       },
   };
   return language[key] ?? key;
@@ -104,12 +126,14 @@ class SharedInviteQrArtCard extends StatelessWidget {
   final String code;
   final SharedInviteQrStyle style;
   final bool classic;
+  final String languageCode;
 
   const SharedInviteQrArtCard({
     super.key,
     required this.code,
     required this.style,
     required this.classic,
+    this.languageCode = 'it',
   });
 
   @override
@@ -117,7 +141,14 @@ class SharedInviteQrArtCard extends StatelessWidget {
     final gradient = classic
         ? const [Colors.white, Color(0xFFF9F8F9)]
         : style.gradient;
-    final color = Theme.of(context).colorScheme.onSurface;
+    // Artwork always has a pale background, including in dark mode. A fixed
+    // dark foreground prevents low-contrast white-on-pastel labels.
+    const artworkInk = Color(0xFF332B34);
+    // AlertDialog reserves 40dp insets and 24dp content padding per side;
+    // the card and QR frame add another 42dp. Avoid a fixed 220dp overflow
+    // on 320dp/large-text PWA viewports without altering encoded QR data.
+    final qrDimension =
+        (MediaQuery.sizeOf(context).width - 180).clamp(0.0, 220.0);
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
@@ -135,10 +166,18 @@ class SharedInviteQrArtCard extends StatelessWidget {
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(style.icon, color: color),
+                Icon(style.icon, color: artworkInk),
                 const SizedBox(width: 9),
-                Text(style.name, style: TextStyle(
-                  color: color, fontWeight: FontWeight.w700)),
+                Flexible(
+                  child: Text(
+                    style.labelFor(languageCode),
+                    maxLines: 2,
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                      color: artworkInk, fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ),
               ],
             ),
             const SizedBox(height: 10),
@@ -153,7 +192,7 @@ class SharedInviteQrArtCard extends StatelessWidget {
               data: SharedInviteQrPayload.encode(code),
               version: QrVersions.auto,
               errorCorrectionLevel: QrErrorCorrectLevel.H,
-              size: 220,
+              size: qrDimension,
               padding: const EdgeInsets.all(7),
               backgroundColor: Colors.white,
               gapless: true,
