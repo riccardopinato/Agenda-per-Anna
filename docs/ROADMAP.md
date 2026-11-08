@@ -1,11 +1,18 @@
 # Anna's Diary — Roadmap
 
-## 9 novembre 2026 — Web-first S4: Shared invite QR e stato reale del collaudo (PR in validazione)
+## 9 novembre 2026 — Web-first S5: accessibilità, testo ingrandito, 5 lingue e QA performance (PR in validazione)
+
+- **Problema reale da codice:** `AnnaEditorialActionPair` decideva soltanto sulla larghezza (340dp), mantenendo due riquadri stretti a 360–390dp anche con testo 1,6–2×; `AnnaEditorialSectionHeading` con azione comprimeva il titolo nella stessa riga; il dock editoriale aveva altezza fissa 60dp mentre l'etichetta scala con il font di sistema.
+- **Fix visual-only condiviso:** coppie di azioni editoriali in colonna quando il testo supera la soglia; titoli e azioni di sezione si impilano su display stretti o con font grande; dock e spazio riservato dal MainShell crescono insieme in funzione del text scaler, mantenendo altezza originale a 1× e l'unica azione centrale Crea.
+- **QA:** widget sintetico `test/ds6_webfirst_s5_a11y_responsive_test.dart` per IT/EN/ES/FR/PT su 320dp, testo 2× e navigazione reale del dock; verifica regressione fonte per 10k ricordi già esistente e reduced-motion. Nessun benchmark FPS/TTI fisico è stato eseguito: `PHYSICAL_PERFORMANCE_NOT_MEASURED`.
+- **Rilascio:** PR, Flutter analyze/full tests/Web release, AppLab Source Gate, check recensioni, merge e Pages exact SHA; solo Chat, nessun APK, nessuna modifica a offline/sync/auth/Vault/storage/router.
+
+## 9 novembre 2026 — Web-first S4: Shared invite QR e collaudo (PR #277 merged / Web PASS)
 
 - **Feedback manuale, non CI:** l'utente riferisce che due persone, su telefoni diversi, hanno entrambe creato e modificato contenuti nello Spazio condiviso, osservando le modifiche sull'altro telefono. Riferisce anche persistenza dei contenuti dopo riapertura. `USER_REPORTED_MANUAL_PASS` per creazione, modifica, sync online bidirezionale e persistenza; non promuovere a `INDEPENDENTLY_VERIFIED` e non dedurre data/ora, versione, dispositivo o prova specifica su QR, scadenze o ACL.
 - **Decisione prodotto:** per esplicita richiesta, NON affrontare ora avvio o scritture offline Web/PWA; tema `DEFERRED_BY_USER`, non `PASS`. La prova di scrittura offline→online non è stata eseguita.
 - **Sviluppo visual-only:** i 4 stili artistici dell'invito QR ora hanno nomi localizzati IT/EN/ES/FR/PT; testo con contrasto scuro su sfondo pastello anche in dark mode e badge QR adattivo alla larghezza mobile (anche 320dp). Il codice server-issued 8 caratteri, expiry 24h, QR payload, join/ACL, rigenerazione owner-only e store/sync non cambiano.
-- **Evidenza richiesta:** test widget QR responsivo dark-mode 320dp + copia nelle 5 lingue, fonte QR payload invariata, suite Flutter completa, AppLab Source Gate, build Web PR, CI main e Pages exact SHA. Fino ai green gate la classificazione di questa modifica è `SOURCE_IMPLEMENTED / CI_PENDING / WEB_DEPLOY_PENDING`.
+- **Evidenza richiesta:** test widget QR responsivo dark-mode 320dp + copia nelle 5 lingue, fonte QR payload invariata, suite Flutter completa, AppLab Source Gate, build Web PR, CI main e Pages exact SHA. PR #277 integrata a `f69cc29ab76a1260b08d6fca99aa937598a0961c`; main [Flutter CI PASS #42536016379](https://github.com/riccardopinato/Agenda-per-Anna/actions/runs/42536016379) e [Pages PASS #42536016378](https://github.com/riccardopinato/Agenda-per-Anna/actions/runs/42536016378). Test manuale dei QR resta NOT_VERIFIED.
 - **Dopo questo step:** performance/accessibilità, verifica lingue, regressioni responsive per superfici reali. Test manuale QR valido/scaduto e ACL restano `NOT_VERIFIED` indipendentemente dal precedente sync PASS. Solo Chat, niente Work o APK.
 
 ## 8 novembre 2026 — Web-first DS6 S3: Inbox, Cerca, Crea (PR #276 merged, Web PASS)

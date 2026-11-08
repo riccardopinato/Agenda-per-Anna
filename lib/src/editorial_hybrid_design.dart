@@ -512,8 +512,13 @@ class AnnaEditorialActionPair extends StatelessWidget {
   @override
   Widget build(BuildContext context) => LayoutBuilder(
         builder: (context, constraints) {
+          // A two-column arrangement can become unusably narrow even on
+          // 360–390dp phones when the OS font size is increased. Stack the
+          // existing widgets instead; no duplicate actions or state.
+          final largeText = MediaQuery.textScalerOf(context).scale(16) >= 22;
           if (constraints.maxWidth <
-              AnnaEditorialTokens.stackedTileBreakpoint) {
+                  AnnaEditorialTokens.stackedTileBreakpoint ||
+              largeText) {
             return Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
@@ -549,25 +554,44 @@ class AnnaEditorialSectionHeading extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colors = AnnaEditorialColors.of(context);
-    return Row(
-      children: [
-        Expanded(
-          child: Semantics(
-            header: true,
-            child: Text(
-              title,
-              style: AnnaJournalTypography.editorial(
-                context,
-                size: AnnaEditorialTokens.sectionTitle,
-              ).copyWith(color: colors.ink),
-            ),
-          ),
-        ),
-        if (action != null) ...[
-          const SizedBox(width: AnnaDesignTokens.spaceXs),
-          action!,
-        ],
-      ],
+    final heading = Semantics(
+      header: true,
+      child: Text(
+        title,
+        softWrap: true,
+        style: AnnaJournalTypography.editorial(
+          context,
+          size: AnnaEditorialTokens.sectionTitle,
+        ).copyWith(color: colors.ink),
+      ),
+    );
+    if (action == null) return heading;
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final largeText = MediaQuery.textScalerOf(context).scale(16) >= 22;
+        // Preserve the action and the full localized heading at high font
+        // scales instead of squeezing them into the same horizontal row.
+        if (constraints.maxWidth <
+                AnnaEditorialTokens.stackedTileBreakpoint ||
+            largeText) {
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              heading,
+              const SizedBox(height: AnnaDesignTokens.spaceXs),
+              Align(alignment: Alignment.centerRight, child: action!),
+            ],
+          );
+        }
+        return Row(
+          children: [
+            Expanded(child: heading),
+            const SizedBox(width: AnnaDesignTokens.spaceXs),
+            action!,
+          ],
+        );
+      },
     );
   }
 }
@@ -644,6 +668,14 @@ class AnnaEditorialDockBar extends StatelessWidget {
        assert(selectedIcons.length == 4),
        assert(semanticIds.length == 4);
 
+  /// The bottom navigation labels scale with the OS font setting. Increase
+  /// the component's vertical budget instead of allowing label overflow on
+  /// narrow Web/PWA viewports. Base 60dp preserves the approved default.
+  static double heightFor(BuildContext context) {
+    final scaledLabel = MediaQuery.textScalerOf(context).scale(11);
+    return (40.0 + scaledLabel * 1.3).clamp(60.0, 94.0);
+  }
+
   @override
   Widget build(BuildContext context) {
     final colors = AnnaEditorialColors.of(context);
@@ -651,7 +683,7 @@ class AnnaEditorialDockBar extends StatelessWidget {
       child: Material(
         type: MaterialType.transparency,
         child: SizedBox(
-          height: 60,
+          height: heightFor(context),
           child: Center(
             child: ConstrainedBox(
               constraints: const BoxConstraints(maxWidth: 600),

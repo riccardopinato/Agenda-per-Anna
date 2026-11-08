@@ -390,7 +390,8 @@ class _MainShellState extends State<MainShell> {
                     if (editorial) {
                       return SizedBox(
                         key: const ValueKey<String>('main-editorial-dock'),
-                        height: 102 + MediaQuery.paddingOf(context).bottom,
+                        height: 42 + AnnaEditorialDockBar.heightFor(context) +
+                            MediaQuery.paddingOf(context).bottom,
                         child: Stack(
                           clipBehavior: Clip.none,
                           children: [
