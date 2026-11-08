@@ -165,6 +165,50 @@ void main() {
     store.dispose();
   });
 
+
+  testWidgets('DS6 More to Search direct route callback is mounted and back works',
+      (tester) async {
+    tester.view.physicalSize = const Size(390, 844);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(() {
+      tester.view.resetPhysicalSize();
+      tester.view.resetDevicePixelRatio();
+    });
+
+    final store = AgendaStore();
+    store.preferences = const AgendaPreferences(
+      onboardingDone: true,
+      appLanguage: AppLanguage.italian,
+    );
+    await tester.pumpWidget(
+      AgendaApp(store: store, bypassIdentityForTesting: true),
+    );
+    await tester.pump(const Duration(milliseconds: 400));
+    await tester.tap(find.byKey(const ValueKey<String>('main-nav-more')));
+    await tester.pump(const Duration(milliseconds: 500));
+    final search = find.byKey(const ValueKey<String>('more-search'));
+    expect(search, findsOneWidget);
+    final tile = tester.widget<ListTile>(search);
+    expect(tile.onTap, isNotNull);
+
+    // Diagnostic distinction: invoke the actual bound route callback, not
+    // a pointer tap. A PASS here alone does not prove Web touch navigation.
+    tile.onTap!();
+    await tester.pump(const Duration(milliseconds: 1100));
+    expect(find.byType(PersonalSearchConnectionsScreen), findsOneWidget);
+    expect(find.byKey(const ValueKey<String>('approved-search-query')),
+        findsOneWidget);
+    expect(tester.takeException(), isNull);
+
+    await tester.tap(find.byType(BackButton));
+    await tester.pump(const Duration(milliseconds: 700));
+    expect(find.byType(PersonalSearchConnectionsScreen), findsNothing);
+    expect(find.byType(MoreScreen), findsOneWidget);
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.pump();
+    store.dispose();
+  });
+
   test('More entry points retain the canonical source-screen routes', () {
     // Source contract only. Real browser tap/navigation will be verified on
     // installed PWAs; no claim of end-to-end pass is made here.
