@@ -1,11 +1,19 @@
 # Anna's Diary — Roadmap
 
-## 8 novembre 2026 — Web-first DS6 S3: Inbox, Cerca, Crea (PR in validazione)
+## 9 novembre 2026 — Web-first S4: Shared invite QR e stato reale del collaudo (PR in validazione)
+
+- **Feedback manuale, non CI:** l'utente riferisce che due persone, su telefoni diversi, hanno entrambe creato e modificato contenuti nello Spazio condiviso, osservando le modifiche sull'altro telefono. Riferisce anche persistenza dei contenuti dopo riapertura. `USER_REPORTED_MANUAL_PASS` per creazione, modifica, sync online bidirezionale e persistenza; non promuovere a `INDEPENDENTLY_VERIFIED` e non dedurre data/ora, versione, dispositivo o prova specifica su QR, scadenze o ACL.
+- **Decisione prodotto:** per esplicita richiesta, NON affrontare ora avvio o scritture offline Web/PWA; tema `DEFERRED_BY_USER`, non `PASS`. La prova di scrittura offline→online non è stata eseguita.
+- **Sviluppo visual-only:** i 4 stili artistici dell'invito QR ora hanno nomi localizzati IT/EN/ES/FR/PT; testo con contrasto scuro su sfondo pastello anche in dark mode e badge QR adattivo alla larghezza mobile (anche 320dp). Il codice server-issued 8 caratteri, expiry 24h, QR payload, join/ACL, rigenerazione owner-only e store/sync non cambiano.
+- **Evidenza richiesta:** test widget QR responsivo dark-mode 320dp + copia nelle 5 lingue, fonte QR payload invariata, suite Flutter completa, AppLab Source Gate, build Web PR, CI main e Pages exact SHA. Fino ai green gate la classificazione di questa modifica è `SOURCE_IMPLEMENTED / CI_PENDING / WEB_DEPLOY_PENDING`.
+- **Dopo questo step:** performance/accessibilità, verifica lingue, regressioni responsive per superfici reali. Test manuale QR valido/scaduto e ACL restano `NOT_VERIFIED` indipendentemente dal precedente sync PASS. Solo Chat, niente Work o APK.
+
+## 8 novembre 2026 — Web-first DS6 S3: Inbox, Cerca, Crea (PR #276 merged, Web PASS)
 
 - **Inbox:** in Editorial aggiunta azione X per cancellare il filtro testuale, tastiera Cerca con submit che non cambia contenuti, stato "Nessun risultato" quando una query/tag esclude tutte le note. **FIX_CURRENT_STEP:** una query rimasta memorizzata non può filtrare invisibilmente la modalità Classic, che non espone il campo.
 - **Cerca globale:** etichetta ordinamento flessibile su display stretto e chiusura tastiera su scroll, senza cambiare l'indice canonico, l'ordinamento, i filtri autorizzati, gli archivi o l'esclusione Vault.
 - **Crea:** il giorno realmente selezionato usa il badge data Editorial già introdotto in S2; Classic mantiene il normale testo, picker/giorno selezionato/write path/azione originari. Tempi 416/544 ms e cascata TOP→BOTTOM 100 ms invariati.
-- **QA:** test Flutter mirati con dati sintetici `test/ds6_webfirst_inbox_search_create_s3_test.dart`, più suite e build Web release, AppLab Gate, review e deploy exact-head. All'inizio `SOURCE_IMPLEMENTED`, `CI_PENDING`, `WEB_DEPLOY_PENDING`, `WEB_USER_NOT_VERIFIED`.
+- **QA:** test Flutter mirati con dati sintetici `test/ds6_webfirst_inbox_search_create_s3_test.dart`, più suite e build Web release, AppLab Gate, review e deploy exact-head. PR #276 merged a `869d48ca651bd85e9ee4952264c87a9e33904606`; Development checks main [PASS #42532098616](https://github.com/riccardopinato/Agenda-per-Anna/actions/runs/42532098616) e Pages [PASS #42532098617](https://github.com/riccardopinato/Agenda-per-Anna/actions/runs/42532098617). `WEB_USER_NOT_VERIFIED` per Inbox/Cerca/Crea.
 - **Vincoli:** soltanto Chat, senza Work, nessun APK, no migrazioni, no nuove persistence/index/route/backend, nessuna modifica a sicurezza, account, sync, Vault o cron. La certificazione PWA su due dispositivi resta distinta dal PASS Flutter.
 
 ## 8 novembre 2026 — Web-first DS6 S2: Oggi, Calendario e Ricordi (PR #275 merged; Web PASS)
