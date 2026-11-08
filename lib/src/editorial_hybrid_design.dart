@@ -182,7 +182,7 @@ class AnnaEditorialDateLabel extends StatelessWidget {
                   overflow: TextOverflow.ellipsis,
                   style: Theme.of(context).textTheme.labelMedium?.copyWith(
                     color: foreground,
-                    fontWeight: FontWeight.w650,
+                    fontWeight: FontWeight.w600,
                     height: 1.25,
                   ),
                 ),
