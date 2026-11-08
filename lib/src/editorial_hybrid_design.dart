@@ -148,8 +148,10 @@ class AnnaEditorialDateLabel extends StatelessWidget {
     final colors = AnnaEditorialColors.of(context);
     final foreground = onMedia ? Colors.white : colors.mutedInk;
     return ConstrainedBox(
-      constraints: BoxConstraints(
-        maxWidth: MediaQuery.sizeOf(context).width - 48,
+      // Parent layout bounds the badge on a phone. Do not derive maxWidth
+      // from MediaQuery: nested previews and tests may report Size.zero.
+      constraints: const BoxConstraints(
+        maxWidth: AnnaEditorialTokens.contentMaxWidth,
       ),
       child: DecoratedBox(
         decoration: BoxDecoration(
