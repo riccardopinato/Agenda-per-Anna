@@ -166,8 +166,9 @@ void main() {
   });
 
 
-  testWidgets('DS6 More to Search direct route callback is mounted and back works',
+  testWidgets('DS6 More → Search touch, clear query and back work',
       (tester) async {
+    // Synthetic Flutter widget navigation, not installed-browser QA.
     tester.view.physicalSize = const Size(390, 844);
     tester.view.devicePixelRatio = 1;
     addTearDown(() {
@@ -186,35 +187,34 @@ void main() {
     await tester.pump(const Duration(milliseconds: 400));
     await tester.tap(find.byKey(const ValueKey<String>('main-nav-more')));
     await tester.pump(const Duration(milliseconds: 500));
-    final search = find.byKey(const ValueKey<String>('more-search'));
-    expect(search, findsOneWidget);
-    final tile = tester.widget<ListTile>(search);
-    expect(tile.onTap, isNotNull);
-
-    // Diagnostic distinction: invoke the actual bound route callback, not
-    // a pointer tap. A PASS here alone does not prove Web touch navigation.
-    tile.onTap!();
-    // Diagnose route-stack behavior at the exact callback boundary.
-    // Temporary logs use only synthetic guest metadata.
-    // ignore: avoid_print
-    print('WEB_S1 immediate canPop=${appNavigatorKey.currentState?.canPop()} '
-        'allSearch=${find.byType(PersonalSearchConnectionsScreen, skipOffstage: false).evaluate().length}');
+    final moreSearch = find.byKey(const ValueKey<String>('more-search'));
+    expect(moreSearch, findsOneWidget);
+    await tester.ensureVisible(moreSearch);
+    await tester.pump(const Duration(milliseconds: 250));
+    await tester.tap(moreSearch);
+    // Navigator inserts the route on the NEXT frame; advancing time in only
+    // one pump incorrectly asserted before the new route was mounted.
     await tester.pump();
-    // ignore: avoid_print
-    print('WEB_S1 afterPump canPop=${appNavigatorKey.currentState?.canPop()} '
-        'allSearch=${find.byType(PersonalSearchConnectionsScreen, skipOffstage: false).evaluate().length}');
     await tester.pump(const Duration(milliseconds: 1100));
-    // ignore: avoid_print
-    print('WEB_S1 after1100 canPop=${appNavigatorKey.currentState?.canPop()} '
-        'allSearch=${find.byType(PersonalSearchConnectionsScreen, skipOffstage: false).evaluate().length} '
-        'visibleSearch=${find.byType(PersonalSearchConnectionsScreen).evaluate().length} '
-        'searchInput=${find.byKey(const ValueKey<String>('approved-search-query'), skipOffstage:false).evaluate().length}');
+
     expect(find.byType(PersonalSearchConnectionsScreen), findsOneWidget);
-    expect(find.byKey(const ValueKey<String>('approved-search-query')),
-        findsOneWidget);
+    final queryInput = find.byKey(const ValueKey<String>('approved-search-query'));
+    expect(queryInput, findsOneWidget);
+    expect(find.byKey(const ValueKey<String>('approved-search-clear')),
+        findsNothing);
+    await tester.enterText(queryInput, 'cenna');
+    await tester.pump();
+    final clear = find.byKey(const ValueKey<String>('approved-search-clear'));
+    expect(clear, findsOneWidget);
+    await tester.tap(clear);
+    await tester.pump();
+    expect(tester.widget<TextField>(queryInput).controller!.text, isEmpty);
+    expect(clear, findsNothing);
+    expect(store.approvedPersonalSearch(''), isEmpty);
     expect(tester.takeException(), isNull);
 
     await tester.tap(find.byType(BackButton));
+    await tester.pump();
     await tester.pump(const Duration(milliseconds: 700));
     expect(find.byType(PersonalSearchConnectionsScreen), findsNothing);
     expect(find.byType(MoreScreen), findsOneWidget);
