@@ -15,9 +15,9 @@
 | --- | --- | --- |
 | W01 | Apri PWA da chiusa, visita Oggi e Altro | Nessun loading infinito; layout e dock accessibili; in Oggi regola notebook chiara senza clipping su 320dp e testo ingrandito |
 | W02 | Altro → Cerca con indice vuoto, query vuota, digita e cancella; prova Invio/Cerca della tastiera | Nessuna eccezione o blocco; prompt/filtro e input usabili, tasto X cancella senza alterare record, submit chiude la tastiera (fix #270 e Web-first S1 #274) |
-| W03 | Cerca `c`, `cena`, refuso `cenna` su dati sintetici | Solo titoli ammessi in ricerca a un carattere; ordine/risultati coerenti; nessuna voce Vault |
-| W04 | Inbox: crea, etichetta, rinomina, riapri e filtra | Dati riaperti integri dopo riavvio e distinzione per account |
-| W05 | Crea → Evento sul giorno selezionato, riapertura calendario; passa Mese/Settimana | Data corretta, badge data settimanale leggibile, nessun writer duplicato, gesture/tastiera non coprono Salva |
+| W03 | Cerca `c`, `cena`, refuso `cenna` su dati sintetici; ordine e scorrimento con tastiera aperta anche a 320dp | Solo titoli ammessi in ricerca a un carattere; ordine/risultati coerenti, etichetta Ordina non tagliata, drag chiude la tastiera, nessuna voce Vault |
+| W04 | Inbox: crea, etichetta, rinomina, riapri, filtra e cancella query; prova cambio Editorial → Classic con query non vuota | Dati riaperti integri e separati per account; filtri visibili solo nella rispettiva modalità, Classic non nasconde note per ricerche invisibili, stato Nessun risultato corretto |
+| W05 | Crea → Evento sul giorno selezionato, cambia data dal picker, riapri calendario; passa Mese/Settimana | Giorno reale e badge coerenti in Editorial, testo normale in Classic; nessun writer duplicato, selezione data corretta, gesture/tastiera non coprono Salva |
 | W06 | Ricordi, Timeline, Mappa e anno con media sintetici, foto e ricordi di solo testo | Scroll e immagini stabili; badge data leggibile sulle foto e sul testo in light/dark/HSV, nessun contenuto non autorizzato |
 | W07 | Aspetto: palette standard/HSV, tema chiaro/scuro, testo grande | Persistenza dopo riapertura; contrasti adeguati, niente overflow |
 | W08 | Spazio condiviso: codice scaduto / valido tra due account sintetici | Server owner corretto, revoca rispettata; nessun accesso cross-space |

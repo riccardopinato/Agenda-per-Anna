@@ -1095,7 +1095,9 @@ class _InboxScreenState extends State<InboxScreen> {
             ? [...store.activeInboxEntries]
             : [...store.inboxEntriesInCategory(selectedCategory!)];
         // DS6: local, authorized Inbox title/tag filtering, no new index.
-        final needle = _noteQuery.trim().toLowerCase();
+        // Classic does not expose the DS6 query field: never apply a hidden
+        // filter while the reversible editorial style is disabled.
+        final needle = editorial ? _noteQuery.trim().toLowerCase() : '';
         if (needle.isNotEmpty) {
           entries.removeWhere((entry) =>
               !entry.text.toLowerCase().contains(needle) &&
@@ -1217,9 +1219,21 @@ class _InboxScreenState extends State<InboxScreen> {
                     key: const ValueKey<String>('ds6-inbox-search'),
                     controller: _noteSearchController,
                     textInputAction: TextInputAction.search,
+                    onSubmitted: (_) => FocusScope.of(context).unfocus(),
                     decoration: InputDecoration(
                       prefixIcon: const Icon(Icons.search),
                       hintText: strings.search,
+                      suffixIcon: needle.isEmpty
+                          ? null
+                          : IconButton(
+                              key: const ValueKey<String>('ds6-inbox-search-clear'),
+                              tooltip: strings.v100ClearSearch,
+                              onPressed: () {
+                                _noteSearchController.clear();
+                                setState(() => _noteQuery = '');
+                              },
+                              icon: const Icon(Icons.close_rounded),
+                            ),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(16),
                       ),
@@ -1267,7 +1281,10 @@ class _InboxScreenState extends State<InboxScreen> {
                   child: Padding(
                     padding: const EdgeInsets.all(32),
                     child: Text(
-                      strings.inboxEmpty,
+                      needle.isNotEmpty || selectedCategory != null
+                          ? strings.v100NoResults
+                          : strings.inboxEmpty,
+                      key: const ValueKey<String>('ds6-inbox-empty-state'),
                       textAlign: TextAlign.center,
                     ),
                   ),

@@ -1450,7 +1450,13 @@ class _PersonalSearchConnectionsScreenState
             child: Row(
               mainAxisAlignment: MainAxisAlignment.end,
               children: [
-                Text(approvedSearchOrderTitle(strings.languageCode)),
+                Flexible(
+                  child: Text(
+                    approvedSearchOrderTitle(strings.languageCode),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
                 const SizedBox(width: 8),
                 DropdownButton<ApprovedSearchSort>(
                   value: sortOrder,
@@ -1471,6 +1477,8 @@ class _PersonalSearchConnectionsScreenState
           Expanded(
             child: query.trim().isEmpty
                 ? SingleChildScrollView(
+                    keyboardDismissBehavior:
+                        ScrollViewKeyboardDismissBehavior.onDrag,
                     child: Padding(
                       padding: const EdgeInsets.all(24),
                       child: Column(
@@ -1535,6 +1543,8 @@ class _PersonalSearchConnectionsScreenState
                         ),
                       )
                     : ListView.separated(
+                        keyboardDismissBehavior:
+                            ScrollViewKeyboardDismissBehavior.onDrag,
                         padding: const EdgeInsets.fromLTRB(14, 8, 14, 40),
                         itemCount: hits.length,
                         separatorBuilder: (_, __) =>
