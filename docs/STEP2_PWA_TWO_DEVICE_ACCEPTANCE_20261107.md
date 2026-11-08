@@ -33,6 +33,12 @@
 | W09 | Offline breve, scrittura locale, ritorno online | Stato sync veritiero; riconciliazione senza duplicati o perdita; non fare logout mentre dati in sospeso |
 | W10 | Salvataggio e riapertura dei contenuti dopo restart PWA | Persistenza verificata; se sync fallisce, diagnostica accurata |
 
+## S5 — Accessibilità, 5 lingue e performance (collaudo da eseguire)
+
+- A/B: aprire Oggi, Calendario, Ricordi, Altro e Impostazioni con preferenza lingua IT, EN, ES, FR, PT; verificare a 320/360/390dp con testo 1× e 2× titoli, pulsanti e quattro destinazioni dock, inclusa l'azione Crea. I test Flutter automatici provano widget sintetici, non ogni schermata su browser fisico.
+- A/B: attivare Reduce Motion e verificare che le animazioni non impediscano input o navigazione; keyboard focus, screen reader e target 48dp devono essere verificati su PWA reale.
+- Prestazioni: raccogliere 3 misure cold + 3 warm per Oggi/Cerca/Ricordi/Calendario su ciascun dispositivo, registrando solo tempi tecnici senza contenuti personali; nessuna soglia inventata e nessun `PERFORMANCE_PASS` senza dati.
+
 ## Performance riproducibile (non raccogliere tracce con dati privati)
 
 Registrare, per A e B separatamente, **3 campioni cold** (PWA chiusa e riaperta) e **3 warm** (navigazione interna) per apertura Oggi, Cerca/risultati, Ricordi con media sintetici e calendario. Per ogni campione rilevare dispositivo, browser/versione, stato rete, tempo a contenuto interattivo, reattività dopo scroll e eventuali blocchi. I dati mancanti sono `NOT_MEASURED`; nessuna soglia arbitraria determina PASS fino a una baseline concordata. Annotare memory snapshots solo con fixture sintetiche e nessun dato di contenuto.
