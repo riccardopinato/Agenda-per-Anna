@@ -73,7 +73,9 @@ class AnnaEditorialTodayOverview extends StatelessWidget {
                 ],
               ),
               const SizedBox(height: 17),
-              Divider(color: colors.border, height: 1),
+              const AnnaEditorialAccentRule(
+                key: ValueKey<String>('editorial-today-accent-rule'),
+              ),
               const SizedBox(height: 16),
               AnnaEditorialPrimaryAction(
                 label: strings.d3('ui5ShowAll'),
