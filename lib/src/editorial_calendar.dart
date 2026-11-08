@@ -26,7 +26,6 @@ class AnnaEditorialCalendarPanel extends StatelessWidget {
         child: Padding(padding: padding, child: child),
       );
     }
-    final colors = AnnaEditorialColors.of(context);
     return AnnaEditorialSurface(
       tone: featured
           ? AnnaEditorialSurfaceTone.featured
@@ -38,16 +37,9 @@ class AnnaEditorialCalendarPanel extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Container(
-            height: 2,
-            margin: const EdgeInsets.symmetric(horizontal: 30),
-            decoration: BoxDecoration(
-              gradient: LinearGradient(colors: [
-                colors.card,
-                colors.accent.withValues(alpha: 0.55),
-                colors.card,
-              ]),
-            ),
+          const AnnaEditorialAccentRule(
+            key: ValueKey<String>('editorial-calendar-notebook-rule'),
+            margin: EdgeInsets.symmetric(horizontal: 30),
           ),
           Padding(padding: padding, child: child),
         ],
@@ -86,12 +78,9 @@ class AnnaEditorialCalendarWeekSummary extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisSize: MainAxisSize.min,
         children: [
-          Text(
-            dateRange,
-            style: Theme.of(context).textTheme.labelMedium?.copyWith(
-              color: colors.mutedInk,
-              fontWeight: FontWeight.w700,
-            ),
+          AnnaEditorialDateLabel(
+            key: const ValueKey<String>('editorial-calendar-week-date'),
+            text: dateRange,
           ),
           const SizedBox(height: 9),
           Text(

@@ -83,13 +83,9 @@ extension _EditorialMemoriesPresentation on _DiaryMemoriesScreenState {
                               ),
                             ),
                             const SizedBox(height: 8),
-                            Text(
-                              date,
-                              style: Theme.of(context).textTheme.bodyMedium
-                                  ?.copyWith(
-                                    color: Colors.white,
-                                    fontWeight: FontWeight.w600,
-                                  ),
+                            AnnaEditorialDateLabel(
+                              text: date,
+                              onMedia: true,
                             ),
                           ],
                         ),
@@ -114,12 +110,11 @@ extension _EditorialMemoriesPresentation on _DiaryMemoriesScreenState {
                           size: 32,
                         ),
                         const SizedBox(height: 20),
-                        Container(
+                        const SizedBox(
                           width: 60,
-                          height: 2,
-                          decoration: BoxDecoration(
-                            color: colors.accent.withValues(alpha: 0.62),
-                            borderRadius: BorderRadius.circular(2),
+                          child: AnnaEditorialAccentRule(
+                            key: ValueKey<String>(
+                              'memories-editorial-featured-rule'),
                           ),
                         ),
                         const SizedBox(height: 16),
@@ -132,11 +127,7 @@ extension _EditorialMemoriesPresentation on _DiaryMemoriesScreenState {
                           ).copyWith(color: colors.ink, height: 1.22),
                         ),
                         const SizedBox(height: 13),
-                        Text(
-                          date,
-                          style: Theme.of(context).textTheme.bodyMedium
-                              ?.copyWith(color: colors.mutedInk),
-                        ),
+                        AnnaEditorialDateLabel(text: date),
                       ],
                     ),
                   ),
@@ -200,11 +191,7 @@ extension _EditorialMemoriesPresentation on _DiaryMemoriesScreenState {
                           ).copyWith(color: colors.ink),
                         ),
                         const SizedBox(height: 8),
-                        Text(
-                          _cap(date),
-                          style: Theme.of(context).textTheme.bodySmall
-                              ?.copyWith(color: colors.mutedInk),
-                        ),
+                        AnnaEditorialDateLabel(text: _cap(date)),
                       ],
                     ),
                   ),
@@ -238,11 +225,7 @@ extension _EditorialMemoriesPresentation on _DiaryMemoriesScreenState {
                             ).copyWith(color: colors.ink),
                           ),
                           const SizedBox(height: 8),
-                          Text(
-                            _cap(date),
-                            style: Theme.of(context).textTheme.bodySmall
-                                ?.copyWith(color: colors.mutedInk),
-                          ),
+                          AnnaEditorialDateLabel(text: _cap(date)),
                         ],
                       ),
                     ),
