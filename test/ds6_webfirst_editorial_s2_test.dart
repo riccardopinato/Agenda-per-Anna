@@ -120,7 +120,10 @@ void main() {
     for (final dark in [false, true]) {
       await tester.pumpWidget(app(
         const MediaQuery(
-          data: MediaQueryData(textScaler: TextScaler.linear(1.6)),
+          data: MediaQueryData(
+            size: Size(320, 720),
+            textScaler: TextScaler.linear(1.6),
+          ),
           child: Padding(
             padding: EdgeInsets.all(18),
             child: Column(children: [
