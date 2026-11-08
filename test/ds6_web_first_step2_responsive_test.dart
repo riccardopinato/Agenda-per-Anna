@@ -194,7 +194,21 @@ void main() {
     // Diagnostic distinction: invoke the actual bound route callback, not
     // a pointer tap. A PASS here alone does not prove Web touch navigation.
     tile.onTap!();
+    // Diagnose route-stack behavior at the exact callback boundary.
+    // Temporary logs use only synthetic guest metadata.
+    // ignore: avoid_print
+    print('WEB_S1 immediate canPop=${appNavigatorKey.currentState?.canPop()} '
+        'allSearch=${find.byType(PersonalSearchConnectionsScreen, skipOffstage: false).evaluate().length}');
+    await tester.pump();
+    // ignore: avoid_print
+    print('WEB_S1 afterPump canPop=${appNavigatorKey.currentState?.canPop()} '
+        'allSearch=${find.byType(PersonalSearchConnectionsScreen, skipOffstage: false).evaluate().length}');
     await tester.pump(const Duration(milliseconds: 1100));
+    // ignore: avoid_print
+    print('WEB_S1 after1100 canPop=${appNavigatorKey.currentState?.canPop()} '
+        'allSearch=${find.byType(PersonalSearchConnectionsScreen, skipOffstage: false).evaluate().length} '
+        'visibleSearch=${find.byType(PersonalSearchConnectionsScreen).evaluate().length} '
+        'searchInput=${find.byKey(const ValueKey<String>('approved-search-query'), skipOffstage:false).evaluate().length}');
     expect(find.byType(PersonalSearchConnectionsScreen), findsOneWidget);
     expect(find.byKey(const ValueKey<String>('approved-search-query')),
         findsOneWidget);
