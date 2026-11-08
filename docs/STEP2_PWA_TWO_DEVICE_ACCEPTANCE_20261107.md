@@ -14,7 +14,7 @@
 | ID | Scenario | Atteso / condizioni di fallimento |
 | --- | --- | --- |
 | W01 | Apri PWA da chiusa, visita Oggi e Altro | Nessun loading infinito; layout e dock accessibili; nessun testo troncato |
-| W02 | Altro → Cerca con indice vuoto o query vuota | Nessuna eccezione o blocco; prompt/filtro e input usabili (fix #270) |
+| W02 | Altro → Cerca con indice vuoto, query vuota, digita e cancella; prova Invio/Cerca della tastiera | Nessuna eccezione o blocco; prompt/filtro e input usabili, tasto X cancella senza alterare record, submit chiude la tastiera (fix #270 e Web-first S1 #274) |
 | W03 | Cerca `c`, `cena`, refuso `cenna` su dati sintetici | Solo titoli ammessi in ricerca a un carattere; ordine/risultati coerenti; nessuna voce Vault |
 | W04 | Inbox: crea, etichetta, rinomina, riapri e filtra | Dati riaperti integri dopo riavvio e distinzione per account |
 | W05 | Crea → Evento sul giorno selezionato, riapertura calendario | Data corretta, nessun writer duplicato, gesture/tastiera non coprono Salva |
