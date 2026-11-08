@@ -97,6 +97,104 @@ class AnnaEditorialColors {
 
 enum AnnaEditorialSurfaceTone { regular, featured, quiet }
 
+ 
+/// A quiet notebook rule shared by Today, Calendar and Memories.
+/// Its color is derived from the existing app palette in light/dark/HSV modes.
+class AnnaEditorialAccentRule extends StatelessWidget {
+  final EdgeInsetsGeometry margin;
+
+  const AnnaEditorialAccentRule({
+    super.key,
+    this.margin = EdgeInsets.zero,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = AnnaEditorialColors.of(context);
+    return Padding(
+      padding: margin,
+      child: Container(
+        width: double.infinity,
+        height: 2,
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(2),
+          gradient: LinearGradient(
+            colors: [
+              colors.accent.withValues(alpha: 0.08),
+              colors.accent.withValues(alpha: 0.58),
+              colors.accent.withValues(alpha: 0.08),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Read-only date metadata for the original calendar and diary records.
+/// It never computes or stores dates and uses the caller's localized text.
+class AnnaEditorialDateLabel extends StatelessWidget {
+  final String text;
+  final bool onMedia;
+
+  const AnnaEditorialDateLabel({
+    super.key,
+    required this.text,
+    this.onMedia = false,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = AnnaEditorialColors.of(context);
+    final foreground = onMedia ? Colors.white : colors.mutedInk;
+    return ConstrainedBox(
+      constraints: BoxConstraints(
+        maxWidth: MediaQuery.sizeOf(context).width - 48,
+      ),
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          color: onMedia
+              ? Colors.black.withValues(alpha: 0.57)
+              : colors.quiet,
+          borderRadius: BorderRadius.circular(11),
+          border: Border.all(
+            color: onMedia
+                ? Colors.white.withValues(alpha: 0.38)
+                : colors.border,
+          ),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                Icons.calendar_today_outlined,
+                size: 14,
+                color: foreground,
+                semanticLabel: null,
+              ),
+              const SizedBox(width: 7),
+              Flexible(
+                child: Text(
+                  text,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                    color: foreground,
+                    fontWeight: FontWeight.w650,
+                    height: 1.25,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 /// Layout constraint only — consumers own scrolling, account and data states.
 class AnnaEditorialPageLayout extends StatelessWidget {
   final Widget child;
