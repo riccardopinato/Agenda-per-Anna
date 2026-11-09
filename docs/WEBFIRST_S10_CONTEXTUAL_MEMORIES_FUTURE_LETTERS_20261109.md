@@ -46,7 +46,7 @@ La funzione **Lettere al futuro** era già nel diario canonico in [PR #218](http
 | Determinismo/limite 2 e ragioni date/person/place | Suite contextual originale e nuovo test |
 | Guest → B → guest con vecchia form | Test `Cap0160TagEditGuard` e persistenza canonica |
 | Nota futura visibile in lettera, non in shared-only/archived | Test journal canonico e record resolver |
-| Lettura in corso + switch account | Widget test dialog/visibilità del testo |
+| Lettura in corso + switch account | Test di cambio profilo sul resolver canonico + controllo statico del lettore reattivo; comportamento del dialogo in browser reale NOT_VERIFIED |
 | IT/EN/ES/FR/PT | Test label e vecchie fixture locali |
 | Lettera pronta nello stesso archivio Ricordi | Tile neutra `s10-future-letters-due` + preview senza testo |
 | PWA, browser fisici, account sync tra dispositivi, performance, offline | NOT_VERIFIED / NOT_MEASURED / offline DEFERRED_BY_USER |
