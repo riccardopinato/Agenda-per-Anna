@@ -259,19 +259,30 @@ void main() {
       ],
       home: VisionBoardGalleryScreen(store: store),
     ));
-    await tester.pumpAndSettle();
+    // A finite set of frames avoids the 10-minute pumpAndSettle watchdog
+    // when a separate app-level ticker keeps scheduling transient frames.
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 500));
     expect(find.text('Le mie Vision Board'), findsOneWidget);
     expect(find.byKey(ValueKey('vision-board-${board.id}')), findsOneWidget);
     expect(find.text('Collega ricordi'), findsOneWidget);
     // Change the actual store filter while the gallery stays mounted:
     // the resulting agenda/shared notifications must hide private content.
     store.setAgendaContentFilter(AgendaContentFilter.sharedOnly);
-    await tester.pumpAndSettle();
+    // A finite set of frames avoids the 10-minute pumpAndSettle watchdog
+    // when a separate app-level ticker keeps scheduling transient frames.
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 500));
     expect(find.byKey(ValueKey('vision-board-${board.id}')), findsNothing);
     expect(find.textContaining('non sono disponibili'), findsOneWidget);
     store.setAgendaContentFilter(AgendaContentFilter.all);
-    await tester.pumpAndSettle();
+    // A finite set of frames avoids the 10-minute pumpAndSettle watchdog
+    // when a separate app-level ticker keeps scheduling transient frames.
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 500));
     expect(find.byKey(ValueKey('vision-board-${board.id}')), findsOneWidget);
+    expect(tester.binding.hasScheduledFrame, isFalse,
+      reason: 'The static private gallery must not maintain a perpetual ticker');
     expect(tester.takeException(), isNull);
   });
 }
