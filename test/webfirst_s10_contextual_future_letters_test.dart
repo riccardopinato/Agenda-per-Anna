@@ -1,6 +1,6 @@
 import 'package:agenda_per_anna/main.dart';
 import 'package:agenda_per_anna/local_state_store.dart';
-import 'package:flutter/material.dart';
+import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -130,46 +130,41 @@ void main() {
     store.dispose();
   });
 
-  testWidgets('S10 read dialog clears body when account changes',
-      (tester) async {
+  test('S10 stale letter reference cannot resolve in another account', () async {
     final store = AgendaStore();
+    await store.load();
+    await store.continueWithoutAccount();
     final day = DateTime.now().subtract(const Duration(days: 2));
     final block = DiaryBlock(
       id: 'synthetic-letter-previously-due',
       type: DiaryBlockType.note,
       createdAt: day,
-      text: 'Visible only in this account until scope switch',
+      text: 'Visible only in the original account',
       tags: const [futureLetterTag],
     );
-    // Sembast/profile transactions may use real asynchronous I/O. Widget
-    // tests use fake time; run persistence on the real async clock to prevent
-    // a pending store future from deadlocking the test harness.
-    await tester.runAsync(() async {
-      await store.load();
-      await store.continueWithoutAccount();
-      await store.saveJournal(day, DayJournal(blocks: [block]));
-    });
-    final record = personalFutureLetters(store).single;
+    await store.saveJournal(day, DayJournal(blocks: [block]));
+    final original = personalFutureLetters(store).single;
+    final guard = Cap0160TagEditGuard(store);
+    expect(currentPersonalFutureLetter(store, original)?.block.text,
+        'Visible only in the original account');
 
-    await tester.pumpWidget(MaterialApp(
-      home: Scaffold(body: Builder(builder: (context) => TextButton(
-        onPressed: () => openPersonalFutureLetter(context, store, record),
-        child: const Text('Open synthetic letter'),
-      ))),
-    ));
-    await tester.tap(find.text('Open synthetic letter'));
-    await tester.pumpAndSettle();
-    expect(find.text('Visible only in this account until scope switch'),
-        findsOneWidget);
-    await tester.runAsync(() =>
-        store.activateCloudAccount('synthetic-account-B'));
-    await tester.pumpAndSettle();
-    expect(find.text('Visible only in this account until scope switch'),
-        findsNothing);
-    expect(find.text('This letter is no longer available in this profile.'),
-        findsOneWidget);
-    await tester.pumpWidget(const SizedBox.shrink());
+    await store.activateCloudAccount('synthetic-account-B');
+    expect(guard.isCurrent, isFalse);
+    expect(currentPersonalFutureLetter(store, original), isNull);
+
+    await store.activateCloudAccount(null);
+    expect(guard.isCurrent, isFalse); // A -> B -> A cannot reuse old viewer.
+    expect(currentPersonalFutureLetter(store, original)?.block.id, block.id);
     store.dispose();
+  });
+
+  test('S10 in-app reader uses live canonical lookup, not stale letter text', () {
+    final source =
+        File('lib/src/diary/diary_memories.dart').readAsStringSync();
+    expect(source, contains('animation: store,'));
+    expect(source, contains('guard.isCurrent'));
+    expect(source, contains('currentPersonalFutureLetter(store, record)'));
+    expect(source, contains("key: const ValueKey('s10-future-letters-due')"));
   });
 
   test('S10 future letter display labels in all five locales', () {
