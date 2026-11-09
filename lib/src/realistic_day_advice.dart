@@ -11,6 +11,7 @@ class RealisticDayAdvice {
     this.recordedTaskMinutes = 0,
     this.tasksWithRecordedTime = 0,
     this.tasksWithoutRecordedTime = 0,
+    this.bookedTaskMinutes = 0,
   });
 
   final int freeMinutes;
@@ -20,11 +21,16 @@ class RealisticDayAdvice {
   /// User-selected voluntary space left unbooked. Never assumed task time.
   final int bufferMinutes;
   /// Sum of explicit start/end task durations, shown for provenance only.
-  /// Timed tasks already occupy calendar slots; do NOT subtract twice.
+  /// The union of timed tasks is deducted separately from visible free slots,
+  /// excluding overlaps; this provenance total itself is never deducted again.
   final int recordedTaskMinutes;
   final int tasksWithRecordedTime;
   final int tasksWithoutRecordedTime;
-  int get usableMinutes => max(0, freeMinutes - bufferMinutes);
+  /// Explicit timed tasks within otherwise free 09–21 calendar slots.
+  /// Overlaps with appointments or other tasks are subtracted only once.
+  final int bookedTaskMinutes;
+  int get usableMinutes =>
+      max(0, freeMinutes - bookedTaskMinutes - bufferMinutes);
 
   bool get hasPressure => reasonCode == 'VISIBLE_WINDOW_CONGESTED';
 }
@@ -53,7 +59,9 @@ class RecordedTaskTime {
           entry.date.year != day.year ||
           entry.date.month != day.month ||
           entry.date.day != day.day ||
-          !seen.add(entry.id)) {
+          !seen.add(entry.isShared
+              ? 'shared:${entry.space?.id}:${entry.id}'
+              : 'private:${entry.id}')) {
         continue;
       }
       final start = entry.start;
@@ -81,6 +89,62 @@ class RecordedTaskTime {
 }
 
 abstract final class RealisticDayAdvisor {
+  /// Remove only explicitly timed, unfinished tasks from the already-visible
+  /// appointment gaps. These are projections over authorized agenda entries:
+  /// no new scheduler, write path, inference or persistence.
+  static List<CalendarFreeSlot> _availableAfterRecordedTasks(
+    List<CalendarFreeSlot> calendarGaps,
+    Iterable<UnifiedAgendaEntry> visibleEntries,
+  ) {
+    final timedTasks = <CalendarFreeSlot>[];
+    final seen = <String>{};
+    for (final entry in visibleEntries) {
+      if (entry.isExternal || entry.type != ItemType.task || entry.done) {
+        continue;
+      }
+      final identity = entry.isShared
+          ? 'shared:${entry.space?.id}:${entry.id}'
+          : 'private:${entry.id}';
+      if (!seen.add(identity)) continue;
+      final start = entry.start;
+      final end = entry.end;
+      if (start == null || end == null) continue;
+      final fromClock = start.hour * 60 + start.minute;
+      final toClock = end.hour * 60 + end.minute;
+      if (fromClock == toClock) continue; // Unknown, not an all-day claim.
+      final day = entry.date;
+      final from = DateTime(day.year, day.month, day.day,
+          start.hour, start.minute);
+      final until = DateTime(day.year, day.month,
+          day.day + (toClock < fromClock ? 1 : 0),
+          end.hour, end.minute);
+      if (until.isAfter(from)) timedTasks.add(CalendarFreeSlot(from, until));
+    }
+    timedTasks.sort((left, right) => left.start.compareTo(right.start));
+
+    final remaining = <CalendarFreeSlot>[];
+    for (final gap in calendarGaps) {
+      var cursor = gap.start;
+      for (final task in timedTasks) {
+        if (!task.end.isAfter(cursor)) continue;
+        if (!task.start.isBefore(gap.end)) break;
+        if (task.start.isAfter(cursor)) {
+          final beforeTask = task.start.isBefore(gap.end)
+              ? task.start : gap.end;
+          if (beforeTask.isAfter(cursor)) {
+            remaining.add(CalendarFreeSlot(cursor, beforeTask));
+          }
+        }
+        if (task.end.isAfter(cursor)) cursor = task.end;
+        if (!cursor.isBefore(gap.end)) break;
+      }
+      if (gap.end.isAfter(cursor)) {
+        remaining.add(CalendarFreeSlot(cursor, gap.end));
+      }
+    }
+    return List<CalendarFreeSlot>.unmodifiable(remaining);
+  }
+
   static RealisticDayAdvice evaluate({
     required DateTime day,
     required Iterable<UnifiedAgendaEntry> visibleEntries,
@@ -110,22 +174,33 @@ abstract final class RealisticDayAdvisor {
       0,
       (sum, slot) => sum + slot.duration.inMinutes,
     );
+    final taskAdjustedSlots =
+        _availableAfterRecordedTasks(effectiveSlots, observed);
+    final afterTasks = taskAdjustedSlots.fold<int>(
+      0,
+      (sum, slot) => sum + slot.duration.inMinutes,
+    );
     final boundedBuffer = bufferMinutes.clamp(0, 120).toInt();
-    final usable = max(0, minutes - boundedBuffer);
-    final candidate = effectiveSlots.where(
+    final usable = max(0, afterTasks - boundedBuffer);
+    final candidate = taskAdjustedSlots.where(
       (slot) => slot.duration.inMinutes >= 30,
     );
+    final windowEnd = DateTime(day.year, day.month, day.day, 21);
+    final elapsed = now != null && !windowEnd.isAfter(now);
     return RealisticDayAdvice(
       freeMinutes: minutes,
       bufferMinutes: boundedBuffer,
       recordedTaskMinutes: recorded.minutes,
+      bookedTaskMinutes: minutes - afterTasks,
       tasksWithRecordedTime: recorded.withTime,
       tasksWithoutRecordedTime: recorded.withoutTime,
       pendingTasks: pendingTasks,
       firstFreeSlot: candidate.isEmpty ? null : candidate.first,
-      reasonCode: pendingTasks > 0 && usable < 90
-          ? 'VISIBLE_WINDOW_CONGESTED'
-          : 'VISIBLE_WINDOW_CAPACITY',
+      reasonCode: elapsed
+          ? 'VISIBLE_WINDOW_ELAPSED'
+          : pendingTasks > 0 && usable < 90
+              ? 'VISIBLE_WINDOW_CONGESTED'
+              : 'VISIBLE_WINDOW_CAPACITY',
     );
   }
 }
@@ -407,9 +482,11 @@ class _RealisticDayCardBody extends StatelessWidget {
         'Reservar como margem',
       ],
       'usable': [
-        'Time left after buffer', 'Tempo dopo il margine',
-        'Tiempo después del margen', 'Temps après la marge',
-        'Tempo depois da margem',
+        'Time after timed tasks and buffer',
+        'Tempo dopo attività con orario e margine',
+        'Tiempo tras tareas con horario y margen',
+        'Temps après tâches horaires et marge',
+        'Tempo após tarefas com horário e margem',
       ],
       'slots': [
         'Review free times',
@@ -429,6 +506,19 @@ class _RealisticDayCardBody extends StatelessWidget {
         'Recorded task duration', 'Durata registrata delle attività',
         'Duración registrada de las tareas', 'Durée enregistrée des tâches',
         'Duração registada das tarefas',
+      ],
+      'bookedTasks': [
+        'Timed tasks inside free slots', 'Attività con orario negli slot liberi',
+        'Tareas con horario en huecos libres',
+        'Tâches horaires dans les créneaux libres',
+        'Tarefas com horário nos períodos livres',
+      ],
+      'elapsed': [
+        'The visible 09–21 window has ended for this day.',
+        'La fascia 09–21 è già terminata per questa giornata.',
+        'La franja visible 09–21 ya terminó para este día.',
+        'La plage visible 09–21 est terminée pour cette journée.',
+        'A faixa visível 09–21 já terminou neste dia.',
       ],
       'taskUnknown': [
         'Tasks with unknown duration', 'Attività senza durata nota',
@@ -535,10 +625,12 @@ class _RealisticDayCardBody extends StatelessWidget {
             ),
             const SizedBox(height: 6),
             Text(
-              advisePressure
-                  ? _localized(strings.languageCode, 'pressure')
-                  : '${_localized(strings.languageCode, 'capacity')}: '
-                      '${hours}h ${minutes}m',
+              advice.reasonCode == 'VISIBLE_WINDOW_ELAPSED'
+                  ? _localized(strings.languageCode, 'elapsed')
+                  : advisePressure
+                      ? _localized(strings.languageCode, 'pressure')
+                      : '${_localized(strings.languageCode, 'capacity')}: '
+                          '${hours}h ${minutes}m',
             ),
             const SizedBox(height: 7),
             Wrap(
@@ -569,6 +661,12 @@ class _RealisticDayCardBody extends StatelessWidget {
                 style: Theme.of(context).textTheme.bodySmall,
               ),
             ],
+            if (advice.bookedTaskMinutes > 0)
+              Text(
+                '${_localized(strings.languageCode, 'bookedTasks')}: '
+                '${advice.bookedTaskMinutes}m',
+                style: Theme.of(context).textTheme.bodySmall,
+              ),
             if (advice.tasksWithoutRecordedTime > 0)
               Text(
                 '${_localized(strings.languageCode, 'taskUnknown')}: '
