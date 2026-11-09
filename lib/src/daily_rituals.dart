@@ -85,6 +85,71 @@ extension AgendaStoreDailyRituals on AgendaStore {
   }
 }
 
+/// Editorial preview only. The writer remains startDailyRitual / DiaryBlock.
+Future<void> showGentleRitualPreview(BuildContext context) async {
+  final strings = AnnaStrings.of(context);
+  final presets = diaryTemplatePresetsFor(strings);
+  final morning = presets.firstWhere((preset) => preset.id == 'morning');
+  final evening = presets.firstWhere((preset) => preset.id == 'evening');
+
+  await showModalBottomSheet<void>(
+    context: context,
+    showDragHandle: true,
+    isScrollControlled: true,
+    builder: (sheetContext) => SafeArea(
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.fromLTRB(20, 8, 20, 20),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              strings.d3('gentleRitualsTitle'),
+              style: Theme.of(sheetContext).textTheme.headlineSmall,
+            ),
+            const SizedBox(height: 8),
+            Text(strings.d3('gentleRitualsExplanation')),
+            const SizedBox(height: 12),
+            for (final preset in <DiaryTemplatePreset>[morning, evening])
+              Card(
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Icon(preset.icon),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              preset.title,
+                              style: Theme.of(sheetContext).textTheme.titleMedium,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                      Text(preset.seedText),
+                    ],
+                  ),
+                ),
+              ),
+            const SizedBox(height: 8),
+            Align(
+              alignment: Alignment.centerRight,
+              child: TextButton(
+                onPressed: () => Navigator.pop(sheetContext),
+                child: Text(strings.d3('gentleRitualsClose')),
+              ),
+            ),
+          ],
+        ),
+      ),
+    ),
+  );
+}
+
 class DailyRitualCard extends StatelessWidget {
   final AgendaStore store;
   final DateTime date;
@@ -138,6 +203,15 @@ class DailyRitualCard extends StatelessWidget {
             style: Theme.of(context).textTheme.bodySmall,
           ),
           const SizedBox(height: 8),
+          Align(
+            alignment: Alignment.centerLeft,
+            child: TextButton.icon(
+              key: const ValueKey<String>('gentle-rituals-preview-today'),
+              onPressed: () => showGentleRitualPreview(context),
+              icon: const Icon(Icons.auto_stories_outlined),
+              label: Text(strings.d3('gentleRitualsPreview')),
+            ),
+          ),
           for (final kind in kinds)
             _DailyRitualTile(
               store: store,
