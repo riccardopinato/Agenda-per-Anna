@@ -2470,15 +2470,25 @@ class FutureLetterRecord {
   final DateTime day;
   final DiaryBlock block;
   const FutureLetterRecord(this.day, this.block);
+
+  /// An in-app date cue, never a cryptographic lock or a push reminder.
+  bool isAvailableOn(DateTime now) =>
+      !DateTime(day.year, day.month, day.day)
+          .isAfter(DateTime(now.year, now.month, now.day));
 }
 
 List<FutureLetterRecord> personalFutureLetters(AgendaStore store) {
+  if (!store.entryScopeReady ||
+      store.agendaContentFilter == AgendaContentFilter.sharedOnly) {
+    return const <FutureLetterRecord>[];
+  }
   final result = <FutureLetterRecord>[];
   for (final entry in store.journals.entries) {
     final day = DateTime.tryParse(entry.key);
     if (day == null) continue;
     for (final block in entry.value.blocks) {
-      if (block.tags.contains(futureLetterTag)) {
+      if (!block.archived && block.type == DiaryBlockType.note &&
+          block.tags.contains(futureLetterTag)) {
         result.add(FutureLetterRecord(day, block));
       }
     }
@@ -2487,15 +2497,19 @@ List<FutureLetterRecord> personalFutureLetters(AgendaStore store) {
   return List<FutureLetterRecord>.unmodifiable(result);
 }
 
+/// Uses the same canonical diary writer, protected against A -> B -> A
+/// account changes even if the dialogue remains open.
 Future<bool> savePersonalFutureLetter(
   AgendaStore store, DateTime day, String text, {
   required String? accountAtOpen,
+  Cap0160TagEditGuard? scopeGuard,
 }) async {
+  final guard = scopeGuard ?? Cap0160TagEditGuard(store);
   final body = text.trim();
   final now = DateTime.now();
   final target = DateTime(day.year, day.month, day.day);
   final today = DateTime(now.year, now.month, now.day);
-  if (!store.entryScopeReady || store.activeAccountId != accountAtOpen ||
+  if (!guard.isCurrent || guard.accountId != accountAtOpen ||
       !target.isAfter(today) || body.isEmpty || body.length > 10000) {
     return false;
   }
@@ -2507,10 +2521,33 @@ Future<bool> savePersonalFutureLetter(
     text: body,
     tags: const [futureLetterTag],
   );
-  await store.saveJournal(
-    target, journal.copyWith(blocks: [...journal.blocks, letter]),
-  );
-  return true;
+  try {
+    await store.saveJournal(
+      target, journal.copyWith(blocks: [...journal.blocks, letter]),
+      scopeGuard: guard,
+    );
+    return guard.isCurrent;
+  } on Cap0160ScopeChanged {
+    return false;
+  }
+}
+
+/// Resolve the exact active canonical block again before reading it. A stale
+/// tile/reference from a former account cannot reveal another profile's data.
+FutureLetterRecord? currentPersonalFutureLetter(
+    AgendaStore store, FutureLetterRecord record) {
+  if (!store.entryScopeReady ||
+      store.agendaContentFilter == AgendaContentFilter.sharedOnly) {
+    return null;
+  }
+  for (final block in store.journal(record.day).blocks) {
+    if (block.id == record.block.id && !block.archived &&
+        block.type == DiaryBlockType.note &&
+        block.tags.contains(futureLetterTag)) {
+      return FutureLetterRecord(record.day, block);
+    }
+  }
+  return null;
 }
 
 String futureLetterTitle(AnnaStrings s) => switch (s.languageCode) {
@@ -2530,6 +2567,22 @@ String futureLetterLabel(AnnaStrings s, String key) {
     'empty': ['No letters yet', 'Nessuna lettera', 'Sin cartas todavía', 'Aucune lettre', 'Ainda sem cartas'],
     'early': ['Open ahead of time?', 'Aprire in anticipo?', '¿Abrir antes de tiempo?', 'Ouvrir avant la date ?', 'Abrir antes da data?'],
     'read': ['Read letter', 'Leggi lettera', 'Leer carta', 'Lire la lettre', 'Ler carta'],
+    'waiting': ['Waiting for its date', 'In attesa della data',
+      'En espera de la fecha', 'En attente de la date',
+      'À espera da data'],
+    'ready': ['Ready to read', 'Pronta da leggere',
+      'Lista para leer', 'Prête à lire',
+      'Pronta para ler'],
+    'unavailable': ['This letter is no longer available in this profile.',
+      'Questa lettera non è più disponibile in questo profilo.',
+      'Esta carta ya no está disponible en este perfil.',
+      'Cette lettre n’est plus disponible dans ce profil.',
+      'Esta carta já não está disponível neste perfil.'],
+    'saveFailed': ['Could not save this letter. Check local storage and try again.',
+      'Impossibile salvare la lettera. Controlla la memoria locale e riprova.',
+      'No se pudo guardar la carta. Comprueba el almacenamiento local.',
+      'Impossible d’enregistrer la lettre. Vérifiez le stockage local.',
+      'Não foi possível guardar a carta. Verifica o armazenamento local.'],
     'trash': ['Move to Trash', 'Sposta nel Cestino', 'Mover a la papelera', 'Mettre à la corbeille', 'Mover para lixeira'],
     'notice': ['A reminder date, not a security lock: this note remains accessible from Diary.',
       'Una data da ricordare, non un blocco: la nota resta accessibile dal Diario.',
@@ -2546,8 +2599,10 @@ String futureLetterLabel(AnnaStrings s, String key) {
 Future<void> composePersonalFutureLetter(
     BuildContext context, AgendaStore store) async {
   if (!store.entryScopeReady) return;
+  final guard = Cap0160TagEditGuard(store);
   final account = store.activeAccountId;
   final controller = TextEditingController();
+  var saving = false;
   final now = DateTime.now();
   var target = DateTime(now.year, now.month, now.day + 30);
   await showDialog<void>(
@@ -2562,6 +2617,7 @@ Future<void> composePersonalFutureLetter(
             Text(futureLetterLabel(text, 'notice')),
             TextField(
               controller: controller, maxLines: 6, maxLength: 10000,
+              onChanged: (_) => refresh(() {}),
               decoration: InputDecoration(
                 labelText: futureLetterLabel(text, 'body')),
             ),
@@ -2584,13 +2640,35 @@ Future<void> composePersonalFutureLetter(
           TextButton(onPressed: () => Navigator.pop(dialog),
             child: Text(quickWinText(text, 'undo'))),
           FilledButton(
-            onPressed: () async {
-              if (store.activeAccountId != account) return;
-              final saved = await savePersonalFutureLetter(
-                store, target, controller.text, accountAtOpen: account,
-              );
-              if (saved && dialog.mounted) Navigator.pop(dialog);
-            },
+            onPressed: saving || !guard.isCurrent ||
+                    controller.text.trim().isEmpty
+                ? null
+                : () async {
+                    refresh(() => saving = true);
+                    try {
+                      final saved = await savePersonalFutureLetter(
+                        store, target, controller.text,
+                        accountAtOpen: account, scopeGuard: guard,
+                      );
+                      if (saved && dialog.mounted) {
+                        Navigator.pop(dialog);
+                      } else if (dialog.mounted) {
+                        ScaffoldMessenger.maybeOf(dialog)?.showSnackBar(
+                          SnackBar(content: Text(
+                            futureLetterLabel(text, 'unavailable'))),
+                        );
+                      }
+                    } catch (_) {
+                      if (dialog.mounted) {
+                        ScaffoldMessenger.maybeOf(dialog)?.showSnackBar(
+                          SnackBar(content: Text(
+                            futureLetterLabel(text, 'saveFailed'))),
+                        );
+                      }
+                    } finally {
+                      if (dialog.mounted) refresh(() => saving = false);
+                    }
+                  },
             child: Text(futureLetterLabel(text, 'save')),
           ),
         ],
@@ -2601,11 +2679,12 @@ Future<void> composePersonalFutureLetter(
 }
 
 Future<void> openPersonalFutureLetter(
-    BuildContext context, FutureLetterRecord record) async {
-  final strings = AnnaStrings.of(context);
+    BuildContext context, AgendaStore store, FutureLetterRecord record) async {
+  final guard = Cap0160TagEditGuard(store);
+  if (!guard.isCurrent ||
+      currentPersonalFutureLetter(store, record) == null) return;
   final today = DateTime.now();
-  final due = DateTime(record.day.year, record.day.month, record.day.day);
-  if (due.isAfter(DateTime(today.year, today.month, today.day))) {
+  if (!record.isAvailableOn(today)) {
     final early = await showDialog<bool>(
       context: context,
       builder: (dialog) => AlertDialog(
@@ -2621,15 +2700,31 @@ Future<void> openPersonalFutureLetter(
     );
     if (early != true) return;
   }
-  if (!context.mounted) return;
+  if (!context.mounted || !guard.isCurrent ||
+      currentPersonalFutureLetter(store, record) == null) return;
   await showDialog<void>(
     context: context,
     builder: (dialog) => AlertDialog(
-      title: Text(futureLetterTitle(strings)),
-      content: SingleChildScrollView(child: SelectableText(record.block.text)),
+      title: Text(futureLetterTitle(AnnaStrings.of(dialog))),
+      // If the account switches or the letter is trashed while open, erase
+      // the visible text on the next store notification. No stale snapshot.
+      content: AnimatedBuilder(
+        animation: store,
+        builder: (dialog, _) {
+          final current = guard.isCurrent
+              ? currentPersonalFutureLetter(store, record) : null;
+          return SingleChildScrollView(
+            child: current == null
+                ? Text(futureLetterLabel(
+                    AnnaStrings.of(dialog), 'unavailable'))
+                : SelectableText(current.block.text),
+          );
+        },
+      ),
       actions: [
         TextButton(onPressed: () => Navigator.pop(dialog),
-          child: Text(futureLetterLabel(AnnaStrings.of(dialog), 'read'))),
+          child: Text(futureLetterLabel(
+              AnnaStrings.of(dialog), 'read'))),
       ],
     ),
   );
@@ -2645,10 +2740,17 @@ class PersonalFutureLettersScreen extends StatelessWidget {
     builder: (context, _) {
       final strings = AnnaStrings.of(context);
       final letters = personalFutureLetters(store);
+      final available = letters.where(
+        (letter) => letter.isAvailableOn(DateTime.now())).toList();
+      final waiting = letters.where(
+        (letter) => !letter.isAvailableOn(DateTime.now())).toList();
       return Scaffold(
         appBar: AppBar(title: Text(futureLetterTitle(strings))),
         floatingActionButton: FloatingActionButton.extended(
-          onPressed: () => composePersonalFutureLetter(context, store),
+          onPressed: store.entryScopeReady &&
+                  store.agendaContentFilter != AgendaContentFilter.sharedOnly
+              ? () => composePersonalFutureLetter(context, store)
+              : null,
           icon: const Icon(Icons.edit_note_outlined),
           label: Text(futureLetterLabel(strings, 'create')),
         ),
@@ -2660,14 +2762,17 @@ class PersonalFutureLettersScreen extends StatelessWidget {
             const SizedBox(height: 16),
             if (letters.isEmpty)
               Text(futureLetterLabel(strings, 'empty')),
-            for (final letter in letters)
+            for (final letter in [...available, ...waiting])
               Card(child: ListTile(
                 key: ValueKey('future-letter-${letter.block.id}'),
                 leading: const Icon(Icons.mark_email_unread_outlined),
                 title: Text(DateFormat.yMMMMd(
                     AnnaStrings.intlLocale(context)).format(letter.day)),
-                subtitle: Text(futureLetterLabel(strings, 'read')),
-                onTap: () => openPersonalFutureLetter(context, letter),
+                subtitle: Text(futureLetterLabel(strings,
+                    letter.isAvailableOn(DateTime.now())
+                        ? 'ready' : 'waiting')),
+                onTap: () => openPersonalFutureLetter(
+                    context, store, letter),
                 trailing: IconButton(
                   tooltip: futureLetterLabel(strings, 'trash'),
                   icon: const Icon(Icons.delete_outline),
