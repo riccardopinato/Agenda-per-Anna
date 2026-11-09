@@ -1,12 +1,19 @@
 # Anna's Diary — Roadmap
 
-## 9 novembre 2026 — Web-first S6: audit di schermate reali e fix circoscritti (PR in verifica)
+## 9 novembre 2026 — Web-first Maxi-step 7: navigazione reale, ritorno, focus e Crea (PR in verifica)
+
+- **Baseline fissata:** App-Factory-Core `2b3ae9e01764b7504980efca34f2543949dc7b89` / CURRENT Master v27 / Golden Index v29; app `main@d82e2d12593683cf8bd5af8c05ee33ab19906f56` con S6 già merged e Web PASS. Documento operativo: [WEBFIRST_S7_NAVIGATION_ACCEPTANCE_20261109.md](WEBFIRST_S7_NAVIGATION_ACCEPTANCE_20261109.md).
+- **Correzione locale:** `MainShell._selectDestination` rilascia il focus quando si passa tra Oggi/Messaggi/Ricordi/Altro (IndexedStack mantiene stato e ordine); `_openCentralCreate` lo rilascia prima di aprire l'unico Unified Capture. Nessun nuovo router, nessuna scrittura, nessun cambiamento a sync/auth/Vault/offline.
+- **Test S7:** widget Flutter reali su dati sintetici: mobile Editorial Altro→Cerca→Indietro→Impostazioni→Aspetto→Indietro×2→Ricordi→Oggi→Crea→Annulla; Classic Oggi→Calendario→Indietro; desktop rail→Altro. Preservare test S2–S6 sulle cinque lingue e testo 1–2×.
+- **Gate di chiusura:** analyze + test completo + Chrome Vault + Web build, AppLab Source Gate, review/merge, poi CI main + Pages **sullo stesso SHA**. Non promuovere `WEB_USER_PASS` o prove fisiche/accessibility screen reader senza collaudo device, e non attribuire ottimizzazioni prestazionali non misurate. Solo Chat, Web-first; nessun APK.
+
+## 9 novembre 2026 — Web-first S6: audit di schermate reali e fix circoscritti (PR #279 merged / Web PASS)
 
 - **Audit documentato:** [REAL_SCREEN_AUDIT_S6_20261109.md](REAL_SCREEN_AUDIT_S6_20261109.md). Codice effettivo di Altro→Impostazioni, Altro→Cerca e Impostazioni→Aspetto. I rischi di clipping/focus sono rilevati dalla struttura dei layout, non spacciati per bug riprodotti su device reali.
 - **Impostazioni:** tastiera di ricerca rilasciata su submit, trascinamento e apertura sezione; filtro e navigazione invariati.
 - **Cerca:** chip filtranti adattivi con testo del sistema; menu ordinamento flessibile con ellissi a larghezza mobile; nessuna modifica a risultati, permessi, archivio, indice, OCR o ricerca.
 - **Aspetto:** riuso dei pulsanti Annulla/Applica in colonna sotto 310dp o con text scaler elevato; scroll chiude la tastiera HEX, applicazione preferenze inalterata.
-- **Nuova regressione reale-widget:** `test/ds6_webfirst_s6_real_screen_audit_test.dart`, schermate a 320dp e 2×, Cerca IT/EN/ES/FR/PT, navigazione Impostazioni→Aspetto; gate Flutter, AppLab e Web solo quando conclusi. PWA fisiche, screen reader e performance restano `NOT_VERIFIED / NOT_MEASURED`. Solo Chat, Web-first, nessun APK/offline/sync/Vault.
+- **Nuova regressione reale-widget:** `test/ds6_webfirst_s6_real_screen_audit_test.dart`, schermate a 320dp e 2×, Cerca IT/EN/ES/FR/PT, navigazione Impostazioni→Aspetto; [Development checks PASS #42540324144](https://github.com/riccardopinato/Agenda-per-Anna/actions/runs/42540324144) e [Pages PASS #42540324393](https://github.com/riccardopinato/Agenda-per-Anna/actions/runs/42540324393) sullo stesso `main@d82e2d12593683cf8bd5af8c05ee33ab19906f56`, PR #279 merged. PWA fisiche, screen reader e performance restano `NOT_VERIFIED / NOT_MEASURED`. Solo Chat, Web-first, nessun APK/offline/sync/Vault.
 
 ## 9 novembre 2026 — Web-first S5: accessibilità, testo ingrandito, 5 lingue (PR #278 merged / Web PASS)
 
