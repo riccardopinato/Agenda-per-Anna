@@ -133,8 +133,6 @@ void main() {
   testWidgets('S10 read dialog clears body when account changes',
       (tester) async {
     final store = AgendaStore();
-    await store.load();
-    await store.continueWithoutAccount();
     final day = DateTime.now().subtract(const Duration(days: 2));
     final block = DiaryBlock(
       id: 'synthetic-letter-previously-due',
@@ -143,7 +141,14 @@ void main() {
       text: 'Visible only in this account until scope switch',
       tags: const [futureLetterTag],
     );
-    await store.saveJournal(day, DayJournal(blocks: [block]));
+    // Sembast/profile transactions may use real asynchronous I/O. Widget
+    // tests use fake time; run persistence on the real async clock to prevent
+    // a pending store future from deadlocking the test harness.
+    await tester.runAsync(() async {
+      await store.load();
+      await store.continueWithoutAccount();
+      await store.saveJournal(day, DayJournal(blocks: [block]));
+    });
     final record = personalFutureLetters(store).single;
 
     await tester.pumpWidget(MaterialApp(
@@ -156,7 +161,8 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('Visible only in this account until scope switch'),
         findsOneWidget);
-    await store.activateCloudAccount('synthetic-account-B');
+    await tester.runAsync(() =>
+        store.activateCloudAccount('synthetic-account-B'));
     await tester.pumpAndSettle();
     expect(find.text('Visible only in this account until scope switch'),
         findsNothing);
