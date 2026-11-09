@@ -237,14 +237,26 @@ void main() {
   testWidgets('Ricordi gallery shows boards, links and restores private boundary',
       (tester) async {
     debugPrint('S11D gallery: begin');
-    final store = await initializedStore();
+    // Widget tests run in a fake-async zone. Store startup uses real async
+    // storage/database operations and must run outside that fake clock.
+    final loadedStore = await tester.runAsync<AgendaStore>(
+      () => initializedStore(),
+    );
+    if (loadedStore == null) {
+      throw StateError('S11-D gallery fixture could not load the store');
+    }
+    final store = loadedStore;
     debugPrint('S11D gallery: store initialized');
     addTearDown(store.dispose);
     final day = DateTime(2026, 11, 9);
     final board = VisionBoardFoundation.draft(
       visionBoardPresetsFor(const AnnaStrings('it'))[1], createdAt: day,
     );
-    await store.saveJournal(day, DayJournal(blocks: [board]));
+    final initialized = await tester.runAsync<bool>(() async {
+      await store.saveJournal(day, DayJournal(blocks: [board]));
+      return true;
+    });
+    expect(initialized, isTrue);
     debugPrint('S11D gallery: journal saved');
     tester.view.devicePixelRatio = 2;
     tester.view.physicalSize = const Size(640, 1280);
