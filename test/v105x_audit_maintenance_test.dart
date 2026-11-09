@@ -42,6 +42,10 @@ void main() {
     expect(find.text('Diary templates'), findsOneWidget);
     await tester.tap(find.text('Morning').last);
     await tester.pumpAndSettle();
+    // Step4 previews the selected seed without saving or creating a draft.
+    expect(store.journal(day).blocks, isEmpty);
+    await tester.tap(find.text('Use in diary').last);
+    await tester.pumpAndSettle();
 
     expect(find.byType(TextField), findsOneWidget);
     expect(store.journal(day).blocks, isEmpty);
@@ -53,6 +57,10 @@ void main() {
     await tester.tap(find.text('Templates'));
     await tester.pumpAndSettle();
     await tester.tap(find.text('Morning').last);
+    await tester.pumpAndSettle();
+    // Step4 previews the selected seed without saving or creating a draft.
+    expect(store.journal(day).blocks, isEmpty);
+    await tester.tap(find.text('Use in diary').last);
     await tester.pumpAndSettle();
     await tester.tap(find.text('Save').last);
     await tester.pumpAndSettle();
@@ -82,6 +90,10 @@ void main() {
     await tester.tap(find.text('Templates'));
     await tester.pumpAndSettle();
     await tester.tap(find.text('Morning').last);
+    await tester.pumpAndSettle();
+    // Step4 previews the selected seed without saving or creating a draft.
+    expect(store.journal(day).blocks, isEmpty);
+    await tester.tap(find.text('Use in diary').last);
     await tester.pumpAndSettle();
     await tester.enterText(find.byType(TextField), 'My irreplaceable draft');
 
