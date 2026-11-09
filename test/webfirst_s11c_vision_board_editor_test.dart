@@ -212,6 +212,40 @@ void main() {
     }
   });
 
+  testWidgets('page add, delete, undo and redo restore the full board',
+      (tester) async {
+    tester.view.devicePixelRatio = 1;
+    tester.view.physicalSize = const Size(900, 900);
+    addTearDown(() {
+      tester.view.resetDevicePixelRatio();
+      tester.view.resetPhysicalSize();
+    });
+    await tester.pumpWidget(MaterialApp(
+      locale: const Locale('it'),
+      home: const DiarySketchbookScreen(
+        initialPages: [DiarySketchPage(id: 'base')],
+        visionBoardMode: true,
+      ),
+    ));
+    expect(find.text('1/1'), findsOneWidget);
+    await tester.tap(find.byIcon(Icons.add_box_outlined));
+    await tester.pumpAndSettle();
+    expect(find.text('2/2'), findsOneWidget);
+    await tester.tap(find.byIcon(Icons.undo));
+    await tester.pumpAndSettle();
+    expect(find.text('1/1'), findsOneWidget);
+    await tester.tap(find.byIcon(Icons.redo));
+    await tester.pumpAndSettle();
+    expect(find.text('2/2'), findsOneWidget);
+    await tester.tap(find.byIcon(Icons.delete_outline));
+    await tester.pumpAndSettle();
+    expect(find.text('1/1'), findsOneWidget);
+    await tester.tap(find.byIcon(Icons.undo));
+    await tester.pumpAndSettle();
+    expect(find.text('2/2'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('save freezes editor interaction until the async commit resolves',
       (tester) async {
     tester.view.devicePixelRatio = 2;
