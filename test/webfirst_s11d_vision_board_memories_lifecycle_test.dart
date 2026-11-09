@@ -201,6 +201,39 @@ void main() {
     restored.dispose();
   });
 
+  test('ZIP and open export fail closed for missing live or trashed board media',
+      () async {
+    final store = await initializedStore();
+    final day = DateTime(2026, 11, 9);
+    final preset = visionBoardPresetsFor(const AnnaStrings('it'))[0];
+    final board = VisionBoardFoundation.draft(
+      preset, createdAt: day,
+    );
+    final bad = board.copyWith(pages: [
+      board.pages.single.copyWith(imageElements: const [
+        DiarySketchImageElement(
+          id: 'missing', mediaAssetId: 'unavailable-media-id',
+          x: 0.1, y: 0.1,
+        ),
+      ]),
+    ]);
+    await store.saveJournal(day, DayJournal(blocks: [bad]));
+    await expectLater(
+      store.createBackupZip(), throwsA(isA<StateError>()),
+    );
+    await expectLater(
+      store.createOpenExportZip(), throwsA(isA<StateError>()),
+    );
+    expect(await store.moveDiaryBlockToTrash(day, bad.id), isTrue);
+    await expectLater(
+      store.createBackupZip(), throwsA(isA<StateError>()),
+    );
+    expect(store.trash.where(
+      (t) => t.kind == TrashEntityKind.diaryBlock), hasLength(1),
+    );
+    store.dispose();
+  });
+
   testWidgets('Ricordi gallery shows boards, links and restores private boundary',
       (tester) async {
     final store = await initializedStore();
