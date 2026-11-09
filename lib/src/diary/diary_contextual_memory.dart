@@ -22,6 +22,7 @@ abstract final class ContextualMemorySelector {
     required Iterable<DiaryBlockReference> authorizedPrivateMemories,
     required DateTime today,
     Set<String> excludedIds = const {},
+    Set<String>? authorizedPersonIds,
     int limit = 2,
   }) {
     if (limit <= 0) return const [];
@@ -30,6 +31,7 @@ abstract final class ContextualMemorySelector {
       final block = reference.block;
       if (block.id.trim().isEmpty || block.archived ||
           excludedIds.contains(block.id) ||
+          block.tags.contains(futureLetterTag) ||
           !reference.date.isBefore(anchor) ||
           block.tags.any((tag) =>
               _excludedExplicitTags.contains(tag.trim().toLowerCase()))) {
@@ -38,7 +40,9 @@ abstract final class ContextualMemorySelector {
       final anniversary = reference.date.year < anchor.year &&
           reference.date.month == anchor.month &&
           reference.date.day == anchor.day;
-      final linked = block.personIds.isNotEmpty ||
+      final linkedPerson = block.personIds.any((id) =>
+          authorizedPersonIds == null || authorizedPersonIds.contains(id));
+      final linked = linkedPerson ||
           block.places.any((place) => place.normalizedName.isNotEmpty);
       return anniversary || linked;
     }).toList(growable: false)
@@ -59,9 +63,11 @@ abstract final class ContextualMemorySelector {
       final anniversary = record.date.year < anchor.year &&
           record.date.month == anchor.month &&
           record.date.day == anchor.day;
+      final linkedPerson = record.block.personIds.any((id) =>
+          authorizedPersonIds == null || authorizedPersonIds.contains(id));
       final reason = anniversary
           ? 'anniversary'
-          : record.block.personIds.isNotEmpty ? 'person' : 'place';
+          : linkedPerson ? 'person' : 'place';
       buckets[reason]!.add(record);
     }
     final result = <ContextualMemoryPick>[];
@@ -116,6 +122,7 @@ class _ContextualMemoryPanelState extends State<ContextualMemoryPanel> {
   int _dailySelectedDay = 0;
   bool _selecting = false;
   String? _observedScope;
+  int? _observedEpoch;
 
   String get _scopeKey => 'anna_contextual_memory_v1_${sha256.convert(
         utf8.encode(widget.store.activeAccountId ?? 'local'),
@@ -128,14 +135,17 @@ class _ContextualMemoryPanelState extends State<ContextualMemoryPanel> {
   void initState() {
     super.initState();
     _observedScope = _scopeKey;
+    _observedEpoch = widget.store.accountScopeEpoch;
     _load();
   }
 
   @override
   void didUpdateWidget(covariant ContextualMemoryPanel oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (_observedScope != _scopeKey) {
+    if (_observedScope != _scopeKey ||
+        _observedEpoch != widget.store.accountScopeEpoch) {
       _observedScope = _scopeKey;
+      _observedEpoch = widget.store.accountScopeEpoch;
       _loaded = false;
       _enabled = false;
       _snoozedThrough = 0;
@@ -148,9 +158,13 @@ class _ContextualMemoryPanelState extends State<ContextualMemoryPanel> {
 
   Future<void> _load() async {
     final key = _scopeKey;
+    final epoch = widget.store.accountScopeEpoch;
     try {
       final prefs = await SharedPreferences.getInstance();
-      if (!mounted || key != _scopeKey) return;
+      if (!mounted || !widget.store.entryScopeReady ||
+          key != _scopeKey || epoch != widget.store.accountScopeEpoch) {
+        return;
+      }
       setState(() {
         _enabled = prefs.getBool('${key}_enabled') ?? false;
         _snoozedThrough = prefs.getInt('${key}_snoozed') ?? 0;
@@ -174,7 +188,9 @@ class _ContextualMemoryPanelState extends State<ContextualMemoryPanel> {
   /// and switching a search/person filter cannot refill the day's quota.
   Future<void> _ensureDailyPicks() async {
     if (!mounted || !_loaded || !_enabled || _selecting ||
+        !widget.store.entryScopeReady ||
         _observedScope != _scopeKey ||
+        _observedEpoch != widget.store.accountScopeEpoch ||
         widget.store.agendaContentFilter == AgendaContentFilter.sharedOnly) {
       return;
     }
@@ -183,6 +199,7 @@ class _ContextualMemoryPanelState extends State<ContextualMemoryPanel> {
     if (_dailySelectedDay == today || _snoozedThrough > today) return;
     _selecting = true;
     final key = _scopeKey;
+    final epoch = widget.store.accountScopeEpoch;
     try {
       final eligible = widget.authorizedPrivateMemories.toList(growable: false);
       final chosen = ContextualMemorySelector.choose(
@@ -191,12 +208,18 @@ class _ContextualMemoryPanelState extends State<ContextualMemoryPanel> {
         excludedIds: eligible
             .where((item) => _excluded.contains(_digestFor(item.block.id)))
             .map((item) => item.block.id).toSet(),
+        authorizedPersonIds:
+            widget.store.people.map((person) => person.id).toSet(),
       );
       final hashes = chosen
           .map((item) => _digestFor(item.reference.block.id))
           .toSet();
       final prefs = await SharedPreferences.getInstance();
-      if (!mounted || _scopeKey != key || !_enabled) return;
+      if (!mounted || !widget.store.entryScopeReady ||
+          _scopeKey != key || widget.store.accountScopeEpoch != epoch ||
+          !_enabled) {
+        return;
+      }
       if (!await prefs.setStringList(
         '${key}_selected_hashes', hashes.toList(growable: false),
       )) {
@@ -205,7 +228,10 @@ class _ContextualMemoryPanelState extends State<ContextualMemoryPanel> {
       if (!await prefs.setInt('${key}_selected_day', today)) {
         throw StateError('Cannot persist selection day');
       }
-      if (!mounted || _scopeKey != key) return;
+      if (!mounted || !widget.store.entryScopeReady ||
+          _scopeKey != key || widget.store.accountScopeEpoch != epoch) {
+        return;
+      }
       setState(() {
         _dailySelectedDay = today;
         _dailySelected..clear()..addAll(hashes);
@@ -218,25 +244,42 @@ class _ContextualMemoryPanelState extends State<ContextualMemoryPanel> {
   }
 
   Future<void> _setEnabled(bool enabled) async {
+    if (!widget.store.entryScopeReady ||
+        _observedEpoch != widget.store.accountScopeEpoch ||
+        widget.store.agendaContentFilter == AgendaContentFilter.sharedOnly) {
+      return;
+    }
     final key = _scopeKey;
+    final epoch = widget.store.accountScopeEpoch;
     final previous = _enabled;
     setState(() => _enabled = enabled);
     try {
       final prefs = await SharedPreferences.getInstance();
-      if (_scopeKey != key) return;
+      if (_scopeKey != key ||
+          widget.store.accountScopeEpoch != epoch ||
+          !widget.store.entryScopeReady) {
+        return;
+      }
       if (!await prefs.setBool('${key}_enabled', enabled)) {
         throw StateError('Recall opt-in not saved');
       }
       if (enabled) await _ensureDailyPicks();
     } catch (_) {
-      if (mounted && _scopeKey == key) {
+      if (mounted && _scopeKey == key &&
+          widget.store.accountScopeEpoch == epoch) {
         setState(() => _enabled = previous);
       }
     }
   }
 
   Future<void> _snooze(bool pause) async {
+    if (!widget.store.entryScopeReady ||
+        _observedEpoch != widget.store.accountScopeEpoch ||
+        widget.store.agendaContentFilter == AgendaContentFilter.sharedOnly) {
+      return;
+    }
     final key = _scopeKey;
+    final epoch = widget.store.accountScopeEpoch;
     final previous = _snoozedThrough;
     final now = DateTime.now();
     final until = DateTime(now.year, now.month, now.day + 7);
@@ -245,20 +288,31 @@ class _ContextualMemoryPanelState extends State<ContextualMemoryPanel> {
     setState(() => _snoozedThrough = choice);
     try {
       final prefs = await SharedPreferences.getInstance();
-      if (_scopeKey != key) return;
+      if (_scopeKey != key ||
+          widget.store.accountScopeEpoch != epoch ||
+          !widget.store.entryScopeReady) {
+        return;
+      }
       if (!await prefs.setInt('${key}_snoozed', choice)) {
         throw StateError('Recall snooze not saved');
       }
       if (!pause) await _ensureDailyPicks();
     } catch (_) {
-      if (mounted && _scopeKey == key) {
+      if (mounted && _scopeKey == key &&
+          widget.store.accountScopeEpoch == epoch) {
         setState(() => _snoozedThrough = previous);
       }
     }
   }
 
   Future<void> _neverSuggest(String blockId) async {
+    if (!widget.store.entryScopeReady ||
+        _observedEpoch != widget.store.accountScopeEpoch ||
+        widget.store.agendaContentFilter == AgendaContentFilter.sharedOnly) {
+      return;
+    }
     final key = _scopeKey;
+    final epoch = widget.store.accountScopeEpoch;
     final hashed = _digestFor(blockId);
     final previous = Set<String>.from(_excluded);
     setState(() {
@@ -268,31 +322,47 @@ class _ContextualMemoryPanelState extends State<ContextualMemoryPanel> {
     });
     try {
       final prefs = await SharedPreferences.getInstance();
-      if (_scopeKey != key) return;
+      if (_scopeKey != key ||
+          widget.store.accountScopeEpoch != epoch ||
+          !widget.store.entryScopeReady) {
+        return;
+      }
       if (!await prefs.setStringList(
         '${key}_excluded', _excluded.toList(growable: false),
       )) {
         throw StateError('Recall exclusion not saved');
       }
     } catch (_) {
-      if (mounted && _scopeKey == key) {
+      if (mounted && _scopeKey == key &&
+          widget.store.accountScopeEpoch == epoch) {
         setState(() => _excluded..clear()..addAll(previous));
       }
     }
   }
 
   Future<void> _resetExcluded() async {
+    if (!widget.store.entryScopeReady ||
+        _observedEpoch != widget.store.accountScopeEpoch ||
+        widget.store.agendaContentFilter == AgendaContentFilter.sharedOnly) {
+      return;
+    }
     final key = _scopeKey;
+    final epoch = widget.store.accountScopeEpoch;
     final previous = Set<String>.from(_excluded);
     setState(() => _excluded.clear());
     try {
       final prefs = await SharedPreferences.getInstance();
-      if (_scopeKey != key) return;
+      if (_scopeKey != key ||
+          widget.store.accountScopeEpoch != epoch ||
+          !widget.store.entryScopeReady) {
+        return;
+      }
       if (!await prefs.remove('${key}_excluded')) {
         throw StateError('Recall exclusions not cleared');
       }
     } catch (_) {
-      if (mounted && _scopeKey == key) {
+      if (mounted && _scopeKey == key &&
+          widget.store.accountScopeEpoch == epoch) {
         setState(() => _excluded.addAll(previous));
       }
     }
@@ -348,7 +418,9 @@ class _ContextualMemoryPanelState extends State<ContextualMemoryPanel> {
   Widget build(BuildContext context) {
     // Never expose private recaps while the agenda explicitly shows shared
     // records only, or across a pending account-scope transition.
-    if (!_loaded || _observedScope != _scopeKey ||
+    if (!_loaded || !widget.store.entryScopeReady ||
+        _observedScope != _scopeKey ||
+        _observedEpoch != widget.store.accountScopeEpoch ||
         widget.store.agendaContentFilter == AgendaContentFilter.sharedOnly) {
       return const SizedBox.shrink();
     }
@@ -370,6 +442,8 @@ class _ContextualMemoryPanelState extends State<ContextualMemoryPanel> {
                 .where((reference) =>
                     _excluded.contains(_digestFor(reference.block.id)))
                 .map((reference) => reference.block.id).toSet(),
+            authorizedPersonIds:
+                widget.store.people.map((person) => person.id).toSet(),
           )
         : const <ContextualMemoryPick>[];
     final lang = AnnaStrings.of(context).languageCode;

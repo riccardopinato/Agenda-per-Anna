@@ -1,6 +1,17 @@
 # Anna's Diary — Roadmap
 
-## 9 novembre 2026 — Web-first Maxi-step 9: Giornata realistica 2.0 (PR / gate in verifica)
+## 9 novembre 2026 — Web-first Maxi-step 10: Ricordi contestuali + Lettera al futuro (PR/gate in verifica)
+
+- **Baseline S10:** Factory `App-Factory-Core@d4ed1185d36d419228fba6b57a979cde308bd321` (CURRENT Master v27, Golden Index v29), Anna `main@f4b2baf95e062777da4ad23c0e40bbf8ed8cb6c1`. Contract: Product Bible; [dossier S10](WEBFIRST_S10_CONTEXTUAL_MEMORIES_FUTURE_LETTERS_20261109.md); [issue #224](https://github.com/riccardopinato/Agenda-per-Anna/issues/224); AD-NL26-03 autorizzata in questo passo soltanto.
+- **Riuso reale:** `ContextualMemoryPanel/Selector` da #241; `future_letter_v1` come nota in `AgendaStore.journals`, Cestino/import/export/backup canonici da #218; niente nuovo store/editor/provider, ML, shared sync, Vault o migrazioni.
+- **Ricordi contestuali:** mantenuti opt-in OFF, massimo 2 suggerimenti per giorno, scelta deterministica, data/motivo, snooze/exclusion; esclusi `future_letter_v1`, collegamenti a persone non più esistenti e contenuti sensibili/archiviati. Protezione su accountScopeEpoch (compreso switch A→B→A), scope non pronto/shared-only e callback asincroni.
+- **Lettera futura:** la vecchia data promemoria è **in-app, non blocco cifrato**, senza nuovi push; `saveJournal` protetto da guard di account ed epoch, pulsante salvataggio non duplicabile, niente lettura con riferimento stale. UI `In attesa`/`Pronta`; tile neutra in Ricordi > Per te solo se almeno una lettera è pronta. Non si mostra il testo prima del tap; cancellazione continua nel Cestino.
+- **Test:** nuova suite `test/webfirst_s10_contextual_future_letters_test.dart` per selettore, privacy, lettera archivio, sharedOnly, A→B→A, risoluzione lettera dopo account switch e controllo statico del dialogo reattivo (browser fisico NOT_VERIFIED), copy IT/EN/ES/FR/PT; mantenere `test/contextual_memory_p2_test.dart`, `test/v105b0_memories_3_core_test.dart` e suite Flutter completa.
+- **Gate obbligatori:** PR head Flutter analyze/test/full Web/crypto + dedicated Web PR build (tocca `lib/**`) + AppLab Source Gate; review senza blocker, merge soltanto con gate verdi. Validare `main` CI/Pages stesso SHA separatamente; PWA A/B, browser fisici, Store e performance `NOT_VERIFIED / NOT_MEASURED`. Offline `DEFERRED_BY_USER`. Solo Chat, Web-first, niente APK.
+- **S11 (proposta, non autorizzata/implementata qui):** template personali e Vision Board nel Canvas/Sketchbook esistente, previa ammissione di prodotto e licenze.
+
+
+## 9 novembre 2026 — Web-first Maxi-step 9: Giornata realistica 2.0 (PR #285 merged / CI PR PASS)
 
 - **Factory:** `App-Factory-Core@d4ed1185d36d419228fba6b57a979cde308bd321` (CURRENT Master v27 / Golden Index v29); **Anna base:** `main@bee3b22b9c2e8a614efa9deeec32815102c78522` dopo S8. Scope [#226](https://github.com/riccardopinato/Agenda-per-Anna/issues/226); piano e matrice nel [WEBFIRST_S9_REALISTIC_DAY_2_0_20261109.md](WEBFIRST_S9_REALISTIC_DAY_2_0_20261109.md).
 - **Delta sorgente circoscritto:** `RealisticDayAdvisor` conserva la misura calendar-only 09–21 e conteggia separatamente, senza doppi sottratti, i task non completati con **entrambi** gli orari esplicitamente registrati e visibili (`bookedTaskMinutes`). La disponibilità effettiva ora sottrae task calendar-free + buffer selezionato; il primo slot consigliato esclude i task con tempo. Dati sconosciuti non diventano durate inventate.
