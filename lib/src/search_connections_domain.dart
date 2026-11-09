@@ -1402,7 +1402,11 @@ class _PersonalSearchConnectionsScreenState
             ),
           ),
           SizedBox(
-            height: 46,
+            key: const ValueKey<String>('approved-search-filter-strip'),
+            // Chip labels follow the system text scale; the original fixed
+            // 46dp strip clipped long translated labels at larger scales.
+            height: (18.0 + MediaQuery.textScalerOf(context).scale(14) * 2)
+                .clamp(46.0, 96.0),
             child: ListView(
               padding: const EdgeInsets.symmetric(horizontal: 14),
               scrollDirection: Axis.horizontal,
@@ -1458,7 +1462,11 @@ class _PersonalSearchConnectionsScreenState
                   ),
                 ),
                 const SizedBox(width: 8),
-                DropdownButton<ApprovedSearchSort>(
+                Flexible(
+                  flex: 2,
+                  child: DropdownButton<ApprovedSearchSort>(
+                  key: const ValueKey<String>('approved-search-sort'),
+                  isExpanded: true,
                   value: sortOrder,
                   onChanged: (value) {
                     if (value != null) setState(() => sortOrder = value);
@@ -1466,9 +1474,14 @@ class _PersonalSearchConnectionsScreenState
                   items: ApprovedSearchSort.values.map(
                     (value) => DropdownMenuItem(
                       value: value,
-                      child: Text(value.approvedLabel(strings.languageCode)),
+                      child: Text(
+                        value.approvedLabel(strings.languageCode),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
                     ),
                   ).toList(),
+                ),
                 ),
               ],
             ),
