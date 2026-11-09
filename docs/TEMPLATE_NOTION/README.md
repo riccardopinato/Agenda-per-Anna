@@ -49,3 +49,7 @@ Il [registro strutturato](CATALOGO.json) distingue **ricerca, sorgente incomplet
 | TN-ANNA-0005 | Trip Planner | SECONDARY_LIMITED | E2 export, proposta da valutare | [Analisi](SCHEDE/TN-ANNA-0005.md) |
 
 Il template completo `Trip Planner` ha come proprietario principale **Wonderlog**, mentre Anna può eventualmente usarne solo aspetti di diario personale. Non viene modificata la roadmap di prodotto.
+
+## Maxi-step 2 — prototipo UX rituali nativi
+
+[Specifica UX Routines Activities → Rituali gentili](UX_STEP2/README.md) · [anteprima HTML con interazioni simulate](UX_STEP2/PROTOTIPO_RITUALI_GENTILI.html). Demo, NON implementazione Anna / RevenueCat.
