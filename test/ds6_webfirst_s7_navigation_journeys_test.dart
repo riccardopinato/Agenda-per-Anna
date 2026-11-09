@@ -48,6 +48,15 @@ void main() {
       scrollable: find.byType(Scrollable).first,
       maxScrolls: 24,
     );
+    // scrollUntilVisible stops once a lazily built element EXISTS; it may
+    // still sit below the attached navigation dock's actual hit-test area.
+    // Position the existing ListTile within the upper portion of the viewport.
+    await Scrollable.ensureVisible(
+      tester.element(target),
+      alignment: 0.3,
+      duration: const Duration(milliseconds: 150),
+    );
+    await tester.pump(const Duration(milliseconds: 200));
   }
 
   testWidgets('S7 mobile shell navigates through real Search, Settings and '
@@ -107,10 +116,16 @@ void main() {
     expect(find.byType(AppearanceColorsScreen), findsOneWidget);
 
     // Back/cancel must keep the same settings route rather than duplicating it.
-    await tester.pageBack();
+    // Use browser/system Back to validate the route stack. pageBack() only
+    // presses an auto-generated AppBar BackButton, which is not guaranteed
+    // for all embedded routes and is not the browser Back gesture.
+    await tester.binding.handlePopRoute();
     await settlePop(tester);
     expect(find.byType(SettingsHubScreen), findsOneWidget);
-    await tester.pageBack();
+    // Use browser/system Back to validate the route stack. pageBack() only
+    // presses an auto-generated AppBar BackButton, which is not guaranteed
+    // for all embedded routes and is not the browser Back gesture.
+    await tester.binding.handlePopRoute();
     await settlePop(tester);
     expect(find.byType(MoreScreen), findsOneWidget);
 
@@ -126,7 +141,10 @@ void main() {
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 900));
     expect(find.byType(BottomSheet), findsOneWidget);
-    await tester.pageBack();
+    // Use browser/system Back to validate the route stack. pageBack() only
+    // presses an auto-generated AppBar BackButton, which is not guaranteed
+    // for all embedded routes and is not the browser Back gesture.
+    await tester.binding.handlePopRoute();
     await settlePop(tester);
     expect(find.byType(BottomSheet), findsNothing);
     expect(find.byType(MainShell), findsOneWidget);
@@ -160,7 +178,10 @@ void main() {
     await tester.tap(calendar);
     await settlePush(tester);
     expect(find.byType(CalendarHubScreen), findsOneWidget);
-    await tester.pageBack();
+    // Use browser/system Back to validate the route stack. pageBack() only
+    // presses an auto-generated AppBar BackButton, which is not guaranteed
+    // for all embedded routes and is not the browser Back gesture.
+    await tester.binding.handlePopRoute();
     await settlePop(tester);
     expect(find.byType(CalendarHubScreen), findsNothing);
     expect(find.byType(MainShell), findsOneWidget);
