@@ -91,7 +91,10 @@ void main() {
     expect(editable.focusNode.hasFocus, isFalse);
 
     await tester.tap(appearance);
-    await tester.pump(const Duration(milliseconds: 400));
+    // Navigator installs the pushed route on the following frame. Giving
+    // the duration to the first frame alone can report a false negative.
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 850));
     expect(find.byType(AppearanceColorsScreen), findsOneWidget);
     expect(tester.takeException(), isNull);
 
