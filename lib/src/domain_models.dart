@@ -1197,6 +1197,10 @@ class HabitDefinition {
 
 enum DiaryBlockType { note, sketch, photo, voice }
 
+/// Additive sub-classification; legacy sketch data defaults to [sketch].
+/// No new DiaryBlockType or independent persistence is introduced.
+enum DiaryCreativeSubtype { sketch, visionBoard }
+
 enum DiarySketchTool {
   pen,
   highlighter,
@@ -1519,6 +1523,7 @@ String _annaNormalizedPhotoAltText(Object? value) {
 class DiaryBlock {
   final String id;
   final DiaryBlockType type;
+  final DiaryCreativeSubtype creativeSubtype;
   final DateTime createdAt;
   final String text;
   /// Optional author-written accessibility description of a diary photo.
@@ -1546,6 +1551,7 @@ class DiaryBlock {
   const DiaryBlock({
     required this.id,
     required this.type,
+    this.creativeSubtype = DiaryCreativeSubtype.sketch,
     required this.createdAt,
     this.text = '',
     this.altText = '',
@@ -1566,6 +1572,10 @@ class DiaryBlock {
     this.relatedBlockIds = const [],
   });
 
+  bool get isPersonalVisionBoard =>
+      type == DiaryBlockType.sketch &&
+      creativeSubtype == DiaryCreativeSubtype.visionBoard;
+
   bool get hasPhotoMedia =>
       type == DiaryBlockType.photo &&
       (mediaAssetId.isNotEmpty || imageBase64.isNotEmpty);
@@ -1575,6 +1585,7 @@ class DiaryBlock {
       (mediaAssetId.isNotEmpty || audioBase64.isNotEmpty);
 
   DiaryBlock copyWith({
+    DiaryCreativeSubtype? creativeSubtype,
     String? text,
     String? altText,
     String? imageBase64,
@@ -1596,6 +1607,7 @@ class DiaryBlock {
       DiaryBlock(
         id: id,
         type: type,
+        creativeSubtype: creativeSubtype ?? this.creativeSubtype,
         createdAt: createdAt,
         text: text ?? this.text,
         altText: altText ?? this.altText,
@@ -1620,6 +1632,7 @@ class DiaryBlock {
   Map<String, dynamic> toJson() => {
         'id': id,
         'type': type.name,
+        if (isPersonalVisionBoard) 'creativeSubtype': creativeSubtype.name,
         'createdAt': createdAt.toUtc().toIso8601String(),
         'text': text,
         'altText': altText,
@@ -1652,6 +1665,10 @@ class DiaryBlock {
         type: DiaryBlockType.values.firstWhere(
           (value) => value.name == json['type'],
           orElse: () => DiaryBlockType.note,
+        ),
+        creativeSubtype: DiaryCreativeSubtype.values.firstWhere(
+          (value) => value.name == json['creativeSubtype'],
+          orElse: () => DiaryCreativeSubtype.sketch,
         ),
         createdAt:
             DateTime.tryParse(json['createdAt'] as String? ?? '')?.toLocal() ??
