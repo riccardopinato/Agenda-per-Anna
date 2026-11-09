@@ -23,6 +23,21 @@ This document defines what Anna's Diary is, what it is not, and the product/secu
 
 Research provenance: [S11-A technical audit](WEBFIRST_S11A_VISION_BOARD_AUDIT_20261109.md) (S11-A audit report originally produced in Chat), App Factory's Vision Board catalog (research only), current Product Bible, and the existing Sketchbook implementation. External code/assets are not imported for S11-B.
 
+### 9 November 2026 — S11-C Vision Board editor authorization
+
+The user explicitly authorized **S11-C** after S11-B source/CI/Pages success.
+The admitted scope extends only the existing private Sketchbook with a
+Vision Board mode, use of the six original presets, non-destructive placement
+of referenced photos in collage layouts, editing and bounded undo/redo,
+unsaved-draft confirmation, and an explicit account-epoch-guarded save to
+`AgendaStore.journals`. A private diary Create action may open the editor;
+this is not a new app tab or a shared-space feature. Existing sketches retain
+their prior mode and compatibility. S11-D (Ricordi gallery, memory links,
+complete lifecycle/portable export) and S11-E (manual PWA/physical QA) still
+require separate acceptance. No automatic photo import, private-to-shared
+sync, Vault/Privacy V2 change, third-party assets or signed APK is admitted.
+Source/CI/Pages evidence remains tied to each exact tested SHA.
+
 ## Approved 10-screen visual contract — 31 October 2026
 
 All ten Anna's Diary interactive design decisions were explicitly approved by the user. The complete ledger and non-destructive implementation plan are maintained in [APPROVED_10_MOCKUPS_IMPLEMENTATION_CONTRACT.md](APPROVED_10_MOCKUPS_IMPLEMENTATION_CONTRACT.md). These decisions authorize **bounded implementation**, not APK/public release or changes to existing user records. In particular: Cassaforte privata must remain exactly as installed; +Crea retains its current actions with approved top-to-bottom micro-bounce; Inbox tag creation/rename/filter must be tested on a real Android phone before acceptance; global Search must not surface invisible one-character matches and must offer newest/oldest/A–Z. Existing source/release evidence remains valid only for its exact previously tested SHA.
