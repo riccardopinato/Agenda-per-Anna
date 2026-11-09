@@ -217,7 +217,9 @@ class _ContextualMemoryPanelState extends State<ContextualMemoryPanel> {
       final prefs = await SharedPreferences.getInstance();
       if (!mounted || !widget.store.entryScopeReady ||
           _scopeKey != key || widget.store.accountScopeEpoch != epoch ||
-          !_enabled) return;
+          !_enabled) {
+        return;
+      }
       if (!await prefs.setStringList(
         '${key}_selected_hashes', hashes.toList(growable: false),
       )) {
@@ -227,7 +229,9 @@ class _ContextualMemoryPanelState extends State<ContextualMemoryPanel> {
         throw StateError('Cannot persist selection day');
       }
       if (!mounted || !widget.store.entryScopeReady ||
-          _scopeKey != key || widget.store.accountScopeEpoch != epoch) return;
+          _scopeKey != key || widget.store.accountScopeEpoch != epoch) {
+        return;
+      }
       setState(() {
         _dailySelectedDay = today;
         _dailySelected..clear()..addAll(hashes);
@@ -253,7 +257,9 @@ class _ContextualMemoryPanelState extends State<ContextualMemoryPanel> {
       final prefs = await SharedPreferences.getInstance();
       if (_scopeKey != key ||
           widget.store.accountScopeEpoch != epoch ||
-          !widget.store.entryScopeReady) return;
+          !widget.store.entryScopeReady) {
+        return;
+      }
       if (!await prefs.setBool('${key}_enabled', enabled)) {
         throw StateError('Recall opt-in not saved');
       }
@@ -284,7 +290,9 @@ class _ContextualMemoryPanelState extends State<ContextualMemoryPanel> {
       final prefs = await SharedPreferences.getInstance();
       if (_scopeKey != key ||
           widget.store.accountScopeEpoch != epoch ||
-          !widget.store.entryScopeReady) return;
+          !widget.store.entryScopeReady) {
+        return;
+      }
       if (!await prefs.setInt('${key}_snoozed', choice)) {
         throw StateError('Recall snooze not saved');
       }
@@ -316,7 +324,9 @@ class _ContextualMemoryPanelState extends State<ContextualMemoryPanel> {
       final prefs = await SharedPreferences.getInstance();
       if (_scopeKey != key ||
           widget.store.accountScopeEpoch != epoch ||
-          !widget.store.entryScopeReady) return;
+          !widget.store.entryScopeReady) {
+        return;
+      }
       if (!await prefs.setStringList(
         '${key}_excluded', _excluded.toList(growable: false),
       )) {
@@ -344,7 +354,9 @@ class _ContextualMemoryPanelState extends State<ContextualMemoryPanel> {
       final prefs = await SharedPreferences.getInstance();
       if (_scopeKey != key ||
           widget.store.accountScopeEpoch != epoch ||
-          !widget.store.entryScopeReady) return;
+          !widget.store.entryScopeReady) {
+        return;
+      }
       if (!await prefs.remove('${key}_excluded')) {
         throw StateError('Recall exclusions not cleared');
       }
