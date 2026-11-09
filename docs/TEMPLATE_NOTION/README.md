@@ -8,9 +8,11 @@ Catalogo **di ricerca** per i template Notion la cui utilità principale riguard
 
 | ID Anna | Template | Categoria | Evidenza | Stato prodotto | Scheda |
 |---|---|---|---|---|---|
-| — | **Nessun template ancora classificato come principale per Anna** | — | — | RICERCA APERTA | — |
+| TN-ANNA-0001 | Routines Activities | Rituali / routine giornaliere e settimanali | **E2 Markdown + 4 immagini** | PROPOSTA — riuso di rituali esistenti | [Analisi](SCHEDE/TN-ANNA-0001-ROUTINES_ACTIVITIES.md) |
+| TN-ANNA-0002 | Weekly Planner | Pianificazione leggera | **E0 funzionale** — export contiene solo intro/upsell | RINVIA — export incompleto | [Analisi](SCHEDE/TN-ANNA-0002-WEEKLY_PLANNER_INCOMPLETE.md) |
+| TN-ANNA-0003 | Weight Loss Tracker | Wellness sensibile | **E2 Markdown + CSV + GIF** | BLOCCATO — product/privacy gate | [Analisi](SCHEDE/TN-ANNA-0003-WEIGHT_LOSS_TRACKER_RESTRICTED.md) |
 
-Il [registro strutturato](CATALOGO.json) è volutamente vuoto finché non identifichiamo un primo template pertin​ente. Non aggiungere falsi record per riempire l'indice.
+Il [registro strutturato](CATALOGO.json) distingue **ricerca, sorgente incompleta e blocco privacy**: una scheda presente non autorizza l'integrazione Flutter.
 
 ## Template citati ma assegnati ad altre app
 
@@ -34,3 +36,7 @@ Il [registro strutturato](CATALOGO.json) è volutamente vuoto finché non identi
 5. Proporre l'integrazione Flutter in una roadmap separata, solo dopo ammissione di prodotto e controlli: privacy/ACL, reversibilità, test e visual approval.
 
 **Baseline**: Anna's Diary `main@7d22e5f2e5710599fdcd56c785b6ebe7bf6c33f0` e App Factory Core `2b3ae9e01764b7504980efca34f2543949dc7b89` (Master v27 / Golden Index v29), classificazione documentale 2026-11-09. Questo elenco non cambia le release o la roadmap esistente.
+
+## Idea futura — Store interno di template Anna
+
+[**TPL-STORE-2026-01: idea valida da conservare**](https://github.com/riccardopinato/Idee-app-Archivi-riferimenti/blob/main/17-RICERCA-TEMPLATE-UX/IDEA_STORE_TEMPLATE_INTERNO_2026-11-09.md). Prezzo candidato **€3,99** una tantum per template **originale**, alcuni preset gratuiti, preview e ripristino acquisti. **Non implementato**, non cambia Product Bible, RevenueCat, permessi, dati, `Noi ♡` o Vault. Nessuno dei template caricati è autorizzato automaticamente per vendita o copia.
