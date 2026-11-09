@@ -28,6 +28,8 @@ class _MainShellState extends State<MainShell> {
 
   Future<void> _openCentralCreate() async {
     if (_createPressed) return;
+    // Avoid keeping a focused previous screen under the canonical capture.
+    FocusScope.of(context).unfocus();
     unawaited(AnnaFeedback.selection());
     setState(() => _createPressed = true);
     final animate = AnnaDesignTokens.animationsEnabled(context);
@@ -170,6 +172,9 @@ class _MainShellState extends State<MainShell> {
 
   void _selectDestination(int value) {
     if (value == index) return;
+    // IndexedStack retains other pages: release their keyboard focus before
+    // offstaging the old destination so IME cannot cover the selected page.
+    FocusScope.of(context).unfocus();
     setState(() => index = value);
   }
 
