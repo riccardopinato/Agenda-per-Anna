@@ -1125,6 +1125,7 @@ class DiaryComposerSection extends StatelessWidget {
   final VoidCallback onMemories;
   final VoidCallback onAddNote;
   final VoidCallback onAddSketch;
+  final VoidCallback? onAddVisionBoard;
   final VoidCallback onAddPhoto;
   final VoidCallback? onAddVoice;
   final VoidCallback? onTemplates;
@@ -1141,6 +1142,7 @@ class DiaryComposerSection extends StatelessWidget {
     required this.onMemories,
     required this.onAddNote,
     required this.onAddSketch,
+    this.onAddVisionBoard,
     required this.onAddPhoto,
     this.onAddVoice,
     this.onTemplates,
@@ -1193,6 +1195,13 @@ class DiaryComposerSection extends StatelessWidget {
                 icon: const Icon(Icons.draw_outlined),
                 label: Text(AnnaStrings.of(context).v100Sketch),
               ),
+              if (onAddVisionBoard != null)
+                FilledButton.tonalIcon(
+                  key: const ValueKey('vision-board-create'),
+                  onPressed: onAddVisionBoard,
+                  icon: const Icon(Icons.dashboard_customize_outlined),
+                  label: Text(VisionBoardUiCopy.add(AnnaStrings.of(context))),
+                ),
               if (onAddVoice != null)
                 FilledButton.tonalIcon(
                   onPressed: voiceBusy ? null : onAddVoice,
@@ -1853,7 +1862,34 @@ class _DiaryMemoryCardState extends State<DiaryMemoryCard> {
     }
   }
 
+  Future<void> _openVisionBoard() async {
+    final guard = Cap0160TagEditGuard(widget.store);
+    if (!guard.isCurrent || !mounted) return;
+    final preset = await showVisionBoardPresetPicker(context);
+    if (preset == null || !mounted || !guard.isCurrent) return;
+
+    final draft = VisionBoardFoundation.draft(
+      preset, createdAt: DateTime.now(),
+    );
+    await Navigator.push<List<DiarySketchPage>>(
+      context,
+      MaterialPageRoute(
+        builder: (_) => DiarySketchbookScreen(
+          initialPages: draft.pages,
+          visionBoardMode: true,
+          onSavePages: (pages) => VisionBoardFoundation.saveDraft(
+            widget.store, widget.date, draft.copyWith(pages: pages),
+            scopeGuard: guard,
+          ),
+        ),
+      ),
+    );
+  }
+
   Future<void> _openSketch([DiaryBlock? existing]) async {
+    final guard = Cap0160TagEditGuard(widget.store);
+    if (!guard.isCurrent) return;
+    final board = existing?.isPersonalVisionBoard == true;
     final initialPages = existing?.pages.isNotEmpty == true
         ? existing!.pages
         : [
@@ -1867,12 +1903,22 @@ class _DiaryMemoryCardState extends State<DiaryMemoryCard> {
       MaterialPageRoute(
         builder: (_) => DiarySketchbookScreen(
           initialPages: initialPages,
+          visionBoardMode: board,
+          onSavePages: board
+              ? (updated) => saveExistingPrivateVisionBoard(
+                    widget.store, widget.date, existing!, updated,
+                    scopeGuard: guard,
+                  )
+              : null,
         ),
       ),
     );
-    if (pages == null || pages.isEmpty) return;
+    // Saved Vision Boards commit inside the editor's guarded callback,
+    // so failed writes leave their draft open and never report success.
+    if (board || pages == null || pages.isEmpty || !guard.isCurrent) return;
 
-    final blocks = [...widget.store.journal(widget.date).blocks];
+    final current = widget.store.journal(widget.date);
+    final blocks = [...current.blocks];
     if (existing == null) {
       blocks.add(
         DiaryBlock(
@@ -1884,9 +1930,17 @@ class _DiaryMemoryCardState extends State<DiaryMemoryCard> {
       );
     } else {
       final index = blocks.indexWhere((block) => block.id == existing.id);
-      if (index >= 0) blocks[index] = existing.copyWith(pages: pages);
+      if (index < 0 || !identical(blocks[index], existing)) return;
+      blocks[index] = existing.copyWith(pages: pages);
     }
-    await _saveBlocks(blocks);
+    try {
+      await widget.store.saveJournal(
+        widget.date, current.copyWith(blocks: blocks),
+        scopeGuard: guard,
+      );
+    } on Cap0160ScopeChanged {
+      // Reject an editor returning after account transition.
+    }
   }
 
   Future<void> _editPeople(DiaryBlock block) async {
@@ -2174,9 +2228,13 @@ class _DiaryMemoryCardState extends State<DiaryMemoryCard> {
             : block.pages.first;
         return DiaryContentCard(
           kind: DiaryContentKind.sketch,
-          title: block.pages.length <= 1
-              ? AnnaStrings.of(context).v100Sketch
-              : AnnaStrings.of(context).d3SketchPages(block.pages.length),
+          title: block.isPersonalVisionBoard
+              ? (block.text.trim().isEmpty
+                  ? VisionBoardUiCopy.add(AnnaStrings.of(context))
+                  : block.text)
+              : (block.pages.length <= 1
+                  ? AnnaStrings.of(context).v100Sketch
+                  : AnnaStrings.of(context).d3SketchPages(block.pages.length)),
           subtitle: AnnaStrings.of(context).d3SketchTimed(time),
           preview: DiarySketchPagePreview(page: page),
           onOpen: () => _openSketch(block),
@@ -2248,6 +2306,7 @@ class _DiaryMemoryCardState extends State<DiaryMemoryCard> {
       ),
       onAddNote: () => _addNote(),
       onAddSketch: () => _openSketch(),
+      onAddVisionBoard: _openVisionBoard,
       onAddPhoto: _addPhoto,
       onAddVoice: _addVoice,
       onTemplates: _applyTemplate,

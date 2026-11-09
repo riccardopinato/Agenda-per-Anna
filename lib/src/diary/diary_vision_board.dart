@@ -391,3 +391,204 @@ Future<VisionBoardPreset?> showVisionBoardPresetPicker(BuildContext context) {
     ),
   );
 }
+
+enum VisionBoardCollageStyle { template, grid, cascade }
+
+/// S11-C: pure geometry on existing sketch-image records. No bitmap
+/// transformations, duplicate media store, network provider or image copies.
+/// The template layout reads S11-B original rectangle frames when available.
+abstract final class VisionBoardCollage {
+  static List<VisionBoardFrame> _templateFrames(DiarySketchPage page) {
+    final frames = <VisionBoardFrame>[];
+    for (final stroke in page.strokes) {
+      if (stroke.tool != DiarySketchTool.rectangle ||
+          stroke.points.length != 2) {
+        continue;
+      }
+      final a = stroke.points[0], b = stroke.points[1];
+      final x = min(a.x, b.x), y = min(a.y, b.y);
+      final frame = VisionBoardFrame(
+        x, y, (a.x - b.x).abs(), (a.y - b.y).abs(),
+      );
+      if (frame.isValid) frames.add(frame);
+    }
+    return frames;
+  }
+
+  static List<VisionBoardFrame> _grid(int count) {
+    if (count == 0) return const [];
+    // Adaptive columns and gaps avoid negative Positioned dimensions even
+    // when a board holds hundreds of photographs.
+    final columns = count == 1 ? 1 : count <= 8 ? 2 : sqrt(count).ceil();
+    final rows = (count / columns).ceil();
+    const padding = 0.07;
+    final gap = min(0.035, 0.12 / max(rows, columns));
+    final width = (1 - padding * 2 - (columns - 1) * gap) / columns;
+    final height = (1 - padding * 2 - (rows - 1) * gap) / rows;
+    return [
+      for (var i = 0; i < count; i++)
+        VisionBoardFrame(
+          padding + (i % columns) * (width + gap),
+          padding + (i ~/ columns) * (height + gap),
+          width, height,
+        ),
+    ];
+  }
+
+  static List<VisionBoardFrame> _cascade(int count) {
+    if (count > 8) {
+      return _grid(count); // avoid unreadably overlapped media
+    }
+    return [
+      for (var i = 0; i < count; i++)
+        VisionBoardFrame(
+          0.08 + (i % 3) * 0.18,
+          0.09 + i * (0.60 / max(count, 1)),
+          0.52, 0.35,
+        ),
+    ];
+  }
+
+  static DiarySketchPage arrange(
+    DiarySketchPage page,
+    VisionBoardCollageStyle style,
+  ) {
+    final images = page.imageElements;
+    if (images.isEmpty) return page;
+    final templates = _templateFrames(page);
+    final frames = switch (style) {
+      VisionBoardCollageStyle.template
+          when templates.isNotEmpty && images.length <= templates.length =>
+        templates,
+      VisionBoardCollageStyle.cascade => _cascade(images.length),
+      _ => _grid(images.length),
+    };
+    return page.copyWith(imageElements: [
+      for (var i = 0; i < images.length; i++)
+        images[i].copyWith(
+          x: frames[i].x,
+          y: frames[i].y,
+          width: frames[i].width,
+          height: frames[i].height,
+        ),
+    ]);
+  }
+}
+
+class VisionBoardHistoryEntry {
+  const VisionBoardHistoryEntry(this.pages, this.pageIndex);
+
+  final List<DiarySketchPage> pages;
+  final int pageIndex;
+}
+
+abstract final class VisionBoardUiCopy {
+  static String add(AnnaStrings s) => s._pick(
+    en: 'Vision Board', it: 'Vision Board', es: 'Vision Board',
+    fr: 'Vision Board', pt: 'Vision Board',
+  );
+  static String editor(AnnaStrings s) => s._pick(
+    en: 'My Vision Board', it: 'La mia Vision Board',
+    es: 'Mi Vision Board', fr: 'Ma Vision Board', pt: 'A minha Vision Board',
+  );
+  static String arrange(AnnaStrings s) => s._pick(
+    en: 'Collage layout', it: 'Disponi il collage',
+    es: 'Diseño del collage', fr: 'Disposition du collage',
+    pt: 'Organizar colagem',
+  );
+  static String template(AnnaStrings s) => s._pick(
+    en: 'Template frames', it: 'Cornici del modello',
+    es: 'Marcos del modelo', fr: 'Cadres du modèle',
+    pt: 'Molduras do modelo',
+  );
+  static String grid(AnnaStrings s) => s._pick(
+    en: 'Grid', it: 'Griglia', es: 'Cuadrícula', fr: 'Grille',
+    pt: 'Grelha',
+  );
+  static String cascade(AnnaStrings s) => s._pick(
+    en: 'Cascade', it: 'Cascata', es: 'Cascada', fr: 'Cascade',
+    pt: 'Cascata',
+  );
+  static String discardTitle(AnnaStrings s) => s._pick(
+    en: 'Discard changes?', it: 'Scartare le modifiche?',
+    es: '¿Descartar cambios?', fr: 'Ignorer les modifications ?',
+    pt: 'Descartar alterações?',
+  );
+  static String discardDetail(AnnaStrings s) => s._pick(
+    en: 'Your changes have not been saved.',
+    it: 'Le modifiche non sono state salvate.',
+    es: 'Los cambios no se han guardado.',
+    fr: 'Vos modifications ne sont pas enregistrées.',
+    pt: 'As alterações não foram guardadas.',
+  );
+  static String discard(AnnaStrings s) => s._pick(
+    en: 'Discard', it: 'Scarta', es: 'Descartar',
+    fr: 'Ignorer', pt: 'Descartar',
+  );
+  static String keep(AnnaStrings s) => s._pick(
+    en: 'Keep editing', it: 'Continua a modificare',
+    es: 'Seguir editando', fr: 'Continuer à modifier',
+    pt: 'Continuar a editar',
+  );
+  static String saveError(AnnaStrings s) => s._pick(
+    en: 'Unable to save. Your draft is still open.',
+    it: 'Salvataggio non riuscito. La bozza è ancora aperta.',
+    es: 'No se ha podido guardar. El borrador sigue abierto.',
+    fr: 'Enregistrement impossible. Le brouillon reste ouvert.',
+    pt: 'Não foi possível guardar. O rascunho continua aberto.',
+  );
+  static String needImages(AnnaStrings s) => s._pick(
+    en: 'Add a photo to create a collage.',
+    it: 'Aggiungi una foto per creare un collage.',
+    es: 'Añade una foto para crear un collage.',
+    fr: 'Ajoutez une photo pour créer un collage.',
+    pt: 'Adicione uma foto para criar uma colagem.',
+  );
+}
+
+/// Guarded edit of a saved private board. Rejects stale references and media,
+/// including writes from an editor that survived A→B→A.
+Future<bool> saveExistingPrivateVisionBoard(
+  AgendaStore store,
+  DateTime date,
+  DiaryBlock source,
+  List<DiarySketchPage> pages, {
+  required Cap0160TagEditGuard scopeGuard,
+}) async {
+  if (!scopeGuard.isCurrent || !source.isPersonalVisionBoard ||
+      source.archived || pages.isEmpty || pages.length > 64) {
+    return false;
+  }
+  for (final page in pages) {
+    for (final image in page.imageElements) {
+      if (image.mediaAssetId.isNotEmpty) {
+        if (await MediaAssetStore.instance.read(image.mediaAssetId) == null) {
+          return false;
+        }
+      } else if (image.imageBase64.isNotEmpty) {
+        try {
+          base64Decode(image.imageBase64);
+        } catch (_) {
+          return false;
+        }
+      } else {
+        return false;
+      }
+      if (!scopeGuard.isCurrent) return false;
+    }
+  }
+  if (!scopeGuard.isCurrent) return false;
+  final current = store.journal(date);
+  final index = current.blocks.indexWhere((block) => block.id == source.id);
+  if (index < 0 || !identical(current.blocks[index], source)) return false;
+  final blocks = [...current.blocks];
+  blocks[index] = source.copyWith(pages: pages);
+  try {
+    await store.saveJournal(
+      date, current.copyWith(blocks: blocks), scopeGuard: scopeGuard,
+    );
+    return scopeGuard.isCurrent;
+  } on Cap0160ScopeChanged {
+    return false;
+  }
+}

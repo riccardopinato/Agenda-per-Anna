@@ -1,5 +1,15 @@
 # Anna's Diary — Roadmap
 
+## 9 novembre 2026 — Web-first S11-C: editor Vision Board e collage (PR in validazione)
+
+- **Stato:** implementazione proposta su branch `feat/webfirst-s11c-vision-board-editor`, **non** considerata merged/CI/deploy finché non risultano verdi i gate esatti. Dossier [S11-C](WEBFIRST_S11C_VISION_BOARD_EDITOR_20261109.md).
+- **Ingresso e ownership:** azione opt-in nel solo diario privato, picker originali S11-B, editor Sketchbook `visionBoardMode`; nessun nuovo editor/DB/cloud/ACL, Gallery Ricordi riservata a S11-D.
+- **Editor:** collage pure Dart su cornici del template, griglia e cascata; media ID immutati; history undo/redo di move, resize, collage e pagine; dialogo cinque lingue per modifiche non salvate; callback Save resta aperta se write fallisce.
+- **Persistenza:** `VisionBoardFoundation.saveDraft` per creazione, `saveExistingPrivateVisionBoard` per modifica; journal writer canonico, guard epoch A→B→A, blocco stale/archived/shared-only, media mancanti fail-closed. Sketch classici ancora compatibili.
+- **Accettazione obbligatoria:** regressioni S11-B/S11-C, `flutter analyze`, Flutter test completi, C2, Web Vault crypto, Web release, PR Web preview, AppLab Source Gate; ruleset required checks e merge su `main` aggiornato. Poi DEVELOPMENT e Pages `push main` sullo stesso merge SHA.
+- **S11-D/E:** gallery e collegamenti autorizzati Ricordi, audit Cestino/backup/import, gestione media transitori, QA PWA accessibilità e dispositivi; **NOT_VERIFIED** fino a prove reali. Nessun APK/Play e niente offline PWA.
+
+
 ## 9 novembre 2026 — Web-first S11-B: Vision Board privata, foundation e preset originali (PR #292)
 
 - **Ammissione prodotto:** Vision Board personale facoltativa **privata**, limitata a collage di sogni, aspirazioni e ricordi. Product Bible aggiornato e [S11-A source audit](WEBFIRST_S11A_VISION_BOARD_AUDIT_20261109.md) tracciato. Nessun nuovo editor, database, cloud, router, modifica dati utenti o condivisione automatica con Noi ♡.
