@@ -1,0 +1,17 @@
+{
+  "schema_version": 1,
+  "application": "Anna's Diary",
+  "catalogue_type": "public_research_index",
+  "updated_at": "2026-11-09",
+  "master_reference": "riccardopinato/Idee-app-Archivi-riferimenti/17-RICERCA-TEMPLATE-UX",
+  "entries": [],
+  "cross_app_references": [
+    {
+      "master_ref": "TPLUX-REF-0001",
+      "title": "Second Brain (PARA Dashboard)",
+      "primary_application": "Notes-Ecosistema",
+      "assignment": "NOT_ANNA_PRIMARY",
+      "reason": "PARA professional workspace is out of Anna Product Bible; abstract quick actions/personal cards can be considered in future only with explicit product admission"
+    }
+  ]
+}

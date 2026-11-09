@@ -6,6 +6,11 @@ Flutter app for personal planning, private diary and the shared **Noi ♡** spac
 
 Canonical product scope and security boundaries: `docs/PRODUCT_BIBLE.md`.
 
+## Template Notion — catalogo di ricerca
+
+[**Apri Template Notion**](docs/TEMPLATE_NOTION/README.md): indice autonomo dei template esterni pertinenti a diario, ricordi, obiettivi personali, routine e `Noi ♡`. Il catalogo è inizialmente **senza template Anna assegnati**: Second Brain (PARA Dashboard) è classificato nel catalogo Notes, con soli spunti trasversali per Anna. Nessuna nuova funzione nell'app, nessun cambiamento dati, Vault, design o roadmap.
+
+
 ## Current workflow: Flutter Web-first (7 Nov 2026)
 
 The owner and Anna use the installed Chrome Flutter Web PWA for ongoing UI and functional review. Changes follow protected PRs, exact-head Flutter/Web/AppLab Source Gate, merge and verified Pages deployment. Reopen or refresh the PWA after saving edits; a Chrome-installed PWA is not an Android APK.
