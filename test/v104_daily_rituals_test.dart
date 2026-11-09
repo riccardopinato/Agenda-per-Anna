@@ -127,6 +127,10 @@ void main() {
         File('lib/src/diary/diary_templates.dart').readAsStringSync();
 
     expect(ritual, contains('applyDiaryTemplate'));
+    expect(ritual, contains('showGentleRitualPreview'));
+    expect(settings, contains("'gentle-rituals-preview-settings'"));
+    expect(ritual, contains("'gentle-rituals-preview-today'"));
+    expect(ritual, contains('preset.seedText'));
     expect(ritual, contains('NotificationService.instance.scheduleDaily'));
     expect(ritual, contains("dailyRitualTag(kind)"));
     expect(templates, contains('Iterable<String> extraTags'));
@@ -175,6 +179,10 @@ void main() {
       'ritualMorningTime',
       'ritualEveningTime',
       'ritualNotificationsUnavailable',
+      'gentleRitualsPreview',
+      'gentleRitualsTitle',
+      'gentleRitualsExplanation',
+      'gentleRitualsClose',
     ];
 
     for (final language in const <AppLanguage>[

@@ -1800,6 +1800,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       style: Theme.of(context).textTheme.bodySmall,
                     ),
                     const SizedBox(height: 6),
+                    TextButton.icon(
+                      key: const ValueKey<String>('gentle-rituals-preview-settings'),
+                      onPressed: () => showGentleRitualPreview(context),
+                      icon: const Icon(Icons.auto_stories_outlined),
+                      label: Text(strings.d3('gentleRitualsPreview')),
+                    ),
                     SwitchListTile(
                       key: const ValueKey<String>(
                         'settings-morning-ritual',
