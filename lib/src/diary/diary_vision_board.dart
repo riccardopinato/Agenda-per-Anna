@@ -402,7 +402,9 @@ abstract final class VisionBoardCollage {
     final frames = <VisionBoardFrame>[];
     for (final stroke in page.strokes) {
       if (stroke.tool != DiarySketchTool.rectangle ||
-          stroke.points.length != 2) continue;
+          stroke.points.length != 2) {
+        continue;
+      }
       final a = stroke.points[0], b = stroke.points[1];
       final x = min(a.x, b.x), y = min(a.y, b.y);
       final frame = VisionBoardFrame(
