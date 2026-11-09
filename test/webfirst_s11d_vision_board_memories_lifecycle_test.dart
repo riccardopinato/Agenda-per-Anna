@@ -230,23 +230,15 @@ void main() {
     expect(find.text('Le mie Vision Board'), findsOneWidget);
     expect(find.byKey(ValueKey('vision-board-${board.id}')), findsOneWidget);
     expect(find.text('Collega ricordi'), findsOneWidget);
-    store.agendaContentFilter = AgendaContentFilter.sharedOnly;
-    // Re-enter the route to verify account/scope-boundary filtering.
-    // journalRevision is intentionally exposed as a read-only ValueListenable.
-    await tester.pumpWidget(const SizedBox.shrink());
-    await tester.pumpWidget(MaterialApp(
-      locale: const Locale('it'),
-      supportedLocales: AnnaStrings.supportedLocales,
-      localizationsDelegates: const [
-        GlobalMaterialLocalizations.delegate,
-        GlobalWidgetsLocalizations.delegate,
-        GlobalCupertinoLocalizations.delegate,
-      ],
-      home: VisionBoardGalleryScreen(store: store),
-    ));
+    // Change the actual store filter while the gallery stays mounted:
+    // the resulting agenda/shared notifications must hide private content.
+    store.setAgendaContentFilter(AgendaContentFilter.sharedOnly);
     await tester.pumpAndSettle();
     expect(find.byKey(ValueKey('vision-board-${board.id}')), findsNothing);
     expect(find.textContaining('non sono disponibili'), findsOneWidget);
+    store.setAgendaContentFilter(AgendaContentFilter.all);
+    await tester.pumpAndSettle();
+    expect(find.byKey(ValueKey('vision-board-${board.id}')), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 }
