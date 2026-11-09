@@ -262,10 +262,14 @@ class DiaryPhotoViewerScreen extends StatelessWidget {
 
 class DiarySketchbookScreen extends StatefulWidget {
   final List<DiarySketchPage> initialPages;
+  final bool visionBoardMode;
+  final Future<bool> Function(List<DiarySketchPage> pages)? onSavePages;
 
   const DiarySketchbookScreen({
     super.key,
     required this.initialPages,
+    this.visionBoardMode = false,
+    this.onSavePages,
   });
 
   @override
@@ -297,6 +301,15 @@ class _DiarySketchbookScreenState extends State<DiarySketchbookScreen> {
 
   final Map<String, List<DiarySketchPage>> _undo = {};
   final Map<String, List<DiarySketchPage>> _redo = {};
+  // Full-board snapshots are scoped to Vision Board mode. Legacy Sketchbook
+  // retains its lightweight page-scoped history and prior behavior.
+  final List<VisionBoardHistoryEntry> _visionUndo = [];
+  final List<VisionBoardHistoryEntry> _visionRedo = [];
+  bool _selectionDidMove = false;
+  bool _resizeActive = false;
+  bool _savingSketch = false;
+  bool _discardDialogOpen = false;
+  late String _initialPagesSignature;
   final TransformationController _transform = TransformationController();
   final GlobalKey _pageBoundaryKey = GlobalKey();
 
@@ -329,6 +342,104 @@ class _DiarySketchbookScreenState extends State<DiarySketchbookScreen> {
     if (pages.isEmpty) {
       pages = [DiarySketchPage(id: const Uuid().v4())];
     }
+    if (widget.visionBoardMode) tool = DiarySketchTool.select;
+    _initialPagesSignature = _pagesSignature(pages);
+  }
+
+  String _pagesSignature(List<DiarySketchPage> value) =>
+      jsonEncode(value.map((item) => item.toLocalJson()).toList());
+
+  bool get _hasUnsavedChanges =>
+      _pagesSignature(pages) != _initialPagesSignature;
+
+  VisionBoardHistoryEntry _boardSnapshot() => VisionBoardHistoryEntry(
+        pages.map(_clonePage).toList(growable: false),
+        pageIndex,
+      );
+
+  void _restoreBoardSnapshot(VisionBoardHistoryEntry entry) {
+    setState(() {
+      pages = entry.pages.map(_clonePage).toList();
+      pageIndex = entry.pageIndex.clamp(0, pages.length - 1);
+      _clearSelection();
+      _clearSelectionMoveBuffers();
+      _selectionMoveStarted = false;
+      _selectionDidMove = false;
+      activeStroke = null;
+      _activeStrokePoints.clear();
+      lassoPoints.clear();
+      _gestureRevision++;
+      _transform.value = Matrix4.identity();
+    });
+  }
+
+  Future<void> _saveSketch() async {
+    if (_savingSketch || !mounted) return;
+    final callback = widget.onSavePages;
+    if (callback == null) {
+      Navigator.pop(context, pages.map(_clonePage).toList(growable: false));
+      return;
+    }
+    setState(() => _savingSketch = true);
+    var ok = false;
+    try {
+      ok = await callback(pages.map(_clonePage).toList(growable: false));
+    } catch (_) {
+      ok = false;
+    }
+    if (!mounted) return;
+    if (ok) {
+      Navigator.pop(context, pages.map(_clonePage).toList(growable: false));
+      return;
+    }
+    setState(() => _savingSketch = false);
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+      content: Text(VisionBoardUiCopy.saveError(AnnaStrings.of(context))),
+    ));
+  }
+
+  Future<void> _requestDiscard() async {
+    if (_discardDialogOpen || _savingSketch || !mounted) return;
+    if (!_hasUnsavedChanges) {
+      Navigator.pop(context);
+      return;
+    }
+    _discardDialogOpen = true;
+    final strings = AnnaStrings.of(context);
+    final discard = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: Text(VisionBoardUiCopy.discardTitle(strings)),
+        content: Text(VisionBoardUiCopy.discardDetail(strings)),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: Text(VisionBoardUiCopy.keep(strings)),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(dialogContext, true),
+            child: Text(VisionBoardUiCopy.discard(strings)),
+          ),
+        ],
+      ),
+    );
+    _discardDialogOpen = false;
+    if (!mounted || discard != true) return;
+    Navigator.pop(context); // explicit discard; no journal write
+  }
+
+  void _applyCollage(VisionBoardCollageStyle style) {
+    if (!widget.visionBoardMode || page.imageElements.isEmpty) return;
+    final arranged = VisionBoardCollage.arrange(page, style);
+    if (_pagesSignature([page]) == _pagesSignature([arranged])) return;
+    _replacePage(arranged, history: true);
+    _clearSelection();
+  }
+
+  void _beginResizeHistory() {
+    if (_resizeActive) return;
+    _pushHistory();
+    _resizeActive = true;
   }
 
   @override
@@ -410,6 +521,12 @@ class _DiarySketchbookScreenState extends State<DiarySketchbookScreen> {
   }
 
   void _pushHistory() {
+    if (widget.visionBoardMode) {
+      _visionUndo.add(_boardSnapshot());
+      if (_visionUndo.length > 24) _visionUndo.removeAt(0);
+      _visionRedo.clear();
+      return;
+    }
     final stack = _undo.putIfAbsent(page.id, () => []);
     stack.add(_historySnapshot(page));
     final limit = _historyLimit(page);
@@ -428,6 +545,14 @@ class _DiarySketchbookScreenState extends State<DiarySketchbookScreen> {
   }
 
   void _undoAction() {
+    if (widget.visionBoardMode) {
+      if (_visionUndo.isEmpty) return;
+      final previous = _visionUndo.removeLast();
+      _visionRedo.add(_boardSnapshot());
+      if (_visionRedo.length > 24) _visionRedo.removeAt(0);
+      _restoreBoardSnapshot(previous);
+      return;
+    }
     final stack = _undo[page.id];
     if (stack == null || stack.isEmpty) return;
     final previous = stack.removeLast();
@@ -443,6 +568,14 @@ class _DiarySketchbookScreenState extends State<DiarySketchbookScreen> {
   }
 
   void _redoAction() {
+    if (widget.visionBoardMode) {
+      if (_visionRedo.isEmpty) return;
+      final next = _visionRedo.removeLast();
+      _visionUndo.add(_boardSnapshot());
+      if (_visionUndo.length > 24) _visionUndo.removeAt(0);
+      _restoreBoardSnapshot(next);
+      return;
+    }
     final stack = _redo[page.id];
     if (stack == null || stack.isEmpty) return;
     final next = stack.removeLast();
@@ -615,8 +748,8 @@ class _DiarySketchbookScreenState extends State<DiarySketchbookScreen> {
             selectedStrokeIndices.isNotEmpty ||
                 selectedTextIds.isNotEmpty ||
                 selectedImageIds.isNotEmpty;
+        _selectionDidMove = false;
         if (_selectionMoveStarted) {
-          _pushHistory();
           _prepareSelectionMove();
         }
       });
@@ -659,6 +792,10 @@ class _DiarySketchbookScreenState extends State<DiarySketchbookScreen> {
     final texts = _selectionWorkingText;
     final images = _selectionWorkingImages;
     if (strokes == null || texts == null || images == null) return;
+    if (!_selectionDidMove) {
+      _pushHistory(); // one undo entry per drag, not per touch or pixel
+      _selectionDidMove = true;
+    }
 
     for (final index in selectedStrokeIndices) {
       if (index < 0 || index >= strokes.length) continue;
@@ -813,6 +950,7 @@ class _DiarySketchbookScreenState extends State<DiarySketchbookScreen> {
 
     if (tool == DiarySketchTool.select) {
       _selectionMoveStarted = false;
+      _selectionDidMove = false;
       _clearSelectionMoveBuffers();
       return;
     }
@@ -949,9 +1087,14 @@ class _DiarySketchbookScreenState extends State<DiarySketchbookScreen> {
         y: 0.12,
       );
       setState(() {
-        pages[pageIndex] = page.copyWith(
+        final updated = page.copyWith(
           imageElements: [...page.imageElements, element],
         );
+        pages[pageIndex] = widget.visionBoardMode
+            ? VisionBoardCollage.arrange(
+                updated, VisionBoardCollageStyle.template,
+              )
+            : updated;
         _clearSelection();
         selectedImageIds.add(element.id);
         tool = DiarySketchTool.select;
@@ -995,6 +1138,7 @@ class _DiarySketchbookScreenState extends State<DiarySketchbookScreen> {
 
   void _resizeSelectedImage(double value) {
     if (selectedImageIds.length != 1) return;
+    _beginResizeHistory();
     final id = selectedImageIds.first;
     final images = page.imageElements.map((item) {
       if (item.id != id) return item;
@@ -1015,6 +1159,7 @@ class _DiarySketchbookScreenState extends State<DiarySketchbookScreen> {
 
   void _resizeSelectedText(double value) {
     if (selectedTextIds.length != 1) return;
+    _beginResizeHistory();
     final id = selectedTextIds.first;
     final texts = page.textElements
         .map(
@@ -1029,6 +1174,7 @@ class _DiarySketchbookScreenState extends State<DiarySketchbookScreen> {
 
   void _addPage() {
     if (pages.length >= 64) return;
+    if (widget.visionBoardMode) _pushHistory();
     setState(() {
       pages.add(
         DiarySketchPage(
@@ -1048,6 +1194,7 @@ class _DiarySketchbookScreenState extends State<DiarySketchbookScreen> {
 
   void _duplicatePage() {
     if (pages.length >= 64) return;
+    if (widget.visionBoardMode) _pushHistory();
     final duplicated = DiarySketchPage(
       id: const Uuid().v4(),
       paper: page.paper,
@@ -1098,8 +1245,9 @@ class _DiarySketchbookScreenState extends State<DiarySketchbookScreen> {
   }
 
   void _deletePage() {
+    if (widget.visionBoardMode) _pushHistory();
     if (pages.length <= 1) {
-      _pushHistory();
+      if (!widget.visionBoardMode) _pushHistory();
       setState(() {
         pages[pageIndex] = DiarySketchPage(
           id: page.id,
