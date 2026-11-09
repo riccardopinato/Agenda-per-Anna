@@ -52,6 +52,8 @@ class _SettingsHubScreenState extends State<SettingsHubScreen> {
           : store.preferences.displayName.trim();
 
   void _open(BuildContext context, Widget screen) {
+    // Avoid carrying the Settings search keyboard over the destination route.
+    FocusScope.of(context).unfocus();
     unawaited(AnnaFeedback.selection());
     Navigator.push(
       context,
@@ -122,6 +124,8 @@ class _SettingsHubScreenState extends State<SettingsHubScreen> {
               maxWidth: AnnaDesignTokens.compactContentWidth,
             ),
             child: ListView(
+              keyboardDismissBehavior:
+                  ScrollViewKeyboardDismissBehavior.onDrag,
               padding: const EdgeInsets.fromLTRB(
                 AnnaDesignTokens.spaceMd,
                 AnnaDesignTokens.spaceXs,
@@ -186,6 +190,7 @@ class _SettingsHubScreenState extends State<SettingsHubScreen> {
                   onChanged: (value) =>
                       setState(() => _query = value.trim().toLowerCase()),
                   textInputAction: TextInputAction.search,
+                  onSubmitted: (_) => FocusScope.of(context).unfocus(),
                   decoration: InputDecoration(
                     prefixIcon: const Icon(Icons.search),
                     hintText: quickWins2Copy(
