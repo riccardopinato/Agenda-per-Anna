@@ -220,7 +220,7 @@ void main() {
       tester.view.resetDevicePixelRatio();
       tester.view.resetPhysicalSize();
     });
-    await tester.pumpWidget(MaterialApp(
+    await tester.pumpWidget(const MaterialApp(
       locale: const Locale('it'),
       home: const DiarySketchbookScreen(
         initialPages: [DiarySketchPage(id: 'base')],
