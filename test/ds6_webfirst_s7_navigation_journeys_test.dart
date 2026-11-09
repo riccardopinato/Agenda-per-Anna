@@ -54,9 +54,12 @@ void main() {
     await Scrollable.ensureVisible(
       tester.element(target),
       alignment: 0.3,
-      duration: const Duration(milliseconds: 150),
+      // In widget tests an awaited nonzero scroll duration cannot complete
+      // until a pump advances the fake clock. Jump immediately to avoid
+      // deadlocking this actual user navigation journey.
+      duration: Duration.zero,
     );
-    await tester.pump(const Duration(milliseconds: 200));
+    await tester.pump();
   }
 
   testWidgets('S7 mobile shell navigates through real Search, Settings and '
