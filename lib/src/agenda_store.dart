@@ -896,8 +896,9 @@ class AgendaStore extends ChangeNotifier {
   }
 
   Future<List<Map<String, dynamic>>> _portableSketchPages(
-    List<DiarySketchPage> pages,
-  ) async {
+    List<DiarySketchPage> pages, {
+    bool requireCompleteImages = false,
+  }) async {
     final result = <Map<String, dynamic>>[];
 
     for (final page in pages) {
@@ -912,6 +913,21 @@ class AgendaStore extends ChangeNotifier {
               await MediaAssetStore.instance.read(image.mediaAssetId);
           if (bytes != null) {
             imageJson['imageBase64'] = base64Encode(bytes);
+          } else if (requireCompleteImages) {
+            throw StateError('vision_board_missing_media');
+          }
+        }
+        if (requireCompleteImages) {
+          final encoded = imageJson['imageBase64']?.toString() ?? '';
+          if (encoded.isEmpty) {
+            throw StateError('vision_board_missing_media');
+          }
+          try {
+            if (base64Decode(encoded).isEmpty) {
+              throw const FormatException('empty_media');
+            }
+          } catch (_) {
+            throw StateError('vision_board_invalid_media');
           }
         }
         imageJson.remove('mediaAssetId');
@@ -1088,7 +1104,10 @@ class AgendaStore extends ChangeNotifier {
       }
 
       if (block.pages.isNotEmpty) {
-        blockJson['pages'] = await _portableSketchPages(block.pages);
+        blockJson['pages'] = await _portableSketchPages(
+          block.pages,
+          requireCompleteImages: block.isPersonalVisionBoard,
+        );
       }
       blocks.add(blockJson);
     }
