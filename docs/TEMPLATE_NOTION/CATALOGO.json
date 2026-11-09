@@ -43,6 +43,36 @@
       "implementation_status": "NOT_IMPLEMENTED_FROM_THIS_SOURCE",
       "reuse_mode": "GENERIC_CHECKIN_PATTERN_ONLY",
       "internal_content_verified": true
+    },
+    {
+      "id": "TN-ANNA-0004",
+      "master_ref": "TPLUX-REF-0009",
+      "title": "Shopping List",
+      "category": "Shopping and home life",
+      "record": "SCHEDE/TN-ANNA-0004.md",
+      "evidence_level": "E2_EXPORT_STRUCTURE_VERIFIED",
+      "internal_content_verified": true,
+      "product_status": "RESEARCH_PROPOSAL",
+      "app_fit": "PRIMARY",
+      "reuse_mode": "ORIGINAL_APP_NATIVE_PATTERN_ONLY",
+      "implementation_status": "NOT_IMPLEMENTED_FROM_THIS_SOURCE",
+      "source_audit_url": "https://github.com/riccardopinato/Idee-app-Archivi-riferimenti/blob/main/17-RICERCA-TEMPLATE-UX/LOTTO_NOTION_2026_11_09_12_ZIP.md",
+      "source_baseline": "a944802a7c07f1f594914c8ace282d105c1da5b9"
+    },
+    {
+      "id": "TN-ANNA-0005",
+      "master_ref": "TPLUX-REF-0011",
+      "title": "Trip Planner",
+      "category": "Personal travel / diary",
+      "record": "SCHEDE/TN-ANNA-0005.md",
+      "evidence_level": "E2_EXPORT_STRUCTURE_VERIFIED",
+      "internal_content_verified": true,
+      "product_status": "RESEARCH_PROPOSAL",
+      "app_fit": "SECONDARY_LIMITED",
+      "reuse_mode": "ORIGINAL_APP_NATIVE_PATTERN_ONLY",
+      "implementation_status": "NOT_IMPLEMENTED_FROM_THIS_SOURCE",
+      "source_audit_url": "https://github.com/riccardopinato/Idee-app-Archivi-riferimenti/blob/main/17-RICERCA-TEMPLATE-UX/LOTTO_NOTION_2026_11_09_12_ZIP.md",
+      "source_baseline": "a944802a7c07f1f594914c8ace282d105c1da5b9"
     }
   ],
   "cross_app_references": [

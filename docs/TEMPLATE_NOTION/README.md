@@ -40,3 +40,12 @@ Il [registro strutturato](CATALOGO.json) distingue **ricerca, sorgente incomplet
 ## Idea futura — Store interno di template Anna
 
 [**TPL-STORE-2026-01: idea valida da conservare**](https://github.com/riccardopinato/Idee-app-Archivi-riferimenti/blob/main/17-RICERCA-TEMPLATE-UX/IDEA_STORE_TEMPLATE_INTERNO_2026-11-09.md). Prezzo candidato **€3,99** una tantum per template **originale**, alcuni preset gratuiti, preview e ripristino acquisti. **Non implementato**, non cambia Product Bible, RevenueCat, permessi, dati, `Noi ♡` o Vault. Nessuno dei template caricati è autorizzato automaticamente per vendita o copia.
+
+## Lotto Notion di novembre 2026 — ricerca, non app integrata
+
+| ID | Fonte | Ruolo | Stato | Scheda |
+|---|---|---|---|---|
+| TN-ANNA-0004 | Shopping List | PRIMARY | E2 export, proposta da valutare | [Analisi](SCHEDE/TN-ANNA-0004.md) |
+| TN-ANNA-0005 | Trip Planner | SECONDARY_LIMITED | E2 export, proposta da valutare | [Analisi](SCHEDE/TN-ANNA-0005.md) |
+
+Il template completo `Trip Planner` ha come proprietario principale **Wonderlog**, mentre Anna può eventualmente usarne solo aspetti di diario personale. Non viene modificata la roadmap di prodotto.
