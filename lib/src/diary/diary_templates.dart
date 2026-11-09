@@ -106,6 +106,54 @@ extension DiaryTemplatesAgendaStore on AgendaStore {
   }
 }
 
+Future<DiaryTemplatePreset?> _previewFreeDiaryTemplate(
+  BuildContext context,
+  DiaryTemplatePreset preset,
+) {
+  final strings = AnnaStrings.of(context);
+  return showDialog<DiaryTemplatePreset>(
+    context: context,
+    builder: (dialogContext) => AlertDialog(
+      title: Text(preset.title),
+      content: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(preset.description),
+            const SizedBox(height: 12),
+            Text(
+              strings.d3('templateCatalogPreview'),
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
+            const SizedBox(height: 8),
+            SelectableText(preset.seedText),
+            if (preset.mediaHint.isNotEmpty) ...[
+              const SizedBox(height: 12),
+              Text(preset.mediaHint),
+            ],
+            const SizedBox(height: 12),
+            Text(
+              strings.d3('templateCatalogPrivacy'),
+              style: Theme.of(context).textTheme.bodySmall,
+            ),
+          ],
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(dialogContext),
+          child: Text(strings.d3('templateCatalogBack')),
+        ),
+        FilledButton(
+          onPressed: () => Navigator.pop(dialogContext, preset),
+          child: Text(strings.d3('templateCatalogUse')),
+        ),
+      ],
+    ),
+  );
+}
+
 Future<DiaryTemplatePreset?> showDiaryTemplatePicker(
   BuildContext context,
 ) {
@@ -126,6 +174,13 @@ Future<DiaryTemplatePreset?> showDiaryTemplatePicker(
               AnnaStrings.of(sheetContext).d3('templatePickerSubtitle'),
             ),
           ),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            child: Text(
+              AnnaStrings.of(sheetContext).d3('templateCatalogFree'),
+              style: Theme.of(sheetContext).textTheme.titleSmall,
+            ),
+          ),
           ...diaryTemplatePresetsFor(AnnaStrings.of(sheetContext)).map(
             (preset) => Card(
               child: ListTile(
@@ -140,8 +195,16 @@ Future<DiaryTemplatePreset?> showDiaryTemplatePicker(
                     if (preset.mediaHint.isNotEmpty) preset.mediaHint,
                   ].join(' '),
                 ),
-                trailing: const Icon(Icons.add),
-                onTap: () => Navigator.pop(sheetContext, preset),
+                trailing: const Icon(Icons.visibility_outlined),
+                onTap: () async {
+                  final selected = await _previewFreeDiaryTemplate(
+                    sheetContext,
+                    preset,
+                  );
+                  if (selected != null && sheetContext.mounted) {
+                    Navigator.pop(sheetContext, selected);
+                  }
+                },
               ),
             ),
           ),
