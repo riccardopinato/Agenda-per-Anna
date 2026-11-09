@@ -1,6 +1,17 @@
 # Anna's Diary — Roadmap
 
-## 9 novembre 2026 — Web-first Maxi-step 8: S7 evidence, regressioni e readiness S9 (PR in verifica)
+## 9 novembre 2026 — Web-first Maxi-step 9: Giornata realistica 2.0 (PR / gate in verifica)
+
+- **Factory:** `App-Factory-Core@d4ed1185d36d419228fba6b57a979cde308bd321` (CURRENT Master v27 / Golden Index v29); **Anna base:** `main@bee3b22b9c2e8a614efa9deeec32815102c78522` dopo S8. Scope [#226](https://github.com/riccardopinato/Agenda-per-Anna/issues/226); piano e matrice nel [WEBFIRST_S9_REALISTIC_DAY_2_0_20261109.md](WEBFIRST_S9_REALISTIC_DAY_2_0_20261109.md).
+- **Delta sorgente circoscritto:** `RealisticDayAdvisor` conserva la misura calendar-only 09–21 e conteggia separatamente, senza doppi sottratti, i task non completati con **entrambi** gli orari esplicitamente registrati e visibili (`bookedTaskMinutes`). La disponibilità effettiva ora sottrae task calendar-free + buffer selezionato; il primo slot consigliato esclude i task con tempo. Dati sconosciuti non diventano durate inventate.
+- **Stati corretti:** `VISIBLE_WINDOW_ELAPSED` quando la fascia è già terminata (non «calendario pieno»); task overnight e orari ritagliati al periodo realmente visibile; descrizioni e minuti distinti nelle cinque lingue. Identità dedup privata/condivisa; no differenza nella logica del calendario B2 (calendar-only).
+- **Riuso intatto:** buffer per account/device, nudge opt-in/snooze/dismiss, filtro autorizzazioni, UI DS6, un solo writer e nessuna rischedulazione; niente nuovo store/cloud/ML, migration, privacy #215, Google Calendar #199, Vault, APK o Play. Offline PWA continua `DEFERRED_BY_USER`.
+- **Nuovi test:** `test/webfirst_s9_recorded_capacity_test.dart` (unione, sovrapposizione appointment-task, notte, sconosciuti, elapsed, no mutation), `test/webfirst_s9_card_responsive_test.dart` (IT/EN/ES/FR/PT, 320dp/2×, buffer locale); aggiornato `test/realistic_day_guidance_p1_test.dart`. Test automatizzati non dimostrano dati PWA o hardware.
+- **Gate di chiusura:** PR exact-head Development checks (analyze/test/Chrome Vault/Web build), **dedicated Web PR build** (S9 cambia `lib/**`), AppLab Source Gate e review non bloccanti. Solo successivamente merge e comparazione main Development CI + Pages `head_sha` sullo stesso commit, senza dichiarare deploy prima di evidenza. Collaudo PWA A/B, account switch reale, DST per timezone fisica, performance, screen reader `NOT_VERIFIED / NOT_MEASURED`.
+- **Step successivo, distinto:** Maxi-step 10 Ricordi contestuali/Lettera al futuro (issue #224 e AD-NL26-03) da ammettere esplicitamente; nessuna implementazione in S9.
+
+
+## 9 novembre 2026 — Web-first Maxi-step 8: S7 evidence, regressioni e readiness S9 (PR #284 merged / CI PR PASS)
 
 - **Factory immutabile per S8:** `App-Factory-Core@2b3ae9e01764b7504980efca34f2543949dc7b89`; CURRENT Master v27 / Golden Index v29. **Anna base:** `main@5d7dfa8475d7cdbfa766a451c7198ba4f796385b` (include i nuovi documenti Template Notion, non modificati da S8).
 - **S7 riconciliato:** [PR #280](https://github.com/riccardopinato/Agenda-per-Anna/pull/280) è **merged** nel commit `7d22e5f2e5710599fdcd56c785b6ebe7bf6c33f0`; head PR `06923c7e56c6d62e621c79825224c6f078ca9202` con [Development checks #42546933657](https://github.com/riccardopinato/Agenda-per-Anna/actions/runs/42546933657), [PR Web build #42546933645](https://github.com/riccardopinato/Agenda-per-Anna/actions/runs/42546933645) e [AppLab Source Gate #42546933648](https://github.com/riccardopinato/Agenda-per-Anna/actions/runs/42546933648) **SUCCESS** sullo stesso head.
@@ -9,7 +20,7 @@
 - **S9 preparato, NON implementato:** [issue #226](https://github.com/riccardopinato/Agenda-per-Anna/issues/226) **Giornata realistica 2.0** (durate solo se presenti, buffer opt-in, dati mancanti espliciti, no ripianificazione silenziosa, permessi e ricorrenze sicuri). Piano S9-A…E, test e limiti nel [documento operativo S8/S9](WEBFIRST_S8_EVIDENCE_AND_S9_PLAN_20261109.md). Google Calendar Direct #199 e Privacy V2 #215 restano Draft/Blocked; nessuna API, APK, Play, nuovi database o AI in S8.
 
 
-## 9 novembre 2026 — Web-first Maxi-step 7: navigazione reale, ritorno, focus e Crea (PR in verifica)
+## 9 novembre 2026 — Web-first Maxi-step 7: navigazione reale, ritorno, focus e Crea (PR #280 merged / CI PR PASS)
 
 - **Baseline fissata:** App-Factory-Core `2b3ae9e01764b7504980efca34f2543949dc7b89` / CURRENT Master v27 / Golden Index v29; app `main@d82e2d12593683cf8bd5af8c05ee33ab19906f56` con S6 già merged e Web PASS. Documento operativo: [WEBFIRST_S7_NAVIGATION_ACCEPTANCE_20261109.md](WEBFIRST_S7_NAVIGATION_ACCEPTANCE_20261109.md).
 - **Correzione locale:** `MainShell._selectDestination` rilascia il focus quando si passa tra Oggi/Messaggi/Ricordi/Altro (IndexedStack mantiene stato e ordine); `_openCentralCreate` lo rilascia prima di aprire l'unico Unified Capture. Nessun nuovo router, nessuna scrittura, nessun cambiamento a sync/auth/Vault/offline.

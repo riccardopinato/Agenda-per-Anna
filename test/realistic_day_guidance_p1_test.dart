@@ -89,9 +89,11 @@ void main() {
     );
     expect(advice.tasksWithRecordedTime, 1);
     expect(advice.recordedTaskMinutes, 30);
-    // The free-slot algorithm already sees this timed task as a calendar busy
-    // interval; recorded time is provenance, not a second subtraction.
-    expect(advice.usableMinutes, advice.freeMinutes - 60);
+    // The calendar-only total is unchanged; explicit task time within
+    // otherwise free slots now reduces usable capacity exactly once.
+    expect(advice.freeMinutes, 720);
+    expect(advice.bookedTaskMinutes, 30);
+    expect(advice.usableMinutes, 720 - 30 - 60);
   });
 
   test('no visible task timestamps means no fabricated duration', () {
