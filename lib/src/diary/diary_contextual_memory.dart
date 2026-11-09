@@ -240,25 +240,40 @@ class _ContextualMemoryPanelState extends State<ContextualMemoryPanel> {
   }
 
   Future<void> _setEnabled(bool enabled) async {
+    if (!widget.store.entryScopeReady ||
+        _observedEpoch != widget.store.accountScopeEpoch ||
+        widget.store.agendaContentFilter == AgendaContentFilter.sharedOnly) {
+      return;
+    }
     final key = _scopeKey;
+    final epoch = widget.store.accountScopeEpoch;
     final previous = _enabled;
     setState(() => _enabled = enabled);
     try {
       final prefs = await SharedPreferences.getInstance();
-      if (_scopeKey != key) return;
+      if (_scopeKey != key ||
+          widget.store.accountScopeEpoch != epoch ||
+          !widget.store.entryScopeReady) return;
       if (!await prefs.setBool('${key}_enabled', enabled)) {
         throw StateError('Recall opt-in not saved');
       }
       if (enabled) await _ensureDailyPicks();
     } catch (_) {
-      if (mounted && _scopeKey == key) {
+      if (mounted && _scopeKey == key &&
+          widget.store.accountScopeEpoch == epoch) {
         setState(() => _enabled = previous);
       }
     }
   }
 
   Future<void> _snooze(bool pause) async {
+    if (!widget.store.entryScopeReady ||
+        _observedEpoch != widget.store.accountScopeEpoch ||
+        widget.store.agendaContentFilter == AgendaContentFilter.sharedOnly) {
+      return;
+    }
     final key = _scopeKey;
+    final epoch = widget.store.accountScopeEpoch;
     final previous = _snoozedThrough;
     final now = DateTime.now();
     final until = DateTime(now.year, now.month, now.day + 7);
@@ -267,20 +282,29 @@ class _ContextualMemoryPanelState extends State<ContextualMemoryPanel> {
     setState(() => _snoozedThrough = choice);
     try {
       final prefs = await SharedPreferences.getInstance();
-      if (_scopeKey != key) return;
+      if (_scopeKey != key ||
+          widget.store.accountScopeEpoch != epoch ||
+          !widget.store.entryScopeReady) return;
       if (!await prefs.setInt('${key}_snoozed', choice)) {
         throw StateError('Recall snooze not saved');
       }
       if (!pause) await _ensureDailyPicks();
     } catch (_) {
-      if (mounted && _scopeKey == key) {
+      if (mounted && _scopeKey == key &&
+          widget.store.accountScopeEpoch == epoch) {
         setState(() => _snoozedThrough = previous);
       }
     }
   }
 
   Future<void> _neverSuggest(String blockId) async {
+    if (!widget.store.entryScopeReady ||
+        _observedEpoch != widget.store.accountScopeEpoch ||
+        widget.store.agendaContentFilter == AgendaContentFilter.sharedOnly) {
+      return;
+    }
     final key = _scopeKey;
+    final epoch = widget.store.accountScopeEpoch;
     final hashed = _digestFor(blockId);
     final previous = Set<String>.from(_excluded);
     setState(() {
@@ -290,31 +314,43 @@ class _ContextualMemoryPanelState extends State<ContextualMemoryPanel> {
     });
     try {
       final prefs = await SharedPreferences.getInstance();
-      if (_scopeKey != key) return;
+      if (_scopeKey != key ||
+          widget.store.accountScopeEpoch != epoch ||
+          !widget.store.entryScopeReady) return;
       if (!await prefs.setStringList(
         '${key}_excluded', _excluded.toList(growable: false),
       )) {
         throw StateError('Recall exclusion not saved');
       }
     } catch (_) {
-      if (mounted && _scopeKey == key) {
+      if (mounted && _scopeKey == key &&
+          widget.store.accountScopeEpoch == epoch) {
         setState(() => _excluded..clear()..addAll(previous));
       }
     }
   }
 
   Future<void> _resetExcluded() async {
+    if (!widget.store.entryScopeReady ||
+        _observedEpoch != widget.store.accountScopeEpoch ||
+        widget.store.agendaContentFilter == AgendaContentFilter.sharedOnly) {
+      return;
+    }
     final key = _scopeKey;
+    final epoch = widget.store.accountScopeEpoch;
     final previous = Set<String>.from(_excluded);
     setState(() => _excluded.clear());
     try {
       final prefs = await SharedPreferences.getInstance();
-      if (_scopeKey != key) return;
+      if (_scopeKey != key ||
+          widget.store.accountScopeEpoch != epoch ||
+          !widget.store.entryScopeReady) return;
       if (!await prefs.remove('${key}_excluded')) {
         throw StateError('Recall exclusions not cleared');
       }
     } catch (_) {
-      if (mounted && _scopeKey == key) {
+      if (mounted && _scopeKey == key &&
+          widget.store.accountScopeEpoch == epoch) {
         setState(() => _excluded.addAll(previous));
       }
     }
