@@ -10,6 +10,19 @@ The next visual refinement cycle received 10/10 explicit user approvals after th
 
 This document defines what Anna's Diary is, what it is not, and the product/security invariants that future work must preserve. Implementation details belong in `docs/ARCHITECTURE.md`; execution sequencing belongs in `docs/ROADMAP.md`.
 
+## 9 November 2026 — S11 Vision Board private: bounded product admission
+
+**ADMITTED FOR IMPLEMENTATION (S11-B foundation only).** By the user's explicit direction after the read-only S11-A audit, Anna's Diary may offer **private, optional personal Vision Boards** for life aspirations, future experiences, relationships, homes, journeys and personal memories. These are original, user-editable **visual sketch compositions**, not a new notes workspace or goal-management platform.
+
+- **One owner:** represent a board as the existing private `DiaryBlockType.sketch`, distinguished by an additive backward-compatible `DiaryCreativeSubtype.visionBoard` metadata value; older sketch blocks decode as `sketch`. `AgendaStore.journals`, existing `DiarySketchPage`, `DiarySketchbookScreen`, `MediaAssetStore`, Trash and backup/export remain canonical. Do not introduce a parallel table, database, media store, sync/ACL service, editor, or new main tab.
+- **Private by default:** no automatic membership in `Noi ♡`, no automatic publishing/share/cross-app transfer, no imported private images, account data, Vault secrets or generated autobiographical material. Access and writes must fail closed on unresolved scope, shared-only filters, account switch (including A→B→A), and stale editor return.
+- **S11-B source scope:** original, license-clean visual presets and empty frame layouts; drafts are never persisted on picker open/cancel. Reuse the normal `saveJournal` guard for explicit commits, preserve existing records on insert, and keep media references intact when duplicating. Existing journal and text templates are unchanged.
+- **S11-C/D/E gated separately:** integration into a simpler Sketchbook mode and Ricordi gallery, editor history/unsaved changes, board associations, lifecycle and missing-media hardening, visual approval, physical/browser acceptance and release evidence. No board editor or installed PWA is claimed complete by the S11-B metadata/preset foundation.
+- **Explicitly excluded now:** collaboration, cloud image services, AI/ML, automatic goal/task creation, infinite canvas, paid template store, new permissions, APK/Play, offline PWA certification, or changes to Vault/Privacy V2/OAuth.
+- **Evidence:** tests/CI/Pages must name the exact source SHA. CI cannot certify two physical PWA sessions, gesture accessibility, actual media recovery, or performance.
+
+Research provenance: [S11-A technical audit](WEBFIRST_S11A_VISION_BOARD_AUDIT_20261109.md) (S11-A audit report originally produced in Chat), App Factory's Vision Board catalog (research only), current Product Bible, and the existing Sketchbook implementation. External code/assets are not imported for S11-B.
+
 ## Approved 10-screen visual contract — 31 October 2026
 
 All ten Anna's Diary interactive design decisions were explicitly approved by the user. The complete ledger and non-destructive implementation plan are maintained in [APPROVED_10_MOCKUPS_IMPLEMENTATION_CONTRACT.md](APPROVED_10_MOCKUPS_IMPLEMENTATION_CONTRACT.md). These decisions authorize **bounded implementation**, not APK/public release or changes to existing user records. In particular: Cassaforte privata must remain exactly as installed; +Crea retains its current actions with approved top-to-bottom micro-bounce; Inbox tag creation/rename/filter must be tested on a real Android phone before acceptance; global Search must not surface invisible one-character matches and must offer newest/oldest/A–Z. Existing source/release evidence remains valid only for its exact previously tested SHA.
@@ -31,7 +44,7 @@ The product includes a deliberately bounded **Spazio condiviso (Noi ♡)** for m
 - personal agenda, reminders and recurring life events;
 - daily timeline / "My day";
 - optional morning/evening daily rituals that materialize through the existing private diary and reminder paths;
-- private diary: text, photo, voice and sketch;
+- private diary: text, photo, voice and sketch, with optional private personal Vision Boards composed through existing sketch data;
 - people, birthdays and lightweight place references;
 - deterministic memories / resurfacing / life archive;
 - private shopping and workout history/plans at lightweight personal scope;
