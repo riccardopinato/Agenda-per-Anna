@@ -1552,6 +1552,7 @@ class _DiarySketchbookScreenState extends State<DiarySketchbookScreen> {
         ],
       ),
       body: AbsorbPointer(
+        key: const ValueKey('vision-board-save-freeze'),
         absorbing: _savingSketch,
         child: SafeArea(
         child: Column(
