@@ -1,5 +1,14 @@
 # Anna's Diary — Roadmap
 
+## 9 novembre 2026 — Web-first S11-B: Vision Board privata, foundation e preset originali (PR #292)
+
+- **Ammissione prodotto:** Vision Board personale facoltativa **privata**, limitata a collage di sogni, aspirazioni e ricordi. Product Bible aggiornato e [S11-A source audit](WEBFIRST_S11A_VISION_BOARD_AUDIT_20261109.md) tracciato. Nessun nuovo editor, database, cloud, router, modifica dati utenti o condivisione automatica con Noi ♡.
+- **Sorgente:** PR [#292](https://github.com/riccardopinato/Agenda-per-Anna/pull/292): `DiaryCreativeSubtype` additivo su `DiaryBlockType.sketch` con default `sketch` retrocompatibile; [dossier S11-B](WEBFIRST_S11B_VISION_BOARD_FOUNDATION_20261109.md). Sei preset geometrici originali (Vuoto, Sogni, Viaggi, Casa, Insieme, Obiettivi), localizzati in IT/EN/ES/FR/PT, senza immagini/quote esterne.
+- **Ownership invariata:** bozze in memoria, duplicazione con nuovi ID, projection private/archived aware, commit esplicito tramite `AgendaStore.saveJournal` con `Cap0160TagEditGuard`, test A→B→A, shared-only, media mancante, vecchi sketch e persistenza. Il selettore anteprima è una primitiva per S11-C, **non** una galleria già accessibile nell'app.
+- **Gates:** Development checks con test/flutter analyze/C2/Web Vault/Web release, Web PR build, AppLab Source Gate e review su *identico head SHA*, branch aggiornato con `main` e merge protetto. Dopo merge distinguere CI `push main` da deploy Pages `push main` con lo stesso SHA. Stato e run esatti si ricavano dalla PR/Actions; PWA fisiche, accessibilità real-device e performance **NOT_VERIFIED / NOT_MEASURED**.
+- **S11-C:** modalità Vision Board nell'editor Sketchbook, undo corretto per resize e pagine, conferma modifiche non salvate, media transient e collage. **S11-D:** ingresso in Ricordi, galleria/associazioni private, Cestino, backup e portability. **S11-E:** QA visuale/device e Pages exact SHA. Nessun APK/Play o offline-PWA in questo step.
+
+
 ## 9 novembre 2026 — Template catalog Step4 (anteprima gratuita)
 
 - In [PR #291](https://github.com/riccardopinato/Agenda-per-Anna/pull/291), the existing `showDiaryTemplatePicker` displays an original, free, five-language catalog and read-only seed preview. A preset returns to the already-owned diary editor only after explicit `Use in diary`; the editor retains its standard save/ownership semantics.
