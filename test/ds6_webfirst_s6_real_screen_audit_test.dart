@@ -60,11 +60,27 @@ void main() {
     await tester.pump();
 
     final search = find.byKey(const ValueKey('qw2-settings-search'));
+    // At 320dp / 2x the approved editorial header and preview occupy the
+    // initial viewport. Reach the real search by scrolling before asserting.
+    await tester.scrollUntilVisible(
+      search,
+      180,
+      scrollable: find.byType(Scrollable).first,
+      maxScrolls: 15,
+    );
     expect(search, findsOneWidget);
     await tester.enterText(search, 'palette');
     await tester.pump();
-    expect(find.byKey(const ValueKey('settings-hub-appearance')),
-        findsOneWidget);
+    final appearance = find.byKey(
+      const ValueKey('settings-hub-appearance'),
+    );
+    await tester.scrollUntilVisible(
+      appearance,
+      120,
+      scrollable: find.byType(Scrollable).first,
+      maxScrolls: 12,
+    );
+    expect(appearance, findsOneWidget);
 
     final editable = tester.widget<EditableText>(
       find.descendant(of: search, matching: find.byType(EditableText)),
@@ -74,7 +90,7 @@ void main() {
     await tester.pump();
     expect(editable.focusNode.hasFocus, isFalse);
 
-    await tester.tap(find.byKey(const ValueKey('settings-hub-appearance')));
+    await tester.tap(appearance);
     await tester.pump(const Duration(milliseconds: 400));
     expect(find.byType(AppearanceColorsScreen), findsOneWidget);
     expect(tester.takeException(), isNull);
