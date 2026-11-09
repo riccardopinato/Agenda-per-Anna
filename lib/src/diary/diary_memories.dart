@@ -1433,6 +1433,33 @@ class _DiaryMemoriesScreenState extends State<DiaryMemoriesScreen> {
                       editorial: true,
                     ),
                   const SizedBox(height: AnnaDesignTokens.spaceMd),
+                  // A neutral, in-app due notice only: never render letter text
+                  // or open a letter without a user tap. Uses existing journal.
+                  if (widget.personId == null &&
+                      widget.store.entryScopeReady &&
+                      widget.store.agendaContentFilter !=
+                          AgendaContentFilter.sharedOnly &&
+                      personalFutureLetters(widget.store)
+                          .any((letter) => letter.isAvailableOn(now))) ...[
+                    Card(
+                      child: ListTile(
+                        key: const ValueKey('s10-future-letters-due'),
+                        leading: const Icon(Icons.mark_email_unread_outlined),
+                        title: Text(futureLetterTitle(strings)),
+                        subtitle: Text(futureLetterLabel(strings, 'ready')),
+                        trailing: const Icon(Icons.chevron_right),
+                        onTap: () => Navigator.push(
+                          context,
+                          MaterialPageRoute<void>(
+                            builder: (_) => PersonalFutureLettersScreen(
+                              store: widget.store,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: AnnaDesignTokens.spaceSm),
+                  ],
                   if (!editorial) ...[
                     ContextualMemoryPanel(
                       store: widget.store,
