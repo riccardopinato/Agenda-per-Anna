@@ -540,11 +540,6 @@ abstract final class VisionBoardUiCopy {
   );
 }
 
-extension VisionBoardUpdateOnFoundation on VisionBoardFoundation {
-  // This extension deliberately exposes no new store; static helper lives
-  // below instead of introducing any parallel canonical writer.
-}
-
 /// Guarded edit of a saved private board. Rejects stale references and media,
 /// including writes from an editor that survived A→B→A.
 Future<bool> saveExistingPrivateVisionBoard(
