@@ -231,7 +231,19 @@ void main() {
     expect(find.byKey(ValueKey('vision-board-${board.id}')), findsOneWidget);
     expect(find.text('Collega ricordi'), findsOneWidget);
     store.agendaContentFilter = AgendaContentFilter.sharedOnly;
-    store.journalRevision.value++;
+    // Re-enter the route to verify account/scope-boundary filtering.
+    // journalRevision is intentionally exposed as a read-only ValueListenable.
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.pumpWidget(MaterialApp(
+      locale: const Locale('it'),
+      supportedLocales: AnnaStrings.supportedLocales,
+      localizationsDelegates: const [
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
+      home: VisionBoardGalleryScreen(store: store),
+    ));
     await tester.pumpAndSettle();
     expect(find.byKey(ValueKey('vision-board-${board.id}')), findsNothing);
     expect(find.textContaining('non sono disponibili'), findsOneWidget);
