@@ -984,6 +984,7 @@ class _DiarySketchbookScreenState extends State<DiarySketchbookScreen> {
   }
 
   Future<void> _addText() async {
+    if (_savingSketch) return;
     DiarySketchTextElement? existing;
     if (selectedTextIds.length == 1) {
       final id = selectedTextIds.first;
@@ -1025,7 +1026,7 @@ class _DiarySketchbookScreenState extends State<DiarySketchbookScreen> {
       ),
     );
     controller.dispose();
-    if (value == null || value.isEmpty) return;
+    if (value == null || value.isEmpty || !mounted || _savingSketch) return;
 
     _pushHistory();
     if (existing == null) {
@@ -1066,8 +1067,9 @@ class _DiarySketchbookScreenState extends State<DiarySketchbookScreen> {
   }
 
   Future<void> _addImage() async {
+    if (_savingSketch) return;
     final source = await _chooseDiaryImageSource(context);
-    if (source == null || !mounted) return;
+    if (source == null || !mounted || _savingSketch) return;
 
     try {
       final imageBytes = await _pickCompressedDiaryImageBytes(
@@ -1077,8 +1079,9 @@ class _DiarySketchbookScreenState extends State<DiarySketchbookScreen> {
         fallbackMaxSide: 1100,
         fallbackQuality: 74,
       );
-      if (imageBytes == null) return;
+      if (imageBytes == null || !mounted || _savingSketch) return;
       final mediaAssetId = await MediaAssetStore.instance.put(imageBytes);
+      if (!mounted || _savingSketch) return;
       _pushHistory();
       final element = DiarySketchImageElement(
         id: const Uuid().v4(),
@@ -1533,7 +1536,7 @@ class _DiarySketchbookScreenState extends State<DiarySketchbookScreen> {
         actions: [
           IconButton(
             tooltip: AnnaStrings.of(context).d3('exportPng'),
-            onPressed: _exportPng,
+            onPressed: _savingSketch ? null : _exportPng,
             icon: const Icon(Icons.ios_share_outlined),
           ),
           IconButton(
@@ -1548,7 +1551,9 @@ class _DiarySketchbookScreenState extends State<DiarySketchbookScreen> {
           ),
         ],
       ),
-      body: SafeArea(
+      body: AbsorbPointer(
+        absorbing: _savingSketch,
+        child: SafeArea(
         child: Column(
           children: [
             SizedBox(
@@ -1861,6 +1866,7 @@ class _DiarySketchbookScreenState extends State<DiarySketchbookScreen> {
               ),
             ),
           ],
+        ),
         ),
       ),
       ),
