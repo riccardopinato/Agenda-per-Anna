@@ -432,7 +432,9 @@ abstract final class VisionBoardCollage {
   }
 
   static List<VisionBoardFrame> _cascade(int count) {
-    if (count > 8) return _grid(count); // avoid unreadably overlapped media
+    if (count > 8) {
+      return _grid(count); // avoid unreadably overlapped media
+    }
     return [
       for (var i = 0; i < count; i++)
         VisionBoardFrame(
