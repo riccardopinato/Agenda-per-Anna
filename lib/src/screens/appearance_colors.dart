@@ -114,6 +114,8 @@ class _AppearanceColorsScreenState extends State<AppearanceColorsScreen> {
             maxWidth: AnnaDesignTokens.compactContentWidth,
           ),
           child: ListView(
+            keyboardDismissBehavior:
+                ScrollViewKeyboardDismissBehavior.onDrag,
             padding: const EdgeInsets.all(AnnaDesignTokens.spaceMd),
             children: [
               Text(strings.d3('appearanceColorsIntro')),
@@ -394,23 +396,40 @@ class _AppearanceColorsScreenState extends State<AppearanceColorsScreen> {
                 ),
               ),
               const SizedBox(height: AnnaDesignTokens.spaceLg),
-              Row(
-                children: [
-                  Expanded(
-                    child: OutlinedButton(
-                      onPressed: saving ? null : () => Navigator.pop(context),
-                      child: Text(strings.cancel),
-                    ),
-                  ),
-                  const SizedBox(width: AnnaDesignTokens.spaceSm),
-                  Expanded(
-                    child: FilledButton(
-                      key: const ValueKey<String>('appearance-apply'),
-                      onPressed: saving || !hexValid ? null : _apply,
-                      child: Text(strings.d3('appearanceApply')),
-                    ),
-                  ),
-                ],
+              LayoutBuilder(
+                builder: (context, constraints) {
+                  final cancel = OutlinedButton(
+                    onPressed: saving ? null : () => Navigator.pop(context),
+                    child: Text(strings.cancel),
+                  );
+                  final apply = FilledButton(
+                    key: const ValueKey<String>('appearance-apply'),
+                    onPressed: saving || !hexValid ? null : _apply,
+                    child: Text(strings.d3('appearanceApply')),
+                  );
+                  final largeText =
+                      MediaQuery.textScalerOf(context).scale(16) >= 22;
+                  // The two canonical actions must remain fully readable in
+                  // long translations and with large PWA accessibility text.
+                  if (constraints.maxWidth < 310 || largeText) {
+                    return Column(
+                      key: const ValueKey<String>('appearance-actions-stacked'),
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        cancel,
+                        const SizedBox(height: AnnaDesignTokens.spaceSm),
+                        apply,
+                      ],
+                    );
+                  }
+                  return Row(
+                    children: [
+                      Expanded(child: cancel),
+                      const SizedBox(width: AnnaDesignTokens.spaceSm),
+                      Expanded(child: apply),
+                    ],
+                  );
+                },
               ),
               const SizedBox(height: AnnaDesignTokens.spaceLg),
             ],
