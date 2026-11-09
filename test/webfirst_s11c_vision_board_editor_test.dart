@@ -221,8 +221,8 @@ void main() {
       tester.view.resetPhysicalSize();
     });
     await tester.pumpWidget(const MaterialApp(
-      locale: const Locale('it'),
-      home: const DiarySketchbookScreen(
+      locale: Locale('it'),
+      home: DiarySketchbookScreen(
         initialPages: [DiarySketchPage(id: 'base')],
         visionBoardMode: true,
       ),
