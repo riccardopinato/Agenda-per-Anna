@@ -185,12 +185,17 @@ class _VisionBoardGalleryScreenState extends State<VisionBoardGalleryScreen> {
     );
     if (selected == null || !mounted) return;
     setState(() => _busy = true);
-    final ok = await VisionBoardMemories.saveLinks(
-      widget.store, ref, selected, scopeGuard: guard,
-    );
-    if (!mounted) return;
-    setState(() => _busy = false);
-    if (!ok) _notice();
+    var ok = false;
+    try {
+      ok = await VisionBoardMemories.saveLinks(
+        widget.store, ref, selected, scopeGuard: guard,
+      );
+    } catch (_) {
+      ok = false; // local storage/IO failure; never strand the UI as busy
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+    if (!ok && mounted) _notice();
   }
 
   Future<void> _trash(DiaryBlockReference ref) async {
@@ -219,12 +224,17 @@ class _VisionBoardGalleryScreenState extends State<VisionBoardGalleryScreen> {
     );
     if (confirmed != true || !mounted) return;
     setState(() => _busy = true);
-    final ok = await VisionBoardMemories.moveToTrash(
-      widget.store, ref, scopeGuard: guard,
-    );
-    if (!mounted) return;
-    setState(() => _busy = false);
-    if (!ok) _notice();
+    var ok = false;
+    try {
+      ok = await VisionBoardMemories.moveToTrash(
+        widget.store, ref, scopeGuard: guard,
+      );
+    } catch (_) {
+      ok = false; // preserve usability if the canonical Trash write fails
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+    if (!ok && mounted) _notice();
   }
 
   @override
@@ -235,7 +245,12 @@ class _VisionBoardGalleryScreenState extends State<VisionBoardGalleryScreen> {
         title: Text(visionBoardGalleryText(strings, 'title')),
       ),
       body: AnimatedBuilder(
-        animation: widget.store.journalRevision,
+        animation: Listenable.merge([
+          widget.store.journalRevision,
+          widget.store.agendaRevision,
+          widget.store.sharedRevision,
+          widget.store.accountRevision,
+        ]),
         builder: (context, _) {
           if (!widget.store.entryScopeReady ||
               widget.store.agendaContentFilter ==
