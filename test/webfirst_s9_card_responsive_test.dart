@@ -1,6 +1,7 @@
 import 'package:agenda_per_anna/main.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 /// S9: preview using synthetic in-memory records. Does not certify real
@@ -12,7 +13,7 @@ void main() {
     SharedPreferences.setMockInitialValues(<String, Object>{});
   });
 
-  Future<AgendaStore> syntheticStore() async {
+  AgendaStore syntheticStore() {
     final store = AgendaStore();
     final day = DateTime.now();
     store.items.add(AgendaItem(
@@ -36,9 +37,15 @@ void main() {
         tester.view.resetPhysicalSize();
         tester.view.resetDevicePixelRatio();
       });
-      final store = await syntheticStore();
+      final store = syntheticStore();
       await tester.pumpWidget(MaterialApp(
         locale: Locale(locale),
+        supportedLocales: AnnaStrings.supportedLocales,
+        localizationsDelegates: const [
+          GlobalMaterialLocalizations.delegate,
+          GlobalWidgetsLocalizations.delegate,
+          GlobalCupertinoLocalizations.delegate,
+        ],
         builder: (context, child) => MediaQuery(
           data: MediaQuery.of(context)
               .copyWith(textScaler: const TextScaler.linear(2)),
@@ -75,10 +82,16 @@ void main() {
       tester.view.resetPhysicalSize();
       tester.view.resetDevicePixelRatio();
     });
-    final store = await syntheticStore();
+    final store = syntheticStore();
     final original = store.items.single;
     await tester.pumpWidget(MaterialApp(
       locale: const Locale('it'),
+      supportedLocales: AnnaStrings.supportedLocales,
+      localizationsDelegates: const [
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
       home: Scaffold(body: SingleChildScrollView(
         child: RealisticDayCard(
           store: store,
