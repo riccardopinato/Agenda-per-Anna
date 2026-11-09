@@ -2,6 +2,13 @@
 
 Data: 9 novembre 2026. Modalità: **SOLO Chat**, Flutter Web-first, sviluppo su branch e PR, nessun APK, nessun nuovo provider, database o API AI.
 
+## Chiusura sorgente S10 — evidenza fissata dopo merge
+
+- **IMPLEMENTED + TESTED + MERGED:** [PR #287](https://github.com/riccardopinato/Agenda-per-Anna/pull/287), base `f4b2baf95e062777da4ad23c0e40bbf8ed8cb6c1`, head finale `938e145b10dd8b9e6832596a4c047d0644910849`, squash su `main@4d772b3e88a3c1ee8a40b92bd5b71e9ceb559823`. Git ref `main` e merge PR verificati identici.
+- **Gates exact-head PASS:** [Development checks #42639141502](https://github.com/riccardopinato/Agenda-per-Anna/actions/runs/42639141502) (analyze, suite Flutter completa, C2 sintetico, Web Vault crypto, Web release), [Deploy Anna's Diary Web — PR build #42639141707](https://github.com/riccardopinato/Agenda-per-Anna/actions/runs/42639141707), [AppLab Source Gate #42639141762](https://github.com/riccardopinato/Agenda-per-Anna/actions/runs/42639141762). Nessuna review bloccante al merge.
+- **Non confondere gli ambiti:** PR Web build SUCCESS **non** prova Pages produzione. Run `push main` di Development checks e Pages su `4d772b3e`: **NOT_VERIFIED** tramite connettore disponibile (la lettura dei workflow per SHA espone solo i run PR). PWA installata due dispositivi, lettura dialogo con account switch reale, accessibilità, sync/backup fisici: **NOT_VERIFIED**. Performance: **NOT_MEASURED**. Offline PWA: **DEFERRED_BY_USER**. No Android APK né pubblicazione Play.
+- **Issue:** [#224](https://github.com/riccardopinato/Agenda-per-Anna/issues/224) registra il merge e mantiene la distinzione fra source acceptance e QA fisico/produzione.
+
 ## Baseline
 
 - **Factory CURRENT**: `riccardopinato/App-Factory-Core@d4ed1185d36d419228fba6b57a979cde308bd321`; Master v27, Golden Index v29, Registry v2.
