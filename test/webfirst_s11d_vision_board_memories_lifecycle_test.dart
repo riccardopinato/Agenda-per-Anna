@@ -236,19 +236,23 @@ void main() {
 
   testWidgets('Ricordi gallery shows boards, links and restores private boundary',
       (tester) async {
+    debugPrint('S11D gallery: begin');
     final store = await initializedStore();
+    debugPrint('S11D gallery: store initialized');
     addTearDown(store.dispose);
     final day = DateTime(2026, 11, 9);
     final board = VisionBoardFoundation.draft(
       visionBoardPresetsFor(const AnnaStrings('it'))[1], createdAt: day,
     );
     await store.saveJournal(day, DayJournal(blocks: [board]));
+    debugPrint('S11D gallery: journal saved');
     tester.view.devicePixelRatio = 2;
     tester.view.physicalSize = const Size(640, 1280);
     addTearDown(() {
       tester.view.resetDevicePixelRatio();
       tester.view.resetPhysicalSize();
     });
+    debugPrint('S11D gallery: before first pumpWidget');
     await tester.pumpWidget(MaterialApp(
       locale: const Locale('it'),
       supportedLocales: AnnaStrings.supportedLocales,
@@ -263,18 +267,22 @@ void main() {
     // when a separate app-level ticker keeps scheduling transient frames.
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 500));
+    debugPrint('S11D gallery: first finite pumps finished');
     expect(find.text('Le mie Vision Board'), findsOneWidget);
     expect(find.byKey(ValueKey('vision-board-${board.id}')), findsOneWidget);
     expect(find.text('Collega ricordi'), findsOneWidget);
     // Change the actual store filter while the gallery stays mounted:
     // the resulting agenda/shared notifications must hide private content.
+    debugPrint('S11D gallery: before shared-only');
     store.setAgendaContentFilter(AgendaContentFilter.sharedOnly);
     // A finite set of frames avoids the 10-minute pumpAndSettle watchdog
     // when a separate app-level ticker keeps scheduling transient frames.
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 500));
     expect(find.byKey(ValueKey('vision-board-${board.id}')), findsNothing);
+    debugPrint('S11D gallery: shared-only checked');
     expect(find.textContaining('non sono disponibili'), findsOneWidget);
+    debugPrint('S11D gallery: before returning private');
     store.setAgendaContentFilter(AgendaContentFilter.all);
     // A finite set of frames avoids the 10-minute pumpAndSettle watchdog
     // when a separate app-level ticker keeps scheduling transient frames.
@@ -283,6 +291,7 @@ void main() {
     expect(find.byKey(ValueKey('vision-board-${board.id}')), findsOneWidget);
     expect(tester.binding.hasScheduledFrame, isFalse,
       reason: 'The static private gallery must not maintain a perpetual ticker');
+    debugPrint('S11D gallery: final assertions');
     expect(tester.takeException(), isNull);
-  });
+  }, timeout: const Timeout(Duration(seconds: 45)));
 }
