@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:agenda_per_anna/main.dart';
 import 'package:agenda_per_anna/local_state_store.dart';
 import 'package:agenda_per_anna/media_asset_store.dart';
@@ -183,6 +185,89 @@ void main() {
       scopeGuard: Cap0160TagEditGuard(store),
     ), isFalse);
     store.dispose();
+  });
+
+  test('large photo collages use valid positive sizes', () {
+    for (final count in [51, 128, 512]) {
+      final page = DiarySketchPage(
+        id: 'stress-$count',
+        imageElements: [
+          for (var i = 0; i < count; i++)
+            DiarySketchImageElement(
+              id: 'i-$i', mediaAssetId: 'asset-$i',
+              x: 0.1, y: 0.1,
+            ),
+        ],
+      );
+      for (final style in VisionBoardCollageStyle.values) {
+        final arranged = VisionBoardCollage.arrange(page, style);
+        expect(arranged.imageElements, hasLength(count));
+        for (final image in arranged.imageElements) {
+          expect(image.width, greaterThan(0));
+          expect(image.height, greaterThan(0));
+          expect(image.x + image.width, lessThanOrEqualTo(1.000001));
+          expect(image.y + image.height, lessThanOrEqualTo(1.000001));
+        }
+      }
+    }
+  });
+
+  testWidgets('save freezes editor interaction until the async commit resolves',
+      (tester) async {
+    tester.view.devicePixelRatio = 2;
+    tester.view.physicalSize = const Size(640, 1280);
+    addTearDown(() {
+      tester.view.resetDevicePixelRatio();
+      tester.view.resetPhysicalSize();
+    });
+    final pending = Completer<bool>();
+    var attempts = 0;
+    await tester.pumpWidget(MaterialApp(
+      locale: const Locale('it'),
+      supportedLocales: AnnaStrings.supportedLocales,
+      localizationsDelegates: const [
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
+      home: Scaffold(body: Builder(
+        builder: (context) => Center(child: ElevatedButton(
+          onPressed: () => Navigator.push<List<DiarySketchPage>>(
+            context,
+            MaterialPageRoute(builder: (_) => DiarySketchbookScreen(
+              initialPages: const [DiarySketchPage(id: 'async-board')],
+              visionBoardMode: true,
+              onSavePages: (_) {
+                attempts++;
+                return pending.future;
+              },
+            )),
+          ),
+          child: const Text('Open async board'),
+        )),
+      )),
+    ));
+    await tester.tap(find.text('Open async board'));
+    await tester.pumpAndSettle();
+    const freezeKey = ValueKey('vision-board-save-freeze');
+    expect(tester.widget<AbsorbPointer>(find.byKey(freezeKey)).absorbing,
+        isFalse);
+    await tester.tap(find.byIcon(Icons.check));
+    await tester.pump();
+    expect(attempts, 1);
+    expect(tester.widget<AbsorbPointer>(find.byKey(freezeKey)).absorbing,
+        isTrue);
+    // A pending write must not close or mutate the document from a stray tap.
+    await tester.tap(find.byIcon(Icons.text_fields_outlined).first,
+        warnIfMissed: false);
+    await tester.pump();
+    expect(find.byType(AlertDialog), findsNothing);
+    expect(find.text('La mia Vision Board'), findsOneWidget);
+
+    pending.complete(true);
+    await tester.pumpAndSettle();
+    expect(find.text('Open async board'), findsOneWidget);
+    expect(tester.takeException(), isNull);
   });
 
   testWidgets('Vision Board editor confirms discard and retains draft on failed Save',
