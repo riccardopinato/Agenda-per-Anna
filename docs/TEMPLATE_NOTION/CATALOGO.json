@@ -4,7 +4,47 @@
   "catalogue_type": "public_research_index",
   "updated_at": "2026-11-09",
   "master_reference": "riccardopinato/Idee-app-Archivi-riferimenti/17-RICERCA-TEMPLATE-UX",
-  "entries": [],
+  "entries": [
+    {
+      "id": "TN-ANNA-0001",
+      "master_ref": "TPLUX-REF-0002",
+      "title": "Routines Activities",
+      "category": "Daily Rituals / Weekly Routines",
+      "record": "SCHEDE/TN-ANNA-0001-ROUTINES_ACTIVITIES.md",
+      "evidence_level": "E2_EXPORT_STRUCTURE_VERIFIED",
+      "product_status": "RESEARCH_PROPOSAL",
+      "app_fit": "PRIMARY",
+      "implementation_status": "NOT_IMPLEMENTED_FROM_THIS_SOURCE",
+      "reuse_mode": "PATTERN_REFERENCE_ONLY",
+      "internal_content_verified": true
+    },
+    {
+      "id": "TN-ANNA-0002",
+      "master_ref": "TPLUX-REF-0003",
+      "title": "Weekly Planner",
+      "category": "Weekly Planning",
+      "record": "SCHEDE/TN-ANNA-0002-WEEKLY_PLANNER_INCOMPLETE.md",
+      "evidence_level": "E2_FILE_READ_BUT_TEMPLATE_CONTENT_UNAVAILABLE",
+      "product_status": "RESEARCH_BLOCKED_INCOMPLETE_EXPORT",
+      "app_fit": "CANDIDATE_PRESENCE_ONLY",
+      "implementation_status": "NOT_IMPLEMENTED_FROM_THIS_SOURCE",
+      "reuse_mode": "NO_REUSE_UNTIL_REAL_EXPORT",
+      "internal_content_verified": false
+    },
+    {
+      "id": "TN-ANNA-0003",
+      "master_ref": "TPLUX-REF-0006",
+      "title": "Weight Loss Tracker",
+      "category": "Sensitive Wellness Research",
+      "record": "SCHEDE/TN-ANNA-0003-WEIGHT_LOSS_TRACKER_RESTRICTED.md",
+      "evidence_level": "E2_EXPORT_STRUCTURE_VERIFIED",
+      "product_status": "HOLD_SCOPE_AND_PRIVACY_REVIEW",
+      "app_fit": "CONDITIONAL_ONLY",
+      "implementation_status": "NOT_IMPLEMENTED_FROM_THIS_SOURCE",
+      "reuse_mode": "GENERIC_CHECKIN_PATTERN_ONLY",
+      "internal_content_verified": true
+    }
+  ],
   "cross_app_references": [
     {
       "master_ref": "TPLUX-REF-0001",
@@ -12,6 +52,13 @@
       "primary_application": "Notes-Ecosistema",
       "assignment": "NOT_ANNA_PRIMARY",
       "reason": "PARA professional workspace is out of Anna Product Bible; abstract quick actions/personal cards can be considered in future only with explicit product admission"
+    },
+    {
+      "master_ref": "TPLUX-REF-0004",
+      "title": "Book Tracker",
+      "primary_application": "Notes-Ecosistema",
+      "assignment": "SECONDARY_PATTERN_ONLY",
+      "reason": "May inform future lightweight personal reading journal, but not core product or the Notes knowledge database"
     }
   ]
 }
