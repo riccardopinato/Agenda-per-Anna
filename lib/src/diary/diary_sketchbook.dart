@@ -996,13 +996,17 @@ class _DiarySketchbookScreenState extends State<DiarySketchbookScreen> {
       }
     }
 
-    final controller = TextEditingController(text: existing?.text ?? '');
+    // TextFormField owns its controller throughout the dialog exit animation.
+    // Disposing a manual controller as soon as showDialog resolves leaves
+    // TextField still mounted and crashes Flutter during the pop transition.
+    var draftText = existing?.text ?? '';
     final value = await showDialog<String>(
       context: context,
       builder: (dialogContext) => AlertDialog(
         title: Text(existing == null ? AnnaStrings.of(context).d3('addText') : AnnaStrings.of(context).d3('editText')),
-        content: TextField(
-          controller: controller,
+        content: TextFormField(
+          initialValue: draftText,
+          onChanged: (value) => draftText = value,
           autofocus: true,
           minLines: 2,
           maxLines: 6,
@@ -1019,13 +1023,12 @@ class _DiarySketchbookScreenState extends State<DiarySketchbookScreen> {
           ),
           FilledButton(
             onPressed: () =>
-                Navigator.pop(dialogContext, controller.text.trim()),
+                Navigator.pop(dialogContext, draftText.trim()),
             child: Text(AnnaStrings.of(context).d3('insert')),
           ),
         ],
       ),
     );
-    controller.dispose();
     if (value == null || value.isEmpty || !mounted || _savingSketch) return;
 
     _pushHistory();
