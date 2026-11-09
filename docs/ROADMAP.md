@@ -1,5 +1,11 @@
 # Anna's Diary — Roadmap
 
+## 9 novembre 2026 — Template catalog Step4 (anteprima gratuita)
+
+- In [PR #291](https://github.com/riccardopinato/Agenda-per-Anna/pull/291), the existing `showDiaryTemplatePicker` displays an original, free, five-language catalog and read-only seed preview. A preset returns to the already-owned diary editor only after explicit `Use in diary`; the editor retains its standard save/ownership semantics.
+- Scope and gates: [Step4 document](TEMPLATE_NOTION/UX_STEP4_FREE_GALLERY.md). Existing ritual settings, private content, `Noi ♡`, Vault and the RevenueCat entitlement are unchanged; no SKU, store payments, install registry or second write path.
+- Validate exact-head Development checks, Web build and UI5/AppLab Source Gate; physical browser/device, private account isolation and Store payments are separately NOT VERIFIED.
+
 ## 9 novembre 2026 — Web-first Maxi-step 10: Ricordi contestuali + Lettera al futuro (PR #287 merged / CI PR PASS)
 
 - **Source integration S10: COMPLETE.** [PR #287](https://github.com/riccardopinato/Agenda-per-Anna/pull/287) merged in `main@4d772b3e88a3c1ee8a40b92bd5b71e9ceb559823`, from exact PR head `938e145b10dd8b9e6832596a4c047d0644910849`. On this PR head: [Development checks #42639141502](https://github.com/riccardopinato/Agenda-per-Anna/actions/runs/42639141502), [Web PR build #42639141707](https://github.com/riccardopinato/Agenda-per-Anna/actions/runs/42639141707), [AppLab Source Gate #42639141762](https://github.com/riccardopinato/Agenda-per-Anna/actions/runs/42639141762) all **SUCCESS**. Main-push [Development checks #42640103948](https://github.com/riccardopinato/Agenda-per-Anna/actions/runs/42640103948) and [Pages #42640103766](https://github.com/riccardopinato/Agenda-per-Anna/actions/runs/42640103766) both **SUCCESS** on merge SHA `4d772b3e` (Pages `deploy` job SUCCESS); physical PWA/account switch/accessibility `NOT_VERIFIED`, performance `NOT_MEASURED`, offline `DEFERRED_BY_USER`. No APK/Play/Store.
