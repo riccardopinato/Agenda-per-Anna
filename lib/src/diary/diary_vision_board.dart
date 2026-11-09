@@ -417,10 +417,12 @@ abstract final class VisionBoardCollage {
 
   static List<VisionBoardFrame> _grid(int count) {
     if (count == 0) return const [];
-    final columns = count == 1 ? 1 : 2;
+    // Adaptive columns and gaps avoid negative Positioned dimensions even
+    // when a board holds hundreds of photographs.
+    final columns = count == 1 ? 1 : count <= 8 ? 2 : sqrt(count).ceil();
     final rows = (count / columns).ceil();
     const padding = 0.07;
-    const gap = 0.035;
+    final gap = min(0.035, 0.12 / max(rows, columns));
     final width = (1 - padding * 2 - (columns - 1) * gap) / columns;
     final height = (1 - padding * 2 - (rows - 1) * gap) / rows;
     return [
