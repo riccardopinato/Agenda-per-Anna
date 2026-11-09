@@ -1,11 +1,19 @@
 # Anna's Diary — Roadmap
 
-## 9 novembre 2026 — Web-first S5: accessibilità, testo ingrandito, 5 lingue e QA performance (PR in validazione)
+## 9 novembre 2026 — Web-first S6: audit di schermate reali e fix circoscritti (PR in verifica)
+
+- **Audit documentato:** [REAL_SCREEN_AUDIT_S6_20261109.md](REAL_SCREEN_AUDIT_S6_20261109.md). Codice effettivo di Altro→Impostazioni, Altro→Cerca e Impostazioni→Aspetto. I rischi di clipping/focus sono rilevati dalla struttura dei layout, non spacciati per bug riprodotti su device reali.
+- **Impostazioni:** tastiera di ricerca rilasciata su submit, trascinamento e apertura sezione; filtro e navigazione invariati.
+- **Cerca:** chip filtranti adattivi con testo del sistema; menu ordinamento flessibile con ellissi a larghezza mobile; nessuna modifica a risultati, permessi, archivio, indice, OCR o ricerca.
+- **Aspetto:** riuso dei pulsanti Annulla/Applica in colonna sotto 310dp o con text scaler elevato; scroll chiude la tastiera HEX, applicazione preferenze inalterata.
+- **Nuova regressione reale-widget:** `test/ds6_webfirst_s6_real_screen_audit_test.dart`, schermate a 320dp e 2×, Cerca IT/EN/ES/FR/PT, navigazione Impostazioni→Aspetto; gate Flutter, AppLab e Web solo quando conclusi. PWA fisiche, screen reader e performance restano `NOT_VERIFIED / NOT_MEASURED`. Solo Chat, Web-first, nessun APK/offline/sync/Vault.
+
+## 9 novembre 2026 — Web-first S5: accessibilità, testo ingrandito, 5 lingue (PR #278 merged / Web PASS)
 
 - **Problema reale da codice:** `AnnaEditorialActionPair` decideva soltanto sulla larghezza (340dp), mantenendo due riquadri stretti a 360–390dp anche con testo 1,6–2×; `AnnaEditorialSectionHeading` con azione comprimeva il titolo nella stessa riga; il dock editoriale aveva altezza fissa 60dp mentre l'etichetta scala con il font di sistema.
 - **Fix visual-only condiviso:** coppie di azioni editoriali in colonna quando il testo supera la soglia; titoli e azioni di sezione si impilano su display stretti o con font grande; dock e spazio riservato dal MainShell crescono insieme in funzione del text scaler, mantenendo altezza originale a 1× e l'unica azione centrale Crea.
 - **QA:** widget sintetico `test/ds6_webfirst_s5_a11y_responsive_test.dart` per IT/EN/ES/FR/PT su 320dp, testo 2× e navigazione reale del dock; verifica regressione fonte per 10k ricordi già esistente e reduced-motion. Nessun benchmark FPS/TTI fisico è stato eseguito: `PHYSICAL_PERFORMANCE_NOT_MEASURED`.
-- **Rilascio:** PR, Flutter analyze/full tests/Web release, AppLab Source Gate, check recensioni, merge e Pages exact SHA; solo Chat, nessun APK, nessuna modifica a offline/sync/auth/Vault/storage/router.
+- **Rilascio verificato:** PR #278 merged a `9f2c308099aef9ed584395e96c94afe53d648352`; [Development checks main SUCCESS #42537729068](https://github.com/riccardopinato/Agenda-per-Anna/actions/runs/42537729068), [Pages SUCCESS #42537729161](https://github.com/riccardopinato/Agenda-per-Anna/actions/runs/42537729161), stesso SHA. AppLab Source Gate PR PASS; nessun APK. Performance reali `NOT_MEASURED`.
 
 ## 9 novembre 2026 — Web-first S4: Shared invite QR e collaudo (PR #277 merged / Web PASS)
 
