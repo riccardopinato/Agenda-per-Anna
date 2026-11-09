@@ -2709,7 +2709,9 @@ Future<void> openPersonalFutureLetter(
     BuildContext context, AgendaStore store, FutureLetterRecord record) async {
   final guard = Cap0160TagEditGuard(store);
   if (!guard.isCurrent ||
-      currentPersonalFutureLetter(store, record) == null) return;
+      currentPersonalFutureLetter(store, record) == null) {
+    return;
+  }
   final today = DateTime.now();
   if (!record.isAvailableOn(today)) {
     final early = await showDialog<bool>(
@@ -2728,7 +2730,9 @@ Future<void> openPersonalFutureLetter(
     if (early != true) return;
   }
   if (!context.mounted || !guard.isCurrent ||
-      currentPersonalFutureLetter(store, record) == null) return;
+      currentPersonalFutureLetter(store, record) == null) {
+    return;
+  }
   await showDialog<void>(
     context: context,
     builder: (dialog) => AlertDialog(
