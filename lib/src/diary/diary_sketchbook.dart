@@ -1492,6 +1492,8 @@ class _DiarySketchbookScreenState extends State<DiarySketchbookScreen> {
               value: image != null
                   ? image.width.clamp(0.15, 0.9)
                   : textElement!.fontSize.clamp(12, 48),
+              onChangeStart: (_) => _beginResizeHistory(),
+              onChangeEnd: (_) => _resizeActive = false,
               onChanged:
                   image != null ? _resizeSelectedImage : _resizeSelectedText,
             ),
@@ -1503,17 +1505,30 @@ class _DiarySketchbookScreenState extends State<DiarySketchbookScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final undoAvailable = (_undo[page.id] ?? const []).isNotEmpty;
-    final redoAvailable = (_redo[page.id] ?? const []).isNotEmpty;
+    final undoAvailable = widget.visionBoardMode
+        ? _visionUndo.isNotEmpty
+        : (_undo[page.id] ?? const []).isNotEmpty;
+    final redoAvailable = widget.visionBoardMode
+        ? _visionRedo.isNotEmpty
+        : (_redo[page.id] ?? const []).isNotEmpty;
     final hasSelection = selectedStrokeIndices.isNotEmpty ||
         selectedTextIds.isNotEmpty ||
         selectedImageIds.isNotEmpty;
 
-    return Scaffold(
+    return PopScope<List<DiarySketchPage>>(
+      canPop: !widget.visionBoardMode,
+      onPopInvokedWithResult: (didPop, result) {
+        if (!didPop && widget.visionBoardMode) {
+          unawaited(_requestDiscard());
+        }
+      },
+      child: Scaffold(
       appBar: AppBar(
-        title: const Text(
-          'Sketchbook',
-          style: TextStyle(fontWeight: FontWeight.w900),
+        title: Text(
+          widget.visionBoardMode
+              ? VisionBoardUiCopy.editor(AnnaStrings.of(context))
+              : 'Sketchbook',
+          style: const TextStyle(fontWeight: FontWeight.w900),
         ),
         actions: [
           IconButton(
@@ -1523,8 +1538,13 @@ class _DiarySketchbookScreenState extends State<DiarySketchbookScreen> {
           ),
           IconButton(
             tooltip: AnnaStrings.of(context).d3('saveSketch'),
-            onPressed: () => Navigator.pop(context, pages),
-            icon: const Icon(Icons.check),
+            onPressed: _savingSketch ? null : _saveSketch,
+            icon: _savingSketch
+                ? const SizedBox(
+                    width: 20, height: 20,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : const Icon(Icons.check),
           ),
         ],
       ),
@@ -1580,6 +1600,36 @@ class _DiarySketchbookScreenState extends State<DiarySketchbookScreen> {
                     onPressed: _addImage,
                     icon: const Icon(Icons.add_photo_alternate_outlined),
                   ),
+                  if (widget.visionBoardMode)
+                    PopupMenuButton<VisionBoardCollageStyle>(
+                      key: const ValueKey('vision-board-collage-menu'),
+                      tooltip: VisionBoardUiCopy.arrange(
+                        AnnaStrings.of(context),
+                      ),
+                      enabled: page.imageElements.isNotEmpty,
+                      icon: const Icon(Icons.dashboard_customize_outlined),
+                      onSelected: _applyCollage,
+                      itemBuilder: (_) => [
+                        PopupMenuItem(
+                          value: VisionBoardCollageStyle.template,
+                          child: Text(VisionBoardUiCopy.template(
+                            AnnaStrings.of(context),
+                          )),
+                        ),
+                        PopupMenuItem(
+                          value: VisionBoardCollageStyle.grid,
+                          child: Text(VisionBoardUiCopy.grid(
+                            AnnaStrings.of(context),
+                          )),
+                        ),
+                        PopupMenuItem(
+                          value: VisionBoardCollageStyle.cascade,
+                          child: Text(VisionBoardUiCopy.cascade(
+                            AnnaStrings.of(context),
+                          )),
+                        ),
+                      ],
+                    ),
                   IconButton(
                     tooltip: AnnaStrings.of(context).d3('deleteSelection'),
                     onPressed: hasSelection ? _deleteSelection : null,
@@ -1812,6 +1862,7 @@ class _DiarySketchbookScreenState extends State<DiarySketchbookScreen> {
             ),
           ],
         ),
+      ),
       ),
     );
   }
