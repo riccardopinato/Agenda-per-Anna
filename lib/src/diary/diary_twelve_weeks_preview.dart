@@ -140,7 +140,7 @@ class _TwelveWeeksConceptPreviewState extends State<TwelveWeeksConceptPreview> {
             fr: 'Un chapitre à la fois. Ni délais, ni scores, ni obligations.',
             pt: 'Um capítulo de cada vez. Sem prazos, pontuação ou obrigações.')),
           const SizedBox(height: 12),
-          Text((step + 1).toString() + ' / 4'),
+          Text('${step + 1} / 4'),
           const SizedBox(height: 14),
           if (step == 0) ...[
             Text(weekText.first, style: Theme.of(context).textTheme.titleMedium),
@@ -149,7 +149,7 @@ class _TwelveWeeksConceptPreviewState extends State<TwelveWeeksConceptPreview> {
           if (step == 1) ...[
             Wrap(spacing: 6, runSpacing: 4,
               children: List.generate(12, (index) => ChoiceChip(
-                key: ValueKey('anna-12w-week-' + index.toString()),
+                key: ValueKey('anna-12w-week-$index'),
                 label: Text((index + 1).toString()),
                 selected: week == index,
                 onSelected: (_) => setState(() => week = index),
