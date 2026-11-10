@@ -1,6 +1,6 @@
-enum VisionBoardInsertAction { photo, text, arrow, draw }
-
 part of '../../main.dart';
+
+enum VisionBoardInsertAction { photo, text, arrow, draw }
 
 /// S12: a single freely navigable Vision Board scene, without a new database
 /// or a coordinate/schema migration. Existing S11 normalized points stay at
