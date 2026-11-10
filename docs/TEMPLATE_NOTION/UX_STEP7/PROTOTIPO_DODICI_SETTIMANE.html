@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="it"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Anna's Diary · Dodici settimane che contano — prototipo UX</title>
+<style>
+:root{font:15px/1.55 'Manrope',system-ui,-apple-system,sans-serif;background:#faf5f5;color:#49323e;--rose:#a45175;--pale:#f9e8ec;--line:#ead5dc;--paper:#fffafa}
+*{box-sizing:border-box}body{margin:0}.frame{max-width:830px;margin:auto;padding:24px}.notice{background:#fff2f5;border:1px dashed #c688a3;border-radius:15px;padding:12px 15px;font-size:13px}h1,h2,h3{font-family:Georgia,'Times New Roman',serif;font-weight:500}h1{font-size:clamp(35px,6vw,52px);line-height:1.09;margin:16px 0 10px}h2{font-size:clamp(25px,4vw,32px);line-height:1.15;margin:0 0 14px}h3{font-size:21px;margin:6px 0}.eyebrow{font-size:11px;letter-spacing:.15em;text-transform:uppercase;color:#a06b81;margin-top:22px}.muted{color:#806b73}.label{display:inline-block;padding:5px 12px;border-radius:99px;background:#f4e0e7;color:#874562;font-size:12px;font-weight:700}.tabs{display:flex;gap:8px;flex-wrap:wrap;margin:24px 0 16px}button{font:inherit;cursor:pointer;min-height:44px}.tab{border:1px solid var(--line);background:#fff;color:#563b47;border-radius:14px;padding:10px 13px;flex:1}.tab.current,.cta{background:var(--rose);color:white;border:1px solid var(--rose)}.paper{background:var(--paper);border:1px solid var(--line);border-radius:26px;box-shadow:0 14px 40px #6c304112;padding:27px;min-height:480px}section[hidden]{display:none}.card{border:1px solid #efdae1;background:#fff2f5;padding:17px;border-radius:18px;margin:12px 0}.card p{margin:5px 0}.weeks{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:9px}.week{background:#fff;border:1px solid var(--line);border-radius:12px;padding:10px 7px;font-size:13px}.week.current{border-color:var(--rose);background:#fce9ef;color:#6c3050;font-weight:700}.field{width:100%;display:block;min-height:46px;border-radius:13px;padding:12px;background:white;border:1px solid #cbaeba;color:#49323e;font:inherit;margin:7px 0 17px}label{font-weight:650}.check{display:flex;align-items:center;gap:10px;min-height:45px}.check input{width:18px;height:18px}.actions{display:flex;flex-wrap:wrap;gap:9px;margin-top:20px}.cta,.quiet{border-radius:13px;padding:11px 16px;min-height:45px}.quiet{background:#fff;border:1px solid var(--line);color:#7f3e5b}.cta:disabled{opacity:.5;cursor:not-allowed}.status{color:#28664b;font-weight:700;min-height:24px}.intro{font-size:17px;max-width:65ch}.note{background:#fff;border-left:3px solid var(--rose);padding:14px;border-radius:10px;white-space:pre-wrap}.small{font-size:13px;color:#866f78}.privacy{padding:12px 14px;border-radius:14px;background:#f8e6ed;font-size:13px}footer{font-size:12px;color:#8b717c;margin-top:16px}@media(max-width:580px){.frame{padding:12px}.paper{padding:18px;min-height:400px}.tabs{display:grid;grid-template-columns:1fr 1fr}.weeks{grid-template-columns:repeat(3,minmax(0,1fr))}h1{margin-top:12px}}
+</style></head>
+<body><div class="frame"><div class="notice" role="note"><strong>PROTOTIPO UX · NON ATTIVO NELL'APP</strong> — Dati e domande originali di esempio. Nessun diario, promemoria, account o contenuto personale sarà letto o modificato.</div>
+<div class="eyebrow">Anna's Diary · percorso privato</div><h1>Dodici settimane<br>che contano</h1><p class="intro muted">Un piccolo percorso per dare spazio ai pensieri e tornare su ciò che conta, senza dover completare tutto.</p><span class="label">CONCEPT · NON ACQUISTABILE · SOLO PRIVATO</span>
+<nav class="tabs" aria-label="Fasi del percorso">
+<button class="tab current" data-step="discover">1 · Scopri</button>
+<button class="tab" data-step="weeks">2 · Le settimane</button>
+<button class="tab" data-step="setup">3 · Personalizza</button>
+<button class="tab" data-step="confirm">4 · Riepilogo</button></nav>
+<main class="paper">
+<section id="discover"><h2>Un capitolo alla volta</h2>
+<p>Ogni settimana avrà una domanda iniziale, uno spazio libero e una riflessione finale. Deciderai tu quando scrivere.</p>
+<div class="card"><span class="small">Settimana 1</span><h3>Da dove voglio partire?</h3><p>Quale piccolo cambiamento mi farebbe piacere provare?</p></div>
+<div class="card"><span class="small">Settimana 12</span><h3>Quello che porto con me</h3><p>Cosa desidero ricordare di queste settimane?</p></div>
+<p class="privacy">Il percorso sarà privato. Nessuna condivisione su Noi ♡, nessun accesso alla Cassaforte, nessun punteggio o promemoria automatico.</p>
+<div class="actions"><button class="cta" type="button" data-step="weeks">Esplora le 12 tappe</button></div></section>
+<section id="weeks" hidden><h2>Le tue dodici tappe</h2><p class="muted">Tocca una settimana per vedere una domanda di esempio.</p>
+<div class="weeks" aria-label="Seleziona una settimana">
+<button type="button" class="week current" data-week="0">Settimana 1</button><button type="button" class="week" data-week="1">Settimana 2</button><button type="button" class="week" data-week="2">Settimana 3</button><button type="button" class="week" data-week="3">Settimana 4</button>
+<button type="button" class="week" data-week="4">Settimana 5</button><button type="button" class="week" data-week="5">Settimana 6</button><button type="button" class="week" data-week="6">Settimana 7</button><button type="button" class="week" data-week="7">Settimana 8</button>
+<button type="button" class="week" data-week="8">Settimana 9</button><button type="button" class="week" data-week="9">Settimana 10</button><button type="button" class="week" data-week="10">Settimana 11</button><button type="button" class="week" data-week="11">Settimana 12</button>
+</div>
+<div class="card" aria-live="polite"><span class="small" id="week-caption">CAPITOLO 01</span><h3 id="week-title">Da dove voglio partire?</h3><p id="week-prompt">Quale piccolo cambiamento mi farebbe piacere provare?</p></div>
+<p class="small">Una settimana saltata resta disponibile: nessuna penalità, nessuno streak.</p>
+<div class="actions"><button class="quiet" data-step="discover" type="button">Indietro</button><button class="cta" data-step="setup" type="button">Personalizza</button></div></section>
+<section id="setup" hidden><h2>Il percorso è tuo</h2>
+<label for="journey-title">Titolo personale</label><input id="journey-title" class="field" maxlength="90" value="Le mie dodici settimane">
+<label for="start-date">Data d'inizio (sceglila tu)</label><input id="start-date" class="field" type="date">
+<label for="intention">Una piccola intenzione, facoltativa</label><textarea id="intention" class="field" maxlength="300" rows="3" placeholder="Vorrei ritagliarmi un momento per scrivere..."></textarea>
+<label class="check"><input id="review" type="checkbox" checked> Includi una riflessione a fine settimana</label>
+<p class="small">In una versione reale, ogni nuovo blocco privato sarebbe creato solo quando scegli di scrivere, non tutte le 12 settimane automaticamente.</p>
+<div class="actions"><button class="quiet" data-step="weeks" type="button">Indietro</button><button class="cta" data-step="confirm" type="button">Rivedi scelte</button></div></section>
+<section id="confirm" hidden><h2>Prima di iniziare</h2><div class="card"><h3 id="final-title">Le mie dodici settimane</h3>
+<p id="final-date"></p><p id="final-review"></p><p class="small" id="final-intention"></p></div>
+<div class="note">Proposta futura: aggiungere, su tua scelta, un normale blocco di diario privato con la prima domanda; il resto resta una sequenza editoriale da esplorare. Annullare non scrive nulla.</div>
+<p class="privacy">Nessuna nuova tabella, condivisione, notifica, acquisto o modifica a Vault. I testi personali rimangono tuoi anche se non userai più il modello.</p>
+<label class="check"><input id="approve" type="checkbox"> Ho letto il riepilogo simulato</label>
+<div class="actions"><button class="quiet" type="button" data-step="setup">Indietro</button><button class="cta" type="button" id="simulate" disabled>Simula inizio</button></div><p class="status" id="status" role="status"></p></section>
+</main><footer>DS6 rose / tipografia editoriale · Anteprima HTML in italiano · Le cinque lingue dell'app dovranno essere verificate nel runtime Flutter · Non è un diario salvato.</footer>
+</div><script>
+const titles=['Da dove voglio partire?','Una piccola abitudine','Cosa mi dà energia','Le persone importanti','Un momento da custodire','Un luogo che vorrei vivere','Fare spazio','La gratitudine possibile','Un desiderio concreto','Cosa ho imparato','Guardarmi con gentilezza','Quello che porto con me'];
+const prompts=['Quale piccolo cambiamento mi farebbe piacere provare?','Quale gesto semplice vorrei ripetere?','Cosa mi ha dato un po’ di energia?','A chi vorrei dedicare un pensiero?','Quale dettaglio recente voglio ricordare?','Dove vorrei trascorrere un momento speciale?','A cosa posso dare meno importanza?','Che cosa è andato bene, anche solo per un istante?','Quale desiderio posso descrivere con parole mie?','Che cosa ho capito di me stessa in questi giorni?','Come posso accogliere un momento difficile?','Cosa desidero ricordare di queste settimane?'];
+const nav=[...document.querySelectorAll('nav [data-step]')];
+function display(id){document.querySelectorAll('main section').forEach(x=>x.hidden=x.id!==id);nav.forEach(x=>x.classList.toggle('current',x.dataset.step===id));if(id==='confirm')summary();document.getElementById('status').textContent='';}
+function summary(){document.getElementById('final-title').textContent=document.getElementById('journey-title').value.trim()||'Il mio percorso';const date=document.getElementById('start-date').value;document.getElementById('final-date').textContent=date?'Partenza scelta: '+date:'Data da scegliere prima di creare davvero';document.getElementById('final-review').textContent=document.getElementById('review').checked?'Riflessione settimanale inclusa':'Riflessione settimanale non inclusa';document.getElementById('final-intention').textContent=document.getElementById('intention').value.trim()||'Nessuna intenzione impostata.';}
+document.querySelectorAll('[data-step]').forEach(x=>x.addEventListener('click',()=>display(x.dataset.step)));
+document.querySelectorAll('[data-week]').forEach(x=>x.addEventListener('click',()=>{const i=Number(x.dataset.week);document.querySelectorAll('[data-week]').forEach(b=>b.classList.toggle('current',b===x));document.getElementById('week-caption').textContent='CAPITOLO '+String(i+1).padStart(2,'0');document.getElementById('week-title').textContent=titles[i];document.getElementById('week-prompt').textContent=prompts[i];}));
+document.getElementById('approve').addEventListener('change',e=>document.getElementById('simulate').disabled=!e.target.checked);
+document.getElementById('simulate').addEventListener('click',()=>document.getElementById('status').textContent='Simulazione completata: nessun DiaryBlock o promemoria salvato.');
+</script></body></html>
