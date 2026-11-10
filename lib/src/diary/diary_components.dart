@@ -2250,7 +2250,9 @@ class _DiaryMemoryCardState extends State<DiaryMemoryCard> {
                   ? AnnaStrings.of(context).v100Sketch
                   : AnnaStrings.of(context).d3SketchPages(block.pages.length)),
           subtitle: AnnaStrings.of(context).d3SketchTimed(time),
-          preview: DiarySketchPagePreview(page: page),
+          preview: DiarySketchPagePreview(
+            page: page, freeformFit: block.isPersonalVisionBoard,
+          ),
           onOpen: () => _openSketch(block),
           onEdit: () => _openSketch(block),
           onPeople: () => _editPeople(block),

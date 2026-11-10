@@ -483,6 +483,40 @@ class VisionBoardHistoryEntry {
 }
 
 abstract final class VisionBoardUiCopy {
+  static String addHere(AnnaStrings s) => s._pick(
+    en: 'Add to board', it: 'Aggiungi alla tela',
+    es: 'Añadir al lienzo', fr: 'Ajouter à la toile',
+    pt: 'Adicionar à tela',
+  );
+  static String photo(AnnaStrings s) => s._pick(
+    en: 'Photo', it: 'Foto', es: 'Foto',
+    fr: 'Photo', pt: 'Fotografia',
+  );
+  static String text(AnnaStrings s) => s._pick(
+    en: 'Text', it: 'Testo', es: 'Texto',
+    fr: 'Texte', pt: 'Texto',
+  );
+  static String arrow(AnnaStrings s) => s._pick(
+    en: 'Arrow', it: 'Freccia', es: 'Flecha',
+    fr: 'Flèche', pt: 'Seta',
+  );
+  static String draw(AnnaStrings s) => s._pick(
+    en: 'Draw', it: 'Disegna', es: 'Dibujar',
+    fr: 'Dessiner', pt: 'Desenhar',
+  );
+  static String zoomOut(AnnaStrings s) => s._pick(
+    en: 'Zoom out', it: 'Riduci zoom', es: 'Alejar',
+    fr: 'Dézoomer', pt: 'Reduzir zoom',
+  );
+  static String zoomIn(AnnaStrings s) => s._pick(
+    en: 'Zoom in', it: 'Aumenta zoom', es: 'Acercar',
+    fr: 'Zoomer', pt: 'Ampliar zoom',
+  );
+  static String center(AnnaStrings s) => s._pick(
+    en: 'Center canvas', it: 'Centra la tela',
+    es: 'Centrar lienzo', fr: 'Centrer la toile',
+    pt: 'Centrar tela',
+  );
   static String add(AnnaStrings s) => s._pick(
     en: 'Vision Board', it: 'Vision Board', es: 'Vision Board',
     fr: 'Vision Board', pt: 'Vision Board',

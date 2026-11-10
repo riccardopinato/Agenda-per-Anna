@@ -212,7 +212,29 @@ void main() {
     }
   });
 
-  testWidgets('page add, delete, undo and redo restore the full board',
+  testWidgets('legacy Sketchbook still adds independent pages',
+      (tester) async {
+    tester.view.devicePixelRatio = 1;
+    tester.view.physicalSize = const Size(900, 900);
+    addTearDown(() {
+      tester.view.resetDevicePixelRatio();
+      tester.view.resetPhysicalSize();
+    });
+    await tester.pumpWidget(const MaterialApp(
+      locale: Locale('it'),
+      home: DiarySketchbookScreen(
+        initialPages: [DiarySketchPage(id: 'base')],
+      ),
+    ));
+    expect(find.text('1/1'), findsOneWidget);
+    expect(find.byKey(const ValueKey('vision-board-add-content')), findsNothing);
+    await tester.tap(find.byKey(const ValueKey('sketchbook-add-page')));
+    await tester.pumpAndSettle();
+    expect(find.text('2/2'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('Vision Board edits use whole-board undo and redo',
       (tester) async {
     tester.view.devicePixelRatio = 1;
     tester.view.physicalSize = const Size(900, 900);
@@ -227,22 +249,21 @@ void main() {
         visionBoardMode: true,
       ),
     ));
-    expect(find.text('1/1'), findsOneWidget);
-    await tester.tap(find.byIcon(Icons.add_box_outlined));
+    await tester.pump();
+    expect(find.text('1/1'), findsNothing);
+    expect(find.byIcon(Icons.add_box_outlined), findsNothing);
+    await tester.tap(find.byIcon(Icons.text_fields_outlined).first);
     await tester.pumpAndSettle();
-    expect(find.text('2/2'), findsOneWidget);
+    await tester.enterText(find.byType(TextField).last, 'S12 goal');
+    await tester.tap(find.byType(FilledButton).last);
+    await tester.pumpAndSettle();
+    expect(find.text('S12 goal'), findsOneWidget);
     await tester.tap(find.byIcon(Icons.undo));
     await tester.pumpAndSettle();
-    expect(find.text('1/1'), findsOneWidget);
+    expect(find.text('S12 goal'), findsNothing);
     await tester.tap(find.byIcon(Icons.redo));
     await tester.pumpAndSettle();
-    expect(find.text('2/2'), findsOneWidget);
-    await tester.tap(find.byIcon(Icons.delete_outline));
-    await tester.pumpAndSettle();
-    expect(find.text('1/1'), findsOneWidget);
-    await tester.tap(find.byIcon(Icons.undo));
-    await tester.pumpAndSettle();
-    expect(find.text('2/2'), findsOneWidget);
+    expect(find.text('S12 goal'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 

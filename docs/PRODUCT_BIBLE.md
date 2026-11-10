@@ -38,6 +38,40 @@ require separate acceptance. No automatic photo import, private-to-shared
 sync, Vault/Privacy V2 change, third-party assets or signed APK is admitted.
 Source/CI/Pages evidence remains tied to each exact tested SHA.
 
+### 10 November 2026 — S12 product admission: Vision Board freeform canvas
+
+**EXPLICIT NEW USER ADMISSION; supersedes *only* the “infinite canvas”
+exclusion of the original S11-B scope (line 21 above).** After reporting a
+limited manual pass for add photo/save/display/discard, the user requested
+that private Vision Board become a freely movable and zoomable canvas,
+similar in interaction to Notes-Ecosistema: photos, writing, pen strokes,
+arrows and content beyond initial template frames. The user separately
+requested Vision Board as a direct action on the existing global **Crea +**
+control.
+
+- Reuse the **existing** private `DiaryBlockType.sketch`,
+  `DiaryCreativeSubtype.visionBoard`, `DiarySketchPage`, Sketchbook editor,
+  `MediaAssetStore`, account-epoch guard and canonical `saveJournal`.
+  No second visual database, duplicate writer, Cloud Sync or ACL exception.
+- For Vision Board **only**, support a dynamically expanding world scene
+  without clamping element coordinates to the original normalized 0..1
+  bounds. Pan/zoom with the Hand tool, drawing, arrows, text and photos at the
+  user's visible location. Old normalized board elements retain their
+  position; old multipage boards remain readable. A new Vision Board's +
+  action adds content, not a blank page. Templates are editable starting
+  guides, **not fixed media capacity slots**.
+- The global `Crea +` menu can surface the private Vision Board entry, but
+  the option is withheld in shared-only scope and its entire save path must
+  retain the A→B→A guard. No private-to-shared visibility.
+- Reuse Notes-Ecosistema's **dynamic scene growth architectural pattern**
+  as a donor reference, adapted to Anna's existing model and code.
+  Notes media, notes databases, sync tokens and unrelated workflow tools
+  are never copied, imported or federated.
+- **Still excluded:** collaboration, private image auto-import, new premium
+  store, new permissions, complete full-world PDF export, ML/AI, offline PWA
+  certification, Android APK/Play, and Vault/Auth changes. Exact GitHub CI,
+  Pages deploy and two real PWA acceptance remain separate gates.
+
 ## Approved 10-screen visual contract — 31 October 2026
 
 All ten Anna's Diary interactive design decisions were explicitly approved by the user. The complete ledger and non-destructive implementation plan are maintained in [APPROVED_10_MOCKUPS_IMPLEMENTATION_CONTRACT.md](APPROVED_10_MOCKUPS_IMPLEMENTATION_CONTRACT.md). These decisions authorize **bounded implementation**, not APK/public release or changes to existing user records. In particular: Cassaforte privata must remain exactly as installed; +Crea retains its current actions with approved top-to-bottom micro-bounce; Inbox tag creation/rename/filter must be tested on a real Android phone before acceptance; global Search must not surface invisible one-character matches and must offer newest/oldest/A–Z. Existing source/release evidence remains valid only for its exact previously tested SHA.
