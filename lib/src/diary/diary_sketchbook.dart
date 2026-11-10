@@ -2065,9 +2065,9 @@ class _DiarySketchbookScreenState extends State<DiarySketchbookScreen> {
                       ),
                     ),
                     TextButton(
-                      onPressed: () {
-                        _transform.value = Matrix4.identity();
-                      },
+                      onPressed: widget.visionBoardMode
+                          ? _centerVisionViewport
+                          : () => _transform.value = Matrix4.identity(),
                       child: Text(AnnaStrings.of(context).d3SketchReset),
                     ),
                   ],
@@ -2077,7 +2077,9 @@ class _DiarySketchbookScreenState extends State<DiarySketchbookScreen> {
               child: Padding(
                 padding: const EdgeInsets.fromLTRB(12, 4, 12, 12),
                 child: Center(
-                  child: AspectRatio(
+                  child: widget.visionBoardMode
+                      ? _visionWorldViewport()
+                      : AspectRatio(
                     aspectRatio: 3 / 4,
                     child: Material(
                       elevation: 2,
