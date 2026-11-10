@@ -105,6 +105,74 @@ void main() {
     store.dispose();
   });
 
+  test('two guarded Trash mutations on the same journal serialize', () async {
+    final store = await openGuest();
+    final date = DateTime(2026, 11, 10);
+    final presets = visionBoardPresetsFor(const AnnaStrings('en'));
+    final first = VisionBoardFoundation.draft(presets[0], createdAt: date);
+    final second = VisionBoardFoundation.draft(presets[1], createdAt: date);
+    await store.saveJournal(date, DayJournal(blocks: [first, second]));
+    final refs = VisionBoardFoundation.personalBoards(store);
+    final guard = Cap0160TagEditGuard(store);
+    final a = VisionBoardMemories.moveToTrash(
+      store, refs.first, scopeGuard: guard,
+    );
+    final b = VisionBoardMemories.moveToTrash(
+      store, refs.last, scopeGuard: guard,
+    );
+    expect(await a, isTrue);
+    expect(await b, isTrue);
+    expect(store.journal(date).blocks, isEmpty);
+    final trashed = store.trash
+        .where((t) => t.kind == TrashEntityKind.diaryBlock)
+        .map((t) => t.entityId).toSet();
+    expect(trashed, {first.id, second.id});
+    store.dispose();
+  });
+
+  test('two queued Trash deletions and A to B switch preserve both boards',
+      () async {
+    final store = await openGuest();
+    final date = DateTime(2026, 11, 10);
+    final presets = visionBoardPresetsFor(const AnnaStrings('it'));
+    final first = VisionBoardFoundation.draft(presets[2], createdAt: date);
+    final second = VisionBoardFoundation.draft(presets[3], createdAt: date);
+    await store.saveJournal(date, DayJournal(blocks: [first, second]));
+    final refs = VisionBoardFoundation.personalBoards(store);
+    final guard = Cap0160TagEditGuard(store);
+    final deletionA = VisionBoardMemories.moveToTrash(
+      store, refs.first, scopeGuard: guard,
+    );
+    final deletionB = VisionBoardMemories.moveToTrash(
+      store, refs.last, scopeGuard: guard,
+    );
+    final switched = store.activateCloudAccount('synthetic-s11e-b');
+    final a = await deletionA;
+    final b = await deletionB;
+    await switched;
+    expect(store.journal(date).blocks, isEmpty);
+    expect(store.trash, isEmpty);
+    await store.activateCloudAccount(null);
+    final live = store.journal(date).blocks.map((v) => v.id).toList();
+    final trashed = store.trash
+        .where((t) => t.kind == TrashEntityKind.diaryBlock)
+        .map((t) => t.entityId).toList();
+    for (final id in [first.id, second.id]) {
+      expect(live.where((x) => x == id).length +
+          trashed.where((x) => x == id).length, 1,
+        reason: 'Rollback must never drop either original board');
+    }
+    final results = [a, b];
+    final refsByOrder = [refs.first.block.id, refs.last.block.id];
+    for (var i = 0; i < results.length; i++) {
+      expect(trashed.contains(refsByOrder[i]), results[i]);
+    }
+    expect(await VisionBoardMemories.moveToTrash(
+      store, refs.first, scopeGuard: guard,
+    ), isFalse, reason: 'same account after B still has a newer epoch');
+    store.dispose();
+  });
+
   test('account switch and Trash mutation never leave half-deleted board',
       () async {
     final store = await openGuest();
