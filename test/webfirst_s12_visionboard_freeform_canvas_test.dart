@@ -9,7 +9,7 @@ void main() {
 
   test('old S11 normalized coordinates retain their original world position',
       () {
-    final olderPage = DiarySketchPage(
+    const olderPage = DiarySketchPage(
       id: 'legacy',
       strokes: const [
         DiarySketchStroke(
