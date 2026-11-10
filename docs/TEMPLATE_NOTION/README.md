@@ -57,3 +57,7 @@ Il template completo `Trip Planner` ha come proprietario principale **Wonderlog*
 ## Step 7 — Dodici settimane che contano (design-only, 10/11/2026)
 
 [Specifica UX e privacy](UX_STEP7/README_DODICI_SETTIMANE.md) · [prototipo HTML interattivo delle 12 tappe](UX_STEP7/PROTOTIPO_DODICI_SETTIMANE.html). Il manifest centrale `anna_twelve_week_reflection_research.json` resta `research_candidate`. **UX_DRAFT_PENDING_APPROVAL:** nessun nuovo writer, DiaryBlock, reminder, database, RevenueCat/Store o contenuto condiviso. La galleria gratuita e i confini Vault/Noi rimangono invariati.
+
+## Step 8 — Anteprima Flutter nativa del concept (senza installazione)
+
+[Dodici settimane che contano · preview Flutter](UX_STEP8_TWELVE_WEEKS_NATIVE_PREVIEW.md): 12 capitoli interattivi e riepilogo simulato nel selettore esistente, senza DiaryBlock, notifiche, Premium, acquisti o scrittura dati. L'approvazione UX resta provvisoria e il manifest resta `research_candidate`.

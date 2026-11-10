@@ -208,6 +208,18 @@ Future<DiaryTemplatePreset?> showDiaryTemplatePicker(
               ),
             ),
           ),
+          const Divider(),
+          Card(
+            key: const ValueKey('anna-12w-concept-card'),
+            child: ListTile(
+              title: Text('${annaTwelveWeeksConceptTitle(AnnaStrings.of(sheetContext))} · Concept'),
+              subtitle: Text(annaTwelveWeeksConceptCatalogSubtitle(
+                AnnaStrings.of(sheetContext),
+              )),
+              trailing: const Icon(Icons.visibility_outlined),
+              onTap: () => showTwelveWeeksConceptPreview(sheetContext),
+            ),
+          ),
         ],
       ),
     ),
