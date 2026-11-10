@@ -130,7 +130,11 @@ abstract final class VisionBoardMemories {
     required Cap0160TagEditGuard scopeGuard,
   }) async {
     if (!scopeGuard.isCurrent || current(store, board) == null) return false;
-    return store.moveDiaryBlockToTrash(board.date, board.block.id);
+    return store.moveDiaryBlockToTrash(
+      board.date, board.block.id,
+      scopeGuard: scopeGuard,
+      expectedBlock: board.block,
+    );
   }
 }
 
