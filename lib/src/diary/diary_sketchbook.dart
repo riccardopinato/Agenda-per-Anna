@@ -2156,10 +2156,12 @@ class _DiarySketchbookScreenState extends State<DiarySketchbookScreen> {
 
 class DiarySketchPagePreview extends StatelessWidget {
   final DiarySketchPage page;
+  final bool freeformFit;
 
   const DiarySketchPagePreview({
     super.key,
     required this.page,
+    this.freeformFit = false,
   });
 
   @override
@@ -2170,21 +2172,41 @@ class DiarySketchPagePreview extends StatelessWidget {
           constraints.maxWidth,
           constraints.maxHeight,
         );
+        final bounds = freeformFit
+            ? VisionBoardWorld.contentBounds(page)
+            : const Rect.fromLTWH(0, 0, 1, 1);
+        final scale = freeformFit
+            ? min(size.width / (bounds.width * VisionBoardWorld.unit),
+                size.height / (bounds.height * VisionBoardWorld.unitY))
+            : 1.0;
+        final unitX = freeformFit
+            ? VisionBoardWorld.unit * scale : size.width;
+        final unitY = freeformFit
+            ? VisionBoardWorld.unitY * scale : size.height;
+        final origin = Offset(
+          freeformFit ? size.width / 2 - bounds.center.dx * unitX : 0,
+          freeformFit ? size.height / 2 - bounds.center.dy * unitY : 0,
+        );
         return ColoredBox(
           color: Colors.white,
           child: Stack(
             fit: StackFit.expand,
             children: [
               CustomPaint(
-                painter: DiarySketchPainter(page: page),
+                painter: DiarySketchPainter(
+                  page: page,
+                  worldOrigin: freeformFit ? origin : null,
+                  worldUnit: unitX,
+                  worldUnitY: unitY,
+                ),
                 child: const SizedBox.expand(),
               ),
               ...page.imageElements.map(
                 (element) => Positioned(
-                  left: element.x * size.width,
-                  top: element.y * size.height,
-                  width: element.width * size.width,
-                  height: element.height * size.height,
+                  left: origin.dx + element.x * unitX,
+                  top: origin.dy + element.y * unitY,
+                  width: element.width * unitX,
+                  height: element.height * unitY,
                   child: DiaryMediaImage(
                     assetId: element.mediaAssetId,
                     fallbackBase64: element.imageBase64,
@@ -2195,13 +2217,15 @@ class DiarySketchPagePreview extends StatelessWidget {
               ),
               ...page.textElements.map(
                 (element) => Positioned(
-                  left: element.x * size.width,
-                  top: element.y * size.height,
+                  left: origin.dx + element.x * unitX,
+                  top: origin.dy + element.y * unitY,
                   child: Text(
                     element.text,
                     style: TextStyle(
                       color: Color(element.colorValue),
-                      fontSize: element.fontSize,
+                      fontSize: freeformFit
+                          ? (element.fontSize * scale).clamp(6, 26).toDouble()
+                          : element.fontSize,
                       fontWeight: FontWeight.w600,
                     ),
                   ),
