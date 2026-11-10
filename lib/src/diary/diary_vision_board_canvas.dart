@@ -98,6 +98,12 @@ abstract final class VisionBoardWorld {
         ((radius + margin) / growth).ceilToDouble() * growth);
   }
 
+  /// Matrix4's getMaxScaleOnAxis includes Z=1.0 and is not a reliable
+  /// zoom factor for a 2D board below 100%. Use its X/Y 2D basis.
+  static double cameraScale(Matrix4 matrix) =>
+      sqrt(matrix.entry(0, 0) * matrix.entry(0, 0) +
+          matrix.entry(1, 0) * matrix.entry(1, 0));
+
   static Matrix4 centeredCamera(Size viewport, double halfExtent) {
     final scale = min(
       1.0,
