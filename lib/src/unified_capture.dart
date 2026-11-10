@@ -696,7 +696,9 @@ Future<void> showUnifiedCapture(
   switch (action) {
     case _UnifiedCaptureAction.visionBoard:
       if (!store.entryScopeReady ||
-          store.agendaContentFilter == AgendaContentFilter.sharedOnly) return;
+          store.agendaContentFilter == AgendaContentFilter.sharedOnly) {
+        return;
+      }
       final guard = Cap0160TagEditGuard(store);
       if (!guard.isCurrent) return;
       final preset = await showVisionBoardPresetPicker(context);
