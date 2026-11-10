@@ -2247,6 +2247,24 @@ class DiarySketchPainter extends CustomPainter {
         Offset.zero & size,
         Paint()..color = const Color(0xFFFCFBFD),
       );
+      // Keep ruled-paper guides for already-saved Vision Boards, too.
+      // Generate guides only inside the viewport clip to avoid rendering
+      // thousands of offscreen lines in an expanding scene.
+      if (page.paper == DiarySketchPaper.ruled) {
+        final visible = canvas.getDestinationClipBounds();
+        final guide = Paint()
+          ..color = const Color(0xFFD8DFEA).withValues(alpha: .60)
+          ..strokeWidth = 1;
+        const step = 42.0;
+        final left = max(0.0, visible.left);
+        final right = min(size.width, visible.right);
+        final top = max(0.0, visible.top);
+        final bottom = min(size.height, visible.bottom);
+        for (var y = (top / step).floorToDouble() * step;
+             y <= bottom; y += step) {
+          canvas.drawLine(Offset(left, y), Offset(right, y), guide);
+        }
+      }
       // A bounded, soft dot pattern preserves performance even after a
       // large pan/zoom. Content itself is never clipped to this guide.
       if (page.paper == DiarySketchPaper.grid ||
