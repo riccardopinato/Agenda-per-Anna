@@ -1,10 +1,18 @@
 # Anna's Diary — Roadmap
-\n## 10 novembre 2026 — S12 Vision Board: tela espandibile e Crea + (PR in validazione)
 
-- **Feedback utente verificato solo manualmente e parzialmente:** creazione/Foto/Salva/Ricordi/Scarta funzionali nel suo scenario. **Gap:** cornici 3 foto percepite come vincolo, + crea pagina bianca, manca Crea+ globale.
-- **S12** [dossier](WEBFIRST_S12_FREEFORM_VISION_BOARD_DESIGN_20261110.md): camera e world scene espandibile, foto/testi/penna/frecce senza limiti del foglio, aggiunta al centro viewport, menu + contenuti invece di pagine; board legacy restano deserializzabili e Sketchbook tradizionale resta multipagina. Riuso tecnico comparato di Notes-Ecosistema, non nuovo editor o store.
-- **Gate:** required checks e source review sullo stesso head SHA, merge protetto, post-merge Development e Pages sullo stesso SHA. 2-PWA gesture/persistenza/backups `MANUAL_QA_PENDING`, niente APK/Play e offline `DEFERRED_BY_USER`.
+## 10 novembre 2026 — S13 Vision Board: collaudo e stabilizzazione Web-first (PR #301)
 
+- **Base verificata:** S12 [PR #299](https://github.com/riccardopinato/Agenda-per-Anna/pull/299) unita in `main@9a1e000f7322ae412ac4abf4b185ab49031e8776`. [Development post-merge #42838930186](https://github.com/riccardopinato/Agenda-per-Anna/actions/runs/42838930186) e [Pages post-merge #42838930043](https://github.com/riccardopinato/Agenda-per-Anna/actions/runs/42838930043) **PASS** sullo stesso SHA; Pages su *attempt 2* dopo timeout `syncing_files` del primo deployment. Pubblicazione tecnica != refresh/installazione PWA fisica.
+- **S13 [PR #301](https://github.com/riccardopinato/Agenda-per-Anna/pull/301):** [piano, matrice 16 scenari e criteri di evidenza](WEBFIRST_S13_VISION_BOARD_PWA_ACCEPTANCE_20261110.md). Test automatici: 30 foto con media IDs/byte e ZIP import, testo/frecce/coordinate estese, crescita camera ripetuta sotto 1× e toolbar raggiungibile a 320dp; nessun nuovo editor/DB/API o prodotto.
+- **Gate S13:** PR exact-head Development/Flutter, Web build, AppLab e review; merge solo dopo gate verdi; poi Development e Pages sullo SHA effettivo di main. Stato di quei gate da aggiornare **solo** dopo esecuzione.
+- **Acceptance fisica:** PWA A/B, privacy A→B→A, touch, 30 *foto reali*, backup cross-device, accessibilità e performance **MANUAL_QA_PENDING / NOT_MEASURED**. Web-first: APK/Play fuori scope, offline PWA differita.
+
+## 10 novembre 2026 — S12 Vision Board: tela espandibile e Crea + (PR #299 MERGED / Pages PASS)
+
+- **Rilascio verificato:** PR #299 su `main@9a1e000f`, CI e Pages PASS con retry di deploy; dossier [S12](WEBFIRST_S12_FREEFORM_VISION_BOARD_DESIGN_20261110.md). Evidenza non equivale a QA fisica.
+- **Feedback utente pre-S12:** creazione/Foto/Salva/Ricordi/Scarta manualmente funzionali, ma cornici percepite come slot fissi, + che aggiungeva pagina e ingresso Crea+ mancante. Questi limiti motivavano la modifica S12, non descrivono lo stato sorgente attuale.
+- **Sorgente S12:** world scene 3:4 compatibile con legacy, media/testi/penna/frecce oltre il foglio originale, add-content nel board e ingresso Crea + globale; Sketchbook tradizionale multipagina preservato.
+- **Rimanente:** test PWA reali, persistenza/backup su dispositivi, gesti e assistive tech = **NOT_VERIFIED**, affidati a S13. Nessuna build APK richiesta.
 
 ## 10 novembre 2026 — S11-E Vision Board: resilienza account/media e QA PWA
 
