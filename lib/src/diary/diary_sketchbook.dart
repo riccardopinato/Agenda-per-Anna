@@ -407,7 +407,7 @@ class _DiarySketchbookScreenState extends State<DiarySketchbookScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       final camera = _transform.value.clone();
-      final scale = camera.getMaxScaleOnAxis();
+      final scale = VisionBoardWorld.cameraScale(camera);
       camera.storage[12] -= delta * scale;
       camera.storage[13] -= delta * scale;
       _transform.value = camera;
@@ -1632,7 +1632,7 @@ class _DiarySketchbookScreenState extends State<DiarySketchbookScreen> {
     final focal = Offset(
       _visionViewport.width / 2, _visionViewport.height / 2);
     final worldPoint = _transform.toScene(focal);
-    final scale = (_transform.value.getMaxScaleOnAxis() * multiplier)
+    final scale = (VisionBoardWorld.cameraScale(_transform.value) * multiplier)
         .clamp(VisionBoardWorld.minScale, VisionBoardWorld.maxScale)
         .toDouble();
     _transform.value = Matrix4.identity()
