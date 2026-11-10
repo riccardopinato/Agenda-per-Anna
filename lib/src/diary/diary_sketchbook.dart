@@ -421,7 +421,9 @@ class _DiarySketchbookScreenState extends State<DiarySketchbookScreen> {
 
   void _growVisionForViewport() {
     if (!widget.visionBoardMode || _visionViewport.isEmpty ||
-        !_visionCameraCentered) return;
+        !_visionCameraCentered) {
+      return;
+    }
     _expandVisionWorld(VisionBoardWorld.viewportHalfExtent(
       _transform, _visionViewport, _visionHalfExtent,
     ));
