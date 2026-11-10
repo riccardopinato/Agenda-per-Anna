@@ -260,7 +260,13 @@ class _TwelveWeeksConceptPreviewState extends State<TwelveWeeksConceptPreview> {
               ),
           ],
           const SizedBox(height: 16),
-          Wrap(
+        ],
+      )),
+      bottomNavigationBar: SafeArea(
+        top: false,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
+          child: Wrap(
             key: const ValueKey('anna-12w-actions'),
             alignment: WrapAlignment.end,
             spacing: 8,
@@ -290,8 +296,8 @@ class _TwelveWeeksConceptPreviewState extends State<TwelveWeeksConceptPreview> {
                 ),
             ],
           ),
-        ],
-      )),
+        ),
+      ),
     );
   }
 }
