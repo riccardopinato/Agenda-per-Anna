@@ -1121,11 +1121,14 @@ class _DiarySketchbookScreenState extends State<DiarySketchbookScreen> {
 
     _pushHistory();
     if (existing == null) {
+      final anchor = widget.visionBoardMode
+          ? _visionInsertPoint()
+          : const DiarySketchPoint(.12, .12);
       final element = DiarySketchTextElement(
         id: const Uuid().v4(),
         text: value,
-        x: 0.12,
-        y: 0.12,
+        x: anchor.x,
+        y: anchor.y,
         fontSize: textSize,
         colorValue: colorValue,
       );
@@ -1137,6 +1140,7 @@ class _DiarySketchbookScreenState extends State<DiarySketchbookScreen> {
         selectedTextIds.add(element.id);
         tool = DiarySketchTool.select;
       });
+      _growVisionToContent();
     } else {
       final existingId = existing.id;
       final updated = page.textElements
@@ -1182,25 +1186,27 @@ class _DiarySketchbookScreenState extends State<DiarySketchbookScreen> {
         mediaAssetId, (count) => count + 1, ifAbsent: () => 1,
       );
       _pushHistory();
+      final anchor = widget.visionBoardMode
+          ? _visionInsertPoint()
+          : const DiarySketchPoint(.38, .29);
       final element = DiarySketchImageElement(
         id: const Uuid().v4(),
         mediaAssetId: mediaAssetId,
-        x: 0.12,
-        y: 0.12,
+        x: anchor.x - .26,
+        y: anchor.y - .17,
       );
       setState(() {
         final updated = page.copyWith(
           imageElements: [...page.imageElements, element],
         );
-        pages[pageIndex] = widget.visionBoardMode
-            ? VisionBoardCollage.arrange(
-                updated, VisionBoardCollageStyle.template,
-              )
-            : updated;
+        // Freeform boards never auto-snap newly imported photos back into
+        // the original three/four preset frames. Collage is opt-in only.
+        pages[pageIndex] = updated;
         _clearSelection();
         selectedImageIds.add(element.id);
         tool = DiarySketchTool.select;
       });
+      _growVisionToContent();
     } catch (_) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -1249,14 +1255,15 @@ class _DiarySketchbookScreenState extends State<DiarySketchbookScreen> {
       return item.copyWith(
         width: value,
         height: nextHeight,
-        x: item.x.clamp(0.0, (1.0 - value).clamp(0.0, 1.0)),
-        y: item.y.clamp(
-          0.0,
-          (1.0 - nextHeight).clamp(0.0, 1.0),
-        ),
+        x: widget.visionBoardMode
+            ? item.x : item.x.clamp(0.0, (1.0 - value).clamp(0.0, 1.0)),
+        y: widget.visionBoardMode
+            ? item.y : item.y.clamp(
+                0.0, (1.0 - nextHeight).clamp(0.0, 1.0)),
       );
     }).toList();
     setState(() => pages[pageIndex] = page.copyWith(imageElements: images));
+    _growVisionToContent();
   }
 
   void _resizeSelectedText(double value) {
@@ -1467,8 +1474,14 @@ class _DiarySketchbookScreenState extends State<DiarySketchbookScreen> {
 
   Widget _canvas(Size size) {
     final currentPage = page;
+    final worldOrigin = widget.visionBoardMode
+        ? Offset(VisionBoardWorld.origin(_visionHalfExtent),
+            VisionBoardWorld.origin(_visionHalfExtent))
+        : Offset.zero;
+    final unitX = widget.visionBoardMode ? VisionBoardWorld.unit : size.width;
+    final unitY = widget.visionBoardMode ? VisionBoardWorld.unit : size.height;
     return RepaintBoundary(
-      key: _pageBoundaryKey,
+      key: widget.visionBoardMode ? null : _pageBoundaryKey,
       child: Stack(
         fit: StackFit.expand,
         children: [
@@ -1479,6 +1492,7 @@ class _DiarySketchbookScreenState extends State<DiarySketchbookScreen> {
               selectedStrokeIndices: Set<int>.of(selectedStrokeIndices),
               lassoPoints: lassoPoints,
               gestureRevision: _gestureRevision,
+              worldOrigin: widget.visionBoardMode ? worldOrigin : null,
             ),
             child: const SizedBox.expand(),
           ),
@@ -1486,10 +1500,10 @@ class _DiarySketchbookScreenState extends State<DiarySketchbookScreen> {
             (element) {
               final selected = selectedImageIds.contains(element.id);
               return Positioned(
-                left: element.x * size.width,
-                top: element.y * size.height,
-                width: element.width * size.width,
-                height: element.height * size.height,
+                left: worldOrigin.dx + element.x * unitX,
+                top: worldOrigin.dy + element.y * unitY,
+                width: element.width * unitX,
+                height: element.height * unitY,
                 child: DecoratedBox(
                   decoration: BoxDecoration(
                     border: selected
@@ -1518,8 +1532,8 @@ class _DiarySketchbookScreenState extends State<DiarySketchbookScreen> {
             (element) {
               final selected = selectedTextIds.contains(element.id);
               return Positioned(
-                left: element.x * size.width,
-                top: element.y * size.height,
+                left: worldOrigin.dx + element.x * unitX,
+                top: worldOrigin.dy + element.y * unitY,
                 child: DecoratedBox(
                   decoration: BoxDecoration(
                     border: selected
