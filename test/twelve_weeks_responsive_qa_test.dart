@@ -11,13 +11,13 @@ void main() {
         addTearDown(() => tester.binding.setSurfaceSize(null));
         await tester.pumpWidget(MaterialApp(
           locale: const Locale('it'),
-          home: MediaQuery(
-            data: MediaQueryData(
-              size: Size(width, 760),
+          builder: (context, child) => MediaQuery(
+            data: MediaQuery.of(context).copyWith(
               textScaler: TextScaler.linear(scale),
             ),
-            child: const TwelveWeeksConceptPreview(),
+            child: child!,
           ),
+          home: const TwelveWeeksConceptPreview(),
         ));
         expect(find.byKey(const ValueKey('anna-12w-native-preview')),
             findsOneWidget);
