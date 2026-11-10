@@ -29,14 +29,23 @@ void main() {
           await tester.pumpAndSettle();
           expect(tester.takeException(), isNull);
         }
-        expect(find.byKey(const ValueKey('anna-12w-simulate')),
-            findsOneWidget);
+        final simulate = find.byKey(const ValueKey('anna-12w-simulate'));
+        await tester.scrollUntilVisible(
+          simulate,
+          150,
+          scrollable: find.byType(Scrollable).last,
+        );
+        await tester.pumpAndSettle();
+        expect(simulate, findsOneWidget);
         final agree = find.byType(CheckboxListTile).last;
-        await tester.ensureVisible(agree);
+        await tester.scrollUntilVisible(
+          agree,
+          -100,
+          scrollable: find.byType(Scrollable).last,
+        );
         await tester.pumpAndSettle();
         await tester.tap(agree);
         await tester.pumpAndSettle();
-        final simulate = find.byKey(const ValueKey('anna-12w-simulate'));
         await tester.ensureVisible(simulate);
         await tester.pumpAndSettle();
         await tester.tap(simulate);
