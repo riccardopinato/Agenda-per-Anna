@@ -26,7 +26,9 @@ void main() {
     final a = VisionBoardWorld.toScene(
       olderPage.strokes.first.points.first, half);
     expect(a.dx, closeTo(half - 320 + .08 * 640, .00001));
-    expect(a.dy, closeTo(half - 320 + .10 * 640, .00001));
+    expect(a.dy, closeTo(
+      half - VisionBoardWorld.unitY / 2 +
+          .10 * VisionBoardWorld.unitY, .00001));
     final back = VisionBoardWorld.fromScene(a, half);
     expect(back.x, closeTo(.08, .00001));
     expect(back.y, closeTo(.10, .00001));
@@ -116,6 +118,43 @@ void main() {
     );
     expect(world.x, closeTo(modelBeforeGrowth.x, .000001));
     expect(world.y, closeTo(modelBeforeGrowth.y, .000001));
+  });
+
+  test('legacy square shape stays square with 3:4 coordinate basis', () {
+    const half = VisionBoardWorld.initialHalfExtent;
+    final a = VisionBoardWorld.toScene(
+      const DiarySketchPoint(.08, .10), half);
+    final b = VisionBoardWorld.toScene(
+      const DiarySketchPoint(.48, .40), half);
+    expect(b.dx - a.dx, closeTo(b.dy - a.dy, .000001));
+  });
+
+  test('Ricordi freeform thumbnail fits faraway photo and ink', () {
+    const page = DiarySketchPage(
+      id: 'far-preview',
+      strokes: [
+        DiarySketchStroke(
+          tool: DiarySketchTool.arrow, colorValue: 0xff000000,
+          width: 3,
+          points: [
+            DiarySketchPoint(-12.0, 8.0),
+            DiarySketchPoint(-11.0, 8.8),
+          ],
+        ),
+      ],
+      imageElements: [
+        DiarySketchImageElement(
+          id: 'photo', mediaAssetId: 'synthetic', x: 15, y: -10,
+          width: .6, height: .5,
+        ),
+      ],
+    );
+    final bounds = VisionBoardWorld.contentBounds(page);
+    expect(bounds.left, lessThan(-12));
+    expect(bounds.right, greaterThan(15.6));
+    expect(bounds.top, lessThan(-10));
+    expect(bounds.bottom, greaterThan(8.8));
+    expect(bounds.width * VisionBoardWorld.unit, greaterThan(0));
   });
 
   test('arrow wings point backward, and remain finite', () {
