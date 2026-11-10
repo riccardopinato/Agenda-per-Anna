@@ -303,6 +303,7 @@ class _VisionBoardGalleryScreenState extends State<VisionBoardGalleryScreen> {
                         child: InkWell(
                           onTap: _busy ? null : () => _edit(ref),
                           child: DiarySketchPagePreview(
+                            freeformFit: true,
                             page: ref.block.pages.isEmpty
                                 ? DiarySketchPage(id: ref.block.id)
                                 : ref.block.pages.first,
