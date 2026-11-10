@@ -92,6 +92,14 @@ void main() {
     );
     expect(second?.id, first?.id);
     expect(store.journal(date).blocks, hasLength(1));
+    final otherDay = DateTime(2026, 11, 11);
+    final wrongDayReplay = await TwelveWeeksDraftWriter.saveConfirmed(
+      store, otherDay, plan, userConfirmed: true,
+      requestId: 'request-1234', scopeGuard: guard,
+    );
+    expect(wrongDayReplay, isNull);
+    expect(store.journal(otherDay).blocks, isEmpty);
+    expect(store.journal(date).blocks, hasLength(1));
 
     final userEdit = first!.copyWith(text: 'Testo modificato manualmente');
     await store.saveJournal(
