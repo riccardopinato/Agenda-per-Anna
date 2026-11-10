@@ -53,3 +53,7 @@ Il template completo `Trip Planner` ha come proprietario principale **Wonderlog*
 ## Maxi-step 2 — prototipo UX rituali nativi
 
 [Specifica UX Routines Activities → Rituali gentili](UX_STEP2/README.md) · [anteprima HTML con interazioni simulate](UX_STEP2/PROTOTIPO_RITUALI_GENTILI.html). Demo, NON implementazione Anna / RevenueCat.
+
+## Step 7 — Dodici settimane che contano (design-only, 10/11/2026)
+
+[Specifica UX e privacy](UX_STEP7/README_DODICI_SETTIMANE.md) · [prototipo HTML interattivo delle 12 tappe](UX_STEP7/PROTOTIPO_DODICI_SETTIMANE.html). Il manifest centrale `anna_twelve_week_reflection_research.json` resta `research_candidate`. **UX_DRAFT_PENDING_APPROVAL:** nessun nuovo writer, DiaryBlock, reminder, database, RevenueCat/Store o contenuto condiviso. La galleria gratuita e i confini Vault/Noi rimangono invariati.
