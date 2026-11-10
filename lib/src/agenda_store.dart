@@ -2101,8 +2101,10 @@ class AgendaStore extends ChangeNotifier {
   Map<String, dynamic> _localDataPayload() =>
       _backupDomain.localDataPayload(this);
 
-  Future<String> createBackupJson() =>
-      _backupDomain.createBackupJson(this);
+  Future<String> createBackupJson() async {
+    await _verifyVisionBoardMediaForExport();
+    return _backupDomain.createBackupJson(this);
+  }
 
   // S11-D: ZIP and open export cannot claim complete private boards when
   // any referenced Sketchbook photo is missing. This is a read-only preflight;
