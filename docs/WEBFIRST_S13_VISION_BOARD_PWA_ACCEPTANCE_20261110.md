@@ -22,8 +22,16 @@ and an operator-ready PWA test ledger. No new product feature.
   user's installed PWA refreshed to that commit.
 - **S13 base:** `main@9a1e000f7322ae412ac4abf4b185ab49031e8776`.
   **S13 PR:** [#301](https://github.com/riccardopinato/Agenda-per-Anna/pull/301).
-  S13 CI/merge/Pages results must be filled from the actual resulting runs;
-  do not inherit S12's PASS as evidence for S13.
+  **S13 verified source evidence:** exact PR head
+  `ecf5a3036075b9ffa60d8411bf731bf29fdf0ecc`: [Development #42853041224](https://github.com/riccardopinato/Agenda-per-Anna/actions/runs/42853041224)
+  and [AppLab Source Gate #42853041530](https://github.com/riccardopinato/Agenda-per-Anna/actions/runs/42853041530)
+  **PASS**. Squash merge `main@19a3fb41fbe4560fbd82f942de65edb5e5172336`;
+  [Development #42854135539](https://github.com/riccardopinato/Agenda-per-Anna/actions/runs/42854135539)
+  **PASS** on exact merge SHA. S13 changes only `test/**` and `docs/**`;
+  Pages Web deploy intentionally **NOT TRIGGERED**; production code is still
+  the S12 release, not a physical PWA install certification.
+  **Operator issue:** [#297](https://github.com/riccardopinato/Agenda-per-Anna/issues/297)
+  remains OPEN, `MANUAL_QA_PENDING`.
 
 ## Synthetic S13 checks (separate from physical acceptance)
 
@@ -103,7 +111,9 @@ only to the **traditional Sketchbook**, not to the new board.
 
 Source QA is eligible for merge only with identical PR-head required checks
 green, no unresolved actionable review or branch conflict, and a safe merge.
-After merge, collect exact-main Development and Pages deploy evidence. Mark
-this stage `SOURCE_QA_COMPLETE` only for verified source workflows.
-`TWO_PWA_PHYSICAL_ACCEPTANCE` remains `MANUAL_QA_PENDING` until operators
-supply actual device results.
+Source workflows were verified on the exact PR and merge SHAs above:
+`SOURCE_QA_COMPLETE / CI_VERIFIED / S12_PAGES_VERIFIED`. Since this S13 PR
+contains only test and documentation files, GitHub Pages did not redeploy;
+there is no new S13 runtime release to certify. `TWO_PWA_PHYSICAL_ACCEPTANCE`
+remains `MANUAL_QA_PENDING` (tracked in issue #297) until operators supply
+actual device results.
