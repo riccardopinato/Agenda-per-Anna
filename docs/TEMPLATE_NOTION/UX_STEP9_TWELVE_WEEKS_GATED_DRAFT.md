@@ -15,7 +15,7 @@
 
 ### QA
 
-Added tests: `test/twelve_weeks_guarded_draft_test.dart` (validation, consent, shared scope, replay/conflict, preservation/reload) and `test/twelve_weeks_responsive_qa_test.dart` (320 / 360 / 600 dp, 1x / 2x). Preview uses `Wrap` for navigation and announces simulation completion through a semantics live region.
+Added tests: `test/twelve_weeks_guarded_draft_test.dart` (validation, consent, shared scope, replay/conflict, preservation/reload) and `test/twelve_weeks_responsive_qa_test.dart` (320 / 360 / 600 dp, 1x / 2x: wizard navigation only; long-body final confirmation at 2x remains manual/physical QA). Preview uses `Wrap` for navigation and announces simulation completion through a semantics live region.
 
 Manual **NOT VERIFIED** matrix: five locales; 320dp 2x reader and keyboard; original private entry untouched; cancellation and return; A→B→A; concurrency/fault-injected persistence; export/import/restore; Vault and Noi boundary; optional civil-date and DST; physical Android + browser PWA. Record exact SHA, locale/OS, redacted screenshots and result per case. CI PASS ≠ physical QA PASS.
 
