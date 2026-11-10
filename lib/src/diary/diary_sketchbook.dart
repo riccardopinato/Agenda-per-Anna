@@ -264,12 +264,14 @@ class DiarySketchbookScreen extends StatefulWidget {
   final List<DiarySketchPage> initialPages;
   final bool visionBoardMode;
   final Future<bool> Function(List<DiarySketchPage> pages)? onSavePages;
+  final VoidCallback? onDraftMediaReleased;
 
   const DiarySketchbookScreen({
     super.key,
     required this.initialPages,
     this.visionBoardMode = false,
     this.onSavePages,
+    this.onDraftMediaReleased,
   });
 
   @override
@@ -305,6 +307,7 @@ class _DiarySketchbookScreenState extends State<DiarySketchbookScreen> {
   // retains its lightweight page-scoped history and prior behavior.
   final List<VisionBoardHistoryEntry> _visionUndo = [];
   final List<VisionBoardHistoryEntry> _visionRedo = [];
+  final Map<String, int> _retainedDraftMedia = <String, int>{};
   bool _selectionDidMove = false;
   bool _resizeActive = false;
   bool _savingSketch = false;
@@ -444,6 +447,16 @@ class _DiarySketchbookScreenState extends State<DiarySketchbookScreen> {
 
   @override
   void dispose() {
+    // Release *only* this editor's in-flight image leases. References
+    // committed to journals/Trash remain protected by canonical media GC.
+    final hadDraftImports = _retainedDraftMedia.isNotEmpty;
+    for (final entry in _retainedDraftMedia.entries) {
+      for (var i = 0; i < entry.value; i++) {
+        MediaAssetStore.instance.releaseDraftMedia(entry.key);
+      }
+    }
+    _retainedDraftMedia.clear();
+    if (hadDraftImports) widget.onDraftMediaReleased?.call();
     _transform.dispose();
     super.dispose();
   }
@@ -1083,8 +1096,16 @@ class _DiarySketchbookScreenState extends State<DiarySketchbookScreen> {
         fallbackQuality: 74,
       );
       if (imageBytes == null || !mounted || _savingSketch) return;
-      final mediaAssetId = await MediaAssetStore.instance.put(imageBytes);
-      if (!mounted || _savingSketch) return;
+      final mediaAssetId =
+          await MediaAssetStore.instance.putForDraft(imageBytes);
+      if (!mounted || _savingSketch) {
+        MediaAssetStore.instance.releaseDraftMedia(mediaAssetId);
+        widget.onDraftMediaReleased?.call();
+        return;
+      }
+      _retainedDraftMedia.update(
+        mediaAssetId, (count) => count + 1, ifAbsent: () => 1,
+      );
       _pushHistory();
       final element = DiarySketchImageElement(
         id: const Uuid().v4(),
