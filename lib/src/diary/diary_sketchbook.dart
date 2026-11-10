@@ -1621,6 +1621,153 @@ class _DiarySketchbookScreenState extends State<DiarySketchbookScreen> {
     );
   }
 
+
+  void _zoomVision(double multiplier) {
+    if (_visionViewport.isEmpty) return;
+    final focal = Offset(
+      _visionViewport.width / 2, _visionViewport.height / 2);
+    final worldPoint = _transform.toScene(focal);
+    final scale = (_transform.value.getMaxScaleOnAxis() * multiplier)
+        .clamp(VisionBoardWorld.minScale, VisionBoardWorld.maxScale)
+        .toDouble();
+    _transform.value = Matrix4.identity()
+      ..setEntry(0, 0, scale)
+      ..setEntry(1, 1, scale)
+      ..setTranslationRaw(
+        focal.dx - worldPoint.dx * scale,
+        focal.dy - worldPoint.dy * scale, 0);
+    _growVisionForViewport();
+  }
+
+  Future<void> _showVisionInsertMenu() async {
+    if (!widget.visionBoardMode || _savingSketch || !mounted) return;
+    final strings = AnnaStrings.of(context);
+    final action = await showModalBottomSheet<VisionBoardInsertAction>(
+      context: context,
+      showDragHandle: true,
+      builder: (sheet) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(title: Text(VisionBoardUiCopy.addHere(strings))),
+            ListTile(
+              leading: const Icon(Icons.add_photo_alternate_outlined),
+              title: Text(VisionBoardUiCopy.photo(strings)),
+              onTap: () => Navigator.pop(sheet, VisionBoardInsertAction.photo),
+            ),
+            ListTile(
+              leading: const Icon(Icons.text_fields_outlined),
+              title: Text(VisionBoardUiCopy.text(strings)),
+              onTap: () => Navigator.pop(sheet, VisionBoardInsertAction.text),
+            ),
+            ListTile(
+              leading: const Icon(Icons.arrow_forward_outlined),
+              title: Text(VisionBoardUiCopy.arrow(strings)),
+              onTap: () => Navigator.pop(sheet, VisionBoardInsertAction.arrow),
+            ),
+            ListTile(
+              leading: const Icon(Icons.edit_outlined),
+              title: Text(VisionBoardUiCopy.draw(strings)),
+              onTap: () => Navigator.pop(sheet, VisionBoardInsertAction.draw),
+            ),
+          ],
+        ),
+      ),
+    );
+    if (action == null || !mounted || _savingSketch) return;
+    switch (action) {
+      case VisionBoardInsertAction.photo:
+        await _addImage();
+      case VisionBoardInsertAction.text:
+        await _addText();
+      case VisionBoardInsertAction.arrow:
+        setState(() => tool = DiarySketchTool.arrow);
+      case VisionBoardInsertAction.draw:
+        setState(() => tool = DiarySketchTool.pen);
+    }
+  }
+
+  Widget _visionWorldViewport() => LayoutBuilder(
+    builder: (context, constraints) {
+      final viewport = Size(constraints.maxWidth, constraints.maxHeight);
+      _scheduleVisionCenter(viewport);
+      final sceneSide = _visionHalfExtent * 2;
+      final sceneSize = Size(sceneSide, sceneSide);
+      return Material(
+        color: const Color(0xFFFCFBFD),
+        clipBehavior: Clip.hardEdge,
+        borderRadius: BorderRadius.circular(10),
+        child: Stack(
+          children: [
+            Positioned.fill(
+              child: RepaintBoundary(
+                key: _pageBoundaryKey,
+                child: ClipRect(
+                  child: InteractiveViewer(
+                    transformationController: _transform,
+                    constrained: false,
+                    minScale: VisionBoardWorld.minScale,
+                    maxScale: VisionBoardWorld.maxScale,
+                    panEnabled: tool == DiarySketchTool.hand,
+                    scaleEnabled: true,
+                    onInteractionUpdate: (_) => _growVisionForViewport(),
+                    child: SizedBox(
+                      width: sceneSide,
+                      height: sceneSide,
+                      child: GestureDetector(
+                        behavior: HitTestBehavior.opaque,
+                        onTapDown: tool == DiarySketchTool.select
+                            ? (details) => setState(() => _selectAt(
+                                _point(details.localPosition, sceneSize)))
+                            : null,
+                        onPanStart: tool == DiarySketchTool.hand
+                            ? null : (d) => _start(d, sceneSize),
+                        onPanUpdate: tool == DiarySketchTool.hand
+                            ? null : (d) => _update(d, sceneSize),
+                        onPanEnd: tool == DiarySketchTool.hand
+                            ? null : _end,
+                        child: _canvas(sceneSize),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+            Positioned(
+              right: 8, bottom: 8,
+              child: Material(
+                color: Theme.of(context).colorScheme.surface.withValues(
+                  alpha: .91),
+                borderRadius: BorderRadius.circular(24),
+                elevation: 2,
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    IconButton(
+                      tooltip: VisionBoardUiCopy.zoomOut(AnnaStrings.of(context)),
+                      onPressed: () => _zoomVision(.72),
+                      icon: const Icon(Icons.remove),
+                    ),
+                    IconButton(
+                      tooltip: VisionBoardUiCopy.center(AnnaStrings.of(context)),
+                      onPressed: _centerVisionViewport,
+                      icon: const Icon(Icons.center_focus_strong_outlined),
+                    ),
+                    IconButton(
+                      tooltip: VisionBoardUiCopy.zoomIn(AnnaStrings.of(context)),
+                      onPressed: () => _zoomVision(1.4),
+                      icon: const Icon(Icons.add),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      );
+    },
+  );
+
   @override
   Widget build(BuildContext context) {
     final undoAvailable = widget.visionBoardMode
