@@ -409,6 +409,25 @@ extension AgendaStoreLifecycle on AgendaStore {
     String blockId, {
     Cap0160TagEditGuard? scopeGuard,
     DiaryBlock? expectedBlock,
+  }) {
+    if (scopeGuard == null) {
+      return _moveDiaryBlockToTrashCore(
+        date, blockId, expectedBlock: expectedBlock,
+      );
+    }
+    return _serializeGuardedDiaryTrash(
+      () => _moveDiaryBlockToTrashCore(
+        date, blockId, scopeGuard: scopeGuard,
+        expectedBlock: expectedBlock,
+      ),
+    );
+  }
+
+  Future<bool> _moveDiaryBlockToTrashCore(
+    DateTime date,
+    String blockId, {
+    Cap0160TagEditGuard? scopeGuard,
+    DiaryBlock? expectedBlock,
   }) async {
     if (scopeGuard != null && !scopeGuard.isCurrent) return false;
     final key = AgendaStore.dateKey(date);
