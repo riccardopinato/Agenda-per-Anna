@@ -889,7 +889,8 @@ class _DiarySketchbookScreenState extends State<DiarySketchbookScreen> {
 
     if (current.tool == DiarySketchTool.line ||
         current.tool == DiarySketchTool.rectangle ||
-        current.tool == DiarySketchTool.ellipse) {
+        current.tool == DiarySketchTool.ellipse ||
+        current.tool == DiarySketchTool.arrow) {
       if (_activeStrokePoints.length == 1) {
         _activeStrokePoints.add(p);
       } else {
@@ -1364,6 +1365,7 @@ class _DiarySketchbookScreenState extends State<DiarySketchbookScreen> {
         DiarySketchTool.line => Icons.horizontal_rule,
         DiarySketchTool.rectangle => Icons.crop_square,
         DiarySketchTool.ellipse => Icons.circle_outlined,
+        DiarySketchTool.arrow => Icons.arrow_forward_outlined,
         DiarySketchTool.select => Icons.open_with_outlined,
         DiarySketchTool.lasso => Icons.gesture_outlined,
         DiarySketchTool.hand => Icons.pan_tool_alt_outlined,
@@ -1376,6 +1378,7 @@ class _DiarySketchbookScreenState extends State<DiarySketchbookScreen> {
         DiarySketchTool.line => strings.d3('line'),
         DiarySketchTool.rectangle => strings.d3('rectangle'),
         DiarySketchTool.ellipse => strings.d3('ellipse'),
+        DiarySketchTool.arrow => VisionBoardUiCopy.arrow(strings),
         DiarySketchTool.select => strings.d3('select'),
         DiarySketchTool.lasso => strings.d3('lasso'),
         DiarySketchTool.hand => strings.d3('zoom'),
@@ -1966,6 +1969,8 @@ class DiarySketchPainter extends CustomPainter {
   final Set<int> selectedStrokeIndices;
   final List<DiarySketchPoint> lassoPoints;
   final int gestureRevision;
+  final Offset? worldOrigin;
+  final double worldUnit;
 
   const DiarySketchPainter({
     required this.page,
@@ -1973,12 +1978,53 @@ class DiarySketchPainter extends CustomPainter {
     this.selectedStrokeIndices = const {},
     this.lassoPoints = const [],
     this.gestureRevision = 0,
+    this.worldOrigin,
+    this.worldUnit = VisionBoardWorld.unit,
   });
 
   Offset _offset(DiarySketchPoint point, Size size) =>
-      Offset(point.x * size.width, point.y * size.height);
+      worldOrigin == null
+          ? Offset(point.x * size.width, point.y * size.height)
+          : worldOrigin! + Offset(point.x * worldUnit, point.y * worldUnit);
 
   void _paintPaper(Canvas canvas, Size size) {
+    if (worldOrigin != null) {
+      canvas.drawRect(
+        Offset.zero & size,
+        Paint()..color = const Color(0xFFFCFBFD),
+      );
+      // A bounded, soft dot pattern preserves performance even after a
+      // large pan/zoom. Content itself is never clipped to this guide.
+      if (page.paper == DiarySketchPaper.grid ||
+          page.paper == DiarySketchPaper.dots) {
+        final visible = canvas.getDestinationClipBounds();
+        final ink = Paint()
+          ..color = const Color(0xFFD8D5E1).withValues(alpha: .54)
+          ..strokeWidth = 1;
+        const step = 64.0;
+        final left = (visible.left / step).floor() * step;
+        final top = (visible.top / step).floor() * step;
+        final right = min(visible.right, size.width);
+        final bottom = min(visible.bottom, size.height);
+        for (var x = left; x <= right; x += step) {
+          for (var y = top; y <= bottom; y += step) {
+            if (page.paper == DiarySketchPaper.grid) {
+              if (y == top) {
+                canvas.drawLine(Offset(x, top), Offset(x, bottom), ink);
+              }
+            } else {
+              canvas.drawCircle(Offset(x, y), 1.5, ink);
+            }
+          }
+        }
+        if (page.paper == DiarySketchPaper.grid) {
+          for (var y = top; y <= bottom; y += step) {
+            canvas.drawLine(Offset(left, y), Offset(right, y), ink);
+          }
+        }
+      }
+      return;
+    }
     canvas.drawRect(Offset.zero & size, Paint()..color = Colors.white);
     final guide = Paint()
       ..color = const Color(0xFFD8DFEA).withValues(alpha: 0.55)
@@ -2052,12 +2098,20 @@ class DiarySketchPainter extends CustomPainter {
   ) {
     if (stroke.tool == DiarySketchTool.line ||
         stroke.tool == DiarySketchTool.rectangle ||
-        stroke.tool == DiarySketchTool.ellipse) {
+        stroke.tool == DiarySketchTool.ellipse ||
+        stroke.tool == DiarySketchTool.arrow) {
       if (stroke.points.length < 2) return;
       final first = _offset(stroke.points.first, size);
       final last = _offset(stroke.points.last, size);
-      if (stroke.tool == DiarySketchTool.line) {
+      if (stroke.tool == DiarySketchTool.line ||
+          stroke.tool == DiarySketchTool.arrow) {
         canvas.drawLine(first, last, paint);
+        if (stroke.tool == DiarySketchTool.arrow) {
+          final left = VisionBoardWorld.arrowWing(first, last);
+          final right = VisionBoardWorld.arrowWing(first, last, left: false);
+          canvas.drawLine(last, left, paint);
+          canvas.drawLine(last, right, paint);
+        }
       } else {
         final rect = Rect.fromPoints(first, last);
         if (stroke.tool == DiarySketchTool.rectangle) {
@@ -2092,7 +2146,10 @@ class DiarySketchPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     _paintPaper(canvas, size);
-    canvas.saveLayer(Offset.zero & size, Paint());
+    canvas.saveLayer(
+      worldOrigin == null ? Offset.zero & size : canvas.getDestinationClipBounds(),
+      Paint(),
+    );
     for (var index = 0; index < page.strokes.length; index++) {
       _drawStroke(
         canvas,
@@ -2127,6 +2184,8 @@ class DiarySketchPainter extends CustomPainter {
     return oldDelegate.page != page ||
         oldDelegate.activeStroke != activeStroke ||
         oldDelegate.gestureRevision != gestureRevision ||
+        oldDelegate.worldOrigin != worldOrigin ||
+        oldDelegate.worldUnit != worldUnit ||
         !setEquals(
           oldDelegate.selectedStrokeIndices,
           selectedStrokeIndices,
