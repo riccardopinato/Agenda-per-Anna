@@ -1,5 +1,31 @@
 part of '../../main.dart';
 
+String annaTwelveWeeksConceptTitle(AnnaStrings strings) => strings._pick(
+      it: 'Dodici settimane che contano',
+      en: 'Twelve Meaningful Weeks',
+      es: 'Doce semanas con sentido',
+      fr: 'Douze semaines essentielles',
+      pt: 'Doze semanas com significado',
+    );
+
+String annaTwelveWeeksConceptDefaultTitle(AnnaStrings strings) =>
+    strings._pick(
+      it: 'Le mie dodici settimane',
+      en: 'My twelve weeks',
+      es: 'Mis doce semanas',
+      fr: 'Mes douze semaines',
+      pt: 'As minhas doze semanas',
+    );
+
+String annaTwelveWeeksConceptCatalogSubtitle(AnnaStrings strings) =>
+    strings._pick(
+      it: 'Anteprima privata · non acquistabile · nessun dato salvato',
+      en: 'Private preview · not for sale · no data saved',
+      es: 'Vista privada · no disponible · sin guardar datos',
+      fr: 'Aperçu privé · non disponible · aucune donnée enregistrée',
+      pt: 'Prévia privada · indisponível · nenhum dado guardado',
+    );
+
 /// Read-only Flutter counterpart of the approved UX prototype. No DiaryBlock,
 /// reminder, sync, entitlement, Store, or billing call is made on any path.
 Future<void> showTwelveWeeksConceptPreview(BuildContext context) =>
@@ -92,7 +118,17 @@ class _TwelveWeeksConceptPreviewState extends State<TwelveWeeksConceptPreview> {
   bool confirmed = false;
   bool simulated = false;
   DateTime? chosenDate;
-  final title = TextEditingController(text: 'Le mie dodici settimane');
+  final title = TextEditingController();
+  bool _titleInitialized = false;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (!_titleInitialized) {
+      title.text = annaTwelveWeeksConceptDefaultTitle(AnnaStrings.of(context));
+      _titleInitialized = true;
+    }
+  }
   final intention = TextEditingController();
 
   @override
@@ -116,9 +152,7 @@ class _TwelveWeeksConceptPreviewState extends State<TwelveWeeksConceptPreview> {
 
   @override
   Widget build(BuildContext context) {
-    final heading = pick(it: 'Dodici settimane che contano',
-      en: 'Twelve Meaningful Weeks', es: 'Doce semanas con sentido',
-      fr: 'Douze semaines essentielles', pt: 'Doze semanas com significado');
+    final heading = annaTwelveWeeksConceptTitle(AnnaStrings.of(context));
     return Scaffold(
       appBar: AppBar(title: Text(heading)),
       body: SafeArea(child: ListView(
