@@ -7,7 +7,11 @@ enum VisionBoardInsertAction { photo, text, arrow, draw }
 /// the same visual locations inside the initial 640-unit board region.
 /// Positions outside [0,1] are legal for Vision Board *only*.
 abstract final class VisionBoardWorld {
+  // Original Sketchbook pages were rendered at aspectRatio 3 / 4.
+  // Keep separate world pixel bases: older 0..1 drawings, photos and
+  // preset rectangles must not be squashed to a square on reopen.
   static const double unit = 640;
+  static const double unitY = unit * 4 / 3;
   static const double initialHalfExtent = 2048;
   static const double growth = 1024;
   static const double margin = 640;
@@ -15,15 +19,16 @@ abstract final class VisionBoardWorld {
   static const double maxScale = 8.0;
 
   static double origin(double halfExtent) => halfExtent - unit / 2;
+  static double originY(double halfExtent) => halfExtent - unitY / 2;
 
   static Offset toScene(DiarySketchPoint point, double halfExtent) =>
       Offset(origin(halfExtent) + point.x * unit,
-          origin(halfExtent) + point.y * unit);
+          originY(halfExtent) + point.y * unitY);
 
   static DiarySketchPoint fromScene(Offset scene, double halfExtent) =>
       DiarySketchPoint(
         (scene.dx - origin(halfExtent)) / unit,
-        (scene.dy - origin(halfExtent)) / unit,
+        (scene.dy - originY(halfExtent)) / unitY,
       );
 
   static double requiredHalfExtent(Iterable<DiarySketchPage> pages) {
@@ -31,7 +36,7 @@ abstract final class VisionBoardWorld {
     void include(double x, double y) {
       if (!x.isFinite || !y.isFinite) return;
       final px = (x - .5) * unit;
-      final py = (y - .5) * unit;
+      final py = (y - .5) * unitY;
       radius = max(radius, max(px.abs(), py.abs()));
     }
     for (final page in pages) {
@@ -43,7 +48,7 @@ abstract final class VisionBoardWorld {
       for (final label in page.textElements) {
         include(label.x, label.y);
         include(label.x + max(.1, label.text.length * label.fontSize / unit),
-            label.y + label.fontSize * 2 / unit);
+            label.y + label.fontSize * 2 / unitY);
       }
       for (final photo in page.imageElements) {
         include(photo.x, photo.y);
@@ -57,7 +62,7 @@ abstract final class VisionBoardWorld {
   static Matrix4 centeredCamera(Size viewport, double halfExtent) {
     final scale = min(
       1.0,
-      min(viewport.width * .84 / unit, viewport.height * .84 / unit),
+      min(viewport.width * .84 / unit, viewport.height * .84 / unitY),
     ).clamp(minScale, 1.0);
     return Matrix4.identity()
       ..setEntry(0, 0, scale)
