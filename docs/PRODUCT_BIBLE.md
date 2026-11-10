@@ -10,6 +10,18 @@ The next visual refinement cycle received 10/10 explicit user approvals after th
 
 This document defines what Anna's Diary is, what it is not, and the product/security invariants that future work must preserve. Implementation details belong in `docs/ARCHITECTURE.md`; execution sequencing belongs in `docs/ROADMAP.md`.
 
+## 10 November 2026 — Twelve-week reflections: source-only product assessment
+
+**ADMITTED FOR BOUNDED SOURCE PREPARATION ONLY; NOT ADMITTED AS AN INSTALLABLE, PAID OR ACTIVE WRITING FEATURE.** The provisionally approved original UX for *Dodici settimane che contano* fits Anna's Diary as an optional, private, gentle journal prompt sequence. It must not turn Anna into an external goal tracker or a second Notion workspace.
+
+- Private by default: future writing uses a single user-owned `DiaryBlockType.note` through the existing `AgendaStore.saveJournal` with `Cap0160TagEditGuard`, not a new collection, second writer or shared-space path. The current native preview performs zero writes.
+- No deadlines, scores, AI, reminders, calendar mutation, auto-generated autobiographical material, Vault access, images or external template assets. The twelve prompts are original and editable only after a separate writer activation.
+- Data safety: require explicit confirmation; request-id idempotency, rejection of stale A→B→A scope, no overwrite of an edited entry, existing-entry preservation, rollback through the established store; backup/export and failure-injection evidence are activation gates.
+- This phase prepares a **non-UI-connected** guarded writer adapter and source QA only. It does not grant product-market admission, `catalog_status` promotion, commercial rights, SKU, purchases, Premium packaging or Store distribution. Manifest stays `research_candidate` / first-party rights pending review.
+- Before connecting a save button, verify distinct value versus the six existing Free diary presets, original rights status, language/accessibility and responsive acceptance, real account-switch + backup/restore, exact-head CI/AppLab, physical and browser QA. No action may bypass these gates.
+
+Source detail: [Step9 QA and guarded draft contract](TEMPLATE_NOTION/UX_STEP9_TWELVE_WEEKS_GATED_DRAFT.md). This paragraph is a product *boundary*, not a release certification.
+
 ## 9 November 2026 — S11 Vision Board private: bounded product admission
 
 **ADMITTED FOR IMPLEMENTATION (S11-B foundation only).** By the user's explicit direction after the read-only S11-A audit, Anna's Diary may offer **private, optional personal Vision Boards** for life aspirations, future experiences, relationships, homes, journeys and personal memories. These are original, user-editable **visual sketch compositions**, not a new notes workspace or goal-management platform.
