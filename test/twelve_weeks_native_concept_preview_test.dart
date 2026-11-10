@@ -18,7 +18,12 @@ void main() {
     await tester.tap(find.text('Apri modelli'));
     await tester.pumpAndSettle();
     final entry = find.byKey(const ValueKey('anna-12w-concept-card'));
-    await tester.ensureVisible(entry);
+    await tester.scrollUntilVisible(
+      entry,
+      160,
+      scrollable: find.byType(Scrollable).last,
+    );
+    await tester.pumpAndSettle();
     await tester.tap(entry);
     await tester.pumpAndSettle();
     expect(find.byKey(const ValueKey('anna-12w-native-preview')), findsOneWidget);
