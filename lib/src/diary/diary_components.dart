@@ -1877,6 +1877,13 @@ class _DiaryMemoryCardState extends State<DiaryMemoryCard> {
         builder: (_) => DiarySketchbookScreen(
           initialPages: draft.pages,
           visionBoardMode: true,
+          onDraftMediaReleased: () {
+            if (guard.isCurrent) {
+              widget.store._scheduleMediaMaintenance(
+                delay: const Duration(seconds: 12),
+              );
+            }
+          },
           onSavePages: (pages) => VisionBoardFoundation.saveDraft(
             widget.store, widget.date, draft.copyWith(pages: pages),
             scopeGuard: guard,
@@ -1904,6 +1911,13 @@ class _DiaryMemoryCardState extends State<DiaryMemoryCard> {
         builder: (_) => DiarySketchbookScreen(
           initialPages: initialPages,
           visionBoardMode: board,
+          onDraftMediaReleased: () {
+            if (guard.isCurrent) {
+              widget.store._scheduleMediaMaintenance(
+                delay: const Duration(seconds: 12),
+              );
+            }
+          },
           onSavePages: board
               ? (updated) => saveExistingPrivateVisionBoard(
                     widget.store, widget.date, existing!, updated,
