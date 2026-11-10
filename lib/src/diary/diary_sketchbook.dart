@@ -1987,7 +1987,6 @@ class _DiarySketchbookScreenState extends State<DiarySketchbookScreen> {
                     ),
                   ],
                   if (!widget.visionBoardMode) ...[
-
                     IconButton(
                       tooltip: AnnaStrings.of(context).d3('duplicatePage'),
                       onPressed: pages.length >= 64 ? null : _duplicatePage,
@@ -1998,6 +1997,7 @@ class _DiarySketchbookScreenState extends State<DiarySketchbookScreen> {
                       onPressed: _deletePage,
                       icon: const Icon(Icons.delete_outline),
                     ),
+                  ],
                       ],
                     ),
                   ),
