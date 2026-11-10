@@ -7,6 +7,7 @@ enum _UnifiedCaptureAction {
   voice,
   photo,
   sketch,
+  visionBoard,
   templates,
   inbox,
   task,
@@ -457,6 +458,12 @@ Future<void> showUnifiedCapture(
      action: _UnifiedCaptureAction.voice),
     (icon: Icons.draw_outlined, title: strings.v100Sketch,
      subtitle: null, action: _UnifiedCaptureAction.sketch),
+    if (store.entryScopeReady &&
+        store.agendaContentFilter != AgendaContentFilter.sharedOnly)
+      (icon: Icons.dashboard_customize_outlined,
+       title: VisionBoardUiCopy.add(strings),
+       subtitle: VisionBoardUiCopy.addHere(strings),
+       action: _UnifiedCaptureAction.visionBoard),
     (icon: Icons.inbox_outlined, title: strings.quickInboxNote,
      subtitle: strings.organizeLater, action: _UnifiedCaptureAction.inbox),
     (icon: Icons.event_outlined, title: strings.appointment,
@@ -574,7 +581,10 @@ Future<void> showUnifiedCapture(
                       },
                     ),
                   ),
-                  // Four most chosen capture actions, sorted locally.
+                  // Keep the top four ranked actions and pin personal
+                  // Vision Board as a fifth visible option when it is not
+                  // already among those four. The other destinations retain
+                  // the existing ranking and remain in "more".
                   for (var i = 0; i < 4; i++)
                     actionTile(
                       icon: rankedActions[i].icon,
@@ -584,6 +594,18 @@ Future<void> showUnifiedCapture(
                       action: rankedActions[i].action,
                       primary: true,
                       order: i,
+                    ),
+                  if (rankedActions.any((entry) =>
+                          entry.action == _UnifiedCaptureAction.visionBoard) &&
+                      !rankedActions.take(4).any((entry) =>
+                          entry.action == _UnifiedCaptureAction.visionBoard))
+                    actionTile(
+                      icon: Icons.dashboard_customize_outlined,
+                      title: VisionBoardUiCopy.add(strings),
+                      subtitle: VisionBoardUiCopy.addHere(strings),
+                      action: _UnifiedCaptureAction.visionBoard,
+                      primary: true,
+                      order: 4,
                     ),
                   Padding(
                     padding: const EdgeInsets.symmetric(
@@ -625,6 +647,8 @@ Future<void> showUnifiedCapture(
                             children: [
                               const Divider(height: 1),
                               for (var i = 4; i < rankedActions.length; i++)
+                                if (rankedActions[i].action !=
+                                    _UnifiedCaptureAction.visionBoard)
                                 actionTile(
                                   icon: rankedActions[i].icon,
                                   title: rankedActions[i].title,
@@ -670,6 +694,40 @@ Future<void> showUnifiedCapture(
       store, action.name, accountAtCaptureOpen));
 
   switch (action) {
+    case _UnifiedCaptureAction.visionBoard:
+      if (!store.entryScopeReady ||
+          store.agendaContentFilter == AgendaContentFilter.sharedOnly) return;
+      final guard = Cap0160TagEditGuard(store);
+      if (!guard.isCurrent) return;
+      final preset = await showVisionBoardPresetPicker(context);
+      if (preset == null || !context.mounted || !guard.isCurrent) return;
+      final draft = VisionBoardFoundation.draft(
+        preset, createdAt: _unifiedCaptureTimestamp(targetDay),
+      );
+      final saved = await Navigator.push<List<DiarySketchPage>>(
+        context,
+        MaterialPageRoute(
+          builder: (_) => DiarySketchbookScreen(
+            initialPages: draft.pages,
+            visionBoardMode: true,
+            onDraftMediaReleased: () {
+              if (guard.isCurrent) {
+                store._scheduleMediaMaintenance(
+                  delay: const Duration(seconds: 12),
+                );
+              }
+            },
+            onSavePages: (pages) => VisionBoardFoundation.saveDraft(
+              store, targetDay, draft.copyWith(pages: pages),
+              scopeGuard: guard,
+            ),
+          ),
+        ),
+      );
+      if (saved == null || !context.mounted || !guard.isCurrent) return;
+      AnnaMotionV108.showSaveSuccess(context);
+      return;
+
     case _UnifiedCaptureAction.sketch:
       final pages = await Navigator.push<List<DiarySketchPage>>(
         context,
