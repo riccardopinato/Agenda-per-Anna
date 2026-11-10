@@ -78,14 +78,19 @@ abstract final class TwelveWeeksDraftWriter {
     try {
       if (!scopeGuard.isCurrent) return null;
       final journal = store.journal(target);
-      for (final existing in journal.blocks) {
-        if (existing.id == id) {
-          // Same request = same record. Conflicting replay must never
-          // overwrite an existing, potentially user-edited diary block.
-          return existing.text == body && scopeGuard.isCurrent
-              ? existing
-              : null;
+      // A receipt belongs to one user and one civil date. Search the entire
+      // currently loaded profile, not just the requested day: replaying the
+      // same request on another day must never create a duplicate block ID.
+      final targetKey = dateKey(target);
+      for (final entry in store.journals.entries) {
+        for (final existing in entry.value.blocks) {
+          if (existing.id != id) continue;
+          if (!scopeGuard.isCurrent || entry.key != targetKey) return null;
+          // Same date + same original request = existing record. Edited
+          // content or a date mismatch must never be overwritten.
+          return existing.text == body ? existing : null;
         }
+        if (!scopeGuard.isCurrent) return null;
       }
       if (!scopeGuard.isCurrent) return null;
       final block = DiaryBlock(
