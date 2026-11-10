@@ -208,6 +208,16 @@ Future<DiaryTemplatePreset?> showDiaryTemplatePicker(
               ),
             ),
           ),
+          const Divider(),
+          Card(
+            key: const ValueKey('anna-12w-concept-card'),
+            child: ListTile(
+              title: const Text('Dodici settimane che contano · Concept'),
+              subtitle: const Text('Anteprima privata · non acquistabile · nessun dato salvato'),
+              trailing: const Icon(Icons.visibility_outlined),
+              onTap: () => showTwelveWeeksConceptPreview(sheetContext),
+            ),
+          ),
         ],
       ),
     ),
