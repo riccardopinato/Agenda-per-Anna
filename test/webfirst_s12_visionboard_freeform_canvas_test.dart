@@ -36,7 +36,7 @@ void main() {
 
   test('freeform coordinates may exceed old page bounds and survive JSON',
       () {
-    final page = DiarySketchPage(
+    const page = DiarySketchPage(
       id: 'freeform',
       strokes: const [
         DiarySketchStroke(
