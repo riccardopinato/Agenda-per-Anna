@@ -130,7 +130,11 @@ abstract final class VisionBoardMemories {
     required Cap0160TagEditGuard scopeGuard,
   }) async {
     if (!scopeGuard.isCurrent || current(store, board) == null) return false;
-    return store.moveDiaryBlockToTrash(board.date, board.block.id);
+    return store.moveDiaryBlockToTrash(
+      board.date, board.block.id,
+      scopeGuard: scopeGuard,
+      expectedBlock: board.block,
+    );
   }
 }
 
@@ -165,6 +169,13 @@ class _VisionBoardGalleryScreenState extends State<VisionBoardGalleryScreen> {
         builder: (_) => DiarySketchbookScreen(
           initialPages: ref.block.pages,
           visionBoardMode: true,
+          onDraftMediaReleased: () {
+            if (guard.isCurrent) {
+              widget.store._scheduleMediaMaintenance(
+                delay: const Duration(seconds: 12),
+              );
+            }
+          },
           onSavePages: (pages) => saveExistingPrivateVisionBoard(
             widget.store, ref.date, ref.block, pages, scopeGuard: guard,
           ),

@@ -404,7 +404,32 @@ extension AgendaStoreLifecycle on AgendaStore {
     return true;
   }
 
-  Future<bool> moveDiaryBlockToTrash(DateTime date, String blockId) async {
+  Future<bool> moveDiaryBlockToTrash(
+    DateTime date,
+    String blockId, {
+    Cap0160TagEditGuard? scopeGuard,
+    DiaryBlock? expectedBlock,
+  }) {
+    if (scopeGuard == null) {
+      return _moveDiaryBlockToTrashCore(
+        date, blockId, expectedBlock: expectedBlock,
+      );
+    }
+    return _serializeGuardedDiaryTrash(
+      () => _moveDiaryBlockToTrashCore(
+        date, blockId, scopeGuard: scopeGuard,
+        expectedBlock: expectedBlock,
+      ),
+    );
+  }
+
+  Future<bool> _moveDiaryBlockToTrashCore(
+    DateTime date,
+    String blockId, {
+    Cap0160TagEditGuard? scopeGuard,
+    DiaryBlock? expectedBlock,
+  }) async {
+    if (scopeGuard != null && !scopeGuard.isCurrent) return false;
     final key = AgendaStore.dateKey(date);
     final current = journals[key];
     if (current == null) return false;
@@ -412,6 +437,15 @@ extension AgendaStoreLifecycle on AgendaStore {
     if (index < 0) return false;
 
     final block = current.blocks[index];
+    // Reject a stale gallery card even if a recreated block has the same ID.
+    if (expectedBlock != null && !identical(block, expectedBlock)) {
+      return false;
+    }
+    if (scopeGuard != null &&
+        (_unreadableStorageKeys.contains(AgendaStore._journalsKey) ||
+            _unreadableStorageKeys.contains(_trashKey))) {
+      throw StateError('diary_trash_storage_unavailable');
+    }
     final strings = AnnaStrings.forPreference(preferences.appLanguage);
     final title = block.text.trim().isNotEmpty
         ? block.text.trim()
@@ -433,10 +467,27 @@ extension AgendaStoreLifecycle on AgendaStore {
     journals[key] = updated;
     _putTrashInMemory(entry);
 
-    await _persistEntityMutations([
-      (type: 'journal', id: key, payload: updated.toLocalJson(), deleted: false),
-      (type: 'trash', id: entry.id, payload: entry.toJson(), deleted: false),
-    ]);
+    void rollbackRejectedTrash() {
+      // Never roll back an unrelated newly loaded account projection.
+      if (identical(journals[key], updated)) journals[key] = current;
+      trash.removeWhere((candidate) => identical(candidate, entry));
+      _notifyJournalChanged();
+    }
+
+    try {
+      await _persistEntityMutations([
+        (type: 'journal', id: key, payload: updated.toLocalJson(), deleted: false),
+        (type: 'trash', id: entry.id, payload: entry.toJson(), deleted: false),
+      ], scopeGuard: scopeGuard, onScopeRejected: rollbackRejectedTrash);
+    } on Cap0160ScopeChanged {
+      return false;
+    } catch (_) {
+      rollbackRejectedTrash();
+      rethrow;
+    }
+    // Only publish UI notifications inside the account that initiated
+    // this private edit. Its durable write has already been serialized.
+    if (scopeGuard != null && !scopeGuard.isCurrent) return false;
     signals.bumpLifecycle();
     _scheduleMediaMaintenance(delay: const Duration(seconds: 1));
     _notifyJournalChanged();

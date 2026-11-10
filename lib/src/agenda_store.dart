@@ -56,6 +56,25 @@ class AgendaStore extends ChangeNotifier {
   // One canonical local write queue prevents concurrent sync-index rollbacks
   // from discarding operations committed by another mutation.
   Future<void> _localMutationTail = Future<void>.value();
+  // A scoped Gallery can issue two Trash operations in one event turn.
+  // Serialize the *whole* optimistic projection and its durable write, not
+  // merely the persistence calls, so their rollbacks cannot overlap.
+  Future<void> _guardedDiaryTrashTail = Future<void>.value();
+
+  Future<bool> _serializeGuardedDiaryTrash(
+    Future<bool> Function() transaction,
+  ) async {
+    final previous = _guardedDiaryTrashTail;
+    final completed = Completer<void>();
+    _guardedDiaryTrashTail = completed.future;
+    try {
+      await previous;
+      return await transaction();
+    } finally {
+      completed.complete();
+    }
+  }
+
   final Set<String> _explicitRestoreKeys = <String>{};
   final Map<String, List<AgendaItem>> _dayIndex = {};
   final Map<String, SharedSpace> _sharedAgendaSpaces = {};
@@ -2101,8 +2120,10 @@ class AgendaStore extends ChangeNotifier {
   Map<String, dynamic> _localDataPayload() =>
       _backupDomain.localDataPayload(this);
 
-  Future<String> createBackupJson() =>
-      _backupDomain.createBackupJson(this);
+  Future<String> createBackupJson() async {
+    await _verifyVisionBoardMediaForExport();
+    return _backupDomain.createBackupJson(this);
+  }
 
   // S11-D: ZIP and open export cannot claim complete private boards when
   // any referenced Sketchbook photo is missing. This is a read-only preflight;
