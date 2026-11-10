@@ -28,8 +28,10 @@ void main() {
     }
     expect(tester.widget<FilledButton>(
       find.byKey(const ValueKey('anna-12w-simulate'))).onPressed, isNull);
+    await tester.ensureVisible(find.byType(CheckboxListTile).last);
     await tester.tap(find.byType(CheckboxListTile).last);
     await tester.pumpAndSettle();
+    await tester.ensureVisible(find.byKey(const ValueKey('anna-12w-simulate')));
     await tester.tap(find.byKey(const ValueKey('anna-12w-simulate')));
     await tester.pumpAndSettle();
     expect(find.byKey(const ValueKey('anna-12w-done')), findsOneWidget);
