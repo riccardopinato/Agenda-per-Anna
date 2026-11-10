@@ -81,7 +81,7 @@ abstract final class TwelveWeeksDraftWriter {
       // A receipt belongs to one user and one civil date. Search the entire
       // currently loaded profile, not just the requested day: replaying the
       // same request on another day must never create a duplicate block ID.
-      final targetKey = dateKey(target);
+      final targetKey = AgendaStore.dateKey(target);
       for (final entry in store.journals.entries) {
         for (final existing in entry.value.blocks) {
           if (existing.id != id) continue;
