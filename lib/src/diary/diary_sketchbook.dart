@@ -315,6 +315,9 @@ class _DiarySketchbookScreenState extends State<DiarySketchbookScreen> {
   late String _initialPagesSignature;
   final TransformationController _transform = TransformationController();
   final GlobalKey _pageBoundaryKey = GlobalKey();
+  late double _visionHalfExtent;
+  Size _visionViewport = Size.zero;
+  bool _visionCameraCentered = false;
 
   bool _selectionMoveStarted = false;
 
@@ -345,7 +348,8 @@ class _DiarySketchbookScreenState extends State<DiarySketchbookScreen> {
     if (pages.isEmpty) {
       pages = [DiarySketchPage(id: const Uuid().v4())];
     }
-    if (widget.visionBoardMode) tool = DiarySketchTool.select;
+    if (widget.visionBoardMode) tool = DiarySketchTool.hand;
+    _visionHalfExtent = VisionBoardWorld.requiredHalfExtent(pages);
     _initialPagesSignature = _pagesSignature(pages);
   }
 
@@ -372,9 +376,61 @@ class _DiarySketchbookScreenState extends State<DiarySketchbookScreen> {
       _activeStrokePoints.clear();
       lassoPoints.clear();
       _gestureRevision++;
-      _transform.value = Matrix4.identity();
+      if (!widget.visionBoardMode) {
+        _transform.value = Matrix4.identity();
+      }
+    });
+    _growVisionToContent();
+  }
+
+  void _centerVisionViewport() {
+    if (!widget.visionBoardMode || _visionViewport.isEmpty) return;
+    _transform.value = VisionBoardWorld.centeredCamera(
+      _visionViewport, _visionHalfExtent,
+    );
+  }
+
+  void _scheduleVisionCenter(Size size) {
+    _visionViewport = size;
+    if (_visionCameraCentered || size.isEmpty) return;
+    _visionCameraCentered = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _centerVisionViewport();
     });
   }
+
+  void _expandVisionWorld(double halfExtent) {
+    if (!widget.visionBoardMode || halfExtent <= _visionHalfExtent) return;
+    final delta = halfExtent - _visionHalfExtent;
+    setState(() => _visionHalfExtent = halfExtent);
+    if (!_visionCameraCentered) return;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      final camera = _transform.value.clone();
+      final scale = camera.getMaxScaleOnAxis();
+      camera.storage[12] -= delta * scale;
+      camera.storage[13] -= delta * scale;
+      _transform.value = camera;
+    });
+  }
+
+  void _growVisionToContent() {
+    if (!widget.visionBoardMode) return;
+    _expandVisionWorld(VisionBoardWorld.requiredHalfExtent(pages));
+  }
+
+  void _growVisionForViewport() {
+    if (!widget.visionBoardMode || _visionViewport.isEmpty ||
+        !_visionCameraCentered) return;
+    _expandVisionWorld(VisionBoardWorld.viewportHalfExtent(
+      _transform, _visionViewport, _visionHalfExtent,
+    ));
+  }
+
+  DiarySketchPoint _visionInsertPoint() =>
+      VisionBoardWorld.insertAtCenter(
+        _transform, _visionViewport, _visionHalfExtent,
+      );
 
   Future<void> _saveSketch() async {
     if (_savingSketch || !mounted) return;
@@ -555,6 +611,7 @@ class _DiarySketchbookScreenState extends State<DiarySketchbookScreen> {
   }) {
     if (history) _pushHistory();
     setState(() => pages[pageIndex] = value);
+    _growVisionToContent();
   }
 
   void _undoAction() {
@@ -604,6 +661,9 @@ class _DiarySketchbookScreenState extends State<DiarySketchbookScreen> {
   }
 
   DiarySketchPoint _point(Offset local, Size size) {
+    if (widget.visionBoardMode) {
+      return VisionBoardWorld.fromScene(local, _visionHalfExtent);
+    }
     final canvasWidth = size.width <= 0 ? 1.0 : size.width;
     final canvasHeight = size.height <= 0 ? 1.0 : size.height;
     return DiarySketchPoint(
@@ -643,8 +703,12 @@ class _DiarySketchbookScreenState extends State<DiarySketchbookScreen> {
       return true;
     }
     final last = buffer.last;
-    final dx = (point.x - last.x) * (size.width <= 0 ? 1 : size.width);
-    final dy = (point.y - last.y) * (size.height <= 0 ? 1 : size.height);
+    final sampleWidth = widget.visionBoardMode
+        ? VisionBoardWorld.unit : (size.width <= 0 ? 1 : size.width);
+    final sampleHeight = widget.visionBoardMode
+        ? VisionBoardWorld.unit : (size.height <= 0 ? 1 : size.height);
+    final dx = (point.x - last.x) * sampleWidth;
+    final dy = (point.y - last.y) * sampleHeight;
     if (dx * dx + dy * dy < minPixels * minPixels) return false;
     buffer.add(point);
     return true;
@@ -797,8 +861,12 @@ class _DiarySketchbookScreenState extends State<DiarySketchbookScreen> {
   }
 
   void _moveSelection(Offset delta, Size size) {
-    final dx = delta.dx / (size.width <= 0 ? 1 : size.width);
-    final dy = delta.dy / (size.height <= 0 ? 1 : size.height);
+    final basisWidth = widget.visionBoardMode
+        ? VisionBoardWorld.unit : (size.width <= 0 ? 1 : size.width);
+    final basisHeight = widget.visionBoardMode
+        ? VisionBoardWorld.unit : (size.height <= 0 ? 1 : size.height);
+    final dx = delta.dx / basisWidth;
+    final dy = delta.dy / basisHeight;
     if (dx == 0 && dy == 0) return;
 
     final strokes = _selectionWorkingStrokes;
@@ -817,8 +885,10 @@ class _DiarySketchbookScreenState extends State<DiarySketchbookScreen> {
         points: stroke.points
             .map(
               (point) => DiarySketchPoint(
-                (point.x + dx).clamp(0.0, 1.0),
-                (point.y + dy).clamp(0.0, 1.0),
+                widget.visionBoardMode
+                    ? point.x + dx : (point.x + dx).clamp(0.0, 1.0),
+                widget.visionBoardMode
+                    ? point.y + dy : (point.y + dy).clamp(0.0, 1.0),
               ),
             )
             .toList(growable: false),
@@ -829,8 +899,10 @@ class _DiarySketchbookScreenState extends State<DiarySketchbookScreen> {
       if (index < 0 || index >= texts.length) continue;
       final element = texts[index];
       texts[index] = element.copyWith(
-        x: (element.x + dx).clamp(0.0, 0.96),
-        y: (element.y + dy).clamp(0.0, 0.96),
+        x: widget.visionBoardMode
+            ? element.x + dx : (element.x + dx).clamp(0.0, 0.96),
+        y: widget.visionBoardMode
+            ? element.y + dy : (element.y + dy).clamp(0.0, 0.96),
       );
     }
 
@@ -838,14 +910,14 @@ class _DiarySketchbookScreenState extends State<DiarySketchbookScreen> {
       if (index < 0 || index >= images.length) continue;
       final element = images[index];
       images[index] = element.copyWith(
-        x: (element.x + dx).clamp(
-          0.0,
-          (1.0 - element.width).clamp(0.0, 1.0),
-        ),
-        y: (element.y + dy).clamp(
-          0.0,
-          (1.0 - element.height).clamp(0.0, 1.0),
-        ),
+        x: widget.visionBoardMode
+            ? element.x + dx
+            : (element.x + dx).clamp(
+                0.0, (1.0 - element.width).clamp(0.0, 1.0)),
+        y: widget.visionBoardMode
+            ? element.y + dy
+            : (element.y + dy).clamp(
+                0.0, (1.0 - element.height).clamp(0.0, 1.0)),
       );
     }
 
@@ -858,6 +930,7 @@ class _DiarySketchbookScreenState extends State<DiarySketchbookScreen> {
         imageElements: images,
       );
     });
+    _growVisionToContent();
   }
 
   void _update(DragUpdateDetails details, Size size) {
@@ -995,6 +1068,7 @@ class _DiarySketchbookScreenState extends State<DiarySketchbookScreen> {
       );
       _resetGesturePreview();
     });
+    _growVisionToContent();
   }
 
   Future<void> _addText() async {
