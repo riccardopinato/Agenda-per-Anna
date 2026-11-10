@@ -708,7 +708,7 @@ class _DiarySketchbookScreenState extends State<DiarySketchbookScreen> {
     final sampleWidth = widget.visionBoardMode
         ? VisionBoardWorld.unit : (size.width <= 0 ? 1 : size.width);
     final sampleHeight = widget.visionBoardMode
-        ? VisionBoardWorld.unit : (size.height <= 0 ? 1 : size.height);
+        ? VisionBoardWorld.unitY : (size.height <= 0 ? 1 : size.height);
     final dx = (point.x - last.x) * sampleWidth;
     final dy = (point.y - last.y) * sampleHeight;
     if (dx * dx + dy * dy < minPixels * minPixels) return false;
@@ -866,7 +866,7 @@ class _DiarySketchbookScreenState extends State<DiarySketchbookScreen> {
     final basisWidth = widget.visionBoardMode
         ? VisionBoardWorld.unit : (size.width <= 0 ? 1 : size.width);
     final basisHeight = widget.visionBoardMode
-        ? VisionBoardWorld.unit : (size.height <= 0 ? 1 : size.height);
+        ? VisionBoardWorld.unitY : (size.height <= 0 ? 1 : size.height);
     final dx = delta.dx / basisWidth;
     final dy = delta.dy / basisHeight;
     if (dx == 0 && dy == 0) return;
@@ -1478,10 +1478,10 @@ class _DiarySketchbookScreenState extends State<DiarySketchbookScreen> {
     final currentPage = page;
     final worldOrigin = widget.visionBoardMode
         ? Offset(VisionBoardWorld.origin(_visionHalfExtent),
-            VisionBoardWorld.origin(_visionHalfExtent))
+            VisionBoardWorld.originY(_visionHalfExtent))
         : Offset.zero;
     final unitX = widget.visionBoardMode ? VisionBoardWorld.unit : size.width;
-    final unitY = widget.visionBoardMode ? VisionBoardWorld.unit : size.height;
+    final unitY = widget.visionBoardMode ? VisionBoardWorld.unitY : size.height;
     return RepaintBoundary(
       key: widget.visionBoardMode ? null : _pageBoundaryKey,
       child: Stack(
@@ -1495,6 +1495,7 @@ class _DiarySketchbookScreenState extends State<DiarySketchbookScreen> {
               lassoPoints: lassoPoints,
               gestureRevision: _gestureRevision,
               worldOrigin: widget.visionBoardMode ? worldOrigin : null,
+              worldUnitY: VisionBoardWorld.unitY,
             ),
             child: const SizedBox.expand(),
           ),
@@ -2222,6 +2223,7 @@ class DiarySketchPainter extends CustomPainter {
   final int gestureRevision;
   final Offset? worldOrigin;
   final double worldUnit;
+  final double worldUnitY;
 
   const DiarySketchPainter({
     required this.page,
@@ -2231,12 +2233,13 @@ class DiarySketchPainter extends CustomPainter {
     this.gestureRevision = 0,
     this.worldOrigin,
     this.worldUnit = VisionBoardWorld.unit,
+    this.worldUnitY = VisionBoardWorld.unitY,
   });
 
   Offset _offset(DiarySketchPoint point, Size size) =>
       worldOrigin == null
           ? Offset(point.x * size.width, point.y * size.height)
-          : worldOrigin! + Offset(point.x * worldUnit, point.y * worldUnit);
+          : worldOrigin! + Offset(point.x * worldUnit, point.y * worldUnitY);
 
   void _paintPaper(Canvas canvas, Size size) {
     if (worldOrigin != null) {
@@ -2437,6 +2440,7 @@ class DiarySketchPainter extends CustomPainter {
         oldDelegate.gestureRevision != gestureRevision ||
         oldDelegate.worldOrigin != worldOrigin ||
         oldDelegate.worldUnit != worldUnit ||
+        oldDelegate.worldUnitY != worldUnitY ||
         !setEquals(
           oldDelegate.selectedStrokeIndices,
           selectedStrokeIndices,
