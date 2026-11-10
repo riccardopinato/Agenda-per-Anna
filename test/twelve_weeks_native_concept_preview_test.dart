@@ -5,6 +5,8 @@ import 'package:agenda_per_anna/main.dart';
 void main() {
   testWidgets('Twelve-week concept is native and never selects a diary writer',
       (tester) async {
+    await tester.binding.setSurfaceSize(const Size(900, 1300));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
     DiaryTemplatePreset? selected;
     await tester.pumpWidget(MaterialApp(
       locale: const Locale('it'),
@@ -23,12 +25,14 @@ void main() {
     expect(selected, isNull);
     for (var index = 0; index < 3; index++) {
       await tester.ensureVisible(find.byKey(const ValueKey('anna-12w-next')));
+      await tester.pumpAndSettle();
       await tester.tap(find.byKey(const ValueKey('anna-12w-next')));
       await tester.pumpAndSettle();
     }
     expect(tester.widget<FilledButton>(
       find.byKey(const ValueKey('anna-12w-simulate'))).onPressed, isNull);
     await tester.ensureVisible(find.byType(CheckboxListTile).last);
+    await tester.pumpAndSettle();
     await tester.tap(find.byType(CheckboxListTile).last);
     await tester.pumpAndSettle();
     await tester.ensureVisible(find.byKey(const ValueKey('anna-12w-simulate')));
