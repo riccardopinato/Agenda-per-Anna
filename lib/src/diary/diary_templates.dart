@@ -212,8 +212,10 @@ Future<DiaryTemplatePreset?> showDiaryTemplatePicker(
           Card(
             key: const ValueKey('anna-12w-concept-card'),
             child: ListTile(
-              title: const Text('Dodici settimane che contano · Concept'),
-              subtitle: const Text('Anteprima privata · non acquistabile · nessun dato salvato'),
+              title: Text('${annaTwelveWeeksConceptTitle(AnnaStrings.of(sheetContext))} · Concept'),
+              subtitle: Text(annaTwelveWeeksConceptCatalogSubtitle(
+                AnnaStrings.of(sheetContext),
+              )),
               trailing: const Icon(Icons.visibility_outlined),
               onTap: () => showTwelveWeeksConceptPreview(sheetContext),
             ),
