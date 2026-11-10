@@ -1592,6 +1592,36 @@ class _DiaryMemoriesScreenState extends State<DiaryMemoriesScreen> {
                       ),
                     const SizedBox(height: 10),
                   ],
+                  if (widget.personId == null &&
+                      widget.store.entryScopeReady &&
+                      widget.store.agendaContentFilter !=
+                          AgendaContentFilter.sharedOnly) ...[
+                    _memoryExploreSurface(
+                      child: Semantics(
+                        identifier: 'memories-vision-board-entry',
+                        button: true,
+                        child: ListTile(
+                          key: const ValueKey('memories-vision-board-entry'),
+                          leading: const Icon(Icons.dashboard_customize_outlined),
+                          title: Text(visionBoardGalleryText(strings, 'title'),
+                              style: const TextStyle(
+                                fontWeight: FontWeight.w800)),
+                          subtitle: Text(
+                              visionBoardGalleryText(strings, 'description')),
+                          trailing: const Icon(Icons.chevron_right),
+                          onTap: () => Navigator.push<void>(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => VisionBoardGalleryScreen(
+                                store: widget.store,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                  ],
                   _memoryExploreSurface(
                     child: Column(
                       children: [

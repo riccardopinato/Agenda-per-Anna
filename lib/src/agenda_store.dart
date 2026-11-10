@@ -896,8 +896,9 @@ class AgendaStore extends ChangeNotifier {
   }
 
   Future<List<Map<String, dynamic>>> _portableSketchPages(
-    List<DiarySketchPage> pages,
-  ) async {
+    List<DiarySketchPage> pages, {
+    bool requireCompleteImages = false,
+  }) async {
     final result = <Map<String, dynamic>>[];
 
     for (final page in pages) {
@@ -912,6 +913,21 @@ class AgendaStore extends ChangeNotifier {
               await MediaAssetStore.instance.read(image.mediaAssetId);
           if (bytes != null) {
             imageJson['imageBase64'] = base64Encode(bytes);
+          } else if (requireCompleteImages) {
+            throw StateError('vision_board_missing_media');
+          }
+        }
+        if (requireCompleteImages) {
+          final encoded = imageJson['imageBase64']?.toString() ?? '';
+          if (encoded.isEmpty) {
+            throw StateError('vision_board_missing_media');
+          }
+          try {
+            if (base64Decode(encoded).isEmpty) {
+              throw const FormatException('empty_media');
+            }
+          } catch (_) {
+            throw StateError('vision_board_invalid_media');
           }
         }
         imageJson.remove('mediaAssetId');
@@ -1088,7 +1104,10 @@ class AgendaStore extends ChangeNotifier {
       }
 
       if (block.pages.isNotEmpty) {
-        blockJson['pages'] = await _portableSketchPages(block.pages);
+        blockJson['pages'] = await _portableSketchPages(
+          block.pages,
+          requireCompleteImages: block.isPersonalVisionBoard,
+        );
       }
       blocks.add(blockJson);
     }
@@ -2085,16 +2104,67 @@ class AgendaStore extends ChangeNotifier {
   Future<String> createBackupJson() =>
       _backupDomain.createBackupJson(this);
 
-  Future<Uint8List> createBackupZip() =>
-      _backupDomain.createBackupZip(this);
+  // S11-D: ZIP and open export cannot claim complete private boards when
+  // any referenced Sketchbook photo is missing. This is a read-only preflight;
+  // ordinary sketches and existing media storage are unchanged.
+  Future<void> _verifyVisionBoardMediaForExport() async {
+    Future<void> verify(DiaryBlock block) async {
+      if (!block.isPersonalVisionBoard) return;
+      for (final page in block.pages) {
+        for (final image in page.imageElements) {
+          if (image.mediaAssetId.isNotEmpty) {
+            final bytes = await MediaAssetStore.instance.read(
+              image.mediaAssetId,
+            );
+            if (bytes == null || bytes.isEmpty) {
+              throw StateError('vision_board_missing_media');
+            }
+          } else if (image.imageBase64.isNotEmpty) {
+            try {
+              if (base64Decode(image.imageBase64).isEmpty) {
+                throw const FormatException('empty_image');
+              }
+            } catch (_) {
+              throw StateError('vision_board_invalid_media');
+            }
+          } else {
+            throw StateError('vision_board_missing_media');
+          }
+        }
+      }
+    }
+
+    for (final journal in journals.values) {
+      for (final block in journal.blocks) {
+        await verify(block);
+      }
+    }
+    // The Trash is part of the complete backup; preserve recoverability.
+    for (final entry in trash) {
+      if (entry.kind == TrashEntityKind.diaryBlock) {
+        await verify(DiaryBlock.fromJson(entry.payload));
+      } else if (entry.kind == TrashEntityKind.journal) {
+        for (final block in DayJournal.fromJson(entry.payload).blocks) {
+          await verify(block);
+        }
+      }
+    }
+  }
+
+  Future<Uint8List> createBackupZip() async {
+    await _verifyVisionBoardMediaForExport();
+    return _backupDomain.createBackupZip(this);
+  }
 
   Future<Uint8List> createOpenExportZip({
     AnnaStrings? strings,
-  }) =>
-      _backupDomain.createOpenExportZip(
-        this,
-        strings: strings ?? AnnaStrings.forPreference(preferences.appLanguage),
-      );
+  }) async {
+    await _verifyVisionBoardMediaForExport();
+    return _backupDomain.createOpenExportZip(
+      this,
+      strings: strings ?? AnnaStrings.forPreference(preferences.appLanguage),
+    );
+  }
 
   DecodedZipBackup _decodeAndValidateBackupZip(Uint8List bytes) =>
       _backupDomain.decodeAndValidateBackupZip(this, bytes);

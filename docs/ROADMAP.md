@@ -1,5 +1,14 @@
 # Anna's Diary — Roadmap
 
+## 10 novembre 2026 — Web-first S11-D: raccolta Vision Board, collegamenti e recovery (PR da validare)
+
+- **Sorgente proposta:** Ricordi > Per te > Le mie Vision Board, galleria privata sul `AgendaStore.journals` attivo, preview Sketchbook, modifica S11-C, collega ricordi (guard A→B→A, ID fino a 12, riferimenti attuali, niente shared-only), Cestino e ripristino canonici. Copy IT/EN/ES/FR/PT.
+- **Integrità media:** export portabile Sketchbook ha fail-closed per immagini Vision Board mancanti/invalid media; i media nel backup ZIP mantengono ID e byte. Non è certificazione fisica cross-device.
+- **Dossier/QA:** [S11-D](WEBFIRST_S11D_VISION_BOARD_GALLERY_LIFECYCLE_20261110.md), `test/webfirst_s11d_vision_board_memories_lifecycle_test.dart`; stato PR/CI/Pages definito dai rispettivi workflow SHA, non da questa roadmap.
+- **Limiti espliciti:** cancellazione Cestino riusa mutatore legacy non completamente scope-transactional durante awaited persist; media temporanei conservati fino a manutenzione; PWA fisiche `NOT_VERIFIED`, performance `NOT_MEASURED`, offline `DEFERRED_BY_USER`; nessun APK.
+- **S11-E:** QA su due PWA/dispositivi e screen reader, test Cestino con switch account nel momento di persist, errori export/media transitori, backup reali cross-device, responsive cinque lingue, Pages exact SHA e controllo performance.
+
+
 ## 9 novembre 2026 — Web-first S11-C: editor Vision Board e collage (PR in validazione)
 
 - **Stato:** implementazione proposta su branch `feat/webfirst-s11c-vision-board-editor`, **non** considerata merged/CI/deploy finché non risultano verdi i gate esatti. Dossier [S11-C](WEBFIRST_S11C_VISION_BOARD_EDITOR_20261109.md).
