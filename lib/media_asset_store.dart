@@ -19,6 +19,9 @@ class MediaAssetStore {
 
   final Map<String, Uint8List> _cache = <String, Uint8List>{};
   final Set<String> _corruptAssetIds = <String>{};
+  // Protect assets in in-memory Sketchbook editors from scheduled media GC.
+  // Content-addressed assets may be used by several simultaneous drafts.
+  final Map<String, int> _draftMediaRetains = <String, int>{};
   int _cacheBytes = 0;
 
   Set<String> get corruptAssetIds =>
@@ -57,6 +60,37 @@ class MediaAssetStore {
     await putNamed(assetId, bytes);
     return assetId;
   }
+
+  /// Reserve a just-imported image *before* awaiting storage. The caller
+  /// must release exactly once, even if the editor is dismissed mid-import.
+  /// This never creates a second persistent media namespace.
+  Future<String> putForDraft(Uint8List bytes) async {
+    final assetId = contentAssetId(bytes);
+    _draftMediaRetains.update(
+      assetId, (count) => count + 1, ifAbsent: () => 1,
+    );
+    try {
+      await putNamed(assetId, bytes);
+      return assetId;
+    } catch (_) {
+      releaseDraftMedia(assetId);
+      rethrow;
+    }
+  }
+
+  void releaseDraftMedia(String assetId) {
+    final count = _draftMediaRetains[assetId];
+    if (count == null) return;
+    if (count <= 1) {
+      _draftMediaRetains.remove(assetId);
+    } else {
+      _draftMediaRetains[assetId] = count - 1;
+    }
+  }
+
+  /// Non-secret diagnostic / test signal, never persists media IDs.
+  bool isDraftMediaRetained(String assetId) =>
+      (_draftMediaRetains[assetId] ?? 0) > 0;
 
   Future<void> putNamed(String assetId, Uint8List bytes) async {
     if (assetId.trim().isEmpty || bytes.isEmpty) {
@@ -120,6 +154,9 @@ class MediaAssetStore {
 
     for (final assetId in existing) {
       if (referencedAssetIds.contains(assetId)) continue;
+      // Concurrent editors can hold an image which is not in any saved
+      // journal yet. Never delete it before that editor commits/discards.
+      if (isDraftMediaRetained(assetId)) continue;
       if (assetId.startsWith('remote_')) continue;
       // Restore staging is managed by the explicit restore transaction.
       // Generic media GC must never race an active restore.
@@ -192,6 +229,7 @@ class MediaAssetStore {
     _cache.clear();
     _cacheBytes = 0;
     _corruptAssetIds.clear();
+    _draftMediaRetains.clear();
     await clearMediaAssetsForTesting();
   }
 }
