@@ -1,5 +1,12 @@
 # Anna's Diary — Roadmap
 
+## 10 novembre 2026 — S11-E Vision Board: resilienza account/media e QA PWA
+
+- **Decisione:** Web-first, solo Chat, niente APK, nessuna nuova capability privacy/shared/AI. S11-D [PR #295](https://github.com/riccardopinato/Agenda-per-Anna/pull/295) merged `3251cd5a`, [Development #42785919074](https://github.com/riccardopinato/Agenda-per-Anna/actions/runs/42785919074) e [Pages #42785919433](https://github.com/riccardopinato/Agenda-per-Anna/actions/runs/42785919433) entrambi **SUCCESS** sullo SHA.
+- **S11-E implementazione proposta:** Cestino Vision Board passa `Cap0160TagEditGuard` e identità del blocco al mutatore lifecycle esistente, rollback in caso di cambio account, protezione della foto draft con lease MediaAssetStore fino alla chiusura editor (niente GC precoce), richiamo GC ritardato nello scope valido; verifica fail-closed del media anche per backup JSON oltre a ZIP.
+- **Regressioni:** 2 editor simultanei con foto deduplicata, GC/Save, account switch durante movimento Cestino, preservazione journal/trash, 5 lingue e gallery dark 320dp, backup JSON mancante; gate AppLab/Flutter/Web e Pages SHA esatto da registrare solo a workflow concluso.
+- **Accettazione reale:** [matrice PWA 2 dispositivi, accessibilità e media](WEBFIRST_S11E_VISION_BOARD_HARDENING_PWA_QA_20261110.md). **MANUAL_QA_PENDING** per installazione PWA, touch, TalkBack/VoiceOver, confronto ZIP cross-device, export PNG picker e performance; offline PWA `DEFERRED_BY_USER`, APK/Play `OUT_OF_SCOPE`. Nessun PASS sintetico viene spacciato per test fisico.
+
 ## 10 novembre 2026 — Web-first S11-D: raccolta Vision Board, collegamenti e recovery (PR da validare)
 
 - **Sorgente proposta:** Ricordi > Per te > Le mie Vision Board, galleria privata sul `AgendaStore.journals` attivo, preview Sketchbook, modifica S11-C, collega ricordi (guard A→B→A, ID fino a 12, riferimenti attuali, niente shared-only), Cestino e ripristino canonici. Copy IT/EN/ES/FR/PT.
