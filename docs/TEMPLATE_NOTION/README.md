@@ -61,3 +61,7 @@ Il template completo `Trip Planner` ha come proprietario principale **Wonderlog*
 ## Step 8 — Anteprima Flutter nativa del concept (senza installazione)
 
 [Dodici settimane che contano · preview Flutter](UX_STEP8_TWELVE_WEEKS_NATIVE_PREVIEW.md): 12 capitoli interattivi e riepilogo simulato nel selettore esistente, senza DiaryBlock, notifiche, Premium, acquisti o scrittura dati. L'approvazione UX resta provvisoria e il manifest resta `research_candidate`.
+
+## Step 9 — Contratto di ammissione e QA del concept
+
+[Dodici settimane · source QA e writer protetto](UX_STEP9_TWELVE_WEEKS_GATED_DRAFT.md): matrice responsive/accessibilità e adapter `TwelveWeeksDraftWriter` non collegato alla UI, basato su `AgendaStore.saveJournal`. Il concept resta `research_candidate` e senza salvataggi attivi o acquisti.
