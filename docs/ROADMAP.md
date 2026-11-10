@@ -1,4 +1,10 @@
 # Anna's Diary — Roadmap
+\n## 10 novembre 2026 — S12 Vision Board: tela espandibile e Crea + (PR in validazione)
+
+- **Feedback utente verificato solo manualmente e parzialmente:** creazione/Foto/Salva/Ricordi/Scarta funzionali nel suo scenario. **Gap:** cornici 3 foto percepite come vincolo, + crea pagina bianca, manca Crea+ globale.
+- **S12** [dossier](WEBFIRST_S12_FREEFORM_VISION_BOARD_DESIGN_20261110.md): camera e world scene espandibile, foto/testi/penna/frecce senza limiti del foglio, aggiunta al centro viewport, menu + contenuti invece di pagine; board legacy restano deserializzabili e Sketchbook tradizionale resta multipagina. Riuso tecnico comparato di Notes-Ecosistema, non nuovo editor o store.
+- **Gate:** required checks e source review sullo stesso head SHA, merge protetto, post-merge Development e Pages sullo stesso SHA. 2-PWA gesture/persistenza/backups `MANUAL_QA_PENDING`, niente APK/Play e offline `DEFERRED_BY_USER`.
+
 
 ## 10 novembre 2026 — S11-E Vision Board: resilienza account/media e QA PWA
 

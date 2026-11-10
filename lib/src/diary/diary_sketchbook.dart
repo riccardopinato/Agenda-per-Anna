@@ -315,6 +315,9 @@ class _DiarySketchbookScreenState extends State<DiarySketchbookScreen> {
   late String _initialPagesSignature;
   final TransformationController _transform = TransformationController();
   final GlobalKey _pageBoundaryKey = GlobalKey();
+  late double _visionHalfExtent;
+  Size _visionViewport = Size.zero;
+  bool _visionCameraCentered = false;
 
   bool _selectionMoveStarted = false;
 
@@ -345,7 +348,8 @@ class _DiarySketchbookScreenState extends State<DiarySketchbookScreen> {
     if (pages.isEmpty) {
       pages = [DiarySketchPage(id: const Uuid().v4())];
     }
-    if (widget.visionBoardMode) tool = DiarySketchTool.select;
+    if (widget.visionBoardMode) tool = DiarySketchTool.hand;
+    _visionHalfExtent = VisionBoardWorld.requiredHalfExtent(pages);
     _initialPagesSignature = _pagesSignature(pages);
   }
 
@@ -372,9 +376,61 @@ class _DiarySketchbookScreenState extends State<DiarySketchbookScreen> {
       _activeStrokePoints.clear();
       lassoPoints.clear();
       _gestureRevision++;
-      _transform.value = Matrix4.identity();
+      if (!widget.visionBoardMode) {
+        _transform.value = Matrix4.identity();
+      }
+    });
+    _growVisionToContent();
+  }
+
+  void _centerVisionViewport() {
+    if (!widget.visionBoardMode || _visionViewport.isEmpty) return;
+    _transform.value = VisionBoardWorld.centeredCamera(
+      _visionViewport, _visionHalfExtent,
+    );
+  }
+
+  void _scheduleVisionCenter(Size size) {
+    _visionViewport = size;
+    if (_visionCameraCentered || size.isEmpty) return;
+    _visionCameraCentered = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _centerVisionViewport();
     });
   }
+
+  void _expandVisionWorld(double halfExtent) {
+    if (!widget.visionBoardMode || halfExtent <= _visionHalfExtent) return;
+    final delta = halfExtent - _visionHalfExtent;
+    setState(() => _visionHalfExtent = halfExtent);
+    if (!_visionCameraCentered) return;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      _transform.value = VisionBoardWorld.cameraAfterGrowth(
+        _transform.value, delta,
+      );
+    });
+  }
+
+  void _growVisionToContent() {
+    if (!widget.visionBoardMode) return;
+    _expandVisionWorld(VisionBoardWorld.requiredHalfExtent(pages));
+  }
+
+  void _growVisionForViewport() {
+    if (!widget.visionBoardMode || _visionViewport.isEmpty ||
+        !_visionCameraCentered) {
+      return;
+    }
+    _expandVisionWorld(VisionBoardWorld.viewportHalfExtent(
+      _transform, _visionViewport, _visionHalfExtent,
+    ));
+  }
+
+  DiarySketchPoint _visionInsertPoint() =>
+      VisionBoardWorld.insertAtCenter(
+        _transform, _visionViewport, _visionHalfExtent,
+      );
 
   Future<void> _saveSketch() async {
     if (_savingSketch || !mounted) return;
@@ -555,6 +611,7 @@ class _DiarySketchbookScreenState extends State<DiarySketchbookScreen> {
   }) {
     if (history) _pushHistory();
     setState(() => pages[pageIndex] = value);
+    _growVisionToContent();
   }
 
   void _undoAction() {
@@ -604,6 +661,9 @@ class _DiarySketchbookScreenState extends State<DiarySketchbookScreen> {
   }
 
   DiarySketchPoint _point(Offset local, Size size) {
+    if (widget.visionBoardMode) {
+      return VisionBoardWorld.fromScene(local, _visionHalfExtent);
+    }
     final canvasWidth = size.width <= 0 ? 1.0 : size.width;
     final canvasHeight = size.height <= 0 ? 1.0 : size.height;
     return DiarySketchPoint(
@@ -643,8 +703,12 @@ class _DiarySketchbookScreenState extends State<DiarySketchbookScreen> {
       return true;
     }
     final last = buffer.last;
-    final dx = (point.x - last.x) * (size.width <= 0 ? 1 : size.width);
-    final dy = (point.y - last.y) * (size.height <= 0 ? 1 : size.height);
+    final sampleWidth = widget.visionBoardMode
+        ? VisionBoardWorld.unit : (size.width <= 0 ? 1 : size.width);
+    final sampleHeight = widget.visionBoardMode
+        ? VisionBoardWorld.unitY : (size.height <= 0 ? 1 : size.height);
+    final dx = (point.x - last.x) * sampleWidth;
+    final dy = (point.y - last.y) * sampleHeight;
     if (dx * dx + dy * dy < minPixels * minPixels) return false;
     buffer.add(point);
     return true;
@@ -797,8 +861,12 @@ class _DiarySketchbookScreenState extends State<DiarySketchbookScreen> {
   }
 
   void _moveSelection(Offset delta, Size size) {
-    final dx = delta.dx / (size.width <= 0 ? 1 : size.width);
-    final dy = delta.dy / (size.height <= 0 ? 1 : size.height);
+    final basisWidth = widget.visionBoardMode
+        ? VisionBoardWorld.unit : (size.width <= 0 ? 1 : size.width);
+    final basisHeight = widget.visionBoardMode
+        ? VisionBoardWorld.unitY : (size.height <= 0 ? 1 : size.height);
+    final dx = delta.dx / basisWidth;
+    final dy = delta.dy / basisHeight;
     if (dx == 0 && dy == 0) return;
 
     final strokes = _selectionWorkingStrokes;
@@ -817,8 +885,10 @@ class _DiarySketchbookScreenState extends State<DiarySketchbookScreen> {
         points: stroke.points
             .map(
               (point) => DiarySketchPoint(
-                (point.x + dx).clamp(0.0, 1.0),
-                (point.y + dy).clamp(0.0, 1.0),
+                widget.visionBoardMode
+                    ? point.x + dx : (point.x + dx).clamp(0.0, 1.0),
+                widget.visionBoardMode
+                    ? point.y + dy : (point.y + dy).clamp(0.0, 1.0),
               ),
             )
             .toList(growable: false),
@@ -829,8 +899,10 @@ class _DiarySketchbookScreenState extends State<DiarySketchbookScreen> {
       if (index < 0 || index >= texts.length) continue;
       final element = texts[index];
       texts[index] = element.copyWith(
-        x: (element.x + dx).clamp(0.0, 0.96),
-        y: (element.y + dy).clamp(0.0, 0.96),
+        x: widget.visionBoardMode
+            ? element.x + dx : (element.x + dx).clamp(0.0, 0.96),
+        y: widget.visionBoardMode
+            ? element.y + dy : (element.y + dy).clamp(0.0, 0.96),
       );
     }
 
@@ -838,14 +910,14 @@ class _DiarySketchbookScreenState extends State<DiarySketchbookScreen> {
       if (index < 0 || index >= images.length) continue;
       final element = images[index];
       images[index] = element.copyWith(
-        x: (element.x + dx).clamp(
-          0.0,
-          (1.0 - element.width).clamp(0.0, 1.0),
-        ),
-        y: (element.y + dy).clamp(
-          0.0,
-          (1.0 - element.height).clamp(0.0, 1.0),
-        ),
+        x: widget.visionBoardMode
+            ? element.x + dx
+            : (element.x + dx).clamp(
+                0.0, (1.0 - element.width).clamp(0.0, 1.0)),
+        y: widget.visionBoardMode
+            ? element.y + dy
+            : (element.y + dy).clamp(
+                0.0, (1.0 - element.height).clamp(0.0, 1.0)),
       );
     }
 
@@ -858,6 +930,7 @@ class _DiarySketchbookScreenState extends State<DiarySketchbookScreen> {
         imageElements: images,
       );
     });
+    _growVisionToContent();
   }
 
   void _update(DragUpdateDetails details, Size size) {
@@ -889,7 +962,8 @@ class _DiarySketchbookScreenState extends State<DiarySketchbookScreen> {
 
     if (current.tool == DiarySketchTool.line ||
         current.tool == DiarySketchTool.rectangle ||
-        current.tool == DiarySketchTool.ellipse) {
+        current.tool == DiarySketchTool.ellipse ||
+        current.tool == DiarySketchTool.arrow) {
       if (_activeStrokePoints.length == 1) {
         _activeStrokePoints.add(p);
       } else {
@@ -994,6 +1068,7 @@ class _DiarySketchbookScreenState extends State<DiarySketchbookScreen> {
       );
       _resetGesturePreview();
     });
+    _growVisionToContent();
   }
 
   Future<void> _addText() async {
@@ -1046,11 +1121,14 @@ class _DiarySketchbookScreenState extends State<DiarySketchbookScreen> {
 
     _pushHistory();
     if (existing == null) {
+      final anchor = widget.visionBoardMode
+          ? _visionInsertPoint()
+          : const DiarySketchPoint(.12, .12);
       final element = DiarySketchTextElement(
         id: const Uuid().v4(),
         text: value,
-        x: 0.12,
-        y: 0.12,
+        x: anchor.x,
+        y: anchor.y,
         fontSize: textSize,
         colorValue: colorValue,
       );
@@ -1062,6 +1140,7 @@ class _DiarySketchbookScreenState extends State<DiarySketchbookScreen> {
         selectedTextIds.add(element.id);
         tool = DiarySketchTool.select;
       });
+      _growVisionToContent();
     } else {
       final existingId = existing.id;
       final updated = page.textElements
@@ -1107,25 +1186,27 @@ class _DiarySketchbookScreenState extends State<DiarySketchbookScreen> {
         mediaAssetId, (count) => count + 1, ifAbsent: () => 1,
       );
       _pushHistory();
+      final anchor = widget.visionBoardMode
+          ? _visionInsertPoint()
+          : const DiarySketchPoint(.38, .29);
       final element = DiarySketchImageElement(
         id: const Uuid().v4(),
         mediaAssetId: mediaAssetId,
-        x: 0.12,
-        y: 0.12,
+        x: anchor.x - .26,
+        y: anchor.y - .17,
       );
       setState(() {
         final updated = page.copyWith(
           imageElements: [...page.imageElements, element],
         );
-        pages[pageIndex] = widget.visionBoardMode
-            ? VisionBoardCollage.arrange(
-                updated, VisionBoardCollageStyle.template,
-              )
-            : updated;
+        // Freeform boards never auto-snap newly imported photos back into
+        // the original three/four preset frames. Collage is opt-in only.
+        pages[pageIndex] = updated;
         _clearSelection();
         selectedImageIds.add(element.id);
         tool = DiarySketchTool.select;
       });
+      _growVisionToContent();
     } catch (_) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -1174,14 +1255,15 @@ class _DiarySketchbookScreenState extends State<DiarySketchbookScreen> {
       return item.copyWith(
         width: value,
         height: nextHeight,
-        x: item.x.clamp(0.0, (1.0 - value).clamp(0.0, 1.0)),
-        y: item.y.clamp(
-          0.0,
-          (1.0 - nextHeight).clamp(0.0, 1.0),
-        ),
+        x: widget.visionBoardMode
+            ? item.x : item.x.clamp(0.0, (1.0 - value).clamp(0.0, 1.0)),
+        y: widget.visionBoardMode
+            ? item.y : item.y.clamp(
+                0.0, (1.0 - nextHeight).clamp(0.0, 1.0)),
       );
     }).toList();
     setState(() => pages[pageIndex] = page.copyWith(imageElements: images));
+    _growVisionToContent();
   }
 
   void _resizeSelectedText(double value) {
@@ -1364,6 +1446,7 @@ class _DiarySketchbookScreenState extends State<DiarySketchbookScreen> {
         DiarySketchTool.line => Icons.horizontal_rule,
         DiarySketchTool.rectangle => Icons.crop_square,
         DiarySketchTool.ellipse => Icons.circle_outlined,
+        DiarySketchTool.arrow => Icons.arrow_forward_outlined,
         DiarySketchTool.select => Icons.open_with_outlined,
         DiarySketchTool.lasso => Icons.gesture_outlined,
         DiarySketchTool.hand => Icons.pan_tool_alt_outlined,
@@ -1376,6 +1459,7 @@ class _DiarySketchbookScreenState extends State<DiarySketchbookScreen> {
         DiarySketchTool.line => strings.d3('line'),
         DiarySketchTool.rectangle => strings.d3('rectangle'),
         DiarySketchTool.ellipse => strings.d3('ellipse'),
+        DiarySketchTool.arrow => VisionBoardUiCopy.arrow(strings),
         DiarySketchTool.select => strings.d3('select'),
         DiarySketchTool.lasso => strings.d3('lasso'),
         DiarySketchTool.hand => strings.d3('zoom'),
@@ -1390,9 +1474,13 @@ class _DiarySketchbookScreenState extends State<DiarySketchbookScreen> {
 
   Widget _canvas(Size size) {
     final currentPage = page;
-    return RepaintBoundary(
-      key: _pageBoundaryKey,
-      child: Stack(
+    final worldOrigin = widget.visionBoardMode
+        ? Offset(VisionBoardWorld.origin(_visionHalfExtent),
+            VisionBoardWorld.originY(_visionHalfExtent))
+        : Offset.zero;
+    final unitX = widget.visionBoardMode ? VisionBoardWorld.unit : size.width;
+    final unitY = widget.visionBoardMode ? VisionBoardWorld.unitY : size.height;
+    final scene = Stack(
         fit: StackFit.expand,
         children: [
           CustomPaint(
@@ -1402,6 +1490,8 @@ class _DiarySketchbookScreenState extends State<DiarySketchbookScreen> {
               selectedStrokeIndices: Set<int>.of(selectedStrokeIndices),
               lassoPoints: lassoPoints,
               gestureRevision: _gestureRevision,
+              worldOrigin: widget.visionBoardMode ? worldOrigin : null,
+              worldUnitY: VisionBoardWorld.unitY,
             ),
             child: const SizedBox.expand(),
           ),
@@ -1409,10 +1499,10 @@ class _DiarySketchbookScreenState extends State<DiarySketchbookScreen> {
             (element) {
               final selected = selectedImageIds.contains(element.id);
               return Positioned(
-                left: element.x * size.width,
-                top: element.y * size.height,
-                width: element.width * size.width,
-                height: element.height * size.height,
+                left: worldOrigin.dx + element.x * unitX,
+                top: worldOrigin.dy + element.y * unitY,
+                width: element.width * unitX,
+                height: element.height * unitY,
                 child: DecoratedBox(
                   decoration: BoxDecoration(
                     border: selected
@@ -1441,8 +1531,8 @@ class _DiarySketchbookScreenState extends State<DiarySketchbookScreen> {
             (element) {
               final selected = selectedTextIds.contains(element.id);
               return Positioned(
-                left: element.x * size.width,
-                top: element.y * size.height,
+                left: worldOrigin.dx + element.x * unitX,
+                top: worldOrigin.dy + element.y * unitY,
                 child: DecoratedBox(
                   decoration: BoxDecoration(
                     border: selected
@@ -1471,8 +1561,12 @@ class _DiarySketchbookScreenState extends State<DiarySketchbookScreen> {
             },
           ),
         ],
-      ),
-    );
+      );
+    // The large virtual scene must not be its own raster cache layer:
+    // export only the *visible viewport* in Vision Board mode.
+    return widget.visionBoardMode
+        ? scene
+        : RepaintBoundary(key: _pageBoundaryKey, child: scene);
   }
 
   Widget _selectionControls() {
@@ -1529,6 +1623,153 @@ class _DiarySketchbookScreenState extends State<DiarySketchbookScreen> {
       ),
     );
   }
+
+
+  void _zoomVision(double multiplier) {
+    if (_visionViewport.isEmpty) return;
+    final focal = Offset(
+      _visionViewport.width / 2, _visionViewport.height / 2);
+    final worldPoint = _transform.toScene(focal);
+    final scale = (VisionBoardWorld.cameraScale(_transform.value) * multiplier)
+        .clamp(VisionBoardWorld.minScale, VisionBoardWorld.maxScale)
+        .toDouble();
+    _transform.value = Matrix4.identity()
+      ..setEntry(0, 0, scale)
+      ..setEntry(1, 1, scale)
+      ..setTranslationRaw(
+        focal.dx - worldPoint.dx * scale,
+        focal.dy - worldPoint.dy * scale, 0);
+    _growVisionForViewport();
+  }
+
+  Future<void> _showVisionInsertMenu() async {
+    if (!widget.visionBoardMode || _savingSketch || !mounted) return;
+    final strings = AnnaStrings.of(context);
+    final action = await showModalBottomSheet<VisionBoardInsertAction>(
+      context: context,
+      showDragHandle: true,
+      builder: (sheet) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(title: Text(VisionBoardUiCopy.addHere(strings))),
+            ListTile(
+              leading: const Icon(Icons.add_photo_alternate_outlined),
+              title: Text(VisionBoardUiCopy.photo(strings)),
+              onTap: () => Navigator.pop(sheet, VisionBoardInsertAction.photo),
+            ),
+            ListTile(
+              leading: const Icon(Icons.text_fields_outlined),
+              title: Text(VisionBoardUiCopy.text(strings)),
+              onTap: () => Navigator.pop(sheet, VisionBoardInsertAction.text),
+            ),
+            ListTile(
+              leading: const Icon(Icons.arrow_forward_outlined),
+              title: Text(VisionBoardUiCopy.arrow(strings)),
+              onTap: () => Navigator.pop(sheet, VisionBoardInsertAction.arrow),
+            ),
+            ListTile(
+              leading: const Icon(Icons.edit_outlined),
+              title: Text(VisionBoardUiCopy.draw(strings)),
+              onTap: () => Navigator.pop(sheet, VisionBoardInsertAction.draw),
+            ),
+          ],
+        ),
+      ),
+    );
+    if (action == null || !mounted || _savingSketch) return;
+    switch (action) {
+      case VisionBoardInsertAction.photo:
+        await _addImage();
+      case VisionBoardInsertAction.text:
+        await _addText();
+      case VisionBoardInsertAction.arrow:
+        setState(() => tool = DiarySketchTool.arrow);
+      case VisionBoardInsertAction.draw:
+        setState(() => tool = DiarySketchTool.pen);
+    }
+  }
+
+  Widget _visionWorldViewport() => LayoutBuilder(
+    builder: (context, constraints) {
+      final viewport = Size(constraints.maxWidth, constraints.maxHeight);
+      _scheduleVisionCenter(viewport);
+      final sceneSide = _visionHalfExtent * 2;
+      final sceneSize = Size(sceneSide, sceneSide);
+      return Material(
+        color: const Color(0xFFFCFBFD),
+        clipBehavior: Clip.hardEdge,
+        borderRadius: BorderRadius.circular(10),
+        child: Stack(
+          children: [
+            Positioned.fill(
+              child: RepaintBoundary(
+                key: _pageBoundaryKey,
+                child: ClipRect(
+                  child: InteractiveViewer(
+                    transformationController: _transform,
+                    constrained: false,
+                    minScale: VisionBoardWorld.minScale,
+                    maxScale: VisionBoardWorld.maxScale,
+                    panEnabled: tool == DiarySketchTool.hand,
+                    scaleEnabled: true,
+                    onInteractionUpdate: (_) => _growVisionForViewport(),
+                    child: SizedBox(
+                      width: sceneSide,
+                      height: sceneSide,
+                      child: GestureDetector(
+                        behavior: HitTestBehavior.opaque,
+                        onTapDown: tool == DiarySketchTool.select
+                            ? (details) => setState(() => _selectAt(
+                                _point(details.localPosition, sceneSize)))
+                            : null,
+                        onPanStart: tool == DiarySketchTool.hand
+                            ? null : (d) => _start(d, sceneSize),
+                        onPanUpdate: tool == DiarySketchTool.hand
+                            ? null : (d) => _update(d, sceneSize),
+                        onPanEnd: tool == DiarySketchTool.hand
+                            ? null : _end,
+                        child: _canvas(sceneSize),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+            Positioned(
+              right: 8, bottom: 8,
+              child: Material(
+                color: Theme.of(context).colorScheme.surface.withValues(
+                  alpha: .91),
+                borderRadius: BorderRadius.circular(24),
+                elevation: 2,
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    IconButton(
+                      tooltip: VisionBoardUiCopy.zoomOut(AnnaStrings.of(context)),
+                      onPressed: () => _zoomVision(.72),
+                      icon: const Icon(Icons.remove),
+                    ),
+                    IconButton(
+                      tooltip: VisionBoardUiCopy.center(AnnaStrings.of(context)),
+                      onPressed: _centerVisionViewport,
+                      icon: const Icon(Icons.center_focus_strong_outlined),
+                    ),
+                    IconButton(
+                      tooltip: VisionBoardUiCopy.zoomIn(AnnaStrings.of(context)),
+                      onPressed: () => _zoomVision(1.4),
+                      icon: const Icon(Icons.add),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      );
+    },
+  );
 
   @override
   Widget build(BuildContext context) {
@@ -1606,10 +1847,29 @@ class _DiarySketchbookScreenState extends State<DiarySketchbookScreen> {
             ),
             SizedBox(
               height: 48,
-              child: ListView(
-                padding: const EdgeInsets.symmetric(horizontal: 8),
-                scrollDirection: Axis.horizontal,
+              child: Row(
                 children: [
+                  // Keep the primary action visible on narrow phones; the
+                  // remaining tools can scroll horizontally.
+                  IconButton(
+                    key: widget.visionBoardMode
+                        ? const ValueKey('vision-board-add-content')
+                        : const ValueKey('sketchbook-add-page'),
+                    tooltip: widget.visionBoardMode
+                        ? VisionBoardUiCopy.addHere(AnnaStrings.of(context))
+                        : AnnaStrings.of(context).d3('newPage'),
+                    onPressed: widget.visionBoardMode
+                        ? _showVisionInsertMenu
+                        : (pages.length >= 64 ? null : _addPage),
+                    icon: Icon(widget.visionBoardMode
+                        ? Icons.add_circle_outline
+                        : Icons.add_box_outlined),
+                  ),
+                  Expanded(
+                    child: ListView(
+                      padding: const EdgeInsets.symmetric(horizontal: 8),
+                      scrollDirection: Axis.horizontal,
+                      children: [
                   IconButton(
                     tooltip: AnnaStrings.of(context).d3('undo'),
                     onPressed: undoAvailable ? _undoAction : null,
@@ -1690,53 +1950,56 @@ class _DiarySketchbookScreenState extends State<DiarySketchbookScreen> {
                     ),
                   ),
                   const SizedBox(width: 10),
-                  Center(
-                    child: Text(
-                      '${pageIndex + 1}/${pages.length}',
-                      style: const TextStyle(fontWeight: FontWeight.w800),
+
+                  if (!widget.visionBoardMode || pages.length > 1) ...[
+                    Center(
+                      child: Text(
+                        '${pageIndex + 1}/${pages.length}',
+                        style: const TextStyle(fontWeight: FontWeight.w800),
+                      ),
                     ),
-                  ),
-                  IconButton(
-                    tooltip: AnnaStrings.of(context).d3('previousPage'),
-                    onPressed: pageIndex == 0
-                        ? null
-                        : () => setState(() {
-                              pageIndex--;
-                              _clearSelection();
-                              _resetGesturePreview();
-                              _clearSelectionMoveBuffers();
-                              _transform.value = Matrix4.identity();
-                            }),
-                    icon: const Icon(Icons.chevron_left),
-                  ),
-                  IconButton(
-                    tooltip: AnnaStrings.of(context).d3('nextPage'),
-                    onPressed: pageIndex >= pages.length - 1
-                        ? null
-                        : () => setState(() {
-                              pageIndex++;
-                              _clearSelection();
-                              _resetGesturePreview();
-                              _clearSelectionMoveBuffers();
-                              _transform.value = Matrix4.identity();
-                            }),
-                    icon: const Icon(Icons.chevron_right),
-                  ),
-                  IconButton(
-                    tooltip: AnnaStrings.of(context).d3('newPage'),
-                    onPressed: pages.length >= 64 ? null : _addPage,
-                    icon: const Icon(Icons.add_box_outlined),
-                  ),
-                  IconButton(
-                    tooltip: AnnaStrings.of(context).d3('duplicatePage'),
-                    onPressed:
-                        pages.length >= 64 ? null : _duplicatePage,
-                    icon: const Icon(Icons.copy_all_outlined),
-                  ),
-                  IconButton(
-                    tooltip: AnnaStrings.of(context).d3('deletePage'),
-                    onPressed: _deletePage,
-                    icon: const Icon(Icons.delete_outline),
+                    IconButton(
+                      tooltip: AnnaStrings.of(context).d3('previousPage'),
+                      onPressed: pageIndex == 0 ? null : () => setState(() {
+                        pageIndex--;
+                        _clearSelection();
+                        _resetGesturePreview();
+                        _clearSelectionMoveBuffers();
+                        if (!widget.visionBoardMode) {
+                          _transform.value = Matrix4.identity();
+                        }
+                      }),
+                      icon: const Icon(Icons.chevron_left),
+                    ),
+                    IconButton(
+                      tooltip: AnnaStrings.of(context).d3('nextPage'),
+                      onPressed: pageIndex >= pages.length - 1
+                          ? null : () => setState(() {
+                        pageIndex++;
+                        _clearSelection();
+                        _resetGesturePreview();
+                        _clearSelectionMoveBuffers();
+                        if (!widget.visionBoardMode) {
+                          _transform.value = Matrix4.identity();
+                        }
+                      }),
+                      icon: const Icon(Icons.chevron_right),
+                    ),
+                  ],
+                  if (!widget.visionBoardMode) ...[
+                    IconButton(
+                      tooltip: AnnaStrings.of(context).d3('duplicatePage'),
+                      onPressed: pages.length >= 64 ? null : _duplicatePage,
+                      icon: const Icon(Icons.copy_all_outlined),
+                    ),
+                    IconButton(
+                      tooltip: AnnaStrings.of(context).d3('deletePage'),
+                      onPressed: _deletePage,
+                      icon: const Icon(Icons.delete_outline),
+                    ),
+                  ],
+                      ],
+                    ),
                   ),
                 ],
               ),
@@ -1793,10 +2056,12 @@ class _DiarySketchbookScreenState extends State<DiarySketchbookScreen> {
                         },
                       ),
                     ),
-                    Row(
-                      children: [
-                        const SizedBox(width: 14),
-                        const Icon(Icons.line_weight, size: 18),
+                    SizedBox(
+                      height: 42,
+                      child: Row(
+                        children: [
+                          const SizedBox(width: 14),
+                          const Icon(Icons.line_weight, size: 18),
                         const SizedBox(width: 6),
                         Expanded(
                           child: Slider(
@@ -1807,8 +2072,9 @@ class _DiarySketchbookScreenState extends State<DiarySketchbookScreen> {
                                 setState(() => width = value),
                           ),
                         ),
-                        const SizedBox(width: 10),
-                      ],
+                          const SizedBox(width: 10),
+                        ],
+                      ),
                     ),
                   ],
                 ),
@@ -1827,9 +2093,9 @@ class _DiarySketchbookScreenState extends State<DiarySketchbookScreen> {
                       ),
                     ),
                     TextButton(
-                      onPressed: () {
-                        _transform.value = Matrix4.identity();
-                      },
+                      onPressed: widget.visionBoardMode
+                          ? _centerVisionViewport
+                          : () => _transform.value = Matrix4.identity(),
                       child: Text(AnnaStrings.of(context).d3SketchReset),
                     ),
                   ],
@@ -1839,7 +2105,9 @@ class _DiarySketchbookScreenState extends State<DiarySketchbookScreen> {
               child: Padding(
                 padding: const EdgeInsets.fromLTRB(12, 4, 12, 12),
                 child: Center(
-                  child: AspectRatio(
+                  child: widget.visionBoardMode
+                      ? _visionWorldViewport()
+                      : AspectRatio(
                     aspectRatio: 3 / 4,
                     child: Material(
                       elevation: 2,
@@ -1901,10 +2169,12 @@ class _DiarySketchbookScreenState extends State<DiarySketchbookScreen> {
 
 class DiarySketchPagePreview extends StatelessWidget {
   final DiarySketchPage page;
+  final bool freeformFit;
 
   const DiarySketchPagePreview({
     super.key,
     required this.page,
+    this.freeformFit = false,
   });
 
   @override
@@ -1915,21 +2185,41 @@ class DiarySketchPagePreview extends StatelessWidget {
           constraints.maxWidth,
           constraints.maxHeight,
         );
+        final bounds = freeformFit
+            ? VisionBoardWorld.contentBounds(page)
+            : const Rect.fromLTWH(0, 0, 1, 1);
+        final scale = freeformFit
+            ? min(size.width / (bounds.width * VisionBoardWorld.unit),
+                size.height / (bounds.height * VisionBoardWorld.unitY))
+            : 1.0;
+        final unitX = freeformFit
+            ? VisionBoardWorld.unit * scale : size.width;
+        final unitY = freeformFit
+            ? VisionBoardWorld.unitY * scale : size.height;
+        final origin = Offset(
+          freeformFit ? size.width / 2 - bounds.center.dx * unitX : 0,
+          freeformFit ? size.height / 2 - bounds.center.dy * unitY : 0,
+        );
         return ColoredBox(
           color: Colors.white,
           child: Stack(
             fit: StackFit.expand,
             children: [
               CustomPaint(
-                painter: DiarySketchPainter(page: page),
+                painter: DiarySketchPainter(
+                  page: page,
+                  worldOrigin: freeformFit ? origin : null,
+                  worldUnit: unitX,
+                  worldUnitY: unitY,
+                ),
                 child: const SizedBox.expand(),
               ),
               ...page.imageElements.map(
                 (element) => Positioned(
-                  left: element.x * size.width,
-                  top: element.y * size.height,
-                  width: element.width * size.width,
-                  height: element.height * size.height,
+                  left: origin.dx + element.x * unitX,
+                  top: origin.dy + element.y * unitY,
+                  width: element.width * unitX,
+                  height: element.height * unitY,
                   child: DiaryMediaImage(
                     assetId: element.mediaAssetId,
                     fallbackBase64: element.imageBase64,
@@ -1940,13 +2230,15 @@ class DiarySketchPagePreview extends StatelessWidget {
               ),
               ...page.textElements.map(
                 (element) => Positioned(
-                  left: element.x * size.width,
-                  top: element.y * size.height,
+                  left: origin.dx + element.x * unitX,
+                  top: origin.dy + element.y * unitY,
                   child: Text(
                     element.text,
                     style: TextStyle(
                       color: Color(element.colorValue),
-                      fontSize: element.fontSize,
+                      fontSize: freeformFit
+                          ? (element.fontSize * scale).clamp(6, 26).toDouble()
+                          : element.fontSize,
                       fontWeight: FontWeight.w600,
                     ),
                   ),
@@ -1966,6 +2258,9 @@ class DiarySketchPainter extends CustomPainter {
   final Set<int> selectedStrokeIndices;
   final List<DiarySketchPoint> lassoPoints;
   final int gestureRevision;
+  final Offset? worldOrigin;
+  final double worldUnit;
+  final double worldUnitY;
 
   const DiarySketchPainter({
     required this.page,
@@ -1973,12 +2268,72 @@ class DiarySketchPainter extends CustomPainter {
     this.selectedStrokeIndices = const {},
     this.lassoPoints = const [],
     this.gestureRevision = 0,
+    this.worldOrigin,
+    this.worldUnit = VisionBoardWorld.unit,
+    this.worldUnitY = VisionBoardWorld.unitY,
   });
 
   Offset _offset(DiarySketchPoint point, Size size) =>
-      Offset(point.x * size.width, point.y * size.height);
+      worldOrigin == null
+          ? Offset(point.x * size.width, point.y * size.height)
+          : worldOrigin! + Offset(point.x * worldUnit, point.y * worldUnitY);
 
   void _paintPaper(Canvas canvas, Size size) {
+    if (worldOrigin != null) {
+      canvas.drawRect(
+        Offset.zero & size,
+        Paint()..color = const Color(0xFFFCFBFD),
+      );
+      // Keep ruled-paper guides for already-saved Vision Boards, too.
+      // Generate guides only inside the viewport clip to avoid rendering
+      // thousands of offscreen lines in an expanding scene.
+      if (page.paper == DiarySketchPaper.ruled) {
+        final visible = canvas.getDestinationClipBounds();
+        final guide = Paint()
+          ..color = const Color(0xFFD8DFEA).withValues(alpha: .60)
+          ..strokeWidth = 1;
+        const step = 42.0;
+        final left = max(0.0, visible.left);
+        final right = min(size.width, visible.right);
+        final top = max(0.0, visible.top);
+        final bottom = min(size.height, visible.bottom);
+        for (var y = (top / step).floorToDouble() * step;
+             y <= bottom; y += step) {
+          canvas.drawLine(Offset(left, y), Offset(right, y), guide);
+        }
+      }
+      // A bounded, soft dot pattern preserves performance even after a
+      // large pan/zoom. Content itself is never clipped to this guide.
+      if (page.paper == DiarySketchPaper.grid ||
+          page.paper == DiarySketchPaper.dots) {
+        final visible = canvas.getDestinationClipBounds();
+        final ink = Paint()
+          ..color = const Color(0xFFD8D5E1).withValues(alpha: .54)
+          ..strokeWidth = 1;
+        const step = 64.0;
+        final left = (visible.left / step).floor() * step;
+        final top = (visible.top / step).floor() * step;
+        final right = min(visible.right, size.width);
+        final bottom = min(visible.bottom, size.height);
+        for (var x = left; x <= right; x += step) {
+          for (var y = top; y <= bottom; y += step) {
+            if (page.paper == DiarySketchPaper.grid) {
+              if (y == top) {
+                canvas.drawLine(Offset(x, top), Offset(x, bottom), ink);
+              }
+            } else {
+              canvas.drawCircle(Offset(x, y), 1.5, ink);
+            }
+          }
+        }
+        if (page.paper == DiarySketchPaper.grid) {
+          for (var y = top; y <= bottom; y += step) {
+            canvas.drawLine(Offset(left, y), Offset(right, y), ink);
+          }
+        }
+      }
+      return;
+    }
     canvas.drawRect(Offset.zero & size, Paint()..color = Colors.white);
     final guide = Paint()
       ..color = const Color(0xFFD8DFEA).withValues(alpha: 0.55)
@@ -2052,12 +2407,20 @@ class DiarySketchPainter extends CustomPainter {
   ) {
     if (stroke.tool == DiarySketchTool.line ||
         stroke.tool == DiarySketchTool.rectangle ||
-        stroke.tool == DiarySketchTool.ellipse) {
+        stroke.tool == DiarySketchTool.ellipse ||
+        stroke.tool == DiarySketchTool.arrow) {
       if (stroke.points.length < 2) return;
       final first = _offset(stroke.points.first, size);
       final last = _offset(stroke.points.last, size);
-      if (stroke.tool == DiarySketchTool.line) {
+      if (stroke.tool == DiarySketchTool.line ||
+          stroke.tool == DiarySketchTool.arrow) {
         canvas.drawLine(first, last, paint);
+        if (stroke.tool == DiarySketchTool.arrow) {
+          final left = VisionBoardWorld.arrowWing(first, last);
+          final right = VisionBoardWorld.arrowWing(first, last, left: false);
+          canvas.drawLine(last, left, paint);
+          canvas.drawLine(last, right, paint);
+        }
       } else {
         final rect = Rect.fromPoints(first, last);
         if (stroke.tool == DiarySketchTool.rectangle) {
@@ -2092,7 +2455,10 @@ class DiarySketchPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     _paintPaper(canvas, size);
-    canvas.saveLayer(Offset.zero & size, Paint());
+    canvas.saveLayer(
+      worldOrigin == null ? Offset.zero & size : canvas.getDestinationClipBounds(),
+      Paint(),
+    );
     for (var index = 0; index < page.strokes.length; index++) {
       _drawStroke(
         canvas,
@@ -2127,6 +2493,9 @@ class DiarySketchPainter extends CustomPainter {
     return oldDelegate.page != page ||
         oldDelegate.activeStroke != activeStroke ||
         oldDelegate.gestureRevision != gestureRevision ||
+        oldDelegate.worldOrigin != worldOrigin ||
+        oldDelegate.worldUnit != worldUnit ||
+        oldDelegate.worldUnitY != worldUnitY ||
         !setEquals(
           oldDelegate.selectedStrokeIndices,
           selectedStrokeIndices,

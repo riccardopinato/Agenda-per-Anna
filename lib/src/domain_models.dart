@@ -1208,6 +1208,7 @@ enum DiarySketchTool {
   line,
   rectangle,
   ellipse,
+  arrow,
   select,
   lasso,
   hand,
