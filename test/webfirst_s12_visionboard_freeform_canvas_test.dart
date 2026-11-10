@@ -11,7 +11,7 @@ void main() {
       () {
     const olderPage = DiarySketchPage(
       id: 'legacy',
-      strokes: const [
+      strokes: [
         DiarySketchStroke(
           tool: DiarySketchTool.rectangle,
           colorValue: 0xff000000,
@@ -38,7 +38,7 @@ void main() {
       () {
     const page = DiarySketchPage(
       id: 'freeform',
-      strokes: const [
+      strokes: [
         DiarySketchStroke(
           tool: DiarySketchTool.arrow,
           colorValue: 0xffaa00aa,
@@ -49,12 +49,12 @@ void main() {
           ],
         ),
       ],
-      textElements: const [
+      textElements: [
         DiarySketchTextElement(
           id: 'text-far', text: 'Freedom', x: -6.7, y: 6.2,
         ),
       ],
-      imageElements: const [
+      imageElements: [
         DiarySketchImageElement(
           id: 'photo-far', mediaAssetId: 'synthetic',
           x: 9.5, y: -8.2, width: .4, height: .5,
