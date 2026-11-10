@@ -1,3 +1,5 @@
+enum VisionBoardInsertAction { photo, text, arrow, draw }
+
 part of '../../main.dart';
 
 /// S12: a single freely navigable Vision Board scene, without a new database
