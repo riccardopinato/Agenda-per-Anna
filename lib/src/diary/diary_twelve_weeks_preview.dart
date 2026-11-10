@@ -249,33 +249,55 @@ class _TwelveWeeksConceptPreviewState extends State<TwelveWeeksConceptPreview> {
               child: Text(pick(it: 'Simula inizio', en: 'Simulate start',
                 es: 'Simular inicio', fr: 'Simuler le début', pt: 'Simular início'))),
             if (simulated)
-              Text(pick(it: 'Simulazione completa: nessun diario o promemoria salvato.',
-                en: 'Simulation complete: no diary or reminder saved.',
-                es: 'Simulación completa: no se guardó nada.',
-                fr: 'Simulation terminée : aucune donnée enregistrée.',
-                pt: 'Simulação concluída: nenhum dado guardado.'),
-                key: const ValueKey('anna-12w-done')),
+              Semantics(
+                liveRegion: true,
+                child: Text(pick(it: 'Simulazione completa: nessun diario o promemoria salvato.',
+                  en: 'Simulation complete: no diary or reminder saved.',
+                  es: 'Simulación completa: no se guardó nada.',
+                  fr: 'Simulation terminée : aucune donnée enregistrée.',
+                  pt: 'Simulação concluída: nenhum dado guardado.'),
+                  key: const ValueKey('anna-12w-done')),
+              ),
           ],
           const SizedBox(height: 16),
-          Row(children: [
-            if (step > 0)
-              TextButton(onPressed: () => setState(() {
-                step--; simulated = false;
-              }), child: Text(pick(it: 'Indietro', en: 'Back',
-                es: 'Atrás', fr: 'Retour', pt: 'Voltar'))),
-            const Spacer(),
-            if (step < 3)
-              FilledButton(key: const ValueKey('anna-12w-next'),
-                onPressed: () => setState(() => step++),
-                child: Text(pick(it: 'Avanti', en: 'Next',
-                  es: 'Siguiente', fr: 'Suivant', pt: 'Próximo')))
-            else
-              TextButton(onPressed: () => Navigator.pop(context),
-                child: Text(pick(it: 'Chiudi', en: 'Close',
-                  es: 'Cerrar', fr: 'Fermer', pt: 'Fechar'))),
-          ]),
         ],
       )),
+      bottomNavigationBar: SafeArea(
+        top: false,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
+          child: Wrap(
+            key: const ValueKey('anna-12w-actions'),
+            alignment: WrapAlignment.end,
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              if (step > 0)
+                TextButton(
+                  onPressed: () => setState(() {
+                    step--;
+                    simulated = false;
+                  }),
+                  child: Text(pick(it: 'Indietro', en: 'Back',
+                      es: 'Atrás', fr: 'Retour', pt: 'Voltar')),
+                ),
+              if (step < 3)
+                FilledButton(
+                  key: const ValueKey('anna-12w-next'),
+                  onPressed: () => setState(() => step++),
+                  child: Text(pick(it: 'Avanti', en: 'Next',
+                      es: 'Siguiente', fr: 'Suivant', pt: 'Próximo')),
+                )
+              else
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: Text(pick(it: 'Chiudi', en: 'Close',
+                      es: 'Cerrar', fr: 'Fermer', pt: 'Fechar')),
+                ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }
