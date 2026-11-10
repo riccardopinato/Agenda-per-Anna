@@ -1482,9 +1482,7 @@ class _DiarySketchbookScreenState extends State<DiarySketchbookScreen> {
         : Offset.zero;
     final unitX = widget.visionBoardMode ? VisionBoardWorld.unit : size.width;
     final unitY = widget.visionBoardMode ? VisionBoardWorld.unitY : size.height;
-    return RepaintBoundary(
-      key: widget.visionBoardMode ? null : _pageBoundaryKey,
-      child: Stack(
+    final scene = Stack(
         fit: StackFit.expand,
         children: [
           CustomPaint(
@@ -1565,8 +1563,12 @@ class _DiarySketchbookScreenState extends State<DiarySketchbookScreen> {
             },
           ),
         ],
-      ),
-    );
+      );
+    // The large virtual scene must not be its own raster cache layer:
+    // export only the *visible viewport* in Vision Board mode.
+    return widget.visionBoardMode
+        ? scene
+        : RepaintBoundary(key: _pageBoundaryKey, child: scene);
   }
 
   Widget _selectionControls() {
