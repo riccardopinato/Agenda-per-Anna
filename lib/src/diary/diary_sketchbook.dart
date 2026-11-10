@@ -406,11 +406,9 @@ class _DiarySketchbookScreenState extends State<DiarySketchbookScreen> {
     if (!_visionCameraCentered) return;
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
-      final camera = _transform.value.clone();
-      final scale = VisionBoardWorld.cameraScale(camera);
-      camera.storage[12] -= delta * scale;
-      camera.storage[13] -= delta * scale;
-      _transform.value = camera;
+      _transform.value = VisionBoardWorld.cameraAfterGrowth(
+        _transform.value, delta,
+      );
     });
   }
 
@@ -1849,10 +1847,29 @@ class _DiarySketchbookScreenState extends State<DiarySketchbookScreen> {
             ),
             SizedBox(
               height: 48,
-              child: ListView(
-                padding: const EdgeInsets.symmetric(horizontal: 8),
-                scrollDirection: Axis.horizontal,
+              child: Row(
                 children: [
+                  // Keep the primary action visible on narrow phones; the
+                  // remaining tools can scroll horizontally.
+                  IconButton(
+                    key: widget.visionBoardMode
+                        ? const ValueKey('vision-board-add-content')
+                        : const ValueKey('sketchbook-add-page'),
+                    tooltip: widget.visionBoardMode
+                        ? VisionBoardUiCopy.addHere(AnnaStrings.of(context))
+                        : AnnaStrings.of(context).d3('newPage'),
+                    onPressed: widget.visionBoardMode
+                        ? _showVisionInsertMenu
+                        : (pages.length >= 64 ? null : _addPage),
+                    icon: Icon(widget.visionBoardMode
+                        ? Icons.add_circle_outline
+                        : Icons.add_box_outlined),
+                  ),
+                  Expanded(
+                    child: ListView(
+                      padding: const EdgeInsets.symmetric(horizontal: 8),
+                      scrollDirection: Axis.horizontal,
+                      children: [
                   IconButton(
                     tooltip: AnnaStrings.of(context).d3('undo'),
                     onPressed: undoAvailable ? _undoAction : null,
@@ -1933,14 +1950,7 @@ class _DiarySketchbookScreenState extends State<DiarySketchbookScreen> {
                     ),
                   ),
                   const SizedBox(width: 10),
-                  if (widget.visionBoardMode)
-                    IconButton(
-                      key: const ValueKey('vision-board-add-content'),
-                      tooltip: VisionBoardUiCopy.addHere(
-                        AnnaStrings.of(context)),
-                      onPressed: _showVisionInsertMenu,
-                      icon: const Icon(Icons.add_circle_outline),
-                    ),
+
                   if (!widget.visionBoardMode || pages.length > 1) ...[
                     Center(
                       child: Text(
@@ -1977,11 +1987,7 @@ class _DiarySketchbookScreenState extends State<DiarySketchbookScreen> {
                     ),
                   ],
                   if (!widget.visionBoardMode) ...[
-                    IconButton(
-                      tooltip: AnnaStrings.of(context).d3('newPage'),
-                      onPressed: pages.length >= 64 ? null : _addPage,
-                      icon: const Icon(Icons.add_box_outlined),
-                    ),
+
                     IconButton(
                       tooltip: AnnaStrings.of(context).d3('duplicatePage'),
                       onPressed: pages.length >= 64 ? null : _duplicatePage,
@@ -1992,7 +1998,9 @@ class _DiarySketchbookScreenState extends State<DiarySketchbookScreen> {
                       onPressed: _deletePage,
                       icon: const Icon(Icons.delete_outline),
                     ),
-                  ],
+                      ],
+                    ),
+                  ),
                 ],
               ),
             ),
@@ -2048,10 +2056,12 @@ class _DiarySketchbookScreenState extends State<DiarySketchbookScreen> {
                         },
                       ),
                     ),
-                    Row(
-                      children: [
-                        const SizedBox(width: 14),
-                        const Icon(Icons.line_weight, size: 18),
+                    SizedBox(
+                      height: 42,
+                      child: Row(
+                        children: [
+                          const SizedBox(width: 14),
+                          const Icon(Icons.line_weight, size: 18),
                         const SizedBox(width: 6),
                         Expanded(
                           child: Slider(
@@ -2062,8 +2072,9 @@ class _DiarySketchbookScreenState extends State<DiarySketchbookScreen> {
                                 setState(() => width = value),
                           ),
                         ),
-                        const SizedBox(width: 10),
-                      ],
+                          const SizedBox(width: 10),
+                        ],
+                      ),
                     ),
                   ],
                 ),

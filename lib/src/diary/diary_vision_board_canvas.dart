@@ -104,6 +104,17 @@ abstract final class VisionBoardWorld {
       sqrt(matrix.entry(0, 0) * matrix.entry(0, 0) +
           matrix.entry(1, 0) * matrix.entry(1, 0));
 
+  /// Growth shifts scene origin by [delta] on both axes. Preserve the same
+  /// logical world point at the viewport center even when zoomed below 1x.
+  /// Matrix4.getMaxScaleOnAxis includes its Z axis and is unsafe here.
+  static Matrix4 cameraAfterGrowth(Matrix4 current, double delta) {
+    final next = current.clone();
+    final scale = cameraScale(next);
+    next.storage[12] -= delta * scale;
+    next.storage[13] -= delta * scale;
+    return next;
+  }
+
   static Matrix4 centeredCamera(Size viewport, double halfExtent) {
     final scale = min(
       1.0,

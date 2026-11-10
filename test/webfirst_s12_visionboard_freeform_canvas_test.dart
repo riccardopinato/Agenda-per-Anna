@@ -109,10 +109,7 @@ void main() {
       VisionBoardWorld.initialHalfExtent,
     );
     final delta = expanded - VisionBoardWorld.initialHalfExtent;
-    final shifted = camera.value.clone();
-    shifted.storage[12] -= delta * shifted.getMaxScaleOnAxis();
-    shifted.storage[13] -= delta * shifted.getMaxScaleOnAxis();
-    camera.value = shifted;
+    camera.value = VisionBoardWorld.cameraAfterGrowth(camera.value, delta);
     final world = VisionBoardWorld.fromScene(
       camera.toScene(const Offset(160, 240)), expanded,
     );
