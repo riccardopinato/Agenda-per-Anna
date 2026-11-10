@@ -31,6 +31,45 @@ abstract final class VisionBoardWorld {
         (scene.dy - originY(halfExtent)) / unitY,
       );
 
+  /// Fits all board elements in Ricordi and diary thumbnails. Ordinary
+  /// Sketchbook previews remain a fixed 3:4 sheet.
+  static Rect contentBounds(DiarySketchPage page) {
+    var minX = double.infinity;
+    var minY = double.infinity;
+    var maxX = double.negativeInfinity;
+    var maxY = double.negativeInfinity;
+    void include(double x, double y) {
+      if (!x.isFinite || !y.isFinite) return;
+      minX = min(minX, x);
+      minY = min(minY, y);
+      maxX = max(maxX, x);
+      maxY = max(maxY, y);
+    }
+
+    for (final stroke in page.strokes) {
+      for (final point in stroke.points) {
+        include(point.x, point.y);
+      }
+    }
+    for (final image in page.imageElements) {
+      include(image.x, image.y);
+      include(image.x + image.width, image.y + image.height);
+    }
+    for (final label in page.textElements) {
+      include(label.x, label.y);
+      include(label.x + label.text.length * label.fontSize * .55 / unit,
+          label.y + label.fontSize * 1.6 / unitY);
+    }
+    if (!minX.isFinite || !minY.isFinite) {
+      return const Rect.fromLTWH(0, 0, 1, 1);
+    }
+    return Rect.fromCenter(
+      center: Offset((minX + maxX) / 2, (minY + maxY) / 2),
+      width: max(.52, maxX - minX) * 1.18,
+      height: max(.60, maxY - minY) * 1.18,
+    );
+  }
+
   static double requiredHalfExtent(Iterable<DiarySketchPage> pages) {
     var radius = 0.0;
     void include(double x, double y) {
