@@ -20,9 +20,13 @@ the user explicitly deferred offline/Web guarantees.
    checked scope before calling the legacy Trash mutator, but the mutator
    wrote journal and Trash without an epoch guard. The S11-E change adds
    optional `scopeGuard` and `expectedBlock` to the **existing**
-   `AgendaStoreLifecycle.moveDiaryBlockToTrash`, uses the canonical
-   `_persistEntityMutations` serial queue with account recheck and scope
-   rejection rollback, and leaves other legacy callers unchanged.
+   `AgendaStoreLifecycle.moveDiaryBlockToTrash`. Critically, a separate
+   per-store guard queue serializes the **entire optimistic journal/Trash
+   projection plus the canonical `_persistEntityMutations` write**, not only
+   the persistence call: two same-day deletes cannot overwrite each other's
+   rollback after a concurrent account switch. The canonical writer rechecks
+   the account epoch and invokes scope-rejection rollback. Legacy unguarded
+   callers retain their pre-existing behavior.
    Reject stale card identity and unreadable journal/Trash storage. Failure
    restores only the exact in-memory projection, never another account.
 2. **P1 media draft/GC race:** the media GC used to delete every unreferenced
@@ -47,7 +51,8 @@ the user explicitly deferred offline/Web guarantees.
 ## Automated evidence — inspect exact head and merge SHA, do not infer
 - `test/webfirst_s11e_vision_board_hardening_test.dart`: concurrent editor
   retain/release with interleaved prune, persisted media references and ZIP,
-  stale board ID guarded Trash, concurrent A→B→A Trash consistency,
+  stale board ID guarded Trash, concurrent same-day two-delete rollback
+  under A→B→A,
   missing media JSON backup for live/Trash, five-language gallery labels,
   320dp dark mode and shared-only filter.
 - S11-B/C/D suites remain regression gates. PR source checks must include
