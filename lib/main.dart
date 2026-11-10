@@ -120,6 +120,7 @@ part 'src/planner_views.dart';
 part 'src/widgets_editors.dart';
 part 'src/diary/diary_templates.dart';
 part 'src/diary/diary_twelve_weeks_preview.dart';
+part 'src/diary/diary_twelve_weeks_draft.dart';
 part 'src/diary/diary_vision_board.dart';
 part 'src/diary/diary_vision_board_canvas.dart';
 part 'src/diary/diary_vision_board_gallery.dart';
