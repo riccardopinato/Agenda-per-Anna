@@ -102,6 +102,10 @@ void main() {
       camera, const Size(320, 480), VisionBoardWorld.initialHalfExtent,
     );
     expect(expanded, greaterThan(VisionBoardWorld.initialHalfExtent));
+    final modelBeforeGrowth = VisionBoardWorld.fromScene(
+      camera.toScene(const Offset(160, 240)),
+      VisionBoardWorld.initialHalfExtent,
+    );
     final delta = expanded - VisionBoardWorld.initialHalfExtent;
     final shifted = camera.value.clone();
     shifted.storage[12] -= delta * shifted.getMaxScaleOnAxis();
@@ -110,13 +114,8 @@ void main() {
     final world = VisionBoardWorld.fromScene(
       camera.toScene(const Offset(160, 240)), expanded,
     );
-    final preservedWorld = VisionBoardWorld.fromScene(
-      const Offset(0, 0),
-      VisionBoardWorld.initialHalfExtent,
-    );
-    expect(world.x.isFinite, isTrue);
-    expect(world.y.isFinite, isTrue);
-    expect(preservedWorld.x.isFinite, isTrue);
+    expect(world.x, closeTo(modelBeforeGrowth.x, .000001));
+    expect(world.y, closeTo(modelBeforeGrowth.y, .000001));
   });
 
   test('arrow wings point backward, and remain finite', () {
