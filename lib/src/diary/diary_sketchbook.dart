@@ -1928,54 +1928,66 @@ class _DiarySketchbookScreenState extends State<DiarySketchbookScreen> {
                     ),
                   ),
                   const SizedBox(width: 10),
-                  Center(
-                    child: Text(
-                      '${pageIndex + 1}/${pages.length}',
-                      style: const TextStyle(fontWeight: FontWeight.w800),
+                  if (widget.visionBoardMode)
+                    IconButton(
+                      key: const ValueKey('vision-board-add-content'),
+                      tooltip: VisionBoardUiCopy.addHere(
+                        AnnaStrings.of(context)),
+                      onPressed: _showVisionInsertMenu,
+                      icon: const Icon(Icons.add_circle_outline),
                     ),
-                  ),
-                  IconButton(
-                    tooltip: AnnaStrings.of(context).d3('previousPage'),
-                    onPressed: pageIndex == 0
-                        ? null
-                        : () => setState(() {
-                              pageIndex--;
-                              _clearSelection();
-                              _resetGesturePreview();
-                              _clearSelectionMoveBuffers();
-                              _transform.value = Matrix4.identity();
-                            }),
-                    icon: const Icon(Icons.chevron_left),
-                  ),
-                  IconButton(
-                    tooltip: AnnaStrings.of(context).d3('nextPage'),
-                    onPressed: pageIndex >= pages.length - 1
-                        ? null
-                        : () => setState(() {
-                              pageIndex++;
-                              _clearSelection();
-                              _resetGesturePreview();
-                              _clearSelectionMoveBuffers();
-                              _transform.value = Matrix4.identity();
-                            }),
-                    icon: const Icon(Icons.chevron_right),
-                  ),
-                  IconButton(
-                    tooltip: AnnaStrings.of(context).d3('newPage'),
-                    onPressed: pages.length >= 64 ? null : _addPage,
-                    icon: const Icon(Icons.add_box_outlined),
-                  ),
-                  IconButton(
-                    tooltip: AnnaStrings.of(context).d3('duplicatePage'),
-                    onPressed:
-                        pages.length >= 64 ? null : _duplicatePage,
-                    icon: const Icon(Icons.copy_all_outlined),
-                  ),
-                  IconButton(
-                    tooltip: AnnaStrings.of(context).d3('deletePage'),
-                    onPressed: _deletePage,
-                    icon: const Icon(Icons.delete_outline),
-                  ),
+                  if (!widget.visionBoardMode || pages.length > 1) ...[
+                    Center(
+                      child: Text(
+                        '${pageIndex + 1}/${pages.length}',
+                        style: const TextStyle(fontWeight: FontWeight.w800),
+                      ),
+                    ),
+                    IconButton(
+                      tooltip: AnnaStrings.of(context).d3('previousPage'),
+                      onPressed: pageIndex == 0 ? null : () => setState(() {
+                        pageIndex--;
+                        _clearSelection();
+                        _resetGesturePreview();
+                        _clearSelectionMoveBuffers();
+                        if (!widget.visionBoardMode) {
+                          _transform.value = Matrix4.identity();
+                        }
+                      }),
+                      icon: const Icon(Icons.chevron_left),
+                    ),
+                    IconButton(
+                      tooltip: AnnaStrings.of(context).d3('nextPage'),
+                      onPressed: pageIndex >= pages.length - 1
+                          ? null : () => setState(() {
+                        pageIndex++;
+                        _clearSelection();
+                        _resetGesturePreview();
+                        _clearSelectionMoveBuffers();
+                        if (!widget.visionBoardMode) {
+                          _transform.value = Matrix4.identity();
+                        }
+                      }),
+                      icon: const Icon(Icons.chevron_right),
+                    ),
+                  ],
+                  if (!widget.visionBoardMode) ...[
+                    IconButton(
+                      tooltip: AnnaStrings.of(context).d3('newPage'),
+                      onPressed: pages.length >= 64 ? null : _addPage,
+                      icon: const Icon(Icons.add_box_outlined),
+                    ),
+                    IconButton(
+                      tooltip: AnnaStrings.of(context).d3('duplicatePage'),
+                      onPressed: pages.length >= 64 ? null : _duplicatePage,
+                      icon: const Icon(Icons.copy_all_outlined),
+                    ),
+                    IconButton(
+                      tooltip: AnnaStrings.of(context).d3('deletePage'),
+                      onPressed: _deletePage,
+                      icon: const Icon(Icons.delete_outline),
+                    ),
+                  ],
                 ],
               ),
             ),
