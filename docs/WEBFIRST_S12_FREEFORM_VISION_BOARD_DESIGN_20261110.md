@@ -21,7 +21,7 @@ solo prototipo documentale). **Factory baseline già fissata nel ciclo S11-A:**
   Anna e solo un helper geometrico separato `VisionBoardWorld`. Nessun nuovo
   package, sistema di media o database.
 - Legacy: i punti normalizzati `x/y ∈ [0,1]` di S11-B/C/D/E corrispondono
-  allo stesso riquadro iniziale 640×640 nella scena espandibile. I nuovi punti
+  allo stesso riquadro iniziale 640×853⅓ (proporzioni 3:4) nella scena espandibile. I nuovi punti
   possono essere negativi o maggiori di 1, senza migrazione dello schema.
   Una board con vecchie pagine multiple mantiene la navigazione tra pagine,
   ma il comando + non crea ulteriori pagine.
