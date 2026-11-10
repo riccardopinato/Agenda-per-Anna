@@ -1,6 +1,6 @@
 # UX Step 7 — Dodici settimane che contano (Anna's Diary)
 
-**Stato:** UX_DRAFT_PENDING_APPROVAL / NON INSTALLABILE / NON ACQUISTABILE. Data: 10/11/2026. Factory baseline: App-Factory-Core@2953e9b50f5f43fbd5a1702cb41785a4235592a5 (Master v27, Golden Index v29).
+**Stato:** UX_APPROVED_PROVISIONAL (decisione utente 10/11/2026) / NON INSTALLABILE / NON ACQUISTABILE. Data: 10/11/2026. Factory baseline: App-Factory-Core@2953e9b50f5f43fbd5a1702cb41785a4235592a5 (Master v27, Golden Index v29).
 
 [Prototipo HTML interattivo — 12 capitoli, dati inventati](PROTOTIPO_DODICI_SETTIMANE.html) · [Manifest statico Core anna_twelve_week_reflection_research.json](https://github.com/riccardopinato/App-Factory-Core/blob/main/contracts/template_engine_v1/examples/anna_twelve_week_reflection_research.json).
 
@@ -22,7 +22,7 @@
 
 ## Gate da superare prima di implementare il template in Flutter
 
-- Approvazione visiva e di prodotto esplicita: card, 12 tappe, tono narrativo, calendario opzionale, flusso sul giorno/diario, valore originale distinto dai rituali gratis.
+- **Approvazione UX provvisoria ricevuta il 10/11/2026** per il prototipo a 12 tappe: eventuali raffinamenti rimangono possibili. Ammissione commerciale/Product Bible, valore distinto dai rituali gratuiti e autorizzazione di implementazione/pagamento restano gate separati.
 - Write plan con conferma per un solo `DiaryBlock` alla volta, `installation_request_id` e receipt idempotente/owner-bound, staging + rollback contro save failure, una sola voce al retry, nessun effetto su Annulla.
 - Compatibilità data civile e DST, date prima/fuori dalla finestra, locale, offline, rotazione, riapertura, backup/restore, editing/revoca del modello, account A→B→A.
 - QA responsive 320/360dp, zoom test 200%, voice reader, tastiera, focus, contrasto Light/Dark, riduzione animazioni, cinque traduzioni.
