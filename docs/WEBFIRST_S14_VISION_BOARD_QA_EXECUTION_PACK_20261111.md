@@ -32,9 +32,9 @@
 **Fase D — misure reali:** S13-16 (30 foto) e PWA-13 (20 foto) su A/B: annotare cold/warm open, durata salvataggio, frame time/jank e memoria solo se effettivamente misurati; nessuna soglia fittizia o PASS generico.
 
 ## Scheda prova e validatore
-Ogni scenario del JSON precompilato ha: `id`, `status`, `priority`, `devices`, `action`, `expected`, `observed`, `testedAt`, `testerRef`, `evidenceRefs`, `metrics`.
+Ogni scenario del JSON precompilato ha: `id`, `status`, `priority`, `devices`, `action`, `expected`, `observed`, `testedAt`, `testerRef`, `evidenceRefs`, `testedOn` (dispositivi realmente provati), `metrics`.
 Stati ammessi: `NOT_VERIFIED`, `NOT_MEASURED` (solo performance), `BLOCKED`, `FAIL`, `PASS`.
-- Un `PASS` richiede una descrizione osservata, data ISO UTC/offset, riferimento operatore, almeno un riferimento di prova non sensibile e dispositivi provati esplicitamente. Per le due prove performance richiede anche metriche positive `coldMs`, `warmMs`, `saveMs`, `memoryMiB`.
+- Un `PASS` richiede una descrizione osservata, data ISO UTC/offset, riferimento operatore, almeno un riferimento di prova non sensibile e `testedOn` con **tutti i dispositivi obbligatori** (campo `devices` canonico non modificabile). Per le due prove performance richiede anche metriche **finite e positive** `coldMs`, `warmMs`, `saveMs`, `memoryMiB`; `NaN` e infinito non sono validi.
 - `BLOCKED` e `FAIL` richiedono `observed` e `testerRef`; mai convertire automaticamente in PASS.
 - `python3 tool/validate_vision_board_pwa_evidence.py docs/qa/vision_board_two_pwa_template.json` verifica il **template**, non l'avvenuto collaudo.
 - `python3 tool/validate_vision_board_pwa_evidence.py /percorso/privato/risultati.json --require-complete` verifica solo la **completezza formale** di un ledger passato da operatori reali. Il tool **non può autenticare foto, build PWA, dispositivi o esecuzioni fisiche** e non concede alcuna certificazione.

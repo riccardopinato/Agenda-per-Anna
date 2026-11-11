@@ -36,10 +36,40 @@ class VisionBoardEvidenceShapeTests(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, "scenario IDs"):
                 validate(invalid)
 
+    def test_cannot_change_required_a_b_scope(self):
+        invalid = copy.deepcopy(self.data)
+        invalid["scenarios"][0]["devices"] = "A"
+        with self.assertRaisesRegex(ValueError, "required device scope"):
+            validate(invalid)
+
+    def test_pass_requires_actual_both_device_coverage(self):
+        invalid = copy.deepcopy(self.data)
+        case = next(x for x in invalid["scenarios"] if x["id"] == "S13-01")
+        case.update(
+            status="PASS", observed="A only", testerRef="QA-A",
+            testedAt="2026-11-11T09:00:00+01:00",
+            evidenceRefs=["safe-evidence-ref"], testedOn=["A"],
+        )
+        with self.assertRaisesRegex(ValueError, "required device coverage"):
+            validate(invalid)
+
+    def test_performance_rejects_nonfinite_json_values(self):
+        for number in (float("nan"), float("inf")):
+            invalid = copy.deepcopy(self.data)
+            case = next(x for x in invalid["scenarios"] if x["id"] == "PWA-13")
+            case.update(
+                status="PASS", observed="Measured synthetic photos", testerRef="QA-B",
+                testedAt="2026-11-11T09:00:00+01:00",
+                evidenceRefs=["safe-evidence-ref"], testedOn=["A", "B"],
+                metrics={"coldMs": number, "warmMs": 100, "saveMs": 200, "memoryMiB": 70},
+            )
+            with self.assertRaisesRegex(ValueError, "invalid performance numbers"):
+                validate(invalid)
+
     def test_performance_cannot_be_assumed(self):
         invalid = copy.deepcopy(self.data)
         p = next(x for x in invalid["scenarios"] if x["id"] == "PWA-13")
-        p.update(status="PASS", observed="Measured synthetic photos", testerRef="QA-A", testedAt="2026-11-11T09:00:00+01:00", evidenceRefs=["safe-evidence-ref"])
+        p.update(status="PASS", observed="Measured synthetic photos", testerRef="QA-A", testedAt="2026-11-11T09:00:00+01:00", evidenceRefs=["safe-evidence-ref"], testedOn=["A", "B"])
         with self.assertRaisesRegex(ValueError, "performance numbers"):
             validate(invalid)
 
