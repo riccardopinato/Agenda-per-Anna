@@ -117,3 +117,7 @@ contains only test and documentation files, GitHub Pages did not redeploy;
 there is no new S13 runtime release to certify. `TWO_PWA_PHYSICAL_ACCEPTANCE`
 remains `MANUAL_QA_PENDING` (tracked in issue #297) until operators supply
 actual device results.
+
+## 11 November 2026 — S14 executable QA preparation
+
+The canonical S13 16 cases and S11-E 14 cases are consolidated for **operator preparation only** in [S14 two-PWA execution pack](WEBFIRST_S14_VISION_BOARD_QA_EXECUTION_PACK_20261111.md), with [structured 30-scenario evidence template](qa/vision_board_two_pwa_template.json) and fail-closed structural validator (`tool/validate_vision_board_pwa_evidence.py`). Template validation is automated; physical PWA execution and release identity remain **NOT_VERIFIED**, issue #297 remains open.
