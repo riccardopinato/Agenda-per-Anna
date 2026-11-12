@@ -23,6 +23,32 @@ void main() {
     expect(jsonEncode(original.toJson()), before);
   });
 
+  test('AgendaStore runtime projection consumes pinned profile kit without writing', () {
+    const prefs = anna.AgendaPreferences(
+      displayName: 'Anna',
+      themeMode: anna.AgendaThemeMode.dark,
+      appLanguage: anna.AppLanguage.italian,
+      defaultEventMinutes: 45,
+    );
+    final store = anna.AgendaStore()..preferences = prefs;
+    final before = jsonEncode(store.preferences.toJson());
+    final snapshot = store.factoryProfileSnapshot;
+    expect(snapshot.displayName, 'Anna');
+    expect(snapshot.locale, 'it');
+    expect(snapshot.theme, kit.ProfileTheme.dark);
+    expect(snapshot.analyticsOptIn, isFalse);
+    expect(store.preferences.defaultEventMinutes, 45);
+    expect(jsonEncode(store.preferences.toJson()), before);
+    store.dispose();
+  });
+
+  test('system language remains explicit and private by default', () {
+    final store = anna.AgendaStore();
+    expect(store.factoryProfileSnapshot.locale, 'system');
+    expect(store.factoryProfileSnapshot.analyticsOptIn, isFalse);
+    store.dispose();
+  });
+
   test('shared kit has no implicit auth, cloud, backup or consent', () {
     const defaults = kit.ProfilePreferences();
     expect(defaults.analyticsOptIn, isFalse);
