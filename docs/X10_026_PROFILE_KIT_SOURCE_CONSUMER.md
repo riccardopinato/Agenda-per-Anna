@@ -7,3 +7,7 @@ The added Flutter test exercises the actual dependency in this consumer's toolch
 Rollback: remove the sole `factory_profile_kit` git dependency and the test, and regenerate `pubspec.lock` using the same toolchain; existing app stores remain unchanged. No Golden promotion follows from adding this dependency.
 
 **Anna specific gate: Product Bible/DS6 and Private Vault behavior remain authoritative; no user data/path changed. Only merge after exact-head Development and AppLab Source checks plus independent review.**
+
+## Follow-up source consumer runtime projection (X10-026)
+
+`AgendaStore.factoryProfileSnapshot` now builds a **read-only**, runtime-available `factory_profile_kit` profile from the canonical current `AgendaPreferences` object. This does not install a new preferences store, migrate Vault/backup fields, opt users into analytics, enable login or alter the UI. Two regression tests check locale/theme/display name projection and unchanged serialized store data. The kit's `ProfileTheme` is a *view*, never a replacement for `AgendaThemeMode`. Revert by removing the single root import, one getter and its tests; no stored data format changed.

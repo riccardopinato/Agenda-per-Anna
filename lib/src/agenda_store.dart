@@ -95,6 +95,24 @@ class AgendaStore extends ChangeNotifier {
   final Set<String> _unreadableStorageKeys = {};
   AgendaPreferences preferences = const AgendaPreferences();
 
+  /// X10-026: optional, read-only view for the pinned Factory profile kit.
+  /// Existing local/Noi/Cloud preference storage, IDs and backups remain
+  /// authoritative. Never implicitly enable analytics or sign-in.
+  factory_profile.ProfilePreferences get factoryProfileSnapshot {
+    final locale = preferences.appLanguage.code;
+    final theme = switch (preferences.themeMode) {
+      AgendaThemeMode.system => factory_profile.ProfileTheme.system,
+      AgendaThemeMode.light => factory_profile.ProfileTheme.light,
+      AgendaThemeMode.dark => factory_profile.ProfileTheme.dark,
+    };
+    return factory_profile.ProfilePreferences(
+      displayName: preferences.displayName,
+      locale: locale.isEmpty ? 'system' : locale,
+      theme: theme,
+      analyticsOptIn: false,
+    );
+  }
+
   List<HabitDefinition> _starterHabits() {
     final strings = AnnaStrings.forPreference(preferences.appLanguage);
     return [
