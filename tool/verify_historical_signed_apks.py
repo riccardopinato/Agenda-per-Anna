@@ -131,6 +131,10 @@ def inspect_android(data: dict, item: dict, apk: Path) -> dict:
     print("AAPT_BINARY_PACKAGE " + package_line[:350])
     match = re.search(r"(?m)^package: name='([^']+)' versionCode='(\d+)' versionName='([^']+)'", output)
     actual_code = int(match.group(2)) if match else None
+    print("AAPT_PARSED_EXPECTED", {"actual": match.groups() if match else None,
+                                    "package": data["package_id"],
+                                    "binary_version_code": item["apk_version_code"],
+                                    "version_name": data["version_name"]})
     require(match is not None
             and match.group(1) == data["package_id"]
             and actual_code == item["apk_version_code"]
