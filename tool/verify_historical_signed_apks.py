@@ -130,9 +130,10 @@ def inspect_android(data: dict, item: dict, apk: Path) -> dict:
                          if line.startswith("package: ")), "MISSING_PACKAGE_LINE")
     print("AAPT_BINARY_PACKAGE " + package_line[:350])
     match = re.search(r"(?m)^package: name='([^']+)' versionCode='(\d+)' versionName='([^']+)'", output)
+    actual_code = int(match.group(2)) if match else None
     require(match is not None
             and match.group(1) == data["package_id"]
-            and int(match.group(2)) == item["version_code"]
+            and actual_code == item["apk_version_code"]
             and match.group(3) == data["version_name"], "APK_BINARY_PACKAGE_VERSION_MISMATCH")
     with ZipFile(apk) as signed_apk:
         names = signed_apk.namelist()
@@ -147,7 +148,7 @@ def inspect_android(data: dict, item: dict, apk: Path) -> dict:
     require("Signer #2" not in signed and re.search(
         r"Verified using v2 scheme \(APK Signature Scheme v2\):\s*true", signed, re.I)
         is not None, "APK_V2_SIGNATURE_NOT_VALID")
-    return {"version_code": int(match is not None and item["version_code"]),
+    return {"version_code": actual_code,
             "sha256": digest(apk), "size_bytes": apk.stat().st_size,
             "signing_certificate_sha256": data["expected_signing_certificate_sha256"],
             "native_abis": sorted(abis), "apksigner_verified": True}
@@ -155,6 +156,16 @@ def inspect_android(data: dict, item: dict, apk: Path) -> dict:
 
 def verify_one(data: dict, item: dict, root: Path) -> dict:
     code = item["version_code"]
+    binary_code = item.get("apk_version_code")
+    require(type(binary_code) is int and binary_code > 0, "ACTUAL_BINARY_VERSIONCODE_PIN_REQUIRED")
+    if binary_code != code:
+        require(code == 128 and binary_code == 2127
+                and item.get("version_code_discrepancy") ==
+                "SOURCE_BUILD_128_VS_SIGNED_ARM64_APK_VERSION_CODE_2127_UNRESOLVED",
+                "UNREVIEWED_BINARY_VERSIONCODE_DISCREPANCY")
+    else:
+        require("version_code_discrepancy" not in item,
+                "MISLEADING_VERSIONCODE_DISCREPANCY_FLAG")
     directory = root / str(code)
     require(directory.is_dir() and not directory.is_symlink(), "ARTIFACT_DIR_MISSING")
     require(SHA40.fullmatch(item["source_sha"]) is not None
