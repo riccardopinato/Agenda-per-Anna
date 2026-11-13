@@ -13,6 +13,7 @@ import os
 import re
 import subprocess
 import tempfile
+from xml.etree import ElementTree as ET
 from pathlib import Path
 from zipfile import ZipFile
 
@@ -155,6 +156,30 @@ def install_expect(apk: Path, version: int) -> None:
     require(installed_version() == version, "ACTUAL_INSTALLED_VERSION_MISMATCH")
 
 
+def visible_synthetic_emulator_labels() -> str:
+    # Only the disposable prechecked emulator exists. Strip data from output
+    # to an allowlisted collection of short UI labels / semantics ids.
+    dumped = cmd("adb", "-e", "shell", "uiautomator", "dump",
+                 "/sdcard/anna-emulator-synthetic-hierarchy.xml", timeout=50)
+    if dumped.returncode != 0:
+        return "UI_HIERARCHY_DUMP_UNAVAILABLE"
+    output = cmd("adb", "-e", "shell", "cat",
+                 "/sdcard/anna-emulator-synthetic-hierarchy.xml", timeout=25)
+    if output.returncode != 0:
+        return "UI_HIERARCHY_READ_UNAVAILABLE"
+    try:
+        tree = ET.fromstring(output.stdout)
+    except ET.ParseError:
+        return "UI_HIERARCHY_PARSE_UNAVAILABLE"
+    labels = []
+    for node in tree.iter("node"):
+        for key in ("text", "content-desc", "resource-id"):
+            label = node.get(key, "").strip()
+            if label and len(label) <= 110 and label not in labels:
+                labels.append(label)
+    return "|".join(labels[-65:])[-3900:]
+
+
 def maestro(flow: str) -> None:
     require(Path(flow).is_file(), "MAESTRO_JOURNEY_MISSING")
     result = cmd("maestro", "test", flow, timeout=660)
@@ -164,9 +189,11 @@ def maestro(flow: str) -> None:
         runtime = cmd("adb", "-e", "logcat", "-d", "-t", "150",
                       "-s", "AndroidRuntime:E", timeout=30)
         diagnostic = runtime.stdout[-1600:] if runtime.returncode == 0 else ""
+        ui = visible_synthetic_emulator_labels()
         raise RehearsalError(
             "REAL_APP_UI_JOURNEY_FAILED:" + Path(flow).name + ":" +
             (result.stdout + "\n" + result.stderr)[-3000:] +
+            ":UI_SEMANTICS_LABELS:" + ui +
             ":ANDROID_RUNTIME_CRASH_SNIPPET:" + diagnostic)
     print("MAESTRO_REAL_APK_UI_PASS: " + Path(flow).name)
 
