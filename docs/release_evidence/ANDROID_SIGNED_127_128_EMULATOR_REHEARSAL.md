@@ -18,7 +18,7 @@ The exact binaries have the same release-signing certificate `31BE63155C831F0622
 The test runs on a disposable Android API35 Google APIs x86_64 emulator with ARM64 native-library translation. The Python harness refuses a real phone or a preexisting installed package, before any installation. The guest/offline path never signs in, switches real accounts or loads personal backups.
 
 1. Install original +127 ARM64 signed APK; verify package via Android PackageManager **2127**.
-2. Complete normal guest onboarding using the existing `.maestro/journeys/onboarding.yaml` (the only place with `clearState: true`, on a completely new synthetic fixture).
+2. Complete normal guest onboarding by reusing the canonical selectors in `.maestro/release-recovery/signed127-onboard-no-clear.yaml`. The flow keeps `clearState: false` because the emulator is explicitly checked to have no prior app installation before the first APK install. No `pm clear` is issued.
 3. Use real, unchanged Anna UI to create one **synthetic Inbox note**, text `X10_ANNA_127_128_EMULATOR_SYNTHETIC_ONLY`; observe it in Inbox.
 4. Force-stop and **upgrade in-place** using original +128, `adb install -r`. No uninstall, `pm clear`, backup/restore or `-d`. Verify installed Android `versionCode=2128`.
 5. Navigate to Inbox from freshly launched updated app, assert exactly the synthetic note remains visible.
