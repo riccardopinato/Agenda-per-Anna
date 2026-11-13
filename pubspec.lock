@@ -181,11 +181,11 @@ packages:
     dependency: "direct main"
     description:
       path: "19-APP-FACTORY-10X/flutter_kits/profile"
-      ref: "1d1a8628e25f58b788b013cf6955763d00363cdc"
-      resolved-ref: "1d1a8628e25f58b788b013cf6955763d00363cdc"
+      ref: "710e83261bcadc1cfd5eda3e28d77bed8b8bc576"
+      resolved-ref: "710e83261bcadc1cfd5eda3e28d77bed8b8bc576"
       url: "https://github.com/riccardopinato/Idee-app-Archivi-riferimenti.git"
     source: git
-    version: "0.1.0"
+    version: "0.1.1"
   fake_async:
     dependency: transitive
     description:
