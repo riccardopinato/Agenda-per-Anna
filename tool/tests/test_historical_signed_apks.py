@@ -158,6 +158,7 @@ class SignedPairSafetyTests(unittest.TestCase):
             inv, item, directory = sample(Path(tmp), code=128)
             with patch.object(mod, "inspect_android", return_value={
                 "version_code": 2128, "signing_certificate_sha256": CERT,
+                "sha256": item["apk_sha256"], "size_bytes": item["apk_size_bytes"],
                 "apksigner_verified": True}):
                 proof = mod.verify_one(inv, item, Path(tmp))
             self.assertEqual(proof["source_build_number"], 128)
