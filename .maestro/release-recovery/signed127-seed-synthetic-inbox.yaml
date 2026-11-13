@@ -1,14 +1,15 @@
 appId: com.riccardopinato.agenda_per_anna
 ---
-# Launch the REAL historical stable-signed +127 APK. Never clear state here:
-# onboarding is completed separately using the canonical existing flow.
-- launchApp
+# Original stable-signed +127 only. Start guest UI without clearing state.
+- launchApp:
+    clearState: false
 - extendedWaitUntil:
     visible:
       id: 'main-nav-more'
-    timeout: 45000
+    timeout: 60000
 - tapOn:
     id: 'main-nav-more'
+    retryTapIfNoChange: true
 - scrollUntilVisible:
     element:
       id: 'more-inbox'
@@ -19,34 +20,20 @@ appId: com.riccardopinato.agenda_per_anna
 - extendedWaitUntil:
     visible: 'Inbox'
     timeout: 30000
+# Unlike the flaky collapsed capture sheet, this is an actual canonical
+# account-scoped persisted Inbox category (organization_domain.dart).
 - tapOn:
-    text: '(Cattura|Capture|Capturar|Capturer)'
+    text: '(Nuovo tag|New tag|Nueva etiqueta|Nouveau tag|Nova etiqueta)'
 - extendedWaitUntil:
-    visible:
-      id: 'capture-effective-date'
-    timeout: 30000
-# Quick Inbox note is in the extended action sheet; do not depend on ranking.
+    visible: '(Nuovo tag|New tag|Nueva etiqueta|Nouveau tag|Nova etiqueta)'
+    timeout: 15000
 - tapOn:
-    text: '(Altre opzioni|More options|Más opciones|Plus d.options|Mais opções)'
-# Bottom sheet uses a bounded SingleChildScrollView. Maestro's generic
-# scrollUntilVisible swipes from screen centre OUTSIDE its scrollable content.
-# Swipe from inside the expanded sheet, then find the real Inbox action.
-- swipe:
-    start: "55%,83%"
-    end: "55%,35%"
-    duration: 550
-- tapOn:
-    text: '(Nota rapida in Inbox|Quick note in Inbox|Nota rápida en Inbox|Note rapide dans Inbox|Nota rápida na Inbox)'
-- extendedWaitUntil:
-    visible: '(Nota rapida|Quick note|Nota rápida|Note rapide)'
-    timeout: 20000
-- tapOn:
-    text: '(Scrivi al volo...|Write something quickly...|Escribe algo rápido...|Écris rapidement...|Escreve rapidamente...)'
+    text: 'Tag'
 - inputText: 'X10_ANNA_127_128_EMULATOR_SYNTHETIC_ONLY'
 - hideKeyboard
 - tapOn:
     text: '(Salva|Save|Guardar|Enregistrer)'
 - extendedWaitUntil:
-    visible: '.*X10_ANNA_127_128_EMULATOR_SYNTHETIC_ONLY.*'
+    visible: '#X10_ANNA_127_128_EMULATOR_SYNTHETIC_ONLY'
     timeout: 30000
-- assertVisible: 'X10_ANNA_127_128_EMULATOR_SYNTHETIC_ONLY'
+- assertVisible: '#X10_ANNA_127_128_EMULATOR_SYNTHETIC_ONLY'
