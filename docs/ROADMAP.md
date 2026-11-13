@@ -1,5 +1,11 @@
 # Anna's Diary — Roadmap
 
+## 13 novembre 2026 — Android rc.6+130: candidate for exact signed physical QA (SOURCE PR, NOT INSTALLED)
+
+- Nuovo candidato source-only: [evidence protocol rc.6+130](release_evidence/ANDROID_RC6_130_CANDIDATE_20261113.md), con gate exact-head, monotonia buildNumber e firma protetta. La +129 **firmata** esiste storicamente ([run #42317437509](https://github.com/riccardopinato/Agenda-per-Anna/actions/runs/42317437509)), ma non incorpora tutti i cambiamenti successivi.
+- Questa fase non installa nulla e non muta dati utente o schema; il Maxi-step 3 resta `NOT VERIFIED` fino al collaudo fisico di dispositivo, backup e matrice 31 scenari. Play/Store esclusi.
+
+
 ## 13 novembre 2026 — Android Maxi-step 3: physical QA / data integrity gate (PROTOCOL READY; DEVICE NOT VERIFIED)
 
 - Protocollo incrementale [Android Maxi-step 3 — backup verificato e matrice 31 scenari](release_evidence/ANDROID_MAXISTEP3_PHYSICAL_DATA_GATE_20261113.md) a partire da `main@c9da767a14eae5ef0f82ee39e61853f2e24f0057`. Confronta i 57 task 10x con il proprio gate X10-032, senza cambiare stati del programma.
