@@ -1,0 +1,87 @@
+name: Anna historical signed APK +127/+128 identity audit
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/historical-signed-apk-pair-audit.yml"
+      - "tool/verify_historical_signed_apks.py"
+      - "tool/tests/test_historical_signed_apks.py"
+      - "docs/release_evidence/ANDROID_SIGNED_PAIR_127_128_PINNED.json"
+      - "docs/release_evidence/ANDROID_SIGNED_PAIR_127_128_AUDIT.md"
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+jobs:
+  verify-historical-signed-pair:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - name: Checkout exact PR source (not the synthetic merge commit)
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+      - name: Run fail-closed offline negative tests
+        run: python3 -m unittest discover -s tool/tests -p test_historical_signed_apks.py -v
+      - name: Download only two pinned, original GitHub Action artifacts and provenance
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          ROOT="$RUNNER_TEMP/anna-historical-signed-audit"
+          mkdir -p "$ROOT/127" "$ROOT/128"
+          for version in 127 128; do
+            if [ "$version" = 127 ]; then
+              run=42123307290
+              artifact=13459458898
+              source=999bf8eb4c010d8fb7007179bb7f518fba5b71de
+            else
+              run=42221409690
+              artifact=13503582447
+              source=01151f379ebd9669c3936058aa089433a05a63ae
+            fi
+            dir="$ROOT/$version"
+            gh api "repos/$GITHUB_REPOSITORY/actions/runs/$run" > "$dir/run.json"
+            gh api "repos/$GITHUB_REPOSITORY/actions/runs/$run/jobs?per_page=100" > "$dir/jobs.json"
+            gh api "repos/$GITHUB_REPOSITORY/actions/artifacts/$artifact" > "$dir/artifact.json"
+            gh api "repos/$GITHUB_REPOSITORY/contents/pubspec.yaml?ref=$source" > "$dir/pubspec.json"
+            # GitHub returns the original artifact ZIP bytes via a signed redirect.
+            # Verify both ZIP SHA-256 and the APK inner SHA-256 independently.
+            gh api "repos/$GITHUB_REPOSITORY/actions/artifacts/$artifact/zip" > "$dir/artifact.zip"
+            test -s "$dir/artifact.zip"
+          done
+      - name: Setup JDK (Android build-tools only, no Flutter build or signing)
+        uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # v4.7.1
+        with:
+          distribution: temurin
+          java-version: '17'
+      - name: Setup Android build tools for independent binary inspection
+        uses: android-actions/setup-android@be39fa834029ff78f1a44aa3bb0819b8fc2bd8fd
+      - name: Install aapt/apksigner and expose to verifier
+        shell: bash
+        run: |
+          set -euo pipefail
+          yes | sdkmanager --licenses >/dev/null || true
+          sdkmanager "build-tools;36.0.0"
+          echo "$ANDROID_HOME/build-tools/36.0.0" >> "$GITHUB_PATH"
+      - name: Independently verify original 127 and 128 APK bytes/signatures
+        env:
+          EXPECTED_HEAD: ${{ github.event.pull_request.head.sha || github.sha }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 tool/verify_historical_signed_apks.py \
+            --inventory docs/release_evidence/ANDROID_SIGNED_PAIR_127_128_PINNED.json \
+            --artifact-root "$RUNNER_TEMP/anna-historical-signed-audit" \
+            --expected-head "$EXPECTED_HEAD" \
+            --output "$RUNNER_TEMP/anna-historical-signed-audit/identity-result.json"
+          echo "Original signed APK pair (+127/+128): independent hash, source, aapt version and apksigner v2 signer proof. No APK generated or installed. No device, rollback or Store certification." >> "$GITHUB_STEP_SUMMARY"
+      - name: Upload provenance receipt ONLY (no APKs and no user data)
+        if: success()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: anna-existing-127-128-identity-audit
+          path: ${{ runner.temp }}/anna-historical-signed-audit/identity-result.json
+          if-no-files-found: error
+          retention-days: 30
