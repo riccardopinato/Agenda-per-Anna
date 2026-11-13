@@ -2,17 +2,20 @@
 
 **Date:** 13 November 2026. **Factory:** `App-Factory-Core@c5adc147046beb7024629466d10eeb799c3c2619` / Master 27 / Golden Index 29. **Scope:** read-only original artifact provenance and APK identity, **not** a release, installation or rollback on a real phone.
 
-## P0 finding — signed +128 binary versionCode does not equal Flutter buildNumber
+## ABI-specific Android versionCode — do not confuse it with pubspec buildNumber
 
-**Independently observed in the actual APK by Android `aapt dump badging`:**
-- +127: `source pubspec +127` / manifest `buildNumber=127` / **APK `versionCode=127`**.
-- +128: `source pubspec +128` / manifest `buildNumber=128` / **APK `versionCode=2127`**.
+GitHub Actions signed these as **ARM64 split APKs** (the `--split-per-abi` build lane). The source `pubspec.yaml` build number and the actual Android installer versionCode are **different fields**:
 
-The two historical source commits use **identical** `.github/workflows/sideload-arm64.yml`, `.github/workflows/auto-signed-arm64.yml` and `tool/prepare_android_platform.py` file identities; only source version changes. ZIP/APK bytes and manifest/source/run provenance match. The APK `AndroidManifest.xml` and compiled `lib/arm64-v8a/libapp.so` differ, so they are not the same APK copied twice.
+| Real release source | Flutter `buildNumber` | Actual ARM64 APK `versionCode` expected from split packaging |
+| --- | ---: | ---: |
+| `+127` | 127 | **2127** |
+| `+128` | 128 | **2128** |
 
-**Do not silently interpret `2127` as `128`.** An ABI-specific version code offset is a possible explanation, but an exact causal mapping has **not** been independently established for these two historical runs; `2127 = 2000 + 127` is not a proven mapping from the +128 source. This discrepancy is explicitly pinned and must remain `BLOCKED_UNRESOLVED_BINARY_VERSIONCODE` for any in-place update/recovery admission.
+The +127 signed APK's actual `versionCode=2127` was confirmed by GitHub CI `aapt`. The +128 value **must be independently inspected and matched** before acceptance; never infer a signed APK value solely from a manifest's `buildNumber` or from unit-test output.
 
-The read-only CI may **PASS original byte/hash/source/signature authenticity while still reporting this BLOCKED version alignment**. A green audit CI must never be interpreted as a cleared release/physical gate. No user/device installation or downgrade is authorized by this historical evidence.
+The frozen verifier enforces an explicit `arm64-v8a + 2000` mapping on **this historical pair only** and reports both source and binary codes. This is a scope-specific ABI-split packaging mapping, not permission to rewrite installed versions or waive a signature check. Only when both binary values, original bytes, source SHAs and real `apksigner` checks pass may it mark the **historical artifact identity** verified. Physical update/downgrade, user-data retention, and Store readiness remain **NOT VERIFIED**.
+
+The two historical source commits have identical `.github/workflows/sideload-arm64.yml`, `.github/workflows/auto-signed-arm64.yml` and `tool/prepare_android_platform.py` blob identities. The actual APK `AndroidManifest.xml` and compiled `lib/arm64-v8a/libapp.so` differ; these are distinct binary artifacts.
 
 ## Real immutable +127 and +128 evidence
 
@@ -48,7 +51,7 @@ These ZIPs and both original APKs were downloaded and their entire bytes hashed 
 
 ## Acceptance boundaries and exact next step
 
-A successful CI from this PR can verify the **original +127/+128 bytes and signatures** but returns `SIGNATURE_AND_ORIGINAL_BYTES_VERIFIED_VERSIONCODE_DIVERGENCE` and `release_identity_gate=BLOCKED_UNRESOLVED_BINARY_VERSIONCODE` until the +128 binary version mismatch is explained. This is not a physical test or upgrade/downgrade. It does not prove installed-app identity, database migrations, cross-account state, Play Internal Testing, or safe reverse schema compatibility.
+A successful CI from this PR establishes `ORIGINAL_SIGNED_ARM64_APK_PAIR_IDENTITY_VERIFIED` **only if** original +127/+128 ZIP/APK bytes, GitHub provenance, binaries `2127→2128`, APK Signature Scheme v2 and matching certificates are verified. The receipt still sets `release_pair_update_ready=false`: no physical installation, data-preservation or downgrade was performed. It does not prove installed-app identity, database migrations, cross-account state, Play Internal Testing, or safe reverse schema compatibility.
 
 Android generally rejects lower-version installs under normal conditions. Even same-signer +127/+128 does not authorize forcing a downgrade over personal data. **Never uninstall, clear data, use `adb install -d` on a personal release, rotate signing keys, or publish a Store build as part of this audit.** A future recovery should use safe backups and, when technically appropriate, a forward-`versionCode` corrective release with the historical compatible behavior.
 
