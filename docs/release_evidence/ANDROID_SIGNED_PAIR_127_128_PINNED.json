@@ -20,7 +20,8 @@
       "zip_sha256": "759638a3a9e42b5bd41185af6f64f4cf9916f81ab3cb1ee27d38e76a4a4206a5",
       "apk_sha256": "063299c6fea06fdb187f91a470670efeee3145e06fcf962552a7f1c67db49435",
       "apk_size_bytes": 41798052,
-      "zip_size_bytes": 20710069
+      "zip_size_bytes": 20710069,
+      "apk_version_code": 127
     },
     {
       "version_code": 128,
@@ -30,7 +31,9 @@
       "zip_sha256": "000fedad87a37712bc52491202eb135c3002abf9b61d9b20cfaddf0326d00671",
       "apk_sha256": "d1fa6b9ba8df521a92114ad5da9bc6fbc6ab51bf971eeee660e0cf05331454cd",
       "apk_size_bytes": 41798052,
-      "zip_size_bytes": 20705974
+      "zip_size_bytes": 20705974,
+      "apk_version_code": 2127,
+      "version_code_discrepancy": "SOURCE_BUILD_128_VS_SIGNED_ARM64_APK_VERSION_CODE_2127_UNRESOLVED"
     }
   ],
   "exclusions": {
