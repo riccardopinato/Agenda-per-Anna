@@ -53,7 +53,8 @@ def sample(root: Path, code=127):
         zipped.writestr("Anna-Diary-arm64-release.apk", fake_apk)
         zipped.writestr("PHYSICAL_CERTIFICATION_MANIFEST.json", json.dumps(manifest))
     item = {
-        "version_code": code, "apk_version_code": code, "source_sha": source,
+        "version_code": code, "apk_version_code": code + 2000,
+        "abi_specific_version_code_offset": 2000, "source_sha": source,
         "run_id": run, "artifact_id": artifact,
         "zip_sha256": mod.digest(path), "zip_size_bytes": path.stat().st_size,
         "apk_sha256": apkhash, "apk_size_bytes": len(fake_apk),
@@ -61,6 +62,7 @@ def sample(root: Path, code=127):
     inventory = {
         "repository": REPO, "package_id": "com.riccardopinato.agenda_per_anna",
         "version_name": "1.0.0-rc.6",
+        "apk_abi": "arm64-v8a", "expected_abi_specific_version_code_offset": 2000,
         "workflow_id": 303, "workflow_name": "Auto signed ARM64 release candidate",
         "artifact_name": "annas-diary-light-arm64",
         "apk_file": "Anna-Diary-arm64-release.apk",
@@ -143,28 +145,29 @@ class SignedPairSafetyTests(unittest.TestCase):
             with self.assertRaisesRegex(mod.AuditError, "EXACT_ORIGINAL_ZIP_MISMATCH"):
                 mod.verify_one(inv, item, Path(tmp))
 
-    def test_unreviewed_source_binary_version_mismatch_fails(self):
+    def test_unexpected_arm64_abi_mapping_fails_closed(self):
         with tempfile.TemporaryDirectory() as tmp:
             inv, item, directory = sample(Path(tmp))
-            item["apk_version_code"] = 2127
+            item["apk_version_code"] = 127  # stale source buildNumber is NOT APK code
             with self.assertRaisesRegex(mod.AuditError,
-                                        "UNREVIEWED_BINARY_VERSIONCODE_DISCREPANCY"):
+                                        "UNEXPECTED_ARM64_SPLIT_VERSION_CODE_MAPPING"):
                 mod.verify_one(inv, item, Path(tmp))
 
-    def test_known_128_discrepancy_requires_exact_explicit_pin(self):
+    def test_128_arm64_offset_requires_exact_explicit_pin(self):
         with tempfile.TemporaryDirectory() as tmp:
             inv, item, directory = sample(Path(tmp), code=128)
-            item["apk_version_code"] = 2127
-            item["version_code_discrepancy"] = (
-                "SOURCE_BUILD_128_VS_SIGNED_ARM64_APK_VERSION_CODE_2127_UNRESOLVED")
             with patch.object(mod, "inspect_android", return_value={
-                "version_code": 2127, "signing_certificate_sha256": CERT,
+                "version_code": 2128, "signing_certificate_sha256": CERT,
                 "apksigner_verified": True}):
                 proof = mod.verify_one(inv, item, Path(tmp))
             self.assertEqual(proof["source_build_number"], 128)
-            self.assertEqual(proof["actual_binary_version_code"], 2127)
+            self.assertEqual(proof["actual_binary_version_code"], 2128)
             self.assertEqual(proof["version_code_alignment"],
-                             "UNRESOLVED_SOURCE_BINARY_DIVERGENCE")
+                             "ARM64_SPLIT_ABI_OFFSET_2000")
+            item["abi_specific_version_code_offset"] = 1000
+            with self.assertRaisesRegex(mod.AuditError,
+                                        "UNEXPECTED_ARM64_SPLIT_VERSION_CODE_MAPPING"):
+                mod.verify_one(inv, item, Path(tmp))
 
     def test_no_manifest_claim_can_replace_actual_apk_inspector(self):
         with tempfile.TemporaryDirectory() as tmp:
@@ -182,7 +185,7 @@ class SignedPairSafetyTests(unittest.TestCase):
             with ZipFile(apk, "w") as z:
                 z.writestr("lib/arm64-v8a/libsynthetic.so", b"not an APK signature")
             badging = ("package: name='com.riccardopinato.agenda_per_anna' "
-                       "versionCode='127' versionName='1.0.0-rc.6'\\n")
+                       "versionCode='2127' versionName='1.0.0-rc.6'\\n")
             with patch.object(mod, "command", side_effect=[
                 badging, "no independently verified signer certificate"
             ]):
@@ -195,7 +198,7 @@ class SignedPairSafetyTests(unittest.TestCase):
             inv, item, directory = sample(Path(tmp))
             apk = Path(tmp) / "fixture.apk"
             badging = ("package: name='com.riccardopinato.agenda_per_anna' "
-                       "versionCode='2127' versionName='1.0.0-rc.6'\\n")
+                       "versionCode='127' versionName='1.0.0-rc.6'\\n")
             with patch.object(mod, "command", return_value=badging):
                 with self.assertRaisesRegex(mod.AuditError,
                                             "APK_BINARY_PACKAGE_VERSION_MISMATCH"):
