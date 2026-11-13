@@ -53,7 +53,7 @@ def sample(root: Path, code=127):
         zipped.writestr("Anna-Diary-arm64-release.apk", fake_apk)
         zipped.writestr("PHYSICAL_CERTIFICATION_MANIFEST.json", json.dumps(manifest))
     item = {
-        "version_code": code, "source_sha": source,
+        "version_code": code, "apk_version_code": code, "source_sha": source,
         "run_id": run, "artifact_id": artifact,
         "zip_sha256": mod.digest(path), "zip_size_bytes": path.stat().st_size,
         "apk_sha256": apkhash, "apk_size_bytes": len(fake_apk),
@@ -142,6 +142,29 @@ class SignedPairSafetyTests(unittest.TestCase):
             path.write_bytes(path.read_bytes() + b"tamper")
             with self.assertRaisesRegex(mod.AuditError, "EXACT_ORIGINAL_ZIP_MISMATCH"):
                 mod.verify_one(inv, item, Path(tmp))
+
+    def test_unreviewed_source_binary_version_mismatch_fails(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            inv, item, directory = sample(Path(tmp))
+            item["apk_version_code"] = 2127
+            with self.assertRaisesRegex(mod.AuditError,
+                                        "UNREVIEWED_BINARY_VERSIONCODE_DISCREPANCY"):
+                mod.verify_one(inv, item, Path(tmp))
+
+    def test_known_128_discrepancy_requires_exact_explicit_pin(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            inv, item, directory = sample(Path(tmp), code=128)
+            item["apk_version_code"] = 2127
+            item["version_code_discrepancy"] = (
+                "SOURCE_BUILD_128_VS_SIGNED_ARM64_APK_VERSION_CODE_2127_UNRESOLVED")
+            with patch.object(mod, "inspect_android", return_value={
+                "version_code": 2127, "signing_certificate_sha256": CERT,
+                "apksigner_verified": True}):
+                proof = mod.verify_one(inv, item, Path(tmp))
+            self.assertEqual(proof["source_build_number"], 128)
+            self.assertEqual(proof["actual_binary_version_code"], 2127)
+            self.assertEqual(proof["version_code_alignment"],
+                             "UNRESOLVED_SOURCE_BINARY_DIVERGENCE")
 
     def test_no_manifest_claim_can_replace_actual_apk_inspector(self):
         with tempfile.TemporaryDirectory() as tmp:
