@@ -97,3 +97,24 @@ Gli ID seguenti sono scenari QA di Anna, **non** nuovi ID X10 e non modificano l
 **Stato al momento della creazione del documento:** gate fisici `NOT VERIFIED`, backup personale `NOT VERIFIED`, APK candidate successivo `NOT VERIFIED`, Play `NOT AUTHORIZED`. Numero scenari: **31**, tutti `NOT VERIFIED`. Codice/app/SQL, firme, dati e `pubspec.yaml` non vengono modificati da questo piano.
 
 Dopo l'esecuzione fisica, riportare solo receipt per singolo scenario e aggiornare questa matrice tramite nuova PR/review exact-head. Promuovere X10-032 nel registro 10x **solo** con prove complete richieste dalla sua acceptance, inclusi i gate Play; non convertire automaticamente un collaudo Android locale in `VERIFIED` globale.
+
+## 6. Preflight locale in sola lettura (tool disponibile; telefono NON collaudato)
+
+Script canonico: [`tool/read_only_android_phone_preflight.py`](../../tool/read_only_android_phone_preflight.py). Prima dell'utilizzo collegare **un solo dispositivo fisico Android ARM64** al PC via USB e autorizzare il debugging Android sul telefono. Lo script non fa `install`, `uninstall`, `pm clear`, `push`, `pull`, export, backup o restore; non registra il seriale/IMEI, dati del diario o password. Vieta gli emulatori per evitare di confondere preflight fisico con il Maxi-step 2.
+
+Da PowerShell Windows, nella cartella locale clonata di `Agenda-per-Anna`, con Python e Android SDK già installati:
+
+```powershell
+$sdk = if ($env:ANDROID_HOME) { $env:ANDROID_HOME } else { $env:ANDROID_SDK_ROOT }
+if (-not $sdk) { throw 'ANDROID_HOME / ANDROID_SDK_ROOT mancante' }
+$adb = Join-Path $sdk 'platform-tools\adb.exe'
+$aapt = Join-Path $sdk 'build-tools\36.0.0\aapt.exe'
+$signer = Join-Path $sdk 'build-tools\36.0.0\apksigner.bat'
+python tool/read_only_android_phone_preflight.py --adb "$adb" --aapt "$aapt" --apksigner "$signer" --output "$env:USERPROFILE\Documents\anna-physical-preflight.json"
+```
+
+Opzionali: `--candidate "C:\percorso\Anna-Diary-arm64-release.apk"` verifica sul file locale reale SHA-256, package, Android `versionCode` e firma con `apksigner` oltre alla versione installata. `--backup "C:\percorso\backup_diario.zip"` calcola **solo** hash/dimensione di un file backup pre-esistente: NON verifica contenuto, cifratura o ripristinabilità. Nessuna opzione crea un backup, scarica APK o autorizza installazioni.
+
+Se il telefono non ha Anna già installata, non è arm64, un dispositivo non è autorizzato, l'APK candidato è più vecchio/uguale, la firma è diversa o un tool fallisce, lo script termina `BLOCKED`. La firma dell'APK **installato** non è autenticata dalla sola lettura del `dumpsys`; anche in esito positivo restano `installed_signer_match`, backup/restore, inventario dati e update fisico `NOT_VERIFIED`. Il JSON locale non viene caricato in GitHub, e `installation_authorized=false` e `physical_qa_pass=false` sono invarianti.
+
+**Gate dopo il preflight:** prima di qualunque installazione sul telefono personale, servono un vero backup recuperabile verificato separatamente su ambiente isolato, un candidato firmato e più recente prodotto da CI autorizzata, la prova d'identità dei binari e la matrice P0. L'ultima run [43434093799](https://github.com/riccardopinato/Agenda-per-Anna/actions/runs/43434093799) ha `signed-apk SKIPPED`: non produce un candidato. Nessuna conclusione `DEVICE_VERIFIED` o X10-032 `VERIFIED` in questo passo.
