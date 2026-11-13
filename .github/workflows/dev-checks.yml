@@ -66,6 +66,10 @@ jobs:
           python3 -m pip install Pillow==11.3.0
           python3 -m unittest discover -s tool -p 'test_visual*.py'
 
+      - name: Read-only Android physical preflight safety tests (offline)
+        run: |
+          python3 -m unittest discover -s tool/tests -p 'test_read_only_android_phone_preflight.py' -v
+
       - name: Test Web Vault crypto
         run: flutter test --platform chrome test/v087_web_vault_kdf_browser_test.dart
 
