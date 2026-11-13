@@ -109,12 +109,7 @@ jobs:
           cores: 2
           disable-animations: true
           emulator-options: -no-snapshot-load -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none -camera-front none
-          script: |
-            python3 tool/rehearse_real_apk_emulator_upgrade.py \
-              --artifact-root "$RUNNER_TEMP/anna-real-signed-recovery" \
-              --inventory docs/release_evidence/ANDROID_SIGNED_PAIR_127_128_PINNED.json \
-              --expected-head "$EXPECTED_HEAD" \
-              --output "$RUNNER_TEMP/anna-real-signed-recovery/emulator-upgrade-receipt.json"
+          script: python3 tool/rehearse_real_apk_emulator_upgrade.py --artifact-root "$RUNNER_TEMP/anna-real-signed-recovery" --inventory docs/release_evidence/ANDROID_SIGNED_PAIR_127_128_PINNED.json --expected-head "$EXPECTED_HEAD" --output "$RUNNER_TEMP/anna-real-signed-recovery/emulator-upgrade-receipt.json"
       - name: Record strict scope boundary
         if: success()
         shell: bash
