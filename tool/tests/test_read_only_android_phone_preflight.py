@@ -101,6 +101,29 @@ class ReadOnlyPhonePreflightTests(unittest.TestCase):
             with self.assertRaisesRegex(mod.PreflightError, "SYMLINK"):
                 mod.regular_file(link, "BACKUP")
 
+    def test_output_cannot_overwrite_backup_apk_or_hardlink(self):
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            backup = root / "backup.dat"
+            backup.write_bytes(b"DO_NOT_DELETE_USER_BACKUP")
+            apk = root / "candidate.apk"
+            apk.write_bytes(b"DO_NOT_DELETE_SIGNED_APK")
+            link = root / "backup-alias.dat"
+            link.hardlink_to(backup)
+            original_backup, original_apk = backup.read_bytes(), apk.read_bytes()
+            for existing in (backup, apk, link):
+                with self.assertRaisesRegex(mod.PreflightError, "OUTPUT_ALREADY_EXISTS"):
+                    mod.write_receipt_exclusive(existing, '{"receipt": true}\n')
+            self.assertEqual(backup.read_bytes(), original_backup)
+            self.assertEqual(apk.read_bytes(), original_apk)
+            self.assertEqual(link.read_bytes(), original_backup)
+            fresh = root / "fresh-receipt.json"
+            mod.write_receipt_exclusive(fresh, '{"ok": true}\n')
+            self.assertEqual(fresh.read_text(), '{"ok": true}\n')
+            with self.assertRaisesRegex(mod.PreflightError, "OUTPUT_ALREADY_EXISTS"):
+                mod.write_receipt_exclusive(fresh, '{"replaced": true}\n')
+            self.assertEqual(fresh.read_text(), '{"ok": true}\n')
+
     def test_fail_closed_on_inspector_failure(self):
         with tempfile.TemporaryDirectory() as d:
             apk = Path(d) / "candidate.apk"
