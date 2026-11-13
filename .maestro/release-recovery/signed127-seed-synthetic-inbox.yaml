@@ -1,0 +1,50 @@
+appId: com.riccardopinato.agenda_per_anna
+---
+# Launch the REAL historical stable-signed +127 APK. Never clear state here:
+# onboarding is completed separately using the canonical existing flow.
+- launchApp
+- extendedWaitUntil:
+    visible:
+      id: 'main-nav-more'
+    timeout: 45000
+- tapOn:
+    id: 'main-nav-more'
+- scrollUntilVisible:
+    element:
+      id: 'more-inbox'
+    direction: UP
+    timeout: 18000
+- tapOn:
+    id: 'more-inbox'
+- extendedWaitUntil:
+    visible: 'Inbox'
+    timeout: 30000
+- tapOn:
+    text: '(Cattura|Capture|Capturar|Capturer)'
+- extendedWaitUntil:
+    visible:
+      id: 'capture-effective-date'
+    timeout: 30000
+# Quick Inbox note is in the extended action sheet; do not depend on ranking.
+- tapOn:
+    text: '(Altre opzioni|More options|Más opciones|Plus d.options|Mais opções)'
+- scrollUntilVisible:
+    element:
+      text: '(Nota rapida in Inbox|Quick note in Inbox|Nota rápida en Inbox|Note rapide dans Inbox|Nota rápida na Inbox)'
+    direction: DOWN
+    timeout: 20000
+- tapOn:
+    text: '(Nota rapida in Inbox|Quick note in Inbox|Nota rápida en Inbox|Note rapide dans Inbox|Nota rápida na Inbox)'
+- extendedWaitUntil:
+    visible: '(Nota rapida|Quick note|Nota rápida|Note rapide)'
+    timeout: 20000
+- tapOn:
+    text: '(Scrivi al volo...|Write something quickly...|Escribe algo rápido...|Écris rapidement...|Escreve rapidamente...)'
+- inputText: 'X10_ANNA_127_128_EMULATOR_SYNTHETIC_ONLY'
+- hideKeyboard
+- tapOn:
+    text: '(Salva|Save|Guardar|Enregistrer)'
+- extendedWaitUntil:
+    visible: '.*X10_ANNA_127_128_EMULATOR_SYNTHETIC_ONLY.*'
+    timeout: 30000
+- assertVisible: 'X10_ANNA_127_128_EMULATOR_SYNTHETIC_ONLY'
