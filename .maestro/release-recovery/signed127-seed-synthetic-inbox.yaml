@@ -28,14 +28,13 @@ appId: com.riccardopinato.agenda_per_anna
 # Quick Inbox note is in the extended action sheet; do not depend on ranking.
 - tapOn:
     text: '(Altre opzioni|More options|Más opciones|Plus d.options|Mais opções)'
-- scrollUntilVisible:
-    element:
-      text: '(Nota rapida in Inbox|Quick note in Inbox|Nota rápida en Inbox|Note rapide dans Inbox|Nota rápida na Inbox)'
-    direction: DOWN
-    timeout: 30000
-    visibilityPercentage: 20
-    centerElement: true
-    speed: 35
+# Bottom sheet uses a bounded SingleChildScrollView. Maestro's generic
+# scrollUntilVisible swipes from screen centre OUTSIDE its scrollable content.
+# Swipe from inside the expanded sheet, then find the real Inbox action.
+- swipe:
+    start: "55%,83%"
+    end: "55%,35%"
+    duration: 550
 - tapOn:
     text: '(Nota rapida in Inbox|Quick note in Inbox|Nota rápida en Inbox|Note rapide dans Inbox|Nota rápida na Inbox)'
 - extendedWaitUntil:
