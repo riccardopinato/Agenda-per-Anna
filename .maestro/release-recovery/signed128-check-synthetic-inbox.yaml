@@ -1,6 +1,6 @@
 appId: com.riccardopinato.agenda_per_anna
 ---
-# This flow MUST keep the installed app's data: never use clearState.
+# Real unchanged +128 binary, never clear synthetic guest app state.
 - launchApp:
     clearState: false
 - extendedWaitUntil:
@@ -18,6 +18,6 @@ appId: com.riccardopinato.agenda_per_anna
 - tapOn:
     id: 'more-inbox'
 - extendedWaitUntil:
-    visible: '.*X10_ANNA_127_128_EMULATOR_SYNTHETIC_ONLY.*'
+    visible: '#X10_ANNA_127_128_EMULATOR_SYNTHETIC_ONLY'
     timeout: 45000
-- assertVisible: 'X10_ANNA_127_128_EMULATOR_SYNTHETIC_ONLY'
+- assertVisible: '#X10_ANNA_127_128_EMULATOR_SYNTHETIC_ONLY'
