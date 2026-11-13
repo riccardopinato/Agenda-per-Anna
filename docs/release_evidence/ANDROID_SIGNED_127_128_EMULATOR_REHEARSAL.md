@@ -15,20 +15,22 @@ The exact binaries have the same release-signing certificate `31BE63155C831F0622
 
 ## Exact real-app emulator journey and evidence levels
 
-The test runs on a disposable Android API35 Google APIs x86_64 emulator with ARM64 native-library translation. The Python harness refuses a real phone or a preexisting installed package, before any installation. The guest/offline path never signs in, switches real accounts or loads personal backups.
+The test runs on a disposable Android API35 Google APIs x86_64 emulator with ARM64 native-library translation.
+
+**Synthetic writer choice:** the original capture sheet's “More options” action does not remain expanded in actual release +127 on this emulator. That behavior prevented reaching the Quick Note editor in prior CI runs, so the rehearsal instead uses the existing Inbox **“New tag”** action (`OrganizationAgendaStore.createInboxCategory`, stored in canonical `preferences.inboxCategoryCatalog`) to exercise an actual persisted local write without modifying historical APKs. This validates persistence of **one category**, not note/media/Vault/record retention; those remain separate gates. The Python harness refuses a real phone or a preexisting installed package, before any installation. The guest/offline path never signs in, switches real accounts or loads personal backups.
 
 1. Install original +127 ARM64 signed APK; verify package via Android PackageManager **2127**.
 2. Complete normal guest onboarding by reusing the canonical selectors in `.maestro/release-recovery/signed127-onboard-no-clear.yaml`. The flow keeps `clearState: false` because the emulator is explicitly checked to have no prior app installation before the first APK install. No `pm clear` is issued.
-3. Use real, unchanged Anna UI to create one **synthetic Inbox note**, text `X10_ANNA_127_128_EMULATOR_SYNTHETIC_ONLY`; observe it in Inbox.
+3. Use real, unchanged Anna UI to create one **synthetic Inbox category**, text `X10_ANNA_127_128_EMULATOR_SYNTHETIC_ONLY`; observe it in Inbox.
 4. Force-stop and **upgrade in-place** using original +128, `adb install -r`. No uninstall, `pm clear`, backup/restore or `-d`. Verify installed Android `versionCode=2128`.
-5. Navigate to Inbox from freshly launched updated app, assert exactly the synthetic note remains visible.
-6. Force-stop/relaunch and assert the same note remains visible.
-7. Try ordinary `adb install -r` of the prior +127: require an actual `INSTALL_FAILED_VERSION_DOWNGRADE` result. Confirm still on +128 and same note preserved.
-8. Reinstall the **same** stable-signed +128 as a **non-destructive same-version repair**; confirm the persisted note still visible. This proves recovery of a rejected update action, **not old-code rollback**.
+5. Navigate to Inbox from freshly launched updated app, assert the same synthetic category chip remains visible.
+6. Force-stop/relaunch and assert the same category remains visible.
+7. Try ordinary `adb install -r` of the prior +127: require an actual `INSTALL_FAILED_VERSION_DOWNGRADE` result. Confirm still on +128 and same category preserved.
+8. Reinstall the **same** stable-signed +128 as a **non-destructive same-version repair**; confirm the persisted category still visible. This proves recovery of a rejected update action, **not old-code rollback**.
 
 One isolated Python receipt records immutable originals, runner Git SHA, emulated OS/ABI/ARM translation, outcome of each UI stage, and explicit hard false for phone, user data, actual release downgrade, Store, forward-fix and Golden. **Do not mark a step PASS if Maestro fails or the UI sentinel is missing.** Only the two JSON receipts may be uploaded, not original signed APK files, screenshot content, caches, databases or real data.
 
-**Scope of actual runtime evidence if PASS:** `SIGNED_REAL_APP_EMULATOR_UPGRADE_AND_REPAIR_PASS` — one guest Inbox note under real +127/+128 binaries and emulator with ARM translation. This does not certify all app storage, Vault/Keystore, media, notifications, shared sync, account switching, OS/OEM policy, real device or physical release. ARM translation may affect runtime behavior: a future real ARM64 phone must be independently tested.
+**Scope of actual runtime evidence if PASS:** `SIGNED_REAL_APP_EMULATOR_UPGRADE_AND_REPAIR_PASS` — one guest Inbox category under real +127/+128 binaries and emulator with ARM translation. This does not certify all app storage, Vault/Keystore, media, notifications, shared sync, account switching, OS/OEM policy, real device or physical release. ARM translation may affect runtime behavior: a future real ARM64 phone must be independently tested.
 
 ## Fail-closed recovery boundary
 
