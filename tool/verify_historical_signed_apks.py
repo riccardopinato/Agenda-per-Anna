@@ -126,15 +126,8 @@ def verify_manifest(data: dict, item: dict, manifest: dict) -> None:
 
 def inspect_android(data: dict, item: dict, apk: Path) -> dict:
     output = command("aapt", "dump", "badging", str(apk))
-    package_line = next((line for line in output.splitlines()
-                         if line.startswith("package: ")), "MISSING_PACKAGE_LINE")
-    print("AAPT_BINARY_PACKAGE " + package_line[:350])
     match = re.search(r"(?m)^package: name='([^']+)' versionCode='(\d+)' versionName='([^']+)'", output)
     actual_code = int(match.group(2)) if match else None
-    print("AAPT_PARSED_EXPECTED", {"actual": match.groups() if match else None,
-                                    "package": data["package_id"],
-                                    "binary_version_code": item["apk_version_code"],
-                                    "version_name": data["version_name"]})
     require(match is not None
             and match.group(1) == data["package_id"]
             and actual_code == item["apk_version_code"]
@@ -162,14 +155,13 @@ def verify_one(data: dict, item: dict, root: Path) -> dict:
     code = item["version_code"]
     binary_code = item.get("apk_version_code")
     require(type(binary_code) is int and binary_code > 0, "ACTUAL_BINARY_VERSIONCODE_PIN_REQUIRED")
-    if binary_code != code:
-        require(code == 128 and binary_code == 2127
-                and item.get("version_code_discrepancy") ==
-                "SOURCE_BUILD_128_VS_SIGNED_ARM64_APK_VERSION_CODE_2127_UNRESOLVED",
-                "UNREVIEWED_BINARY_VERSIONCODE_DISCREPANCY")
-    else:
-        require("version_code_discrepancy" not in item,
-                "MISLEADING_VERSIONCODE_DISCREPANCY_FLAG")
+    # For actual ARM64 split APK, Gradle encodes an ABI-specific install
+    # versionCode. This is NOT Flutter's pubspec buildNumber (source metadata).
+    require(data.get("apk_abi") == "arm64-v8a"
+            and data.get("expected_abi_specific_version_code_offset") == 2000
+            and item.get("abi_specific_version_code_offset") == 2000
+            and binary_code == code + 2000,
+            "UNEXPECTED_ARM64_SPLIT_VERSION_CODE_MAPPING")
     directory = root / str(code)
     require(directory.is_dir() and not directory.is_symlink(), "ARTIFACT_DIR_MISSING")
     require(SHA40.fullmatch(item["source_sha"]) is not None
@@ -200,6 +192,12 @@ def verify_one(data: dict, item: dict, root: Path) -> dict:
                         dst.write(chunk)
                 require(digest(apk) == item["apk_sha256"], "APK_BYTES_HASH_MISMATCH")
                 identity = inspect_android(data, item, apk)
+                print("REAL_SIGNED_APK_BINARY", {
+                    "source_build_number": code,
+                    "verified_apk_version_code": identity["version_code"],
+                    "sha256": identity["sha256"],
+                    "signer_sha256": identity["signing_certificate_sha256"],
+                })
     except (OSError, BadZipFile, KeyError, json.JSONDecodeError) as exc:
         raise AuditError("ARCHIVE_OR_MANIFEST_INVALID") from exc
     return {"source_sha": item["source_sha"], "workflow_run_id": item["run_id"],
@@ -207,8 +205,7 @@ def verify_one(data: dict, item: dict, root: Path) -> dict:
             "apk": identity, "source_version": f'{data["version_name"]}+{code}',
             "source_build_number": code,
             "actual_binary_version_code": identity["version_code"],
-            "version_code_alignment": ("MATCH" if code == identity["version_code"]
-                                       else "UNRESOLVED_SOURCE_BINARY_DIVERGENCE")}
+            "version_code_alignment": "ARM64_SPLIT_ABI_OFFSET_2000"}
 
 
 def audit(inventory: dict, directory: Path, expected_head: str) -> dict:
@@ -226,20 +223,16 @@ def audit(inventory: dict, directory: Path, expected_head: str) -> dict:
     require(proofs[0]["apk"]["signing_certificate_sha256"]
             == proofs[1]["apk"]["signing_certificate_sha256"],
             "CROSS_VERSION_SIGNER_CHANGED")
-    discrepancies = [{"source_build_number": p["source_build_number"],
-                      "actual_binary_version_code": p["actual_binary_version_code"],
-                      "source_sha": p["source_sha"],
-                      "status": "UNRESOLVED_REQUIRES_RELEASE_ENGINEERING_REVIEW"}
-                     for p in proofs if p["version_code_alignment"] != "MATCH"]
-    require(len(discrepancies) == 1
-            and discrepancies[0]["source_build_number"] == 128
-            and discrepancies[0]["actual_binary_version_code"] == 2127,
-            "EXPECTED_HISTORICAL_VERSIONCODE_DISCREPANCY_MISSING")
+    mapping = [(p["source_build_number"], p["actual_binary_version_code"])
+               for p in proofs]
+    require(mapping == [(127, 2127), (128, 2128)],
+            "HISTORICAL_ARM64_VERSION_SEQUENCE_MISMATCH")
     return {"schema_version": 1,
-            "result": "SIGNATURE_AND_ORIGINAL_BYTES_VERIFIED_VERSIONCODE_DIVERGENCE",
-            "release_identity_gate": "BLOCKED_UNRESOLVED_BINARY_VERSIONCODE",
+            "result": "ORIGINAL_SIGNED_ARM64_APK_PAIR_IDENTITY_VERIFIED",
+            "release_identity_gate": "ARTIFACT_ONLY_NO_PHYSICAL_QA",
             "release_pair_update_ready": False,
-            "discrepancies": discrepancies,
+            "verified_source_to_apk_version_mapping": mapping,
+            "arm64_split_abi_version_code_offset": 2000,
             "repository": inventory["repository"], "audit_checkout_sha": actual,
             "ci_run_id": os.environ.get("GITHUB_RUN_ID"),
             "physical_device_verified": False, "installed_app_verified": False,
@@ -261,9 +254,9 @@ def main() -> None:
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(json.dumps(receipt, indent=2, sort_keys=True) + "\n",
                            encoding="utf-8")
-    print("PASS: original ZIP/APK bytes, sources, signatures and signer parity. "
-          "BLOCKED: +128 APK actual versionCode 2127 differs from source build 128. "
-          "NOT RELEASE READY / DEVICE / DOWNGRADE / PLAY / GOLDEN.")
+    print("PASS: original +127/+128 ZIP/APK hashes, aapt binary 2127->2128, "
+          "apksigner v2 signatures, matching cert and source/run provenance. "
+          "ARTIFACT ONLY: NOT INSTALLED / DEVICE / DATA / PLAY / GOLDEN.")
 
 
 if __name__ == "__main__":
