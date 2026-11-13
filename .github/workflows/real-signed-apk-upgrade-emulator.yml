@@ -18,6 +18,9 @@ permissions:
   actions: read
 jobs:
   signed-anna-emulator-upgrade:
+    # One-off, explicit user-authorized Maxi-step 2 PR #312 gate. Subsequent
+    # PRs must use manual workflow_dispatch; never generalize native CI.
+    if: ${{ github.event_name == 'workflow_dispatch' || (github.event_name == 'pull_request' && github.event.pull_request.number == 312 && github.event.pull_request.head.repo.full_name == github.repository) }}
     runs-on: ubuntu-24.04
     timeout-minutes: 55
     steps:
@@ -114,7 +117,7 @@ jobs:
         if: success()
         shell: bash
         run: |
-          echo "Original stable signed Anna ARM64 APKs: in-place 2127→2128, real guest UI Inbox synthetic note retained after upgrade/restart/downgrade denial/same-version repair. Android API35 x86_64 ARM translation, NOT a physical phone, forced downgrade, real user data or Golden/Play acceptance." >> "$GITHUB_STEP_SUMMARY"
+          echo "Original stable signed Anna ARM64 APKs: in-place 2127→2128, real guest UI Inbox synthetic category retained after upgrade/restart/downgrade denial/same-version repair. Android API35 x86_64 ARM translation, NOT a physical phone, forced downgrade, real user data or Golden/Play acceptance." >> "$GITHUB_STEP_SUMMARY"
       - name: Upload only verified synthetic-scope receipts, never APKs or screenshots
         if: success()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
