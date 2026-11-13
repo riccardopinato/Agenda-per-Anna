@@ -5,6 +5,7 @@ import 'dart:math';
 import 'dart:ui' as ui;
 
 import 'package:crypto/crypto.dart';
+import 'package:factory_profile_kit/factory_profile_kit.dart' as factory_profile;
 
 import 'package:flutter/foundation.dart';
 import 'package:file_picker/file_picker.dart';

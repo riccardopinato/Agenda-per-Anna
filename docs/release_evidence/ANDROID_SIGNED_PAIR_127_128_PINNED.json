@@ -1,0 +1,50 @@
+{
+  "schema_version": 1,
+  "scope": "EXISTING_SIGNED_APK_IDENTITY_AUDIT_ONLY",
+  "repository": "riccardopinato/Agenda-per-Anna",
+  "package_id": "com.riccardopinato.agenda_per_anna",
+  "version_name": "1.0.0-rc.6",
+  "expected_signing_certificate_sha256": "31be63155c831f062238179ec9b8f19d1c16a925bed1d526bc7e6a4712c62dc3",
+  "workflow_name": "Auto signed ARM64 release candidate",
+  "workflow_id": 403113693,
+  "artifact_name": "annas-diary-light-arm64",
+  "apk_file": "Anna-Diary-arm64-release.apk",
+  "manifest_file": "PHYSICAL_CERTIFICATION_MANIFEST.json",
+  "channel": "direct-sideload",
+  "releases": [
+    {
+      "version_code": 127,
+      "source_sha": "999bf8eb4c010d8fb7007179bb7f518fba5b71de",
+      "run_id": 42123307290,
+      "artifact_id": 13459458898,
+      "zip_sha256": "759638a3a9e42b5bd41185af6f64f4cf9916f81ab3cb1ee27d38e76a4a4206a5",
+      "apk_sha256": "063299c6fea06fdb187f91a470670efeee3145e06fcf962552a7f1c67db49435",
+      "apk_size_bytes": 41798052,
+      "zip_size_bytes": 20710069,
+      "apk_version_code": 2127,
+      "abi_specific_version_code_offset": 2000
+    },
+    {
+      "version_code": 128,
+      "source_sha": "01151f379ebd9669c3936058aa089433a05a63ae",
+      "run_id": 42221409690,
+      "artifact_id": 13503582447,
+      "zip_sha256": "000fedad87a37712bc52491202eb135c3002abf9b61d9b20cfaddf0326d00671",
+      "apk_sha256": "d1fa6b9ba8df521a92114ad5da9bc6fbc6ab51bf971eeee660e0cf05331454cd",
+      "apk_size_bytes": 41798052,
+      "zip_size_bytes": 20705974,
+      "apk_version_code": 2128,
+      "abi_specific_version_code_offset": 2000
+    }
+  ],
+  "exclusions": {
+    "installed_phone": false,
+    "device_data": false,
+    "downgrade": false,
+    "play": false,
+    "golden": false,
+    "release_authorization": false
+  },
+  "apk_abi": "arm64-v8a",
+  "expected_abi_specific_version_code_offset": 2000
+}

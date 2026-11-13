@@ -1,0 +1,23 @@
+appId: com.riccardopinato.agenda_per_anna
+---
+# Real unchanged +128 binary, never clear synthetic guest app state.
+- launchApp:
+    clearState: false
+- extendedWaitUntil:
+    visible:
+      id: 'main-nav-more'
+    timeout: 60000
+- tapOn:
+    id: 'main-nav-more'
+    retryTapIfNoChange: true
+- scrollUntilVisible:
+    element:
+      id: 'more-inbox'
+    direction: UP
+    timeout: 20000
+- tapOn:
+    id: 'more-inbox'
+- extendedWaitUntil:
+    visible: '#X10_ANNA_127_128_EMULATOR_SYNTHETIC_ONLY'
+    timeout: 45000
+- assertVisible: '#X10_ANNA_127_128_EMULATOR_SYNTHETIC_ONLY'

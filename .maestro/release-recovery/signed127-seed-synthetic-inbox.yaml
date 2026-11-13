@@ -1,0 +1,39 @@
+appId: com.riccardopinato.agenda_per_anna
+---
+# Original stable-signed +127 only. Start guest UI without clearing state.
+- launchApp:
+    clearState: false
+- extendedWaitUntil:
+    visible:
+      id: 'main-nav-more'
+    timeout: 60000
+- tapOn:
+    id: 'main-nav-more'
+    retryTapIfNoChange: true
+- scrollUntilVisible:
+    element:
+      id: 'more-inbox'
+    direction: UP
+    timeout: 18000
+- tapOn:
+    id: 'more-inbox'
+- extendedWaitUntil:
+    visible: 'Inbox'
+    timeout: 30000
+# Unlike the flaky collapsed capture sheet, this is an actual canonical
+# account-scoped persisted Inbox category (organization_domain.dart).
+- tapOn:
+    text: '(Nuovo tag|New tag|Nueva etiqueta|Nouveau tag|Nova etiqueta)'
+- extendedWaitUntil:
+    visible: '(Nuovo tag|New tag|Nueva etiqueta|Nouveau tag|Nova etiqueta)'
+    timeout: 15000
+- tapOn:
+    text: 'Tag'
+- inputText: 'X10_ANNA_127_128_EMULATOR_SYNTHETIC_ONLY'
+- hideKeyboard
+- tapOn:
+    text: '(Salva|Save|Guardar|Enregistrer)'
+- extendedWaitUntil:
+    visible: '#X10_ANNA_127_128_EMULATOR_SYNTHETIC_ONLY'
+    timeout: 30000
+- assertVisible: '#X10_ANNA_127_128_EMULATOR_SYNTHETIC_ONLY'

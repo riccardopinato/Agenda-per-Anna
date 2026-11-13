@@ -1,0 +1,130 @@
+name: Anna signed 127-to-128 REAL APK emulator upgrade and recovery
+
+# Only original historical signed artifacts. No compilation, signing, Play or
+# access to personal phones/accounts. This is a separately scoped native gate.
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/real-signed-apk-upgrade-emulator.yml"
+      - "tool/rehearse_real_apk_emulator_upgrade.py"
+      - "tool/tests/test_real_apk_emulator_upgrade.py"
+      - ".maestro/release-recovery/**"
+      - "docs/release_evidence/ANDROID_SIGNED_PAIR_127_128_PINNED.json"
+      - "docs/release_evidence/ANDROID_SIGNED_127_128_EMULATOR_REHEARSAL.md"
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+jobs:
+  signed-anna-emulator-upgrade:
+    # One-off, explicit user-authorized Maxi-step 2 PR #312 gate. Subsequent
+    # PRs must use manual workflow_dispatch; never generalize native CI.
+    if: ${{ github.event_name == 'workflow_dispatch' || (github.event_name == 'pull_request' && github.event.pull_request.number == 312 && github.event.pull_request.head.repo.full_name == github.repository) }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 55
+    steps:
+      - name: Checkout exact PR head
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+      - name: Run offline fail-closed tests
+        run: python3 -m unittest discover -s tool/tests -p test_real_apk_emulator_upgrade.py -v
+      - name: Download original artifacts and immutable GitHub provenance
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          ROOT="$RUNNER_TEMP/anna-real-signed-recovery"
+          mkdir -p "$ROOT/127" "$ROOT/128"
+          for version in 127 128; do
+            if [ "$version" = 127 ]; then
+              run=42123307290
+              artifact=13459458898
+              source=999bf8eb4c010d8fb7007179bb7f518fba5b71de
+            else
+              run=42221409690
+              artifact=13503582447
+              source=01151f379ebd9669c3936058aa089433a05a63ae
+            fi
+            dir="$ROOT/$version"
+            gh api "repos/$GITHUB_REPOSITORY/actions/runs/$run" > "$dir/run.json"
+            gh api "repos/$GITHUB_REPOSITORY/actions/runs/$run/jobs?per_page=100" > "$dir/jobs.json"
+            gh api "repos/$GITHUB_REPOSITORY/actions/artifacts/$artifact" > "$dir/artifact.json"
+            gh api "repos/$GITHUB_REPOSITORY/contents/pubspec.yaml?ref=$source" > "$dir/pubspec.json"
+            gh api "repos/$GITHUB_REPOSITORY/actions/artifacts/$artifact/zip" > "$dir/artifact.zip"
+            test -s "$dir/artifact.zip"
+          done
+      - name: Setup Java 17
+        uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # v4.7.1
+        with:
+          distribution: temurin
+          java-version: '17'
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@be39fa834029ff78f1a44aa3bb0819b8fc2bd8fd
+      - name: Install Android binary inspection tools
+        shell: bash
+        run: |
+          set -euo pipefail
+          yes | sdkmanager --licenses >/dev/null || true
+          sdkmanager "build-tools;36.0.0" "platform-tools"
+          echo "$ANDROID_HOME/build-tools/36.0.0" >> "$GITHUB_PATH"
+      - name: Verify actual historical ZIP/APK sources and signatures again
+        env:
+          EXPECTED_HEAD: ${{ github.event.pull_request.head.sha || github.sha }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 tool/verify_historical_signed_apks.py \
+            --inventory docs/release_evidence/ANDROID_SIGNED_PAIR_127_128_PINNED.json \
+            --artifact-root "$RUNNER_TEMP/anna-real-signed-recovery" \
+            --expected-head "$EXPECTED_HEAD" \
+            --output "$RUNNER_TEMP/anna-real-signed-recovery/source-identity.json"
+      - name: Install pinned Maestro for REAL app semantics UI flow
+        env:
+          MAESTRO_VERSION: '2.10.0'
+          MAESTRO_CLI_NO_ANALYTICS: '1'
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl --fail --show-error --silent --location https://get.maestro.mobile.dev | bash
+          echo "$HOME/.maestro/bin" >> "$GITHUB_PATH"
+          "$HOME/.maestro/bin/maestro" --version | grep -F '2.10.0'
+      - name: Enable KVM for disposable API 35 emulator
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+      - name: Install, upgrade and safely recover REAL signed Anna APKs
+        uses: reactivecircus/android-emulator-runner@a421e43855164a8197daf9d8d40fe71c6996bb0d
+        env:
+          EXPECTED_HEAD: ${{ github.event.pull_request.head.sha || github.sha }}
+          MAESTRO_CLI_NO_ANALYTICS: '1'
+        with:
+          api-level: 35
+          target: google_apis
+          arch: x86_64
+          profile: pixel_5
+          cores: 2
+          disable-animations: true
+          emulator-options: -no-snapshot-load -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none -camera-front none
+          script: python3 tool/rehearse_real_apk_emulator_upgrade.py --artifact-root "$RUNNER_TEMP/anna-real-signed-recovery" --inventory docs/release_evidence/ANDROID_SIGNED_PAIR_127_128_PINNED.json --expected-head "$EXPECTED_HEAD" --output "$RUNNER_TEMP/anna-real-signed-recovery/emulator-upgrade-receipt.json"
+      - name: Record strict scope boundary
+        if: success()
+        shell: bash
+        run: |
+          echo "Original stable signed Anna ARM64 APKs: in-place 2127→2128, real guest UI Inbox synthetic category retained after upgrade/restart/downgrade denial/same-version repair. Android API35 x86_64 ARM translation, NOT a physical phone, forced downgrade, real user data or Golden/Play acceptance." >> "$GITHUB_STEP_SUMMARY"
+      - name: Upload only verified synthetic-scope receipts, never APKs or screenshots
+        if: success()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: anna-original-signed-apk-emulator-upgrade-recovery
+          path: |
+            ${{ runner.temp }}/anna-real-signed-recovery/source-identity.json
+            ${{ runner.temp }}/anna-real-signed-recovery/emulator-upgrade-receipt.json
+          if-no-files-found: error
+          retention-days: 30

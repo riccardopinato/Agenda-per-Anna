@@ -1,11 +1,17 @@
 name: agenda_per_anna
 description: Anna's Diary, diario e agenda personale multipiattaforma.
 publish_to: "none"
-version: 1.0.0-rc.6+129
+version: 1.0.0-rc.6+130
 environment:
   sdk: ">=3.10.0 <4.0.0"
 
 dependencies:
+
+  factory_profile_kit:
+    git:
+      url: https://github.com/riccardopinato/Idee-app-Archivi-riferimenti.git
+      ref: 710e83261bcadc1cfd5eda3e28d77bed8b8bc576
+      path: 19-APP-FACTORY-10X/flutter_kits/profile
   flutter:
     sdk: flutter
   flutter_localizations:

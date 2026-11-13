@@ -1,5 +1,19 @@
 # Anna's Diary — Roadmap
 
+## 13 novembre 2026 — Android rc.6+130: candidate for exact signed physical QA (SOURCE PR, NOT INSTALLED)
+
+- Nuovo candidato source-only: [evidence protocol rc.6+130](release_evidence/ANDROID_RC6_130_CANDIDATE_20261113.md), con gate exact-head, monotonia buildNumber e firma protetta. La +129 **firmata** esiste storicamente ([run #42317437509](https://github.com/riccardopinato/Agenda-per-Anna/actions/runs/42317437509)), ma non incorpora tutti i cambiamenti successivi.
+- Questa fase non installa nulla e non muta dati utente o schema; il Maxi-step 3 resta `NOT VERIFIED` fino al collaudo fisico di dispositivo, backup e matrice 31 scenari. Play/Store esclusi.
+
+
+## 13 novembre 2026 — Android Maxi-step 3: physical QA / data integrity gate (PROTOCOL READY; DEVICE NOT VERIFIED)
+
+- Protocollo incrementale [Android Maxi-step 3 — backup verificato e matrice 31 scenari](release_evidence/ANDROID_MAXISTEP3_PHYSICAL_DATA_GATE_20261113.md) a partire da `main@c9da767a14eae5ef0f82ee39e61853f2e24f0057`. Confronta i 57 task 10x con il proprio gate X10-032, senza cambiare stati del programma.
+- Il test precedente su emulatore riguarda solo una categoria Inbox sintetica (+127→+128). L'[auto-signed run #43427535538](https://github.com/riccardopinato/Agenda-per-Anna/actions/runs/43427535538) conclude con `signed-apk SKIPPED` e senza nuovi artifact: **nessuna nuova installazione fisica, backup o data retention dichiarata**.
+- Esecuzione reale: device ARM64 spare e dati sintetici, backup verificato prima di installare, versione installata/candidate con stesso package/firma e monotonia Android `versionCode`; mai `pm clear`, downgrade forzato, import distruttivo o segreti in CI. Store/Play resta separato.
+
+- **Preflight locale non distruttivo:** aggiunto [`tool/read_only_android_phone_preflight.py`](../tool/read_only_android_phone_preflight.py) con suite Python negativa; rileva solo metadata, versione e APK candidato opzionale. Non verifica backup/restore, firma dell'APK installato o dati, e non installa nulla. Dettagli nel protocollo Maxi-step 3.
+
 ## 10 novembre 2026 — S13 Vision Board: collaudo e stabilizzazione Web-first (PR #301)
 
 - **Base verificata:** S12 [PR #299](https://github.com/riccardopinato/Agenda-per-Anna/pull/299) unita in `main@9a1e000f7322ae412ac4abf4b185ab49031e8776`. [Development post-merge #42838930186](https://github.com/riccardopinato/Agenda-per-Anna/actions/runs/42838930186) e [Pages post-merge #42838930043](https://github.com/riccardopinato/Agenda-per-Anna/actions/runs/42838930043) **PASS** sullo stesso SHA; Pages su *attempt 2* dopo timeout `syncing_files` del primo deployment. Pubblicazione tecnica != refresh/installazione PWA fisica.
