@@ -200,7 +200,11 @@ def verify_one(data: dict, item: dict, root: Path) -> dict:
         raise AuditError("ARCHIVE_OR_MANIFEST_INVALID") from exc
     return {"source_sha": item["source_sha"], "workflow_run_id": item["run_id"],
             "artifact_id": item["artifact_id"], "artifact_zip_sha256": item["zip_sha256"],
-            "apk": identity, "source_version": f'{data["version_name"]}+{code}'}
+            "apk": identity, "source_version": f'{data["version_name"]}+{code}',
+            "source_build_number": code,
+            "actual_binary_version_code": identity["version_code"],
+            "version_code_alignment": ("MATCH" if code == identity["version_code"]
+                                       else "UNRESOLVED_SOURCE_BINARY_DIVERGENCE")}
 
 
 def audit(inventory: dict, directory: Path, expected_head: str) -> dict:
@@ -218,7 +222,20 @@ def audit(inventory: dict, directory: Path, expected_head: str) -> dict:
     require(proofs[0]["apk"]["signing_certificate_sha256"]
             == proofs[1]["apk"]["signing_certificate_sha256"],
             "CROSS_VERSION_SIGNER_CHANGED")
-    return {"schema_version": 1, "result": "HISTORICAL_SIGNED_APK_PAIR_IDENTITY_PASS",
+    discrepancies = [{"source_build_number": p["source_build_number"],
+                      "actual_binary_version_code": p["actual_binary_version_code"],
+                      "source_sha": p["source_sha"],
+                      "status": "UNRESOLVED_REQUIRES_RELEASE_ENGINEERING_REVIEW"}
+                     for p in proofs if p["version_code_alignment"] != "MATCH"]
+    require(len(discrepancies) == 1
+            and discrepancies[0]["source_build_number"] == 128
+            and discrepancies[0]["actual_binary_version_code"] == 2127,
+            "EXPECTED_HISTORICAL_VERSIONCODE_DISCREPANCY_MISSING")
+    return {"schema_version": 1,
+            "result": "SIGNATURE_AND_ORIGINAL_BYTES_VERIFIED_VERSIONCODE_DIVERGENCE",
+            "release_identity_gate": "BLOCKED_UNRESOLVED_BINARY_VERSIONCODE",
+            "release_pair_update_ready": False,
+            "discrepancies": discrepancies,
             "repository": inventory["repository"], "audit_checkout_sha": actual,
             "ci_run_id": os.environ.get("GITHUB_RUN_ID"),
             "physical_device_verified": False, "installed_app_verified": False,
@@ -240,9 +257,9 @@ def main() -> None:
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(json.dumps(receipt, indent=2, sort_keys=True) + "\n",
                            encoding="utf-8")
-    print("PASS: original +127/+128 APK ZIP bytes, source/build provenance, "
-          "aapt manifest, APK v2 cryptographic signatures, matching cert. "
-          "NOT INSTALLED/DEVICE/DOWNGRADE/PLAY/GOLDEN.")
+    print("PASS: original ZIP/APK bytes, sources, signatures and signer parity. "
+          "BLOCKED: +128 APK actual versionCode 2127 differs from source build 128. "
+          "NOT RELEASE READY / DEVICE / DOWNGRADE / PLAY / GOLDEN.")
 
 
 if __name__ == "__main__":
