@@ -10,7 +10,7 @@ dependencies:
   factory_profile_kit:
     git:
       url: https://github.com/riccardopinato/Idee-app-Archivi-riferimenti.git
-      ref: 1d1a8628e25f58b788b013cf6955763d00363cdc
+      ref: 710e83261bcadc1cfd5eda3e28d77bed8b8bc576
       path: 19-APP-FACTORY-10X/flutter_kits/profile
   flutter:
     sdk: flutter
