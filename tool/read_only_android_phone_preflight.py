@@ -158,6 +158,20 @@ def build_receipt(adb: str, aapt: str, apksigner: str,
     return receipt
 
 
+def write_receipt_exclusive(path: Path, body: str) -> None:
+    """Fail closed if output exists, including backup/APK paths and hardlinks."""
+    if path.is_symlink():
+        raise PreflightError("OUTPUT_ALREADY_EXISTS_OR_SYMLINK")
+    try:
+        path.parent.mkdir(parents=True, exist_ok=True)
+        with path.open("x", encoding="utf-8") as stream:
+            stream.write(body)
+    except FileExistsError as exc:
+        raise PreflightError("OUTPUT_ALREADY_EXISTS_OR_SYMLINK") from exc
+    except OSError as exc:
+        raise PreflightError("OUTPUT_WRITE_FAILED") from exc
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--adb", default="adb", help="Path to local ADB; read-only shell commands")
@@ -176,11 +190,12 @@ def main(argv: list[str] | None = None) -> int:
         return 2
     out = json.dumps(receipt, indent=2, sort_keys=True) + "\n"
     if args.output:
-        if args.output.is_symlink():
-            print('{"status":"BLOCKED","reason":"OUTPUT_IS_SYMLINK"}')
+        try:
+            write_receipt_exclusive(args.output, out)
+        except PreflightError as exc:
+            print(json.dumps({"status": "BLOCKED", "reason": str(exc),
+                              "installation_authorized": False, "physical_qa_pass": False}))
             return 2
-        args.output.parent.mkdir(parents=True, exist_ok=True)
-        args.output.write_text(out, encoding="utf-8")
         print("LOCAL_RECEIPT_WRITTEN_ONLY_NO_INSTALL_OR_CERTIFICATION")
     else:
         print(out, end="")
