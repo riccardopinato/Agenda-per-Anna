@@ -214,14 +214,14 @@ def rehearse(root: Path, inventory: dict, head: str) -> dict:
         print("REAL_APK_MAIN_LAUNCH_INTENT_PASS")
         maestro(MAESTRO_FLOW_ONBOARDING)
         maestro(MAESTRO_FLOW_SEED)
-        print("REAL_APP_SYNTHETIC_INBOX_SEEDED_PASS")
+        print("REAL_APP_SYNTHETIC_INBOX_CATEGORY_SEEDED_PASS")
         adb("shell", "am", "force-stop", PACKAGE)
         install_expect(new, 2128)  # NO uninstall, NO data clear
         maestro(MAESTRO_FLOW_VERIFY)
-        print("REAL_APK_INPLACE_UPGRADE_PERSISTENCE_PASS")
+        print("REAL_APK_INPLACE_UPGRADE_CATEGORY_PERSISTENCE_PASS")
         adb("shell", "am", "force-stop", PACKAGE)
         maestro(MAESTRO_FLOW_VERIFY)
-        print("REAL_APK_PROCESS_RESTART_PERSISTENCE_PASS")
+        print("REAL_APK_PROCESS_RESTART_CATEGORY_PERSISTENCE_PASS")
         downgrade = cmd("adb", "-e", "install", "-r", str(old))
         message = downgrade.stdout + "\n" + downgrade.stderr
         require(downgrade.returncode != 0
@@ -230,12 +230,12 @@ def rehearse(root: Path, inventory: dict, head: str) -> dict:
         require(installed_version() == 2128,
                 "REJECTED_DOWNGRADE_CHANGED_INSTALL")
         maestro(MAESTRO_FLOW_VERIFY)
-        print("REAL_RELEASE_DOWNGRADE_REJECTED_DATA_INTACT_PASS")
+        print("REAL_RELEASE_DOWNGRADE_REJECTED_CATEGORY_INTACT_PASS")
         # Recovery from failed attempt is a same-version, non-destructive
         # repair/re-install, NOT a version rollback or a forward fix build.
         install_expect(new, 2128)
         maestro(MAESTRO_FLOW_VERIFY)
-        print("REAL_APK_SAME_VERSION_REPAIR_PERSISTENCE_PASS")
+        print("REAL_APK_SAME_VERSION_REPAIR_CATEGORY_PERSISTENCE_PASS")
     return {
         "schema_version": 1,
         "result": "SIGNED_REAL_APP_EMULATOR_UPGRADE_AND_REPAIR_PASS",
@@ -249,17 +249,17 @@ def rehearse(root: Path, inventory: dict, head: str) -> dict:
              "artifact_id": item["artifact_id"],
              "apk_sha256": item["apk_sha256"]}
             for item in inventory["releases"]],
-        "device": device, "synthetic_fixture": "one_guest_inbox_note",
+        "device": device, "synthetic_fixture": "one_guest_inbox_category",
         "synthetic_fixture_token": CANARY,
         "checks": {
             "original_signed_apk_127_installed": True,
-            "guest_onboarding_and_inbox_note_written_through_real_ui": True,
+            "guest_onboarding_and_inbox_category_written_through_real_ui": True,
             "inplace_upgrade_2127_to_2128": True,
-            "inbox_note_persisted_after_upgrade": True,
-            "inbox_note_persisted_after_process_restart": True,
+            "inbox_category_persisted_after_upgrade": True,
+            "inbox_category_persisted_after_process_restart": True,
             "normal_downgrade_2128_to_2127_rejected": True,
-            "data_intact_after_rejected_downgrade": True,
-            "same_version_2128_repair_and_data_retention": True,
+            "category_intact_after_rejected_downgrade": True,
+            "same_version_2128_repair_and_category_retention": True,
         },
         "physical_device_verified": False,
         "actual_user_data_tested": False,
@@ -283,7 +283,7 @@ def main() -> None:
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(json.dumps(report, indent=2, sort_keys=True) + "\n",
                            encoding="utf-8")
-    print("PASS real signed APK emulator 2127->2128, guest Inbox retention, "
+    print("PASS real signed APK emulator 2127->2128, guest Inbox category retention, "
           "normal downgrade refused, same-version non-destructive repair. "
           "NO REAL PHONE / DOWNGRADE / PLAY / GOLDEN.")
 
