@@ -132,9 +132,21 @@ def installed_version() -> int:
 
 
 def ensure_uninstalled() -> None:
-    # A disposable emulator must begin empty; we NEVER uninstall or clear data.
-    prior = adb("shell", "pm", "path", PACKAGE).strip()
-    require(not prior, "NONEMPTY_EMULATOR_PACKAGE_REFUSED")
+    # Android 15 'pm path <absent package>' returns exit status 1, frequently
+    # with empty stdout. This is not an ADB transport failure. Distinguish
+    # absence from a preinstalled package or an offline/unreachable emulator.
+    probe = cmd("adb", "-e", "shell", "pm", "path", PACKAGE)
+    stdout = probe.stdout.strip()
+    stderr = probe.stderr.strip()
+    if probe.returncode == 0:
+        require(not stdout and not stderr,
+                "NONEMPTY_EMULATOR_PACKAGE_REFUSED")
+        return
+    require(probe.returncode == 1 and not stdout
+            and (not stderr or re.search(
+                r"\\b(package|application)\\b.*\\b(not found|unknown)\\b",
+                stderr, re.I) is not None),
+            "EMULATOR_PACKAGE_PROBE_FAILED_NOT_SAFE_TO_INSTALL")
 
 
 def install_expect(apk: Path, version: int) -> None:
