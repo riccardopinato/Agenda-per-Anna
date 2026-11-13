@@ -126,6 +126,9 @@ def verify_manifest(data: dict, item: dict, manifest: dict) -> None:
 
 def inspect_android(data: dict, item: dict, apk: Path) -> dict:
     output = command("aapt", "dump", "badging", str(apk))
+    package_line = next((line for line in output.splitlines()
+                         if line.startswith("package: ")), "MISSING_PACKAGE_LINE")
+    print("AAPT_BINARY_PACKAGE " + package_line[:350])
     match = re.search(r"(?m)^package: name='([^']+)' versionCode='(\d+)' versionName='([^']+)'", output)
     require(match is not None
             and match.group(1) == data["package_id"]
