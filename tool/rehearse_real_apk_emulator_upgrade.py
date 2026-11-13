@@ -144,7 +144,7 @@ def ensure_uninstalled() -> None:
         return
     require(probe.returncode == 1 and not stdout
             and (not stderr or re.search(
-                r"\\b(package|application)\\b.*\\b(not found|unknown)\\b",
+                r"\b(package|application)\b.*\b(not found|unknown)\b",
                 stderr, re.I) is not None),
             "EMULATOR_PACKAGE_PROBE_FAILED_NOT_SAFE_TO_INSTALL")
 
