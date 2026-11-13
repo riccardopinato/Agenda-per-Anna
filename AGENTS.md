@@ -92,7 +92,16 @@ For behavior-changing Anna's Diary roadmap steps, automatic exact-head source ga
 - AppLab Source Gate (repository-local code and visual-flow contract validation; no external AppLab APK runner).
 
 Android size audit, Android emulator integration, and Store/AAB builds remain
-**manual workflow_dispatch actions only**. By explicit user authorization, the
+**manual workflow_dispatch actions only** by default. A strictly bounded
+**one-time exception** for the user's explicit 13 November 2026 instruction
+to perform Android signed APK Maxi-step 2 is authorized **only for PR #312**
+(`test/android-original-apk-upgrade-recovery-emulator-20261113`) and **only**
+for `.github/workflows/real-signed-apk-upgrade-emulator.yml`, which must
+fail closed or skip all other pull requests. This exception is for pre-existing
+signed +127/+128 artifacts on an isolated emulator with synthetic guest state;
+it grants no generic automatic Android testing, APK builds, signing, Store,
+physical device or user data access. Outside PR #312 all emulator runs must be
+explicit workflow_dispatch. By explicit user authorization, the
 **stable-signed ARM64 sideload APK** is now automated for release candidates:
 `.github/workflows/auto-signed-arm64.yml` listens only to a successful
 `Development checks` run from a trusted `main` push, requires a strictly
