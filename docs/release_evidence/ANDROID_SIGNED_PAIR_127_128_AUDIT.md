@@ -2,6 +2,18 @@
 
 **Date:** 13 November 2026. **Factory:** `App-Factory-Core@c5adc147046beb7024629466d10eeb799c3c2619` / Master 27 / Golden Index 29. **Scope:** read-only original artifact provenance and APK identity, **not** a release, installation or rollback on a real phone.
 
+## P0 finding — signed +128 binary versionCode does not equal Flutter buildNumber
+
+**Independently observed in the actual APK by Android `aapt dump badging`:**
+- +127: `source pubspec +127` / manifest `buildNumber=127` / **APK `versionCode=127`**.
+- +128: `source pubspec +128` / manifest `buildNumber=128` / **APK `versionCode=2127`**.
+
+The two historical source commits use **identical** `.github/workflows/sideload-arm64.yml`, `.github/workflows/auto-signed-arm64.yml` and `tool/prepare_android_platform.py` file identities; only source version changes. ZIP/APK bytes and manifest/source/run provenance match. The APK `AndroidManifest.xml` and compiled `lib/arm64-v8a/libapp.so` differ, so they are not the same APK copied twice.
+
+**Do not silently interpret `2127` as `128`.** An ABI-specific version code offset is a possible explanation, but an exact causal mapping has **not** been independently established for these two historical runs; `2127 = 2000 + 127` is not a proven mapping from the +128 source. This discrepancy is explicitly pinned and must remain `BLOCKED_UNRESOLVED_BINARY_VERSIONCODE` for any in-place update/recovery admission.
+
+The read-only CI may **PASS original byte/hash/source/signature authenticity while still reporting this BLOCKED version alignment**. A green audit CI must never be interpreted as a cleared release/physical gate. No user/device installation or downgrade is authorized by this historical evidence.
+
 ## Real immutable +127 and +128 evidence
 
 | Evidence | +127 | +128 |
@@ -36,7 +48,7 @@ These ZIPs and both original APKs were downloaded and their entire bytes hashed 
 
 ## Acceptance boundaries and exact next step
 
-A successful CI from this PR qualifies `HISTORICAL_SIGNED_APK_PAIR_IDENTITY_PASS` for **original +127/+128 file identities**, not a physical test or upgrade/downgrade. It does not prove installed-app identity, database migrations, cross-account state, Play Internal Testing, or safe reverse schema compatibility.
+A successful CI from this PR can verify the **original +127/+128 bytes and signatures** but returns `SIGNATURE_AND_ORIGINAL_BYTES_VERIFIED_VERSIONCODE_DIVERGENCE` and `release_identity_gate=BLOCKED_UNRESOLVED_BINARY_VERSIONCODE` until the +128 binary version mismatch is explained. This is not a physical test or upgrade/downgrade. It does not prove installed-app identity, database migrations, cross-account state, Play Internal Testing, or safe reverse schema compatibility.
 
 Android generally rejects lower-version installs under normal conditions. Even same-signer +127/+128 does not authorize forcing a downgrade over personal data. **Never uninstall, clear data, use `adb install -d` on a personal release, rotate signing keys, or publish a Store build as part of this audit.** A future recovery should use safe backups and, when technically appropriate, a forward-`versionCode` corrective release with the historical compatible behavior.
 
