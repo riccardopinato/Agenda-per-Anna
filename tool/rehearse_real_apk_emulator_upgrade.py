@@ -19,7 +19,7 @@ from zipfile import ZipFile
 PACKAGE = "com.riccardopinato.agenda_per_anna"
 CANARY = "X10_ANNA_127_128_EMULATOR_SYNTHETIC_ONLY"
 EXPECTED_VERSIONS = (2127, 2128)
-MAESTRO_FLOW_ONBOARDING = ".maestro/journeys/onboarding.yaml"
+MAESTRO_FLOW_ONBOARDING = ".maestro/release-recovery/signed127-onboard-no-clear.yaml"
 MAESTRO_FLOW_SEED = ".maestro/release-recovery/signed127-seed-synthetic-inbox.yaml"
 MAESTRO_FLOW_VERIFY = ".maestro/release-recovery/signed128-check-synthetic-inbox.yaml"
 
@@ -159,10 +159,15 @@ def maestro(flow: str) -> None:
     require(Path(flow).is_file(), "MAESTRO_JOURNEY_MISSING")
     result = cmd("maestro", "test", flow, timeout=660)
     if result.returncode != 0:
-        # The build is not certified; do not invent persistence on partial UI.
+        # Only AndroidRuntime-filtered crash lines from this disposable
+        # emulator; no screenshot, account or data files are uploaded.
+        runtime = cmd("adb", "-e", "logcat", "-d", "-t", "150",
+                      "-s", "AndroidRuntime:E", timeout=30)
+        diagnostic = runtime.stdout[-1600:] if runtime.returncode == 0 else ""
         raise RehearsalError(
             "REAL_APP_UI_JOURNEY_FAILED:" + Path(flow).name + ":" +
-            (result.stdout + "\n" + result.stderr)[-2200:])
+            (result.stdout + "\n" + result.stderr)[-3000:] +
+            ":ANDROID_RUNTIME_CRASH_SNIPPET:" + diagnostic)
     print("MAESTRO_REAL_APK_UI_PASS: " + Path(flow).name)
 
 
@@ -176,6 +181,10 @@ def rehearse(root: Path, inventory: dict, head: str) -> dict:
         old, new = inspect_local_pair(root, inventory, Path(temp))
         install_expect(old, 2127)
         print("REAL_APK_OLD_INSTALL_PASS")
+        launched = adb("shell", "monkey", "-p", PACKAGE, "1")
+        require("Events injected: 1" in launched,
+                "REAL_APK_MAIN_LAUNCH_FAILED")
+        print("REAL_APK_MAIN_LAUNCH_INTENT_PASS")
         maestro(MAESTRO_FLOW_ONBOARDING)
         maestro(MAESTRO_FLOW_SEED)
         print("REAL_APP_SYNTHETIC_INBOX_SEEDED_PASS")
