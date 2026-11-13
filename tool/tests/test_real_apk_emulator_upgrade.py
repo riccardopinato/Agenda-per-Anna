@@ -31,13 +31,22 @@ class SafetyTests(unittest.TestCase):
                 mod.emulator_guard()
 
     def test_preinstalled_app_is_blocked_before_touching_data(self):
-        with patch.object(mod, "adb", return_value="package:/data/app/base.apk"):
+        with patch.object(mod, "cmd", return_value=subprocess.CompletedProcess(
+                [], 0, "package:/data/app/base.apk", "")):
             with self.assertRaisesRegex(mod.RehearsalError, "NONEMPTY_EMULATOR"):
                 mod.ensure_uninstalled()
 
-    def test_empty_package_allowed_only_through_preflight(self):
-        with patch.object(mod, "adb", return_value=""):
+    def test_empty_package_with_android15_exit1_is_allowed(self):
+        with patch.object(mod, "cmd", return_value=subprocess.CompletedProcess(
+                [], 1, "", "")):
             mod.ensure_uninstalled()
+
+    def test_unreachable_adb_transport_is_never_treated_as_absent(self):
+        with patch.object(mod, "cmd", return_value=subprocess.CompletedProcess(
+                [], 1, "", "error: device offline")):
+            with self.assertRaisesRegex(mod.RehearsalError,
+                                        "EMULATOR_PACKAGE_PROBE_FAILED"):
+                mod.ensure_uninstalled()
 
     def test_install_requires_actual_version_from_package_manager(self):
         with patch.object(mod, "adb", return_value="Success"):
