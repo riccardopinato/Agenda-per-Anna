@@ -211,7 +211,7 @@ void main() {
     await store.load();
     await store.addInboxEntry('Cafe note');
     final id = store.inbox.single.id;
-    await store.setInboxTags(id, ['Cafe\\u0301', 'Viaggi']);
+    await store.setInboxTags(id, ['Cafe\u0301', 'Viaggi']);
     await store.moveInboxToTrash(id);
     expect(store.inbox, isEmpty);
 
