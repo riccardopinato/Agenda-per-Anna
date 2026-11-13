@@ -76,7 +76,7 @@ jobs:
             --artifact-root "$RUNNER_TEMP/anna-historical-signed-audit" \
             --expected-head "$EXPECTED_HEAD" \
             --output "$RUNNER_TEMP/anna-historical-signed-audit/identity-result.json"
-          echo "Original +127/+128 ZIP/APK hashes and cryptographic signatures verified. BLOCKED release identity: +128 actual APK versionCode 2127, source buildNumber 128. No installed device, APK rollback, Play or Golden certification." >> "$GITHUB_STEP_SUMMARY"
+          echo "Original +127/+128 signed APK artifacts verified: source buildNumbers 127/128, ARM64 split APK versionCodes 2127/2128, APK SHA-256, aapt, apksigner v2 and same signer. No installation, physical data, rollback, Play or Golden certification." >> "$GITHUB_STEP_SUMMARY"
       - name: Upload provenance receipt ONLY (no APKs and no user data)
         if: success()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
