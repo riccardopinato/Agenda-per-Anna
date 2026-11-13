@@ -178,11 +178,27 @@ class SignedPairSafetyTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             inv, item, directory = sample(Path(tmp))
             apk = Path(tmp) / "fixture.apk"
-            apk.write_bytes(b"fake manifest cannot create signed APK")
+            # Valid structural ZIP does NOT make a signed APK.
+            with ZipFile(apk, "w") as z:
+                z.writestr("lib/arm64-v8a/libsynthetic.so", b"not an APK signature")
             badging = ("package: name='com.riccardopinato.agenda_per_anna' "
-                       "versionCode='127' versionName='1.0.0-rc.6'\n")
+                       "versionCode='127' versionName='1.0.0-rc.6'\\n")
+            with patch.object(mod, "command", side_effect=[
+                badging, "no independently verified signer certificate"
+            ]):
+                with self.assertRaisesRegex(mod.AuditError,
+                                            "APK_CRYPTOGRAPHIC_SIGNER_MISMATCH"):
+                    mod.inspect_android(inv, item, apk)
+
+    def test_aapt_rejects_wrong_binary_version_even_when_manifest_matches(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            inv, item, directory = sample(Path(tmp))
+            apk = Path(tmp) / "fixture.apk"
+            badging = ("package: name='com.riccardopinato.agenda_per_anna' "
+                       "versionCode='2127' versionName='1.0.0-rc.6'\\n")
             with patch.object(mod, "command", return_value=badging):
-                with self.assertRaises(Exception):
+                with self.assertRaisesRegex(mod.AuditError,
+                                            "APK_BINARY_PACKAGE_VERSION_MISMATCH"):
                     mod.inspect_android(inv, item, apk)
 
     def test_audit_checkout_not_synthetic_pr_merge_sha(self):
