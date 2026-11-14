@@ -75,6 +75,54 @@ bool sharedSpaceAliasWithinLimit(String value) {
   return name.isNotEmpty && name.characters.length <= 60;
 }
 
+/// Account-bound hub reads must never use another user's cached group list.
+String? sharedSpaceHubAuthorizedAccount({
+  required bool signedIn,
+  String? cloudUserId,
+  String? activeAccountId,
+}) => signedIn &&
+        cloudUserId != null &&
+        cloudUserId == activeAccountId
+    ? cloudUserId
+    : null;
+
+/// Non-destructive diagnostics for a failed/empty membership listing.
+String sharedSpaceHubRecoveryCopy(String language, String key) {
+  final labels = switch (language) {
+    'en' => {
+      'unavailable': 'Groups could not be updated. Local data was not cleared.',
+      'empty': 'No groups returned for this account. Check the signed-in account before creating another group.',
+      'preserved': 'Previous group list preserved locally, but not shown until membership is verified.',
+      'account': 'Check account',
+    },
+    'es' => {
+      'unavailable': 'No se pudieron actualizar los grupos. No se borraron los datos locales.',
+      'empty': 'Este usuario no tiene grupos visibles. Comprueba la cuenta antes de crear otro.',
+      'preserved': 'Lista anterior conservada en el dispositivo, sin mostrarla hasta verificar el acceso.',
+      'account': 'Comprobar cuenta',
+    },
+    'fr' => {
+      'unavailable': 'Impossible de charger les groupes. Les données locales sont conservées.',
+      'empty': 'Aucun groupe trouvé pour ce compte. Vérifiez le compte avant d’en créer un autre.',
+      'preserved': 'Ancienne liste conservée localement, masquée jusqu’à vérification des accès.',
+      'account': 'Vérifier le compte',
+    },
+    'pt' => {
+      'unavailable': 'Não foi possível atualizar os grupos. Os dados locais foram preservados.',
+      'empty': 'Nenhum grupo encontrado nesta conta. Confirma a conta antes de criar outro.',
+      'preserved': 'Lista anterior preservada no dispositivo, oculta até validar o acesso.',
+      'account': 'Verificar conta',
+    },
+    _ => {
+      'unavailable': 'Impossibile aggiornare i gruppi. I dati locali non sono stati cancellati.',
+      'empty': 'Nessun gruppo trovato per questo account. Controlla l’accesso prima di crearne un altro.',
+      'preserved': 'Elenco precedente conservato sul dispositivo, ma nascosto fino alla verifica dei permessi.',
+      'account': 'Controlla account',
+    },
+  };
+  return labels[key] ?? key;
+}
+
 class SharedSpaceHubScreen extends StatefulWidget {
   final AgendaStore store;
 
@@ -90,6 +138,50 @@ class _SharedSpaceHubScreenState extends State<SharedSpaceHubScreen> {
   final Map<String, int> pendingBySpace = {};
   Map<String, String> _memberAliases = {};
   String? _memberAliasScope;
+  String? _loadedAccountId;
+  int _accountGeneration = 0;
+  int _reloadRequest = 0;
+  bool _reloadError = false;
+  bool _remoteEmpty = false;
+  bool _localListPreserved = false;
+
+  String? get _authorizedAccount => sharedSpaceHubAuthorizedAccount(
+        signedIn: CloudSyncService.instance.signedIn,
+        cloudUserId: CloudSyncService.instance.userId,
+        activeAccountId: widget.store.activeAccountId,
+      );
+
+  void _onAccountOrSessionChanged() {
+    // Both notifiers may fire during build/account binding. Process after the
+    // frame, and only reload when the verified account actually changes.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      final account = _authorizedAccount;
+      if (account == _loadedAccountId) return;
+      _loadedAccountId = account;
+      _accountGeneration++;
+      _reloadRequest++;
+      setState(() {
+        spaces = const [];
+        pendingBySpace.clear();
+        loading = account != null;
+        _reloadError = false;
+        _remoteEmpty = false;
+        _localListPreserved = false;
+        _memberAliases = {};
+        _memberAliasScope = null;
+      });
+      if (account != null) {
+        unawaited(_loadCachedThenReload());
+      }
+    });
+  }
+
+  bool _validLoad(String account, int generation, int request) =>
+      mounted &&
+      _authorizedAccount == account &&
+      _accountGeneration == generation &&
+      _reloadRequest == request;
 
   String get _memberAliasKey =>
       '${widget.store.sharedSpacesCacheStorageKey}_member_labels';
@@ -141,12 +233,32 @@ class _SharedSpaceHubScreenState extends State<SharedSpaceHubScreen> {
   @override
   void initState() {
     super.initState();
-    _loadCachedThenReload();
+    _loadedAccountId = _authorizedAccount;
+    CloudSyncService.instance.addListener(_onAccountOrSessionChanged);
+    widget.store.accountRevision.addListener(_onAccountOrSessionChanged);
+    unawaited(_loadCachedThenReload());
+  }
+
+  @override
+  void dispose() {
+    CloudSyncService.instance.removeListener(_onAccountOrSessionChanged);
+    widget.store.accountRevision.removeListener(_onAccountOrSessionChanged);
+    super.dispose();
   }
 
   Future<void> _loadCachedThenReload() async {
+    final account = _authorizedAccount;
+    final generation = _accountGeneration;
+    if (account == null) {
+      if (mounted) setState(() => loading = false);
+      return;
+    }
     await _loadMemberAliases();
+    if (!mounted || _authorizedAccount != account ||
+        generation != _accountGeneration) return;
     final prefs = await widget.store._localState();
+    if (!mounted || _authorizedAccount != account ||
+        generation != _accountGeneration) return;
     final raw = prefs.getString(widget.store.sharedSpacesCacheStorageKey);
     if (raw != null) {
       try {
@@ -168,13 +280,21 @@ class _SharedSpaceHubScreenState extends State<SharedSpaceHubScreen> {
         await _refreshIndicators(cached);
       } catch (_) {}
     }
+    if (!mounted || _authorizedAccount != account ||
+        generation != _accountGeneration) return;
     await _reload();
   }
 
-  Future<void> _saveSpacesCache(List<SharedSpace> value) async {
+  Future<void> _saveSpacesCache(
+    List<SharedSpace> value, {
+    required String expectedAccount,
+  }) async {
+    if (_authorizedAccount != expectedAccount) return;
+    final key = widget.store.sharedSpacesCacheStorageKey;
     final prefs = await widget.store._localState();
+    if (_authorizedAccount != expectedAccount) return;
     await prefs.setString(
-      widget.store.sharedSpacesCacheStorageKey,
+      key,
       jsonEncode(
         value
             .map(
@@ -189,7 +309,9 @@ class _SharedSpaceHubScreenState extends State<SharedSpaceHubScreen> {
             .toList(),
       ),
     );
-    await widget.store.refreshSharedAgendaCache();
+    if (_authorizedAccount == expectedAccount) {
+      await widget.store.refreshSharedAgendaCache();
+    }
   }
 
   Future<void> _refreshIndicators(List<SharedSpace> value) async {
@@ -208,23 +330,52 @@ class _SharedSpaceHubScreenState extends State<SharedSpaceHubScreen> {
 
   Future<void> _reload() async {
     final cloud = CloudSyncService.instance;
-    if (!cloud.signedIn) {
+    final account = _authorizedAccount;
+    if (account == null) {
       if (mounted) setState(() => loading = false);
       return;
     }
+    final generation = _accountGeneration;
+    final request = ++_reloadRequest;
     try {
       final result = await cloud.listSharedSpaces();
-      await _saveSpacesCache(result);
-      await _refreshIndicators(result);
-      await widget.store.refreshSharedAgendaCache(pullRemote: true);
-      if (mounted) {
+      if (!_validLoad(account, generation, request)) return;
+      if (result.isEmpty) {
+        // A zero-row response can be a genuine membership change or an
+        // unexpected account/session state. Hide previously listed spaces,
+        // but NEVER replace a nonempty recovery cache with [].
+        final hadPreviousList = spaces.isNotEmpty;
         setState(() {
-          spaces = result;
+          spaces = const [];
+          pendingBySpace.clear();
           loading = false;
+          _remoteEmpty = true;
+          _localListPreserved = hadPreviousList;
+          _reloadError = false;
         });
+        return;
       }
+      await _saveSpacesCache(result, expectedAccount: account);
+      if (!_validLoad(account, generation, request)) return;
+      await _refreshIndicators(result);
+      if (!_validLoad(account, generation, request)) return;
+      await widget.store.refreshSharedAgendaCache(pullRemote: true);
+      if (!_validLoad(account, generation, request)) return;
+      setState(() {
+        spaces = result;
+        loading = false;
+        _remoteEmpty = false;
+        _localListPreserved = false;
+        _reloadError = false;
+      });
     } catch (_) {
-      if (mounted) setState(() => loading = false);
+      // Network/auth errors are not evidence that memberships were deleted.
+      // Keep the last known local list without overwriting its stored copy.
+      if (!_validLoad(account, generation, request)) return;
+      setState(() {
+        loading = false;
+        _reloadError = true;
+      });
     }
   }
 
@@ -579,7 +730,60 @@ class _SharedSpaceHubScreenState extends State<SharedSpaceHubScreen> {
                           ),
                         ),
                         const SizedBox(height: 16),
-                        if (spaces.isEmpty)
+                        if (_reloadError || _remoteEmpty)
+                          SimpleCard(
+                            child: Column(
+                              children: [
+                                const Icon(Icons.info_outline),
+                                const SizedBox(height: 8),
+                                Text(
+                                  sharedSpaceHubRecoveryCopy(
+                                    AnnaStrings.of(context).languageCode,
+                                    _reloadError ? 'unavailable' : 'empty',
+                                  ),
+                                  textAlign: TextAlign.center,
+                                ),
+                                if (_localListPreserved) ...[
+                                  const SizedBox(height: 6),
+                                  Text(
+                                    sharedSpaceHubRecoveryCopy(
+                                      AnnaStrings.of(context).languageCode,
+                                      'preserved',
+                                    ),
+                                    textAlign: TextAlign.center,
+                                  ),
+                                ],
+                                const SizedBox(height: 12),
+                                OutlinedButton.icon(
+                                  onPressed: () => Navigator.of(context).push(
+                                    MaterialPageRoute<void>(
+                                      builder: (_) => CloudAccountScreen(
+                                        store: widget.store,
+                                      ),
+                                    ),
+                                  ),
+                                  icon: const Icon(Icons.manage_accounts_outlined),
+                                  label: Text(
+                                    sharedSpaceHubRecoveryCopy(
+                                      AnnaStrings.of(context).languageCode,
+                                      'account',
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(height: 8),
+                                TextButton.icon(
+                                  onPressed: _reload,
+                                  icon: const Icon(Icons.refresh),
+                                  label: Text(
+                                    AnnaStrings.of(context).d3('refresh'),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        if (_reloadError || _remoteEmpty)
+                          const SizedBox(height: 12),
+                        if (spaces.isEmpty && !_localListPreserved)
                           SimpleCard(
                             child: Column(
                               children: [
