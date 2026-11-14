@@ -58,7 +58,9 @@ class _MainShellState extends State<MainShell> {
     BuildContext context, {
     bool editorial = false,
   }) {
-    final color = Theme.of(context).colorScheme.primary;
+    final color = editorial
+        ? AnnaOrganicPastel.oliveInk
+        : Theme.of(context).colorScheme.primary;
     final scheme = Theme.of(context).colorScheme;
     final animate = AnnaDesignTokens.animationsEnabled(context);
     return Semantics(
