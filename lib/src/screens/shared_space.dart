@@ -344,7 +344,7 @@ class _SharedSpaceHubScreenState extends State<SharedSpaceHubScreen> {
         // A zero-row response can be a genuine membership change or an
         // unexpected account/session state. Hide previously listed spaces,
         // but NEVER replace a nonempty recovery cache with [].
-        final hadPreviousList = spaces.isNotEmpty;
+        final hadPreviousList = spaces.isNotEmpty || _localListPreserved;
         setState(() {
           spaces = const [];
           pendingBySpace.clear();
