@@ -66,6 +66,10 @@ void main() {
     expect(emptyResponsePath, isNot(contains('_saveSpacesCache(')));
     expect(emptyResponsePath, isNot(contains('setString(')));
     expect(emptyResponsePath, contains('spaces = const [];'));
+    // Previously cached groups remain hidden and cannot trigger a duplicate
+    // create-another-group action while membership is unverified.
+    expect(hub, contains('if (spaces.isEmpty && !_localListPreserved)'));
+    expect(hub, contains('else if (spaces.isNotEmpty) ...['));
     expect(hub, contains('if (_authorizedAccount != expectedAccount) {'));
   });
 
