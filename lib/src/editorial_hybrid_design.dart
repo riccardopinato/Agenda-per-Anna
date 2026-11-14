@@ -454,6 +454,47 @@ class AnnaEditorialQuickAction extends StatelessWidget {
   Widget build(BuildContext context) {
     final colors = AnnaEditorialColors.of(context);
     final theme = Theme.of(context);
+    if (AnnaOrganicPastel.enabled(context)) {
+      // Organic preview: one short, scannable row instead of a tall bento
+      // card. Keep the original action owner, label and masked subtitle.
+      return AnnaEditorialSurface(
+        onTap: onTap,
+        semanticLabel: title,
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+        child: Row(
+          children: [
+            Icon(icon, size: 22, color: AnnaOrganicPastel.oliveInk),
+            const SizedBox(width: 9),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    title,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: theme.textTheme.titleSmall?.copyWith(
+                      fontWeight: FontWeight.w700,
+                      color: AnnaOrganicPastel.text(context),
+                    ),
+                  ),
+                  if (subtitle != null && subtitle!.isNotEmpty)
+                    Text(
+                      subtitle!,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      );
+    }
     return AnnaEditorialSurface(
       onTap: onTap,
       semanticLabel: title,
