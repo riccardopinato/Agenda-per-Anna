@@ -532,13 +532,10 @@ class _SharedSpaceHubScreenState extends State<SharedSpaceHubScreen> {
                         Container(
                           padding: const EdgeInsets.all(20),
                           decoration: BoxDecoration(
-                            gradient: editorial
-                                ? LinearGradient(
-                                    begin: Alignment.topLeft,
-                                    end: Alignment.bottomRight,
-                                    colors: [colors.featuredStart, colors.featuredEnd],
-                                  )
-                                : accent.gradient,
+                            color: editorial
+                                ? AnnaOrganicPastel.surface(context)
+                                : null,
+                            gradient: editorial ? null : accent.gradient,
                             border: editorial
                                 ? Border.all(color: colors.border)
                                 : null,
@@ -547,11 +544,17 @@ class _SharedSpaceHubScreenState extends State<SharedSpaceHubScreen> {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Icon(
-                                Icons.groups_outlined,
-                                size: 30,
-                                color: editorial ? colors.accent : accent.foreground,
-                              ),
+                              if (editorial)
+                                const AnnaOrganicPastelLandscape(
+                                  height: 88,
+                                  radius: 16,
+                                )
+                              else
+                                Icon(
+                                  Icons.groups_outlined,
+                                  size: 30,
+                                  color: accent.foreground,
+                                ),
                               const SizedBox(height: 10),
                               Text(
                                 AnnaStrings.of(context).d3('sharedSpace'),
@@ -639,18 +642,48 @@ class _SharedSpaceHubScreenState extends State<SharedSpaceHubScreen> {
                               final pending = pendingBySpace[space.id] ?? 0;
                               return Card(
                                 margin: const EdgeInsets.only(bottom: 10),
+                                elevation: 0,
+                                color: editorial
+                                    ? AnnaOrganicPastel.surface(context)
+                                    : null,
+                                shape: editorial
+                                    ? RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(19),
+                                        side: BorderSide(
+                                          color: Theme.of(context).brightness ==
+                                                  Brightness.dark
+                                              ? Theme.of(context)
+                                                  .colorScheme.outlineVariant
+                                              : AnnaOrganicPastel.border,
+                                        ),
+                                      )
+                                    : null,
                                 child: ListTile(
-                                  leading: CircleAvatar(
-                                    child: Icon(
-                                      sharedSpaceCanRename(space, cloud.userId)
-                                          ? Icons.admin_panel_settings_outlined
-                                          : Icons.groups_outlined,
-                                    ),
-                                  ),
+                                  contentPadding: editorial
+                                      ? const EdgeInsets.symmetric(
+                                          horizontal: 14,
+                                          vertical: 7,
+                                        )
+                                      : null,
+                                  leading: editorial
+                                      ? const AnnaOrganicPastelGroupAvatar()
+                                      : CircleAvatar(
+                                          child: Icon(
+                                            sharedSpaceCanRename(
+                                              space,
+                                              cloud.userId,
+                                            )
+                                                ? Icons.admin_panel_settings_outlined
+                                                : Icons.groups_outlined,
+                                          ),
+                                        ),
                                   title: Text(
                                     _displayName(space),
-                                    style: const TextStyle(
+                                    style: TextStyle(
                                       fontWeight: FontWeight.w800,
+                                      color: editorial
+                                          ? AnnaOrganicPastel.text(context)
+                                          : null,
                                     ),
                                   ),
                                   subtitle: Text(
