@@ -19,6 +19,22 @@ void main() {
     final lora = FontLoader('Lora')
       ..addFont(rootBundle.load('assets/fonts/Lora-VF.ttf'));
     await Future.wait([manrope.load(), lora.load()]);
+    // Widget tests do not host Android's external-calendar MethodChannel.
+    // Mock only the read-only status result; no real account/calendars touched.
+    const externalCalendarChannel =
+        MethodChannel('annas_diary/external_calendar');
+    final messenger =
+        TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
+    messenger.setMockMethodCallHandler(
+      externalCalendarChannel,
+      (call) async => call.method == 'status'
+          ? <String, Object>{'granted': false}
+          : null,
+    );
+    addTearDown(() => messenger.setMockMethodCallHandler(
+          externalCalendarChannel,
+          null,
+        ));
     SharedPreferences.setMockInitialValues(<String, Object>{
       AnnaEditorialTodayMode.storageKey: true,
     });
@@ -58,5 +74,10 @@ void main() {
       matchesGoldenFile('goldens/organic_pastel_today_390.png'),
     );
     expect(tester.takeException(), isNull);
+    // Staggered Motion and delayed card timers must fully drain before
+    // teardown; a pending delay is not evidence of pixel failure.
+    await tester.pump(const Duration(seconds: 2));
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.pump(const Duration(seconds: 2));
   }, skip: !organicCaptureEnabled);
 }
