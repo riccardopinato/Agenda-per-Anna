@@ -86,28 +86,28 @@ Record KEEP / REVISE / REJECT, with a reversal path to existing Classic mode.
 - Verificare 320/390dp, status insets, fontScale e 5 lingue (fallback
   senza nome incluso) prima dell'eventuale approvazione KEEP.
 
-## Revisione hero — qualità e collasso durante lo scroll (14/11/2026)
-- Diagnosi verificata: il WebP decorativo originale è **360 × 120 px**
-  (RIFF/WebP VP8, rapporto 3:1), perciò il vecchio `BoxFit.cover` in
-  una testata alta 232dp lo ingrandiva e ritagliava sensibilmente.
-- Ora il panorama occupa un'altezza derivata dalla larghezza
-  `availableWidth / 3`, dunque conserva proporzioni e inquadratura
-  senza zoom verticale; la zona alta è riempita da un cielo CustomPainter
-  disegnato alla risoluzione fisica dello schermo.
-- Hero a scorrimento coordinato: `CustomScrollView`,
-  `SliverPersistentHeader(pinned: true)` con estensione di
-  `topInset + 232` → `topInset + 132` (100dp di compressione).
-  Il saluto locale + nome profilo e le due azioni rimangono visibili
-  e ancorate alla safe area; tutte le card scorrono sotto.
-- Il ListView originale della modalità non Organic conserva padding,
-  comportamento e navigazione. Dock, Create, contenuti, storage e sync
-  sono invariati.
-- QA: controllo 320/390dp, colore/scuro, testo ingrandito e tap originali,
-  più screenshot Flutter espanso/compattato con un nome sintetico.
-- Asset effettivamente integrato: nuovo acquerello originale offline
-  `AnnaOrganicPastelWatercolor.bytes` WebP **576 × 192**, **10.9 KB**,
-  sostituisce il precedente 360 × 120 di circa 3.5 KB. Il painter
-  rimane fallback di sicurezza; test RIFF/VP8 verifica le dimensioni.
-- Distinguere il vero incremento dei pixel sorgente dall'eliminazione
-  dell'upscaling: sono due correzioni complementari.
-- PR in bozza, **DO NOT MERGE** senza confronto e via libera dell'utente.
+## Revisione hero — HD e collasso progressivo (14/11/2026)
+- Diagnosi: l'immagine iniziale era **360 × 120 px**, insufficiente
+  per il rendering full-bleed alto 232dp (`BoxFit.cover` con forte zoom).
+- **Asset finale in PR**: acquerello originale **1200 × 400 px**,
+  WebP di **61.1 KB** generato da una sorgente 1536px, offline e senza
+  dipendenze o immagini remote. Il sorgente è incorporato in
+  `AnnaOrganicPastelWatercolor.bytes`; test RIFF/VP8 pin delle dimensioni.
+- Al primo ingresso l'immagine `BoxFit.cover` occupa l'intera superficie:
+  sfumatura nella stessa tinta del canvas ai bordi superiore e inferiore,
+  testo e azioni leggibili in overlay.
+- Durante lo scroll, `CustomScrollView` e
+  `SliverPersistentHeader(pinned: true)` riducono l'altezza da
+  `topInset + 232` a `topInset + 132` (100dp di compressione).
+  Il crop passa progressivamente da più immersivo alla panoramica 3:1
+  quasi intera, senza duplicazioni o animation controller.
+- Il saluto `approvedTodayGreeting` legge lingua, orario e nome profilo;
+  font Organic 22dp e halo morbido per maggiore leggibilità, Classic
+  conserva 26dp.
+- Navigazione calendario/Classic e accessibilità preservate. Le schede
+  mantengono il gutter 20dp e scorrono sotto la testata. Il dock e Crea
+  sono invariati; nessun dato, router, login o sync è toccato.
+- Screenshot reali Flutter 390×844: esteso/compattato, empty/populated.
+  Test mirati 320/390dp e font scale aumentato, CI exact-head.
+- `PR #319` rimane draft **DO NOT MERGE** finché l'utente non approva
+  questa specifica variante visiva.
