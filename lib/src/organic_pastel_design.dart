@@ -281,3 +281,81 @@ class AnnaOrganicPastelGroupAvatar extends StatelessWidget {
         ),
       );
 }
+
+
+/// Compact real-data agenda digest used only when the selected day has actual
+/// entries. No invented tasks, no second editor, and no hidden private titles.
+class AnnaOrganicPastelAgendaDigest extends StatelessWidget {
+  final List<UnifiedAgendaEntry> entries;
+  final bool hideDetails;
+  final ValueChanged<UnifiedAgendaEntry> onOpenEntry;
+  final VoidCallback onOpenDay;
+
+  const AnnaOrganicPastelAgendaDigest({
+    super.key,
+    required this.entries,
+    required this.hideDetails,
+    required this.onOpenEntry,
+    required this.onOpenDay,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final strings = AnnaStrings.of(context);
+    final visible = entries.take(3).toList(growable: false);
+    return AnnaEditorialSurface(
+      key: const ValueKey<String>('organic-pastel-agenda-digest'),
+      padding: const EdgeInsets.fromLTRB(13, 10, 13, 8),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  strings.d3('ui5Commitments'),
+                  style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+              ),
+              TextButton(
+                onPressed: onOpenDay,
+                child: Text(strings.d3('ui5ShowAll')),
+              ),
+            ],
+          ),
+          for (final entry in visible)
+            InkWell(
+              onTap: () => onOpenEntry(entry),
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(minHeight: 48),
+                child: Row(
+                  children: [
+                    Icon(
+                      entry.done
+                          ? Icons.check_box_outlined
+                          : Icons.check_box_outline_blank_outlined,
+                      color: Theme.of(context).brightness == Brightness.dark
+                          ? Theme.of(context).colorScheme.onSurface
+                          : AnnaOrganicPastel.oliveInk,
+                      size: 21,
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Text(
+                        hideDetails ? '•••' : entry.title,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: Theme.of(context).textTheme.bodyMedium,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+}
