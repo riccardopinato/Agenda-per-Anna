@@ -34,15 +34,33 @@ class AnnaOrganicLiquidDockSurface extends StatelessWidget {
           child: DecoratedBox(
             decoration: BoxDecoration(
               borderRadius: radius,
+              // One continuous tinted glass surface, not four separate tiles.
               gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
+                begin: Alignment.centerLeft,
+                end: Alignment.centerRight,
+                stops: const [0, .25, .5, .75, 1],
                 colors: [
-                  scheme.surface.withValues(alpha: dark ? .82 : .76),
-                  Color.lerp(scheme.surface, scheme.primaryContainer, .15)!
-                      .withValues(alpha: dark ? .81 : .71),
-                  scheme.surfaceContainerLow
-                      .withValues(alpha: dark ? .86 : .77),
+                  for (final index in [0, 1])
+                    Color.lerp(
+                      scheme.surface,
+                      Color.lerp(
+                        scheme.primary,
+                        AnnaOrganicLiquidTab._pastels[index],
+                        .58,
+                      ),
+                      dark ? .14 : .20,
+                    )!.withValues(alpha: dark ? .88 : .77),
+                  scheme.surface.withValues(alpha: dark ? .86 : .74),
+                  for (final index in [2, 3])
+                    Color.lerp(
+                      scheme.surface,
+                      Color.lerp(
+                        scheme.primary,
+                        AnnaOrganicLiquidTab._pastels[index],
+                        .58,
+                      ),
+                      dark ? .14 : .20,
+                    )!.withValues(alpha: dark ? .88 : .77),
                 ],
               ),
             ),
@@ -125,19 +143,15 @@ class AnnaOrganicLiquidTab extends StatelessWidget {
                 // The radial wash fades entirely into the shared backdrop.
                 decoration: BoxDecoration(
                   gradient: RadialGradient(
-                    center: const Alignment(0, -.24),
-                    radius: 1.05,
-                    stops: const [0, .50, 1],
+                    center: const Alignment(0, -.20),
+                    radius: .74,
+                    stops: const [0, .55, 1],
                     colors: [
                       tint.withValues(
-                        alpha: selected
-                            ? (dark ? .37 : .41)
-                            : (dark ? .17 : .23),
+                        alpha: selected ? (dark ? .38 : .34) : 0,
                       ),
                       tint.withValues(
-                        alpha: selected
-                            ? (dark ? .16 : .19)
-                            : (dark ? .07 : .09),
+                        alpha: selected ? (dark ? .14 : .12) : 0,
                       ),
                       tint.withValues(alpha: 0),
                     ],
@@ -151,7 +165,7 @@ class AnnaOrganicLiquidTab extends StatelessWidget {
                     children: [
                       Icon(
                         icon,
-                        color: foreground,
+                        color: Color.lerp(foreground, tint, dark ? .16 : .12)!,
                         size: 21,
                       ),
                       const SizedBox(height: 3),
