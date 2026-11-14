@@ -45,12 +45,6 @@ class AnnaOrganicLiquidDockSurface extends StatelessWidget {
                       .withValues(alpha: dark ? .86 : .77),
                 ],
               ),
-              border: Border(
-                top: BorderSide(
-                  color: Colors.white.withValues(alpha: dark ? .24 : .83),
-                  width: 1.25,
-                ),
-              ),
             ),
             child: SafeArea(
               top: false,
@@ -68,7 +62,8 @@ class AnnaOrganicLiquidDockSurface extends StatelessWidget {
   }
 }
 
-/// Four colored translucent gel capsules that reuse the original page owner.
+/// Four soft color pools fused into the dock, rather than raised capsules.
+/// The selection is signaled by a diffuse glow, icon and text weight only.
 class AnnaOrganicLiquidTab extends StatelessWidget {
   final int page;
   final bool selected;
@@ -103,7 +98,7 @@ class AnnaOrganicLiquidTab extends StatelessWidget {
     final duration = AnnaDesignTokens.animationsEnabled(context)
         ? const Duration(milliseconds: 210)
         : Duration.zero;
-    final foreground = scheme.onSurface;
+    final foreground = selected ? scheme.onSurface : scheme.onSurfaceVariant;
 
     return Semantics(
       identifier: semanticId,
@@ -117,101 +112,61 @@ class AnnaOrganicLiquidTab extends StatelessWidget {
           color: Colors.transparent,
           child: InkWell(
             key: ValueKey<String>(semanticId),
-            borderRadius: BorderRadius.circular(19),
+            borderRadius: BorderRadius.circular(18),
             onTap: onTap,
             child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 3, vertical: 2),
-              child: AnimatedScale(
+              padding: const EdgeInsets.symmetric(horizontal: 1, vertical: 2),
+              child: AnimatedContainer(
+                key: ValueKey<String>('liquid-integrated-tab-$page'),
                 duration: duration,
-                curve: Curves.easeOutBack,
-                scale: selected ? 1 : .97,
-                child: AnimatedContainer(
-                  duration: duration,
-                  curve: Curves.easeOutCubic,
-                  constraints: const BoxConstraints(minHeight: 48),
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(18),
-                    gradient: LinearGradient(
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                      stops: const [0, .51, 1],
-                      colors: [
-                        Color.lerp(scheme.surface, tint, dark ? .31 : .19)!
-                            .withValues(alpha: dark ? .94 : .90),
-                        tint.withValues(
-                          alpha: selected
-                              ? (dark ? .68 : .52)
-                              : (dark ? .42 : .29),
-                        ),
-                        Color.lerp(
-                          scheme.surfaceContainerLow,
-                          tint,
-                          selected ? .53 : .32,
-                        )!.withValues(alpha: dark ? .91 : .79),
-                      ],
-                    ),
-                    border: Border.all(
-                      color: Colors.white.withValues(
-                        alpha: dark ? (selected ? .45 : .30) : .86,
+                curve: Curves.easeOutCubic,
+                constraints: const BoxConstraints(minHeight: 48),
+                // No outline, individual drop shadow or hard-edged card.
+                // The radial wash fades entirely into the shared backdrop.
+                decoration: BoxDecoration(
+                  gradient: RadialGradient(
+                    center: const Alignment(0, -.24),
+                    radius: 1.05,
+                    stops: const [0, .50, 1],
+                    colors: [
+                      tint.withValues(
+                        alpha: selected
+                            ? (dark ? .37 : .41)
+                            : (dark ? .17 : .23),
                       ),
-                      width: selected ? 1.4 : .95,
-                    ),
-                    boxShadow: [
-                      BoxShadow(
-                        color: tint.withValues(
-                          alpha: selected ? (dark ? .29 : .23) : .10,
-                        ),
-                        blurRadius: selected ? 13 : 8,
-                        offset: Offset(0, selected ? 4 : 2),
+                      tint.withValues(
+                        alpha: selected
+                            ? (dark ? .16 : .19)
+                            : (dark ? .07 : .09),
                       ),
+                      tint.withValues(alpha: 0),
                     ],
                   ),
-                  child: Stack(
-                    alignment: Alignment.center,
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(1, 5, 1, 2),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    mainAxisSize: MainAxisSize.min,
                     children: [
-                      Positioned(
-                        top: 3,
-                        left: 11,
-                        right: 11,
-                        child: Container(
-                          height: 4,
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(20),
-                            gradient: LinearGradient(
-                              colors: [
-                                Colors.white.withValues(alpha: .03),
-                                Colors.white.withValues(
-                                    alpha: dark ? .42 : .91),
-                                Colors.white.withValues(alpha: .03),
-                              ],
-                            ),
-                          ),
-                        ),
+                      Icon(
+                        icon,
+                        color: foreground,
+                        size: 21,
                       ),
-                      Padding(
-                        padding: const EdgeInsets.fromLTRB(1, 5, 1, 2),
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(icon, color: foreground, size: 21),
-                            const SizedBox(height: 3),
-                            Text(
-                              label,
-                              maxLines: 1,
-                              softWrap: false,
-                              overflow: TextOverflow.ellipsis,
-                              textAlign: TextAlign.center,
-                              style: TextStyle(
-                                fontFamily: AnnaJournalTypography.uiFamily,
-                                color: foreground,
-                                fontSize: 11,
-                                fontWeight: selected
-                                    ? FontWeight.w800
-                                    : FontWeight.w600,
-                              ),
-                            ),
-                          ],
+                      const SizedBox(height: 3),
+                      Text(
+                        label,
+                        maxLines: 1,
+                        softWrap: false,
+                        overflow: TextOverflow.ellipsis,
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          fontFamily: AnnaJournalTypography.uiFamily,
+                          color: foreground,
+                          fontSize: 11,
+                          fontWeight:
+                              selected ? FontWeight.w800 : FontWeight.w600,
                         ),
                       ),
                     ],
@@ -285,79 +240,50 @@ class AnnaOrganicLiquidCreate extends StatelessWidget {
               ],
             ),
             child: ClipOval(
-              child: BackdropFilter(
-                filter: ui.ImageFilter.blur(sigmaX: 7, sigmaY: 7),
-                child: DecoratedBox(
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    gradient: LinearGradient(
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                      colors: [
-                        Color.lerp(tint, Colors.white, dark ? .13 : .55)!
-                            .withValues(alpha: .96),
-                        tint.withValues(alpha: dark ? .94 : .84),
-                        Color.lerp(tint, scheme.primary, .38)!
-                            .withValues(alpha: .90),
-                      ],
-                    ),
-                    border: Border.all(
-                      color: Colors.white
-                          .withValues(alpha: dark ? .53 : .91),
-                      width: 1.8,
-                    ),
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  // Opaque gel prevents the dock edge or any underlying
+                  // line from showing through the Create action.
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [
+                      Color.lerp(tint, Colors.white, dark ? .13 : .40)!,
+                      tint,
+                      Color.lerp(tint, scheme.primary, .38)!,
+                    ],
                   ),
-                  child: Material(
-                    color: Colors.transparent,
-                    child: InkWell(
-                      key: const ValueKey<String>('main-nav-create'),
-                      onTap: onTap,
-                      child: SizedBox(
-                        width: 62,
-                        height: 62,
-                        child: Stack(
-                          alignment: Alignment.center,
-                          children: [
-                            Positioned(
-                              left: 11,
-                              right: 11,
-                              top: 6,
-                              child: Container(
-                                height: 10,
-                                decoration: BoxDecoration(
-                                  borderRadius: BorderRadius.circular(30),
-                                  gradient: LinearGradient(
-                                    colors: [
-                                      Colors.white.withValues(alpha: .05),
-                                      Colors.white.withValues(
-                                        alpha: dark ? .48 : .92,
-                                      ),
-                                      Colors.white.withValues(alpha: .05),
-                                    ],
-                                  ),
-                                ),
-                              ),
+                  border: Border.all(
+                    color: Color.lerp(tint, scheme.surface, dark ? .31 : .67)!,
+                    width: 1.3,
+                  ),
+                ),
+                child: Material(
+                  color: Colors.transparent,
+                  child: InkWell(
+                    key: const ValueKey<String>('main-nav-create'),
+                    onTap: onTap,
+                    child: SizedBox(
+                      width: 62,
+                      height: 62,
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.add_rounded, color: ink, size: 27),
+                          Text(
+                            label,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              fontFamily: AnnaJournalTypography.uiFamily,
+                              color: ink,
+                              fontSize: 10,
+                              height: 1,
+                              fontWeight: FontWeight.w800,
                             ),
-                            Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Icon(Icons.add_rounded, color: ink, size: 27),
-                                Text(
-                                  label,
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: TextStyle(
-                                    fontFamily: AnnaJournalTypography.uiFamily,
-                                    color: ink,
-                                    fontSize: 10,
-                                    height: 1,
-                                    fontWeight: FontWeight.w800,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ],
-                        ),
+                          ),
+                        ],
                       ),
                     ),
                   ),
