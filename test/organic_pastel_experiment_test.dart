@@ -39,6 +39,85 @@ void main() {
     }
   });
 
+  testWidgets('full-bleed Today hero keeps name, controls and safe area',
+      (tester) async {
+    for (final brightness in [Brightness.light, Brightness.dark]) {
+      for (final width in [320.0, 390.0]) {
+        tester.view.physicalSize = Size(width, 700);
+        tester.view.devicePixelRatio = 1;
+        var calendarOpens = 0;
+        var classicOpens = 0;
+        await tester.pumpWidget(MaterialApp(
+          theme: ThemeData(
+            colorScheme: ColorScheme.fromSeed(
+              seedColor: const Color(0xFF899657),
+              brightness: brightness,
+            ),
+          ),
+          home: Scaffold(
+            body: MediaQuery(
+              data: const MediaQueryData(
+                viewPadding: EdgeInsets.only(top: 24),
+                disableAnimations: true,
+              ),
+              child: AnnaOrganicPastelBleedHero(
+                toolbar: AnnaTodayEditorialGreetingToolbar(
+                  greeting: approvedTodayGreeting('it', 'Giulia', 9),
+                  calendarTooltip: 'Calendario',
+                  classicTooltip: 'Classic',
+                  activeInShell: false,
+                  onOpenCalendar: () => calendarOpens++,
+                  onReturnToClassic: () => classicOpens++,
+                ),
+              ),
+            ),
+          ),
+        ));
+        await tester.pump();
+        final hero = find.byKey(
+          const ValueKey<String>('organic-pastel-fullbleed-hero'),
+        );
+        expect(hero, findsOneWidget);
+        expect(tester.getSize(hero).width, width);
+        expect(tester.getSize(hero).height, 256);
+        final landscape = find.byKey(
+          const ValueKey<String>('organic-pastel-landscape'),
+        );
+        expect(landscape, findsOneWidget);
+        expect(tester.getSize(landscape).width, width);
+        final fade = tester.widget<DecoratedBox>(find.byKey(
+          const ValueKey<String>('organic-pastel-hero-fade'),
+        ));
+        final colors = (fade.decoration as BoxDecoration).gradient!
+            as LinearGradient;
+        expect(colors.colors.first.alpha, 1.0);
+        expect(colors.colors.last.alpha, 1.0);
+        expect(
+          find.byKey(const ValueKey<String>('ds6-today-greeting')),
+          findsOneWidget,
+        );
+        expect(find.text('Buongiorno, Giulia'), findsOneWidget);
+        expect(
+          tester.getTopLeft(find.byKey(
+            const ValueKey<String>('ds6-today-compact-header'),
+          )).dy,
+          greaterThanOrEqualTo(24),
+        );
+        await tester.tap(
+          find.byKey(const ValueKey<String>('today-open-calendar')),
+        );
+        await tester.tap(
+          find.byKey(const ValueKey<String>('today-editorial-disable')),
+        );
+        expect(calendarOpens, 1);
+        expect(classicOpens, 1);
+        expect(tester.takeException(), isNull);
+      }
+    }
+    tester.view.resetPhysicalSize();
+    tester.view.resetDevicePixelRatio();
+  });
+
   testWidgets('week strip uses actual dates and canonical selected-day callback',
       (tester) async {
     tester.view.physicalSize = const Size(390, 844);
