@@ -13,8 +13,10 @@ const organicCaptureEnabled =
     bool.fromEnvironment('ANNA_ORGANIC_CAPTURE', defaultValue: false);
 
 void main() {
-  testWidgets('real Organic Pastel Today at 390dp (synthetic offline state)',
-      (tester) async {
+  Future<void> captureToday(
+    WidgetTester tester, {
+    required bool populated,
+  }) async {
     debugPrint('ORGANIC_CAPTURE STEP 1: initialize locale');
     await initializeDateFormatting('it_IT', null);
     debugPrint('ORGANIC_CAPTURE STEP 2: load fonts');
@@ -77,6 +79,37 @@ void main() {
       palette: AgendaPalette.sage,
     );
     addTearDown(store.dispose);
+    if (populated) {
+      // Pure test-memory fixture: zero production credentials or data writes.
+      final now = DateTime.now();
+      final date = DateTime(now.year, now.month, now.day);
+      store.items.addAll([
+        AgendaItem(
+          id: 'organic-demo-breakfast',
+          title: 'Colazione insieme',
+          note: '',
+          date: date,
+          type: ItemType.task,
+          done: true,
+        ),
+        AgendaItem(
+          id: 'organic-demo-weekend',
+          title: 'Prenotare il weekend',
+          note: '',
+          date: date,
+          type: ItemType.task,
+        ),
+        AgendaItem(
+          id: 'organic-demo-picnic',
+          title: 'Picnic al parco',
+          note: '',
+          date: date,
+          type: ItemType.appointment,
+          start: const TimeOfDay(hour: 16, minute: 0),
+          end: const TimeOfDay(hour: 17, minute: 0),
+        ),
+      ]);
+    }
     debugPrint('ORGANIC_CAPTURE STEP 6: pumpWidget');
     await tester.pumpWidget(
       AgendaApp(store: store, bypassIdentityForTesting: true),
@@ -100,7 +133,11 @@ void main() {
     debugPrint('ORGANIC_CAPTURE STEP 8: golden capture');
     await expectLater(
       find.byType(Scaffold).first,
-      matchesGoldenFile('goldens/organic_pastel_today_390.png'),
+      matchesGoldenFile(
+        populated
+            ? 'goldens/organic_pastel_today_populated_390.png'
+            : 'goldens/organic_pastel_today_390.png',
+      ),
     );
     debugPrint('ORGANIC_CAPTURE STEP 9: drain and cleanup');
     expect(tester.takeException(), isNull);
@@ -109,5 +146,13 @@ void main() {
     await tester.pump(const Duration(seconds: 2));
     await tester.pumpWidget(const SizedBox.shrink());
     await tester.pump(const Duration(seconds: 2));
+  }
+
+  testWidgets('Organic Pastel — empty diary', (tester) async {
+    await captureToday(tester, populated: false);
+  }, skip: !organicCaptureEnabled, timeout: const Timeout(Duration(seconds: 110)));
+
+  testWidgets('Organic Pastel — populated sample diary', (tester) async {
+    await captureToday(tester, populated: true);
   }, skip: !organicCaptureEnabled, timeout: const Timeout(Duration(seconds: 110)));
 }
