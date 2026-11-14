@@ -887,6 +887,7 @@ class _PlannerScreenState extends State<PlannerScreen> {
         unawaited(HomeWidgetBridge.instance.sync(widget.store));
         final strings = AnnaStrings.of(context);
         final editorial = widget.embedded && AnnaEditorialTodayMode.enabled.value;
+        final organic = editorial && AnnaOrganicPastel.enabled(context);
         // Hybrid deliberately shows the complete day without filter chips.
         // A filter selected in Calendar/Week must not remain invisibly active
         // when returning to this Home. Reset only the in-memory view filter,
@@ -1024,7 +1025,9 @@ class _PlannerScreenState extends State<PlannerScreen> {
             ],
           ),
           body: SafeArea(
-            top: editorial,
+            // The Organic masthead paints behind the status bar; its buttons
+            // independently respect the device's top viewPadding.
+            top: editorial && !organic,
             bottom: false,
             child: Column(
             children: [
@@ -1048,9 +1051,43 @@ class _PlannerScreenState extends State<PlannerScreen> {
                     child: AnnaMotionReveal(
                       token: day.millisecondsSinceEpoch,
                       child: ListView(
-                      padding: const EdgeInsets.fromLTRB(20, 14, 20, 110),
+                      padding: EdgeInsets.fromLTRB(
+                        organic ? 0 : 20,
+                        organic ? 0 : 14,
+                        organic ? 0 : 20,
+                        110,
+                      ),
                       children: [
-                        if (editorial) ...[
+                        if (organic)
+                          AnnaOrganicPastelBleedHero(
+                            toolbar: AnnaTodayEditorialGreetingToolbar(
+                              activeInShell: widget.activeInShell,
+                              greeting: approvedTodayGreeting(
+                                strings.languageCode,
+                                widget.store.preferences.displayName,
+                                DateTime.now().hour,
+                              ),
+                              calendarTooltip: strings.navCalendar,
+                              classicTooltip: annaEditorialTodayModeLabel(
+                                strings.languageCode, returnToClassic: true,
+                              ),
+                              onOpenCalendar: () => Navigator.push(
+                                context,
+                                MaterialPageRoute<void>(
+                                  builder: (_) => CalendarHubScreen(
+                                    store: widget.store,
+                                  ),
+                                ),
+                              ),
+                              onReturnToClassic: () =>
+                                  unawaited(_setEditorialMode(false)),
+                            ),
+                          ),
+                        // Apply the original 20dp content gutter to every
+                        // ordinary row, while the masthead alone bleeds edge
+                        // to edge and shares the same scrollable surface.
+                        for (final content in <Widget>[
+                        if (editorial && !organic) ...[
                           AnnaTodayEditorialGreetingToolbar(
                             activeInShell: widget.activeInShell,
                             greeting: approvedTodayGreeting(
@@ -1090,6 +1127,25 @@ class _PlannerScreenState extends State<PlannerScreen> {
                             radius: 20,
                           ),
                           const SizedBox(height: 12),
+                          AnnaOrganicPastelWeekStrip(
+                            selected: day,
+                            onSelected: _selectDay,
+                          ),
+                          const SizedBox(height: 14),
+                        ],
+                        if (organic) ...[
+                          if (!AgendaStore.sameDay(day, DateTime.now()))
+                            Align(
+                              alignment: Alignment.centerLeft,
+                              child: TextButton.icon(
+                                key: const ValueKey<String>(
+                                  'editorial-today-return',
+                                ),
+                                onPressed: () => _selectDay(DateTime.now()),
+                                icon: const Icon(Icons.today_outlined),
+                                label: Text(strings.navToday),
+                              ),
+                            ),
                           AnnaOrganicPastelWeekStrip(
                             selected: day,
                             onSelected: _selectDay,
@@ -1300,6 +1356,15 @@ class _PlannerScreenState extends State<PlannerScreen> {
                             ),
                           ],
                         ),
+                        ])
+                          organic
+                              ? Padding(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 20,
+                                  ),
+                                  child: content,
+                                )
+                              : content,
                   ],
                     ),
                     ),
