@@ -127,6 +127,40 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
+  testWidgets('Olive action truncates safely at 320dp and double text size',
+      (tester) async {
+    tester.view.physicalSize = const Size(320, 800);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(() {
+      tester.view.resetPhysicalSize();
+      tester.view.resetDevicePixelRatio();
+    });
+    var called = 0;
+    await tester.pumpWidget(MaterialApp(
+      home: Scaffold(
+        body: MediaQuery(
+          data: const MediaQueryData(
+            textScaler: TextScaler.linear(2),
+          ),
+          child: Center(
+            child: SizedBox(
+              width: 148,
+              child: AnnaOrganicPastelAction(
+                label: 'Apri la Weekly Review della settimana',
+                icon: Icons.arrow_forward_rounded,
+                onPressed: () => called++,
+              ),
+            ),
+          ),
+        ),
+      ),
+    ));
+    expect(tester.takeException(), isNull);
+    await tester.tap(find.byType(AnnaOrganicPastelAction));
+    expect(called, 1);
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('Organic group row keeps original open and rename callbacks',
       (tester) async {
     var opened = 0;
