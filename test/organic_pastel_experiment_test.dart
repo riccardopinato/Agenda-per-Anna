@@ -467,6 +467,10 @@ void main() {
           ),
         ),
       ));
+      // MaterialApp transitions between ThemeData instances using
+      // AnimatedTheme. Wait for the actual dark/light theme to settle
+      // before comparing the rendered icon against the inherited scheme.
+      await tester.pumpAndSettle();
       // Verify the EFFECTIVE Flutter theme after ThemeData normalization,
       // not the pre-normalized ColorScheme.fromSeed input.
       final actualForeground = Theme.of(
@@ -488,7 +492,7 @@ void main() {
         Color.lerp(
           actualForeground,
           pastel,
-          brightness == Brightness.dark ? .16 : .12,
+          effectiveScheme.brightness == Brightness.dark ? .16 : .12,
         ),
       );
       expect(tester.takeException(), isNull);
