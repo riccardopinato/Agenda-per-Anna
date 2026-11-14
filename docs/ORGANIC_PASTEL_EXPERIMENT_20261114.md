@@ -85,3 +85,26 @@ Record KEEP / REVISE / REJECT, with a reversal path to existing Classic mode.
   il tasto centrale Crea e il veto al merge/deploy fino al review visuale.
 - Verificare 320/390dp, status insets, fontScale e 5 lingue (fallback
   senza nome incluso) prima dell'eventuale approvazione KEEP.
+
+## Revisione hero — qualità e collasso durante lo scroll (14/11/2026)
+- Diagnosi verificata: il WebP decorativo originale è **360 × 120 px**
+  (RIFF/WebP VP8, rapporto 3:1), perciò il vecchio `BoxFit.cover` in
+  una testata alta 232dp lo ingrandiva e ritagliava sensibilmente.
+- Ora il panorama occupa un'altezza derivata dalla larghezza
+  `availableWidth / 3`, dunque conserva proporzioni e inquadratura
+  senza zoom verticale; la zona alta è riempita da un cielo CustomPainter
+  disegnato alla risoluzione fisica dello schermo.
+- Hero a scorrimento coordinato: `CustomScrollView`,
+  `SliverPersistentHeader(pinned: true)` con estensione di
+  `topInset + 232` → `topInset + 132` (100dp di compressione).
+  Il saluto locale + nome profilo e le due azioni rimangono visibili
+  e ancorate alla safe area; tutte le card scorrono sotto.
+- Il ListView originale della modalità non Organic conserva padding,
+  comportamento e navigazione. Dock, Create, contenuti, storage e sync
+  sono invariati.
+- QA: controllo 320/390dp, colore/scuro, testo ingrandito e tap originali,
+  più screenshot Flutter espanso/compattato con un nome sintetico.
+- Nuova illustrazione artistica ad alta definizione disponibile come
+  **candidata separata**: non dichiararla integrata nel repository né
+  confondere lo sharpening a proporzioni native con un nuovo asset HD.
+- PR in bozza, **DO NOT MERGE** senza confronto e via libera dell'utente.
