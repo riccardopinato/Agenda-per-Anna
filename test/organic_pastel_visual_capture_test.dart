@@ -26,11 +26,16 @@ void main() {
     debugPrint('ORGANIC_CAPTURE STEP 3: icon font');
     // Widget tests otherwise substitute squares for Material icon glyphs.
     // The CI capture workflow provides Flutter SDK's bundled original font.
-    final iconFont = File('test/fixtures/MaterialIcons-Regular.otf');
-    if (await iconFont.exists()) {
-      final bytes = await iconFont.readAsBytes();
+    // File I/O under testWidgets' fake-async zone never completes.
+    // Use runAsync only for the local SDK font bytes; UI remains Flutter.
+    final iconBytes = await tester.runAsync(() async {
+      final iconFont = File('test/fixtures/MaterialIcons-Regular.otf');
+      if (!await iconFont.exists()) return null;
+      return await iconFont.readAsBytes();
+    });
+    if (iconBytes != null) {
       await (FontLoader('MaterialIcons')
-            ..addFont(Future<ByteData>.value(ByteData.sublistView(bytes))))
+            ..addFont(Future<ByteData>.value(ByteData.sublistView(iconBytes))))
           .load();
     }
     // Widget tests do not host Android's external-calendar MethodChannel.
