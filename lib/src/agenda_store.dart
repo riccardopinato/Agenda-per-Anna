@@ -4011,22 +4011,29 @@ class AgendaStore extends ChangeNotifier {
       try {
         spaces = await cloud.listSharedSpaces();
         remoteSpacesLoaded = true;
-        await prefs.setString(
-          sharedSpacesCacheStorageKey,
-          jsonEncode(
-            spaces
-                .map(
-                  (space) => {
-                    'id': space.id,
-                    'owner_id': space.ownerId,
-                    'name': space.name,
-                    'role': space.role,
-                    'created_at': space.createdAt.toIso8601String(),
-                  },
-                )
-                .toList(),
-          ),
-        );
+        // A zero-row membership response must not destructively overwrite a
+        // previously populated, account-scoped recovery cache. The active
+        // projection still honors the remote result (no stale group display).
+        // Cache cleanup is a separate explicit data-lifecycle decision.
+        if (spaces.isNotEmpty ||
+            prefs.getString(sharedSpacesCacheStorageKey) == null) {
+          await prefs.setString(
+            sharedSpacesCacheStorageKey,
+            jsonEncode(
+              spaces
+                  .map(
+                    (space) => {
+                      'id': space.id,
+                      'owner_id': space.ownerId,
+                      'name': space.name,
+                      'role': space.role,
+                      'created_at': space.createdAt.toIso8601String(),
+                    },
+                  )
+                  .toList(),
+            ),
+          );
+        }
       } catch (error) {
         _recordSharedSyncError(error);
         spaces = const [];
