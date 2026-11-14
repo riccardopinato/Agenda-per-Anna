@@ -66,7 +66,7 @@ void main() {
     expect(emptyResponsePath, isNot(contains('_saveSpacesCache(')));
     expect(emptyResponsePath, isNot(contains('setString(')));
     expect(emptyResponsePath, contains('spaces = const [];'));
-    expect(hub, contains('if (_authorizedAccount != expectedAccount) return;'));
+    expect(hub, contains('if (_authorizedAccount != expectedAccount) {'));
   });
 
   test('global shared-agenda refresh does not erase account-scoped cache',
