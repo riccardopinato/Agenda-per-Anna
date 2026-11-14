@@ -70,7 +70,12 @@ void main() {
     await tester.pumpWidget(
       AgendaApp(store: store, bypassIdentityForTesting: true),
     );
-    await tester.pumpAndSettle();
+    // The live shell has repeating motion (e.g. greeting ticker) and can
+    // never settle. Capture a deterministic frame after bounded time while
+    // retaining the real widget tree and authentic empty local state.
+    await tester.pump(const Duration(milliseconds: 250));
+    await tester.pump(const Duration(milliseconds: 450));
+    await tester.pump(const Duration(milliseconds: 850));
 
     expect(
       find.byKey(const ValueKey<String>('organic-pastel-landscape')),
