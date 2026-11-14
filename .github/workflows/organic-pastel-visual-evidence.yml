@@ -42,10 +42,17 @@ jobs:
         run: |
           mkdir -p test/fixtures
           cp "$(dirname "$(command -v flutter)")/cache/artifacts/material_fonts/MaterialIcons-Regular.otf" test/fixtures/
-      - name: Capture actual Flutter Today with no real user data
+      - name: Capture empty diary in isolated Flutter process
         run: |
           flutter test --update-goldens \
             --dart-define=ANNA_ORGANIC_CAPTURE=true \
+            --dart-define=ANNA_ORGANIC_POPULATED=false \
+            test/organic_pastel_visual_capture_test.dart
+      - name: Capture populated diary in isolated Flutter process
+        run: |
+          flutter test --update-goldens \
+            --dart-define=ANNA_ORGANIC_CAPTURE=true \
+            --dart-define=ANNA_ORGANIC_POPULATED=true \
             test/organic_pastel_visual_capture_test.dart
       - name: Attach screenshot for user review (not a release)
         if: success()
