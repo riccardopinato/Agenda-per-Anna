@@ -68,3 +68,20 @@ Record KEEP / REVISE / REJECT, with a reversal path to existing Classic mode.
 - Restano invariati touch target, callback, route e la variante Classic.
 - Gate invariato: test CI su commit esatto, screenshot di confronto e decisione
   KEEP / REVISE / REJECT prima di qualsiasi merge.
+
+## Prova top hero — immagine full-bleed + saluto personale
+- Solo variante Organic Pastel / vista Oggi; Classic e Messaggi restano invariati.
+- La watercolor già inclusa in app occupa la larghezza disponibile senza
+  margini e raggiunge l'estremo superiore del viewport; niente bordo/radius.
+- Dissolvenza a doppia estremità verso lo stesso colore del canvas; titolo
+  e due azioni originali in sovrimpressione con safe inset Android/iOS.
+- Il saluto rimane `approvedTodayGreeting(languageCode,
+  preferences.displayName, hour)`: nessun nome dedotto o nuova persistenza.
+- La nuova testata scorre assieme alla home, non rimane uno sfondo fisso.
+  Tutte le altre card mantengono il gutter orizzontale di 20dp.
+- Per la comparazione, screenshot Flutter con nome **Giulia** sintetico;
+  nessun account o contenuto personale importato.
+- Invariati l'Organic dock approvato provvisoriamente, i dati, le route,
+  il tasto centrale Crea e il veto al merge/deploy fino al review visuale.
+- Verificare 320/390dp, status insets, fontScale e 5 lingue (fallback
+  senza nome incluso) prima dell'eventuale approvazione KEEP.
