@@ -38,6 +38,10 @@ jobs:
           python3 tool/prepare_web_platform.py
       - name: Fetch locked dependencies
         run: flutter pub get --enforce-lockfile
+      - name: Prepare SDK Material Icons for faithful Flutter screenshot
+        run: |
+          mkdir -p test/fixtures
+          cp "$(dirname "$(command -v flutter)")/cache/artifacts/material_fonts/MaterialIcons-Regular.otf" test/fixtures/
       - name: Capture actual Flutter Today with no real user data
         run: |
           flutter test --update-goldens \
