@@ -426,80 +426,111 @@ class AnnaOrganicPastelWeekStrip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final first = DateTime(
-      selected.year,
-      selected.month,
-      selected.day - (selected.weekday - DateTime.monday),
-    );
+    // Civil arithmetic must not add 24-hour durations across DST changes.
+    final first = mondayOf(selected);
+    final strings = AnnaStrings.of(context);
     final lang = AnnaStrings.intlLocale(context);
     final dark = Theme.of(context).brightness == Brightness.dark;
     final border = Theme.of(context).colorScheme.outlineVariant;
+    final (previousWeekLabel, nextWeekLabel) = switch (strings.languageCode) {
+      'en' => ('Previous week', 'Next week'),
+      'es' => ('Semana anterior', 'Semana siguiente'),
+      'fr' => ('Semaine précédente', 'Semaine suivante'),
+      'pt' => ('Semana anterior', 'Próxima semana'),
+      _ => ('Settimana precedente', 'Settimana successiva'),
+    };
     return Container(
       key: const ValueKey<String>('organic-pastel-week-strip'),
-      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 7),
+      padding: const EdgeInsets.symmetric(horizontal: 3, vertical: 7),
       decoration: BoxDecoration(
         color: AnnaOrganicPastel.surface(context),
         borderRadius: BorderRadius.circular(18),
         border: Border.all(color: dark ? border : AnnaOrganicPastel.border),
       ),
-      child: SingleChildScrollView(
-        scrollDirection: Axis.horizontal,
-        child: Row(
-          children: [
-            for (var i = 0; i < 7; i++) ...[
-              if (i > 0) const SizedBox(width: 3),
-              Builder(builder: (context) {
-                final date = first.add(Duration(days: i));
-                final active = AgendaStore.sameDay(date, selected);
-                final label = DateFormat('EEE', lang).format(date);
-                return Semantics(
-                  button: true,
-                  selected: active,
-                  label: DateFormat('EEEE d MMMM y', lang).format(date),
-                  child: InkWell(
-                    key: ValueKey<String>(
-                      'organic-week-day-${date.year}-${date.month}-${date.day}',
-                    ),
-                    onTap: () => onSelected(date),
-                    borderRadius: BorderRadius.circular(13),
-                    child: Container(
-                      width: 48,
-                      constraints: const BoxConstraints(minHeight: 54),
-                      decoration: BoxDecoration(
-                        color: active
-                            ? AnnaOrganicPastel.selection(context)
-                                .withValues(alpha: dark ? .44 : .38)
-                            : Colors.transparent,
-                        borderRadius: BorderRadius.circular(13),
-                      ),
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Text(
-                            label,
-                            maxLines: 1,
-                            style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                              fontSize: 10,
-                              color: AnnaOrganicPastel.text(context),
+      child: Row(
+        children: [
+          IconButton(
+            key: const ValueKey<String>('organic-week-prev'),
+            tooltip: previousWeekLabel,
+            constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
+            padding: EdgeInsets.zero,
+            iconSize: 21,
+            onPressed: () => onSelected(addCivilDays(selected, -7)),
+            icon: const Icon(Icons.chevron_left_rounded),
+          ),
+          Expanded(
+            child: SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(
+                children: [
+                  for (var i = 0; i < 7; i++) ...[
+                    if (i > 0) const SizedBox(width: 3),
+                    Builder(builder: (context) {
+                      final date = addCivilDays(first, i);
+                      final active = AgendaStore.sameDay(date, selected);
+                      final label = DateFormat('EEE', lang).format(date);
+                      return Semantics(
+                        button: true,
+                        selected: active,
+                        label: DateFormat('EEEE d MMMM y', lang).format(date),
+                        child: InkWell(
+                          key: ValueKey<String>(
+                            'organic-week-day-${date.year}-${date.month}-${date.day}',
+                          ),
+                          onTap: () => onSelected(date),
+                          borderRadius: BorderRadius.circular(13),
+                          child: Container(
+                            width: 48,
+                            constraints: const BoxConstraints(minHeight: 54),
+                            decoration: BoxDecoration(
+                              color: active
+                                  ? AnnaOrganicPastel.selection(context)
+                                      .withValues(alpha: dark ? .44 : .38)
+                                  : Colors.transparent,
+                              borderRadius: BorderRadius.circular(13),
+                            ),
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Text(
+                                  label,
+                                  maxLines: 1,
+                                  style: Theme.of(context)
+                                      .textTheme.labelSmall?.copyWith(
+                                        fontSize: 10,
+                                        color: AnnaOrganicPastel.text(context),
+                                      ),
+                                ),
+                                const SizedBox(height: 2),
+                                Text(
+                                  '${date.day}',
+                                  style: Theme.of(context)
+                                      .textTheme.labelLarge?.copyWith(
+                                        color: AnnaOrganicPastel.text(context),
+                                        fontWeight: FontWeight.w800,
+                                      ),
+                                ),
+                              ],
                             ),
                           ),
-                          const SizedBox(height: 2),
-                          Text(
-                            '${date.day}',
-                            style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                              color: AnnaOrganicPastel.text(context),
-                              fontWeight: FontWeight.w800,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                );
-              }),
-            ],
-          ],
-        ),
+                        ),
+                      );
+                    }),
+                  ],
+                ],
+              ),
+            ),
+          ),
+          IconButton(
+            key: const ValueKey<String>('organic-week-next'),
+            tooltip: nextWeekLabel,
+            constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
+            padding: EdgeInsets.zero,
+            iconSize: 21,
+            onPressed: () => onSelected(addCivilDays(selected, 7)),
+            icon: const Icon(Icons.chevron_right_rounded),
+          ),
+        ],
       ),
     );
   }
