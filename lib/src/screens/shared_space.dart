@@ -822,7 +822,7 @@ class _SharedSpaceHubScreenState extends State<SharedSpaceHubScreen> {
                               ],
                             ),
                           )
-                        else ...[
+                        else if (spaces.isNotEmpty) ...[
                           Padding(
                             padding: const EdgeInsets.only(bottom: 14),
                             child: SizedBox(
