@@ -877,6 +877,9 @@ abstract final class AnnaEditorialTodayMode {
   static final ValueNotifier<bool> enabled = ValueNotifier<bool>(false);
   static Future<void>? _readFuture;
 
+  /// No saved choice: official Organic Home. Explicit false: keep Classic.
+  static bool initialPreference(bool? savedValue) => savedValue ?? true;
+
   static Future<void> ensureLoaded() => _readFuture ??= _read();
 
   static Future<void> _read() async {
@@ -885,7 +888,7 @@ abstract final class AnnaEditorialTodayMode {
       // Organic Pastel is now the official Home for devices without an
       // explicit local appearance choice. Preserve an existing Classic choice
       // (false) and the same isolated preference key across APK upgrades.
-      enabled.value = preferences.getBool(storageKey) ?? true;
+      enabled.value = initialPreference(preferences.getBool(storageKey));
     } catch (_) {
       // A failed cosmetic read must not block the canonical classic Home.
     }
