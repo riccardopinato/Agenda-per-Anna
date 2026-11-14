@@ -53,6 +53,7 @@ part 'src/localization_d3.dart';
 part 'src/localization_d3_completion.dart';
 part 'src/localization_d3_domain.dart';
 part 'src/theme_semantics.dart';
+part 'src/organic_pastel_design.dart';
 part 'src/motion_v108.dart';
 part 'src/ios_journal_design.dart';
 part 'src/editorial_hybrid_design.dart';
