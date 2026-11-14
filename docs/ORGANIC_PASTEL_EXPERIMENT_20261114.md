@@ -1,8 +1,19 @@
-# Organic Pastel — Esperimento di design, non approvazione di prodotto
+# Organic Pastel — Home ufficiale (promozione Android rc.6+131)
 
-**Stato: CANDIDATE / PREVIEW ONLY**. L'utente ha chiesto una prova
-riuso-first da confrontare con l'immagine originale prima di decidere se
-conservare il nuovo stile. Nessuna autorizzazione a merge o deploy produzione.
+**Stato: DESIGN APPROVED / RELEASE CANDIDATE.** Il 14 novembre 2026
+l'utente ha approvato il design HD e la Home comprimibile e ha richiesto
+esplicitamente l'integrazione come Home ufficiale e un APK installabile.
+Le vecchie indicazioni "PREVIEW ONLY / DO NOT MERGE" sotto restano come
+storico dell'esperimento; **il gate di approvazione del design è ora superato**.
+Restano obbligatori CI exact-head, incremento versionCode, firma stabile e
+collaudo fisico dell'APK prima di dichiarare certificato il dispositivo.
+
+La variante Organic è il default quando non esiste una scelta locale salvata.
+Una scelta Classic esplicita rimane rispettata tramite la stessa chiave
+SharedPreferences e può sempre essere ripristinata. Nessuna migrazione
+di storage, dei dati del diario, cloud, autenticazione o backup.
+La build Android diretta usa il canale stable-signed ARM64 approvato,
+**non** debug, keystore occasionale né Store/Play.
 
 ## Reference / source
 - Riferimento grafico: concept Organic Pastel Diary (14/11/2026),
@@ -111,3 +122,11 @@ Record KEEP / REVISE / REJECT, with a reversal path to existing Classic mode.
   Test mirati 320/390dp e font scale aumentato, CI exact-head.
 - `PR #319` rimane draft **DO NOT MERGE** finché l'utente non approva
   questa specifica variante visiva.
+
+
+## Promotion evidence — Android rc.6+131
+- Candidate source: PR #319; previous main `rc.6+130`, new `rc.6+131`.
+- Official Home: HD watercolor 1200×400, top fade, owner greeting, scroll-collapsing pinned hero, Liquid Pastel dock/Create, real Today cards and week review.
+- Default Organic only when previous device preference is absent; any explicit Classic choice is kept.
+- GitHub Development checks/AppLab/Flutter screenshots mandatory; source merge and signing follow checks. Artifact SHA-256, signing SHA-256 and versionCode must be captured from signed workflow.
+- Physical device installation, frame-time/jank, safe area with OEM status bar and upgrade data-preservation remain **NOT VERIFIED** until the user's real-device acceptance.
