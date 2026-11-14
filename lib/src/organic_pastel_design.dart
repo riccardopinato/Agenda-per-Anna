@@ -580,7 +580,7 @@ class AnnaOrganicPastelAction extends StatelessWidget {
                       style: const TextStyle(
                         fontFamily: AnnaJournalTypography.uiFamily,
                         fontSize: 13,
-                        fontWeight: FontWeight.w750,
+                        fontWeight: FontWeight.w700,
                         height: 1.25,
                       ).copyWith(color: foreground),
                     ),
