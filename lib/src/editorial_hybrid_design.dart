@@ -463,7 +463,13 @@ class AnnaEditorialQuickAction extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
         child: Row(
           children: [
-            Icon(icon, size: 22, color: AnnaOrganicPastel.oliveInk),
+            Icon(
+              icon,
+              size: 22,
+              color: Theme.of(context).brightness == Brightness.dark
+                  ? Theme.of(context).colorScheme.onSurface
+                  : AnnaOrganicPastel.oliveInk,
+            ),
             const SizedBox(width: 9),
             Expanded(
               child: Column(
