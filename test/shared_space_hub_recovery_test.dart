@@ -69,6 +69,29 @@ void main() {
     expect(hub, contains('if (_authorizedAccount != expectedAccount) return;'));
   });
 
+  test('global shared-agenda refresh does not erase account-scoped cache',
+      () {
+    final source =
+        File('lib/src/agenda_store.dart').readAsStringSync();
+    final begin = source.indexOf('Future<void> refreshSharedAgendaCache(');
+    final end = source.indexOf('Future<void> _bindUnifiedRealtime(', begin);
+    expect(begin, greaterThanOrEqualTo(0));
+    expect(end, greaterThan(begin));
+    final refresh = source.substring(begin, end);
+    expect(
+      refresh,
+      contains('spaces.isNotEmpty ||'),
+    );
+    expect(
+      refresh,
+      contains('prefs.getString(sharedSpacesCacheStorageKey) == null'),
+    );
+    // A real empty membership response can still remove groups from the
+    // active UI; this check is only about preserving the prior local cache.
+    expect(refresh, contains('_sharedAgendaSpaces'));
+    expect(refresh, contains('..clear()'));
+  });
+
   test('session binding has symmetrical listeners and suppresses stale loads',
       () {
     final source = File('lib/src/screens/shared_space.dart')
