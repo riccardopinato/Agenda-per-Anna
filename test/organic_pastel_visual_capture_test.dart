@@ -161,6 +161,28 @@ void main() {
             : 'goldens/organic_pastel_today_390.png',
       ),
     );
+    debugPrint('ORGANIC_CAPTURE STEP 8B: scroll and capture compact hero');
+    final scroll = find.byKey(const ValueKey<String>(
+      'organic-pastel-collapsing-scroll',
+    ));
+    expect(scroll, findsOneWidget);
+    await tester.drag(scroll, const Offset(0, -390));
+    await tester.pump(const Duration(milliseconds: 250));
+    await tester.pump(const Duration(milliseconds: 450));
+    expect(
+      tester.getSize(find.byKey(
+        const ValueKey<String>('organic-pastel-fullbleed-hero'),
+      )).height,
+      lessThanOrEqualTo(140),
+    );
+    await expectLater(
+      find.byType(Scaffold).first,
+      matchesGoldenFile(
+        populated
+            ? 'goldens/organic_pastel_today_populated_collapsed_390.png'
+            : 'goldens/organic_pastel_today_collapsed_390.png',
+      ),
+    );
     debugPrint('ORGANIC_CAPTURE STEP 9: drain and cleanup');
     expect(tester.takeException(), isNull);
     // Staggered Motion and delayed card timers must fully drain before
