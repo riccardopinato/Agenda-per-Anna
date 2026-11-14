@@ -118,6 +118,72 @@ void main() {
     tester.view.resetDevicePixelRatio();
   });
 
+  testWidgets('Organic sliver shrinks 100dp and keeps the toolbar pinned',
+      (tester) async {
+    tester.view.physicalSize = const Size(390, 844);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(() {
+      tester.view.resetPhysicalSize();
+      tester.view.resetDevicePixelRatio();
+    });
+    var calendar = 0;
+    var classic = 0;
+    final toolbar = AnnaTodayEditorialGreetingToolbar(
+      greeting: approvedTodayGreeting('it', 'Giulia', 9),
+      calendarTooltip: 'Calendario',
+      classicTooltip: 'Classic',
+      activeInShell: false,
+      onOpenCalendar: () => calendar++,
+      onReturnToClassic: () => classic++,
+    );
+    await tester.pumpWidget(MaterialApp(
+      home: Scaffold(
+        body: CustomScrollView(
+          slivers: [
+            SliverPersistentHeader(
+              pinned: true,
+              delegate: AnnaOrganicPastelHeroSliverDelegate(
+                toolbar: toolbar,
+                topInset: 24,
+              ),
+            ),
+            const SliverToBoxAdapter(child: SizedBox(height: 1500)),
+          ],
+        ),
+      ),
+    ));
+    await tester.pump();
+    final hero = find.byKey(
+      const ValueKey<String>('organic-pastel-fullbleed-hero'),
+    );
+    expect(tester.getSize(hero).height, 256);
+    // The source image has a fixed 3:1 panorama, not a stretched 232dp cover.
+    final image = find.byKey(
+      const ValueKey<String>('organic-pastel-landscape'),
+    );
+    expect(tester.getSize(image).height, closeTo(130, .1));
+    expect(find.byKey(
+      const ValueKey<String>('organic-pastel-vector-sky'),
+    ), findsOneWidget);
+
+    await tester.drag(find.byType(CustomScrollView), const Offset(0, -260));
+    await tester.pumpAndSettle();
+    expect(tester.getSize(hero).height, closeTo(156, .1));
+    expect(tester.getSize(image).height, closeTo(130, .1));
+    expect(find.byKey(
+      const ValueKey<String>('ds6-today-greeting'),
+    ), findsOneWidget);
+    await tester.tap(find.byKey(
+      const ValueKey<String>('today-open-calendar'),
+    ));
+    await tester.tap(find.byKey(
+      const ValueKey<String>('today-editorial-disable'),
+    ));
+    expect(calendar, 1);
+    expect(classic, 1);
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('week strip uses actual dates and canonical selected-day callback',
       (tester) async {
     tester.view.physicalSize = const Size(390, 844);
