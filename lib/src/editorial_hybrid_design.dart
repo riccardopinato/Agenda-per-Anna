@@ -743,7 +743,8 @@ class AnnaEditorialDockBar extends StatelessWidget {
   /// narrow Web/PWA viewports. Base 60dp preserves the approved default.
   static double heightFor(BuildContext context) {
     final scaledLabel = MediaQuery.textScalerOf(context).scale(11);
-    return (46.0 + scaledLabel * 1.55).clamp(64.0, 108.0);
+    return (60.0 + (scaledLabel - 11.0).clamp(0.0, 1000.0) * 2.0)
+        .clamp(60.0, 108.0);
   }
 
   @override
