@@ -614,7 +614,10 @@ class AnnaEditorialDockSurface extends StatelessWidget {
     return Container(
       key: const ValueKey<String>('anna-editorial-anchored-dock'),
       decoration: BoxDecoration(
-        color: colors.dock,
+        color: AnnaOrganicPastel.enabled(context) &&
+                Theme.of(context).brightness == Brightness.light
+            ? AnnaOrganicPastel.paper
+            : colors.dock,
         borderRadius: const BorderRadius.vertical(
           top: Radius.circular(AnnaEditorialTokens.dockTopRadius),
         ),
@@ -742,12 +745,16 @@ class AnnaEditorialDockBar extends StatelessWidget {
                         horizontal: 12, vertical: 3,
                       ),
                       decoration: BoxDecoration(
-                        color: selected ? colors.quiet : Colors.transparent,
+                        color: selected && AnnaOrganicPastel.enabled(context)
+                            ? AnnaOrganicPastel.olive.withValues(alpha: .16)
+                            : selected ? colors.quiet : Colors.transparent,
                         borderRadius: BorderRadius.circular(16),
                       ),
                       child: Icon(
                         selected ? selectedIcons[page] : icons[page],
-                        color: selected ? colors.accent : colors.mutedInk,
+                        color: selected && AnnaOrganicPastel.enabled(context)
+                            ? AnnaOrganicPastel.oliveInk
+                            : selected ? colors.accent : colors.mutedInk,
                         size: 21,
                       ),
                     ),
@@ -760,7 +767,9 @@ class AnnaEditorialDockBar extends StatelessWidget {
                       textAlign: TextAlign.center,
                       style: TextStyle(
                         fontFamily: AnnaJournalTypography.uiFamily,
-                        color: selected ? colors.accent : colors.mutedInk,
+                        color: selected && AnnaOrganicPastel.enabled(context)
+                            ? AnnaOrganicPastel.oliveInk
+                            : selected ? colors.accent : colors.mutedInk,
                         fontSize: 11,
                         fontWeight: selected
                             ? FontWeight.w800
