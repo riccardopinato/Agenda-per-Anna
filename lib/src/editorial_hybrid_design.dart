@@ -319,6 +319,16 @@ class AnnaEditorialSurface extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Visual-only style switch; the canonical callbacks and data owner remain.
+    if (AnnaOrganicPastel.enabled(context)) {
+      return AnnaOrganicPaperSurface(
+        tone: tone,
+        padding: padding,
+        onTap: onTap,
+        semanticLabel: semanticLabel,
+        child: child,
+      );
+    }
     final colors = AnnaEditorialColors.of(context);
     final featured = tone == AnnaEditorialSurfaceTone.featured;
     final radius = BorderRadius.circular(
@@ -403,6 +413,13 @@ class AnnaEditorialPrimaryAction extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    if (AnnaOrganicPastel.enabled(context)) {
+      return AnnaOrganicPastelAction(
+        label: label,
+        icon: icon,
+        onPressed: onPressed,
+      );
+    }
     final colors = AnnaEditorialColors.of(context);
     final style = FilledButton.styleFrom(
       backgroundColor: colors.accent,
