@@ -191,6 +191,61 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
+  testWidgets('real quick links use enabled modules and 320dp text scaling',
+      (tester) async {
+    tester.view.physicalSize = const Size(320, 740);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(() {
+      tester.view.resetPhysicalSize();
+      tester.view.resetDevicePixelRatio();
+    });
+    final store = AgendaStore();
+    addTearDown(store.dispose);
+    store.preferences = const AgendaPreferences(
+      appLanguage: AppLanguage.italian,
+      enabledModules: <AppModule>{},
+    );
+    await tester.pumpWidget(MaterialApp(
+      locale: const Locale('it'),
+      home: Scaffold(
+        body: MediaQuery(
+          data: const MediaQueryData(textScaler: TextScaler.linear(1.6)),
+          child: SingleChildScrollView(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              child: AnnaOrganicPastelQuickLinks(store: store),
+            ),
+          ),
+        ),
+      ),
+    ));
+    expect(
+      find.byKey(const ValueKey('organic-pastel-quick-links')),
+      findsOneWidget,
+    );
+    expect(
+      find.byKey(const ValueKey('organic-quick-calendar')),
+      findsOneWidget,
+    );
+    expect(
+      find.byKey(const ValueKey('organic-quick-inbox')),
+      findsOneWidget,
+    );
+    expect(
+      find.byKey(const ValueKey('organic-quick-search')),
+      findsOneWidget,
+    );
+    expect(
+      find.byKey(const ValueKey('organic-quick-shopping')),
+      findsNothing,
+    );
+    expect(
+      find.byKey(const ValueKey('organic-quick-memories')),
+      findsNothing,
+    );
+    expect(tester.takeException(), isNull);
+  });
+
   test('style experiment is presentation-only and preserves group routes', () {
     final source = File('lib/src/screens/shared_space.dart').readAsStringSync();
     expect(source, contains('AnnaOrganicPastelGroupAvatar()'));
