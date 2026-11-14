@@ -76,16 +76,34 @@ class _MainShellState extends State<MainShell> {
             duration: animate ? const Duration(milliseconds: 190) : Duration.zero,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              color: editorial ? AnnaEditorialColors.of(context).dock : null,
+              color: editorial
+                  ? AnnaOrganicPastel.paper
+                  : null,
+              border: editorial
+                  ? Border.all(
+                      color: AnnaOrganicPastel.border,
+                      width: 1.5,
+                    )
+                  : null,
               boxShadow: [
                 BoxShadow(
                   color: color.withValues(
-                    alpha: _createReleased && animate ? 0.38 :
-                        _createPressed && animate ? 0.28 : 0.16),
-                  blurRadius: _createReleased && animate ? 29 :
-                      _createPressed && animate ? 24 : 15,
-                  spreadRadius: _createReleased && animate ? 6 :
-                      _createPressed && animate ? 4 : 2,
+                    alpha: editorial
+                        ? .14
+                        : _createReleased && animate
+                            ? .38
+                            : _createPressed && animate ? .28 : .16,
+                  ),
+                  blurRadius: editorial
+                      ? 13
+                      : _createReleased && animate
+                          ? 29
+                          : _createPressed && animate ? 24 : 15,
+                  spreadRadius: editorial
+                      ? 0
+                      : _createReleased && animate
+                          ? 6
+                          : _createPressed && animate ? 4 : 2,
                 ),
               ],
             ),
@@ -93,7 +111,7 @@ class _MainShellState extends State<MainShell> {
             child: Material(
               color: color,
               shape: const CircleBorder(),
-              elevation: 2,
+              elevation: editorial ? 0 : 2,
               clipBehavior: Clip.antiAlias,
               child: InkWell(
                 key: const ValueKey<String>('main-nav-create'),
@@ -104,12 +122,16 @@ class _MainShellState extends State<MainShell> {
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Icon(Icons.add, color: scheme.onPrimary, size: 25),
+                      Icon(
+                        Icons.add,
+                        color: editorial ? Colors.white : scheme.onPrimary,
+                        size: 25,
+                      ),
                       Text(
                         AnnaStrings.of(context).d3('ui5Create'),
                         maxLines: 1,
                         style: TextStyle(
-                          color: scheme.onPrimary,
+                          color: editorial ? Colors.white : scheme.onPrimary,
                           fontSize: 10,
                           height: 1.0,
                           fontWeight: FontWeight.w800,
