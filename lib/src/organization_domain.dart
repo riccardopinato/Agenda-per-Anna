@@ -350,43 +350,91 @@ extension OrganizationAgendaStore on AgendaStore {
     _notifyInboxChanged();
   }
 
-  /// Rename a tag in ALL Inbox records, including archived records.
-  /// Persist the batch first; only then update the in-memory projection.
+  /// Rename a category across active, archived AND trashed Inbox notes.
+  /// Keep Trash metadata and unrelated payload fields intact. Persist the
+  /// Inbox + Trash entity deltas in one local batch before publishing either
+  /// in-memory projection; Diary tags are intentionally outside this scope.
   Future<int> renameInboxTag(String oldName, String newName) async {
     final from = normalizeOrganizationTags([oldName]);
     final to = normalizeOrganizationTags([newName]);
     if (from.isEmpty || to.isEmpty) return 0;
-    final oldKey = from.single.toLowerCase();
+    final oldKey = organizationTagComparisonKey(from.single);
     final target = to.single;
+
+    bool matches(String tag) =>
+        organizationTagComparisonKey(tag) == oldKey;
+    List<String> renameTags(Iterable<String> tags) =>
+        normalizeOrganizationTags(
+          tags.map((tag) => matches(tag) ? target : tag),
+        );
+
     final updates = <({int index, InboxEntry entry})>[];
     for (var i = 0; i < inbox.length; i++) {
       final entry = inbox[i];
-      if (!entry.tags.any((tag) => tag.toLowerCase() == oldKey)) continue;
-      final next = entry.copyWith(
-        tags: normalizeOrganizationTags(entry.tags.map(
-          (tag) => tag.toLowerCase() == oldKey ? target : tag,
-        )),
-      );
+      if (!entry.tags.any(matches)) continue;
+      final next = entry.copyWith(tags: renameTags(entry.tags));
       if (listEquals(next.tags, entry.tags)) continue;
       updates.add((index: i, entry: next));
     }
+
+    final trashUpdates = <({int index, TrashEntry entry})>[];
+    for (var i = 0; i < trash.length; i++) {
+      final entry = trash[i];
+      if (entry.kind != TrashEntityKind.inbox) continue;
+      final rawTags = entry.payload['tags'];
+      if (rawTags is! List) continue;
+      final previousTags = rawTags.whereType<String>().toList(growable: false);
+      if (!previousTags.any(matches)) continue;
+      final nextTags = renameTags(previousTags);
+      if (listEquals(nextTags, previousTags)) continue;
+      trashUpdates.add((
+        index: i,
+        entry: entry.copyWith(payload: {
+          ...entry.payload,
+          'tags': nextTags,
+        }),
+      ));
+    }
+
     final catalog = preferences.inboxCategoryCatalog;
     final newCatalog = normalizeInboxCategoryCatalog([
       for (final name in catalog)
-        name.toLowerCase() == oldKey ? target : name,
+        matches(name) ? target : name,
     ]);
-    if (updates.isEmpty && listEquals(catalog, newCatalog)) return 0;
-    if (updates.isNotEmpty) {
-      await _persistEntityMutations(
-      updates.map((update) => (
-        type: 'inbox',
-        id: update.entry.id,
-        payload: update.entry.toJson(),
-        deleted: false,
-      )).toList(),
-    );
+    if (updates.isEmpty &&
+        trashUpdates.isEmpty &&
+        listEquals(catalog, newCatalog)) {
+      return 0;
+    }
+
+    final mutations = <({
+      String type,
+      String id,
+      Map<String, dynamic>? payload,
+      bool deleted,
+    })>[
+      for (final update in updates)
+        (
+          type: 'inbox',
+          id: update.entry.id,
+          payload: update.entry.toJson(),
+          deleted: false,
+        ),
+      for (final update in trashUpdates)
+        (
+          type: 'trash',
+          id: update.entry.id,
+          payload: update.entry.toJson(),
+          deleted: false,
+        ),
+    ];
+    if (mutations.isNotEmpty) {
+      await _persistEntityMutations(mutations);
       for (final update in updates) {
         inbox[update.index] = update.entry;
+      }
+      for (final update in trashUpdates) {
+        trash[update.index] = update.entry;
       }
     }
     if (!listEquals(catalog, newCatalog)) {
@@ -394,8 +442,9 @@ extension OrganizationAgendaStore on AgendaStore {
         preferences.copyWith(inboxCategoryCatalog: newCatalog),
       );
     }
+    if (trashUpdates.isNotEmpty) signals.bumpLifecycle();
     _notifyInboxChanged();
-    return updates.length;
+    return updates.length + trashUpdates.length;
   }
 
   Future<void> updateDiaryOrganization(
