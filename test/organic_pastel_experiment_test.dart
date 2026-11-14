@@ -403,6 +403,78 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
+  testWidgets('Organic week arrows traverse weeks and dates survive DST',
+      (tester) async {
+    tester.view.physicalSize = const Size(320, 640);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(() {
+      tester.view.resetPhysicalSize();
+      tester.view.resetDevicePixelRatio();
+    });
+    final selected = DateTime(2026, 10, 31);
+    DateTime? changed;
+    await tester.pumpWidget(MaterialApp(
+      locale: const Locale('it'),
+      home: Scaffold(
+        body: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20),
+          child: AnnaOrganicPastelWeekStrip(
+            selected: selected,
+            onSelected: (date) => changed = date,
+          ),
+        ),
+      ),
+    ));
+    // 26 Oct – 1 Nov remains seven distinct civil dates in a DST week.
+    for (var delta = 0; delta < 7; delta++) {
+      final day = addCivilDays(DateTime(2026, 10, 26), delta);
+      expect(
+        find.byKey(ValueKey<String>(
+          'organic-week-day-${day.year}-${day.month}-${day.day}',
+        )),
+        findsOneWidget,
+      );
+    }
+    expect(find.byKey(const ValueKey<String>('organic-week-prev')),
+        findsOneWidget);
+    expect(find.byKey(const ValueKey<String>('organic-week-next')),
+        findsOneWidget);
+
+    await tester.tap(find.byKey(const ValueKey<String>('organic-week-next')));
+    expect(changed, DateTime(2026, 11, 7));
+    await tester.tap(find.byKey(const ValueKey<String>('organic-week-prev')));
+    expect(changed, DateTime(2026, 10, 24));
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('selected pastel dock label uses theme foreground in dark mode',
+      (tester) async {
+    for (final brightness in [Brightness.light, Brightness.dark]) {
+      final scheme = ColorScheme.fromSeed(
+        seedColor: const Color(0xFF8670B0),
+        brightness: brightness,
+      );
+      await tester.pumpWidget(MaterialApp(
+        theme: ThemeData(colorScheme: scheme),
+        home: Scaffold(
+          body: AnnaOrganicLiquidTab(
+            page: 0,
+            selected: true,
+            label: 'Oggi',
+            icon: Icons.today,
+            semanticId: 'selected-organic-day',
+            onTap: () {},
+          ),
+        ),
+      ));
+      final label = tester.widget<Text>(find.text('Oggi'));
+      expect(label.style?.color, scheme.onSurface);
+      final icon = tester.widget<Icon>(find.byIcon(Icons.today));
+      expect(icon.color, scheme.onSurface);
+      expect(tester.takeException(), isNull);
+    }
+  });
+
   testWidgets('compact phone keeps seven real day controls scrollable',
       (tester) async {
     tester.view.physicalSize = const Size(320, 640);
