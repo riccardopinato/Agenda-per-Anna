@@ -81,15 +81,62 @@ class AnnaOrganicPastelLandscape extends StatelessWidget {
   }
 }
 
-/// Full-bleed Organic Today masthead. The image and the personalized
-/// greeting share the SAME scroll position; the fade reaches the actual
-/// Scaffold background at both edges, with no separate framed hero card.
-/// The provided toolbar keeps PlannerScreen's existing navigation callbacks
-/// and the canonical, localized display name.
+/// A pinned, scroll-driven Organic Today masthead.
+/// Expanded: atmospheric sky + entire panoramically composed artwork.
+/// Collapsed: compact, correctly aspect-ratioed landscape and same toolbar.
+/// The old 360x120 WebP must NEVER be scaled to a 232dp tall cover image.
+class AnnaOrganicPastelHeroSliverDelegate
+    extends SliverPersistentHeaderDelegate {
+  final Widget toolbar;
+  final double topInset;
+
+  const AnnaOrganicPastelHeroSliverDelegate({
+    required this.toolbar,
+    required this.topInset,
+  });
+
+  @override
+  double get minExtent => topInset + 132;
+
+  @override
+  double get maxExtent => topInset + 232;
+
+  @override
+  Widget build(
+      BuildContext context, double shrinkOffset, bool overlapsContent) {
+    final extent = (maxExtent - shrinkOffset).clamp(minExtent, maxExtent);
+    final progress = (shrinkOffset / (maxExtent - minExtent))
+        .clamp(0.0, 1.0);
+    return AnnaOrganicPastelBleedHero(
+      toolbar: toolbar,
+      height: extent,
+      collapseProgress: progress,
+      topInset: topInset,
+    );
+  }
+
+  @override
+  bool shouldRebuild(covariant AnnaOrganicPastelHeroSliverDelegate oldDelegate) =>
+      oldDelegate.toolbar != toolbar || oldDelegate.topInset != topInset;
+}
+
+/// Edge-to-edge artwork behind the original greeting/calendar/Classic
+/// controls. The extended sky is vector-rendered at physical screen density,
+/// while the 360x120 panorama is kept at its original 3:1 aspect ratio.
+/// A faint short fade blends the two layers without softening the landscape.
 class AnnaOrganicPastelBleedHero extends StatelessWidget {
   final Widget toolbar;
+  final double? height;
+  final double collapseProgress;
+  final double? topInset;
 
-  const AnnaOrganicPastelBleedHero({super.key, required this.toolbar});
+  const AnnaOrganicPastelBleedHero({
+    super.key,
+    required this.toolbar,
+    this.height,
+    this.collapseProgress = 0,
+    this.topInset,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -97,55 +144,146 @@ class AnnaOrganicPastelBleedHero extends StatelessWidget {
     final background = dark
         ? AnnaEditorialColors.of(context).canvas
         : AnnaOrganicPastel.canvas;
-    // The image may paint behind a status bar / display cutout, but the
-    // greeting and interactive controls always stay in a safe area.
-    final safeTop = MediaQuery.viewPaddingOf(context).top;
-    final height = safeTop + 232.0;
+    final safeTop = topInset ?? MediaQuery.viewPaddingOf(context).top;
+    final actualHeight = height ?? safeTop + 232;
+    final compact = collapseProgress.clamp(0.0, 1.0);
+
     return SizedBox(
       key: const ValueKey<String>('organic-pastel-fullbleed-hero'),
       width: double.infinity,
-      height: height,
-      child: Stack(
-        clipBehavior: Clip.hardEdge,
-        children: [
-          Positioned.fill(
-            child: AnnaOrganicPastelLandscape(
-              height: height,
-              radius: 0,
-            ),
-          ),
-          Positioned.fill(
-            child: IgnorePointer(
-              child: DecoratedBox(
-                key: const ValueKey<String>('organic-pastel-hero-fade'),
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                    stops: const [0, .16, .35, .56, .78, 1],
-                    colors: [
-                      background,
-                      background.withValues(alpha: .95),
-                      background.withValues(alpha: .36),
-                      background.withValues(alpha: .02),
-                      background.withValues(alpha: .04),
-                      background,
-                    ],
+      height: actualHeight,
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          // The source WebP is 360x120. Width-based layout keeps the
+          // panoramic artwork sharp and stops the former 2x vertical zoom.
+          final naturalHeight = constraints.maxWidth / 3;
+          return Stack(
+            clipBehavior: Clip.hardEdge,
+            children: [
+              Positioned.fill(
+                child: CustomPaint(
+                  key: const ValueKey<String>('organic-pastel-vector-sky'),
+                  painter: _AnnaOrganicPastelHeroSkyPainter(dark: dark),
+                ),
+              ),
+              Positioned(
+                left: 0,
+                right: 0,
+                bottom: 0,
+                child: SizedBox(
+                  height: naturalHeight,
+                  child: AnnaOrganicPastelLandscape(
+                    height: naturalHeight,
+                    radius: 0,
                   ),
                 ),
               ),
-            ),
-          ),
-          Positioned(
-            top: safeTop + 14,
-            left: 20,
-            right: 20,
-            child: toolbar,
-          ),
-        ],
+              Positioned.fill(
+                child: IgnorePointer(
+                  child: DecoratedBox(
+                    key: const ValueKey<String>('organic-pastel-hero-fade'),
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                        stops: const [0, .19, .42, .66, .89, 1],
+                        colors: [
+                          background.withValues(alpha: .98),
+                          background.withValues(alpha: .79 - compact * .10),
+                          background.withValues(alpha: .10),
+                          background.withValues(alpha: 0),
+                          background.withValues(alpha: .02),
+                          background,
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+              Positioned(
+                top: safeTop + 14,
+                left: 20,
+                right: 20,
+                child: toolbar,
+              ),
+            ],
+          );
+        },
       ),
     );
   }
+}
+
+/// Scalable, lightweight sky extension: vector strokes do not raster-upscale
+/// and no new packages, image downloads or background processing are needed.
+class _AnnaOrganicPastelHeroSkyPainter extends CustomPainter {
+  final bool dark;
+
+  const _AnnaOrganicPastelHeroSkyPainter({required this.dark});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final area = Offset.zero & size;
+    canvas.drawRect(
+      area,
+      Paint()
+        ..shader = LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: dark
+              ? const [
+                  Color(0xFF26332F),
+                  Color(0xFF455B50),
+                  Color(0xFF858F76),
+                ]
+              : const [
+                  Color(0xFFFFF9F3),
+                  Color(0xFFFCEEDA),
+                  Color(0xFFF8DFAF),
+                ],
+        ).createShader(area),
+    );
+
+    final radius = size.height * .22;
+    final sunCenter = Offset(size.width * .75, size.height * .60);
+    canvas.drawCircle(
+      sunCenter,
+      radius * 1.6,
+      Paint()
+        ..shader = RadialGradient(
+          colors: [
+            (dark ? const Color(0xFFE6C18C) : const Color(0xFFFFE9BB))
+                .withValues(alpha: .45),
+            const Color(0xFFFFE6BD).withValues(alpha: 0),
+          ],
+        ).createShader(Rect.fromCircle(
+          center: sunCenter,
+          radius: radius * 1.6,
+        )),
+    );
+
+    // Delicate, non-blurred wash lines maintain texture at any pixel density.
+    final streak = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeCap = StrokeCap.round
+      ..strokeWidth = .8
+      ..color = (dark ? const Color(0xFFE5D1B1) : const Color(0xFFDFC5A6))
+          .withValues(alpha: dark ? .12 : .21);
+    for (var i = 0; i < 24; i++) {
+      final y = size.height * (.26 + i * .014);
+      final x = size.width * ((i * 37 % 43) / 101);
+      final length = size.width * (.08 + (i % 5) * .021);
+      final path = Path()
+        ..moveTo(x, y)
+        ..quadraticBezierTo(x + length * .55, y - 1.4,
+            x + length, y + .7);
+      canvas.drawPath(path, streak);
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant _AnnaOrganicPastelHeroSkyPainter oldDelegate) =>
+      dark != oldDelegate.dark;
 }
 
 class _AnnaOrganicPastelLandscapePainter extends CustomPainter {
