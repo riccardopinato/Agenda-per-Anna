@@ -109,6 +109,44 @@ class _AnnaOrganicPastelLandscapePainter extends CustomPainter {
       canvas.drawPath(path, Paint()..color = color);
     }
 
+    // Distant watercolor ridgeline: asymmetrical silhouettes, not polygons.
+    final ridge = Paint()
+      ..color = dark
+          ? const Color(0xFF70877F).withValues(alpha: .44)
+          : const Color(0xFF9FB9A6).withValues(alpha: .37);
+    final haze = Paint()
+      ..color = dark
+          ? const Color(0xFFAFBCA5).withValues(alpha: .16)
+          : const Color(0xFF9CAFA2).withValues(alpha: .23);
+    for (final scale in [0.71, 0.89, 1.13]) {
+      final mountain = Path()
+        ..moveTo(w * (.05 + (scale - .70) * .14), h * .68)
+        ..cubicTo(w * .25, h * .54, w * .35, h * (.18 + scale * .07),
+            w * (.44 + (scale - 1) * .11), h * (.40 + scale * .02))
+        ..quadraticBezierTo(w * .58, h * .52, w * .72, h * .65)
+        ..close();
+      canvas.drawPath(mountain, scale > 1 ? haze : ridge);
+    }
+
+    // Broad, low-contrast atmospheric clouds.
+    final cloudPaint = Paint()
+      ..color = (dark ? const Color(0xFFD6D7C0) : Colors.white)
+          .withValues(alpha: dark ? .07 : .40);
+    for (final cloud in [
+      Offset(w * .18, h * .28),
+      Offset(w * .54, h * .17),
+      Offset(w * .64, h * .31),
+    ]) {
+      canvas.drawOval(
+        Rect.fromCenter(
+          center: cloud,
+          width: w * .22,
+          height: h * .075,
+        ),
+        cloudPaint,
+      );
+    }
+
     hill(
       dark ? const Color(0xFF647A70) : const Color(0xFFD4DDCF),
       .64, .55, .65, .36,
@@ -129,6 +167,78 @@ class _AnnaOrganicPastelLandscapePainter extends CustomPainter {
       dark ? const Color(0xFF2B5140) : const Color(0xFF7D986B),
       .98, .94, .98, .88,
     );
+
+    // Soft winding path leads the eye toward the center — a diary landscape.
+    final path = Path()
+      ..moveTo(w * .40, h)
+      ..cubicTo(w * .43, h * .90, w * .48, h * .87, w * .51, h * .81)
+      ..cubicTo(w * .54, h * .76, w * .50, h * .72, w * .52, h * .69)
+      ..lineTo(w * .53, h * .69)
+      ..cubicTo(w * .58, h * .76, w * .59, h * .84, w * .61, h * .88)
+      ..lineTo(w * .64, h)
+      ..close();
+    canvas.drawPath(
+      path,
+      Paint()
+        ..color = dark
+            ? const Color(0xFFACB09A).withValues(alpha: .36)
+            : const Color(0xFFF0DBC1).withValues(alpha: .85),
+    );
+
+    // Small tree clusters, layered translucent crowns and bright wildflowers.
+    for (final tree in <(double, double, double)>[
+      (.10, .78, .11), (.17, .75, .075), (.84, .75, .09), (.92, .79, .13)
+    ]) {
+      final x = w * tree.$1;
+      final y = h * tree.$2;
+      final size = h * tree.$3;
+      final trunk = Paint()
+        ..color = dark ? const Color(0xFF806E53) : const Color(0xFF9D8C67)
+        ..strokeWidth = 1.7
+        ..strokeCap = StrokeCap.round;
+      canvas.drawLine(Offset(x, y), Offset(x, y - size * .84), trunk);
+      for (final oval in [
+        (Offset(x - size * .33, y - size * .78), size * .58),
+        (Offset(x + size * .28, y - size * .72), size * .58),
+        (Offset(x, y - size * 1.08), size * .67)
+      ]) {
+        canvas.drawCircle(
+          oval.$1,
+          oval.$2,
+          Paint()
+            ..color = (dark
+                    ? const Color(0xFF7D9973)
+                    : const Color(0xFF79995E))
+                .withValues(alpha: .74),
+        );
+      }
+    }
+
+    for (var i = 0; i < 32; i++) {
+      final x = ((i * 137.0 + 23) % (w * 3)) / 3;
+      final y = h * (.87 + .095 * sin(i * 2.3).abs());
+      final stem = Paint()
+        ..color = dark ? const Color(0xFFB1B998) : const Color(0xFF738D58)
+        ..strokeWidth = .6;
+      canvas.drawLine(Offset(x, y), Offset(x + 1, y - 5.5), stem);
+      canvas.drawCircle(
+        Offset(x + 1.2, y - 6),
+        i % 4 == 0 ? 1.8 : 1.05,
+        Paint()
+          ..color = i % 3 == 0
+              ? const Color(0xFFFFE7B6)
+              : const Color(0xFFFFF9E5),
+      );
+    }
+
+    final pigment = Paint()
+      ..color = (dark ? const Color(0xFFC1CFB3) : const Color(0xFF718B74))
+          .withValues(alpha: dark ? .045 : .07);
+    for (var i = 0; i < 88; i++) {
+      final x = ((i * 47.0 + 9) % 97) / 97 * w;
+      final y = ((i * 59.0 + 17) % 89) / 89 * h;
+      canvas.drawCircle(Offset(x, y), .45 + (i % 3) * .21, pigment);
+    }
 
     final grass = Paint()
       ..color = dark ? const Color(0xFF294A3B) : const Color(0xFF68855B)
