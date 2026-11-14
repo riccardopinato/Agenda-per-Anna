@@ -674,6 +674,9 @@ class AnnaEditorialDockSurface extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    if (AnnaOrganicPastel.enabled(context)) {
+      return AnnaOrganicLiquidDockSurface(child: child);
+    }
     final colors = AnnaEditorialColors.of(context);
     return Container(
       key: const ValueKey<String>('anna-editorial-anchored-dock'),
@@ -778,6 +781,18 @@ class AnnaEditorialDockBar extends StatelessWidget {
     int page,
   ) {
     final selected = selectedPage == page;
+    if (AnnaOrganicPastel.enabled(context)) {
+      return Expanded(
+        child: AnnaOrganicLiquidTab(
+          page: page,
+          selected: selected,
+          label: labels[page],
+          icon: selected ? selectedIcons[page] : icons[page],
+          semanticId: semanticIds[page],
+          onTap: () => onPageSelected(page),
+        ),
+      );
+    }
     return Expanded(
       child: Semantics(
         identifier: semanticIds[page],

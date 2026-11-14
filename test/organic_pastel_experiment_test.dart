@@ -259,4 +259,80 @@ void main() {
     expect(shell, contains('SharedSpaceHubScreen(store: widget.store)'));
     expect(shell, contains('onTap: _openCentralCreate'));
   });
+  testWidgets('liquid tabs remain tappable at 320dp in light and dark',
+      (tester) async {
+    tester.view.physicalSize = const Size(320, 640);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(() {
+      tester.view.resetPhysicalSize();
+      tester.view.resetDevicePixelRatio();
+      AnnaEditorialTodayMode.enabled.value = false;
+    });
+    AnnaEditorialTodayMode.enabled.value = true;
+    var selected = -1;
+    for (final brightness in [Brightness.light, Brightness.dark]) {
+      await tester.pumpWidget(MaterialApp(
+        theme: ThemeData(
+          colorScheme: ColorScheme.fromSeed(
+            seedColor: const Color(0xFF9D7BAE),
+            brightness: brightness,
+          ),
+        ),
+        home: Scaffold(
+          bottomNavigationBar: AnnaEditorialDockBar(
+            selectedPage: 0,
+            onPageSelected: (page) => selected = page,
+            labels: const ['Oggi', 'Messaggi', 'Ricordi', 'Altro'],
+            icons: const [
+              Icons.today_outlined,
+              Icons.chat_bubble_outline,
+              Icons.photo_library_outlined,
+              Icons.grid_view_outlined,
+            ],
+            selectedIcons: const [
+              Icons.today,
+              Icons.chat_bubble,
+              Icons.photo_library,
+              Icons.grid_view,
+            ],
+            semanticIds: const [
+              'main-nav-today',
+              'main-nav-messages',
+              'main-nav-memories',
+              'main-nav-more',
+            ],
+          ),
+        ),
+      ));
+      expect(find.byType(AnnaOrganicLiquidTab), findsNWidgets(4));
+      expect(find.byType(AnnaOrganicLiquidDockSurface), findsOneWidget);
+      expect(find.byType(BackdropFilter), findsOneWidget);
+      await tester.tap(find.byKey(const ValueKey('main-nav-messages')));
+      expect(selected, 1);
+      expect(tester.takeException(), isNull);
+    }
+  });
+
+  testWidgets('glass Create preserves the single action callback',
+      (tester) async {
+    var createCalls = 0;
+    await tester.pumpWidget(MaterialApp(
+      home: Scaffold(
+        body: Center(
+          child: AnnaOrganicLiquidCreate(
+            label: 'Crea',
+            pressed: false,
+            released: false,
+            onTap: () => createCalls++,
+          ),
+        ),
+      ),
+    ));
+    expect(find.byKey(const ValueKey('organic-liquid-create-orb')),
+        findsOneWidget);
+    await tester.tap(find.byKey(const ValueKey('main-nav-create')));
+    expect(createCalls, 1);
+    expect(tester.takeException(), isNull);
+  });
+
 }

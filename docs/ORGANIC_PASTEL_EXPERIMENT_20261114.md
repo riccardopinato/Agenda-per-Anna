@@ -44,3 +44,16 @@ Compare actual Flutter screenshots at 390×844 against the supplied reference
 and at 320×640 for overflow; test IT/EN/ES/FR/PT, textScale,
 dark/HSV/custom palettes, RTL where relevant, and saved shared groups.
 Record KEEP / REVISE / REJECT, with a reversal path to existing Classic mode.
+
+## Revisione mirata — Liquid Pastel Glass dock
+- Solo la barra inferiore Organic Pastel e il pulsante Crea centrale.
+- Quattro capsule con tinti salvia/pesca/lavanda/cielo mescolati al
+  ColorScheme del dispositivo (anche HSV e dark); superficie translucida,
+  gradienti speculari, bordo riflettente, ombre di elevazione e animazioni
+  ridotte quando richiesto dal sistema.
+- Bolla Crea sollevata, con riflesso e feedback di pressione. Lo stesso
+  callback `_openCentralCreate` rimane l'unico proprietario di Capture.
+- La Classic resta invariata. Nessuna nuova dipendenza, asset remoto,
+  preferenza o modifica dati.
+- Gate ancora aperto: collaudo visuale su 320dp, 390dp, testi grandi,
+  dark/HSV, IT/EN/ES/FR/PT e approvazione esplicita prima del merge.
