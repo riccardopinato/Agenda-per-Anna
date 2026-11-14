@@ -467,10 +467,15 @@ void main() {
           ),
         ),
       ));
+      // Verify the EFFECTIVE Flutter theme after ThemeData normalization,
+      // not the pre-normalized ColorScheme.fromSeed input.
+      final actualForeground = Theme.of(
+        tester.element(find.byType(AnnaOrganicLiquidTab)),
+      ).colorScheme.onSurface;
       final label = tester.widget<Text>(find.text('Oggi'));
-      expect(label.style?.color, scheme.onSurface);
+      expect(label.style?.color, actualForeground);
       final icon = tester.widget<Icon>(find.byIcon(Icons.today));
-      expect(icon.color, scheme.onSurface);
+      expect(icon.color, actualForeground);
       expect(tester.takeException(), isNull);
     }
   });
