@@ -1050,42 +1050,9 @@ class _PlannerScreenState extends State<PlannerScreen> {
                     ),
                     child: AnnaMotionReveal(
                       token: day.millisecondsSinceEpoch,
-                      child: ListView(
-                      padding: EdgeInsets.fromLTRB(
-                        organic ? 0 : 20,
-                        organic ? 0 : 14,
-                        organic ? 0 : 20,
-                        110,
-                      ),
-                      children: [
-                        if (organic)
-                          AnnaOrganicPastelBleedHero(
-                            toolbar: AnnaTodayEditorialGreetingToolbar(
-                              activeInShell: widget.activeInShell,
-                              greeting: approvedTodayGreeting(
-                                strings.languageCode,
-                                widget.store.preferences.displayName,
-                                DateTime.now().hour,
-                              ),
-                              calendarTooltip: strings.navCalendar,
-                              classicTooltip: annaEditorialTodayModeLabel(
-                                strings.languageCode, returnToClassic: true,
-                              ),
-                              onOpenCalendar: () => Navigator.push(
-                                context,
-                                MaterialPageRoute<void>(
-                                  builder: (_) => CalendarHubScreen(
-                                    store: widget.store,
-                                  ),
-                                ),
-                              ),
-                              onReturnToClassic: () =>
-                                  unawaited(_setEditorialMode(false)),
-                            ),
-                          ),
-                        // Apply the original 20dp content gutter to every
-                        // ordinary row, while the masthead alone bleeds edge
-                        // to edge and shares the same scrollable surface.
+                      child: Builder(
+                        builder: (context) {
+                          final pageContent = <Widget>[
                         for (final content in <Widget>[
                         if (editorial && !organic) ...[
                           AnnaTodayEditorialGreetingToolbar(
@@ -1365,8 +1332,62 @@ class _PlannerScreenState extends State<PlannerScreen> {
                                   child: content,
                                 )
                               : content,
-                  ],
-                    ),
+                          ];
+                          if (!organic) {
+                            // Classic and the non-Organic editorial variant
+                            // retain their original scroll behavior.
+                            return ListView(
+                              padding: const EdgeInsets.fromLTRB(
+                                20, 14, 20, 110,
+                              ),
+                              children: pageContent,
+                            );
+                          }
+                          return CustomScrollView(
+                            key: const ValueKey<String>(
+                              'organic-pastel-collapsing-scroll',
+                            ),
+                            slivers: [
+                              SliverPersistentHeader(
+                                pinned: true,
+                                delegate: AnnaOrganicPastelHeroSliverDelegate(
+                                  topInset:
+                                      MediaQuery.viewPaddingOf(context).top,
+                                  toolbar: AnnaTodayEditorialGreetingToolbar(
+                                    activeInShell: widget.activeInShell,
+                                    greeting: approvedTodayGreeting(
+                                      strings.languageCode,
+                                      widget.store.preferences.displayName,
+                                      DateTime.now().hour,
+                                    ),
+                                    calendarTooltip: strings.navCalendar,
+                                    classicTooltip: annaEditorialTodayModeLabel(
+                                      strings.languageCode,
+                                      returnToClassic: true,
+                                    ),
+                                    onOpenCalendar: () => Navigator.push(
+                                      context,
+                                      MaterialPageRoute<void>(
+                                        builder: (_) => CalendarHubScreen(
+                                          store: widget.store,
+                                        ),
+                                      ),
+                                    ),
+                                    onReturnToClassic: () =>
+                                        unawaited(_setEditorialMode(false)),
+                                  ),
+                                ),
+                              ),
+                              SliverPadding(
+                                padding: const EdgeInsets.only(bottom: 110),
+                                sliver: SliverList(
+                                  delegate: SliverChildListDelegate(pageContent),
+                                ),
+                              ),
+                            ],
+                          );
+                        },
+                      ),
                     ),
                   ),
                 ),
