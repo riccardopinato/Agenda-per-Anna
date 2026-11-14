@@ -1166,26 +1166,11 @@ class _PlannerScreenState extends State<PlannerScreen> {
                             ),
                             const SizedBox(height: 12),
                           ],
-                          // A single authentic memory before the diary.
-                          // No placeholder photo, no fabricated anniversary.
-                          if (editorial &&
-                              (memoryRecall.onThisDay.isNotEmpty ||
-                                  memoryRecall.sameMonthPastYears.isNotEmpty)) ...[
-                            _DayMemoryRecallCard(
-                              store: widget.store,
-                              anchor: day,
-                              memories: memoryRecall.onThisDay.isNotEmpty
-                                  ? memoryRecall.onThisDay
-                                  : memoryRecall.sameMonthPastYears,
-                              exactAnniversary:
-                                  memoryRecall.onThisDay.isNotEmpty,
-                              hideDetails:
-                                  widget.store.preferences.hideHomeDetails,
-                            ),
-                            const SizedBox(height: 14),
-                          ],
                           if (editorial) ...[
-                            AnnaOrganicPastelQuickLinks(store: widget.store),
+                            AnnaOrganicPastelQuickLinks(
+                              store: widget.store,
+                              selectedDate: day,
+                            ),
                             const SizedBox(height: 14),
                           ],
                           // DF-08–14: Oggi reads the selected day before
@@ -1204,6 +1189,25 @@ class _PlannerScreenState extends State<PlannerScreen> {
                               order: 0,
                               child: _TodayCompactSummary(snapshot: snapshot),
                             ),
+                          // Keep memories immediately BELOW "Il mio diario".
+                          // Recalls are still canonical and shown only when
+                          // there is genuine, authorized journal history.
+                          if (editorial &&
+                              (memoryRecall.onThisDay.isNotEmpty ||
+                                  memoryRecall.sameMonthPastYears.isNotEmpty)) ...[
+                            _DayMemoryRecallCard(
+                              store: widget.store,
+                              anchor: day,
+                              memories: memoryRecall.onThisDay.isNotEmpty
+                                  ? memoryRecall.onThisDay
+                                  : memoryRecall.sameMonthPastYears,
+                              exactAnniversary:
+                                  memoryRecall.onThisDay.isNotEmpty,
+                              hideDetails:
+                                  widget.store.preferences.hideHomeDetails,
+                            ),
+                            const SizedBox(height: 14),
+                          ],
                           // Hero-first rhythm is exclusive to the Editorial Home.
                           if (editorial) ...planningCards,
                           if (isToday && (upcoming.isNotEmpty || pinnedItems.isNotEmpty)) ...[
@@ -1321,7 +1325,11 @@ class _PlannerScreenState extends State<PlannerScreen> {
                           _DayLifeStream(snapshot: snapshot, store: widget.store),
                         ],
                         const SizedBox(height: 14),
-                        ExpansionTile(
+                        // The embedded Home no longer duplicates the hourly
+                        // timeline: "Impegni" opens its dedicated page.
+                        // Standalone day detail retains its legacy affordance.
+                        if (!widget.embedded)
+                          ExpansionTile(
                           tilePadding: const EdgeInsets.symmetric(horizontal: 8),
                           childrenPadding: const EdgeInsets.only(bottom: 8),
                           leading: const Icon(Icons.schedule_outlined),
@@ -2485,6 +2493,130 @@ class _TimelinePlacement {
     required this.lane,
     required this.laneCount,
   });
+}
+
+/// Dedicated hourly commitments view opened from the Organic Home shortcut.
+/// Owns no records or editor: it reuses the canonical private appointment
+/// projection and the exact same DayTimeline gestures/create/edit callbacks.
+class AnnaCommitmentsTimelineScreen extends StatefulWidget {
+  final AgendaStore store;
+  final DateTime? initialDate;
+
+  const AnnaCommitmentsTimelineScreen({
+    super.key,
+    required this.store,
+    this.initialDate,
+  });
+
+  @override
+  State<AnnaCommitmentsTimelineScreen> createState() =>
+      _AnnaCommitmentsTimelineScreenState();
+}
+
+class _AnnaCommitmentsTimelineScreenState
+    extends State<AnnaCommitmentsTimelineScreen> {
+  late DateTime _selected;
+  late final ScrollController _timelineScroll;
+
+  @override
+  void initState() {
+    super.initState();
+    final source = widget.initialDate ?? DateTime.now();
+    _selected = DateTime(source.year, source.month, source.day);
+    // Open on the useful working-day portion. The original 00:00–24:00
+    // timeline remains fully scrollable and no events are filtered by hour.
+    _timelineScroll = ScrollController(
+      initialScrollOffset: DayTimeline.offsetForMinutes(7 * 60),
+    );
+  }
+
+  @override
+  void dispose() {
+    _timelineScroll.dispose();
+    super.dispose();
+  }
+
+  void _selectDay(DateTime selected) {
+    setState(() => _selected = DateTime(
+      selected.year, selected.month, selected.day,
+    ));
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final strings = AnnaStrings.of(context);
+    final organic = AnnaOrganicPastel.enabled(context);
+    return Scaffold(
+      key: const ValueKey<String>('commitments-hourly-timeline-screen'),
+      backgroundColor: organic
+          ? AnnaEditorialColors.of(context).canvas
+          : null,
+      appBar: AppBar(
+        title: Text(
+          strings.d3('ui5Commitments'),
+          style: organic
+              ? AnnaJournalTypography.editorial(context, size: 25)
+              : null,
+        ),
+        actions: [
+          IconButton(
+            key: const ValueKey<String>('commitments-today'),
+            tooltip: strings.navToday,
+            onPressed: () => _selectDay(DateTime.now()),
+            icon: const Icon(Icons.today_outlined),
+          ),
+        ],
+      ),
+      body: AnimatedBuilder(
+        animation: widget.store.agendaRevision,
+        builder: (context, _) {
+          final snapshot = widget.store.dayHubSnapshot(_selected);
+          final timedPrivate = snapshot.agenda
+              .where((entry) =>
+                  entry.type == ItemType.appointment &&
+                  entry.start != null &&
+                  entry.isPrivate)
+              .map((entry) => entry.privateItem!)
+              .toList();
+          return Column(
+            children: [
+              _TodaySingleDateNavigator(
+                selected: _selected,
+                onSelected: _selectDay,
+              ),
+              Expanded(
+                child: SingleChildScrollView(
+                  key: const ValueKey<String>(
+                    'commitments-hourly-scroll',
+                  ),
+                  controller: _timelineScroll,
+                  padding: const EdgeInsets.fromLTRB(16, 8, 16, 28),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      _TimelineHint(eventCount: timedPrivate.length),
+                      const SizedBox(height: 12),
+                      DayTimeline(
+                        key: const ValueKey<String>(
+                          'commitments-canonical-day-timeline',
+                        ),
+                        date: _selected,
+                        events: timedPrivate,
+                        store: widget.store,
+                        onChanged: () {
+                          if (mounted) setState(() {});
+                        },
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          );
+        },
+      ),
+    );
+  }
 }
 
 class DayTimeline extends StatelessWidget {
