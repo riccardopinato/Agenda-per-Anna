@@ -14,6 +14,17 @@ void main() {
     AnnaEditorialTodayMode.enabled.value = false;
   });
 
+  test('Organic watercolor is true 576x192 WebP, not the old 360x120', () {
+    final bytes = AnnaOrganicPastelWatercolor.bytes;
+    expect(bytes.length, greaterThan(6000));
+    expect(bytes.length, lessThan(20000)); // bounded offline asset weight
+    expect(String.fromCharCodes(bytes.sublist(0, 4)), 'RIFF');
+    expect(String.fromCharCodes(bytes.sublist(8, 12)), 'WEBP');
+    // RIFF VP8 frame width and height are stored in bytes 26–29.
+    expect((bytes[26] | (bytes[27] << 8)) & 0x3fff, 576);
+    expect((bytes[28] | (bytes[29] << 8)) & 0x3fff, 192);
+  });
+
   testWidgets('original landscape paints in light and dark without assets',
       (tester) async {
     for (final brightness in [Brightness.light, Brightness.dark]) {
