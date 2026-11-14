@@ -1108,6 +1108,21 @@ class _PlannerScreenState extends State<PlannerScreen> {
                         ] else
                           const SizedBox(height: 12),
                         if (widget.embedded) ...[
+                          // Organic Preview: only actual authorized
+                          // agenda entries. Open via the existing editor.
+                          if (editorial && snapshot.agenda.isNotEmpty) ...[
+                            AnnaOrganicPastelAgendaDigest(
+                              entries: snapshot.agenda,
+                              hideDetails:
+                                  widget.store.preferences.hideHomeDetails,
+                              onOpenEntry: (entry) =>
+                                  openUnifiedAgendaEntry(
+                                    context, widget.store, entry,
+                                  ),
+                              onOpenDay: _openSelectedDay,
+                            ),
+                            const SizedBox(height: 12),
+                          ],
                           // DF-08–14: Oggi reads the selected day before
                           // any editor. Create stays in the shell's + Crea.
                           if (editorial)
