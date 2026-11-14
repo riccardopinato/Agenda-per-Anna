@@ -239,6 +239,139 @@ void main() {
     }
   });
 
+
+  testWidgets('Organic hero scroll QA matrix: small, large, landscape and a11y',
+      (tester) async {
+    AnnaEditorialTodayMode.enabled.value = true;
+    addTearDown(() => AnnaEditorialTodayMode.enabled.value = false);
+    addTearDown(() {
+      tester.view.resetPhysicalSize();
+      tester.view.resetDevicePixelRatio();
+    });
+
+    // Synthetic name only. These are widget-level simulations, not results
+    // from an Android emulator or a physical phone.
+    const cases = <({double width, double height, Brightness brightness,
+        double scale, String label})>[
+      (width: 320, height: 640, brightness: Brightness.light,
+          scale: 1, label: 'small-light'),
+      (width: 320, height: 640, brightness: Brightness.dark,
+          scale: 1.6, label: 'small-dark-large-text'),
+      (width: 390, height: 844, brightness: Brightness.light,
+          scale: 1.6, label: 'normal-large-text'),
+      (width: 390, height: 844, brightness: Brightness.dark,
+          scale: 1, label: 'normal-dark'),
+      (width: 640, height: 360, brightness: Brightness.light,
+          scale: 1, label: 'landscape'),
+      (width: 600, height: 880, brightness: Brightness.dark,
+          scale: 1.6, label: 'tablet-dark-large-text'),
+    ];
+
+    for (final scenario in cases) {
+      tester.view.physicalSize = Size(scenario.width, scenario.height);
+      tester.view.devicePixelRatio = 1;
+      var calendarOpens = 0;
+      var classicOpens = 0;
+
+      await tester.pumpWidget(MaterialApp(
+        theme: ThemeData(
+          colorScheme: ColorScheme.fromSeed(
+            seedColor: const Color(0xFFAD7DAD),
+            brightness: scenario.brightness,
+          ),
+        ),
+        home: MediaQuery(
+          data: MediaQueryData(
+            textScaler: TextScaler.linear(scenario.scale),
+            viewPadding: const EdgeInsets.only(top: 32),
+            disableAnimations: true,
+          ),
+          child: Scaffold(
+            body: CustomScrollView(
+              key: const ValueKey<String>('organic-qa-scroller'),
+              slivers: [
+                SliverPersistentHeader(
+                  pinned: true,
+                  delegate: AnnaOrganicPastelHeroSliverDelegate(
+                    topInset: 32,
+                    toolbar: AnnaTodayEditorialGreetingToolbar(
+                      greeting: approvedTodayGreeting(
+                        'it', 'Alessandra Riccarda', 14,
+                      ),
+                      activeInShell: false,
+                      calendarTooltip: 'Calendario',
+                      classicTooltip: 'Classic',
+                      onOpenCalendar: () => calendarOpens++,
+                      onReturnToClassic: () => classicOpens++,
+                    ),
+                  ),
+                ),
+                const SliverToBoxAdapter(
+                  child: SizedBox(height: 1700),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ));
+      await tester.pump();
+
+      final hero = find.byKey(
+        const ValueKey<String>('organic-pastel-fullbleed-hero'),
+      );
+      expect(tester.getSize(hero).height, 264, reason: scenario.label);
+      expect(tester.getSize(hero).width, scenario.width,
+          reason: scenario.label);
+      expect(
+        tester.getTopLeft(find.byKey(
+          const ValueKey<String>('ds6-today-compact-header'),
+        )).dy,
+        greaterThanOrEqualTo(32),
+        reason: scenario.label,
+      );
+
+      await tester.drag(
+        find.byKey(const ValueKey<String>('organic-qa-scroller')),
+        const Offset(0, -360),
+      );
+      await tester.pumpAndSettle();
+      expect(tester.getSize(hero).height, closeTo(164, 1),
+          reason: scenario.label);
+      expect(find.byKey(const ValueKey<String>('ds6-today-greeting')),
+          findsOneWidget);
+      expect(tester.takeException(), isNull, reason: scenario.label);
+
+      await tester.tap(
+        find.byKey(const ValueKey<String>('today-open-calendar')),
+      );
+      await tester.tap(
+        find.byKey(const ValueKey<String>('today-editorial-disable')),
+      );
+      expect(calendarOpens, 1, reason: scenario.label);
+      expect(classicOpens, 1, reason: scenario.label);
+
+      await tester.drag(
+        find.byKey(const ValueKey<String>('organic-qa-scroller')),
+        const Offset(0, 500),
+      );
+      await tester.pumpAndSettle();
+      expect(tester.getSize(hero).height, closeTo(264, 1),
+          reason: scenario.label);
+      expect(tester.takeException(), isNull, reason: scenario.label);
+    }
+  });
+
+  test('localized owner greeting keeps fallback for empty profile', () {
+    for (final locale in ['it', 'en', 'es', 'fr', 'pt']) {
+      final blank = approvedTodayGreeting(locale, '  ', 9);
+      final named = approvedTodayGreeting(locale, 'Giulia', 9);
+      expect(blank.trim(), isNotEmpty);
+      expect(named, contains('Giulia'));
+      expect(named.length, greaterThan(blank.length));
+      expect(blank, isNot(contains('Giulia')));
+    }
+  });
+
   testWidgets('week strip uses actual dates and canonical selected-day callback',
       (tester) async {
     tester.view.physicalSize = const Size(390, 844);
