@@ -53,10 +53,26 @@ class AnnaOrganicPastelLandscape extends StatelessWidget {
             key: const ValueKey<String>('organic-pastel-landscape'),
             height: height,
             width: double.infinity,
-            child: CustomPaint(
-              painter: _AnnaOrganicPastelLandscapePainter(
-                Theme.of(context).brightness,
-              ),
+            child: Stack(
+              fit: StackFit.expand,
+              children: [
+                // The procedural painter stays as an offline failure fallback.
+                CustomPaint(
+                  painter: _AnnaOrganicPastelLandscapePainter(
+                    Theme.of(context).brightness,
+                  ),
+                ),
+                Image.memory(
+                  AnnaOrganicPastelWatercolor.bytes,
+                  fit: BoxFit.cover,
+                  filterQuality: FilterQuality.medium,
+                  gaplessPlayback: true,
+                  errorBuilder: (context, error, stackTrace) =>
+                      const SizedBox.shrink(),
+                ),
+                if (Theme.of(context).brightness == Brightness.dark)
+                  const ColoredBox(color: Color(0x6621362D)),
+              ],
             ),
           ),
         ),
