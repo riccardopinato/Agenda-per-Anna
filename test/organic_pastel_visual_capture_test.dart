@@ -83,6 +83,19 @@ void main() {
       // Pure test-memory fixture: zero production credentials or data writes.
       final now = DateTime.now();
       final date = DateTime(now.year, now.month, now.day);
+      // An authentic diary-block model, but synthetic and in-memory only.
+      // This exercises the no-fake-photo note fallback in Ricordi.
+      final memoryDate = DateTime(date.year - 1, date.month, date.day);
+      store.journals[AgendaStore.dateKey(memoryDate)] = DayJournal(
+        blocks: [
+          DiaryBlock(
+            id: 'organic-demo-memory',
+            type: DiaryBlockType.note,
+            createdAt: memoryDate,
+            text: 'Il nostro picnic al parco',
+          ),
+        ],
+      );
       store.items.addAll([
         AgendaItem(
           id: 'organic-demo-breakfast',
