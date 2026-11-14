@@ -62,5 +62,7 @@ jobs:
           path: |
             test/goldens/organic_pastel_today_390.png
             test/goldens/organic_pastel_today_populated_390.png
+            test/goldens/organic_pastel_today_collapsed_390.png
+            test/goldens/organic_pastel_today_populated_collapsed_390.png
           if-no-files-found: error
           retention-days: 7
