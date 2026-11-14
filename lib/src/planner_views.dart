@@ -1571,6 +1571,91 @@ class _DayMemoryRecallCard extends StatelessWidget {
                 DiaryBlockType.photo => Icons.photo_outlined,
                 DiaryBlockType.voice => Icons.mic_none_outlined,
               }, color: Theme.of(context).colorScheme.primary));
+    if (AnnaOrganicPastel.enabled(context)) {
+      final dateLine = exactAnniversary
+          ? (years == 1
+                  ? strings.d3('ui5OneYearAgo')
+                  : strings.d3Format('ui5YearsAgo', {'years': years})) +
+              ' · ' + date
+          : date;
+      return Column(
+        key: const ValueKey<String>('ui5-today-memory-teaser'),
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Padding(
+            padding: const EdgeInsets.only(left: 3, bottom: 9),
+            child: Text(
+              strings.d3('ui5MemoryTeaser'),
+              style: AnnaJournalTypography.editorial(context, size: 18)
+                  .copyWith(color: AnnaOrganicPastel.text(context)),
+            ),
+          ),
+          AnnaOrganicPaperSurface(
+            onTap: () => Navigator.push<void>(
+              context,
+              MaterialPageRoute<void>(
+                builder: (_) => DiaryMemoriesScreen(store: store),
+              ),
+            ),
+            semanticLabel: strings.d3('ui5MemoryTeaser'),
+            padding: const EdgeInsets.all(9),
+            child: Row(
+              children: [
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(13),
+                  child: SizedBox(
+                    width: 80,
+                    height: 72,
+                    child: ColoredBox(
+                      color: Theme.of(context).brightness == Brightness.dark
+                          ? const Color(0xFF364D42)
+                          : AnnaOrganicPastel.peach,
+                      child: preview,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        hideDetails ? '•••' : title,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: AnnaJournalTypography.editorial(
+                          context,
+                          size: 16,
+                        ).copyWith(color: AnnaOrganicPastel.text(context)),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        hideDetails ? '•••' : dateLine,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: Theme.of(context).brightness == Brightness.dark
+                              ? Theme.of(context).colorScheme.onSurfaceVariant
+                              : AnnaOrganicPastel.quietInk,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 4),
+                Icon(
+                  Icons.chevron_right_rounded,
+                  size: 21,
+                  color: Theme.of(context).brightness == Brightness.dark
+                      ? Theme.of(context).colorScheme.onSurface
+                      : AnnaOrganicPastel.oliveInk,
+                ),
+              ],
+            ),
+          ),
+        ],
+      );
+    }
     return Column(
       key: const ValueKey<String>('ui5-today-memory-teaser'),
       crossAxisAlignment: CrossAxisAlignment.stretch,
