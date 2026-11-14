@@ -193,6 +193,52 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
+  testWidgets('Organic owner greeting stays fully visible at 390dp',
+      (tester) async {
+    AnnaEditorialTodayMode.enabled.value = true;
+    tester.view.physicalSize = const Size(390, 844);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(() {
+      tester.view.resetPhysicalSize();
+      tester.view.resetDevicePixelRatio();
+      AnnaEditorialTodayMode.enabled.value = false;
+    });
+    for (final brightness in [Brightness.light, Brightness.dark]) {
+      await tester.pumpWidget(MaterialApp(
+        theme: ThemeData(
+          colorScheme: ColorScheme.fromSeed(
+            seedColor: const Color(0xFF899657),
+            brightness: brightness,
+          ),
+        ),
+        home: Scaffold(
+          body: AnnaOrganicPastelBleedHero(
+            toolbar: AnnaTodayEditorialGreetingToolbar(
+              greeting: approvedTodayGreeting('it', 'Giulia', 14),
+              calendarTooltip: 'Calendario',
+              classicTooltip: 'Classic',
+              activeInShell: false,
+              onOpenCalendar: () {},
+              onReturnToClassic: () {},
+            ),
+          ),
+        ),
+      ));
+      await tester.pump();
+      expect(find.byKey(
+        const ValueKey<String>('ds6-today-greeting'),
+      ), findsOneWidget);
+      expect(find.byKey(
+        const ValueKey<String>('ds6-today-marquee'),
+      ), findsNothing);
+      final greeting = tester.widget<Text>(find.byKey(
+        const ValueKey<String>('ds6-today-static-greeting'),
+      ));
+      expect(greeting.data, 'Buon pomeriggio, Giulia');
+      expect(tester.takeException(), isNull);
+    }
+  });
+
   testWidgets('week strip uses actual dates and canonical selected-day callback',
       (tester) async {
     tester.view.physicalSize = const Size(390, 844);
