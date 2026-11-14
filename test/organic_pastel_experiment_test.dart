@@ -306,6 +306,15 @@ void main() {
       ));
       expect(find.byType(AnnaOrganicLiquidTab), findsNWidgets(4));
       expect(find.byType(AnnaOrganicLiquidDockSurface), findsOneWidget);
+      for (var page = 0; page < 4; page++) {
+        final tab = tester.widget<AnimatedContainer>(
+          find.byKey(ValueKey<String>('liquid-integrated-tab-$page')),
+        );
+        final decoration = tab.decoration! as BoxDecoration;
+        expect(decoration.gradient, isA<RadialGradient>());
+        expect(decoration.border, isNull);
+        expect(decoration.boxShadow, isNull);
+      }
       expect(find.byType(BackdropFilter), findsOneWidget);
       await tester.tap(find.byKey(const ValueKey('main-nav-messages')));
       expect(selected, 1);
@@ -330,6 +339,15 @@ void main() {
     ));
     expect(find.byKey(const ValueKey('organic-liquid-create-orb')),
         findsOneWidget);
+    // The central gel orb must hide the underlying dock line and contain
+    // no bright horizontal glare stripe.
+    expect(
+      find.descendant(
+        of: find.byType(AnnaOrganicLiquidCreate),
+        matching: find.byType(BackdropFilter),
+      ),
+      findsNothing,
+    );
     await tester.tap(find.byKey(const ValueKey('main-nav-create')));
     expect(createCalls, 1);
     expect(tester.takeException(), isNull);
