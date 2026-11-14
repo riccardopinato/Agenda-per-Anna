@@ -683,16 +683,20 @@ class AnnaOrganicPastelAction extends StatelessWidget {
                   mainAxisSize: MainAxisSize.min,
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Text(
-                      label,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        fontFamily: AnnaJournalTypography.uiFamily,
-                        fontSize: 13,
-                        fontWeight: FontWeight.w700,
-                        height: 1.25,
-                      ).copyWith(color: foreground),
+                    Flexible(
+                      fit: FlexFit.loose,
+                      child: Text(
+                        label,
+                        maxLines: 1,
+                        softWrap: false,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          fontFamily: AnnaJournalTypography.uiFamily,
+                          fontSize: 13,
+                          fontWeight: FontWeight.w700,
+                          height: 1.25,
+                        ).copyWith(color: foreground),
+                      ),
                     ),
                     if (icon != null) ...[
                       const SizedBox(width: 8),
