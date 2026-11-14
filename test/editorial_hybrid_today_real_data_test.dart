@@ -6,6 +6,11 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:agenda_per_anna/main.dart';
 
 void main() {
+  // Legacy Editorial Hybrid widget snapshots intentionally exercise the
+  // Classic editorial components, not the newly promoted Organic skin.
+  // The independently tested Organic Home retains its own widget suite.
+  setUp(() => AnnaEditorialTodayMode.enabled.value = false);
+
   DayHubSnapshot day({String note = ''}) => DayHubSnapshot(
     date: DateTime(2026, 11, 5),
     agenda: const [],
@@ -34,7 +39,8 @@ void main() {
   test('style is device-local and not synced through AgendaPreferences', () async {
     SharedPreferences.setMockInitialValues(<String, Object>{});
     await AnnaEditorialTodayMode.ensureLoaded();
-    expect(AnnaEditorialTodayMode.enabled.value, isFalse);
+    // Organic is now the official default if the local style key is absent.
+    expect(AnnaEditorialTodayMode.enabled.value, isTrue);
     expect(await AnnaEditorialTodayMode.setEnabled(true), isTrue);
     expect(AnnaEditorialTodayMode.enabled.value, isTrue);
     final preferences = await SharedPreferences.getInstance();

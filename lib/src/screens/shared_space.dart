@@ -471,10 +471,26 @@ class _SharedSpaceHubScreenState extends State<SharedSpaceHubScreen> {
         final editorial = AnnaEditorialTodayMode.enabled.value;
         final colors = AnnaEditorialColors.of(context);
         return Scaffold(
+          backgroundColor: editorial &&
+                  Theme.of(context).brightness == Brightness.light
+              ? AnnaOrganicPastel.canvas
+              : null,
           appBar: AppBar(
+            backgroundColor: editorial &&
+                    Theme.of(context).brightness == Brightness.light
+                ? AnnaOrganicPastel.canvas
+                : null,
+            scrolledUnderElevation: 0,
+            surfaceTintColor: Colors.transparent,
             title: Text(
-              AnnaStrings.of(context).d3('sharedSpace'),
-              style: const TextStyle(fontWeight: FontWeight.w900),
+              editorial
+                  ? AnnaStrings.of(context).navMessages
+                  : AnnaStrings.of(context).d3('sharedSpace'),
+              style: editorial
+                  ? AnnaJournalTypography.editorial(context, size: 29).copyWith(
+                      color: AnnaOrganicPastel.text(context),
+                    )
+                  : const TextStyle(fontWeight: FontWeight.w900),
             ),
             actions: [
               if (cloud.signedIn)
@@ -532,13 +548,10 @@ class _SharedSpaceHubScreenState extends State<SharedSpaceHubScreen> {
                         Container(
                           padding: const EdgeInsets.all(20),
                           decoration: BoxDecoration(
-                            gradient: editorial
-                                ? LinearGradient(
-                                    begin: Alignment.topLeft,
-                                    end: Alignment.bottomRight,
-                                    colors: [colors.featuredStart, colors.featuredEnd],
-                                  )
-                                : accent.gradient,
+                            color: editorial
+                                ? AnnaOrganicPastel.surface(context)
+                                : null,
+                            gradient: editorial ? null : accent.gradient,
                             border: editorial
                                 ? Border.all(color: colors.border)
                                 : null,
@@ -547,11 +560,17 @@ class _SharedSpaceHubScreenState extends State<SharedSpaceHubScreen> {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Icon(
-                                Icons.groups_outlined,
-                                size: 30,
-                                color: editorial ? colors.accent : accent.foreground,
-                              ),
+                              if (editorial)
+                                const AnnaOrganicPastelLandscape(
+                                  height: 88,
+                                  radius: 16,
+                                )
+                              else
+                                Icon(
+                                  Icons.groups_outlined,
+                                  size: 30,
+                                  color: accent.foreground,
+                                ),
                               const SizedBox(height: 10),
                               Text(
                                 AnnaStrings.of(context).d3('sharedSpace'),
@@ -623,34 +642,132 @@ class _SharedSpaceHubScreenState extends State<SharedSpaceHubScreen> {
                             padding: const EdgeInsets.only(bottom: 14),
                             child: SizedBox(
                               width: double.infinity,
-                              child: FilledButton.icon(
-                                key: const ValueKey('shared-create-another'),
-                                onPressed: loading ? null : _createSpace,
-                                icon: const Icon(Icons.add),
-                                label: Text(
-                                  AnnaStrings.of(context).d3('createSharedSpace'),
-                                ),
-                              ),
+                              child: editorial
+                                  ? AnnaOrganicPastelAction(
+                                      key: const ValueKey('shared-create-another'),
+                                      label: AnnaStrings.of(context)
+                                          .d3('createSharedSpace'),
+                                      icon: Icons.add,
+                                      subtle: true,
+                                      onPressed: loading ? null : _createSpace,
+                                    )
+                                  : FilledButton.icon(
+                                      key: const ValueKey('shared-create-another'),
+                                      onPressed: loading ? null : _createSpace,
+                                      icon: const Icon(Icons.add),
+                                      label: Text(AnnaStrings.of(context)
+                                          .d3('createSharedSpace')),
+                                    ),
                             ),
                           ),
                           ...spaces.map(
                             (space) {
                               final unread = widget.store.sharedUnreadCount(space.id);
                               final pending = pendingBySpace[space.id] ?? 0;
+                              if (editorial) {
+                                final detail = [
+                                  pending > 0
+                                      ? AnnaStrings.of(context).d3Format(
+                                          'sharedPendingChanges',
+                                          {'count': pending},
+                                        )
+                                      : sharedSpaceCanRename(
+                                          space, cloud.userId,
+                                        )
+                                          ? AnnaStrings.of(context)
+                                              .d3('sharedCreatedSynced')
+                                          : AnnaStrings.of(context)
+                                              .d3('sharedSynced'),
+                                  if (!sharedSpaceCanRename(
+                                        space, cloud.userId,
+                                      ) &&
+                                      _memberAliasScope == _memberAliasKey &&
+                                      _memberAliases.containsKey(space.id))
+                                    sharedSpaceRenameCopy(
+                                      AnnaStrings.of(context).languageCode,
+                                      'localOnly',
+                                    ),
+                                ].join(' · ');
+                                return AnnaOrganicPastelGroupRow(
+                                  title: _displayName(space),
+                                  detail: detail,
+                                  unread: unread,
+                                  renameKey: 'shared-rename-${space.id}',
+                                  renameTooltip: sharedSpaceRenameCopy(
+                                    AnnaStrings.of(context).languageCode,
+                                    sharedSpaceCanRename(space, cloud.userId)
+                                        ? 'rename'
+                                        : 'renameLocal',
+                                  ),
+                                  onRename: loading
+                                      ? null
+                                      : () => _renameSpace(space),
+                                  onOpen: () async {
+                                    await widget.store.markSharedSpaceRead(
+                                      space.id,
+                                    );
+                                    if (!context.mounted) return;
+                                    await Navigator.push(
+                                      context,
+                                      MaterialPageRoute<void>(
+                                        builder: (_) => SharedSpaceScreen(
+                                          store: widget.store,
+                                          space: _spaceForDisplay(space),
+                                        ),
+                                      ),
+                                    );
+                                    if (!mounted) return;
+                                    await widget.store.markSharedSpaceRead(
+                                      space.id,
+                                    );
+                                    await _reload();
+                                  },
+                                );
+                              }
                               return Card(
                                 margin: const EdgeInsets.only(bottom: 10),
+                                elevation: 0,
+                                color: editorial
+                                    ? AnnaOrganicPastel.surface(context)
+                                    : null,
+                                shape: editorial
+                                    ? RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(19),
+                                        side: BorderSide(
+                                          color: Theme.of(context).brightness ==
+                                                  Brightness.dark
+                                              ? Theme.of(context)
+                                                  .colorScheme.outlineVariant
+                                              : AnnaOrganicPastel.border,
+                                        ),
+                                      )
+                                    : null,
                                 child: ListTile(
-                                  leading: CircleAvatar(
-                                    child: Icon(
-                                      sharedSpaceCanRename(space, cloud.userId)
-                                          ? Icons.admin_panel_settings_outlined
-                                          : Icons.groups_outlined,
-                                    ),
-                                  ),
+                                  contentPadding: editorial
+                                      ? const EdgeInsets.symmetric(
+                                          horizontal: 14,
+                                          vertical: 7,
+                                        )
+                                      : null,
+                                  leading: editorial
+                                      ? const AnnaOrganicPastelGroupAvatar()
+                                      : CircleAvatar(
+                                          child: Icon(
+                                            sharedSpaceCanRename(
+                                              space,
+                                              cloud.userId,
+                                            )
+                                                ? Icons.admin_panel_settings_outlined
+                                                : Icons.groups_outlined,
+                                          ),
+                                        ),
                                   title: Text(
                                     _displayName(space),
-                                    style: const TextStyle(
+                                    style: TextStyle(
                                       fontWeight: FontWeight.w800,
+                                      color: editorial
+                                          ? AnnaOrganicPastel.text(context)
+                                          : null,
                                     ),
                                   ),
                                   subtitle: Text(

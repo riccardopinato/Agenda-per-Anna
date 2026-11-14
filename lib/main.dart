@@ -53,6 +53,9 @@ part 'src/localization_d3.dart';
 part 'src/localization_d3_completion.dart';
 part 'src/localization_d3_domain.dart';
 part 'src/theme_semantics.dart';
+part 'src/organic_pastel_design.dart';
+part 'src/organic_pastel_liquid_nav.dart';
+part 'src/organic_pastel_watercolor.dart';
 part 'src/motion_v108.dart';
 part 'src/ios_journal_design.dart';
 part 'src/editorial_hybrid_design.dart';
@@ -344,6 +347,10 @@ Future<void> main() async {
     return;
   }
 
+  // Resolve the local, reversible Home appearance before the first frame.
+  // This avoids a Classic->Organic flash on updates/new installations.
+  // It never reads or mutates cloud-synced diary/account preferences.
+  await AnnaEditorialTodayMode.ensureLoaded();
   runApp(AgendaApp(store: store));
   // Start the opt-in outbound calendar reconciler only after local state loads.
   // It does not request permissions or write anything unless enabled.
