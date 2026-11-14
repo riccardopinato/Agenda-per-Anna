@@ -1,0 +1,68 @@
+name: Organic Pastel actual Flutter screenshot (PR-only)
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+    paths:
+      - "lib/**"
+      - "test/organic_pastel_visual_capture_test.dart"
+      - ".github/workflows/organic-pastel-visual-evidence.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: organic-pastel-evidence-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  capture:
+    if: github.head_ref == 'design/organic-pastel-experiment-20261114'
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: Checkout PR head
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Setup Flutter
+        uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2.23.0
+        with:
+          flutter-version: "3.47.5"
+          channel: stable
+          cache: true
+      - name: Prepare synthetic Flutter platform skeletons
+        run: |
+          rm -rf android web /tmp/anna_organic_base
+          flutter create --project-name agenda_per_anna --org com.riccardopinato --platforms=android,web /tmp/anna_organic_base
+          cp -R /tmp/anna_organic_base/android .
+          cp -R /tmp/anna_organic_base/web .
+          python3 tool/prepare_android_platform.py
+          python3 tool/prepare_web_platform.py
+      - name: Fetch locked dependencies
+        run: flutter pub get --enforce-lockfile
+      - name: Prepare SDK Material Icons for faithful Flutter screenshot
+        run: |
+          mkdir -p test/fixtures
+          cp "$(dirname "$(command -v flutter)")/cache/artifacts/material_fonts/MaterialIcons-Regular.otf" test/fixtures/
+      - name: Capture empty diary in isolated Flutter process
+        run: |
+          flutter test --update-goldens \
+            --dart-define=ANNA_ORGANIC_CAPTURE=true \
+            --dart-define=ANNA_ORGANIC_POPULATED=false \
+            test/organic_pastel_visual_capture_test.dart
+      - name: Capture populated diary in isolated Flutter process
+        run: |
+          flutter test --update-goldens \
+            --dart-define=ANNA_ORGANIC_CAPTURE=true \
+            --dart-define=ANNA_ORGANIC_POPULATED=true \
+            test/organic_pastel_visual_capture_test.dart
+      - name: Attach screenshot for user review (not a release)
+        if: success()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: anna-organic-pastel-flutter-review-${{ github.sha }}
+          path: |
+            test/goldens/organic_pastel_today_390.png
+            test/goldens/organic_pastel_today_populated_390.png
+            test/goldens/organic_pastel_today_collapsed_390.png
+            test/goldens/organic_pastel_today_populated_collapsed_390.png
+          if-no-files-found: error
+          retention-days: 7

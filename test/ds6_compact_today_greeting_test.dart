@@ -217,7 +217,7 @@ void main() {
 
   test('Editorial Today has no separate brand or quote below greeting', () {
     final source = File('lib/src/planner_views.dart').readAsStringSync();
-    final start = source.indexOf('if (editorial) ...[\n'
+    final start = source.indexOf('if (editorial && !organic) ...[\n'
         '                          AnnaTodayEditorialGreetingToolbar(');
     expect(start, greaterThanOrEqualTo(0));
     final stop = source.indexOf('if (!widget.embedded) _DayOpeningCard', start);

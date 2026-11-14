@@ -43,7 +43,15 @@ void main() {
     ]) {
       expect(planner, contains(required));
     }
-    expect(planner, contains('EdgeInsets.fromLTRB(20, 14, 20, 110)'));
+    // The classic 20/14dp inset stays; only the Organic hero paints edge to
+    // edge, while normal editorial cards regain the 20dp content gutter.
+    expect(planner, contains('SliverPersistentHeader('));
+    expect(planner, contains('AnnaOrganicPastelHeroSliverDelegate('));
+    expect(planner, contains('SliverChildListDelegate(pageContent)'));
+    expect(planner, contains('for (final content in <Widget>['));
+    expect(planner, contains('horizontal: 20,'));
+    expect(planner, contains('return ListView(')); // untouched Classic branch
+    expect(planner, contains('20, 14, 20, 110,'));
     expect(planner, contains('_TodayCompactDiaryPreview('));
   });
 }

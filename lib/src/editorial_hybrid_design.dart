@@ -319,6 +319,16 @@ class AnnaEditorialSurface extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Visual-only style switch; the canonical callbacks and data owner remain.
+    if (AnnaOrganicPastel.enabled(context)) {
+      return AnnaOrganicPaperSurface(
+        tone: tone,
+        padding: padding,
+        onTap: onTap,
+        semanticLabel: semanticLabel,
+        child: child,
+      );
+    }
     final colors = AnnaEditorialColors.of(context);
     final featured = tone == AnnaEditorialSurfaceTone.featured;
     final radius = BorderRadius.circular(
@@ -403,6 +413,13 @@ class AnnaEditorialPrimaryAction extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    if (AnnaOrganicPastel.enabled(context)) {
+      return AnnaOrganicPastelAction(
+        label: label,
+        icon: icon,
+        onPressed: onPressed,
+      );
+    }
     final colors = AnnaEditorialColors.of(context);
     final style = FilledButton.styleFrom(
       backgroundColor: colors.accent,
@@ -454,6 +471,53 @@ class AnnaEditorialQuickAction extends StatelessWidget {
   Widget build(BuildContext context) {
     final colors = AnnaEditorialColors.of(context);
     final theme = Theme.of(context);
+    if (AnnaOrganicPastel.enabled(context)) {
+      // Organic preview: one short, scannable row instead of a tall bento
+      // card. Keep the original action owner, label and masked subtitle.
+      return AnnaEditorialSurface(
+        onTap: onTap,
+        semanticLabel: title,
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+        child: Row(
+          children: [
+            Icon(
+              icon,
+              size: 22,
+              color: Theme.of(context).brightness == Brightness.dark
+                  ? Theme.of(context).colorScheme.onSurface
+                  : AnnaOrganicPastel.oliveInk,
+            ),
+            const SizedBox(width: 9),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    title,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: theme.textTheme.titleSmall?.copyWith(
+                      fontWeight: FontWeight.w700,
+                      color: AnnaOrganicPastel.text(context),
+                    ),
+                  ),
+                  if (subtitle != null && subtitle!.isNotEmpty)
+                    Text(
+                      subtitle!,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      );
+    }
     return AnnaEditorialSurface(
       onTap: onTap,
       semanticLabel: title,
@@ -610,11 +674,17 @@ class AnnaEditorialDockSurface extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    if (AnnaOrganicPastel.enabled(context)) {
+      return AnnaOrganicLiquidDockSurface(child: child);
+    }
     final colors = AnnaEditorialColors.of(context);
     return Container(
       key: const ValueKey<String>('anna-editorial-anchored-dock'),
       decoration: BoxDecoration(
-        color: colors.dock,
+        color: AnnaOrganicPastel.enabled(context) &&
+                Theme.of(context).brightness == Brightness.light
+            ? AnnaOrganicPastel.paper
+            : colors.dock,
         borderRadius: const BorderRadius.vertical(
           top: Radius.circular(AnnaEditorialTokens.dockTopRadius),
         ),
@@ -673,7 +743,8 @@ class AnnaEditorialDockBar extends StatelessWidget {
   /// narrow Web/PWA viewports. Base 60dp preserves the approved default.
   static double heightFor(BuildContext context) {
     final scaledLabel = MediaQuery.textScalerOf(context).scale(11);
-    return (40.0 + scaledLabel * 1.3).clamp(60.0, 94.0);
+    return (60.0 + (scaledLabel - 11.0).clamp(0.0, 1000.0) * 2.0)
+        .clamp(60.0, 108.0);
   }
 
   @override
@@ -711,6 +782,18 @@ class AnnaEditorialDockBar extends StatelessWidget {
     int page,
   ) {
     final selected = selectedPage == page;
+    if (AnnaOrganicPastel.enabled(context)) {
+      return Expanded(
+        child: AnnaOrganicLiquidTab(
+          page: page,
+          selected: selected,
+          label: labels[page],
+          icon: selected ? selectedIcons[page] : icons[page],
+          semanticId: semanticIds[page],
+          onTap: () => onPageSelected(page),
+        ),
+      );
+    }
     return Expanded(
       child: Semantics(
         identifier: semanticIds[page],
@@ -742,12 +825,16 @@ class AnnaEditorialDockBar extends StatelessWidget {
                         horizontal: 12, vertical: 3,
                       ),
                       decoration: BoxDecoration(
-                        color: selected ? colors.quiet : Colors.transparent,
+                        color: selected && AnnaOrganicPastel.enabled(context)
+                            ? AnnaOrganicPastel.olive.withValues(alpha: .16)
+                            : selected ? colors.quiet : Colors.transparent,
                         borderRadius: BorderRadius.circular(16),
                       ),
                       child: Icon(
                         selected ? selectedIcons[page] : icons[page],
-                        color: selected ? colors.accent : colors.mutedInk,
+                        color: selected && AnnaOrganicPastel.enabled(context)
+                            ? AnnaOrganicPastel.oliveInk
+                            : selected ? colors.accent : colors.mutedInk,
                         size: 21,
                       ),
                     ),
@@ -760,7 +847,9 @@ class AnnaEditorialDockBar extends StatelessWidget {
                       textAlign: TextAlign.center,
                       style: TextStyle(
                         fontFamily: AnnaJournalTypography.uiFamily,
-                        color: selected ? colors.accent : colors.mutedInk,
+                        color: selected && AnnaOrganicPastel.enabled(context)
+                            ? AnnaOrganicPastel.oliveInk
+                            : selected ? colors.accent : colors.mutedInk,
                         fontSize: 11,
                         fontWeight: selected
                             ? FontWeight.w800

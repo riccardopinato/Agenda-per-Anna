@@ -58,8 +58,18 @@ class _MainShellState extends State<MainShell> {
     BuildContext context, {
     bool editorial = false,
   }) {
-    final color = Theme.of(context).colorScheme.primary;
+    if (editorial) {
+      return AnnaOrganicLiquidCreate(
+        label: AnnaStrings.of(context).d3('ui5Create'),
+        pressed: _createPressed,
+        released: _createReleased,
+        onTap: _openCentralCreate,
+      );
+    }
+
+    // The published/Classic Create button keeps its existing M3 appearance.
     final scheme = Theme.of(context).colorScheme;
+    final color = scheme.primary;
     final animate = AnnaDesignTokens.animationsEnabled(context);
     return Semantics(
       identifier: 'main-nav-create',
@@ -74,20 +84,22 @@ class _MainShellState extends State<MainShell> {
             duration: animate ? const Duration(milliseconds: 190) : Duration.zero,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              color: editorial ? AnnaEditorialColors.of(context).dock : null,
               boxShadow: [
                 BoxShadow(
                   color: color.withValues(
-                    alpha: _createReleased && animate ? 0.38 :
-                        _createPressed && animate ? 0.28 : 0.16),
-                  blurRadius: _createReleased && animate ? 29 :
-                      _createPressed && animate ? 24 : 15,
-                  spreadRadius: _createReleased && animate ? 6 :
-                      _createPressed && animate ? 4 : 2,
+                    alpha: _createReleased && animate
+                        ? .38
+                        : _createPressed && animate ? .28 : .16,
+                  ),
+                  blurRadius: _createReleased && animate
+                      ? 29
+                      : _createPressed && animate ? 24 : 15,
+                  spreadRadius: _createReleased && animate
+                      ? 6
+                      : _createPressed && animate ? 4 : 2,
                 ),
               ],
             ),
-            padding: editorial ? const EdgeInsets.all(5) : EdgeInsets.zero,
             child: Material(
               color: color,
               shape: const CircleBorder(),
@@ -109,7 +121,7 @@ class _MainShellState extends State<MainShell> {
                         style: TextStyle(
                           color: scheme.onPrimary,
                           fontSize: 10,
-                          height: 1.0,
+                          height: 1,
                           fontWeight: FontWeight.w800,
                         ),
                       ),

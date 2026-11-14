@@ -125,6 +125,110 @@ class _WeeklyReviewHomeCardState extends State<WeeklyReviewHomeCard>{
    final compact=complete||(!sunday&&!monday);
    final hidden=widget.store.preferences.hideHomeDetails;
    final counts=WeeklyReviewSummary.fromItems(widget.store.items,review);
+   if (AnnaOrganicPastel.enabled(c)) {
+     // A compact journal-chapter entry replaces the bulky Material tile.
+     // Same review/settings/archive routes and the same saved week state.
+     return AnnaOrganicPaperSurface(
+       padding: const EdgeInsets.fromLTRB(14, 12, 12, 12),
+       child: Column(
+         crossAxisAlignment: CrossAxisAlignment.start,
+         children: [
+           Row(
+             children: [
+               Container(
+                 width: 34,
+                 height: 34,
+                 alignment: Alignment.center,
+                 decoration: BoxDecoration(
+                   color: AnnaOrganicPastel.peach.withValues(alpha: .60),
+                   borderRadius: BorderRadius.circular(12),
+                 ),
+                 child: const Icon(
+                   Icons.auto_stories_outlined,
+                   size: 19,
+                   color: AnnaOrganicPastel.oliveInk,
+                 ),
+               ),
+               const SizedBox(width: 10),
+               Expanded(
+                 child: Column(
+                   crossAxisAlignment: CrossAxisAlignment.start,
+                   children: [
+                     Text(
+                       wrText(c, 'week'),
+                       style: AnnaJournalTypography.editorial(
+                         c, size: 19,
+                       ).copyWith(color: AnnaOrganicPastel.text(c)),
+                     ),
+                     Text(
+                       wrRange(c, sunday ? review : plan),
+                       maxLines: 1,
+                       overflow: TextOverflow.ellipsis,
+                       style: Theme.of(c).textTheme.bodySmall,
+                     ),
+                   ],
+                 ),
+               ),
+               IconButton(
+                 tooltip: wrText(c, 'reminders'),
+                 icon: const Icon(Icons.notifications_none_outlined, size: 20),
+                 onPressed: () => Navigator.push<void>(
+                   c,
+                   MaterialPageRoute(
+                     builder: (_) => WeeklyReviewSettingsPage(
+                       store: widget.store,
+                     ),
+                   ),
+                 ),
+               ),
+             ],
+           ),
+           const SizedBox(height: 7),
+           Text(
+             wrText(c, complete ? 'saved' : monday ? 'new' : 'look'),
+             style: Theme.of(c).textTheme.bodySmall?.copyWith(
+               color: AnnaOrganicPastel.text(c),
+             ),
+           ),
+           const SizedBox(height: 10),
+           Row(
+             children: [
+               Expanded(
+                 child: AnnaOrganicPastelAction(
+                   label: wrText(c, complete ? 'reopen' : 'open'),
+                   icon: Icons.arrow_forward_rounded,
+                   onPressed: () => Navigator.push<void>(
+                     c,
+                     MaterialPageRoute(
+                       builder: (_) => WeeklyReviewScreen(
+                         store: widget.store,
+                         reviewWeek: review,
+                         planWeek: plan,
+                         initialStep: (!sunday && !monday) ? 2 : 0,
+                       ),
+                     ),
+                   ),
+                 ),
+               ),
+               const SizedBox(width: 8),
+               IconButton(
+                 tooltip: wrText(c, 'archive'),
+                 icon: const Icon(Icons.auto_stories_outlined),
+                 onPressed: () => Navigator.push<void>(
+                   c,
+                   MaterialPageRoute(
+                     builder: (_) => WeeklyReviewArchivePage(
+                       store: widget.store,
+                     ),
+                   ),
+                 ),
+               ),
+             ],
+           ),
+         ],
+       ),
+     );
+   }
    return AnnaJournalCard(hero:!compact,child:Column(
      crossAxisAlignment:CrossAxisAlignment.start,children:[
        Row(children:[
