@@ -189,7 +189,7 @@ class AnnaOrganicLiquidTab extends StatelessWidget {
                         ),
                       ),
                       Padding(
-                        padding: const EdgeInsets.fromLTRB(1, 7, 1, 4),
+                        padding: const EdgeInsets.fromLTRB(1, 5, 1, 2),
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.center,
                           mainAxisSize: MainAxisSize.min,

@@ -335,4 +335,48 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
+  testWidgets('gel capsules fit 360dp with enlarged text without overflows',
+      (tester) async {
+    tester.view.physicalSize = const Size(360, 780);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(() {
+      tester.view.resetPhysicalSize();
+      tester.view.resetDevicePixelRatio();
+      AnnaEditorialTodayMode.enabled.value = false;
+    });
+    AnnaEditorialTodayMode.enabled.value = true;
+    await tester.pumpWidget(MaterialApp(
+      home: MediaQuery(
+        data: const MediaQueryData(textScaler: TextScaler.linear(1.6)),
+        child: Scaffold(
+          bottomNavigationBar: AnnaEditorialDockBar(
+            selectedPage: 0,
+            onPageSelected: (_) {},
+            labels: const ['Oggi', 'Messaggi', 'Ricordi', 'Altro'],
+            icons: const [
+              Icons.today_outlined,
+              Icons.chat_bubble_outline,
+              Icons.photo_library_outlined,
+              Icons.grid_view_outlined,
+            ],
+            selectedIcons: const [
+              Icons.today,
+              Icons.chat_bubble,
+              Icons.photo_library,
+              Icons.grid_view,
+            ],
+            semanticIds: const [
+              'main-nav-today',
+              'main-nav-messages',
+              'main-nav-memories',
+              'main-nav-more',
+            ],
+          ),
+        ),
+      ),
+    ));
+    expect(find.byType(AnnaOrganicLiquidTab), findsNWidgets(4));
+    expect(tester.takeException(), isNull);
+  });
+
 }
