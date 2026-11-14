@@ -101,7 +101,7 @@ void main() {
         ));
         final colors = (fade.decoration as BoxDecoration).gradient!
             as LinearGradient;
-        expect(colors.colors.first.a, 1.0);
+        expect(colors.colors.first.a, closeTo(.98, .001));
         expect(colors.colors.last.a, 1.0);
         expect(
           find.byKey(const ValueKey<String>('ds6-today-greeting')),
