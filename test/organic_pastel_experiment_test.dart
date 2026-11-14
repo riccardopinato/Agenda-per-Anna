@@ -499,32 +499,82 @@ void main() {
     }
   });
 
-  testWidgets('compact phone keeps seven real day controls scrollable',
+  testWidgets('all seven weekdays fit without sideways scroll at 320dp',
       (tester) async {
-    tester.view.physicalSize = const Size(320, 640);
-    tester.view.devicePixelRatio = 1;
     addTearDown(() {
       tester.view.resetPhysicalSize();
       tester.view.resetDevicePixelRatio();
     });
-    await tester.pumpWidget(MaterialApp(
-      locale: const Locale('it'),
-      home: Scaffold(
-        body: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 20),
-          child: AnnaOrganicPastelWeekStrip(
-            selected: DateTime(2026, 11, 14),
-            onSelected: (_) {},
+    for (final width in [320.0, 360.0, 390.0, 600.0]) {
+      for (final scale in [1.0, 1.6]) {
+        tester.view.physicalSize = Size(width, 700);
+        tester.view.devicePixelRatio = 1;
+        DateTime? tapped;
+        final day = DateTime(2026, 11, 14);
+        await tester.pumpWidget(MaterialApp(
+          locale: const Locale('it'),
+          home: Scaffold(
+            body: MediaQuery(
+              data: MediaQueryData(
+                textScaler: TextScaler.linear(scale),
+              ),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                child: AnnaOrganicPastelWeekStrip(
+                  selected: day,
+                  onSelected: (date) => tapped = date,
+                ),
+              ),
+            ),
           ),
-        ),
-      ),
-    ));
-    expect(
-      find.byKey(const ValueKey<String>('organic-pastel-week-strip')),
-      findsOneWidget,
-    );
-    expect(find.byType(SingleChildScrollView), findsOneWidget);
-    expect(tester.takeException(), isNull);
+        ));
+        final week = find.byKey(
+          const ValueKey<String>('organic-pastel-week-strip'),
+        );
+        final row = find.byKey(
+          const ValueKey<String>('organic-week-seven-days'),
+        );
+        expect(week, findsOneWidget);
+        expect(row, findsOneWidget);
+        expect(find.byType(SingleChildScrollView), findsNothing,
+            reason: 'week should not scroll on width $width scale $scale');
+        final bounds = tester.getRect(row);
+        Rect? previous;
+        for (var i = 0; i < 7; i++) {
+          final date = addCivilDays(DateTime(2026, 11, 9), i);
+          final item = find.byKey(ValueKey<String>(
+            'organic-week-day-${date.year}-${date.month}-${date.day}',
+          ));
+          expect(item, findsOneWidget);
+          final box = tester.getRect(item);
+          expect(box.left, greaterThanOrEqualTo(bounds.left - .1));
+          expect(box.right, lessThanOrEqualTo(bounds.right + .1));
+          expect(box.width, greaterThan(0));
+          if (previous != null) {
+            expect(box.left, greaterThanOrEqualTo(previous.right - .1));
+          }
+          previous = box;
+        }
+        expect(tester.takeException(), isNull,
+            reason: 'no clipping/overflow on width $width scale $scale');
+        final friday = find.byKey(
+          const ValueKey<String>('organic-week-day-2026-11-13'),
+        );
+        final saturday = find.byKey(
+          const ValueKey<String>('organic-week-day-2026-11-14'),
+        );
+        final sunday = find.byKey(
+          const ValueKey<String>('organic-week-day-2026-11-15'),
+        );
+        await tester.tap(friday);
+        expect(tapped, DateTime(2026, 11, 13));
+        await tester.tap(saturday);
+        expect(tapped, DateTime(2026, 11, 14));
+        await tester.tap(sunday);
+        expect(tapped, DateTime(2026, 11, 15));
+        expect(tester.takeException(), isNull);
+      }
+    }
   });
 
   testWidgets('Organic paper and bespoke olive action are not M3 cards',
