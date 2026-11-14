@@ -92,10 +92,30 @@ class _AnnaTodayEditorialGreetingToolbarState
   @override
   Widget build(BuildContext context) {
     final color = AnnaEditorialColors.of(context).ink;
+    final organic = AnnaOrganicPastel.enabled(context);
     final style = AnnaJournalTypography.editorial(
       context,
-      size: 26,
-    ).copyWith(height: 1.12, letterSpacing: -0.55, color: color);
+      // Keep the entire owner greeting visible at 390dp instead of
+      // gratuitously marquing a short real name over the scenic header.
+      size: organic ? 22 : 26,
+    ).copyWith(
+      height: 1.12,
+      letterSpacing: -0.55,
+      color: color,
+      // Subtle halo preserves contrast against either collapsed image or sky
+      // without placing a separate rectangular tile behind the title.
+      shadows: organic
+          ? [
+              Shadow(
+                color: (Theme.of(context).brightness == Brightness.dark
+                        ? AnnaEditorialColors.of(context).canvas
+                        : AnnaOrganicPastel.canvas)
+                    .withValues(alpha: .95),
+                blurRadius: 5,
+              ),
+            ]
+          : null,
+    );
 
     return Row(
       key: const ValueKey<String>('ds6-today-compact-header'),
