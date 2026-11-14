@@ -81,6 +81,73 @@ class AnnaOrganicPastelLandscape extends StatelessWidget {
   }
 }
 
+/// Full-bleed Organic Today masthead. The image and the personalized
+/// greeting share the SAME scroll position; the fade reaches the actual
+/// Scaffold background at both edges, with no separate framed hero card.
+/// The provided toolbar keeps PlannerScreen's existing navigation callbacks
+/// and the canonical, localized display name.
+class AnnaOrganicPastelBleedHero extends StatelessWidget {
+  final Widget toolbar;
+
+  const AnnaOrganicPastelBleedHero({super.key, required this.toolbar});
+
+  @override
+  Widget build(BuildContext context) {
+    final dark = Theme.of(context).brightness == Brightness.dark;
+    final background = dark
+        ? AnnaEditorialColors.of(context).canvas
+        : AnnaOrganicPastel.canvas;
+    // The image may paint behind a status bar / display cutout, but the
+    // greeting and interactive controls always stay in a safe area.
+    final safeTop = MediaQuery.viewPaddingOf(context).top;
+    final height = safeTop + 232.0;
+    return SizedBox(
+      key: const ValueKey<String>('organic-pastel-fullbleed-hero'),
+      width: double.infinity,
+      height: height,
+      child: Stack(
+        clipBehavior: Clip.hardEdge,
+        children: [
+          Positioned.fill(
+            child: AnnaOrganicPastelLandscape(
+              height: height,
+              radius: 0,
+            ),
+          ),
+          Positioned.fill(
+            child: IgnorePointer(
+              child: DecoratedBox(
+                key: const ValueKey<String>('organic-pastel-hero-fade'),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    stops: const [0, .16, .35, .56, .78, 1],
+                    colors: [
+                      background,
+                      background.withValues(alpha: .95),
+                      background.withValues(alpha: .36),
+                      background.withValues(alpha: .02),
+                      background.withValues(alpha: .04),
+                      background,
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+          Positioned(
+            top: safeTop + 14,
+            left: 20,
+            right: 20,
+            child: toolbar,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class _AnnaOrganicPastelLandscapePainter extends CustomPainter {
   final Brightness brightness;
 
