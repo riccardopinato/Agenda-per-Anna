@@ -146,6 +146,116 @@ void main() {
     reloaded.dispose();
   });
 
+  test('rename includes trashed Inbox notes and survives restart and restore',
+      () async {
+    final store = AgendaStore();
+    await store.load();
+    await store.createInboxCategory('Idee');
+    await store.addInboxEntry('Active idea');
+    await store.addInboxEntry('Archived idea');
+    await store.addInboxEntry('Trashed idea');
+    final activeId =
+        store.inbox.firstWhere((e) => e.text == 'Active idea').id;
+    final archiveId =
+        store.inbox.firstWhere((e) => e.text == 'Archived idea').id;
+    final trashedId =
+        store.inbox.firstWhere((e) => e.text == 'Trashed idea').id;
+    await store.setInboxTags(activeId, ['Idee', 'Personale']);
+    await store.setInboxTags(archiveId, ['Idee']);
+    await store.setInboxTags(trashedId, ['Idee', 'Casa']);
+    await store.toggleInboxArchived(archiveId);
+    await store.moveInboxToTrash(trashedId);
+    final trashId = store.trash.single.id;
+    final originalDeletedAt = store.trash.single.deletedAt;
+
+    final day = DateTime(2026, 11, 14);
+    await store.saveJournal(day, DayJournal(blocks: [
+      DiaryBlock(
+        id: 'diary-taxonomy-stays-private',
+        type: DiaryBlockType.note,
+        createdAt: day,
+        text: 'Diary tags must not change',
+        tags: ['Idee'],
+      ),
+    ]));
+
+    expect(await store.renameInboxTag(' idee ', 'Progetti'), 3);
+    expect(store.inbox.firstWhere((e) => e.id == activeId).tags,
+        ['Progetti', 'Personale']);
+    expect(store.inbox.firstWhere((e) => e.id == archiveId).tags,
+        ['Progetti']);
+    expect(store.inbox.firstWhere((e) => e.id == archiveId).archived, isTrue);
+    expect(store.trash.single.id, trashId);
+    expect(store.trash.single.deletedAt, originalDeletedAt);
+    expect(store.trash.single.payload['tags'], ['Progetti', 'Casa']);
+    expect(store.inboxCategoryTags, contains('Progetti'));
+    expect(store.inboxCategoryTags, isNot(contains('Idee')));
+    expect(store.journal(day).blocks.single.tags, ['Idee']);
+    store.dispose();
+
+    final restarted = AgendaStore();
+    await restarted.load();
+    expect(restarted.inboxCategoryTags, contains('Progetti'));
+    expect(restarted.trash.single.id, trashId);
+    expect(restarted.trash.single.payload['tags'], ['Progetti', 'Casa']);
+    expect(await restarted.restoreTrashEntry(trashId), isTrue);
+    expect(restarted.inbox.firstWhere((e) => e.id == trashedId).tags,
+        ['Progetti', 'Casa']);
+    expect(restarted.journal(day).blocks.single.tags, ['Idee']);
+    restarted.dispose();
+  });
+
+  test('trash-only rename uses canonical Latin accent equality and dedupes',
+      () async {
+    final store = AgendaStore();
+    await store.load();
+    await store.addInboxEntry('Cafe note');
+    final id = store.inbox.single.id;
+    await store.setInboxTags(id, ['Cafe\u0301', 'Viaggi']);
+    await store.moveInboxToTrash(id);
+    expect(store.inbox, isEmpty);
+
+    expect(await store.renameInboxTag('cafè', 'Viaggi'), 0);
+    expect(await store.renameInboxTag('café', 'Viaggi'), 1);
+    expect(store.trash.single.payload['tags'], ['Viaggi']);
+    final trashId = store.trash.single.id;
+    store.dispose();
+
+    final restarted = AgendaStore();
+    await restarted.load();
+    expect(await restarted.restoreTrashEntry(trashId), isTrue);
+    expect(restarted.inbox.single.tags, ['Viaggi']);
+    restarted.dispose();
+  });
+
+  test('failed local batch leaves Inbox and Trash rename unchanged',
+      () async {
+    final store = AgendaStore();
+    await store.load();
+    await store.addInboxEntry('Live');
+    await store.addInboxEntry('Deleted');
+    final liveId = store.inbox.firstWhere((e) => e.text == 'Live').id;
+    final deletedId = store.inbox.firstWhere((e) => e.text == 'Deleted').id;
+    await store.setInboxTags(liveId, ['Idee']);
+    await store.setInboxTags(deletedId, ['Idee']);
+    await store.moveInboxToTrash(deletedId);
+
+    LocalStateStore.instance.failNextBatchForTesting();
+    await expectLater(
+      store.renameInboxTag('Idee', 'Nuove idee'),
+      throwsStateError,
+    );
+    expect(store.inbox.single.tags, ['Idee']);
+    expect(store.trash.single.payload['tags'], ['Idee']);
+    store.dispose();
+
+    final restarted = AgendaStore();
+    await restarted.load();
+    expect(restarted.inbox.single.tags, ['Idee']);
+    expect(restarted.trash.single.payload['tags'], ['Idee']);
+    restarted.dispose();
+  });
+
   test('renaming into existing tag deduplicates without destroying other tags',
       () async {
     final store = AgendaStore();
