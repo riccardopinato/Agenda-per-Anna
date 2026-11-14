@@ -1106,7 +1106,7 @@ class _PlannerScreenState extends State<PlannerScreen> {
                           AgendaContentFilterBar(store: widget.store),
                           const SizedBox(height: AnnaDesignTokens.spaceMd),
                         ] else
-                          const SizedBox(height: 12),
+                          const SizedBox(height: 4),
                         if (widget.embedded) ...[
                           // Organic Preview: only actual authorized
                           // agenda entries. Open via the existing editor.
@@ -1595,12 +1595,10 @@ class _DayMemoryRecallCard extends StatelessWidget {
                 DiaryBlockType.voice => Icons.mic_none_outlined,
               }, color: Theme.of(context).colorScheme.primary));
     if (AnnaOrganicPastel.enabled(context)) {
-      final dateLine = exactAnniversary
-          ? (years == 1
-                  ? strings.d3('ui5OneYearAgo')
-                  : strings.d3Format('ui5YearsAgo', {'years': years})) +
-              ' · ' + date
-          : date;
+      final ageLabel = years == 1
+          ? strings.d3('ui5OneYearAgo')
+          : strings.d3Format('ui5YearsAgo', {'years': years});
+      final dateLine = exactAnniversary ? '$ageLabel · $date' : date;
       return Column(
         key: const ValueKey<String>('ui5-today-memory-teaser'),
         crossAxisAlignment: CrossAxisAlignment.stretch,
