@@ -76,6 +76,7 @@ void main() {
     store.preferences = const AgendaPreferences(
       appLanguage: AppLanguage.italian,
       onboardingDone: true,
+      displayName: 'Giulia', // synthetic fixture, exercises the real greeting
       palette: AgendaPalette.sage,
     );
     addTearDown(store.dispose);
