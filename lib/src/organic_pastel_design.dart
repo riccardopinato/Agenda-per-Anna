@@ -828,3 +828,173 @@ class AnnaOrganicPastelGroupRow extends StatelessWidget {
     );
   }
 }
+
+
+/// Contextual navigation to existing screens only; never a content source.
+/// Module-dependent targets disappear when disabled.
+class AnnaOrganicPastelQuickLinks extends StatelessWidget {
+  final AgendaStore store;
+
+  const AnnaOrganicPastelQuickLinks({super.key, required this.store});
+
+  @override
+  Widget build(BuildContext context) {
+    final strings = AnnaStrings.of(context);
+    void open(Widget destination) {
+      Navigator.push<void>(
+        context,
+        MaterialPageRoute<void>(builder: (_) => destination),
+      );
+    }
+
+    final links = <_AnnaOrganicQuickLinkData>[
+      _AnnaOrganicQuickLinkData(
+        'calendar', strings.navCalendar, Icons.calendar_month_outlined,
+        () => open(CalendarHubScreen(store: store)),
+      ),
+      if (store.preferences.isModuleEnabled(AppModule.shopping))
+        _AnnaOrganicQuickLinkData(
+          'shopping', strings.shoppingList, Icons.checklist_outlined,
+          () => open(ShoppingListScreen(store: store)),
+        ),
+      if (store.preferences.isModuleEnabled(AppModule.memories))
+        _AnnaOrganicQuickLinkData(
+          'memories', strings.navMemories, Icons.auto_stories_outlined,
+          () => open(DiaryMemoriesScreen(store: store)),
+        ),
+      _AnnaOrganicQuickLinkData(
+        'inbox', strings.inbox, Icons.edit_note_outlined,
+        () => open(InboxScreen(store: store)),
+      ),
+      _AnnaOrganicQuickLinkData(
+        'search', strings.search, Icons.search_rounded,
+        () => open(PersonalSearchConnectionsScreen(store: store)),
+      ),
+    ].take(4).toList(growable: false);
+
+    return Column(
+      key: const ValueKey<String>('organic-pastel-quick-links'),
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.only(left: 3, bottom: 9),
+          child: Text(
+            strings.d3('moreQuickAccess'),
+            style: AnnaJournalTypography.editorial(context, size: 18)
+                .copyWith(color: AnnaOrganicPastel.text(context)),
+          ),
+        ),
+        Row(
+          children: [
+            for (var i = 0; i < links.length; i++) ...[
+              if (i != 0) const SizedBox(width: 7),
+              Expanded(
+                child: _AnnaOrganicQuickLinkTile(data: links[i], index: i),
+              ),
+            ],
+          ],
+        ),
+      ],
+    );
+  }
+}
+
+class _AnnaOrganicQuickLinkData {
+  final String id;
+  final String label;
+  final IconData icon;
+  final VoidCallback onTap;
+
+  const _AnnaOrganicQuickLinkData(
+    this.id, this.label, this.icon, this.onTap,
+  );
+}
+
+class _AnnaOrganicQuickLinkTile extends StatelessWidget {
+  final _AnnaOrganicQuickLinkData data;
+  final int index;
+
+  const _AnnaOrganicQuickLinkTile({
+    required this.data,
+    required this.index,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final dark = Theme.of(context).brightness == Brightness.dark;
+    final tones = dark
+        ? const <Color>[
+            Color(0xFF35483A),
+            Color(0xFF3F453B),
+            Color(0xFF4A4038),
+            Color(0xFF364D45),
+          ]
+        : const <Color>[
+            Color(0xFFE8ECD9),
+            Color(0xFFF8E5D5),
+            Color(0xFFF3EDDF),
+            Color(0xFFE8E9D9),
+          ];
+    final ink = dark
+        ? const Color(0xFFE9EBDD)
+        : AnnaOrganicPastel.oliveInk;
+    return Semantics(
+      button: true,
+      label: data.label,
+      child: Material(
+        type: MaterialType.transparency,
+        child: InkWell(
+          key: ValueKey<String>('organic-quick-' + data.id),
+          onTap: data.onTap,
+          borderRadius: BorderRadius.circular(15),
+          child: Ink(
+            decoration: BoxDecoration(
+              color: tones[index % tones.length],
+              borderRadius: BorderRadius.circular(15),
+              border: Border.all(
+                color: dark
+                    ? const Color(0xFF647263)
+                    : const Color(0xFFE5DCCA),
+                width: .8,
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: const Color(0xFF847861)
+                      .withValues(alpha: dark ? .06 : .09),
+                  blurRadius: 7,
+                  offset: const Offset(0, 3),
+                ),
+              ],
+            ),
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(minHeight: 76),
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(3, 9, 3, 7),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(data.icon, color: ink, size: 23),
+                    const SizedBox(height: 5),
+                    Text(
+                      data.label,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontFamily: AnnaJournalTypography.uiFamily,
+                        fontSize: 10.5,
+                        fontWeight: FontWeight.w700,
+                        height: 1.12,
+                        color: ink,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
