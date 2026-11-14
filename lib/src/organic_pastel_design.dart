@@ -120,10 +120,10 @@ class AnnaOrganicPastelHeroSliverDelegate
       oldDelegate.toolbar != toolbar || oldDelegate.topInset != topInset;
 }
 
-/// Edge-to-edge artwork behind the original greeting/calendar/Classic
-/// controls. The extended sky is vector-rendered at physical screen density,
-/// while the 360x120 panorama is kept at its original 3:1 aspect ratio.
-/// A faint short fade blends the two layers without softening the landscape.
+/// Full-height landscape rendered from a native 1200x400 offline WebP:
+/// no oversized preview zoom. It smoothly reveals the 3:1 panorama as
+/// the pinned header shrinks; the original localized greeting/commands
+/// remain above a soft gradient for contrast.
 class AnnaOrganicPastelBleedHero extends StatelessWidget {
   final Widget toolbar;
   final double? height;
@@ -153,29 +153,18 @@ class AnnaOrganicPastelBleedHero extends StatelessWidget {
       width: double.infinity,
       height: actualHeight,
       child: LayoutBuilder(
-        builder: (context, constraints) {
-          // The source WebP is 360x120. Width-based layout keeps the
-          // panoramic artwork sharp and stops the former 2x vertical zoom.
-          final naturalHeight = constraints.maxWidth / 3;
+        builder: (context, _) {
+          // HD 1200x400 watercolor now covers the full-height hero without
+          // the previous 360x120 preview's heavy upscaling. Flutter's cover
+          // fit naturally reveals more of the full panorama as the sliver
+          // contracts from 232dp to 132dp.
           return Stack(
             clipBehavior: Clip.hardEdge,
             children: [
               Positioned.fill(
-                child: CustomPaint(
-                  key: const ValueKey<String>('organic-pastel-vector-sky'),
-                  painter: _AnnaOrganicPastelHeroSkyPainter(dark: dark),
-                ),
-              ),
-              Positioned(
-                left: 0,
-                right: 0,
-                bottom: 0,
-                child: SizedBox(
-                  height: naturalHeight,
-                  child: AnnaOrganicPastelLandscape(
-                    height: naturalHeight,
-                    radius: 0,
-                  ),
+                child: AnnaOrganicPastelLandscape(
+                  height: actualHeight,
+                  radius: 0,
                 ),
               ),
               Positioned.fill(
@@ -212,78 +201,6 @@ class AnnaOrganicPastelBleedHero extends StatelessWidget {
       ),
     );
   }
-}
-
-/// Scalable, lightweight sky extension: vector strokes do not raster-upscale
-/// and no new packages, image downloads or background processing are needed.
-class _AnnaOrganicPastelHeroSkyPainter extends CustomPainter {
-  final bool dark;
-
-  const _AnnaOrganicPastelHeroSkyPainter({required this.dark});
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final area = Offset.zero & size;
-    canvas.drawRect(
-      area,
-      Paint()
-        ..shader = LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: dark
-              ? const [
-                  Color(0xFF26332F),
-                  Color(0xFF455B50),
-                  Color(0xFF858F76),
-                ]
-              : const [
-                  Color(0xFFFFF9F3),
-                  Color(0xFFFCEEDA),
-                  Color(0xFFF8DFAF),
-                ],
-        ).createShader(area),
-    );
-
-    final radius = size.height * .22;
-    final sunCenter = Offset(size.width * .75, size.height * .60);
-    canvas.drawCircle(
-      sunCenter,
-      radius * 1.6,
-      Paint()
-        ..shader = RadialGradient(
-          colors: [
-            (dark ? const Color(0xFFE6C18C) : const Color(0xFFFFE9BB))
-                .withValues(alpha: .45),
-            const Color(0xFFFFE6BD).withValues(alpha: 0),
-          ],
-        ).createShader(Rect.fromCircle(
-          center: sunCenter,
-          radius: radius * 1.6,
-        )),
-    );
-
-    // Delicate, non-blurred wash lines maintain texture at any pixel density.
-    final streak = Paint()
-      ..style = PaintingStyle.stroke
-      ..strokeCap = StrokeCap.round
-      ..strokeWidth = .8
-      ..color = (dark ? const Color(0xFFE5D1B1) : const Color(0xFFDFC5A6))
-          .withValues(alpha: dark ? .12 : .21);
-    for (var i = 0; i < 24; i++) {
-      final y = size.height * (.26 + i * .014);
-      final x = size.width * ((i * 37 % 43) / 101);
-      final length = size.width * (.08 + (i % 5) * .021);
-      final path = Path()
-        ..moveTo(x, y)
-        ..quadraticBezierTo(x + length * .55, y - 1.4,
-            x + length, y + .7);
-      canvas.drawPath(path, streak);
-    }
-  }
-
-  @override
-  bool shouldRepaint(covariant _AnnaOrganicPastelHeroSkyPainter oldDelegate) =>
-      dark != oldDelegate.dark;
 }
 
 class _AnnaOrganicPastelLandscapePainter extends CustomPainter {
