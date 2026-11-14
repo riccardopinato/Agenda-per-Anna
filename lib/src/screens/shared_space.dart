@@ -255,10 +255,14 @@ class _SharedSpaceHubScreenState extends State<SharedSpaceHubScreen> {
     }
     await _loadMemberAliases();
     if (!mounted || _authorizedAccount != account ||
-        generation != _accountGeneration) return;
+        generation != _accountGeneration) {
+      return;
+    }
     final prefs = await widget.store._localState();
     if (!mounted || _authorizedAccount != account ||
-        generation != _accountGeneration) return;
+        generation != _accountGeneration) {
+      return;
+    }
     final raw = prefs.getString(widget.store.sharedSpacesCacheStorageKey);
     if (raw != null) {
       try {
@@ -281,7 +285,9 @@ class _SharedSpaceHubScreenState extends State<SharedSpaceHubScreen> {
       } catch (_) {}
     }
     if (!mounted || _authorizedAccount != account ||
-        generation != _accountGeneration) return;
+        generation != _accountGeneration) {
+      return;
+    }
     await _reload();
   }
 
@@ -289,10 +295,14 @@ class _SharedSpaceHubScreenState extends State<SharedSpaceHubScreen> {
     List<SharedSpace> value, {
     required String expectedAccount,
   }) async {
-    if (_authorizedAccount != expectedAccount) return;
+    if (_authorizedAccount != expectedAccount) {
+      return;
+    }
     final key = widget.store.sharedSpacesCacheStorageKey;
     final prefs = await widget.store._localState();
-    if (_authorizedAccount != expectedAccount) return;
+    if (_authorizedAccount != expectedAccount) {
+      return;
+    }
     await prefs.setString(
       key,
       jsonEncode(
@@ -339,7 +349,9 @@ class _SharedSpaceHubScreenState extends State<SharedSpaceHubScreen> {
     final request = ++_reloadRequest;
     try {
       final result = await cloud.listSharedSpaces();
-      if (!_validLoad(account, generation, request)) return;
+      if (!_validLoad(account, generation, request)) {
+        return;
+      }
       if (result.isEmpty) {
         // A zero-row response can be a genuine membership change or an
         // unexpected account/session state. Hide previously listed spaces,
@@ -356,11 +368,17 @@ class _SharedSpaceHubScreenState extends State<SharedSpaceHubScreen> {
         return;
       }
       await _saveSpacesCache(result, expectedAccount: account);
-      if (!_validLoad(account, generation, request)) return;
+      if (!_validLoad(account, generation, request)) {
+        return;
+      }
       await _refreshIndicators(result);
-      if (!_validLoad(account, generation, request)) return;
+      if (!_validLoad(account, generation, request)) {
+        return;
+      }
       await widget.store.refreshSharedAgendaCache(pullRemote: true);
-      if (!_validLoad(account, generation, request)) return;
+      if (!_validLoad(account, generation, request)) {
+        return;
+      }
       setState(() {
         spaces = result;
         loading = false;
@@ -371,7 +389,9 @@ class _SharedSpaceHubScreenState extends State<SharedSpaceHubScreen> {
     } catch (_) {
       // Network/auth errors are not evidence that memberships were deleted.
       // Keep the last known local list without overwriting its stored copy.
-      if (!_validLoad(account, generation, request)) return;
+      if (!_validLoad(account, generation, request)) {
+        return;
+      }
       setState(() {
         loading = false;
         _reloadError = true;
