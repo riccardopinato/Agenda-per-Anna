@@ -148,11 +148,13 @@ void main() {
     await tester.pump(const Duration(seconds: 2));
   }
 
-  testWidgets('Organic Pastel — empty diary', (tester) async {
-    await captureToday(tester, populated: false);
-  }, skip: !organicCaptureEnabled, timeout: const Timeout(Duration(seconds: 110)));
-
-  testWidgets('Organic Pastel — populated sample diary', (tester) async {
-    await captureToday(tester, populated: true);
+  testWidgets('Organic Pastel — isolated screenshot scenario', (tester) async {
+    await captureToday(
+      tester,
+      populated: const bool.fromEnvironment(
+        'ANNA_ORGANIC_POPULATED',
+        defaultValue: false,
+      ),
+    );
   }, skip: !organicCaptureEnabled, timeout: const Timeout(Duration(seconds: 110)));
 }
