@@ -14,15 +14,15 @@ void main() {
     AnnaEditorialTodayMode.enabled.value = false;
   });
 
-  test('Organic watercolor is true 576x192 WebP, not the old 360x120', () {
+  test('Organic watercolor is 1200x400 WebP, not the old 360x120', () {
     final bytes = AnnaOrganicPastelWatercolor.bytes;
-    expect(bytes.length, greaterThan(6000));
-    expect(bytes.length, lessThan(20000)); // bounded offline asset weight
+    expect(bytes.length, greaterThan(30000));
+    expect(bytes.length, lessThan(100000)); // bounded offline asset weight
     expect(String.fromCharCodes(bytes.sublist(0, 4)), 'RIFF');
     expect(String.fromCharCodes(bytes.sublist(8, 12)), 'WEBP');
     // RIFF VP8 frame width and height are stored in bytes 26–29.
-    expect((bytes[26] | (bytes[27] << 8)) & 0x3fff, 576);
-    expect((bytes[28] | (bytes[29] << 8)) & 0x3fff, 192);
+    expect((bytes[26] | (bytes[27] << 8)) & 0x3fff, 1200);
+    expect((bytes[28] | (bytes[29] << 8)) & 0x3fff, 400);
   });
 
   testWidgets('original landscape paints in light and dark without assets',
@@ -168,19 +168,17 @@ void main() {
       const ValueKey<String>('organic-pastel-fullbleed-hero'),
     );
     expect(tester.getSize(hero).height, 256);
-    // The source image has a fixed 3:1 panorama, not a stretched 232dp cover.
+    // Premium image covers the expanded hero and reveals more landscape
+    // as the pinned sliver collapses to the original panorama proportions.
     final image = find.byKey(
       const ValueKey<String>('organic-pastel-landscape'),
     );
-    expect(tester.getSize(image).height, closeTo(130, .1));
-    expect(find.byKey(
-      const ValueKey<String>('organic-pastel-vector-sky'),
-    ), findsOneWidget);
+    expect(tester.getSize(image).height, closeTo(256, .1));
 
     await tester.drag(find.byType(CustomScrollView), const Offset(0, -260));
     await tester.pumpAndSettle();
     expect(tester.getSize(hero).height, closeTo(156, .1));
-    expect(tester.getSize(image).height, closeTo(130, .1));
+    expect(tester.getSize(image).height, closeTo(156, .1));
     expect(find.byKey(
       const ValueKey<String>('ds6-today-greeting'),
     ), findsOneWidget);
