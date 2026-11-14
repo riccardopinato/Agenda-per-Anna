@@ -951,7 +951,11 @@ class _PlannerScreenState extends State<PlannerScreen> {
         ];
 
         return Scaffold(
-          backgroundColor: editorial ? AnnaEditorialColors.of(context).canvas : null,
+          backgroundColor: editorial
+              ? Theme.of(context).brightness == Brightness.dark
+                  ? AnnaEditorialColors.of(context).canvas
+                  : AnnaOrganicPastel.canvas
+              : null,
           floatingActionButton: widget.embedded ? null : FloatingActionButton.extended(
             onPressed: () => _showQuickCapture(
               context,
@@ -1080,12 +1084,17 @@ class _PlannerScreenState extends State<PlannerScreen> {
                                 label: Text(strings.navToday),
                               ),
                             ),
-                          const SizedBox(height: 20),
-                          _TodaySingleDateNavigator(
+                          const SizedBox(height: 12),
+                          const AnnaOrganicPastelLandscape(
+                            height: 96,
+                            radius: 20,
+                          ),
+                          const SizedBox(height: 12),
+                          AnnaOrganicPastelWeekStrip(
                             selected: day,
                             onSelected: _selectDay,
                           ),
-                          const SizedBox(height: 16),
+                          const SizedBox(height: 14),
                         ],
                         // R3 embeds the daily wish directly below the greeting,
                         // not in a repeated standalone opening card.
