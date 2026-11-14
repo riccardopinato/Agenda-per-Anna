@@ -474,8 +474,23 @@ void main() {
       ).colorScheme.onSurface;
       final label = tester.widget<Text>(find.text('Oggi'));
       expect(label.style?.color, actualForeground);
+      // The icon intentionally blends only 12–16% of the pastel tint into
+      // the active foreground; the label must remain pure onSurface.
+      final effectiveScheme = Theme.of(
+        tester.element(find.byType(AnnaOrganicLiquidTab)),
+      ).colorScheme;
+      final pastel = Color.lerp(
+        effectiveScheme.primary, const Color(0xFF9DC4A6), .58,
+      )!;
       final icon = tester.widget<Icon>(find.byIcon(Icons.today));
-      expect(icon.color, actualForeground);
+      expect(
+        icon.color,
+        Color.lerp(
+          actualForeground,
+          pastel,
+          brightness == Brightness.dark ? .16 : .12,
+        ),
+      );
       expect(tester.takeException(), isNull);
     }
   });
