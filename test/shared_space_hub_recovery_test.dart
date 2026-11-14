@@ -1,0 +1,89 @@
+import 'dart:io';
+
+import 'package:flutter_test/flutter_test.dart';
+
+import 'package:agenda_per_anna/main.dart';
+
+void main() {
+  test('shared group cache is read only for the authenticated active account',
+      () {
+    expect(
+      sharedSpaceHubAuthorizedAccount(
+        signedIn: true,
+        cloudUserId: 'account-with-two-spaces',
+        activeAccountId: 'account-with-two-spaces',
+      ),
+      'account-with-two-spaces',
+    );
+    expect(
+      sharedSpaceHubAuthorizedAccount(
+        signedIn: true,
+        cloudUserId: 'account-with-two-spaces',
+        activeAccountId: 'other-account',
+      ),
+      isNull,
+    );
+    expect(
+      sharedSpaceHubAuthorizedAccount(
+        signedIn: false,
+        cloudUserId: 'account-with-two-spaces',
+        activeAccountId: 'account-with-two-spaces',
+      ),
+      isNull,
+    );
+    expect(
+      sharedSpaceHubAuthorizedAccount(
+        signedIn: true,
+        cloudUserId: null,
+        activeAccountId: 'account-with-two-spaces',
+      ),
+      isNull,
+    );
+  });
+
+  test('group recovery guidance exists in all five supported languages', () {
+    for (final locale in ['it', 'en', 'es', 'fr', 'pt']) {
+      for (final key in ['unavailable', 'empty', 'preserved', 'account']) {
+        expect(sharedSpaceHubRecoveryCopy(locale, key), isNotEmpty);
+        expect(sharedSpaceHubRecoveryCopy(locale, key), isNot(key));
+      }
+    }
+  });
+
+  test('empty membership read cannot overwrite the cached list', () {
+    final file = File('lib/src/screens/shared_space.dart').readAsStringSync();
+    final start = file.indexOf('class _SharedSpaceHubScreenState');
+    final end = file.indexOf('class SharedSpaceScreen', start);
+    expect(start, greaterThanOrEqualTo(0));
+    expect(end, greaterThan(start));
+    final hub = file.substring(start, end);
+    final begin = hub.indexOf('if (result.isEmpty) {');
+    final nextSave = hub.indexOf('await _saveSpacesCache(result', begin);
+    expect(begin, greaterThanOrEqualTo(0));
+    expect(nextSave, greaterThan(begin));
+    final emptyResponsePath = hub.substring(begin, nextSave);
+    expect(emptyResponsePath, contains('return;'));
+    expect(emptyResponsePath, isNot(contains('_saveSpacesCache(')));
+    expect(emptyResponsePath, isNot(contains('setString(')));
+    expect(emptyResponsePath, contains('spaces = const [];'));
+    expect(hub, contains('if (_authorizedAccount != expectedAccount) return;'));
+  });
+
+  test('session binding has symmetrical listeners and suppresses stale loads',
+      () {
+    final source = File('lib/src/screens/shared_space.dart')
+        .readAsStringSync();
+    final begin = source.indexOf('class _SharedSpaceHubScreenState');
+    final end = source.indexOf('class SharedSpaceScreen', begin);
+    final hub = source.substring(begin, end);
+    expect(hub,
+        contains('CloudSyncService.instance.addListener(_onAccountOrSessionChanged)'));
+    expect(hub,
+        contains('CloudSyncService.instance.removeListener(_onAccountOrSessionChanged)'));
+    expect(hub,
+        contains('widget.store.accountRevision.addListener(_onAccountOrSessionChanged)'));
+    expect(hub,
+        contains('widget.store.accountRevision.removeListener(_onAccountOrSessionChanged)'));
+    expect(hub, contains('_validLoad(account, generation, request)'));
+  });
+}
