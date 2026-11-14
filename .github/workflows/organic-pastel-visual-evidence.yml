@@ -16,7 +16,10 @@ concurrency:
 
 jobs:
   capture:
-    if: github.head_ref == 'design/organic-pastel-experiment-20261114'
+    # Scoped QA for the original design PR and the official 7-day layout fix.
+    if: >-
+      github.head_ref == 'design/organic-pastel-experiment-20261114' ||
+      github.head_ref == 'fix/organic-seven-days-visible-rc132'
     runs-on: ubuntu-latest
     timeout-minutes: 25
     steps:
