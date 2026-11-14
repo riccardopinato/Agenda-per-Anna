@@ -57,3 +57,14 @@ Record KEEP / REVISE / REJECT, with a reversal path to existing Classic mode.
   preferenza o modifica dati.
 - Gate ancora aperto: collaudo visuale su 320dp, 390dp, testi grandi,
   dark/HSV, IT/EN/ES/FR/PT e approvazione esplicita prima del merge.
+
+### Liquid Pastel Glass — revisione UX su feedback
+- Rimosso dal tasto centrale il riflesso orizzontale bianco, oltre al
+  BackdropFilter specifico della bolla: il colore opaco sfumato evita di
+  mostrare la linea del dock attraverso il pulsante.
+- Le quattro destinazioni non sono più capsule con bordo e ombra, ma
+  sfumature radiali senza margini visivi netti, fuse nella superficie del dock.
+  Solo la destinazione attiva ha un colore più concentrato.
+- Restano invariati touch target, callback, route e la variante Classic.
+- Gate invariato: test CI su commit esatto, screenshot di confronto e decisione
+  KEEP / REVISE / REJECT prima di qualsiasi merge.
