@@ -944,7 +944,7 @@ class _AnnaOrganicQuickLinkTile extends StatelessWidget {
       child: Material(
         type: MaterialType.transparency,
         child: InkWell(
-          key: ValueKey<String>('organic-quick-' + data.id),
+          key: ValueKey<String>('organic-quick-${data.id}'),
           onTap: data.onTap,
           borderRadius: BorderRadius.circular(15),
           child: Ink(
@@ -967,7 +967,7 @@ class _AnnaOrganicQuickLinkTile extends StatelessWidget {
               ],
             ),
             child: ConstrainedBox(
-              constraints: const BoxConstraints(minHeight: 76),
+              constraints: const BoxConstraints(minHeight: 70),
               child: Padding(
                 padding: const EdgeInsets.fromLTRB(3, 9, 3, 7),
                 child: Column(
