@@ -1,3 +1,6 @@
+import 'dart:io';
+import 'dart:typed_data';
+
 import 'package:agenda_per_anna/main.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -19,6 +22,15 @@ void main() {
     final lora = FontLoader('Lora')
       ..addFont(rootBundle.load('assets/fonts/Lora-VF.ttf'));
     await Future.wait([manrope.load(), lora.load()]);
+    // Widget tests otherwise substitute squares for Material icon glyphs.
+    // The CI capture workflow provides Flutter SDK's bundled original font.
+    final iconFont = File('test/fixtures/MaterialIcons-Regular.otf');
+    if (await iconFont.exists()) {
+      final bytes = await iconFont.readAsBytes();
+      await (FontLoader('MaterialIcons')
+            ..addFont(Future<ByteData>.value(ByteData.sublistView(bytes))))
+          .load();
+    }
     // Widget tests do not host Android's external-calendar MethodChannel.
     // Mock only the read-only status result; no real account/calendars touched.
     const externalCalendarChannel =
