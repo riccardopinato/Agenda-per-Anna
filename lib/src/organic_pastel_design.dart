@@ -359,3 +359,342 @@ class AnnaOrganicPastelAgendaDigest extends StatelessWidget {
     );
   }
 }
+
+
+/// Bespoke paper surface. Material is retained only as an invisible ink/focus
+/// interaction host: visual shape, paper palette and elevation are *not* M3.
+/// Keys remain on caller widgets so historic source/widget contracts survive.
+class AnnaOrganicPaperSurface extends StatelessWidget {
+  final Widget child;
+  final AnnaEditorialSurfaceTone tone;
+  final EdgeInsetsGeometry? padding;
+  final VoidCallback? onTap;
+  final String? semanticLabel;
+
+  const AnnaOrganicPaperSurface({
+    super.key,
+    required this.child,
+    this.tone = AnnaEditorialSurfaceTone.regular,
+    this.padding,
+    this.onTap,
+    this.semanticLabel,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final dark = Theme.of(context).brightness == Brightness.dark;
+    final featured = tone == AnnaEditorialSurfaceTone.featured;
+    final quiet = tone == AnnaEditorialSurfaceTone.quiet;
+    final radius = BorderRadius.circular(featured ? 23 : 17);
+    final paperTop = dark
+        ? (featured ? const Color(0xFF35443B) : const Color(0xFF27352E))
+        : featured
+            ? const Color(0xFFFBF3E5)
+            : quiet
+                ? const Color(0xFFF4F2E8)
+                : AnnaOrganicPastel.paper;
+    final paperBottom = dark
+        ? (featured ? const Color(0xFF293C35) : const Color(0xFF26372F))
+        : featured
+            ? const Color(0xFFF7EBD9)
+            : quiet
+                ? const Color(0xFFF1EFE2)
+                : const Color(0xFFFFFBF4);
+    final content = Padding(
+      padding: padding ??
+          EdgeInsets.fromLTRB(
+            featured ? 18 : 14,
+            featured ? 15 : 12,
+            featured ? 18 : 14,
+            featured ? 15 : 12,
+          ),
+      child: child,
+    );
+    return Semantics(
+      container: onTap != null,
+      button: onTap != null,
+      label: semanticLabel,
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          borderRadius: radius,
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [paperTop, paperBottom],
+          ),
+          border: Border.all(
+            color: dark ? const Color(0xFF546556) : AnnaOrganicPastel.border,
+            width: .9,
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: (dark ? Colors.black : const Color(0xFF6F664F))
+                  .withValues(alpha: dark ? .17 : .075),
+              blurRadius: featured ? 15 : 10,
+              offset: Offset(0, featured ? 6 : 3),
+            ),
+          ],
+        ),
+        child: ClipRRect(
+          borderRadius: radius,
+          child: Stack(
+            children: [
+              Positioned.fill(
+                child: ExcludeSemantics(
+                  child: CustomPaint(
+                    painter: _AnnaOrganicPaperFibrePainter(dark),
+                  ),
+                ),
+              ),
+              Material(
+                type: MaterialType.transparency,
+                child: InkWell(
+                  onTap: onTap,
+                  borderRadius: radius,
+                  child: ConstrainedBox(
+                    constraints: BoxConstraints(
+                      minHeight: onTap == null ? 0 : 48,
+                    ),
+                    child: content,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _AnnaOrganicPaperFibrePainter extends CustomPainter {
+  final bool dark;
+  const _AnnaOrganicPaperFibrePainter(this.dark);
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = dark
+          ? const Color(0xFFE2D4AE).withValues(alpha: .022)
+          : const Color(0xFF8F816D).withValues(alpha: .048);
+    if (size.isEmpty) return;
+    // Deterministic, near-invisible fibres — print texture, not noise.
+    for (var i = 0; i < 80; i++) {
+      final x = ((i * 47 + 13) % 101) / 101 * size.width;
+      final y = ((i * 71 + 29) % 103) / 103 * size.height;
+      canvas.drawOval(
+        Rect.fromCenter(
+          center: Offset(x, y),
+          width: i.isEven ? 1.15 : .65,
+          height: .65,
+        ),
+        paint,
+      );
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant _AnnaOrganicPaperFibrePainter previous) =>
+      previous.dark != dark;
+}
+
+/// Distinct olive action, keeping only the low-level Flutter accessibility
+/// and input handling. No Material FilledButton, themed shadow or M3 tokens.
+class AnnaOrganicPastelAction extends StatelessWidget {
+  final String label;
+  final IconData? icon;
+  final VoidCallback? onPressed;
+  final bool subtle;
+
+  const AnnaOrganicPastelAction({
+    super.key,
+    required this.label,
+    this.icon,
+    this.onPressed,
+    this.subtle = false,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final dark = Theme.of(context).brightness == Brightness.dark;
+    final foreground = subtle
+        ? AnnaOrganicPastel.text(context)
+        : Colors.white;
+    return Semantics(
+      button: true,
+      enabled: onPressed != null,
+      child: Material(
+        type: MaterialType.transparency,
+        child: InkWell(
+          onTap: onPressed,
+          borderRadius: BorderRadius.circular(15),
+          child: DecoratedBox(
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(15),
+              gradient: subtle
+                  ? null
+                  : LinearGradient(
+                      colors: dark
+                          ? const [Color(0xFF738D57), Color(0xFF566D49)]
+                          : const [Color(0xFF849453), Color(0xFF657840)],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+              color: subtle
+                  ? (dark
+                      ? const Color(0xFF405344)
+                      : const Color(0xFFEDEDD9))
+                  : null,
+              border: Border.all(
+                color: subtle
+                    ? (dark
+                        ? const Color(0xFF66775E)
+                        : const Color(0xFFCCD0AE))
+                    : const Color(0xFF879963),
+              ),
+              boxShadow: onPressed == null || subtle
+                  ? null
+                  : [
+                      BoxShadow(
+                        color: const Color(0xFF56693D)
+                            .withValues(alpha: dark ? .13 : .16),
+                        blurRadius: 9,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
+            ),
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(minHeight: 48),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 18, vertical: 11,
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      label,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        fontFamily: AnnaJournalTypography.uiFamily,
+                        fontSize: 13,
+                        fontWeight: FontWeight.w750,
+                        height: 1.25,
+                      ).copyWith(color: foreground),
+                    ),
+                    if (icon != null) ...[
+                      const SizedBox(width: 8),
+                      Icon(icon, size: 17, color: foreground),
+                    ],
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Deliberately compact custom shared-space row; the caller still owns all
+/// data, membership, read-count, rename and opening callbacks.
+class AnnaOrganicPastelGroupRow extends StatelessWidget {
+  final String title;
+  final String detail;
+  final int unread;
+  final VoidCallback onOpen;
+  final VoidCallback? onRename;
+  final String renameTooltip;
+  final String renameKey;
+
+  const AnnaOrganicPastelGroupRow({
+    super.key,
+    required this.title,
+    required this.detail,
+    required this.unread,
+    required this.onOpen,
+    required this.onRename,
+    required this.renameTooltip,
+    required this.renameKey,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final muted = Theme.of(context).brightness == Brightness.dark
+        ? Theme.of(context).colorScheme.onSurfaceVariant
+        : AnnaOrganicPastel.quietInk;
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 10),
+      child: AnnaOrganicPaperSurface(
+        onTap: onOpen,
+        semanticLabel: title,
+        padding: const EdgeInsets.fromLTRB(10, 9, 7, 9),
+        child: Row(
+          children: [
+            const AnnaOrganicPastelGroupAvatar(),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: AnnaJournalTypography.editorial(
+                      context, size: 17,
+                    ).copyWith(
+                      fontWeight: FontWeight.w600,
+                      color: AnnaOrganicPastel.text(context),
+                      height: 1.2,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    detail,
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: muted,
+                      height: 1.22,
+                    ),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
+              ),
+            ),
+            if (unread > 0)
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 6, vertical: 3,
+                ),
+                decoration: BoxDecoration(
+                  color: AnnaOrganicPastel.peach,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Text(
+                  unread > 99 ? '99+' : '$unread',
+                  style: const TextStyle(
+                    color: AnnaOrganicPastel.ink,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+              ),
+            IconButton(
+              key: ValueKey<String>(renameKey),
+              tooltip: renameTooltip,
+              onPressed: onRename,
+              icon: Icon(Icons.more_horiz, size: 21, color: muted),
+              constraints: const BoxConstraints(
+                minHeight: 48, minWidth: 48,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
