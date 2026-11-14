@@ -280,3 +280,4 @@ class AnnaOrganicPastelGroupAvatar extends StatelessWidget {
           semanticLabel: null,
         ),
       );
+}
