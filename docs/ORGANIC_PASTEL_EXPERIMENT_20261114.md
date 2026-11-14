@@ -104,7 +104,10 @@ Record KEEP / REVISE / REJECT, with a reversal path to existing Classic mode.
   sono invariati.
 - QA: controllo 320/390dp, colore/scuro, testo ingrandito e tap originali,
   più screenshot Flutter espanso/compattato con un nome sintetico.
-- Nuova illustrazione artistica ad alta definizione disponibile come
-  **candidata separata**: non dichiararla integrata nel repository né
-  confondere lo sharpening a proporzioni native con un nuovo asset HD.
+- Asset effettivamente integrato: nuovo acquerello originale offline
+  `AnnaOrganicPastelWatercolor.bytes` WebP **576 × 192**, **10.9 KB**,
+  sostituisce il precedente 360 × 120 di circa 3.5 KB. Il painter
+  rimane fallback di sicurezza; test RIFF/VP8 verifica le dimensioni.
+- Distinguere il vero incremento dei pixel sorgente dall'eliminazione
+  dell'upscaling: sono due correzioni complementari.
 - PR in bozza, **DO NOT MERGE** senza confronto e via libera dell'utente.
