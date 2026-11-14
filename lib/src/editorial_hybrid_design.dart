@@ -867,7 +867,7 @@ class AnnaEditorialDockBar extends StatelessWidget {
   }
 }
 
-/// UI-only, opt-in appearance choice for this device.
+/// UI-only, per-device appearance choice (Organic default, Classic reversible).
 ///
 /// An isolated boolean is intentionally NOT written to AgendaPreferences:
 /// that object is cloud-synced and controls sensitive app/account settings.
@@ -882,7 +882,10 @@ abstract final class AnnaEditorialTodayMode {
   static Future<void> _read() async {
     try {
       final preferences = await SharedPreferences.getInstance();
-      enabled.value = preferences.getBool(storageKey) ?? false;
+      // Organic Pastel is now the official Home for devices without an
+      // explicit local appearance choice. Preserve an existing Classic choice
+      // (false) and the same isolated preference key across APK upgrades.
+      enabled.value = preferences.getBool(storageKey) ?? true;
     } catch (_) {
       // A failed cosmetic read must not block the canonical classic Home.
     }
@@ -912,20 +915,20 @@ String annaEditorialTodayModeLabel(String languageCode, {required bool returnToC
     };
   }
   return switch (languageCode) {
-    'en' => 'Try Editorial Hybrid Home',
-    'es' => 'Probar inicio Editorial Hybrid',
-    'fr' => 'Essayer l’accueil Editorial Hybrid',
-    'pt' => 'Experimentar página inicial Editorial Hybrid',
-    _ => 'Prova la Home Editorial Hybrid',
+    'en' => 'Use the new Home',
+    'es' => 'Usar el nuevo inicio',
+    'fr' => 'Utiliser le nouvel accueil',
+    'pt' => 'Usar a nova página inicial',
+    _ => 'Usa la nuova Home',
   };
 }
 
 String annaEditorialTodayModeDescription(String languageCode) => switch (languageCode) {
-  'en' => 'Alternative design, same diary and calendar data. Only on this device.',
-  'es' => 'Diseño alternativo, mismos datos del diario y calendario. Solo aquí.',
-  'fr' => 'Design alternatif, mêmes données du journal et du calendrier. Sur cet appareil.',
-  'pt' => 'Visual alternativo, os mesmos dados do diário e calendário. Só neste dispositivo.',
-  _ => 'Grafica alternativa, stessi dati di diario e calendario. Solo su questo dispositivo.',
+  'en' => 'Modern Home, same diary and calendar data. Choice saved on this device.',
+  'es' => 'Nuevo inicio, mismos datos del diario y calendario. Opción guardada aquí.',
+  'fr' => 'Nouvel accueil, mêmes données du journal et du calendrier. Choix local.',
+  'pt' => 'Novo início, mesmos dados do diário e calendário. Escolha local.',
+  _ => 'Nuova Home, stessi dati di diario e calendario. Scelta salvata su questo dispositivo.',
 };
 
 String annaEditorialTodaySaveFailure(String languageCode) => switch (languageCode) {
