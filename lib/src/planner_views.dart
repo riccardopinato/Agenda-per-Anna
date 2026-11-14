@@ -1123,6 +1123,28 @@ class _PlannerScreenState extends State<PlannerScreen> {
                             ),
                             const SizedBox(height: 12),
                           ],
+                          // A single authentic memory before the diary.
+                          // No placeholder photo, no fabricated anniversary.
+                          if (editorial &&
+                              (memoryRecall.onThisDay.isNotEmpty ||
+                                  memoryRecall.sameMonthPastYears.isNotEmpty)) ...[
+                            _DayMemoryRecallCard(
+                              store: widget.store,
+                              anchor: day,
+                              memories: memoryRecall.onThisDay.isNotEmpty
+                                  ? memoryRecall.onThisDay
+                                  : memoryRecall.sameMonthPastYears,
+                              exactAnniversary:
+                                  memoryRecall.onThisDay.isNotEmpty,
+                              hideDetails:
+                                  widget.store.preferences.hideHomeDetails,
+                            ),
+                            const SizedBox(height: 14),
+                          ],
+                          if (editorial) ...[
+                            AnnaOrganicPastelQuickLinks(store: widget.store),
+                            const SizedBox(height: 14),
+                          ],
                           // DF-08–14: Oggi reads the selected day before
                           // any editor. Create stays in the shell's + Crea.
                           if (editorial)
@@ -1222,8 +1244,9 @@ class _PlannerScreenState extends State<PlannerScreen> {
                           ],
                         ],
                         const SizedBox(height: 14),
-                        if (memoryRecall.onThisDay.isNotEmpty ||
-                            memoryRecall.sameMonthPastYears.isNotEmpty) ...[
+                        if (!editorial &&
+                            (memoryRecall.onThisDay.isNotEmpty ||
+                                memoryRecall.sameMonthPastYears.isNotEmpty)) ...[
                           _DayMemoryRecallCard(
                             store: widget.store,
                             anchor: day,
