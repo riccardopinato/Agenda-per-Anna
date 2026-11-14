@@ -117,7 +117,15 @@ void main() {
     // The live shell has repeating motion (e.g. greeting ticker) and can
     // never settle. Capture a deterministic frame after bounded time while
     // retaining the real widget tree and authentic empty local state.
-    debugPrint('ORGANIC_CAPTURE STEP 7: bounded pump');
+    debugPrint('ORGANIC_CAPTURE STEP 7: decode art in real async zone');
+    final context = tester.element(find.byType(Scaffold).first);
+    await tester.runAsync(() async {
+      await precacheImage(
+        MemoryImage(AnnaOrganicPastelWatercolor.bytes),
+        context,
+      );
+    });
+    debugPrint('ORGANIC_CAPTURE STEP 7B: bounded frame pumps');
     await tester.pump(const Duration(milliseconds: 250));
     await tester.pump(const Duration(milliseconds: 450));
     await tester.pump(const Duration(milliseconds: 850));
