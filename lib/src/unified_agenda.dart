@@ -121,7 +121,7 @@ List<UnifiedAgendaEntry> agendaEntriesForDayWithExternal(
 class AgendaContentFilterBar extends StatelessWidget {
   final AgendaStore store;
   final EdgeInsetsGeometry padding;
-  // The notebook calendar uses wrapping single-line chips rather than
+  // The notebook calendar uses original wrapping journal pills rather than
   // forcing long localized segment labels into three equal narrow columns.
   // Other consumers, including Classic, retain their original control.
   final bool calendarNotebook;
@@ -145,16 +145,54 @@ class AgendaContentFilterBar extends StatelessWidget {
               runSpacing: 8,
               children: [
                 for (final value in AgendaContentFilter.values)
-                  ChoiceChip(
-                    key: ValueKey<String>('calendar-notebook-filter-${value.name}'),
-                    showCheckmark: false,
+                  Semantics(
                     selected: store.agendaContentFilter == value,
-                    label: Text(
-                      value.localizedLabel(strings),
-                      maxLines: 1,
-                      softWrap: false,
+                    button: true,
+                    label: value.localizedLabel(strings),
+                    child: Material(
+                      type: MaterialType.transparency,
+                      child: InkWell(
+                        key: ValueKey<String>(
+                            'calendar-notebook-filter-${value.name}'),
+                        onTap: () => store.setAgendaContentFilter(value),
+                        splashFactory: NoSplash.splashFactory,
+                        borderRadius: BorderRadius.circular(15),
+                        focusColor: AnnaEditorialColors.of(context)
+                            .accent.withValues(alpha: .12),
+                        child: DecoratedBox(
+                          decoration: BoxDecoration(
+                            color: store.agendaContentFilter == value
+                                ? AnnaEditorialColors.of(context).quiet
+                                : AnnaEditorialColors.of(context).card,
+                            borderRadius: BorderRadius.circular(15),
+                            border: Border.all(
+                              color: store.agendaContentFilter == value
+                                  ? AnnaEditorialColors.of(context).accent
+                                  : AnnaEditorialColors.of(context).border,
+                            ),
+                          ),
+                          child: ConstrainedBox(
+                            constraints: const BoxConstraints(minHeight: 48),
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 13, vertical: 10,
+                              ),
+                              child: Text(
+                                value.localizedLabel(strings),
+                                maxLines: 1,
+                                softWrap: false,
+                                style: TextStyle(
+                                  fontFamily: AnnaJournalTypography.uiFamily,
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w700,
+                                  color: AnnaEditorialColors.of(context).ink,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
                     ),
-                    onSelected: (_) => store.setAgendaContentFilter(value),
                   ),
               ],
             )
