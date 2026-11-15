@@ -246,15 +246,21 @@ void main() {
     expect(find.byKey(const ValueKey<String>(
       'calendar-notebook-filter-wrap',
     )), findsOneWidget);
-    expect(find.byType(ChoiceChip), findsNWidgets(3));
-    for (final choice in tester.widgetList<ChoiceChip>(
-        find.byType(ChoiceChip))) {
-      expect(choice.label, isA<Text>());
-      final label = choice.label as Text;
+    expect(find.byType(ChoiceChip), findsNothing);
+    for (final value in AgendaContentFilter.values) {
+      final pill = find.byKey(ValueKey<String>(
+        'calendar-notebook-filter-${value.name}',
+      ));
+      expect(pill, findsOneWidget);
+      final label = tester.widget<Text>(
+        find.descendant(of: pill, matching: find.byType(Text)).first,
+      );
       expect(label.maxLines, 1);
       expect(label.softWrap, false);
     }
-    await tester.tap(find.byType(ChoiceChip).last);
+    await tester.tap(find.byKey(ValueKey<String>(
+      'calendar-notebook-filter-${AgendaContentFilter.values.last.name}',
+    )));
     await tester.pump();
     expect(store.agendaContentFilter, AgendaContentFilter.values.last);
     expect(tester.takeException(), isNull);
@@ -264,6 +270,44 @@ void main() {
     expect(find.byType(SegmentedButton<AgendaContentFilter>),
         findsOneWidget);
     expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('Original journal calendar selector keeps the Classic M3 separate',
+      (tester) async {
+    tester.view.devicePixelRatio = 1;
+    addTearDown(() {
+      tester.view.resetPhysicalSize();
+      tester.view.resetDevicePixelRatio();
+    });
+    for (final width in [320.0, 390.0, 600.0]) {
+      tester.view.physicalSize = Size(width, 720);
+      for (final dark in [false, true]) {
+        bool? selection;
+        await tester.pumpWidget(app(
+          MediaQuery(
+            data: MediaQueryData(
+              size: Size(width, 720),
+              textScaler: const TextScaler.linear(1.6),
+            ),
+            child: AnnaOrganicCalendarModePicker(
+              monthSelected: true,
+              monthLabel: 'Mese',
+              weekLabel: 'Settimana',
+              onSelected: (value) => selection = value,
+            ),
+          ),
+          brightness: dark ? Brightness.dark : Brightness.light,
+        ));
+        expect(find.byType(SegmentedButton), findsNothing);
+        expect(find.byKey(
+            const ValueKey<String>('organic-calendar-mode-month')),
+            findsOneWidget);
+        await tester.tap(find.byKey(
+            const ValueKey<String>('organic-calendar-mode-week')));
+        expect(selection, false);
+        expect(tester.takeException(), isNull);
+      }
+    }
   });
 
 }
