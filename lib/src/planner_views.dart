@@ -3031,6 +3031,18 @@ class DayTimeline extends StatelessWidget {
       base.withValues(alpha: organicStyle ? .11 : .16),
       organicStyle ? AnnaOrganicPastel.surface(context) : scheme.surface,
     );
+    // On one-hour slots accessibility text can exceed the fixed 74dp
+    // timeline cell. Preserve the real title and time by dropping only
+    // secondary category/notes at high text scale; never shrink font size.
+    final textScale =
+        MediaQuery.textScalerOf(context).scale(13) / 13;
+    final compactForText = organicStyle &&
+        (height < 68 * textScale || placement.laneCount > 2);
+    final showTime = !organicStyle ||
+        !compactForText ||
+        height >= 36 + 20 * textScale;
+    final showNote = !organicStyle ||
+        (!compactForText && height >= 110 * textScale);
 
     return Positioned(
       top: top + 2,
@@ -3090,7 +3102,7 @@ class DayTimeline extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      if (placement.laneCount <= 2)
+                      if (placement.laneCount <= 2 && !compactForText)
                         Row(
                           children: [
                             Icon(
@@ -3119,7 +3131,7 @@ class DayTimeline extends StatelessWidget {
                         ),
                       Text(
                         event.title,
-                        maxLines: height < 58 ? 1 : 2,
+                        maxLines: compactForText || height < 58 ? 1 : 2,
                         overflow: TextOverflow.ellipsis,
                         style: TextStyle(
                           fontWeight: FontWeight.w800,
@@ -3127,7 +3139,7 @@ class DayTimeline extends StatelessWidget {
                           fontSize: placement.laneCount > 2 ? 11 : 13,
                         ),
                       ),
-                      if (height >= 52)
+                      if (height >= 52 && showTime)
                         Text(
                           event.end == null
                               ? formatTime(start)
@@ -3143,6 +3155,7 @@ class DayTimeline extends StatelessWidget {
                           ),
                         ),
                       if (height >= 82 &&
+                          showNote &&
                           placement.laneCount <= 2 &&
                           event.note.trim().isNotEmpty)
                         Text(
