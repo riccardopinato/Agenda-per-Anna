@@ -92,10 +92,30 @@ class _AnnaTodayEditorialGreetingToolbarState
   @override
   Widget build(BuildContext context) {
     final color = AnnaEditorialColors.of(context).ink;
+    final organic = AnnaOrganicPastel.enabled(context);
     final style = AnnaJournalTypography.editorial(
       context,
-      size: 26,
-    ).copyWith(height: 1.12, letterSpacing: -0.55, color: color);
+      // Keep the entire owner greeting visible at 390dp instead of
+      // gratuitously marquing a short real name over the scenic header.
+      size: organic ? 22 : 26,
+    ).copyWith(
+      height: 1.12,
+      letterSpacing: -0.55,
+      color: color,
+      // Subtle halo preserves contrast against either collapsed image or sky
+      // without placing a separate rectangular tile behind the title.
+      shadows: organic
+          ? [
+              Shadow(
+                color: (Theme.of(context).brightness == Brightness.dark
+                        ? AnnaEditorialColors.of(context).canvas
+                        : AnnaOrganicPastel.canvas)
+                    .withValues(alpha: .95),
+                blurRadius: 5,
+              ),
+            ]
+          : null,
+    );
 
     return Row(
       key: const ValueKey<String>('ds6-today-compact-header'),
@@ -887,6 +907,7 @@ class _PlannerScreenState extends State<PlannerScreen> {
         unawaited(HomeWidgetBridge.instance.sync(widget.store));
         final strings = AnnaStrings.of(context);
         final editorial = widget.embedded && AnnaEditorialTodayMode.enabled.value;
+        final organic = editorial && AnnaOrganicPastel.enabled(context);
         // Hybrid deliberately shows the complete day without filter chips.
         // A filter selected in Calendar/Week must not remain invisibly active
         // when returning to this Home. Reset only the in-memory view filter,
@@ -951,7 +972,11 @@ class _PlannerScreenState extends State<PlannerScreen> {
         ];
 
         return Scaffold(
-          backgroundColor: editorial ? AnnaEditorialColors.of(context).canvas : null,
+          backgroundColor: editorial
+              ? Theme.of(context).brightness == Brightness.dark
+                  ? AnnaEditorialColors.of(context).canvas
+                  : AnnaOrganicPastel.canvas
+              : null,
           floatingActionButton: widget.embedded ? null : FloatingActionButton.extended(
             onPressed: () => _showQuickCapture(
               context,
@@ -1020,7 +1045,9 @@ class _PlannerScreenState extends State<PlannerScreen> {
             ],
           ),
           body: SafeArea(
-            top: editorial,
+            // The Organic masthead paints behind the status bar; its buttons
+            // independently respect the device's top viewPadding.
+            top: editorial && !organic,
             bottom: false,
             child: Column(
             children: [
@@ -1043,10 +1070,11 @@ class _PlannerScreenState extends State<PlannerScreen> {
                     ),
                     child: AnnaMotionReveal(
                       token: day.millisecondsSinceEpoch,
-                      child: ListView(
-                      padding: const EdgeInsets.fromLTRB(20, 14, 20, 110),
-                      children: [
-                        if (editorial) ...[
+                      child: Builder(
+                        builder: (context) {
+                          final pageContent = <Widget>[
+                        for (final content in <Widget>[
+                        if (editorial && !organic) ...[
                           AnnaTodayEditorialGreetingToolbar(
                             activeInShell: widget.activeInShell,
                             greeting: approvedTodayGreeting(
@@ -1080,12 +1108,36 @@ class _PlannerScreenState extends State<PlannerScreen> {
                                 label: Text(strings.navToday),
                               ),
                             ),
-                          const SizedBox(height: 20),
-                          _TodaySingleDateNavigator(
+                          const SizedBox(height: 12),
+                          const AnnaOrganicPastelLandscape(
+                            height: 96,
+                            radius: 20,
+                          ),
+                          const SizedBox(height: 12),
+                          AnnaOrganicPastelWeekStrip(
                             selected: day,
                             onSelected: _selectDay,
                           ),
-                          const SizedBox(height: 16),
+                          const SizedBox(height: 14),
+                        ],
+                        if (organic) ...[
+                          if (!AgendaStore.sameDay(day, DateTime.now()))
+                            Align(
+                              alignment: Alignment.centerLeft,
+                              child: TextButton.icon(
+                                key: const ValueKey<String>(
+                                  'editorial-today-return',
+                                ),
+                                onPressed: () => _selectDay(DateTime.now()),
+                                icon: const Icon(Icons.today_outlined),
+                                label: Text(strings.navToday),
+                              ),
+                            ),
+                          AnnaOrganicPastelWeekStrip(
+                            selected: day,
+                            onSelected: _selectDay,
+                          ),
+                          const SizedBox(height: 14),
                         ],
                         // R3 embeds the daily wish directly below the greeting,
                         // not in a repeated standalone opening card.
@@ -1097,8 +1149,30 @@ class _PlannerScreenState extends State<PlannerScreen> {
                           AgendaContentFilterBar(store: widget.store),
                           const SizedBox(height: AnnaDesignTokens.spaceMd),
                         ] else
-                          const SizedBox(height: 12),
+                          const SizedBox(height: 4),
                         if (widget.embedded) ...[
+                          // Organic Preview: only actual authorized
+                          // agenda entries. Open via the existing editor.
+                          if (editorial && snapshot.agenda.isNotEmpty) ...[
+                            AnnaOrganicPastelAgendaDigest(
+                              entries: snapshot.agenda,
+                              hideDetails:
+                                  widget.store.preferences.hideHomeDetails,
+                              onOpenEntry: (entry) =>
+                                  openUnifiedAgendaEntry(
+                                    context, widget.store, entry,
+                                  ),
+                              onOpenDay: _openSelectedDay,
+                            ),
+                            const SizedBox(height: 12),
+                          ],
+                          if (editorial) ...[
+                            AnnaOrganicPastelQuickLinks(
+                              store: widget.store,
+                              selectedDate: day,
+                            ),
+                            const SizedBox(height: 14),
+                          ],
                           // DF-08–14: Oggi reads the selected day before
                           // any editor. Create stays in the shell's + Crea.
                           if (editorial)
@@ -1115,6 +1189,25 @@ class _PlannerScreenState extends State<PlannerScreen> {
                               order: 0,
                               child: _TodayCompactSummary(snapshot: snapshot),
                             ),
+                          // Keep memories immediately BELOW "Il mio diario".
+                          // Recalls are still canonical and shown only when
+                          // there is genuine, authorized journal history.
+                          if (editorial &&
+                              (memoryRecall.onThisDay.isNotEmpty ||
+                                  memoryRecall.sameMonthPastYears.isNotEmpty)) ...[
+                            _DayMemoryRecallCard(
+                              store: widget.store,
+                              anchor: day,
+                              memories: memoryRecall.onThisDay.isNotEmpty
+                                  ? memoryRecall.onThisDay
+                                  : memoryRecall.sameMonthPastYears,
+                              exactAnniversary:
+                                  memoryRecall.onThisDay.isNotEmpty,
+                              hideDetails:
+                                  widget.store.preferences.hideHomeDetails,
+                            ),
+                            const SizedBox(height: 14),
+                          ],
                           // Hero-first rhythm is exclusive to the Editorial Home.
                           if (editorial) ...planningCards,
                           if (isToday && (upcoming.isNotEmpty || pinnedItems.isNotEmpty)) ...[
@@ -1198,8 +1291,9 @@ class _PlannerScreenState extends State<PlannerScreen> {
                           ],
                         ],
                         const SizedBox(height: 14),
-                        if (memoryRecall.onThisDay.isNotEmpty ||
-                            memoryRecall.sameMonthPastYears.isNotEmpty) ...[
+                        if (!editorial &&
+                            (memoryRecall.onThisDay.isNotEmpty ||
+                                memoryRecall.sameMonthPastYears.isNotEmpty)) ...[
                           _DayMemoryRecallCard(
                             store: widget.store,
                             anchor: day,
@@ -1231,7 +1325,11 @@ class _PlannerScreenState extends State<PlannerScreen> {
                           _DayLifeStream(snapshot: snapshot, store: widget.store),
                         ],
                         const SizedBox(height: 14),
-                        ExpansionTile(
+                        // The embedded Home no longer duplicates the hourly
+                        // timeline: "Impegni" opens its dedicated page.
+                        // Standalone day detail retains its legacy affordance.
+                        if (!widget.embedded)
+                          ExpansionTile(
                           tilePadding: const EdgeInsets.symmetric(horizontal: 8),
                           childrenPadding: const EdgeInsets.only(bottom: 8),
                           leading: const Icon(Icons.schedule_outlined),
@@ -1253,8 +1351,71 @@ class _PlannerScreenState extends State<PlannerScreen> {
                             ),
                           ],
                         ),
-                  ],
-                    ),
+                        ])
+                          organic
+                              ? Padding(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 20,
+                                  ),
+                                  child: content,
+                                )
+                              : content,
+                          ];
+                          if (!organic) {
+                            // Classic and the non-Organic editorial variant
+                            // retain their original scroll behavior.
+                            return ListView(
+                              padding: const EdgeInsets.fromLTRB(
+                                20, 14, 20, 110,
+                              ),
+                              children: pageContent,
+                            );
+                          }
+                          return CustomScrollView(
+                            key: const ValueKey<String>(
+                              'organic-pastel-collapsing-scroll',
+                            ),
+                            slivers: [
+                              SliverPersistentHeader(
+                                pinned: true,
+                                delegate: AnnaOrganicPastelHeroSliverDelegate(
+                                  topInset:
+                                      MediaQuery.viewPaddingOf(context).top,
+                                  toolbar: AnnaTodayEditorialGreetingToolbar(
+                                    activeInShell: widget.activeInShell,
+                                    greeting: approvedTodayGreeting(
+                                      strings.languageCode,
+                                      widget.store.preferences.displayName,
+                                      DateTime.now().hour,
+                                    ),
+                                    calendarTooltip: strings.navCalendar,
+                                    classicTooltip: annaEditorialTodayModeLabel(
+                                      strings.languageCode,
+                                      returnToClassic: true,
+                                    ),
+                                    onOpenCalendar: () => Navigator.push(
+                                      context,
+                                      MaterialPageRoute<void>(
+                                        builder: (_) => CalendarHubScreen(
+                                          store: widget.store,
+                                        ),
+                                      ),
+                                    ),
+                                    onReturnToClassic: () =>
+                                        unawaited(_setEditorialMode(false)),
+                                  ),
+                                ),
+                              ),
+                              SliverPadding(
+                                padding: const EdgeInsets.only(bottom: 110),
+                                sliver: SliverList(
+                                  delegate: SliverChildListDelegate(pageContent),
+                                ),
+                              ),
+                            ],
+                          );
+                        },
+                      ),
                     ),
                   ),
                 ),
@@ -1547,6 +1708,89 @@ class _DayMemoryRecallCard extends StatelessWidget {
                 DiaryBlockType.photo => Icons.photo_outlined,
                 DiaryBlockType.voice => Icons.mic_none_outlined,
               }, color: Theme.of(context).colorScheme.primary));
+    if (AnnaOrganicPastel.enabled(context)) {
+      final ageLabel = years == 1
+          ? strings.d3('ui5OneYearAgo')
+          : strings.d3Format('ui5YearsAgo', {'years': years});
+      final dateLine = exactAnniversary ? '$ageLabel · $date' : date;
+      return Column(
+        key: const ValueKey<String>('ui5-today-memory-teaser'),
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Padding(
+            padding: const EdgeInsets.only(left: 3, bottom: 9),
+            child: Text(
+              strings.d3('ui5MemoryTeaser'),
+              style: AnnaJournalTypography.editorial(context, size: 18)
+                  .copyWith(color: AnnaOrganicPastel.text(context)),
+            ),
+          ),
+          AnnaOrganicPaperSurface(
+            onTap: () => Navigator.push<void>(
+              context,
+              MaterialPageRoute<void>(
+                builder: (_) => DiaryMemoriesScreen(store: store),
+              ),
+            ),
+            semanticLabel: strings.d3('ui5MemoryTeaser'),
+            padding: const EdgeInsets.all(9),
+            child: Row(
+              children: [
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(13),
+                  child: SizedBox(
+                    width: 80,
+                    height: 72,
+                    child: ColoredBox(
+                      color: Theme.of(context).brightness == Brightness.dark
+                          ? const Color(0xFF364D42)
+                          : AnnaOrganicPastel.peach,
+                      child: preview,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        hideDetails ? '•••' : title,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: AnnaJournalTypography.editorial(
+                          context,
+                          size: 16,
+                        ).copyWith(color: AnnaOrganicPastel.text(context)),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        hideDetails ? '•••' : dateLine,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: Theme.of(context).brightness == Brightness.dark
+                              ? Theme.of(context).colorScheme.onSurfaceVariant
+                              : AnnaOrganicPastel.quietInk,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 4),
+                Icon(
+                  Icons.chevron_right_rounded,
+                  size: 21,
+                  color: Theme.of(context).brightness == Brightness.dark
+                      ? Theme.of(context).colorScheme.onSurface
+                      : AnnaOrganicPastel.oliveInk,
+                ),
+              ],
+            ),
+          ),
+        ],
+      );
+    }
     return Column(
       key: const ValueKey<String>('ui5-today-memory-teaser'),
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -2249,6 +2493,130 @@ class _TimelinePlacement {
     required this.lane,
     required this.laneCount,
   });
+}
+
+/// Dedicated hourly commitments view opened from the Organic Home shortcut.
+/// Owns no records or editor: it reuses the canonical private appointment
+/// projection and the exact same DayTimeline gestures/create/edit callbacks.
+class AnnaCommitmentsTimelineScreen extends StatefulWidget {
+  final AgendaStore store;
+  final DateTime? initialDate;
+
+  const AnnaCommitmentsTimelineScreen({
+    super.key,
+    required this.store,
+    this.initialDate,
+  });
+
+  @override
+  State<AnnaCommitmentsTimelineScreen> createState() =>
+      _AnnaCommitmentsTimelineScreenState();
+}
+
+class _AnnaCommitmentsTimelineScreenState
+    extends State<AnnaCommitmentsTimelineScreen> {
+  late DateTime _selected;
+  late final ScrollController _timelineScroll;
+
+  @override
+  void initState() {
+    super.initState();
+    final source = widget.initialDate ?? DateTime.now();
+    _selected = DateTime(source.year, source.month, source.day);
+    // Open on the useful working-day portion. The original 00:00–24:00
+    // timeline remains fully scrollable and no events are filtered by hour.
+    _timelineScroll = ScrollController(
+      initialScrollOffset: DayTimeline.offsetForMinutes(7 * 60),
+    );
+  }
+
+  @override
+  void dispose() {
+    _timelineScroll.dispose();
+    super.dispose();
+  }
+
+  void _selectDay(DateTime selected) {
+    setState(() => _selected = DateTime(
+      selected.year, selected.month, selected.day,
+    ));
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final strings = AnnaStrings.of(context);
+    final organic = AnnaOrganicPastel.enabled(context);
+    return Scaffold(
+      key: const ValueKey<String>('commitments-hourly-timeline-screen'),
+      backgroundColor: organic
+          ? AnnaEditorialColors.of(context).canvas
+          : null,
+      appBar: AppBar(
+        title: Text(
+          strings.d3('ui5Commitments'),
+          style: organic
+              ? AnnaJournalTypography.editorial(context, size: 25)
+              : null,
+        ),
+        actions: [
+          IconButton(
+            key: const ValueKey<String>('commitments-today'),
+            tooltip: strings.navToday,
+            onPressed: () => _selectDay(DateTime.now()),
+            icon: const Icon(Icons.today_outlined),
+          ),
+        ],
+      ),
+      body: AnimatedBuilder(
+        animation: widget.store.agendaRevision,
+        builder: (context, _) {
+          final snapshot = widget.store.dayHubSnapshot(_selected);
+          final timedPrivate = snapshot.agenda
+              .where((entry) =>
+                  entry.type == ItemType.appointment &&
+                  entry.start != null &&
+                  entry.isPrivate)
+              .map((entry) => entry.privateItem!)
+              .toList();
+          return Column(
+            children: [
+              _TodaySingleDateNavigator(
+                selected: _selected,
+                onSelected: _selectDay,
+              ),
+              Expanded(
+                child: SingleChildScrollView(
+                  key: const ValueKey<String>(
+                    'commitments-hourly-scroll',
+                  ),
+                  controller: _timelineScroll,
+                  padding: const EdgeInsets.fromLTRB(16, 8, 16, 28),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      _TimelineHint(eventCount: timedPrivate.length),
+                      const SizedBox(height: 12),
+                      DayTimeline(
+                        key: const ValueKey<String>(
+                          'commitments-canonical-day-timeline',
+                        ),
+                        date: _selected,
+                        events: timedPrivate,
+                        store: widget.store,
+                        onChanged: () {
+                          if (mounted) setState(() {});
+                        },
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          );
+        },
+      ),
+    );
+  }
 }
 
 class DayTimeline extends StatelessWidget {

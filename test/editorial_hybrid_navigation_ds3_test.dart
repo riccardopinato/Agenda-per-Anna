@@ -55,6 +55,21 @@ void main() {
     );
   }
 
+  test('Organic is the official new Home; persisted Classic stays respected',
+      () {
+    expect(AnnaEditorialTodayMode.initialPreference(null), isTrue);
+    expect(AnnaEditorialTodayMode.initialPreference(true), isTrue);
+    expect(AnnaEditorialTodayMode.initialPreference(false), isFalse);
+
+    // The appearance preference remains local and has the original key.
+    expect(AnnaEditorialTodayMode.storageKey,
+        'anna.local_ui.today_editorial_hybrid_v1');
+    final mainSource = File('lib/main.dart').readAsStringSync();
+    expect(mainSource, contains('await AnnaEditorialTodayMode.ensureLoaded();'));
+    expect(mainSource.indexOf('await AnnaEditorialTodayMode.ensureLoaded();'),
+        lessThan(mainSource.indexOf('runApp(AgendaApp(store: store));')));
+  });
+
   testWidgets('docked navigation reaches the two edges and the device bottom',
       (tester) async {
     tester.view.physicalSize = const Size(390, 844);
