@@ -89,7 +89,14 @@ class AnnaEditorialCalendarWeekSummary extends StatelessWidget {
               context, size: AnnaEditorialTokens.sectionTitle,
             ).copyWith(color: colors.ink),
           ),
-          const SizedBox(height: 13),
+          // DS6 notebook rhythm: a quiet palette-driven separator keeps the
+          // real date, event count and task progress readable as one summary.
+          const SizedBox(height: 10),
+          const AnnaEditorialAccentRule(
+            key: ValueKey<String>('editorial-calendar-week-summary-rule'),
+            margin: EdgeInsets.symmetric(horizontal: 0),
+          ),
+          const SizedBox(height: 10),
           Wrap(
             spacing: AnnaDesignTokens.spaceSm,
             runSpacing: AnnaDesignTokens.spaceSm,
