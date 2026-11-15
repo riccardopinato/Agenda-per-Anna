@@ -200,7 +200,14 @@ void main() {
     // Only the Hybrid Home loses the chips; Classic and Calendar retain them.
     expect(home, contains("if (!editorial) ...["));
     expect(home, contains('AgendaContentFilterBar(store: widget.store)'));
-    expect(planner.split('AgendaContentFilterBar(store: widget.store)').length - 1, 4);
+    // Calendar/Week now pass an optional notebook presentation flag on
+    // separate lines. Count the real widget invocations, not one formatting.
+    expect(
+      RegExp(r'AgendaContentFilterBar\\(\\s*store:\\s*widget\\.store')
+          .allMatches(planner).length,
+      4,
+    );
+    expect(planner.split('calendarNotebook: editorial,').length - 1, 2);
     // When a global filter was chosen elsewhere, reset it after the frame
     // so Hybrid never silently hides private/shared items.
     expect(home, contains('widget.store.agendaContentFilter != AgendaContentFilter.all'));
