@@ -584,13 +584,42 @@ class _CalendarScreenState extends State<CalendarScreen> {
                             ).copyWith(color: AnnaEditorialColors.of(context).ink)
                           : Theme.of(context).textTheme.titleLarge!,
                     ),
-                    calendarStyle: CalendarStyle(
-                      outsideDaysVisible: false,
-                      selectedDecoration: BoxDecoration(
-                        color: Theme.of(context).colorScheme.primary,
-                        shape: BoxShape.circle,
-                      ),
-                    ),
+                    // Notebook selection belongs to the existing
+                    // TableCalendar; canonical events and callbacks remain.
+                    // Shape and border distinguish focus from a mere marker.
+                    calendarStyle: editorial
+                        ? CalendarStyle(
+                            outsideDaysVisible: false,
+                            selectedDecoration: BoxDecoration(
+                              color: Theme.of(context).colorScheme.primary,
+                              borderRadius: BorderRadius.circular(14),
+                              border: Border.all(
+                                color: Theme.of(context).colorScheme.onPrimary
+                                    .withValues(alpha: .35),
+                              ),
+                            ),
+                            todayDecoration: BoxDecoration(
+                              color: Theme.of(context).colorScheme
+                                  .primaryContainer.withValues(alpha: .55),
+                              borderRadius: BorderRadius.circular(14),
+                              border: Border.all(
+                                color: Theme.of(context).colorScheme.primary,
+                                width: 1.6,
+                              ),
+                            ),
+                            markerDecoration: BoxDecoration(
+                              color: Theme.of(context).colorScheme.primary,
+                              shape: BoxShape.circle,
+                            ),
+                            markersMaxCount: 3,
+                          )
+                        : CalendarStyle(
+                            outsideDaysVisible: false,
+                            selectedDecoration: BoxDecoration(
+                              color: Theme.of(context).colorScheme.primary,
+                              shape: BoxShape.circle,
+                            ),
+                          ),
                     ),
                   ),
                 ),
@@ -3531,15 +3560,35 @@ class _WeekDayCard extends StatelessWidget {
     final items = agendaEntriesForDayWithExternal(store, day);
     final journal = store.journal(day);
     final isToday = AgendaStore.sameDay(day, DateTime.now());
+    final organic = AnnaOrganicPastel.enabled(context);
+    final scheme = Theme.of(context).colorScheme;
 
+    // Presentation-only. The original 7 dates and the canonical + Capture
+    // callback below remain unchanged, including selected civil-day ownership.
     return Container(
+      key: organic
+          ? ValueKey<String>('organic-week-day-${AgendaStore.dateKey(day)}')
+          : null,
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: isToday
-            ? Theme.of(context).colorScheme.primaryContainer.withValues(alpha: 0.55)
-            : Theme.of(context).colorScheme.surface,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: Theme.of(context).colorScheme.outlineVariant),
+        color: organic
+            ? (isToday
+                ? Color.alphaBlend(
+                    scheme.primary.withValues(alpha: .09),
+                    AnnaOrganicPastel.surface(context),
+                  )
+                : AnnaOrganicPastel.surface(context))
+            : (isToday
+                ? scheme.primaryContainer.withValues(alpha: 0.55)
+                : scheme.surface),
+        borderRadius: BorderRadius.circular(organic ? 24 : 20),
+        border: Border.all(
+          color: organic
+              ? (isToday
+                  ? scheme.primary.withValues(alpha: .55)
+                  : scheme.outlineVariant.withValues(alpha: .68))
+              : scheme.outlineVariant,
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -3552,23 +3601,40 @@ class _WeekDayCard extends StatelessWidget {
                 alignment: Alignment.center,
                 decoration: BoxDecoration(
                   color: isToday
-                      ? Theme.of(context).colorScheme.primary
-                      : Theme.of(context).colorScheme.surfaceContainerHighest,
-                  borderRadius: BorderRadius.circular(14),
+                      ? scheme.primary
+                      : (organic
+                          ? scheme.surfaceContainerHighest.withValues(alpha: .65)
+                          : scheme.surfaceContainerHighest),
+                  borderRadius: BorderRadius.circular(organic ? 16 : 14),
                 ),
                 child: Text(
                   '${day.day}',
-                  style: TextStyle(
-                    fontWeight: FontWeight.w900,
-                    color: isToday ? Theme.of(context).colorScheme.onPrimary : null,
-                  ),
+                  style: organic
+                      ? AnnaJournalTypography.editorial(
+                          context, size: 20,
+                        ).copyWith(
+                          color: isToday ? scheme.onPrimary : scheme.onSurface,
+                        )
+                      : TextStyle(
+                          fontWeight: FontWeight.w900,
+                          color: isToday ? scheme.onPrimary : null,
+                        ),
                 ),
               ),
               const SizedBox(width: 10),
               Expanded(
                 child: Text(
                   _cap(DateFormat('EEEE', AnnaStrings.intlLocale(context)).format(day)),
-                  style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 17),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: organic
+                      ? AnnaJournalTypography.editorial(
+                          context, size: 18,
+                        ).copyWith(color: scheme.onSurface)
+                      : const TextStyle(
+                          fontWeight: FontWeight.w800,
+                          fontSize: 17,
+                        ),
                 ),
               ),
               IconButton(
