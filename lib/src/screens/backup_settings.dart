@@ -1506,6 +1506,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
     await widget.store.reconcileDailyRitualReminders();
   }
 
+
+  /// Page-only chrome. Changing the paper wrapper never changes a settings
+  /// writer, privacy control, entitlement check or account boundary.
+  Widget _journalSettingsCard({required Widget child}) =>
+      AnnaOrganicPastel.enabled(context)
+          ? AnnaOrganicPaperSurface(child: child)
+          : SimpleCard(child: child);
+
   @override
   Widget build(BuildContext context) {
     return AnimatedBuilder(
@@ -1520,16 +1528,27 @@ class _SettingsScreenState extends State<SettingsScreen> {
         final secondary = prefs.defaultSecondaryReminder ?? -1;
 
         return Scaffold(
+          backgroundColor: AnnaOrganicPastel.enabled(context)
+              ? AnnaEditorialColors.of(context).canvas : null,
           appBar: AppBar(
+            toolbarHeight: AnnaOrganicPastel.enabled(context) ? 72 : null,
+            backgroundColor: AnnaOrganicPastel.enabled(context)
+                ? AnnaEditorialColors.of(context).canvas : null,
+            surfaceTintColor: AnnaOrganicPastel.enabled(context)
+                ? Colors.transparent : null,
+            elevation: 0,
+            scrolledUnderElevation: 0,
             title: Text(
               strings.settings,
-              style: const TextStyle(fontWeight: FontWeight.w800),
+              style: AnnaOrganicPastel.enabled(context)
+                  ? AnnaJournalTypography.editorial(context, size: 26)
+                  : const TextStyle(fontWeight: FontWeight.w800),
             ),
           ),
           body: ListView(
             padding: const EdgeInsets.fromLTRB(14, 8, 14, 50),
             children: [
-              SimpleCard(
+              _journalSettingsCard(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -1562,7 +1581,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 ),
               ),
               const SizedBox(height: 12),
-              SimpleCard(
+              _journalSettingsCard(
                 child: ListTile(
                   key: const ValueKey('settings-personalization'),
                   contentPadding: EdgeInsets.zero,
@@ -1588,7 +1607,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 ),
               ),
               const SizedBox(height: 12),
-              SimpleCard(
+              _journalSettingsCard(
                 child: ListTile(
                   contentPadding: EdgeInsets.zero,
                   leading: const CircleAvatar(
@@ -1613,7 +1632,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 ),
               ),
               const SizedBox(height: 12),
-              SimpleCard(
+              _journalSettingsCard(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -1660,7 +1679,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 ),
               ),
               const SizedBox(height: 12),
-              SimpleCard(
+              _journalSettingsCard(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -1735,7 +1754,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 ),
               ),
               const SizedBox(height: 12),
-              SimpleCard(
+              _journalSettingsCard(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -1783,7 +1802,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 ),
               ),
               const SizedBox(height: 12),
-              SimpleCard(
+              _journalSettingsCard(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -1903,7 +1922,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 ),
               ),
               const SizedBox(height: 12),
-              SimpleCard(
+              _journalSettingsCard(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -2036,7 +2055,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               const SizedBox(height: 12),
               const ExternalCalendarSettingsCard(),
               const SizedBox(height: 12),
-              SimpleCard(
+              _journalSettingsCard(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -2265,7 +2284,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 ),
               ),
               const SizedBox(height: 12),
-              SimpleCard(
+              _journalSettingsCard(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [

@@ -2229,21 +2229,10 @@ class _DiaryMemoriesScreenState extends State<DiaryMemoriesScreen> {
       _ => strings.d3('memoriesBrowse'),
     };
 
-    return ValueListenableBuilder<bool>(
-      valueListenable: AnnaEditorialTodayMode.enabled,
-      builder: (context, editorial, _) => Scaffold(
-      backgroundColor: editorial ? AnnaEditorialColors.of(context).canvas : null,
-      appBar: AppBar(
-        backgroundColor: editorial ? AnnaEditorialColors.of(context).canvas : null,
-        surfaceTintColor: editorial ? Colors.transparent : null,
-        toolbarHeight: 78,
-        title: Text(
-          widget.personName == null
-              ? strings.v100MyMemories
-              : strings.v100MemoriesWithPerson(widget.personName!),
-          style: AnnaJournalTypography.editorial(context, size: 29),
-        ),
-        actions: [
+    // The same canonical actions are rendered once: an iOS Journal
+    // toolbar row when Organic is enabled, or the Classic AppBar actions.
+    final memoryActions = <Widget>[
+
           IconButton(
             key: const ValueKey('cap0151-memory-extractive-summary'),
             tooltip: memoryExtractiveCopy(strings.languageCode, 'title'),
@@ -2304,7 +2293,37 @@ class _DiaryMemoriesScreenState extends State<DiaryMemoriesScreen> {
               child: const Icon(Icons.tune_outlined),
             ),
           ),
-        ],
+    ];
+
+    return ValueListenableBuilder<bool>(
+      valueListenable: AnnaEditorialTodayMode.enabled,
+      builder: (context, editorial, _) => Scaffold(
+      backgroundColor: editorial ? AnnaEditorialColors.of(context).canvas : null,
+      appBar: AppBar(
+        backgroundColor: editorial ? AnnaEditorialColors.of(context).canvas : null,
+        surfaceTintColor: editorial ? Colors.transparent : null,
+        toolbarHeight: editorial ? 72 : 78,
+        elevation: 0,
+        scrolledUnderElevation: 0,
+        title: Text(
+          widget.personName == null
+              ? strings.v100MyMemories
+              : strings.v100MemoriesWithPerson(widget.personName!),
+          style: AnnaJournalTypography.editorial(context, size: 29),
+        ),
+        actions: editorial ? null : memoryActions,
+        bottom: editorial
+            ? PreferredSize(
+                preferredSize: const Size.fromHeight(56),
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(14, 0, 14, 8),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: memoryActions,
+                  ),
+                ),
+              )
+            : null,
       ),
       body: AnimatedBuilder(
         animation: Listenable.merge([

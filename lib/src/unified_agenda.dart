@@ -121,32 +121,96 @@ List<UnifiedAgendaEntry> agendaEntriesForDayWithExternal(
 class AgendaContentFilterBar extends StatelessWidget {
   final AgendaStore store;
   final EdgeInsetsGeometry padding;
+  // The notebook calendar uses original wrapping journal pills rather than
+  // forcing long localized segment labels into three equal narrow columns.
+  // Other consumers, including Classic, retain their original control.
+  final bool calendarNotebook;
 
   const AgendaContentFilterBar({
     super.key,
     required this.store,
     this.padding = EdgeInsets.zero,
+    this.calendarNotebook = false,
   });
 
   @override
   Widget build(BuildContext context) {
+    final strings = AnnaStrings.of(context);
     return Padding(
       padding: padding,
-      child: SegmentedButton<AgendaContentFilter>(
-        showSelectedIcon: false,
-        segments: AgendaContentFilter.values
-            .map(
-              (value) => ButtonSegment(
-                value: value,
-                icon: Icon(value.icon, size: 17),
-                label: Text(value.localizedLabel(AnnaStrings.of(context))),
-              ),
+      child: calendarNotebook
+          ? Wrap(
+              key: const ValueKey<String>('calendar-notebook-filter-wrap'),
+              spacing: 8,
+              runSpacing: 8,
+              children: [
+                for (final value in AgendaContentFilter.values)
+                  Semantics(
+                    selected: store.agendaContentFilter == value,
+                    button: true,
+                    label: value.localizedLabel(strings),
+                    child: Material(
+                      type: MaterialType.transparency,
+                      child: InkWell(
+                        key: ValueKey<String>(
+                            'calendar-notebook-filter-${value.name}'),
+                        onTap: () => store.setAgendaContentFilter(value),
+                        splashFactory: NoSplash.splashFactory,
+                        borderRadius: BorderRadius.circular(15),
+                        focusColor: AnnaEditorialColors.of(context)
+                            .accent.withValues(alpha: .12),
+                        child: DecoratedBox(
+                          decoration: BoxDecoration(
+                            color: store.agendaContentFilter == value
+                                ? AnnaEditorialColors.of(context).quiet
+                                : AnnaEditorialColors.of(context).card,
+                            borderRadius: BorderRadius.circular(15),
+                            border: Border.all(
+                              color: store.agendaContentFilter == value
+                                  ? AnnaEditorialColors.of(context).accent
+                                  : AnnaEditorialColors.of(context).border,
+                            ),
+                          ),
+                          child: ConstrainedBox(
+                            constraints: const BoxConstraints(minHeight: 48),
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 13, vertical: 10,
+                              ),
+                              child: Text(
+                                value.localizedLabel(strings),
+                                maxLines: 1,
+                                softWrap: false,
+                                style: TextStyle(
+                                  fontFamily: AnnaJournalTypography.uiFamily,
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w700,
+                                  color: AnnaEditorialColors.of(context).ink,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+              ],
             )
-            .toList(),
-        selected: {store.agendaContentFilter},
-        onSelectionChanged: (value) =>
-            store.setAgendaContentFilter(value.first),
-      ),
+          : SegmentedButton<AgendaContentFilter>(
+              showSelectedIcon: false,
+              segments: AgendaContentFilter.values
+                  .map(
+                    (value) => ButtonSegment(
+                      value: value,
+                      icon: Icon(value.icon, size: 17),
+                      label: Text(value.localizedLabel(strings)),
+                    ),
+                  )
+                  .toList(),
+              selected: {store.agendaContentFilter},
+              onSelectionChanged: (value) =>
+                  store.setAgendaContentFilter(value.first),
+            ),
     );
   }
 }

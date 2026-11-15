@@ -154,7 +154,15 @@ void main() {
     expect(find.byType(MoreScreen), findsOneWidget);
     final searchTile = find.byKey(const ValueKey<String>('more-search'));
     expect(searchTile, findsOneWidget);
-    expect(tester.widget<ListTile>(searchTile).onTap, isNotNull);
+    // Organic Journal intentionally uses a bespoke InkWell instead of M3
+    // ListTile. Both appearances must retain their real navigation callback.
+    final searchControl = tester.widget(searchTile);
+    expect(searchControl is InkWell || searchControl is ListTile, isTrue);
+    if (searchControl is InkWell) {
+      expect(searchControl.onTap, isNotNull);
+    } else if (searchControl is ListTile) {
+      expect(searchControl.onTap, isNotNull);
+    }
     // Independently prove the canonical blank-query result cannot mutate or
     // crash; do not claim the browser/navigation path was exercised.
     expect(store.approvedPersonalSearch(''), isEmpty);

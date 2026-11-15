@@ -1,0 +1,73 @@
+name: Calendar notebook Flutter visual evidence (PR-only)
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+    paths:
+      - "lib/**"
+      - "test/calendar_notebook_visual_capture_test.dart"
+      - ".github/workflows/calendar-notebook-visual-evidence.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: calendar-notebook-evidence-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  capture:
+    if: github.head_ref == 'design/ds6-calendar-notebook-week-summary-20261115' ||
+      github.head_ref == 'integration/ios-journal-three-surfaces-20261116'
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: Checkout PR head
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Setup Flutter
+        uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2.23.0
+        with:
+          flutter-version: "3.47.5"
+          channel: stable
+          cache: true
+      - name: Prepare synthetic Flutter platform skeletons
+        run: |
+          rm -rf android web /tmp/anna_calendar_base
+          flutter create --project-name agenda_per_anna --org com.riccardopinato --platforms=android,web /tmp/anna_calendar_base
+          cp -R /tmp/anna_calendar_base/android .
+          cp -R /tmp/anna_calendar_base/web .
+          python3 tool/prepare_android_platform.py
+          python3 tool/prepare_web_platform.py
+      - name: Fetch locked dependencies
+        run: flutter pub get --enforce-lockfile
+      - name: Prepare icon font for accurate Flutter screenshots
+        run: |
+          mkdir -p test/fixtures
+          cp "$(dirname "$(command -v flutter)")/cache/artifacts/material_fonts/MaterialIcons-Regular.otf" test/fixtures/
+      - name: Capture empty month and week
+        run: |
+          flutter test --update-goldens \
+            --dart-define=ANNA_CALENDAR_CAPTURE=true \
+            --dart-define=ANNA_CALENDAR_POPULATED=false \
+            test/calendar_notebook_visual_capture_test.dart
+      - name: Capture populated month and week
+        run: |
+          flutter test --update-goldens \
+            --dart-define=ANNA_CALENDAR_CAPTURE=true \
+            --dart-define=ANNA_CALENDAR_POPULATED=true \
+            test/calendar_notebook_visual_capture_test.dart
+      - name: Attach eight Flutter screenshots for actual CalendarHub and detail
+        if: success()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: anna-calendar-notebook-review-${{ github.sha }}
+          path: |
+            test/goldens/anna_calendar_notebook_month_empty_390.png
+            test/goldens/anna_calendar_notebook_month_populated_390.png
+            test/goldens/anna_calendar_notebook_week_empty_390.png
+            test/goldens/anna_calendar_notebook_week_populated_390.png
+            test/goldens/anna_calendar_hub_month_empty_390.png
+            test/goldens/anna_calendar_hub_month_populated_390.png
+            test/goldens/anna_calendar_hub_week_empty_390.png
+            test/goldens/anna_calendar_hub_week_populated_390.png
+          if-no-files-found: error
+          retention-days: 7

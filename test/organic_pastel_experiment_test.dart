@@ -804,6 +804,134 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
+  testWidgets('Impegni premium uses the real timeline in light/dark and small screens',
+      (tester) async {
+    addTearDown(() {
+      tester.view.resetPhysicalSize();
+      tester.view.resetDevicePixelRatio();
+      AnnaEditorialTodayMode.enabled.value = false;
+    });
+    final date = DateTime(2026, 11, 14);
+    final store = AgendaStore();
+    addTearDown(store.dispose);
+    store.preferences = const AgendaPreferences(
+      appLanguage: AppLanguage.italian,
+      palette: AgendaPalette.sage,
+    );
+    store.items.add(AgendaItem(
+      id: 'organic-commitment-qa',
+      title: 'Visita di controllo',
+      date: date,
+      type: ItemType.appointment,
+      start: const TimeOfDay(hour: 9, minute: 30),
+      end: const TimeOfDay(hour: 10, minute: 30),
+      note: 'Promemoria sintetico',
+    ));
+    AnnaEditorialTodayMode.enabled.value = true;
+
+    for (final width in [320.0, 390.0, 600.0]) {
+      for (final brightness in [Brightness.light, Brightness.dark]) {
+        tester.view.physicalSize = Size(width, 720);
+        tester.view.devicePixelRatio = 1;
+        await tester.pumpWidget(MaterialApp(
+          locale: const Locale('it'),
+          theme: ThemeData(colorScheme: ColorScheme.fromSeed(
+            seedColor: const Color(0xFF899657),
+            brightness: brightness,
+          )),
+          home: MediaQuery(
+            data: const MediaQueryData(
+              textScaler: TextScaler.linear(1.6),
+            ),
+            child: AnnaCommitmentsTimelineScreen(
+              store: store,
+              initialDate: date,
+            ),
+          ),
+        ));
+        await tester.pump(const Duration(milliseconds: 350));
+        expect(find.byKey(const ValueKey<String>(
+          'commitments-organic-header',
+        )), findsOneWidget);
+        expect(find.byKey(const ValueKey<String>(
+          'commitments-organic-hint',
+        )), findsOneWidget);
+        expect(find.byKey(const ValueKey<String>(
+          'commitments-organic-hour-grid',
+        )), findsOneWidget);
+        expect(find.byKey(const ValueKey<String>(
+          'commitments-private-count',
+        )), findsOneWidget);
+        final timeline = find.byKey(const ValueKey<String>(
+          'commitments-canonical-day-timeline',
+        ));
+        expect(tester.widget<DayTimeline>(timeline).organicStyle, isTrue);
+        expect(tester.widget<DayTimeline>(timeline).events.single.title,
+            'Visita di controllo');
+        expect(DayTimeline.startHour, 0);
+        expect(DayTimeline.endHour, 24);
+        expect(tester.takeException(), isNull,
+            reason: 'viewport $width with $brightness at 1.6x text');
+      }
+    }
+  });
+
+  testWidgets('Impegni preserves date navigation and legacy Classic timeline',
+      (tester) async {
+    final store = AgendaStore();
+    addTearDown(store.dispose);
+    final day = DateTime(2026, 11, 14);
+    AnnaEditorialTodayMode.enabled.value = true;
+    addTearDown(() => AnnaEditorialTodayMode.enabled.value = false);
+    await tester.pumpWidget(MaterialApp(
+      locale: const Locale('it'),
+      home: AnnaCommitmentsTimelineScreen(
+        store: store,
+        initialDate: day,
+      ),
+    ));
+    await tester.pump();
+    final timeline = find.byKey(const ValueKey<String>(
+      'commitments-canonical-day-timeline',
+    ));
+    expect(tester.widget<DayTimeline>(timeline).organicStyle, isTrue);
+    await tester.tap(find.byKey(const ValueKey('today-date-next')));
+    await tester.pump();
+    expect(tester.widget<DayTimeline>(timeline).date,
+        DateTime(2026, 11, 15));
+    await tester.tap(find.byKey(const ValueKey('today-date-prev')));
+    await tester.pump();
+    expect(tester.widget<DayTimeline>(timeline).date, day);
+    expect(tester.takeException(), isNull);
+
+    AnnaEditorialTodayMode.enabled.value = false;
+    await tester.pumpWidget(MaterialApp(
+      locale: const Locale('it'),
+      home: AnnaCommitmentsTimelineScreen(
+        store: store,
+        initialDate: day,
+      ),
+    ));
+    await tester.pump();
+    expect(find.byKey(const ValueKey<String>(
+      'commitments-organic-header',
+    )), findsNothing);
+    expect(tester.widget<DayTimeline>(timeline).organicStyle, isFalse);
+    expect(tester.takeException(), isNull);
+  });
+
+  test('Impegni premium never creates a second writer or 12-hour view', () {
+    final source = File('lib/src/planner_views.dart').readAsStringSync();
+    expect(source, contains('class _AnnaCommitmentsOrganicHeader'));
+    expect(source, contains('organicStyle: organic,'));
+    expect(source, contains('onTapDown: (details) =>'));
+    expect(source, contains('_createAtPosition(context, details.localPosition.dy)'));
+    expect(source, contains('await openUnifiedItemComposer('));
+    expect(source, contains('await openItemEditor('));
+    expect(source, contains('await _showAgendaItemActions('));
+    expect(source, contains('static const int endHour = 24;'));
+  });
+
   test('Organic Today places memories after the diary and hides inline timeline',
       () {
     final source = File('lib/src/planner_views.dart').readAsStringSync();
