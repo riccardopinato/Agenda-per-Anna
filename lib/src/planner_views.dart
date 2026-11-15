@@ -2437,17 +2437,34 @@ Future<void> _openDayLifeEntry(
 
 class _TimelineHint extends StatelessWidget {
   final int eventCount;
+  final bool organicStyle;
 
-  const _TimelineHint({required this.eventCount});
+  const _TimelineHint({
+    required this.eventCount,
+    this.organicStyle = false,
+  });
 
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
+      key: organicStyle
+          ? const ValueKey<String>('commitments-organic-hint')
+          : null,
+      padding: EdgeInsets.symmetric(
+        horizontal: organicStyle ? 16 : 12,
+        vertical: organicStyle ? 13 : 9,
+      ),
       decoration: BoxDecoration(
-        color: scheme.surfaceContainerHighest.withValues(alpha: 0.55),
-        borderRadius: BorderRadius.circular(16),
+        color: organicStyle
+            ? AnnaOrganicPastel.surface(context)
+            : scheme.surfaceContainerHighest.withValues(alpha: 0.55),
+        borderRadius: BorderRadius.circular(organicStyle ? 19 : 16),
+        border: organicStyle
+            ? Border.all(
+                color: scheme.outlineVariant.withValues(alpha: .66),
+              )
+            : null,
       ),
       child: Row(
         children: [
@@ -2810,6 +2827,8 @@ class DayTimeline extends StatelessWidget {
   final List<AgendaItem> events;
   final AgendaStore store;
   final VoidCallback onChanged;
+  // Only the dedicated Impegni screen opts in; Calendar/Classic are untouched.
+  final bool organicStyle;
 
   const DayTimeline({
     super.key,
@@ -2817,6 +2836,7 @@ class DayTimeline extends StatelessWidget {
     required this.events,
     required this.store,
     required this.onChanged,
+    this.organicStyle = false,
   });
 
   static const int startHour = 0;
@@ -2848,11 +2868,19 @@ class DayTimeline extends StatelessWidget {
       builder: (context, constraints) {
         return Container(
           height: totalHeight,
+          key: organicStyle
+              ? const ValueKey<String>('commitments-organic-hour-grid')
+              : null,
           decoration: BoxDecoration(
-            color: Theme.of(context).colorScheme.surface,
-            borderRadius: BorderRadius.circular(24),
+            color: organicStyle
+                ? AnnaOrganicPastel.surface(context)
+                : Theme.of(context).colorScheme.surface,
+            borderRadius: BorderRadius.circular(organicStyle ? 22 : 24),
             border: Border.all(
-              color: Theme.of(context).colorScheme.outlineVariant,
+              color: organicStyle
+                  ? Theme.of(context)
+                      .colorScheme.outlineVariant.withValues(alpha: .62)
+                  : Theme.of(context).colorScheme.outlineVariant,
             ),
           ),
           clipBehavior: Clip.antiAlias,
@@ -2868,6 +2896,7 @@ class DayTimeline extends StatelessWidget {
                       color: Theme.of(context).colorScheme.outlineVariant,
                       textColor:
                           Theme.of(context).colorScheme.onSurfaceVariant,
+                      organicStyle: organicStyle,
                     ),
                   ),
                 ),
@@ -2991,9 +3020,10 @@ class DayTimeline extends StatelessWidget {
         placement.lane * (laneWidth + gap);
 
     final base = event.category.color;
+    final scheme = Theme.of(context).colorScheme;
     final background = Color.alphaBlend(
-      base.withValues(alpha: 0.16),
-      Theme.of(context).colorScheme.surface,
+      base.withValues(alpha: organicStyle ? .11 : .16),
+      organicStyle ? AnnaOrganicPastel.surface(context) : scheme.surface,
     );
 
     return Positioned(
@@ -3004,7 +3034,7 @@ class DayTimeline extends StatelessWidget {
       child: Material(
         color: Colors.transparent,
         child: InkWell(
-          borderRadius: BorderRadius.circular(14),
+          borderRadius: BorderRadius.circular(organicStyle ? 17 : 14),
           onTap: () async {
             await openItemEditor(
               context,
@@ -3025,13 +3055,17 @@ class DayTimeline extends StatelessWidget {
             ),
             decoration: BoxDecoration(
               color: background,
-              borderRadius: BorderRadius.circular(14),
-              border: Border.all(color: base.withValues(alpha: 0.55)),
-              boxShadow: const [
+              borderRadius: BorderRadius.circular(organicStyle ? 17 : 14),
+              border: Border.all(
+                color: base.withValues(alpha: organicStyle ? .23 : .55),
+              ),
+              boxShadow: [
                 BoxShadow(
-                  blurRadius: 4,
-                  offset: Offset(0, 2),
-                  color: Color(0x12000000),
+                  blurRadius: organicStyle ? 10 : 4,
+                  offset: Offset(0, organicStyle ? 3 : 2),
+                  color: scheme.shadow.withValues(
+                    alpha: organicStyle ? .055 : .07,
+                  ),
                 ),
               ],
             ),
@@ -3053,7 +3087,13 @@ class DayTimeline extends StatelessWidget {
                       if (placement.laneCount <= 2)
                         Row(
                           children: [
-                            Icon(event.category.icon, size: 13, color: base),
+                            Icon(
+                              event.category.icon,
+                              size: 13,
+                              color: organicStyle
+                                  ? scheme.onSurfaceVariant
+                                  : base,
+                            ),
                             const SizedBox(width: 4),
                             Expanded(
                               child: Text(
@@ -3061,7 +3101,9 @@ class DayTimeline extends StatelessWidget {
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
                                 style: TextStyle(
-                                  color: base,
+                                  color: organicStyle
+                                      ? scheme.onSurfaceVariant
+                                      : base,
                                   fontSize: 10,
                                   fontWeight: FontWeight.w800,
                                 ),
@@ -3075,6 +3117,7 @@ class DayTimeline extends StatelessWidget {
                         overflow: TextOverflow.ellipsis,
                         style: TextStyle(
                           fontWeight: FontWeight.w800,
+                          color: organicStyle ? scheme.onSurface : null,
                           fontSize: placement.laneCount > 2 ? 11 : 13,
                         ),
                       ),
@@ -3087,6 +3130,9 @@ class DayTimeline extends StatelessWidget {
                           overflow: TextOverflow.ellipsis,
                           style: TextStyle(
                             fontSize: placement.laneCount > 2 ? 9 : 11,
+                            color: organicStyle
+                                ? scheme.onSurfaceVariant
+                                : null,
                             fontWeight: FontWeight.w600,
                           ),
                         ),
@@ -3097,7 +3143,12 @@ class DayTimeline extends StatelessWidget {
                           event.note,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(fontSize: 11),
+                          style: TextStyle(
+                            fontSize: 11,
+                            color: organicStyle
+                                ? scheme.onSurfaceVariant
+                                : null,
+                          ),
                         ),
                     ],
                   ),
@@ -3121,25 +3172,61 @@ class DayTimeline extends StatelessWidget {
     }
 
     final top = offsetForMinutes(minutes);
+    final highlight = organicStyle
+        ? Theme.of(context).colorScheme.primary
+        : const Color(0xFFE14F7A);
     return Positioned(
-      top: top,
-      left: timeColumnWidth - 3,
+      key: organicStyle
+          ? const ValueKey<String>('commitments-organic-now-indicator')
+          : null,
+      top: organicStyle ? top - 10 : top,
+      left: organicStyle ? 5 : timeColumnWidth - 3,
       right: 0,
       child: IgnorePointer(
         child: Row(
           children: [
-            Container(
-              width: 9,
-              height: 9,
-              decoration: const BoxDecoration(
-                color: Color(0xFFE14F7A),
-                shape: BoxShape.circle,
+            if (organicStyle)
+              Container(
+                height: 23,
+                padding: const EdgeInsets.symmetric(horizontal: 7),
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  color: highlight,
+                  borderRadius: BorderRadius.circular(9),
+                ),
+                child: Text(
+                  formatTime(TimeOfDay.fromDateTime(now)),
+                  style: TextStyle(
+                    color: Theme.of(context).colorScheme.onPrimary,
+                    fontWeight: FontWeight.w800,
+                    fontSize: 10,
+                  ),
+                ),
+              )
+            else
+              Container(
+                width: 9,
+                height: 9,
+                decoration: const BoxDecoration(
+                  color: Color(0xFFE14F7A),
+                  shape: BoxShape.circle,
+                ),
               ),
-            ),
+            if (organicStyle)
+              Container(
+                width: 7,
+                height: 7,
+                decoration: BoxDecoration(
+                  color: highlight,
+                  shape: BoxShape.circle,
+                ),
+              ),
             Expanded(
               child: Container(
-                height: 2,
-                color: const Color(0xFFE14F7A),
+                height: organicStyle ? 1.5 : 2,
+                color: highlight.withValues(
+                  alpha: organicStyle ? .72 : 1,
+                ),
               ),
             ),
           ],
@@ -3175,17 +3262,22 @@ class DayTimeline extends StatelessWidget {
 class _TimelinePainter extends CustomPainter {
   final Color color;
   final Color textColor;
+  final bool organicStyle;
 
-  _TimelinePainter({required this.color, required this.textColor});
+  _TimelinePainter({
+    required this.color,
+    required this.textColor,
+    this.organicStyle = false,
+  });
 
   @override
   void paint(Canvas canvas, Size size) {
     final fullPaint = Paint()
-      ..color = color
-      ..strokeWidth = 1;
+      ..color = organicStyle ? color.withValues(alpha: .62) : color
+      ..strokeWidth = organicStyle ? .8 : 1;
     final halfPaint = Paint()
-      ..color = color.withValues(alpha: 0.35)
-      ..strokeWidth = 1;
+      ..color = color.withValues(alpha: organicStyle ? .17 : .35)
+      ..strokeWidth = organicStyle ? .7 : 1;
 
     for (int hour = DayTimeline.startHour;
         hour <= DayTimeline.endHour;
@@ -3211,8 +3303,10 @@ class _TimelinePainter extends CustomPainter {
           text: '${hour.toString().padLeft(2, '0')}:00',
           style: TextStyle(
             color: textColor,
-            fontSize: 10.5,
-            fontWeight: FontWeight.w600,
+            fontSize: organicStyle ? 11 : 10.5,
+            fontWeight: organicStyle
+                ? FontWeight.w700
+                : FontWeight.w600,
           ),
         ),
         textDirection: ui.TextDirection.ltr,
@@ -3234,7 +3328,9 @@ class _TimelinePainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant _TimelinePainter oldDelegate) {
-    return oldDelegate.color != color || oldDelegate.textColor != textColor;
+    return oldDelegate.color != color ||
+        oldDelegate.textColor != textColor ||
+        oldDelegate.organicStyle != organicStyle;
   }
 }
 
