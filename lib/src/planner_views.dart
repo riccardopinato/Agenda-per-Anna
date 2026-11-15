@@ -3069,7 +3069,9 @@ class DayTimeline extends StatelessWidget {
           child: Container(
             padding: EdgeInsets.symmetric(
               horizontal: placement.laneCount > 2 ? 6 : 9,
-              vertical: 7,
+              // Keep scaled title + time within 60-minute slots without
+              // clipping or reducing the user's accessibility text size.
+              vertical: compactForText ? 3 : 7,
             ),
             decoration: BoxDecoration(
               color: background,
