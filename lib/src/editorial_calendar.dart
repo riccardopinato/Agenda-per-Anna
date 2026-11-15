@@ -1,5 +1,109 @@
 part of '../main.dart';
 
+/// Original calendar mode selector for the Organic iOS Journal.
+/// Unlike Material 3 SegmentedButton, every pixel is under this design's own
+/// theme, spacing and palette. Classic retains its pre-existing widget.
+class AnnaOrganicCalendarModePicker extends StatelessWidget {
+  final bool monthSelected;
+  final String monthLabel;
+  final String weekLabel;
+  final ValueChanged<bool> onSelected;
+
+  const AnnaOrganicCalendarModePicker({
+    super.key,
+    required this.monthSelected,
+    required this.monthLabel,
+    required this.weekLabel,
+    required this.onSelected,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = AnnaEditorialColors.of(context);
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: colors.quiet,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: colors.border),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(3),
+        child: Row(
+          children: [
+            for (final month in [true, false])
+              Expanded(
+                child: Semantics(
+                  button: true,
+                  selected: monthSelected == month,
+                  label: month ? monthLabel : weekLabel,
+                  child: Material(
+                    type: MaterialType.transparency,
+                    child: InkWell(
+                      key: ValueKey<String>(month
+                          ? 'organic-calendar-mode-month'
+                          : 'organic-calendar-mode-week'),
+                      splashFactory: NoSplash.splashFactory,
+                      highlightColor: Colors.transparent,
+                      focusColor: colors.accent.withValues(alpha: .12),
+                      borderRadius: BorderRadius.circular(15),
+                      onTap: () => onSelected(month),
+                      child: Container(
+                        constraints: const BoxConstraints(minHeight: 48),
+                        alignment: Alignment.center,
+                        decoration: BoxDecoration(
+                          color: monthSelected == month
+                              ? colors.card : Colors.transparent,
+                          borderRadius: BorderRadius.circular(15),
+                          boxShadow: monthSelected == month
+                              ? [
+                                  BoxShadow(
+                                    color: colors.shadow,
+                                    blurRadius: 8,
+                                    offset: const Offset(0, 2),
+                                  )
+                                ]
+                              : null,
+                        ),
+                        padding: const EdgeInsets.symmetric(horizontal: 5),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              month
+                                  ? Icons.calendar_month_outlined
+                                  : Icons.view_week_outlined,
+                              size: 16,
+                              color: monthSelected == month
+                                  ? colors.accent : colors.mutedInk,
+                            ),
+                            const SizedBox(width: 6),
+                            Flexible(
+                              child: Text(
+                                month ? monthLabel : weekLabel,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(
+                                  fontFamily: AnnaJournalTypography.uiFamily,
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w700,
+                                  color: colors.ink,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 /// DS5 visual-only wrapper. The caller retains its original agenda,
 /// date selection, editor, persistence, and semantics; no second writer.
 class AnnaEditorialCalendarPanel extends StatelessWidget {
