@@ -625,7 +625,10 @@ class _CalendarScreenState extends State<CalendarScreen> {
                 ),
               ),
               const SizedBox(height: 12),
-              AgendaContentFilterBar(store: widget.store),
+              AgendaContentFilterBar(
+                store: widget.store,
+                calendarNotebook: editorial,
+              ),
               const SizedBox(height: 10),
               Align(
                 alignment: Alignment.centerLeft,
@@ -3223,11 +3226,13 @@ class _WeekScreenState extends State<WeekScreen> {
                     AnnaStrings.of(context).d3('myWeek'),
                     style: const TextStyle(fontWeight: FontWeight.w800),
                   ),
-                  actions: _weekActions(context),
+                  actions: editorial ? null : _weekActions(context),
                 ),
           body: Column(
             children: [
-              if (widget.embedded)
+              // In the notebook standalone screen, move all week actions
+              // below the title so the localized header never truncates.
+              if (widget.embedded || editorial)
                 Semantics(
                   identifier: 'calendar-week-view',
                   container: true,
@@ -3260,7 +3265,10 @@ class _WeekScreenState extends State<WeekScreen> {
                         totalTasks: totalTasks,
                       ),
               const SizedBox(height: 12),
-              AgendaContentFilterBar(store: widget.store),
+              AgendaContentFilterBar(
+                store: widget.store,
+                calendarNotebook: editorial,
+              ),
               const SizedBox(height: 14),
               WeekFocusCard(
                 key: ValueKey('week-focus-${AgendaStore.dateKey(start)}'),
