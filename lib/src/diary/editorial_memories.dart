@@ -190,7 +190,12 @@ extension _EditorialMemoriesPresentation on _DiaryMemoriesScreenState {
                             context, size: AnnaEditorialTokens.cardTitle,
                           ).copyWith(color: colors.ink),
                         ),
-                        const SizedBox(height: 8),
+                        if (AnnaOrganicPastel.enabled(context)) ...[
+                          const SizedBox(height: 10),
+                          const AnnaOrganicJournalRule(),
+                          const SizedBox(height: 10),
+                        ] else
+                          const SizedBox(height: 8),
                         AnnaEditorialDateLabel(text: _cap(date)),
                       ],
                     ),
@@ -224,12 +229,24 @@ extension _EditorialMemoriesPresentation on _DiaryMemoriesScreenState {
                               context, size: AnnaEditorialTokens.cardTitle,
                             ).copyWith(color: colors.ink),
                           ),
-                          const SizedBox(height: 8),
+                          if (AnnaOrganicPastel.enabled(context)) ...[
+                            const SizedBox(height: 10),
+                            const AnnaOrganicJournalRule(),
+                            const SizedBox(height: 10),
+                          ] else
+                            const SizedBox(height: 8),
                           AnnaEditorialDateLabel(text: _cap(date)),
                         ],
                       ),
                     ),
-                    Icon(Icons.chevron_right, color: colors.mutedInk),
+                    Icon(
+                      AnnaOrganicPastel.enabled(context)
+                          ? Icons.arrow_forward_ios_rounded
+                          : Icons.chevron_right,
+                      size: AnnaOrganicPastel.enabled(context) ? 15 : 24,
+                      color: AnnaOrganicPastel.enabled(context)
+                          ? colors.accent : colors.mutedInk,
+                    ),
                   ],
                 ),
               ),
