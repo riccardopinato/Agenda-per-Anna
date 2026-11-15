@@ -139,6 +139,52 @@ void main() {
       ),
     );
 
+    // Render the actual CalendarHub used from Home, not just the two
+    // standalone screens. This checks the original non-M3 selector and
+    // the existing My Month / My Year links in a real Flutter route.
+    Navigator.of(homeContext).pop(); // Week -> Month detail
+    await tester.pump(const Duration(milliseconds: 350));
+    Navigator.of(homeContext).pop(); // Month detail -> Home
+    await tester.pump(const Duration(milliseconds: 350));
+    Navigator.of(homeContext).push(MaterialPageRoute<void>(
+      builder: (_) => CalendarHubScreen(store: store),
+    ));
+    await tester.pump(const Duration(milliseconds: 350));
+    await tester.pump(const Duration(milliseconds: 500));
+    expect(find.byKey(const ValueKey<String>(
+      'calendar-open-month-notebook',
+    )), findsOneWidget);
+    expect(find.byKey(const ValueKey<String>(
+      'calendar-open-year-overview',
+    )), findsOneWidget);
+    expect(find.byKey(const ValueKey<String>(
+      'organic-calendar-mode-month',
+    )), findsOneWidget);
+    await expectLater(
+      find.descendant(
+        of: find.byType(CalendarHubScreen),
+        matching: find.byType(Scaffold),
+      ).first,
+      matchesGoldenFile(calendarCapturePopulated
+          ? 'goldens/anna_calendar_hub_month_populated_390.png'
+          : 'goldens/anna_calendar_hub_month_empty_390.png'),
+    );
+
+    await tester.tap(find.byKey(const ValueKey<String>(
+      'organic-calendar-mode-week',
+    )));
+    await tester.pump(const Duration(milliseconds: 350));
+    await tester.pump(const Duration(milliseconds: 500));
+    await expectLater(
+      find.descendant(
+        of: find.byType(CalendarHubScreen),
+        matching: find.byType(Scaffold),
+      ).first,
+      matchesGoldenFile(calendarCapturePopulated
+          ? 'goldens/anna_calendar_hub_week_populated_390.png'
+          : 'goldens/anna_calendar_hub_week_empty_390.png'),
+    );
+
     expect(tester.takeException(), isNull);
     await tester.pump(const Duration(seconds: 2));
     await tester.pumpWidget(const SizedBox.shrink());
