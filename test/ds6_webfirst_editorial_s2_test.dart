@@ -156,4 +156,69 @@ void main() {
     expect(source, isNot(contains('saveJournal(')));
     expect(source, isNot(contains('Supabase')));
   });
+  testWidgets('Notebook week summary survives large text and palette variants',
+      (tester) async {
+    tester.view.devicePixelRatio = 1;
+    addTearDown(() {
+      tester.view.resetPhysicalSize();
+      tester.view.resetDevicePixelRatio();
+    });
+    for (final width in [320.0, 390.0, 600.0]) {
+      tester.view.physicalSize = Size(width, 760);
+      for (final brightness in [Brightness.light, Brightness.dark]) {
+        await tester.pumpWidget(app(
+          MediaQuery(
+            data: MediaQueryData(
+              size: Size(width, 760),
+              textScaler: const TextScaler.linear(1.6),
+            ),
+            child: AnnaEditorialCalendarWeekSummary(
+              start: DateTime(2026, 11, 2),
+              end: DateTime(2026, 11, 8),
+              eventCount: 3,
+              completedTasks: 1,
+              totalTasks: 2,
+            ),
+          ),
+          brightness: brightness,
+          seed: Colors.deepOrange,
+        ));
+        expect(find.byKey(const ValueKey<String>(
+          'editorial-calendar-week-summary-rule',
+        )), findsOneWidget);
+        expect(find.byKey(const ValueKey<String>(
+          'editorial-calendar-week-date',
+        )), findsOneWidget);
+        expect(tester.takeException(), isNull,
+            reason: 'week summary width $width brightness $brightness');
+      }
+    }
+  });
+
+  test('Quaderno illustrato keeps real month and all seven week days',
+      () {
+    final source = File('lib/src/planner_views.dart').readAsStringSync();
+    final month = source
+        .split('class _CalendarScreenState')[1]
+        .split('class _CalendarDayContextCard')[0];
+    final week = source
+        .split('class _WeekScreenState')[1]
+        .split('class _WeekHero')[0];
+    final dayCard = source
+        .split('class _WeekDayCard')[1]
+        .split('class WeekMemoryCard')[0];
+    expect(month, contains('TableCalendar<UnifiedAgendaEntry>'));
+    expect(month, contains('selectedDayPredicate: (d) => isSameDay(d, selected)'));
+    expect(month, contains('eventLoader: (day) =>'));
+    expect(month, contains('todayDecoration: BoxDecoration('));
+    expect(month, contains('markersMaxCount: 3'));
+    expect(month, contains('widget.onSelectedDateChanged?.call(s)'));
+    expect(week, contains('for (int i = 6; i >= 0; i--)'));
+    expect(dayCard, contains('organic-week-day-'));
+    expect(dayCard, contains('captureDate: day,'));
+    expect(dayCard, contains('UnifiedAgendaTile(store: store, entry: item'));
+    expect(dayCard, contains('AnnaOrganicPastel.surface(context)'));
+  });
+
+
 }
