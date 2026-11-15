@@ -280,7 +280,18 @@ class _CalendarHubScreenState extends State<CalendarHubScreen> {
             padding: const EdgeInsets.fromLTRB(16, 0, 16, 10),
             child: SizedBox(
               width: double.infinity,
-              child: SegmentedButton<_CalendarHubView>(
+              child: editorial
+                  ? AnnaOrganicCalendarModePicker(
+                      monthSelected: view == _CalendarHubView.month,
+                      monthLabel: strings.navMonth,
+                      weekLabel: strings.navWeek,
+                      onSelected: (month) => setState(() {
+                        view = month
+                            ? _CalendarHubView.month
+                            : _CalendarHubView.week;
+                      }),
+                    )
+                  : SegmentedButton<_CalendarHubView>(
                 style: ButtonStyle(
                   backgroundColor: editorial
                       ? WidgetStatePropertyAll(AnnaEditorialColors.of(context).quiet)
