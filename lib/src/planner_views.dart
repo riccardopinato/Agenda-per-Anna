@@ -2676,12 +2676,18 @@ class _AnnaCommitmentsOrganicHeader extends StatelessWidget {
     final scheme = Theme.of(context).colorScheme;
     final dark = scheme.brightness == Brightness.dark;
     final language = AnnaStrings.of(context).languageCode;
-    final (eyebrow, heading, privateLabel) = switch (language) {
-      'en' => ('YOUR DAY', 'One hour at a time', 'personal appointments'),
-      'es' => ('TU DÍA', 'Cada hora cuenta', 'citas personales'),
-      'fr' => ('VOTRE JOURNÉE', 'Chaque heure compte', 'rendez-vous personnels'),
-      'pt' => ('O SEU DIA', 'Cada hora conta', 'compromissos pessoais'),
-      _ => ('LA TUA GIORNATA', 'Ogni ora conta', 'appuntamenti personali'),
+    final (eyebrow, heading, singularLabel, pluralLabel) =
+        switch (language) {
+      'en' => ('YOUR DAY', 'One hour at a time',
+          'personal appointment', 'personal appointments'),
+      'es' => ('TU DÍA', 'Cada hora cuenta',
+          'cita personal', 'citas personales'),
+      'fr' => ('VOTRE JOURNÉE', 'Chaque heure compte',
+          'rendez-vous personnel', 'rendez-vous personnels'),
+      'pt' => ('O SEU DIA', 'Cada hora conta',
+          'compromisso pessoal', 'compromissos pessoais'),
+      _ => ('LA TUA GIORNATA', 'Ogni ora conta',
+          'appuntamento personale', 'appuntamenti personali'),
     };
     final base = AnnaOrganicPastel.surface(context);
     final accent = scheme.primary;
@@ -2800,7 +2806,7 @@ class _AnnaCommitmentsOrganicHeader extends StatelessWidget {
                           ),
                         ),
                         child: Text(
-                          '$eventCount $privateLabel',
+                          '$eventCount ${eventCount == 1 ? singularLabel : pluralLabel}',
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: Theme.of(context)
@@ -3303,6 +3309,10 @@ class _TimelinePainter extends CustomPainter {
           text: '${hour.toString().padLeft(2, '0')}:00',
           style: TextStyle(
             color: textColor,
+            // Headless Flutter's default test font is Ahem (black bars).
+            // Use the same bundled Manrope asset as Anna's Diary, so
+            // hour labels are visually truthful in CI and on devices.
+            fontFamily: organicStyle ? 'Manrope' : null,
             fontSize: organicStyle ? 11 : 10.5,
             fontWeight: organicStyle
                 ? FontWeight.w700
