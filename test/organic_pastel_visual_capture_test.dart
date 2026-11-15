@@ -198,18 +198,20 @@ void main() {
         note: 'Porta la macchina fotografica',
       ));
     }
-    await tester.pumpWidget(MaterialApp(
-      locale: const Locale('it'),
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: const Color(0xFF899657),
-        ),
-      ),
-      home: AnnaCommitmentsTimelineScreen(
-        store: store,
-        initialDate: DateTime.now(),
-      ),
-    ));
+    // Use the real AgendaApp theme/localization and push the real quick-link
+    // route. A bare MaterialApp uses headless test Ahem (black rectangles)
+    // instead of the shipped Manrope font; that is NOT meaningful visual QA.
+    await tester.pumpWidget(
+      AgendaApp(store: store, bypassIdentityForTesting: true),
+    );
+    await tester.pump(const Duration(milliseconds: 350));
+    await tester.pump(const Duration(milliseconds: 500));
+    final quickLink = find.byKey(
+      const ValueKey<String>('organic-quick-commitments'),
+    );
+    expect(quickLink, findsOneWidget);
+    await tester.ensureVisible(quickLink);
+    await tester.tap(quickLink);
     await tester.pump(const Duration(milliseconds: 350));
     await tester.pump(const Duration(milliseconds: 500));
     expect(
