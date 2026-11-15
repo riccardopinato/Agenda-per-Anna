@@ -74,6 +74,7 @@ void main() {
         AgendaItem(
           id: 'calendar-notebook-appointment-fixture',
           title: 'Visita al museo',
+          note: '',
           date: date,
           type: ItemType.appointment,
           start: const TimeOfDay(hour: 10, minute: 30),
@@ -82,6 +83,7 @@ void main() {
         AgendaItem(
           id: 'calendar-notebook-task-fixture',
           title: 'Preparare le fotografie',
+          note: '',
           date: date,
           type: ItemType.task,
           done: false,
