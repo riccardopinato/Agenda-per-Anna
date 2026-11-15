@@ -2549,7 +2549,9 @@ class _AnnaCommitmentsTimelineScreenState
     return Scaffold(
       key: const ValueKey<String>('commitments-hourly-timeline-screen'),
       backgroundColor: organic
-          ? AnnaEditorialColors.of(context).canvas
+          ? (Theme.of(context).brightness == Brightness.dark
+              ? AnnaEditorialColors.of(context).canvas
+              : AnnaOrganicPastel.canvas)
           : null,
       appBar: AppBar(
         title: Text(
@@ -2580,10 +2582,17 @@ class _AnnaCommitmentsTimelineScreenState
               .toList();
           return Column(
             children: [
-              _TodaySingleDateNavigator(
-                selected: _selected,
-                onSelected: _selectDay,
-              ),
+              if (organic)
+                _AnnaCommitmentsOrganicHeader(
+                  selected: _selected,
+                  eventCount: timedPrivate.length,
+                  onSelected: _selectDay,
+                )
+              else
+                _TodaySingleDateNavigator(
+                  selected: _selected,
+                  onSelected: _selectDay,
+                ),
               Expanded(
                 child: SingleChildScrollView(
                   key: const ValueKey<String>(
@@ -2591,29 +2600,206 @@ class _AnnaCommitmentsTimelineScreenState
                   ),
                   controller: _timelineScroll,
                   padding: const EdgeInsets.fromLTRB(16, 8, 16, 28),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      _TimelineHint(eventCount: timedPrivate.length),
-                      const SizedBox(height: 12),
-                      DayTimeline(
-                        key: const ValueKey<String>(
-                          'commitments-canonical-day-timeline',
-                        ),
-                        date: _selected,
-                        events: timedPrivate,
-                        store: widget.store,
-                        onChanged: () {
-                          if (mounted) setState(() {});
-                        },
+                  child: Center(
+                    child: ConstrainedBox(
+                      constraints: const BoxConstraints(
+                        maxWidth: AnnaDesignTokens.readingContentWidth,
                       ),
-                    ],
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          _TimelineHint(
+                            eventCount: timedPrivate.length,
+                            organicStyle: organic,
+                          ),
+                          const SizedBox(height: 12),
+                          DayTimeline(
+                            key: const ValueKey<String>(
+                              'commitments-canonical-day-timeline',
+                            ),
+                            date: _selected,
+                            events: timedPrivate,
+                            store: widget.store,
+                            organicStyle: organic,
+                            onChanged: () {
+                              if (mounted) setState(() {});
+                            },
+                          ),
+                        ],
+                      ),
+                    ),
                   ),
                 ),
               ),
             ],
           );
         },
+      ),
+    );
+  }
+}
+
+
+/// Premium header for the dedicated Impegni route. The date controls are the
+/// canonical civil-day navigator; the count refers ONLY to timed private
+/// appointments, never to external/shared items or all tasks.
+class _AnnaCommitmentsOrganicHeader extends StatelessWidget {
+  final DateTime selected;
+  final int eventCount;
+  final ValueChanged<DateTime> onSelected;
+
+  const _AnnaCommitmentsOrganicHeader({
+    required this.selected,
+    required this.eventCount,
+    required this.onSelected,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final dark = scheme.brightness == Brightness.dark;
+    final language = AnnaStrings.of(context).languageCode;
+    final (eyebrow, heading, privateLabel) = switch (language) {
+      'en' => ('YOUR DAY', 'One hour at a time', 'personal appointments'),
+      'es' => ('TU DÍA', 'Cada hora cuenta', 'citas personales'),
+      'fr' => ('VOTRE JOURNÉE', 'Chaque heure compte', 'rendez-vous personnels'),
+      'pt' => ('O SEU DIA', 'Cada hora conta', 'compromissos pessoais'),
+      _ => ('LA TUA GIORNATA', 'Ogni ora conta', 'appuntamenti personali'),
+    };
+    final base = AnnaOrganicPastel.surface(context);
+    final accent = scheme.primary;
+    final ink = AnnaOrganicPastel.text(context);
+    return Center(
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(
+          maxWidth: AnnaDesignTokens.readingContentWidth,
+        ),
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+          child: Container(
+            key: const ValueKey<String>('commitments-organic-header'),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(26),
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  Color.lerp(base, accent, dark ? .13 : .09)!,
+                  Color.lerp(base, scheme.tertiaryContainer, dark ? .15 : .24)!,
+                  base,
+                ],
+              ),
+              border: Border.all(
+                color: scheme.outlineVariant.withValues(alpha: .6),
+              ),
+              boxShadow: [
+                BoxShadow(
+                  blurRadius: 16,
+                  offset: const Offset(0, 5),
+                  color: scheme.shadow.withValues(alpha: dark ? .10 : .045),
+                ),
+              ],
+            ),
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(10, 15, 10, 8),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 12),
+                    child: Row(
+                      children: [
+                        Container(
+                          width: 41,
+                          height: 41,
+                          alignment: Alignment.center,
+                          decoration: BoxDecoration(
+                            color: accent.withValues(alpha: dark ? .24 : .13),
+                            shape: BoxShape.circle,
+                          ),
+                          child: Icon(
+                            Icons.schedule_rounded,
+                            color: ink,
+                            size: 23,
+                          ),
+                        ),
+                        const SizedBox(width: 11),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                eyebrow,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: Theme.of(context)
+                                    .textTheme.labelSmall?.copyWith(
+                                      color: scheme.onSurfaceVariant,
+                                      fontWeight: FontWeight.w800,
+                                      letterSpacing: 1.2,
+                                    ),
+                              ),
+                              Text(
+                                heading,
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                                style: AnnaJournalTypography.editorial(
+                                  context,
+                                  size: 21,
+                                ).copyWith(color: ink),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 7),
+                  // Keep the existing accessible 48dp day arrows and
+                  // unchanged date localization/motion behavior.
+                  _TodaySingleDateNavigator(
+                    selected: selected,
+                    onSelected: onSelected,
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(12, 0, 12, 5),
+                    child: Align(
+                      alignment: Alignment.centerLeft,
+                      child: Container(
+                        key: const ValueKey<String>(
+                          'commitments-private-count',
+                        ),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 11,
+                          vertical: 6,
+                        ),
+                        decoration: BoxDecoration(
+                          color: scheme.surface.withValues(
+                            alpha: dark ? .65 : .86,
+                          ),
+                          borderRadius: BorderRadius.circular(99),
+                          border: Border.all(
+                            color: scheme.outlineVariant.withValues(alpha: .5),
+                          ),
+                        ),
+                        child: Text(
+                          '$eventCount $privateLabel',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: Theme.of(context)
+                              .textTheme.labelMedium?.copyWith(
+                                fontWeight: FontWeight.w700,
+                                color: ink,
+                              ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
       ),
     );
   }
