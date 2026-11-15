@@ -184,11 +184,15 @@ void main() {
       ),
     );
     debugPrint('ORGANIC_CAPTURE STEP 8C: render dedicated Impegni premium');
+    // A SEPARATE fresh in-memory store avoids stale derived-day projections
+    // after the already captured Home snapshot. This is synthetic test-only
+    // content, never a user's journal or an app database mutation.
+    final commitmentsStore = AgendaStore();
+    commitmentsStore.preferences = store.preferences;
+    addTearDown(commitmentsStore.dispose);
     if (populated) {
-      // This synthetic item is injected AFTER the Home screenshots so they
-      // stay comparable across PRs. It never leaves the in-memory test store.
       final today = DateTime.now();
-      store.items.add(AgendaItem(
+      commitmentsStore.items.add(AgendaItem(
         id: 'organic-premium-commitments-capture',
         title: 'Passeggiata ai Colli',
         date: DateTime(today.year, today.month, today.day),
@@ -198,23 +202,13 @@ void main() {
         note: 'Porta la macchina fotografica',
       ));
     }
-    // Use the real AgendaApp theme/localization and push the real quick-link
-    // route. A bare MaterialApp uses headless test Ahem (black rectangles)
-    // instead of the shipped Manrope font; that is NOT meaningful visual QA.
-    await tester.pumpWidget(
-      AgendaApp(store: store, bypassIdentityForTesting: true),
-    );
-    await tester.pump(const Duration(milliseconds: 350));
-    await tester.pump(const Duration(milliseconds: 500));
-    // Push via the app's own Navigator: the Home screenshot intentionally
-    // leaves its collapsible sliver scrolled, so tester.ensureVisible() can
-    // place the quick-link UNDER the pinned hero. Navigation behavior via
-    // that tile has separate widget coverage in organic_pastel_experiment.
-    // This screenshot must isolate the visual treatment, not scroll hit test.
+    // Keep the real AgendaApp in place (Manrope/Lora, localizations and
+    // active ColorScheme), and push the premium screen on its Navigator.
+    // Its shortcut navigation was already separately widget-tested.
     final homeContext = tester.element(find.byType(Scaffold).first);
     Navigator.of(homeContext).push(MaterialPageRoute<void>(
       builder: (_) => AnnaCommitmentsTimelineScreen(
-        store: store,
+        store: commitmentsStore,
         initialDate: DateTime.now(),
       ),
     ));
