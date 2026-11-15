@@ -183,6 +183,51 @@ void main() {
             : 'goldens/organic_pastel_today_collapsed_390.png',
       ),
     );
+    debugPrint('ORGANIC_CAPTURE STEP 8C: render dedicated Impegni premium');
+    if (populated) {
+      // This synthetic item is injected AFTER the Home screenshots so they
+      // stay comparable across PRs. It never leaves the in-memory test store.
+      final today = DateTime.now();
+      store.items.add(AgendaItem(
+        id: 'organic-premium-commitments-capture',
+        title: 'Passeggiata ai Colli',
+        date: DateTime(today.year, today.month, today.day),
+        type: ItemType.appointment,
+        start: const TimeOfDay(hour: 9, minute: 30),
+        end: const TimeOfDay(hour: 10, minute: 30),
+        note: 'Porta la macchina fotografica',
+      ));
+    }
+    await tester.pumpWidget(MaterialApp(
+      locale: const Locale('it'),
+      theme: ThemeData(
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: const Color(0xFF899657),
+        ),
+      ),
+      home: AnnaCommitmentsTimelineScreen(
+        store: store,
+        initialDate: DateTime.now(),
+      ),
+    ));
+    await tester.pump(const Duration(milliseconds: 350));
+    await tester.pump(const Duration(milliseconds: 500));
+    expect(
+      find.byKey(const ValueKey<String>('commitments-organic-header')),
+      findsOneWidget,
+    );
+    expect(
+      find.byKey(const ValueKey<String>('commitments-organic-hour-grid')),
+      findsOneWidget,
+    );
+    await expectLater(
+      find.byType(Scaffold).first,
+      matchesGoldenFile(
+        populated
+            ? 'goldens/organic_commitments_premium_populated_390.png'
+            : 'goldens/organic_commitments_premium_empty_390.png',
+      ),
+    );
     debugPrint('ORGANIC_CAPTURE STEP 9: drain and cleanup');
     expect(tester.takeException(), isNull);
     // Staggered Motion and delayed card timers must fully drain before
