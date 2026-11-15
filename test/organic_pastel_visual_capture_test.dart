@@ -183,6 +183,53 @@ void main() {
             : 'goldens/organic_pastel_today_collapsed_390.png',
       ),
     );
+    debugPrint('ORGANIC_CAPTURE STEP 8C: render dedicated Impegni premium');
+    // A SEPARATE fresh in-memory store avoids stale derived-day projections
+    // after the already captured Home snapshot. This is synthetic test-only
+    // content, never a user's journal or an app database mutation.
+    final commitmentsStore = AgendaStore();
+    commitmentsStore.preferences = store.preferences;
+    addTearDown(commitmentsStore.dispose);
+    if (populated) {
+      final today = DateTime.now();
+      commitmentsStore.items.add(AgendaItem(
+        id: 'organic-premium-commitments-capture',
+        title: 'Passeggiata ai Colli',
+        date: DateTime(today.year, today.month, today.day),
+        type: ItemType.appointment,
+        start: const TimeOfDay(hour: 9, minute: 30),
+        end: const TimeOfDay(hour: 10, minute: 30),
+        note: 'Porta la macchina fotografica',
+      ));
+    }
+    // Keep the real AgendaApp in place (Manrope/Lora, localizations and
+    // active ColorScheme), and push the premium screen on its Navigator.
+    // Its shortcut navigation was already separately widget-tested.
+    final homeContext = tester.element(find.byType(Scaffold).first);
+    Navigator.of(homeContext).push(MaterialPageRoute<void>(
+      builder: (_) => AnnaCommitmentsTimelineScreen(
+        store: commitmentsStore,
+        initialDate: DateTime.now(),
+      ),
+    ));
+    await tester.pump(const Duration(milliseconds: 350));
+    await tester.pump(const Duration(milliseconds: 500));
+    expect(
+      find.byKey(const ValueKey<String>('commitments-organic-header')),
+      findsOneWidget,
+    );
+    expect(
+      find.byKey(const ValueKey<String>('commitments-organic-hour-grid')),
+      findsOneWidget,
+    );
+    await expectLater(
+      find.byType(Scaffold).first,
+      matchesGoldenFile(
+        populated
+            ? 'goldens/organic_commitments_premium_populated_390.png'
+            : 'goldens/organic_commitments_premium_empty_390.png',
+      ),
+    );
     debugPrint('ORGANIC_CAPTURE STEP 9: drain and cleanup');
     expect(tester.takeException(), isNull);
     // Staggered Motion and delayed card timers must fully drain before
