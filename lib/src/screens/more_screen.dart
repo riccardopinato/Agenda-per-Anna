@@ -42,7 +42,19 @@ class MoreScreen extends StatelessWidget {
     Widget? trailing,
     required VoidCallback onTap,
   }) {
-    return Semantics(
+    return Builder(builder: (context) {
+      if (AnnaOrganicPastel.enabled(context)) {
+        return AnnaOrganicJournalRow(
+          identifier: id,
+          icon: icon,
+          domain: domain,
+          title: title,
+          subtitle: subtitle,
+          trailing: trailing,
+          onTap: onTap,
+        );
+      }
+      return Semantics(
       identifier: id,
       button: true,
       label: title,
@@ -65,7 +77,8 @@ class MoreScreen extends StatelessWidget {
         onTap: onTap,
         ),
       ),
-    );
+      );
+    });
   }
 
   Widget _sectionCard({
@@ -105,9 +118,16 @@ class MoreScreen extends StatelessWidget {
         return Scaffold(
           appBar: AppBar(
             toolbarHeight: 78,
+            backgroundColor: editorial
+                ? AnnaEditorialColors.of(context).canvas : null,
+            surfaceTintColor: editorial ? Colors.transparent : null,
+            scrolledUnderElevation: 0,
+            elevation: 0,
             title: Text(
               strings.navMore,
-              style: Theme.of(context).textTheme.headlineMedium,
+              style: editorial
+                  ? AnnaJournalTypography.editorial(context, size: 27)
+                  : Theme.of(context).textTheme.headlineMedium,
             ),
           ),
           body: Center(
@@ -212,7 +232,9 @@ class MoreScreen extends StatelessWidget {
                             PersonalSearchConnectionsScreen(store: store),
                           ),
                         ),
-                        const Divider(height: 1),
+                        editorial
+                            ? const AnnaOrganicJournalRule()
+                            : const Divider(height: 1),
                         _tile(
                           id: 'more-inbox',
                           domain: AnnaVisualDomain.today,
@@ -305,7 +327,9 @@ class MoreScreen extends StatelessWidget {
                           onTap: () =>
                               _open(context, ArchiveScreen(store: store)),
                         ),
-                        const Divider(height: 1),
+                        editorial
+                            ? const AnnaOrganicJournalRule()
+                            : const Divider(height: 1),
                         _tile(
                           id: 'more-backup',
                           domain: AnnaVisualDomain.vault,
@@ -314,7 +338,9 @@ class MoreScreen extends StatelessWidget {
                           onTap: () =>
                               _open(context, BackupScreen(store: store)),
                         ),
-                        const Divider(height: 1),
+                        editorial
+                            ? const AnnaOrganicJournalRule()
+                            : const Divider(height: 1),
                         _tile(
                           id: 'more-cloud',
                           domain: AnnaVisualDomain.ecosystem,
@@ -323,7 +349,9 @@ class MoreScreen extends StatelessWidget {
                           onTap: () =>
                               _open(context, CloudAccountScreen(store: store)),
                         ),
-                        const Divider(height: 1),
+                        editorial
+                            ? const AnnaOrganicJournalRule()
+                            : const Divider(height: 1),
                         _tile(
                           id: 'more-settings',
                           domain: AnnaVisualDomain.ecosystem,
