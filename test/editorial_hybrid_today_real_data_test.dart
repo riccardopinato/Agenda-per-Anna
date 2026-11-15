@@ -203,7 +203,7 @@ void main() {
     // Calendar/Week now pass an optional notebook presentation flag on
     // separate lines. Count the real widget invocations, not one formatting.
     expect(
-      RegExp(r'AgendaContentFilterBar\\(\\s*store:\\s*widget\\.store')
+      RegExp(r'AgendaContentFilterBar\(\s*store:\s*widget\.store')
           .allMatches(planner).length,
       4,
     );
