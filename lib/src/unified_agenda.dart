@@ -121,32 +121,58 @@ List<UnifiedAgendaEntry> agendaEntriesForDayWithExternal(
 class AgendaContentFilterBar extends StatelessWidget {
   final AgendaStore store;
   final EdgeInsetsGeometry padding;
+  // The notebook calendar uses wrapping single-line chips rather than
+  // forcing long localized segment labels into three equal narrow columns.
+  // Other consumers, including Classic, retain their original control.
+  final bool calendarNotebook;
 
   const AgendaContentFilterBar({
     super.key,
     required this.store,
     this.padding = EdgeInsets.zero,
+    this.calendarNotebook = false,
   });
 
   @override
   Widget build(BuildContext context) {
+    final strings = AnnaStrings.of(context);
     return Padding(
       padding: padding,
-      child: SegmentedButton<AgendaContentFilter>(
-        showSelectedIcon: false,
-        segments: AgendaContentFilter.values
-            .map(
-              (value) => ButtonSegment(
-                value: value,
-                icon: Icon(value.icon, size: 17),
-                label: Text(value.localizedLabel(AnnaStrings.of(context))),
-              ),
+      child: calendarNotebook
+          ? Wrap(
+              key: const ValueKey<String>('calendar-notebook-filter-wrap'),
+              spacing: 8,
+              runSpacing: 8,
+              children: [
+                for (final value in AgendaContentFilter.values)
+                  ChoiceChip(
+                    key: ValueKey<String>('calendar-notebook-filter-${value.name}'),
+                    showCheckmark: false,
+                    selected: store.agendaContentFilter == value,
+                    label: Text(
+                      value.localizedLabel(strings),
+                      maxLines: 1,
+                      softWrap: false,
+                    ),
+                    onSelected: (_) => store.setAgendaContentFilter(value),
+                  ),
+              ],
             )
-            .toList(),
-        selected: {store.agendaContentFilter},
-        onSelectionChanged: (value) =>
-            store.setAgendaContentFilter(value.first),
-      ),
+          : SegmentedButton<AgendaContentFilter>(
+              showSelectedIcon: false,
+              segments: AgendaContentFilter.values
+                  .map(
+                    (value) => ButtonSegment(
+                      value: value,
+                      icon: Icon(value.icon, size: 17),
+                      label: Text(value.localizedLabel(strings)),
+                    ),
+                  )
+                  .toList(),
+              selected: {store.agendaContentFilter},
+              onSelectionChanged: (value) =>
+                  store.setAgendaContentFilter(value.first),
+            ),
     );
   }
 }
