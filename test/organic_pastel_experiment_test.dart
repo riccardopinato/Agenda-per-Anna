@@ -726,7 +726,21 @@ void main() {
       find.byKey(const ValueKey('organic-quick-commitments')),
       findsOneWidget,
     );
-    expect(find.text('Impegni'), findsOneWidget);
+    // MaterialApp may resolve its own fallback locale in a bare widget
+    // harness. Assert the real five-language label, not a hardcoded "it".
+    final commitmentsTile = find.byKey(
+      const ValueKey<String>('organic-quick-commitments'),
+    );
+    final actualLabel = AnnaStrings.of(
+      tester.element(commitmentsTile),
+    ).d3('ui5Commitments');
+    expect(
+      find.descendant(
+        of: commitmentsTile,
+        matching: find.text(actualLabel),
+      ),
+      findsOneWidget,
+    );
     expect(tester.takeException(), isNull);
   });
 
