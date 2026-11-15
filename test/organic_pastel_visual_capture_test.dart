@@ -210,7 +210,13 @@ void main() {
       const ValueKey<String>('organic-quick-commitments'),
     );
     expect(quickLink, findsOneWidget);
-    await tester.ensureVisible(quickLink);
+    // Do NOT ensureVisible here: it positions the quick tile at y≈44,
+    // UNDER the pinned Organic hero, and the hero correctly intercepts
+    // the tap. At 390×844 the tile is already fully visible, both with
+    // the hero expanded and after the existing 390dp scroll capture.
+    final tileRect = tester.getRect(quickLink);
+    expect(tileRect.top, greaterThan(120));
+    expect(tileRect.bottom, lessThan(760));
     await tester.tap(quickLink);
     await tester.pump(const Duration(milliseconds: 350));
     await tester.pump(const Duration(milliseconds: 500));
