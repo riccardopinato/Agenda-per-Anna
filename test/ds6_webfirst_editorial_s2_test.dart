@@ -221,4 +221,49 @@ void main() {
   });
 
 
+  testWidgets('Calendar notebook filters keep localized words intact',
+      (tester) async {
+    tester.view.physicalSize = const Size(320, 720);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(() {
+      tester.view.resetPhysicalSize();
+      tester.view.resetDevicePixelRatio();
+    });
+    final store = AgendaStore();
+    addTearDown(store.dispose);
+    await tester.pumpWidget(app(
+      MediaQuery(
+        data: const MediaQueryData(
+          size: Size(320, 720),
+          textScaler: TextScaler.linear(1.6),
+        ),
+        child: AgendaContentFilterBar(
+          store: store,
+          calendarNotebook: true,
+        ),
+      ),
+    ));
+    expect(find.byKey(const ValueKey<String>(
+      'calendar-notebook-filter-wrap',
+    )), findsOneWidget);
+    expect(find.byType(ChoiceChip), findsNWidgets(3));
+    for (final choice in tester.widgetList<ChoiceChip>(
+        find.byType(ChoiceChip))) {
+      expect(choice.label, isA<Text>());
+      final label = choice.label as Text;
+      expect(label.maxLines, 1);
+      expect(label.softWrap, false);
+    }
+    await tester.tap(find.byType(ChoiceChip).last);
+    await tester.pump();
+    expect(store.agendaContentFilter, AgendaContentFilter.values.last);
+    expect(tester.takeException(), isNull);
+
+    await tester.pumpWidget(app(AgendaContentFilterBar(store: store)));
+    expect(find.byType(ChoiceChip), findsNothing);
+    expect(find.byType(SegmentedButton<AgendaContentFilter>),
+        findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
 }
