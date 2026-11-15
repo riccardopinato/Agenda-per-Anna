@@ -722,7 +722,107 @@ void main() {
       find.byKey(const ValueKey('organic-quick-memories')),
       findsNothing,
     );
+    expect(
+      find.byKey(const ValueKey('organic-quick-commitments')),
+      findsOneWidget,
+    );
+    // MaterialApp may resolve its own fallback locale in a bare widget
+    // harness. Assert the real five-language label, not a hardcoded "it".
+    final commitmentsTile = find.byKey(
+      const ValueKey<String>('organic-quick-commitments'),
+    );
+    final actualLabel = AnnaStrings.of(
+      tester.element(commitmentsTile),
+    ).d3('ui5Commitments');
+    expect(
+      find.descendant(
+        of: commitmentsTile,
+        matching: find.text(actualLabel),
+      ),
+      findsOneWidget,
+    );
     expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('Impegni shortcut opens the existing 24-hour timeline on the selected day',
+      (tester) async {
+    tester.view.physicalSize = const Size(390, 844);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(() {
+      tester.view.resetPhysicalSize();
+      tester.view.resetDevicePixelRatio();
+    });
+    final store = AgendaStore();
+    addTearDown(store.dispose);
+    store.preferences = const AgendaPreferences(
+      appLanguage: AppLanguage.italian,
+      enabledModules: <AppModule>{AppModule.memories},
+    );
+    final selectedDay = DateTime(2026, 11, 14);
+    await tester.pumpWidget(MaterialApp(
+      locale: const Locale('it'),
+      home: Scaffold(
+        body: AnnaOrganicPastelQuickLinks(
+          store: store,
+          selectedDate: selectedDay,
+        ),
+      ),
+    ));
+    expect(
+      find.byKey(const ValueKey<String>('organic-quick-commitments')),
+      findsOneWidget,
+    );
+    expect(
+      find.byKey(const ValueKey<String>('organic-quick-memories')),
+      findsNothing,
+    );
+    await tester.tap(find.byKey(
+      const ValueKey<String>('organic-quick-commitments'),
+    ));
+    await tester.pumpAndSettle();
+    expect(find.byType(AnnaCommitmentsTimelineScreen), findsOneWidget);
+    expect(
+      find.byKey(const ValueKey<String>(
+        'commitments-hourly-timeline-screen',
+      )),
+      findsOneWidget,
+    );
+    final timeline = find.byKey(
+      const ValueKey<String>('commitments-canonical-day-timeline'),
+    );
+    expect(timeline, findsOneWidget);
+    expect(tester.widget<DayTimeline>(timeline).date, selectedDay);
+    expect(DayTimeline.startHour, 0);
+    expect(DayTimeline.endHour, 24);
+    await tester.tap(find.byKey(const ValueKey('today-date-next')));
+    await tester.pumpAndSettle();
+    expect(tester.widget<DayTimeline>(timeline).date,
+        DateTime(2026, 11, 15));
+    await tester.tap(find.byKey(const ValueKey('today-date-prev')));
+    await tester.pumpAndSettle();
+    expect(tester.widget<DayTimeline>(timeline).date, selectedDay);
+    expect(tester.takeException(), isNull);
+  });
+
+  test('Organic Today places memories after the diary and hides inline timeline',
+      () {
+    final source = File('lib/src/planner_views.dart').readAsStringSync();
+    final planner = source
+        .split('class _PlannerScreenState')[1]
+        .split('class _CalendarDayContextCard')[0];
+    final quickLinks = planner.indexOf('AnnaOrganicPastelQuickLinks(');
+    final diary = planner.indexOf('AnnaEditorialTodayOverview(');
+    final memories = planner.indexOf('// Keep memories immediately BELOW');
+    final nextCards = planner.indexOf('// Hero-first rhythm');
+    expect(quickLinks, greaterThan(0));
+    expect(diary, greaterThan(quickLinks));
+    expect(memories, greaterThan(diary));
+    expect(nextCards, greaterThan(memories));
+    expect(planner, contains('if (!widget.embedded)'));
+    expect(planner, contains('ExpansionTile('));
+    expect(planner, contains('selectedDate: day,'));
+    expect(source, contains('class AnnaCommitmentsTimelineScreen'));
+    expect(source, contains('DayTimeline('));
   });
 
   test('style experiment is presentation-only and preserves group routes', () {

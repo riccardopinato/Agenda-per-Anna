@@ -1013,8 +1013,14 @@ class AnnaOrganicPastelGroupRow extends StatelessWidget {
 /// Module-dependent targets disappear when disabled.
 class AnnaOrganicPastelQuickLinks extends StatelessWidget {
   final AgendaStore store;
+  // Match the Home's selected civil day; no second selection store.
+  final DateTime? selectedDate;
 
-  const AnnaOrganicPastelQuickLinks({super.key, required this.store});
+  const AnnaOrganicPastelQuickLinks({
+    super.key,
+    required this.store,
+    this.selectedDate,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -1036,11 +1042,15 @@ class AnnaOrganicPastelQuickLinks extends StatelessWidget {
           'shopping', strings.shoppingList, Icons.checklist_outlined,
           () => open(ShoppingListScreen(store: store)),
         ),
-      if (store.preferences.isModuleEnabled(AppModule.memories))
-        _AnnaOrganicQuickLinkData(
-          'memories', strings.navMemories, Icons.auto_stories_outlined,
-          () => open(DiaryMemoriesScreen(store: store)),
-        ),
+      // Home shortcut leads to the SAME canonical DayTimeline that used to
+      // sit at the bottom of Today. Full Ricordi remains in the main tab.
+      _AnnaOrganicQuickLinkData(
+        'commitments', strings.d3('ui5Commitments'), Icons.schedule_outlined,
+        () => open(AnnaCommitmentsTimelineScreen(
+          store: store,
+          initialDate: selectedDate,
+        )),
+      ),
       _AnnaOrganicQuickLinkData(
         'inbox', strings.inbox, Icons.edit_note_outlined,
         () => open(InboxScreen(store: store)),
