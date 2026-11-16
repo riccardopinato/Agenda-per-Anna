@@ -425,8 +425,22 @@ class _WeeklyReviewScreenState extends State<WeeklyReviewScreen>{
      onPopInvokedWithResult:(didPop,result){
        if(!didPop){unawaited(exitReview());}
      },
-     child:Scaffold(appBar:AppBar(title:Text(wrText(c,'week')),
-       leading:BackButton(onPressed:()=>exitReview())),
+     child:Scaffold(appBar:AppBar(
+       title:Text(wrText(c,'week')),
+       leading:BackButton(onPressed:()=>exitReview()),
+       actions:[
+         IconButton(
+           tooltip:wrText(c,'reminders'),
+           icon:const Icon(Icons.notifications_none_outlined),
+           onPressed:()=>Navigator.push<void>(
+             c,
+             MaterialPageRoute<void>(
+               builder:(_)=>WeeklyReviewSettingsPage(store:widget.store),
+             ),
+           ),
+         ),
+       ],
+     ),
      body:SafeArea(child:AnnaJournalContent(child:AnnaMotionReveal(token:step,axis:Axis.vertical,child:ListView(
        padding:const EdgeInsets.symmetric(vertical:14),children:finished?[
          AnnaJournalCard(hero:true,child:Column(children:[
