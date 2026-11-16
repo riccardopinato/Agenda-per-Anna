@@ -179,7 +179,7 @@ void main() {
     expect(shell, contains('label: strings.navToday'));
     expect(shell, contains('label: strings.navMessages'));
     final planner = File('lib/src/planner_views.dart').readAsStringSync();
-    expect(planner, isNot(contains("'today-open-calendar'")));
+    expect(planner, contains("'today-open-calendar'")); // Classic-only AppBar.
     expect(planner, contains('AnnaOrganicPastelQuickLinks('));
     expect(shell, contains('label: strings.navMemories'));
     expect(shell, contains('label: strings.navMore'));
