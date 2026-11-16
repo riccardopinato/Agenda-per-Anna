@@ -45,6 +45,10 @@ void main() {
   testWidgets('editorial diary hero keeps canonical action, without duplicate counters', (tester) async {
     var openedDiary = 0;
     await tester.pumpWidget(app(AnnaEditorialTodayOverview(
+      store: AgendaStore(),
+      selectedDate: DateTime(2026, 11, 16),
+      hideDetails: false,
+      onOpenWeek: () {},
       onOpenDiary: () => openedDiary++,
     )));
     expect(find.byKey(const ValueKey('editorial-today-real-overview')), findsOneWidget);
@@ -64,6 +68,10 @@ void main() {
 
   testWidgets('duplicate counts and masked counters are absent from the Home', (tester) async {
     await tester.pumpWidget(app(AnnaEditorialTodayOverview(
+      store: AgendaStore(),
+      selectedDate: DateTime(2026, 11, 16),
+      hideDetails: false,
+      onOpenWeek: () {},
       onOpenDiary: () {},
     )));
     expect(find.byType(AnnaEditorialActionPair), findsNothing);
@@ -72,9 +80,13 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('compact diary has no redundant emblem',
+  testWidgets('two equal dashboard cards preserve diary title and controls',
       (tester) async {
     await tester.pumpWidget(app(AnnaEditorialTodayOverview(
+      store: AgendaStore(),
+      selectedDate: DateTime(2026, 11, 16),
+      hideDetails: false,
+      onOpenWeek: () {},
       onOpenDiary: () {},
     )));
     final card = find.byKey(const ValueKey('editorial-today-diary-hero'));
@@ -83,10 +95,12 @@ void main() {
     expect(find.text('Il mio diario'), findsOneWidget);
     expect(find.text('Il tuo diario'), findsNothing);
     expect(find.text('Diario iniziato'), findsNothing);
-    expect(tester.getSize(card).height, lessThan(210));
+    expect(tester.getSize(card).height, greaterThan(150));
+    expect(tester.getSize(card).width, closeTo(
+      tester.getSize(find.byKey(const ValueKey('editorial-today-week-card'))).width, 1));
     expect(icon, findsNothing);
     expect(tester.getRect(title).width, greaterThan(100));
-    expect(find.byType(FilledButton), findsOneWidget);
+    expect(find.byType(FilledButton), findsNWidgets(2));
     expect(tester.takeException(), isNull);
   });
 
@@ -99,6 +113,10 @@ void main() {
       tester.view.resetDevicePixelRatio();
     });
     final overview = AnnaEditorialTodayOverview(
+      store: AgendaStore(),
+      selectedDate: DateTime(2026, 11, 16),
+      hideDetails: false,
+      onOpenWeek: () {},
       onOpenDiary: () {},
     );
     await tester.pumpWidget(MaterialApp(

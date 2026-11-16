@@ -1007,19 +1007,22 @@ class _PlannerScreenState extends State<PlannerScreen> {
         final planningCards = <Widget>[
           if (widget.embedded && isToday)
             for (final card in widget.store.preferences.todayCardOrder) ...[
-              const SizedBox(height: 12),
-              if (card == 'review')
+              if (card == 'review' && !editorial) ...[
+                const SizedBox(height: 12),
                 WeeklyReviewHomeCard(
                   key: const ValueKey('cap0147-review'),
                   store: widget.store,
                 ),
-              if (card == 'realistic')
+              ],
+              if (card == 'realistic') ...[
+                const SizedBox(height: 12),
                 RealisticDayCard(
                   key: const ValueKey('cap0147-realistic'),
                   store: widget.store,
                   snapshot: snapshot,
                   hideDetails: widget.store.preferences.hideHomeDetails,
                 ),
+              ],
             ],
         ];
 
@@ -1229,7 +1232,39 @@ class _PlannerScreenState extends State<PlannerScreen> {
                           // any editor. Create stays in the shell's + Crea.
                           if (editorial)
                             AnnaEditorialTodayOverview(
+                              store: widget.store,
+                              selectedDate: day,
+                              hideDetails: widget.store.preferences.hideHomeDetails,
                               onOpenDiary: _openSelectedDay,
+                              onOpenWeek: () {
+                                // Same week selection as the existing
+                                // WeeklyReviewHomeCard, no new workflow.
+                                final now = DateTime.now();
+                                final current = wrMonday(now);
+                                final review = now.weekday == DateTime.monday
+                                    ? DateTime(current.year, current.month,
+                                        current.day - 7)
+                                    : current;
+                                final plan = now.weekday == DateTime.sunday
+                                    ? DateTime(current.year, current.month,
+                                        current.day + 7)
+                                    : current;
+                                Navigator.push<void>(
+                                  context,
+                                  MaterialPageRoute<void>(
+                                    builder: (_) => WeeklyReviewScreen(
+                                      store: widget.store,
+                                      reviewWeek: review,
+                                      planWeek: plan,
+                                      initialStep:
+                                          now.weekday != DateTime.sunday &&
+                                                  now.weekday != DateTime.monday
+                                              ? 2
+                                              : 0,
+                                    ),
+                                  ),
+                                );
+                              },
                             )
                           else
                             AnnaMotionStagger(
