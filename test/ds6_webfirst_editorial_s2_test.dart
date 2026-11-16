@@ -54,7 +54,7 @@ void main() {
     expect(find.byType(AnnaEditorialActionPair), findsNothing);
     expect(find.text('Impegni'), findsNothing);
     expect(find.text('Attività'), findsNothing);
-    expect(find.text('•••'), findsNothing);
+    expect(find.text('•••'), findsOneWidget); // Privacy hides real week count.
     await tester.tap(find.byType(FilledButton).first);
     expect(diaryOpenCount, 1);
     expect(tester.takeException(), isNull);
