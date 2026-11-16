@@ -611,7 +611,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
                     curve: Curves.easeOutCubic,
                     child: TableCalendar<UnifiedAgendaEntry>(
                     locale: AnnaStrings.intlLocale(context),
-                    daysOfWeekHeight: editorial ? 34 : 24,
+                    daysOfWeekHeight: editorial ? 34 : 16,
                     rowHeight: editorial ? 56 : 52,
                     daysOfWeekStyle: editorial
                         ? DaysOfWeekStyle(
@@ -701,28 +701,33 @@ class _CalendarScreenState extends State<CalendarScreen> {
                       }
                       unawaited(_loadVisibleMonth(f));
                     },
-                    headerStyle: HeaderStyle(
-                      formatButtonVisible: false,
-                      headerPadding: const EdgeInsets.symmetric(vertical: 12),
-                      leftChevronIcon: Icon(
-                        Icons.chevron_left_rounded,
-                        color: editorial
-                            ? AnnaEditorialColors.of(context).ink
-                            : Theme.of(context).colorScheme.onSurface,
-                      ),
-                      rightChevronIcon: Icon(
-                        Icons.chevron_right_rounded,
-                        color: editorial
-                            ? AnnaEditorialColors.of(context).ink
-                            : Theme.of(context).colorScheme.onSurface,
-                      ),
-                      titleCentered: true,
-                      titleTextStyle: editorial
-                          ? AnnaJournalTypography.editorial(
-                              context, size: 21,
-                            ).copyWith(color: AnnaEditorialColors.of(context).ink)
-                          : Theme.of(context).textTheme.titleLarge!,
-                    ),
+                    headerStyle: editorial
+                        ? HeaderStyle(
+                            formatButtonVisible: false,
+                            titleCentered: true,
+                            headerPadding:
+                                const EdgeInsets.symmetric(vertical: 12),
+                            leftChevronIcon: Icon(
+                              Icons.chevron_left_rounded,
+                              color: AnnaEditorialColors.of(context).ink,
+                            ),
+                            rightChevronIcon: Icon(
+                              Icons.chevron_right_rounded,
+                              color: AnnaEditorialColors.of(context).ink,
+                            ),
+                            titleTextStyle: AnnaJournalTypography.editorial(
+                              context,
+                              size: 21,
+                            ).copyWith(
+                              color: AnnaEditorialColors.of(context).ink,
+                            ),
+                          )
+                        : HeaderStyle(
+                            formatButtonVisible: false,
+                            titleCentered: true,
+                            titleTextStyle:
+                                Theme.of(context).textTheme.titleLarge!,
+                          ),
                     // Notebook selection belongs to the existing
                     // TableCalendar; canonical events and callbacks remain.
                     // Shape and border distinguish focus from a mere marker.
