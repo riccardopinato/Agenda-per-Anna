@@ -903,6 +903,14 @@ class _PlannerScreenState extends State<PlannerScreen> {
   void initState() {
     super.initState();
     day = widget.initialDate ?? DateTime.now();
+    // The old full-width WeeklyReviewHomeCard reconciled reminder schedules
+    // on Home mount. The paired dashboard replaces that widget; preserve
+    // reminder behavior without rendering a duplicate card.
+    if (widget.embedded &&
+        widget.store.preferences.weeklyReviewReminderEnabled &&
+        AnnaEditorialTodayMode.enabled.value) {
+      unawaited(WeeklyReviewReminders.reconcile(widget.store));
+    }
     unawaited(AnnaEditorialTodayMode.ensureLoaded());
     unawaited(
       ExternalCalendarService.instance.initialize().then(
