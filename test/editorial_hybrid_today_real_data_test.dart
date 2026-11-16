@@ -165,6 +165,12 @@ void main() {
     final diary = home.indexOf('AnnaEditorialTodayOverview(');
     expect(shortcut, greaterThanOrEqualTo(0));
     expect(diary, greaterThan(shortcut));
+    // The canonical review is reachable from the right tile, not duplicated.
+    expect(home, contains("if (!editorial || card != 'review')"));
+    final memories = home.indexOf('// Keep memories immediately BELOW');
+    final agendaDetail = home.indexOf('AnnaOrganicPastelAgendaDigest(');
+    expect(memories, greaterThan(diary));
+    expect(agendaDetail, greaterThan(memories));
     expect(overview, isNot(contains('AnnaEditorialActionPair(')));
     expect(overview, isNot(contains("d3('ui5Commitments')")));
     expect(overview, isNot(contains("d3('ui5Activities')")));
