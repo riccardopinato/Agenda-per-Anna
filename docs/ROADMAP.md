@@ -1,5 +1,16 @@
 # Anna's Diary — Roadmap
 
+## 16 novembre 2026 — post rc.6+134: roadmap audit-only follow-up autorizzata
+
+- **APK:** il titolare conferma funzionamento di `rc.6+134`. Download/signing **esclusi** dai lavori correttivi; lo stato dell'APK già firmato e la versione rimangono invariati.
+- **Main corrente prima del polish:** `afbbb3ec5b46d1744d2f681668742fdef7723ea1` ([PR #326](https://github.com/riccardopinato/Agenda-per-Anna/pull/326)); build firmata [#43777799161](https://github.com/riccardopinato/Agenda-per-Anna/actions/runs/43777799161) PASS e Web [#43777394708](https://github.com/riccardopinato/Agenda-per-Anna/actions/runs/43777394708) PASS.
+- **Maxi-step fonte/UI:** [PR #328](https://github.com/riccardopinato/Agenda-per-Anna/pull/328) per Ricordi immediatamente visibile, carta/controlli Journal, screenshot Flutter e test; non modifica DB, Vault, Account, Store, API, APK firmato o `versionCode`.
+- **Scan 360° Flutter:** [workflow full-checkout #43786278027](https://github.com/riccardopinato/Agenda-per-Anna/actions/runs/43786278027) PASS (332 Dart, 0 skipped, 0 legacy high-confidence; 257 segnali `REVIEW` **non automaticamente bug**), report JSON allegato al run.
+- **Documentazione:** status attuale aggiunto come sezione di apertura, registri storici successivi **immutati**; non confondere dati storici +123/+129/+130 con la release +134.
+- **Residual ledger:** [AUDIT_RESIDUAL_POST_134_20261116.md](AUDIT_RESIDUAL_POST_134_20261116.md). Una voce non verificabile con sorgente/CI resta esplicitamente in sospeso; non trasformare un test Flutter in physical QA.
+- **Prerequisito per nuova release:** solo su richiesta specifica futura, nuovo `versionCode`, gate main esatto, firma stabile, update-in-place, protezione dei dati. La PR #328 non richiede e non autorizza un nuovo APK.
+
+
 ## 13 novembre 2026 — Android rc.6+130: candidate for exact signed physical QA (SOURCE PR, NOT INSTALLED)
 
 - Nuovo candidato source-only: [evidence protocol rc.6+130](release_evidence/ANDROID_RC6_130_CANDIDATE_20261113.md), con gate exact-head, monotonia buildNumber e firma protetta. La +129 **firmata** esiste storicamente ([run #42317437509](https://github.com/riccardopinato/Agenda-per-Anna/actions/runs/42317437509)), ma non incorpora tutti i cambiamenti successivi.
