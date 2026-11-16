@@ -38,31 +38,19 @@ void main() {
     home: Scaffold(body: SingleChildScrollView(child: child)),
   );
 
-  DayHubSnapshot emptyDay() => DayHubSnapshot(
-    date: DateTime(2026, 11, 8),
-    agenda: const [],
-    birthdays: const [],
-    workouts: const [],
-    pendingTaskCount: 0,
-    appointmentCount: 0,
-    journal: const DayJournal(note: 'Testo personale riservato'),
-  );
-
-  testWidgets('Oggi editorial hero retains real actions and hides note text',
+  testWidgets('Oggi editorial diary hero retains its one action without counters',
       (tester) async {
     var diaryOpenCount = 0;
     await tester.pumpWidget(app(AnnaEditorialTodayOverview(
-      snapshot: emptyDay(),
-      hideDetails: true,
       onOpenDiary: () => diaryOpenCount++,
-      onOpenCalendar: () {},
-      onOpenDay: () {},
     )));
     expect(find.byKey(const ValueKey<String>('editorial-today-accent-rule')),
         findsOneWidget);
     expect(find.text('Il mio diario'), findsOneWidget);
-    expect(find.text('Testo personale riservato'), findsNothing);
-    expect(find.text('•••'), findsNWidgets(2));
+    expect(find.byType(AnnaEditorialActionPair), findsNothing);
+    expect(find.text('Impegni'), findsNothing);
+    expect(find.text('Attività'), findsNothing);
+    expect(find.text('•••'), findsNothing);
     await tester.tap(find.byType(FilledButton).first);
     expect(diaryOpenCount, 1);
     expect(tester.takeException(), isNull);
