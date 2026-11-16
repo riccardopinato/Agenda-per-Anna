@@ -15,6 +15,12 @@ void main() {
     await initializeDateFormatting('it_IT', null);
   });
 
+  AgendaStore makeStore() {
+    final store = AgendaStore();
+    addTearDown(store.dispose);
+    return store;
+  }
+
   Widget app(Widget child, {
     Color seed = Colors.teal,
     Brightness brightness = Brightness.light,
@@ -42,7 +48,11 @@ void main() {
       (tester) async {
     var diaryOpenCount = 0;
     await tester.pumpWidget(app(AnnaEditorialTodayOverview(
+      store: makeStore(),
+      today: DateTime(2026, 11, 16),
+      hideDetails: true,
       onOpenDiary: () => diaryOpenCount++,
+      onOpenWeek: () {},
     )));
     expect(find.byKey(const ValueKey<String>('editorial-today-accent-rule')),
         findsOneWidget);
@@ -50,7 +60,7 @@ void main() {
     expect(find.byType(AnnaEditorialActionPair), findsNothing);
     expect(find.text('Impegni'), findsNothing);
     expect(find.text('Attività'), findsNothing);
-    expect(find.text('•••'), findsNothing);
+    expect(find.text('•••'), findsNWidgets(2));
     await tester.tap(find.byType(FilledButton).first);
     expect(diaryOpenCount, 1);
     expect(tester.takeException(), isNull);
