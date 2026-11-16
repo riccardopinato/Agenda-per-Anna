@@ -33,7 +33,7 @@ const Map<String, Map<String, String>> _d3Catalog = {
   "ui5YearsAgo": <String, String>{"en": "{years} years ago", "it": "{years} anni fa", "es": "Hace {years} años", "fr": "Il y a {years} ans", "pt": "Há {years} anos"},
   "ui5MemoryYearCount": <String, String>{"en": "{index} of {total} this year", "it": "{index} di {total} nell'anno", "es": "{index} de {total} del año", "fr": "{index} sur {total} cette année", "pt": "{index} de {total} no ano"},
   "ui5DayDiary": <String, String>{"en": "My diary", "it": "Il mio diario", "es": "Mi diario", "fr": "Mon journal", "pt": "O meu diário"},
-  "ui5MemoryTeaser": <String, String>{"en": "Memories to rediscover", "it": "Ricordi da rivivere", "es": "Recuerdos para revivir", "fr": "Souvenirs à revivre", "pt": "Memórias para reviver"},
+  "ui5MemoryTeaser": <String, String>{"en": "Moments to remember", "it": "Momenti da ricordare", "es": "Momentos para recordar", "fr": "Moments à retrouver", "pt": "Momentos para recordar"},
   "ui5NoMemoriesDay": <String, String>{"en": "A quiet day to make your own.", "it": "Una giornata tutta da vivere.", "es": "Un día por vivir.", "fr": "Une journée à vivre.", "pt": "Um dia por viver."},
   "ui5YearJump": <String, String>{"en": "Jump to year", "it": "Vai all'anno", "es": "Ir al año", "fr": "Aller à l'année", "pt": "Ir para o ano"},
   "ui5MemoryCount": <String, String>{"en": "{count} memories", "it": "{count} ricordi", "es": "{count} recuerdos", "fr": "{count} souvenirs", "pt": "{count} memórias"},
