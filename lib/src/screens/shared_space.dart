@@ -3139,6 +3139,16 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
     );
   }
 
+  Widget _togetherDetailLink(BuildContext context, Widget child) {
+    if (!AnnaEditorialTodayMode.enabled.value) {
+      return Card(margin: EdgeInsets.zero, child: child);
+    }
+    return AnnaOrganicPaperSurface(
+      padding: EdgeInsets.zero,
+      child: child,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final dayEntries = _selectedEntries;
@@ -3238,9 +3248,9 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
               const SizedBox(height: 10),
               _sharedDiaryCard(context),
               const SizedBox(height: 10),
-              Card(
-                margin: EdgeInsets.zero,
-                child: ListTile(
+              _togetherDetailLink(
+                context,
+                ListTile(
                   leading: const CircleAvatar(
                     child: Icon(Icons.shopping_cart_outlined),
                   ),
@@ -3261,9 +3271,9 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
                 ),
               ),
               const SizedBox(height: 10),
-              Card(
-                margin: EdgeInsets.zero,
-                child: ListTile(
+              _togetherDetailLink(
+                context,
+                ListTile(
                   leading: const CircleAvatar(
                     child: Icon(Icons.photo_library_outlined),
                   ),
