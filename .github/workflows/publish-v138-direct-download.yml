@@ -1,0 +1,115 @@
+name: Publish verified Anna's Diary v138 APK direct download
+
+# One-time distribution bridge for the already built and signed v138 artifact.
+# This publishes the original verified APK; it neither builds nor re-signs.
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/publish-v138-direct-download.yml'
+
+permissions:
+  contents: write
+  actions: read
+
+concurrency:
+  group: annas-diary-publish-v138
+  cancel-in-progress: false
+
+jobs:
+  release:
+    if: github.repository == 'riccardopinato/Agenda-per-Anna' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    env:
+      GH_TOKEN: ${{ github.token }}
+      SOURCE_SHA: 518f489512c4b54e3926cc4965b771e47cb49ae5
+      SOURCE_RUN: '43922378822'
+      RELEASE_TAG: v1.0.0-rc.6-plus138
+      EXPECTED_APK_SHA256: 0b2bc15de32ba4b55474989dbd8df401f26cc51d0726014d2b76b9518442a7c2
+      EXPECTED_CERT_SHA256: 31BE63155C831F062238179EC9B8F19D1C16A925BED1D526BC7E6A4712C62DC3
+    steps:
+      - name: Verify trusted v138 signed source run
+        shell: bash
+        run: |
+          set -euo pipefail
+          gh api "repos/$GITHUB_REPOSITORY/actions/runs/$SOURCE_RUN" > /tmp/anna-v138-run.json
+          python3 - <<'PY'
+          import json, os
+          run = json.load(open('/tmp/anna-v138-run.json', encoding='utf-8'))
+          expected = os.environ['SOURCE_SHA']
+          assert run['head_sha'] == expected, 'source SHA mismatch'
+          assert run['conclusion'] == 'success', 'signed build not successful'
+          assert run['head_branch'] == 'main', 'not sourced from main'
+          print('Verified trusted signing run', run['id'], expected)
+          PY
+      - name: Retrieve original signed artifact from trusted run
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p dist
+          gh run download "$SOURCE_RUN" \
+            --repo "$GITHUB_REPOSITORY" \
+            --name annas-diary-light-arm64 \
+            --dir dist
+          test -s dist/Anna-Diary-arm64-release.apk
+          test -s dist/PHYSICAL_CERTIFICATION_MANIFEST.json
+      - name: Verify artifact bytes, build number, package and signing identity
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import hashlib, json, os
+          from pathlib import Path
+          manifest = json.loads(Path('dist/PHYSICAL_CERTIFICATION_MANIFEST.json').read_text())
+          apk = Path('dist/Anna-Diary-arm64-release.apk')
+          digest = hashlib.sha256(apk.read_bytes()).hexdigest()
+          checks = {
+              'artifactSha256': digest,
+              'buildNumber': 138,
+              'appVersion': '1.0.0-rc.6+138',
+              'packageId': 'com.riccardopinato.agenda_per_anna',
+              'sourceSha': os.environ['SOURCE_SHA'],
+              'workflowRunId': os.environ['SOURCE_RUN'],
+              'signingCertificateSha256': os.environ['EXPECTED_CERT_SHA256'],
+          }
+          for key, expected in checks.items():
+              if manifest.get(key) != expected:
+                  raise SystemExit(f"::error::Manifest mismatch {key}: expected {expected!r}, got {manifest.get(key)!r}")
+          if digest != os.environ['EXPECTED_APK_SHA256']:
+              raise SystemExit("::error::Original APK hash mismatch")
+          if manifest.get('physicalVerification', {}).get('status') != 'PENDING':
+              raise SystemExit("::error::Unexpected device-certification state")
+          print('Verified v138 APK, SHA-256:', digest)
+          print('Size:', apk.stat().st_size, 'bytes')
+          PY
+      - name: Publish single source-bound prerelease for direct Android download
+        shell: bash
+        run: |
+          set -euo pipefail
+          if gh release view "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            echo "::error::Release tag already exists; refusing to replace a published APK"
+            exit 1
+          fi
+          cat > dist/RELEASE_NOTES.txt <<'EOF'
+          Anna's Diary 1.0.0-rc.6+138 — Android ARM64, APK firmato.
+
+          Include Calendario, Ricordi, Altro/Impostazioni, Messaggi e Inbox/Diario.
+          Candidato per aggiornamento diretto, NON certificato su dispositivo fisico.
+          NON disinstallare la versione precedente. Conservare un backup.
+          Identità di firma invariata rispetto alla v137.
+          Provenienza: main @ 518f489512c4b54e3926cc4965b771e47cb49ae5
+          GitHub Actions: https://github.com/riccardopinato/Agenda-per-Anna/actions/runs/43922378822
+          SHA-256: 0b2bc15de32ba4b55474989dbd8df401f26cc51d0726014d2b76b9518442a7c2
+          EOF
+          gh release create "$RELEASE_TAG" \
+            --repo "$GITHUB_REPOSITORY" \
+            --target "$SOURCE_SHA" \
+            --title "Anna's Diary v138 — APK ARM64 firmato" \
+            --notes-file dist/RELEASE_NOTES.txt \
+            --prerelease \
+            "dist/Anna-Diary-arm64-release.apk#Anna-Diary-v138-arm64-release.apk" \
+            "dist/PHYSICAL_CERTIFICATION_MANIFEST.json#PHYSICAL_CERTIFICATION_MANIFEST.json"
+          gh release view "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY" \
+            --json url,assets \
+            --jq '{url: .url, assets: [.assets[].url]}'
