@@ -65,7 +65,11 @@ class AnnaEditorialTodayOverview extends StatelessWidget {
         const gap = 10.0;
         final side = (constraints.maxWidth - gap) / 2;
         // Squares at normal size; extra height only for narrow/a11y layouts.
-        final tileHeight = (side < 151 || scale > 1.30) ? side * 1.35 : side;
+        final tileHeight = scale > 1.30
+            ? side * 2.12
+            : side < 151
+                ? side * 1.35
+                : side;
         Widget tile({
           required String key,
           required String title,
@@ -79,7 +83,11 @@ class AnnaEditorialTodayOverview extends StatelessWidget {
             children: [
               Text(
                 title,
-                key: ValueKey<String>('$key-title'),
+                key: ValueKey<String>(
+                  key == 'editorial-today-diary-hero'
+                      ? 'editorial-today-diary-title'
+                      : '$key-title',
+                ),
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
                 style: AnnaJournalTypography.editorial(
