@@ -41,25 +41,6 @@ class AnnaEditorialTodayOverview extends StatelessWidget {
                       ).copyWith(color: colors.ink),
                     ),
                   ),
-                  const SizedBox(width: 12),
-                  // DS6: notebook emblem uses the existing themed colors.
-                  Container(
-                    width: 42,
-                    height: 42,
-                    alignment: Alignment.center,
-                    decoration: BoxDecoration(
-                      color: colors.quiet,
-                      borderRadius: BorderRadius.circular(14),
-                      border: Border.all(color: colors.border),
-                    ),
-                    child: Icon(
-                      Icons.auto_stories_outlined,
-                      key: const ValueKey<String>('editorial-today-diary-icon'),
-                      color: colors.accent,
-                      size: 23,
-                      semanticLabel: null,
-                    ),
-                  ),
                 ],
               ),
               const SizedBox(height: 12),

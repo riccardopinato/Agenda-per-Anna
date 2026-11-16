@@ -41,7 +41,7 @@ void main() {
     );
   }
 
-  testWidgets('single-line ticker shares 48dp heading with Calendar and Classic',
+  testWidgets('single-line ticker shares 48dp heading with Classic only',
       (tester) async {
     var calendarOpens = 0;
     var classicOpens = 0;
@@ -66,7 +66,7 @@ void main() {
       );
 
       expect(greeting, findsOneWidget);
-      expect(calendar, findsOneWidget);
+      expect(calendar, findsNothing);
       expect(classic, findsOneWidget);
       expect(find.text('Anna’s Diary'), findsNothing);
       expect(find.textContaining('Un’agenda serve'), findsNothing);
@@ -74,7 +74,7 @@ void main() {
         const ValueKey<String>('ds6-today-compact-header'),
       )).height, lessThanOrEqualTo(56));
       expect(tester.getRect(greeting).right,
-          lessThanOrEqualTo(tester.getRect(calendar).left + 0.1));
+          lessThanOrEqualTo(tester.getRect(classic).left + 0.1));
       for (final textWidget in tester.widgetList<Text>(
         find.descendant(of: greeting, matching: find.byType(Text)),
       )) {
@@ -83,12 +83,11 @@ void main() {
       }
       expect(tester.takeException(), isNull);
 
-      await tester.tap(calendar);
       await tester.tap(classic);
       expect(tester.takeException(), isNull);
     }
 
-    expect(calendarOpens, 3);
+    expect(calendarOpens, 0);
     expect(classicOpens, 3);
   });
 

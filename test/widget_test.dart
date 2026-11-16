@@ -14,7 +14,7 @@ void main() {
       AgendaApp(store: store, bypassIdentityForTesting: true),
     );
     await tester.pumpAndSettle();
-    expect(find.byKey(const ValueKey<String>('today-open-calendar')), findsOneWidget);
+    expect(find.byKey(const ValueKey<String>('today-open-calendar')), findsNothing);
     expect(find.text('Crea'), findsWidgets);
   });
 }

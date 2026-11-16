@@ -205,12 +205,6 @@ class _AnnaTodayEditorialGreetingToolbarState
           ),
         ),
         IconButton(
-          key: const ValueKey<String>('today-open-calendar'),
-          tooltip: widget.calendarTooltip,
-          onPressed: widget.onOpenCalendar,
-          icon: const Icon(Icons.calendar_month_outlined),
-        ),
-        IconButton(
           key: const ValueKey<String>('today-editorial-disable'),
           tooltip: widget.classicTooltip,
           onPressed: widget.onReturnToClassic,

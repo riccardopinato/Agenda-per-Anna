@@ -166,7 +166,7 @@ void main() {
       tester.view.resetPhysicalSize();
       tester.view.resetDevicePixelRatio();
     });
-    AnnaEditorialTodayMode.enabled.value = false;
+    AnnaEditorialTodayMode.enabled.value = true;
     final store = AgendaStore();
     store.preferences = const AgendaPreferences(
       onboardingDone: true, appLanguage: AppLanguage.italian,
@@ -176,7 +176,8 @@ void main() {
     );
     await tester.pump(const Duration(milliseconds: 400));
 
-    final calendar = find.byKey(const ValueKey('today-open-calendar'));
+    expect(find.byKey(const ValueKey('today-open-calendar')), findsNothing);
+    final calendar = find.byKey(const ValueKey('organic-quick-calendar'));
     expect(calendar, findsOneWidget);
     await tester.tap(calendar);
     await settlePush(tester);
