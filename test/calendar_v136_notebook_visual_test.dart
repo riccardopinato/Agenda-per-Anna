@@ -85,6 +85,9 @@ void main() {
     expect(hub, contains('IndexedStack('));
     expect(hub, contains('AnnaJournalCard(')); // Classic still reachable.
     expect(month, contains('TableCalendar<UnifiedAgendaEntry>'));
+    expect(month, contains('markerBuilder: (context, day, loadedEvents)'));
+    expect(month, contains('isSameDay(day, selected)'));
+    expect(month, contains('loadedEvents.length && i < 3'));
     expect(month, contains('eventLoader: (day) =>'));
     expect(month, contains('selectedDayPredicate: (d) => isSameDay(d, selected)'));
     expect(month, contains('onDaySelected: (s, f)'));
