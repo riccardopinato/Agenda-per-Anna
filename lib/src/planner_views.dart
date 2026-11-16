@@ -635,6 +635,51 @@ class _CalendarScreenState extends State<CalendarScreen> {
                     selectedDayPredicate: (d) => isSameDay(d, selected),
                     eventLoader: (day) =>
                         agendaEntriesForDayWithExternal(widget.store, day),
+                    // The existing eventLoader remains canonical. Only its
+                    // visible markers are redrawn for selected-day contrast.
+                    calendarBuilders: editorial
+                        ? CalendarBuilders<UnifiedAgendaEntry>(
+                            markerBuilder: (context, day, loadedEvents) {
+                              if (loadedEvents.isEmpty) {
+                                return const SizedBox.shrink();
+                              }
+                              final markerInk = isSameDay(day, selected)
+                                  ? Theme.of(context).colorScheme.onPrimary
+                                  : AnnaEditorialColors.of(context).accent;
+                              return ExcludeSemantics(
+                                child: Align(
+                                  alignment: Alignment.bottomCenter,
+                                  child: Padding(
+                                    padding: const EdgeInsets.only(bottom: 4),
+                                    child: Row(
+                                      mainAxisAlignment: MainAxisAlignment.center,
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        for (var i = 0;
+                                            i < loadedEvents.length && i < 3;
+                                            i++)
+                                          Padding(
+                                            padding: const EdgeInsets.symmetric(
+                                                horizontal: 1.5),
+                                            child: DecoratedBox(
+                                              decoration: BoxDecoration(
+                                                color: markerInk,
+                                                shape: BoxShape.circle,
+                                              ),
+                                              child: const SizedBox(
+                                                width: 5,
+                                                height: 5,
+                                              ),
+                                            ),
+                                          ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              );
+                            },
+                          )
+                        : const CalendarBuilders<UnifiedAgendaEntry>(),
                     onDaySelected: (s, f) {
                       setState(() {
                         selected = s;
