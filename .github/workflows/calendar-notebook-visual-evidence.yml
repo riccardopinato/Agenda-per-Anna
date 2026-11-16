@@ -57,7 +57,7 @@ jobs:
             --dart-define=ANNA_CALENDAR_CAPTURE=true \
             --dart-define=ANNA_CALENDAR_POPULATED=true \
             test/calendar_notebook_visual_capture_test.dart
-      - name: Attach eight Flutter screenshots for actual CalendarHub and detail
+      - name: Attach twelve Flutter screenshots for CalendarHub, agenda and week days
         if: success()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
@@ -67,6 +67,10 @@ jobs:
             test/goldens/anna_calendar_notebook_month_populated_390.png
             test/goldens/anna_calendar_notebook_week_empty_390.png
             test/goldens/anna_calendar_notebook_week_populated_390.png
+            test/goldens/anna_calendar_notebook_month_agenda_empty_390.png
+            test/goldens/anna_calendar_notebook_month_agenda_populated_390.png
+            test/goldens/anna_calendar_notebook_week_days_empty_390.png
+            test/goldens/anna_calendar_notebook_week_days_populated_390.png
             test/goldens/anna_calendar_hub_month_empty_390.png
             test/goldens/anna_calendar_hub_month_populated_390.png
             test/goldens/anna_calendar_hub_week_empty_390.png
