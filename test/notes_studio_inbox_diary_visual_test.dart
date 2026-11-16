@@ -21,6 +21,9 @@ void main() {
       'AnnaEditorialSectionHeading(',
       'ds6-inbox-search',
       'ds6-inbox-empty-state',
+      'padding: EdgeInsets.all(compact ? 8 : 24)',
+      'padding: EdgeInsets.all(compact ? 10 : 24)',
+      'if (!compact) ...[',
     ]) {
       expect(inbox, contains(visual));
     }
