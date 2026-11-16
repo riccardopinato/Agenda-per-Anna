@@ -42,9 +42,13 @@ void main() {
       (tester) async {
     var diaryOpenCount = 0;
     await tester.pumpWidget(app(AnnaEditorialTodayOverview(
+      store: AgendaStore(),
+      selectedDate: DateTime(2026, 11, 16),
+      hideDetails: true,
+      onOpenWeek: () {},
       onOpenDiary: () => diaryOpenCount++,
     )));
-    expect(find.byKey(const ValueKey<String>('editorial-today-accent-rule')),
+    expect(find.byKey(const ValueKey<String>('editorial-today-week-card')),
         findsOneWidget);
     expect(find.text('Il mio diario'), findsOneWidget);
     expect(find.byType(AnnaEditorialActionPair), findsNothing);

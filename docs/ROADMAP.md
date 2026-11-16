@@ -1,5 +1,13 @@
 # Anna's Diary — Roadmap
 
+## 16 novembre 2026 — Dashboard Oggi a due quadrati (+135)
+
+- **Home Organic:** Il mio diario e La mia settimana in due card di pari larghezza/altezza, quadrate a testo standard e adattive per accessibilità; scorrimento verticale conservato. Ricordi da rivivere rimane immediatamente sotto.
+- **Dati reali:** contatore delle giornate annotate nella settimana del giorno selezionato, con il predicato canonico `DayHubSnapshot.hasJournalContent`. Rispetta `hideHomeDetails`; cinque lingue; nessun nuovo store.
+- **Weekly Review:** card in alto apre `WeeklyReviewScreen` canonico. L'originale `WeeklyReviewHomeCard` resta nel layout Classic, ma non viene duplicato più in basso nella Home Organic. Le altre schede e i ricordi non vengono rimossi.
+- **Versione:** `1.0.0-rc.6+135`; Web Pages e APK ARM64 firmato solo dopo gate esatto di main. Collaudo fisico esteso resta separato.
+
+
 ## 16 novembre 2026 — post rc.6+134: roadmap fonte/UI integrata, gate fisici residui
 
 - **APK:** il titolare conferma funzionamento di `rc.6+134`. Download/signing **esclusi** dai lavori correttivi; lo stato dell'APK già firmato e la versione rimangono invariati.
