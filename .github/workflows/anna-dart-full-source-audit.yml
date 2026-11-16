@@ -37,12 +37,20 @@ jobs:
           python3 - <<'PY'
           import collections
           import json
+          import subprocess
           from pathlib import Path
 
-          report = json.loads(Path("build/audit/flutter_source_report.json").read_text())
+          path = Path("build/audit/flutter_source_report.json")
+          report = json.loads(path.read_text())
+          checkout_sha = subprocess.check_output(
+              ["git", "rev-parse", "HEAD"], text=True
+          ).strip()
+          report["checkout_sha"] = checkout_sha
+          report["scanner_provenance"] = "Idee-app-Archivi-riferimenti@8fdc4e1f: scripts/audit_flutter_antipatterns.py"
+          path.write_text(json.dumps(report, ensure_ascii=False, indent=2) + "\n")
           data = report["reports"][0]
           counts = collections.Counter(x["rule"] for x in data["findings"])
-          print(f"checkout SHA (GitHub run): __GITHUB_SHA__")
+          print(f"scanned checkout SHA: {checkout_sha}")
           print(f"scanned={data['scanned_dart_files']} skipped={data['skipped_files']} truncated={data['truncated']}")
           print(f"counts={dict(sorted(counts.items()))}")
           for item in data["findings"]:
