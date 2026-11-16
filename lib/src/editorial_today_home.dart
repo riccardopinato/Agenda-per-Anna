@@ -72,7 +72,7 @@ class AnnaEditorialTodayOverview extends StatelessWidget {
         final scale = MediaQuery.textScalerOf(context).scale(1);
         // Approximate squares on a normal phone; grow vertically for 320dp
         // and large accessibility text instead of clipping the CTAs.
-        final accessibleHeight = 194 + (scale > 1 ? (scale - 1) * 110 : 0);
+        final double accessibleHeight = 194.0 + (scale > 1 ? (scale - 1) * 110.0 : 0.0);
         final height = side > accessibleHeight ? side : accessibleHeight;
         return Row(
           key: const ValueKey<String>('editorial-today-real-overview'),
