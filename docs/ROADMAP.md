@@ -1,3 +1,14 @@
+## 16 novembre 2026 — Calendar Notebook v136 (candidate · visual-only)
+
+- **Scope autorizzato:** calendario Mese/Settimana/agenda con resa iOS Journal coerente con Oggi v135, senza nuovi modelli, writer, route, permessi, storage, sync o modifiche alla Cassaforte.
+- **Mese/Anno:** collegamenti editoriali originali, adattivi (colonna con 320dp e testo >1.3x); destinazioni canoniche `MonthScreen` e `YearScreen`, chiavi di accessibilità immutate.
+- **Mese:** TableCalendar canonico con intestazione, settimana, selezione, oggi e indicatori ripuliti tramite stile derivato dal ColorScheme (5 palette/HSV/dark); callbacks, eventi, date 2020–2040 e navigazione preservati.
+- **Agenda:** CTA slot liberi, timeline 07:00–22:00 inizialmente chiusa, stato vuoto veritiero, riepilogo del giorno e visibilità degli eventi invariati; solo chrome carta/Manrope/Lora.
+- **Settimana:** riepilogo e sette card esistenti, con spaziatura, divisione e profondità visiva; nessuna modifica a focus, priorità, attività, ricordi, cancellazione o pulsanti Crea.
+- **Classic reversibile:** mantiene le superfici/classi Material precedenti; nessun secondo calendario o duplicazione della selezione.
+- **Evidenza necessaria per chiudere:** CI exact-head, AppLab Source Gate e Web, screenshot Flutter PR di otto stati vuoti/popolati Mese/Settimana, ispezione prima/dopo; APK stabile su `main` solo se la candidata +136 supera i gate di rilascio. Qualità visiva personale, aggiornamento fisico e test dati restano **NON VERIFICATI** finché privi di prova.
+- **Owner UI:** [issue #327](https://github.com/riccardopinato/Agenda-per-Anna/issues/327). **Gate fisici separati:** [issue #329](https://github.com/riccardopinato/Agenda-per-Anna/issues/329).
+
 # Anna's Diary — Roadmap
 
 ## 16 novembre 2026 — Dashboard Oggi a due quadrati (+135)
