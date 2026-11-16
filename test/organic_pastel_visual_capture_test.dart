@@ -87,6 +87,14 @@ void main() {
       // An authentic diary-block model, but synthetic and in-memory only.
       // This exercises the no-fake-photo note fallback in Ricordi.
       final memoryDate = DateTime(date.year - 1, date.month, date.day);
+      // Synthetic but genuinely persisted-shaped diary records exercise
+      // per-week and all-time counts without fabricating production content.
+      final monday = wrMonday(date);
+      store.journals[AgendaStore.dateKey(monday)] =
+          const DayJournal(note: 'Una passeggiata al tramonto');
+      store.journals[AgendaStore.dateKey(
+        DateTime(monday.year, monday.month, monday.day + 2),
+      )] = const DayJournal(beautiful: 'Una giornata speciale');
       store.journals[AgendaStore.dateKey(memoryDate)] = DayJournal(
         blocks: [
           DiaryBlock(
@@ -151,6 +159,18 @@ void main() {
     expect(
       find.byKey(const ValueKey<String>('main-nav-create')),
       findsOneWidget,
+    );
+    expect(
+      find.byKey(const ValueKey<String>('editorial-today-diary-hero')),
+      findsOneWidget,
+    );
+    expect(
+      find.byKey(const ValueKey<String>('editorial-today-week-hero')),
+      findsOneWidget,
+    );
+    expect(
+      find.byKey(const ValueKey<String>('cap0147-review')),
+      findsNothing,
     );
     debugPrint('ORGANIC_CAPTURE STEP 8: golden capture');
     await expectLater(
