@@ -125,7 +125,7 @@ void main() {
         File('lib/src/diary/diary_memories.dart').readAsStringSync();
     expect(memoriesScreen, contains('AnnaOrganicJournalYearPill('));
     expect(memoriesScreen, contains('editorial ? 304 : 328'));
-    expect(memoriesScreen, contains('editorial\\n                            ? KeyedSubtree(').isFalse, isTrue);
+    expect(memoriesScreen, contains('itemBuilder: (context, position) => editorial'));
     expect(memoriesScreen, contains('child: _forYouHero(context, anniversary[position])'));
     expect(memories, contains('DiaryBlockType.photo && block.hasPhotoMedia'));
     expect(memories, contains('_coverPreview(context, record)'));
