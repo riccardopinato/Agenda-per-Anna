@@ -5,27 +5,17 @@ part of '../main.dart';
 /// This is presentation-only: no synthetic content, alternate repository,
 /// capture writer, account, navigation owner or calendar persistence.
 class AnnaEditorialTodayOverview extends StatelessWidget {
-  final DayHubSnapshot snapshot;
-  final bool hideDetails;
   final VoidCallback onOpenDiary;
-  final VoidCallback onOpenCalendar;
-  final VoidCallback onOpenDay;
 
   const AnnaEditorialTodayOverview({
     super.key,
-    required this.snapshot,
-    required this.hideDetails,
     required this.onOpenDiary,
-    required this.onOpenCalendar,
-    required this.onOpenDay,
   });
 
   @override
   Widget build(BuildContext context) {
     final strings = AnnaStrings.of(context);
     final colors = AnnaEditorialColors.of(context);
-    final commitments = snapshot.agenda.length + snapshot.birthdays.length;
-    final activities = snapshot.workouts.length;
     return Column(
       key: const ValueKey<String>('editorial-today-real-overview'),
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -83,21 +73,6 @@ class AnnaEditorialTodayOverview extends StatelessWidget {
                 onPressed: onOpenDiary,
               ),
             ],
-          ),
-        ),
-        const SizedBox(height: AnnaDesignTokens.spaceMd),
-        AnnaEditorialActionPair(
-          leading: AnnaEditorialQuickAction(
-            icon: Icons.event_outlined,
-            title: strings.d3('ui5Commitments'),
-            subtitle: hideDetails ? '•••' : commitments.toString(),
-            onTap: onOpenCalendar,
-          ),
-          trailing: AnnaEditorialQuickAction(
-            icon: Icons.directions_run_outlined,
-            title: strings.d3('ui5Activities'),
-            subtitle: hideDetails ? '•••' : activities.toString(),
-            onTap: onOpenDay,
           ),
         ),
       ],

@@ -1235,11 +1235,7 @@ class _PlannerScreenState extends State<PlannerScreen> {
                           // any editor. Create stays in the shell's + Crea.
                           if (editorial)
                             AnnaEditorialTodayOverview(
-                              snapshot: snapshot,
-                              hideDetails: widget.store.preferences.hideHomeDetails,
                               onOpenDiary: _openSelectedDay,
-                              onOpenCalendar: _openSelectedDay,
-                              onOpenDay: _openSelectedDay,
                             )
                           else
                             AnnaMotionStagger(
