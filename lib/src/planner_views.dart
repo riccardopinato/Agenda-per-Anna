@@ -367,51 +367,94 @@ class _CalendarHubScreenState extends State<CalendarHubScreen> {
             ),
             child: Builder(
               builder: (context) {
-                final notebookLinks = Row(
-                children: [
-                  Expanded(
-                    child: Semantics(
-                      identifier: 'calendar-open-month-notebook',
-                    button: true,
-                    label: strings.v100MyMonth,
-                    child: OutlinedButton.icon(
-                      key: const ValueKey<String>(
-                        'calendar-open-month-notebook',
-                      ),
-                      onPressed: () => Navigator.push(
-                        context,
-                        MaterialPageRoute<void>(
-                          builder: (_) => MonthScreen(store: widget.store),
+                // Canonical month/year routes; Organic gets only journal chrome.
+                final monthLink = Semantics(
+                  identifier: 'calendar-open-month-notebook',
+                  button: true,
+                  label: strings.v100MyMonth,
+                  child: editorial
+                      ? AnnaOrganicCalendarNotebookLink(
+                          key: const ValueKey<String>(
+                            'calendar-open-month-notebook',
+                          ),
+                          label: strings.v100MyMonth,
+                          icon: Icons.auto_awesome_outlined,
+                          onPressed: () => Navigator.push(
+                            context,
+                            MaterialPageRoute<void>(
+                              builder: (_) => MonthScreen(store: widget.store),
+                            ),
+                          ),
+                        )
+                      : OutlinedButton.icon(
+                          key: const ValueKey<String>(
+                            'calendar-open-month-notebook',
+                          ),
+                          onPressed: () => Navigator.push(
+                            context,
+                            MaterialPageRoute<void>(
+                              builder: (_) => MonthScreen(store: widget.store),
+                            ),
+                          ),
+                          icon: const Icon(Icons.auto_awesome_outlined),
+                          label: Text(strings.v100MyMonth),
                         ),
-                      ),
-                      icon: const Icon(Icons.auto_awesome_outlined),
-                      label: Text(strings.v100MyMonth),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: AnnaDesignTokens.spaceSm),
-                Expanded(
-                  child: Semantics(
-                    identifier: 'calendar-open-year-overview',
-                    button: true,
-                    label: strings.v100MyYear,
-                    child: OutlinedButton.icon(
-                      key: const ValueKey<String>(
-                        'calendar-open-year-overview',
-                      ),
-                      onPressed: () => Navigator.push(
-                        context,
-                        MaterialPageRoute<void>(
-                          builder: (_) => YearScreen(store: widget.store),
+                );
+                final yearLink = Semantics(
+                  identifier: 'calendar-open-year-overview',
+                  button: true,
+                  label: strings.v100MyYear,
+                  child: editorial
+                      ? AnnaOrganicCalendarNotebookLink(
+                          key: const ValueKey<String>(
+                            'calendar-open-year-overview',
+                          ),
+                          label: strings.v100MyYear,
+                          icon: Icons.insights_outlined,
+                          onPressed: () => Navigator.push(
+                            context,
+                            MaterialPageRoute<void>(
+                              builder: (_) => YearScreen(store: widget.store),
+                            ),
+                          ),
+                        )
+                      : OutlinedButton.icon(
+                          key: const ValueKey<String>(
+                            'calendar-open-year-overview',
+                          ),
+                          onPressed: () => Navigator.push(
+                            context,
+                            MaterialPageRoute<void>(
+                              builder: (_) => YearScreen(store: widget.store),
+                            ),
+                          ),
+                          icon: const Icon(Icons.insights_outlined),
+                          label: Text(strings.v100MyYear),
                         ),
-                      ),
-                      icon: const Icon(Icons.insights_outlined),
-                      label: Text(strings.v100MyYear),
-                    ),
-                  ),
-                ),
-                ],
-              );
+                );
+                final notebookLinks = LayoutBuilder(
+                  builder: (context, constraints) {
+                    final stacked = editorial &&
+                        (constraints.maxWidth < 310 ||
+                            MediaQuery.textScalerOf(context).scale(1) > 1.3);
+                    if (stacked) {
+                      return Column(
+                        children: [
+                          SizedBox(width: double.infinity, child: monthLink),
+                          const SizedBox(height: AnnaDesignTokens.spaceSm),
+                          SizedBox(width: double.infinity, child: yearLink),
+                        ],
+                      );
+                    }
+                    return Row(
+                      children: [
+                        Expanded(child: monthLink),
+                        const SizedBox(width: AnnaDesignTokens.spaceSm),
+                        Expanded(child: yearLink),
+                      ],
+                    );
+                  },
+                );
                 return editorial
                     ? AnnaEditorialSurface(
                         key: const ValueKey<String>('editorial-calendar-notebooks'),
@@ -568,6 +611,24 @@ class _CalendarScreenState extends State<CalendarScreen> {
                     curve: Curves.easeOutCubic,
                     child: TableCalendar<UnifiedAgendaEntry>(
                     locale: AnnaStrings.intlLocale(context),
+                    daysOfWeekHeight: editorial ? 34 : 24,
+                    rowHeight: editorial ? 56 : 52,
+                    daysOfWeekStyle: editorial
+                        ? DaysOfWeekStyle(
+                            weekdayStyle: TextStyle(
+                              fontFamily: AnnaJournalTypography.uiFamily,
+                              fontWeight: FontWeight.w700,
+                              fontSize: 12,
+                              color: AnnaEditorialColors.of(context).mutedInk,
+                            ),
+                            weekendStyle: TextStyle(
+                              fontFamily: AnnaJournalTypography.uiFamily,
+                              fontWeight: FontWeight.w700,
+                              fontSize: 12,
+                              color: AnnaEditorialColors.of(context).accent,
+                            ),
+                          )
+                        : const DaysOfWeekStyle(),
                     firstDay: DateTime(2020),
                     lastDay: DateTime(2040),
                     focusedDay: focused,
@@ -597,6 +658,19 @@ class _CalendarScreenState extends State<CalendarScreen> {
                     },
                     headerStyle: HeaderStyle(
                       formatButtonVisible: false,
+                      headerPadding: const EdgeInsets.symmetric(vertical: 12),
+                      leftChevronIcon: Icon(
+                        Icons.chevron_left_rounded,
+                        color: editorial
+                            ? AnnaEditorialColors.of(context).ink
+                            : Theme.of(context).colorScheme.onSurface,
+                      ),
+                      rightChevronIcon: Icon(
+                        Icons.chevron_right_rounded,
+                        color: editorial
+                            ? AnnaEditorialColors.of(context).ink
+                            : Theme.of(context).colorScheme.onSurface,
+                      ),
                       titleCentered: true,
                       titleTextStyle: editorial
                           ? AnnaJournalTypography.editorial(
@@ -610,6 +684,29 @@ class _CalendarScreenState extends State<CalendarScreen> {
                     calendarStyle: editorial
                         ? CalendarStyle(
                             outsideDaysVisible: false,
+                            cellMargin: const EdgeInsets.all(4),
+                            markerSize: 5.5,
+                            markerMargin: const EdgeInsets.symmetric(horizontal: 1),
+                            defaultTextStyle: TextStyle(
+                              fontFamily: AnnaJournalTypography.uiFamily,
+                              fontWeight: FontWeight.w600,
+                              color: AnnaEditorialColors.of(context).ink,
+                            ),
+                            weekendTextStyle: TextStyle(
+                              fontFamily: AnnaJournalTypography.uiFamily,
+                              fontWeight: FontWeight.w600,
+                              color: AnnaEditorialColors.of(context).accent,
+                            ),
+                            selectedTextStyle: TextStyle(
+                              fontFamily: AnnaJournalTypography.uiFamily,
+                              fontWeight: FontWeight.w800,
+                              color: Theme.of(context).colorScheme.onPrimary,
+                            ),
+                            todayTextStyle: TextStyle(
+                              fontFamily: AnnaJournalTypography.uiFamily,
+                              fontWeight: FontWeight.w800,
+                              color: AnnaEditorialColors.of(context).ink,
+                            ),
                             selectedDecoration: BoxDecoration(
                               color: Theme.of(context).colorScheme.primary,
                               borderRadius: BorderRadius.circular(14),
@@ -657,6 +754,18 @@ class _CalendarScreenState extends State<CalendarScreen> {
                   onPressed: () => showCalendarFreeSlots(
                       context, widget.store, selected),
                   icon: const Icon(Icons.event_available_outlined),
+                  style: editorial
+                      ? OutlinedButton.styleFrom(
+                          minimumSize: const Size(0, 48),
+                          foregroundColor: AnnaEditorialColors.of(context).ink,
+                          side: BorderSide(
+                            color: AnnaEditorialColors.of(context).border,
+                          ),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                        )
+                      : null,
                   label: Text(calendarFreeSlotLabel(
                       strings, 'open')),
                 ),
@@ -669,6 +778,15 @@ class _CalendarScreenState extends State<CalendarScreen> {
                 child: ExpansionTile(
                 key: const ValueKey<String>('approved-calendar-hourly-timeline'),
                 initiallyExpanded: false,
+                tilePadding: editorial
+                    ? const EdgeInsets.symmetric(horizontal: 16)
+                    : null,
+                iconColor: editorial
+                    ? AnnaEditorialColors.of(context).accent
+                    : null,
+                collapsedIconColor: editorial
+                    ? AnnaEditorialColors.of(context).mutedInk
+                    : null,
                 leading: const Icon(Icons.schedule_outlined),
                 title: Text(strings.hourlyTimeline),
                 subtitle: const Text('07:00–22:00'),
@@ -774,7 +892,9 @@ class _CalendarScreenState extends State<CalendarScreen> {
                 SectionTitle(selectedDateTitle),
               const SizedBox(height: 10),
               if (events.isEmpty)
-                SimpleCard(child: Text(strings.noCommitments))
+                editorial
+                    ? AnnaOrganicCalendarEmptyAgenda(label: strings.noCommitments)
+                    : SimpleCard(child: Text(strings.noCommitments))
               else
                 ...events.map(
                   (e) => UnifiedAgendaTile(
@@ -1534,12 +1654,28 @@ class _CalendarDayContextCard extends StatelessWidget {
             .map((occurrence) => occurrence.birthday.name)
             .join(', ');
 
+    final organic = AnnaOrganicPastel.enabled(context);
     return Container(
-      padding: const EdgeInsets.all(15),
+      padding: EdgeInsets.all(organic ? 17 : 15),
       decoration: BoxDecoration(
-        color: scheme.surfaceContainerHighest.withValues(alpha: 0.38),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: scheme.outlineVariant),
+        color: organic
+            ? AnnaOrganicPastel.surface(context)
+            : scheme.surfaceContainerHighest.withValues(alpha: 0.38),
+        borderRadius: BorderRadius.circular(organic ? 23 : 20),
+        border: Border.all(
+          color: organic
+              ? AnnaEditorialColors.of(context).border
+              : scheme.outlineVariant,
+        ),
+        boxShadow: organic
+            ? [
+                BoxShadow(
+                  color: AnnaEditorialColors.of(context).shadow,
+                  blurRadius: 12,
+                  offset: const Offset(0, 3),
+                ),
+              ]
+            : null,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1551,7 +1687,9 @@ class _CalendarDayContextCard extends StatelessWidget {
               Expanded(
                 child: Text(
                   strings.dayContext,
-                  style: const TextStyle(fontWeight: FontWeight.w800),
+                  style: organic
+                       ? AnnaJournalTypography.editorial(context, size: 18)
+                       : const TextStyle(fontWeight: FontWeight.w800),
                 ),
               ),
               TextButton(
@@ -3935,8 +4073,17 @@ class _WeekDayCard extends StatelessWidget {
       key: organic
           ? ValueKey<String>('organic-week-day-${AgendaStore.dateKey(day)}')
           : null,
-      padding: const EdgeInsets.all(14),
+      padding: EdgeInsets.all(organic ? 16 : 14),
       decoration: BoxDecoration(
+        boxShadow: organic
+            ? [
+                BoxShadow(
+                  color: AnnaEditorialColors.of(context).shadow,
+                  blurRadius: 12,
+                  offset: const Offset(0, 3),
+                ),
+              ]
+            : null,
         color: organic
             ? (isToday
                 ? Color.alphaBlend(
@@ -4015,6 +4162,12 @@ class _WeekDayCard extends StatelessWidget {
               ),
             ],
           ),
+          if (organic) ...[
+            const SizedBox(height: 9),
+            const AnnaEditorialAccentRule(
+              margin: EdgeInsets.symmetric(horizontal: 2),
+            ),
+          ],
           if (items.isEmpty)
             Padding(
               padding: const EdgeInsets.only(top: 8),
