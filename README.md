@@ -1,5 +1,15 @@
 # Anna's Diary
 
+## Stato verificato al 16 novembre 2026 — rc.6+134 (fonte corrente)
+
+- **Sorgente main**: `afbbb3ec5b46d1744d2f681668742fdef7723ea1`, `1.0.0-rc.6+134`; integrazione Journal Impegni/Calendario/Ricordi/Altro/Impostazioni [PR #326](https://github.com/riccardopinato/Agenda-per-Anna/pull/326).
+- **CI/Android/Web**: [Development checks #43777394780](https://github.com/riccardopinato/Agenda-per-Anna/actions/runs/43777394780), [Android native #43777394728](https://github.com/riccardopinato/Agenda-per-Anna/actions/runs/43777394728), [Pages #43777394708](https://github.com/riccardopinato/Agenda-per-Anna/actions/runs/43777394708) PASS; Web https://riccardopinato.github.io/Agenda-per-Anna/.
+- **APK ARM64 firmato**: [run #43777799161](https://github.com/riccardopinato/Agenda-per-Anna/actions/runs/43777799161) PASS, artifact `14186833210`, SHA source uguale a main; **il titolare riferisce che l'APK funziona** (16/11/2026). Test fisici dettagliati/retention/account/Store **NON VERIFICATI**; l'attestazione non promuove tutti i gate.
+- **Polish estetico successivo**: [PR #328](https://github.com/riccardopinato/Agenda-per-Anna/pull/328) e [issue #327](https://github.com/riccardopinato/Agenda-per-Anna/issues/327). Se integrato senza nuovo versionCode, aggiorna la sorgente/Web; **non** modifica i byte dell'APK +134 già distribuito.
+- **Audit/risultati non chiusi**: [registro post +134](docs/AUDIT_RESIDUAL_POST_134_20261116.md).
+
+> I riferimenti a +129 e release storiche più sotto sono conservati come testimonianze storiche, non descrivono l'ultimo rilascio.
+
 Flutter app for personal planning, private diary and the shared **Noi ♡** space.
 
 **Current Web-first source (7 Nov 2026):** `main@dc601002` (`1.0.0-rc.6+129`); [GitHub Pages deploy #42402256546](https://github.com/riccardopinato/Agenda-per-Anna/actions/runs/42402256546) PASS. Latest signed Android +129 was built earlier at `cb8c3d0`, so it does not contain the subsequent Web changes. Physical/native/Play certification remains pending. The historical sections below retain their original release context.
