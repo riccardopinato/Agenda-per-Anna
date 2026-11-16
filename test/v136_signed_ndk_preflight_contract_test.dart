@@ -19,7 +19,7 @@ void main() {
     expect(source, contains('Require stable Android signing configuration'));
     expect(source, contains('Prepare physical certification identity'));
     expect(source, contains('Upload lightweight ARM64 APK'));
-    expect(source, contains('test "$(git rev-parse HEAD)" = "$BUILD_SOURCE_SHA"'));
+    expect(source, contains(r'test "$(git rev-parse HEAD)" = "$BUILD_SOURCE_SHA"'));
     expect(source, contains('ANNA_STORE_RELEASE=false'));
   });
 }
