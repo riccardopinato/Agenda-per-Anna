@@ -582,9 +582,14 @@ class _CalendarScreenState extends State<CalendarScreen> {
           appBar: widget.embedded
               ? null
               : AppBar(
+                  backgroundColor:
+                      editorial ? AnnaEditorialColors.of(context).canvas : null,
+                  surfaceTintColor: editorial ? Colors.transparent : null,
                   title: Text(
                     strings.calendar,
-                    style: const TextStyle(fontWeight: FontWeight.w800),
+                    style: editorial
+                        ? AnnaJournalTypography.editorial(context, size: 27)
+                        : const TextStyle(fontWeight: FontWeight.w800),
                   ),
                 ),
           floatingActionButton: widget.embedded ? null : FloatingActionButton.extended(
@@ -650,7 +655,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
                                 child: Align(
                                   alignment: Alignment.bottomCenter,
                                   child: Padding(
-                                    padding: const EdgeInsets.only(bottom: 4),
+                                    padding: const EdgeInsets.only(bottom: 10),
                                     child: Row(
                                       mainAxisAlignment: MainAxisAlignment.center,
                                       mainAxisSize: MainAxisSize.min,
@@ -3768,9 +3773,14 @@ class _WeekScreenState extends State<WeekScreen> {
           appBar: widget.embedded
               ? null
               : AppBar(
+                  backgroundColor:
+                      editorial ? AnnaEditorialColors.of(context).canvas : null,
+                  surfaceTintColor: editorial ? Colors.transparent : null,
                   title: Text(
                     AnnaStrings.of(context).d3('myWeek'),
-                    style: const TextStyle(fontWeight: FontWeight.w800),
+                    style: editorial
+                        ? AnnaJournalTypography.editorial(context, size: 27)
+                        : const TextStyle(fontWeight: FontWeight.w800),
                   ),
                   actions: editorial ? null : _weekActions(context),
                 ),
