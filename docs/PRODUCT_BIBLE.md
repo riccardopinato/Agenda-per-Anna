@@ -1,5 +1,9 @@
 # Anna's Diary — Product Bible
 
+## Decisione di prodotto aggiornata — 16 novembre 2026, dashboard Oggi
+
+Il titolare approva due card affiancate **Diario / La mia settimana**, pari dimensioni e dati reali: numero di giorni annotati derivato dai `DayJournal` canonici, con filtro della privacy locale. Il tasto di destra riusa `WeeklyReviewScreen`, non crea un secondo riepilogo o un secondo archivio. Il teaser **«Momenti da ricordare»** rimane immediatamente dopo le due card **solo con contenuti realmente esistenti**. La Home scorre, la preview dettagliata Impegni viene spostata sotto il teaser senza eliminare le funzioni. L'owner richiede Web e APK firmato aggiornati: candidata `1.0.0-rc.6+135`; [PR #333](https://github.com/riccardopinato/Agenda-per-Anna/pull/333). I gate e la consegna artefatto sono processi distinti dal blueprint UI.
+
 ## Decisione di prodotto corrente — 16 novembre 2026
 
 La release firmata `1.0.0-rc.6+134` unifica nella sua sorgente `afbbb3ec5b46d1744d2f681668742fdef7723ea1` le viste estetiche di Impegni, Calendario, Ricordi, Altro e Impostazioni ([PR #326](https://github.com/riccardopinato/Agenda-per-Anna/pull/326)); [workflow APK ARM64 firmato #43777799161](https://github.com/riccardopinato/Agenda-per-Anna/actions/runs/43777799161) PASS. Il titolare conferma che **l'APK funziona**: non intervenire sulla distribuzione sulla base del vecchio errore di download. Questa attestazione non equivale a suite fisica dei dati personali, firma installata, Store, due-device sync, sicurezza Vault e altri gate specifici.

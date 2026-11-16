@@ -1,5 +1,11 @@
 # Anna's Diary — Roadmap
 
+## 16 novembre 2026 — decisione successiva: Home dashboard + APK +135
+
+**Autorizzato:** [PR #333](https://github.com/riccardopinato/Agenda-per-Anna/pull/333). Sostituire il riquadro «Il mio diario» con due card di dimensione pari, affiancate: sinistra Diario (giorni autentici annotati nel repository canonico privato), destra «La mia settimana» (giorni annotati nella settimana corrente e accesso alla Weekly Review canonica). La Home rimane scorrevole; il ricordo autentico precede la preview Impegni dettagliata. Non mostrare duplicati, non creare contatori fasulli, non modificare account, Vault, schema, firma o Classic.
+
+**Release:** la richiesta odierna **sostituisce** il precedente vincolo «nessun nuovo APK» valido solo per il polish +134. Preparare `rc.6+135`, eseguire QA Flutter/Web/Android e poi GitHub Pages e APK arm64 con firma stabile tramite pipeline automatica main se exact-head PASS. Tracciare commit/artefatto/hash prima della consegna. Physical QA update-in-place rimane PENDING finché l'utente non conferma il nuovo APK. Mantenere in sospeso le voci pertinenti di [issue #329](https://github.com/riccardopinato/Agenda-per-Anna/issues/329).
+
 ## 16 novembre 2026 — post rc.6+134: roadmap fonte/UI integrata, gate fisici residui
 
 - **APK:** il titolare conferma funzionamento di `rc.6+134`. Download/signing **esclusi** dai lavori correttivi; lo stato dell'APK già firmato e la versione rimangono invariati.

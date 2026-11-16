@@ -1,5 +1,11 @@
 # Anna's Diary
 
+## 16 novembre 2026 — dashboard Oggi a due card · candidata +135
+
+Il redesign approvato dal titolare è sviluppato in [PR #333](https://github.com/riccardopinato/Agenda-per-Anna/pull/333): **«Il mio diario»** a sinistra, **«La mia settimana»** a destra, stessa altezza, contatori autentici dei soli giorni annotati da `AgendaStore.journals`, rispetto del mascheramento privacy, apertura del Weekly Review originale e sezione **«Momenti da ricordare» immediatamente sotto quando disponibili ricordi reali**. Il riepilogo completo Impegni è spostato dopo il teaser Ricordi; Classic e gli editor restano invariati. Supportate cinque lingue, dark, font ingranditi e Home scorrevole.
+
+Il `pubspec.yaml` della PR prepara `1.0.0-rc.6+135`. **Attenzione:** la precedente APK +134 continua a essere l'ultima release firmata confermata fino alla pubblicazione dell'artefatto +135; il numero nel file sorgente non certifica build/installazione. L'APK +135 userà il medesimo signer e richiede gates exact-head GitHub, main, preflight/versionCode e artifact SHA; prova sul telefono resta separata. Web Pages dopo merge.
+
 ## Stato verificato al 16 novembre 2026 — rc.6+134 (fonte corrente)
 
 - **Base dell'APK firmato**: `afbbb3ec5b46d1744d2f681668742fdef7723ea1`, `1.0.0-rc.6+134`; integrazione [PR #326](https://github.com/riccardopinato/Agenda-per-Anna/pull/326). **Main dopo il polish**: `2934ea9573edc68edbfc24210fbf8296ac67af49` ([PR #328](https://github.com/riccardopinato/Agenda-per-Anna/pull/328)); build number invariato.
