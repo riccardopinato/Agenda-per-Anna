@@ -5,8 +5,8 @@ Updated 16 November 2026. This file is **append-only in spirit**: preserve origi
 ## Release/source identity
 
 - Factory: `App-Factory-Core@c5adc147046beb7024629466d10eeb799c3c2619`, Master v27, Golden Index v29.
-- Last signed APK **unchanged**: `1.0.0-rc.6+134` from `main@afbbb3ec5b46d1744d2f681668742fdef7723ea1`, [signed run #43777799161](https://github.com/riccardopinato/Agenda-per-Anna/actions/runs/43777799161), artifact `14186833210`. The owner states that the APK works. Do not reopen download/signing without new failure evidence.
-- UI polishing: [PR #328](https://github.com/riccardopinato/Agenda-per-Anna/pull/328), source-only, no new APK; pending merged-head/owner acceptance as applicable. [UI quality follow-up #327](https://github.com/riccardopinato/Agenda-per-Anna/issues/327).
+- Last signed APK **unchanged**: `1.0.0-rc.6+134` from release source `afbbb3ec5b46d1744d2f681668742fdef7723ea1`, [signed run #43777799161](https://github.com/riccardopinato/Agenda-per-Anna/actions/runs/43777799161), artifact `14186833210`. The owner states that the APK works. Do not reopen download/signing without new failure evidence.
+- UI source polish: [PR #328](https://github.com/riccardopinato/Agenda-per-Anna/pull/328) **MERGED** at `main@2934ea9573edc68edbfc24210fbf8296ac67af49`, same `+134` metadata, no new signed APK; pending **owner visual acceptance**. Residual tracking: [issue #329](https://github.com/riccardopinato/Agenda-per-Anna/issues/329). [UI quality follow-up #327](https://github.com/riccardopinato/Agenda-per-Anna/issues/327).
 - Current Web is based on main; source-only changes after +134 **do not retroactively alter the signed APK**.
 
 ## Items resolved at source or confirmed by owner

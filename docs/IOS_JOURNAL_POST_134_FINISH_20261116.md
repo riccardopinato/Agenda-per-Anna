@@ -1,6 +1,6 @@
 # Anna's Diary — post +134 visual/product finish (16 Nov 2026)
 
-Status: IN PROGRESS; no release or physical certification from this document.
+Status: **SOURCE MERGED** via [PR #328](https://github.com/riccardopinato/Agenda-per-Anna/pull/328) at `main@2934ea9573edc68edbfc24210fbf8296ac67af49`; visual owner and physical certification **NOT VERIFIED**. No new APK/release.
 Source baseline: `main@afbbb3ec5b46d1744d2f681668742fdef7723ea1`, Flutter `1.0.0-rc.6+134`.
 Factory baseline: `App-Factory-Core@c5adc147046beb7024629466d10eeb799c3c2619`, Master v27 / Golden Index v29.
 
