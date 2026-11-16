@@ -1141,14 +1141,29 @@ class _InboxScreenState extends State<InboxScreen> {
                 ? AnnaEditorialColors.of(context).canvas : null,
             scrolledUnderElevation: 0,
             surfaceTintColor: editorial ? Colors.transparent : null,
-            title: Text(
-              strings.inbox,
-              style: editorial
-                  ? AnnaJournalTypography.editorial(context, size: 25)
-                  : const TextStyle(fontWeight: FontWeight.w900),
-            ),
+            title: editorial
+                ? null
+                : Text(
+                    strings.inbox,
+                    style: const TextStyle(fontWeight: FontWeight.w900),
+                  ),
           ),
           floatingActionButton: FloatingActionButton.extended(
+            backgroundColor: editorial
+                ? Theme.of(context).colorScheme.primaryContainer
+                : null,
+            foregroundColor: editorial
+                ? Theme.of(context).colorScheme.onPrimaryContainer
+                : null,
+            elevation: editorial ? 1 : null,
+            shape: editorial
+                ? RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(19),
+                    side: BorderSide(
+                      color: AnnaEditorialColors.of(context).border,
+                    ),
+                  )
+                : null,
             onPressed: () => _showQuickCapture(
               context,
               store,
@@ -1171,8 +1186,6 @@ class _InboxScreenState extends State<InboxScreen> {
                   padding: const EdgeInsets.fromLTRB(18, 8, 18, 8),
                   child: AnnaEditorialHeader(
                     title: strings.inbox,
-                    eyebrow: inboxCategoryCopy(
-                      strings.languageCode, 'heading'),
                   ),
                 ),
               if (!compact)
