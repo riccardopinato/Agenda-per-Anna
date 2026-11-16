@@ -1007,12 +1007,16 @@ class _PlannerScreenState extends State<PlannerScreen> {
         final planningCards = <Widget>[
           if (widget.embedded && isToday)
             for (final card in widget.store.preferences.todayCardOrder) ...[
-              const SizedBox(height: 12),
-              if (card == 'review')
-                WeeklyReviewHomeCard(
-                  key: const ValueKey('cap0147-review'),
-                  store: widget.store,
-                ),
+              // Organic Today places review in the right dashboard tile.
+              // Classic keeps the original configurable full-width card.
+              if (!editorial || card != 'review') ...[
+                const SizedBox(height: 12),
+                if (card == 'review')
+                  WeeklyReviewHomeCard(
+                    key: const ValueKey('cap0147-review'),
+                    store: widget.store,
+                  ),
+              ],
               if (card == 'realistic')
                 RealisticDayCard(
                   key: const ValueKey('cap0147-realistic'),
@@ -1229,7 +1233,13 @@ class _PlannerScreenState extends State<PlannerScreen> {
                           // any editor. Create stays in the shell's + Crea.
                           if (editorial)
                             AnnaEditorialTodayOverview(
+                              store: widget.store,
+                              today: DateTime.now(),
+                              hideDetails: widget.store.preferences.hideHomeDetails,
                               onOpenDiary: _openSelectedDay,
+                              onOpenWeek: () => openCurrentWeeklyReview(
+                                context, widget.store,
+                              ),
                             )
                           else
                             AnnaMotionStagger(

@@ -1738,6 +1738,15 @@ class DayJournal {
     this.blocks = const [],
   });
 
+  /// Single definition for a genuinely annotated day (excludes archived-only blocks).
+  /// Reused by the day hub and the private-only dashboard projection.
+  bool get hasContent =>
+      beautiful.trim().isNotEmpty ||
+      note.trim().isNotEmpty ||
+      gratitude.any((value) => value.trim().isNotEmpty) ||
+      mood != null ||
+      blocks.any((block) => !block.archived);
+
   DayJournal copyWith({
     String? beautiful,
     String? note,

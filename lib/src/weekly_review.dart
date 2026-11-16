@@ -32,6 +32,8 @@ class WeeklyReviewSummary {
 
 const _wrCopy = <String,List<String>>{
  'week':['La tua settimana','Your week','Tu semana','Ta semaine','A tua semana'],
+ 'myWeek':['La mia settimana','My week','Mi semana','Ma semaine','A minha semana'],
+ 'briefReview':['Riepilogo','Review','Resumen','Bilan','Resumo'],
  'review':['Bilancio','Review','Balance','Bilan','Balanço'],
  'memories':['Ricordi','Memories','Recuerdos','Souvenirs','Memórias'],
  'intentions':['Intenzioni','Intentions','Intenciones','Intentions','Intenções'],
@@ -100,6 +102,32 @@ DateTime wrPlanningWeekFor(AgendaStore store,DateTime reviewMonday){
   return DateTime(reviewMonday.year,reviewMonday.month,reviewMonday.day+7);
 }
 
+
+/// Open the existing canonical Weekly Review; no second editor or review store.
+void openCurrentWeeklyReview(BuildContext context, AgendaStore store) {
+  final now = DateTime.now();
+  final current = wrMonday(now);
+  final review = now.weekday == DateTime.monday
+      ? DateTime(current.year, current.month, current.day - 7)
+      : current;
+  final plan = now.weekday == DateTime.sunday
+      ? DateTime(current.year, current.month, current.day + 7)
+      : current;
+  Navigator.push<void>(
+    context,
+    MaterialPageRoute<void>(
+      builder: (_) => WeeklyReviewScreen(
+        store: store,
+        reviewWeek: review,
+        planWeek: plan,
+        initialStep: now.weekday != DateTime.sunday &&
+                now.weekday != DateTime.monday
+            ? 2
+            : 0,
+      ),
+    ),
+  );
+}
 
 class WeeklyReviewHomeCard extends StatefulWidget{
  final AgendaStore store;

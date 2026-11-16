@@ -167,12 +167,7 @@ class DayHubSnapshot {
     required this.journal,
   });
 
-  bool get hasJournalContent =>
-      journal.beautiful.trim().isNotEmpty ||
-      journal.note.trim().isNotEmpty ||
-      journal.gratitude.any((entry) => entry.trim().isNotEmpty) ||
-      journal.mood != null ||
-      journal.blocks.any((block) => !block.archived);
+  bool get hasJournalContent => journal.hasContent;
 
   List<DayLifeEntry> get lifeEntries {
     final result = <DayLifeEntry>[
