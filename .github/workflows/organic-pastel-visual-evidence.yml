@@ -24,6 +24,7 @@ jobs:
       github.head_ref == 'design/organic-commitments-premium-20261115' ||
       github.head_ref == 'integration/ios-journal-three-surfaces-20261116' ||
       github.head_ref == 'design/organic-journal-home-parity-20261116' ||
+      github.head_ref == 'feat/today-diary-week-dashboard-rc135-20261116' ||
       github.head_ref == 'design/home-remove-duplicate-commitments-activity-20261116'
     runs-on: ubuntu-latest
     timeout-minutes: 25
