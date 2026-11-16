@@ -203,6 +203,71 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
+  testWidgets('dashboard stays two columns on narrow phones, dark mode and 200% text',
+      (tester) async {
+    final store = makeStore();
+    AnnaEditorialTodayMode.enabled.value = true;
+    addTearDown(() {
+      AnnaEditorialTodayMode.enabled.value = false;
+      tester.view.resetPhysicalSize();
+      tester.view.resetDevicePixelRatio();
+    });
+    tester.view.devicePixelRatio = 1;
+    for (final width in [320.0, 390.0, 600.0]) {
+      tester.view.physicalSize = Size(width, 900);
+      for (final brightness in [Brightness.light, Brightness.dark]) {
+        for (final scale in [1.0, 1.6, 2.0]) {
+          await tester.pumpWidget(MaterialApp(
+            locale: const Locale('it'),
+            supportedLocales: const [Locale('it'), Locale('en')],
+            localizationsDelegates: const [
+              GlobalMaterialLocalizations.delegate,
+              GlobalWidgetsLocalizations.delegate,
+              GlobalCupertinoLocalizations.delegate,
+            ],
+            theme: ThemeData(
+              useMaterial3: true,
+              colorScheme: ColorScheme.fromSeed(
+                seedColor: Colors.green,
+                brightness: brightness,
+              ),
+            ),
+            home: Scaffold(
+              body: SingleChildScrollView(
+                child: MediaQuery(
+                  data: MediaQueryData(
+                    size: Size(width, 900),
+                    textScaler: TextScaler.linear(scale),
+                  ),
+                  child: AnnaEditorialTodayOverview(
+                    store: store,
+                    today: DateTime(2026, 11, 16),
+                    hideDetails: false,
+                    onOpenDiary: () {},
+                    onOpenWeek: () {},
+                  ),
+                ),
+              ),
+            ),
+          ));
+          await tester.pump();
+          final diary = find.byKey(
+              const ValueKey<String>('editorial-today-diary-hero'));
+          final week = find.byKey(
+              const ValueKey<String>('editorial-today-week-hero'));
+          expect(diary, findsOneWidget);
+          expect(week, findsOneWidget);
+          expect(tester.getSize(diary).height,
+              closeTo(tester.getSize(week).height, 0.1));
+          expect(tester.getSize(diary).width,
+              closeTo(tester.getSize(week).width, 0.1));
+          expect(tester.takeException(), isNull,
+              reason: 'dashboard width $width brightness $brightness font $scale');
+        }
+      }
+    }
+  });
+
   test('the diary name is first-person in every supported locale', () {
     const expected = <String, String>{
       'it': 'Il mio diario',
