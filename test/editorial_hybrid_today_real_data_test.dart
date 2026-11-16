@@ -2,10 +2,13 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:intl/date_symbol_data_local.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:agenda_per_anna/main.dart';
 
 void main() {
+  setUpAll(() async => initializeDateFormatting('it_IT', null));
+
   // Legacy Editorial Hybrid widget snapshots intentionally exercise the
   // Classic editorial components, not the newly promoted Organic skin.
   // The independently tested Organic Home retains its own widget suite.
