@@ -173,7 +173,7 @@ void main() {
     store.journals['2026-11-16'] = const DayJournal(note: 'Un giorno vero');
     store.journals['2026-11-17'] = const DayJournal(beautiful: 'Un momento bello');
     store.journals['2026-11-15'] = const DayJournal(note: 'La settimana scorsa');
-    store.journals['2026-11-18'] = const DayJournal(
+    store.journals['2026-11-18'] = DayJournal(
       blocks: [DiaryBlock(
         id: 'archived-card-qa',
         type: DiaryBlockType.note,
