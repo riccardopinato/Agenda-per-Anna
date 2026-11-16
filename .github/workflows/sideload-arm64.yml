@@ -106,7 +106,7 @@ jobs:
             echo "Android NDK $NDK_VERSION install attempt $attempt/3"
             if timeout 900 "$SDKMANAGER" --sdk_root="$SDK_ROOT" --install "ndk;$NDK_VERSION" &&
                test -f "$NDK_PATH/source.properties" &&
-               grep -Eq '^[[:space:]]*Pkg\\.Revision[[:space:]]*=[[:space:]]*28\\.2\\.13676358' "$NDK_PATH/source.properties"; then
+               grep -Eq '^[[:space:]]*Pkg[.]Revision[[:space:]]*=[[:space:]]*28[.]2[.]13676358' "$NDK_PATH/source.properties"; then
               echo "Verified Android NDK $NDK_VERSION"
               exit 0
             fi
