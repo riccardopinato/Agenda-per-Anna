@@ -16,3 +16,19 @@ User confirms the existing signed APK **works**: do not touch download, signing,
 
 ## Exclusions
 Do not alter private Vault, persisted schema/ACL, account or shared-space ownership, Google Calendar Direct #199, Privacy V2 #215, Store/RevenueCat production, signed APK workflow. Do not upgrade version for a source-only aesthetic PR. AppLab/source PASS is not on-phone QA.
+
+## Evidenza incrementale della prima wave
+
+- Memoria `Per te → In questo giorno`: in modalità Journal la `PageView` ora costruisce subito il contenuto senza `AnnaMotionStagger` con opacità iniziale zero; Classic mantiene la presentazione precedente. Screenshot Flutter popolato renderizzato, con titolo reale e data, nella [visual review #43785771246](https://github.com/riccardopinato/Agenda-per-Anna/actions/runs/43785771246); non certifica esperienza fisica.
+- Selettore anno `AnnaOrganicJournalYearPill` (48dp, Semantics, focus, tap) solo Journal; Classic mantiene `ChoiceChip`. Calendario `+Crea` passa a `AnnaOrganicPastelAction` nella sola presentazione editoriale; rimane la stessa funzione `showUnifiedCapture` e la data selezionata canonica.
+- Calendar notebook, hero Ricordi, Altro e hub Impostazioni usano `AnnaOrganicPaperSurface` con texture / gradient / paper border dell'Home anziché la generica superficie flat, laddove applicabile.
+- Screenshot reali Flutter per Home, calendario month/week, Impegni, Ricordi, More e Settings: [Journal #43785771246](https://github.com/riccardopinato/Agenda-per-Anna/actions/runs/43785771246), [Calendar #43785771152](https://github.com/riccardopinato/Agenda-per-Anna/actions/runs/43785771152), [Organic #43785771121](https://github.com/riccardopinato/Agenda-per-Anna/actions/runs/43785771121); i risultati sono visual QA con fixture sintetiche e PR merge simulation, non installazione.
+- Scanner uguale alla versione canonica [catalogo@8fdc4e1f](https://github.com/riccardopinato/Idee-app-Archivi-riferimenti/blob/8fdc4e1f526d54287b52ad3433004fb4f89b7dc9/scripts/audit_flutter_antipatterns.py), snapshot in `tool/audit_flutter_antipatterns.py`; [workflow #43786278027](https://github.com/riccardopinato/Agenda-per-Anna/actions/runs/43786278027) PASS e artifact con evidenza per-file. 332 Dart, 0 skipped, 0 high confidence LEGACY_API, 257 euristiche REVIEW: 57 preferences, 134 import IO (soprattutto test), 65 eager ListView, 1 async void notification callback. Nessun fix massivo automatico: prima della modifica serve triage di file e comportamento.
+- Test obbligatori della PR: Flutter analyze, full suite, browser crypto, Pages, AppLab Source Gate, screenshot differenziati, report scansione. Verificare exact-head finale dopo ogni commit.
+- User attestation: APK +134 funziona, non modificare signing/download. Visual parity **OWNER ACCEPTANCE PENDING**; full physical QA distinta.
+
+## Remaining test gates
+
+- Reale aggiornamento telefono, dati reali, storage, backup/restore, due device, notifica recapitata, PIN/biometria, fluidità p95: **NOT VERIFIED**, non imputare a questi screenshot.
+- Attribuzione dell'estetica finale Home-parity: richiede approvazione dell'utente e immagini/gesti su installazione reale.
+- Aggiornare [registro residui](AUDIT_RESIDUAL_POST_134_20261116.md) quando un'area ottiene una prova specifica, senza cancellarne la storia.
