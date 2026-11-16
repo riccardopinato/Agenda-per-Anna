@@ -168,10 +168,49 @@ class _SettingsHubScreenState extends State<SettingsHubScreen> {
                     child: Row(
                       children: [
                         Container(
-                          width: 44, height: 44,
+                          key: const ValueKey<String>(
+                            'settings-hub-live-palette-preview'),
+                          width: 58,
+                          height: 58,
                           decoration: BoxDecoration(
-                            color: Theme.of(context).colorScheme.primary,
-                            borderRadius: BorderRadius.circular(14),
+                            gradient: LinearGradient(
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                              colors: [
+                                Theme.of(context).colorScheme.primaryContainer,
+                                Theme.of(context).colorScheme.surface,
+                              ],
+                            ),
+                            borderRadius: BorderRadius.circular(17),
+                            border: Border.all(
+                              color: AnnaEditorialColors.of(context).border,
+                            ),
+                          ),
+                          child: Center(
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                for (final color in [
+                                  Theme.of(context).colorScheme.primary,
+                                  Theme.of(context).colorScheme.secondary,
+                                  Theme.of(context).colorScheme.tertiary,
+                                ])
+                                  Container(
+                                    width: 10,
+                                    height: 10,
+                                    margin: const EdgeInsets.symmetric(
+                                      horizontal: 2),
+                                    decoration: BoxDecoration(
+                                      color: color,
+                                      shape: BoxShape.circle,
+                                      border: Border.all(
+                                        color: Theme.of(context)
+                                            .colorScheme.surface,
+                                      ),
+                                    ),
+                                  ),
+                              ],
+                            ),
                           ),
                         ),
                         const SizedBox(width: 13),
@@ -239,6 +278,23 @@ class _SettingsHubScreenState extends State<SettingsHubScreen> {
                             : Theme.of(context).colorScheme.outline,
                       ),
                     ),
+                    enabledBorder: AnnaOrganicPastel.enabled(context)
+                        ? OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(19),
+                            borderSide: BorderSide(
+                              color: AnnaEditorialColors.of(context).border,
+                            ),
+                          )
+                        : null,
+                    focusedBorder: AnnaOrganicPastel.enabled(context)
+                        ? OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(19),
+                            borderSide: BorderSide(
+                              color: Theme.of(context).colorScheme.primary,
+                              width: 1.5,
+                            ),
+                          )
+                        : null,
                   ),
                 ),
                 const SizedBox(height: AnnaDesignTokens.spaceSm),
