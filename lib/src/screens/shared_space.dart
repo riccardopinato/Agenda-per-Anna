@@ -456,6 +456,27 @@ class _SharedSpaceHubScreenState extends State<SharedSpaceHubScreen> {
     );
   }
 
+  // Presentation-only wrappers; no shared-space state or route ownership.
+  Widget _togetherHubHero(bool editorial, Widget child) {
+    if (!editorial) return child;
+    return AnnaOrganicPaperSurface(
+      key: const ValueKey<String>('together-editorial-hub-hero'),
+      tone: AnnaEditorialSurfaceTone.featured,
+      padding: EdgeInsets.zero,
+      child: child,
+    );
+  }
+
+  Widget _togetherEmptyState(bool editorial, Widget child) {
+    if (!editorial) return SimpleCard(child: child);
+    return AnnaOrganicPaperSurface(
+      key: const ValueKey<String>('together-editorial-empty'),
+      tone: AnnaEditorialSurfaceTone.quiet,
+      padding: const EdgeInsets.all(20),
+      child: child,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final cloud = CloudSyncService.instance;
@@ -545,16 +566,13 @@ class _SharedSpaceHubScreenState extends State<SharedSpaceHubScreen> {
                   : ListView(
                       padding: const EdgeInsets.fromLTRB(16, 10, 16, 40),
                       children: [
-                        Container(
+                        _togetherHubHero(
+                          editorial,
+                          Container(
                           padding: const EdgeInsets.all(20),
                           decoration: BoxDecoration(
-                            color: editorial
-                                ? AnnaOrganicPastel.surface(context)
-                                : null,
+                            color: editorial ? Colors.transparent : null,
                             gradient: editorial ? null : accent.gradient,
-                            border: editorial
-                                ? Border.all(color: colors.border)
-                                : null,
                             borderRadius: BorderRadius.circular(26),
                           ),
                           child: Column(
@@ -572,6 +590,17 @@ class _SharedSpaceHubScreenState extends State<SharedSpaceHubScreen> {
                                   color: accent.foreground,
                                 ),
                               const SizedBox(height: 10),
+                              if (editorial) ...[
+                                Text(
+                                  AnnaStrings.of(context).navMessages.toUpperCase(),
+                                  style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                                    color: colors.accent,
+                                    letterSpacing: 1.6,
+                                    fontWeight: FontWeight.w800,
+                                  ),
+                                ),
+                                const SizedBox(height: 8),
+                              ],
                               Text(
                                 AnnaStrings.of(context).d3('sharedSpace'),
                                 style: editorial
@@ -596,12 +625,22 @@ class _SharedSpaceHubScreenState extends State<SharedSpaceHubScreen> {
                               ),
                             ],
                           ),
+                          ),
                         ),
                         const SizedBox(height: 16),
                         if (spaces.isEmpty)
-                          SimpleCard(
-                            child: Column(
+                          _togetherEmptyState(
+                            editorial,
+                            Column(
                               children: [
+                                if (editorial) ...[
+                                  Icon(
+                                    Icons.chat_bubble_outline_rounded,
+                                    color: colors.accent,
+                                    size: 32,
+                                  ),
+                                  const SizedBox(height: 12),
+                                ],
                                 Text(
                                   AnnaStrings.of(context).d3('noSharedSpace'),
                                   textAlign: TextAlign.center,
