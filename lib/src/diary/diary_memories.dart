@@ -1493,36 +1493,55 @@ class _DiaryMemoriesScreenState extends State<DiaryMemoriesScreen> {
                         scrollDirection: Axis.horizontal,
                         children: years.map((year) => Padding(
                           padding: const EdgeInsets.only(right: 7),
-                          child: ChoiceChip(
-                            key: ValueKey<String>('ui5-anniversary-year-$year'),
-                            label: Text('$year'),
-                            selected: activeYear == year,
-                            onSelected: (_) {
-                              final position = anniversary.indexWhere(
-                                (record) => record.date.year == year);
-                              if (position < 0) return;
-                              _anniversaryPager.jumpToPage(position);
-                              setState(() => _anniversaryIndex = position);
-                            },
-                          ),
+                          child: editorial
+                              ? AnnaOrganicJournalYearPill(
+                                  key: ValueKey<String>('ui5-anniversary-year-$year'),
+                                  year: year,
+                                  selected: activeYear == year,
+                                  onTap: () {
+                                    final position = anniversary.indexWhere(
+                                      (record) => record.date.year == year,
+                                    );
+                                    if (position < 0) return;
+                                    _anniversaryPager.jumpToPage(position);
+                                    setState(() => _anniversaryIndex = position);
+                                  },
+                                )
+                              : ChoiceChip(
+                                                          key: ValueKey<String>('ui5-anniversary-year-$year'),
+                                                          label: Text('$year'),
+                                                          selected: activeYear == year,
+                                                          onSelected: (_) {
+                                                            final position = anniversary.indexWhere(
+                                                              (record) => record.date.year == year);
+                                                            if (position < 0) return;
+                                                            _anniversaryPager.jumpToPage(position);
+                                                            setState(() => _anniversaryIndex = position);
+                                                          },
+                                                        ),
                         )).toList(),
                       ),
                     ),
                     SizedBox(
-                      height: 328,
+                      height: editorial ? 304 : 328,
                       child: PageView.builder(
                         key: const ValueKey<String>('ui5-anniversary-carousel'),
                         controller: _anniversaryPager,
                         itemCount: anniversary.length,
                         onPageChanged: (position) =>
                             setState(() => _anniversaryIndex = position),
-                        itemBuilder: (context, position) =>
-                            AnnaMotionStagger(
-                              key: ValueKey<String>(
-                                'v108-featured-${anniversary[position].block.id}'),
-                              order: 0,
-                              child: _forYouHero(context, anniversary[position]),
-                            ),
+                        itemBuilder: (context, position) => editorial
+                            ? KeyedSubtree(
+                                key: ValueKey<String>(
+                                  'v108-featured-${anniversary[position].block.id}'),
+                                child: _forYouHero(context, anniversary[position]),
+                              )
+                            : AnnaMotionStagger(
+                                key: ValueKey<String>(
+                                  'v108-featured-${anniversary[position].block.id}'),
+                                order: 0,
+                                child: _forYouHero(context, anniversary[position]),
+                              ),
                       ),
                     ),
                     if (activeRecord != null)

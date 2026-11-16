@@ -130,24 +130,34 @@ class AnnaEditorialCalendarPanel extends StatelessWidget {
         child: Padding(padding: padding, child: child),
       );
     }
+    // Notebook body and data ownership stay identical in both themes.
+    final notebook = Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        const AnnaEditorialAccentRule(
+          key: ValueKey<String>('editorial-calendar-notebook-rule'),
+          margin: EdgeInsets.symmetric(horizontal: 30),
+        ),
+        Padding(padding: padding, child: child),
+      ],
+    );
+    final tone = featured
+        ? AnnaEditorialSurfaceTone.featured
+        : AnnaEditorialSurfaceTone.regular;
+    if (AnnaOrganicPastel.enabled(context)) {
+      return AnnaOrganicPaperSurface(
+        tone: tone,
+        padding: EdgeInsets.zero,
+        semanticLabel: semanticLabel,
+        child: notebook,
+      );
+    }
     return AnnaEditorialSurface(
-      tone: featured
-          ? AnnaEditorialSurfaceTone.featured
-          : AnnaEditorialSurfaceTone.regular,
+      tone: tone,
       padding: EdgeInsets.zero,
       semanticLabel: semanticLabel,
-      // DS6 notebook binding: subtle themed rule above the SAME calendar.
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          const AnnaEditorialAccentRule(
-            key: ValueKey<String>('editorial-calendar-notebook-rule'),
-            margin: EdgeInsets.symmetric(horizontal: 30),
-          ),
-          Padding(padding: padding, child: child),
-        ],
-      ),
+      child: notebook,
     );
   }
 }

@@ -65,6 +65,39 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
+  testWidgets('Organic anniversary year pill is accessible at large scale',
+      (tester) async {
+    var taps = 0;
+    tester.view.physicalSize = const Size(320, 720);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(() {
+      tester.view.resetPhysicalSize();
+      tester.view.resetDevicePixelRatio();
+    });
+    await tester.pumpWidget(MaterialApp(
+      home: Scaffold(
+        body: MediaQuery(
+          data: const MediaQueryData(
+            textScaler: TextScaler.linear(1.6),
+          ),
+          child: AnnaOrganicJournalYearPill(
+            key: const ValueKey<String>('qa-anniversary-year'),
+            year: 2025,
+            selected: true,
+            onTap: () => taps++,
+          ),
+        ),
+      ),
+    ));
+    final pill = find.byKey(const ValueKey<String>('qa-anniversary-year'));
+    expect(pill, findsOneWidget);
+    expect(find.byType(ChoiceChip), findsNothing);
+    expect(tester.getSize(pill).height, greaterThanOrEqualTo(48));
+    await tester.tap(pill);
+    expect(taps, 1);
+    expect(tester.takeException(), isNull);
+  });
+
   test('More, Settings and Memories use original chrome only in Organic mode',
       () {
     final more = File('lib/src/screens/more_screen.dart')
@@ -88,6 +121,12 @@ void main() {
     expect(primarySettings, contains('AnnaOrganicPaperSurface(child: child)'));
     expect(primarySettings, contains('SimpleCard(child: child)'));
     expect(memories, contains('AnnaOrganicJournalRule()'));
+    final memoriesScreen =
+        File('lib/src/diary/diary_memories.dart').readAsStringSync();
+    expect(memoriesScreen, contains('AnnaOrganicJournalYearPill('));
+    expect(memoriesScreen, contains('editorial ? 304 : 328'));
+    expect(memoriesScreen, contains('editorial\\n                            ? KeyedSubtree(').isFalse, isTrue);
+    expect(memoriesScreen, contains('child: _forYouHero(context, anniversary[position])'));
     expect(memories, contains('DiaryBlockType.photo && block.hasPhotoMedia'));
     expect(memories, contains('_coverPreview(context, record)'));
     expect(memories, contains('_openRecord(record)'));

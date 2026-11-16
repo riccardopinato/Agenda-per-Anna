@@ -87,7 +87,7 @@ class MoreScreen extends StatelessWidget {
     required Widget child,
   }) {
     if (!editorial) return AnnaJournalCard(domain: domain, child: child);
-    return AnnaEditorialSurface(
+    return AnnaOrganicPaperSurface(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
       child: child,
     );
@@ -150,7 +150,7 @@ class MoreScreen extends StatelessWidget {
                       subtitle: ds6MoreIntro(strings.languageCode),
                     ),
                     const SizedBox(height: AnnaDesignTokens.spaceLg),
-                    AnnaEditorialSurface(
+                    AnnaOrganicPaperSurface(
                       key: const ValueKey<String>('ds6-more-profile'),
                       tone: AnnaEditorialSurfaceTone.featured,
                       semanticLabel: strings.settings,

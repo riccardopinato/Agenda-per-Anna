@@ -30,7 +30,7 @@ extension _EditorialMemoriesPresentation on _DiaryMemoriesScreenState {
       label: '$title · $date',
       child: Padding(
         padding: const EdgeInsets.only(top: AnnaDesignTokens.spaceSm),
-        child: AnnaEditorialSurface(
+        child: AnnaOrganicPaperSurface(
           key: const ValueKey<String>('memories-editorial-featured'),
           tone: AnnaEditorialSurfaceTone.featured,
           padding: EdgeInsets.zero,
@@ -273,7 +273,7 @@ extension _EditorialMemoriesPresentation on _DiaryMemoriesScreenState {
 
   Widget _memoryExploreSurface({required Widget child}) {
     if (AnnaEditorialTodayMode.enabled.value) {
-      return AnnaEditorialSurface(
+      return AnnaOrganicPaperSurface(
         key: const ValueKey<String>('memories-editorial-explore'),
         padding: EdgeInsets.zero,
         child: child,
