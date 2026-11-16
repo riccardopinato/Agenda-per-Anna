@@ -34,6 +34,17 @@ void main() {
           .load();
     }
 
+    const channel = MethodChannel('annas_diary/external_calendar');
+    final messenger =
+        TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
+    messenger.setMockMethodCallHandler(
+      channel,
+      (call) async => call.method == 'status'
+          ? <String, Object>{'granted': false}
+          : null,
+    );
+    addTearDown(() => messenger.setMockMethodCallHandler(channel, null));
+
     SharedPreferences.setMockInitialValues(<String, Object>{
       AnnaEditorialTodayMode.storageKey: true,
     });
