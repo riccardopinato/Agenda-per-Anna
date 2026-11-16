@@ -11,6 +11,12 @@ void main() {
   // The independently tested Organic Home retains its own widget suite.
   setUp(() => AnnaEditorialTodayMode.enabled.value = false);
 
+  AgendaStore makeStore() {
+    final store = AgendaStore();
+    addTearDown(store.dispose);
+    return store;
+  }
+
   Widget app(Widget child) => MaterialApp(
     locale: const Locale('it'),
     supportedLocales: const [Locale('it'), Locale('en')],
@@ -45,10 +51,16 @@ void main() {
   testWidgets('editorial diary hero keeps canonical action, without duplicate counters', (tester) async {
     var openedDiary = 0;
     await tester.pumpWidget(app(AnnaEditorialTodayOverview(
+      store: makeStore(),
+      today: DateTime(2026, 11, 16),
+      hideDetails: false,
+      onOpenWeek: () {},
       onOpenDiary: () => openedDiary++,
     )));
     expect(find.byKey(const ValueKey('editorial-today-real-overview')), findsOneWidget);
     expect(find.byKey(const ValueKey('editorial-today-diary-hero')), findsOneWidget);
+    expect(find.byKey(const ValueKey('editorial-today-week-hero')), findsOneWidget);
+    expect(find.text('La mia settimana'), findsOneWidget);
     expect(find.byType(AnnaEditorialActionPair), findsNothing);
     expect(find.text('Impegni'), findsNothing);
     expect(find.text('Attività'), findsNothing);
@@ -62,12 +74,16 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('duplicate counts and masked counters are absent from the Home', (tester) async {
+  testWidgets('privacy hides both genuine diary statistics without removing actions', (tester) async {
     await tester.pumpWidget(app(AnnaEditorialTodayOverview(
+      store: makeStore(),
+      today: DateTime(2026, 11, 16),
+      hideDetails: true,
+      onOpenWeek: () {},
       onOpenDiary: () {},
     )));
     expect(find.byType(AnnaEditorialActionPair), findsNothing);
-    expect(find.text('•••'), findsNothing);
+    expect(find.text('•••'), findsNWidgets(2));
     expect(find.text('0'), findsNothing);
     expect(tester.takeException(), isNull);
   });
@@ -75,6 +91,10 @@ void main() {
   testWidgets('compact diary has no redundant emblem',
       (tester) async {
     await tester.pumpWidget(app(AnnaEditorialTodayOverview(
+      store: makeStore(),
+      today: DateTime(2026, 11, 16),
+      hideDetails: false,
+      onOpenWeek: () {},
       onOpenDiary: () {},
     )));
     final card = find.byKey(const ValueKey('editorial-today-diary-hero'));
@@ -83,10 +103,12 @@ void main() {
     expect(find.text('Il mio diario'), findsOneWidget);
     expect(find.text('Il tuo diario'), findsNothing);
     expect(find.text('Diario iniziato'), findsNothing);
-    expect(tester.getSize(card).height, lessThan(210));
+    final weekly = find.byKey(const ValueKey('editorial-today-week-hero'));
+    expect(tester.getSize(card).height, tester.getSize(weekly).height);
+    expect(tester.getSize(card).width, tester.getSize(weekly).width);
     expect(icon, findsNothing);
     expect(tester.getRect(title).width, greaterThan(100));
-    expect(find.byType(FilledButton), findsOneWidget);
+    expect(find.byType(FilledButton), findsNWidgets(2));
     expect(tester.takeException(), isNull);
   });
 
@@ -99,6 +121,10 @@ void main() {
       tester.view.resetDevicePixelRatio();
     });
     final overview = AnnaEditorialTodayOverview(
+      store: makeStore(),
+      today: DateTime(2026, 11, 16),
+      hideDetails: false,
+      onOpenWeek: () {},
       onOpenDiary: () {},
     );
     await tester.pumpWidget(MaterialApp(
@@ -139,6 +165,42 @@ void main() {
     expect(overview, isNot(contains('AnnaEditorialActionPair(')));
     expect(overview, isNot(contains("d3('ui5Commitments')")));
     expect(overview, isNot(contains("d3('ui5Activities')")));
+  });
+
+  testWidgets('two diary/week cards use authentic journal dates and open both canonical actions',
+      (tester) async {
+    final store = makeStore();
+    store.journals['2026-11-16'] = const DayJournal(note: 'Un giorno vero');
+    store.journals['2026-11-17'] = const DayJournal(beautiful: 'Un momento bello');
+    store.journals['2026-11-15'] = const DayJournal(note: 'La settimana scorsa');
+    store.journals['2026-11-18'] = const DayJournal(
+      blocks: [DiaryBlock(
+        id: 'archived-card-qa',
+        type: DiaryBlockType.note,
+        createdAt: DateTime(2026, 11, 18),
+        text: 'Non deve contare',
+        archived: true,
+      )],
+    );
+    expect(annaTodayAnnotatedDayCounts(store, DateTime(2026, 11, 16)),
+        (all: 3, week: 2));
+    var diaryOpened = 0;
+    var reviewOpened = 0;
+    await tester.pumpWidget(app(AnnaEditorialTodayOverview(
+      store: store,
+      today: DateTime(2026, 11, 16),
+      hideDetails: false,
+      onOpenDiary: () => diaryOpened++,
+      onOpenWeek: () => reviewOpened++,
+    )));
+    expect(find.text('3 giornate annotate'), findsOneWidget);
+    expect(find.text('2/7 giornate annotate'), findsOneWidget);
+    expect(find.text('La mia settimana'), findsOneWidget);
+    await tester.tap(find.byType(FilledButton).first);
+    await tester.tap(find.byType(FilledButton).last);
+    expect(diaryOpened, 1);
+    expect(reviewOpened, 1);
+    expect(tester.takeException(), isNull);
   });
 
   test('the diary name is first-person in every supported locale', () {
