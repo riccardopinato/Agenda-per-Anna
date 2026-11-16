@@ -25,7 +25,7 @@ void main() {
   test('Today retains a quick calendar route and personalized greeting', () {
     final planner = code('lib/src/planner_views.dart');
     final localization = code('lib/src/localization.dart');
-    expect(planner, isNot(contains("'today-open-calendar'")));
+    expect(planner, contains("'today-open-calendar'")); // Classic-only AppBar.
     expect(code('lib/src/organic_pastel_design.dart'), contains("'calendar', strings.navCalendar"));
     expect(planner, contains('approvedTodayGreeting('));
     expect(planner, contains('widget.store.preferences.displayName'));
