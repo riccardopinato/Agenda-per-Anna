@@ -114,13 +114,11 @@ void main() {
           )).dy,
           greaterThanOrEqualTo(24),
         );
-        await tester.tap(
-          find.byKey(const ValueKey<String>('today-open-calendar')),
-        );
+        expect(find.byKey(const ValueKey<String>('today-open-calendar')), findsNothing);
         await tester.tap(
           find.byKey(const ValueKey<String>('today-editorial-disable')),
         );
-        expect(calendarOpens, 1);
+        expect(calendarOpens, 0);
         expect(classicOpens, 1);
         expect(tester.takeException(), isNull);
       }
@@ -182,13 +180,11 @@ void main() {
     expect(find.byKey(
       const ValueKey<String>('ds6-today-greeting'),
     ), findsOneWidget);
-    await tester.tap(find.byKey(
-      const ValueKey<String>('today-open-calendar'),
-    ));
+    expect(find.byKey(const ValueKey<String>('today-open-calendar')), findsNothing);
     await tester.tap(find.byKey(
       const ValueKey<String>('today-editorial-disable'),
     ));
-    expect(calendar, 1);
+    expect(calendar, 0);
     expect(classic, 1);
     expect(tester.takeException(), isNull);
   });
@@ -341,13 +337,11 @@ void main() {
           findsOneWidget);
       expect(tester.takeException(), isNull, reason: scenario.label);
 
-      await tester.tap(
-        find.byKey(const ValueKey<String>('today-open-calendar')),
-      );
+      expect(find.byKey(const ValueKey<String>('today-open-calendar')), findsNothing);
       await tester.tap(
         find.byKey(const ValueKey<String>('today-editorial-disable')),
       );
-      expect(calendarOpens, 1, reason: scenario.label);
+      expect(calendarOpens, 0, reason: scenario.label);
       expect(classicOpens, 1, reason: scenario.label);
 
       await tester.drag(

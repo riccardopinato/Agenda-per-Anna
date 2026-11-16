@@ -23,7 +23,7 @@ appId: com.riccardopinato.agenda_per_anna
 - tapOn:
     id: 'main-nav-today'
 - tapOn:
-    id: 'today-open-calendar'
+    id: 'organic-quick-calendar'
     retryTapIfNoChange: true
 - extendedWaitUntil:
     visible:

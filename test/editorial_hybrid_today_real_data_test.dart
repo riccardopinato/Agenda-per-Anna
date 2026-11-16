@@ -56,7 +56,7 @@ void main() {
     expect(find.text('Il mio diario'), findsOneWidget);
     expect(find.text('Il tuo diario'), findsNothing);
     expect(find.byKey(const ValueKey('editorial-today-diary-title')), findsOneWidget);
-    expect(find.byKey(const ValueKey('editorial-today-diary-icon')), findsOneWidget);
+    expect(find.byKey(const ValueKey('editorial-today-diary-icon')), findsNothing);
     await tester.tap(find.byType(FilledButton).first);
     expect(openedDiary, 1);
     expect(tester.takeException(), isNull);
@@ -72,7 +72,7 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('compact diary has no secondary copy and title/icon share a row',
+  testWidgets('compact diary has no redundant emblem',
       (tester) async {
     await tester.pumpWidget(app(AnnaEditorialTodayOverview(
       onOpenDiary: () {},
@@ -84,10 +84,8 @@ void main() {
     expect(find.text('Il tuo diario'), findsNothing);
     expect(find.text('Diario iniziato'), findsNothing);
     expect(tester.getSize(card).height, lessThan(210));
-    expect(
-      (tester.getCenter(title).dy - tester.getCenter(icon).dy).abs(),
-      lessThan(2),
-    );
+    expect(icon, findsNothing);
+    expect(tester.getRect(title).width, greaterThan(100));
     expect(find.byType(FilledButton), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
@@ -124,7 +122,7 @@ void main() {
     ));
     expect(find.text('Il mio diario'), findsOneWidget);
     expect(find.byKey(const ValueKey('editorial-today-diary-icon')),
-        findsOneWidget);
+        findsNothing);
     expect(tester.takeException(), isNull);
   });
 
@@ -168,7 +166,8 @@ void main() {
     expect(planner, contains('_TodayCompactDiaryPreview('));
     expect(planner, contains('_DayMemoryRecallCard('));
     expect(planner, contains('DayTimeline('));
-    expect(planner, contains('today-open-calendar'));
+    expect(planner, contains("'today-open-calendar'")); // Classic-only AppBar, not Organic header.
+    expect(planner, contains('AnnaOrganicPastelQuickLinks('));
     expect(planner, contains("'editorial-today-return'"));
     expect(planner, contains('onPressed: () => _selectDay(DateTime.now())'));
     expect(planner, contains('showUnifiedCapture('));
