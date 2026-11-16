@@ -104,6 +104,121 @@ class AnnaOrganicCalendarModePicker extends StatelessWidget {
   }
 }
 
+
+/// Calendar notebook shortcuts use the same paper and palette as Organic Today.
+/// They are pure presentation over the caller's original month/year routes.
+class AnnaOrganicCalendarNotebookLink extends StatelessWidget {
+  final String label;
+  final IconData icon;
+  final VoidCallback onPressed;
+
+  const AnnaOrganicCalendarNotebookLink({
+    super.key,
+    required this.label,
+    required this.icon,
+    required this.onPressed,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = AnnaEditorialColors.of(context);
+    return Material(
+      type: MaterialType.transparency,
+      child: InkWell(
+        onTap: onPressed,
+        borderRadius: BorderRadius.circular(17),
+        child: Ink(
+          decoration: BoxDecoration(
+            color: colors.card.withValues(alpha: .65),
+            borderRadius: BorderRadius.circular(17),
+            border: Border.all(color: colors.border),
+          ),
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(minHeight: 58),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+              child: Row(
+                children: [
+                  Container(
+                    width: 34,
+                    height: 34,
+                    alignment: Alignment.center,
+                    decoration: BoxDecoration(
+                      color: colors.quiet,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Icon(icon, size: 19, color: colors.accent),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      label,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                            fontFamily: AnnaJournalTypography.uiFamily,
+                            fontWeight: FontWeight.w700,
+                            color: colors.ink,
+                          ),
+                    ),
+                  ),
+                  const SizedBox(width: 2),
+                  Icon(Icons.chevron_right_rounded,
+                      size: 17, color: colors.mutedInk),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// A truthful empty-day treatment; the caller supplies the existing
+/// localized string and continues to own the canonical agenda.
+class AnnaOrganicCalendarEmptyAgenda extends StatelessWidget {
+  final String label;
+
+  const AnnaOrganicCalendarEmptyAgenda({
+    super.key,
+    required this.label,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = AnnaEditorialColors.of(context);
+    return AnnaOrganicPaperSurface(
+      tone: AnnaEditorialSurfaceTone.quiet,
+      child: Row(
+        children: [
+          Container(
+            width: 40,
+            height: 40,
+            alignment: Alignment.center,
+            decoration: BoxDecoration(
+              color: colors.quiet,
+              borderRadius: BorderRadius.circular(13),
+            ),
+            child: Icon(Icons.event_available_outlined,
+                color: colors.accent, size: 21),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              label,
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: colors.ink,
+                    fontFamily: AnnaJournalTypography.uiFamily,
+                  ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 /// DS5 visual-only wrapper. The caller retains its original agenda,
 /// date selection, editor, persistence, and semantics; no second writer.
 class AnnaEditorialCalendarPanel extends StatelessWidget {
