@@ -1322,22 +1322,24 @@ class _InboxScreenState extends State<InboxScreen> {
               Expanded(
                 child: entries.isEmpty
               ? Center(
-                  child: Padding(
-                    padding: const EdgeInsets.all(24),
+                  child: SingleChildScrollView(
+                    padding: EdgeInsets.all(compact ? 8 : 24),
                     child: editorial
                         ? AnnaOrganicPaperSurface(
                             key: const ValueKey<String>('notes-studio-empty'),
                             tone: AnnaEditorialSurfaceTone.quiet,
-                            padding: const EdgeInsets.all(24),
+                            padding: EdgeInsets.all(compact ? 10 : 24),
                             child: Column(
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                Icon(
-                                  Icons.sticky_note_2_outlined,
-                                  color: AnnaEditorialColors.of(context).accent,
-                                  size: 34,
-                                ),
-                                const SizedBox(height: 12),
+                                if (!compact) ...[
+                                  Icon(
+                                    Icons.sticky_note_2_outlined,
+                                    color: AnnaEditorialColors.of(context).accent,
+                                    size: 34,
+                                  ),
+                                  const SizedBox(height: 12),
+                                ],
                                 Text(
                                   needle.isNotEmpty || selectedCategory != null
                                       ? strings.v100NoResults
