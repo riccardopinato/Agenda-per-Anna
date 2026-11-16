@@ -1207,21 +1207,6 @@ class _PlannerScreenState extends State<PlannerScreen> {
                         ] else
                           const SizedBox(height: 4),
                         if (widget.embedded) ...[
-                          // Organic Preview: only actual authorized
-                          // agenda entries. Open via the existing editor.
-                          if (editorial && snapshot.agenda.isNotEmpty) ...[
-                            AnnaOrganicPastelAgendaDigest(
-                              entries: snapshot.agenda,
-                              hideDetails:
-                                  widget.store.preferences.hideHomeDetails,
-                              onOpenEntry: (entry) =>
-                                  openUnifiedAgendaEntry(
-                                    context, widget.store, entry,
-                                  ),
-                              onOpenDay: _openSelectedDay,
-                            ),
-                            const SizedBox(height: 12),
-                          ],
                           if (editorial) ...[
                             AnnaOrganicPastelQuickLinks(
                               store: widget.store,
@@ -1265,6 +1250,21 @@ class _PlannerScreenState extends State<PlannerScreen> {
                                   widget.store.preferences.hideHomeDetails,
                             ),
                             const SizedBox(height: 14),
+                          ],
+                          // Keep real agenda entries available without pushing the
+                          // personal dashboard and its memory teaser below the fold.
+                          if (editorial && snapshot.agenda.isNotEmpty) ...[
+                            const SizedBox(height: 12),
+                            AnnaOrganicPastelAgendaDigest(
+                              entries: snapshot.agenda,
+                              hideDetails:
+                                  widget.store.preferences.hideHomeDetails,
+                              onOpenEntry: (entry) =>
+                                  openUnifiedAgendaEntry(
+                                    context, widget.store, entry,
+                                  ),
+                              onOpenDay: _openSelectedDay,
+                            ),
                           ],
                           // Hero-first rhythm is exclusive to the Editorial Home.
                           if (editorial) ...planningCards,
