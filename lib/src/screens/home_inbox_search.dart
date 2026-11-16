@@ -813,7 +813,7 @@ class _InboxScreenState extends State<InboxScreen> {
     required Widget child,
   }) {
     if (!editorial) return Card(child: child);
-    return AnnaEditorialSurface(
+    return AnnaOrganicPaperSurface(
       tone: pinned
           ? AnnaEditorialSurfaceTone.featured
           : AnnaEditorialSurfaceTone.regular,
@@ -1132,15 +1132,38 @@ class _InboxScreenState extends State<InboxScreen> {
             : pinnedCount == entries.length ? 1 : 2;
 
         return Scaffold(
+          backgroundColor: editorial &&
+                  Theme.of(context).brightness == Brightness.light
+              ? AnnaOrganicPastel.canvas
+              : null,
           appBar: AppBar(
-            title: Text(
-              strings.inbox,
-              style: editorial
-                  ? AnnaJournalTypography.editorial(context, size: 25)
-                  : const TextStyle(fontWeight: FontWeight.w900),
-            ),
+            backgroundColor: editorial
+                ? AnnaEditorialColors.of(context).canvas : null,
+            scrolledUnderElevation: 0,
+            surfaceTintColor: editorial ? Colors.transparent : null,
+            title: editorial
+                ? null
+                : Text(
+                    strings.inbox,
+                    style: const TextStyle(fontWeight: FontWeight.w900),
+                  ),
           ),
           floatingActionButton: FloatingActionButton.extended(
+            backgroundColor: editorial
+                ? Theme.of(context).colorScheme.primaryContainer
+                : null,
+            foregroundColor: editorial
+                ? Theme.of(context).colorScheme.onPrimaryContainer
+                : null,
+            elevation: editorial ? 1 : null,
+            shape: editorial
+                ? RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(19),
+                    side: BorderSide(
+                      color: AnnaEditorialColors.of(context).border,
+                    ),
+                  )
+                : null,
             onPressed: () => _showQuickCapture(
               context,
               store,
@@ -1163,8 +1186,6 @@ class _InboxScreenState extends State<InboxScreen> {
                   padding: const EdgeInsets.fromLTRB(18, 8, 18, 8),
                   child: AnnaEditorialHeader(
                     title: strings.inbox,
-                    eyebrow: inboxCategoryCopy(
-                      strings.languageCode, 'heading'),
                   ),
                 ),
               if (!compact)
@@ -1252,8 +1273,26 @@ class _InboxScreenState extends State<InboxScreen> {
                               },
                               icon: const Icon(Icons.close_rounded),
                             ),
+                      filled: true,
+                      fillColor: AnnaOrganicPastel.surface(context),
                       border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(16),
+                        borderRadius: BorderRadius.circular(19),
+                        borderSide: BorderSide(
+                          color: AnnaEditorialColors.of(context).border,
+                        ),
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(19),
+                        borderSide: BorderSide(
+                          color: AnnaEditorialColors.of(context).border,
+                        ),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(19),
+                        borderSide: BorderSide(
+                          color: Theme.of(context).colorScheme.primary,
+                          width: 1.5,
+                        ),
                       ),
                       isDense: true,
                     ),
@@ -1296,15 +1335,42 @@ class _InboxScreenState extends State<InboxScreen> {
               Expanded(
                 child: entries.isEmpty
               ? Center(
-                  child: Padding(
-                    padding: const EdgeInsets.all(32),
-                    child: Text(
-                      needle.isNotEmpty || selectedCategory != null
-                          ? strings.v100NoResults
-                          : strings.inboxEmpty,
-                      key: const ValueKey<String>('ds6-inbox-empty-state'),
-                      textAlign: TextAlign.center,
-                    ),
+                  child: SingleChildScrollView(
+                    padding: EdgeInsets.all(compact ? 8 : 24),
+                    child: editorial
+                        ? AnnaOrganicPaperSurface(
+                            key: const ValueKey<String>('notes-studio-empty'),
+                            tone: AnnaEditorialSurfaceTone.quiet,
+                            padding: EdgeInsets.all(compact ? 10 : 24),
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                if (!compact) ...[
+                                  Icon(
+                                    Icons.sticky_note_2_outlined,
+                                    color: AnnaEditorialColors.of(context).accent,
+                                    size: 34,
+                                  ),
+                                  const SizedBox(height: 12),
+                                ],
+                                Text(
+                                  needle.isNotEmpty || selectedCategory != null
+                                      ? strings.v100NoResults
+                                      : strings.inboxEmpty,
+                                  key: const ValueKey<String>(
+                                    'ds6-inbox-empty-state'),
+                                  textAlign: TextAlign.center,
+                                ),
+                              ],
+                            ),
+                          )
+                        : Text(
+                            needle.isNotEmpty || selectedCategory != null
+                                ? strings.v100NoResults
+                                : strings.inboxEmpty,
+                            key: const ValueKey<String>('ds6-inbox-empty-state'),
+                            textAlign: TextAlign.center,
+                          ),
                   ),
                 )
               : ListView.separated(
@@ -1320,12 +1386,17 @@ class _InboxScreenState extends State<InboxScreen> {
                             ? 'inbox-section-pinned'
                             : 'inbox-section-other'),
                         padding: const EdgeInsets.fromLTRB(4, 10, 4, 4),
-                        child: Text(
-                          approvedInboxSectionTitle(
-                            strings.languageCode, entryIndex == -1),
-                          style: Theme.of(context).textTheme.titleMedium
-                              ?.copyWith(fontWeight: FontWeight.w800),
-                        ),
+                        child: editorial
+                            ? AnnaEditorialSectionHeading(
+                                title: approvedInboxSectionTitle(
+                                  strings.languageCode, entryIndex == -1),
+                              )
+                            : Text(
+                                approvedInboxSectionTitle(
+                                  strings.languageCode, entryIndex == -1),
+                                style: Theme.of(context).textTheme.titleMedium
+                                    ?.copyWith(fontWeight: FontWeight.w800),
+                              ),
                       );
                     }
                     final entry = entries[entryIndex];
@@ -1337,6 +1408,7 @@ class _InboxScreenState extends State<InboxScreen> {
                       editorial: editorial,
                       pinned: entry.pinned,
                       child: ListTile(
+                        key: ValueKey<String>('notes-studio-note-${entry.id}'),
                         contentPadding: const EdgeInsets.fromLTRB(
                           14,
                           8,
@@ -1345,8 +1417,11 @@ class _InboxScreenState extends State<InboxScreen> {
                         ),
                         leading: Icon(
                           entry.pinned
-                              ? Icons.push_pin
+                              ? Icons.push_pin_rounded
                               : Icons.sticky_note_2_outlined,
+                          color: editorial
+                              ? AnnaEditorialColors.of(context).accent
+                              : null,
                         ),
                         title: Text(
                           entry.text,

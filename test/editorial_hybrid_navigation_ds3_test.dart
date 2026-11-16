@@ -200,6 +200,7 @@ void main() {
     expect(design, isNot(contains('setAgendaContentFilter(')));
     expect(today, contains('if (!editorial) ...planningCards'));
     expect(today, contains('if (editorial) ...planningCards'));
+    expect(today, contains("if (card == 'review' && !editorial)"));
     expect(today, contains('AnnaEditorialTodayOverview('));
     expect(today, contains('if (!editorial) ...['));
     expect(today, contains('AgendaContentFilterBar(store: widget.store)'));

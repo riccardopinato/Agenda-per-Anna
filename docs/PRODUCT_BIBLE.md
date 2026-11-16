@@ -1,4 +1,15 @@
+## Aggiornamento di prodotto — 16 novembre 2026 · Calendar Notebook v136
+
+La direzione estetica resta **Organic iOS Journal / pastello contemporaneo**: Month/Week devono condividere la qualità di Oggi con superfici carta originali, gerarchie Lora/Manrope e palette utente/HSV. Il candidato +136 modifica soltanto presentazione del calendario e dell'agenda; dati, filtri, editor, calendario esterno, settimana, Classic reversibile, spazio condiviso e Cassaforte rimangono canonici e invariati. Nessuna accettazione fisica o estetica viene inferita dalla sola integrazione sorgente. Gate e stato in `docs/ROADMAP.md` e issue #327/#329.
+
 # Anna's Diary — Product Bible
+
+## Decisione di prodotto corrente — 16 novembre 2026
+
+La release firmata `1.0.0-rc.6+134` unifica nella sua sorgente `afbbb3ec5b46d1744d2f681668742fdef7723ea1` le viste estetiche di Impegni, Calendario, Ricordi, Altro e Impostazioni ([PR #326](https://github.com/riccardopinato/Agenda-per-Anna/pull/326)); [workflow APK ARM64 firmato #43777799161](https://github.com/riccardopinato/Agenda-per-Anna/actions/runs/43777799161) PASS. Il titolare conferma che **l'APK funziona**: non intervenire sulla distribuzione sulla base del vecchio errore di download. Questa attestazione non equivale a suite fisica dei dati personali, firma installata, Store, due-device sync, sicurezza Vault e altri gate specifici.
+
+**Decisione estetica:** il risultato è migliore, ma le superfici non sono ancora percepite come pari alla Home. La [PR #328](https://github.com/riccardopinato/Agenda-per-Anna/pull/328) è stata **integrata in `main@2934ea9573edc68edbfc24210fbf8296ac67af49`** come sola presentazione; conservare Classic reversibile, dati canonici, palette rose e HSV, Manrope/Lora, localizzazione, dark mode e Cassaforte privata invariata. Non imporre una riscrittura del Material host: il requisito è una UI Journal originale, non una migrazione tecnica globale. Il resto dei gate risiede nel [registro di audit](AUDIT_RESIDUAL_POST_134_20261116.md).
+
 
 ## DS6 Premium Editorial — 7 November 2026 (10/10 APPROVED)
 

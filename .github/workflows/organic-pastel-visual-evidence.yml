@@ -20,7 +20,12 @@ jobs:
     if: >-
       github.head_ref == 'design/organic-pastel-experiment-20261114' ||
       github.head_ref == 'fix/organic-seven-days-visible-rc132' ||
-      github.head_ref == 'feat/home-commitments-timeline-reorder-20261115'
+      github.head_ref == 'feat/home-commitments-timeline-reorder-20261115' ||
+      github.head_ref == 'design/organic-commitments-premium-20261115' ||
+      github.head_ref == 'integration/ios-journal-three-surfaces-20261116' ||
+      github.head_ref == 'design/organic-journal-home-parity-20261116' ||
+      github.head_ref == 'design/home-remove-duplicate-commitments-activity-20261116' ||
+      github.head_ref == 'feat/today-two-tile-diary-week-rc135-20261116'
     runs-on: ubuntu-latest
     timeout-minutes: 25
     steps:
@@ -68,5 +73,7 @@ jobs:
             test/goldens/organic_pastel_today_populated_390.png
             test/goldens/organic_pastel_today_collapsed_390.png
             test/goldens/organic_pastel_today_populated_collapsed_390.png
+            test/goldens/organic_commitments_premium_empty_390.png
+            test/goldens/organic_commitments_premium_populated_390.png
           if-no-files-found: error
           retention-days: 7

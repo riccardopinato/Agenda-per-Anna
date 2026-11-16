@@ -1493,36 +1493,55 @@ class _DiaryMemoriesScreenState extends State<DiaryMemoriesScreen> {
                         scrollDirection: Axis.horizontal,
                         children: years.map((year) => Padding(
                           padding: const EdgeInsets.only(right: 7),
-                          child: ChoiceChip(
-                            key: ValueKey<String>('ui5-anniversary-year-$year'),
-                            label: Text('$year'),
-                            selected: activeYear == year,
-                            onSelected: (_) {
-                              final position = anniversary.indexWhere(
-                                (record) => record.date.year == year);
-                              if (position < 0) return;
-                              _anniversaryPager.jumpToPage(position);
-                              setState(() => _anniversaryIndex = position);
-                            },
-                          ),
+                          child: editorial
+                              ? AnnaOrganicJournalYearPill(
+                                  key: ValueKey<String>('ui5-anniversary-year-$year'),
+                                  year: year,
+                                  selected: activeYear == year,
+                                  onTap: () {
+                                    final position = anniversary.indexWhere(
+                                      (record) => record.date.year == year,
+                                    );
+                                    if (position < 0) return;
+                                    _anniversaryPager.jumpToPage(position);
+                                    setState(() => _anniversaryIndex = position);
+                                  },
+                                )
+                              : ChoiceChip(
+                                                          key: ValueKey<String>('ui5-anniversary-year-$year'),
+                                                          label: Text('$year'),
+                                                          selected: activeYear == year,
+                                                          onSelected: (_) {
+                                                            final position = anniversary.indexWhere(
+                                                              (record) => record.date.year == year);
+                                                            if (position < 0) return;
+                                                            _anniversaryPager.jumpToPage(position);
+                                                            setState(() => _anniversaryIndex = position);
+                                                          },
+                                                        ),
                         )).toList(),
                       ),
                     ),
                     SizedBox(
-                      height: 328,
+                      height: editorial ? 304 : 328,
                       child: PageView.builder(
                         key: const ValueKey<String>('ui5-anniversary-carousel'),
                         controller: _anniversaryPager,
                         itemCount: anniversary.length,
                         onPageChanged: (position) =>
                             setState(() => _anniversaryIndex = position),
-                        itemBuilder: (context, position) =>
-                            AnnaMotionStagger(
-                              key: ValueKey<String>(
-                                'v108-featured-${anniversary[position].block.id}'),
-                              order: 0,
-                              child: _forYouHero(context, anniversary[position]),
-                            ),
+                        itemBuilder: (context, position) => editorial
+                            ? KeyedSubtree(
+                                key: ValueKey<String>(
+                                  'v108-featured-${anniversary[position].block.id}'),
+                                child: _forYouHero(context, anniversary[position]),
+                              )
+                            : AnnaMotionStagger(
+                                key: ValueKey<String>(
+                                  'v108-featured-${anniversary[position].block.id}'),
+                                order: 0,
+                                child: _forYouHero(context, anniversary[position]),
+                              ),
                       ),
                     ),
                     if (activeRecord != null)
@@ -2229,21 +2248,10 @@ class _DiaryMemoriesScreenState extends State<DiaryMemoriesScreen> {
       _ => strings.d3('memoriesBrowse'),
     };
 
-    return ValueListenableBuilder<bool>(
-      valueListenable: AnnaEditorialTodayMode.enabled,
-      builder: (context, editorial, _) => Scaffold(
-      backgroundColor: editorial ? AnnaEditorialColors.of(context).canvas : null,
-      appBar: AppBar(
-        backgroundColor: editorial ? AnnaEditorialColors.of(context).canvas : null,
-        surfaceTintColor: editorial ? Colors.transparent : null,
-        toolbarHeight: 78,
-        title: Text(
-          widget.personName == null
-              ? strings.v100MyMemories
-              : strings.v100MemoriesWithPerson(widget.personName!),
-          style: AnnaJournalTypography.editorial(context, size: 29),
-        ),
-        actions: [
+    // The same canonical actions are rendered once: an iOS Journal
+    // toolbar row when Organic is enabled, or the Classic AppBar actions.
+    final memoryActions = <Widget>[
+
           IconButton(
             key: const ValueKey('cap0151-memory-extractive-summary'),
             tooltip: memoryExtractiveCopy(strings.languageCode, 'title'),
@@ -2304,7 +2312,37 @@ class _DiaryMemoriesScreenState extends State<DiaryMemoriesScreen> {
               child: const Icon(Icons.tune_outlined),
             ),
           ),
-        ],
+    ];
+
+    return ValueListenableBuilder<bool>(
+      valueListenable: AnnaEditorialTodayMode.enabled,
+      builder: (context, editorial, _) => Scaffold(
+      backgroundColor: editorial ? AnnaEditorialColors.of(context).canvas : null,
+      appBar: AppBar(
+        backgroundColor: editorial ? AnnaEditorialColors.of(context).canvas : null,
+        surfaceTintColor: editorial ? Colors.transparent : null,
+        toolbarHeight: editorial ? 72 : 78,
+        elevation: 0,
+        scrolledUnderElevation: 0,
+        title: Text(
+          widget.personName == null
+              ? strings.v100MyMemories
+              : strings.v100MemoriesWithPerson(widget.personName!),
+          style: AnnaJournalTypography.editorial(context, size: 29),
+        ),
+        actions: editorial ? null : memoryActions,
+        bottom: editorial
+            ? PreferredSize(
+                preferredSize: const Size.fromHeight(56),
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(14, 0, 14, 8),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: memoryActions,
+                  ),
+                ),
+              )
+            : null,
       ),
       body: AnimatedBuilder(
         animation: Listenable.merge([

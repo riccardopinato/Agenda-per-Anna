@@ -22,10 +22,11 @@ void main() {
     expect(shell, contains('initialDate: DateTime.now()'));
   });
 
-  test('Today retains a direct calendar route and personalized greeting', () {
+  test('Today retains a quick calendar route and personalized greeting', () {
     final planner = code('lib/src/planner_views.dart');
     final localization = code('lib/src/localization.dart');
-    expect(planner, contains("'today-open-calendar'"));
+    expect(planner, contains("'today-open-calendar'")); // Classic-only AppBar.
+    expect(code('lib/src/organic_pastel_design.dart'), contains("'calendar', strings.navCalendar"));
     expect(planner, contains('approvedTodayGreeting('));
     expect(planner, contains('widget.store.preferences.displayName'));
     expect(planner, contains('strings.languageCode'));

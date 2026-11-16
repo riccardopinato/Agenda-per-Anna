@@ -30,7 +30,7 @@ extension _EditorialMemoriesPresentation on _DiaryMemoriesScreenState {
       label: '$title · $date',
       child: Padding(
         padding: const EdgeInsets.only(top: AnnaDesignTokens.spaceSm),
-        child: AnnaEditorialSurface(
+        child: AnnaOrganicPaperSurface(
           key: const ValueKey<String>('memories-editorial-featured'),
           tone: AnnaEditorialSurfaceTone.featured,
           padding: EdgeInsets.zero,
@@ -38,7 +38,8 @@ extension _EditorialMemoriesPresentation on _DiaryMemoriesScreenState {
           semanticLabel: '$title · $date',
           child: authenticVisual
               ? SizedBox(
-                  height: 282,
+                  height: MediaQuery.textScalerOf(context).scale(1) > 1.3
+                      ? 342 : 282,
                   width: double.infinity,
                   child: Stack(
                     fit: StackFit.expand,
@@ -56,8 +57,20 @@ extension _EditorialMemoriesPresentation on _DiaryMemoriesScreenState {
                             end: Alignment.bottomCenter,
                             colors: [
                               Colors.transparent,
-                              Colors.black.withValues(alpha: 0.72),
+                              Colors.black.withValues(alpha: 0.78),
                             ],
+                          ),
+                        ),
+                      ),
+                      Positioned.fill(
+                        child: IgnorePointer(
+                          child: DecoratedBox(
+                            decoration: BoxDecoration(
+                              border: Border.all(
+                                color: Colors.white.withValues(alpha: 0.22),
+                                width: 1.5,
+                              ),
+                            ),
                           ),
                         ),
                       ),
@@ -167,15 +180,25 @@ extension _EditorialMemoriesPresentation on _DiaryMemoriesScreenState {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  SizedBox(
-                    height: 185,
-                    width: double.infinity,
-                    child: block.type == DiaryBlockType.photo
-                        ? Hero(
-                            tag: 'v108-photo-${block.id}',
-                            child: _coverPreview(context, record),
-                          )
-                        : _coverPreview(context, record),
+                  Padding(
+                    padding: AnnaOrganicPastel.enabled(context)
+                        ? const EdgeInsets.fromLTRB(12, 12, 12, 0)
+                        : EdgeInsets.zero,
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(
+                        AnnaOrganicPastel.enabled(context) ? 12 : 0,
+                      ),
+                      child: SizedBox(
+                        height: AnnaOrganicPastel.enabled(context) ? 203 : 185,
+                        width: double.infinity,
+                        child: block.type == DiaryBlockType.photo
+                            ? Hero(
+                                tag: 'v108-photo-${block.id}',
+                                child: _coverPreview(context, record),
+                              )
+                            : _coverPreview(context, record),
+                      ),
+                    ),
                   ),
                   Padding(
                     padding: const EdgeInsets.fromLTRB(19, 16, 19, 18),
@@ -190,7 +213,12 @@ extension _EditorialMemoriesPresentation on _DiaryMemoriesScreenState {
                             context, size: AnnaEditorialTokens.cardTitle,
                           ).copyWith(color: colors.ink),
                         ),
-                        const SizedBox(height: 8),
+                        if (AnnaOrganicPastel.enabled(context)) ...[
+                          const SizedBox(height: 10),
+                          const AnnaOrganicJournalRule(),
+                          const SizedBox(height: 10),
+                        ] else
+                          const SizedBox(height: 8),
                         AnnaEditorialDateLabel(text: _cap(date)),
                       ],
                     ),
@@ -224,12 +252,24 @@ extension _EditorialMemoriesPresentation on _DiaryMemoriesScreenState {
                               context, size: AnnaEditorialTokens.cardTitle,
                             ).copyWith(color: colors.ink),
                           ),
-                          const SizedBox(height: 8),
+                          if (AnnaOrganicPastel.enabled(context)) ...[
+                            const SizedBox(height: 10),
+                            const AnnaOrganicJournalRule(),
+                            const SizedBox(height: 10),
+                          ] else
+                            const SizedBox(height: 8),
                           AnnaEditorialDateLabel(text: _cap(date)),
                         ],
                       ),
                     ),
-                    Icon(Icons.chevron_right, color: colors.mutedInk),
+                    Icon(
+                      AnnaOrganicPastel.enabled(context)
+                          ? Icons.arrow_forward_ios_rounded
+                          : Icons.chevron_right,
+                      size: AnnaOrganicPastel.enabled(context) ? 15 : 24,
+                      color: AnnaOrganicPastel.enabled(context)
+                          ? colors.accent : colors.mutedInk,
+                    ),
                   ],
                 ),
               ),
@@ -242,10 +282,15 @@ extension _EditorialMemoriesPresentation on _DiaryMemoriesScreenState {
     if (AnnaEditorialTodayMode.enabled.value) {
       return Padding(
         padding: const EdgeInsets.only(bottom: 6),
-        child: AnnaEditorialSurface(
-          padding: EdgeInsets.zero,
-          child: child,
-        ),
+        child: AnnaOrganicPastel.enabled(context)
+            ? AnnaOrganicPaperSurface(
+                padding: EdgeInsets.zero,
+                child: child,
+              )
+            : AnnaEditorialSurface(
+                padding: EdgeInsets.zero,
+                child: child,
+              ),
       );
     }
     return Card(
@@ -256,7 +301,7 @@ extension _EditorialMemoriesPresentation on _DiaryMemoriesScreenState {
 
   Widget _memoryExploreSurface({required Widget child}) {
     if (AnnaEditorialTodayMode.enabled.value) {
-      return AnnaEditorialSurface(
+      return AnnaOrganicPaperSurface(
         key: const ValueKey<String>('memories-editorial-explore'),
         padding: EdgeInsets.zero,
         child: child,

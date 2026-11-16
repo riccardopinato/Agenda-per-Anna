@@ -1,0 +1,71 @@
+name: Anna's Diary full Dart checkout source audit
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+    paths:
+      - "lib/**"
+      - "test/**"
+      - "integration_test/**"
+      - "tool/audit_flutter_antipatterns.py"
+      - ".github/workflows/anna-dart-full-source-audit.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: anna-dart-source-audit-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  scan:
+    if: github.event_name == 'workflow_dispatch' ||
+      github.head_ref == 'design/organic-journal-home-parity-20261116'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Scan exact checkout Dart files (read-only)
+        run: |
+          mkdir -p build/audit
+          python3 tool/audit_flutter_antipatterns.py .             --max-findings 5000 > build/audit/flutter_source_report.json
+      - name: Print evidence and fail only on confirmed legacy API signatures
+        run: |
+          python3 - <<'PY'
+          import collections
+          import json
+          import subprocess
+          from pathlib import Path
+
+          path = Path("build/audit/flutter_source_report.json")
+          report = json.loads(path.read_text())
+          checkout_sha = subprocess.check_output(
+              ["git", "rev-parse", "HEAD"], text=True
+          ).strip()
+          report["checkout_sha"] = checkout_sha
+          report["scanner_provenance"] = "Idee-app-Archivi-riferimenti@8fdc4e1f: scripts/audit_flutter_antipatterns.py"
+          path.write_text(json.dumps(report, ensure_ascii=False, indent=2) + "\n")
+          data = report["reports"][0]
+          counts = collections.Counter(x["rule"] for x in data["findings"])
+          print(f"scanned checkout SHA: {checkout_sha}")
+          print(f"scanned={data['scanned_dart_files']} skipped={data['skipped_files']} truncated={data['truncated']}")
+          print(f"counts={dict(sorted(counts.items()))}")
+          for item in data["findings"]:
+              if item["category"] == "LEGACY_API":
+                  print(f"LEGACY {item['file']}:{item['line']} {item['rule']}")
+          if data["truncated"]:
+              raise SystemExit("::error::Scanner findings truncated; report incomplete")
+          if data["legacy_api_detected"]:
+              raise SystemExit("::error::High confidence legacy API signature: manual triage needed")
+          PY
+      - name: Publish inspectable full-checkout report
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: anna-dart-full-source-audit-${{ github.sha }}
+          path: build/audit/flutter_source_report.json
+          retention-days: 30
+          if-no-files-found: warn

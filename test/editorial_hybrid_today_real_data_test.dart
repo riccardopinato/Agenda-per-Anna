@@ -11,16 +11,6 @@ void main() {
   // The independently tested Organic Home retains its own widget suite.
   setUp(() => AnnaEditorialTodayMode.enabled.value = false);
 
-  DayHubSnapshot day({String note = ''}) => DayHubSnapshot(
-    date: DateTime(2026, 11, 5),
-    agenda: const [],
-    birthdays: const [],
-    workouts: const [],
-    pendingTaskCount: 0,
-    appointmentCount: 0,
-    journal: DayJournal(note: note),
-  );
-
   Widget app(Widget child) => MaterialApp(
     locale: const Locale('it'),
     supportedLocales: const [Locale('it'), Locale('en')],
@@ -52,63 +42,65 @@ void main() {
     expect(preferences.getBool(AnnaEditorialTodayMode.storageKey), isFalse);
   });
 
-  testWidgets('real-day editorial hero opens canonical caller action', (tester) async {
+  testWidgets('editorial diary hero keeps canonical action, without duplicate counters', (tester) async {
     var openedDiary = 0;
     await tester.pumpWidget(app(AnnaEditorialTodayOverview(
-      snapshot: day(note: 'Nota vera, non una demo'),
+      store: AgendaStore(),
+      selectedDate: DateTime(2026, 11, 16),
       hideDetails: false,
+      onOpenWeek: () {},
       onOpenDiary: () => openedDiary++,
-      onOpenCalendar: () {},
-      onOpenDay: () {},
     )));
     expect(find.byKey(const ValueKey('editorial-today-real-overview')), findsOneWidget);
     expect(find.byKey(const ValueKey('editorial-today-diary-hero')), findsOneWidget);
-    expect(find.text('0'), findsNWidgets(2));
-    expect(find.text('Nota vera, non una demo'), findsNothing);
+    expect(find.byType(AnnaEditorialActionPair), findsNothing);
+    expect(find.text('Impegni'), findsNothing);
+    expect(find.text('Attività'), findsNothing);
+    expect(find.text('0'), findsNothing);
     expect(find.text('Il mio diario'), findsOneWidget);
     expect(find.text('Il tuo diario'), findsNothing);
     expect(find.byKey(const ValueKey('editorial-today-diary-title')), findsOneWidget);
-    expect(find.byKey(const ValueKey('editorial-today-diary-icon')), findsOneWidget);
+    expect(find.byKey(const ValueKey('editorial-today-diary-icon')), findsNothing);
     await tester.tap(find.byType(FilledButton).first);
     expect(openedDiary, 1);
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('privacy mode masks the day state and counts', (tester) async {
+  testWidgets('duplicate counts and masked counters are absent from the Home', (tester) async {
     await tester.pumpWidget(app(AnnaEditorialTodayOverview(
-      snapshot: day(note: 'Informazione privata'),
-      hideDetails: true,
+      store: AgendaStore(),
+      selectedDate: DateTime(2026, 11, 16),
+      hideDetails: false,
+      onOpenWeek: () {},
       onOpenDiary: () {},
-      onOpenCalendar: () {},
-      onOpenDay: () {},
     )));
-    expect(find.text('•••'), findsNWidgets(2));
-    expect(find.text('Informazione privata'), findsNothing);
+    expect(find.byType(AnnaEditorialActionPair), findsNothing);
+    expect(find.text('•••'), findsNothing);
+    expect(find.text('0'), findsNothing);
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('compact diary has no secondary copy and title/icon share a row',
+  testWidgets('two equal dashboard cards preserve diary title and controls',
       (tester) async {
     await tester.pumpWidget(app(AnnaEditorialTodayOverview(
-      snapshot: day(note: 'Nota privata effettiva'),
+      store: AgendaStore(),
+      selectedDate: DateTime(2026, 11, 16),
       hideDetails: false,
+      onOpenWeek: () {},
       onOpenDiary: () {},
-      onOpenCalendar: () {},
-      onOpenDay: () {},
     )));
     final card = find.byKey(const ValueKey('editorial-today-diary-hero'));
     final title = find.byKey(const ValueKey('editorial-today-diary-title'));
     final icon = find.byKey(const ValueKey('editorial-today-diary-icon'));
     expect(find.text('Il mio diario'), findsOneWidget);
     expect(find.text('Il tuo diario'), findsNothing);
-    expect(find.text('Nota privata effettiva'), findsNothing);
     expect(find.text('Diario iniziato'), findsNothing);
-    expect(tester.getSize(card).height, lessThan(210));
-    expect(
-      (tester.getCenter(title).dy - tester.getCenter(icon).dy).abs(),
-      lessThan(2),
-    );
-    expect(find.byType(FilledButton), findsOneWidget);
+    expect(tester.getSize(card).height, greaterThan(150));
+    expect(tester.getSize(card).width, closeTo(
+      tester.getSize(find.byKey(const ValueKey('editorial-today-week-card'))).width, 1));
+    expect(icon, findsNothing);
+    expect(tester.getRect(title).width, greaterThan(100));
+    expect(find.byType(FilledButton), findsNWidgets(2));
     expect(tester.takeException(), isNull);
   });
 
@@ -121,11 +113,11 @@ void main() {
       tester.view.resetDevicePixelRatio();
     });
     final overview = AnnaEditorialTodayOverview(
-      snapshot: day(),
-      hideDetails: true,
+      store: AgendaStore(),
+      selectedDate: DateTime(2026, 11, 16),
+      hideDetails: false,
+      onOpenWeek: () {},
       onOpenDiary: () {},
-      onOpenCalendar: () {},
-      onOpenDay: () {},
     );
     await tester.pumpWidget(MaterialApp(
       locale: const Locale('it'),
@@ -148,8 +140,23 @@ void main() {
     ));
     expect(find.text('Il mio diario'), findsOneWidget);
     expect(find.byKey(const ValueKey('editorial-today-diary-icon')),
-        findsOneWidget);
+        findsNothing);
     expect(tester.takeException(), isNull);
+  });
+
+  test('Organic Home keeps the single Impegni shortcut above its diary hero', () {
+    final planner = File('lib/src/planner_views.dart').readAsStringSync();
+    final overview = File('lib/src/editorial_today_home.dart').readAsStringSync();
+    final home = planner
+        .split('class _PlannerScreenState')[1]
+        .split('class _CalendarDayContextCard')[0];
+    final shortcut = home.indexOf('AnnaOrganicPastelQuickLinks(');
+    final diary = home.indexOf('AnnaEditorialTodayOverview(');
+    expect(shortcut, greaterThanOrEqualTo(0));
+    expect(diary, greaterThan(shortcut));
+    expect(overview, isNot(contains('AnnaEditorialActionPair(')));
+    expect(overview, isNot(contains("d3('ui5Commitments')")));
+    expect(overview, isNot(contains("d3('ui5Activities')")));
   });
 
   test('the diary name is first-person in every supported locale', () {
@@ -177,7 +184,8 @@ void main() {
     expect(planner, contains('_TodayCompactDiaryPreview('));
     expect(planner, contains('_DayMemoryRecallCard('));
     expect(planner, contains('DayTimeline('));
-    expect(planner, contains('today-open-calendar'));
+    expect(planner, contains("'today-open-calendar'")); // Classic-only AppBar, not Organic header.
+    expect(planner, contains('AnnaOrganicPastelQuickLinks('));
     expect(planner, contains("'editorial-today-return'"));
     expect(planner, contains('onPressed: () => _selectDay(DateTime.now())'));
     expect(planner, contains('showUnifiedCapture('));
@@ -200,7 +208,14 @@ void main() {
     // Only the Hybrid Home loses the chips; Classic and Calendar retain them.
     expect(home, contains("if (!editorial) ...["));
     expect(home, contains('AgendaContentFilterBar(store: widget.store)'));
-    expect(planner.split('AgendaContentFilterBar(store: widget.store)').length - 1, 4);
+    // Calendar/Week now pass an optional notebook presentation flag on
+    // separate lines. Count the real widget invocations, not one formatting.
+    expect(
+      RegExp(r'AgendaContentFilterBar\(\s*store:\s*widget\.store')
+          .allMatches(planner).length,
+      4,
+    );
+    expect(planner.split('calendarNotebook: editorial,').length - 1, 2);
     // When a global filter was chosen elsewhere, reset it after the frame
     // so Hybrid never silently hides private/shared items.
     expect(home, contains('widget.store.agendaContentFilter != AgendaContentFilter.all'));

@@ -63,7 +63,7 @@ class _SettingsHubScreenState extends State<SettingsHubScreen> {
 
   Widget _groupSurface({required Widget child}) {
     if (!AnnaEditorialTodayMode.enabled.value) return SimpleCard(child: child);
-    return AnnaEditorialSurface(
+    return AnnaOrganicPaperSurface(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
       child: child,
     );
@@ -77,7 +77,18 @@ class _SettingsHubScreenState extends State<SettingsHubScreen> {
     String? subtitle,
     required VoidCallback onTap,
   }) {
-    return Semantics(
+    return Builder(builder: (context) {
+      if (AnnaOrganicPastel.enabled(context)) {
+        return AnnaOrganicJournalRow(
+          identifier: id,
+          icon: icon,
+          domain: domain,
+          title: title,
+          subtitle: subtitle,
+          onTap: onTap,
+        );
+      }
+      return Semantics(
       identifier: id,
       button: true,
       label: title,
@@ -97,7 +108,8 @@ class _SettingsHubScreenState extends State<SettingsHubScreen> {
         trailing: const Icon(Icons.chevron_right),
         onTap: onTap,
       ),
-    );
+      );
+    });
   }
 
   @override
@@ -113,9 +125,17 @@ class _SettingsHubScreenState extends State<SettingsHubScreen> {
       builder: (context, _) => Scaffold(
         appBar: AppBar(
           toolbarHeight: 78,
+          backgroundColor: AnnaOrganicPastel.enabled(context)
+              ? AnnaEditorialColors.of(context).canvas : null,
+          surfaceTintColor: AnnaOrganicPastel.enabled(context)
+              ? Colors.transparent : null,
+          scrolledUnderElevation: 0,
+          elevation: 0,
           title: Text(
             strings.settings,
-            style: Theme.of(context).textTheme.headlineMedium,
+            style: AnnaOrganicPastel.enabled(context)
+                ? AnnaJournalTypography.editorial(context, size: 27)
+                : Theme.of(context).textTheme.headlineMedium,
           ),
         ),
         body: Center(
@@ -139,7 +159,7 @@ class _SettingsHubScreenState extends State<SettingsHubScreen> {
                     eyebrow: strings.d3('personalizationTitle'),
                   ),
                   const SizedBox(height: AnnaDesignTokens.spaceLg),
-                  AnnaEditorialSurface(
+                  AnnaOrganicPaperSurface(
                     key: const ValueKey<String>('ds6-settings-color-preview'),
                     tone: AnnaEditorialSurfaceTone.featured,
                     semanticLabel: strings.d3('appearanceColorsTitle'),
@@ -148,10 +168,49 @@ class _SettingsHubScreenState extends State<SettingsHubScreen> {
                     child: Row(
                       children: [
                         Container(
-                          width: 44, height: 44,
+                          key: const ValueKey<String>(
+                            'settings-hub-live-palette-preview'),
+                          width: 58,
+                          height: 58,
                           decoration: BoxDecoration(
-                            color: Theme.of(context).colorScheme.primary,
-                            borderRadius: BorderRadius.circular(14),
+                            gradient: LinearGradient(
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                              colors: [
+                                Theme.of(context).colorScheme.primaryContainer,
+                                Theme.of(context).colorScheme.surface,
+                              ],
+                            ),
+                            borderRadius: BorderRadius.circular(17),
+                            border: Border.all(
+                              color: AnnaEditorialColors.of(context).border,
+                            ),
+                          ),
+                          child: Center(
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                for (final color in [
+                                  Theme.of(context).colorScheme.primary,
+                                  Theme.of(context).colorScheme.secondary,
+                                  Theme.of(context).colorScheme.tertiary,
+                                ])
+                                  Container(
+                                    width: 10,
+                                    height: 10,
+                                    margin: const EdgeInsets.symmetric(
+                                      horizontal: 2),
+                                    decoration: BoxDecoration(
+                                      color: color,
+                                      shape: BoxShape.circle,
+                                      border: Border.all(
+                                        color: Theme.of(context)
+                                            .colorScheme.surface,
+                                      ),
+                                    ),
+                                  ),
+                              ],
+                            ),
                           ),
                         ),
                         const SizedBox(width: 13),
@@ -203,7 +262,39 @@ class _SettingsHubScreenState extends State<SettingsHubScreen> {
                         _query = '';
                       }),
                     ),
-                    border: const OutlineInputBorder(),
+                    filled: AnnaOrganicPastel.enabled(context),
+                    fillColor: AnnaOrganicPastel.enabled(context)
+                        ? AnnaOrganicPastel.surface(context) : null,
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 16, vertical: 16,
+                    ),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(
+                        AnnaOrganicPastel.enabled(context) ? 19 : 12,
+                      ),
+                      borderSide: BorderSide(
+                        color: AnnaOrganicPastel.enabled(context)
+                            ? AnnaEditorialColors.of(context).border
+                            : Theme.of(context).colorScheme.outline,
+                      ),
+                    ),
+                    enabledBorder: AnnaOrganicPastel.enabled(context)
+                        ? OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(19),
+                            borderSide: BorderSide(
+                              color: AnnaEditorialColors.of(context).border,
+                            ),
+                          )
+                        : null,
+                    focusedBorder: AnnaOrganicPastel.enabled(context)
+                        ? OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(19),
+                            borderSide: BorderSide(
+                              color: Theme.of(context).colorScheme.primary,
+                              width: 1.5,
+                            ),
+                          )
+                        : null,
                   ),
                 ),
                 const SizedBox(height: AnnaDesignTokens.spaceSm),
@@ -378,7 +469,9 @@ class _SettingsHubScreenState extends State<SettingsHubScreen> {
                           AppearanceColorsScreen(store: store),
                         ),
                       ),
-                      const Divider(height: 1),
+                      AnnaOrganicPastel.enabled(context)
+                      ? const AnnaOrganicJournalRule()
+                      : const Divider(height: 1),
                       _tile(
                         id: 'settings-hub-personalization',
                         domain: AnnaVisualDomain.people,
@@ -390,7 +483,9 @@ class _SettingsHubScreenState extends State<SettingsHubScreen> {
                           PersonalizationScreen(store: store),
                         ),
                       ),
-                      const Divider(height: 1),
+                      AnnaOrganicPastel.enabled(context)
+                      ? const AnnaOrganicJournalRule()
+                      : const Divider(height: 1),
                       _tile(
                         id: 'settings-hub-preferences-privacy',
                         domain: AnnaVisualDomain.vault,
@@ -426,7 +521,9 @@ class _SettingsHubScreenState extends State<SettingsHubScreen> {
                           const PremiumScreen(),
                         ),
                       ),
-                      const Divider(height: 1),
+                      AnnaOrganicPastel.enabled(context)
+                      ? const AnnaOrganicJournalRule()
+                      : const Divider(height: 1),
                       _tile(
                         id: 'settings-hub-account',
                         domain: AnnaVisualDomain.ecosystem,
@@ -438,7 +535,9 @@ class _SettingsHubScreenState extends State<SettingsHubScreen> {
                           CloudAccountScreen(store: store),
                         ),
                       ),
-                      const Divider(height: 1),
+                      AnnaOrganicPastel.enabled(context)
+                      ? const AnnaOrganicJournalRule()
+                      : const Divider(height: 1),
                       _tile(
                         id: 'settings-hub-android-calendar-sync',
                         domain: AnnaVisualDomain.ecosystem,
@@ -450,7 +549,9 @@ class _SettingsHubScreenState extends State<SettingsHubScreen> {
                           AndroidCalendarSyncSettingsScreen(store: store),
                         ),
                       ),
-                      const Divider(height: 1),
+                      AnnaOrganicPastel.enabled(context)
+                      ? const AnnaOrganicJournalRule()
+                      : const Divider(height: 1),
                       _tile(
                         id: 'settings-hub-capability-health',
                         domain: AnnaVisualDomain.ecosystem,
@@ -462,7 +563,9 @@ class _SettingsHubScreenState extends State<SettingsHubScreen> {
                           CapabilityHealthScreen(store: store),
                         ),
                       ),
-                      const Divider(height: 1),
+                      AnnaOrganicPastel.enabled(context)
+                      ? const AnnaOrganicJournalRule()
+                      : const Divider(height: 1),
                       _tile(
                         id: 'settings-hub-backup',
                         domain: AnnaVisualDomain.vault,

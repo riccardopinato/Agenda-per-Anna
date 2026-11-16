@@ -42,7 +42,19 @@ class MoreScreen extends StatelessWidget {
     Widget? trailing,
     required VoidCallback onTap,
   }) {
-    return Semantics(
+    return Builder(builder: (context) {
+      if (AnnaOrganicPastel.enabled(context)) {
+        return AnnaOrganicJournalRow(
+          identifier: id,
+          icon: icon,
+          domain: domain,
+          title: title,
+          subtitle: subtitle,
+          trailing: trailing,
+          onTap: onTap,
+        );
+      }
+      return Semantics(
       identifier: id,
       button: true,
       label: title,
@@ -65,7 +77,8 @@ class MoreScreen extends StatelessWidget {
         onTap: onTap,
         ),
       ),
-    );
+      );
+    });
   }
 
   Widget _sectionCard({
@@ -74,9 +87,86 @@ class MoreScreen extends StatelessWidget {
     required Widget child,
   }) {
     if (!editorial) return AnnaJournalCard(domain: domain, child: child);
-    return AnnaEditorialSurface(
+    return AnnaOrganicPaperSurface(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
       child: child,
+    );
+  }
+
+  /// One notebook page in Organic mode; Classic retains its separate cards.
+  /// Existing visibility guards, tile identifiers and destinations are reused.
+  Widget _yourSpaceSection(
+    BuildContext context,
+    AnnaStrings strings,
+    bool editorial,
+  ) {
+    final prefs = store.preferences;
+    final entries = <({AnnaVisualDomain domain, Widget child})>[
+      if (prefs.isModuleEnabled(AppModule.privateVault))
+        (
+          domain: AnnaVisualDomain.vault,
+          child: _tile(
+            id: 'more-private-vault',
+            domain: AnnaVisualDomain.vault,
+            icon: Icons.lock_person_outlined,
+            title: strings.v100PrivateVault,
+            subtitle: strings.v100PrivateVaultDescription,
+            onTap: () => _open(context, PrivateVaultScreen(store: store)),
+          ),
+        ),
+      if (prefs.isModuleEnabled(AppModule.memories))
+        (
+          domain: AnnaVisualDomain.memories,
+          child: _tile(
+            id: 'more-future-letters',
+            domain: AnnaVisualDomain.memories,
+            icon: Icons.mark_email_unread_outlined,
+            title: futureLetterTitle(strings),
+            onTap: () => _open(
+              context,
+              PersonalFutureLettersScreen(store: store),
+            ),
+          ),
+        ),
+      (
+        domain: AnnaVisualDomain.people,
+        child: _tile(
+          id: 'more-explore',
+          domain: AnnaVisualDomain.people,
+          icon: Icons.apps_outlined,
+          title: strings.v100Explore,
+          subtitle: strings.v100ExploreIntro,
+          onTap: () => _open(context, ExploreScreen(store: store)),
+        ),
+      ),
+    ];
+    if (editorial) {
+      return _sectionCard(
+        editorial: true,
+        domain: AnnaVisualDomain.people,
+        child: Column(
+          key: const ValueKey<String>('more-organic-your-space-group'),
+          children: [
+            for (var i = 0; i < entries.length; i++) ...[
+              if (i > 0) const AnnaOrganicJournalRule(),
+              entries[i].child,
+            ],
+          ],
+        ),
+      );
+    }
+    return Column(
+      children: [
+        for (var i = 0; i < entries.length; i++) ...[
+          _sectionCard(
+            editorial: false,
+            domain: entries[i].domain,
+            child: entries[i].child,
+          ),
+          if (i < entries.length - 1)
+            const SizedBox(height: AnnaDesignTokens.spaceSm),
+        ],
+      ],
     );
   }
 
@@ -105,9 +195,16 @@ class MoreScreen extends StatelessWidget {
         return Scaffold(
           appBar: AppBar(
             toolbarHeight: 78,
+            backgroundColor: editorial
+                ? AnnaEditorialColors.of(context).canvas : null,
+            surfaceTintColor: editorial ? Colors.transparent : null,
+            scrolledUnderElevation: 0,
+            elevation: 0,
             title: Text(
               strings.navMore,
-              style: Theme.of(context).textTheme.headlineMedium,
+              style: editorial
+                  ? AnnaJournalTypography.editorial(context, size: 27)
+                  : Theme.of(context).textTheme.headlineMedium,
             ),
           ),
           body: Center(
@@ -130,7 +227,7 @@ class MoreScreen extends StatelessWidget {
                       subtitle: ds6MoreIntro(strings.languageCode),
                     ),
                     const SizedBox(height: AnnaDesignTokens.spaceLg),
-                    AnnaEditorialSurface(
+                    AnnaOrganicPaperSurface(
                       key: const ValueKey<String>('ds6-more-profile'),
                       tone: AnnaEditorialSurfaceTone.featured,
                       semanticLabel: strings.settings,
@@ -212,7 +309,9 @@ class MoreScreen extends StatelessWidget {
                             PersonalSearchConnectionsScreen(store: store),
                           ),
                         ),
-                        const Divider(height: 1),
+                        editorial
+                            ? const AnnaOrganicJournalRule()
+                            : const Divider(height: 1),
                         _tile(
                           id: 'more-inbox',
                           domain: AnnaVisualDomain.today,
@@ -237,56 +336,7 @@ class MoreScreen extends StatelessWidget {
                       ? AnnaEditorialSectionHeading(title: strings.d3('moreYourSpace'))
                       : AnnaJournalSectionHeading(title: strings.d3('moreYourSpace')),
                   const SizedBox(height: AnnaDesignTokens.spaceSm),
-                  if (prefs.isModuleEnabled(AppModule.privateVault)) ...[
-                    _sectionCard(
-                    editorial: editorial,
-                    domain: AnnaVisualDomain.vault,
-                      child: _tile(
-                        id: 'more-private-vault',
-                        domain: AnnaVisualDomain.vault,
-                        icon: Icons.lock_person_outlined,
-                        title: strings.v100PrivateVault,
-                        subtitle: strings.v100PrivateVaultDescription,
-                        onTap: () => _open(
-                          context,
-                          PrivateVaultScreen(store: store),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: AnnaDesignTokens.spaceSm),
-                  ],
-                  if (prefs.isModuleEnabled(AppModule.memories)) ...[
-                    _sectionCard(
-                    editorial: editorial,
-                    domain: AnnaVisualDomain.memories,
-                      child: _tile(
-                        id: 'more-future-letters',
-                        domain: AnnaVisualDomain.memories,
-                        icon: Icons.mark_email_unread_outlined,
-                        title: futureLetterTitle(strings),
-                        onTap: () => _open(
-                          context,
-                          PersonalFutureLettersScreen(store: store),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: AnnaDesignTokens.spaceSm),
-                  ],
-                  _sectionCard(
-                    editorial: editorial,
-                    domain: AnnaVisualDomain.people,
-                    child: _tile(
-                      id: 'more-explore',
-                      domain: AnnaVisualDomain.people,
-                      icon: Icons.apps_outlined,
-                      title: strings.v100Explore,
-                      subtitle: strings.v100ExploreIntro,
-                      onTap: () => _open(
-                        context,
-                        ExploreScreen(store: store),
-                      ),
-                    ),
-                  ),
+                  _yourSpaceSection(context, strings, editorial),
                   const SizedBox(height: AnnaDesignTokens.spaceLg),
                   editorial
                       ? AnnaEditorialSectionHeading(title: strings.d3('moreDataAndApp'))
@@ -305,7 +355,9 @@ class MoreScreen extends StatelessWidget {
                           onTap: () =>
                               _open(context, ArchiveScreen(store: store)),
                         ),
-                        const Divider(height: 1),
+                        editorial
+                            ? const AnnaOrganicJournalRule()
+                            : const Divider(height: 1),
                         _tile(
                           id: 'more-backup',
                           domain: AnnaVisualDomain.vault,
@@ -314,7 +366,9 @@ class MoreScreen extends StatelessWidget {
                           onTap: () =>
                               _open(context, BackupScreen(store: store)),
                         ),
-                        const Divider(height: 1),
+                        editorial
+                            ? const AnnaOrganicJournalRule()
+                            : const Divider(height: 1),
                         _tile(
                           id: 'more-cloud',
                           domain: AnnaVisualDomain.ecosystem,
@@ -323,7 +377,9 @@ class MoreScreen extends StatelessWidget {
                           onTap: () =>
                               _open(context, CloudAccountScreen(store: store)),
                         ),
-                        const Divider(height: 1),
+                        editorial
+                            ? const AnnaOrganicJournalRule()
+                            : const Divider(height: 1),
                         _tile(
                           id: 'more-settings',
                           domain: AnnaVisualDomain.ecosystem,

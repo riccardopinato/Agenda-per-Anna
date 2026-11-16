@@ -1,4 +1,34 @@
+## 16 novembre 2026 — Calendar Notebook v136 (candidate · visual-only)
+
+- **Scope autorizzato:** calendario Mese/Settimana/agenda con resa iOS Journal coerente con Oggi v135, senza nuovi modelli, writer, route, permessi, storage, sync o modifiche alla Cassaforte.
+- **Mese/Anno:** collegamenti editoriali originali, adattivi (colonna con 320dp e testo >1.3x); destinazioni canoniche `MonthScreen` e `YearScreen`, chiavi di accessibilità immutate.
+- **Mese:** TableCalendar canonico con intestazione, settimana, selezione, oggi e indicatori ripuliti tramite stile derivato dal ColorScheme (5 palette/HSV/dark); callbacks, eventi, date 2020–2040 e navigazione preservati.
+- **Agenda:** CTA slot liberi, timeline 07:00–22:00 inizialmente chiusa, stato vuoto veritiero, riepilogo del giorno e visibilità degli eventi invariati; solo chrome carta/Manrope/Lora.
+- **Settimana:** riepilogo e sette card esistenti, con spaziatura, divisione e profondità visiva; nessuna modifica a focus, priorità, attività, ricordi, cancellazione o pulsanti Crea.
+- **Classic reversibile:** mantiene le superfici/classi Material precedenti; nessun secondo calendario o duplicazione della selezione.
+- **Evidenza necessaria per chiudere:** CI exact-head, AppLab Source Gate e Web, screenshot Flutter PR di dodici viste reali (Mese, agenda dopo scroll, Settimana e sette giorni; vuote/popolate), con fixture rose e verifica dei marker data-driven, ispezione prima/dopo; APK stabile su `main` solo se la candidata +136 supera i gate di rilascio. Qualità visiva personale, aggiornamento fisico e test dati restano **NON VERIFICATI** finché privi di prova.
+- **Owner UI:** [issue #327](https://github.com/riccardopinato/Agenda-per-Anna/issues/327). **Gate fisici separati:** [issue #329](https://github.com/riccardopinato/Agenda-per-Anna/issues/329).
+
 # Anna's Diary — Roadmap
+
+## 16 novembre 2026 — Dashboard Oggi a due quadrati (+135)
+
+- **Home Organic:** Il mio diario e La mia settimana in due card di pari larghezza/altezza, quadrate a testo standard e adattive per accessibilità; scorrimento verticale conservato. Ricordi da rivivere rimane immediatamente sotto.
+- **Dati reali:** contatore delle giornate annotate nella settimana del giorno selezionato, con il predicato canonico `DayHubSnapshot.hasJournalContent`. Rispetta `hideHomeDetails`; cinque lingue; nessun nuovo store.
+- **Weekly Review:** card in alto apre `WeeklyReviewScreen` canonico. L'originale `WeeklyReviewHomeCard` resta nel layout Classic, ma non viene duplicato più in basso nella Home Organic. Le altre schede e i ricordi non vengono rimossi.
+- **Versione:** `1.0.0-rc.6+135`; Web Pages e APK ARM64 firmato solo dopo gate esatto di main. Collaudo fisico esteso resta separato.
+
+
+## 16 novembre 2026 — post rc.6+134: roadmap fonte/UI integrata, gate fisici residui
+
+- **APK:** il titolare conferma funzionamento di `rc.6+134`. Download/signing **esclusi** dai lavori correttivi; lo stato dell'APK già firmato e la versione rimangono invariati.
+- **Main corrente prima del polish:** `afbbb3ec5b46d1744d2f681668742fdef7723ea1` ([PR #326](https://github.com/riccardopinato/Agenda-per-Anna/pull/326)); build firmata [#43777799161](https://github.com/riccardopinato/Agenda-per-Anna/actions/runs/43777799161) PASS e Web [#43777394708](https://github.com/riccardopinato/Agenda-per-Anna/actions/runs/43777394708) PASS.
+- **Maxi-step fonte/UI (MERGED `main@2934ea9573edc68edbfc24210fbf8296ac67af49`):** [PR #328](https://github.com/riccardopinato/Agenda-per-Anna/pull/328) per Ricordi immediatamente visibile, carta/controlli Journal, screenshot Flutter e test; non modifica DB, Vault, Account, Store, API, APK firmato o `versionCode`.
+- **Scan 360° Flutter:** [workflow full-checkout #43786278027](https://github.com/riccardopinato/Agenda-per-Anna/actions/runs/43786278027) PASS (332 Dart, 0 skipped, 0 legacy high-confidence; 257 segnali `REVIEW` **non automaticamente bug**), report JSON allegato al run.
+- **Documentazione:** status attuale aggiunto come sezione di apertura, registri storici successivi **immutati**; non confondere dati storici +123/+129/+130 con la release +134.
+- **Residual ledger:** [AUDIT_RESIDUAL_POST_134_20261116.md](AUDIT_RESIDUAL_POST_134_20261116.md) / [tracking issue #329](https://github.com/riccardopinato/Agenda-per-Anna/issues/329). Una voce non verificabile con sorgente/CI resta esplicitamente in sospeso; non trasformare un test Flutter in physical QA.
+- **Prerequisito per nuova release:** solo su richiesta specifica futura, nuovo `versionCode`, gate main esatto, firma stabile, update-in-place, protezione dei dati. La PR #328 non richiede e non autorizza un nuovo APK.
+
 
 ## 13 novembre 2026 — Android rc.6+130: candidate for exact signed physical QA (SOURCE PR, NOT INSTALLED)
 

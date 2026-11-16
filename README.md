@@ -1,5 +1,15 @@
 # Anna's Diary
 
+## Stato verificato al 16 novembre 2026 — rc.6+134 (fonte corrente)
+
+- **Base dell'APK firmato**: `afbbb3ec5b46d1744d2f681668742fdef7723ea1`, `1.0.0-rc.6+134`; integrazione [PR #326](https://github.com/riccardopinato/Agenda-per-Anna/pull/326). **Main dopo il polish**: `2934ea9573edc68edbfc24210fbf8296ac67af49` ([PR #328](https://github.com/riccardopinato/Agenda-per-Anna/pull/328)); build number invariato.
+- **CI/Android/Web**: [Development checks #43777394780](https://github.com/riccardopinato/Agenda-per-Anna/actions/runs/43777394780), [Android native #43777394728](https://github.com/riccardopinato/Agenda-per-Anna/actions/runs/43777394728), [Pages #43777394708](https://github.com/riccardopinato/Agenda-per-Anna/actions/runs/43777394708) PASS; Web https://riccardopinato.github.io/Agenda-per-Anna/.
+- **APK ARM64 firmato**: [run #43777799161](https://github.com/riccardopinato/Agenda-per-Anna/actions/runs/43777799161) PASS, artifact `14186833210`, SHA source uguale alla base firmata +134 (non al main post-polish); **il titolare riferisce che l'APK funziona** (16/11/2026). Test fisici dettagliati/retention/account/Store **NON VERIFICATI**; l'attestazione non promuove tutti i gate.
+- **Polish estetico integrato in sorgente**: [PR #328](https://github.com/riccardopinato/Agenda-per-Anna/pull/328); il nuovo main/Web include la correzione Ricordi e la carta Organic. **Non modifica i byte dell'APK +134 già distribuito**. Estetica finale ancora in attesa del feedback nell'[issue #327](https://github.com/riccardopinato/Agenda-per-Anna/issues/327).
+- **Audit/risultati non chiusi**: [registro post +134](docs/AUDIT_RESIDUAL_POST_134_20261116.md) / [issue #329](https://github.com/riccardopinato/Agenda-per-Anna/issues/329).
+
+> I riferimenti a +129 e release storiche più sotto sono conservati come testimonianze storiche, non descrivono l'ultimo rilascio.
+
 Flutter app for personal planning, private diary and the shared **Noi ♡** space.
 
 **Current Web-first source (7 Nov 2026):** `main@dc601002` (`1.0.0-rc.6+129`); [GitHub Pages deploy #42402256546](https://github.com/riccardopinato/Agenda-per-Anna/actions/runs/42402256546) PASS. Latest signed Android +129 was built earlier at `cb8c3d0`, so it does not contain the subsequent Web changes. Physical/native/Play certification remains pending. The historical sections below retain their original release context.
