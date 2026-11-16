@@ -18,7 +18,9 @@ jobs:
   review-capture:
     if: github.head_ref == 'design/organic-ios-journal-non-m3-surfaces-20261116' ||
       github.head_ref == 'integration/ios-journal-three-surfaces-20261116' ||
-      github.head_ref == 'design/organic-journal-home-parity-20261116'
+      github.head_ref == 'design/organic-journal-home-parity-20261116' ||
+      github.head_ref == 'feat/v137-memories-editorial-album-20261116' ||
+      github.head_ref == 'feat/v138-more-settings-essential-20261116'
     runs-on: ubuntu-latest
     timeout-minutes: 25
     steps:
