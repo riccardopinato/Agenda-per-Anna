@@ -1,13 +1,13 @@
 # Anna's Diary — Roadmap
 
-## 16 novembre 2026 — post rc.6+134: roadmap audit-only follow-up autorizzata
+## 16 novembre 2026 — post rc.6+134: roadmap fonte/UI integrata, gate fisici residui
 
 - **APK:** il titolare conferma funzionamento di `rc.6+134`. Download/signing **esclusi** dai lavori correttivi; lo stato dell'APK già firmato e la versione rimangono invariati.
 - **Main corrente prima del polish:** `afbbb3ec5b46d1744d2f681668742fdef7723ea1` ([PR #326](https://github.com/riccardopinato/Agenda-per-Anna/pull/326)); build firmata [#43777799161](https://github.com/riccardopinato/Agenda-per-Anna/actions/runs/43777799161) PASS e Web [#43777394708](https://github.com/riccardopinato/Agenda-per-Anna/actions/runs/43777394708) PASS.
-- **Maxi-step fonte/UI:** [PR #328](https://github.com/riccardopinato/Agenda-per-Anna/pull/328) per Ricordi immediatamente visibile, carta/controlli Journal, screenshot Flutter e test; non modifica DB, Vault, Account, Store, API, APK firmato o `versionCode`.
+- **Maxi-step fonte/UI (MERGED `main@2934ea9573edc68edbfc24210fbf8296ac67af49`):** [PR #328](https://github.com/riccardopinato/Agenda-per-Anna/pull/328) per Ricordi immediatamente visibile, carta/controlli Journal, screenshot Flutter e test; non modifica DB, Vault, Account, Store, API, APK firmato o `versionCode`.
 - **Scan 360° Flutter:** [workflow full-checkout #43786278027](https://github.com/riccardopinato/Agenda-per-Anna/actions/runs/43786278027) PASS (332 Dart, 0 skipped, 0 legacy high-confidence; 257 segnali `REVIEW` **non automaticamente bug**), report JSON allegato al run.
 - **Documentazione:** status attuale aggiunto come sezione di apertura, registri storici successivi **immutati**; non confondere dati storici +123/+129/+130 con la release +134.
-- **Residual ledger:** [AUDIT_RESIDUAL_POST_134_20261116.md](AUDIT_RESIDUAL_POST_134_20261116.md). Una voce non verificabile con sorgente/CI resta esplicitamente in sospeso; non trasformare un test Flutter in physical QA.
+- **Residual ledger:** [AUDIT_RESIDUAL_POST_134_20261116.md](AUDIT_RESIDUAL_POST_134_20261116.md) / [tracking issue #329](https://github.com/riccardopinato/Agenda-per-Anna/issues/329). Una voce non verificabile con sorgente/CI resta esplicitamente in sospeso; non trasformare un test Flutter in physical QA.
 - **Prerequisito per nuova release:** solo su richiesta specifica futura, nuovo `versionCode`, gate main esatto, firma stabile, update-in-place, protezione dei dati. La PR #328 non richiede e non autorizza un nuovo APK.
 
 
