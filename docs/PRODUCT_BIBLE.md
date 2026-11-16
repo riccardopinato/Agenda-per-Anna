@@ -1,5 +1,12 @@
 # Anna's Diary — Product Bible
 
+## Decisione di prodotto corrente — 16 novembre 2026
+
+La release `1.0.0-rc.6+134` unifica in `main@afbbb3ec5b46d1744d2f681668742fdef7723ea1` le viste estetiche di Impegni, Calendario, Ricordi, Altro e Impostazioni ([PR #326](https://github.com/riccardopinato/Agenda-per-Anna/pull/326)); [workflow APK ARM64 firmato #43777799161](https://github.com/riccardopinato/Agenda-per-Anna/actions/runs/43777799161) PASS. Il titolare conferma che **l'APK funziona**: non intervenire sulla distribuzione sulla base del vecchio errore di download. Questa attestazione non equivale a suite fisica dei dati personali, firma installata, Store, due-device sync, sicurezza Vault e altri gate specifici.
+
+**Decisione estetica:** il risultato è migliore, ma le superfici non sono ancora percepite come pari alla Home. La [PR #328](https://github.com/riccardopinato/Agenda-per-Anna/pull/328) lavora su pura presentazione; conservare Classic reversibile, dati canonici, palette rose e HSV, Manrope/Lora, localizzazione, dark mode e Cassaforte privata invariata. Non imporre una riscrittura del Material host: il requisito è una UI Journal originale, non una migrazione tecnica globale. Il resto dei gate risiede nel [registro di audit](AUDIT_RESIDUAL_POST_134_20261116.md).
+
+
 ## DS6 Premium Editorial — 7 November 2026 (10/10 APPROVED)
 
 The next visual refinement cycle received 10/10 explicit user approvals after the original 31 October ten-screen contract. Its canonical product/design contract is [DS6_PREMIUM_EDITORIAL_10_10_20261107.md](DS6_PREMIUM_EDITORIAL_10_10_20261107.md). The changes are incremental over the signed +128 Editorial Hybrid shell, not a rewrite. **Privacy First: no source or visual change inside the Private Vault.** Shared-space server ownership, real-data writers, Classic reversible mode, five palettes/HSV, global Search exclusions, selected-day Capture and all existing routes remain authoritative. Implemented source, merged CI, signed APK and physical acceptance remain separate gates.

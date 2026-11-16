@@ -115,3 +115,72 @@ class AnnaOrganicJournalRule extends StatelessWidget {
         ),
       );
 }
+
+
+/// Year selector for personal anniversary recall. Compact editorial paper pill,
+/// with the same keyboard/semantics contract as the Classic chip.
+class AnnaOrganicJournalYearPill extends StatelessWidget {
+  final int year;
+  final bool selected;
+  final VoidCallback onTap;
+
+  const AnnaOrganicJournalYearPill({
+    super.key,
+    required this.year,
+    required this.selected,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = AnnaEditorialColors.of(context);
+    return Semantics(
+      button: true,
+      selected: selected,
+      label: '$year',
+      child: Material(
+        type: MaterialType.transparency,
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(15),
+          splashFactory: NoSplash.splashFactory,
+          focusColor: colors.accent.withValues(alpha: .14),
+          child: DecoratedBox(
+            decoration: BoxDecoration(
+              color: selected ? colors.quiet : colors.card,
+              borderRadius: BorderRadius.circular(15),
+              border: Border.all(
+                color: selected ? colors.accent : colors.border,
+                width: selected ? 1.25 : 1,
+              ),
+            ),
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(minHeight: 48, minWidth: 66),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 13),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    if (selected) ...[
+                      Icon(Icons.check_rounded, size: 16, color: colors.accent),
+                      const SizedBox(width: 6),
+                    ],
+                    Text(
+                      '$year',
+                      style: TextStyle(
+                        fontFamily: AnnaJournalTypography.uiFamily,
+                        fontSize: 13,
+                        fontWeight: FontWeight.w700,
+                        color: colors.ink,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}

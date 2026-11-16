@@ -63,7 +63,7 @@ class _SettingsHubScreenState extends State<SettingsHubScreen> {
 
   Widget _groupSurface({required Widget child}) {
     if (!AnnaEditorialTodayMode.enabled.value) return SimpleCard(child: child);
-    return AnnaEditorialSurface(
+    return AnnaOrganicPaperSurface(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
       child: child,
     );
@@ -159,7 +159,7 @@ class _SettingsHubScreenState extends State<SettingsHubScreen> {
                     eyebrow: strings.d3('personalizationTitle'),
                   ),
                   const SizedBox(height: AnnaDesignTokens.spaceLg),
-                  AnnaEditorialSurface(
+                  AnnaOrganicPaperSurface(
                     key: const ValueKey<String>('ds6-settings-color-preview'),
                     tone: AnnaEditorialSurfaceTone.featured,
                     semanticLabel: strings.d3('appearanceColorsTitle'),

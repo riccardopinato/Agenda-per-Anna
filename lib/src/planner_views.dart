@@ -254,16 +254,31 @@ class _CalendarHubScreenState extends State<CalendarHubScreen> {
       valueListenable: AnnaEditorialTodayMode.enabled,
       builder: (context, editorial, _) => Scaffold(
       backgroundColor: editorial ? AnnaEditorialColors.of(context).canvas : null,
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => showUnifiedCapture(
-          context,
-          widget.store,
-          initialDate: _captureDay,
-          entryPoint: UnifiedCaptureEntryPoint.month,
-        ),
-        icon: const Icon(Icons.add),
-        label: Text(strings.d3('ui5Create')),
-      ),
+      floatingActionButton: editorial
+          ? Padding(
+              padding: const EdgeInsetsDirectional.only(end: 6, bottom: 5),
+              child: AnnaOrganicPastelAction(
+                key: const ValueKey<String>('organic-calendar-create'),
+                icon: Icons.add,
+                label: strings.d3('ui5Create'),
+                onPressed: () => showUnifiedCapture(
+                  context,
+                  widget.store,
+                  initialDate: _captureDay,
+                  entryPoint: UnifiedCaptureEntryPoint.month,
+                ),
+              ),
+            )
+          : FloatingActionButton.extended(
+              onPressed: () => showUnifiedCapture(
+                context,
+                widget.store,
+                initialDate: _captureDay,
+                entryPoint: UnifiedCaptureEntryPoint.month,
+              ),
+              icon: const Icon(Icons.add),
+              label: Text(strings.d3('ui5Create')),
+            ),
       appBar: AppBar(
         backgroundColor: editorial ? AnnaEditorialColors.of(context).canvas : null,
         surfaceTintColor: editorial ? Colors.transparent : null,

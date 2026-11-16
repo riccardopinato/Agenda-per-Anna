@@ -100,6 +100,14 @@ void main() {
       await tester.pump(const Duration(milliseconds: 350));
       await tester.pump(const Duration(milliseconds: 450));
       expect(find.byType(screenType), findsOneWidget);
+      if (organicJournalPopulated && screenType == DiaryMemoriesScreen) {
+        // Prevent screenshot PASS with an invisible but space-occupying hero.
+        expect(
+          find.byKey(const ValueKey<String>('memories-editorial-featured')),
+          findsOneWidget,
+        );
+        expect(find.text('Una passeggiata insieme nel parco'), findsWidgets);
+      }
       final surface = find.descendant(
         of: find.byType(screenType),
         matching: find.byType(Scaffold),
