@@ -67,7 +67,7 @@ void main() {
       appLanguage: AppLanguage.italian,
       onboardingDone: true,
       displayName: 'Giulia',
-      palette: AgendaPalette.sage,
+      palette: AgendaPalette.rose,
     );
     if (calendarCapturePopulated) {
       store.items.addAll([
@@ -116,6 +116,25 @@ void main() {
       ),
     );
 
+    // Also inspect the actual below-the-fold agenda, not only the month grid.
+    await tester.drag(
+      find.descendant(
+        of: find.byType(CalendarScreen),
+        matching: find.byType(ListView),
+      ).first,
+      const Offset(0, -520),
+    );
+    await tester.pump(const Duration(milliseconds: 450));
+    await expectLater(
+      find.descendant(
+        of: find.byType(CalendarScreen),
+        matching: find.byType(Scaffold),
+      ).first,
+      matchesGoldenFile(calendarCapturePopulated
+          ? 'goldens/anna_calendar_notebook_month_agenda_populated_390.png'
+          : 'goldens/anna_calendar_notebook_month_agenda_empty_390.png'),
+    );
+
     // The SAME app/store feeds WeekScreen and keeps all seven canonical days.
     Navigator.of(tester.element(find.byType(CalendarScreen))).push(
       MaterialPageRoute<void>(
@@ -137,6 +156,25 @@ void main() {
             ? 'goldens/anna_calendar_notebook_week_populated_390.png'
             : 'goldens/anna_calendar_notebook_week_empty_390.png',
       ),
+    );
+
+    // Verify the editorial seven-day cards after scrolling past week notes.
+    await tester.drag(
+      find.descendant(
+        of: find.byType(WeekScreen),
+        matching: find.byType(ListView),
+      ).first,
+      const Offset(0, -600),
+    );
+    await tester.pump(const Duration(milliseconds: 450));
+    await expectLater(
+      find.descendant(
+        of: find.byType(WeekScreen),
+        matching: find.byType(Scaffold),
+      ).first,
+      matchesGoldenFile(calendarCapturePopulated
+          ? 'goldens/anna_calendar_notebook_week_days_populated_390.png'
+          : 'goldens/anna_calendar_notebook_week_days_empty_390.png'),
     );
 
     // Render the actual CalendarHub used from Home, not just the two
