@@ -14,7 +14,7 @@ void main() {
     expect(source, contains('for attempt in 1 2 3'));
     expect(source, contains('timeout 900'));
     expect(source, contains('source.properties'));
-    expect(source, contains('Pkg\\.Revision'));
+    expect(source, contains('Pkg[.]Revision'));
     expect(source, contains('Unable to install verified Android NDK'));
     expect(source, contains('Require stable Android signing configuration'));
     expect(source, contains('Prepare physical certification identity'));
