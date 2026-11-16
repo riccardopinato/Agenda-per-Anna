@@ -935,11 +935,15 @@ void main() {
     final quickLinks = planner.indexOf('AnnaOrganicPastelQuickLinks(');
     final diary = planner.indexOf('AnnaEditorialTodayOverview(');
     final memories = planner.indexOf('// Keep memories immediately BELOW');
+    final agendaDetail = planner.indexOf('AnnaOrganicPastelAgendaDigest(');
     final nextCards = planner.indexOf('// Hero-first rhythm');
     expect(quickLinks, greaterThan(0));
     expect(diary, greaterThan(quickLinks));
     expect(memories, greaterThan(diary));
     expect(nextCards, greaterThan(memories));
+    expect(agendaDetail, greaterThan(memories));
+    // Keep the complete real Impegni preview without obstructing the dashboard.
+    expect(agendaDetail, lessThan(nextCards));
     expect(planner, contains('if (!widget.embedded)'));
     expect(planner, contains('ExpansionTile('));
     expect(planner, contains('selectedDate: day,'));
