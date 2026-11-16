@@ -166,7 +166,7 @@ void main() {
     expect(planner, contains('_TodayCompactDiaryPreview('));
     expect(planner, contains('_DayMemoryRecallCard('));
     expect(planner, contains('DayTimeline('));
-    expect(planner, isNot(contains("'today-open-calendar'")));
+    expect(planner, contains("'today-open-calendar'")); // Classic-only AppBar, not Organic header.
     expect(planner, contains('AnnaOrganicPastelQuickLinks('));
     expect(planner, contains("'editorial-today-return'"));
     expect(planner, contains('onPressed: () => _selectDay(DateTime.now())'));
