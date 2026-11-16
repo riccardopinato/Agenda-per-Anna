@@ -1,0 +1,68 @@
+name: Notes Studio Flutter visual evidence (PR-only)
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+    paths:
+      - "lib/src/screens/home_inbox_search.dart"
+      - "lib/src/diary/diary_components.dart"
+      - "test/notes_studio_visual_capture_test.dart"
+      - ".github/workflows/notes-studio-visual-evidence.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: notes-studio-visual-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  capture:
+    if: github.head_ref == 'feat/notes-studio-inbox-diary-visual-20261116'
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: Checkout PR head
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Setup Flutter
+        uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2.23.0
+        with:
+          flutter-version: "3.47.5"
+          channel: stable
+          cache: true
+      - name: Create pinned Flutter test skeletons
+        run: |
+          rm -rf android web /tmp/anna_notes_visual
+          flutter create --project-name agenda_per_anna --org com.riccardopinato --platforms=android,web /tmp/anna_notes_visual
+          cp -R /tmp/anna_notes_visual/android .
+          cp -R /tmp/anna_notes_visual/web .
+          python3 tool/prepare_android_platform.py
+          python3 tool/prepare_web_platform.py
+      - name: Install locked dependencies
+        run: flutter pub get --enforce-lockfile
+      - name: Prepare Material Icons
+        run: |
+          mkdir -p test/fixtures
+          cp "$(dirname "$(command -v flutter)")/cache/artifacts/material_fonts/MaterialIcons-Regular.otf" test/fixtures/
+      - name: Capture true empty Inbox
+        run: |
+          flutter test --update-goldens \
+            --dart-define=ANNA_NOTES_STUDIO_CAPTURE=true \
+            --dart-define=ANNA_NOTES_STUDIO_POPULATED=false \
+            test/notes_studio_visual_capture_test.dart
+      - name: Capture synthetic populated Inbox
+        run: |
+          flutter test --update-goldens \
+            --dart-define=ANNA_NOTES_STUDIO_CAPTURE=true \
+            --dart-define=ANNA_NOTES_STUDIO_POPULATED=true \
+            test/notes_studio_visual_capture_test.dart
+      - name: Upload real Flutter screenshots (no personal data)
+        if: success()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: anna-notes-studio-inbox-review-${{ github.sha }}
+          path: |
+            test/goldens/notes_studio_inbox_empty_390.png
+            test/goldens/notes_studio_inbox_populated_390.png
+          if-no-files-found: error
+          retention-days: 7

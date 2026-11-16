@@ -539,8 +539,21 @@ class _DiaryNoteEditorDialogState extends State<_DiaryNoteEditorDialog> {
   Widget build(BuildContext context) {
     final strings = AnnaStrings.of(context);
     final title = widget.editing ? strings.d3('editNote') : strings.d3('newNote');
+    final editorial = AnnaOrganicPastel.enabled(context);
     return AlertDialog(
-      title: Text(title),
+      backgroundColor: editorial ? AnnaOrganicPastel.surface(context) : null,
+      shape: editorial
+          ? RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(24),
+              side: BorderSide(color: AnnaEditorialColors.of(context).border),
+            )
+          : null,
+      title: Text(
+        title,
+        style: editorial
+            ? AnnaJournalTypography.editorial(context, size: 24)
+            : null,
+      ),
       content: TextField(
         controller: _controller,
         autofocus: true,
@@ -549,7 +562,22 @@ class _DiaryNoteEditorDialogState extends State<_DiaryNoteEditorDialog> {
         textCapitalization: TextCapitalization.sentences,
         decoration: InputDecoration(
           hintText: strings.d3('noteHint'),
-          border: const OutlineInputBorder(),
+          filled: editorial,
+          fillColor: editorial
+              ? Theme.of(context).colorScheme.surface
+              : null,
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(editorial ? 16 : 4),
+          ),
+          focusedBorder: editorial
+              ? OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(16),
+                  borderSide: BorderSide(
+                    color: Theme.of(context).colorScheme.primary,
+                    width: 1.5,
+                  ),
+                )
+              : null,
         ),
       ),
       actions: [
