@@ -17,7 +17,8 @@ concurrency:
 jobs:
   capture:
     if: github.head_ref == 'design/ds6-calendar-notebook-week-summary-20261115' ||
-      github.head_ref == 'integration/ios-journal-three-surfaces-20261116'
+      github.head_ref == 'integration/ios-journal-three-surfaces-20261116' ||
+      github.head_ref == 'design/organic-journal-home-parity-20261116'
     runs-on: ubuntu-latest
     timeout-minutes: 25
     steps:
