@@ -1023,6 +1023,7 @@ class _PlannerScreenState extends State<PlannerScreen> {
                   hideDetails: widget.store.preferences.hideHomeDetails,
                 ),
               ],
+            ],
         ];
 
         return Scaffold(
