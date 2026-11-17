@@ -18,6 +18,7 @@ void main() {
       (tester) async {
     await tester.pumpWidget(const MaterialApp(
       locale: Locale('it'),
+      supportedLocales: AnnaStrings.supportedLocales,
       home: Scaffold(body: Center(
         child: AnnaContextHelpButton(
           section: AnnaContextHelpSection.create,
@@ -53,6 +54,7 @@ void main() {
       await tester.pumpWidget(MaterialApp(
         key: ValueKey(locale.languageCode),
         locale: locale,
+        supportedLocales: AnnaStrings.supportedLocales,
         home: const AnnaContextHelpScreen(
           section: AnnaContextHelpSection.sharedSpace,
         ),
