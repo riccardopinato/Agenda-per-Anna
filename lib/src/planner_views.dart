@@ -592,16 +592,29 @@ class _CalendarScreenState extends State<CalendarScreen> {
                         : const TextStyle(fontWeight: FontWeight.w800),
                   ),
                 ),
-          floatingActionButton: widget.embedded ? null : FloatingActionButton.extended(
-            onPressed: () => _showQuickCapture(
-              context,
-              widget.store,
-              captureDate: selected,
-              entryPoint: UnifiedCaptureEntryPoint.month,
-            ),
-            icon: const Icon(Icons.add),
-            label: Text(strings.capture),
-          ),
+          floatingActionButton: widget.embedded
+              ? null
+              : editorial
+                  ? AnnaOrganicPastelAction(
+                      label: strings.capture,
+                      icon: Icons.add_rounded,
+                      onPressed: () => _showQuickCapture(
+                        context,
+                        widget.store,
+                        captureDate: selected,
+                        entryPoint: UnifiedCaptureEntryPoint.month,
+                      ),
+                    )
+                  : FloatingActionButton.extended(
+                      onPressed: () => _showQuickCapture(
+                        context,
+                        widget.store,
+                        captureDate: selected,
+                        entryPoint: UnifiedCaptureEntryPoint.month,
+                      ),
+                      icon: const Icon(Icons.add),
+                      label: Text(strings.capture),
+                    ),
           body: ListView(
             padding: const EdgeInsets.fromLTRB(14, 0, 14, 100),
             children: [
@@ -616,8 +629,8 @@ class _CalendarScreenState extends State<CalendarScreen> {
                     curve: Curves.easeOutCubic,
                     child: TableCalendar<UnifiedAgendaEntry>(
                     locale: AnnaStrings.intlLocale(context),
-                    daysOfWeekHeight: editorial ? 34 : 16,
-                    rowHeight: editorial ? 56 : 52,
+                    daysOfWeekHeight: editorial ? 30 : 16,
+                    rowHeight: editorial ? 50 : 52,
                     daysOfWeekStyle: editorial
                         ? DaysOfWeekStyle(
                             weekdayStyle: TextStyle(
@@ -739,7 +752,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
                     calendarStyle: editorial
                         ? CalendarStyle(
                             outsideDaysVisible: false,
-                            cellMargin: const EdgeInsets.all(4),
+                            cellMargin: const EdgeInsets.all(3),
                             markerSize: 5.5,
                             markerMargin: const EdgeInsets.symmetric(horizontal: 1),
                             defaultTextStyle: TextStyle(
@@ -843,7 +856,12 @@ class _CalendarScreenState extends State<CalendarScreen> {
                     ? AnnaEditorialColors.of(context).mutedInk
                     : null,
                 leading: const Icon(Icons.schedule_outlined),
-                title: Text(strings.hourlyTimeline),
+                title: Text(
+                  strings.hourlyTimeline,
+                  style: editorial
+                      ? AnnaJournalTypography.editorial(context, size: 18)
+                      : null,
+                ),
                 subtitle: const Text('07:00–22:00'),
                 children: [
                   for (var hour = 7; hour <= 22; hour++)
