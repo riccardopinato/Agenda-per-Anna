@@ -2769,6 +2769,7 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
       reactions = await cloud.listSharedEntryReactions(widget.space.id);
       members = await cloud.listSharedSpaceMembers(widget.space.id);
     } catch (_) {
+      if (!mounted) return;
       _message(AnnaStrings.of(context).d3('sharedLikesLoadFailed'));
       return;
     }
