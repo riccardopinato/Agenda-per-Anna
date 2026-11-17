@@ -4022,6 +4022,7 @@ class AgendaStore extends ChangeNotifier {
                     'name': space.name,
                     'role': space.role,
                     'created_at': space.createdAt.toIso8601String(),
+                    'avatar_path': space.avatarPath,
                   },
                 )
                 .toList(),
