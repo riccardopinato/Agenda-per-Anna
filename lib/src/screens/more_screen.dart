@@ -206,6 +206,23 @@ class MoreScreen extends StatelessWidget {
                   ? AnnaJournalTypography.editorial(context, size: 27)
                   : Theme.of(context).textTheme.headlineMedium,
             ),
+            actions: [
+              AnnaContextHelpButton(
+                section: AnnaContextHelpSection.more,
+                visibleTopicIds: [
+                  'moreSearch',
+                  'moreInbox',
+                  'moreFavorites',
+                  'moreExplore',
+                  if (prefs.isModuleEnabled(AppModule.privateVault))
+                    'moreVault',
+                  if (prefs.isModuleEnabled(AppModule.memories))
+                    'moreLetters',
+                  'moreData',
+                  'moreSettings',
+                ],
+              ),
+            ],
           ),
           body: Center(
             child: ConstrainedBox(
