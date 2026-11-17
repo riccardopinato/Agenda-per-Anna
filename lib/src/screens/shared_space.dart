@@ -75,6 +75,172 @@ bool sharedSpaceAliasWithinLimit(String value) {
   return name.isNotEmpty && name.characters.length <= 60;
 }
 
+/// Photo is a property of the shared space, not a personal profile or an
+/// ordinary diary photo. Only the owner can replace it for every member.
+String sharedSpaceAvatarCopy(String language, String key) {
+  const localized = <String, Map<String, String>>{
+    'it': {'title': 'Foto dello spazio', 'gallery': 'Scegli dalla galleria', 'camera': 'Scatta una foto', 'remove': 'Rimuovi foto', 'changed': 'Foto dello spazio aggiornata', 'failed': 'Impossibile aggiornare la foto dello spazio', 'format': 'Scegli un JPEG di massimo 512 KB', 'edit': 'Cambia la foto dello spazio'},
+    'en': {'title': 'Space photo', 'gallery': 'Choose from gallery', 'camera': 'Take a photo', 'remove': 'Remove photo', 'changed': 'Space photo updated', 'failed': 'Could not update the space photo', 'format': 'Choose a JPEG up to 512 KB', 'edit': 'Change space photo'},
+    'es': {'title': 'Foto del espacio', 'gallery': 'Elegir de galería', 'camera': 'Tomar una foto', 'remove': 'Eliminar foto', 'changed': 'Foto del espacio actualizada', 'failed': 'No se pudo actualizar la foto', 'format': 'Elige un JPEG de hasta 512 KB', 'edit': 'Cambiar foto del espacio'},
+    'fr': {'title': 'Photo de l’espace', 'gallery': 'Choisir dans la galerie', 'camera': 'Prendre une photo', 'remove': 'Supprimer la photo', 'changed': 'Photo de l’espace mise à jour', 'failed': 'Impossible de modifier la photo', 'format': 'Choisis un JPEG de 512 Ko maximum', 'edit': 'Changer la photo de l’espace'},
+    'pt': {'title': 'Foto do espaço', 'gallery': 'Escolher da galeria', 'camera': 'Tirar uma foto', 'remove': 'Remover foto', 'changed': 'Foto do espaço atualizada', 'failed': 'Não foi possível atualizar a foto', 'format': 'Escolhe um JPEG até 512 KB', 'edit': 'Alterar foto do espaço'},
+  };
+  return (localized[language] ?? localized['it']!)[key] ?? key;
+}
+
+/// Null = cancelled, empty = removed, nonempty = new server path.
+/// Never publish a DB pointer to an object that failed to upload.
+Future<String?> chooseAndSaveSharedSpaceAvatar(
+  BuildContext context,
+  SharedSpace space,
+) async {
+  final cloud = CloudSyncService.instance;
+  final accountId = cloud.userId;
+  if (!cloud.signedIn || accountId == null || space.ownerId != accountId) {
+    return null;
+  }
+  final language = AnnaStrings.of(context).languageCode;
+  final choice = await showModalBottomSheet<String>(
+    context: context,
+    showDragHandle: true,
+    builder: (sheetContext) => SafeArea(
+      child: Wrap(children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(20, 8, 20, 12),
+          child: Text(
+            sharedSpaceAvatarCopy(language, 'title'),
+            style: Theme.of(sheetContext).textTheme.titleLarge,
+          ),
+        ),
+        ListTile(
+          leading: const Icon(Icons.photo_library_outlined),
+          title: Text(sharedSpaceAvatarCopy(language, 'gallery')),
+          onTap: () => Navigator.pop(sheetContext, 'gallery'),
+        ),
+        ListTile(
+          leading: const Icon(Icons.photo_camera_outlined),
+          title: Text(sharedSpaceAvatarCopy(language, 'camera')),
+          onTap: () => Navigator.pop(sheetContext, 'camera'),
+        ),
+        if (space.avatarPath.isNotEmpty)
+          ListTile(
+            leading: const Icon(Icons.delete_outline),
+            title: Text(sharedSpaceAvatarCopy(language, 'remove')),
+            onTap: () => Navigator.pop(sheetContext, 'remove'),
+          ),
+      ]),
+    ),
+  );
+  if (choice == null || !context.mounted || cloud.userId != accountId) {
+    return null;
+  }
+  if (choice == 'remove') {
+    await cloud.setSharedSpaceAvatar(space.id, '');
+    if (space.avatarPath.isNotEmpty) {
+      try { await cloud.deleteSharedMedia(space.avatarPath); } catch (_) {}
+    }
+    return '';
+  }
+  final bytes = await _pickCompressedDiaryImageBytes(
+    choice == 'camera' ? ImageSource.camera : ImageSource.gallery,
+    maxSide: 512,
+    quality: 76,
+    fallbackMaxSide: 384,
+    fallbackQuality: 64,
+    maxEncodedBytes: 512 * 1024,
+  );
+  if (bytes == null || bytes.isEmpty) return null;
+  if (bytes.lengthInBytes > 512 * 1024 || bytes.length < 3 ||
+      bytes[0] != 0xFF || bytes[1] != 0xD8 || bytes[2] != 0xFF) {
+    throw const FormatException('shared_avatar_invalid_jpeg');
+  }
+  if (!context.mounted || cloud.userId != accountId) return null;
+  final uploaded = await cloud.uploadSharedSpaceAvatar(
+    spaceId: space.id,
+    jpegBytes: bytes,
+  );
+  try {
+    if (cloud.userId != accountId) throw StateError('account_changed');
+    await cloud.setSharedSpaceAvatar(space.id, uploaded);
+  } catch (_) {
+    try { await cloud.deleteSharedMedia(uploaded); } catch (_) {}
+    rethrow;
+  }
+  if (space.avatarPath.isNotEmpty && space.avatarPath != uploaded) {
+    try { await cloud.deleteSharedMedia(space.avatarPath); } catch (_) {}
+  }
+  return uploaded;
+}
+
+/// Authenticated download from the private bucket. Failed/unauthorized images
+/// fall back to a genuine journal icon, never a synthetic person's portrait.
+class SharedSpaceAvatar extends StatefulWidget {
+  final String avatarPath;
+  final String? accountId;
+  final bool organic;
+  final double size;
+  const SharedSpaceAvatar({
+    super.key,
+    required this.avatarPath,
+    required this.accountId,
+    this.organic = true,
+    this.size = 48,
+  });
+
+  @override
+  State<SharedSpaceAvatar> createState() => _SharedSpaceAvatarState();
+}
+
+class _SharedSpaceAvatarState extends State<SharedSpaceAvatar> {
+  late Future<Uint8List?> _photo = _load();
+
+  Future<Uint8List?> _load() async {
+    if (widget.avatarPath.isEmpty || widget.accountId == null) return null;
+    try {
+      return await CloudSyncService.instance.downloadSharedMedia(widget.avatarPath);
+    } catch (_) {
+      return null;
+    }
+  }
+
+  @override
+  void didUpdateWidget(covariant SharedSpaceAvatar oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.avatarPath != oldWidget.avatarPath ||
+        widget.accountId != oldWidget.accountId) {
+      _photo = _load();
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final fallback = widget.organic
+        ? const AnnaOrganicPastelGroupAvatar()
+        : const CircleAvatar(child: Icon(Icons.groups_outlined));
+    if (widget.avatarPath.isEmpty || widget.accountId == null) return fallback;
+    return SizedBox(
+      width: widget.size,
+      height: widget.size,
+      child: FutureBuilder<Uint8List?>(
+        future: _photo,
+        builder: (context, snapshot) {
+          final bytes = snapshot.data;
+          if (bytes == null || bytes.isEmpty) return fallback;
+          return ClipRRect(
+            borderRadius: BorderRadius.circular(widget.organic ? 16 : widget.size / 2),
+            child: Image.memory(
+              bytes, fit: BoxFit.cover,
+              width: widget.size, height: widget.size,
+              gaplessPlayback: true,
+              errorBuilder: (_, __, ___) => fallback,
+            ),
+          );
+        },
+      ),
+    );
+  }
+}
+
 class SharedSpaceHubScreen extends StatefulWidget {
   final AgendaStore store;
 
