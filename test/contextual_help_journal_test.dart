@@ -40,13 +40,22 @@ void main() {
       findsOneWidget,
     );
     expect(find.text('Data del contenuto'), findsWidgets);
+    // The journal guide is a lazily laid-out scrolling ListView. Exercise
+    // a real scroll rather than expecting offscreen topics in the tree.
+    final noteTopic =
+        find.byKey(const ValueKey<String>('context-help-topic-text'));
+    await tester.scrollUntilVisible(noteTopic, 220);
+    await tester.pumpAndSettle();
     expect(find.text('Nota di diario'), findsOneWidget);
-    expect(find.text('Fotografia'), findsOneWidget);
-    expect(find.text('Vision board'), findsNothing);
-
-    await tester.tap(find.byKey(const ValueKey<String>('context-help-topic-text')));
+    await tester.tap(noteTopic);
     await tester.pumpAndSettle();
     expect(find.textContaining('Scrivi un pensiero'), findsOneWidget);
+    final photoTopic =
+        find.byKey(const ValueKey<String>('context-help-topic-photo'));
+    await tester.scrollUntilVisible(photoTopic, 220);
+    await tester.pumpAndSettle();
+    expect(find.text('Fotografia'), findsOneWidget);
+    expect(find.text('Vision board'), findsNothing);
     // Guides explain, but have no save button or capture-writer callback.
     expect(find.byType(TextField), findsNothing);
     await tester.pageBack();
@@ -75,12 +84,13 @@ void main() {
         find.byKey(const ValueKey<String>('context-help-page-sharedSpace')),
         findsOneWidget,
       );
-      expect(find.byKey(
+      final interactions = find.byKey(
         const ValueKey<String>('context-help-topic-spaceInteractions'),
-      ), findsOneWidget);
-      await tester.tap(find.byKey(
-        const ValueKey<String>('context-help-topic-spaceInteractions'),
-      ));
+      );
+      await tester.scrollUntilVisible(interactions, 220);
+      await tester.pumpAndSettle();
+      expect(interactions, findsOneWidget);
+      await tester.tap(interactions);
       await tester.pumpAndSettle();
       expect(find.textContaining(
         locale.languageCode == 'it' ? 'Mi piace, commenti' : 'Likes, comments',
