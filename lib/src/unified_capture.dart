@@ -537,22 +537,45 @@ Future<void> showUnifiedCapture(
             AnnaStrings.intlLocale(sheetContext),
           ).format(targetDay));
           return SafeArea(
-            child: SingleChildScrollView(
+            child: ConstrainedBox(
+              constraints: BoxConstraints(
+                maxHeight: MediaQuery.sizeOf(sheetContext).height * 0.86,
+              ),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
+                  // Always visible while the action list scrolls.
                   ListTile(
+                    key: const ValueKey<String>('capture-help-pinned-header'),
                     title: Text(
                       strings.capture,
-                      style: const TextStyle(fontWeight: FontWeight.w800),
+                      style: AnnaOrganicPastel.enabled(sheetContext)
+                          ? AnnaJournalTypography.editorial(sheetContext, size: 24)
+                          : const TextStyle(fontWeight: FontWeight.w800),
                     ),
                     subtitle: Text(
                       entryPoint == UnifiedCaptureEntryPoint.inbox
                           ? strings.captureInboxDescription
                           : strings.captureDayDescription,
                     ),
+                    trailing: AnnaContextHelpButton(
+                      section: AnnaContextHelpSection.create,
+                      captureActions: [
+                        for (final entry in availableActions)
+                          AnnaContextHelpTopic(
+                            id: entry.action.name,
+                            icon: entry.icon,
+                            title: entry.title,
+                          ),
+                      ],
+                    ),
                   ),
-                  // DF-06/07: display the effective date and permit a
+                  Flexible(
+                    child: SingleChildScrollView(
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          // DF-06/07: display the effective date and permit a
                   // reversible override before any capture writer runs.
                   Semantics(
                     identifier: 'capture-effective-date',
@@ -673,6 +696,10 @@ Future<void> showUnifiedCapture(
                       child: TextButton(
                         onPressed: () => Navigator.pop(sheetContext),
                         child: Text(strings.close),
+                      ),
+                    ),
+                  ),
+                        ],
                       ),
                     ),
                   ),
