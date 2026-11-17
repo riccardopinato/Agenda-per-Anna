@@ -1509,9 +1509,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   /// Page-only chrome. Changing the paper wrapper never changes a settings
   /// writer, privacy control, entitlement check or account boundary.
-  Widget _journalSettingsCard({required Widget child}) =>
+  Widget _journalSettingsCard({
+    required Widget child,
+    AnnaEditorialSurfaceTone tone = AnnaEditorialSurfaceTone.regular,
+  }) =>
       AnnaOrganicPastel.enabled(context)
-          ? AnnaOrganicPaperSurface(child: child)
+          ? AnnaOrganicPaperSurface(tone: tone, child: child)
           : SimpleCard(child: child);
 
   @override
@@ -1546,18 +1549,36 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ),
           ),
           body: ListView(
-            padding: const EdgeInsets.fromLTRB(14, 8, 14, 50),
+            padding: const EdgeInsets.fromLTRB(16, 10, 16, 56),
             children: [
               _journalSettingsCard(
+                tone: AnnaEditorialSurfaceTone.featured,
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      strings.myAgendaSection,
-                      style: const TextStyle(
-                        fontWeight: FontWeight.w900,
-                        fontSize: 18,
-                      ),
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        if (AnnaOrganicPastel.enabled(context)) ...[
+                          const AnnaPastelIcon(
+                            icon: Icons.auto_stories_outlined,
+                            domain: AnnaVisualDomain.today,
+                          ),
+                          const SizedBox(width: 12),
+                        ],
+                        Expanded(
+                          child: Text(
+                            strings.myAgendaSection,
+                            style: AnnaOrganicPastel.enabled(context)
+                                ? AnnaJournalTypography.editorial(
+                                    context, size: 21)
+                                : const TextStyle(
+                                    fontWeight: FontWeight.w900,
+                                    fontSize: 18,
+                                  ),
+                          ),
+                        ),
+                      ],
                     ),
                     const SizedBox(height: 12),
                     TextField(
@@ -1572,14 +1593,65 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     const SizedBox(height: 10),
                     SizedBox(
                       width: double.infinity,
-                      child: FilledButton.tonal(
-                        onPressed: _saveName,
-                        child: Text(strings.saveName),
-                      ),
+                      child: AnnaOrganicPastel.enabled(context)
+                          ? AnnaOrganicPastelAction(
+                              label: strings.saveName,
+                              icon: Icons.check_rounded,
+                              onPressed: _saveName,
+                            )
+                          : FilledButton.tonal(
+                              onPressed: _saveName,
+                              child: Text(strings.saveName),
+                            ),
                     ),
                   ],
                 ),
               ),
+              // Shared journal navigation sheet; Classic keeps the original
+              // independent M3 cards and all destination callbacks unchanged.
+              if (AnnaOrganicPastel.enabled(context)) ...[
+                const SizedBox(height: 12),
+                AnnaOrganicPaperSurface(
+                  key: const ValueKey<String>('settings-organic-shortcuts'),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 14, vertical: 4,
+                  ),
+                  child: Column(
+                    children: [
+                      AnnaOrganicJournalRow(
+                        identifier: 'settings-personalization',
+                        icon: Icons.tune_outlined,
+                        domain: AnnaVisualDomain.people,
+                        title: strings.d3('personalizationTitle'),
+                        subtitle: strings.d3('personalizationSettingsSubtitle'),
+                        onTap: () => Navigator.push(
+                          context,
+                          MaterialPageRoute<void>(
+                            builder: (_) =>
+                                PersonalizationScreen(store: widget.store),
+                          ),
+                        ),
+                      ),
+                      const AnnaOrganicJournalRule(),
+                      AnnaOrganicJournalRow(
+                        identifier: 'settings-premium',
+                        icon: Icons.workspace_premium_outlined,
+                        domain: AnnaVisualDomain.memories,
+                        title: strings.premiumTitle,
+                        subtitle: PremiumEntitlementService.instance.paidEntitlement
+                            ? strings.premiumActiveDescription
+                            : strings.premiumSettingsDescription,
+                        onTap: () => Navigator.push(
+                          context,
+                          MaterialPageRoute<void>(
+                            builder: (_) => const PremiumScreen(),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ] else ...[
               const SizedBox(height: 12),
               _journalSettingsCard(
                 child: ListTile(
@@ -1631,6 +1703,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   ),
                 ),
               ),
+              ],
               const SizedBox(height: 12),
               _journalSettingsCard(
                 child: Column(
