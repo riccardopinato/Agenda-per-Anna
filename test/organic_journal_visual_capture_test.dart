@@ -107,6 +107,13 @@ void main() {
           findsOneWidget,
         );
         expect(find.text('Una passeggiata insieme nel parco'), findsWidgets);
+        // The true text-only memory must not occupy a photo-sized empty slot.
+        expect(
+          tester.getSize(find.byKey(
+            const ValueKey<String>('memories-editorial-featured'),
+          )).height,
+          lessThan(250),
+        );
       }
       final surface = find.descendant(
         of: find.byType(screenType),
