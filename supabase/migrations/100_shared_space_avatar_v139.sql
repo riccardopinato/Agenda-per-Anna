@@ -36,7 +36,7 @@ begin
     -- Prevent other members from uploading/updating/deleting the picture.
     if array_length(v_parts, 1) <> 2 or
        p_name !~ ('^' || v_space::text ||
-         '/__space_avatar/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\\.jpg$') then
+         '/__space_avatar/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}[.]jpg$') then
       return false;
     end if;
     return exists (
@@ -100,7 +100,7 @@ begin
   end if;
   if v_path <> '' and v_path !~
     ('^' || p_space_id::text ||
-    '/__space_avatar/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\\.jpg$') then
+    '/__space_avatar/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}[.]jpg$') then
     raise exception 'invalid_shared_space_avatar_path';
   end if;
   update public.shared_spaces
