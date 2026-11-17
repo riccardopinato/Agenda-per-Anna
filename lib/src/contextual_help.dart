@@ -346,10 +346,12 @@ class AnnaContextHelpButton extends StatelessWidget {
     super.key,
     required this.section,
     this.captureActions = const <AnnaContextHelpTopic>[],
+    this.visibleTopicIds,
   });
 
   final AnnaContextHelpSection section;
   final List<AnnaContextHelpTopic> captureActions;
+  final List<String>? visibleTopicIds;
 
   @override
   Widget build(BuildContext context) => IconButton(
@@ -361,6 +363,7 @@ class AnnaContextHelpButton extends StatelessWidget {
         builder: (_) => AnnaContextHelpScreen(
           section: section,
           captureActions: captureActions,
+          visibleTopicIds: visibleTopicIds,
         ),
       ),
     ),
@@ -372,10 +375,12 @@ class AnnaContextHelpScreen extends StatefulWidget {
     super.key,
     required this.section,
     this.captureActions = const <AnnaContextHelpTopic>[],
+    this.visibleTopicIds,
   });
 
   final AnnaContextHelpSection section;
   final List<AnnaContextHelpTopic> captureActions;
+  final List<String>? visibleTopicIds;
 
   @override
   State<AnnaContextHelpScreen> createState() => _AnnaContextHelpScreenState();
@@ -389,7 +394,7 @@ class _AnnaContextHelpScreenState extends State<AnnaContextHelpScreen> {
     super.initState();
     _expanded = widget.section == AnnaContextHelpSection.create
         ? 'date'
-        : _annaContextHelpSections[widget.section]!.first;
+        : (widget.visibleTopicIds ?? _annaContextHelpSections[widget.section]!).first;
   }
 
   List<AnnaContextHelpTopic> _visibleTopics(String language) {
@@ -406,7 +411,8 @@ class _AnnaContextHelpScreenState extends State<AnnaContextHelpScreen> {
       ];
     }
     return <AnnaContextHelpTopic>[
-      for (final id in _annaContextHelpSections[widget.section]!)
+      for (final id in widget.visibleTopicIds ??
+          _annaContextHelpSections[widget.section]!)
         AnnaContextHelpTopic(
           id: id,
           icon: _annaContextHelpIcons[id]!,
