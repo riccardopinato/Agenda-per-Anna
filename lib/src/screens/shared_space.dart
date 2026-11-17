@@ -2949,6 +2949,9 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
             } catch (_) {}
           }
         }
+        if (_avatarPath.isNotEmpty) {
+          try { await cloud.deleteSharedMedia(_avatarPath); } catch (_) {}
+        }
         await cloud.deleteSharedSpace(widget.space.id);
       } else {
         await CloudSyncService.instance.leaveSharedSpace(widget.space.id);
