@@ -170,8 +170,24 @@ void main() {
     await tester.drag(weekList, const Offset(0, -390));
     await tester.pump(const Duration(milliseconds: 450));
     if (calendarCapturePopulated) {
-      // Fail the capture if no actual synthetic fixture entered the viewport.
-      expect(find.text('Visita al museo'), findsWidgets);
+      // A text match in ListView's offscreen cache is insufficient: it must
+      // actually occupy visible pixels in the recorded screenshot.
+      final appointment = find.text('Visita al museo');
+      await tester.scrollUntilVisible(
+        appointment,
+        160,
+        scrollable: find.descendant(
+          of: find.byType(WeekScreen),
+          matching: find.byType(Scrollable),
+        ).first,
+        maxScrolls: 12,
+      );
+      await tester.pump(const Duration(milliseconds: 450));
+      expect(appointment, findsWidgets);
+      final viewport = tester.getRect(weekList);
+      final eventRect = tester.getRect(appointment.first);
+      expect(eventRect.top, greaterThanOrEqualTo(viewport.top));
+      expect(eventRect.bottom, lessThanOrEqualTo(viewport.bottom));
     }
     await expectLater(
       find.descendant(
