@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:uuid/uuid.dart';
 
 enum CloudConnectionState {
   disabled,
@@ -97,6 +98,8 @@ class SharedSpace {
   final String name;
   final String role;
   final DateTime createdAt;
+  /// Private storage path shared by space members; blank for the default icon.
+  final String avatarPath;
 
   const SharedSpace({
     required this.id,
@@ -104,6 +107,7 @@ class SharedSpace {
     required this.name,
     required this.role,
     required this.createdAt,
+    this.avatarPath = '',
   });
 
   bool get isOwner => role == 'owner';
@@ -117,6 +121,7 @@ class SharedSpace {
         ownerId: json['owner_id'] as String,
         name: json['name'] as String? ?? 'Spazio condiviso',
         role: role,
+        avatarPath: json['avatar_path']?.toString() ?? '',
         createdAt:
             DateTime.tryParse(json['created_at'] as String? ?? '') ??
                 DateTime.now(),
@@ -275,7 +280,8 @@ class SharedEntryReaction {
   final String entryId;
   final String userId;
   final String kind;
-  final DateTime createdAt;
+  // A missing/malformed server timestamp must never become an invented 'now'.
+  final DateTime? createdAt;
 
   const SharedEntryReaction({
     required this.spaceId,
@@ -291,8 +297,7 @@ class SharedEntryReaction {
         entryId: json['entry_id'] as String,
         userId: json['user_id'] as String,
         kind: json['kind'] as String? ?? 'heart',
-        createdAt: DateTime.tryParse(json['created_at'] as String? ?? '') ??
-            DateTime.now(),
+        createdAt: DateTime.tryParse(json['created_at']?.toString() ?? ''),
       );
 }
 
@@ -903,7 +908,7 @@ class CloudSyncService extends ChangeNotifier {
 
     final response = await client
         .from('shared_spaces')
-        .select('id,owner_id,name,created_at');
+        .select('id,owner_id,name,created_at,avatar_path');
 
     final spaces = (response as List)
         .map((row) => Map<String, dynamic>.from(row as Map))
@@ -944,6 +949,35 @@ class CloudSyncService extends ChangeNotifier {
       params: {'p_space_id': spaceId, 'p_name': trimmed},
     );
     return result.toString();
+  }
+
+  /// Upload an optimized JPEG to a reserved, owner-only folder. The caller
+  /// publishes the returned path via the guarded RPC only after upload passes.
+  Future<String> uploadSharedSpaceAvatar({
+    required String spaceId,
+    required Uint8List jpegBytes,
+  }) async {
+    if (jpegBytes.isEmpty || jpegBytes.length > 512 * 1024) {
+      throw ArgumentError('Shared-space avatar must be a JPEG under 512 KiB');
+    }
+    final client = _requireSignedInClient();
+    final path = '$spaceId/__space_avatar/${const Uuid().v4()}.jpg';
+    await client.storage.from('shared-media').uploadBinary(
+      path,
+      jpegBytes,
+      fileOptions: const FileOptions(contentType: 'image/jpeg', upsert: false),
+    );
+    return path;
+  }
+
+  /// Owner-only database RPC: never grant direct shared_spaces writes.
+  Future<String> setSharedSpaceAvatar(String spaceId, String avatarPath) async {
+    final client = _requireSignedInClient();
+    final result = await client.rpc('set_shared_space_avatar', params: {
+      'p_space_id': spaceId,
+      'p_avatar_path': avatarPath,
+    });
+    return result?.toString() ?? '';
   }
 
   Future<SpaceInviteDetails> createOrGetSpaceInvite(
@@ -1357,6 +1391,9 @@ class CloudSyncService extends ChangeNotifier {
     }
 
     final orphans = discovered
+        // Space profile photos are not diary entries. Never delete them
+        // through the shared-diary media maintenance UI.
+        .where((path) => !path.contains('/__space_avatar/'))
         .where((path) => !referencedPaths.contains(path))
         .toList(growable: false);
 

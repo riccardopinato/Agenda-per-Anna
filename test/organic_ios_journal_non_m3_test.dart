@@ -118,13 +118,17 @@ void main() {
     expect(more, contains('return Semantics(')); // Classic fallback.
     expect(settings, contains('return Semantics('));
     expect(primarySettings, contains('Widget _journalSettingsCard('));
-    expect(primarySettings, contains('AnnaOrganicPaperSurface(child: child)'));
+    expect(primarySettings, anyOf(
+      contains('AnnaOrganicPaperSurface(child: child)'),
+      contains('AnnaOrganicPaperSurface(tone: tone, child: child)'),
+    ));
     expect(primarySettings, contains('SimpleCard(child: child)'));
     expect(memories, contains('AnnaOrganicJournalRule()'));
     final memoriesScreen =
         File('lib/src/diary/diary_memories.dart').readAsStringSync();
     expect(memoriesScreen, contains('AnnaOrganicJournalYearPill('));
-    expect(memoriesScreen, contains('editorial ? 304 : 328'));
+    expect(memoriesScreen, contains('activeHasAuthenticVisual'));
+    expect(memoriesScreen, contains('MediaQuery.textScalerOf(context)'));
     expect(memoriesScreen, contains('itemBuilder: (context, position) => editorial'));
     expect(memoriesScreen, contains('child: _forYouHero(context, anniversary[position])'));
     expect(memories, contains('DiaryBlockType.photo && block.hasPhotoMedia'));

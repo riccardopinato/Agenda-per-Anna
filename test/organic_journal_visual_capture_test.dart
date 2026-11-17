@@ -107,6 +107,13 @@ void main() {
           findsOneWidget,
         );
         expect(find.text('Una passeggiata insieme nel parco'), findsWidgets);
+        // The true text-only memory must not occupy a photo-sized empty slot.
+        expect(
+          tester.getSize(find.byKey(
+            const ValueKey<String>('memories-editorial-featured'),
+          )).height,
+          lessThan(250),
+        );
       }
       final surface = find.descendant(
         of: find.byType(screenType),
@@ -136,6 +143,16 @@ void main() {
       screen: SettingsScreen(store: store),
       screenType: SettingsScreen,
       fileName: 'organic_journal_settings_profile_390.png',
+    );
+    await capture(
+      screen: ExploreScreen(store: store),
+      screenType: ExploreScreen,
+      fileName: 'organic_journal_explore_390.png',
+    );
+    await capture(
+      screen: PersonalizationScreen(store: store),
+      screenType: PersonalizationScreen,
+      fileName: 'organic_journal_personalization_390.png',
     );
     await capture(
       screen: DiaryMemoriesScreen(store: store),

@@ -75,6 +75,172 @@ bool sharedSpaceAliasWithinLimit(String value) {
   return name.isNotEmpty && name.characters.length <= 60;
 }
 
+/// Photo is a property of the shared space, not a personal profile or an
+/// ordinary diary photo. Only the owner can replace it for every member.
+String sharedSpaceAvatarCopy(String language, String key) {
+  const localized = <String, Map<String, String>>{
+    'it': {'title': 'Foto dello spazio', 'gallery': 'Scegli dalla galleria', 'camera': 'Scatta una foto', 'remove': 'Rimuovi foto', 'changed': 'Foto dello spazio aggiornata', 'failed': 'Impossibile aggiornare la foto dello spazio', 'format': 'Scegli un JPEG di massimo 512 KB', 'edit': 'Cambia la foto dello spazio'},
+    'en': {'title': 'Space photo', 'gallery': 'Choose from gallery', 'camera': 'Take a photo', 'remove': 'Remove photo', 'changed': 'Space photo updated', 'failed': 'Could not update the space photo', 'format': 'Choose a JPEG up to 512 KB', 'edit': 'Change space photo'},
+    'es': {'title': 'Foto del espacio', 'gallery': 'Elegir de galería', 'camera': 'Tomar una foto', 'remove': 'Eliminar foto', 'changed': 'Foto del espacio actualizada', 'failed': 'No se pudo actualizar la foto', 'format': 'Elige un JPEG de hasta 512 KB', 'edit': 'Cambiar foto del espacio'},
+    'fr': {'title': 'Photo de l’espace', 'gallery': 'Choisir dans la galerie', 'camera': 'Prendre une photo', 'remove': 'Supprimer la photo', 'changed': 'Photo de l’espace mise à jour', 'failed': 'Impossible de modifier la photo', 'format': 'Choisis un JPEG de 512 Ko maximum', 'edit': 'Changer la photo de l’espace'},
+    'pt': {'title': 'Foto do espaço', 'gallery': 'Escolher da galeria', 'camera': 'Tirar uma foto', 'remove': 'Remover foto', 'changed': 'Foto do espaço atualizada', 'failed': 'Não foi possível atualizar a foto', 'format': 'Escolhe um JPEG até 512 KB', 'edit': 'Alterar foto do espaço'},
+  };
+  return (localized[language] ?? localized['it']!)[key] ?? key;
+}
+
+/// Null = cancelled, empty = removed, nonempty = new server path.
+/// Never publish a DB pointer to an object that failed to upload.
+Future<String?> chooseAndSaveSharedSpaceAvatar(
+  BuildContext context,
+  SharedSpace space,
+) async {
+  final cloud = CloudSyncService.instance;
+  final accountId = cloud.userId;
+  if (!cloud.signedIn || accountId == null || space.ownerId != accountId) {
+    return null;
+  }
+  final language = AnnaStrings.of(context).languageCode;
+  final choice = await showModalBottomSheet<String>(
+    context: context,
+    showDragHandle: true,
+    builder: (sheetContext) => SafeArea(
+      child: Wrap(children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(20, 8, 20, 12),
+          child: Text(
+            sharedSpaceAvatarCopy(language, 'title'),
+            style: Theme.of(sheetContext).textTheme.titleLarge,
+          ),
+        ),
+        ListTile(
+          leading: const Icon(Icons.photo_library_outlined),
+          title: Text(sharedSpaceAvatarCopy(language, 'gallery')),
+          onTap: () => Navigator.pop(sheetContext, 'gallery'),
+        ),
+        ListTile(
+          leading: const Icon(Icons.photo_camera_outlined),
+          title: Text(sharedSpaceAvatarCopy(language, 'camera')),
+          onTap: () => Navigator.pop(sheetContext, 'camera'),
+        ),
+        if (space.avatarPath.isNotEmpty)
+          ListTile(
+            leading: const Icon(Icons.delete_outline),
+            title: Text(sharedSpaceAvatarCopy(language, 'remove')),
+            onTap: () => Navigator.pop(sheetContext, 'remove'),
+          ),
+      ]),
+    ),
+  );
+  if (choice == null || !context.mounted || cloud.userId != accountId) {
+    return null;
+  }
+  if (choice == 'remove') {
+    await cloud.setSharedSpaceAvatar(space.id, '');
+    if (space.avatarPath.isNotEmpty) {
+      try { await cloud.deleteSharedMedia(space.avatarPath); } catch (_) {}
+    }
+    return '';
+  }
+  final bytes = await _pickCompressedDiaryImageBytes(
+    choice == 'camera' ? ImageSource.camera : ImageSource.gallery,
+    maxSide: 512,
+    quality: 76,
+    fallbackMaxSide: 384,
+    fallbackQuality: 64,
+    maxEncodedBytes: 512 * 1024,
+  );
+  if (bytes == null || bytes.isEmpty) return null;
+  if (bytes.lengthInBytes > 512 * 1024 || bytes.length < 3 ||
+      bytes[0] != 0xFF || bytes[1] != 0xD8 || bytes[2] != 0xFF) {
+    throw const FormatException('shared_avatar_invalid_jpeg');
+  }
+  if (!context.mounted || cloud.userId != accountId) return null;
+  final uploaded = await cloud.uploadSharedSpaceAvatar(
+    spaceId: space.id,
+    jpegBytes: bytes,
+  );
+  try {
+    if (cloud.userId != accountId) throw StateError('account_changed');
+    await cloud.setSharedSpaceAvatar(space.id, uploaded);
+  } catch (_) {
+    try { await cloud.deleteSharedMedia(uploaded); } catch (_) {}
+    rethrow;
+  }
+  if (space.avatarPath.isNotEmpty && space.avatarPath != uploaded) {
+    try { await cloud.deleteSharedMedia(space.avatarPath); } catch (_) {}
+  }
+  return uploaded;
+}
+
+/// Authenticated download from the private bucket. Failed/unauthorized images
+/// fall back to a genuine journal icon, never a synthetic person's portrait.
+class SharedSpaceAvatar extends StatefulWidget {
+  final String avatarPath;
+  final String? accountId;
+  final bool organic;
+  final double size;
+  const SharedSpaceAvatar({
+    super.key,
+    required this.avatarPath,
+    required this.accountId,
+    this.organic = true,
+    this.size = 48,
+  });
+
+  @override
+  State<SharedSpaceAvatar> createState() => _SharedSpaceAvatarState();
+}
+
+class _SharedSpaceAvatarState extends State<SharedSpaceAvatar> {
+  late Future<Uint8List?> _photo = _load();
+
+  Future<Uint8List?> _load() async {
+    if (widget.avatarPath.isEmpty || widget.accountId == null) return null;
+    try {
+      return await CloudSyncService.instance.downloadSharedMedia(widget.avatarPath);
+    } catch (_) {
+      return null;
+    }
+  }
+
+  @override
+  void didUpdateWidget(covariant SharedSpaceAvatar oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.avatarPath != oldWidget.avatarPath ||
+        widget.accountId != oldWidget.accountId) {
+      _photo = _load();
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final fallback = widget.organic
+        ? const AnnaOrganicPastelGroupAvatar()
+        : const CircleAvatar(child: Icon(Icons.groups_outlined));
+    if (widget.avatarPath.isEmpty || widget.accountId == null) return fallback;
+    return SizedBox(
+      width: widget.size,
+      height: widget.size,
+      child: FutureBuilder<Uint8List?>(
+        future: _photo,
+        builder: (context, snapshot) {
+          final bytes = snapshot.data;
+          if (bytes == null || bytes.isEmpty) return fallback;
+          return ClipRRect(
+            borderRadius: BorderRadius.circular(widget.organic ? 16 : widget.size / 2),
+            child: Image.memory(
+              bytes, fit: BoxFit.cover,
+              width: widget.size, height: widget.size,
+              gaplessPlayback: true,
+              errorBuilder: (_, __, ___) => fallback,
+            ),
+          );
+        },
+      ),
+    );
+  }
+}
+
 class SharedSpaceHubScreen extends StatefulWidget {
   final AgendaStore store;
 
@@ -88,6 +254,7 @@ class _SharedSpaceHubScreenState extends State<SharedSpaceHubScreen> {
   bool loading = true;
   List<SharedSpace> spaces = const [];
   final Map<String, int> pendingBySpace = {};
+  final Set<String> _avatarBusy = <String>{};
   Map<String, String> _memberAliases = {};
   String? _memberAliasScope;
 
@@ -110,6 +277,7 @@ class _SharedSpaceHubScreenState extends State<SharedSpaceHubScreen> {
         name: _displayName(source),
         role: source.role,
         createdAt: source.createdAt,
+        avatarPath: source.avatarPath,
       );
 
   Future<void> _loadMemberAliases() async {
@@ -184,6 +352,7 @@ class _SharedSpaceHubScreenState extends State<SharedSpaceHubScreen> {
                 'name': space.name,
                 'role': space.role,
                 'created_at': space.createdAt.toIso8601String(),
+                'avatar_path': space.avatarPath,
               },
             )
             .toList(),
@@ -353,6 +522,27 @@ class _SharedSpaceHubScreenState extends State<SharedSpaceHubScreen> {
       if (!mounted) return;
       setState(() => loading = false);
       _message(sharedSpaceRenameCopy(language, 'failed'));
+    }
+  }
+
+  Future<void> _changeSpaceAvatar(SharedSpace space) async {
+    if (_avatarBusy.contains(space.id) || !CloudSyncService.instance.signedIn ||
+        !sharedSpaceCanRename(space, CloudSyncService.instance.userId)) {
+      return;
+    }
+    final language = AnnaStrings.of(context).languageCode;
+    setState(() => _avatarBusy.add(space.id));
+    try {
+      final updated = await chooseAndSaveSharedSpaceAvatar(context, space);
+      if (!mounted || updated == null) return;
+      await _reload();
+      if (mounted) _message(sharedSpaceAvatarCopy(language, 'changed'));
+    } on FormatException {
+      if (mounted) _message(sharedSpaceAvatarCopy(language, 'format'));
+    } catch (_) {
+      if (mounted) _message(sharedSpaceAvatarCopy(language, 'failed'));
+    } finally {
+      if (mounted) setState(() => _avatarBusy.remove(space.id));
     }
   }
 
@@ -731,6 +921,18 @@ class _SharedSpaceHubScreenState extends State<SharedSpaceHubScreen> {
                                   title: _displayName(space),
                                   detail: detail,
                                   unread: unread,
+                                  avatar: SharedSpaceAvatar(
+                                    key: ValueKey<String>('shared-avatar-${space.id}'),
+                                    avatarPath: space.avatarPath,
+                                    accountId: cloud.userId,
+                                  ),
+                                  photoKey: 'shared-space-photo-${space.id}',
+                                  photoTooltip: sharedSpaceAvatarCopy(
+                                    AnnaStrings.of(context).languageCode, 'edit',
+                                  ),
+                                  onChangePhoto: sharedSpaceCanRename(space, cloud.userId) &&
+                                          !_avatarBusy.contains(space.id)
+                                      ? () => _changeSpaceAvatar(space) : null,
                                   renameKey: 'shared-rename-${space.id}',
                                   renameTooltip: sharedSpaceRenameCopy(
                                     AnnaStrings.of(context).languageCode,
@@ -788,18 +990,12 @@ class _SharedSpaceHubScreenState extends State<SharedSpaceHubScreen> {
                                           vertical: 7,
                                         )
                                       : null,
-                                  leading: editorial
-                                      ? const AnnaOrganicPastelGroupAvatar()
-                                      : CircleAvatar(
-                                          child: Icon(
-                                            sharedSpaceCanRename(
-                                              space,
-                                              cloud.userId,
-                                            )
-                                                ? Icons.admin_panel_settings_outlined
-                                                : Icons.groups_outlined,
-                                          ),
-                                        ),
+                                  leading: SharedSpaceAvatar(
+                                    key: ValueKey<String>('shared-avatar-classic-${space.id}'),
+                                    avatarPath: space.avatarPath,
+                                    accountId: cloud.userId,
+                                    organic: false,
+                                  ),
                                   title: Text(
                                     _displayName(space),
                                     style: TextStyle(
@@ -841,6 +1037,16 @@ class _SharedSpaceHubScreenState extends State<SharedSpaceHubScreen> {
                                           child: const Icon(
                                             Icons.notifications_none,
                                           ),
+                                        ),
+                                      if (sharedSpaceCanRename(space, cloud.userId))
+                                        IconButton(
+                                          key: ValueKey<String>('shared-space-photo-${space.id}'),
+                                          tooltip: sharedSpaceAvatarCopy(
+                                            AnnaStrings.of(context).languageCode, 'edit',
+                                          ),
+                                          onPressed: _avatarBusy.contains(space.id)
+                                              ? null : () => _changeSpaceAvatar(space),
+                                          icon: const Icon(Icons.photo_camera_outlined),
                                         ),
                                       IconButton(
                                         key: ValueKey<String>(
@@ -921,6 +1127,8 @@ class SharedSpaceScreen extends StatefulWidget {
 
 class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
   bool loading = true;
+  late String _avatarPath;
+  bool _avatarBusy = false;
   bool realtimeConnected = false;
   List<SharedEntry> entries = [];
   Set<String> pendingIds = {};
@@ -947,6 +1155,7 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
   void initState() {
     super.initState();
     _seenConflictCount = widget.store.sharedConflictCount;
+    _avatarPath = widget.space.avatarPath;
     _loadCachedThenRefresh();
     _bindRealtime();
   }
@@ -1264,6 +1473,22 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
       lastRefreshAt = DateTime.now();
       await cloud.markSharedSpaceSeen(widget.space.id);
       if (refreshInteractions) {
+        // The space header is not a realtime shared_entry. Explicit refresh
+        // must also pull its owner-managed photo from canonical membership data.
+        final accountId = cloud.userId;
+        try {
+          final refreshedSpaces = await cloud.listSharedSpaces();
+          for (final currentSpace in refreshedSpaces) {
+            if (currentSpace.id != widget.space.id) continue;
+            if (mounted && cloud.userId == accountId &&
+                currentSpace.avatarPath != _avatarPath) {
+              setState(() => _avatarPath = currentSpace.avatarPath);
+            }
+            break;
+          }
+        } catch (_) {
+          // A failed avatar refresh must not discard shared content.
+        }
         await _loadInteractions();
       }
       await widget.store.markSharedSpaceRead(widget.space.id);
@@ -2530,6 +2755,37 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
     );
   }
 
+  Future<void> _changeCurrentSpaceAvatar() async {
+    if (_avatarBusy ||
+        !sharedSpaceCanRename(widget.space, CloudSyncService.instance.userId)) {
+      return;
+    }
+    final language = AnnaStrings.of(context).languageCode;
+    setState(() => _avatarBusy = true);
+    try {
+      final updated = await chooseAndSaveSharedSpaceAvatar(
+        context,
+        SharedSpace(
+          id: widget.space.id,
+          ownerId: widget.space.ownerId,
+          name: widget.space.name,
+          role: widget.space.role,
+          createdAt: widget.space.createdAt,
+          avatarPath: _avatarPath,
+        ),
+      );
+      if (!mounted || updated == null) return;
+      setState(() => _avatarPath = updated);
+      _message(sharedSpaceAvatarCopy(language, 'changed'));
+    } on FormatException {
+      if (mounted) _message(sharedSpaceAvatarCopy(language, 'format'));
+    } catch (_) {
+      if (mounted) _message(sharedSpaceAvatarCopy(language, 'failed'));
+    } finally {
+      if (mounted) setState(() => _avatarBusy = false);
+    }
+  }
+
   Future<void> _openMembers() async {
     final strings = AnnaStrings.of(context);
     List<SharedSpaceMember> members;
@@ -2711,6 +2967,9 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
             } catch (_) {}
           }
         }
+        if (_avatarPath.isNotEmpty) {
+          try { await cloud.deleteSharedMedia(_avatarPath); } catch (_) {}
+        }
         await cloud.deleteSharedSpace(widget.space.id);
       } else {
         await CloudSyncService.instance.leaveSharedSpace(widget.space.id);
@@ -2749,6 +3008,147 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
     );
   }
 
+  /// Load authoritative, per-user heart records on demand. A local heart
+  /// count is not enough to know *when* a reaction was committed.
+  Future<void> _openHeartDetails(SharedEntry entry) async {
+    final accountScope = widget.store.activeAccountId;
+    final cloud = CloudSyncService.instance;
+    if (accountScope == null || !cloud.signedIn) {
+      _message(AnnaStrings.of(context).d3('sharedLikesOnlineRequired'));
+      return;
+    }
+
+    late final List<SharedEntryReaction> reactions;
+    late final List<SharedSpaceMember> members;
+    try {
+      // Confirm any pending reaction first; never invent a local timestamp.
+      await widget.store.flushSharedInteractionOperations(
+        spaceId: widget.space.id,
+      );
+      reactions = await cloud.listSharedEntryReactions(widget.space.id);
+      members = await cloud.listSharedSpaceMembers(widget.space.id);
+    } catch (_) {
+      if (!mounted) return;
+      _message(AnnaStrings.of(context).d3('sharedLikesLoadFailed'));
+      return;
+    }
+    if (!mounted) return;
+    if (widget.store.activeAccountId != accountScope) return;
+
+    final confirmed = reactions
+        .where((reaction) =>
+            reaction.spaceId == widget.space.id &&
+            reaction.entryId == entry.id &&
+            reaction.kind == 'heart')
+        .toList()
+      ..sort((a, b) {
+        if (a.createdAt == null) return b.createdAt == null ? 0 : 1;
+        if (b.createdAt == null) return -1;
+        return b.createdAt!.compareTo(a.createdAt!);
+      });
+    final names = <String, String>{
+      for (final member in members) member.userId: member.displayName.trim(),
+    };
+
+    await showModalBottomSheet<void>(
+      context: context,
+      showDragHandle: true,
+      isScrollControlled: true,
+      builder: (sheetContext) {
+        final strings = AnnaStrings.of(sheetContext);
+        final palette = AnnaEditorialColors.of(sheetContext);
+        final organic = AnnaOrganicPastel.enabled(sheetContext);
+        return SafeArea(
+          top: false,
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(20, 8, 20, 20),
+            child: SizedBox(
+              key: ValueKey<String>('shared-likes-sheet-${entry.id}'),
+              height: MediaQuery.sizeOf(sheetContext).height * 0.58,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    strings.d3('sharedLikesDetailsTitle'),
+                    style: organic
+                        ? AnnaJournalTypography.editorial(sheetContext, size: 24)
+                        : Theme.of(sheetContext).textTheme.titleLarge,
+                  ),
+                  const SizedBox(height: 5),
+                  Text(
+                    entry.title.trim().isEmpty
+                        ? strings.sharedEntryTypeLabel(entry.type)
+                        : entry.title.trim(),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(color: palette.mutedInk),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(strings.d3Format('sharedLikesCount', {
+                    'count': confirmed.length,
+                  })),
+                  const SizedBox(height: 14),
+                  Expanded(
+                    child: confirmed.isEmpty
+                        ? Center(
+                            child: Text(strings.d3('sharedLikesNoLongerPresent')),
+                          )
+                        : ListView.separated(
+                            itemCount: confirmed.length,
+                            separatorBuilder: (_, __) => const SizedBox(height: 8),
+                            itemBuilder: (context, index) {
+                              final reaction = confirmed[index];
+                              final isMine = reaction.userId == accountScope;
+                              final memberName = names[reaction.userId] ?? '';
+                              final name = isMine
+                                  ? strings.d3('mem_you')
+                                  : memberName.isEmpty
+                                      ? strings.d3('otherPerson')
+                                      : memberName;
+                              final created = reaction.createdAt;
+                              final timestamp = created == null
+                                  ? strings.d3('sharedLikesTimeUnknown')
+                                  : DateFormat(
+                                      'd MMM yyyy · HH:mm',
+                                      AnnaStrings.intlLocale(sheetContext),
+                                    ).format(created.toLocal());
+                              return Padding(
+                                padding: const EdgeInsets.symmetric(vertical: 6),
+                                child: Row(
+                                  children: [
+                                    CircleAvatar(
+                                      backgroundColor: palette.quiet,
+                                      child: Text(
+                                        name.isEmpty ? '?' : name.substring(0, 1).toUpperCase(),
+                                        style: TextStyle(color: palette.ink),
+                                      ),
+                                    ),
+                                    const SizedBox(width: 12),
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        children: [
+                                          Text(name, style: const TextStyle(fontWeight: FontWeight.w700)),
+                                          const SizedBox(height: 3),
+                                          Text(timestamp, style: TextStyle(color: palette.mutedInk)),
+                                        ],
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              );
+                            },
+                          ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
   Widget _sharedInteractionFooter(
     SharedEntry entry, {
     required Set<String> hearts,
@@ -2758,7 +3158,11 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
   }) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(8, 2, 8, 4),
-      child: Row(
+      child: Wrap(
+        spacing: 2,
+        runSpacing: 0,
+        alignment: WrapAlignment.spaceBetween,
+        crossAxisAlignment: WrapCrossAlignment.center,
         children: [
           TextButton.icon(
             onPressed:
@@ -2770,8 +3174,14 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
                   : null,
               size: 20,
             ),
-            label: Text(hearts.isEmpty ? AnnaStrings.of(context).d3('sharedLike') : '${hearts.length}'),
+            label: Text(AnnaStrings.of(context).d3('sharedLike')),
           ),
+          if (hearts.isNotEmpty)
+            TextButton(
+              key: ValueKey<String>('shared-likes-detail-${entry.id}'),
+              onPressed: () => _openHeartDetails(entry),
+              child: Text('${hearts.length}'),
+            ),
           TextButton.icon(
             onPressed: () => _openComments(entry),
             icon: const Icon(Icons.chat_bubble_outline, size: 19),
@@ -2779,11 +3189,11 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
               comments.isEmpty ? AnnaStrings.of(context).d3CommentAction : '${comments.length}',
             ),
           ),
-          const Spacer(),
           if (seen != null)
             Padding(
               padding: const EdgeInsets.only(right: 6),
               child: Row(
+                mainAxisSize: MainAxisSize.min,
                 children: [
                   const Icon(Icons.done_all, size: 17),
                   const SizedBox(width: 4),
@@ -3161,10 +3571,14 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
       ]),
       builder: (context, _) => Scaffold(
         appBar: AppBar(
+          // Keep the title legible beside existing actions at 320dp.
+          // The larger space portrait lives in the first journal page below.
           title: Text(
             widget.space.name,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
             style: AnnaEditorialTodayMode.enabled.value
-                ? AnnaJournalTypography.editorial(context, size: 25)
+                ? AnnaJournalTypography.editorial(context, size: 23)
                 : const TextStyle(fontWeight: FontWeight.w900),
           ),
           actions: [
@@ -3193,8 +3607,17 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
               onSelected: (value) {
                 if (value == 'refresh') _refresh();
                 if (value == 'leave') _leaveOrDelete();
+                if (value == 'avatar') unawaited(_changeCurrentSpaceAvatar());
               },
               itemBuilder: (_) => [
+                if (sharedSpaceCanRename(widget.space, CloudSyncService.instance.userId))
+                  PopupMenuItem(
+                    value: 'avatar',
+                    enabled: !_avatarBusy,
+                    child: Text(sharedSpaceAvatarCopy(
+                      AnnaStrings.of(context).languageCode, 'edit',
+                    )),
+                  ),
                 PopupMenuItem(
                   value: 'refresh',
                   child: Text(AnnaStrings.of(context).d3('refresh')),
@@ -3232,8 +3655,14 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
                 ),
                 child: Row(
                   children: [
-                    const Icon(Icons.favorite_outline),
-                    const SizedBox(width: 10),
+                    SharedSpaceAvatar(
+                      key: ValueKey<String>('shared-space-header-avatar-${widget.space.id}'),
+                      avatarPath: _avatarPath,
+                      accountId: CloudSyncService.instance.userId,
+                      organic: AnnaOrganicPastel.enabled(context),
+                      size: 56,
+                    ),
+                    const SizedBox(width: 12),
                     Expanded(
                       child: Text(
                         '${AnnaStrings.of(context).d3('sharedEverythingHere')} '
