@@ -527,7 +527,9 @@ class _SharedSpaceHubScreenState extends State<SharedSpaceHubScreen> {
 
   Future<void> _changeSpaceAvatar(SharedSpace space) async {
     if (_avatarBusy.contains(space.id) || !CloudSyncService.instance.signedIn ||
-        !sharedSpaceCanRename(space, CloudSyncService.instance.userId)) return;
+        !sharedSpaceCanRename(space, CloudSyncService.instance.userId)) {
+      return;
+    }
     final language = AnnaStrings.of(context).languageCode;
     setState(() => _avatarBusy.add(space.id));
     try {
@@ -920,11 +922,11 @@ class _SharedSpaceHubScreenState extends State<SharedSpaceHubScreen> {
                                   detail: detail,
                                   unread: unread,
                                   avatar: SharedSpaceAvatar(
-                                    key: ValueKey<String>('shared-avatar-' + space.id),
+                                    key: ValueKey<String>('shared-avatar-${space.id}'),
                                     avatarPath: space.avatarPath,
                                     accountId: cloud.userId,
                                   ),
-                                  photoKey: 'shared-space-photo-' + space.id,
+                                  photoKey: 'shared-space-photo-${space.id}',
                                   photoTooltip: sharedSpaceAvatarCopy(
                                     AnnaStrings.of(context).languageCode, 'edit',
                                   ),
@@ -989,7 +991,7 @@ class _SharedSpaceHubScreenState extends State<SharedSpaceHubScreen> {
                                         )
                                       : null,
                                   leading: SharedSpaceAvatar(
-                                    key: ValueKey<String>('shared-avatar-classic-' + space.id),
+                                    key: ValueKey<String>('shared-avatar-classic-${space.id}'),
                                     avatarPath: space.avatarPath,
                                     accountId: cloud.userId,
                                     organic: false,
@@ -1038,7 +1040,7 @@ class _SharedSpaceHubScreenState extends State<SharedSpaceHubScreen> {
                                         ),
                                       if (sharedSpaceCanRename(space, cloud.userId))
                                         IconButton(
-                                          key: ValueKey<String>('shared-space-photo-' + space.id),
+                                          key: ValueKey<String>('shared-space-photo-${space.id}'),
                                           tooltip: sharedSpaceAvatarCopy(
                                             AnnaStrings.of(context).languageCode, 'edit',
                                           ),
