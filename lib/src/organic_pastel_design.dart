@@ -918,6 +918,10 @@ class AnnaOrganicPastelGroupRow extends StatelessWidget {
   final VoidCallback? onRename;
   final String renameTooltip;
   final String renameKey;
+  final Widget? avatar;
+  final VoidCallback? onChangePhoto;
+  final String? photoTooltip;
+  final String? photoKey;
 
   const AnnaOrganicPastelGroupRow({
     super.key,
@@ -928,6 +932,10 @@ class AnnaOrganicPastelGroupRow extends StatelessWidget {
     required this.onRename,
     required this.renameTooltip,
     required this.renameKey,
+    this.avatar,
+    this.onChangePhoto,
+    this.photoTooltip,
+    this.photoKey,
   });
 
   @override
@@ -943,7 +951,7 @@ class AnnaOrganicPastelGroupRow extends StatelessWidget {
         padding: const EdgeInsets.fromLTRB(10, 9, 7, 9),
         child: Row(
           children: [
-            const AnnaOrganicPastelGroupAvatar(),
+            avatar ?? const AnnaOrganicPastelGroupAvatar(),
             const SizedBox(width: 12),
             Expanded(
               child: Column(
@@ -991,6 +999,14 @@ class AnnaOrganicPastelGroupRow extends StatelessWidget {
                     fontWeight: FontWeight.w800,
                   ),
                 ),
+              ),
+            if (onChangePhoto != null)
+              IconButton(
+                key: ValueKey<String>(photoKey ?? 'shared-space-photo-edit'),
+                tooltip: photoTooltip,
+                onPressed: onChangePhoto,
+                icon: Icon(Icons.photo_camera_outlined, size: 20, color: muted),
+                constraints: const BoxConstraints(minHeight: 48, minWidth: 48),
               ),
             IconButton(
               key: ValueKey<String>(renameKey),
