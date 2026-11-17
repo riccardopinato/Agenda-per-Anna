@@ -2897,7 +2897,11 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
   }) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(8, 2, 8, 4),
-      child: Row(
+      child: Wrap(
+        spacing: 2,
+        runSpacing: 0,
+        alignment: WrapAlignment.spaceBetween,
+        crossAxisAlignment: WrapCrossAlignment.center,
         children: [
           TextButton.icon(
             onPressed:
@@ -2924,7 +2928,6 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
               comments.isEmpty ? AnnaStrings.of(context).d3CommentAction : '${comments.length}',
             ),
           ),
-          const Spacer(),
           if (seen != null)
             Padding(
               padding: const EdgeInsets.only(right: 6),
