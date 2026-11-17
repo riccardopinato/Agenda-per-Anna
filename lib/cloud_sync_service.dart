@@ -275,7 +275,8 @@ class SharedEntryReaction {
   final String entryId;
   final String userId;
   final String kind;
-  final DateTime createdAt;
+  // A missing/malformed server timestamp must never become an invented 'now'.
+  final DateTime? createdAt;
 
   const SharedEntryReaction({
     required this.spaceId,
@@ -291,8 +292,7 @@ class SharedEntryReaction {
         entryId: json['entry_id'] as String,
         userId: json['user_id'] as String,
         kind: json['kind'] as String? ?? 'heart',
-        createdAt: DateTime.tryParse(json['created_at'] as String? ?? '') ??
-            DateTime.now(),
+        createdAt: DateTime.tryParse(json['created_at']?.toString() ?? ''),
       );
 }
 
