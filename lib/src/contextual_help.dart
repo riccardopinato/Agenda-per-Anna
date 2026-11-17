@@ -384,6 +384,14 @@ class AnnaContextHelpScreen extends StatefulWidget {
 class _AnnaContextHelpScreenState extends State<AnnaContextHelpScreen> {
   String? _expanded;
 
+  @override
+  void initState() {
+    super.initState();
+    _expanded = widget.section == AnnaContextHelpSection.create
+        ? 'date'
+        : _annaContextHelpSections[widget.section]!.first;
+  }
+
   List<AnnaContextHelpTopic> _visibleTopics(String language) {
     if (widget.section == AnnaContextHelpSection.create) {
       // A hidden Vision Board (or any future disabled action) is not
@@ -539,11 +547,6 @@ class _AnnaContextHelpScreenState extends State<AnnaContextHelpScreen> {
     final topics = _visibleTopics(language);
     final organic = AnnaOrganicPastel.enabled(context);
     final palette = AnnaEditorialColors.of(context);
-    final expanded = _expanded ?? (topics.isEmpty ? null : topics.first.id);
-    if (_expanded == null && expanded != null) {
-      // Only the initial state is expanded. No persistence or mutations.
-      _expanded = expanded;
-    }
     return Scaffold(
       backgroundColor: organic ? palette.canvas : null,
       appBar: AppBar(
