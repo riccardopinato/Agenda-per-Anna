@@ -201,10 +201,6 @@ class ExploreScreen extends StatelessWidget {
           return ListView(
             padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
             children: [
-              if (organic) ...[
-                AnnaEditorialSectionHeading(title: strings.v100Explore),
-                const SizedBox(height: 8),
-              ],
               Text(
                 strings.v100ExploreIntro,
                 style: organic
