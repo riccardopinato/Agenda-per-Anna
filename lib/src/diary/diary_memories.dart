@@ -1394,6 +1394,12 @@ class _DiaryMemoriesScreenState extends State<DiaryMemoriesScreen> {
     final monthName = _cap(DateFormat(
       'MMMM', AnnaStrings.intlLocale(context)).format(now));
     final activeRecord = anniversary.isEmpty ? null : anniversary[_anniversaryIndex];
+    // Only actual photo media or an authentic sketch earns a tall hero.
+    // Text and voice keep their full canonical content in a tighter notebook.
+    final activeHasAuthenticVisual = activeRecord != null &&
+        (activeRecord.block.type == DiaryBlockType.sketch ||
+            (activeRecord.block.type == DiaryBlockType.photo &&
+                activeRecord.block.hasPhotoMedia));
     final activeYear = activeRecord?.date.year;
     final years = anniversary.map((entry) => entry.date.year).toSet().toList()
       ..sort((a, b) => b.compareTo(a));
@@ -1523,7 +1529,12 @@ class _DiaryMemoriesScreenState extends State<DiaryMemoriesScreen> {
                       ),
                     ),
                     SizedBox(
-                      height: editorial ? 304 : 328,
+                      height: editorial
+                          ? (!activeHasAuthenticVisual &&
+                                  MediaQuery.textScalerOf(context).scale(1) <= 1.3
+                              ? 244
+                              : 304)
+                          : 328,
                       child: PageView.builder(
                         key: const ValueKey<String>('ui5-anniversary-carousel'),
                         controller: _anniversaryPager,
