@@ -2749,6 +2749,145 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
     );
   }
 
+  /// Load authoritative, per-user heart records on demand. A local heart
+  /// count is not enough to know *when* a reaction was committed.
+  Future<void> _openHeartDetails(SharedEntry entry) async {
+    final accountScope = widget.store.activeAccountId;
+    final cloud = CloudSyncService.instance;
+    if (accountScope == null || !cloud.signedIn) {
+      _message(AnnaStrings.of(context).d3('sharedLikesOnlineRequired'));
+      return;
+    }
+
+    late final List<SharedEntryReaction> reactions;
+    late final List<SharedSpaceMember> members;
+    try {
+      // Confirm any pending reaction first; never invent a local timestamp.
+      await widget.store.flushSharedInteractionOperations(
+        spaceId: widget.space.id,
+      );
+      reactions = await cloud.listSharedEntryReactions(widget.space.id);
+      members = await cloud.listSharedSpaceMembers(widget.space.id);
+    } catch (_) {
+      _message(AnnaStrings.of(context).d3('sharedLikesLoadFailed'));
+      return;
+    }
+    if (!mounted || widget.store.activeAccountId != accountScope) return;
+
+    final confirmed = reactions
+        .where((reaction) =>
+            reaction.spaceId == widget.space.id &&
+            reaction.entryId == entry.id &&
+            reaction.kind == 'heart')
+        .toList()
+      ..sort((a, b) {
+        if (a.createdAt == null) return b.createdAt == null ? 0 : 1;
+        if (b.createdAt == null) return -1;
+        return b.createdAt!.compareTo(a.createdAt!);
+      });
+    final names = <String, String>{
+      for (final member in members) member.userId: member.displayName.trim(),
+    };
+
+    await showModalBottomSheet<void>(
+      context: context,
+      showDragHandle: true,
+      isScrollControlled: true,
+      builder: (sheetContext) {
+        final strings = AnnaStrings.of(sheetContext);
+        final palette = AnnaEditorialColors.of(sheetContext);
+        final organic = AnnaOrganicPastel.enabled(sheetContext);
+        return SafeArea(
+          top: false,
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(20, 8, 20, 20),
+            child: SizedBox(
+              key: ValueKey<String>('shared-likes-sheet-${entry.id}'),
+              height: MediaQuery.sizeOf(sheetContext).height * 0.58,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    strings.d3('sharedLikesDetailsTitle'),
+                    style: organic
+                        ? AnnaJournalTypography.editorial(sheetContext, size: 24)
+                        : Theme.of(sheetContext).textTheme.titleLarge,
+                  ),
+                  const SizedBox(height: 5),
+                  Text(
+                    entry.title.trim().isEmpty
+                        ? strings.sharedEntryTypeLabel(entry.type)
+                        : entry.title.trim(),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(color: palette.mutedInk),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(strings.d3Format('sharedLikesCount', {
+                    'count': confirmed.length,
+                  })),
+                  const SizedBox(height: 14),
+                  Expanded(
+                    child: confirmed.isEmpty
+                        ? Center(
+                            child: Text(strings.d3('sharedLikesNoLongerPresent')),
+                          )
+                        : ListView.separated(
+                            itemCount: confirmed.length,
+                            separatorBuilder: (_, __) => const SizedBox(height: 8),
+                            itemBuilder: (context, index) {
+                              final reaction = confirmed[index];
+                              final isMine = reaction.userId == accountScope;
+                              final memberName = names[reaction.userId] ?? '';
+                              final name = isMine
+                                  ? strings.d3('mem_you')
+                                  : memberName.isEmpty
+                                      ? strings.d3('otherPerson')
+                                      : memberName;
+                              final created = reaction.createdAt;
+                              final timestamp = created == null
+                                  ? strings.d3('sharedLikesTimeUnknown')
+                                  : DateFormat(
+                                      'd MMM yyyy · HH:mm',
+                                      AnnaStrings.intlLocale(sheetContext),
+                                    ).format(created.toLocal());
+                              return Padding(
+                                padding: const EdgeInsets.symmetric(vertical: 6),
+                                child: Row(
+                                  children: [
+                                    CircleAvatar(
+                                      backgroundColor: palette.quiet,
+                                      child: Text(
+                                        name.isEmpty ? '?' : name.substring(0, 1).toUpperCase(),
+                                        style: TextStyle(color: palette.ink),
+                                      ),
+                                    ),
+                                    const SizedBox(width: 12),
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        children: [
+                                          Text(name, style: const TextStyle(fontWeight: FontWeight.w700)),
+                                          const SizedBox(height: 3),
+                                          Text(timestamp, style: TextStyle(color: palette.mutedInk)),
+                                        ],
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              );
+                            },
+                          ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
   Widget _sharedInteractionFooter(
     SharedEntry entry, {
     required Set<String> hearts,
@@ -2770,8 +2909,14 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
                   : null,
               size: 20,
             ),
-            label: Text(hearts.isEmpty ? AnnaStrings.of(context).d3('sharedLike') : '${hearts.length}'),
+            label: Text(AnnaStrings.of(context).d3('sharedLike')),
           ),
+          if (hearts.isNotEmpty)
+            TextButton(
+              key: ValueKey<String>('shared-likes-detail-${entry.id}'),
+              onPressed: () => _openHeartDetails(entry),
+              child: Text('${hearts.length}'),
+            ),
           TextButton.icon(
             onPressed: () => _openComments(entry),
             icon: const Icon(Icons.chat_bubble_outline, size: 19),
