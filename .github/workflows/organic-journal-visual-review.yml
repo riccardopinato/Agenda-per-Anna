@@ -6,6 +6,7 @@ on:
       - "lib/**"
       - "test/organic_journal_visual_capture_test.dart"
       - ".github/workflows/organic-journal-visual-review.yml"
+      - "docs/qa/IMPECCABLE_VISUAL_PILOT_20261117.md"
 
 permissions:
   contents: read
@@ -23,7 +24,8 @@ jobs:
       github.head_ref == 'feat/v138-more-settings-essential-20261116' ||
       github.head_ref == 'design/settings-journal-profile-grouping-20261117' ||
       github.head_ref == 'design/memories-compact-authentic-notebook-20261117' ||
-      github.head_ref == 'design/secondary-journal-wave1-20261117'
+      github.head_ref == 'design/secondary-journal-wave1-20261117' ||
+      github.head_ref == 'docs/visual-qa-impeccable-pilot-20261117'
     runs-on: ubuntu-latest
     timeout-minutes: 25
     steps:
