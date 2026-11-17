@@ -44,20 +44,78 @@ class PersonalizationScreen extends StatelessWidget {
         AppModule.ecosystem => Icons.hub_outlined,
       };
 
+  // A single presentation adapter keeps Classic and the canonical store
+  // behavior intact while bringing nested settings into Today's journal.
+  Widget _section(BuildContext context, {required Widget child}) =>
+      AnnaOrganicPastel.enabled(context)
+          ? AnnaOrganicPaperSurface(child: child)
+          : SimpleCard(child: child);
+
+  Future<void> _setEditorialMode(BuildContext context, bool enabled, String language) async {
+    final saved = await AnnaEditorialTodayMode.setEnabled(enabled);
+    if (!saved && context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text(annaEditorialTodaySaveFailure(language)),
+      ));
+    }
+  }
+
+  Widget _journalPreset(BuildContext context, {
+    required String label,
+    required bool selected,
+    required VoidCallback onTap,
+    required Key key,
+  }) {
+    final colors = AnnaEditorialColors.of(context);
+    return InkWell(
+      key: key,
+      borderRadius: BorderRadius.circular(15),
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 180),
+        constraints: const BoxConstraints(minHeight: 48),
+        padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 12),
+        decoration: BoxDecoration(
+          color: selected ? colors.quiet : colors.card,
+          borderRadius: BorderRadius.circular(15),
+          border: Border.all(
+            color: selected ? colors.accent : colors.border,
+            width: selected ? 1.3 : 1,
+          ),
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            fontFamily: AnnaJournalTypography.uiFamily,
+            fontWeight: FontWeight.w700,
+            color: colors.ink,
+          ),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return AnimatedBuilder(
-      animation: store.settingsRevision,
+      animation: Listenable.merge([store.settingsRevision, AnnaEditorialTodayMode.enabled]),
       builder: (context, _) {
         final strings = AnnaStrings.of(context);
         final prefs = store.preferences;
+        final organic = AnnaOrganicPastel.enabled(context);
         unawaited(AnnaEditorialTodayMode.ensureLoaded());
 
         return Scaffold(
+          backgroundColor: organic ? AnnaEditorialColors.of(context).canvas : null,
           appBar: AppBar(
+            backgroundColor: organic ? AnnaEditorialColors.of(context).canvas : null,
+            surfaceTintColor: organic ? Colors.transparent : null,
+            scrolledUnderElevation: 0,
             title: Text(
               strings.d3('personalizationTitle'),
-              style: const TextStyle(fontWeight: FontWeight.w900),
+              style: organic
+                  ? AnnaJournalTypography.editorial(context, size: 27)
+                  : const TextStyle(fontWeight: FontWeight.w900),
             ),
           ),
           body: ListView(
@@ -68,8 +126,22 @@ class PersonalizationScreen extends StatelessWidget {
                 style: Theme.of(context).textTheme.bodyLarge,
               ),
               const SizedBox(height: 16),
-              SimpleCard(
-                child: ListTile(
+              _section(context,
+                child: organic
+                    ? AnnaOrganicJournalRow(
+                        identifier: 'personalization-appearance',
+                        icon: Icons.palette_outlined,
+                        domain: AnnaVisualDomain.people,
+                        title: strings.d3('appearanceColorsTitle'),
+                        subtitle: strings.d3('appearanceColorsIntro'),
+                        onTap: () => Navigator.push(
+                          context,
+                          MaterialPageRoute<void>(
+                            builder: (_) => AppearanceColorsScreen(store: store),
+                          ),
+                        ),
+                      )
+                    : ListTile(
                   key: const ValueKey<String>('personalization-appearance'),
                   contentPadding: EdgeInsets.zero,
                   leading: const AnnaPastelIcon(
@@ -88,32 +160,41 @@ class PersonalizationScreen extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 12),
-              SimpleCard(
+              _section(context,
                 child: AnimatedBuilder(
                   animation: AnnaEditorialTodayMode.enabled,
-                  builder: (context, _) => SwitchListTile.adaptive(
-                    key: const ValueKey<String>('personalization-editorial-home'),
-                    contentPadding: EdgeInsets.zero,
-                    secondary: const Icon(Icons.auto_awesome_outlined),
-                    title: const Text('Home Editorial Hybrid'),
-                    subtitle: Text(annaEditorialTodayModeDescription(
-                      strings.languageCode,
-                    )),
-                    value: AnnaEditorialTodayMode.enabled.value,
-                    onChanged: (enabled) async {
-                      final saved = await AnnaEditorialTodayMode.setEnabled(enabled);
-                      if (!saved && context.mounted) {
-                        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                          content: Text(annaEditorialTodaySaveFailure(
+                  builder: (context, _) => organic
+                      ? AnnaOrganicJournalRow(
+                          identifier: 'personalization-editorial-home',
+                          icon: Icons.auto_awesome_outlined,
+                          domain: AnnaVisualDomain.today,
+                          title: 'Home Editorial Hybrid',
+                          subtitle: annaEditorialTodayModeDescription(strings.languageCode),
+                          onTap: () => unawaited(_setEditorialMode(
+                            context, !AnnaEditorialTodayMode.enabled.value,
                             strings.languageCode,
                           )),
-                        ));
-                      }
-                    },
-                  ),
+                          trailing: Switch.adaptive(
+                            value: AnnaEditorialTodayMode.enabled.value,
+                            onChanged: (value) => unawaited(_setEditorialMode(
+                              context, value, strings.languageCode,
+                            )),
+                          ),
+                        )
+                      : SwitchListTile.adaptive(
+                          key: const ValueKey<String>('personalization-editorial-home'),
+                          contentPadding: EdgeInsets.zero,
+                          secondary: const Icon(Icons.auto_awesome_outlined),
+                          title: const Text('Home Editorial Hybrid'),
+                          subtitle: Text(annaEditorialTodayModeDescription(strings.languageCode)),
+                          value: AnnaEditorialTodayMode.enabled.value,
+                          onChanged: (value) => unawaited(_setEditorialMode(
+                            context, value, strings.languageCode,
+                          )),
+                        ),
                 ),
               ),
-              SimpleCard(
+              _section(context,
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -187,8 +268,7 @@ class PersonalizationScreen extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 12),
-              const SizedBox(height: 12),
-              SimpleCard(
+              _section(context,
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -230,7 +310,15 @@ class PersonalizationScreen extends StatelessWidget {
                             onTap: () =>
                                 store.applyPersonalizationPreset(preset),
                             excludeSemantics: true,
-                            child: ChoiceChip(
+                            child: organic
+                                ? _journalPreset(
+                                    context,
+                                    key: ValueKey('personalization-preset-${preset.name}'),
+                                    label: _presetLabel(strings, preset),
+                                    selected: prefs.personalizationPreset == preset,
+                                    onTap: () => store.applyPersonalizationPreset(preset),
+                                  )
+                                : ChoiceChip(
                               key: ValueKey(
                                 'personalization-preset-${preset.name}',
                               ),
@@ -259,7 +347,7 @@ class PersonalizationScreen extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 12),
-              SimpleCard(
+              _section(context,
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -308,7 +396,25 @@ class PersonalizationScreen extends StatelessWidget {
                             onTap: () =>
                                 store.setModuleEnabled(module, !enabled),
                             excludeSemantics: true,
-                            child: SwitchListTile.adaptive(
+                            child: organic
+                                ? KeyedSubtree(
+                                    key: ValueKey('personalization-module-${module.name}'),
+                                    child: AnnaOrganicJournalRow(
+                                      identifier: 'personalization_module_${module.name}',
+                                      icon: _moduleIcon(module),
+                                      domain: module == AppModule.privateVault
+                                          ? AnnaVisualDomain.vault
+                                          : AnnaVisualDomain.people,
+                                      title: _moduleTitle(strings, module),
+                                      subtitle: hint,
+                                      onTap: () => store.setModuleEnabled(module, !enabled),
+                                      trailing: Switch.adaptive(
+                                        value: enabled,
+                                        onChanged: (value) => store.setModuleEnabled(module, value),
+                                      ),
+                                    ),
+                                  )
+                                : SwitchListTile.adaptive(
                               key: ValueKey(
                                 'personalization-module-${module.name}',
                               ),
@@ -324,7 +430,9 @@ class PersonalizationScreen extends StatelessWidget {
                         },
                       ),
                       if (module != AppModule.values.last)
-                        const Divider(height: 1),
+                        organic
+                            ? const AnnaOrganicJournalRule()
+                            : const Divider(height: 1),
                     ],
                   ],
                 ),
@@ -334,7 +442,19 @@ class PersonalizationScreen extends StatelessWidget {
                 identifier: 'personalization_restore_complete',
                 button: true,
                 label: strings.d3('personalizationRestoreComplete'),
-                child: OutlinedButton.icon(
+                child: organic
+                    ? KeyedSubtree(
+                        key: const ValueKey('personalization-restore-complete'),
+                        child: AnnaOrganicPastelAction(
+                          label: strings.d3('personalizationRestoreComplete'),
+                          icon: Icons.restore_outlined,
+                          subtle: true,
+                          onPressed: () => store.applyPersonalizationPreset(
+                            PersonalizationPreset.complete,
+                          ),
+                        ),
+                      )
+                    : OutlinedButton.icon(
                   key: const ValueKey('personalization-restore-complete'),
                   onPressed: () => store.applyPersonalizationPreset(
                     PersonalizationPreset.complete,
