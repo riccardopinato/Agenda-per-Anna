@@ -435,6 +435,7 @@ class _AnnaContextHelpScreenState extends State<AnnaContextHelpScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Semantics(
+          key: ValueKey<String>('context-help-topic-${topic.id}'),
           identifier: 'context-help-topic-${topic.id}',
           button: true,
           child: InkWell(
