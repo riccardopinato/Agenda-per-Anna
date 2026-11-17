@@ -1125,6 +1125,8 @@ class SharedSpaceScreen extends StatefulWidget {
 
 class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
   bool loading = true;
+  late String _avatarPath;
+  bool _avatarBusy = false;
   bool realtimeConnected = false;
   List<SharedEntry> entries = [];
   Set<String> pendingIds = {};
@@ -1151,6 +1153,7 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
   void initState() {
     super.initState();
     _seenConflictCount = widget.store.sharedConflictCount;
+    _avatarPath = widget.space.avatarPath;
     _loadCachedThenRefresh();
     _bindRealtime();
   }
@@ -2734,6 +2737,37 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
     );
   }
 
+  Future<void> _changeCurrentSpaceAvatar() async {
+    if (_avatarBusy ||
+        !sharedSpaceCanRename(widget.space, CloudSyncService.instance.userId)) {
+      return;
+    }
+    final language = AnnaStrings.of(context).languageCode;
+    setState(() => _avatarBusy = true);
+    try {
+      final updated = await chooseAndSaveSharedSpaceAvatar(
+        context,
+        SharedSpace(
+          id: widget.space.id,
+          ownerId: widget.space.ownerId,
+          name: widget.space.name,
+          role: widget.space.role,
+          createdAt: widget.space.createdAt,
+          avatarPath: _avatarPath,
+        ),
+      );
+      if (!mounted || updated == null) return;
+      setState(() => _avatarPath = updated);
+      _message(sharedSpaceAvatarCopy(language, 'changed'));
+    } on FormatException {
+      if (mounted) _message(sharedSpaceAvatarCopy(language, 'format'));
+    } catch (_) {
+      if (mounted) _message(sharedSpaceAvatarCopy(language, 'failed'));
+    } finally {
+      if (mounted) setState(() => _avatarBusy = false);
+    }
+  }
+
   Future<void> _openMembers() async {
     final strings = AnnaStrings.of(context);
     List<SharedSpaceMember> members;
@@ -3516,11 +3550,26 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
       ]),
       builder: (context, _) => Scaffold(
         appBar: AppBar(
-          title: Text(
-            widget.space.name,
-            style: AnnaEditorialTodayMode.enabled.value
-                ? AnnaJournalTypography.editorial(context, size: 25)
-                : const TextStyle(fontWeight: FontWeight.w900),
+          title: Row(
+            children: [
+              SharedSpaceAvatar(
+                avatarPath: _avatarPath,
+                accountId: CloudSyncService.instance.userId,
+                organic: AnnaOrganicPastel.enabled(context),
+                size: 40,
+              ),
+              const SizedBox(width: 9),
+              Expanded(
+                child: Text(
+                  widget.space.name,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: AnnaEditorialTodayMode.enabled.value
+                      ? AnnaJournalTypography.editorial(context, size: 23)
+                      : const TextStyle(fontWeight: FontWeight.w900),
+                ),
+              ),
+            ],
           ),
           actions: [
             IconButton(
@@ -3548,8 +3597,17 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
               onSelected: (value) {
                 if (value == 'refresh') _refresh();
                 if (value == 'leave') _leaveOrDelete();
+                if (value == 'avatar') unawaited(_changeCurrentSpaceAvatar());
               },
               itemBuilder: (_) => [
+                if (sharedSpaceCanRename(widget.space, CloudSyncService.instance.userId))
+                  PopupMenuItem(
+                    value: 'avatar',
+                    enabled: !_avatarBusy,
+                    child: Text(sharedSpaceAvatarCopy(
+                      AnnaStrings.of(context).languageCode, 'edit',
+                    )),
+                  ),
                 PopupMenuItem(
                   value: 'refresh',
                   child: Text(AnnaStrings.of(context).d3('refresh')),
