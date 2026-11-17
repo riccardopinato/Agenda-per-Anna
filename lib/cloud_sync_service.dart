@@ -961,7 +961,7 @@ class CloudSyncService extends ChangeNotifier {
       throw ArgumentError('Shared-space avatar must be a JPEG under 512 KiB');
     }
     final client = _requireSignedInClient();
-    final path = '${spaceId}/__space_avatar/${const Uuid().v4()}.jpg';
+    final path = '$spaceId/__space_avatar/${const Uuid().v4()}.jpg';
     await client.storage.from('shared-media').uploadBinary(
       path,
       jpegBytes,
