@@ -3571,26 +3571,15 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
       ]),
       builder: (context, _) => Scaffold(
         appBar: AppBar(
-          title: Row(
-            children: [
-              SharedSpaceAvatar(
-                avatarPath: _avatarPath,
-                accountId: CloudSyncService.instance.userId,
-                organic: AnnaOrganicPastel.enabled(context),
-                size: 40,
-              ),
-              const SizedBox(width: 9),
-              Expanded(
-                child: Text(
-                  widget.space.name,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: AnnaEditorialTodayMode.enabled.value
-                      ? AnnaJournalTypography.editorial(context, size: 23)
-                      : const TextStyle(fontWeight: FontWeight.w900),
-                ),
-              ),
-            ],
+          // Keep the title legible beside existing actions at 320dp.
+          // The larger space portrait lives in the first journal page below.
+          title: Text(
+            widget.space.name,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: AnnaEditorialTodayMode.enabled.value
+                ? AnnaJournalTypography.editorial(context, size: 23)
+                : const TextStyle(fontWeight: FontWeight.w900),
           ),
           actions: [
             IconButton(
@@ -3666,8 +3655,14 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
                 ),
                 child: Row(
                   children: [
-                    const Icon(Icons.favorite_outline),
-                    const SizedBox(width: 10),
+                    SharedSpaceAvatar(
+                      key: ValueKey<String>('shared-space-header-avatar-${widget.space.id}'),
+                      avatarPath: _avatarPath,
+                      accountId: CloudSyncService.instance.userId,
+                      organic: AnnaOrganicPastel.enabled(context),
+                      size: 56,
+                    ),
+                    const SizedBox(width: 12),
                     Expanded(
                       child: Text(
                         '${AnnaStrings.of(context).d3('sharedEverythingHere')} '
