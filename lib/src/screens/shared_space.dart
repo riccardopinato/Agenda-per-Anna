@@ -254,6 +254,7 @@ class _SharedSpaceHubScreenState extends State<SharedSpaceHubScreen> {
   bool loading = true;
   List<SharedSpace> spaces = const [];
   final Map<String, int> pendingBySpace = {};
+  final Set<String> _avatarBusy = <String>{};
   Map<String, String> _memberAliases = {};
   String? _memberAliasScope;
 
@@ -276,6 +277,7 @@ class _SharedSpaceHubScreenState extends State<SharedSpaceHubScreen> {
         name: _displayName(source),
         role: source.role,
         createdAt: source.createdAt,
+        avatarPath: source.avatarPath,
       );
 
   Future<void> _loadMemberAliases() async {
@@ -350,6 +352,7 @@ class _SharedSpaceHubScreenState extends State<SharedSpaceHubScreen> {
                 'name': space.name,
                 'role': space.role,
                 'created_at': space.createdAt.toIso8601String(),
+                'avatar_path': space.avatarPath,
               },
             )
             .toList(),
@@ -519,6 +522,25 @@ class _SharedSpaceHubScreenState extends State<SharedSpaceHubScreen> {
       if (!mounted) return;
       setState(() => loading = false);
       _message(sharedSpaceRenameCopy(language, 'failed'));
+    }
+  }
+
+  Future<void> _changeSpaceAvatar(SharedSpace space) async {
+    if (_avatarBusy.contains(space.id) || !CloudSyncService.instance.signedIn ||
+        !sharedSpaceCanRename(space, CloudSyncService.instance.userId)) return;
+    final language = AnnaStrings.of(context).languageCode;
+    setState(() => _avatarBusy.add(space.id));
+    try {
+      final updated = await chooseAndSaveSharedSpaceAvatar(context, space);
+      if (!mounted || updated == null) return;
+      await _reload();
+      if (mounted) _message(sharedSpaceAvatarCopy(language, 'changed'));
+    } on FormatException {
+      if (mounted) _message(sharedSpaceAvatarCopy(language, 'format'));
+    } catch (_) {
+      if (mounted) _message(sharedSpaceAvatarCopy(language, 'failed'));
+    } finally {
+      if (mounted) setState(() => _avatarBusy.remove(space.id));
     }
   }
 
@@ -897,6 +919,18 @@ class _SharedSpaceHubScreenState extends State<SharedSpaceHubScreen> {
                                   title: _displayName(space),
                                   detail: detail,
                                   unread: unread,
+                                  avatar: SharedSpaceAvatar(
+                                    key: ValueKey<String>('shared-avatar-' + space.id),
+                                    avatarPath: space.avatarPath,
+                                    accountId: cloud.userId,
+                                  ),
+                                  photoKey: 'shared-space-photo-' + space.id,
+                                  photoTooltip: sharedSpaceAvatarCopy(
+                                    AnnaStrings.of(context).languageCode, 'edit',
+                                  ),
+                                  onChangePhoto: sharedSpaceCanRename(space, cloud.userId) &&
+                                          !_avatarBusy.contains(space.id)
+                                      ? () => _changeSpaceAvatar(space) : null,
                                   renameKey: 'shared-rename-${space.id}',
                                   renameTooltip: sharedSpaceRenameCopy(
                                     AnnaStrings.of(context).languageCode,
@@ -954,18 +988,12 @@ class _SharedSpaceHubScreenState extends State<SharedSpaceHubScreen> {
                                           vertical: 7,
                                         )
                                       : null,
-                                  leading: editorial
-                                      ? const AnnaOrganicPastelGroupAvatar()
-                                      : CircleAvatar(
-                                          child: Icon(
-                                            sharedSpaceCanRename(
-                                              space,
-                                              cloud.userId,
-                                            )
-                                                ? Icons.admin_panel_settings_outlined
-                                                : Icons.groups_outlined,
-                                          ),
-                                        ),
+                                  leading: SharedSpaceAvatar(
+                                    key: ValueKey<String>('shared-avatar-classic-' + space.id),
+                                    avatarPath: space.avatarPath,
+                                    accountId: cloud.userId,
+                                    organic: false,
+                                  ),
                                   title: Text(
                                     _displayName(space),
                                     style: TextStyle(
@@ -1007,6 +1035,16 @@ class _SharedSpaceHubScreenState extends State<SharedSpaceHubScreen> {
                                           child: const Icon(
                                             Icons.notifications_none,
                                           ),
+                                        ),
+                                      if (sharedSpaceCanRename(space, cloud.userId))
+                                        IconButton(
+                                          key: ValueKey<String>('shared-space-photo-' + space.id),
+                                          tooltip: sharedSpaceAvatarCopy(
+                                            AnnaStrings.of(context).languageCode, 'edit',
+                                          ),
+                                          onPressed: _avatarBusy.contains(space.id)
+                                              ? null : () => _changeSpaceAvatar(space),
+                                          icon: const Icon(Icons.photo_camera_outlined),
                                         ),
                                       IconButton(
                                         key: ValueKey<String>(
