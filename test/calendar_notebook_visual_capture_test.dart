@@ -158,15 +158,21 @@ void main() {
       ),
     );
 
-    // Verify the editorial seven-day cards after scrolling past week notes.
-    await tester.drag(
-      find.descendant(
-        of: find.byType(WeekScreen),
-        matching: find.byType(ListView),
-      ).first,
-      const Offset(0, -600),
-    );
+    // Scroll beyond the overview AND into the selected day's event card.
+    // A single -600 drag used to leave the data-rich day below the fold,
+    // producing byte-identical empty/populated evidence for the seven days.
+    final weekList = find.descendant(
+      of: find.byType(WeekScreen),
+      matching: find.byType(ListView),
+    ).first;
+    await tester.drag(weekList, const Offset(0, -600));
     await tester.pump(const Duration(milliseconds: 450));
+    await tester.drag(weekList, const Offset(0, -390));
+    await tester.pump(const Duration(milliseconds: 450));
+    if (calendarCapturePopulated) {
+      // Fail the capture if no actual synthetic fixture entered the viewport.
+      expect(find.text('Visita al museo'), findsWidgets);
+    }
     await expectLater(
       find.descendant(
         of: find.byType(WeekScreen),
