@@ -107,7 +107,12 @@ extension _EditorialMemoriesPresentation on _DiaryMemoriesScreenState {
                   ),
                 )
               : SizedBox(
-                  height: 282,
+                  // A pure note is not an artificial photo placeholder.
+                  // Keep the original tall size for accessibility text scaling.
+                  height: AnnaOrganicPastel.enabled(context) &&
+                          MediaQuery.textScalerOf(context).scale(1) <= 1.3
+                      ? 228
+                      : 282,
                   child: SingleChildScrollView(
                     padding: const EdgeInsets.all(23),
                     child: Column(
