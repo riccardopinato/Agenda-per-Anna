@@ -1473,6 +1473,22 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
       lastRefreshAt = DateTime.now();
       await cloud.markSharedSpaceSeen(widget.space.id);
       if (refreshInteractions) {
+        // The space header is not a realtime shared_entry. Explicit refresh
+        // must also pull its owner-managed photo from canonical membership data.
+        final accountId = cloud.userId;
+        try {
+          final refreshedSpaces = await cloud.listSharedSpaces();
+          for (final currentSpace in refreshedSpaces) {
+            if (currentSpace.id != widget.space.id) continue;
+            if (mounted && cloud.userId == accountId &&
+                currentSpace.avatarPath != _avatarPath) {
+              setState(() => _avatarPath = currentSpace.avatarPath);
+            }
+            break;
+          }
+        } catch (_) {
+          // A failed avatar refresh must not discard shared content.
+        }
         await _loadInteractions();
       }
       await widget.store.markSharedSpaceRead(widget.space.id);
