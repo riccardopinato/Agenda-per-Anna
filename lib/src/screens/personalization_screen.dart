@@ -164,7 +164,16 @@ class PersonalizationScreen extends StatelessWidget {
                 child: AnimatedBuilder(
                   animation: AnnaEditorialTodayMode.enabled,
                   builder: (context, _) => organic
-                      ? AnnaOrganicJournalRow(
+                      ? Semantics(
+                          container: true,
+                          toggled: AnnaEditorialTodayMode.enabled.value,
+                          label: 'Home Editorial Hybrid',
+                          onTap: () => unawaited(_setEditorialMode(
+                            context, !AnnaEditorialTodayMode.enabled.value,
+                            strings.languageCode,
+                          )),
+                          excludeSemantics: true,
+                          child: AnnaOrganicJournalRow(
                           identifier: 'personalization-editorial-home',
                           icon: Icons.auto_awesome_outlined,
                           domain: AnnaVisualDomain.today,
@@ -179,6 +188,7 @@ class PersonalizationScreen extends StatelessWidget {
                             onChanged: (value) => unawaited(_setEditorialMode(
                               context, value, strings.languageCode,
                             )),
+                          ),
                           ),
                         )
                       : SwitchListTile.adaptive(
