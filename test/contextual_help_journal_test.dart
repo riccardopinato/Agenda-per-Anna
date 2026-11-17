@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:agenda_per_anna/main.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
@@ -19,6 +20,11 @@ void main() {
     await tester.pumpWidget(const MaterialApp(
       locale: Locale('it'),
       supportedLocales: AnnaStrings.supportedLocales,
+      localizationsDelegates: [
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
       home: Scaffold(body: Center(
         child: AnnaContextHelpButton(
           section: AnnaContextHelpSection.create,
@@ -55,6 +61,11 @@ void main() {
         key: ValueKey(locale.languageCode),
         locale: locale,
         supportedLocales: AnnaStrings.supportedLocales,
+        localizationsDelegates: const [
+          GlobalMaterialLocalizations.delegate,
+          GlobalWidgetsLocalizations.delegate,
+          GlobalCupertinoLocalizations.delegate,
+        ],
         home: const AnnaContextHelpScreen(
           section: AnnaContextHelpSection.sharedSpace,
         ),
