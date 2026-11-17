@@ -710,6 +710,9 @@ class _SharedSpaceHubScreenState extends State<SharedSpaceHubScreen> {
                   onPressed: loading ? null : _reload,
                   icon: const Icon(Icons.refresh),
                 ),
+              const AnnaContextHelpButton(
+                section: AnnaContextHelpSection.sharedHub,
+              ),
             ],
           ),
           body: !cloud.signedIn
