@@ -162,9 +162,72 @@ void main() {
           : 'organic_journal_memories_empty_390.png',
     );
 
+    // On-demand contextual onboarding: true Flutter-rendered Journal pages.
+    await capture(
+      screen: const AnnaContextHelpScreen(
+        section: AnnaContextHelpSection.create,
+        captureActions: <AnnaContextHelpTopic>[
+          AnnaContextHelpTopic(
+            id: 'text', icon: Icons.edit_note_outlined, title: 'Nota di diario'),
+          AnnaContextHelpTopic(
+            id: 'photo', icon: Icons.photo_camera_back_outlined, title: 'Foto'),
+          AnnaContextHelpTopic(
+            id: 'task', icon: Icons.check_circle_outline, title: 'Attività'),
+          AnnaContextHelpTopic(
+            id: 'taskFromText', icon: Icons.auto_awesome_motion_outlined,
+            title: 'Attività da una frase'),
+          AnnaContextHelpTopic(
+            id: 'checklistFromNote', icon: Icons.playlist_add_check_outlined,
+            title: 'Checklist da una nota'),
+          AnnaContextHelpTopic(
+            id: 'voice', icon: Icons.mic_none_outlined, title: 'Nota vocale'),
+          AnnaContextHelpTopic(
+            id: 'sketch', icon: Icons.draw_outlined, title: 'Disegno'),
+          AnnaContextHelpTopic(
+            id: 'visionBoard', icon: Icons.dashboard_customize_outlined,
+            title: 'Vision board'),
+          AnnaContextHelpTopic(
+            id: 'inbox', icon: Icons.inbox_outlined, title: 'Inbox'),
+          AnnaContextHelpTopic(
+            id: 'event', icon: Icons.event_outlined, title: 'Appuntamento'),
+          AnnaContextHelpTopic(
+            id: 'birthday', icon: Icons.cake_outlined, title: 'Compleanno'),
+          AnnaContextHelpTopic(
+            id: 'person', icon: Icons.person_add_alt_1_outlined,
+            title: 'Persona importante'),
+          AnnaContextHelpTopic(
+            id: 'templates', icon: Icons.library_books_outlined,
+            title: 'Modelli'),
+        ],
+      ),
+      screenType: AnnaContextHelpScreen,
+      fileName: 'organic_journal_help_create_390.png',
+    );
+    await capture(
+      screen: const AnnaContextHelpScreen(
+        section: AnnaContextHelpSection.sharedSpace,
+      ),
+      screenType: AnnaContextHelpScreen,
+      fileName: 'organic_journal_help_shared_390.png',
+    );
+    await capture(
+      screen: const AnnaContextHelpScreen(
+        section: AnnaContextHelpSection.memories,
+      ),
+      screenType: AnnaContextHelpScreen,
+      fileName: 'organic_journal_help_memories_390.png',
+    );
+    await capture(
+      screen: const AnnaContextHelpScreen(
+        section: AnnaContextHelpSection.more,
+      ),
+      screenType: AnnaContextHelpScreen,
+      fileName: 'organic_journal_help_more_390.png',
+    );
+
     await tester.pump(const Duration(seconds: 2));
     await tester.pumpWidget(const SizedBox.shrink());
     await tester.pump(const Duration(seconds: 2));
   }, skip: !organicJournalCapture,
-      timeout: const Timeout(Duration(seconds: 140)));
+      timeout: const Timeout(Duration(seconds: 240)));
 }
