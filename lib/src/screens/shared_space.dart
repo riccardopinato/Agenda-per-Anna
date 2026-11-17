@@ -2932,6 +2932,7 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
             Padding(
               padding: const EdgeInsets.only(right: 6),
               child: Row(
+                mainAxisSize: MainAxisSize.min,
                 children: [
                   const Icon(Icons.done_all, size: 17),
                   const SizedBox(width: 4),
