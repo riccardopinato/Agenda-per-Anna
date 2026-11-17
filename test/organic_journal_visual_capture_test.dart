@@ -145,6 +145,16 @@ void main() {
       fileName: 'organic_journal_settings_profile_390.png',
     );
     await capture(
+      screen: ExploreScreen(store: store),
+      screenType: ExploreScreen,
+      fileName: 'organic_journal_explore_390.png',
+    );
+    await capture(
+      screen: PersonalizationScreen(store: store),
+      screenType: PersonalizationScreen,
+      fileName: 'organic_journal_personalization_390.png',
+    );
+    await capture(
       screen: DiaryMemoriesScreen(store: store),
       screenType: DiaryMemoriesScreen,
       fileName: organicJournalPopulated
