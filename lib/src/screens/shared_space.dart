@@ -2772,7 +2772,8 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
       _message(AnnaStrings.of(context).d3('sharedLikesLoadFailed'));
       return;
     }
-    if (!mounted || widget.store.activeAccountId != accountScope) return;
+    if (!mounted) return;
+    if (widget.store.activeAccountId != accountScope) return;
 
     final confirmed = reactions
         .where((reaction) =>
