@@ -118,7 +118,10 @@ void main() {
     expect(more, contains('return Semantics(')); // Classic fallback.
     expect(settings, contains('return Semantics('));
     expect(primarySettings, contains('Widget _journalSettingsCard('));
-    expect(primarySettings, contains('AnnaOrganicPaperSurface(child: child)'));
+    expect(primarySettings, anyOf(
+      contains('AnnaOrganicPaperSurface(child: child)'),
+      contains('AnnaOrganicPaperSurface(tone: tone, child: child)'),
+    ));
     expect(primarySettings, contains('SimpleCard(child: child)'));
     expect(memories, contains('AnnaOrganicJournalRule()'));
     final memoriesScreen =
