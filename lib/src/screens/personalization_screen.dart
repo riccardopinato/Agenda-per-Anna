@@ -8,6 +8,14 @@ class PersonalizationScreen extends StatelessWidget {
     required this.store,
   });
 
+  String _journalStyleLabel(String code) => switch (code) {
+        'en' => 'Journal appearance',
+        'es' => 'Estilo del diario',
+        'fr' => 'Style du journal',
+        'pt' => 'Estilo do diário',
+        _ => 'Stile del diario',
+      };
+
   String _presetLabel(AnnaStrings strings, PersonalizationPreset preset) =>
       switch (preset) {
         PersonalizationPreset.essential =>
@@ -167,7 +175,7 @@ class PersonalizationScreen extends StatelessWidget {
                       ? Semantics(
                           container: true,
                           toggled: AnnaEditorialTodayMode.enabled.value,
-                          label: 'Home Editorial Hybrid',
+                          label: _journalStyleLabel(strings.languageCode),
                           onTap: () => unawaited(_setEditorialMode(
                             context, !AnnaEditorialTodayMode.enabled.value,
                             strings.languageCode,
@@ -177,7 +185,7 @@ class PersonalizationScreen extends StatelessWidget {
                           identifier: 'personalization-editorial-home',
                           icon: Icons.auto_awesome_outlined,
                           domain: AnnaVisualDomain.today,
-                          title: 'Home Editorial Hybrid',
+                          title: _journalStyleLabel(strings.languageCode),
                           subtitle: annaEditorialTodayModeDescription(strings.languageCode),
                           onTap: () => unawaited(_setEditorialMode(
                             context, !AnnaEditorialTodayMode.enabled.value,
