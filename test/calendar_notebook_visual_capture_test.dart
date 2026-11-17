@@ -158,15 +158,37 @@ void main() {
       ),
     );
 
-    // Verify the editorial seven-day cards after scrolling past week notes.
-    await tester.drag(
-      find.descendant(
-        of: find.byType(WeekScreen),
-        matching: find.byType(ListView),
-      ).first,
-      const Offset(0, -600),
-    );
+    // Scroll beyond the overview AND into the selected day's event card.
+    // A single -600 drag used to leave the data-rich day below the fold,
+    // producing byte-identical empty/populated evidence for the seven days.
+    final weekList = find.descendant(
+      of: find.byType(WeekScreen),
+      matching: find.byType(ListView),
+    ).first;
+    await tester.drag(weekList, const Offset(0, -600));
     await tester.pump(const Duration(milliseconds: 450));
+    await tester.drag(weekList, const Offset(0, -390));
+    await tester.pump(const Duration(milliseconds: 450));
+    if (calendarCapturePopulated) {
+      // A text match in ListView's offscreen cache is insufficient: it must
+      // actually occupy visible pixels in the recorded screenshot.
+      final appointment = find.text('Visita al museo');
+      await tester.scrollUntilVisible(
+        appointment,
+        160,
+        scrollable: find.descendant(
+          of: find.byType(WeekScreen),
+          matching: find.byType(Scrollable),
+        ).first,
+        maxScrolls: 12,
+      );
+      await tester.pump(const Duration(milliseconds: 450));
+      expect(appointment, findsWidgets);
+      final viewport = tester.getRect(weekList);
+      final eventRect = tester.getRect(appointment.first);
+      expect(eventRect.top, greaterThanOrEqualTo(viewport.top));
+      expect(eventRect.bottom, lessThanOrEqualTo(viewport.bottom));
+    }
     await expectLater(
       find.descendant(
         of: find.byType(WeekScreen),
