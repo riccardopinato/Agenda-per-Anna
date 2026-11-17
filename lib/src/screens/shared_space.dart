@@ -3590,29 +3590,32 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
               onPressed: _openSharedMemories,
               icon: const Icon(Icons.photo_library_outlined),
             ),
-            IconButton(
-              tooltip: AnnaStrings.of(context).d3('sharedPasswords'),
-              onPressed: _openSharedPasswords,
-              icon: const Icon(Icons.password_outlined),
-            ),
-            IconButton(
-              tooltip: AnnaStrings.of(context).d3('peopleInSpace'),
-              onPressed: _openMembers,
-              icon: const Icon(Icons.group_outlined),
-            ),
-            if (widget.space.isOwner)
-              IconButton(
-                tooltip: AnnaStrings.of(context).d3('invite'),
-                onPressed: _invite,
-                icon: const Icon(Icons.person_add_alt_1_outlined),
-              ),
+            // Overflow the secondary functions so the title and fixed help
+            // control retain enough room on a 320dp phone.
             PopupMenuButton<String>(
+              tooltip: MaterialLocalizations.of(context).showMenuTooltip,
               onSelected: (value) {
+                if (value == 'people') _openMembers();
+                if (value == 'passwords') _openSharedPasswords();
+                if (value == 'invite') _invite();
                 if (value == 'refresh') _refresh();
                 if (value == 'leave') _leaveOrDelete();
                 if (value == 'avatar') unawaited(_changeCurrentSpaceAvatar());
               },
               itemBuilder: (_) => [
+                PopupMenuItem(
+                  value: 'people',
+                  child: Text(AnnaStrings.of(context).d3('peopleInSpace')),
+                ),
+                PopupMenuItem(
+                  value: 'passwords',
+                  child: Text(AnnaStrings.of(context).d3('sharedPasswords')),
+                ),
+                if (widget.space.isOwner)
+                  PopupMenuItem(
+                    value: 'invite',
+                    child: Text(AnnaStrings.of(context).d3('invite')),
+                  ),
                 if (sharedSpaceCanRename(widget.space, CloudSyncService.instance.userId))
                   PopupMenuItem(
                     value: 'avatar',
@@ -3634,6 +3637,9 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
                   ),
                 ),
               ],
+            ),
+            const AnnaContextHelpButton(
+              section: AnnaContextHelpSection.sharedSpace,
             ),
           ],
         ),
