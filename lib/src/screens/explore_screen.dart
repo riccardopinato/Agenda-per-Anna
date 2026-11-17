@@ -46,9 +46,12 @@ class ExploreScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final strings = AnnaStrings.of(context);
-    final organic = AnnaOrganicPastel.enabled(context);
-    return Scaffold(
+    return AnimatedBuilder(
+      animation: AnnaEditorialTodayMode.enabled,
+      builder: (context, _) {
+        final strings = AnnaStrings.of(context);
+        final organic = AnnaOrganicPastel.enabled(context);
+        return Scaffold(
       backgroundColor: organic ? AnnaEditorialColors.of(context).canvas : null,
       appBar: AppBar(
         backgroundColor: organic ? AnnaEditorialColors.of(context).canvas : null,
@@ -245,6 +248,8 @@ class ExploreScreen extends StatelessWidget {
           );
         },
       ),
+        );
+      },
     );
   }
 }
