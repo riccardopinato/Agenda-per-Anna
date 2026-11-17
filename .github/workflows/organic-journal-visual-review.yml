@@ -6,6 +6,7 @@ on:
       - "lib/**"
       - "test/organic_journal_visual_capture_test.dart"
       - ".github/workflows/organic-journal-visual-review.yml"
+      - "docs/qa/IMPECCABLE_VISUAL_PILOT_20261117.md"
 
 permissions:
   contents: read
@@ -23,12 +24,16 @@ jobs:
       github.head_ref == 'feat/v138-more-settings-essential-20261116' ||
       github.head_ref == 'design/settings-journal-profile-grouping-20261117' ||
       github.head_ref == 'design/memories-compact-authentic-notebook-20261117' ||
-      github.head_ref == 'design/secondary-journal-wave1-20261117'
+      github.head_ref == 'design/secondary-journal-wave1-20261117' ||
+      github.head_ref == 'docs/visual-qa-impeccable-pilot-20261117'
     runs-on: ubuntu-latest
     timeout-minutes: 25
     steps:
       - name: Checkout PR head
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          persist-credentials: false
       - name: Setup Flutter
         uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2.23.0
         with:
@@ -65,7 +70,7 @@ jobs:
         if: success()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
-          name: anna-journal-ios-non-m3-review-${{ github.sha }}
+          name: anna-journal-ios-non-m3-review-${{ github.event.pull_request.head.sha }}
           path: |
             test/goldens/organic_journal_more_390.png
             test/goldens/organic_journal_settings_hub_390.png
