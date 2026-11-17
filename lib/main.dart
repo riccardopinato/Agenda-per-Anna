@@ -64,6 +64,7 @@ part 'src/editorial_calendar.dart';
 part 'src/editorial_today_home.dart';
 part 'src/day_hub_domain.dart';
 part 'src/daily_rituals.dart';
+part 'src/contextual_help.dart';
 part 'src/unified_capture.dart';
 part 'src/event_memory_capture.dart';
 part 'src/external_calendar_diary.dart';
