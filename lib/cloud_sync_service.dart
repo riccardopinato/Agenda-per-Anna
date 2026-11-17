@@ -1391,6 +1391,9 @@ class CloudSyncService extends ChangeNotifier {
     }
 
     final orphans = discovered
+        // Space profile photos are not diary entries. Never delete them
+        // through the shared-diary media maintenance UI.
+        .where((path) => !path.contains('/__space_avatar/'))
         .where((path) => !referencedPaths.contains(path))
         .toList(growable: false);
 
