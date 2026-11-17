@@ -2323,6 +2323,9 @@ class _DiaryMemoriesScreenState extends State<DiaryMemoriesScreen> {
               child: const Icon(Icons.tune_outlined),
             ),
           ),
+          const AnnaContextHelpButton(
+            section: AnnaContextHelpSection.memories,
+          ),
     ];
 
     return ValueListenableBuilder<bool>(
