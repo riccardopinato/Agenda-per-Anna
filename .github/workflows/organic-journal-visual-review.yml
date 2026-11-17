@@ -25,7 +25,8 @@ jobs:
       github.head_ref == 'design/settings-journal-profile-grouping-20261117' ||
       github.head_ref == 'design/memories-compact-authentic-notebook-20261117' ||
       github.head_ref == 'design/secondary-journal-wave1-20261117' ||
-      github.head_ref == 'docs/visual-qa-impeccable-pilot-20261117'
+      github.head_ref == 'docs/visual-qa-impeccable-pilot-20261117' ||
+      github.head_ref == 'feat/contextual-help-create-shared-memories-more-20261118'
     runs-on: ubuntu-latest
     timeout-minutes: 25
     steps:
@@ -79,5 +80,9 @@ jobs:
             test/goldens/organic_journal_personalization_390.png
             test/goldens/organic_journal_memories_empty_390.png
             test/goldens/organic_journal_memories_populated_390.png
+            test/goldens/organic_journal_help_create_390.png
+            test/goldens/organic_journal_help_shared_390.png
+            test/goldens/organic_journal_help_memories_390.png
+            test/goldens/organic_journal_help_more_390.png
           if-no-files-found: error
           retention-days: 7
