@@ -24,13 +24,10 @@ void main() {
       'onPressed: _createSpace',
       'onPressed: _joinSpace',
       'onPressed: _scanSharedInviteQr',
-      'onPressed: _invite',
       '_renameSpace(space)',
       'markSharedSpaceRead(',
       'onTap: _openSharedShopping',
       'onTap: _openSharedMemories',
-      'onPressed: _openMembers',
-      'onPressed: _openSharedPasswords',
       'onRefresh: _refresh',
       'TableCalendar<SharedEntry>',
       'selectedDayPredicate:',
@@ -38,6 +35,16 @@ void main() {
       '_sharedEntryCard(',
     ]) {
       expect(source, contains(original));
+    }
+    // Shared-space secondary actions were moved from the crowded AppBar
+    // into its existing overflow menu; test the actual route dispatches
+    // instead of requiring removed direct-button source spellings.
+    for (final route in <String>[
+      "if (value == 'invite') _invite();",
+      "if (value == 'people') _openMembers();",
+      "if (value == 'passwords') _openSharedPasswords();",
+    ]) {
+      expect(source, contains(route));
     }
     expect(source, isNot(contains('deleteMasterKey(')));
   });
