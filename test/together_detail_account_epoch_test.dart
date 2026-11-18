@@ -28,18 +28,18 @@ void main() {
       locale: const Locale('en'),
       home: SharedSpaceScreen(store: store, space: space),
     ));
-    await tester.pumpAndSettle();
+    await tester.pump(const Duration(milliseconds: 450));
     expect(find.text(space.name), findsOneWidget);
 
     await tester.runAsync(() => store.activateCloudAccount('user-b'));
-    await tester.pumpAndSettle();
+    await tester.pump(const Duration(milliseconds: 450));
     expect(find.text(space.name), findsNothing);
     expect(find.text(const AnnaStrings('en').d3('sharedSessionExpired')),
         findsOneWidget);
     expect(find.byType(FloatingActionButton), findsNothing);
 
     await tester.runAsync(() => store.activateCloudAccount('user-a'));
-    await tester.pumpAndSettle();
+    await tester.pump(const Duration(milliseconds: 450));
     expect(find.text(space.name), findsNothing,
         reason: 'A→B→A must not revalidate a stale detail route');
     expect(find.text(const AnnaStrings('en').d3('sharedSessionExpired')),
@@ -61,13 +61,13 @@ void main() {
       locale: const Locale('en'),
       home: SharedSpaceHubScreen(store: store),
     ));
-    await tester.pumpAndSettle();
+    await tester.pump(const Duration(milliseconds: 450));
     expect(
         find.byKey(const ValueKey<String>('together-stale-account-session')),
         findsNothing);
 
     await tester.runAsync(() => store.activateCloudAccount('user-b'));
-    await tester.pumpAndSettle();
+    await tester.pump(const Duration(milliseconds: 450));
     expect(
         find.byKey(const ValueKey<String>('together-stale-account-session')),
         findsOneWidget);
@@ -78,7 +78,7 @@ void main() {
     expect(find.byType(FloatingActionButton), findsNothing);
 
     await tester.runAsync(() => store.activateCloudAccount('user-a'));
-    await tester.pumpAndSettle();
+    await tester.pump(const Duration(milliseconds: 450));
     expect(
         find.byKey(const ValueKey<String>('together-stale-account-session')),
         findsOneWidget);
