@@ -241,6 +241,18 @@ class _SharedSpaceAvatarState extends State<SharedSpaceAvatar> {
   }
 }
 
+/// Pure UI copy; a local cache or signed-in session is not a delivery receipt.
+String sharedSpaceVerificationCopy(String language, String key) {
+  const copy = <String, Map<String, String>>{
+    'it': {'listChecked': 'Elenco verificato online', 'cached': 'Copia locale · stato remoto da verificare', 'emptyUnknown': 'Non è possibile verificare gli spazi adesso. Riprova per aggiornare l’elenco.', 'lastChecked': 'Ultimo aggiornamento verificato', 'notChecked': 'Aggiornamento non ancora verificato'},
+    'en': {'listChecked': 'List checked online', 'cached': 'Local copy · remote status not verified', 'emptyUnknown': 'Spaces cannot be checked right now. Retry to refresh the list.', 'lastChecked': 'Last verified update', 'notChecked': 'Update not yet verified'},
+    'es': {'listChecked': 'Lista comprobada en línea', 'cached': 'Copia local · estado remoto sin verificar', 'emptyUnknown': 'No se pueden comprobar los espacios ahora. Vuelve a intentarlo.', 'lastChecked': 'Última actualización verificada', 'notChecked': 'Actualización aún sin verificar'},
+    'fr': {'listChecked': 'Liste vérifiée en ligne', 'cached': 'Copie locale · état distant non vérifié', 'emptyUnknown': 'Impossible de vérifier les espaces pour le moment. Réessayez.', 'lastChecked': 'Dernière mise à jour vérifiée', 'notChecked': 'Mise à jour non encore vérifiée'},
+    'pt': {'listChecked': 'Lista verificada online', 'cached': 'Cópia local · estado remoto não verificado', 'emptyUnknown': 'Não é possível verificar os espaços agora. Tenta novamente.', 'lastChecked': 'Última atualização verificada', 'notChecked': 'Atualização ainda não verificada'},
+  };
+  return (copy[language] ?? copy['en']!)[key] ?? key;
+}
+
 class SharedSpaceHubScreen extends StatefulWidget {
   final AgendaStore store;
 
@@ -252,6 +264,8 @@ class SharedSpaceHubScreen extends StatefulWidget {
 
 class _SharedSpaceHubScreenState extends State<SharedSpaceHubScreen> {
   bool loading = true;
+  // In-memory evidence for the currently mounted hub, never persisted.
+  bool _remoteListVerified = false;
   List<SharedSpace> spaces = const [];
   final Map<String, int> pendingBySpace = {};
   final Set<String> _avatarBusy = <String>{};
@@ -389,11 +403,15 @@ class _SharedSpaceHubScreenState extends State<SharedSpaceHubScreen> {
       if (mounted) {
         setState(() {
           spaces = result;
+          _remoteListVerified = true;
           loading = false;
         });
       }
     } catch (_) {
-      if (mounted) setState(() => loading = false);
+      if (mounted) setState(() {
+        _remoteListVerified = false;
+        loading = false;
+      });
     }
   }
 
@@ -833,7 +851,12 @@ class _SharedSpaceHubScreenState extends State<SharedSpaceHubScreen> {
                                   const SizedBox(height: 12),
                                 ],
                                 Text(
-                                  AnnaStrings.of(context).d3('noSharedSpace'),
+                                  _remoteListVerified
+                                      ? AnnaStrings.of(context).d3('noSharedSpace')
+                                      : sharedSpaceVerificationCopy(
+                                          AnnaStrings.of(context).languageCode,
+                                          'emptyUnknown',
+                                        ),
                                   textAlign: TextAlign.center,
                                 ),
                                 const SizedBox(height: 14),
@@ -901,13 +924,10 @@ class _SharedSpaceHubScreenState extends State<SharedSpaceHubScreen> {
                                           'sharedPendingChanges',
                                           {'count': pending},
                                         )
-                                      : sharedSpaceCanRename(
-                                          space, cloud.userId,
-                                        )
-                                          ? AnnaStrings.of(context)
-                                              .d3('sharedCreatedSynced')
-                                          : AnnaStrings.of(context)
-                                              .d3('sharedSynced'),
+                                      : sharedSpaceVerificationCopy(
+                                            AnnaStrings.of(context).languageCode,
+                                            _remoteListVerified ? 'listChecked' : 'cached',
+                                          ),
                                   if (!sharedSpaceCanRename(
                                         space, cloud.userId,
                                       ) &&
@@ -1012,12 +1032,10 @@ class _SharedSpaceHubScreenState extends State<SharedSpaceHubScreen> {
                                           ? AnnaStrings.of(context).d3Format(
                                               'sharedPendingChanges',
                                               {'count': pending})
-                                          : sharedSpaceCanRename(
-                                                  space, cloud.userId)
-                                              ? AnnaStrings.of(context).d3(
-                                                  'sharedCreatedSynced')
-                                              : AnnaStrings.of(context).d3(
-                                                  'sharedSynced'),
+                                          : sharedSpaceVerificationCopy(
+                                            AnnaStrings.of(context).languageCode,
+                                            _remoteListVerified ? 'listChecked' : 'cached',
+                                          ),
                                       if (!sharedSpaceCanRename(
                                             space, cloud.userId) &&
                                           _memberAliasScope == _memberAliasKey &&
@@ -3514,9 +3532,15 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
           ? AnnaStrings.of(context).d3('sharedListeningUpdates')
           : AnnaStrings.of(context).d3Format('sharedLastUpdate', {'time': DateFormat('HH:mm').format(lastRefreshAt!)});
     } else {
-      icon = Icons.cloud_done_outlined;
-      title = AnnaStrings.of(context).d3('sharedSyncedShort');
-      subtitle = AnnaStrings.of(context).d3('sharedRealtimeReconnect');
+      // No current Realtime receipt: only describe the last confirmed refresh.
+      icon = Icons.cloud_off_outlined;
+      title = sharedSpaceVerificationCopy(
+        AnnaStrings.of(context).languageCode,
+        lastRefreshAt == null ? 'notChecked' : 'lastChecked',
+      );
+      subtitle = lastRefreshAt == null
+          ? AnnaStrings.of(context).d3('sharedRealtimeReconnect')
+          : '${AnnaStrings.of(context).d3Format('sharedLastUpdate', {'time': DateFormat('HH:mm').format(lastRefreshAt!)})} · ${AnnaStrings.of(context).d3('sharedRealtimeReconnect')}';
     }
 
     return Container(
