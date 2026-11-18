@@ -983,7 +983,7 @@ void main() {
           bottomNavigationBar: AnnaEditorialDockBar(
             selectedPage: 0,
             onPageSelected: (page) => selected = page,
-            labels: const ['Oggi', 'Messaggi', 'Ricordi', 'Altro'],
+            labels: const ['Oggi', 'Insieme', 'Ricordi', 'Altro'],
             icons: const [
               Icons.today_outlined,
               Icons.chat_bubble_outline,
@@ -1071,7 +1071,7 @@ void main() {
           bottomNavigationBar: AnnaEditorialDockBar(
             selectedPage: 0,
             onPageSelected: (_) {},
-            labels: const ['Oggi', 'Messaggi', 'Ricordi', 'Altro'],
+            labels: const ['Oggi', 'Insieme', 'Ricordi', 'Altro'],
             icons: const [
               Icons.today_outlined,
               Icons.chat_bubble_outline,
