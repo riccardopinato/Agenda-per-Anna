@@ -2967,6 +2967,28 @@ class _AnnaCommitmentsTimelineScreenState
                           AnnaEditorialSectionHeading(
                             title: strings.d3('ui5Commitments'),
                           ),
+                          // A list-first view must retain the canonical
+                          // task/appointment capture affordance previously
+                          // available through hourly timeline tap gestures.
+                          Align(
+                            alignment: Alignment.centerLeft,
+                            child: TextButton.icon(
+                              key: const ValueKey<String>(
+                                'commitments-list-create',
+                              ),
+                              style: TextButton.styleFrom(
+                                minimumSize: const Size(0, 48),
+                              ),
+                              onPressed: () => _showQuickCapture(
+                                context,
+                                widget.store,
+                                captureDate: _selected,
+                                entryPoint: UnifiedCaptureEntryPoint.day,
+                              ),
+                              icon: const Icon(Icons.add_rounded),
+                              label: Text(strings.capture),
+                            ),
+                          ),
                           const SizedBox(height: 10),
                           if (snapshot.agenda.isEmpty)
                             AnnaOrganicCalendarEmptyAgenda(
