@@ -23,8 +23,7 @@ class _TogetherFixture {
 
   const _TogetherFixture(
     this.id, this.width, this.height, this.language, this.palette,
-    this.theme, this.journal, {this.customPalette = false},
-  );
+    this.theme, this.journal, {this.customPalette = false});
 }
 
 void main() {
