@@ -1,3 +1,5 @@
+import 'package:agenda_per_anna/local_state_store.dart';
+import 'package:agenda_per_anna/media_asset_store.dart';
 import 'package:agenda_per_anna/main.dart';
 import 'package:agenda_per_anna/cloud_sync_service.dart';
 import 'package:flutter/material.dart';
@@ -7,15 +9,24 @@ import 'package:shared_preferences/shared_preferences.dart';
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
-  testWidgets('open shared detail remains hidden after A to B to A', (tester) async {
-    SharedPreferences.setMockInitialValues(<String, Object>{
-      'active_account_v1': 'user-a',
-    });
-    final store = AgendaStore();
-    addTearDown(store.dispose);
-    await tester.runAsync(store.load);
+  late AgendaStore store;
+  setUp(() async {
+    await LocalStateStore.instance.resetForTesting();
+    await MediaAssetStore.instance.resetForTesting();
+    SharedPreferences.setMockInitialValues(<String, Object>{});
+    store = AgendaStore();
+    // Bootstrap real storage outside the Flutter FakeAsync widget frame.
+    await store.load();
+    await store.activateCloudAccount('user-a');
     expect(store.activeAccountId, 'user-a');
+  });
+  tearDown(() async {
+    store.dispose();
+    await LocalStateStore.instance.resetForTesting();
+    await MediaAssetStore.instance.resetForTesting();
+  });
 
+  testWidgets('open shared detail remains hidden after A to B to A', (tester) async {
     final space = SharedSpace(
       id: 'test-space-a',
       ownerId: 'user-a',
@@ -49,14 +60,6 @@ void main() {
   });
   testWidgets('separately routed shared hub cannot leak A after B or A again',
       (tester) async {
-    SharedPreferences.setMockInitialValues(<String, Object>{
-      'active_account_v1': 'user-a',
-    });
-    final store = AgendaStore();
-    addTearDown(store.dispose);
-    await tester.runAsync(store.load);
-    expect(store.activeAccountId, 'user-a');
-
     await tester.pumpWidget(MaterialApp(
       locale: const Locale('en'),
       home: SharedSpaceHubScreen(store: store),
