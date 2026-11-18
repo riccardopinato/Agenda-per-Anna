@@ -244,11 +244,11 @@ class _SharedSpaceAvatarState extends State<SharedSpaceAvatar> {
 /// Pure UI copy; a local cache or signed-in session is not a delivery receipt.
 String sharedSpaceVerificationCopy(String language, String key) {
   const copy = <String, Map<String, String>>{
-    'it': {'listChecked': 'Elenco verificato online', 'cached': 'Copia locale · stato remoto da verificare', 'emptyUnknown': 'Non è possibile verificare gli spazi adesso. Riprova per aggiornare l’elenco.', 'lastChecked': 'Ultimo aggiornamento verificato', 'notChecked': 'Aggiornamento non ancora verificato'},
-    'en': {'listChecked': 'List checked online', 'cached': 'Local copy · remote status not verified', 'emptyUnknown': 'Spaces cannot be checked right now. Retry to refresh the list.', 'lastChecked': 'Last verified update', 'notChecked': 'Update not yet verified'},
-    'es': {'listChecked': 'Lista comprobada en línea', 'cached': 'Copia local · estado remoto sin verificar', 'emptyUnknown': 'No se pueden comprobar los espacios ahora. Vuelve a intentarlo.', 'lastChecked': 'Última actualización verificada', 'notChecked': 'Actualización aún sin verificar'},
-    'fr': {'listChecked': 'Liste vérifiée en ligne', 'cached': 'Copie locale · état distant non vérifié', 'emptyUnknown': 'Impossible de vérifier les espaces pour le moment. Réessayez.', 'lastChecked': 'Dernière mise à jour vérifiée', 'notChecked': 'Mise à jour non encore vérifiée'},
-    'pt': {'listChecked': 'Lista verificada online', 'cached': 'Cópia local · estado remoto não verificado', 'emptyUnknown': 'Não é possível verificar os espaços agora. Tenta novamente.', 'lastChecked': 'Última atualização verificada', 'notChecked': 'Atualização ainda não verificada'},
+    'it': {'listChecked': 'Elenco verificato online', 'cached': 'Copia locale · stato remoto da verificare', 'emptyUnknown': 'Non è possibile verificare gli spazi adesso. Riprova per aggiornare l’elenco.', 'listeningOnly': 'Canale attivo · dati remoti non ancora verificati', 'notChecked': 'Aggiornamento non ancora verificato'},
+    'en': {'listChecked': 'List checked online', 'cached': 'Local copy · remote status not verified', 'emptyUnknown': 'Spaces cannot be checked right now. Retry to refresh the list.', 'listeningOnly': 'Channel active · remote data not yet verified', 'notChecked': 'Update not yet verified'},
+    'es': {'listChecked': 'Lista comprobada en línea', 'cached': 'Copia local · estado remoto sin verificar', 'emptyUnknown': 'No se pueden comprobar los espacios ahora. Vuelve a intentarlo.', 'listeningOnly': 'Canal activo · datos remotos aún sin verificar', 'notChecked': 'Actualización aún sin verificar'},
+    'fr': {'listChecked': 'Liste vérifiée en ligne', 'cached': 'Copie locale · état distant non vérifié', 'emptyUnknown': 'Impossible de vérifier les espaces pour le moment. Réessayez.', 'listeningOnly': 'Canal actif · données distantes non encore vérifiées', 'notChecked': 'Mise à jour non encore vérifiée'},
+    'pt': {'listChecked': 'Lista verificada online', 'cached': 'Cópia local · estado remoto não verificado', 'emptyUnknown': 'Não é possível verificar os espaços agora. Tenta novamente.', 'listeningOnly': 'Canal ativo · dados remotos ainda não verificados', 'notChecked': 'Atualização ainda não verificada'},
   };
   return (copy[language] ?? copy['en']!)[key] ?? key;
 }
@@ -3528,21 +3528,20 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
       title = AnnaStrings.of(context).d3('offline');
       subtitle = AnnaStrings.of(context).d3('offlineLocalCopy');
     } else if (realtimeConnected) {
+      // Socket connectivity is not a receipt for the latest remote record.
       icon = Icons.bolt;
-      title = AnnaStrings.of(context).d3('sharedRealtimeSynced');
-      subtitle = lastRefreshAt == null
-          ? AnnaStrings.of(context).d3('sharedListeningUpdates')
-          : AnnaStrings.of(context).d3Format('sharedLastUpdate', {'time': DateFormat('HH:mm').format(lastRefreshAt!)});
+      title = AnnaStrings.of(context).d3('sharedListeningUpdates');
+      subtitle = sharedSpaceVerificationCopy(
+        AnnaStrings.of(context).languageCode, 'listeningOnly',
+      );
     } else {
-      // No current Realtime receipt: only describe the last confirmed refresh.
+      // A cached refresh timestamp is not proof of remote delivery: the
+      // canonical pull can fall back to cache without throwing an exception.
       icon = Icons.cloud_off_outlined;
       title = sharedSpaceVerificationCopy(
-        AnnaStrings.of(context).languageCode,
-        lastRefreshAt == null ? 'notChecked' : 'lastChecked',
+        AnnaStrings.of(context).languageCode, 'notChecked',
       );
-      subtitle = lastRefreshAt == null
-          ? AnnaStrings.of(context).d3('sharedRealtimeReconnect')
-          : '${AnnaStrings.of(context).d3Format('sharedLastUpdate', {'time': DateFormat('HH:mm').format(lastRefreshAt!)})} · ${AnnaStrings.of(context).d3('sharedRealtimeReconnect')}';
+      subtitle = AnnaStrings.of(context).d3('sharedRealtimeReconnect');
     }
 
     return Container(
