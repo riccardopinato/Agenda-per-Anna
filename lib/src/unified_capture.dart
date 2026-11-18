@@ -142,6 +142,35 @@ String _annaCaptureProposalLabel(String languageCode, String key) {
   return strings[key]?[languageCode] ?? strings[key]?['en'] ?? key;
 }
 
+/// N18-04: user-approved editorial grouping. Copy only; no new capture type,
+/// store, permission, routing or privacy scope is introduced.
+String _annaCaptureJournalGroupLabel(String languageCode, String group) {
+  const labels = <String, Map<String, String>>{
+    'begin': {
+      'it': 'Inizia da qui',
+      'en': 'Start here',
+      'es': 'Empieza aquí',
+      'fr': 'Commence ici',
+      'pt': 'Começa aqui',
+    },
+    'keep': {
+      'it': 'Conserva un’idea',
+      'en': 'Keep an idea',
+      'es': 'Guarda una idea',
+      'fr': 'Garde une idée',
+      'pt': 'Guarda uma ideia',
+    },
+    'other': {
+      'it': 'Altri strumenti',
+      'en': 'More tools',
+      'es': 'Más herramientas',
+      'fr': 'Autres outils',
+      'pt': 'Outras ferramentas',
+    },
+  };
+  return labels[group]?[languageCode] ?? labels[group]?['en'] ?? group;
+}
+
 Future<String?> _askLocalTaskSentence(BuildContext context) async {
   final language = AnnaStrings.of(context).languageCode;
   final controller = TextEditingController();
@@ -477,6 +506,28 @@ Future<void> showUnifiedCapture(
   ];
   final rankedActions = qw2RankCaptureActions(
       availableActions, counts, (choice) => choice.action.name);
+  // The approved Journal entry point has stable, recognizable first actions.
+  // Keep the existing adaptive ranking for the remaining eligible tools and
+  // the historical presentation of Classic intact.
+  final journalStartActions = [
+    for (final choice in const <_UnifiedCaptureAction>[
+      _UnifiedCaptureAction.text,
+      _UnifiedCaptureAction.photo,
+      _UnifiedCaptureAction.event,
+    ])
+      availableActions.firstWhere((entry) => entry.action == choice),
+  ];
+  final journalKeepActions = [
+    for (final choice in const <_UnifiedCaptureAction>[
+      _UnifiedCaptureAction.inbox,
+      _UnifiedCaptureAction.visionBoard,
+    ])
+      ...availableActions.where((entry) => entry.action == choice),
+  ];
+  final journalPinnedKinds = <_UnifiedCaptureAction>{
+    ...journalStartActions.map((entry) => entry.action),
+    ...journalKeepActions.map((entry) => entry.action),
+  };
   String? subtitleFor(_UnifiedCaptureAction selected, String? fallback) =>
       switch (selected) {
         _UnifiedCaptureAction.text => strings.addDiaryNote(dayLabel),
@@ -495,6 +546,7 @@ Future<void> showUnifiedCapture(
     ),
     builder: (sheetContext) {
       var showAllActions = false;
+      final journalCapture = AnnaOrganicPastel.enabled(sheetContext);
 
       Widget actionTile({
         required IconData icon,
@@ -504,6 +556,39 @@ Future<void> showUnifiedCapture(
         bool primary = false,
         int order = 0,
       }) {
+        void choose() {
+          unawaited(AnnaFeedback.selection());
+          Navigator.pop(sheetContext, action);
+        }
+        if (journalCapture) {
+          final domain = switch (action) {
+            _UnifiedCaptureAction.event ||
+            _UnifiedCaptureAction.task ||
+            _UnifiedCaptureAction.taskFromText ||
+            _UnifiedCaptureAction.checklistFromNote ||
+            _UnifiedCaptureAction.birthday => AnnaVisualDomain.calendar,
+            _UnifiedCaptureAction.person => AnnaVisualDomain.people,
+            _UnifiedCaptureAction.inbox => AnnaVisualDomain.today,
+            _ => AnnaVisualDomain.memories,
+          };
+          return AnnaMotionStagger(
+            key: ValueKey<String>('v108-capture-action-${action.name}'),
+            order: order,
+            fan: primary,
+            captureCascade: true,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: AnnaOrganicJournalRow(
+                identifier: 'capture-journal-action-${action.name}',
+                icon: icon,
+                domain: domain,
+                title: title,
+                subtitle: subtitle,
+                onTap: choose,
+              ),
+            ),
+          );
+        }
         final tile = ListTile(
           leading: primary
               ? CircleAvatar(child: Icon(icon))
@@ -515,10 +600,7 @@ Future<void> showUnifiedCapture(
             ),
           ),
           subtitle: subtitle == null ? null : Text(subtitle),
-          onTap: () {
-            unawaited(AnnaFeedback.selection());
-            Navigator.pop(sheetContext, action);
-          },
+          onTap: choose,
         );
         return AnnaMotionStagger(
           key: ValueKey<String>('v108-capture-action-${action.name}'),
@@ -593,32 +675,79 @@ Future<void> showUnifiedCapture(
                       },
                     ),
                   ),
-                  // Keep the top four ranked actions and pin personal
-                  // Vision Board as a fifth visible option when it is not
-                  // already among those four. The other destinations retain
-                  // the existing ranking and remain in "more".
-                  for (var i = 0; i < 4; i++)
-                    actionTile(
-                      icon: rankedActions[i].icon,
-                      title: rankedActions[i].title,
-                      subtitle: subtitleFor(
-                          rankedActions[i].action, rankedActions[i].subtitle),
-                      action: rankedActions[i].action,
-                      primary: true,
-                      order: i,
+                  // N18-04: Journal = intention first. Classic retains the
+                  // old top-four adaptive ranking and pinned Vision Board.
+                  if (journalCapture) ...[
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(20, 10, 20, 6),
+                      child: Align(
+                        alignment: AlignmentDirectional.centerStart,
+                        child: AnnaEditorialSectionHeading(
+                          title: _annaCaptureJournalGroupLabel(
+                            strings.languageCode, 'begin'),
+                        ),
+                      ),
                     ),
-                  if (rankedActions.any((entry) =>
-                          entry.action == _UnifiedCaptureAction.visionBoard) &&
-                      !rankedActions.take(4).any((entry) =>
-                          entry.action == _UnifiedCaptureAction.visionBoard))
-                    actionTile(
-                      icon: Icons.dashboard_customize_outlined,
-                      title: VisionBoardUiCopy.add(strings),
-                      subtitle: VisionBoardUiCopy.addHere(strings),
-                      action: _UnifiedCaptureAction.visionBoard,
-                      primary: true,
-                      order: 4,
+                    for (var i = 0; i < journalStartActions.length; i++)
+                      actionTile(
+                        icon: journalStartActions[i].icon,
+                        title: journalStartActions[i].title,
+                        subtitle: subtitleFor(
+                          journalStartActions[i].action,
+                          journalStartActions[i].subtitle,
+                        ),
+                        action: journalStartActions[i].action,
+                        primary: true,
+                        order: i,
+                      ),
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(20, 12, 20, 6),
+                      child: Align(
+                        alignment: AlignmentDirectional.centerStart,
+                        child: AnnaEditorialSectionHeading(
+                          title: _annaCaptureJournalGroupLabel(
+                            strings.languageCode, 'keep'),
+                        ),
+                      ),
                     ),
+                    for (var i = 0; i < journalKeepActions.length; i++)
+                      actionTile(
+                        icon: journalKeepActions[i].icon,
+                        title: journalKeepActions[i].title,
+                        subtitle: subtitleFor(
+                          journalKeepActions[i].action,
+                          journalKeepActions[i].subtitle,
+                        ),
+                        action: journalKeepActions[i].action,
+                        primary: false,
+                        order: i + journalStartActions.length,
+                      ),
+                  ] else ...[
+                    // Keep the historical Classic ranking and pin available
+                    // Vision Board outside the collapsed secondary section.
+                    for (var i = 0; i < 4; i++)
+                      actionTile(
+                        icon: rankedActions[i].icon,
+                        title: rankedActions[i].title,
+                        subtitle: subtitleFor(
+                            rankedActions[i].action, rankedActions[i].subtitle),
+                        action: rankedActions[i].action,
+                        primary: true,
+                        order: i,
+                      ),
+                    if (rankedActions.any((entry) =>
+                            entry.action == _UnifiedCaptureAction.visionBoard) &&
+                        !rankedActions.take(4).any((entry) =>
+                            entry.action == _UnifiedCaptureAction.visionBoard))
+                      actionTile(
+                        icon: Icons.dashboard_customize_outlined,
+                        title: VisionBoardUiCopy.add(strings),
+                        subtitle: VisionBoardUiCopy.addHere(strings),
+                        action: _UnifiedCaptureAction.visionBoard,
+                        primary: true,
+                        order: 4,
+                      ),
+                  ],
                   Padding(
                     padding: const EdgeInsets.symmetric(
                       horizontal: AnnaDesignTokens.spaceSm,
@@ -658,17 +787,46 @@ Future<void> showUnifiedCapture(
                             mainAxisSize: MainAxisSize.min,
                             children: [
                               const Divider(height: 1),
-                              for (var i = 4; i < rankedActions.length; i++)
-                                if (rankedActions[i].action !=
-                                    _UnifiedCaptureAction.visionBoard)
-                                actionTile(
-                                  icon: rankedActions[i].icon,
-                                  title: rankedActions[i].title,
-                                  subtitle: subtitleFor(
-                          rankedActions[i].action, rankedActions[i].subtitle),
-                                  action: rankedActions[i].action,
-                                  order: i - 4,
+                              if (journalCapture)
+                                Padding(
+                                  padding: const EdgeInsets.fromLTRB(
+                                      20, 12, 20, 6),
+                                  child: Align(
+                                    alignment: AlignmentDirectional.centerStart,
+                                    child: AnnaEditorialSectionHeading(
+                                      title: _annaCaptureJournalGroupLabel(
+                                        strings.languageCode, 'other'),
+                                    ),
+                                  ),
                                 ),
+                              if (journalCapture)
+                                for (var i = 0; i < rankedActions.length; i++)
+                                  if (!journalPinnedKinds
+                                      .contains(rankedActions[i].action))
+                                    actionTile(
+                                      icon: rankedActions[i].icon,
+                                      title: rankedActions[i].title,
+                                      subtitle: subtitleFor(
+                                        rankedActions[i].action,
+                                        rankedActions[i].subtitle,
+                                      ),
+                                      action: rankedActions[i].action,
+                                      order: i + journalKeepActions.length,
+                                    ),
+                              if (!journalCapture)
+                                for (var i = 4; i < rankedActions.length; i++)
+                                  if (rankedActions[i].action !=
+                                      _UnifiedCaptureAction.visionBoard)
+                                    actionTile(
+                                      icon: rankedActions[i].icon,
+                                      title: rankedActions[i].title,
+                                      subtitle: subtitleFor(
+                                        rankedActions[i].action,
+                                        rankedActions[i].subtitle,
+                                      ),
+                                      action: rankedActions[i].action,
+                                      order: i - 4,
+                                    ),
                             ],
                           )
                         : const SizedBox.shrink(),
