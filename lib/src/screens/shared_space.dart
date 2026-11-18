@@ -244,11 +244,11 @@ class _SharedSpaceAvatarState extends State<SharedSpaceAvatar> {
 /// Pure UI copy; a local cache or signed-in session is not a delivery receipt.
 String sharedSpaceVerificationCopy(String language, String key) {
   const copy = <String, Map<String, String>>{
-    'it': {'listChecked': 'Elenco verificato online', 'cached': 'Copia locale · stato remoto da verificare', 'emptyUnknown': 'Non è possibile verificare gli spazi adesso. Riprova per aggiornare l’elenco.', 'listeningOnly': 'Canale attivo · dati remoti non ancora verificati', 'notChecked': 'Aggiornamento non ancora verificato'},
-    'en': {'listChecked': 'List checked online', 'cached': 'Local copy · remote status not verified', 'emptyUnknown': 'Spaces cannot be checked right now. Retry to refresh the list.', 'listeningOnly': 'Channel active · remote data not yet verified', 'notChecked': 'Update not yet verified'},
-    'es': {'listChecked': 'Lista comprobada en línea', 'cached': 'Copia local · estado remoto sin verificar', 'emptyUnknown': 'No se pueden comprobar los espacios ahora. Vuelve a intentarlo.', 'listeningOnly': 'Canal activo · datos remotos aún sin verificar', 'notChecked': 'Actualización aún sin verificar'},
-    'fr': {'listChecked': 'Liste vérifiée en ligne', 'cached': 'Copie locale · état distant non vérifié', 'emptyUnknown': 'Impossible de vérifier les espaces pour le moment. Réessayez.', 'listeningOnly': 'Canal actif · données distantes non encore vérifiées', 'notChecked': 'Mise à jour non encore vérifiée'},
-    'pt': {'listChecked': 'Lista verificada online', 'cached': 'Cópia local · estado remoto não verificado', 'emptyUnknown': 'Não é possível verificar os espaços agora. Tenta novamente.', 'listeningOnly': 'Canal ativo · dados remotos ainda não verificados', 'notChecked': 'Atualização ainda não verificada'},
+    'it': {'sessionChanged': 'L’account è cambiato. Riapri Insieme per vedere i tuoi spazi.', 'listChecked': 'Elenco verificato online', 'cached': 'Copia locale · stato remoto da verificare', 'emptyUnknown': 'Non è possibile verificare gli spazi adesso. Riprova per aggiornare l’elenco.', 'listeningOnly': 'Canale attivo · dati remoti non ancora verificati', 'notChecked': 'Aggiornamento non ancora verificato'},
+    'en': {'sessionChanged': 'The account changed. Open Together again to see your spaces.', 'listChecked': 'List checked online', 'cached': 'Local copy · remote status not verified', 'emptyUnknown': 'Spaces cannot be checked right now. Retry to refresh the list.', 'listeningOnly': 'Channel active · remote data not yet verified', 'notChecked': 'Update not yet verified'},
+    'es': {'sessionChanged': 'La cuenta ha cambiado. Abre Juntos de nuevo para ver tus espacios.', 'listChecked': 'Lista comprobada en línea', 'cached': 'Copia local · estado remoto sin verificar', 'emptyUnknown': 'No se pueden comprobar los espacios ahora. Vuelve a intentarlo.', 'listeningOnly': 'Canal activo · datos remotos aún sin verificar', 'notChecked': 'Actualización aún sin verificar'},
+    'fr': {'sessionChanged': 'Le compte a changé. Ouvrez Ensemble à nouveau pour afficher vos espaces.', 'listChecked': 'Liste vérifiée en ligne', 'cached': 'Copie locale · état distant non vérifié', 'emptyUnknown': 'Impossible de vérifier les espaces pour le moment. Réessayez.', 'listeningOnly': 'Canal actif · données distantes non encore vérifiées', 'notChecked': 'Mise à jour non encore vérifiée'},
+    'pt': {'sessionChanged': 'A conta mudou. Abre Juntos novamente para ver os teus espaços.', 'listChecked': 'Lista verificada online', 'cached': 'Cópia local · estado remoto não verificado', 'emptyUnknown': 'Não é possível verificar os espaços agora. Tenta novamente.', 'listeningOnly': 'Canal ativo · dados remotos ainda não verificados', 'notChecked': 'Atualização ainda não verificada'},
   };
   return (copy[language] ?? copy['en']!)[key] ?? key;
 }
@@ -263,6 +263,15 @@ class SharedSpaceHubScreen extends StatefulWidget {
 }
 
 class _SharedSpaceHubScreenState extends State<SharedSpaceHubScreen> {
+  late final String? _openedAccountId;
+  late final int _openedAccountEpoch;
+
+  /// Also protects hubs opened from Explore/Altro, outside the keyed main tab.
+  bool get _matchesOpenedAccount =>
+      widget.store.accountScopeResolved &&
+      widget.store.activeAccountId == _openedAccountId &&
+      widget.store.accountScopeEpoch == _openedAccountEpoch;
+
   bool loading = true;
   // In-memory evidence for the currently mounted hub, never persisted.
   bool _remoteListVerified = false;
@@ -295,8 +304,10 @@ class _SharedSpaceHubScreenState extends State<SharedSpaceHubScreen> {
       );
 
   Future<void> _loadMemberAliases() async {
+    if (!_matchesOpenedAccount) return;
     final key = _memberAliasKey;
     final prefs = await widget.store._localState();
+    if (!_matchesOpenedAccount) return;
     final raw = prefs.getString(key);
     final result = <String, String>{};
     if (raw != null) {
@@ -312,7 +323,7 @@ class _SharedSpaceHubScreenState extends State<SharedSpaceHubScreen> {
         // Corrupt local display preferences never invalidate shared data.
       }
     }
-    if (mounted && _memberAliasKey == key) {
+    if (mounted && _matchesOpenedAccount && _memberAliasKey == key) {
       setState(() {
         _memberAliases = result;
         _memberAliasScope = key;
@@ -323,12 +334,17 @@ class _SharedSpaceHubScreenState extends State<SharedSpaceHubScreen> {
   @override
   void initState() {
     super.initState();
+    _openedAccountId = widget.store.activeAccountId;
+    _openedAccountEpoch = widget.store.accountScopeEpoch;
     _loadCachedThenReload();
   }
 
   Future<void> _loadCachedThenReload() async {
+    if (!_matchesOpenedAccount) return;
     await _loadMemberAliases();
+    if (!_matchesOpenedAccount) return;
     final prefs = await widget.store._localState();
+    if (!_matchesOpenedAccount) return;
     final raw = prefs.getString(widget.store.sharedSpacesCacheStorageKey);
     if (raw != null) {
       try {
@@ -341,7 +357,7 @@ class _SharedSpaceHubScreenState extends State<SharedSpaceHubScreen> {
               ),
             )
             .toList();
-        if (mounted) {
+        if (mounted && _matchesOpenedAccount) {
           setState(() {
             spaces = cached;
             loading = false;
@@ -354,9 +370,12 @@ class _SharedSpaceHubScreenState extends State<SharedSpaceHubScreen> {
   }
 
   Future<void> _saveSpacesCache(List<SharedSpace> value) async {
+    if (!_matchesOpenedAccount) return;
+    final key = widget.store.sharedSpacesCacheStorageKey;
     final prefs = await widget.store._localState();
+    if (!_matchesOpenedAccount) return;
     await prefs.setString(
-      widget.store.sharedSpacesCacheStorageKey,
+      key,
       jsonEncode(
         value
             .map(
@@ -372,15 +391,18 @@ class _SharedSpaceHubScreenState extends State<SharedSpaceHubScreen> {
             .toList(),
       ),
     );
-    await widget.store.refreshSharedAgendaCache();
+    if (_matchesOpenedAccount) {
+      await widget.store.refreshSharedAgendaCache();
+    }
   }
 
   Future<void> _refreshIndicators(List<SharedSpace> value) async {
     final next = <String, int>{};
     for (final space in value) {
+      if (!_matchesOpenedAccount) return;
       next[space.id] = await widget.store.pendingSharedChanges(space.id);
     }
-    if (mounted) {
+    if (mounted && _matchesOpenedAccount) {
       setState(() {
         pendingBySpace
           ..clear()
@@ -390,17 +412,22 @@ class _SharedSpaceHubScreenState extends State<SharedSpaceHubScreen> {
   }
 
   Future<void> _reload() async {
+    if (!_matchesOpenedAccount) return;
     final cloud = CloudSyncService.instance;
+    final userId = cloud.userId;
     if (!cloud.signedIn) {
       if (mounted) setState(() => loading = false);
       return;
     }
     try {
       final result = await cloud.listSharedSpaces();
+      if (!_matchesOpenedAccount || cloud.userId != userId) return;
       await _saveSpacesCache(result);
+      if (!_matchesOpenedAccount || cloud.userId != userId) return;
       await _refreshIndicators(result);
+      if (!_matchesOpenedAccount || cloud.userId != userId) return;
       await widget.store.refreshSharedAgendaCache(pullRemote: true);
-      if (mounted) {
+      if (mounted && _matchesOpenedAccount && cloud.userId == userId) {
         setState(() {
           spaces = result;
           _remoteListVerified = true;
@@ -408,7 +435,7 @@ class _SharedSpaceHubScreenState extends State<SharedSpaceHubScreen> {
         });
       }
     } catch (_) {
-      if (mounted) {
+      if (mounted && _matchesOpenedAccount && cloud.userId == userId) {
         setState(() {
           _remoteListVerified = false;
           loading = false;
@@ -698,6 +725,24 @@ class _SharedSpaceHubScreenState extends State<SharedSpaceHubScreen> {
         AnnaEditorialTodayMode.enabled,
       ]),
       builder: (context, _) {
+        if (!_matchesOpenedAccount) {
+          return Scaffold(
+            key: const ValueKey<String>('together-stale-account-session'),
+            appBar: AppBar(title: Text(AnnaStrings.of(context).navMessages)),
+            body: Center(
+              child: Padding(
+                padding: const EdgeInsets.all(24),
+                child: Text(
+                  sharedSpaceVerificationCopy(
+                    AnnaStrings.of(context).languageCode,
+                    'sessionChanged',
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              ),
+            ),
+          );
+        }
         final accent = context.accentSurface;
         final editorial = AnnaEditorialTodayMode.enabled.value;
         final colors = AnnaEditorialColors.of(context);
