@@ -218,9 +218,16 @@ void main() {
       find.byKey(const ValueKey<String>('commitments-organic-header')),
       findsOneWidget,
     );
+    // Approved N18-03: the first frame captures the compact Journal list,
+    // not a silently reopened 24-hour timeline. The original timeline still
+    // has separate functional tests, and can be reached by the visible pill.
     expect(
-      find.byKey(const ValueKey<String>('commitments-organic-hour-grid')),
+      find.byKey(const ValueKey<String>('commitments-organic-compact-list')),
       findsOneWidget,
+    );
+    expect(
+      find.byKey(const ValueKey<String>('commitments-canonical-day-timeline')),
+      findsNothing,
     );
     await expectLater(
       find.byType(Scaffold).first,
