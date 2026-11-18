@@ -20,17 +20,20 @@ void main() {
     ]) {
       expect(source, contains(visual));
     }
+    // The compact app bar moves these actions into its existing menu.
+    // Assert the exact original callbacks remain reachable, not their layout.
+    expect(source, contains("if (value == 'invite') _invite();"));
+    expect(source, contains("if (value == 'passwords') _openSharedPasswords();"));
+    expect(source, contains("if (widget.space.isOwner)"));
     for (final original in <String>[
       'onPressed: _createSpace',
       'onPressed: _joinSpace',
       'onPressed: _scanSharedInviteQr',
-      'onPressed: _invite',
       '_renameSpace(space)',
       'markSharedSpaceRead(',
       'onTap: _openSharedShopping',
       'onTap: _openSharedMemories',
       'onPressed: _openMembers',
-      'onPressed: _openSharedPasswords',
       'onRefresh: _refresh',
       'TableCalendar<SharedEntry>',
       'selectedDayPredicate:',

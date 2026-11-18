@@ -2261,7 +2261,7 @@ class _DiaryMemoriesScreenState extends State<DiaryMemoriesScreen> {
 
     // The same canonical actions are rendered once: an iOS Journal
     // toolbar row when Organic is enabled, or the Classic AppBar actions.
-    final memoryActions = <Widget>[
+    final memoryActions = <IconButton>[
 
           IconButton(
             key: const ValueKey('cap0151-memory-extractive-summary'),
@@ -2341,7 +2341,42 @@ class _DiaryMemoriesScreenState extends State<DiaryMemoriesScreen> {
               : strings.v100MemoriesWithPerson(widget.personName!),
           style: AnnaJournalTypography.editorial(context, size: 29),
         ),
-        actions: editorial ? null : memoryActions,
+        actions: editorial
+            ? const [AnnaContextHelpButton(section: AnnaHelpSection.memories)]
+            : <Widget>[
+                // On narrow screens keep the information action visible
+                // without pushing the title beyond the AppBar's constraints.
+                memoryActions[2],
+                PopupMenuButton<int>(
+                  key: const ValueKey<String>('memories-secondary-actions'),
+                  tooltip: strings.d3('captureMoreActions'),
+                  icon: Badge(
+                    isLabelVisible: filter != null,
+                    child: const Icon(Icons.more_horiz),
+                  ),
+                  onSelected: (index) => memoryActions[index].onPressed?.call(),
+                  itemBuilder: (_) => <PopupMenuEntry<int>>[
+                    PopupMenuItem<int>(
+                      value: 0,
+                      child: Text(memoryExtractiveCopy(
+                        strings.languageCode, 'title',
+                      )),
+                    ),
+                    if (!widget.store.preferences.hideHomeDetails)
+                      PopupMenuItem<int>(
+                        value: 1,
+                        child: Text(_annaMemoryFrequencyCopy(
+                          strings.languageCode, 'title',
+                        )),
+                      ),
+                    PopupMenuItem<int>(
+                      value: 3,
+                      child: Text(strings.d3('memoriesFilters')),
+                    ),
+                  ],
+                ),
+                const AnnaContextHelpButton(section: AnnaHelpSection.memories),
+              ],
         bottom: editorial
             ? PreferredSize(
                 preferredSize: const Size.fromHeight(56),
