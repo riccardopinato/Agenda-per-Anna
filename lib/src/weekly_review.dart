@@ -397,8 +397,24 @@ class _WeeklyReviewScreenState extends State<WeeklyReviewScreen>{
      onPopInvokedWithResult:(didPop,result){
        if(!didPop){unawaited(exitReview());}
      },
-     child:Scaffold(appBar:AppBar(title:Text(wrText(c,'week')),
-       leading:BackButton(onPressed:()=>exitReview())),
+     child:Scaffold(
+       appBar:AppBar(
+         title:Text(wrText(c,'week')),
+         leading:BackButton(onPressed:()=>exitReview()),
+         actions:[
+           IconButton(
+             key:const ValueKey<String>('weekly-review-reminder-settings'),
+             tooltip:wrText(c,'reminders'),
+             icon:const Icon(Icons.notifications_none_outlined),
+             onPressed:()=>Navigator.push<void>(
+               c,
+               MaterialPageRoute<void>(
+                 builder:(_)=>WeeklyReviewSettingsPage(store:widget.store),
+               ),
+             ),
+           ),
+         ],
+       ),
      body:SafeArea(child:AnnaJournalContent(child:AnnaMotionReveal(token:step,axis:Axis.vertical,child:ListView(
        padding:const EdgeInsets.symmetric(vertical:14),children:finished?[
          AnnaJournalCard(hero:true,child:Column(children:[
@@ -645,10 +661,17 @@ class _WeeklyReviewSettingsState extends State<WeeklyReviewSettingsPage>{
              onChanged:busy?null:(v)=>save(p.copyWith(weeklyReviewReminderEnabled:v),enabling:v)),
            const SizedBox(height:11),
            DropdownButtonFormField<int>(
+             // The selected weekday must fit the actual 320/390dp card
+             // width and long localized text without a RenderFlex overflow.
+             isExpanded:true,
              initialValue:p.weeklyReviewReminderDay,
              decoration:InputDecoration(labelText:wrText(c,'week')),
              items:[7,1].map((d)=>DropdownMenuItem(value:d,
-               child:Text(wrText(c,d==7?'sunday':'monday')))).toList(),
+               child:Text(
+                 wrText(c,d==7?'sunday':'monday'),
+                 maxLines:1,
+                 overflow:TextOverflow.ellipsis,
+               ))).toList(),
              onChanged:busy?null:(d){if(d!=null)save(p.copyWith(weeklyReviewReminderDay:d));}),
            const SizedBox(height:11),
           ListTile(

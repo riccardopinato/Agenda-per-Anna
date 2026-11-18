@@ -1096,6 +1096,15 @@ class _PlannerScreenState extends State<PlannerScreen> {
   void initState() {
     super.initState();
     day = widget.initialDate ?? DateTime.now();
+    // N18-01: Organic Today no longer mounts WeeklyReviewHomeCard, whose
+    // initState previously reconciled enabled reminders. Keep that behavior
+    // in the original Today owner without rendering a duplicate card.
+    // Classic still reconciles through WeeklyReviewHomeCard.
+    if (widget.embedded &&
+        AnnaEditorialTodayMode.enabled.value &&
+        widget.store.preferences.weeklyReviewReminderEnabled) {
+      unawaited(WeeklyReviewReminders.reconcile(widget.store));
+    }
     unawaited(AnnaEditorialTodayMode.ensureLoaded());
     unawaited(
       ExternalCalendarService.instance.initialize().then(
