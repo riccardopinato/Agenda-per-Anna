@@ -416,11 +416,49 @@ class _SettingsHubScreenState extends State<SettingsHubScreen> {
                     _matches('backup', strings.v100BackupRestore,
                         strings.v100BackupRestoreDescription),
                   ].contains(true))
-                    Padding(
-                      padding: const EdgeInsets.all(20),
-                      child: Text(quickWins2Copy(
-                          strings.languageCode, 'settingsNoMatch')),
-                    ),
+                    AnnaOrganicPastel.enabled(context)
+                        ? AnnaOrganicPaperSurface(
+                            key: const ValueKey<String>(
+                              'settings-journal-empty-search'),
+                            tone: AnnaEditorialSurfaceTone.quiet,
+                            padding: const EdgeInsets.fromLTRB(18, 18, 18, 14),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Icon(
+                                  Icons.search_off_outlined,
+                                  size: 26,
+                                  color: AnnaEditorialColors.of(context).accent,
+                                ),
+                                const SizedBox(height: 12),
+                                Text(
+                                  quickWins2Copy(
+                                    strings.languageCode, 'settingsNoMatch'),
+                                  style: AnnaJournalTypography.editorial(
+                                    context, size: 19),
+                                ),
+                                const SizedBox(height: 12),
+                                TextButton.icon(
+                                  key: const ValueKey<String>(
+                                    'settings-journal-clear-empty-search'),
+                                  icon: const Icon(Icons.close),
+                                  label: Text(strings.v100ClearSearch),
+                                  onPressed: () {
+                                    FocusScope.of(context).unfocus();
+                                    setState(() {
+                                      _search.clear();
+                                      _query = '';
+                                    });
+                                  },
+                                ),
+                              ],
+                            ),
+                          )
+                        : Padding(
+                            padding: const EdgeInsets.all(20),
+                            child: Text(quickWins2Copy(
+                                strings.languageCode, 'settingsNoMatch')),
+                          ),
                 ] else ...[
                 AnnaJournalCard(
                   domain: AnnaVisualDomain.people,
