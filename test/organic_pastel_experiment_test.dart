@@ -848,6 +848,9 @@ void main() {
               textScaler: TextScaler.linear(1.6),
             ),
             child: AnnaCommitmentsTimelineScreen(
+              // Each viewport/brightness fixture starts a fresh route state.
+              // An in-session switch to Timeline is intentionally retained.
+              key: ValueKey<String>('commitments-$width-$brightness'),
               store: store,
               initialDate: date,
             ),
