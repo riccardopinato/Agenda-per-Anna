@@ -184,3 +184,96 @@ class AnnaOrganicJournalYearPill extends StatelessWidget {
     );
   }
 }
+
+
+/// A restrained editorial filter/action pill for the approved Journal UI.
+/// Design-App: UIX-STYLE-004/007 (ADATTATA), DCL-004/007 (ADATTATA).
+///
+/// Only visual presentation changes. Search/Inbox filtering, tag writes and
+/// archival ownership stay with their existing screen callbacks. Classic keeps
+/// its pre-existing ChoiceChip / FilterChip / ActionChip implementations.
+class AnnaOrganicJournalFilterPill extends StatelessWidget {
+  final String label;
+  final bool selected;
+  final IconData? icon;
+  final VoidCallback onTap;
+  final String? semanticsId;
+
+  const AnnaOrganicJournalFilterPill({
+    super.key,
+    required this.label,
+    required this.selected,
+    required this.onTap,
+    this.icon,
+    this.semanticsId,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = AnnaEditorialColors.of(context);
+    final duration = AnnaDesignTokens.animationsEnabled(context)
+        ? const Duration(milliseconds: 170)
+        : Duration.zero;
+
+    return Semantics(
+      identifier: semanticsId,
+      label: label,
+      button: true,
+      selected: selected,
+      onTap: onTap,
+      excludeSemantics: true,
+      child: Material(
+        type: MaterialType.transparency,
+        child: InkWell(
+          key: semanticsId == null ? null : ValueKey<String>(semanticsId!),
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(16),
+          splashFactory: NoSplash.splashFactory,
+          hoverColor: colors.accent.withValues(alpha: .06),
+          focusColor: colors.accent.withValues(alpha: .12),
+          child: AnimatedContainer(
+            duration: duration,
+            curve: Curves.easeOutCubic,
+            constraints: const BoxConstraints(minHeight: 48),
+            padding: const EdgeInsetsDirectional.fromSTEB(13, 8, 13, 8),
+            decoration: BoxDecoration(
+              color: selected ? colors.quiet : colors.card,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(
+                color: selected
+                    ? colors.accent.withValues(alpha: .72)
+                    : colors.border,
+                width: selected ? 1.35 : 1,
+              ),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (icon != null) ...[
+                  Icon(
+                    icon,
+                    size: 17,
+                    color: selected ? colors.accent : colors.mutedInk,
+                  ),
+                  const SizedBox(width: 7),
+                ],
+                Text(
+                  label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontFamily: AnnaJournalTypography.uiFamily,
+                    fontSize: 13,
+                    height: 1.2,
+                    fontWeight: selected ? FontWeight.w800 : FontWeight.w650,
+                    color: selected ? colors.ink : colors.mutedInk,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
