@@ -84,7 +84,7 @@ List<_AnnaHelpEntry> _annaHelpEntries(AnnaHelpSection section, String locale) {
 /// are never advertised in the guide.
 class AnnaContextHelpButton extends StatelessWidget {
   final AnnaHelpSection section;
-  final Set<_UnifiedCaptureAction>? captureActions;
+  final Set<String>? captureActions;
   const AnnaContextHelpButton({
     super.key,
     required this.section,
@@ -112,7 +112,7 @@ class AnnaContextHelpButton extends StatelessWidget {
 
 class _AnnaContextHelpScreen extends StatelessWidget {
   final AnnaHelpSection section;
-  final Set<_UnifiedCaptureAction>? captureActions;
+  final Set<String>? captureActions;
   const _AnnaContextHelpScreen({required this.section, this.captureActions});
 
   @override
@@ -122,7 +122,7 @@ class _AnnaContextHelpScreen extends StatelessWidget {
     final journal = AnnaOrganicPastel.enabled(context);
     final entries = _annaHelpEntries(section, locale)
         .where((entry) => entry.captureAction == null ||
-          captureActions == null || captureActions!.contains(entry.captureAction))
+          captureActions == null || captureActions!.contains(entry.captureAction!.name))
         .toList(growable: false);
     final title = _annaHelpTitle(section, locale);
     return Scaffold(
