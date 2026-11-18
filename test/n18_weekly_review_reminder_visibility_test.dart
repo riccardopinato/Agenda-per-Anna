@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:agenda_per_anna/main.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:intl/date_symbol_data_local.dart';
 
 /// N18-01/03: the approved Organic Home replaces the large WeeklyReviewHomeCard
 /// with a compact paired tile. Keep the original reminder service and settings
@@ -37,6 +38,7 @@ void main() {
 
   testWidgets('Review settings are reachable without the old Home review card',
       (tester) async {
+    await initializeDateFormatting();
     tester.view.physicalSize = const Size(390, 844);
     tester.view.devicePixelRatio = 1;
     addTearDown(() {
