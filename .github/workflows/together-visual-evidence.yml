@@ -1,0 +1,89 @@
+name: Anna Together actual Flutter visual evidence (PR-only)
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+    paths:
+      - 'test/together_visual_capture_test.dart'
+      - 'test/together_detail_account_epoch_test.dart'
+      - 'lib/src/screens/shared_space.dart'
+      - '.github/workflows/together-visual-evidence.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: anna-together-visual-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  capture-together:
+    # Bounded, one-off synthetic visual QA. No live Supabase, secrets, signing,
+    # APK release, user data, physical acceptance or UI mock-up auto-approval.
+    if: github.head_ref == 'fix/together-detail-account-epoch-visual-qa-20261118'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - name: Checkout exact PR head
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          persist-credentials: false
+      - name: Setup Flutter
+        uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2.23.0
+        with:
+          flutter-version: '3.47.5'
+          channel: stable
+          cache: true
+      - name: Prepare synthetic Flutter platforms (no external app or data)
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf android web /tmp/anna_together_base
+          flutter create --project-name agenda_per_anna --org com.riccardopinato --platforms=android,web /tmp/anna_together_base
+          cp -R /tmp/anna_together_base/android .
+          cp -R /tmp/anna_together_base/web .
+          python3 tool/prepare_android_platform.py
+          python3 tool/prepare_web_platform.py
+      - name: Fetch locked dependencies
+        run: flutter pub get --enforce-lockfile
+      - name: Use official SDK icon glyphs
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p test/fixtures
+          cp "$(dirname "$(command -v flutter)")/cache/artifacts/material_fonts/MaterialIcons-Regular.otf" test/fixtures/
+      - name: Verify account A-B-A privacy boundary (fast targeted regression)
+        run: flutter test --reporter expanded test/together_detail_account_epoch_test.dart
+      - name: Render real Insieme hub guest and contextual help
+        shell: bash
+        run: |
+          set -euo pipefail
+          # Each fixture has its own Flutter test process: the app's static
+          # image/theme/channel initialization is not safe to reinitialize
+          # seven times inside the same test isolate.
+          for fixture in \
+            it_320_light_rose \
+            en_390_dark_lilac \
+            es_600_light_sage \
+            fr_320_light_peach \
+            pt_390_light_sky \
+            it_390_custom_hsv \
+            it_390_classic; do
+            echo "::group::Capture $fixture"
+            flutter test --update-goldens \
+              --plain-name "Insieme real guest/help visual $fixture" \
+              --dart-define=ANNA_TOGETHER_CAPTURE=true \
+              test/together_visual_capture_test.dart
+            echo "::endgroup::"
+          done
+      - name: Upload screenshots for manual 10-mock-up review
+        if: success()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: anna-together-guest-help-${{ github.event.pull_request.head.sha }}
+          path: |
+            test/goldens/together_guest_*.png
+            test/goldens/together_help_*.png
+          if-no-files-found: error
+          retention-days: 14
