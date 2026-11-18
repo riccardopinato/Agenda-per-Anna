@@ -3660,6 +3660,10 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
       ]),
       builder: (context, _) => !_matchesOpenedAccount
           ? Scaffold(
+              // A distinct subtree unmounts any old FAB immediately when the
+              // owning account session changes; never animate a private action
+              // into an expired session.
+              key: const ValueKey<String>('together-stale-detail-session'),
               appBar: AppBar(title: Text(AnnaStrings.of(context).navMessages)),
               body: Center(
                 child: Padding(
@@ -3672,6 +3676,7 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
               ),
             )
           : Scaffold(
+        key: const ValueKey<String>('together-live-detail-session'),
         appBar: AppBar(
           // Keep the title legible beside existing actions at 320dp.
           // The larger space portrait lives in the first journal page below.
