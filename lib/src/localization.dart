@@ -68,12 +68,15 @@ class AnnaStrings {
         pt: 'Calendário',
       );
 
+  // N18-06: the user-facing destination is now "Insieme". Retain the
+  // stable navMessages getter and main-nav-messages IDs for route, tests,
+  // settings and accessibility compatibility. Shared-space IDs are unchanged.
   String get navMessages => _pick(
-        en: 'Messages',
-        it: 'Messaggi',
-        es: 'Mensajes',
-        fr: 'Messages',
-        pt: 'Mensagens',
+        en: 'Together',
+        it: 'Insieme',
+        es: 'Juntos',
+        fr: 'Ensemble',
+        pt: 'Juntos',
       );
 
   String get navMemories => memories;

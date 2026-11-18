@@ -13,7 +13,7 @@ void main() {
     'main-nav-memories',
     'main-nav-more',
   ];
-  const labels = <String>['Oggi', 'Messaggi', 'Ricordi', 'Altro'];
+  const labels = <String>['Oggi', 'Insieme', 'Ricordi', 'Altro'];
   const icons = <IconData>[
     Icons.today_outlined,
     Icons.chat_bubble_outline,
