@@ -1405,8 +1405,11 @@ class _PersonalSearchConnectionsScreenState
             key: const ValueKey<String>('approved-search-filter-strip'),
             // Chip labels follow the system text scale; the original fixed
             // 46dp strip clipped long translated labels at larger scales.
-            height: (22.0 + MediaQuery.textScalerOf(context).scale(14) * 2)
-                .clamp(54.0, 112.0),
+            height: AnnaEditorialTodayMode.enabled.value
+                ? (22.0 + MediaQuery.textScalerOf(context).scale(14) * 2)
+                    .clamp(54.0, 112.0)
+                : (18.0 + MediaQuery.textScalerOf(context).scale(14) * 2)
+                    .clamp(46.0, 96.0),
             child: ListView(
               padding: const EdgeInsets.symmetric(horizontal: 14),
               scrollDirection: Axis.horizontal,
