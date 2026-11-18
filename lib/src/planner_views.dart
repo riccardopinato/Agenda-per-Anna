@@ -2837,6 +2837,10 @@ class _AnnaCommitmentsTimelineScreenState
     extends State<AnnaCommitmentsTimelineScreen> {
   late DateTime _selected;
   late final ScrollController _timelineScroll;
+  // N18-03: Journal opens on the compact canonical agenda; the existing
+  // complete 24-hour timeline remains explicitly available. Classic still
+  // opens on the original timeline, without a new persistence preference.
+  bool _showTimeline = false;
 
   @override
   void initState() {
@@ -2848,6 +2852,21 @@ class _AnnaCommitmentsTimelineScreenState
     _timelineScroll = ScrollController(
       initialScrollOffset: DayTimeline.offsetForMinutes(7 * 60),
     );
+    // This screen also projects Android calendar items in its compact list.
+    // Initialize/load the selected civil-day window just as PlannerScreen
+    // does; otherwise navigation may show a false empty state for days not
+    // previously requested by another route.
+    unawaited(
+      ExternalCalendarService.instance.initialize().then(
+        (_) => _loadSelectedCalendarDay(_selected),
+      ),
+    );
+  }
+
+  Future<void> _loadSelectedCalendarDay(DateTime value) {
+    final start = DateTime(value.year, value.month, value.day - 1);
+    final end = DateTime(value.year, value.month, value.day + 2);
+    return ExternalCalendarService.instance.loadRange(start, end);
   }
 
   @override
@@ -2857,9 +2876,9 @@ class _AnnaCommitmentsTimelineScreenState
   }
 
   void _selectDay(DateTime selected) {
-    setState(() => _selected = DateTime(
-      selected.year, selected.month, selected.day,
-    ));
+    final date = DateTime(selected.year, selected.month, selected.day);
+    setState(() => _selected = date);
+    unawaited(_loadSelectedCalendarDay(date));
   }
 
   @override
@@ -2890,7 +2909,13 @@ class _AnnaCommitmentsTimelineScreenState
         ],
       ),
       body: AnimatedBuilder(
-        animation: widget.store.agendaRevision,
+        // The list uses the same authorized unified day projection as Calendar,
+        // including shared and already-loaded external entries.
+        animation: Listenable.merge([
+          widget.store.agendaRevision,
+          widget.store.sharedRevision,
+          ExternalCalendarService.instance,
+        ]),
         builder: (context, _) {
           final snapshot = widget.store.dayHubSnapshot(_selected);
           final timedPrivate = snapshot.agenda
@@ -2913,8 +2938,87 @@ class _AnnaCommitmentsTimelineScreenState
                   selected: _selected,
                   onSelected: _selectDay,
                 ),
+              if (organic)
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 3, 16, 8),
+                  child: Align(
+                    alignment: Alignment.centerLeft,
+                    child: Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: [
+                        AnnaOrganicJournalFilterPill(
+                          semanticsId: 'commitments-view-list',
+                          label: switch (strings.languageCode) {
+                            'it' => 'Elenco',
+                            'es' => 'Lista',
+                            'fr' => 'Liste',
+                            'pt' => 'Lista',
+                            _ => 'List',
+                          },
+                          icon: Icons.view_list_rounded,
+                          selected: !_showTimeline,
+                          onTap: () => setState(() => _showTimeline = false),
+                        ),
+                        AnnaOrganicJournalFilterPill(
+                          semanticsId: 'commitments-view-timeline',
+                          label: strings.hourlyTimeline,
+                          icon: Icons.schedule_outlined,
+                          selected: _showTimeline,
+                          onTap: () => setState(() => _showTimeline = true),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
               Expanded(
-                child: SingleChildScrollView(
+                child: organic && !_showTimeline
+                    ? ListView(
+                        key: const ValueKey<String>(
+                          'commitments-organic-compact-list',
+                        ),
+                        padding: const EdgeInsets.fromLTRB(16, 7, 16, 28),
+                        children: [
+                          AnnaEditorialSectionHeading(
+                            title: strings.d3('ui5Commitments'),
+                          ),
+                          // A list-first view must retain the canonical
+                          // task/appointment capture affordance previously
+                          // available through hourly timeline tap gestures.
+                          Align(
+                            alignment: Alignment.centerLeft,
+                            child: TextButton.icon(
+                              key: const ValueKey<String>(
+                                'commitments-list-create',
+                              ),
+                              style: TextButton.styleFrom(
+                                minimumSize: const Size(0, 48),
+                              ),
+                              onPressed: () => _showQuickCapture(
+                                context,
+                                widget.store,
+                                captureDate: _selected,
+                                entryPoint: UnifiedCaptureEntryPoint.day,
+                              ),
+                              icon: const Icon(Icons.add_rounded),
+                              label: Text(strings.capture),
+                            ),
+                          ),
+                          const SizedBox(height: 10),
+                          if (snapshot.agenda.isEmpty)
+                            AnnaOrganicCalendarEmptyAgenda(
+                              label: strings.noCommitments,
+                            )
+                          else
+                            for (final entry in snapshot.agenda)
+                              UnifiedAgendaTile(
+                                store: widget.store,
+                                entry: entry,
+                                compact: true,
+                              ),
+                        ],
+                      )
+                    : SingleChildScrollView(
                   key: const ValueKey<String>(
                     'commitments-hourly-scroll',
                   ),

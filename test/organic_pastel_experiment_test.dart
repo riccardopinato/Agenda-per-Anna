@@ -2,13 +2,29 @@ import 'dart:io';
 
 import 'package:agenda_per_anna/main.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:intl/date_symbol_data_local.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
+  // ExternalCalendarService is a device-only read bridge. Keep widget
+  // fixtures deterministic; no platform calendar or personal data are read.
+  const externalChannel = MethodChannel('annas_diary/external_calendar');
+  final messenger =
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
   setUpAll(() async {
     await initializeDateFormatting('it', null);
+    SharedPreferences.setMockInitialValues(<String, Object>{});
+    messenger.setMockMethodCallHandler(
+      externalChannel,
+      (call) async => call.method == 'status'
+          ? <String, Object>{'granted': false}
+          : null,
+    );
   });
+  tearDownAll(() => messenger.setMockMethodCallHandler(externalChannel, null));
 
   tearDown(() {
     AnnaEditorialTodayMode.enabled.value = false;
@@ -753,6 +769,7 @@ void main() {
       enabledModules: <AppModule>{AppModule.memories},
     );
     final selectedDay = DateTime(2026, 11, 14);
+    AnnaEditorialTodayMode.enabled.value = true;
     await tester.pumpWidget(MaterialApp(
       locale: const Locale('it'),
       home: Scaffold(
@@ -781,9 +798,18 @@ void main() {
       )),
       findsOneWidget,
     );
+    // N18-03 opens Organic Impegni on the compact canonical day list.
+    expect(find.byKey(const ValueKey<String>(
+      'commitments-organic-compact-list',
+    )), findsOneWidget);
     final timeline = find.byKey(
       const ValueKey<String>('commitments-canonical-day-timeline'),
     );
+    expect(timeline, findsNothing);
+    await tester.tap(find.byKey(const ValueKey<String>(
+      'commitments-view-timeline',
+    )));
+    await tester.pumpAndSettle();
     expect(timeline, findsOneWidget);
     expect(tester.widget<DayTimeline>(timeline).date, selectedDay);
     expect(DayTimeline.startHour, 0);
@@ -838,6 +864,9 @@ void main() {
               textScaler: TextScaler.linear(1.6),
             ),
             child: AnnaCommitmentsTimelineScreen(
+              // Each viewport/brightness fixture starts a fresh route state.
+              // An in-session switch to Timeline is intentionally retained.
+              key: ValueKey<String>('commitments-$width-$brightness'),
               store: store,
               initialDate: date,
             ),
@@ -848,13 +877,21 @@ void main() {
           'commitments-organic-header',
         )), findsOneWidget);
         expect(find.byKey(const ValueKey<String>(
+          'commitments-organic-compact-list',
+        )), findsOneWidget);
+        expect(find.text('Visita di controllo'), findsOneWidget);
+        expect(find.byKey(const ValueKey<String>(
+          'commitments-private-count',
+        )), findsOneWidget);
+        await tester.tap(find.byKey(const ValueKey<String>(
+          'commitments-view-timeline',
+        )));
+        await tester.pump(const Duration(milliseconds: 350));
+        expect(find.byKey(const ValueKey<String>(
           'commitments-organic-hint',
         )), findsOneWidget);
         expect(find.byKey(const ValueKey<String>(
           'commitments-organic-hour-grid',
-        )), findsOneWidget);
-        expect(find.byKey(const ValueKey<String>(
-          'commitments-private-count',
         )), findsOneWidget);
         final timeline = find.byKey(const ValueKey<String>(
           'commitments-canonical-day-timeline',
@@ -885,9 +922,17 @@ void main() {
       ),
     ));
     await tester.pump();
+    expect(find.byKey(const ValueKey<String>(
+      'commitments-organic-compact-list',
+    )), findsOneWidget);
     final timeline = find.byKey(const ValueKey<String>(
       'commitments-canonical-day-timeline',
     ));
+    expect(timeline, findsNothing);
+    await tester.tap(find.byKey(const ValueKey<String>(
+      'commitments-view-timeline',
+    )));
+    await tester.pump();
     expect(tester.widget<DayTimeline>(timeline).organicStyle, isTrue);
     await tester.tap(find.byKey(const ValueKey('today-date-next')));
     await tester.pump();
