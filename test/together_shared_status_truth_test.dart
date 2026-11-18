@@ -40,4 +40,13 @@ void main() {
     expect(source, contains('widget.store.pendingSharedMediaCount'));
     expect(source, contains('markSharedSpaceRead('));
   });
+  test('Shared tab rebuilds and remounts on account scope switch', () {
+    final shell = File('lib/src/screens/home_inbox_search.dart').readAsStringSync();
+    expect(shell, contains('widget.store.accountRevision'));
+    expect(shell, contains('ValueKey<String>(widget.store.sharedSpacesCacheStorageKey)'));
+    expect(shell, contains('SharedSpaceHubScreen(store: widget.store)'));
+    expect(shell, contains('widget.store.preferences.isModuleEnabled(AppModule.sharedSpace)'));
+    expect(shell, contains('PersonalizationScreen(store: widget.store)'));
+  });
+
 }
