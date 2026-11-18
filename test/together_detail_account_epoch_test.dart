@@ -47,4 +47,50 @@ void main() {
     expect(find.byType(FloatingActionButton), findsNothing);
     expect(tester.takeException(), isNull);
   });
+  testWidgets('separately routed shared hub cannot leak A after B or A again',
+      (tester) async {
+    SharedPreferences.setMockInitialValues(<String, Object>{
+      'active_account_v1': 'user-a',
+    });
+    final store = AgendaStore();
+    addTearDown(store.dispose);
+    await tester.runAsync(store.load);
+    expect(store.activeAccountId, 'user-a');
+
+    await tester.pumpWidget(MaterialApp(
+      locale: const Locale('en'),
+      home: SharedSpaceHubScreen(store: store),
+    ));
+    await tester.pumpAndSettle();
+    expect(
+        find.byKey(const ValueKey<String>('together-stale-account-session')),
+        findsNothing);
+
+    await tester.runAsync(() => store.activateCloudAccount('user-b'));
+    await tester.pumpAndSettle();
+    expect(
+        find.byKey(const ValueKey<String>('together-stale-account-session')),
+        findsOneWidget);
+    expect(
+      find.text(sharedSpaceVerificationCopy('en', 'sessionChanged')),
+      findsOneWidget,
+    );
+    expect(find.byType(FloatingActionButton), findsNothing);
+
+    await tester.runAsync(() => store.activateCloudAccount('user-a'));
+    await tester.pumpAndSettle();
+    expect(
+        find.byKey(const ValueKey<String>('together-stale-account-session')),
+        findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
+  test('stale-session UI is localized in all five supported languages', () {
+    for (final language in <String>['it', 'en', 'es', 'fr', 'pt']) {
+      final copy = sharedSpaceVerificationCopy(language, 'sessionChanged');
+      expect(copy, isNotEmpty);
+      expect(copy, isNot('sessionChanged'));
+    }
+  });
+
 }
