@@ -1209,45 +1209,85 @@ class _InboxScreenState extends State<InboxScreen> {
               ),
               if (!compact)
                 SizedBox(
-                  height: 46,
+                  height: editorial
+                      ? (22.0 + MediaQuery.textScalerOf(context).scale(14) * 2)
+                          .clamp(54.0, 112.0)
+                      : 46,
                   child: ListView(
                   padding: const EdgeInsets.symmetric(horizontal: 14),
                   scrollDirection: Axis.horizontal,
                   children: [
                     Padding(
                       padding: const EdgeInsets.only(right: 7),
-                      child: ChoiceChip(
-                        label: Text(inboxCategoryCopy(
-                            strings.languageCode, 'all')),
-                        selected: selectedCategory == null,
-                        onSelected: (_) =>
-                            setState(() => selectedCategory = null),
-                      ),
+                      child: editorial
+                          ? AnnaOrganicJournalFilterPill(
+                              semanticsId: 'inbox-journal-category-all',
+                              label: inboxCategoryCopy(
+                                  strings.languageCode, 'all'),
+                              selected: selectedCategory == null,
+                              onTap: () =>
+                                  setState(() => selectedCategory = null),
+                            )
+                          : ChoiceChip(
+                              label: Text(inboxCategoryCopy(
+                                  strings.languageCode, 'all')),
+                              selected: selectedCategory == null,
+                              onSelected: (_) =>
+                                  setState(() => selectedCategory = null),
+                            ),
                     ),
                     for (final category in categories)
                       Padding(
                         padding: const EdgeInsets.only(right: 7),
-                        child: ChoiceChip(
-                          label: Text('#$category'),
-                          selected: selectedCategory?.toLowerCase() ==
-                              category.toLowerCase(),
-                          onSelected: (_) =>
-                              setState(() => selectedCategory = category),
-                        ),
+                        child: editorial
+                            ? AnnaOrganicJournalFilterPill(
+                                label: '#$category',
+                                selected: selectedCategory?.toLowerCase() ==
+                                    category.toLowerCase(),
+                                onTap: () =>
+                                    setState(() => selectedCategory = category),
+                              )
+                            : ChoiceChip(
+                                label: Text('#$category'),
+                                selected: selectedCategory?.toLowerCase() ==
+                                    category.toLowerCase(),
+                                onSelected: (_) =>
+                                    setState(() => selectedCategory = category),
+                              ),
                       ),
-                    ActionChip(
-                      avatar: const Icon(Icons.add, size: 18),
-                      label: Text(inboxCategoryCopy(
-                          strings.languageCode, 'create')),
-                      onPressed: () => _createCategory(context),
-                    ),
+                    if (editorial)
+                      AnnaOrganicJournalFilterPill(
+                        semanticsId: 'inbox-journal-create-category',
+                        icon: Icons.add,
+                        label: inboxCategoryCopy(
+                            strings.languageCode, 'create'),
+                        selected: false,
+                        onTap: () => _createCategory(context),
+                      )
+                    else
+                      ActionChip(
+                        avatar: const Icon(Icons.add, size: 18),
+                        label: Text(inboxCategoryCopy(
+                            strings.languageCode, 'create')),
+                        onPressed: () => _createCategory(context),
+                      ),
                     const SizedBox(width: 7),
-                    ActionChip(
-                      avatar: const Icon(Icons.label_outline, size: 18),
-                      label: Text(inboxCategoryCopy(
-                          strings.languageCode, 'choose')),
-                      onPressed: () => _addTagToNote(context),
-                    ),
+                    if (editorial)
+                      AnnaOrganicJournalFilterPill(
+                        semanticsId: 'inbox-journal-choose-tag',
+                        icon: Icons.label_outline,
+                        label: inboxCategoryCopy(
+                            strings.languageCode, 'choose'),
+                        selected: false,
+                        onTap: () => _addTagToNote(context),
+                      )
+                    else
+                      ActionChip(
+                        avatar: const Icon(Icons.label_outline, size: 18),
+                        label: Text(inboxCategoryCopy(
+                            strings.languageCode, 'choose')),
+                        onPressed: () => _addTagToNote(context),
+                      ),
                   ],
                 ),
               ),
