@@ -2,13 +2,28 @@ import 'dart:io';
 
 import 'package:agenda_per_anna/main.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:intl/date_symbol_data_local.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
+  // ExternalCalendarService is a device-only read bridge. Keep widget
+  // fixtures deterministic; no platform calendar or personal data are read.
+  const externalChannel = MethodChannel('annas_diary/external_calendar');
+  final messenger =
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
   setUpAll(() async {
     await initializeDateFormatting('it', null);
+    SharedPreferences.setMockInitialValues(<String, Object>{});
+    messenger.setMockMethodCallHandler(
+      externalChannel,
+      (call) async => call.method == 'status'
+          ? <String, Object>{'granted': false}
+          : null,
+    );
   });
+  tearDownAll(() => messenger.setMockMethodCallHandler(externalChannel, null));
 
   tearDown(() {
     AnnaEditorialTodayMode.enabled.value = false;
