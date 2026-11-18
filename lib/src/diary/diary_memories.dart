@@ -2341,7 +2341,12 @@ class _DiaryMemoriesScreenState extends State<DiaryMemoriesScreen> {
               : strings.v100MemoriesWithPerson(widget.personName!),
           style: AnnaJournalTypography.editorial(context, size: 29),
         ),
-        actions: editorial ? null : memoryActions,
+        actions: editorial
+            ? const [AnnaContextHelpButton(section: AnnaHelpSection.memories)]
+            : <Widget>[
+                ...memoryActions,
+                const AnnaContextHelpButton(section: AnnaHelpSection.memories),
+              ],
         bottom: editorial
             ? PreferredSize(
                 preferredSize: const Size.fromHeight(56),
