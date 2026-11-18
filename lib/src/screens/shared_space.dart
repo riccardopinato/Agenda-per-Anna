@@ -1147,6 +1147,17 @@ class SharedSpaceScreen extends StatefulWidget {
 }
 
 class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
+  late final String? _openedAccountId;
+  late final int _openedAccountEpoch;
+
+  /// The open route belongs to one account session. A→B→A must not revive it.
+  /// This is a UI visibility boundary; existing ACL and writer guards remain.
+  bool get _matchesOpenedAccount =>
+      _openedAccountId != null &&
+      widget.store.entryScopeReady &&
+      widget.store.activeAccountId == _openedAccountId &&
+      widget.store.accountScopeEpoch == _openedAccountEpoch;
+
   bool loading = true;
   late String _avatarPath;
   bool _avatarBusy = false;
@@ -1175,6 +1186,8 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
   @override
   void initState() {
     super.initState();
+    _openedAccountId = widget.store.activeAccountId;
+    _openedAccountEpoch = widget.store.accountScopeEpoch;
     _seenConflictCount = widget.store.sharedConflictCount;
     _avatarPath = widget.space.avatarPath;
     _loadCachedThenRefresh();
@@ -1380,7 +1393,9 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
   }
 
   Future<void> _loadCachedThenRefresh() async {
+    if (!_matchesOpenedAccount) return;
     final prefs = await widget.store._localState();
+    if (!_matchesOpenedAccount) return;
     final raw = prefs.getString(_cacheKey);
     if (raw != null) {
       try {
@@ -1454,6 +1469,7 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
     bool silent = false,
     bool refreshInteractions = true,
   }) async {
+    if (!_matchesOpenedAccount) return;
     final strings = AnnaStrings.of(context);
     final cloud = CloudSyncService.instance;
     if (!cloud.signedIn) {
@@ -1470,6 +1486,7 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
         notify: false,
         targetSpaceId: widget.space.id,
       );
+      if (!_matchesOpenedAccount) return;
 
       final next = List<SharedEntry>.from(
         widget.store._sharedAgendaEntriesBySpace[widget.space.id] ??
@@ -3591,11 +3608,25 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
     return AnimatedBuilder(
       animation: Listenable.merge([
         CloudSyncService.instance,
+        widget.store.accountRevision,
         widget.store.sharedRevision,
         widget.store.syncRevision,
         AnnaEditorialTodayMode.enabled,
       ]),
-      builder: (context, _) => Scaffold(
+      builder: (context, _) => !_matchesOpenedAccount
+          ? Scaffold(
+              appBar: AppBar(title: Text(AnnaStrings.of(context).navMessages)),
+              body: Center(
+                child: Padding(
+                  padding: const EdgeInsets.all(24),
+                  child: Text(
+                    AnnaStrings.of(context).d3('sharedSessionExpired'),
+                    textAlign: TextAlign.center,
+                  ),
+                ),
+              ),
+            )
+          : Scaffold(
         appBar: AppBar(
           // Keep the title legible beside existing actions at 320dp.
           // The larger space portrait lives in the first journal page below.
