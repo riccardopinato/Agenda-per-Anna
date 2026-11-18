@@ -9,6 +9,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 /// 18 Nov mock-up N18-03: visual switch only, original agenda and writers.
 void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
   // ExternalCalendarService is a device-only read bridge. Keep widget
   // fixtures deterministic; no platform calendar or personal data are read.
   const externalChannel = MethodChannel('annas_diary/external_calendar');
