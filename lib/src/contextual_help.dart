@@ -209,6 +209,7 @@ class _AnnaHelpEntryCard extends StatelessWidget {
     );
     return Semantics(
       container: true,
+      excludeSemantics: true,
       label: '${entry.title}. ${entry.detail}',
       child: journal
           ? AnnaOrganicPaperSurface(
