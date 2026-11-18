@@ -7,7 +7,7 @@ void main() {
   test('Insieme remote verification states are translated in five locales', () {
     for (final locale in <String>['it', 'en', 'es', 'fr', 'pt']) {
       for (final key in <String>[
-        'listChecked', 'cached', 'emptyUnknown', 'lastChecked', 'notChecked',
+        'listChecked', 'cached', 'emptyUnknown', 'listeningOnly', 'notChecked',
       ]) {
         final text = sharedSpaceVerificationCopy(locale, key);
         expect(text, isNotEmpty, reason: '$locale / $key');
@@ -18,7 +18,7 @@ void main() {
         isNot(sharedSpaceVerificationCopy(locale, 'cached')),
       );
       expect(
-        sharedSpaceVerificationCopy(locale, 'lastChecked'),
+        sharedSpaceVerificationCopy(locale, 'listeningOnly'),
         isNot(sharedSpaceVerificationCopy(locale, 'notChecked')),
       );
     }
@@ -32,7 +32,9 @@ void main() {
     expect(source, contains('_remoteListVerified = true;'));
     expect(source, contains('_remoteListVerified = false;'));
     expect(source, contains("'emptyUnknown'"));
-    expect(source, contains("lastRefreshAt == null ? 'notChecked' : 'lastChecked'"));
+    expect(source, contains("AnnaStrings.of(context).d3('sharedListeningUpdates')"));
+    expect(source, contains("'listeningOnly'"));
+    expect(source, isNot(contains("title = AnnaStrings.of(context).d3('sharedRealtimeSynced');")));
     expect(source, isNot(contains("title = AnnaStrings.of(context).d3('sharedSyncedShort');")));
     // Existing privacy, role and retry ownership remains in its canonical file.
     expect(source, contains('sharedSpaceCanRename('));
