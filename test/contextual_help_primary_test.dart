@@ -31,7 +31,7 @@ void main() {
     }
     expect(capture, contains('section: AnnaHelpSection.capture'));
     expect(capture, contains('captureActions: availableActions.map'));
-    expect(help, contains('captureActions!.contains(entry.captureAction)'));
+    expect(help, contains('captureActions!.contains(entry.captureAction!.name)'));
     expect(help, contains('AnnaHelpSection.capture'));
     expect(help, contains('AnnaHelpSection.more'));
     expect(help, contains('AnnaHelpSection.shared'));
