@@ -408,10 +408,12 @@ class _SharedSpaceHubScreenState extends State<SharedSpaceHubScreen> {
         });
       }
     } catch (_) {
-      if (mounted) setState(() {
-        _remoteListVerified = false;
-        loading = false;
-      });
+      if (mounted) {
+        setState(() {
+          _remoteListVerified = false;
+          loading = false;
+        });
+      }
     }
   }
 
