@@ -537,10 +537,13 @@ Future<void> showUnifiedCapture(
             AnnaStrings.intlLocale(sheetContext),
           ).format(targetDay));
           return SafeArea(
-            child: SingleChildScrollView(
+            child: SizedBox(
+              height: min(MediaQuery.sizeOf(context).height * 0.82, 700.0),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
+                  // The Create+ title and help button stay fixed while
+                  // the available actions scroll beneath them.
                   ListTile(
                     title: Text(
                       strings.capture,
@@ -556,6 +559,11 @@ Future<void> showUnifiedCapture(
                       captureActions: availableActions.map((entry) => entry.action.name).toSet(),
                     ),
                   ),
+                  Expanded(
+                    child: SingleChildScrollView(
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
                   // DF-06/07: display the effective date and permit a
                   // reversible override before any capture writer runs.
                   Semantics(
@@ -677,6 +685,10 @@ Future<void> showUnifiedCapture(
                       child: TextButton(
                         onPressed: () => Navigator.pop(sheetContext),
                         child: Text(strings.close),
+                      ),
+                    ),
+                  ),
+                        ],
                       ),
                     ),
                   ),
