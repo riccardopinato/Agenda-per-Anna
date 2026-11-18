@@ -551,6 +551,10 @@ Future<void> showUnifiedCapture(
                           ? strings.captureInboxDescription
                           : strings.captureDayDescription,
                     ),
+                    trailing: AnnaContextHelpButton(
+                      section: AnnaHelpSection.capture,
+                      captureActions: availableActions.map((entry) => entry.action).toSet(),
+                    ),
                   ),
                   // DF-06/07: display the effective date and permit a
                   // reversible override before any capture writer runs.
