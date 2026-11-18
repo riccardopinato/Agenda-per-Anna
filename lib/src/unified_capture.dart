@@ -553,7 +553,7 @@ Future<void> showUnifiedCapture(
                     ),
                     trailing: AnnaContextHelpButton(
                       section: AnnaHelpSection.capture,
-                      captureActions: availableActions.map((entry) => entry.action).toSet(),
+                      captureActions: availableActions.map((entry) => entry.action.name).toSet(),
                     ),
                   ),
                   // DF-06/07: display the effective date and permit a
