@@ -753,6 +753,7 @@ void main() {
       enabledModules: <AppModule>{AppModule.memories},
     );
     final selectedDay = DateTime(2026, 11, 14);
+    AnnaEditorialTodayMode.enabled.value = true;
     await tester.pumpWidget(MaterialApp(
       locale: const Locale('it'),
       home: Scaffold(
