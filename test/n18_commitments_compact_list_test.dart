@@ -123,6 +123,12 @@ void main() {
     expect(end, greaterThan(start));
     final screen = source.substring(start, end);
     expect(screen, contains('widget.store.dayHubSnapshot(_selected)'));
+    // The canonical Android external-calendar cache must be loaded when
+    // entering Impegni and whenever the selected civil day changes.
+    expect(screen, contains('ExternalCalendarService.instance.initialize()'));
+    expect(screen, contains('_loadSelectedCalendarDay(_selected)'));
+    expect(screen, contains('ExternalCalendarService.instance.loadRange(start, end)'));
+    expect(screen, contains('unawaited(_loadSelectedCalendarDay(date))'));
     expect(screen, contains('UnifiedAgendaTile('));
     expect(screen, contains('compact: true,'));
     expect(screen, contains('AnnaOrganicJournalFilterPill('));
