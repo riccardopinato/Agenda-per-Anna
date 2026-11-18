@@ -637,65 +637,98 @@ class _DiaryMemoriesScreenState extends State<DiaryMemoriesScreen> {
       block,
       strings: AnnaStrings.of(context),
     );
-    final date = DateFormat('d MMMM yyyy', AnnaStrings.intlLocale(context)).format(record.date);
+    final date = DateFormat(
+      'd MMMM yyyy', AnnaStrings.intlLocale(context),
+    ).format(record.date);
+    final journal = AnnaOrganicPastel.enabled(context);
 
+    void openMemory() {
+      // Images open in the existing original-media zoom viewer; text, voice
+      // and sketches retain their canonical dated Planner destination.
+      if (journal && block.type == DiaryBlockType.photo &&
+          block.hasPhotoMedia) {
+        unawaited(_openPhoto(record));
+      } else {
+        unawaited(_openRecord(record));
+      }
+    }
+
+    final content = SizedBox(
+      height: 104,
+      child: Row(
+        children: [
+          SizedBox(
+            width: 104,
+            child: _coverPreview(context, record),
+          ),
+          Expanded(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(13, 11, 10, 11),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: journal
+                        ? TextStyle(
+                            fontFamily: AnnaJournalTypography.uiFamily,
+                            color: AnnaEditorialColors.of(context).ink,
+                            fontWeight: FontWeight.w700,
+                          )
+                        : const TextStyle(fontWeight: FontWeight.w800),
+                  ),
+                  const Spacer(),
+                  Text(
+                    date,
+                    style: Theme.of(context).textTheme.bodySmall,
+                  ),
+                  if (block.personIds.isNotEmpty || block.places.isNotEmpty) ...[
+                    const SizedBox(height: 3),
+                    Text(
+                      [
+                        if (block.personIds.isNotEmpty)
+                          AnnaStrings.of(context).v100PeopleCount(
+                            block.personIds.length),
+                        if (block.places.isNotEmpty)
+                          AnnaStrings.of(context).v100PlacesCount(
+                            block.places.length),
+                      ].join(' · '),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: Theme.of(context).textTheme.bodySmall,
+                    ),
+                  ],
+                ],
+              ),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.only(right: 8),
+            child: Icon(Icons.chevron_right,
+                color: journal ? AnnaEditorialColors.of(context).mutedInk : null),
+          ),
+        ],
+      ),
+    );
+
+    if (journal) {
+      return Padding(
+        padding: const EdgeInsets.only(bottom: 8),
+        child: AnnaOrganicPaperSurface(
+          key: ValueKey<String>('memories-journal-recall-${block.id}'),
+          padding: EdgeInsets.zero,
+          semanticLabel: title,
+          onTap: openMemory,
+          child: content,
+        ),
+      );
+    }
     return Card(
       margin: const EdgeInsets.only(bottom: 8),
       clipBehavior: Clip.antiAlias,
-      child: InkWell(
-        onTap: () => _openRecord(record),
-        child: SizedBox(
-          height: 104,
-          child: Row(
-            children: [
-              SizedBox(
-                width: 104,
-                child: _coverPreview(context, record),
-              ),
-              Expanded(
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(13, 11, 10, 11),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        title,
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(fontWeight: FontWeight.w800),
-                      ),
-                      const Spacer(),
-                      Text(
-                        date,
-                        style: Theme.of(context).textTheme.bodySmall,
-                      ),
-                      if (block.personIds.isNotEmpty ||
-                          block.places.isNotEmpty) ...[
-                        const SizedBox(height: 3),
-                        Text(
-                          [
-                            if (block.personIds.isNotEmpty)
-                              AnnaStrings.of(context).v100PeopleCount(block.personIds.length),
-                            if (block.places.isNotEmpty)
-                              AnnaStrings.of(context).v100PlacesCount(block.places.length),
-                          ].join(' · '),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: Theme.of(context).textTheme.bodySmall,
-                        ),
-                      ],
-                    ],
-                  ),
-                ),
-              ),
-              const Padding(
-                padding: EdgeInsets.only(right: 8),
-                child: Icon(Icons.chevron_right),
-              ),
-            ],
-          ),
-        ),
-      ),
+      child: InkWell(onTap: openMemory, child: content),
     );
   }
 
@@ -706,6 +739,7 @@ class _DiaryMemoriesScreenState extends State<DiaryMemoriesScreen> {
     required List<MemoryRecallFacet> facets,
   }) {
     if (facets.isEmpty) return const SizedBox.shrink();
+    final journal = AnnaOrganicPastel.enabled(context);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -720,37 +754,47 @@ class _DiaryMemoriesScreenState extends State<DiaryMemoriesScreen> {
           spacing: 8,
           runSpacing: 8,
           children: facets.map((facet) {
-            return ActionChip(
-              avatar: Icon(
-                facet.kind == MemoryRecallFacetKind.person
-                    ? Icons.person_outline
-                    : Icons.place_outlined,
-                size: 18,
-              ),
-              label: Text('${facet.label} · ${facet.count}'),
-              onPressed: () {
-                if (facet.kind == MemoryRecallFacetKind.person) {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => DiaryMemoriesScreen(
-                        store: widget.store,
-                        personId: facet.id,
-                        personName: facet.label,
-                      ),
+            final person = facet.kind == MemoryRecallFacetKind.person;
+            final label = '${facet.label} · ${facet.count}';
+            void openFacet() {
+              if (person) {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => DiaryMemoriesScreen(
+                      store: widget.store,
+                      personId: facet.id,
+                      personName: facet.label,
                     ),
-                  );
-                  return;
-                }
+                  ),
+                );
+                return;
+              }
+              searchController.text = facet.label;
+              setState(() {
+                filter = null;
+                searchExpanded = true;
+                view = _DiaryMemoriesView.timeline;
+              });
+            }
 
-                searchController.text = facet.label;
-                setState(() {
-                  filter = null;
-                  searchExpanded = true;
-                  view = _DiaryMemoriesView.timeline;
-                });
-              },
-            );
+            return journal
+                ? AnnaOrganicJournalFilterPill(
+                    label: label,
+                    selected: false,
+                    icon: person
+                        ? Icons.person_outline : Icons.place_outlined,
+                    onTap: openFacet,
+                  )
+                : ActionChip(
+                    avatar: Icon(
+                      person
+                          ? Icons.person_outline : Icons.place_outlined,
+                      size: 18,
+                    ),
+                    label: Text(label),
+                    onPressed: openFacet,
+                  );
           }).toList(growable: false),
         ),
       ],
