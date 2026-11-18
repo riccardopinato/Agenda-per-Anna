@@ -5,6 +5,7 @@ on:
     types: [opened, synchronize, reopened, ready_for_review]
     paths:
       - 'test/together_visual_capture_test.dart'
+      - 'test/together_detail_account_epoch_test.dart'
       - 'lib/src/screens/shared_space.dart'
       - '.github/workflows/together-visual-evidence.yml'
 
@@ -52,6 +53,8 @@ jobs:
           set -euo pipefail
           mkdir -p test/fixtures
           cp "$(dirname "$(command -v flutter)")/cache/artifacts/material_fonts/MaterialIcons-Regular.otf" test/fixtures/
+      - name: Verify account A-B-A privacy boundary (fast targeted regression)
+        run: flutter test --reporter expanded test/together_detail_account_epoch_test.dart
       - name: Render real Insieme hub guest and contextual help
         shell: bash
         run: |
