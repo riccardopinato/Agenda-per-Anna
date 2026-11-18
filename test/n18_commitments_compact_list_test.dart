@@ -28,11 +28,11 @@ void main() {
     store.items.addAll([
       AgendaItem(
         id: 'n18-task', title: 'Preparare una sorpresa',
-        date: day, type: ItemType.task,
+        note: '', date: day, type: ItemType.task,
       ),
       AgendaItem(
         id: 'n18-appointment', title: 'Un caffè insieme',
-        date: day, type: ItemType.appointment,
+        note: '', date: day, type: ItemType.appointment,
         start: const TimeOfDay(hour: 10, minute: 15),
         end: const TimeOfDay(hour: 11, minute: 15),
       ),
