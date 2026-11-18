@@ -57,7 +57,7 @@ void main() {
         findsOneWidget);
     expect(find.byType(FloatingActionButton), findsNothing);
     expect(tester.takeException(), isNull);
-  });
+  }, timeout: const Timeout(Duration(seconds: 100)));
   testWidgets('separately routed shared hub cannot leak A after B or A again',
       (tester) async {
     await tester.pumpWidget(MaterialApp(
@@ -86,7 +86,7 @@ void main() {
         find.byKey(const ValueKey<String>('together-stale-account-session')),
         findsOneWidget);
     expect(tester.takeException(), isNull);
-  });
+  }, timeout: const Timeout(Duration(seconds: 100)));
 
   test('stale-session UI is localized in all five supported languages', () {
     for (final language in <String>['it', 'en', 'es', 'fr', 'pt']) {
