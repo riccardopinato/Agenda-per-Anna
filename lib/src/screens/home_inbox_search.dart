@@ -197,10 +197,18 @@ class _MainShellState extends State<MainShell> {
 
   // Module visibility is preserved even though Messages is a permanent tab.
   Widget _messagesPage() => AnimatedBuilder(
-    animation: widget.store.settingsRevision,
+    animation: Listenable.merge([
+      widget.store.settingsRevision,
+      widget.store.accountRevision,
+    ]),
     builder: (context, _) {
       if (widget.store.preferences.isModuleEnabled(AppModule.sharedSpace)) {
-        return SharedSpaceHubScreen(store: widget.store);
+        // A→B→A must create a fresh hub state; cached space names and avatars
+        // must never remain visible across account boundaries.
+        return KeyedSubtree(
+          key: ValueKey<String>(widget.store.sharedSpacesCacheStorageKey),
+          child: SharedSpaceHubScreen(store: widget.store),
+        );
       }
       final strings = AnnaStrings.of(context);
       return Scaffold(
