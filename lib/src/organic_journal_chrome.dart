@@ -246,30 +246,42 @@ class AnnaOrganicJournalFilterPill extends StatelessWidget {
                 width: selected ? 1.35 : 1,
               ),
             ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                if (icon != null) ...[
-                  Icon(
-                    icon,
-                    size: 17,
-                    color: selected ? colors.accent : colors.mutedInk,
+            child: ConstrainedBox(
+              // A long translation or user-created category must never make
+              // one horizontal pill wider than the phone's usable viewport.
+              constraints: BoxConstraints(
+                maxWidth: (MediaQuery.sizeOf(context).width - 46)
+                    .clamp(140.0, 300.0),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (icon != null) ...[
+                    Icon(
+                      icon,
+                      size: 17,
+                      color: selected ? colors.accent : colors.mutedInk,
+                    ),
+                    const SizedBox(width: 7),
+                  ],
+                  Flexible(
+                    fit: FlexFit.loose,
+                    child: Text(
+                      label,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        fontFamily: AnnaJournalTypography.uiFamily,
+                        fontSize: 13,
+                        height: 1.2,
+                        fontWeight:
+                            selected ? FontWeight.w800 : FontWeight.w600,
+                        color: selected ? colors.ink : colors.mutedInk,
+                      ),
+                    ),
                   ),
-                  const SizedBox(width: 7),
                 ],
-                Text(
-                  label,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    fontFamily: AnnaJournalTypography.uiFamily,
-                    fontSize: 13,
-                    height: 1.2,
-                    fontWeight: selected ? FontWeight.w800 : FontWeight.w600,
-                    color: selected ? colors.ink : colors.mutedInk,
-                  ),
-                ),
-              ],
+              ),
             ),
           ),
         ),
