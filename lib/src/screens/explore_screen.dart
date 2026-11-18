@@ -1,5 +1,15 @@
 part of '../../main.dart';
 
+/// N18-07: report real enabled modules only; no disabled module is
+/// advertised as accessible and no setting is silently changed.
+String annaExploreEnabledSummary(String code, int count) => switch (code) {
+  'it' => '$count moduli attivi',
+  'es' => '$count módulos activos',
+  'fr' => '$count modules actifs',
+  'pt' => '$count módulos ativos',
+  _ => '$count active modules',
+};
+
 class ExploreScreen extends StatelessWidget {
   final AgendaStore store;
   const ExploreScreen({super.key, required this.store});
@@ -26,16 +36,15 @@ class ExploreScreen extends StatelessWidget {
         : icon == Icons.lock_person_outlined
             ? AnnaVisualDomain.vault
             : AnnaVisualDomain.people;
-    return AnnaOrganicPaperSurface(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
-      child: AnnaOrganicJournalRow(
-        identifier: 'explore-journal-${icon.codePoint}',
-        icon: icon,
-        domain: domain,
-        title: title,
-        subtitle: subtitle,
-        onTap: onTap,
-      ),
+    // N18-07: one shared notebook group owns the paper surface; individual
+    // modules are semantic journal rows with the exact previous callback.
+    return AnnaOrganicJournalRow(
+      identifier: 'explore-journal-${icon.codePoint}',
+      icon: icon,
+      domain: domain,
+      title: title,
+      subtitle: subtitle,
+      onTap: onTap,
     );
   }
 
@@ -76,7 +85,9 @@ class ExploreScreen extends StatelessWidget {
 
           void addModule(AppModule module, Widget card) {
             if (!prefs.isModuleEnabled(module)) return;
-            if (modules.isNotEmpty) modules.add(const SizedBox(height: 12));
+            if (!organic && modules.isNotEmpty) {
+              modules.add(const SizedBox(height: 12));
+            }
             modules.add(card);
           }
 
@@ -198,6 +209,21 @@ class ExploreScreen extends StatelessWidget {
             ),
           );
 
+          // One canonical Personalization route in both appearances.
+          // Avoid duplicate destinations or duplicated source-level owners.
+          final personalizationEntry = _navigationEntry(
+            context,
+            icon: Icons.tune,
+            title: strings.d3('personalizationTitle'),
+            subtitle: strings.d3('personalizationSettingsSubtitle'),
+            onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => PersonalizationScreen(store: store),
+              ),
+            ),
+          );
+
           return ListView(
             padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
             children: [
@@ -225,21 +251,48 @@ class ExploreScreen extends StatelessWidget {
                     ],
                   ),
                 )
+              else if (organic) ...[
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 10),
+                  child: Semantics(
+                    label: annaExploreEnabledSummary(
+                        strings.languageCode, modules.length),
+                    child: Text(
+                      annaExploreEnabledSummary(
+                          strings.languageCode, modules.length),
+                      style: TextStyle(
+                        fontFamily: AnnaJournalTypography.uiFamily,
+                        color: AnnaEditorialColors.of(context).mutedInk,
+                      ),
+                    ),
+                  ),
+                ),
+                AnnaOrganicPaperSurface(
+                  key: const ValueKey<String>('explore-journal-modules-group'),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 14, vertical: 4),
+                  child: Column(
+                    children: [
+                      for (var i = 0; i < modules.length; i++) ...[
+                        if (i > 0) const AnnaOrganicJournalRule(),
+                        modules[i],
+                      ],
+                    ],
+                  ),
+                ),
+              ]
               else
                 ...modules,
               const SizedBox(height: 16),
-              _navigationEntry(
-              context,
-                icon: Icons.tune,
-                title: strings.d3('personalizationTitle'),
-                subtitle: strings.d3('personalizationSettingsSubtitle'),
-                onTap: () => Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => PersonalizationScreen(store: store),
-                  ),
-                ),
-              ),
+              organic
+                  ? AnnaOrganicPaperSurface(
+                      key: const ValueKey<String>(
+                        'explore-journal-personalization-entry'),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 14, vertical: 4),
+                      child: personalizationEntry,
+                    )
+                  : personalizationEntry,
             ],
           );
         },
