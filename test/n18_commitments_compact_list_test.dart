@@ -56,6 +56,9 @@ void main() {
     expect(find.text('Preparare una sorpresa'), findsOneWidget);
     expect(find.text('Un caffè insieme'), findsOneWidget);
     expect(timeline, findsNothing);
+    expect(find.byKey(const ValueKey<String>(
+      'commitments-list-create',
+    )), findsOneWidget);
     expect(store.items.length, 2);
 
     await tester.tap(find.byKey(
@@ -126,6 +129,9 @@ void main() {
     expect(screen, contains("'commitments-view-timeline'"));
     expect(screen, contains("'commitments-view-list'"));
     expect(screen, contains('DayTimeline('));
+    expect(screen, contains("'commitments-list-create'"));
+    expect(screen, contains('captureDate: _selected,'));
+    expect(screen, contains('entryPoint: UnifiedCaptureEntryPoint.day,'));
     expect(screen, isNot(contains('await widget.store.save')));
     expect(screen, isNot(contains('AgendaStore()')));
   });
