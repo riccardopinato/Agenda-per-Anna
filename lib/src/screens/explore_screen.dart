@@ -209,6 +209,21 @@ class ExploreScreen extends StatelessWidget {
             ),
           );
 
+          // One canonical Personalization route in both appearances.
+          // Avoid duplicate destinations or duplicated source-level owners.
+          final personalizationEntry = _navigationEntry(
+            context,
+            icon: Icons.tune,
+            title: strings.d3('personalizationTitle'),
+            subtitle: strings.d3('personalizationSettingsSubtitle'),
+            onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => PersonalizationScreen(store: store),
+              ),
+            ),
+          );
+
           return ListView(
             padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
             children: [
@@ -269,38 +284,15 @@ class ExploreScreen extends StatelessWidget {
               else
                 ...modules,
               const SizedBox(height: 16),
-              if (organic)
-                AnnaOrganicPaperSurface(
-                  key: const ValueKey<String>(
-                    'explore-journal-personalization-entry'),
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 14, vertical: 4),
-                  child: _navigationEntry(
-                    context,
-                    icon: Icons.tune,
-                    title: strings.d3('personalizationTitle'),
-                    subtitle: strings.d3('personalizationSettingsSubtitle'),
-                    onTap: () => Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => PersonalizationScreen(store: store),
-                      ),
-                    ),
-                  ),
-                )
-              else
-                _navigationEntry(
-                  context,
-                  icon: Icons.tune,
-                  title: strings.d3('personalizationTitle'),
-                  subtitle: strings.d3('personalizationSettingsSubtitle'),
-                  onTap: () => Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => PersonalizationScreen(store: store),
-                    ),
-                  ),
-                ),
+              organic
+                  ? AnnaOrganicPaperSurface(
+                      key: const ValueKey<String>(
+                        'explore-journal-personalization-entry'),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 14, vertical: 4),
+                      child: personalizationEntry,
+                    )
+                  : personalizationEntry,
             ],
           );
         },
