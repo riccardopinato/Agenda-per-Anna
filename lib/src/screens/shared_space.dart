@@ -704,6 +704,7 @@ class _SharedSpaceHubScreenState extends State<SharedSpaceHubScreen> {
                   : const TextStyle(fontWeight: FontWeight.w900),
             ),
             actions: [
+              const AnnaContextHelpButton(section: AnnaHelpSection.shared),
               if (cloud.signedIn)
                 IconButton(
                   tooltip: AnnaStrings.of(context).d3('refresh'),
@@ -3582,6 +3583,7 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
                 : const TextStyle(fontWeight: FontWeight.w900),
           ),
           actions: [
+            const AnnaContextHelpButton(section: AnnaHelpSection.shared),
             IconButton(
               tooltip: AnnaStrings.of(context).d3('ourMemories'),
               onPressed: _openSharedMemories,
