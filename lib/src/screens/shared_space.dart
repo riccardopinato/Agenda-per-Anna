@@ -704,6 +704,7 @@ class _SharedSpaceHubScreenState extends State<SharedSpaceHubScreen> {
                   : const TextStyle(fontWeight: FontWeight.w900),
             ),
             actions: [
+              const AnnaContextHelpButton(section: AnnaHelpSection.shared),
               if (cloud.signedIn)
                 IconButton(
                   tooltip: AnnaStrings.of(context).d3('refresh'),
@@ -3582,34 +3583,35 @@ class _SharedSpaceScreenState extends State<SharedSpaceScreen> {
                 : const TextStyle(fontWeight: FontWeight.w900),
           ),
           actions: [
-            IconButton(
-              tooltip: AnnaStrings.of(context).d3('ourMemories'),
-              onPressed: _openSharedMemories,
-              icon: const Icon(Icons.photo_library_outlined),
-            ),
-            IconButton(
-              tooltip: AnnaStrings.of(context).d3('sharedPasswords'),
-              onPressed: _openSharedPasswords,
-              icon: const Icon(Icons.password_outlined),
-            ),
+            const AnnaContextHelpButton(section: AnnaHelpSection.shared),
             IconButton(
               tooltip: AnnaStrings.of(context).d3('peopleInSpace'),
               onPressed: _openMembers,
               icon: const Icon(Icons.group_outlined),
             ),
-            if (widget.space.isOwner)
-              IconButton(
-                tooltip: AnnaStrings.of(context).d3('invite'),
-                onPressed: _invite,
-                icon: const Icon(Icons.person_add_alt_1_outlined),
-              ),
             PopupMenuButton<String>(
               onSelected: (value) {
+                if (value == 'memories') _openSharedMemories();
+                if (value == 'passwords') _openSharedPasswords();
+                if (value == 'invite') _invite();
                 if (value == 'refresh') _refresh();
                 if (value == 'leave') _leaveOrDelete();
                 if (value == 'avatar') unawaited(_changeCurrentSpaceAvatar());
               },
               itemBuilder: (_) => [
+                PopupMenuItem(
+                  value: 'memories',
+                  child: Text(AnnaStrings.of(context).d3('ourMemories')),
+                ),
+                PopupMenuItem(
+                  value: 'passwords',
+                  child: Text(AnnaStrings.of(context).d3('sharedPasswords')),
+                ),
+                if (widget.space.isOwner)
+                  PopupMenuItem(
+                    value: 'invite',
+                    child: Text(AnnaStrings.of(context).d3('invite')),
+                  ),
                 if (sharedSpaceCanRename(widget.space, CloudSyncService.instance.userId))
                   PopupMenuItem(
                     value: 'avatar',

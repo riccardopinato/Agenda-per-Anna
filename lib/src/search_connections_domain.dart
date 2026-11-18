@@ -1405,46 +1405,77 @@ class _PersonalSearchConnectionsScreenState
             key: const ValueKey<String>('approved-search-filter-strip'),
             // Chip labels follow the system text scale; the original fixed
             // 46dp strip clipped long translated labels at larger scales.
-            height: (18.0 + MediaQuery.textScalerOf(context).scale(14) * 2)
-                .clamp(46.0, 96.0),
+            height: AnnaEditorialTodayMode.enabled.value
+                ? (22.0 + MediaQuery.textScalerOf(context).scale(14) * 2)
+                    .clamp(54.0, 112.0)
+                : (18.0 + MediaQuery.textScalerOf(context).scale(14) * 2)
+                    .clamp(46.0, 96.0),
             child: ListView(
               padding: const EdgeInsets.symmetric(horizontal: 14),
               scrollDirection: Axis.horizontal,
               children: [
                 Padding(
                   padding: const EdgeInsets.only(right: 7),
-                  child: ChoiceChip(
-                    selected: selectedKinds.isEmpty,
-                    label: Text(strings.all),
-                    onSelected: (_) => setState(selectedKinds.clear),
-                  ),
+                  child: AnnaEditorialTodayMode.enabled.value
+                      ? AnnaOrganicJournalFilterPill(
+                          semanticsId: 'approved-search-journal-all',
+                          label: strings.all,
+                          selected: selectedKinds.isEmpty,
+                          onTap: () => setState(selectedKinds.clear),
+                        )
+                      : ChoiceChip(
+                          selected: selectedKinds.isEmpty,
+                          label: Text(strings.all),
+                          onSelected: (_) => setState(selectedKinds.clear),
+                        ),
                 ),
                 ...PersonalSearchKind.values.map(
                   (kind) => Padding(
                     padding: const EdgeInsets.only(right: 7),
-                    child: FilterChip(
-                      selected: selectedKinds.contains(kind),
-                      avatar: Icon(kind.icon, size: 16),
-                      label: Text(strings.v100SearchKind(kind)),
-                      onSelected: (selected) => setState(() {
-                        if (selected) {
-                          selectedKinds.add(kind);
-                        } else {
-                          selectedKinds.remove(kind);
-                        }
-                      }),
-                    ),
+                    child: AnnaEditorialTodayMode.enabled.value
+                        ? AnnaOrganicJournalFilterPill(
+                            semanticsId: 'approved-search-journal-${kind.name}',
+                            label: strings.v100SearchKind(kind),
+                            icon: kind.icon,
+                            selected: selectedKinds.contains(kind),
+                            onTap: () => setState(() {
+                              if (!selectedKinds.remove(kind)) {
+                                selectedKinds.add(kind);
+                              }
+                            }),
+                          )
+                        : FilterChip(
+                            selected: selectedKinds.contains(kind),
+                            avatar: Icon(kind.icon, size: 16),
+                            label: Text(strings.v100SearchKind(kind)),
+                            onSelected: (selected) => setState(() {
+                              if (selected) {
+                                selectedKinds.add(kind);
+                              } else {
+                                selectedKinds.remove(kind);
+                              }
+                            }),
+                          ),
                   ),
                 ),
                 Padding(
                   padding: const EdgeInsets.only(right: 7),
-                  child: FilterChip(
-                    selected: includeArchived,
-                    avatar: const Icon(Icons.inventory_2_outlined, size: 16),
-                    label: Text(strings.archive),
-                    onSelected: (value) =>
-                        setState(() => includeArchived = value),
-                  ),
+                  child: AnnaEditorialTodayMode.enabled.value
+                      ? AnnaOrganicJournalFilterPill(
+                          semanticsId: 'approved-search-journal-archived',
+                          label: strings.archive,
+                          icon: Icons.inventory_2_outlined,
+                          selected: includeArchived,
+                          onTap: () =>
+                              setState(() => includeArchived = !includeArchived),
+                        )
+                      : FilterChip(
+                          selected: includeArchived,
+                          avatar: const Icon(Icons.inventory_2_outlined, size: 16),
+                          label: Text(strings.archive),
+                          onSelected: (value) =>
+                              setState(() => includeArchived = value),
+                        ),
                 ),
               ],
             ),

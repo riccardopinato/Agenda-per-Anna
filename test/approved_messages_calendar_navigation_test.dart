@@ -36,9 +36,29 @@ void main() {
     expect(planner, contains('initialDate: _captureDay'));
     expect(planner, contains('UnifiedCaptureEntryPoint.month'));
     expect(localization, contains('String get navMessages'));
-    for (final value in ['Messaggi', 'Messages', 'Mensajes', 'Mensagens']) {
+    // N18-06 updates visible copy only; legacy route IDs stay stable.
+    for (final value in ['Insieme', 'Together', 'Juntos', 'Ensemble']) {
       expect(localization, contains(value));
     }
+  });
+
+  test('N18-06 Together label is localized in all five languages', () {
+    const expected = <String, String>{
+      'it': 'Insieme',
+      'en': 'Together',
+      'es': 'Juntos',
+      'fr': 'Ensemble',
+      'pt': 'Juntos',
+    };
+    for (final item in expected.entries) {
+      expect(AnnaStrings(item.key).navMessages, item.value);
+    }
+
+    // The stable destination identifiers and original shared store are kept.
+    final shell = code('lib/src/screens/home_inbox_search.dart');
+    expect(shell, contains("semanticsId: 'main-nav-messages'"));
+    expect(shell, contains('SharedSpaceHubScreen(store: widget.store)'));
+    expect(shell, contains('label: strings.navMessages'));
   });
 
   test('Shared Space is not duplicated in More but retains original owner', () {
