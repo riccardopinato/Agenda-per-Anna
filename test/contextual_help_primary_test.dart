@@ -53,7 +53,8 @@ void main() {
     expect('AnnaHelpSection.shared'.allMatches(shared).length, 2);
     final memories = File('lib/src/diary/diary_memories.dart').readAsStringSync();
     expect(memories, contains('actions: editorial'));
-    expect(memories, contains('...memoryActions'));
+    expect(memories, contains('PopupMenuButton<int>('));
+    expect(memories, contains('memoryActions[index].onPressed?.call()'));
   });
 
   test('all primary guide items have matching descriptions in five languages', () {
