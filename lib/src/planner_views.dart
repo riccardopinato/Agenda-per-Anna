@@ -2852,6 +2852,21 @@ class _AnnaCommitmentsTimelineScreenState
     _timelineScroll = ScrollController(
       initialScrollOffset: DayTimeline.offsetForMinutes(7 * 60),
     );
+    // This screen also projects Android calendar items in its compact list.
+    // Initialize/load the selected civil-day window just as PlannerScreen
+    // does; otherwise navigation may show a false empty state for days not
+    // previously requested by another route.
+    unawaited(
+      ExternalCalendarService.instance.initialize().then(
+        (_) => _loadSelectedCalendarDay(_selected),
+      ),
+    );
+  }
+
+  Future<void> _loadSelectedCalendarDay(DateTime value) {
+    final start = DateTime(value.year, value.month, value.day - 1);
+    final end = DateTime(value.year, value.month, value.day + 2);
+    return ExternalCalendarService.instance.loadRange(start, end);
   }
 
   @override
@@ -2861,9 +2876,9 @@ class _AnnaCommitmentsTimelineScreenState
   }
 
   void _selectDay(DateTime selected) {
-    setState(() => _selected = DateTime(
-      selected.year, selected.month, selected.day,
-    ));
+    final date = DateTime(selected.year, selected.month, selected.day);
+    setState(() => _selected = date);
+    unawaited(_loadSelectedCalendarDay(date));
   }
 
   @override
