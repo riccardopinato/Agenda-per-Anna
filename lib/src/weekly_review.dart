@@ -661,10 +661,17 @@ class _WeeklyReviewSettingsState extends State<WeeklyReviewSettingsPage>{
              onChanged:busy?null:(v)=>save(p.copyWith(weeklyReviewReminderEnabled:v),enabling:v)),
            const SizedBox(height:11),
            DropdownButtonFormField<int>(
+             // The selected weekday must fit the actual 320/390dp card
+             // width and long localized text without a RenderFlex overflow.
+             isExpanded:true,
              initialValue:p.weeklyReviewReminderDay,
              decoration:InputDecoration(labelText:wrText(c,'week')),
              items:[7,1].map((d)=>DropdownMenuItem(value:d,
-               child:Text(wrText(c,d==7?'sunday':'monday')))).toList(),
+               child:Text(
+                 wrText(c,d==7?'sunday':'monday'),
+                 maxLines:1,
+                 overflow:TextOverflow.ellipsis,
+               ))).toList(),
              onChanged:busy?null:(d){if(d!=null)save(p.copyWith(weeklyReviewReminderDay:d));}),
            const SizedBox(height:11),
           ListTile(
