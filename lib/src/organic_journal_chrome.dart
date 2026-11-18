@@ -265,7 +265,7 @@ class AnnaOrganicJournalFilterPill extends StatelessWidget {
                     fontFamily: AnnaJournalTypography.uiFamily,
                     fontSize: 13,
                     height: 1.2,
-                    fontWeight: selected ? FontWeight.w800 : FontWeight.w650,
+                    fontWeight: selected ? FontWeight.w800 : FontWeight.w600,
                     color: selected ? colors.ink : colors.mutedInk,
                   ),
                 ),
