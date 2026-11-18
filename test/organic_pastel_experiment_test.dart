@@ -781,9 +781,18 @@ void main() {
       )),
       findsOneWidget,
     );
+    // N18-03 opens Organic Impegni on the compact canonical day list.
+    expect(find.byKey(const ValueKey<String>(
+      'commitments-organic-compact-list',
+    )), findsOneWidget);
     final timeline = find.byKey(
       const ValueKey<String>('commitments-canonical-day-timeline'),
     );
+    expect(timeline, findsNothing);
+    await tester.tap(find.byKey(const ValueKey<String>(
+      'commitments-view-timeline',
+    )));
+    await tester.pumpAndSettle();
     expect(timeline, findsOneWidget);
     expect(tester.widget<DayTimeline>(timeline).date, selectedDay);
     expect(DayTimeline.startHour, 0);
@@ -848,13 +857,21 @@ void main() {
           'commitments-organic-header',
         )), findsOneWidget);
         expect(find.byKey(const ValueKey<String>(
+          'commitments-organic-compact-list',
+        )), findsOneWidget);
+        expect(find.text('Visita di controllo'), findsOneWidget);
+        expect(find.byKey(const ValueKey<String>(
+          'commitments-private-count',
+        )), findsOneWidget);
+        await tester.tap(find.byKey(const ValueKey<String>(
+          'commitments-view-timeline',
+        )));
+        await tester.pump(const Duration(milliseconds: 350));
+        expect(find.byKey(const ValueKey<String>(
           'commitments-organic-hint',
         )), findsOneWidget);
         expect(find.byKey(const ValueKey<String>(
           'commitments-organic-hour-grid',
-        )), findsOneWidget);
-        expect(find.byKey(const ValueKey<String>(
-          'commitments-private-count',
         )), findsOneWidget);
         final timeline = find.byKey(const ValueKey<String>(
           'commitments-canonical-day-timeline',
@@ -885,9 +902,17 @@ void main() {
       ),
     ));
     await tester.pump();
+    expect(find.byKey(const ValueKey<String>(
+      'commitments-organic-compact-list',
+    )), findsOneWidget);
     final timeline = find.byKey(const ValueKey<String>(
       'commitments-canonical-day-timeline',
     ));
+    expect(timeline, findsNothing);
+    await tester.tap(find.byKey(const ValueKey<String>(
+      'commitments-view-timeline',
+    )));
+    await tester.pump();
     expect(tester.widget<DayTimeline>(timeline).organicStyle, isTrue);
     await tester.tap(find.byKey(const ValueKey('today-date-next')));
     await tester.pump();
