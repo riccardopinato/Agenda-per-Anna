@@ -50,16 +50,23 @@ void main() {
       ));
       await tester.pumpAndSettle();
 
+      final list = find.byType(Scrollable).first;
       final custom = find.byKey(const ValueKey<String>('appearance-custom'));
+      // At 200% text the preset chips begin below the fold; physically
+      // scroll the real screen rather than tapping an offscreen render box.
+      await tester.scrollUntilVisible(custom, 150,
+          scrollable: list, maxScrolls: 35);
       expect(custom, findsOneWidget);
       await tester.tap(custom);
       await tester.pump();
       expect(store.preferences.useCustomPalette, isFalse,
           reason: 'Preview selection must never persist until Apply');
-      expect(find.byKey(const ValueKey<String>('appearance-hue-slider')),
-          findsOneWidget);
+      final hueSlider = find.byKey(
+          const ValueKey<String>('appearance-hue-slider'));
+      await tester.scrollUntilVisible(hueSlider, 150,
+          scrollable: list, maxScrolls: 35);
+      expect(hueSlider, findsOneWidget);
 
-      final list = find.byType(Scrollable).first;
       final actions = find.byKey(
           const ValueKey<String>('appearance-actions-stacked'));
       await tester.scrollUntilVisible(actions, 150,
