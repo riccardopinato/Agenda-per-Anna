@@ -79,7 +79,7 @@ Una riga `A20` è **CHIUSA** soltanto se il suo gate esplicito è eseguito sull'
 | A20-16 | `M5 BENCHMARK PROTOCOL READY` sei scenari | p95/jank/RAM su device **NOT MEASURED** |
 | A20-17 | `DEFERRED BY USER` #355, guide principali già presenti | wave secondaria solo dopo frizioni reali documentate |
 | A20-18 | `LIVE PROVIDER READ-ONLY VERIFIED` 16 tabelle RLS on, 2 WARN security, 14 INFO perf | due WARN **OPEN**, senza mutazioni |
-| A20-19 | `M4 SOURCE MERGED` rc.6+140 su main; #370 PR CI PASS | job firmato/artifact, hash, update-in-place e 31 scenari **PENDING** |
+| A20-19 | `ARTIFACT_BUILT / HASH+CERT PASS` rc.6+140 [run #44433294681](https://github.com/riccardopinato/Agenda-per-Anna/actions/runs/44433294681), [receipt](release_evidence/ANDROID_RC6_140_SIGNED_ARTIFACT_RECEIPT_20261119.md); APK versionCode 2140, SHA-256 validato, cert v2 uguale a +139 | **device install/update/backup/31 scenari NOT_VERIFIED** |
 | A20-20 | `M5 OFFICIAL POLICY CHECK/PLAY MATRIX READY` API36, RevenueCat, salute | AAB/console, acquisto/restore e Data Safety **NOT VERIFIED** |
 
 ### Stop rule: niente completamento inventato
