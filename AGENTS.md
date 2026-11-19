@@ -134,7 +134,7 @@ sideload artifact is required.
 
 - Flutter/Dart application.
 - Android package: `com.riccardopinato.agenda_per_anna`.
-- Primary navigation: Today · Messages · central (+) Create · Memories · More; Calendar is a dedicated route from Today.
+- Primary navigation: Today/Oggi · Together/Insieme · central (+) Create/Crea · Memories/Ricordi · More/Altro; Calendar is a dedicated route from Today. `Noi ♡` stays the historical data/shared-space identity; the display label is `Insieme` since PR #357, with server IDs unchanged.
 - Today is the sole daily hub after v1.05-A3.
 - Stable direct-install Android updates use `.github/workflows/sideload-arm64.yml`, invoked automatically only through the new release preflight or manually for a retry.
 - Web preview/deploy uses GitHub Pages.
