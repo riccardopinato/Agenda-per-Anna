@@ -52,3 +52,35 @@ Una riga `A20` è **CHIUSA** soltanto se il suo gate esplicito è eseguito sull'
 - Non usare materiale di terzi o reference UIR senza effettiva licenza e file.
 - Non affermare che Web PASS = aggiornamento PWA installata, scanner storico = zero problemi o APK +139 storico = sorgente corrente.
 - Non leggere dati personali, sbloccare Vault, impostare OAuth Direct, modificare Supabase o vendere Premium durante QA di codice.
+
+
+## Checkpoint di esecuzione — 19 novembre 2026, dopo M1–M4 source merge
+**Questa sezione aggiorna lo stato**, mentre la tabella iniziale resta lo snapshot storico di apertura. Date e SHA sono identità reali, non stime. M5 prepara solo controlli provider/performance/Store e non li certifica.
+
+**Merge app source verificati:** [M1 #367](https://github.com/riccardopinato/Agenda-per-Anna/pull/367) `73d63a6`, [M2 #368](https://github.com/riccardopinato/Agenda-per-Anna/pull/368) `728e466`, [M3 #369](https://github.com/riccardopinato/Agenda-per-Anna/pull/369) `130fabd`, [M4 #370](https://github.com/riccardopinato/Agenda-per-Anna/pull/370) `2395ca6` (+140 solo source), CI PR exact-head PASS. [Idee #170](https://github.com/riccardopinato/Idee-app-Archivi-riferimenti/pull/170) 7 rinviate, [Design-App #47](https://github.com/riccardopinato/Design-App/pull/47) link UIR corretti con originali marcati missing. Due PR stale #309, #252 chiuse senza merge; #152 QA donor, #254 Design Lab reference, #215 Privacy V2 e #199 OAuth Direct non unire. [M5 dossier](qa/M5_PROVIDER_PERFORMANCE_STORE_GATES_20261119.md) tratta verifica provider e gate esterni.
+
+| ID | Avanzamento **effettivo** | Chiusura (distinta da preparazione) |
+|---|---|---|
+| A20-01 | `SOURCE+PR_CI` M4 +140, precedente +139 manifest registrato | installato +140 e stessa firma su device **NOT VERIFIED** |
+| A20-02 | `SOURCE+CI PASS` guard A→B→A #366, test M2 #368 | due client reali **NOT VERIFIED** |
+| A20-03 | `SOURCE+CI PASS` ZIP, serializzazione e anti-mixing #368 | file picker/restore reale **NOT VERIFIED** |
+| A20-04 | `SOURCE+CI PASS` Vision Board sintetica #368 | due PWA installate S13 #297 **NOT VERIFIED** |
+| A20-05 | `SOURCE+CI PASS` stati Insieme #365–366 | ACL, revoca offline e due device reali **NOT VERIFIED** |
+| A20-06 | `NO CHANGE TO VAULT` come richiesto; D7 checklist pronta | biometria/Keystore/screen secure device **NOT VERIFIED** |
+| A20-07 | `SOURCE PRESENT` reminder, bridge, push | consegna/reboot/DST reali **NOT VERIFIED** |
+| A20-08 | `SOURCE+CAPTURE PASS` M3 16+ schermate Flutter sintetiche | confronto owner 10 mockup **NOT APPROVED** |
+| A20-09 | `EVIDENCE FIRST` no redraw arbitrario | nessun difetto attestato da owner per ulteriore fix; **PENDING REVIEW** |
+| A20-10 | `CAPTURE PARTIAL` N18; non CAP-0069 | 70 baseline + 70 candidate e manifest **NOT VERIFIED** |
+| A20-11 | `WIDGET CI PASS` HSV 320dp / font 200%, 5 lingue già in app | TalkBack/VoiceOver, 5 lingue full matrix su hardware **NOT VERIFIED** |
+| A20-12 | `TRIAGE DOCUMENTED` #309/#252 closed, #152/#254 deferred, #215/#199 blocked | **CLOSED AS TRIAGE**, non tutte PR fuse |
+| A20-13 | `DOC SOURCE MERGED` README, AGENTS, ROADMAP #367 | eventuali nuovi artifact/device richiedono receipts |
+| A20-14 | `DOC SOURCE MERGED` Design-App #47, quattro link non più dead | originali UIR mancanti **NOT RECOVERED**; preferenze preservate |
+| A20-15 | `EXACT-HEAD SCANNER PASS` #44430371797, 356 Dart, zero skipped/legacy | 279 euristiche review, non auto-trattare come 279 bug |
+| A20-16 | `M5 BENCHMARK PROTOCOL READY` sei scenari | p95/jank/RAM su device **NOT MEASURED** |
+| A20-17 | `DEFERRED BY USER` #355, guide principali già presenti | wave secondaria solo dopo frizioni reali documentate |
+| A20-18 | `LIVE PROVIDER READ-ONLY VERIFIED` 16 tabelle RLS on, 2 WARN security, 14 INFO perf | due WARN **OPEN**, senza mutazioni |
+| A20-19 | `M4 SOURCE MERGED` rc.6+140 su main; #370 PR CI PASS | job firmato/artifact, hash, update-in-place e 31 scenari **PENDING** |
+| A20-20 | `M5 OFFICIAL POLICY CHECK/PLAY MATRIX READY` API36, RevenueCat, salute | AAB/console, acquisto/restore e Data Safety **NOT VERIFIED** |
+
+### Stop rule: niente completamento inventato
+La richiesta del titolare di «chiudere tutti i 20 punti» significa **eseguire tutto ciò che è tecnicamente verificabile**, e lasciare solo veri gate esterni con motivo/owner e azione riproducibile. Non dichiarare chiuso come `DEVICE_VERIFIED` o `STORE_READY` un test non svolto. Non cancellare le sette idee rinviate, non introdurre una seconda sync, non toccare data/ACL/Vault per un restyling e non lanciare Play Store senza test reali.
