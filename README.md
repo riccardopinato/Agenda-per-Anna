@@ -1,5 +1,13 @@
 # Anna's Diary
 
+## Stato operativo attuale — 19 novembre 2026 · main +139 (consolidamento)
+
+- **Sorgente integrata**: `main@adbab7db67a1262a5255a64e4aa34da376d6d051` (`1.0.0-rc.6+139`, PR [#366](https://github.com/riccardopinato/Agenda-per-Anna/pull/366) merged); [Development CI](https://github.com/riccardopinato/Agenda-per-Anna/actions/runs/44413420982) e [Pages](https://github.com/riccardopinato/Agenda-per-Anna/actions/runs/44413421279) PASS su quell'HEAD.
+- **Android**: un +139 firmato precedente al merge N18 esiste ([run #44097602073](https://github.com/riccardopinato/Agenda-per-Anna/actions/runs/44097602073)); **non contiene tutti i cambiamenti dell'ultimo main**. Ultima release pubblicata +138. [Auto-signed postmerge #44414372272](https://github.com/riccardopinato/Agenda-per-Anna/actions/runs/44414372272) ha `signed-apk=skipped`, nessun APK nuovo. Non confondere artifact e installazione.
+- **Stato del prodotto**: grandi wave N18 già integrate in sorgente; restano collaudi di privacy/backup/2-device/Android, revisione delle 10 schermate contro screenshot Flutter reali e release fisica. Non introdurre nuove feature per chiudere i gate.
+- **Roadmap attiva 20 punti, M2 e M3 in lane parallele**: [registro di consolidamento 19/11](docs/ANNA_CONSOLIDATION_20_POINT_EXECUTION_20261119.md). I riferimenti più vecchi qui sotto sono storici, non un'altra roadmap attiva.
+
+
 ## Stato verificato al 16 novembre 2026 — rc.6+134 (fonte corrente)
 
 - **Base dell'APK firmato**: `afbbb3ec5b46d1744d2f681668742fdef7723ea1`, `1.0.0-rc.6+134`; integrazione [PR #326](https://github.com/riccardopinato/Agenda-per-Anna/pull/326). **Main dopo il polish**: `2934ea9573edc68edbfc24210fbf8296ac67af49` ([PR #328](https://github.com/riccardopinato/Agenda-per-Anna/pull/328)); build number invariato.
