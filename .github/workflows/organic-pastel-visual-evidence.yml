@@ -18,6 +18,7 @@ jobs:
   capture:
     # Scoped QA for the original design PR and the official 7-day layout fix.
     if: >-
+      github.head_ref == 'ux/anna-m3-evidence-a11y-20261119' ||
       github.head_ref == 'design/organic-pastel-experiment-20261114' ||
       github.head_ref == 'fix/organic-seven-days-visible-rc132' ||
       github.head_ref == 'feat/home-commitments-timeline-reorder-20261115' ||
