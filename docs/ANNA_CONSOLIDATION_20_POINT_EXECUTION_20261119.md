@@ -1,4 +1,6 @@
 # Anna's Diary — Consolidamento audit 360°: 20 interventi e cinque maxi-step
+
+> **REGISTRO STORICO, NON lista di cose ancora da fare.** Scrematura del 19/11/2026: **5 chiusi, 1 assorbito, 1 differito, 13 residui**. Usare soltanto [backlog attivo dei 13 punti](ANNA_A20_ACTIVE_ONLY_20261119.md) per programmare gli interventi. Le venti righe sotto restano immutate come prova storica, non come venti nuove attività. Gate fisici, visuali e Store non certificati rimangono effettivamente aperti.
 Data: 19 novembre 2026 · Decisione titolare: **eseguire roadmap, M2 e M3 in lane indipendenti, senza espansione funzionale**.
 Stato: **PIANO OPERATIVO + REGISTRO PROVE**, non certificazione di runtime/dispositivi.
 
