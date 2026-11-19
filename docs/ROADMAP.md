@@ -1,3 +1,7 @@
+## 19 novembre 2026 — Roadmap attiva: finalizzazione, non espansione
+
+**Decisione utente:** attuare la roadmap dei 20 punti dell'audit con **M2 (dati/PWA/isolamento) e M3 (design/a11y/visual QA) in parallelo**, branch separati e nessuna perdita dati. [Registro corrente A20-01…20](ANNA_CONSOLIDATION_20_POINT_EXECUTION_20261119.md). Fonte: `main@adbab7db67a1262a5255a64e4aa34da376d6d051` (`1.0.0-rc.6+139`); Web/Development postmerge PASS; APK +139 precedente allo SHA corrente e ultimo release pubblicato +138. Non promuovere prove CI a certificazione fisica. Priorità a chiudere M1/M2/M3 e solo dopo M4 release; M5 provider/Store separato. Le opportunità creative non approvate sono rinviate nel repository idee, non autorizzano nuove feature. **Le sezioni storiche che seguono sono testimonianze per vecchi SHA, non lo stato operativo attuale.**
+
 ## 16 novembre 2026 — Calendar Notebook v136 (candidate · visual-only)
 
 - **Scope autorizzato:** calendario Mese/Settimana/agenda con resa iOS Journal coerente con Oggi v135, senza nuovi modelli, writer, route, permessi, storage, sync o modifiche alla Cassaforte.
