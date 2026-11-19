@@ -1,5 +1,14 @@
 # Anna's Diary
 
+## Stato operativo attuale — 19 novembre 2026 · main +140 (consolidamento)
+
+- **Sorgente**: `main@2395ca6f78ff35a9d65f59f6809b4be7d11fcee6` (`1.0.0-rc.6+140`, [M4 PR #370](https://github.com/riccardopinato/Agenda-per-Anna/pull/370)); M1 [#367](https://github.com/riccardopinato/Agenda-per-Anna/pull/367), M2 [#368](https://github.com/riccardopinato/Agenda-per-Anna/pull/368) e M3 [#369](https://github.com/riccardopinato/Agenda-per-Anna/pull/369) già integrate dopo CI exact-head. Tutte le nuove modifiche +140 sono metadata release e protocollo M4, non una nuova funzione.
+- **Web e CI**: [Development main +140](https://github.com/riccardopinato/Agenda-per-Anna/actions/runs/44432560423) PASS; [Pages main +140](https://github.com/riccardopinato/Agenda-per-Anna/actions/runs/44432560528) PASS. Distribuzione Web non certifica cache delle PWA già installate.
+- **APK ARM64 +140 firmato, artifact disponibile**: [Auto signed #44433294681](https://github.com/riccardopinato/Agenda-per-Anna/actions/runs/44433294681) `signed-apk / build=SUCCESS`, [artifact ID 14487751762](https://github.com/riccardopinato/Agenda-per-Anna/actions/runs/44433294681/artifacts/14487751762). APK SHA-256 `196a3310fd3043745e5a7b5fc7eec68d2b3a386e2e37683b77e492cb5f86a237`, versione Android split `2140`, target API36; certificato X.509 estratto **identico** al precedente +139. [Receipt e limiti](docs/release_evidence/ANDROID_RC6_140_SIGNED_ARTIFACT_RECEIPT_20261119.md). **Nessuna installazione, backup fisico, aggiornamento in-place, 31 casi o Play dichiarati PASS**. Ultima GitHub Release pubblicata al checkpoint: +138.
+- **Progetto**: le dieci wave N18 già sono sorgente e screenshot Flutter; la loro accettazione visiva e i gate di privacy/backup/due device/Android restano separati. Priorità a finalizzazione e data safety, non ad AI, nuovi moduli, restyling generali o secondo database.
+- **Backlog scremato, unico riferimento per prossimi lavori**: [13 gate residui su 20](docs/ANNA_A20_ACTIVE_ONLY_20261119.md): **5 interventi chiusi, 1 assorbito, 1 differito**. Il [registro 20 punti](docs/ANNA_CONSOLIDATION_20_POINT_EXECUTION_20261119.md) è conservato come storico; [M2](docs/qa/M2_PRIVATE_LIFECYCLE_TWO_CLIENT_ACCEPTANCE_20261119.md), [M3](docs/qa/M3_N18_VISUAL_ACCESSIBILITY_CLOSEOUT_20261119.md), [M5](docs/qa/M5_PROVIDER_PERFORMANCE_STORE_GATES_20261119.md) restano prove e protocolli. Non ripetere i cinque chiusi o confondere preparazione e collaudo reale.
+
+
 ## Stato verificato al 16 novembre 2026 — rc.6+134 (fonte corrente)
 
 - **Base dell'APK firmato**: `afbbb3ec5b46d1744d2f681668742fdef7723ea1`, `1.0.0-rc.6+134`; integrazione [PR #326](https://github.com/riccardopinato/Agenda-per-Anna/pull/326). **Main dopo il polish**: `2934ea9573edc68edbfc24210fbf8296ac67af49` ([PR #328](https://github.com/riccardopinato/Agenda-per-Anna/pull/328)); build number invariato.

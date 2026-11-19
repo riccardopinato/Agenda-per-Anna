@@ -17,7 +17,8 @@ concurrency:
 
 jobs:
   capture:
-    if: github.head_ref == 'design/calendar-notebook-v136-20261116' ||
+    if: github.head_ref == 'ux/anna-m3-evidence-a11y-20261119' ||
+      github.head_ref == 'design/calendar-notebook-v136-20261116' ||
       github.head_ref == 'design/ds6-calendar-notebook-week-summary-20261115' ||
       github.head_ref == 'integration/ios-journal-three-surfaces-20261116' ||
       github.head_ref == 'design/organic-journal-home-parity-20261116' ||
