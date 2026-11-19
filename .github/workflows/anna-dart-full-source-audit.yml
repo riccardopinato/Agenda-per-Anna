@@ -20,7 +20,8 @@ concurrency:
 jobs:
   scan:
     if: github.event_name == 'workflow_dispatch' ||
-      github.head_ref == 'design/organic-journal-home-parity-20261116'
+      github.head_ref == 'design/organic-journal-home-parity-20261116' ||
+      github.head_ref == 'ux/anna-m3-evidence-a11y-20261119'
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
