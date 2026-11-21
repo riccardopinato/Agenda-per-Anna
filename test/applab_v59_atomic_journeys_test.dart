@@ -10,13 +10,14 @@ void main() {
     final journeys = project['journeys'] as Map<String, dynamic>;
     final catalog = journeys['catalog'] as Map<String, dynamic>;
 
-    expect(catalog.length, 9);
+    expect(catalog.length, 10);
     expect(catalog.keys.first, 'core-shell');
     expect(catalog.keys, containsAll(<String>[
       'onboarding',
       'navigation-critical',
       'memories-critical',
       'settings-critical',
+      'personalization-critical',
       'vault-create',
       'vault-wrong-password',
       'vault-correct-unlock',
@@ -54,6 +55,31 @@ void main() {
     ]) {
       expect((catalog[id] as Map<String, dynamic>)['risk_class'], 'deep');
     }
+  });
+
+  test('Personalization atomic flow boots independently and reuses the visual scenario', () {
+    final project = jsonDecode(File('applab.project.json').readAsStringSync())
+        as Map<String, dynamic>;
+    final journeys = project['journeys'] as Map<String, dynamic>;
+    final catalog = journeys['catalog'] as Map<String, dynamic>;
+    final item = catalog['personalization-critical'] as Map<String, dynamic>;
+    const flowPath = '.maestro/journeys/personalization-atomic.yaml';
+    const scenarioPath = '.maestro/journey/personalization.yaml';
+    final flow = File(flowPath).readAsStringSync();
+    final scenario = File(scenarioPath).readAsStringSync();
+
+    expect(item['flow'], flowPath);
+    expect(item['paths'], contains('lib/src/screens/personalization_screen.dart'));
+    expect(item['paths'], contains(scenarioPath));
+    expect(item['risk_class'], 'normal');
+    expect(item['always_fast'], isFalse);
+    expect(flow, contains('clearState: true'));
+    expect(flow, contains("id: 'onboarding_open_agenda'"));
+    expect(flow, contains("id: 'main-nav-more'"));
+    expect(flow, contains('file: ../journey/personalization.yaml'));
+    expect(scenario, contains("id: 'personalization_preset_essential'"));
+    expect(scenario, contains("id: 'personalization_restore_complete'"));
+    expect(journeys['primary'], '.maestro/applab-smoke.yaml');
   });
 
   test('Vault atomic journeys are independently bootstrappable', () {
