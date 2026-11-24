@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:agenda_per_anna/main.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'support/planner_source_parts.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -70,7 +71,7 @@ void main() {
   }
 
   test('v136 Calendar only decorates canonical month, week and agenda', () {
-    final source = File('lib/src/planner_views.dart').readAsStringSync();
+    final source = readPlannerSourceParts();
     final hub = source.split('class _CalendarHubScreenState')[1]
         .split('class CalendarScreen')[0];
     final month = source.split('class _CalendarScreenState')[1]
