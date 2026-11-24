@@ -4,12 +4,13 @@ import 'package:agenda_per_anna/main.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:intl/date_symbol_data_local.dart';
+import 'support/planner_source_parts.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
   test('DS5 retains one date selector, editor and canonical calendar views', () {
-    final p = File('lib/src/planner_views.dart').readAsStringSync();
+    final p = readPlannerSourceParts();
     final d = File('lib/src/editorial_calendar.dart').readAsStringSync();
     final main = File('lib/main.dart').readAsStringSync();
     expect(main, contains("part 'src/editorial_calendar.dart';"));
