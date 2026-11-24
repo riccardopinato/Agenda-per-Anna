@@ -6,6 +6,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:agenda_per_anna/local_state_store.dart';
 import 'package:agenda_per_anna/main.dart';
 import 'package:agenda_per_anna/media_asset_store.dart';
+import 'support/planner_source_parts.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -87,7 +88,7 @@ void main() {
 
   test('v1.05-B2 replaces legacy YearScreen counters without a new store', () {
     final domain = File('lib/src/year_review_domain.dart').readAsStringSync();
-    final planner = File('lib/src/planner_views.dart').readAsStringSync();
+    final planner = readPlannerSourceParts();
 
     expect(domain, contains('lifeArchiveEntries('));
     expect(domain, contains('memoryReferences()'));
