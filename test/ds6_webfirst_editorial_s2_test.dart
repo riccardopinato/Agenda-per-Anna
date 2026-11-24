@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:intl/date_symbol_data_local.dart';
+import 'support/planner_source_parts.dart';
 
 /// DS6 Web-first S2: Flutter widget/source evidence, NOT installed PWA or
 /// screenshot acceptance. No private data, backend, APK or new data owners.
@@ -189,7 +190,7 @@ void main() {
 
   test('Quaderno illustrato keeps real month and all seven week days',
       () {
-    final source = File('lib/src/planner_views.dart').readAsStringSync();
+    final source = readPlannerSourceParts();
     final month = source
         .split('class _CalendarScreenState')[1]
         .split('class _CalendarDayContextCard')[0];
