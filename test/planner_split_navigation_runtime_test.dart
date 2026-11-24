@@ -13,6 +13,15 @@ void main() {
   testWidgets('planner split retains calendar/week/month/year routes',
       (tester) async {
     await initializeDateFormatting('it_IT', null);
+    // The Flutter test renderer defaults to Ahem, which measures text
+    // differently and can create synthetic Row overflows. Load the same
+    // bundled fonts as the certified 19-image visual-parity fixture.
+    await (FontLoader('Manrope')
+          ..addFont(rootBundle.load('assets/fonts/Manrope-VF.ttf')))
+        .load();
+    await (FontLoader('Lora')
+          ..addFont(rootBundle.load('assets/fonts/Lora-VF.ttf')))
+        .load();
 
     tester.view.physicalSize = const Size(390, 844);
     tester.view.devicePixelRatio = 1;
@@ -72,7 +81,8 @@ void main() {
         expect(find.byKey(const ValueKey<String>('year-review-surface')),
             findsOneWidget);
       }
-      expect(tester.takeException(), isNull);
+      expect(tester.takeException(), isNull,
+          reason: 'Route $pageType must render without Flutter exceptions.');
       navigator.pop();
       await tester.pump(const Duration(milliseconds: 500));
       expect(tester.takeException(), isNull);
