@@ -81,4 +81,80 @@ void main() {
       findsOneWidget,
     );
   });
+
+  testWidgets(
+      'Android emulator: planner split routes and synthetic persistence',
+      (tester) async {
+    tester.view.physicalSize = const Size(390, 844);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(() {
+      tester.view.resetPhysicalSize();
+      tester.view.resetDevicePixelRatio();
+    });
+
+    await initializeDateFormatting('it_IT', null);
+    // The emulator's dedicated disposable profile is the only storage target.
+    // No production account, cloud, external calendar, Vault or user files.
+    await LocalStateStore.instance.resetForTesting();
+    await MediaAssetStore.instance.resetForTesting();
+
+    final initial = AgendaStore();
+    await initial.load();
+    await initial.savePreferences(
+      initial.preferences.copyWith(onboardingDone: true),
+    );
+    await initial.addInboxEntry('Planner split emulator synthetic fixture');
+    expect(
+      initial.inbox.any(
+        (entry) => entry.text == 'Planner split emulator synthetic fixture',
+      ),
+      isTrue,
+    );
+    initial.dispose();
+
+    final restored = AgendaStore();
+    addTearDown(restored.dispose);
+    await restored.load();
+    expect(
+      restored.inbox.any(
+        (entry) => entry.text == 'Planner split emulator synthetic fixture',
+      ),
+      isTrue,
+      reason: 'Local synthetic data must survive reloading the store.',
+    );
+
+    await tester.pumpWidget(
+      AgendaApp(store: restored, bypassIdentityForTesting: true),
+    );
+    await tester.pumpAndSettle();
+
+    final navigator = Navigator.of(tester.element(find.byType(MainShell)));
+    final routes = <(Widget, Type)>[
+      (CalendarHubScreen(store: restored), CalendarHubScreen),
+      (CalendarScreen(store: restored), CalendarScreen),
+      (WeekScreen(store: restored), WeekScreen),
+      (
+        MonthScreen(store: restored, initialMonth: DateTime(2026, 11)),
+        MonthScreen,
+      ),
+      (YearScreen(store: restored, initialYear: 2026), YearScreen),
+    ];
+
+    for (final (page, pageType) in routes) {
+      navigator.push(MaterialPageRoute<void>(builder: (_) => page));
+      await tester.pump(const Duration(milliseconds: 450));
+      await tester.pump(const Duration(milliseconds: 450));
+      expect(find.byType(pageType), findsOneWidget);
+      if (pageType == YearScreen) {
+        expect(
+          find.byKey(const ValueKey<String>('year-review-surface')),
+          findsOneWidget,
+        );
+      }
+      expect(tester.takeException(), isNull);
+      navigator.pop();
+      await tester.pump(const Duration(milliseconds: 500));
+      expect(tester.takeException(), isNull);
+    }
+  });
 }
