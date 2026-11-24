@@ -4,12 +4,13 @@ import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:agenda_per_anna/main.dart';
+import 'support/planner_source_parts.dart';
 
 void main() {
   test('v0.98 routes every primary day surface through Unified Capture', () {
     final home =
         File('lib/src/screens/home_inbox_search.dart').readAsStringSync();
-    final planner = File('lib/src/planner_views.dart').readAsStringSync();
+    final planner = readPlannerSourceParts();
 
     expect(home, isNot(contains('class HomeScreen')));
     expect(
