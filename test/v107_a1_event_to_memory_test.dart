@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'support/planner_source_parts.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -113,7 +114,7 @@ void main() {
   });
 
   test('Uses common private event action sheet, not duplicate store', () {
-    final planner = File('lib/src/planner_views.dart').readAsStringSync();
+    final planner = readPlannerSourceParts();
     final helper = File('lib/src/event_memory_capture.dart').readAsStringSync();
     final main = File('lib/main.dart').readAsStringSync();
     expect(main, contains("part 'src/event_memory_capture.dart';"));
