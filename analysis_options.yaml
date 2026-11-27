@@ -4,3 +4,9 @@ linter:
   rules:
     prefer_const_constructors: true
     use_super_parameters: true
+
+# The standalone Design Lab has its own pubspec and analysis/test pipeline.
+# Do not resolve its package imports against the production application.
+analyzer:
+  exclude:
+    - design_lab/editorial/**
