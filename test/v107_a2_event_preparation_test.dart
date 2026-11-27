@@ -5,6 +5,7 @@ import 'package:agenda_per_anna/main.dart';
 import 'package:agenda_per_anna/media_asset_store.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'support/planner_source_parts.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -160,7 +161,7 @@ void main() {
 
   test('A2 source contract keeps checkbox editor private and no task engine', () {
     final source = File('lib/src/event_preparation.dart').readAsStringSync();
-    final planner = File('lib/src/planner_views.dart').readAsStringSync();
+    final planner = readPlannerSourceParts();
     final main = File('lib/main.dart').readAsStringSync();
     expect(main, contains("part 'src/event_preparation.dart';"));
     expect(planner, contains("'v107-event-preparation-action'"));

@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:agenda_per_anna/main.dart';
+import 'support/planner_source_parts.dart';
 
 void main() {
   test('v1.05-B4 keeps recall projections bounded and canonical', () {
@@ -47,7 +48,7 @@ void main() {
     final collections = File(
       'lib/src/screens/memory_collections_screen.dart',
     ).readAsStringSync();
-    final planner = File('lib/src/planner_views.dart').readAsStringSync();
+    final planner = readPlannerSourceParts();
 
     for (final id in const [
       'memories-for-you',

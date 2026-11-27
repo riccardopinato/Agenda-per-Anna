@@ -123,6 +123,8 @@ part 'src/screens/shared_passwords_screen.dart';
 part 'src/screens/cloud_account.dart';
 part 'src/weekly_review.dart';
 part 'src/planner_views.dart';
+part 'src/planner_week_views.dart';
+part 'src/planner_month_year_views.dart';
 part 'src/widgets_editors.dart';
 part 'src/diary/diary_templates.dart';
 part 'src/diary/diary_twelve_weeks_preview.dart';

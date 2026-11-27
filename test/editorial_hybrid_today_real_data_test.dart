@@ -4,6 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:agenda_per_anna/main.dart';
+import 'support/planner_source_parts.dart';
 
 void main() {
   // Legacy Editorial Hybrid widget snapshots intentionally exercise the
@@ -145,7 +146,7 @@ void main() {
   });
 
   test('Organic Home keeps the single Impegni shortcut above its diary hero', () {
-    final planner = File('lib/src/planner_views.dart').readAsStringSync();
+    final planner = readPlannerSourceParts();
     final overview = File('lib/src/editorial_today_home.dart').readAsStringSync();
     final home = planner
         .split('class _PlannerScreenState')[1]
@@ -173,7 +174,7 @@ void main() {
   });
 
   test('classic paths and canonical data still exist inside opt-in Oggi', () {
-    final planner = File('lib/src/planner_views.dart').readAsStringSync();
+    final planner = readPlannerSourceParts();
     final preferences = File('lib/src/screens/personalization_screen.dart').readAsStringSync();
     final shell = File('lib/src/screens/home_inbox_search.dart').readAsStringSync();
     expect(planner, contains('widget.store.dayHubSnapshot(day)'));
@@ -198,7 +199,7 @@ void main() {
   });
 
   test('Hybrid Home has no filter bar or stale invisible content filter', () {
-    final planner = File('lib/src/planner_views.dart').readAsStringSync();
+    final planner = readPlannerSourceParts();
     final shell = File('lib/src/screens/home_inbox_search.dart').readAsStringSync();
     final start = planner.indexOf('class _PlannerScreenState');
     final end = planner.indexOf('class _CalendarDayContextCard', start);
